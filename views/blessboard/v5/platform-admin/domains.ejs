@@ -1,0 +1,301 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = domains || [];
+  var limits = allowedLimits || [10, 25, 50, 100];
+  var statuses = allowedStatuses || ['active', 'inactive'];
+  var types = allowedDomainTypes || ['apex', 'canonical', 'custom', 'alias'];
+  var hasFilter = Boolean(hostnamePrefix) || Boolean(orgKeyPrefix) || Boolean(statusFilter) || Boolean(typeFilter) || Boolean(verifiedFilter);
+  var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
+
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'Active';
+    if (key === 'inactive') return 'Inactive';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'inactive') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip--warn';
+  }
+  function typeLabel(t) {
+    var key = String(t || '').toLowerCase();
+    if (key === 'apex') return 'Apex';
+    if (key === 'canonical') return 'Canonical';
+    if (key === 'custom') return 'Custom';
+    if (key === 'alias') return 'Alias';
+    return t || '—';
+  }
+  function productLabel(row) {
+    if (row && row.productDisplayName) return row.productDisplayName;
+    var k = String(row && row.productKey || '').toLowerCase();
+    if (k === 'blessboard') return 'BlessBoard';
+    return (row && row.productKey) || '—';
+  }
+  function verifiedLabel(isVerified) {
+    return isVerified ? 'Verified' : 'Unverified';
+  }
+  function verifiedChip(isVerified) {
+    return isVerified ? 'bb-pa-chip--ok' : 'bb-pa-chip--warn';
+  }
+  function orgHref(organizationKey) {
+    return '/admin/organizations/' + encodeURIComponent(organizationKey) + '#pa-org-domains';
+  }
+  function detailHref(hostname) {
+    return '/admin/domains/' + encodeURIComponent(hostname);
+  }
+  function queryPage(p) {
+    var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
+    if (hostnamePrefix) parts.push('q=' + encodeURIComponent(hostnamePrefix));
+    if (orgKeyPrefix) parts.push('org=' + encodeURIComponent(orgKeyPrefix));
+    if (statusFilter) parts.push('status=' + encodeURIComponent(statusFilter));
+    if (typeFilter) parts.push('type=' + encodeURIComponent(typeFilter));
+    if (verifiedFilter) parts.push('verified=' + encodeURIComponent(verifiedFilter));
+    return '/admin/domains?' + parts.join('&');
+  }
+  function clearHref() {
+    return '/admin/domains?limit=' + encodeURIComponent(limit);
+  }
+%>
+
+<section
+  class="bb-pa-domains"
+  data-bb-pa-domains="1"
+  data-bb-pa-domains-directory="1"
+  data-bb-stitch-domains="67-platform-settings"
+  aria-label="Domain directory"
+>
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-domains__eyebrow">Hostname registry</p>
+      <h1 class="bb-pa-page-head__title">Domains</h1>
+      <p class="bb-pa-lede">
+        Live <code>platform.domains</code> rows for BlessBoard. Status, type, and verification
+        come from stored records only. External DNS checks, TLS issuance, and verify workflows are not available.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <span class="bb-pa-chip bb-pa-chip--ok" data-bb-count="domains-total"><%= totalCount %></span>
+      <span class="bb-pa-domains__total-label">domains</span>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/settings" data-bb-pa-domains-settings-link="1">
+        <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+        Settings
+      </a>
+    </div>
+  </header>
+
+  <p class="bb-pa-domains__notice" role="note" data-bb-pa-domains-notice="1">
+    Read-only directory. Domain commerce, DNS automation, TLS issuance, and verify workflows are not implemented.
+    Open an organization for its scoped hostname list.
+  </p>
+
+  <form
+    class="bb-pa-domains-filter"
+    method="get"
+    action="/admin/domains"
+    role="search"
+    data-bb-pa-domains-filter="1"
+  >
+    <div class="bb-pa-field">
+      <label for="q">Hostname prefix</label>
+      <input
+        id="q"
+        name="q"
+        type="search"
+        value="<%= hostnamePrefix || '' %>"
+        placeholder="e.g. pa-"
+        maxlength="253"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <div class="bb-pa-field">
+      <label for="org">Organization key prefix</label>
+      <input
+        id="org"
+        name="org"
+        type="search"
+        value="<%= orgKeyPrefix || '' %>"
+        placeholder="e.g. pa-demo"
+        maxlength="64"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <div class="bb-pa-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">All statuses</option>
+        <% statuses.forEach(function (st) { %>
+        <option value="<%= st %>"<%= statusFilter === st ? ' selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="type">Type</label>
+      <select id="type" name="type">
+        <option value="">All types</option>
+        <% types.forEach(function (t) { %>
+        <option value="<%= t %>"<%= typeFilter === t ? ' selected' : '' %>><%= typeLabel(t) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="verified">Verification</label>
+      <select id="verified" name="verified">
+        <option value="">All</option>
+        <option value="yes"<%= verifiedFilter === 'yes' ? ' selected' : '' %>>Verified</option>
+        <option value="no"<%= verifiedFilter === 'no' ? ' selected' : '' %>>Unverified</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="limit">Rows</label>
+      <select id="limit" name="limit">
+        <% limits.forEach(function (n) { %>
+        <option value="<%= n %>"<%= Number(limit) === Number(n) ? ' selected' : '' %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-domains-filter__actions">
+      <button type="submit" class="bb-pa-btn">Filter</button>
+      <% if (hasFilter) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= clearHref() %>">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (!rows.length && !hasFilter) { %>
+  <p class="bb-pa-empty" role="status" data-bb-pa-empty="domains">No domain records are registered.</p>
+  <% } else if (!rows.length) { %>
+  <div class="bb-pa-empty-wrap" role="status" data-bb-pa-empty="no-results">
+    <p class="bb-pa-empty">No domains match these filters.</p>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= clearHref() %>">Clear filter</a>
+  </div>
+  <% } else { %>
+
+  <div class="bb-pa-domains-table-wrap bb-pa-show-desktop" data-bb-domains-table="1">
+    <table class="bb-pa-table bb-pa-domains-table" data-bb-table="domains-directory">
+      <thead>
+        <tr>
+          <th scope="col">Hostname</th>
+          <th scope="col">Organization</th>
+          <th scope="col">Type</th>
+          <th scope="col">Status</th>
+          <th scope="col">Verified</th>
+          <th scope="col">Product</th>
+          <th scope="col">Deployment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr
+          data-bb-domain-hostname="<%= row.hostname %>"
+          data-bb-domain-type="<%= row.domainType %>"
+          data-bb-domain-status="<%= row.status %>"
+          data-bb-domain-verified="<%= row.isVerified ? '1' : '0' %>"
+          <% if (row.organizationKey) { %>data-bb-domain-org="<%= row.organizationKey %>"<% } %>
+        >
+          <td>
+            <a class="bb-pa-link" href="<%= detailHref(row.hostname) %>" data-bb-domain-open="1">
+              <strong><%= row.hostname %></strong>
+            </a>
+            <% if (row.isPrimary) { %><span class="bb-pa-chip">Primary</span><% } %>
+          </td>
+          <td>
+            <% if (row.organizationKey) { %>
+            <a class="bb-pa-link" href="<%= orgHref(row.organizationKey) %>">
+              <strong><%= row.organizationDisplayName || row.organizationKey %></strong>
+            </a>
+            <div><code class="bb-pa-key"><%= row.organizationKey %></code></div>
+            <% } else { %>
+            <span class="bb-pa-muted">—</span>
+            <% } %>
+          </td>
+          <td><span class="bb-pa-chip"><%= typeLabel(row.domainType) %></span></td>
+          <td><span class="bb-pa-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span></td>
+          <td><span class="bb-pa-chip <%= verifiedChip(row.isVerified) %>"><%= verifiedLabel(row.isVerified) %></span></td>
+          <td><%= productLabel(row) %></td>
+          <td><code class="bb-pa-key"><%= row.deploymentCode || '—' %></code></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bb-pa-domains-cards bb-pa-show-mobile" data-bb-domains-cards="1">
+    <% rows.forEach(function (row) { %>
+    <article
+      class="bb-pa-domains-card"
+      data-bb-domain-hostname="<%= row.hostname %>"
+      data-bb-domain-type="<%= row.domainType %>"
+      data-bb-domain-status="<%= row.status %>"
+      data-bb-domain-verified="<%= row.isVerified ? '1' : '0' %>"
+      <% if (row.organizationKey) { %>data-bb-domain-org="<%= row.organizationKey %>"<% } %>
+    >
+      <header class="bb-pa-domains-card__head">
+        <h2 class="bb-pa-domains-card__title">
+          <a class="bb-pa-link" href="<%= detailHref(row.hostname) %>" data-bb-domain-open="1"><%= row.hostname %></a>
+        </h2>
+        <span class="bb-pa-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+      </header>
+      <p class="bb-pa-domains-card__badges">
+        <span class="bb-pa-chip"><%= typeLabel(row.domainType) %></span>
+        <span class="bb-pa-chip <%= verifiedChip(row.isVerified) %>"><%= verifiedLabel(row.isVerified) %></span>
+        <% if (row.isPrimary) { %><span class="bb-pa-chip">Primary</span><% } %>
+      </p>
+      <dl class="bb-pa-domains-card__dl">
+        <div>
+          <dt>Organization</dt>
+          <dd>
+            <% if (row.organizationKey) { %>
+            <a class="bb-pa-link" href="<%= orgHref(row.organizationKey) %>">
+              <%= row.organizationDisplayName || row.organizationKey %>
+            </a>
+            · <code class="bb-pa-key"><%= row.organizationKey %></code>
+            <% } else { %>
+            —
+            <% } %>
+          </dd>
+        </div>
+        <div>
+          <dt>Product</dt>
+          <dd><%= productLabel(row) %></dd>
+        </div>
+        <div>
+          <dt>Deployment</dt>
+          <dd><code class="bb-pa-key"><%= row.deploymentCode || '—' %></code></dd>
+        </div>
+      </dl>
+      <% if (row.organizationKey) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-domains-card__cta" href="<%= orgHref(row.organizationKey) %>">
+        Open organization domains
+      </a>
+      <% } %>
+      <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-domains-card__cta" href="<%= detailHref(row.hostname) %>" data-bb-domain-open="1">
+        Open domain detail
+      </a>
+    </article>
+    <% }) %>
+  </div>
+
+  <% if (totalPages > 1) { %>
+  <nav class="bb-pa-pager" aria-label="Domain pages" data-bb-pager="domains">
+    <p class="bb-pa-pager__meta">
+      Showing <%= rangeFrom %>–<%= rangeTo %> of <%= totalCount %>
+    </p>
+    <div class="bb-pa-pager__nav bb-pa-pager__links">
+      <% if (page > 1) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= queryPage(page - 1) %>">Previous</a>
+      <% } %>
+      <% if (page < totalPages) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= queryPage(page + 1) %>">Next</a>
+      <% } %>
+    </div>
+  </nav>
+  <% } %>
+
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

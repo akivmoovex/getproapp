@@ -1,6 +1,9 @@
 <%- include('../partials/platform-admin-shell-start') %>
 <%
   var planRows = plans || [];
+  var activePlans = planRows.filter(function (p) { return p && p.isActive; });
+  var inactivePlans = planRows.filter(function (p) { return p && !p.isActive; });
+
   function formatLimit(v) {
     if (v == null) return 'Unlimited';
     return String(v);
@@ -14,54 +17,265 @@
   }
   function featureLabel(key) {
     var k = String(key || '');
-    if (k === 'max_branches') return 'Branches';
-    if (k === 'max_users') return 'Users';
-    if (k === 'max_staff_accounts') return 'Staff accounts';
+    if (k === 'max_branches') return 'Active branches';
+    if (k === 'max_users') return 'Members';
+    if (k === 'max_staff_accounts') return 'Admin / leadership accounts';
     if (k === 'basic_reports') return 'Basic reports';
     if (k === 'advanced_reports') return 'Advanced reports';
-    if (k === 'custom_domain') return 'Custom domain';
-    if (k === 'custom_email') return 'Custom email';
+    if (k === 'custom_domain') return 'Custom organization domain';
+    if (k === 'custom_email') return 'Hosted mailboxes';
     return k;
+  }
+  function productLabel(productKey) {
+    var k = String(productKey || '').toLowerCase();
+    if (k === 'blessboard') return 'BlessBoard';
+    return productKey || '—';
+  }
+  function packageEyebrow(plan) {
+    if (!plan) return 'Catalogue package';
+    if (!plan.isActive) return 'Inactive package';
+    var k = String(plan.planKey || '').toLowerCase();
+    if (k === 'free') return 'Entry package';
+    if (k === 'growth') return 'Growth package';
+    if (k === 'professional') return 'Network package';
+    return 'Catalogue package';
+  }
+  function packageTone(plan) {
+    if (!plan || !plan.isActive) return 'inactive';
+    var k = String(plan.planKey || '').toLowerCase();
+    if (k === 'growth') return 'accent';
+    if (k === 'professional') return 'network';
+    return 'entry';
+  }
+  function statusLabel(plan) {
+    if (!plan) return '—';
+    if (plan.isActive) return 'Active';
+    return 'Inactive';
+  }
+  function statusChip(plan) {
+    if (!plan) return 'bb-pa-chip--muted';
+    if (plan.isActive) return 'bb-pa-chip--ok';
+    return 'bb-pa-chip--muted';
+  }
+  function entitlementSummary(plan) {
+    var parts = [];
+    (plan.features || []).forEach(function (f) {
+      if (!f) return;
+      if (f.featureKind === 'limit') {
+        parts.push(featureLabel(f.featureKey) + ': ' + formatLimit(f.limitValue));
+        return;
+      }
+      if (f.booleanValue) {
+        parts.push(featureLabel(f.featureKey));
+      }
+    });
+    return parts.length ? parts.join(' · ') : 'No features listed';
+  }
+  function safeDescription(plan) {
+    if (!plan) return null;
+    if (!plan.isActive) {
+      return 'Inactive catalogue package. Retained for existing organization subscriptions only.';
+    }
+    // Catalogue descriptions may mention list prices; this directory does not surface price fields.
+    return null;
   }
 %>
 
-<section class="bb-pa-plans" data-bb-pa-plans="1">
-  <header class="bb-pa-page-head">
-    <h1 class="bb-pa-page-head__title">Platform plans</h1>
-    <p class="bb-pa-lede">
-      Data-driven BlessBoard entitlement tiers and resource limits. Prices and billing are not managed here —
-      assign plans from an organization detail page.
-    </p>
+<section
+  class="bb-pa-plans"
+  data-bb-pa-plans="1"
+  data-bb-pa-plans-directory="1"
+  data-bb-stitch-plans="66-platform-plans-limits"
+  aria-label="Platform plans directory"
+>
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-plans__eyebrow">Plans &amp; limits</p>
+      <h1 class="bb-pa-page-head__title">Platform Plans</h1>
+      <p class="bb-pa-lede">
+        Live <code>platform.plans</code> catalogue for BlessBoard. Public package names
+        Foundation, Growth, and Network appear when the catalogue maps them; persisted keys stay as stored.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <span class="bb-pa-chip bb-pa-chip--ok" data-bb-count="plans-active"><%= activePlans.length %> active</span>
+      <% if (inactivePlans.length) { %>
+      <span class="bb-pa-chip bb-pa-chip--muted" data-bb-count="plans-inactive"><%= inactivePlans.length %> inactive</span>
+      <% } %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/organizations" data-bb-pa-plans-orgs-link="1">
+        <span class="material-symbols-outlined" aria-hidden="true">corporate_fare</span>
+        Organizations
+      </a>
+    </div>
   </header>
 
+  <p class="bb-pa-plans__notice" role="note" data-bb-pa-plans-notice="1">
+    Plan creation and parameter editors are not available here. Catalogue rows are read-only;
+    assignment stays on organization detail for active packages only.
+  </p>
+
   <% if (!planRows.length) { %>
-  <p class="bb-pa-empty" role="status" data-bb-empty="plans">No active plans are configured.</p>
+  <p class="bb-pa-empty" role="status" data-bb-empty="plans">No plans are configured in the catalogue.</p>
   <% } else { %>
-  <div class="bb-pa-plan-grid" data-bb-pa-plan-grid="1">
-    <% planRows.forEach(function (plan) { %>
-    <article class="bb-pa-plan-card" data-bb-plan-key="<%= plan.planKey %>">
-      <header class="bb-pa-plan-card__head">
-        <h2 class="bb-pa-plan-card__title"><%= plan.displayName %></h2>
+
+  <section class="bb-pa-plans-active" aria-labelledby="pa-plans-active-heading" data-bb-pa-plans-active="1">
+    <h2 id="pa-plans-active-heading" class="bb-pa-section-title">Active packages</h2>
+    <% if (!activePlans.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-empty="plans-active">No active plans are configured.</p>
+    <% } else { %>
+    <div class="bb-pa-plan-grid" data-bb-pa-plan-grid="1">
+      <% activePlans.forEach(function (plan) { %>
+      <article
+        class="bb-pa-plan-card bb-pa-plan-card--<%= packageTone(plan) %>"
+        data-bb-plan-key="<%= plan.planKey %>"
+        data-bb-plan-display="<%= plan.displayName %>"
+        data-bb-plan-status="<%= plan.status %>"
+        data-bb-plan-active="1"
+      >
+        <header class="bb-pa-plan-card__head">
+          <div class="bb-pa-plan-card__badges">
+            <span class="bb-pa-plan-card__eyebrow"><%= packageEyebrow(plan) %></span>
+            <span class="bb-pa-chip <%= statusChip(plan) %>"><%= statusLabel(plan) %></span>
+          </div>
+          <h3 class="bb-pa-plan-card__title"><%= plan.displayName %></h3>
+          <p class="bb-pa-plan-card__meta">
+            <span><%= productLabel(plan.productKey) %></span>
+            <span aria-hidden="true">·</span>
+            <span>Key <code class="bb-pa-key"><%= plan.planKey %></code></span>
+          </p>
+        </header>
+        <% if (safeDescription(plan)) { %>
+        <p class="bb-pa-plan-card__desc"><%= safeDescription(plan) %></p>
+        <% } %>
+        <h4 class="bb-pa-plan-card__features-label">Entitlements</h4>
+        <ul class="bb-pa-plan-features">
+          <% (plan.features || []).forEach(function (f) { %>
+          <li class="<%= f.featureKind === 'boolean' && !f.booleanValue ? 'is-off' : 'is-on' %>">
+            <span class="material-symbols-outlined" aria-hidden="true"><%= f.featureKind === 'boolean' && !f.booleanValue ? 'close' : 'check' %></span>
+            <span>
+              <strong><%= featureLabel(f.featureKey) %></strong>
+              · <%= formatFeature(f) %>
+            </span>
+          </li>
+          <% }) %>
+        </ul>
+        <div class="bb-pa-plan-card__foot">
+          <p class="bb-pa-hint">Assign this package from an organization detail page.</p>
+          <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-plan-card__cta" href="/admin/organizations">
+            Open organizations
+          </a>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-plans-directory" aria-labelledby="pa-plans-directory-heading" data-bb-pa-plans-table-section="1">
+    <h2 id="pa-plans-directory-heading" class="bb-pa-section-title">Catalogue directory</h2>
+    <p class="bb-pa-hint bb-pa-plans-directory__hint">
+      All stored catalogue rows for this product, including inactive packages.
+    </p>
+
+    <div class="bb-pa-plans-table-wrap bb-pa-show-desktop" data-bb-plan-table="1">
+      <table class="bb-pa-table bb-pa-plans-table">
+        <thead>
+          <tr>
+            <th scope="col">Package</th>
+            <th scope="col">Status</th>
+            <th scope="col">Product</th>
+            <th scope="col">Key</th>
+            <th scope="col">Entitlements</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% planRows.forEach(function (plan) { %>
+          <tr
+            data-bb-plan-key="<%= plan.planKey %>"
+            data-bb-plan-display="<%= plan.displayName %>"
+            data-bb-plan-status="<%= plan.status %>"
+            data-bb-plan-legacy="<%= plan.isLegacy ? '1' : '0' %>"
+          >
+            <td>
+              <strong><%= plan.displayName %></strong>
+              <% if (plan.isLegacy && !plan.isActive) { %>
+              <span class="bb-pa-chip bb-pa-chip--warn" data-bb-plan-legacy-badge="1">Legacy</span>
+              <% } %>
+            </td>
+            <td><span class="bb-pa-chip <%= statusChip(plan) %>"><%= statusLabel(plan) %></span></td>
+            <td><%= productLabel(plan.productKey) %></td>
+            <td><code class="bb-pa-key"><%= plan.planKey %></code></td>
+            <td class="bb-pa-plans-table__summary"><%= entitlementSummary(plan) %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bb-pa-plans-cards bb-pa-show-mobile" data-bb-plan-cards="1">
+      <% planRows.forEach(function (plan) { %>
+      <article
+        class="bb-pa-plans-dir-card <%= plan.isActive ? '' : 'is-inactive' %>"
+        data-bb-plan-key="<%= plan.planKey %>"
+        data-bb-plan-display="<%= plan.displayName %>"
+        data-bb-plan-status="<%= plan.status %>"
+        data-bb-plan-legacy="<%= plan.isLegacy ? '1' : '0' %>"
+      >
+        <header class="bb-pa-plans-dir-card__head">
+          <h3 class="bb-pa-plans-dir-card__title"><%= plan.displayName %></h3>
+          <div class="bb-pa-plans-dir-card__badges">
+            <span class="bb-pa-chip <%= statusChip(plan) %>"><%= statusLabel(plan) %></span>
+            <% if (plan.isLegacy && !plan.isActive) { %>
+            <span class="bb-pa-chip bb-pa-chip--warn" data-bb-plan-legacy-badge="1">Legacy</span>
+            <% } %>
+          </div>
+        </header>
+        <dl class="bb-pa-plans-dir-card__dl">
+          <div>
+            <dt>Product</dt>
+            <dd><%= productLabel(plan.productKey) %></dd>
+          </div>
+          <div>
+            <dt>Key</dt>
+            <dd><code class="bb-pa-key"><%= plan.planKey %></code></dd>
+          </div>
+          <div>
+            <dt>Entitlements</dt>
+            <dd><%= entitlementSummary(plan) %></dd>
+          </div>
+        </dl>
+        <% if (!plan.isActive) { %>
+        <p class="bb-pa-hint"><%= safeDescription(plan) %></p>
+        <% } %>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <% if (inactivePlans.length) { %>
+  <section class="bb-pa-plans-inactive" aria-labelledby="pa-plans-inactive-heading" data-bb-pa-plans-inactive="1">
+    <h2 id="pa-plans-inactive-heading" class="bb-pa-section-title">Inactive &amp; legacy</h2>
+    <p class="bb-pa-hint">
+      These rows remain in the catalogue for existing subscriptions. They are not offered as new assignments.
+    </p>
+    <ul class="bb-pa-plans-inactive-list">
+      <% inactivePlans.forEach(function (plan) { %>
+      <li
+        data-bb-plan-key="<%= plan.planKey %>"
+        data-bb-plan-display="<%= plan.displayName %>"
+        data-bb-plan-status="<%= plan.status %>"
+        data-bb-plan-legacy="1"
+      >
+        <strong><%= plan.displayName %></strong>
         <code class="bb-pa-key"><%= plan.planKey %></code>
-      </header>
-      <% if (plan.description) { %>
-      <p class="bb-pa-plan-card__desc"><%= plan.description %></p>
-      <% } %>
-      <ul class="bb-pa-plan-features">
-        <% (plan.features || []).forEach(function (f) { %>
-        <li class="<%= f.featureKind === 'boolean' && !f.booleanValue ? 'is-off' : 'is-on' %>">
-          <span class="material-symbols-outlined" aria-hidden="true"><%= f.featureKind === 'boolean' && !f.booleanValue ? 'close' : 'check' %></span>
-          <span>
-            <strong><%= featureLabel(f.featureKey) %></strong>
-            · <%= formatFeature(f) %>
-          </span>
-        </li>
-        <% }) %>
-      </ul>
-      <p class="bb-pa-hint">Open an organization to assign this plan.</p>
-    </article>
-    <% }) %>
-  </div>
+        <span class="bb-pa-chip bb-pa-chip--muted"><%= statusLabel(plan) %></span>
+        <span class="bb-pa-chip bb-pa-chip--warn" data-bb-plan-legacy-badge="1">Legacy</span>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
   <% } %>
 </section>
 

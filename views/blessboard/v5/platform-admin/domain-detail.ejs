@@ -1,0 +1,278 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var d = domain || null;
+  var statuses = allowedStatuses || ['active', 'inactive', 'retired'];
+  var flashNotice = typeof notice !== 'undefined' ? notice : null;
+  var flashError = typeof error !== 'undefined' ? error : null;
+  var csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var csrfName = typeof csrfField !== 'undefined' ? csrfField : '_csrf';
+  var canEdit = d && d.mutableOnThisDeployment;
+
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'Active';
+    if (key === 'inactive') return 'Inactive';
+    if (key === 'retired') return 'Retired';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'retired') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip--warn';
+  }
+  function typeLabel(t) {
+    var key = String(t || '').toLowerCase();
+    if (key === 'apex') return 'Apex';
+    if (key === 'canonical') return 'Canonical';
+    if (key === 'custom') return 'Custom';
+    if (key === 'alias') return 'Alias';
+    return t || '—';
+  }
+  function productLabel() {
+    if (d && d.productDisplayName) return d.productDisplayName;
+    var k = String(d && d.productKey || '').toLowerCase();
+    if (k === 'blessboard') return 'BlessBoard';
+    return (d && d.productKey) || '—';
+  }
+  function formatTs(iso) {
+    if (!iso) return '—';
+    try {
+      var dt = new Date(iso);
+      if (Number.isNaN(dt.getTime())) return '—';
+      return dt.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
+    } catch (e) {
+      return '—';
+    }
+  }
+  function noticeText(code) {
+    if (code === 'status_saved') return 'Operational status updated.';
+    if (code === 'organization_saved') return 'Organization assignment updated.';
+    return code || '';
+  }
+  function errorText(code) {
+    if (code === 'confirm_required') return 'Confirm the change before submitting.';
+    if (code === 'invalid') return 'The submitted values are not valid.';
+    if (code === 'not_found') return 'The domain or organization could not be found.';
+    if (code === 'deployment_mismatch') return 'This domain belongs to another deployment and cannot be changed here.';
+    if (code === 'csrf') return 'Invalid or missing CSRF token.';
+    if (code === 'status_failed') return 'Status update failed.';
+    if (code === 'organization_failed') return 'Organization assignment failed.';
+    return code || 'Something went wrong.';
+  }
+  var detailPath = d ? '/admin/domains/' + encodeURIComponent(d.hostname) : '/admin/domains';
+%>
+
+<section
+  class="bb-pa-domain-detail"
+  data-bb-pa-domain-detail="1"
+  data-bb-stitch-domain-detail="67-platform-settings"
+  <% if (d) { %>data-bb-domain-hostname="<%= d.hostname %>"<% } %>
+  aria-label="Domain detail"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin/domains">Domains</a>
+    <span aria-hidden="true">/</span>
+    <span><%= d ? d.hostname : 'Detail' %></span>
+  </nav>
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-domain-detail__eyebrow">Domain detail</p>
+      <h1 class="bb-pa-page-head__title"><%= d ? d.hostname : 'Domain' %></h1>
+      <p class="bb-pa-lede">
+        Existing <code>platform.domains</code> fields only. Operational status is separate from DNS ownership verification.
+        External DNS checks, TLS issuance, redirects, and verification jobs are not available.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/domains" data-bb-pa-domain-back="1">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Directory
+      </a>
+    </div>
+  </header>
+
+  <% if (flashNotice) { %>
+  <p class="bb-pa-flash bb-pa-flash--ok" role="status" data-bb-pa-flash="notice"><%= noticeText(flashNotice) %></p>
+  <% } %>
+  <% if (flashError) { %>
+  <p class="bb-pa-flash bb-pa-flash--error" role="alert" data-bb-pa-flash="error"><%= errorText(flashError) %></p>
+  <% } %>
+
+  <% if (!d) { %>
+  <p class="bb-pa-empty" role="status" data-bb-empty="domain-detail">This domain could not be found.</p>
+  <% } else { %>
+
+  <div class="bb-pa-domain-detail-grid" data-bb-pa-domain-summary="1">
+    <section class="bb-pa-panel" aria-labelledby="pa-domain-summary-heading">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-domain-summary-heading" class="bb-pa-section-title">Summary</h2>
+        <span class="bb-pa-org-detail__ro">Read-only identity</span>
+      </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div>
+          <dt>Hostname</dt>
+          <dd><code class="bb-pa-key"><%= d.hostname %></code></dd>
+        </div>
+        <div>
+          <dt>Type</dt>
+          <dd><span class="bb-pa-chip" data-bb-domain-type="<%= d.domainType %>"><%= typeLabel(d.domainType) %></span></dd>
+        </div>
+        <div>
+          <dt>Product</dt>
+          <dd data-bb-domain-product="<%= d.productKey %>"><%= productLabel() %></dd>
+        </div>
+        <div>
+          <dt>Deployment</dt>
+          <dd><code class="bb-pa-key"><%= d.deploymentCode || '—' %></code></dd>
+        </div>
+        <div>
+          <dt>Primary</dt>
+          <dd><%= d.isPrimary ? 'Yes' : 'No' %></dd>
+        </div>
+        <div>
+          <dt>Created</dt>
+          <dd><%= formatTs(d.createdAt) %></dd>
+        </div>
+        <div>
+          <dt>Updated</dt>
+          <dd><%= formatTs(d.updatedAt) %></dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="bb-pa-panel" aria-labelledby="pa-domain-state-heading" data-bb-pa-domain-states="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-domain-state-heading" class="bb-pa-section-title">Operational vs verification</h2>
+      </div>
+      <ul class="bb-pa-domain-detail-states">
+        <li data-bb-domain-state="operational">
+          <strong>Operational status</strong>
+          <span class="bb-pa-chip <%= statusChip(d.status) %>" data-bb-domain-status="<%= d.status %>"><%= statusLabel(d.status) %></span>
+          <p>Controls whether this hostname is treated as active for routing catalogues. Not a DNS proof.</p>
+        </li>
+        <li data-bb-domain-state="verification">
+          <strong>DNS ownership verification</strong>
+          <span class="bb-pa-chip <%= d.isVerified ? 'bb-pa-chip--ok' : 'bb-pa-chip--warn' %>" data-bb-domain-verified="<%= d.isVerified ? '1' : '0' %>">
+            <%= d.isVerified ? 'Verified' : 'Unverified' %>
+          </span>
+          <p>
+            Stored <code>verified_at</code> only<%= d.verifiedAt ? (': ' + formatTs(d.verifiedAt)) : '' %>.
+            No lookup or certificate job runs from this page.
+          </p>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-domain-org-heading" data-bb-pa-domain-organization="1">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-domain-org-heading" class="bb-pa-section-title">Organization assignment</h2>
+      <% if (canEdit) { %>
+      <span class="bb-pa-org-detail__edit">Editable · CSRF + confirm</span>
+      <% } else { %>
+      <span class="bb-pa-org-detail__ro">Read-only · other deployment</span>
+      <% } %>
+    </div>
+    <dl class="bb-pa-dl bb-pa-dl--grid">
+      <div>
+        <dt>Current organization</dt>
+        <dd>
+          <% if (d.organizationKey) { %>
+          <a class="bb-pa-link" href="/admin/organizations/<%= encodeURIComponent(d.organizationKey) %>#pa-org-domains">
+            <%= d.organizationDisplayName || d.organizationKey %>
+          </a>
+          · <code class="bb-pa-key"><%= d.organizationKey %></code>
+          <% } else { %>
+          —
+          <% } %>
+        </dd>
+      </div>
+    </dl>
+
+    <% if (canEdit) { %>
+    <form
+      class="bb-pa-domain-form"
+      method="post"
+      action="<%= detailPath %>/organization"
+      data-bb-pa-domain-org-form="1"
+    >
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrf %>" />
+      <div class="bb-pa-field">
+        <label for="organization_key">Organization key</label>
+        <input
+          id="organization_key"
+          name="organization_key"
+          type="text"
+          value="<%= d.organizationKey || '' %>"
+          maxlength="64"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="<%= d.domainType === 'apex' ? 'optional for apex' : 'required for tenant types' %>"
+        />
+      </div>
+      <label class="bb-pa-confirm">
+        <input type="checkbox" name="confirm_organization" value="1" required />
+        I confirm changing organization assignment for this hostname.
+      </label>
+      <button type="submit" class="bb-pa-btn">Save organization</button>
+    </form>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-domain-status-heading" data-bb-pa-domain-status-form-wrap="1">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-domain-status-heading" class="bb-pa-section-title">Operational status</h2>
+      <% if (canEdit) { %>
+      <span class="bb-pa-org-detail__edit">Editable · CSRF + confirm</span>
+      <% } else { %>
+      <span class="bb-pa-org-detail__ro">Read-only · other deployment</span>
+      <% } %>
+    </div>
+    <p class="bb-pa-hint">
+      Status changes do not issue certificates, rewrite DNS, or mark ownership verified.
+    </p>
+    <% if (canEdit) { %>
+    <form
+      class="bb-pa-domain-form"
+      method="post"
+      action="<%= detailPath %>/status"
+      data-bb-pa-domain-status-form="1"
+    >
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrf %>" />
+      <div class="bb-pa-field">
+        <label for="status">Status</label>
+        <select id="status" name="status" required>
+          <% statuses.forEach(function (st) { %>
+          <option value="<%= st %>"<%= d.status === st ? ' selected' : '' %>><%= statusLabel(st) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <label class="bb-pa-confirm">
+        <input type="checkbox" name="confirm_status" value="1" required />
+        I confirm changing the operational status for this hostname.
+      </label>
+      <button type="submit" class="bb-pa-btn">Save status</button>
+    </form>
+    <% } %>
+  </section>
+
+  <section
+    class="bb-pa-panel bb-pa-domain-unavailable"
+    aria-labelledby="pa-domain-unavailable-heading"
+    data-bb-pa-domain-unavailable="1"
+  >
+    <h2 id="pa-domain-unavailable-heading" class="bb-pa-section-title">Not available here</h2>
+    <ul class="bb-pa-domain-unavailable__list">
+      <li data-bb-pa-unavailable="create">Domain create remains CLI provisioning only.</li>
+      <li data-bb-pa-unavailable="dns">Automated DNS lookup and record writes are not available.</li>
+      <li data-bb-pa-unavailable="ssl">SSL / certificate issuance is not available.</li>
+      <li data-bb-pa-unavailable="redirects">Hostname redirect controls are not available.</li>
+      <li data-bb-pa-unavailable="verify-jobs">Verification jobs that set <code>verified_at</code> are not available.</li>
+    </ul>
+  </section>
+
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

@@ -231,6 +231,250 @@ async function listDeploymentsSafe(client) {
   return r.rows;
 }
 
+/**
+ * Single deployment row — safe catalogue columns only (no cookie-identity column).
+ * @param {{ query: Function }} client
+ * @param {string} deploymentCode
+ */
+async function findDeploymentSafeByCode(client, deploymentCode) {
+  const r = await client.query(
+    `SELECT
+        deployment_code,
+        application_code,
+        release_version,
+        canonical_domain,
+        environment_code,
+        status,
+        jobs_enabled,
+        database_access_mode
+       FROM platform.deployments
+      WHERE deployment_code = $1
+      LIMIT 1`,
+    [deploymentCode]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Domains owned by a deployment — safe fields only (no UUIDs/secrets).
+ * @param {{ query: Function }} client
+ * @param {string} deploymentCode
+ * @param {number} [limit]
+ */
+async function listDomainsForDeploymentSafe(client, deploymentCode, limit) {
+  const lim = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 100) : 100;
+  const r = await client.query(
+    `SELECT
+        d.hostname,
+        d.domain_type,
+        d.status,
+        d.is_primary,
+        d.deployment_id AS deployment_code,
+        (d.verified_at IS NOT NULL) AS is_verified,
+        p.product_key,
+        p.display_name AS product_display_name,
+        o.organization_key,
+        o.display_name AS organization_display_name
+       FROM platform.domains d
+       INNER JOIN platform.products p
+         ON p.id = d.product_id
+       LEFT JOIN platform.organizations o
+         ON o.id = d.organization_id
+      WHERE d.deployment_id = $1
+      ORDER BY
+        CASE WHEN d.is_primary THEN 0 ELSE 1 END,
+        CASE WHEN d.domain_type = 'canonical' THEN 0 ELSE 1 END,
+        d.hostname ASC
+      LIMIT $2`,
+    [deploymentCode, lim]
+  );
+  return r.rows;
+}
+
+/**
+ * Product catalogue row by product_key (safe display fields).
+ * @param {{ query: Function }} client
+ * @param {string} productKey
+ */
+async function findProductSafeByKey(client, productKey) {
+  const r = await client.query(
+    `SELECT product_key, display_name, status
+       FROM platform.products
+      WHERE product_key = $1
+      LIMIT 1`,
+    [productKey]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Subscription directory rows (no UUIDs). Bounded page.
+ * @param {{ query: Function }} client
+ * @param {{
+ *   limit: number,
+ *   offset: number,
+ *   keyPrefix?: string | null,
+ *   status?: string | null,
+ *   productKey?: string,
+ * }} opts
+ */
+async function listSubscriptionsDirectoryPage(client, opts) {
+  const limit = opts.limit;
+  const offset = opts.offset;
+  const keyPrefix = opts.keyPrefix || null;
+  const status = opts.status || null;
+  const productKey = opts.productKey || "blessboard";
+
+  const r = await client.query(
+    `SELECT
+        o.organization_key,
+        o.display_name AS organization_display_name,
+        o.status AS organization_status,
+        s.product_key,
+        s.status AS subscription_status,
+        s.starts_at,
+        s.ends_at,
+        s.notes,
+        p.plan_key,
+        p.display_name AS plan_display_name,
+        p.status AS plan_status
+       FROM platform.organization_subscriptions s
+       INNER JOIN platform.organizations o
+         ON o.id = s.organization_id
+       INNER JOIN platform.plans p
+         ON p.id = s.plan_id
+      WHERE s.product_key = $1
+        AND ($2::text IS NULL OR o.organization_key LIKE $2 || '%')
+        AND ($3::text IS NULL OR s.status = $3)
+      ORDER BY o.organization_key ASC, s.starts_at DESC
+      LIMIT $4 OFFSET $5`,
+    [productKey, keyPrefix, status, limit, offset]
+  );
+  return r.rows;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {{ keyPrefix?: string | null, status?: string | null, productKey?: string }} opts
+ */
+async function countSubscriptionsDirectory(client, opts) {
+  const keyPrefix = opts.keyPrefix || null;
+  const status = opts.status || null;
+  const productKey = opts.productKey || "blessboard";
+  const r = await client.query(
+    `SELECT COUNT(*)::int AS total
+       FROM platform.organization_subscriptions s
+       INNER JOIN platform.organizations o
+         ON o.id = s.organization_id
+      WHERE s.product_key = $1
+        AND ($2::text IS NULL OR o.organization_key LIKE $2 || '%')
+        AND ($3::text IS NULL OR s.status = $3)`,
+    [productKey, keyPrefix, status]
+  );
+  return r.rows[0] ? Number(r.rows[0].total) : 0;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {{
+ *   limit: number,
+ *   offset: number,
+ *   hostnamePrefix?: string | null,
+ *   orgKeyPrefix?: string | null,
+ *   status?: string | null,
+ *   domainType?: string | null,
+ *   verified?: boolean | null,
+ *   productKey?: string,
+ * }} opts
+ */
+async function listDomainsDirectoryPage(client, opts) {
+  const limit = opts.limit;
+  const offset = opts.offset;
+  const hostnamePrefix = opts.hostnamePrefix || null;
+  const orgKeyPrefix = opts.orgKeyPrefix || null;
+  const status = opts.status || null;
+  const domainType = opts.domainType || null;
+  const verified = opts.verified == null ? null : Boolean(opts.verified);
+  const productKey = opts.productKey || "blessboard";
+
+  const r = await client.query(
+    `SELECT
+        d.hostname,
+        d.domain_type,
+        d.status,
+        d.is_primary,
+        d.deployment_id AS deployment_code,
+        (d.verified_at IS NOT NULL) AS is_verified,
+        p.product_key,
+        p.display_name AS product_display_name,
+        o.organization_key,
+        o.display_name AS organization_display_name,
+        o.status AS organization_status
+       FROM platform.domains d
+       INNER JOIN platform.products p
+         ON p.id = d.product_id
+       LEFT JOIN platform.organizations o
+         ON o.id = d.organization_id
+      WHERE p.product_key = $1
+        AND ($2::text IS NULL OR d.hostname LIKE $2 || '%')
+        AND ($3::text IS NULL OR o.organization_key LIKE $3 || '%')
+        AND ($4::text IS NULL OR d.status = $4)
+        AND ($5::text IS NULL OR d.domain_type = $5)
+        AND (
+          $6::boolean IS NULL
+          OR ($6::boolean = TRUE AND d.verified_at IS NOT NULL)
+          OR ($6::boolean = FALSE AND d.verified_at IS NULL)
+        )
+      ORDER BY
+        CASE WHEN d.is_primary THEN 0 ELSE 1 END,
+        CASE WHEN d.domain_type = 'canonical' THEN 0 ELSE 1 END,
+        d.hostname ASC
+      LIMIT $7 OFFSET $8`,
+    [productKey, hostnamePrefix, orgKeyPrefix, status, domainType, verified, limit, offset]
+  );
+  return r.rows;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {{
+ *   hostnamePrefix?: string | null,
+ *   orgKeyPrefix?: string | null,
+ *   status?: string | null,
+ *   domainType?: string | null,
+ *   verified?: boolean | null,
+ *   productKey?: string,
+ * }} opts
+ */
+async function countDomainsDirectory(client, opts) {
+  const hostnamePrefix = opts.hostnamePrefix || null;
+  const orgKeyPrefix = opts.orgKeyPrefix || null;
+  const status = opts.status || null;
+  const domainType = opts.domainType || null;
+  const verified = opts.verified == null ? null : Boolean(opts.verified);
+  const productKey = opts.productKey || "blessboard";
+  const r = await client.query(
+    `SELECT COUNT(*)::int AS total
+       FROM platform.domains d
+       INNER JOIN platform.products p
+         ON p.id = d.product_id
+       LEFT JOIN platform.organizations o
+         ON o.id = d.organization_id
+      WHERE p.product_key = $1
+        AND ($2::text IS NULL OR d.hostname LIKE $2 || '%')
+        AND ($3::text IS NULL OR o.organization_key LIKE $3 || '%')
+        AND ($4::text IS NULL OR d.status = $4)
+        AND ($5::text IS NULL OR d.domain_type = $5)
+        AND (
+          $6::boolean IS NULL
+          OR ($6::boolean = TRUE AND d.verified_at IS NOT NULL)
+          OR ($6::boolean = FALSE AND d.verified_at IS NULL)
+        )`,
+    [productKey, hostnamePrefix, orgKeyPrefix, status, domainType, verified]
+  );
+  return r.rows[0] ? Number(r.rows[0].total) : 0;
+}
+
 module.exports = {
   listOrganizationDirectoryPage,
   countOrganizationDirectory,
@@ -239,4 +483,11 @@ module.exports = {
   listBranchesForOrganizationKey,
   listDomainsForOrganizationKey,
   listDeploymentsSafe,
+  findDeploymentSafeByCode,
+  listDomainsForDeploymentSafe,
+  findProductSafeByKey,
+  listSubscriptionsDirectoryPage,
+  countSubscriptionsDirectory,
+  listDomainsDirectoryPage,
+  countDomainsDirectory,
 };

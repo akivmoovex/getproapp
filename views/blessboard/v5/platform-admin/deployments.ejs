@@ -2,6 +2,10 @@
 <%
   var rows = deployments || [];
   var current = currentDeploymentCode || '';
+  var activeCount = rows.filter(function (d) {
+    return String(d.status || '').toLowerCase() === 'active';
+  }).length;
+
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'active') return 'Active';
@@ -15,34 +19,117 @@
     if (key === 'retired') return 'bb-pa-chip--muted';
     return 'bb-pa-chip--warn';
   }
+  function envLabel(code) {
+    var key = String(code || '').toLowerCase();
+    if (key === 'production') return 'Production';
+    if (key === 'preproduction') return 'Preproduction';
+    if (key === 'shared') return 'Shared';
+    if (key === 'testing') return 'Testing';
+    return code || '—';
+  }
+  function envChip(code) {
+    var key = String(code || '').toLowerCase();
+    if (key === 'production') return 'bb-pa-chip--ok';
+    if (key === 'preproduction') return 'bb-pa-chip--warn';
+    if (key === 'shared' || key === 'testing') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip';
+  }
+  function productLabel(code) {
+    var key = String(code || '').toLowerCase();
+    if (key === 'blessboard') return 'BlessBoard';
+    if (key === 'getpro') return 'GetPro';
+    if (key === 'ngo') return 'NGO';
+    if (key === 'platform') return 'Platform';
+    return code || '—';
+  }
+  function jobsLabel(enabled) {
+    return enabled ? 'Enabled' : 'Disabled';
+  }
+  function dbAccessLabel(mode) {
+    var key = String(mode || '').toLowerCase();
+    if (key === 'read_write') return 'Read/write';
+    if (key === 'read_only') return 'Read-only';
+    return mode || '—';
+  }
 %>
 
-<section class="bb-pa-deployments" data-bb-pa-deployments="1">
-  <header class="bb-pa-page-head">
-    <h1 class="bb-pa-page-head__title">Deployments</h1>
-    <p class="bb-pa-lede">
-      Registry of platform deployments that own cookies, domains, and job flags.
-      Read-only — no failover, sync, or health fabrication.
-    </p>
+<section
+  class="bb-pa-deployments"
+  data-bb-pa-deployments="1"
+  data-bb-pa-deployments-directory="1"
+  data-bb-stitch-deployments="68-platform-support-monitoring"
+  aria-label="Deployments directory"
+>
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-deployments__eyebrow">Deployments directory</p>
+      <h1 class="bb-pa-page-head__title">Deployments</h1>
+      <p class="bb-pa-lede">
+        Live <code>platform.deployments</code> catalogue — identity, environment, host, and status.
+        Open a row for safe detail and diagnostics. Deploy, restart, rollback, environment-variable editing, and log streaming are not available.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <span class="bb-pa-chip bb-pa-chip--ok" data-bb-count="deployments-total"><%= rows.length %></span>
+      <span class="bb-pa-deployments__total-label">registered</span>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/settings" data-bb-pa-deploy-settings-link="1">
+        <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+        Settings
+      </a>
+    </div>
   </header>
 
-  <% if (current) { %>
-  <p class="bb-pa-hint" data-bb-pa-current-deployment="1">
-    This process · <code class="bb-pa-key"><%= current %></code>
+  <p class="bb-pa-deployments__notice" role="note" data-bb-pa-deployments-notice="1">
+    Safe metadata only. Cookie names, connection strings, and secret values are never shown.
+    This process identity comes from <code>PLATFORM_DEPLOYMENT_CODE</code>.
   </p>
-  <% } %>
+
+  <div class="bb-pa-deploy-summary" data-bb-pa-deploy-summary="1">
+    <article class="bb-pa-deploy-summary__card is-live" data-bb-deploy-stat="registry">
+      <p class="bb-pa-deploy-summary__label">Registry rows</p>
+      <p class="bb-pa-deploy-summary__value" data-bb-count="deployments-listed"><%= rows.length %></p>
+      <p class="bb-pa-deploy-summary__hint">Live catalogue rows</p>
+    </article>
+    <article class="bb-pa-deploy-summary__card is-live" data-bb-deploy-stat="active">
+      <p class="bb-pa-deploy-summary__label">Active status</p>
+      <p class="bb-pa-deploy-summary__value" data-bb-count="deployments-active"><%= activeCount %></p>
+      <p class="bb-pa-deploy-summary__hint">Rows with status Active</p>
+    </article>
+    <article class="bb-pa-deploy-summary__card is-live" data-bb-deploy-stat="current">
+      <p class="bb-pa-deploy-summary__label">This process</p>
+      <p class="bb-pa-deploy-summary__value bb-pa-deploy-summary__value--code">
+        <% if (current) { %>
+        <code class="bb-pa-key" data-bb-pa-current-deployment="1"><%= current %></code>
+        <% } else { %>
+        —
+        <% } %>
+      </p>
+      <p class="bb-pa-deploy-summary__hint">Deployment identity for this runtime</p>
+    </article>
+    <article class="bb-pa-deploy-summary__card is-unavailable" data-bb-deploy-stat="ops" data-bb-deploy-unavailable="ops">
+      <p class="bb-pa-deploy-summary__label">Runtime operations</p>
+      <p class="bb-pa-deploy-summary__value">—</p>
+      <p class="bb-pa-deploy-summary__hint">Deploy / restart / rollback not available</p>
+    </article>
+    <article class="bb-pa-deploy-summary__card is-unavailable" data-bb-deploy-stat="logs" data-bb-deploy-unavailable="logs">
+      <p class="bb-pa-deploy-summary__label">Log streaming</p>
+      <p class="bb-pa-deploy-summary__value">—</p>
+      <p class="bb-pa-deploy-summary__hint">Live logs are not streamed here</p>
+    </article>
+  </div>
 
   <% if (!rows.length) { %>
-  <p class="bb-pa-empty" role="status" data-bb-empty="deployments">No deployments registered.</p>
+  <p class="bb-pa-empty" role="status" data-bb-pa-empty="deployments">No deployments registered.</p>
   <% } else { %>
-  <div class="bb-pa-table-wrap">
-    <table class="bb-pa-table" data-bb-table="deployments">
+
+  <div class="bb-pa-table-wrap bb-pa-deploy-table-wrap bb-pa-show-desktop" data-bb-deploy-table-wrap="1">
+    <table class="bb-pa-table bb-pa-deploy-table" data-bb-table="deployments" data-bb-deploy-table="1">
       <thead>
         <tr>
           <th scope="col">Deployment</th>
-          <th scope="col">Application</th>
+          <th scope="col">Product</th>
           <th scope="col">Release</th>
-          <th scope="col">Canonical domain</th>
+          <th scope="col">Host</th>
           <th scope="col">Environment</th>
           <th scope="col">Status</th>
           <th scope="col">Jobs</th>
@@ -51,24 +138,141 @@
       </thead>
       <tbody>
         <% rows.forEach(function (d) { %>
-        <tr data-bb-deployment="<%= d.deploymentCode %>"<%= d.deploymentCode === current ? ' data-bb-current="1"' : '' %>>
+        <tr
+          data-bb-deployment="<%= d.deploymentCode %>"
+          data-bb-deployment-status="<%= d.status %>"
+          data-bb-deployment-environment="<%= d.environmentCode %>"
+          data-bb-deployment-host="<%= d.canonicalDomain %>"
+          data-bb-deployment-product="<%= d.applicationCode %>"
+          <% if (d.deploymentCode === current) { %>data-bb-current="1"<% } %>
+        >
           <td>
-            <code class="bb-pa-key"><%= d.deploymentCode %></code>
-            <% if (d.deploymentCode === current) { %><span class="bb-pa-chip bb-pa-chip--ok">This process</span><% } %>
+            <a class="bb-pa-link" href="/admin/deployments/<%= encodeURIComponent(d.deploymentCode) %>" data-bb-pa-deploy-link="<%= d.deploymentCode %>">
+              <code class="bb-pa-key"><%= d.deploymentCode %></code>
+            </a>
+            <% if (d.deploymentCode === current) { %>
+            <span class="bb-pa-chip bb-pa-chip--ok">This process</span>
+            <% } %>
           </td>
-          <td><%= d.applicationCode %></td>
-          <td><%= d.releaseVersion %></td>
-          <td><%= d.canonicalDomain %></td>
-          <td><%= d.environmentCode %></td>
-          <td><span class="bb-pa-chip <%= statusChip(d.status) %>"><%= statusLabel(d.status) %></span></td>
-          <td><%= d.jobsEnabled ? 'Enabled' : 'Disabled' %></td>
-          <td><%= d.databaseAccessMode %></td>
+          <td><%= productLabel(d.applicationCode) %></td>
+          <td><%= d.releaseVersion || '—' %></td>
+          <td><code class="bb-pa-key"><%= d.canonicalDomain || '—' %></code></td>
+          <td>
+            <span class="bb-pa-chip <%= envChip(d.environmentCode) %>" data-bb-env-badge="<%= d.environmentCode %>">
+              <%= envLabel(d.environmentCode) %>
+            </span>
+          </td>
+          <td>
+            <span class="bb-pa-chip <%= statusChip(d.status) %>" data-bb-status-badge="<%= d.status %>">
+              <%= statusLabel(d.status) %>
+            </span>
+          </td>
+          <td><%= jobsLabel(d.jobsEnabled) %></td>
+          <td><%= dbAccessLabel(d.databaseAccessMode) %></td>
         </tr>
         <% }) %>
       </tbody>
     </table>
   </div>
+
+  <ul class="bb-pa-deploy-cards bb-pa-show-mobile" data-bb-deploy-cards="1">
+    <% rows.forEach(function (d) { %>
+    <li
+      class="bb-pa-deploy-card<%= d.deploymentCode === current ? ' is-current' : '' %>"
+      data-bb-deployment="<%= d.deploymentCode %>"
+      data-bb-deployment-status="<%= d.status %>"
+      data-bb-deployment-environment="<%= d.environmentCode %>"
+      data-bb-deployment-host="<%= d.canonicalDomain %>"
+      data-bb-deployment-product="<%= d.applicationCode %>"
+      <% if (d.deploymentCode === current) { %>data-bb-current="1"<% } %>
+    >
+      <div class="bb-pa-deploy-card__top">
+        <a class="bb-pa-link" href="/admin/deployments/<%= encodeURIComponent(d.deploymentCode) %>" data-bb-pa-deploy-link="<%= d.deploymentCode %>">
+          <code class="bb-pa-key"><%= d.deploymentCode %></code>
+        </a>
+        <span class="bb-pa-chip <%= statusChip(d.status) %>" data-bb-status-badge="<%= d.status %>">
+          <%= statusLabel(d.status) %>
+        </span>
+      </div>
+      <p class="bb-pa-deploy-card__badges">
+        <span class="bb-pa-chip <%= envChip(d.environmentCode) %>" data-bb-env-badge="<%= d.environmentCode %>">
+          <%= envLabel(d.environmentCode) %>
+        </span>
+        <% if (d.deploymentCode === current) { %>
+        <span class="bb-pa-chip bb-pa-chip--ok">This process</span>
+        <% } %>
+      </p>
+      <dl class="bb-pa-deploy-card__dl">
+        <div>
+          <dt>Product</dt>
+          <dd><%= productLabel(d.applicationCode) %></dd>
+        </div>
+        <div>
+          <dt>Release</dt>
+          <dd><%= d.releaseVersion || '—' %></dd>
+        </div>
+        <div>
+          <dt>Host</dt>
+          <dd><code class="bb-pa-key"><%= d.canonicalDomain || '—' %></code></dd>
+        </div>
+        <div>
+          <dt>Jobs</dt>
+          <dd><%= jobsLabel(d.jobsEnabled) %></dd>
+        </div>
+        <div>
+          <dt>DB access</dt>
+          <dd><%= dbAccessLabel(d.databaseAccessMode) %></dd>
+        </div>
+      </dl>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
+
+  <section
+    class="bb-pa-panel bb-pa-deploy-unavailable"
+    aria-labelledby="pa-deploy-unavailable-heading"
+    data-bb-pa-deploy-unavailable="1"
+  >
+    <h2 id="pa-deploy-unavailable-heading" class="bb-pa-section-title">Not available in this shell</h2>
+    <ul class="bb-pa-deploy-unavailable__list">
+      <li data-bb-pa-unavailable="deploy">
+        <span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
+        <div>
+          <strong>Deploy</strong>
+          <p>No deploy actions are exposed from this directory.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="restart">
+        <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+        <div>
+          <strong>Restart</strong>
+          <p>Process restart controls are not available.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="rollback">
+        <span class="material-symbols-outlined" aria-hidden="true">history</span>
+        <div>
+          <strong>Rollback</strong>
+          <p>Release rollback is not available here.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="env-edit">
+        <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+        <div>
+          <strong>Environment-variable editing</strong>
+          <p>Secret values and runtime env editing are not available.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="log-stream">
+        <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
+        <div>
+          <strong>Log streaming</strong>
+          <p>Live log tails are not streamed from this UI.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
 </section>
 
 <%- include('../partials/platform-admin-shell-end') %>

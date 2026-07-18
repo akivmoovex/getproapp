@@ -502,7 +502,12 @@ function createContentAdminRouter(deps) {
     router.post(`${p}/media/:assetId/archive`, rejectApex, gateContent, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;
-      if (!validateCsrfPost(req, res)) return;
+      const submitted =
+        (req.body && req.body[CSRF_FIELD]) ||
+        (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
+      if (!validateCsrf(req, submitted, env)) {
+        return res.status(403).json({ ok: false, reason: "csrf" });
+      }
       const result = await mediaService.archiveMediaAsset(getPool(), {
         assetId: req.params.assetId,
         churchId: scope.churchId,

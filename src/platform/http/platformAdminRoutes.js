@@ -33,6 +33,30 @@ const {
   STATUS: PLANS_STATUS,
 } = require("../services/listPlatformPlansCatalogue");
 const {
+  listPlatformSubscriptions,
+  STATUS: SUBSCRIPTIONS_STATUS,
+  DEFAULT_LIMIT: SUB_DEFAULT_LIMIT,
+  MAX_LIMIT: SUB_MAX_LIMIT,
+  ALLOWED_LIMITS: SUB_ALLOWED_LIMITS,
+  ALLOWED_STATUSES: SUB_ALLOWED_STATUSES,
+} = require("../services/listPlatformSubscriptions");
+const {
+  listPlatformDomains,
+  STATUS: DOMAINS_STATUS,
+  DEFAULT_LIMIT: DOMAIN_DEFAULT_LIMIT,
+  MAX_LIMIT: DOMAIN_MAX_LIMIT,
+  ALLOWED_LIMITS: DOMAIN_ALLOWED_LIMITS,
+  ALLOWED_STATUSES: DOMAIN_ALLOWED_STATUSES,
+  ALLOWED_DOMAIN_TYPES,
+} = require("../services/listPlatformDomains");
+const {
+  getPlatformDomainDetail,
+  updatePlatformDomainStatus,
+  assignPlatformDomainOrganization,
+  STATUS: DOMAIN_DETAIL_STATUS,
+  ALLOWED_STATUSES: DOMAIN_DETAIL_STATUSES,
+} = require("../services/platformAdminDomains");
+const {
   getPlatformOrganizationEntitlementsView,
   assignOrganizationPlanByKey,
   setOrganizationEntitlementOverrideByKey,
@@ -42,6 +66,10 @@ const {
   listPlatformDeployments,
   STATUS: DEPLOY_STATUS,
 } = require("../services/listPlatformDeployments");
+const {
+  getPlatformDeploymentDetail,
+  STATUS: DEPLOY_DETAIL_STATUS,
+} = require("../services/getPlatformDeploymentDetail");
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
 const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
 const {
@@ -297,7 +325,7 @@ function createPlatformAdminRouter(deps) {
   });
 
   router.get("/admin/plans", requireApex, requirePlatformAdmin, async (req, res) => {
-    const catalogue = await listPlatformPlansCatalogue(getPool());
+    const catalogue = await listPlatformPlansCatalogue(getPool(), { includeInactive: true });
     if (!catalogue.ok || catalogue.status === PLANS_STATUS.LOOKUP_ERROR) {
       return sendControlled(req, res, 503, "Plan catalogue is temporarily unavailable.");
     }
@@ -311,6 +339,173 @@ function createPlatformAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
+  router.get("/admin/subscriptions", requireApex, requirePlatformAdmin, async (req, res) => {
+    const list = await listPlatformSubscriptions(getPool(), {
+      page: req.query.page,
+      limit: req.query.limit,
+      q: req.query.q,
+      status: req.query.status,
+    });
+    if (!list.ok && list.status === SUBSCRIPTIONS_STATUS.LOOKUP_ERROR) {
+      return sendControlled(req, res, 503, "Subscription directory is temporarily unavailable.");
+    }
+    if (!list.ok && list.status === SUBSCRIPTIONS_STATUS.INVALID_INPUT) {
+      return sendControlled(req, res, 400, "Invalid subscription directory filters.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/subscriptions.ejs",
+      shellLocals(req, res, "subscriptions", {
+        pageTitle: "Subscriptions",
+        subscriptions: list.subscriptions || [],
+        page: list.page,
+        limit: list.limit,
+        total: list.total,
+        totalPages: list.totalPages,
+        keyPrefix: list.keyPrefix || "",
+        statusFilter: list.statusFilter || "",
+        defaultLimit: SUB_DEFAULT_LIMIT,
+        maxLimit: SUB_MAX_LIMIT,
+        allowedLimits: SUB_ALLOWED_LIMITS,
+        allowedStatuses: SUB_ALLOWED_STATUSES,
+        rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
+        rangeTo: Math.min(list.page * list.limit, list.total),
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/admin/domains", requireApex, requirePlatformAdmin, async (req, res) => {
+    const list = await listPlatformDomains(getPool(), {
+      page: req.query.page,
+      limit: req.query.limit,
+      q: req.query.q,
+      org: req.query.org,
+      status: req.query.status,
+      type: req.query.type,
+      verified: req.query.verified,
+    });
+    if (!list.ok && list.status === DOMAINS_STATUS.LOOKUP_ERROR) {
+      return sendControlled(req, res, 503, "Domain directory is temporarily unavailable.");
+    }
+    if (!list.ok && list.status === DOMAINS_STATUS.INVALID_INPUT) {
+      return sendControlled(req, res, 400, "Invalid domain directory filters.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/domains.ejs",
+      shellLocals(req, res, "domains", {
+        pageTitle: "Domains",
+        domains: list.domains || [],
+        page: list.page,
+        limit: list.limit,
+        total: list.total,
+        totalPages: list.totalPages,
+        hostnamePrefix: list.hostnamePrefix || "",
+        orgKeyPrefix: list.orgKeyPrefix || "",
+        statusFilter: list.statusFilter || "",
+        typeFilter: list.typeFilter || "",
+        verifiedFilter: list.verifiedFilter || "",
+        defaultLimit: DOMAIN_DEFAULT_LIMIT,
+        maxLimit: DOMAIN_MAX_LIMIT,
+        allowedLimits: DOMAIN_ALLOWED_LIMITS,
+        allowedStatuses: DOMAIN_ALLOWED_STATUSES,
+        allowedDomainTypes: ALLOWED_DOMAIN_TYPES,
+        rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
+        rangeTo: Math.min(list.page * list.limit, list.total),
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/admin/domains/:hostname", requireApex, requirePlatformAdmin, async (req, res) => {
+    const detail = await getPlatformDomainDetail(getPool(), req.params.hostname, env);
+    if (!detail.ok) {
+      if (detail.status === DOMAIN_DETAIL_STATUS.LOOKUP_ERROR) {
+        return sendControlled(req, res, 503, "Domain detail is temporarily unavailable.");
+      }
+      if (detail.status === DOMAIN_DETAIL_STATUS.INVALID_INPUT) {
+        return sendControlled(req, res, 400, "Invalid hostname.");
+      }
+      return sendControlled(req, res, 404, "This domain could not be found.");
+    }
+    const flash = readFlash(req);
+    const html = renderPlatformAdminView(
+      "platform-admin/domain-detail.ejs",
+      shellLocals(req, res, "domains", {
+        pageTitle: detail.domain.hostname,
+        domain: detail.domain,
+        allowedStatuses: detail.allowedStatuses || DOMAIN_DETAIL_STATUSES,
+        currentDeploymentCode: detail.currentDeploymentCode || "",
+        notice: flash.notice,
+        error: flash.error,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post(
+    "/admin/domains/:hostname/status",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      const hostname = String(req.params.hostname || "");
+      const detailPath = `/admin/domains/${encodeURIComponent(hostname)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const confirmed = String((req.body && req.body.confirm_status) || "") === "1";
+      const result = await updatePlatformDomainStatus(getPool(), {
+        hostname,
+        status: req.body && req.body.status,
+        confirmed,
+        env,
+      });
+      if (!result.ok) {
+        let error = "status_failed";
+        if (result.status === DOMAIN_DETAIL_STATUS.CONFIRMATION_REQUIRED) error = "confirm_required";
+        else if (result.status === DOMAIN_DETAIL_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === DOMAIN_DETAIL_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === DOMAIN_DETAIL_STATUS.DEPLOYMENT_MISMATCH) {
+          error = "deployment_mismatch";
+        }
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      return res.redirect(303, `${detailPath}?notice=status_saved`);
+    }
+  );
+
+  router.post(
+    "/admin/domains/:hostname/organization",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      const hostname = String(req.params.hostname || "");
+      const detailPath = `/admin/domains/${encodeURIComponent(hostname)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const confirmed = String((req.body && req.body.confirm_organization) || "") === "1";
+      const result = await assignPlatformDomainOrganization(getPool(), {
+        hostname,
+        organizationKey: req.body && req.body.organization_key,
+        confirmed,
+        env,
+      });
+      if (!result.ok) {
+        let error = "organization_failed";
+        if (result.status === DOMAIN_DETAIL_STATUS.CONFIRMATION_REQUIRED) error = "confirm_required";
+        else if (result.status === DOMAIN_DETAIL_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === DOMAIN_DETAIL_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === DOMAIN_DETAIL_STATUS.DEPLOYMENT_MISMATCH) {
+          error = "deployment_mismatch";
+        }
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      return res.redirect(303, `${detailPath}?notice=organization_saved`);
+    }
+  );
+
   router.get("/admin/deployments", requireApex, requirePlatformAdmin, async (req, res) => {
     const list = await listPlatformDeployments(getPool(), env);
     if (!list.ok || list.status === DEPLOY_STATUS.LOOKUP_ERROR) {
@@ -322,6 +517,32 @@ function createPlatformAdminRouter(deps) {
         pageTitle: "Deployments",
         deployments: list.deployments || [],
         currentDeploymentCode: list.currentDeploymentCode || "",
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/admin/deployments/:deploymentCode", requireApex, requirePlatformAdmin, async (req, res) => {
+    const detail = await getPlatformDeploymentDetail(getPool(), req.params.deploymentCode, env);
+    if (!detail.ok) {
+      if (detail.status === DEPLOY_DETAIL_STATUS.LOOKUP_ERROR) {
+        return sendControlled(req, res, 503, "Deployment detail is temporarily unavailable.");
+      }
+      if (detail.status === DEPLOY_DETAIL_STATUS.INVALID_INPUT) {
+        return sendControlled(req, res, 400, "Invalid deployment code.");
+      }
+      return sendControlled(req, res, 404, "This deployment could not be found.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/deployment-detail.ejs",
+      shellLocals(req, res, "deployments", {
+        pageTitle: detail.deployment.deploymentCode,
+        deployment: detail.deployment,
+        domains: detail.domains || [],
+        products: detail.products || [],
+        diagnostics: detail.diagnostics || [],
+        currentDeploymentCode: detail.currentDeploymentCode || "",
+        isCurrentProcess: Boolean(detail.isCurrentProcess),
       })
     );
     return res.status(200).type("html").send(html);
@@ -425,12 +646,12 @@ function createPlatformAdminRouter(deps) {
         }
         return res.redirect(
           303,
-          `/admin/organizations/${encodeURIComponent(organizationKey)}?error=${error}#pa-org-entitlements`
+          `/admin/organizations/${encodeURIComponent(organizationKey)}?error=${error}#pa-org-subscription`
         );
       }
       return res.redirect(
         303,
-        `/admin/organizations/${encodeURIComponent(organizationKey)}?notice=plan_saved#pa-org-entitlements`
+        `/admin/organizations/${encodeURIComponent(organizationKey)}?notice=plan_saved#pa-org-subscription`
       );
     }
   );

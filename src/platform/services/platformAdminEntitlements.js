@@ -53,8 +53,11 @@ function presentEntitlements(entitlements) {
       planDisplayName: null,
       subscriptionActive: false,
       subscriptionStatus: null,
+      subscriptionStartsAt: null,
+      subscriptionEndsAt: null,
       reason: "unavailable",
       features: [],
+      planInherited: [],
       overrides: [],
     };
   }
@@ -74,13 +77,21 @@ function presentEntitlements(entitlements) {
     });
   }
   const overrides = featureRows.filter((f) => f.source === "override");
+  const planInherited = featureRows.filter((f) => f.source !== "override");
   return {
     planKey: entitlements.planKey || (plan && plan.planKey) || null,
     planDisplayName: plan && plan.displayName ? String(plan.displayName) : null,
     subscriptionActive: Boolean(entitlements.subscriptionActive),
     subscriptionStatus: subscription && subscription.status ? String(subscription.status) : null,
+    subscriptionStartsAt:
+      subscription && subscription.startsAt
+        ? new Date(subscription.startsAt).toISOString()
+        : null,
+    subscriptionEndsAt:
+      subscription && subscription.endsAt ? new Date(subscription.endsAt).toISOString() : null,
     reason: entitlements.reason || null,
     features: featureRows,
+    planInherited,
     overrides,
   };
 }

@@ -36,8 +36,30 @@
       'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       root
     ).filter(function (el) {
-      return !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true";
+      if (el.hasAttribute("disabled") || el.getAttribute("aria-hidden") === "true") return false;
+      if (el.closest("[hidden]")) return false;
+      return true;
     });
+  }
+
+  /**
+   * Shared Tab cycle for modal/dialog panels (used by media picker and ds modals).
+   * @param {KeyboardEvent} ev
+   * @param {Element} root
+   */
+  function trapTabKey(ev, root) {
+    if (!ev || ev.key !== "Tab" || !root) return;
+    var nodes = focusable(root);
+    if (!nodes.length) return;
+    var first = nodes[0];
+    var last = nodes[nodes.length - 1];
+    if (ev.shiftKey && document.activeElement === first) {
+      ev.preventDefault();
+      last.focus();
+    } else if (!ev.shiftKey && document.activeElement === last) {
+      ev.preventDefault();
+      first.focus();
+    }
   }
 
   function bindDrawers() {
@@ -143,17 +165,7 @@
       var openModal = qs('[data-bb-ds-modal][data-bb-ds-open="1"]');
       if (!openModal) return;
       var panel = qs(".bb-ds-modal__panel", openModal);
-      var nodes = focusable(panel);
-      if (!nodes.length) return;
-      var first = nodes[0];
-      var last = nodes[nodes.length - 1];
-      if (ev.shiftKey && document.activeElement === first) {
-        ev.preventDefault();
-        last.focus();
-      } else if (!ev.shiftKey && document.activeElement === last) {
-        ev.preventDefault();
-        first.focus();
-      }
+      trapTabKey(ev, panel);
     });
   }
 
@@ -167,4 +179,9 @@
   } else {
     init();
   }
+
+  window.BlessBoardDesignSystem = {
+    focusable: focusable,
+    trapTabKey: trapTabKey,
+  };
 })();

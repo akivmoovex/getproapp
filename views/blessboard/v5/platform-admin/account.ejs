@@ -1,6 +1,11 @@
 <%- include('../partials/platform-admin-shell-start') %>
 
-<section class="bb-pa-account" data-bb-pa-account="1">
+<section class="bb-pa-account" data-bb-pa-account="1" aria-label="Account">
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin">Dashboard</a>
+    <span aria-hidden="true">/</span>
+    <span>Account</span>
+  </nav>
   <header class="bb-pa-page-head">
     <h1 class="bb-pa-page-head__title">Account</h1>
     <p class="bb-pa-lede">
@@ -8,16 +13,19 @@
     </p>
   </header>
 
-  <dl class="bb-pa-dl">
-    <dt>Display name</dt>
-    <dd><%= displayName || '—' %></dd>
-    <dt>Role</dt>
-    <dd><%= roleLabel %></dd>
-    <dt>Deployment</dt>
-    <dd><code class="bb-pa-key"><%= deploymentCode || '—' %></code></dd>
-    <dt>Host scope</dt>
-    <dd>Apex only · blessboard.org</dd>
-  </dl>
+  <section class="bb-pa-panel" aria-labelledby="pa-account-identity-heading" data-bb-pa-account-identity="1">
+    <h2 id="pa-account-identity-heading" class="bb-pa-section-title">Identity</h2>
+    <dl class="bb-pa-dl">
+      <dt>Display name</dt>
+      <dd><%= displayName || '—' %></dd>
+      <dt>Role</dt>
+      <dd><%= roleLabel %></dd>
+      <dt>Deployment</dt>
+      <dd><code class="bb-pa-key"><%= deploymentCode || '—' %></code></dd>
+      <dt>Host scope</dt>
+      <dd>Apex only · blessboard.org</dd>
+    </dl>
+  </section>
 
   <form class="bb-pa-logout bb-pa-logout--page" method="post" action="/admin/logout" data-bb-pa-logout="1">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />

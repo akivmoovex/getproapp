@@ -80,6 +80,9 @@ describe("blessboard v5 design system", () => {
     assert.match(js, /data-bb-ds-drawer/);
     assert.match(js, /data-bb-ds-modal/);
     assert.match(js, /Escape/);
+    assert.match(js, /BlessBoardDesignSystem/);
+    assert.match(js, /trapTabKey/);
+    assert.match(js, /focusable/);
   });
 
   it("exposes required shared partials", () => {

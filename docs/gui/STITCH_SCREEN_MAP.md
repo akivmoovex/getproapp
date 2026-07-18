@@ -42,10 +42,10 @@ Related prior audits (do not replace this map): `docs/ui/V5_STITCH_SCREEN_MAP.md
 | Metric | Count |
 |--------|------:|
 | Unique Stitch screens (`list_screens`) | 196 |
-| Primary product rows in master table (logical screens) | 97 |
+| Primary product rows in master table (logical screens) | 99 |
 | Rows status **MATCHED** | 0 |
-| Rows status **PARTIAL** | 59 |
-| Rows status **PLACEHOLDER** | 3 |
+| Rows status **PARTIAL** | 62 |
+| Rows status **PLACEHOLDER** | 2 |
 | Rows status **MISSING** | 28 |
 | Rows status **STITCH_MISSING** | 9 |
 | Rows status **NEEDS_VERIFICATION** | 2 |
@@ -141,12 +141,16 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 | 74 | Platform admin | Dashboard | `36c4708b025b4e7eaeab9ed508603b03` | `513dd5cc58c74b21bd7ee8d106dfac55` | `/admin` | `/admin` | `platform-admin/dashboard.ejs`, `platform-admin-shell-*` | platform_admin | PARTIAL | Batch 19B dashboard (`BATCH_19B_PLATFORM_DASHBOARD.md`). Live org/church counts only; unavailable cards for tenants/plans/tickets/health; no fabricated MRR/uptime/activity. Shell Batch 19A. |
 | 75 | Platform admin | Organizations | `18da9665bc674d2dbd249cbbb269d58d` | `db6b741d99e34d10b01496a83de5072a` | `/admin/organizations` | `/admin/organizations` | `platform-admin/organizations.ejs` | platform_admin | PARTIAL | Batch 19C (`BATCH_19C_PLATFORM_ORGANIZATIONS.md`). Key-prefix search + table/cards; live keys/status/branches only; no create/export/MRR. |
 | 76 | Platform admin | Create organization | `d992150d24cb4cd3afdca87ca3ce915f` | `0da4f454abf0402dbe09f82959f29afa` | `/admin/organizations/new` | — | — | platform_admin | MISSING | Provisioning service/CLI exists; no create-org UI route. |
-| 77 | Platform admin | Branch tenants / org detail | `10f1dceb6d694563aaf152ecaedac3d3` | `6633fa49f7b9420a8c1705f1e43c9efb` | `/admin/organizations/:key` | `/admin/organizations/:organizationKey` | `platform-admin/organization-detail.ejs` | platform_admin | PARTIAL | Batch 19D (`BATCH_19D_PLATFORM_ORGANIZATION_DETAIL.md`). Single-org catalogue/domains/branches + plan/override forms; no export/new-branch/health invention. |
-| 78 | Platform admin | Plans & limits | `4d0f59ac6acf4fcc9e1e0ed746abb5fd` | `b5953809962f4e0a8eae4ea96aa4575a` | `/admin/plans` | `/admin/plans` | `platform-admin/plans.ejs` | platform_admin | PARTIAL | Catalogue + org assign/override; no billing/price invention. |
-| 79 | Platform admin | Settings | `30e3856782bd41b6bf14402e1e535cbd` | `efb0fd24f1184968be79083974dcd092` | `/admin/settings` | `/admin/settings` | `platform-admin/settings.ejs` | platform_admin | PARTIAL | Read-only DNS patterns; no save/failover UI. |
-| 80 | Platform admin | Support / monitoring | `74cbe4a015754137ad414222f3941ef2` | `9f40042097d7471db1f5628fbb0d27d8` | `/admin/deployments` | `/admin/deployments` | `platform-admin/deployments.ejs` | platform_admin | PLACEHOLDER | Deployment registry only; Stitch tickets/health not inventable. |
+| 77 | Platform admin | Branch tenants / org detail | `10f1dceb6d694563aaf152ecaedac3d3` | `6633fa49f7b9420a8c1705f1e43c9efb` | `/admin/organizations/:key` | `/admin/organizations/:organizationKey` | `platform-admin/organization-detail.ejs` | platform_admin | PARTIAL | Batch 19D shell + Batch 20C entitlements (`BATCH_20C_PLATFORM_ENTITLEMENTS.md`): capacity/capability groups, plan vs override, allowlisted override form; usage calc unchanged. |
+| 78 | Platform admin | Plans & limits | `4d0f59ac6acf4fcc9e1e0ed746abb5fd` | `b5953809962f4e0a8eae4ea96aa4575a` | `/admin/plans` | `/admin/plans` | `platform-admin/plans.ejs` | platform_admin | PARTIAL | Batch 20A (`BATCH_20A_PLATFORM_PLANS.md`). Directory cards + table from live `platform.plans` (incl. inactive/legacy); display names Foundation/Growth/Network; no create/price invention; assign still active-only on org detail. |
+| 78a | Platform admin | Subscriptions | `4d0f59ac6acf4fcc9e1e0ed746abb5fd` | `b5953809962f4e0a8eae4ea96aa4575a` | `/admin/subscriptions` | `/admin/subscriptions` (+ detail via `/admin/organizations/:key#pa-org-subscription`) | `platform-admin/subscriptions.ejs` (+ org-detail subscription config) | platform_admin | PARTIAL | Batch 20B (`BATCH_20B_PLATFORM_SUBSCRIPTIONS.md`). Live `organization_subscriptions` list/detail; plan assign POST preserved; no checkout/invoices/payments. Stitch pair shared with plans 66. Entitlements UI Batch 20C on org detail. |
+| 78b | Platform admin | Domains directory | `30e3856782bd41b6bf14402e1e535cbd` | `efb0fd24f1184968be79083974dcd092` | `/admin/domains` | `/admin/domains` | `platform-admin/domains.ejs` | platform_admin | PARTIAL | Batch 21A (`BATCH_21A_PLATFORM_DOMAINS.md`). Live `platform.domains` table/cards; org links; status/type/verified from stored data; filters + empty/no-results. Links to Domain Detail. No DNS/cert/purchase/verify automation. Stitch pair adapted from settings 67. |
+| 78c | Platform admin | Domain detail | `30e3856782bd41b6bf14402e1e535cbd` | `efb0fd24f1184968be79083974dcd092` | `/admin/domains/:hostname` | `/admin/domains/:hostname` | `platform-admin/domain-detail.ejs` | platform_admin | PARTIAL | Batch 21B (`BATCH_21B_PLATFORM_DOMAIN_DETAIL.md`). Summary + operational vs verification; CSRF status + org assignment when deployment-scoped; create/DNS/SSL/redirects/verify jobs omitted. |
+| 79 | Platform admin | Settings | `30e3856782bd41b6bf14402e1e535cbd` | `efb0fd24f1184968be79083974dcd092` | `/admin/settings` | `/admin/settings` | `platform-admin/settings.ejs` | platform_admin | PARTIAL | Batch 21A settings polish (`BATCH_21A_PLATFORM_DOMAINS_SETTINGS.md`). Read-only DNS patterns + reserved labels + current deployment; unavailable branding/MFA/failover/DNS automation. No save UI. |
+| 80 | Platform admin | Support / monitoring | `74cbe4a015754137ad414222f3941ef2` | `9f40042097d7471db1f5628fbb0d27d8` | `/admin/deployments` | `/admin/deployments` | `platform-admin/deployments.ejs` | platform_admin | PARTIAL | Batch 21C (`BATCH_21C_PLATFORM_DEPLOYMENTS.md`). Deployments directory: live `platform.deployments` table/cards; env/status badges; product/host; links to detail. No deploy/restart/rollback/env edit/log stream. |
+| 80a | Platform admin | Deployment detail | `74cbe4a015754137ad414222f3941ef2` | `9f40042097d7471db1f5628fbb0d27d8` | `/admin/deployments/:deploymentCode` | `/admin/deployments/:deploymentCode` | `platform-admin/deployment-detail.ejs` | platform_admin | PARTIAL | Batch 21D (`BATCH_21D_PLATFORM_DEPLOYMENT_DETAIL.md`). Summary + environment + products + domains + safe pass/fail diagnostics from live data; unavailable for logs/env edit/process control/health. No secrets. Parity audit: `PLATFORM_ADMIN_PARITY_AUDIT.md`. |
 | 81 | Platform admin | Account | — | — | `/admin/account` | `/admin/account` | `platform-admin/account.ejs` | platform_admin | STITCH_MISSING | |
-| 82 | Shared media | Media library / upload | — | — | `/branch-admin/content/media`, `/hq/content/media` | same | `content-admin/media-upload.ejs`, `media-picker.js`, `media-picker.css` | branch_admin / hq_admin | STITCH_MISSING | Functional media picker/upload present; no dedicated Stitch media-picker screen. |
+| 82 | Shared media | Media library / upload | — (Shared UI States `b61a1ea8176648408211b681e942e0a6`) | — | `/branch-admin/content/media`, `/hq/content/media` | same | `content-admin/media-upload.ejs`, `media-picker.js`, `media-picker.css` | branch_admin / hq_admin | STITCH_MISSING | Batch 22–22B + Batch 22C (`BATCH_22C_MEDIA_DETAIL.md`) detail + soft-archive confirm: safe metadata preview, church-scoped archive CSRF, no hard delete / replace / crop. No dedicated Stitch media pair. |
 | 83 | Leader portal (out of V5 scope) | Leader dashboard | `558f95cbc5604764a1b1a58e358f4b27` | `953dfecffd5e4e79bd58e581d49c13c8` | — | — | — | leader | MISSING | No V5 leader role/routes. |
 | 84 | Leader portal (out of V5 scope) | Ministry roster | `4b2c2162daa847338b088026a12a536a` | `7c64aefd130f43f3910888d0116afae2` | — | — | — | leader | MISSING | |
 | 85 | Leader portal (out of V5 scope) | Record attendance | `5a1fd765d2634bc990a6be831722c803` | `8ea2993615e74de4b8136ef770b784d7` | — | — | — | leader | MISSING | |
@@ -202,7 +206,7 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 | Gap | Why it matters |
 |-----|----------------|
 | Dedicated apex `/account` and auth-error screens | Implemented without Stitch targets |
-| Media picker / upload dialog | Implemented in V5 (`media-picker.*`); no Stitch pair |
+| Media picker / upload dialog | Batch 22 Sacred Modernity polish; no dedicated Stitch pair (Shared UI States reference) |
 | HQ registrations/members | Batch 17A members (Stitch 28) + Batch 17B registrations (Stitch 26); HQ queue read-only |
 | Branch/HQ account & settings | Functional; no Stitch |
 | Announcement form / preview / publish states | Extra admin states beyond list Stitch |

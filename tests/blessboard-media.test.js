@@ -410,6 +410,41 @@ describe("blessboard media service + http", () => {
     assert.ok(up.status === 403 || up.status === 401);
   });
 
+  it("rejects upload without valid CSRF", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sid = sessionCookie(users.hqA);
+    const boot = await request(app).get("/hq/content").set("Host", HOST_A).set("Cookie", sid);
+    const csrf = extractCookie(boot, CSRF_COOKIE);
+    assert.ok(csrf);
+
+    const up = await request(app)
+      .post("/hq/content/media/upload")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(sid, `${CSRF_COOKIE}=${csrf}`))
+      .field(CSRF_FIELD, "not-the-real-csrf-token")
+      .field("visibility", "public")
+      .attach("file", PNG_1X1, "csrf.png");
+    assert.equal(up.status, 403);
+    assert.equal(up.body.ok, false);
+    assert.equal(up.body.reason, "csrf");
+  });
+
+  it("picker upload UI keeps safe error copy and never leaks storage paths", () => {
+    const pickerJs = fs.readFileSync(
+      path.join(__dirname, "..", "public", "blessboard", "v5", "media-picker.js"),
+      "utf8"
+    );
+    assert.match(pickerJs, /aria-live="assertive"/);
+    assert.match(pickerJs, /data-bb-media-success/);
+    assert.match(pickerJs, /fd\.append\("file"/);
+    assert.match(pickerJs, /fd\.append\("_csrf"/);
+    assert.match(pickerJs, /JPEG, PNG, WebP, GIF/);
+    assert.match(pickerJs, /Please try again\./);
+    assert.doesNotMatch(pickerJs, /Upload failed:\s*"\s*\+\s*key/);
+    assert.doesNotMatch(pickerJs, /storage_key|storageKey|service_role|bucket\/|\/tmp\//i);
+    assert.doesNotMatch(pickerJs, /crop|compress|bulk upload|remote url|unsplash/i);
+  });
+
   it("cleans up storage when metadata insert fails", async (t) => {
     if (skipIfNeeded(t)) return;
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "bb-media-cleanup-"));
@@ -487,6 +522,18 @@ describe("blessboard media service + http", () => {
     assert.match(page.text, /data-bb-media-picker="1"/);
     assert.match(page.text, /media-picker\.js/);
     assert.match(page.text, /data-visibility="private"/);
+    assert.match(page.text, /data-fill="assetId"|data-fill="deliveryPath"/);
+
+    const pickerJs = fs.readFileSync(
+      path.join(__dirname, "..", "public", "blessboard", "v5", "media-picker.js"),
+      "utf8"
+    );
+    assert.match(pickerJs, /cfg\.fill === "assetId"/);
+    assert.match(pickerJs, /target\.value = asset\.deliveryPath/);
+    assert.match(pickerJs, /data-bb-media-library-empty/);
+    assert.match(pickerJs, /No church-owned files for this visibility/);
+    assert.match(pickerJs, /filteredLibraryAssets/);
+    assert.doesNotMatch(pickerJs, /unsplash|pexels|stock.?image/i);
 
     const sidB = sessionCookie(users.hqB);
     const listCross = await request(app)
@@ -521,6 +568,137 @@ describe("blessboard media service + http", () => {
       listAfter.body.assets.some((a) => a.id === up.body.assetId),
       false
     );
+  });
+
+  it("media detail UI renders safe metadata and archive confirmation copy", () => {
+    const pickerJs = fs.readFileSync(
+      path.join(__dirname, "..", "public", "blessboard", "v5", "media-picker.js"),
+      "utf8"
+    );
+    assert.match(pickerJs, /data-bb-media-detail="1"/);
+    assert.match(pickerJs, /data-bb-media-lib-meta/);
+    assert.match(pickerJs, /data-bb-media-detail-archive/);
+    assert.match(pickerJs, /data-bb-media-detail-usage/);
+    assert.match(pickerJs, /Asset detail/);
+    assert.match(pickerJs, /Filename/);
+    assert.match(pickerJs, /Visibility/);
+    assert.match(pickerJs, /formatCreatedAt/);
+    assert.match(pickerJs, /Soft-archive removes this from the library/);
+    assert.match(pickerJs, /this church only/);
+    assert.match(pickerJs, /not permanently deleted/);
+    assert.match(pickerJs, /Reference checks beyond soft-archive are not reported/);
+    assert.match(pickerJs, /data-bb-media-archive-error/);
+    assert.match(pickerJs, /\/media\/" \+ encodeURIComponent\(assetId\) \+ "\/archive"/);
+    assert.doesNotMatch(pickerJs, /storage_key|storageKey|storageBucket|bucket\/|service_role/i);
+    assert.doesNotMatch(pickerJs, /replace file|crop|rename asset|bulk.?delete|hard.?delete/i);
+  });
+
+  it("rejects archive without valid CSRF", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sid = sessionCookie(users.hqA);
+    const boot = await request(app).get("/hq/content").set("Host", HOST_A).set("Cookie", sid);
+    const csrf = extractCookie(boot, CSRF_COOKIE);
+    assert.ok(csrf);
+
+    const up = await request(app)
+      .post("/hq/content/media/upload")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(sid, `${CSRF_COOKIE}=${csrf}`))
+      .field(CSRF_FIELD, csrf)
+      .field("visibility", "public")
+      .attach("file", PNG_1X1, "archive-csrf.png");
+    assert.equal(up.status, 200, JSON.stringify(up.body));
+
+    const archived = await request(app)
+      .post(`/hq/content/media/${up.body.assetId}/archive`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(sid, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: "not-the-real-csrf-token" });
+    assert.equal(archived.status, 403);
+    assert.equal(archived.body.ok, false);
+    assert.equal(archived.body.reason, "csrf");
+  });
+
+  it("rejects cross-tenant archive of another church asset", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sidA = sessionCookie(users.hqA);
+    const bootA = await request(app).get("/hq/content").set("Host", HOST_A).set("Cookie", sidA);
+    const csrfA = extractCookie(bootA, CSRF_COOKIE);
+    assert.ok(csrfA);
+
+    const up = await request(app)
+      .post("/hq/content/media/upload")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(sidA, `${CSRF_COOKIE}=${csrfA}`))
+      .field(CSRF_FIELD, csrfA)
+      .field("visibility", "public")
+      .attach("file", PNG_1X1, "cross-archive.png");
+    assert.equal(up.status, 200, JSON.stringify(up.body));
+
+    const sidB = sessionCookie(users.hqB);
+    const bootB = await request(app).get("/hq/content").set("Host", HOST_B).set("Cookie", sidB);
+    const csrfB = extractCookie(bootB, CSRF_COOKIE);
+    assert.ok(csrfB);
+
+    const cross = await request(app)
+      .post(`/hq/content/media/${up.body.assetId}/archive`)
+      .set("Host", HOST_B)
+      .set("Cookie", cookieHeader(sidB, `${CSRF_COOKIE}=${csrfB}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: csrfB });
+    assert.equal(cross.status, 404);
+    assert.equal(cross.body.ok, false);
+    assert.equal(cross.body.reason, "not_found");
+
+    const stillListed = await request(app)
+      .get("/hq/content/media?visibility=public")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "application/json");
+    assert.equal(stillListed.status, 200);
+    assert.ok(
+      stillListed.body.assets.some((a) => a.id === up.body.assetId),
+      "church A asset must remain active after cross-tenant archive attempt"
+    );
+  });
+
+  it("soft-archives without hard-delete or fabricated in-use blocking", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const uploaded = await mediaService.uploadMediaAsset(pool, {
+      churchId: churchA.id,
+      uploadedByUserId: users.hqA.user.id,
+      buffer: PNG_1X1,
+      originalFilename: "soft-archive.png",
+      visibility: VISIBILITY.PUBLIC,
+      dedupeByHash: false,
+    });
+    assert.equal(uploaded.ok, true);
+
+    const archived = await mediaService.archiveMediaAsset(pool, {
+      assetId: uploaded.asset.id,
+      churchId: churchA.id,
+    });
+    assert.equal(archived.ok, true);
+    assert.equal(archived.asset.status, "archived");
+    assert.ok(archived.asset.archivedAt);
+    assert.equal(Object.prototype.hasOwnProperty.call(archived, "inUse"), false);
+
+    const again = await mediaService.archiveMediaAsset(pool, {
+      assetId: uploaded.asset.id,
+      churchId: churchA.id,
+    });
+    assert.equal(again.ok, false);
+    assert.equal(again.reason, "not_found");
+
+    const pickerJs = fs.readFileSync(
+      path.join(__dirname, "..", "public", "blessboard", "v5", "media-picker.js"),
+      "utf8"
+    );
+    assert.match(pickerJs, /Reference checks beyond soft-archive are not reported/);
+    assert.doesNotMatch(pickerJs, /in_use|dependency count|used by \d+/i);
+    // Confirm dialog / detail never surface storage keys in UI source.
+    assert.doesNotMatch(pickerJs, /storageKey|storageBucket|storage_key/);
   });
 
   it("leaves V4 server.legacy.js unchanged (presence check)", () => {

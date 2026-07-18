@@ -1,0 +1,328 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var d = deployment || null;
+  var domainRows = domains || [];
+  var productRows = products || [];
+  var checks = diagnostics || [];
+  var current = currentDeploymentCode || '';
+  var isCurrent = Boolean(isCurrentProcess);
+
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'Active';
+    if (key === 'inactive') return 'Inactive';
+    if (key === 'retired') return 'Retired';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'retired') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip--warn';
+  }
+  function envLabel(code) {
+    var key = String(code || '').toLowerCase();
+    if (key === 'production') return 'Production';
+    if (key === 'preproduction') return 'Preproduction';
+    if (key === 'shared') return 'Shared';
+    if (key === 'testing') return 'Testing';
+    return code || '—';
+  }
+  function envChip(code) {
+    var key = String(code || '').toLowerCase();
+    if (key === 'production') return 'bb-pa-chip--ok';
+    if (key === 'preproduction') return 'bb-pa-chip--warn';
+    if (key === 'shared' || key === 'testing') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip';
+  }
+  function productLabel(code) {
+    var key = String(code || '').toLowerCase();
+    if (key === 'blessboard') return 'BlessBoard';
+    if (key === 'getpro') return 'GetPro';
+    if (key === 'ngo') return 'NGO';
+    if (key === 'platform') return 'Platform';
+    return code || '—';
+  }
+  function typeLabel(t) {
+    var key = String(t || '').toLowerCase();
+    if (key === 'apex') return 'Apex';
+    if (key === 'canonical') return 'Canonical';
+    if (key === 'custom') return 'Custom';
+    if (key === 'alias') return 'Alias';
+    return t || '—';
+  }
+  function jobsLabel(enabled) {
+    return enabled ? 'Enabled' : 'Disabled';
+  }
+  function dbAccessLabel(mode) {
+    var key = String(mode || '').toLowerCase();
+    if (key === 'read_write') return 'Read/write';
+    if (key === 'read_only') return 'Read-only';
+    return mode || '—';
+  }
+  function diagChip(state) {
+    var key = String(state || '').toLowerCase();
+    if (key === 'pass') return 'bb-pa-chip--ok';
+    if (key === 'fail') return 'bb-pa-chip--warn';
+    return 'bb-pa-chip--muted';
+  }
+  function diagLabel(state) {
+    var key = String(state || '').toLowerCase();
+    if (key === 'pass') return 'Pass';
+    if (key === 'fail') return 'Fail';
+    return 'Unavailable';
+  }
+%>
+
+<section
+  class="bb-pa-deployment-detail"
+  data-bb-pa-deployment-detail="1"
+  data-bb-stitch-deployment-detail="68-platform-support-monitoring"
+  <% if (d) { %>data-bb-deployment="<%= d.deploymentCode %>"<% } %>
+  <% if (isCurrent) { %>data-bb-current="1"<% } %>
+  aria-label="Deployment detail"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin/deployments">Deployments</a>
+    <span aria-hidden="true">/</span>
+    <span><%= d ? d.deploymentCode : 'Detail' %></span>
+  </nav>
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-deployment-detail__eyebrow">Deployment detail</p>
+      <h1 class="bb-pa-page-head__title"><%= d ? d.deploymentCode : 'Deployment' %></h1>
+      <p class="bb-pa-lede">
+        Safe registry summary, environment, products, domains, and diagnostic states from live V5 data only.
+        Environment editing, process control, deploy actions, log access, and secret values are not available.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/deployments" data-bb-pa-deploy-back="1">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Directory
+      </a>
+    </div>
+  </header>
+
+  <p class="bb-pa-deployment-detail__notice" role="note" data-bb-pa-deploy-detail-notice="1">
+    Safe metadata only. Cookie names, connection strings, one-time auth material, hashes, and secret values are never shown.
+    Runtime identity comes from <code>PLATFORM_DEPLOYMENT_CODE</code>.
+  </p>
+
+  <% if (!d) { %>
+  <p class="bb-pa-empty" role="status" data-bb-pa-empty="deployment-detail">This deployment could not be found.</p>
+  <% } else { %>
+
+  <div class="bb-pa-deployment-detail-grid" data-bb-pa-deploy-detail-grid="1">
+    <section class="bb-pa-panel" aria-labelledby="pa-deploy-summary-heading" data-bb-pa-deploy-summary-panel="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-deploy-summary-heading" class="bb-pa-section-title">Summary</h2>
+        <% if (isCurrent) { %>
+        <span class="bb-pa-chip bb-pa-chip--ok" data-bb-pa-current-deployment="1">This process</span>
+        <% } else { %>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
+        <% } %>
+      </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div>
+          <dt>Deployment code</dt>
+          <dd><code class="bb-pa-key"><%= d.deploymentCode %></code></dd>
+        </div>
+        <div>
+          <dt>Release</dt>
+          <dd data-bb-pa-deploy-release="1"><%= d.releaseVersion || '—' %></dd>
+        </div>
+        <div>
+          <dt>Canonical host</dt>
+          <dd data-bb-pa-deploy-host="1"><code class="bb-pa-key"><%= d.canonicalDomain || '—' %></code></dd>
+        </div>
+        <div>
+          <dt>Jobs</dt>
+          <dd data-bb-pa-deploy-jobs="1"><%= jobsLabel(d.jobsEnabled) %></dd>
+        </div>
+        <div>
+          <dt>DB access</dt>
+          <dd data-bb-pa-deploy-db-access="1"><%= dbAccessLabel(d.databaseAccessMode) %></dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <span class="bb-pa-chip <%= statusChip(d.status) %>" data-bb-status-badge="<%= d.status %>">
+              <%= statusLabel(d.status) %>
+            </span>
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="bb-pa-panel" aria-labelledby="pa-deploy-env-heading" data-bb-pa-deploy-environment="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-deploy-env-heading" class="bb-pa-section-title">Environment</h2>
+        <span class="bb-pa-chip <%= envChip(d.environmentCode) %>" data-bb-env-badge="<%= d.environmentCode %>">
+          <%= envLabel(d.environmentCode) %>
+        </span>
+      </div>
+      <p class="bb-pa-hint">
+        Environment code from <code>platform.deployments</code>. Runtime env-variable editing is not available.
+      </p>
+      <dl class="bb-pa-dl">
+        <div>
+          <dt>Environment code</dt>
+          <dd data-bb-deployment-environment="<%= d.environmentCode %>"><code class="bb-pa-key"><%= d.environmentCode || '—' %></code></dd>
+        </div>
+        <% if (current) { %>
+        <div>
+          <dt>This process code</dt>
+          <dd><code class="bb-pa-key"><%= current %></code></dd>
+        </div>
+        <% } %>
+      </dl>
+    </section>
+  </div>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-deploy-products-heading" data-bb-pa-deploy-products="1">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-deploy-products-heading" class="bb-pa-section-title">Products</h2>
+      <span class="bb-pa-chip" data-bb-count="deploy-products"><%= productRows.length %></span>
+    </div>
+    <% if (!productRows.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-pa-empty="deploy-products">No products linked to this deployment.</p>
+    <% } else { %>
+    <ul class="bb-pa-deploy-product-list" data-bb-pa-deploy-product-list="1">
+      <% productRows.forEach(function (p) { %>
+      <li data-bb-deploy-product="<%= p.productKey %>" data-bb-deploy-product-source="<%= p.source %>">
+        <strong><%= p.displayName || productLabel(p.productKey) %></strong>
+        <code class="bb-pa-key"><%= p.productKey %></code>
+        <% if (p.source === 'application') { %>
+        <span class="bb-pa-chip bb-pa-chip--ok">Application</span>
+        <% } else { %>
+        <span class="bb-pa-chip bb-pa-chip--muted">From domains</span>
+        <% } %>
+        <% if (p.status) { %>
+        <span class="bb-pa-chip <%= statusChip(p.status) %>"><%= statusLabel(p.status) %></span>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-deploy-domains-heading" data-bb-pa-deploy-domains="1">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-deploy-domains-heading" class="bb-pa-section-title">Domains</h2>
+      <span class="bb-pa-chip" data-bb-count="deploy-domains"><%= domainRows.length %></span>
+    </div>
+    <% if (!domainRows.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-pa-empty="deploy-domains">No domains registered for this deployment.</p>
+    <% } else { %>
+    <div class="bb-pa-table-wrap bb-pa-show-desktop" data-bb-pa-deploy-domains-table="1">
+      <table class="bb-pa-table" data-bb-table="deployment-domains">
+        <thead>
+          <tr>
+            <th scope="col">Hostname</th>
+            <th scope="col">Type</th>
+            <th scope="col">Product</th>
+            <th scope="col">Organization</th>
+            <th scope="col">Status</th>
+            <th scope="col">Verified</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% domainRows.forEach(function (row) { %>
+          <tr data-bb-domain-hostname="<%= row.hostname %>">
+            <td>
+              <a class="bb-pa-link" href="/admin/domains/<%= encodeURIComponent(row.hostname) %>">
+                <code class="bb-pa-key"><%= row.hostname %></code>
+              </a>
+              <% if (row.isPrimary) { %><span class="bb-pa-chip bb-pa-chip--ok">Primary</span><% } %>
+            </td>
+            <td><%= typeLabel(row.domainType) %></td>
+            <td><%= row.productDisplayName || productLabel(row.productKey) %></td>
+            <td>
+              <% if (row.organizationKey) { %>
+              <a class="bb-pa-link" href="/admin/organizations/<%= encodeURIComponent(row.organizationKey) %>"><%= row.organizationKey %></a>
+              <% } else { %>—<% } %>
+            </td>
+            <td>
+              <span class="bb-pa-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+            </td>
+            <td><%= row.isVerified ? 'Yes' : 'No' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <ul class="bb-pa-deploy-domain-cards bb-pa-show-mobile" data-bb-pa-deploy-domains-cards="1">
+      <% domainRows.forEach(function (row) { %>
+      <li class="bb-pa-deploy-domain-card" data-bb-domain-hostname="<%= row.hostname %>">
+        <a class="bb-pa-link" href="/admin/domains/<%= encodeURIComponent(row.hostname) %>">
+          <code class="bb-pa-key"><%= row.hostname %></code>
+        </a>
+        <p class="bb-pa-deploy-domain-card__meta">
+          <%= typeLabel(row.domainType) %> · <%= statusLabel(row.status) %> · <%= row.isVerified ? 'Verified' : 'Unverified' %>
+        </p>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-deploy-diag-heading" data-bb-pa-deploy-diagnostics="1">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-deploy-diag-heading" class="bb-pa-section-title">Diagnostics</h2>
+      <span class="bb-pa-org-detail__ro">Pass / fail from live data · otherwise unavailable</span>
+    </div>
+    <p class="bb-pa-hint">
+      Checks use registry fields and runtime identity only. No secret values, log tails, or invented health meters.
+    </p>
+    <% if (!checks.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-pa-empty="deploy-diagnostics">No diagnostic checks available.</p>
+    <% } else { %>
+    <ul class="bb-pa-deploy-diag-list" data-bb-pa-deploy-diag-list="1">
+      <% checks.forEach(function (c) { %>
+      <li
+        data-bb-pa-diag="<%= c.key %>"
+        data-bb-pa-diag-state="<%= c.state %>"
+        class="bb-pa-deploy-diag<%= c.state === 'unavailable' ? ' is-unavailable' : '' %>"
+      >
+        <div class="bb-pa-deploy-diag__head">
+          <strong><%= c.label %></strong>
+          <span class="bb-pa-chip <%= diagChip(c.state) %>"><%= diagLabel(c.state) %></span>
+        </div>
+        <p><%= c.detail %></p>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section
+    class="bb-pa-panel bb-pa-deploy-detail-unavailable"
+    aria-labelledby="pa-deploy-detail-unavailable-heading"
+    data-bb-pa-deploy-detail-unavailable="1"
+  >
+    <h2 id="pa-deploy-detail-unavailable-heading" class="bb-pa-section-title">Not available on this page</h2>
+    <ul class="bb-pa-deploy-unavailable__list">
+      <li data-bb-pa-unavailable="env-edit">
+        <strong>Environment-variable editing</strong>
+        <p>Secret values and runtime env editing are not available.</p>
+      </li>
+      <li data-bb-pa-unavailable="process-control">
+        <strong>Process control</strong>
+        <p>Deploy, restart, and rollback are not available.</p>
+      </li>
+      <li data-bb-pa-unavailable="log-access">
+        <strong>Log access</strong>
+        <p>Live log tails are not streamed from this UI.</p>
+      </li>
+      <li data-bb-pa-unavailable="secrets">
+        <strong>Secret display</strong>
+        <p>Connection strings, cookie names, one-time auth material, and hashes are never shown.</p>
+      </li>
+    </ul>
+  </section>
+
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

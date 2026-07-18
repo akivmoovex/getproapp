@@ -559,9 +559,11 @@ Bring platform-admin shell and catalogue screens closer to Stitch 62–68.
 
 **Acceptance criteria**
 
-- [ ] Picker remains dialog-accessible (focus trap, Escape, labels)
-- [ ] Upload validation/authorization unchanged
-- [ ] No public media URL leakage beyond existing rules
+- [x] Picker remains dialog-accessible (focus trap, Escape, labels)
+- [x] Upload validation/authorization unchanged
+- [x] No public media URL leakage beyond existing rules
+
+**Status:** Done — Batch 22 (`BATCH_22_SHARED_MEDIA.md`), 2026-07-18.
 
 **Recommended commit message**
 

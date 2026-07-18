@@ -92,6 +92,21 @@ async function listActivePlans(client, productKey) {
   return rows.map(mapPlan);
 }
 
+/**
+ * All catalogue rows for a product (active + inactive). Read-only directory use.
+ * Does not change assignability — callers that assign must still use listActivePlans / status checks.
+ */
+async function listPlansForProduct(client, productKey) {
+  const { rows } = await client.query(
+    `SELECT ${PLAN_COLS}
+       FROM platform.plans
+      WHERE product_key = $1
+      ORDER BY sort_order ASC, plan_key ASC`,
+    [productKey]
+  );
+  return rows.map(mapPlan);
+}
+
 async function findPlanByKey(client, planKey) {
   const { rows } = await client.query(
     `SELECT ${PLAN_COLS} FROM platform.plans WHERE plan_key = $1`,
@@ -259,6 +274,7 @@ module.exports = {
   mapSubscription,
   mapOverride,
   listActivePlans,
+  listPlansForProduct,
   findPlanByKey,
   findPlanById,
   listPlanFeatures,

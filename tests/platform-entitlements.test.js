@@ -114,7 +114,7 @@ describe("platform entitlements", () => {
     assert.equal(resolved.ok, true);
     assert.equal(resolved.entitlements.planKey, "free");
     assert.equal(resolved.entitlements.subscriptionActive, true);
-    assert.equal(getLimit(resolved.entitlements, FEATURE_KEYS.MAX_BRANCHES), 2);
+    assert.equal(getLimit(resolved.entitlements, FEATURE_KEYS.MAX_BRANCHES), 1);
     assert.equal(hasFeature(resolved.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), false);
     assert.equal(hasFeature(resolved.entitlements, FEATURE_KEYS.ADVANCED_REPORTS), false);
   });
@@ -130,20 +130,12 @@ describe("platform entitlements", () => {
 
   it("enforces branch limits transactionally", async () => {
     requireDb();
-    // Free = max 2 branches; church provision already created HQ (1).
-    const first = await createBlessBoardBranch(pool, {
+    // Foundation (free) = max 1 active branch; church provision already created HQ (1).
+    const blocked = await createBlessBoardBranch(pool, {
       churchId,
       organizationId,
       branchKey: "campus-a",
       displayName: "Campus A",
-    });
-    assert.equal(first.ok, true, first.reason);
-
-    const blocked = await createBlessBoardBranch(pool, {
-      churchId,
-      organizationId,
-      branchKey: "campus-b",
-      displayName: "Campus B",
     });
     assert.equal(blocked.ok, false);
     assert.equal(blocked.status, "limit_exceeded");
@@ -153,7 +145,7 @@ describe("platform entitlements", () => {
       `SELECT COUNT(*)::int AS n FROM blessboard.branches WHERE church_id = $1 AND status = 'active'`,
       [churchId]
     );
-    assert.equal(count.rows[0].n, 2);
+    assert.equal(count.rows[0].n, 1);
   });
 
   it("override raises branch limit without changing plan", async () => {
@@ -172,13 +164,27 @@ describe("platform entitlements", () => {
     assert.equal(getLimit(resolved.entitlements, FEATURE_KEYS.MAX_BRANCHES), 3);
     assert.equal(resolved.entitlements.features[FEATURE_KEYS.MAX_BRANCHES].source, "override");
 
+    const second = await createBlessBoardBranch(pool, {
+      churchId,
+      organizationId,
+      branchKey: "campus-a",
+      displayName: "Campus A",
+    });
+    assert.equal(second.ok, true, second.reason);
+
     const third = await createBlessBoardBranch(pool, {
       churchId,
       organizationId,
-      branchKey: "campus-c",
-      displayName: "Campus C",
+      branchKey: "campus-b",
+      displayName: "Campus B",
     });
     assert.equal(third.ok, true, third.reason);
+
+    const count = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM blessboard.branches WHERE church_id = $1 AND status = 'active'`,
+      [churchId]
+    );
+    assert.equal(count.rows[0].n, 3);
   });
 
   it("feature checks fail closed for premium writes", async () => {
@@ -256,7 +262,7 @@ describe("platform entitlements", () => {
     assert.equal(pro.entitlements.planKey, "professional");
     assert.equal(hasFeature(pro.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), true);
     assert.equal(hasFeature(pro.entitlements, FEATURE_KEYS.ADVANCED_REPORTS), true);
-    assert.equal(getLimit(pro.entitlements, FEATURE_KEYS.MAX_BRANCHES), 51);
+    assert.equal(getLimit(pro.entitlements, FEATURE_KEYS.MAX_BRANCHES), null);
 
     const down = await assignOrganizationPlan(pool, {
       organizationId,
@@ -266,7 +272,7 @@ describe("platform entitlements", () => {
 
     const free = await resolveOrganizationEntitlements(pool, { organizationId });
     assert.equal(free.entitlements.planKey, "free");
-    assert.equal(getLimit(free.entitlements, FEATURE_KEYS.MAX_BRANCHES), 2);
+    assert.equal(getLimit(free.entitlements, FEATURE_KEYS.MAX_BRANCHES), 1);
 
     const after = await pool.query(
       `SELECT COUNT(*)::int AS n FROM blessboard.branches WHERE church_id = $1 AND status = 'active'`,

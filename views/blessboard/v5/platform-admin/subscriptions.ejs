@@ -1,0 +1,247 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = subscriptions || [];
+  var limits = allowedLimits || [10, 25, 50, 100];
+  var statuses = allowedStatuses || ['active', 'trialing', 'past_due', 'canceled', 'expired', 'inactive'];
+  var hasFilter = Boolean(keyPrefix) || Boolean(statusFilter);
+  var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
+
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'Active';
+    if (key === 'trialing') return 'Trialing';
+    if (key === 'past_due') return 'Past due';
+    if (key === 'canceled') return 'Canceled';
+    if (key === 'expired') return 'Expired';
+    if (key === 'inactive') return 'Inactive';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active' || key === 'trialing') return 'bb-pa-chip--ok';
+    if (key === 'past_due') return 'bb-pa-chip--warn';
+    if (key === 'canceled' || key === 'expired' || key === 'inactive') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip--muted';
+  }
+  function productLabel(productKey) {
+    var k = String(productKey || '').toLowerCase();
+    if (k === 'blessboard') return 'BlessBoard';
+    return productKey || '—';
+  }
+  function formatTs(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toISOString().slice(0, 10);
+    } catch (e) {
+      return '—';
+    }
+  }
+  function detailHref(organizationKey) {
+    return '/admin/organizations/' + encodeURIComponent(organizationKey) + '#pa-org-subscription';
+  }
+  function queryPage(p) {
+    var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
+    if (keyPrefix) parts.push('q=' + encodeURIComponent(keyPrefix));
+    if (statusFilter) parts.push('status=' + encodeURIComponent(statusFilter));
+    return '/admin/subscriptions?' + parts.join('&');
+  }
+  function clearHref() {
+    return '/admin/subscriptions?limit=' + encodeURIComponent(limit);
+  }
+%>
+
+<section
+  class="bb-pa-subs"
+  data-bb-pa-subscriptions="1"
+  data-bb-stitch-subscriptions="66-platform-plans-limits"
+  aria-label="Subscription directory"
+>
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-subs__eyebrow">Subscription configuration</p>
+      <h1 class="bb-pa-page-head__title">Subscriptions</h1>
+      <p class="bb-pa-lede">
+        Live organization subscription rows for BlessBoard. Plan labels use catalogue display names
+        (Foundation, Growth, Network) while persisted keys stay unchanged.
+        Payment collection is not implemented on this surface.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <span class="bb-pa-chip bb-pa-chip--ok" data-bb-count="subscriptions-total"><%= totalCount %></span>
+      <span class="bb-pa-subs__total-label">subscriptions</span>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/plans" data-bb-pa-subs-plans-link="1">Plans</a>
+    </div>
+  </header>
+
+  <p class="bb-pa-subs__notice" role="note" data-bb-pa-subs-notice="1">
+    This is subscription configuration only. Payment collection and commercial billing runtime are not available.
+    Assign or change plans from an organization detail page.
+  </p>
+
+  <form
+    class="bb-pa-subs-filter"
+    method="get"
+    action="/admin/subscriptions"
+    role="search"
+    data-bb-pa-subs-filter="1"
+  >
+    <div class="bb-pa-field">
+      <label for="q">Organization key prefix</label>
+      <input
+        id="q"
+        name="q"
+        type="search"
+        value="<%= keyPrefix || '' %>"
+        placeholder="e.g. pa-"
+        maxlength="64"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <div class="bb-pa-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">All statuses</option>
+        <% statuses.forEach(function (st) { %>
+        <option value="<%= st %>"<%= statusFilter === st ? ' selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="limit">Rows</label>
+      <select id="limit" name="limit">
+        <% limits.forEach(function (n) { %>
+        <option value="<%= n %>"<%= Number(limit) === Number(n) ? ' selected' : '' %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-subs-filter__actions">
+      <button type="submit" class="bb-pa-btn">Filter</button>
+      <% if (hasFilter) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= clearHref() %>">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (!rows.length && !hasFilter) { %>
+  <p class="bb-pa-empty" role="status" data-bb-pa-empty="subscriptions">No subscription records are configured.</p>
+  <% } else if (!rows.length) { %>
+  <div class="bb-pa-empty-wrap" role="status" data-bb-pa-empty="no-results">
+    <p class="bb-pa-empty">No subscriptions match these filters.</p>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= clearHref() %>">Clear filter</a>
+  </div>
+  <% } else { %>
+
+  <div class="bb-pa-subs-table-wrap bb-pa-show-desktop" data-bb-subs-table="1">
+    <table class="bb-pa-table bb-pa-subs-table">
+      <thead>
+        <tr>
+          <th scope="col">Organization</th>
+          <th scope="col">Plan</th>
+          <th scope="col">Status</th>
+          <th scope="col">Product</th>
+          <th scope="col">Starts</th>
+          <th scope="col">Ends</th>
+          <th scope="col"><span class="bb-pa-visually-hidden">Open</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr
+          data-bb-sub-org="<%= row.organizationKey %>"
+          data-bb-sub-plan-key="<%= row.planKey %>"
+          data-bb-sub-plan-display="<%= row.planDisplayName %>"
+          data-bb-sub-status="<%= row.subscriptionStatus %>"
+        >
+          <td>
+            <a class="bb-pa-link" href="<%= detailHref(row.organizationKey) %>">
+              <strong><%= row.organizationDisplayName || row.organizationKey %></strong>
+            </a>
+            <div><code class="bb-pa-key"><%= row.organizationKey %></code></div>
+          </td>
+          <td>
+            <strong><%= row.planDisplayName || row.planKey %></strong>
+            <div><code class="bb-pa-key"><%= row.planKey %></code></div>
+          </td>
+          <td><span class="bb-pa-chip <%= statusChip(row.subscriptionStatus) %>"><%= statusLabel(row.subscriptionStatus) %></span></td>
+          <td><%= productLabel(row.productKey) %></td>
+          <td><time datetime="<%= row.startsAt || '' %>"><%= formatTs(row.startsAt) %></time></td>
+          <td><% if (row.endsAt) { %><time datetime="<%= row.endsAt %>"><%= formatTs(row.endsAt) %></time><% } else { %>—<% } %></td>
+          <td>
+            <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-subs__open" href="<%= detailHref(row.organizationKey) %>">Configure</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bb-pa-subs-cards bb-pa-show-mobile" data-bb-subs-cards="1">
+    <% rows.forEach(function (row) { %>
+    <article
+      class="bb-pa-subs-card"
+      data-bb-sub-org="<%= row.organizationKey %>"
+      data-bb-sub-plan-key="<%= row.planKey %>"
+      data-bb-sub-plan-display="<%= row.planDisplayName %>"
+      data-bb-sub-status="<%= row.subscriptionStatus %>"
+    >
+      <header class="bb-pa-subs-card__head">
+        <h2 class="bb-pa-subs-card__title">
+          <a class="bb-pa-link" href="<%= detailHref(row.organizationKey) %>"><%= row.organizationDisplayName || row.organizationKey %></a>
+        </h2>
+        <span class="bb-pa-chip <%= statusChip(row.subscriptionStatus) %>"><%= statusLabel(row.subscriptionStatus) %></span>
+      </header>
+      <dl class="bb-pa-subs-card__dl">
+        <div>
+          <dt>Organization key</dt>
+          <dd><code class="bb-pa-key"><%= row.organizationKey %></code></dd>
+        </div>
+        <div>
+          <dt>Plan</dt>
+          <dd>
+            <strong><%= row.planDisplayName || row.planKey %></strong>
+            · <code class="bb-pa-key"><%= row.planKey %></code>
+          </dd>
+        </div>
+        <div>
+          <dt>Product</dt>
+          <dd><%= productLabel(row.productKey) %></dd>
+        </div>
+        <div>
+          <dt>Configuration window</dt>
+          <dd>
+            <time datetime="<%= row.startsAt || '' %>"><%= formatTs(row.startsAt) %></time>
+            →
+            <% if (row.endsAt) { %><time datetime="<%= row.endsAt %>"><%= formatTs(row.endsAt) %></time><% } else { %>Open-ended<% } %>
+          </dd>
+        </div>
+      </dl>
+      <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-subs-card__cta" href="<%= detailHref(row.organizationKey) %>">
+        Open subscription configuration
+      </a>
+    </article>
+    <% }) %>
+  </div>
+
+  <% if (totalPages > 1) { %>
+  <nav class="bb-pa-pager" aria-label="Subscription pages" data-bb-pager="subscriptions">
+    <p class="bb-pa-pager__meta">
+      Showing <%= rangeFrom %>–<%= rangeTo %> of <%= totalCount %>
+    </p>
+    <div class="bb-pa-pager__nav bb-pa-pager__links">
+      <% if (page > 1) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= queryPage(page - 1) %>">Previous</a>
+      <% } %>
+      <% if (page < totalPages) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= queryPage(page + 1) %>">Next</a>
+      <% } %>
+    </div>
+  </nav>
+  <% } %>
+
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

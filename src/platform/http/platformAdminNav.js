@@ -30,6 +30,22 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
     enabled: true,
   },
   {
+    key: "subscriptions",
+    label: "Subscriptions",
+    href: "/admin/subscriptions",
+    icon: "receipt_long",
+    nav: true,
+    enabled: true,
+  },
+  {
+    key: "domains",
+    label: "Domains",
+    href: "/admin/domains",
+    icon: "language",
+    nav: true,
+    enabled: true,
+  },
+  {
     key: "deployments",
     label: "Deployments",
     href: "/admin/deployments",

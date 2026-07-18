@@ -173,12 +173,20 @@
         </dl>
       </section>
 
-      <section class="bb-pa-panel bb-pa-org-detail-panel" aria-labelledby="pa-org-domains-heading" data-bb-pa-org-domains="1">
+      <section
+        class="bb-pa-panel bb-pa-org-detail-panel"
+        aria-labelledby="pa-org-domains-heading"
+        data-bb-pa-org-domains="1"
+        data-bb-stitch-org-domains="67-platform-settings"
+      >
         <div class="bb-pa-panel__head">
           <h2 id="pa-org-domains-heading" class="bb-pa-section-title">Domains</h2>
           <span class="bb-pa-org-detail__ro">Read-only · <%= domainRows.length %> listed (max 100)</span>
         </div>
-        <p class="bb-pa-hint">Registered hostnames only. DNS verify and automation are not available here.</p>
+        <p class="bb-pa-hint">
+          Registered hostnames only. DNS verify, certificate automation, and destructive domain controls are not available here.
+          Platform hostname patterns live under <a class="bb-pa-link" href="/admin/settings">Settings</a>.
+        </p>
         <% if (!domainRows.length) { %>
         <p class="bb-pa-empty" role="status" data-bb-empty="domains">No domains registered for this organization.</p>
         <% } else { %>
@@ -283,81 +291,62 @@
       </section>
     </div>
 
-    <aside class="bb-pa-org-detail__aside" aria-label="Products and entitlements">
+    <aside class="bb-pa-org-detail__aside" aria-label="Subscription and entitlements">
       <section
         class="bb-pa-panel bb-pa-org-detail-panel"
-        id="pa-org-entitlements"
-        aria-labelledby="pa-org-entitlements-heading"
-        data-bb-pa-org-entitlements="1"
+        id="pa-org-subscription"
+        aria-labelledby="pa-org-subscription-heading"
+        data-bb-pa-subscription-config="1"
       >
         <div class="bb-pa-panel__head">
-          <h2 id="pa-org-entitlements-heading" class="bb-pa-section-title">Products &amp; entitlements</h2>
+          <h2 id="pa-org-subscription-heading" class="bb-pa-section-title">Subscription configuration</h2>
         </div>
+        <p class="bb-pa-hint" data-bb-pa-subs-config-notice="1">
+          Plan assignment updates the organization subscription record only.
+          Payment collection is not implemented on this surface.
+          <a class="bb-pa-link" href="/admin/subscriptions">All subscriptions</a>
+        </p>
         <% if (!ent) { %>
-        <p class="bb-pa-empty" role="status">Entitlements are unavailable for this organization.</p>
+        <p class="bb-pa-empty" role="status">Subscription data is unavailable for this organization.</p>
         <% } else { %>
-        <div class="bb-pa-org-detail__ro-block" data-bb-pa-entitlements-readonly="1">
+        <div class="bb-pa-org-detail__ro-block" data-bb-pa-subscription-readonly="1">
           <p class="bb-pa-org-detail__ro">Read-only summary</p>
           <dl class="bb-pa-dl bb-pa-dl--grid">
             <div>
               <dt>Plan</dt>
               <dd>
                 <% if (ent.planDisplayName || ent.planKey) { %>
-                <strong><%= ent.planDisplayName || ent.planKey %></strong>
-                <% if (ent.planKey) { %> <code class="bb-pa-key"><%= ent.planKey %></code><% } %>
+                <strong data-bb-sub-plan-display="<%= ent.planDisplayName || '' %>"><%= ent.planDisplayName || ent.planKey %></strong>
+                <% if (ent.planKey) { %> <code class="bb-pa-key" data-bb-sub-plan-key="<%= ent.planKey %>"><%= ent.planKey %></code><% } %>
                 <% } else { %>—<% } %>
               </dd>
             </div>
             <div>
-              <dt>Subscription</dt>
+              <dt>Subscription status</dt>
               <dd>
                 <% if (ent.subscriptionStatus) { %>
-                <span class="bb-pa-chip <%= statusChip(ent.subscriptionStatus) %>"><%= statusLabel(ent.subscriptionStatus) %></span>
+                <span class="bb-pa-chip <%= statusChip(ent.subscriptionStatus) %>" data-bb-sub-status="<%= ent.subscriptionStatus %>"><%= statusLabel(ent.subscriptionStatus) %></span>
                 <% } else { %>—<% } %>
                 · <%= ent.subscriptionActive ? 'Active for entitlement checks' : 'Inactive (fail closed)' %>
               </dd>
             </div>
+            <div>
+              <dt>Configuration starts</dt>
+              <dd>
+                <% if (ent.subscriptionStartsAt) { %>
+                <time datetime="<%= ent.subscriptionStartsAt %>" data-bb-sub-starts="1"><%= String(ent.subscriptionStartsAt).slice(0, 10) %></time>
+                <% } else { %>—<% } %>
+              </dd>
+            </div>
+            <div>
+              <dt>Configuration ends</dt>
+              <dd>
+                <% if (ent.subscriptionEndsAt) { %>
+                <time datetime="<%= ent.subscriptionEndsAt %>" data-bb-sub-ends="1"><%= String(ent.subscriptionEndsAt).slice(0, 10) %></time>
+                <% } else { %>Open-ended<% } %>
+              </dd>
+            </div>
           </dl>
-
-          <% if (use) { %>
-          <h3 class="bb-pa-subsection-title">Usage vs limits</h3>
-          <ul class="bb-pa-usage" data-bb-pa-usage="1">
-            <li>Branches · <strong><%= use.branches %></strong> / <%= formatLimit(use.branchLimit) %></li>
-            <li>Staff accounts · <strong><%= use.staffAccounts %></strong> / <%= formatLimit(use.staffLimit) %></li>
-            <li>Users · <strong><%= use.users %></strong> / <%= formatLimit(use.userLimit) %></li>
-            <li>Custom domain · <%= use.customDomain ? 'Entitled' : 'Not entitled' %></li>
-            <li>Custom email · <%= use.customEmail ? 'Entitled' : 'Not entitled' %></li>
-            <li>Advanced reports · <%= use.advancedReports ? 'Entitled' : 'Not entitled' %></li>
-          </ul>
-          <% } %>
-
-          <% if (ent.features && ent.features.length) { %>
-          <div class="bb-pa-table-wrap">
-            <table class="bb-pa-table" data-bb-table="entitlements">
-              <thead>
-                <tr>
-                  <th scope="col">Feature</th>
-                  <th scope="col">Value</th>
-                  <th scope="col">Source</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% ent.features.forEach(function (f) { %>
-                <tr data-bb-feature="<%= f.featureKey %>">
-                  <td><%= featureLabel(f.featureKey) %> <code class="bb-pa-key"><%= f.featureKey %></code></td>
-                  <td>
-                    <% if (f.featureKind === 'limit') { %><%= formatLimit(f.limitValue) %><% } else { %><%= f.booleanValue ? 'Yes' : 'No' %><% } %>
-                  </td>
-                  <td>
-                    <%= f.source === 'override' ? 'Override' : 'Plan' %>
-                    <% if (f.reason) { %><span class="bb-pa-hint"> · <%= f.reason %></span><% } %>
-                  </td>
-                </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          </div>
-          <% } %>
         </div>
 
         <form
@@ -394,6 +383,215 @@
         <% } %>
       </section>
 
+      <%
+        var featureRows = (ent && ent.features) ? ent.features : [];
+        var inheritedRows = (ent && ent.planInherited) ? ent.planInherited : featureRows.filter(function (f) { return f.source !== 'override'; });
+        var overrideRows = (ent && ent.overrides) ? ent.overrides : featureRows.filter(function (f) { return f.source === 'override'; });
+        var limitRows = featureRows.filter(function (f) { return f.featureKind === 'limit'; });
+        var flagRows = featureRows.filter(function (f) { return f.featureKind === 'boolean'; });
+        var limitKeys = { max_branches: 1, max_users: 1, max_staff_accounts: 1 };
+        var flagKeys = { basic_reports: 1, advanced_reports: 1, custom_domain: 1, custom_email: 1 };
+        var capacityOptions = featureKeyOptions.filter(function (fk) { return limitKeys[fk]; });
+        var capabilityOptions = featureKeyOptions.filter(function (fk) { return flagKeys[fk]; });
+        function sourceLabel(src) {
+          return src === 'override' ? 'Organization override' : 'Inherited from plan';
+        }
+        function sourceChip(src) {
+          return src === 'override' ? 'bb-pa-chip--warn' : 'bb-pa-chip--muted';
+        }
+        function enabledState(f) {
+          if (!f || f.featureKind !== 'boolean') return null;
+          return f.booleanValue ? 'enabled' : 'disabled';
+        }
+      %>
+
+      <section
+        class="bb-pa-panel bb-pa-org-detail-panel bb-pa-entitlements"
+        id="pa-org-entitlements"
+        aria-labelledby="pa-org-entitlements-heading"
+        data-bb-pa-org-entitlements="1"
+        data-bb-stitch-entitlements="66-platform-plans-limits"
+      >
+        <div class="bb-pa-panel__head">
+          <h2 id="pa-org-entitlements-heading" class="bb-pa-section-title">Entitlements</h2>
+          <span class="bb-pa-org-detail__ro">Read-only effective set</span>
+        </div>
+        <p class="bb-pa-hint" data-bb-pa-entitlements-notice="1">
+          Effective entitlements come from the assigned plan, with organization overrides applied where present.
+          Only defined V5 feature keys are shown — marketing capabilities are not invented here.
+        </p>
+
+        <% if (!ent) { %>
+        <p class="bb-pa-empty" role="status">Entitlements are unavailable for this organization.</p>
+        <% } else { %>
+
+        <% if (use) { %>
+        <div class="bb-pa-entitlements-usage" data-bb-pa-usage="1">
+          <h3 class="bb-pa-subsection-title">Usage vs limits</h3>
+          <ul class="bb-pa-usage">
+            <li data-bb-usage="branches">Branches · <strong><%= use.branches %></strong> / <%= formatLimit(use.branchLimit) %></li>
+            <li data-bb-usage="staff">Staff accounts · <strong><%= use.staffAccounts %></strong> / <%= formatLimit(use.staffLimit) %></li>
+            <li data-bb-usage="users">Users · <strong><%= use.users %></strong> / <%= formatLimit(use.userLimit) %></li>
+            <li data-bb-usage="custom_domain">Custom domain · <%= use.customDomain ? 'Entitled' : 'Not entitled' %></li>
+            <li data-bb-usage="custom_email">Custom email · <%= use.customEmail ? 'Entitled' : 'Not entitled' %></li>
+            <li data-bb-usage="advanced_reports">Advanced reports · <%= use.advancedReports ? 'Entitled' : 'Not entitled' %></li>
+          </ul>
+        </div>
+        <% } %>
+
+        <div class="bb-pa-entitlements-groups" data-bb-pa-entitlement-groups="1">
+          <section class="bb-pa-entitlement-group" aria-labelledby="pa-ent-limits-heading" data-bb-entitlement-group="limits">
+            <h3 id="pa-ent-limits-heading" class="bb-pa-entitlement-group__title">Capacity limits</h3>
+            <% if (!limitRows.length) { %>
+            <p class="bb-pa-empty" role="status">No capacity limits are defined for this subscription.</p>
+            <% } else { %>
+            <div class="bb-pa-entitlements-table-wrap bb-pa-show-desktop" data-bb-entitlement-table="limits">
+              <table class="bb-pa-table" data-bb-table="entitlements-limits">
+                <thead>
+                  <tr>
+                    <th scope="col">Limit</th>
+                    <th scope="col">Value</th>
+                    <th scope="col">Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% limitRows.forEach(function (f) { %>
+                  <tr
+                    data-bb-feature="<%= f.featureKey %>"
+                    data-bb-feature-kind="limit"
+                    data-bb-feature-source="<%= f.source || 'plan' %>"
+                  >
+                    <td><%= featureLabel(f.featureKey) %> <code class="bb-pa-key"><%= f.featureKey %></code></td>
+                    <td><%= formatLimit(f.limitValue) %></td>
+                    <td>
+                      <span class="bb-pa-chip <%= sourceChip(f.source) %>"><%= sourceLabel(f.source) %></span>
+                      <% if (f.reason) { %><span class="bb-pa-hint"> · <%= f.reason %></span><% } %>
+                    </td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <ul class="bb-pa-entitlement-cards bb-pa-show-mobile" data-bb-entitlement-cards="limits">
+              <% limitRows.forEach(function (f) { %>
+              <li
+                class="bb-pa-entitlement-card"
+                data-bb-feature="<%= f.featureKey %>"
+                data-bb-feature-kind="limit"
+                data-bb-feature-source="<%= f.source || 'plan' %>"
+              >
+                <p class="bb-pa-entitlement-card__label"><%= featureLabel(f.featureKey) %></p>
+                <p class="bb-pa-entitlement-card__value"><%= formatLimit(f.limitValue) %></p>
+                <p class="bb-pa-entitlement-card__meta">
+                  <code class="bb-pa-key"><%= f.featureKey %></code>
+                  <span class="bb-pa-chip <%= sourceChip(f.source) %>"><%= sourceLabel(f.source) %></span>
+                </p>
+              </li>
+              <% }) %>
+            </ul>
+            <% } %>
+          </section>
+
+          <section class="bb-pa-entitlement-group" aria-labelledby="pa-ent-flags-heading" data-bb-entitlement-group="capabilities">
+            <h3 id="pa-ent-flags-heading" class="bb-pa-entitlement-group__title">Capability flags</h3>
+            <% if (!flagRows.length) { %>
+            <p class="bb-pa-empty" role="status">No capability flags are defined for this subscription.</p>
+            <% } else { %>
+            <div class="bb-pa-entitlements-table-wrap bb-pa-show-desktop" data-bb-entitlement-table="capabilities">
+              <table class="bb-pa-table" data-bb-table="entitlements-capabilities">
+                <thead>
+                  <tr>
+                    <th scope="col">Capability</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% flagRows.forEach(function (f) { %>
+                  <tr
+                    class="<%= enabledState(f) === 'enabled' ? 'is-enabled' : 'is-disabled' %>"
+                    data-bb-feature="<%= f.featureKey %>"
+                    data-bb-feature-kind="boolean"
+                    data-bb-feature-state="<%= enabledState(f) %>"
+                    data-bb-feature-source="<%= f.source || 'plan' %>"
+                  >
+                    <td><%= featureLabel(f.featureKey) %> <code class="bb-pa-key"><%= f.featureKey %></code></td>
+                    <td>
+                      <span class="bb-pa-chip <%= f.booleanValue ? 'bb-pa-chip--ok' : 'bb-pa-chip--muted' %>">
+                        <%= f.booleanValue ? 'Enabled' : 'Disabled' %>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="bb-pa-chip <%= sourceChip(f.source) %>"><%= sourceLabel(f.source) %></span>
+                      <% if (f.reason) { %><span class="bb-pa-hint"> · <%= f.reason %></span><% } %>
+                    </td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <ul class="bb-pa-entitlement-cards bb-pa-show-mobile" data-bb-entitlement-cards="capabilities">
+              <% flagRows.forEach(function (f) { %>
+              <li
+                class="bb-pa-entitlement-card <%= enabledState(f) === 'enabled' ? 'is-enabled' : 'is-disabled' %>"
+                data-bb-feature="<%= f.featureKey %>"
+                data-bb-feature-kind="boolean"
+                data-bb-feature-state="<%= enabledState(f) %>"
+                data-bb-feature-source="<%= f.source || 'plan' %>"
+              >
+                <p class="bb-pa-entitlement-card__label"><%= featureLabel(f.featureKey) %></p>
+                <p class="bb-pa-entitlement-card__value">
+                  <span class="bb-pa-chip <%= f.booleanValue ? 'bb-pa-chip--ok' : 'bb-pa-chip--muted' %>">
+                    <%= f.booleanValue ? 'Enabled' : 'Disabled' %>
+                  </span>
+                </p>
+                <p class="bb-pa-entitlement-card__meta">
+                  <code class="bb-pa-key"><%= f.featureKey %></code>
+                  <span class="bb-pa-chip <%= sourceChip(f.source) %>"><%= sourceLabel(f.source) %></span>
+                </p>
+              </li>
+              <% }) %>
+            </ul>
+            <% } %>
+          </section>
+        </div>
+
+        <div class="bb-pa-entitlements-sources" data-bb-pa-entitlement-sources="1">
+          <section class="bb-pa-entitlement-source" data-bb-entitlement-source="plan" aria-labelledby="pa-ent-inherited-heading">
+            <h3 id="pa-ent-inherited-heading" class="bb-pa-entitlement-group__title">Inherited from plan</h3>
+            <% if (!inheritedRows.length) { %>
+            <p class="bb-pa-empty" role="status">No plan-inherited entitlements are active.</p>
+            <% } else { %>
+            <ul class="bb-pa-entitlement-source-list">
+              <% inheritedRows.forEach(function (f) { %>
+              <li data-bb-feature="<%= f.featureKey %>" data-bb-feature-source="plan">
+                <strong><%= featureLabel(f.featureKey) %></strong>
+                · <% if (f.featureKind === 'limit') { %><%= formatLimit(f.limitValue) %><% } else { %><%= f.booleanValue ? 'Enabled' : 'Disabled' %><% } %>
+              </li>
+              <% }) %>
+            </ul>
+            <% } %>
+          </section>
+          <section class="bb-pa-entitlement-source" data-bb-entitlement-source="override" aria-labelledby="pa-ent-override-heading">
+            <h3 id="pa-ent-override-heading" class="bb-pa-entitlement-group__title">Organization overrides</h3>
+            <% if (!overrideRows.length) { %>
+            <p class="bb-pa-empty" role="status" data-bb-pa-empty="overrides">No organization overrides are active.</p>
+            <% } else { %>
+            <ul class="bb-pa-entitlement-source-list" data-bb-pa-override-list="1">
+              <% overrideRows.forEach(function (f) { %>
+              <li data-bb-feature="<%= f.featureKey %>" data-bb-feature-source="override">
+                <strong><%= featureLabel(f.featureKey) %></strong>
+                · <% if (f.featureKind === 'limit') { %><%= formatLimit(f.limitValue) %><% } else { %><%= f.booleanValue ? 'Enabled' : 'Disabled' %><% } %>
+                <% if (f.reason) { %><span class="bb-pa-hint"> · <%= f.reason %></span><% } %>
+              </li>
+              <% }) %>
+            </ul>
+            <% } %>
+          </section>
+        </div>
+        <% } %>
+      </section>
+
       <section
         class="bb-pa-panel bb-pa-org-detail-panel"
         id="pa-org-overrides"
@@ -405,7 +603,7 @@
           <span class="bb-pa-org-detail__edit">Editable</span>
         </div>
         <p class="bb-pa-hint">
-          Overrides require a reason and confirmation. They adjust effective limits/features for this organization only.
+          Overrides require a reason and confirmation. Only allowlisted V5 feature keys can be selected — unknown keys are rejected.
         </p>
         <form
           class="bb-pa-form bb-pa-org-detail-form"
@@ -418,7 +616,23 @@
             <span class="bb-pa-field__label">Feature</span>
             <select name="feature_key" required>
               <option value="">Select a feature…</option>
-              <% featureKeyOptions.forEach(function (fk) { %>
+              <% if (capacityOptions.length) { %>
+              <optgroup label="Capacity limits">
+                <% capacityOptions.forEach(function (fk) { %>
+                <option value="<%= fk %>"><%= featureLabel(fk) %> (<%= fk %>)</option>
+                <% }) %>
+              </optgroup>
+              <% } %>
+              <% if (capabilityOptions.length) { %>
+              <optgroup label="Capability flags">
+                <% capabilityOptions.forEach(function (fk) { %>
+                <option value="<%= fk %>"><%= featureLabel(fk) %> (<%= fk %>)</option>
+                <% }) %>
+              </optgroup>
+              <% } %>
+              <% featureKeyOptions.forEach(function (fk) {
+                   if (limitKeys[fk] || flagKeys[fk]) return;
+              %>
               <option value="<%= fk %>"><%= featureLabel(fk) %> (<%= fk %>)</option>
               <% }) %>
             </select>

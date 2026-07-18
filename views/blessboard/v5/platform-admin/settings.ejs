@@ -3,69 +3,159 @@
   var dep = currentDeployment || null;
   var orgReserved = organizationReserved || [];
   var hostReservedList = hostReserved || [];
+  var pattern = hostnamePattern || '{organization}.blessboard.org';
+  var deployCode = currentDeploymentCode || (dep && dep.deploymentCode) || '';
 %>
 
-<section class="bb-pa-settings" data-bb-pa-settings="1">
-  <header class="bb-pa-page-head">
-    <h1 class="bb-pa-page-head__title">Platform settings</h1>
-    <p class="bb-pa-lede">
-      Read-only hostname patterns and reserved labels used by provisioning.
-      DNS automation, branding saves, MFA policy, and failover are not available in this shell.
-    </p>
+<section
+  class="bb-pa-settings"
+  data-bb-pa-settings="1"
+  data-bb-stitch-settings="67-platform-settings"
+  aria-label="Platform settings"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin">Dashboard</a>
+    <span aria-hidden="true">/</span>
+    <span>Settings</span>
+  </nav>
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-settings__eyebrow">Global settings</p>
+      <h1 class="bb-pa-page-head__title">Platform Settings</h1>
+      <p class="bb-pa-lede">
+        Read-only hostname patterns and reserved labels used by provisioning.
+        DNS automation, certificate automation, branding saves, MFA policy, and failover are not available in this shell.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/deployments" data-bb-pa-settings-deploy-link="1">
+        <span class="material-symbols-outlined" aria-hidden="true">dns</span>
+        Deployments
+      </a>
+    </div>
   </header>
 
-  <section class="bb-pa-panel" aria-labelledby="pa-settings-deploy-heading">
-    <h2 id="pa-settings-deploy-heading" class="bb-pa-section-title">Current deployment</h2>
-    <dl class="bb-pa-dl bb-pa-dl--grid">
-      <div>
-        <dt>Deployment code</dt>
-        <dd><code class="bb-pa-key"><%= currentDeploymentCode || '—' %></code></dd>
-      </div>
-      <div>
-        <dt>Canonical domain</dt>
-        <dd><%= dep && dep.canonicalDomain ? dep.canonicalDomain : '—' %></dd>
-      </div>
-      <div>
-        <dt>Environment</dt>
-        <dd><%= dep && dep.environmentCode ? dep.environmentCode : '—' %></dd>
-      </div>
-      <div>
-        <dt>Release</dt>
-        <dd><%= dep && dep.releaseVersion ? dep.releaseVersion : '—' %></dd>
-      </div>
-    </dl>
-    <p class="bb-pa-hint"><a class="bb-pa-link" href="/admin/deployments">View full deployment registry</a></p>
-  </section>
+  <p class="bb-pa-settings__notice" role="note" data-bb-pa-settings-notice="1">
+    Tenant hostnames are registered in <code class="bb-pa-key">platform.domains</code> and resolved by the hostname service.
+    This page does not create, verify, or delete DNS records.
+  </p>
 
-  <section class="bb-pa-panel" aria-labelledby="pa-settings-dns-heading" data-bb-pa-dns-patterns="1">
-    <h2 id="pa-settings-dns-heading" class="bb-pa-section-title">Subdomain &amp; DNS patterns</h2>
-    <p class="bb-pa-hint">
-      Tenant hostnames are registered in <code class="bb-pa-key">platform.domains</code> and resolved by the hostname service.
-      Provisioning remains CLI-only — this page does not create or verify DNS records.
-    </p>
-    <div class="bb-pa-pattern" data-bb-pa-hostname-pattern="1">
-      <span class="bb-pa-chip bb-pa-chip--ok">Active pattern</span>
-      <code class="bb-pa-pattern__code"><%= hostnamePattern %></code>
+  <div class="bb-pa-settings-grid" data-bb-pa-settings-grid="1">
+    <section class="bb-pa-panel bb-pa-settings-panel" aria-labelledby="pa-settings-deploy-heading" data-bb-pa-settings-deployment="1">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-settings-deploy-heading" class="bb-pa-section-title">Current deployment</h2>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
+      </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div>
+          <dt>Deployment code</dt>
+          <dd><code class="bb-pa-key"><%= deployCode || '—' %></code></dd>
+        </div>
+        <div>
+          <dt>Canonical domain</dt>
+          <dd data-bb-pa-settings-canonical="1"><%= dep && dep.canonicalDomain ? dep.canonicalDomain : '—' %></dd>
+        </div>
+        <div>
+          <dt>Environment</dt>
+          <dd><%= dep && dep.environmentCode ? dep.environmentCode : '—' %></dd>
+        </div>
+        <div>
+          <dt>Release</dt>
+          <dd><%= dep && dep.releaseVersion ? dep.releaseVersion : '—' %></dd>
+        </div>
+      </dl>
+      <p class="bb-pa-hint">
+        <a class="bb-pa-link" href="/admin/deployments">View full deployment registry</a>
+      </p>
+    </section>
+
+    <section
+      class="bb-pa-panel bb-pa-settings-panel"
+      aria-labelledby="pa-settings-dns-heading"
+      data-bb-pa-dns-patterns="1"
+    >
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-settings-dns-heading" class="bb-pa-section-title">Subdomain &amp; DNS patterns</h2>
+        <span class="bb-pa-chip bb-pa-chip--ok" data-bb-pa-dns-status="active">Active</span>
+      </div>
+      <p class="bb-pa-hint">
+        Default provisioning pattern for organization hostnames on this deployment’s canonical domain.
+        Custom-domain entitlement and org-scoped host lists stay on organization detail.
+      </p>
+      <div class="bb-pa-pattern" data-bb-pa-hostname-pattern="1">
+        <span class="bb-pa-pattern__label">Default pattern</span>
+        <code class="bb-pa-pattern__code"><%= pattern %></code>
+      </div>
+    </section>
+  </div>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-settings-reserved-heading" data-bb-pa-settings-reserved="1">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-settings-reserved-heading" class="bb-pa-section-title">Reserved keywords</h2>
+      <span class="bb-pa-org-detail__ro">Read-only · provisioning guards</span>
     </div>
-  </section>
+    <p class="bb-pa-hint">
+      Labels blocked during CLI provisioning. Keywords cannot be added or removed from this UI.
+    </p>
 
-  <section class="bb-pa-panel" aria-labelledby="pa-settings-reserved-heading">
-    <h2 id="pa-settings-reserved-heading" class="bb-pa-section-title">Reserved organization keys</h2>
-    <p class="bb-pa-hint">Labels that cannot be used as organization keys during provisioning.</p>
-    <ul class="bb-pa-chip-list" data-bb-pa-reserved="organization">
+    <h3 class="bb-pa-subsection-title" id="pa-settings-reserved-org">Organization keys</h3>
+    <% if (!orgReserved.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-empty="reserved-organization">No reserved organization keys listed.</p>
+    <% } else { %>
+    <ul class="bb-pa-chip-list" data-bb-pa-reserved="organization" aria-labelledby="pa-settings-reserved-org">
       <% orgReserved.forEach(function (slug) { %>
       <li><span class="bb-pa-chip"><%= slug %></span></li>
       <% }) %>
     </ul>
-  </section>
+    <% } %>
 
-  <section class="bb-pa-panel" aria-labelledby="pa-settings-host-reserved-heading">
-    <h2 id="pa-settings-host-reserved-heading" class="bb-pa-section-title">Reserved host labels</h2>
-    <p class="bb-pa-hint">Labels blocked for branch / host slug style names.</p>
-    <ul class="bb-pa-chip-list" data-bb-pa-reserved="host">
+    <h3 class="bb-pa-subsection-title" id="pa-settings-reserved-host">Host labels</h3>
+    <% if (!hostReservedList.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-empty="reserved-host">No reserved host labels listed.</p>
+    <% } else { %>
+    <ul class="bb-pa-chip-list" data-bb-pa-reserved="host" aria-labelledby="pa-settings-reserved-host">
       <% hostReservedList.forEach(function (slug) { %>
       <li><span class="bb-pa-chip"><%= slug %></span></li>
       <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section
+    class="bb-pa-panel bb-pa-settings-unavailable"
+    aria-labelledby="pa-settings-unavailable-heading"
+    data-bb-pa-settings-unavailable="1"
+  >
+    <h2 id="pa-settings-unavailable-heading" class="bb-pa-section-title">Not available in this shell</h2>
+    <ul class="bb-pa-settings-unavailable__list">
+      <li data-bb-pa-unavailable="branding">
+        <span class="material-symbols-outlined" aria-hidden="true">palette</span>
+        <div>
+          <strong>Global branding</strong>
+          <p>Logo upload, brand color tokens, and login accent editors are not implemented.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="security">
+        <span class="material-symbols-outlined" aria-hidden="true">security</span>
+        <div>
+          <strong>Security &amp; access control</strong>
+          <p>MFA enforcement, IP allowlists, session timeout, and credential-policy editors are not implemented.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="failover">
+        <span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>
+        <div>
+          <strong>Backup &amp; cutover</strong>
+          <p>Cutover controls, vault meters, and log downloads are not available.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="dns-automation">
+        <span class="material-symbols-outlined" aria-hidden="true">dns</span>
+        <div>
+          <strong>DNS &amp; certificate automation</strong>
+          <p>Record creation, verification workflows, and certificate issuance are not available here.</p>
+        </div>
+      </li>
     </ul>
   </section>
 </section>

@@ -277,6 +277,8 @@ describe("blessboard platform-admin shell", () => {
     assert.match(home.text, /href="\/admin\/account"/);
     assert.match(home.text, /href="\/admin\/organizations"/);
     assert.match(home.text, /href="\/admin\/plans"/);
+    assert.match(home.text, /href="\/admin\/subscriptions"/);
+    assert.match(home.text, /href="\/admin\/domains"/);
     assert.match(home.text, /href="\/admin\/deployments"/);
     assert.match(home.text, /href="\/admin\/settings"/);
     assert.match(home.text, /data-bb-quick-action="organizations"/);
@@ -319,6 +321,9 @@ describe("blessboard platform-admin shell", () => {
       .set("Cookie", cookie);
     assert.equal(account.status, 200);
     assert.match(account.text, /data-bb-pa-account="1"/);
+    assert.match(account.text, /aria-label="Account"/);
+    assert.match(account.text, /aria-label="Breadcrumb"/);
+    assert.match(account.text, /data-bb-pa-account-identity="1"/);
     assert.match(account.text, /data-bb-pa-logout="1"/);
     assert.match(account.text, /name="_csrf"/);
     assert.match(account.text, /blessboard-org-v5/);
@@ -415,7 +420,14 @@ describe("blessboard platform-admin shell", () => {
     assert.match(detail.text, /data-bb-pa-org-catalogue="1"/);
     assert.match(detail.text, /data-bb-pa-org-domains="1"/);
     assert.match(detail.text, /data-bb-pa-org-branches="1"/);
+    assert.match(detail.text, /data-bb-pa-subscription-config="1"/);
+    assert.match(detail.text, /Subscription configuration/);
     assert.match(detail.text, /data-bb-pa-org-entitlements="1"/);
+    assert.match(detail.text, /data-bb-stitch-entitlements="66-platform-plans-limits"/);
+    assert.match(detail.text, /data-bb-pa-entitlement-groups="1"/);
+    assert.match(detail.text, /data-bb-entitlement-group="limits"/);
+    assert.match(detail.text, /data-bb-entitlement-group="capabilities"/);
+    assert.match(detail.text, /data-bb-pa-entitlement-sources="1"/);
     assert.match(detail.text, /data-bb-pa-org-overrides="1"/);
     assert.match(detail.text, /data-bb-pa-plan-form="1"/);
     assert.match(detail.text, /data-bb-pa-override-form="1"/);
@@ -425,6 +437,9 @@ describe("blessboard platform-admin shell", () => {
     assert.match(detail.text, /Editable/);
     assert.match(detail.text, /pa-demo/);
     assert.match(detail.text, /Platform Admin Demo/);
+    assert.match(detail.text, /data-bb-sub-plan-key="free"/);
+    assert.match(detail.text, /data-bb-sub-plan-display="Foundation"/);
+    assert.match(detail.text, /data-bb-sub-status="active"/);
     assert.match(detail.text, /data-bb-count="active-branches">1</);
     assert.match(detail.text, /data-bb-branch-key="hq"/);
     assert.match(detail.text, /name="confirm_plan_change"/);
@@ -539,10 +554,81 @@ describe("blessboard platform-admin shell", () => {
       .set("Cookie", cookie);
     assert.equal(plans.status, 200);
     assert.match(plans.text, /data-bb-pa-plans="1"/);
+    assert.match(plans.text, /data-bb-pa-plans-directory="1"/);
+    assert.match(plans.text, /data-bb-stitch-plans="66-platform-plans-limits"/);
+    assert.match(plans.text, /Platform Plans/);
+    assert.match(plans.text, /data-bb-pa-plan-grid="1"/);
+    assert.match(plans.text, /data-bb-plan-table="1"/);
+    assert.match(plans.text, /data-bb-plan-cards="1"/);
+    assert.match(plans.text, /data-bb-pa-plans-active="1"/);
+    assert.match(plans.text, /data-bb-pa-plans-inactive="1"/);
     assert.match(plans.text, /data-bb-plan-key="free"/);
     assert.match(plans.text, /data-bb-plan-key="growth"/);
-    assert.doesNotMatch(plans.text, /\$\d+|Create Custom Tier|Paid Tenants|Churn Rate|MRR/i);
+    assert.match(plans.text, /data-bb-plan-key="professional"/);
+    assert.match(plans.text, /data-bb-plan-key="partner"/);
+    assert.match(plans.text, /data-bb-plan-display="Foundation"/);
+    assert.match(plans.text, /data-bb-plan-display="Growth"/);
+    assert.match(plans.text, /data-bb-plan-display="Network"/);
+    assert.match(plans.text, /data-bb-plan-status="active"/);
+    assert.match(plans.text, /data-bb-plan-status="inactive"/);
+    assert.match(plans.text, /data-bb-plan-legacy-badge="1"/);
+    assert.match(plans.text, /data-bb-count="plans-active"/);
+    assert.match(plans.text, /data-bb-count="plans-inactive"/);
+    assert.match(plans.text, /href="\/admin\/organizations"/);
+    assert.doesNotMatch(plans.text, /\$\d+|Create Custom Tier|Configure Parameters|Paid Tenants|Churn Rate|MRR/i);
+    assert.doesNotMatch(plans.text, /Conversion|Uptime SLA|API Throughput|Tenant Slots/i);
+    assert.doesNotMatch(plans.text, /plan_key migration|Phase B|rename plan_key/i);
+    assert.doesNotMatch(plans.text, /Create plan|New plan|Add plan/i);
     assert.doesNotMatch(plans.text, new RegExp(org.id, "i"));
+
+    const subs = await request(app)
+      .get("/admin/subscriptions")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(subs.status, 200);
+    assert.match(subs.text, /data-bb-pa-subscriptions="1"/);
+    assert.match(subs.text, /data-bb-stitch-subscriptions="66-platform-plans-limits"/);
+    assert.match(subs.text, /Subscription configuration/);
+    assert.match(subs.text, /Payment collection is not implemented/i);
+    assert.match(subs.text, /data-bb-subs-table="1"/);
+    assert.match(subs.text, /data-bb-subs-cards="1"/);
+    assert.match(subs.text, /data-bb-pa-subs-filter="1"/);
+    assert.match(subs.text, /data-bb-sub-org="pa-demo"/);
+    assert.match(subs.text, /data-bb-sub-plan-key="free"/);
+    assert.match(subs.text, /data-bb-sub-plan-display="Foundation"/);
+    assert.match(subs.text, /data-bb-sub-status="active"/);
+    assert.match(subs.text, /href="\/admin\/organizations\/pa-demo#pa-org-subscription"/);
+    assert.doesNotMatch(subs.text, /\$\d+|invoice|checkout|refund|MRR|balance due|stripe/i);
+    assert.doesNotMatch(subs.text, new RegExp(org.id, "i"));
+
+    const hqSubs = await request(app)
+      .get("/admin/subscriptions")
+      .set("Host", "blessboard.org")
+      .set("Cookie", await cookieFor(users.hq))
+      .set("Accept", "text/html");
+    assert.equal(hqSubs.status, 403);
+
+    const scoped = await request(app)
+      .get("/admin/subscriptions?q=pa-demo")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(scoped.status, 200);
+    assert.match(scoped.text, /data-bb-sub-org="pa-demo"/);
+    assert.doesNotMatch(scoped.text, /data-bb-sub-org="pa-extra-/);
+
+    const hqPlans = await request(app)
+      .get("/admin/plans")
+      .set("Host", "blessboard.org")
+      .set("Cookie", await cookieFor(users.hq))
+      .set("Accept", "text/html");
+    assert.equal(hqPlans.status, 403);
+
+    const anonPlans = await request(app)
+      .get("/admin/plans")
+      .set("Host", "blessboard.org")
+      .set("Accept", "text/html")
+      .redirects(0);
+    assert.equal(anonPlans.status, 303);
 
     const deployments = await request(app)
       .get("/admin/deployments")
@@ -550,9 +636,94 @@ describe("blessboard platform-admin shell", () => {
       .set("Cookie", cookie);
     assert.equal(deployments.status, 200);
     assert.match(deployments.text, /data-bb-pa-deployments="1"/);
+    assert.match(deployments.text, /data-bb-pa-deployments-directory="1"/);
+    assert.match(deployments.text, /data-bb-stitch-deployments="68-platform-support-monitoring"/);
     assert.match(deployments.text, /data-bb-table="deployments"/);
-    assert.match(deployments.text, /blessboard-org-v5/);
-    assert.doesNotMatch(deployments.text, /session_cookie|Force Sync|Export Reports|Support Tickets/i);
+    assert.match(deployments.text, /data-bb-deploy-table="1"/);
+    assert.match(deployments.text, /data-bb-deploy-cards="1"/);
+    assert.match(deployments.text, /data-bb-pa-deploy-summary="1"/);
+    assert.match(deployments.text, /data-bb-pa-deploy-unavailable="1"/);
+    assert.match(deployments.text, /data-bb-deploy-unavailable="ops"/);
+    assert.match(deployments.text, /data-bb-deploy-unavailable="logs"/);
+    assert.match(deployments.text, /data-bb-pa-unavailable="deploy"/);
+    assert.match(deployments.text, /data-bb-pa-unavailable="restart"/);
+    assert.match(deployments.text, /data-bb-pa-unavailable="rollback"/);
+    assert.match(deployments.text, /data-bb-pa-unavailable="env-edit"/);
+    assert.match(deployments.text, /data-bb-pa-unavailable="log-stream"/);
+    assert.match(deployments.text, /data-bb-count="deployments-total"/);
+    assert.match(deployments.text, /data-bb-pa-current-deployment="1"/);
+    assert.match(deployments.text, /data-bb-deployment="blessboard-org-v5"/);
+    assert.match(deployments.text, /data-bb-deployment-status=/);
+    assert.match(deployments.text, /data-bb-deployment-environment=/);
+    assert.match(deployments.text, /data-bb-deployment-host=/);
+    assert.match(deployments.text, /data-bb-env-badge=/);
+    assert.match(deployments.text, /data-bb-status-badge=/);
+    assert.match(deployments.text, /BlessBoard/);
+    assert.match(deployments.text, /href="\/admin\/settings"/);
+    assert.match(deployments.text, /href="\/admin\/deployments\/blessboard-org-v5"/);
+    assert.doesNotMatch(deployments.text, /session_cookie|SESSION_SECRET|DATABASE_URL|password|credential/i);
+    assert.doesNotMatch(deployments.text, /Force Sync|Export Reports|Support Tickets|99\.98%|Critical Error Rate/i);
+    assert.doesNotMatch(deployments.text, /Retire deployment|Delete deployment|Manual Failover|Rollback now|Restart process/i);
+
+    const deployDetail = await request(app)
+      .get("/admin/deployments/blessboard-org-v5")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(deployDetail.status, 200);
+    assert.match(deployDetail.text, /data-bb-pa-deployment-detail="1"/);
+    assert.match(deployDetail.text, /data-bb-stitch-deployment-detail="68-platform-support-monitoring"/);
+    assert.match(deployDetail.text, /data-bb-deployment="blessboard-org-v5"/);
+    assert.match(deployDetail.text, /data-bb-current="1"/);
+    assert.match(deployDetail.text, /data-bb-pa-deploy-summary-panel="1"/);
+    assert.match(deployDetail.text, /data-bb-pa-deploy-environment="1"/);
+    assert.match(deployDetail.text, /data-bb-pa-deploy-products="1"/);
+    assert.match(deployDetail.text, /data-bb-pa-deploy-domains="1"/);
+    assert.match(deployDetail.text, /data-bb-pa-deploy-diagnostics="1"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag="canonical_host"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag="deployment_status"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag="product_link"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag="domains_registered"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag="runtime_identity"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag-state="pass"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag="log_access"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag="env_editing"/);
+    assert.match(deployDetail.text, /data-bb-pa-diag-state="unavailable"/);
+    assert.match(deployDetail.text, /data-bb-env-badge=/);
+    assert.match(deployDetail.text, /data-bb-status-badge=/);
+    assert.match(deployDetail.text, /data-bb-deploy-product="blessboard"/);
+    assert.match(deployDetail.text, /href="\/admin\/deployments"/);
+    assert.doesNotMatch(deployDetail.text, /session_cookie|SESSION_SECRET|DATABASE_URL|password|credential/i);
+    assert.doesNotMatch(deployDetail.text, /token_hash|bcrypt|Force Sync|Export Reports|99\.98%/i);
+    assert.doesNotMatch(deployDetail.text, /action="\/admin\/deployments[^"]*"[^>]*method="post"|Restart process|Rollback now|Edit environment/i);
+    assert.doesNotMatch(deployDetail.text, /<form[^>]*action="\/admin\/deployments/i);
+
+    const deployMissing = await request(app)
+      .get("/admin/deployments/not-a-real-deployment")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(deployMissing.status, 404);
+
+    const deployInvalid = await request(app)
+      .get("/admin/deployments/Bad_Code!")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(deployInvalid.status, 400);
+
+    const hqDeploy = await request(app)
+      .get("/admin/deployments")
+      .set("Host", "blessboard.org")
+      .set("Cookie", await cookieFor(users.hq))
+      .set("Accept", "text/html");
+    assert.equal(hqDeploy.status, 403);
+
+    const hqDeployDetail = await request(app)
+      .get("/admin/deployments/blessboard-org-v5")
+      .set("Host", "blessboard.org")
+      .set("Cookie", await cookieFor(users.hq))
+      .set("Accept", "text/html");
+    assert.equal(hqDeployDetail.status, 403);
 
     const settings = await request(app)
       .get("/admin/settings")
@@ -560,10 +731,249 @@ describe("blessboard platform-admin shell", () => {
       .set("Cookie", cookie);
     assert.equal(settings.status, 200);
     assert.match(settings.text, /data-bb-pa-settings="1"/);
+    assert.match(settings.text, /data-bb-stitch-settings="67-platform-settings"/);
     assert.match(settings.text, /data-bb-pa-dns-patterns="1"/);
     assert.match(settings.text, /data-bb-pa-hostname-pattern="1"/);
-    assert.doesNotMatch(settings.text, /Save Changes|Manual Failover|Export Logs|Primary Color/i);
-    assert.doesNotMatch(settings.text, /session_cookie_name|password|DATABASE_URL/i);
+    assert.match(settings.text, /data-bb-pa-settings-reserved="1"/);
+    assert.match(settings.text, /data-bb-pa-settings-unavailable="1"/);
+    assert.match(settings.text, /data-bb-pa-unavailable="dns-automation"/);
+    assert.match(settings.text, /data-bb-pa-reserved="organization"/);
+    assert.match(settings.text, /data-bb-pa-reserved="host"/);
+    assert.match(settings.text, /href="\/admin\/deployments"/);
+    assert.doesNotMatch(settings.text, /Save Changes|Manual Failover|Export Logs|Primary Color|Force MFA|\+ Add Keyword/i);
+    assert.doesNotMatch(settings.text, /session_cookie_name|password|DATABASE_URL|Reset All Platform Settings/i);
+
+    const hqSettings = await request(app)
+      .get("/admin/settings")
+      .set("Host", "blessboard.org")
+      .set("Cookie", await cookieFor(users.hq))
+      .set("Accept", "text/html");
+    assert.equal(hqSettings.status, 403);
+
+    const domains = await request(app)
+      .get("/admin/domains")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(domains.status, 200);
+    assert.match(domains.text, /data-bb-pa-domains="1"/);
+    assert.match(domains.text, /data-bb-pa-domains-directory="1"/);
+    assert.match(domains.text, /data-bb-stitch-domains="67-platform-settings"/);
+    assert.match(domains.text, /data-bb-domains-table="1"/);
+    assert.match(domains.text, /data-bb-domains-cards="1"/);
+    assert.match(domains.text, /data-bb-pa-domains-filter="1"/);
+    assert.match(domains.text, /data-bb-count="domains-total"/);
+    assert.match(domains.text, /data-bb-domain-hostname="pa-org\.blessboard\.org"/);
+    assert.match(domains.text, /data-bb-domain-type="canonical"/);
+    assert.match(domains.text, /data-bb-domain-status="active"/);
+    assert.match(domains.text, /data-bb-domain-org="pa-demo"/);
+    assert.match(domains.text, /href="\/admin\/organizations\/pa-demo#pa-org-domains"/);
+    assert.match(domains.text, /BlessBoard/);
+    assert.doesNotMatch(domains.text, /DNS lookup|certificate provisioning|domain purchase|automatic verification|Force Verify|Buy Domain/i);
+    assert.doesNotMatch(domains.text, /session_cookie|DATABASE_URL|ResolveHostname|expectedDeploymentCode/i);
+    assert.doesNotMatch(domains.text, new RegExp(org.id, "i"));
+
+    await pool.query(
+      `UPDATE platform.domains SET status = 'inactive' WHERE hostname = $1`,
+      ["pa-extra-1.blessboard.org"]
+    );
+    const inactive = await request(app)
+      .get("/admin/domains?status=inactive")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(inactive.status, 200);
+    assert.match(inactive.text, /data-bb-domain-hostname="pa-extra-1\.blessboard\.org"/);
+    assert.match(inactive.text, /data-bb-domain-status="inactive"/);
+    assert.doesNotMatch(inactive.text, /data-bb-domain-hostname="pa-org\.blessboard\.org"/);
+
+    const scopedOrg = await request(app)
+      .get("/admin/domains?org=pa-demo")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(scopedOrg.status, 200);
+    assert.match(scopedOrg.text, /data-bb-domain-org="pa-demo"/);
+    assert.doesNotMatch(scopedOrg.text, /data-bb-domain-org="pa-extra-/);
+
+    const scopedHost = await request(app)
+      .get("/admin/domains?q=pa-org")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(scopedHost.status, 200);
+    assert.match(scopedHost.text, /data-bb-domain-hostname="pa-org\.blessboard\.org"/);
+    assert.doesNotMatch(scopedHost.text, /data-bb-domain-hostname="pa-extra-/);
+
+    const typeCanonical = await request(app)
+      .get("/admin/domains?type=canonical")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(typeCanonical.status, 200);
+    assert.match(typeCanonical.text, /data-bb-domain-type="canonical"/);
+
+    const noResults = await request(app)
+      .get("/admin/domains?org=zzznomatch")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(noResults.status, 200);
+    assert.match(noResults.text, /data-bb-pa-empty="no-results"/);
+
+    const hqDomains = await request(app)
+      .get("/admin/domains")
+      .set("Host", "blessboard.org")
+      .set("Cookie", await cookieFor(users.hq))
+      .set("Accept", "text/html");
+    assert.equal(hqDomains.status, 403);
+
+    const anonDomains = await request(app)
+      .get("/admin/domains")
+      .set("Host", "blessboard.org")
+      .set("Accept", "text/html")
+      .redirects(0);
+    assert.equal(anonDomains.status, 303);
+  });
+
+  it("domain detail renders, distinguishes verification, and supports status/org assignment with CSRF", async () => {
+    requireDb();
+    const cookie = await cookieFor(users.platform);
+    const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
+    function extractCookie(res, name) {
+      const raw = res.headers["set-cookie"];
+      if (!raw) return null;
+      const list = Array.isArray(raw) ? raw : [raw];
+      for (const line of list) {
+        if (String(line).startsWith(`${name}=`)) {
+          return String(line).split(";")[0].slice(name.length + 1);
+        }
+      }
+      return null;
+    }
+
+    const host = TENANT_HOST;
+    const detail = await request(app)
+      .get(`/admin/domains/${encodeURIComponent(host)}`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-bb-pa-domain-detail="1"/);
+    assert.match(detail.text, /data-bb-stitch-domain-detail="67-platform-settings"/);
+    assert.match(detail.text, /data-bb-domain-hostname="pa-org\.blessboard\.org"/);
+    assert.match(detail.text, /data-bb-domain-state="operational"/);
+    assert.match(detail.text, /data-bb-domain-state="verification"/);
+    assert.match(detail.text, /data-bb-domain-status="active"/);
+    assert.match(detail.text, /data-bb-domain-verified=/);
+    assert.match(detail.text, /data-bb-pa-domain-org-form="1"/);
+    assert.match(detail.text, /data-bb-pa-domain-status-form="1"/);
+    assert.match(detail.text, /name="confirm_status"/);
+    assert.match(detail.text, /name="confirm_organization"/);
+    assert.match(detail.text, /BlessBoard/);
+    assert.doesNotMatch(detail.text, new RegExp(org.id, "i"));
+    assert.doesNotMatch(detail.text, /session_cookie|DATABASE_URL|ResolveHostname|expectedDeploymentCode/i);
+    assert.doesNotMatch(detail.text, /Buy Domain|Force Verify|certificate issuance job/i);
+
+    const csrfToken = extractCookie(detail, CSRF_COOKIE) || "";
+    assert.ok(csrfToken);
+
+    const noConfirm = await request(app)
+      .post(`/admin/domains/${encodeURIComponent(host)}/status`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfToken}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrfToken,
+        status: "inactive",
+      })
+      .redirects(0);
+    assert.equal(noConfirm.status, 303);
+    assert.match(String(noConfirm.headers.location || ""), /error=confirm_required/);
+
+    const badCsrf = await request(app)
+      .post(`/admin/domains/${encodeURIComponent(host)}/status`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfToken}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: "not-a-valid-token",
+        status: "inactive",
+        confirm_status: "1",
+      })
+      .redirects(0);
+    assert.equal(badCsrf.status, 303);
+    assert.match(String(badCsrf.headers.location || ""), /error=csrf/);
+
+    const statusSave = await request(app)
+      .post(`/admin/domains/${encodeURIComponent(host)}/status`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfToken}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrfToken,
+        status: "inactive",
+        confirm_status: "1",
+      })
+      .redirects(0);
+    assert.equal(statusSave.status, 303);
+    assert.match(String(statusSave.headers.location || ""), /notice=status_saved/);
+
+    const afterStatus = await request(app)
+      .get(`/admin/domains/${encodeURIComponent(host)}`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(afterStatus.status, 200);
+    assert.match(afterStatus.text, /data-bb-domain-status="inactive"/);
+    assert.match(afterStatus.text, /data-bb-domain-verified=/);
+
+    const orgSave = await request(app)
+      .post(`/admin/domains/${encodeURIComponent(host)}/organization`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfToken}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrfToken,
+        organization_key: "pa-extra-1",
+        confirm_organization: "1",
+      })
+      .redirects(0);
+    assert.equal(orgSave.status, 303);
+    assert.match(String(orgSave.headers.location || ""), /notice=organization_saved/);
+
+    const afterOrg = await request(app)
+      .get(`/admin/domains/${encodeURIComponent(host)}`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(afterOrg.status, 200);
+    assert.match(afterOrg.text, /pa-extra-1/);
+    assert.match(afterOrg.text, /href="\/admin\/organizations\/pa-extra-1#pa-org-domains"/);
+
+    const restoreOrg = await request(app)
+      .post(`/admin/domains/${encodeURIComponent(host)}/organization`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfToken}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrfToken,
+        organization_key: "pa-demo",
+        confirm_organization: "1",
+      })
+      .redirects(0);
+    assert.equal(restoreOrg.status, 303);
+
+    const restoreStatus = await request(app)
+      .post(`/admin/domains/${encodeURIComponent(host)}/status`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfToken}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrfToken,
+        status: "active",
+        confirm_status: "1",
+      })
+      .redirects(0);
+    assert.equal(restoreStatus.status, 303);
+
+    const hqDetail = await request(app)
+      .get(`/admin/domains/${encodeURIComponent(host)}`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", await cookieFor(users.hq))
+      .set("Accept", "text/html");
+    assert.equal(hqDetail.status, 403);
   });
 
   it("organization detail shows entitlements and domains; plan/override require confirmation", async () => {
@@ -589,6 +999,7 @@ describe("blessboard platform-admin shell", () => {
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-pa-org-entitlements="1"/);
     assert.match(detail.text, /data-bb-pa-org-domains="1"/);
+    assert.match(detail.text, /data-bb-stitch-org-domains="67-platform-settings"/);
     assert.match(detail.text, /data-bb-table="domains"/);
     assert.match(detail.text, /pa-org\.blessboard\.org/);
     assert.match(detail.text, /data-bb-pa-plan-form="1"/);
@@ -632,7 +1043,17 @@ describe("blessboard platform-admin shell", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(after.status, 200);
-    assert.match(after.text, /growth/i);
+    assert.match(after.text, /data-bb-sub-plan-key="growth"/);
+    assert.match(after.text, /data-bb-sub-plan-display="Growth"/);
+
+    const afterSubs = await request(app)
+      .get("/admin/subscriptions?q=pa-demo")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(afterSubs.status, 200);
+    assert.match(afterSubs.text, /data-bb-sub-org="pa-demo"/);
+    assert.match(afterSubs.text, /data-bb-sub-plan-key="growth"/);
+    assert.match(afterSubs.text, /data-bb-sub-plan-display="Growth"/);
 
     const overrideNoConfirm = await request(app)
       .post("/admin/organizations/pa-demo/entitlement-override")
@@ -664,5 +1085,41 @@ describe("blessboard platform-admin shell", () => {
       });
     assert.equal(overrideOk.status, 303);
     assert.match(String(overrideOk.headers.location || ""), /notice=override_saved/);
+
+    const afterOverride = await request(app)
+      .get("/admin/organizations/pa-demo")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(afterOverride.status, 200);
+    assert.match(afterOverride.text, /data-bb-feature="max_branches"[^>]*data-bb-feature-source="override"|data-bb-feature-source="override"[^>]*data-bb-feature="max_branches"/);
+    assert.match(afterOverride.text, /data-bb-pa-override-list="1"/);
+    assert.match(afterOverride.text, /data-bb-entitlement-source="plan"/);
+    assert.match(afterOverride.text, /data-bb-entitlement-source="override"/);
+    assert.match(afterOverride.text, /Organization override/);
+    assert.match(afterOverride.text, /Inherited from plan/);
+    assert.doesNotMatch(afterOverride.text, /name="feature_key"[^>]*>[\s\S]*value="made_up_feature"/);
+
+    const badKey = await request(app)
+      .post("/admin/organizations/pa-demo/entitlement-override")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        feature_key: "made_up_feature",
+        feature_kind: "boolean",
+        boolean_value: "true",
+        reason: "should be rejected",
+        confirm_override: "1",
+      });
+    assert.equal(badKey.status, 303);
+    assert.match(String(badKey.headers.location || ""), /error=invalid/);
+
+    const hqDetail = await request(app)
+      .get("/admin/organizations/pa-demo")
+      .set("Host", "blessboard.org")
+      .set("Cookie", await cookieFor(users.hq))
+      .set("Accept", "text/html");
+    assert.equal(hqDetail.status, 403);
   });
 });

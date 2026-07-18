@@ -32,29 +32,39 @@ function presentFeature(feature) {
  */
 function presentPlan(plan, features) {
   if (!plan) return null;
+  const status = String(plan.status || "").toLowerCase();
+  const planKey = String(plan.planKey || "");
+  const isActive = status === "active";
+  const isLegacy = !isActive || planKey === "partner";
   return {
-    planKey: String(plan.planKey || ""),
+    planKey,
     displayName: String(plan.displayName || ""),
     description: plan.description != null ? String(plan.description) : null,
+    productKey: plan.productKey != null ? String(plan.productKey) : PRODUCT_KEY_DEFAULT,
     sortOrder: Number(plan.sortOrder) || 0,
-    status: String(plan.status || ""),
+    status,
+    isActive,
+    isLegacy,
     features: (features || []).map(presentFeature).filter(Boolean),
   };
 }
 
 /**
  * @param {{ query: Function }} db
- * @param {{ productKey?: string }} [input]
+ * @param {{ productKey?: string, includeInactive?: boolean }} [input]
  */
 async function listPlatformPlansCatalogue(db, input) {
   const productKey = String((input && input.productKey) || PRODUCT_KEY_DEFAULT)
     .trim()
     .toLowerCase();
+  const includeInactive = Boolean(input && input.includeInactive);
   if (!db || typeof db.query !== "function") {
     return { ok: false, status: STATUS.LOOKUP_ERROR, plans: [] };
   }
   try {
-    const plans = await entitlementRepo.listActivePlans(db, productKey);
+    const plans = includeInactive
+      ? await entitlementRepo.listPlansForProduct(db, productKey)
+      : await entitlementRepo.listActivePlans(db, productKey);
     const presented = [];
     for (const plan of plans) {
       const features = await entitlementRepo.listPlanFeatures(db, plan.id);

@@ -2,6 +2,7 @@
   Shared BlessBoard V5 media picker trigger.
   Expects: uploadUrl OR mediaBase, targetInputId, csrfToken
   Optional: visibility (public|private), fillField (deliveryPath|assetId), listUrl
+  Batch 22 — Sacred Modernity chrome; upload security unchanged.
 %>
 <%
   var _mediaBase = '';
@@ -22,6 +23,7 @@
 <div
   class="bb-media-picker"
   data-bb-media-picker="1"
+  data-bb-stitch-media="shared-ui-states"
   data-media-base="<%= _mediaBase %>"
   data-upload-url="<%= _uploadUrl %>"
   data-list-url="<%= _listUrl %>"
@@ -30,7 +32,7 @@
   data-visibility="<%= _visibility %>"
   data-fill="<%= _fill %>"
 >
-  <button type="button" class="bb-media-picker__open" data-bb-media-open>
+  <button type="button" class="bb-media-picker__open" data-bb-media-open aria-haspopup="dialog">
     <span class="material-symbols-outlined" aria-hidden="true">photo_library</span>
     Choose or upload media
   </button>

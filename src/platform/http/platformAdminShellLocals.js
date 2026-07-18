@@ -48,6 +48,8 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     home: "Platform admin",
     organizations: "Organizations",
     plans: "Plans",
+    subscriptions: "Subscriptions",
+    domains: "Domains",
     deployments: "Deployments",
     settings: "Settings",
     account: "Account",
