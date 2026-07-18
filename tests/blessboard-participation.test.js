@@ -653,9 +653,21 @@ describe("blessboard participation", () => {
       .set("Cookie", memberCookie);
     assert.equal(ministries.status, 200);
     assert.match(ministries.text, /data-bb-member-ministries="1"/);
+    assert.match(ministries.text, /data-bb-stitch-ministries="18-member-my-ministries"/);
+    assert.match(ministries.text, /data-bb-ministries-toolbar="1"/);
     assert.match(ministries.text, /HTTP Ministry/);
     assert.match(ministries.text, /data-bb-status="none"/);
+    assert.match(ministries.text, /data-bb-ministries-discover="1"/);
+    assert.doesNotMatch(ministries.text, /Leader:|Member Rating|Hours Monthly|Upcoming Assignments|Roster|chat_bubble|Message Group/i);
     assert.doesNotMatch(ministries.text, new RegExp(churchA.id, "i"));
+
+    const pendingFilter = await request(app)
+      .get("/member/ministries?filter=pending")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(pendingFilter.status, 200);
+    assert.match(pendingFilter.text, /data-bb-ministry-filter="pending"/);
+    assert.match(pendingFilter.text, /data-bb-ministries-empty="pending"/);
 
     const ministryDetail = await request(app)
       .get(`/member/ministries/${ministry.item.id}`)
@@ -664,6 +676,7 @@ describe("blessboard participation", () => {
     assert.equal(ministryDetail.status, 200);
     assert.match(ministryDetail.text, /Request to join/);
     assert.match(ministryDetail.text, /name="_csrf"/);
+    assert.doesNotMatch(ministryDetail.text, /duty roster|ministry chat|attendance/i);
     const ministryCsrf = extractCookie(ministryDetail, CSRF_COOKIE);
     const join = await request(app)
       .post(`/member/ministries/${ministry.item.id}/join`)
@@ -681,6 +694,15 @@ describe("blessboard participation", () => {
     assert.match(pending.text, /data-bb-status="pending"/);
     assert.match(pending.text, /Cancel request/);
     assert.match(pending.text, /data-bb-ds-modal-open="bb-mp-ministry-leave"/);
+
+    const listPending = await request(app)
+      .get("/member/ministries?filter=pending")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(listPending.status, 200);
+    assert.match(listPending.text, /HTTP Ministry/);
+    assert.match(listPending.text, /data-bb-status="pending"/);
+    assert.match(listPending.text, /Waiting for church review/);
 
     const hqCookie = `${DEFAULT_V5_COOKIE}=${hqAdmin.rawToken}`;
     const admin = await request(app)

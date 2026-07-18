@@ -31,7 +31,11 @@
   });
 %>
 
-<section class="bb-mp-fr-detail" data-bb-member-form-detail="1">
+<section
+  class="bb-mp-fr-detail bb-mp-form-detail"
+  data-bb-member-form-detail="1"
+  data-bb-stitch-forms="20-member-forms-documents"
+>
   <p class="bb-mp-back">
     <a href="/member/forms">
       <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -39,9 +43,12 @@
     </a>
   </p>
 
-  <article class="bb-mp-part-detail">
+  <article class="bb-mp-part-detail" data-bb-form="<%= form.id %>">
     <div class="bb-mp-ann-chips" aria-label="Form type">
       <span class="bb-mp-chip bb-mp-chip--open">Online form</span>
+      <% if (typeof form.fieldCount === 'number' && form.fieldCount > 0) { %>
+      <span class="bb-mp-chip bb-mp-chip--request"><%= form.fieldCountLabel || (form.fieldCount + ' fields') %></span>
+      <% } %>
     </div>
     <h1 class="bb-mp-part-detail__title"><%= form.title %></h1>
     <% if (form.description) { %>
@@ -65,7 +72,7 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
       <% if (!renderable.length) { %>
-      <p class="bb-mp-lede">This form has no fields yet.</p>
+      <p class="bb-mp-lede" role="status" data-bb-form-empty-fields="1">This form has no fields yet.</p>
       <% } %>
 
       <% renderable.forEach(function (field) { %>

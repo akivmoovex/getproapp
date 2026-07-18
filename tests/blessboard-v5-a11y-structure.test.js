@@ -291,6 +291,94 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(css, /\.bb-mp-part-card\.is-past/);
     assert.match(css, /\.bb-mp-events-toolbar/);
   });
+
+  it("member ministries keep joined/pending/discover states without fabricated leaders or chat", () => {
+    const list = read("views/blessboard/v5/participation/member-ministries.ejs");
+    const card = read("views/blessboard/v5/participation/partials/member-ministry-card.ejs");
+    const detail = read("views/blessboard/v5/participation/member-ministry-detail.ejs");
+    const css = read("public/blessboard/v5/member-portal.css");
+    assert.match(list, /data-bb-stitch-ministries="18-member-my-ministries"/);
+    assert.match(list, /data-bb-ministries-toolbar="1"/);
+    assert.match(list, /key: 'mine'/);
+    assert.match(list, /key: 'pending'/);
+    assert.match(list, /key: 'discover'/);
+    assert.match(list, /data-bb-ministries-empty="catalog"/);
+    assert.match(list, /data-bb-ministries-empty="no-results"/);
+    assert.match(list, /data-bb-ministries-empty="mine"/);
+    assert.match(list, /data-bb-ministries-empty="pending"/);
+    assert.match(list, /data-bb-ministries-active="1"/);
+    assert.match(list, /data-bb-ministries-pending="1"/);
+    assert.match(list, /data-bb-ministries-discover="1"/);
+    assert.doesNotMatch(list, /Leader:|Member Rating|Hours Monthly|Upcoming Assignments|View All \d+ Ministries/i);
+    assert.match(card, /data-bb-status=/);
+    assert.match(card, /Waiting for church review/);
+    assert.doesNotMatch(card, /Leader:|Roster|chat|Message Group/i);
+    assert.match(detail, /action="\/member\/ministries\/<%= item\.id %>\/join"/);
+    assert.match(detail, /action="\/member\/ministries\/<%= item\.id %>\/leave"/);
+    assert.match(detail, /name="_csrf"/);
+    assert.match(detail, /data-bb-ds-modal-open="bb-mp-ministry-leave"/);
+    assert.doesNotMatch(detail, /duty roster|ministry chat|attendance feature/i);
+    assert.match(css, /\.bb-mp-ministry-grid/);
+    assert.match(css, /\.bb-mp-ministry-card\.is-pending/);
+    assert.match(css, /\.bb-mp-ministries-toolbar/);
+    assert.match(css, /@media \(min-width:\s*700px\)/);
+  });
+
+  it("member resources keep real file metadata without certificates or course progress", () => {
+    const list = read("views/blessboard/v5/forms-requests/member-resources.ejs");
+    const detail = read("views/blessboard/v5/forms-requests/member-resource-detail.ejs");
+    const css = read("public/blessboard/v5/member-portal.css");
+    assert.match(list, /data-bb-stitch-resources="19-member-resources-study"/);
+    assert.match(list, /data-bb-resources-toolbar="1"/);
+    assert.match(list, /data-bb-resources-search="1"/);
+    assert.match(list, /key: 'files'/);
+    assert.match(list, /key: 'info'/);
+    assert.match(list, /data-bb-resources-empty="catalog"/);
+    assert.match(list, /data-bb-resources-empty="no-results"/);
+    assert.match(list, /r\.typeLabel/);
+    assert.match(list, /r\.sizeLabel/);
+    assert.match(list, /r\.fileName/);
+    assert.doesNotMatch(list, /certificate|course progress|active readers|Sermon Notes|external.?link/i);
+    assert.match(detail, /data-bb-resource-download="1"/);
+    assert.match(detail, /href="\/member\/resources\/<%= resource\.id %>\/file"/);
+    assert.match(detail, /resource\.typeLabel/);
+    assert.match(detail, /resource\.sizeLabel/);
+    assert.doesNotMatch(detail, /certificate|course progress|quiz|completion/i);
+    assert.match(css, /\.bb-mp-resource-grid/);
+    assert.match(css, /\.bb-mp-resource-card/);
+    assert.match(css, /\.bb-mp-resources-toolbar/);
+    assert.match(css, /@media \(min-width:\s*700px\)/);
+  });
+
+  it("member forms keep allowlisted fields and real submission states without PDF or builder chrome", () => {
+    const list = read("views/blessboard/v5/forms-requests/member-forms.ejs");
+    const detail = read("views/blessboard/v5/forms-requests/member-form-detail.ejs");
+    const submission = read("views/blessboard/v5/forms-requests/member-submission.ejs");
+    const css = read("public/blessboard/v5/member-portal.css");
+    assert.match(list, /data-bb-stitch-forms="20-member-forms-documents"/);
+    assert.match(list, /data-bb-forms-toolbar="1"/);
+    assert.match(list, /data-bb-forms-search="1"/);
+    assert.match(list, /key: 'available'/);
+    assert.match(list, /key: 'history'/);
+    assert.match(list, /data-bb-forms-empty="catalog"/);
+    assert.match(list, /data-bb-forms-empty="no-results"/);
+    assert.match(list, /data-bb-forms-empty="history"/);
+    assert.match(list, /s\.statusLabel/);
+    assert.match(list, /f\.fieldCount/);
+    assert.doesNotMatch(list, /Download PDF|form builder|e-?signature|card number|cvv|Approved|Processing/i);
+    assert.match(detail, /action="\/member\/forms\/<%= form\.id %>\/submit"/);
+    assert.match(detail, /name="_csrf"/);
+    assert.match(detail, /data-bb-field-type=/);
+    assert.doesNotMatch(detail, /type="file"|e-?signature|card number|form builder/i);
+    assert.match(submission, /data-bb-member-submission="1"/);
+    assert.match(submission, /data-bb-submission-answers="1"/);
+    assert.match(submission, /statusLabel|Submitted|Closed/);
+    assert.doesNotMatch(submission, /Approved|Processing|pending/i);
+    assert.match(css, /\.bb-mp-forms-grid/);
+    assert.match(css, /\.bb-mp-form-card/);
+    assert.match(css, /\.bb-mp-forms-toolbar/);
+    assert.match(css, /@media \(min-width:\s*700px\)/);
+  });
 });
 
 describe("blessboard v5 a11y structure — viewport CSS breakpoints present", () => {

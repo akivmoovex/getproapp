@@ -1,44 +1,119 @@
 <%- include('../partials/member-shell-start') %>
 <%
+  var allList = typeof allResources !== 'undefined' && allResources ? allResources : (resources || []);
   var list = resources || [];
+  var activeFilter = typeof filter !== 'undefined' && filter ? String(filter) : 'all';
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var isEmptyCatalog = !allList.length;
+  var isNoResults = !isEmptyCatalog && !list.length;
+
+  function filterHref(nextFilter, nextQ) {
+    var parts = [];
+    if (nextFilter && nextFilter !== 'all') parts.push('filter=' + encodeURIComponent(nextFilter));
+    if (nextQ) parts.push('q=' + encodeURIComponent(nextQ));
+    return parts.length ? ('/member/resources?' + parts.join('&')) : '/member/resources';
+  }
+
+  var filters = [
+    { key: 'all', label: 'All' },
+    { key: 'files', label: 'Files' },
+    { key: 'info', label: 'Information' },
+  ];
 %>
 
-<section class="bb-mp-fr" data-bb-member-resources="1">
-  <header class="bb-mp-page-head">
+<section
+  class="bb-mp-fr bb-mp-resources"
+  data-bb-member-resources="1"
+  data-bb-stitch-resources="19-member-resources-study"
+  data-bb-resource-filter="<%= activeFilter %>"
+>
+  <header class="bb-mp-page-head bb-mp-page-head--split">
     <div>
       <h1 class="bb-mp-page-head__title">Resources</h1>
       <p class="bb-mp-lede">Study materials and files shared with members of your church.</p>
     </div>
   </header>
 
-  <% if (!list.length) { %>
-  <div class="bb-mp-empty" role="status">
+  <% if (!isEmptyCatalog) { %>
+  <div class="bb-mp-ann-toolbar bb-mp-resources-toolbar" data-bb-resources-toolbar="1">
+    <nav class="bb-mp-ann-filters" aria-label="Filter resources">
+      <% filters.forEach(function (f) { %>
+      <a
+        class="bb-mp-ann-filter<%= activeFilter === f.key ? ' is-active' : '' %>"
+        href="<%= filterHref(f.key, searchQ) %>"
+        data-bb-resource-filter-link="<%= f.key %>"
+        <%= activeFilter === f.key ? 'aria-current="page"' : '' %>
+      ><%= f.label %></a>
+      <% }) %>
+    </nav>
+    <form method="get" action="/member/resources" class="bb-mp-ann-search" role="search" data-bb-resources-search="1">
+      <% if (activeFilter !== 'all') { %>
+      <input type="hidden" name="filter" value="<%= activeFilter %>" />
+      <% } %>
+      <label class="bb-ds-sr-only" for="bb-mp-resources-q">Search resources</label>
+      <span class="material-symbols-outlined bb-mp-ann-search__icon" aria-hidden="true">search</span>
+      <input
+        id="bb-mp-resources-q"
+        type="search"
+        name="q"
+        value="<%= searchQ %>"
+        maxlength="100"
+        placeholder="Search title or description"
+        autocomplete="off"
+      />
+      <button type="submit" class="bb-mp-btn bb-mp-btn--ghost bb-mp-ann-search__submit">Search</button>
+    </form>
+  </div>
+  <% } %>
+
+  <% if (isEmptyCatalog) { %>
+  <div class="bb-mp-empty" role="status" data-bb-resources-empty="catalog">
     <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
-    <p>No resources are available right now.</p>
+    <p>No resources are available right now. When your church publishes study materials, they will appear here.</p>
+  </div>
+  <% } else if (isNoResults) { %>
+  <div class="bb-mp-empty" role="status" data-bb-resources-empty="no-results">
+    <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+    <p>No resources match this filter<%= searchQ ? ' or search' : '' %>.</p>
+    <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/resources">Clear filters</a>
   </div>
   <% } else { %>
-  <ul class="bb-mp-part-list" aria-label="Resource library">
+  <ul class="bb-mp-part-list bb-mp-resource-grid" aria-label="Resource library">
     <% list.forEach(function (r) { %>
     <li>
       <a
-        class="bb-mp-part-card"
+        class="bb-mp-part-card bb-mp-resource-card"
         href="/member/resources/<%= r.id %>"
         data-bb-resource="<%= r.id %>"
         data-bb-has-file="<%= r.mediaAssetId ? '1' : '0' %>"
+        <% if (r.typeLabel) { %>data-bb-resource-type="<%= r.typeLabel %>"<% } %>
       >
         <div class="bb-mp-fr-icon" aria-hidden="true">
-          <span class="material-symbols-outlined"><%= r.mediaAssetId ? 'description' : 'article' %></span>
+          <span class="material-symbols-outlined"><%= r.icon || (r.mediaAssetId ? 'description' : 'article') %></span>
         </div>
         <div class="bb-mp-part-card__body">
           <div class="bb-mp-part-card__top">
             <h2 class="bb-mp-part-card__title"><%= r.title %></h2>
-            <% if (r.mediaAssetId) { %>
+            <% if (r.typeLabel) { %>
+            <span class="bb-mp-chip bb-mp-chip--open" aria-label="<%= r.typeLabel %>"><%= r.typeLabel %></span>
+            <% } else if (r.mediaAssetId) { %>
             <span class="bb-mp-chip bb-mp-chip--open" aria-label="Download available">File</span>
+            <% } else { %>
+            <span class="bb-mp-chip bb-mp-chip--request" aria-label="Information">Info</span>
             <% } %>
           </div>
           <% if (r.description) { %>
           <p class="bb-mp-part-card__excerpt"><%= r.description.length > 140 ? r.description.slice(0, 139) + '…' : r.description %></p>
           <% } %>
+          <% if (r.fileName || r.sizeLabel) { %>
+          <p class="bb-mp-part-card__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
+            <% if (r.fileName) { %><span><%= r.fileName %></span><% } %>
+            <% if (r.fileName && r.sizeLabel) { %><span aria-hidden="true">·</span><% } %>
+            <% if (r.sizeLabel) { %><span><%= r.sizeLabel %></span><% } %>
+          </p>
+          <% } %>
+          <p class="bb-mp-part-card__cta"><%= r.mediaAssetId ? 'View & download' : 'View details' %></p>
         </div>
         <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
       </a>

@@ -164,6 +164,59 @@ function createParticipationMemberRouter(deps) {
 
   // ----- Ministries -----
 
+  /**
+   * @param {string} raw
+   */
+  function normalizeMemberMinistryFilter(raw) {
+    const value = String(raw || "all")
+      .trim()
+      .toLowerCase();
+    if (value === "mine" || value === "pending" || value === "discover") return value;
+    return "all";
+  }
+
+  /**
+   * @param {object[]} items
+   * @param {string} filter
+   * @param {string} q
+   */
+  function partitionVisibleMemberMinistries(items, filter, q) {
+    const query = String(q || "")
+      .trim()
+      .toLowerCase()
+      .slice(0, 100);
+    let scoped = Array.isArray(items) ? items.slice() : [];
+
+    function matchesQuery(item) {
+      if (!query) return true;
+      if (!item) return false;
+      const name = String(item.name || "").toLowerCase();
+      const summary = String(item.summary || "").toLowerCase();
+      const meetingDay = String(item.meetingDay || "").toLowerCase();
+      return name.includes(query) || summary.includes(query) || meetingDay.includes(query);
+    }
+
+    scoped = scoped.filter(matchesQuery);
+
+    const activeItems = scoped.filter(
+      (item) => item && item.membership && item.membership.status === "active"
+    );
+    const pendingItems = scoped.filter(
+      (item) => item && item.membership && item.membership.status === "pending"
+    );
+    const discoverItems = scoped.filter((item) => {
+      const status = item && item.membership && item.membership.status;
+      return status !== "active" && status !== "pending";
+    });
+
+    let itemsOut = scoped;
+    if (filter === "mine") itemsOut = activeItems;
+    else if (filter === "pending") itemsOut = pendingItems;
+    else if (filter === "discover") itemsOut = discoverItems;
+
+    return { items: itemsOut, activeItems, pendingItems, discoverItems };
+  }
+
   router.get("/member/ministries", rejectApex, requireMember, async (req, res) => {
     const scope = memberScope(req);
     if (!scope) {
@@ -173,10 +226,30 @@ function createParticipationMemberRouter(deps) {
     if (!listed.ok) {
       return res.status(503).type("text").send("Ministries are temporarily unavailable.");
     }
+    const allItems = listed.items || [];
+    const filter = normalizeMemberMinistryFilter(req.query && req.query.filter);
+    const q = String((req.query && req.query.q) || "")
+      .trim()
+      .slice(0, 100);
+    const partitioned = partitionVisibleMemberMinistries(allItems, filter, q);
+    const activeCount = allItems.filter(
+      (item) => item && item.membership && item.membership.status === "active"
+    ).length;
+    const pendingCount = allItems.filter(
+      (item) => item && item.membership && item.membership.status === "pending"
+    ).length;
     const html = renderMemberView(
       "participation/member-ministries.ejs",
       shellLocals(req, res, "ministries", {
-        items: listed.items,
+        allItems,
+        items: partitioned.items,
+        activeItems: partitioned.activeItems,
+        pendingItems: partitioned.pendingItems,
+        discoverItems: partitioned.discoverItems,
+        activeCount,
+        pendingCount,
+        filter,
+        q,
         saved: String((req.query && req.query.saved) || ""),
       })
     );

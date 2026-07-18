@@ -1,0 +1,51 @@
+<%
+  var membership = item && item.membership ? item.membership : null;
+  var status = membership ? membership.status : null;
+  var isActive = status === 'active';
+  var isPending = status === 'pending';
+  var isOpen = item && item.joinPolicy === 'open';
+%>
+<a
+  class="bb-mp-part-card bb-mp-ministry-card<%= isActive || isPending ? ' is-member' : '' %><%= isPending ? ' is-pending' : '' %>"
+  href="/member/ministries/<%= item.id %>"
+  data-bb-ministry="<%= item.id %>"
+  data-bb-status="<%= status || 'none' %>"
+  data-bb-join-policy="<%= item.joinPolicy || 'request' %>"
+>
+  <div class="bb-mp-ministry-card__icon" aria-hidden="true">
+    <span class="material-symbols-outlined">groups</span>
+  </div>
+  <div class="bb-mp-part-card__body">
+    <div class="bb-mp-part-card__top">
+      <h3 class="bb-mp-part-card__title"><%= item.name %></h3>
+      <% if (isActive) { %>
+      <span class="bb-mp-chip bb-mp-chip--active" aria-label="Active">Active</span>
+      <% } else if (isPending) { %>
+      <span class="bb-mp-chip bb-mp-chip--pending" aria-label="Pending">Pending</span>
+      <% } else if (isOpen) { %>
+      <span class="bb-mp-chip bb-mp-chip--open" aria-label="Open to join">Open</span>
+      <% } else { %>
+      <span class="bb-mp-chip bb-mp-chip--request" aria-label="Request to join">Request</span>
+      <% } %>
+    </div>
+    <% if (item.summary) { %>
+    <p class="bb-mp-part-card__excerpt"><%= item.summary %></p>
+    <% } %>
+    <% if (item.meetingDay) { %>
+    <p class="bb-mp-part-card__meta">
+      <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+      <%= item.meetingDay %>
+    </p>
+    <% } %>
+    <% if (isPending) { %>
+    <p class="bb-mp-ministry-card__hint">Waiting for church review</p>
+    <% } else if (isActive) { %>
+    <p class="bb-mp-part-card__cta">View membership</p>
+    <% } else if (isOpen) { %>
+    <p class="bb-mp-part-card__cta">Join ministry</p>
+    <% } else { %>
+    <p class="bb-mp-part-card__cta">Request to join</p>
+    <% } %>
+  </div>
+  <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+</a>

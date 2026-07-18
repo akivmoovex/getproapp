@@ -630,6 +630,60 @@ describe("blessboard forms-requests", () => {
     });
     assert.equal(published.ok, true, published.reason);
 
+    const infoOnly = await createResource(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      scopeBranchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      title: "Study guide outline",
+      description: "Text-only member study notes",
+      audience: "members",
+    });
+    assert.equal(infoOnly.ok, true, infoOnly.reason);
+    const infoPublished = await publishResource(pool, {
+      id: infoOnly.resource.id,
+      churchId: churchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      scopeBranchId: branchA.id,
+    });
+    assert.equal(infoPublished.ok, true, infoPublished.reason);
+
+    const draftHidden = await createResource(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      scopeBranchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      title: "DRAFT_ONLY_RESOURCE_SECRET",
+      description: "Must not appear for members",
+      audience: "members",
+      mediaAssetId: privateMediaId,
+    });
+    assert.equal(draftHidden.ok, true, draftHidden.reason);
+
+    const adminOnly = await createResource(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      scopeBranchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      title: "ADMIN_ONLY_RESOURCE_SECRET",
+      description: "Admins audience",
+      audience: "admins",
+      mediaAssetId: privateMediaId,
+    });
+    assert.equal(adminOnly.ok, true, adminOnly.reason);
+    const adminPublished = await publishResource(pool, {
+      id: adminOnly.resource.id,
+      churchId: churchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      scopeBranchId: branchA.id,
+    });
+    assert.equal(adminPublished.ok, true, adminPublished.reason);
+
     const memberCookie = `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`;
     const list = await request(app)
       .get("/member/resources")
@@ -637,9 +691,50 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", memberCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-member-resources="1"/);
+    assert.match(list.text, /data-bb-stitch-resources="19-member-resources-study"/);
+    assert.match(list.text, /data-bb-resources-toolbar="1"/);
     assert.match(list.text, /HTTP Welcome pack/);
+    assert.match(list.text, /Study guide outline/);
+    assert.match(list.text, /note\.pdf/);
+    assert.match(list.text, /data-bb-resource-type="PDF"/);
+    assert.doesNotMatch(list.text, /DRAFT_ONLY_RESOURCE_SECRET/);
+    assert.doesNotMatch(list.text, /ADMIN_ONLY_RESOURCE_SECRET/);
+    assert.doesNotMatch(list.text, /certificate|course progress|active readers/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(list.text, /javascript:/i);
+
+    const filesFilter = await request(app)
+      .get("/member/resources?filter=files")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(filesFilter.status, 200);
+    assert.match(filesFilter.text, /HTTP Welcome pack/);
+    assert.doesNotMatch(filesFilter.text, /Study guide outline/);
+    assert.match(filesFilter.text, /data-bb-resource-filter="files"/);
+
+    const infoFilter = await request(app)
+      .get("/member/resources?filter=info")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(infoFilter.status, 200);
+    assert.match(infoFilter.text, /Study guide outline/);
+    assert.doesNotMatch(infoFilter.text, /HTTP Welcome pack/);
+
+    const searchHit = await request(app)
+      .get("/member/resources?q=Welcome")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(searchHit.status, 200);
+    assert.match(searchHit.text, /HTTP Welcome pack/);
+    assert.doesNotMatch(searchHit.text, /Study guide outline/);
+
+    const searchMiss = await request(app)
+      .get("/member/resources?q=zzzz-no-such-resource")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(searchMiss.status, 200);
+    assert.match(searchMiss.text, /data-bb-resources-empty="no-results"/);
+    assert.doesNotMatch(searchMiss.text, /HTTP Welcome pack/);
 
     const detail = await request(app)
       .get(`/member/resources/${created.resource.id}`)
@@ -648,6 +743,29 @@ describe("blessboard forms-requests", () => {
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-resource-download="1"/);
     assert.match(detail.text, /href="\/member\/resources\/[^"]+\/file"/);
+    assert.match(detail.text, /data-bb-resource-type="PDF"/);
+    assert.match(detail.text, /note\.pdf/);
+    assert.doesNotMatch(detail.text, /certificate|course progress/i);
+
+    const infoDetail = await request(app)
+      .get(`/member/resources/${infoOnly.resource.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(infoDetail.status, 200);
+    assert.doesNotMatch(infoDetail.text, /data-bb-resource-download="1"/);
+    assert.match(infoDetail.text, /No file is attached/);
+
+    const draftDetail = await request(app)
+      .get(`/member/resources/${draftHidden.resource.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.ok(draftDetail.status === 403 || draftDetail.status === 404);
+
+    const adminDetail = await request(app)
+      .get(`/member/resources/${adminOnly.resource.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.ok(adminDetail.status === 403 || adminDetail.status === 404);
 
     const file = await request(app)
       .get(`/member/resources/${created.resource.id}/file`)
@@ -659,6 +777,18 @@ describe("blessboard forms-requests", () => {
     assert.match(String(file.headers["cache-control"] || ""), /private/i);
     assert.match(String(file.headers["content-disposition"] || ""), /attachment/i);
     assert.match(String(file.headers["content-disposition"] || ""), /note\.pdf/);
+
+    const draftFile = await request(app)
+      .get(`/member/resources/${draftHidden.resource.id}/file`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.ok(draftFile.status === 403 || draftFile.status === 404);
+
+    const adminFile = await request(app)
+      .get(`/member/resources/${adminOnly.resource.id}/file`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.ok(adminFile.status === 403 || adminFile.status === 404);
 
     const publicPath = await request(app)
       .get(`/_bb/media/${privateMediaId}`)
@@ -682,6 +812,7 @@ describe("blessboard forms-requests", () => {
       actorUserId: branchAdmin.user.id,
       tenant,
       title: "HTTP Connect card",
+      description: "Member connect details",
       schema: {
         version: 1,
         fields: [
@@ -700,6 +831,43 @@ describe("blessboard forms-requests", () => {
     });
     assert.equal(published.ok, true, published.reason);
 
+    const draftHidden = await createForm(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      scopeBranchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      title: "DRAFT_ONLY_FORM_SECRET",
+      schema: {
+        version: 1,
+        fields: [{ key: "note", type: "text", label: "Note", required: true }],
+      },
+    });
+    assert.equal(draftHidden.ok, true, draftHidden.reason);
+
+    const otherForm = await createForm(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      scopeBranchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      title: "Volunteer interest",
+      description: "Serve with a team",
+      schema: {
+        version: 1,
+        fields: [{ key: "interest", type: "text", label: "Interest", required: true }],
+      },
+    });
+    assert.equal(otherForm.ok, true, otherForm.reason);
+    const otherPublished = await publishForm(pool, {
+      id: otherForm.form.id,
+      churchId: churchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      scopeBranchId: branchA.id,
+    });
+    assert.equal(otherPublished.ok, true, otherPublished.reason);
+
     const memberCookie = `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`;
     const list = await request(app)
       .get("/member/forms")
@@ -707,7 +875,48 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", memberCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-member-forms="1"/);
+    assert.match(list.text, /data-bb-stitch-forms="20-member-forms-documents"/);
+    assert.match(list.text, /data-bb-forms-toolbar="1"/);
     assert.match(list.text, /HTTP Connect card/);
+    assert.match(list.text, /Volunteer interest/);
+    assert.match(list.text, /Fill online/);
+    assert.match(list.text, /2 fields/);
+    assert.doesNotMatch(list.text, /DRAFT_ONLY_FORM_SECRET/);
+    assert.doesNotMatch(list.text, /Download PDF|form builder|e-?signature|card number|cvv|Approved|Processing/i);
+    assert.doesNotMatch(list.text, /javascript:/i);
+
+    const searchHit = await request(app)
+      .get("/member/forms?q=Connect")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(searchHit.status, 200);
+    assert.match(searchHit.text, /HTTP Connect card/);
+    assert.doesNotMatch(searchHit.text, /Volunteer interest/);
+
+    const searchMiss = await request(app)
+      .get("/member/forms?q=zzzz-no-such-form")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(searchMiss.status, 200);
+    assert.match(searchMiss.text, /data-bb-forms-empty="no-results"/);
+
+    const availableOnly = await request(app)
+      .get("/member/forms?filter=available")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(availableOnly.status, 200);
+    assert.match(availableOnly.text, /data-bb-forms-filter="available"/);
+    assert.match(availableOnly.text, /data-bb-forms-available="1"/);
+    assert.doesNotMatch(availableOnly.text, /data-bb-forms-history="1"/);
+
+    const historyView = await request(app)
+      .get("/member/forms?filter=history")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(historyView.status, 200);
+    assert.match(historyView.text, /data-bb-forms-filter="history"/);
+    assert.match(historyView.text, /data-bb-forms-history="1"/);
+    assert.doesNotMatch(historyView.text, /data-bb-forms-available="1"/);
 
     const detail = await request(app)
       .get(`/member/forms/${form.form.id}`)
@@ -715,12 +924,20 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", memberCookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-member-form-detail="1"/);
+    assert.match(detail.text, /data-bb-stitch-forms="20-member-forms-documents"/);
     assert.match(detail.text, /data-bb-field-type="text"/);
     assert.match(detail.text, /data-bb-field-type="email"/);
     assert.doesNotMatch(detail.text, /data-bb-field-type="html"/);
     assert.doesNotMatch(detail.text, /data-bb-field-type="script"/);
+    assert.doesNotMatch(detail.text, /type="file"|e-?signature|card number|cvv/i);
     assert.match(detail.text, /name="_csrf"/);
     assert.doesNotMatch(detail.text, /javascript:/i);
+
+    const draftDetail = await request(app)
+      .get(`/member/forms/${draftHidden.form.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(draftDetail.status, 404);
 
     const csrf = extractCookie(detail, CSRF_COOKIE);
     assert.ok(csrf);
@@ -783,11 +1000,23 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", memberCookie);
     assert.equal(submitted.status, 200);
     assert.match(submitted.text, /data-bb-member-submission="1"/);
+    assert.match(submitted.text, /data-bb-stitch-forms="20-member-forms-documents"/);
     assert.match(submitted.text, /data-bb-submission-status="submitted"/);
+    assert.match(submitted.text, />Submitted</);
     assert.match(submitted.text, /Full name/);
     assert.match(submitted.text, /Ada Member/);
     assert.doesNotMatch(submitted.text, /extra_injected/);
+    assert.doesNotMatch(submitted.text, /Approved|Processing|pending/i);
     assert.doesNotMatch(submitted.text, /javascript:/i);
+
+    const historyAfter = await request(app)
+      .get("/member/forms?filter=history")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(historyAfter.status, 200);
+    assert.match(historyAfter.text, /HTTP Connect card/);
+    assert.match(historyAfter.text, /data-bb-submission-status="submitted"/);
+    assert.match(historyAfter.text, />Submitted</);
 
     const foreign = await request(app)
       .get(`/member/forms/submissions/${submissionId}`)

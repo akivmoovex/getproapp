@@ -1,6 +1,10 @@
 <%- include('../partials/member-shell-start') %>
 
-<section class="bb-mp-fr-detail" data-bb-member-resource-detail="1">
+<section
+  class="bb-mp-fr-detail"
+  data-bb-member-resource-detail="1"
+  data-bb-stitch-resources="19-member-resources-study"
+>
   <p class="bb-mp-back">
     <a href="/member/resources">
       <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -8,9 +12,16 @@
     </a>
   </p>
 
-  <article class="bb-mp-part-detail" data-bb-resource="<%= resource.id %>">
+  <article
+    class="bb-mp-part-detail"
+    data-bb-resource="<%= resource.id %>"
+    data-bb-has-file="<%= resource.mediaAssetId ? '1' : '0' %>"
+    <% if (resource.typeLabel) { %>data-bb-resource-type="<%= resource.typeLabel %>"<% } %>
+  >
     <div class="bb-mp-ann-chips" aria-label="Resource type">
-      <% if (resource.mediaAssetId) { %>
+      <% if (resource.typeLabel) { %>
+      <span class="bb-mp-chip bb-mp-chip--open"><%= resource.typeLabel %></span>
+      <% } else if (resource.mediaAssetId) { %>
       <span class="bb-mp-chip bb-mp-chip--open">Downloadable file</span>
       <% } else { %>
       <span class="bb-mp-chip bb-mp-chip--request">Information</span>
@@ -21,6 +32,23 @@
 
     <% if (resource.description) { %>
     <div class="bb-mp-ann-body"><%= resource.description %></div>
+    <% } %>
+
+    <% if (resource.fileName || resource.sizeLabel) { %>
+    <dl class="bb-mp-kv bb-mp-kv--stack" data-bb-resource-file-meta="1">
+      <% if (resource.fileName) { %>
+      <div>
+        <dt>File name</dt>
+        <dd><%= resource.fileName %></dd>
+      </div>
+      <% } %>
+      <% if (resource.sizeLabel) { %>
+      <div>
+        <dt>Size</dt>
+        <dd><%= resource.sizeLabel %></dd>
+      </div>
+      <% } %>
+    </dl>
     <% } %>
 
     <div class="bb-mp-part-detail__actions">

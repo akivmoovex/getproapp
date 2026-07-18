@@ -1952,6 +1952,61 @@ a.bb-mp-dash-ann__card:hover {
   font-weight: 600;
 }
 
+.bb-mp-ministries-toolbar {
+  margin-bottom: 1.35rem;
+}
+
+.bb-mp-ministry-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 700px) {
+  .bb-mp-ministry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bb-mp-ministry-card {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  height: 100%;
+  align-items: stretch;
+}
+
+.bb-mp-ministry-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: var(--bb-color-primary-soft, #efeaff);
+  color: var(--bb-violet);
+  align-self: center;
+}
+
+.bb-mp-ministry-card__icon .material-symbols-outlined {
+  font-size: 1.45rem;
+}
+
+.bb-mp-ministry-card.is-pending {
+  border-color: rgba(154, 91, 0, 0.28);
+  background: linear-gradient(180deg, #fffaf3 0%, var(--bb-surface) 55%);
+}
+
+.bb-mp-ministry-card.is-pending .bb-mp-ministry-card__icon {
+  background: #fff4e5;
+  color: #9a5b00;
+}
+
+.bb-mp-ministry-card__hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #9a5b00;
+}
+
 .bb-mp-chip--active {
   background: #ecfdf5;
   color: #0f766e;
@@ -2069,6 +2124,27 @@ a.bb-mp-dash-ann__card:hover {
 
 /* —— Forms / resources —— */
 
+.bb-mp-resources-toolbar {
+  margin-bottom: 1.35rem;
+}
+
+.bb-mp-resource-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 700px) {
+  .bb-mp-resource-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bb-mp-resource-card {
+  height: 100%;
+  align-items: stretch;
+}
+
 .bb-mp-fr-icon {
   display: inline-flex;
   align-items: center;
@@ -2079,10 +2155,43 @@ a.bb-mp-dash-ann__card:hover {
   background: var(--bb-color-primary-soft, #efeaff);
   color: var(--bb-violet);
   flex-shrink: 0;
+  align-self: center;
 }
 
 .bb-mp-fr-icon .material-symbols-outlined {
   font-size: 1.35rem;
+}
+
+.bb-mp-forms-toolbar {
+  margin-bottom: 1.35rem;
+}
+
+.bb-mp-forms-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 700px) {
+  .bb-mp-forms-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bb-mp-form-card,
+.bb-mp-form-history-card {
+  height: 100%;
+  align-items: stretch;
+}
+
+.bb-mp-forms-history {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+.bb-mp-empty--compact {
+  padding: 1.25rem 1rem;
 }
 
 .bb-mp-kv--stack {

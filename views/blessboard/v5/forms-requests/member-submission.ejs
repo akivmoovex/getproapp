@@ -6,9 +6,16 @@
   var formTitle = (typeof form !== 'undefined' && form && form.title)
     ? form.title
     : (submission.formTitle || 'Your submission');
+  var statusLabel = submission.statusLabel
+    || (submission.status === 'archived' ? 'Closed' : submission.status === 'submitted' ? 'Submitted' : null);
 %>
 
-<section class="bb-mp-fr-detail" data-bb-member-submission="1" data-bb-submission-status="<%= submission.status %>">
+<section
+  class="bb-mp-fr-detail bb-mp-form-submission"
+  data-bb-member-submission="1"
+  data-bb-submission-status="<%= submission.status %>"
+  data-bb-stitch-forms="20-member-forms-documents"
+>
   <p class="bb-mp-back">
     <a href="/member/forms">
       <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -20,11 +27,17 @@
   <p class="bb-mp-ok" role="status">Form submitted successfully.</p>
   <% } %>
 
-  <article class="bb-mp-part-detail is-registered">
+  <article class="bb-mp-part-detail is-registered" data-bb-submission="<%= submission.id %>">
     <div class="bb-mp-ann-chips" aria-label="Submission status">
-      <span class="bb-mp-chip bb-mp-chip--active" data-bb-status="<%= submission.status %>">
-        <%= submission.status === 'submitted' ? 'Submitted' : submission.status %>
-      </span>
+      <% if (statusLabel) { %>
+      <span
+        class="bb-mp-chip <%= submission.status === 'archived' ? 'bb-mp-chip--request' : 'bb-mp-chip--active' %>"
+        data-bb-status="<%= submission.status %>"
+      ><%= statusLabel %></span>
+      <% } %>
+      <% if (submission.submittedAtLabel) { %>
+      <span class="bb-mp-chip bb-mp-chip--request"><%= submission.submittedAtLabel %></span>
+      <% } %>
     </div>
 
     <h1 class="bb-mp-part-detail__title"><%= formTitle %></h1>
