@@ -2,6 +2,8 @@
 <%
   var rows = organizations || [];
   var limits = allowedLimits || [10, 25, 50, 100];
+  var hasFilter = Boolean(keyPrefix);
+  var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'active') return 'Active';
@@ -24,20 +26,44 @@
     if (keyPrefix) parts.push('q=' + encodeURIComponent(keyPrefix));
     return '/admin/organizations?' + parts.join('&');
   }
+  function clearHref() {
+    return '/admin/organizations?limit=' + encodeURIComponent(limit);
+  }
 %>
 
-<section class="bb-pa-orgs" data-bb-pa-organizations="1">
+<section
+  class="bb-pa-orgs"
+  data-bb-pa-organizations="1"
+  data-bb-stitch-organizations="63-platform-church-organizations"
+  aria-label="Organization directory"
+>
   <header class="bb-pa-page-head bb-pa-page-head--split">
     <div>
-      <h1 class="bb-pa-page-head__title">Organizations</h1>
+      <p class="bb-pa-orgs__eyebrow">Platform catalogue</p>
+      <h1 class="bb-pa-page-head__title">Organization Governance</h1>
       <p class="bb-pa-lede">
-        Read-only BlessBoard organization directory. Keys, hostnames, and live branch counts only —
-        no create/edit actions and no fabricated revenue metrics.
+        Read-only BlessBoard organization directory. Keys, hostnames, statuses, and live active-branch counts only —
+        no create/edit actions and no fabricated revenue, usage, or subscription metrics.
       </p>
     </div>
+    <p class="bb-pa-page-head__actions">
+      <span class="bb-pa-orgs__total" data-bb-count="directory-total"><%= totalCount %></span>
+      <span class="bb-pa-orgs__total-label">in directory</span>
+    </p>
   </header>
 
-  <form class="bb-pa-search bb-pa-org-filter" method="get" action="/admin/organizations" role="search" data-bb-pa-org-filter="1">
+  <p class="bb-pa-orgs__notice" role="note" data-bb-pa-org-notice="1">
+    Plan, country, HQ-admin, and premium filters from design comps are not available here.
+    Search uses organization key prefix only. Provisioning remains CLI-only.
+  </p>
+
+  <form
+    class="bb-pa-org-filter"
+    method="get"
+    action="/admin/organizations"
+    role="search"
+    data-bb-pa-org-filter="1"
+  >
     <div class="bb-pa-field">
       <label for="q">Organization key prefix</label>
       <input
@@ -59,19 +85,44 @@
         <% }) %>
       </select>
     </div>
-    <div class="bb-pa-search__actions">
-      <button type="submit" class="bb-pa-btn">Filter</button>
-      <% if (keyPrefix) { %>
-      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/organizations?limit=<%= encodeURIComponent(limit) %>">Clear</a>
+    <div class="bb-pa-org-filter__actions">
+      <button type="submit" class="bb-pa-btn">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= clearHref() %>">Clear</a>
       <% } %>
     </div>
   </form>
 
-  <% if (!rows.length) { %>
-  <p class="bb-pa-empty" role="status" data-bb-empty="organizations">No organizations match this directory page.</p>
+  <% if (!rows.length && !hasFilter) { %>
+  <div class="bb-pa-orgs-empty" data-bb-empty="organizations" data-bb-pa-empty="catalog" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No organizations yet',
+      body: 'Provisioned platform organizations appear here. Creation stays CLI-only — there is no create-organization screen in V5.',
+      icon: 'corporate_fare',
+      actionHref: '/admin',
+      actionLabel: 'Back to dashboard'
+    }) %>
+  </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div class="bb-pa-orgs-empty" data-bb-empty="organizations" data-bb-pa-empty="no-results" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No matching organizations',
+      body: 'Try a different organization key prefix, or clear the filter to see the full directory.',
+      icon: 'search_off',
+      actionHref: clearHref(),
+      actionLabel: 'Clear filter'
+    }) %>
+  </div>
   <% } else { %>
-  <div class="bb-pa-table-wrap">
-    <table class="bb-pa-table" data-bb-table="organizations">
+
+  <div
+    class="bb-pa-table-wrap bb-pa-orgs-table-wrap"
+    data-bb-org-table-wrap="1"
+  >
+    <table class="bb-pa-table bb-pa-orgs-table" data-bb-table="organizations" data-bb-org-table="1">
       <thead>
         <tr>
           <th scope="col">Organization</th>
@@ -88,7 +139,7 @@
         <% rows.forEach(function (org) { %>
         <tr data-bb-org-key="<%= org.organizationKey %>">
           <td>
-            <a href="/admin/organizations/<%= org.organizationKey %>">
+            <a class="bb-pa-orgs__name-link" href="/admin/organizations/<%= org.organizationKey %>">
               <strong><%= org.displayName %></strong>
               <code class="bb-pa-key">key · <%= org.organizationKey %></code>
             </a>
@@ -116,14 +167,48 @@
       </tbody>
     </table>
   </div>
+
+  <ul class="bb-pa-orgs-cards" data-bb-org-cards="1">
+    <% rows.forEach(function (org) { %>
+    <li class="bb-pa-orgs-card" data-bb-org-key="<%= org.organizationKey %>">
+      <a class="bb-pa-orgs-card__link" href="/admin/organizations/<%= org.organizationKey %>">
+        <span class="bb-pa-orgs-card__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">corporate_fare</span>
+        </span>
+        <span class="bb-pa-orgs-card__body">
+          <span class="bb-pa-orgs-card__top">
+            <strong class="bb-pa-orgs-card__title"><%= org.displayName %></strong>
+            <span class="bb-pa-chip <%= statusChip(org.organizationStatus) %>"><%= statusLabel(org.organizationStatus) %></span>
+          </span>
+          <code class="bb-pa-key"><%= org.organizationKey %></code>
+          <span class="bb-pa-orgs-card__meta">
+            <span>Branches · <strong data-bb-count="active-branches"><%= org.activeBranchCount %></strong></span>
+            <% if (org.canonicalHostname) { %>
+            <span><%= org.canonicalHostname %></span>
+            <% } %>
+            <% if (org.deploymentCode) { %>
+            <span><%= org.deploymentCode %></span>
+            <% } %>
+          </span>
+          <% if (org.churchKey) { %>
+          <span class="bb-pa-orgs-card__church">
+            Church · <code class="bb-pa-key"><%= org.churchKey %></code>
+            <span class="bb-pa-chip <%= statusChip(org.churchStatus) %>"><%= statusLabel(org.churchStatus) %></span>
+          </span>
+          <% } %>
+        </span>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 
   <nav class="bb-pa-pager" aria-label="Organization pagination" data-bb-pager="organizations">
     <span class="bb-pa-pager__meta">
-      <% if (total === 0) { %>
+      <% if (totalCount === 0) { %>
       Showing 0 of 0
       <% } else { %>
-      Showing <%= rangeFrom %>–<%= rangeTo %> of <%= total %>
+      Showing <%= rangeFrom %>–<%= rangeTo %> of <%= totalCount %>
       <% } %>
       · page <%= page %> of <%= totalPages || 1 %>
       · limit <%= limit %> (max <%= maxLimit %>)

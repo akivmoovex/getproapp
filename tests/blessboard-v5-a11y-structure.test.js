@@ -134,6 +134,26 @@ describe("blessboard v5 a11y structure — shells", () => {
         assert.doesNotMatch(start, /href="\/branch-admin\/reports"/);
         assert.doesNotMatch(start, /Support/i);
       }
+      if (shell.name === "platform") {
+        assert.match(start, /role="dialog"/);
+        assert.match(start, /aria-modal="true"/);
+        assert.match(start, /\binert\b/);
+        assert.match(start, /tabindex="-1"/);
+        assert.match(start, /bb-pa-drawer__close/);
+        assert.match(start, /data-bb-footer="drawer"/);
+        assert.match(start, /powered-by-getpro|bb-powered-by/);
+        assert.match(start, /data-bb-pa-role/);
+        assert.match(start, /data-bb-page-area/);
+        assert.match(start, /data-bb-stitch-shell="62-platform-admin-dashboard"/);
+        assert.match(start, /aria-label="Account"/);
+        assert.match(start, /aria-label="Open menu"/);
+        assert.match(start, /data-bb-nav="mobile-drawer"/);
+        assert.match(end, /data-bb-nav="mobile-tabs"/);
+        assert.match(end, /powered-by-getpro/);
+        assert.doesNotMatch(start, /href="\/admin\/organizations\/new"/);
+        assert.doesNotMatch(start, /Support Tickets|Open Tickets|Platform Health|MRR|Tenants/i);
+        assert.doesNotMatch(end, /Health|Tenants/i);
+      }
     });
 
     it(`${shell.name} CSS locks scroll, clips overflow, exposes focus-visible and reduced motion`, () => {
@@ -173,6 +193,17 @@ describe("blessboard v5 a11y structure — shells", () => {
         assert.match(css, /@media \(max-width:\s*320px\)/);
         assert.match(css, /@media \(min-width:\s*900px\)/);
       }
+      if (shell.name === "platform") {
+        assert.match(css, /\.bb-pa-bottom__link > span:last-child/);
+        assert.match(css, /\.bb-pa-drawer__footer/);
+        assert.match(css, /\.bb-pa-drawer__close/);
+        assert.match(css, /\.bb-pa-page\b/);
+        assert.match(css, /\.bb-pa-dash\b/);
+        assert.match(css, /\.bb-pa-dash-actions__item:focus-visible/);
+        assert.match(css, /#283236/);
+        assert.match(css, /@media \(max-width:\s*320px\)/);
+        assert.match(css, /@media \(min-width:\s*900px\)/);
+      }
     });
   }
 
@@ -180,8 +211,8 @@ describe("blessboard v5 a11y structure — shells", () => {
     const css = read("public/blessboard/v5/platform-admin.css");
     const nav = read("src/platform/http/platformAdminNav.js");
     assert.match(nav, /PLATFORM_ADMIN_MOBILE_TABS/);
-    assert.match(css, /grid-template-columns:\s*repeat\(4,/);
-    assert.doesNotMatch(css, /\.bb-pa-mobile-tabs\s*\{[^}]*repeat\(3,/);
+    assert.match(css, /\.bb-pa-bottom\s*\{[^}]*repeat\(4,/);
+    assert.doesNotMatch(css, /\.bb-pa-bottom\s*\{[^}]*repeat\(3,/);
   });
 
   it("tenant public shell keeps Escape focus trap and reduced motion", () => {
@@ -412,6 +443,116 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(css, /\.bb-hq-dash-stats/);
     assert.match(css, /\.bb-hq-dash-actions/);
     assert.match(css, /\.bb-hq-dash-stat:focus-visible|\.bb-hq-dash-stat--link:focus-visible/);
+    assert.match(css, /@media \(min-width:\s*900px\)/);
+  });
+
+  it("platform admin dashboard keeps Stitch sections without fabricated metrics", () => {
+    const dash = read("views/blessboard/v5/platform-admin/dashboard.ejs");
+    const css = read("public/blessboard/v5/platform-admin.css");
+    const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
+    assert.match(paShell, /platform-admin\.css\?v=11/);
+    assert.match(dash, /data-bb-pa-dashboard="1"/);
+    assert.match(dash, /data-bb-stitch-dashboard="62-platform-admin-dashboard"/);
+    assert.match(dash, /System Overview/);
+    assert.match(dash, /data-bb-dash-welcome="1"/);
+    assert.match(dash, /data-bb-dash-notices="1"/);
+    assert.match(dash, /data-bb-dash-stats="1"/);
+    assert.match(dash, /data-bb-dash-directory="1"/);
+    assert.match(dash, /data-bb-dash-activity="1"/);
+    assert.match(dash, /data-bb-dash-health="1"/);
+    assert.match(dash, /data-bb-dash-quick="desktop"/);
+    assert.match(dash, /data-bb-dash-quick="mobile"/);
+    assert.match(dash, /data-bb-dash-empty="notices"/);
+    assert.match(dash, /data-bb-dash-empty="activity"/);
+    assert.match(dash, /data-bb-dash-empty="health"/);
+    assert.match(dash, /data-bb-dash-empty="create-org"/);
+    assert.match(dash, /data-bb-dash-stat-available="<%= availAttr %>"/);
+    assert.match(dash, /available:\s*true/);
+    assert.match(dash, /available:\s*false/);
+    assert.match(dash, /\/admin\/organizations/);
+    assert.match(dash, /\/admin\/plans/);
+    assert.match(dash, /\/admin\/deployments/);
+    assert.match(dash, /\/admin\/settings/);
+    assert.match(dash, /\/admin\/account/);
+    assert.doesNotMatch(dash, /\/admin\/organizations\/new/);
+    assert.doesNotMatch(dash, /\bMRR\b|\+12%|12\.8k|99\.8%|New Organization|Export Report/i);
+    assert.match(css, /\.bb-pa-dash\b/);
+    assert.match(css, /\.bb-pa-dash-stats/);
+    assert.match(css, /\.bb-pa-dash-actions/);
+    assert.match(css, /\.bb-pa-dash-stat--link:focus-visible/);
+    assert.match(css, /@media \(min-width:\s*900px\)/);
+  });
+
+  it("platform admin organizations directory keeps Stitch layout without fabricated metrics", () => {
+    const page = read("views/blessboard/v5/platform-admin/organizations.ejs");
+    const css = read("public/blessboard/v5/platform-admin.css");
+    const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
+    assert.match(paShell, /platform-admin\.css\?v=11/);
+    assert.match(page, /data-bb-pa-organizations="1"/);
+    assert.match(page, /data-bb-stitch-organizations="63-platform-church-organizations"/);
+    assert.match(page, /Organization Governance/);
+    assert.match(page, /data-bb-pa-org-filter="1"/);
+    assert.match(page, /name="q"/);
+    assert.match(page, /name="limit"/);
+    assert.match(page, /data-bb-org-table="1"/);
+    assert.match(page, /data-bb-org-cards="1"/);
+    assert.match(page, /data-bb-pa-empty="catalog"/);
+    assert.match(page, /data-bb-pa-empty="no-results"/);
+    assert.match(page, /data-bb-pager="organizations"/);
+    assert.match(page, /data-bb-count="directory-total"/);
+    assert.match(page, /data-bb-count="active-branches"/);
+    assert.match(page, /organizationKey/);
+    assert.match(page, /displayName/);
+    assert.match(page, /organizationStatus/);
+    assert.match(page, /activeBranchCount/);
+    assert.match(page, /canonicalHostname/);
+    assert.match(page, /deploymentCode/);
+    assert.doesNotMatch(page, /\/admin\/organizations\/new/);
+    assert.doesNotMatch(page, /Create New Organization|Monthly Revenue|Pending Verifications|\$142k|Export CSV|file_download/i);
+    assert.doesNotMatch(page, /\borg\.id\b|organization_id|church_id/i);
+    assert.match(page, /premium filters from design comps are not available/i);
+    assert.match(css, /\.bb-pa-orgs\b/);
+    assert.match(css, /\.bb-pa-orgs-cards/);
+    assert.match(css, /\.bb-pa-orgs-table-wrap/);
+    assert.match(css, /\.bb-pa-orgs-card__link:focus-visible|\.bb-pa-orgs__name-link:focus-visible/);
+    assert.match(css, /@media \(min-width:\s*900px\)/);
+    assert.match(css, /\.bb-pa-orgs-table-wrap\s*\{[^}]*display:\s*block/);
+    assert.match(css, /\.bb-pa-orgs-cards\s*\{[^}]*display:\s*none/);
+  });
+
+  it("platform admin organization detail keeps Stitch layout with preserved entitlement actions", () => {
+    const page = read("views/blessboard/v5/platform-admin/organization-detail.ejs");
+    const css = read("public/blessboard/v5/platform-admin.css");
+    const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
+    assert.match(paShell, /platform-admin\.css\?v=11/);
+    assert.match(page, /data-bb-pa-organization-detail="1"/);
+    assert.match(page, /data-bb-stitch-organization-detail="65-platform-branch-tenants"/);
+    assert.match(page, /data-bb-pa-org-summary="1"/);
+    assert.match(page, /data-bb-pa-org-catalogue="1"/);
+    assert.match(page, /data-bb-pa-org-domains="1"/);
+    assert.match(page, /data-bb-pa-org-branches="1"/);
+    assert.match(page, /data-bb-pa-org-entitlements="1"/);
+    assert.match(page, /data-bb-pa-org-overrides="1"/);
+    assert.match(page, /data-bb-pa-plan-form="1"/);
+    assert.match(page, /data-bb-pa-override-form="1"/);
+    assert.match(page, /name="plan_key"/);
+    assert.match(page, /name="confirm_plan_change"/);
+    assert.match(page, /name="confirm_override"/);
+    assert.match(page, /name="feature_key"/);
+    assert.match(page, /name="reason"/);
+    assert.match(page, /action="\/admin\/organizations\/<%= org\.organizationKey %>\/plan"/);
+    assert.match(page, /action="\/admin\/organizations\/<%= org\.organizationKey %>\/entitlement-override"/);
+    assert.match(page, /bb-pa-org-detail__ro/);
+    assert.match(page, /bb-pa-org-detail__edit/);
+    assert.match(page, /data-bb-branch-table="1"/);
+    assert.match(page, /data-bb-branch-cards="1"/);
+    assert.match(page, /data-bb-domain-table="1"/);
+    assert.match(page, /data-bb-domain-cards="1"/);
+    assert.doesNotMatch(page, /Export CSV|New Branch|impersonat|DATABASE_URL|connection string|\$249|payment gateway/i);
+    assert.match(css, /\.bb-pa-org-detail\b/);
+    assert.match(css, /\.bb-pa-org-detail-stats/);
+    assert.match(css, /\.bb-pa-org-detail-cards/);
+    assert.match(css, /\.bb-pa-org-detail-table-wrap/);
     assert.match(css, /@media \(min-width:\s*900px\)/);
   });
 

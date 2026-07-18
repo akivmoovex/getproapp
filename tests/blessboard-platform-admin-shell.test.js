@@ -224,14 +224,77 @@ describe("blessboard platform-admin shell", () => {
     const home = await request(app).get("/admin").set("Host", "blessboard.org").set("Cookie", cookie);
     assert.equal(home.status, 200);
     assert.match(home.text, /data-bb-shell="platform-admin"/);
+    assert.match(home.text, /data-bb-stitch-shell="62-platform-admin-dashboard"/);
     assert.match(home.text, /data-bb-pa-dashboard="1"/);
+    assert.match(home.text, /data-bb-stitch-dashboard="62-platform-admin-dashboard"/);
+    assert.match(home.text, /data-bb-nav="desktop-sidebar"/);
+    assert.match(home.text, /data-bb-nav="desktop"/);
+    assert.match(home.text, /data-bb-nav="mobile-drawer"/);
+    assert.match(home.text, /data-bb-nav="mobile-tabs"/);
+    assert.match(home.text, /data-bb-nav="mobile-header"/);
+    assert.match(home.text, /data-bb-page-area/);
+    assert.match(home.text, /data-bb-pa-role/);
+    assert.match(home.text, /role="dialog"/);
+    assert.match(home.text, /aria-modal="true"/);
+    assert.match(home.text, /\binert\b/);
+    assert.match(home.text, /bb-pa-drawer__close/);
+    assert.match(home.text, /data-bb-footer="drawer"/);
+    assert.match(home.text, /powered-by-getpro|Powered by/i);
+    assert.match(home.text, /aria-label="Open menu"/);
+    assert.match(home.text, /aria-label="Account"/);
+    assert.match(home.text, /tabindex="-1"/);
+    assert.match(home.text, /System Overview/);
+    assert.match(home.text, /data-bb-dash-welcome="1"/);
+    assert.match(home.text, /data-bb-dash-notices="1"/);
+    assert.match(home.text, /data-bb-dash-stats="1"/);
+    assert.match(home.text, /data-bb-dash-directory="1"/);
+    assert.match(home.text, /data-bb-dash-activity="1"/);
+    assert.match(home.text, /data-bb-dash-health="1"/);
+    assert.match(home.text, /data-bb-dash-quick="desktop"/);
+    assert.match(home.text, /data-bb-dash-quick="mobile"/);
+    assert.match(home.text, /data-bb-dash-empty="notices"/);
+    assert.match(home.text, /data-bb-dash-empty="activity"/);
+    assert.match(home.text, /data-bb-dash-empty="health"/);
+    assert.match(home.text, /data-bb-dash-empty="create-org"/);
+    assert.match(
+      home.text,
+      /data-bb-dash-stat="organizations"[^>]*data-bb-dash-stat-available="1"|data-bb-dash-stat-available="1"[^>]*data-bb-dash-stat="organizations"/
+    );
+    assert.match(
+      home.text,
+      /data-bb-dash-stat="churches"[^>]*data-bb-dash-stat-available="1"|data-bb-dash-stat-available="1"[^>]*data-bb-dash-stat="churches"/
+    );
+    assert.match(
+      home.text,
+      /data-bb-dash-stat="tenants"[^>]*data-bb-dash-stat-available="0"|data-bb-dash-stat-available="0"[^>]*data-bb-dash-stat="tenants"/
+    );
+    assert.match(
+      home.text,
+      /data-bb-dash-stat="plans"[^>]*data-bb-dash-stat-available="0"|data-bb-dash-stat-available="0"[^>]*data-bb-dash-stat="plans"/
+    );
     assert.match(home.text, /data-bb-count="organizations-total"/);
     assert.match(home.text, /data-bb-count="organizations-with-church"/);
     assert.match(home.text, /href="\/admin\/account"/);
+    assert.match(home.text, /href="\/admin\/organizations"/);
+    assert.match(home.text, /href="\/admin\/plans"/);
+    assert.match(home.text, /href="\/admin\/deployments"/);
+    assert.match(home.text, /href="\/admin\/settings"/);
+    assert.match(home.text, /data-bb-quick-action="organizations"/);
+    assert.match(home.text, /data-bb-quick-action="plans"/);
+    assert.match(home.text, /data-bb-quick-action="deployments"/);
     assert.match(home.text, /data-bb-pa-logout="1"/);
     assert.match(home.text, /Platform admin/);
-    assert.doesNotMatch(home.text, /\bMRR\b|projectedGrowth|\+12%|fake metric/i);
+    assert.match(home.text, /blessboard-org-v5/);
+    assert.doesNotMatch(
+      home.text,
+      /\bMRR\b|projectedGrowth|\+12%|\+5\.2%|12\.8k|99\.8%|fake metric|New Organization|Export Report/i
+    );
+    assert.doesNotMatch(home.text, /href="\/admin\/organizations\/new"/);
+    assert.doesNotMatch(home.text, />\s*Tenants\s*</);
+    assert.doesNotMatch(home.text, />\s*Health\s*</);
     assert.doesNotMatch(home.text, new RegExp(org.id, "i"));
+    assert.match(home.text, /Support tickets are not tracked here/);
+    assert.match(home.text, /Organization creation is not available/);
 
     const list = await request(app)
       .get("/admin/organizations")
@@ -242,6 +305,7 @@ describe("blessboard platform-admin shell", () => {
     assert.match(list.text, /Platform Admin Demo/);
     assert.match(list.text, /data-bb-table="organizations"/);
     assert.match(list.text, /blessboard-org-v5/);
+    assert.match(list.text, /data-bb-stitch-shell="62-platform-admin-dashboard"/);
     assert.doesNotMatch(list.text, new RegExp(org.id, "i"));
     assert.doesNotMatch(list.text, /password|session_token|DATABASE_URL/i);
   });
@@ -346,15 +410,34 @@ describe("blessboard platform-admin shell", () => {
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-detail="organization"/);
     assert.match(detail.text, /data-bb-pa-organization-detail="1"/);
+    assert.match(detail.text, /data-bb-stitch-organization-detail="65-platform-branch-tenants"/);
+    assert.match(detail.text, /data-bb-pa-org-summary="1"/);
+    assert.match(detail.text, /data-bb-pa-org-catalogue="1"/);
+    assert.match(detail.text, /data-bb-pa-org-domains="1"/);
     assert.match(detail.text, /data-bb-pa-org-branches="1"/);
+    assert.match(detail.text, /data-bb-pa-org-entitlements="1"/);
+    assert.match(detail.text, /data-bb-pa-org-overrides="1"/);
+    assert.match(detail.text, /data-bb-pa-plan-form="1"/);
+    assert.match(detail.text, /data-bb-pa-override-form="1"/);
     assert.match(detail.text, /data-bb-table="branches"/);
+    assert.match(detail.text, /data-bb-branch-cards="1"/);
+    assert.match(detail.text, /Read-only/);
+    assert.match(detail.text, /Editable/);
     assert.match(detail.text, /pa-demo/);
     assert.match(detail.text, /Platform Admin Demo/);
     assert.match(detail.text, /data-bb-count="active-branches">1</);
     assert.match(detail.text, /data-bb-branch-key="hq"/);
+    assert.match(detail.text, /name="confirm_plan_change"/);
+    assert.match(detail.text, /name="confirm_override"/);
+    assert.match(detail.text, /name="_csrf"/);
+    assert.match(detail.text, /action="\/admin\/organizations\/pa-demo\/plan"/);
+    assert.match(detail.text, /action="\/admin\/organizations\/pa-demo\/entitlement-override"/);
     assert.doesNotMatch(detail.text, new RegExp(church.id, "i"));
     assert.doesNotMatch(detail.text, new RegExp(org.id, "i"));
-    assert.doesNotMatch(detail.text, /password|session_token|Create New|Export CSV|MRR/i);
+    assert.doesNotMatch(
+      detail.text,
+      /password|session_token|DATABASE_URL|secret|connection string|Export CSV|New Branch|\$249|impersonat/i
+    );
 
     const missing = await request(app)
       .get("/admin/organizations/does-not-exist")
@@ -372,12 +455,30 @@ describe("blessboard platform-admin shell", () => {
       .set("Cookie", cookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-pa-organizations="1"/);
+    assert.match(list.text, /data-bb-stitch-organizations="63-platform-church-organizations"/);
+    assert.match(list.text, /Organization Governance/);
     assert.match(list.text, /data-bb-pa-org-filter="1"/);
+    assert.match(list.text, /data-bb-org-table="1"/);
+    assert.match(list.text, /data-bb-org-cards="1"/);
+    assert.match(list.text, /data-bb-count="directory-total"/);
     assert.match(list.text, /Showing \d+–\d+ of \d+/);
     assert.match(list.text, /name="limit"/);
-    assert.doesNotMatch(list.text, /Create New Organization|Monthly Revenue|Pending Verifications/i);
+    assert.match(list.text, /pa-demo/);
+    assert.match(list.text, /Platform Admin Demo/);
+    assert.match(list.text, /blessboard-org-v5/);
+    assert.doesNotMatch(list.text, /Create New Organization|Monthly Revenue|Pending Verifications|\$142k|Export CSV/i);
     assert.doesNotMatch(list.text, new RegExp(org.id, "i"));
     assert.doesNotMatch(list.text, /password|session_token|DATABASE_URL/i);
+    assert.match(list.text, /premium filters from design comps are not available/i);
+
+    const noResults = await request(app)
+      .get("/admin/organizations?q=zzznomatch")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(noResults.status, 200);
+    assert.match(noResults.text, /data-bb-pa-empty="no-results"/);
+    assert.match(noResults.text, /No matching organizations/);
+    assert.doesNotMatch(noResults.text, /data-bb-org-table="1"/);
   });
 
   it("platform admin repository returns safe catalogue fields only", async () => {

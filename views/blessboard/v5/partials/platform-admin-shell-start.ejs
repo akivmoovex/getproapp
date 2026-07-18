@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=7" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=11" />
 </head>
 <%
   var paNav = (typeof navItems !== 'undefined' && navItems && navItems.length)
@@ -19,11 +19,9 @@
         { key: 'settings', label: 'Settings', href: '/admin/settings', icon: 'settings' },
         { key: 'account', label: 'Account', href: '/admin/account', icon: 'person' },
       ];
-  var paTabs = (typeof mobileTabs !== 'undefined' && mobileTabs && mobileTabs.length)
-    ? mobileTabs
-    : paNav;
   var paRole = typeof roleLabel !== 'undefined' && roleLabel ? roleLabel : 'Platform admin';
   var paDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
+  var paDeploy = typeof deploymentCode !== 'undefined' && deploymentCode ? deploymentCode : '';
   var paCsrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
 %>
 <body
@@ -32,6 +30,7 @@
   data-bb-product="blessboard-v5"
   data-bb-viewport="responsive"
   data-bb-page="<%= activeNav || 'home' %>"
+  data-bb-stitch-shell="62-platform-admin-dashboard"
 >
   <a class="bb-pa-skip" href="#bb-pa-main">Skip to content</a>
 
@@ -49,8 +48,16 @@
           />
           <span>BlessBoard</span>
         </a>
-        <p class="bb-pa-context">Platform administration</p>
-        <span class="bb-pa-role"><%= paRole %></span>
+        <p class="bb-pa-context">
+          <span class="bb-pa-context__label">Platform administration</span>
+          <% if (paDeploy) { %>
+          <span class="bb-pa-context__deploy" data-bb-pa-deployment="1"><%= paDeploy %></span>
+          <% } %>
+        </p>
+        <span class="bb-pa-role" data-bb-pa-role="1">
+          <span class="material-symbols-outlined" aria-hidden="true">shield_person</span>
+          <%= paRole %>
+        </span>
       </div>
 
       <nav class="bb-pa-sidebar__nav" aria-label="Platform admin desktop" data-bb-nav="desktop">
@@ -87,10 +94,19 @@
     <div class="bb-pa-frame">
       <header class="bb-pa-top" data-bb-nav="mobile-header">
         <div class="bb-pa-top__brand">
-          <a class="bb-pa-wordmark bb-pa-wordmark--compact" href="/admin">BlessBoard</a>
+          <a class="bb-pa-wordmark bb-pa-wordmark--compact" href="/admin">
+            <img
+              class="bb-pa-wordmark__mark"
+              src="/church/images/brand/blessboard-small-church-logo.png"
+              alt=""
+              width="24"
+              height="24"
+              decoding="async"
+            />
+            <span>BlessBoard</span>
+          </a>
           <p class="bb-pa-context bb-pa-context--compact">
-            Platform admin
-            <span class="bb-pa-role"><%= paRole %></span>
+            Platform admin<% if (paDeploy) { %> · <%= paDeploy %><% } %>
           </p>
         </div>
         <div class="bb-pa-top__actions">
@@ -104,6 +120,7 @@
             data-bb-nav="mobile-toggle"
             aria-controls="bb-pa-drawer"
             aria-expanded="false"
+            aria-label="Open menu"
           >
             <span class="material-symbols-outlined" aria-hidden="true">menu</span>
             <span class="bb-pa-nav-toggle__label">Menu</span>
@@ -111,15 +128,35 @@
         </div>
       </header>
 
-      <div id="bb-pa-drawer" class="bb-pa-drawer" data-bb-nav="mobile" hidden>
+      <div
+        id="bb-pa-drawer"
+        class="bb-pa-drawer"
+        data-bb-nav="mobile-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Platform admin menu"
+        inert
+        hidden
+      >
         <div class="bb-pa-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
         <nav class="bb-pa-drawer__panel" aria-label="Platform admin mobile menu">
           <div class="bb-pa-drawer__head">
             <p class="bb-pa-drawer__title">Menu</p>
-            <button type="button" class="bb-pa-drawer__close" data-bb-nav="drawer-close" aria-label="Close menu">
+            <button
+              type="button"
+              class="bb-pa-drawer__close"
+              data-bb-nav="drawer-close"
+              aria-label="Close menu"
+            >
               <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
           </div>
+          <% if (paDisplay) { %>
+          <p class="bb-pa-user bb-pa-user--drawer" data-bb-admin-user="1">
+            <span class="bb-pa-user__name"><%= paDisplay %></span>
+            <span class="bb-pa-user__meta"><%= paRole %></span>
+          </p>
+          <% } %>
           <% paNav.forEach(function (item) { %>
           <a
             href="<%= item.href %>"
@@ -130,19 +167,18 @@
             <span><%= item.label %></span>
           </a>
           <% }) %>
+          <form class="bb-pa-logout" method="post" action="/admin/logout" data-bb-pa-logout="1">
+            <input type="hidden" name="_csrf" value="<%= paCsrf %>" />
+            <button type="submit">
+              <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+              Sign out
+            </button>
+          </form>
+          <div class="bb-pa-drawer__footer" data-bb-footer="drawer">
+            <%- include('./powered-by-getpro') %>
+          </div>
         </nav>
       </div>
 
-      <main id="bb-pa-main" class="bb-pa-main">
-        <nav class="bb-pa-mobile-tabs" aria-label="Platform admin shortcuts" data-bb-nav="mobile-tabs">
-          <% paTabs.forEach(function (item) { %>
-          <a
-            href="<%= item.href %>"
-            class="bb-pa-mobile-tab<%= activeNav === item.key ? ' is-active' : '' %>"
-            <%= activeNav === item.key ? 'aria-current="page"' : '' %>
-          >
-            <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
-            <span><%= item.label %></span>
-          </a>
-          <% }) %>
-        </nav>
+      <main id="bb-pa-main" class="bb-pa-main" tabindex="-1">
+        <div class="bb-pa-page" data-bb-page-area="1">

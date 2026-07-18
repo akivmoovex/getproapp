@@ -1,63 +1,307 @@
 <%- include('../partials/platform-admin-shell-start') %>
 <%
   var sample = directorySample || [];
+  var orgTotal = typeof totalOrganizations !== 'undefined' ? Number(totalOrganizations) || 0 : 0;
+  var withChurch = typeof organizationsWithChurch !== 'undefined' ? Number(organizationsWithChurch) || 0 : 0;
+  var greetingName = displayName ? String(displayName).split(/\s+/)[0] : '';
+  var deployLabel = typeof deploymentCode !== 'undefined' && deploymentCode ? String(deploymentCode) : '';
+  var desktopQuickActions = [
+    { key: 'organizations', label: 'Organizations', href: '/admin/organizations', icon: 'corporate_fare' },
+    { key: 'plans', label: 'Plans & limits', href: '/admin/plans', icon: 'workspace_premium' },
+    { key: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'dns' },
+    { key: 'settings', label: 'Settings', href: '/admin/settings', icon: 'settings' }
+  ];
+  var mobileQuickActions = [
+    { key: 'organizations', label: 'Orgs', href: '/admin/organizations', icon: 'corporate_fare' },
+    { key: 'plans', label: 'Plans', href: '/admin/plans', icon: 'workspace_premium' },
+    { key: 'deployments', label: 'Deploy', href: '/admin/deployments', icon: 'dns' },
+    { key: 'account', label: 'Account', href: '/admin/account', icon: 'person' }
+  ];
+  var summaryCards = [
+    {
+      key: 'organizations',
+      label: 'Organizations',
+      icon: 'corporate_fare',
+      href: '/admin/organizations',
+      tone: 'accent',
+      available: true,
+      value: String(orgTotal),
+      countAttr: 'organizations-total',
+      hint: 'Live provisioned total',
+      visibility: 'both'
+    },
+    {
+      key: 'churches',
+      label: 'BlessBoard churches',
+      icon: 'church',
+      href: '/admin/organizations',
+      tone: 'ok',
+      available: true,
+      value: String(withChurch),
+      countAttr: 'organizations-with-church',
+      hint: 'Linked church catalogue rows',
+      visibility: 'both'
+    },
+    {
+      key: 'tenants',
+      label: 'Branch tenants',
+      icon: 'hub',
+      href: '/admin/organizations',
+      tone: 'neutral',
+      available: false,
+      value: '—',
+      hint: 'Open an organization for live branches',
+      visibility: 'both'
+    },
+    {
+      key: 'plans',
+      label: 'Paid plans',
+      icon: 'payments',
+      href: '/admin/plans',
+      tone: 'neutral',
+      available: false,
+      value: '—',
+      hint: 'Catalogue only — no billing totals',
+      visibility: 'desktop'
+    },
+    {
+      key: 'tickets',
+      label: 'Open tickets',
+      icon: 'contact_support',
+      href: '/admin/deployments',
+      tone: 'warn',
+      available: false,
+      value: '—',
+      hint: 'Support tickets are not tracked here',
+      visibility: 'desktop'
+    },
+    {
+      key: 'health',
+      label: 'System health',
+      icon: 'monitor_heart',
+      href: '/admin/deployments',
+      tone: 'warn',
+      available: false,
+      value: '—',
+      hint: 'Open deployments registry',
+      visibility: 'mobile'
+    }
+  ];
 %>
 
-<section class="bb-pa-dash" data-bb-pa-dashboard="1">
-  <header class="bb-pa-page-head">
-    <h1 class="bb-pa-page-head__title">Platform admin</h1>
-    <p class="bb-pa-lede">
-      Apex command center for BlessBoard V5. Cards use live provisioned counts only —
-      no projected growth, billing, or fabricated health scores.
-    </p>
+<section
+  class="bb-pa-dash"
+  data-bb-pa-dashboard="1"
+  data-bb-stitch-dashboard="62-platform-admin-dashboard"
+  aria-label="Platform admin dashboard"
+>
+  <header class="bb-pa-dash__hero">
+    <div class="bb-pa-dash__welcome" data-bb-dash-welcome="1">
+      <p class="bb-pa-dash__eyebrow">Platform overview</p>
+      <h1 class="bb-pa-dash__title">System Overview</h1>
+      <p class="bb-pa-dash__lede">
+        Welcome<% if (greetingName) { %>, <%= greetingName %><% } %>.
+        Apex command center for BlessBoard V5.
+        Only live provisioned organization counts are shown here —
+        subscription revenue, system health, domain counts, and usage metrics are not invented on this page.
+      </p>
+      <p class="bb-pa-dash__role">
+        Signed in as <span class="bb-pa-role" data-bb-pa-role="1"><%= roleLabel || 'Platform admin' %></span>
+        <% if (deployLabel) { %>
+        · <span data-bb-pa-deployment="1"><%= deployLabel %></span>
+        <% } %>
+      </p>
+      <a class="bb-pa-btn bb-pa-dash__hero-cta" href="/admin/organizations">
+        Browse organizations
+      </a>
+    </div>
   </header>
 
-  <section class="bb-pa-summary" aria-label="Directory summary" data-bb-pa-summary="1">
-    <article class="bb-pa-card bb-pa-card--stat">
-      <h2 class="bb-pa-card__label">Organizations</h2>
-      <p class="bb-pa-card__value" data-bb-count="organizations-total"><%= totalOrganizations %></p>
-      <p class="bb-pa-card__hint">Provisioned platform organizations</p>
-    </article>
-    <article class="bb-pa-card bb-pa-card--stat">
-      <h2 class="bb-pa-card__label">With BlessBoard church</h2>
-      <p class="bb-pa-card__value" data-bb-count="organizations-with-church"><%= organizationsWithChurch %></p>
-      <p class="bb-pa-card__hint">Organizations linked to a church catalogue row</p>
-    </article>
-    <article class="bb-pa-card">
-      <h2 class="bb-pa-card__label">Directory</h2>
-      <p class="bb-pa-card__value bb-pa-card__value--text">Read-only</p>
-      <p class="bb-pa-card__hint">
-        <a class="bb-pa-link" href="/admin/organizations">Browse organizations</a>
-      </p>
-    </article>
+  <section
+    class="bb-pa-dash__notices"
+    aria-labelledby="bb-pa-dash-notices-heading"
+    data-bb-dash-notices="1"
+  >
+    <h2 id="bb-pa-dash-notices-heading" class="bb-pa-sr-only">Deployment notices</h2>
+    <p class="bb-pa-dash__notice" role="status" data-bb-dash-empty="notices">
+      No deployment alerts on this dashboard.
+      <% if (deployLabel) { %>
+      Current deployment: <strong><%= deployLabel %></strong>.
+      <% } %>
+      Open Deployments for the live registry — health scores and ticket queues are not fabricated here.
+    </p>
   </section>
 
-  <section class="bb-pa-panel" aria-labelledby="pa-sample-heading">
-    <div class="bb-pa-panel__head">
-      <h2 id="pa-sample-heading" class="bb-pa-section-title">Directory sample</h2>
-      <a class="bb-pa-link" href="/admin/organizations">View all</a>
-    </div>
-    <p class="bb-pa-hint">
-      First keys by organization key order. Creation, editing, billing, and impersonation stay CLI-only.
-    </p>
-    <% if (!sample.length) { %>
-    <p class="bb-pa-empty" role="status" data-bb-pa-empty="directory">No organizations provisioned yet.</p>
-    <% } else { %>
-    <ul class="bb-pa-org-list" data-bb-pa-directory-sample="1">
-      <% sample.forEach(function (org) { %>
-      <li>
-        <a href="/admin/organizations/<%= org.organizationKey %>">
-          <code class="bb-pa-key"><%= org.organizationKey %></code>
-          <span><%= org.displayName %></span>
-        </a>
-        <% if (org.churchKey) { %>
-        <span class="bb-pa-chip">Church · <%= org.churchKey %></span>
+  <section
+    class="bb-pa-dash-stats"
+    aria-labelledby="bb-pa-dash-stats-heading"
+    data-bb-dash-stats="1"
+    data-bb-pa-summary="1"
+  >
+    <h2 id="bb-pa-dash-stats-heading" class="bb-pa-sr-only">Summary</h2>
+    <div class="bb-pa-dash-stats__grid">
+      <% summaryCards.forEach(function (card) {
+        var visClass = card.visibility === 'desktop'
+          ? ' bb-pa-dash-stat--desktop-only'
+          : (card.visibility === 'mobile' ? ' bb-pa-dash-stat--mobile-only' : '');
+        var className = 'bb-pa-dash-stat bb-pa-dash-stat--' + card.tone + visClass;
+        var availAttr = card.available ? '1' : '0';
+      %>
+      <a
+        class="<%= className %> bb-pa-dash-stat--link<%= card.available ? '' : ' is-unavailable' %>"
+        href="<%= card.href %>"
+        data-bb-dash-stat="<%= card.key %>"
+        data-bb-dash-stat-available="<%= availAttr %>"
+      >
+        <span class="bb-pa-dash-stat__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= card.icon %></span>
+        </span>
+        <span class="bb-pa-dash-stat__label"><%= card.label %></span>
+        <% if (card.available) { %>
+        <strong class="bb-pa-dash-stat__value" data-bb-count="<%= card.countAttr %>"><%= card.value %></strong>
+        <% } else { %>
+        <strong class="bb-pa-dash-stat__value" aria-hidden="true"><%= card.value %></strong>
         <% } %>
-      </li>
+        <span class="bb-pa-dash-stat__hint"><%= card.hint %></span>
+      </a>
       <% }) %>
-    </ul>
-    <% } %>
+    </div>
   </section>
+
+  <div class="bb-pa-dash__layout">
+    <div class="bb-pa-dash__main">
+      <section
+        class="bb-pa-dash-panel bb-pa-show-mobile"
+        aria-labelledby="bb-pa-dash-quick-mobile-heading"
+        data-bb-dash-quick="mobile"
+      >
+        <h2 id="bb-pa-dash-quick-mobile-heading" class="bb-pa-dash-panel__title">Quick governance</h2>
+        <ul class="bb-pa-dash-quick-icons">
+          <% mobileQuickActions.forEach(function (action) { %>
+          <li>
+            <a
+              class="bb-pa-dash-quick-icon"
+              href="<%= action.href %>"
+              data-bb-quick-action="<%= action.key %>"
+              data-bb-quick-enabled="1"
+            >
+              <span class="bb-pa-dash-quick-icon__glyph" aria-hidden="true">
+                <span class="material-symbols-outlined"><%= action.icon %></span>
+              </span>
+              <span class="bb-pa-dash-quick-icon__label"><%= action.label %></span>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section
+        class="bb-pa-dash-panel"
+        aria-labelledby="pa-sample-heading"
+        data-bb-dash-directory="1"
+      >
+        <div class="bb-pa-dash-panel__head">
+          <h2 id="pa-sample-heading" class="bb-pa-dash-panel__title">Directory sample</h2>
+          <a class="bb-pa-link" href="/admin/organizations">View all</a>
+        </div>
+        <p class="bb-pa-hint">
+          First keys by organization key order. Creation, editing, billing, and impersonation stay CLI-only —
+          this is not a ranked “top performing” leaderboard.
+        </p>
+        <% if (!sample.length) { %>
+        <div class="bb-pa-dash-empty" role="status" data-bb-pa-empty="directory" data-bb-dash-empty="directory">
+          <span class="material-symbols-outlined" aria-hidden="true">corporate_fare</span>
+          <p>No organizations provisioned yet.</p>
+          <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/organizations">Open organizations</a>
+        </div>
+        <% } else { %>
+        <ul class="bb-pa-org-list" data-bb-pa-directory-sample="1">
+          <% sample.forEach(function (org) { %>
+          <li>
+            <a href="/admin/organizations/<%= org.organizationKey %>">
+              <code class="bb-pa-key"><%= org.organizationKey %></code>
+              <span><%= org.displayName %></span>
+            </a>
+            <% if (org.churchKey) { %>
+            <span class="bb-pa-chip">Church · <%= org.churchKey %></span>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+        <% } %>
+      </section>
+
+      <section
+        class="bb-pa-dash-panel"
+        aria-labelledby="bb-pa-dash-activity-heading"
+        data-bb-dash-activity="1"
+      >
+        <div class="bb-pa-dash-panel__head">
+          <h2 id="bb-pa-dash-activity-heading" class="bb-pa-dash-panel__title">Recent activity</h2>
+          <a class="bb-pa-link" href="/admin/deployments">View deployments</a>
+        </div>
+        <div class="bb-pa-dash-empty" role="status" data-bb-dash-empty="activity">
+          <span class="material-symbols-outlined" aria-hidden="true">history</span>
+          <p>
+            No activity feed is summarized here. Open Deployments for the live registry —
+            fabricated provisioning events and ticket updates are not shown.
+          </p>
+        </div>
+      </section>
+
+      <section
+        class="bb-pa-dash-panel"
+        aria-labelledby="bb-pa-dash-health-heading"
+        data-bb-dash-health="1"
+      >
+        <div class="bb-pa-dash-panel__head">
+          <h2 id="bb-pa-dash-health-heading" class="bb-pa-dash-panel__title">Platform health</h2>
+        </div>
+        <div class="bb-pa-dash-empty" role="status" data-bb-dash-empty="health">
+          <span class="material-symbols-outlined" aria-hidden="true">monitor_heart</span>
+          <p>
+            API uptime, database latency, and reliability percentages are not calculated on this dashboard.
+            Use Deployments for identity and registry context only.
+          </p>
+          <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/deployments">Open deployments</a>
+        </div>
+      </section>
+    </div>
+
+    <aside class="bb-pa-dash__aside bb-pa-show-desktop" aria-label="Shortcuts">
+      <section
+        class="bb-pa-dash-actions"
+        aria-labelledby="bb-pa-dash-quick-desktop-heading"
+        data-bb-dash-quick="desktop"
+      >
+        <h2 id="bb-pa-dash-quick-desktop-heading" class="bb-pa-dash-actions__title">
+          <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+          Quick actions
+        </h2>
+        <ul class="bb-pa-dash-actions__list">
+          <% desktopQuickActions.forEach(function (action) { %>
+          <li>
+            <a
+              class="bb-pa-dash-actions__item"
+              href="<%= action.href %>"
+              data-bb-quick-action="<%= action.key %>"
+              data-bb-quick-enabled="1"
+            >
+              <span class="bb-pa-dash-actions__icon" aria-hidden="true">
+                <span class="material-symbols-outlined"><%= action.icon %></span>
+              </span>
+              <span class="bb-pa-dash-actions__label"><%= action.label %></span>
+              <span class="material-symbols-outlined bb-pa-dash-actions__chevron" aria-hidden="true">chevron_right</span>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+        <p class="bb-pa-dash-actions__note" data-bb-dash-empty="create-org">
+          Organization creation is not available from this dashboard.
+        </p>
+      </section>
+    </aside>
+  </div>
 </section>
 
 <%- include('../partials/platform-admin-shell-end') %>

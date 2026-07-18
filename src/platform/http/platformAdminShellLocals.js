@@ -13,6 +13,7 @@ const {
   PLATFORM_ADMIN_NAV,
   PLATFORM_ADMIN_MOBILE_TABS,
 } = require("./platformAdminNav");
+const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 
 /**
  * @param {import('express').Request} req
@@ -38,6 +39,11 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     navItems.find((item) => item.key === key)
   ).filter(Boolean);
 
+  const deployment = getPlatformDeploymentCode(env);
+  const deploymentCode =
+    (opts.extra && opts.extra.deploymentCode) ||
+    (deployment && deployment.ok ? deployment.code : "");
+
   const defaultTitles = {
     home: "Platform admin",
     organizations: "Organizations",
@@ -55,6 +61,7 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     csrfField: CSRF_FIELD,
     roleLabel: ctx.roleLabel || "Platform admin",
     displayName: ctx.displayName || "",
+    deploymentCode,
     navItems,
     mobileTabs,
     ...(opts.extra || {}),

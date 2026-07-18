@@ -44,9 +44,9 @@ Related prior audits (do not replace this map): `docs/ui/V5_STITCH_SCREEN_MAP.md
 | Unique Stitch screens (`list_screens`) | 196 |
 | Primary product rows in master table (logical screens) | 97 |
 | Rows status **MATCHED** | 0 |
-| Rows status **PARTIAL** | 51 |
-| Rows status **PLACEHOLDER** | 11 |
-| Rows status **MISSING** | 24 |
+| Rows status **PARTIAL** | 59 |
+| Rows status **PLACEHOLDER** | 3 |
+| Rows status **MISSING** | 28 |
 | Rows status **STITCH_MISSING** | 9 |
 | Rows status **NEEDS_VERIFICATION** | 2 |
 | Obsolete / duplicate Stitch screens (appendix; not primary targets) | 44 |
@@ -138,10 +138,10 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 | 71d | HQ admin | Requests oversight | `126bfebff1414fc08367039b84587819` | `9b6531097eec43fb8ce22115dd170429` | `/hq/requests` (+ `/b/:branchKey`, `/:id`) | `/hq/requests` | `forms-requests/admin-requests.ejs` (+ `admin-request-detail.ejs`) | hq_admin | PARTIAL | Batch 18E (`BATCH_18E_HQ_REQUESTS.md`). Reuses branch queue 44 + detail 45. Branch panel + status/search; truncated memberRef; status/history preserved. No SLA/chat/assignment/KPI. |
 | 72 | HQ admin | Registrations / members | — | — | `/hq/registrations`, `/hq/members` | `/hq/registrations`, `/hq/members` | `hq/registrations.ejs`, `hq/members.ejs`, detail views | hq_admin | PARTIAL | Batch 17A members (`BATCH_17A_HQ_MEMBERS.md`, Stitch 28) + Batch 17B registrations (`BATCH_17B_HQ_REGISTRATIONS.md`, Stitch 26 `87fe9bb7…` / `d352ed07…`). Church-scoped; HQ queue read-only (no approve/reject). |
 | 73 | HQ admin | Account / settings | — | — | `/hq/account`, `/hq/settings` | `/hq/account`, `/hq/settings` | `hq/account.ejs`, `hq/settings.ejs` | hq_admin | STITCH_MISSING | |
-| 74 | Platform admin | Dashboard | `36c4708b025b4e7eaeab9ed508603b03` | `513dd5cc58c74b21bd7ee8d106dfac55` | `/admin` | `/admin` | `platform-admin/dashboard.ejs`, `platform-admin-shell-*` | platform_admin | PLACEHOLDER | Stitch dark ops chrome vs V5 light shell; no fake health/tickets. |
-| 75 | Platform admin | Organizations | `18da9665bc674d2dbd249cbbb269d58d` | `db6b741d99e34d10b01496a83de5072a` | `/admin/organizations` | `/admin/organizations` | `platform-admin/organizations.ejs` | platform_admin | PLACEHOLDER | |
+| 74 | Platform admin | Dashboard | `36c4708b025b4e7eaeab9ed508603b03` | `513dd5cc58c74b21bd7ee8d106dfac55` | `/admin` | `/admin` | `platform-admin/dashboard.ejs`, `platform-admin-shell-*` | platform_admin | PARTIAL | Batch 19B dashboard (`BATCH_19B_PLATFORM_DASHBOARD.md`). Live org/church counts only; unavailable cards for tenants/plans/tickets/health; no fabricated MRR/uptime/activity. Shell Batch 19A. |
+| 75 | Platform admin | Organizations | `18da9665bc674d2dbd249cbbb269d58d` | `db6b741d99e34d10b01496a83de5072a` | `/admin/organizations` | `/admin/organizations` | `platform-admin/organizations.ejs` | platform_admin | PARTIAL | Batch 19C (`BATCH_19C_PLATFORM_ORGANIZATIONS.md`). Key-prefix search + table/cards; live keys/status/branches only; no create/export/MRR. |
 | 76 | Platform admin | Create organization | `d992150d24cb4cd3afdca87ca3ce915f` | `0da4f454abf0402dbe09f82959f29afa` | `/admin/organizations/new` | — | — | platform_admin | MISSING | Provisioning service/CLI exists; no create-org UI route. |
-| 77 | Platform admin | Branch tenants / org detail | `10f1dceb6d694563aaf152ecaedac3d3` | `6633fa49f7b9420a8c1705f1e43c9efb` | `/admin/organizations/:key` | `/admin/organizations/:organizationKey` | `platform-admin/organization-detail.ejs` | platform_admin | PLACEHOLDER | |
+| 77 | Platform admin | Branch tenants / org detail | `10f1dceb6d694563aaf152ecaedac3d3` | `6633fa49f7b9420a8c1705f1e43c9efb` | `/admin/organizations/:key` | `/admin/organizations/:organizationKey` | `platform-admin/organization-detail.ejs` | platform_admin | PARTIAL | Batch 19D (`BATCH_19D_PLATFORM_ORGANIZATION_DETAIL.md`). Single-org catalogue/domains/branches + plan/override forms; no export/new-branch/health invention. |
 | 78 | Platform admin | Plans & limits | `4d0f59ac6acf4fcc9e1e0ed746abb5fd` | `b5953809962f4e0a8eae4ea96aa4575a` | `/admin/plans` | `/admin/plans` | `platform-admin/plans.ejs` | platform_admin | PARTIAL | Catalogue + org assign/override; no billing/price invention. |
 | 79 | Platform admin | Settings | `30e3856782bd41b6bf14402e1e535cbd` | `efb0fd24f1184968be79083974dcd092` | `/admin/settings` | `/admin/settings` | `platform-admin/settings.ejs` | platform_admin | PARTIAL | Read-only DNS patterns; no save/failover UI. |
 | 80 | Platform admin | Support / monitoring | `74cbe4a015754137ad414222f3941ef2` | `9f40042097d7471db1f5628fbb0d27d8` | `/admin/deployments` | `/admin/deployments` | `platform-admin/deployments.ejs` | platform_admin | PLACEHOLDER | Deployment registry only; Stitch tickets/health not inventable. |
@@ -160,7 +160,7 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 | 93 | Shared shells | Member shell | (see orders 26–36) | (see orders 26–36) | `/member/*` | `/member/*` | `partials/member-shell-*`, `member-portal.js` | member | PARTIAL | Desktop sidebar + mobile drawer/bottom tabs. |
 | 94 | Shared shells | Branch admin shell | `001d1a0235a14f47b456bb092a012f7c` | `615f1f4eabd645c4a6840349edb17cd1` | `/branch-admin/*` | `/branch-admin/*` | `partials/branch-admin-shell-*`, `branch-admin.css` | branch_admin | PARTIAL | Shell chrome from 25-branch-admin-dashboard-* (Batch 11A). No Reports/Support nav. Dashboard content Batch 11B. |
 | 95 | Shared shells | HQ shell | `538c8f4f1a844930ac058428bf390a76` | `c67eda7682de428d985416074f606fcf` | `/hq/*` | `/hq/*` | `partials/hq-shell-*`, `branch-selector.ejs`, `hq-admin.css` | hq_admin | PARTIAL | Shell chrome from 51-hq-dashboard-* (Batch 16A / `BATCH_16A_HQ_SHELL.md`). Light Sacred Modernity; branch-selector stays page-scoped. No Broadcast/Roles/Templates nav. Dashboard content not started. |
-| 96 | Shared shells | Platform admin shell | (see orders 73–80) | (see orders 73–80) | `/admin/*` | `/admin/*` | `partials/platform-admin-shell-*`, `platform-admin.css` | platform_admin | PLACEHOLDER | |
+| 96 | Shared shells | Platform admin shell | (see orders 74–80) | (see orders 74–80) | `/admin/*` | `/admin/*` | `partials/platform-admin-shell-*`, `platform-admin.css` | platform_admin | PARTIAL | Shell chrome from 62-platform-admin-dashboard-* (Batch 19A / `BATCH_19A_PLATFORM_ADMIN_SHELL.md`). Dark ops sidebar; enabled V5 nav only. Dashboard content not started. |
 | 97 | Shared shells | Apex shell | (see orders 3–12) | (see orders 3–12) | apex routes | apex routes | `partials/apex-shell-*`, `apex.js`, `apex.css` | anon / auth | PARTIAL | |
 
 ---

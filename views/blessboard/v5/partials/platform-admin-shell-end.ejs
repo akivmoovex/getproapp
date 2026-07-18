@@ -1,14 +1,57 @@
-      </main>
+</div>
+</main>
+<%
+  var paNavEnd = (typeof navItems !== 'undefined' && navItems && navItems.length)
+    ? navItems
+    : [
+        { key: 'home', label: 'Dashboard', href: '/admin', icon: 'dashboard' },
+        { key: 'organizations', label: 'Organizations', href: '/admin/organizations', icon: 'corporate_fare' },
+        { key: 'plans', label: 'Plans', href: '/admin/plans', icon: 'workspace_premium' },
+        { key: 'account', label: 'Account', href: '/admin/account', icon: 'person' },
+      ];
+  var paTabsEnd = (typeof mobileTabs !== 'undefined' && mobileTabs && mobileTabs.length)
+    ? mobileTabs
+    : paNavEnd.filter(function (item) {
+        return ['home', 'organizations', 'plans', 'account'].indexOf(item.key) !== -1;
+      });
+%>
+
+      <nav class="bb-pa-bottom" aria-label="Platform admin primary" data-bb-nav="mobile-tabs">
+        <% paTabsEnd.forEach(function (item) { %>
+        <a
+          href="<%= item.href %>"
+          class="bb-pa-bottom__link<%= activeNav === item.key ? ' is-active' : '' %>"
+          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+          <span><%= item.label === 'Organizations' ? 'Orgs' : (item.label === 'Dashboard' ? 'Home' : item.label) %></span>
+        </a>
+        <% }) %>
+      </nav>
+
+      <footer class="bb-pa-footer" data-bb-footer="1">
+        <%- include('./powered-by-getpro') %>
+      </footer>
     </div>
   </div>
-  <script src="/blessboard/v5/design-system.js?v=2" defer></script>
+
   <script src="/blessboard/v5/shell-nav.js?v=1"></script>
+  <script src="/blessboard/v5/design-system.js?v=2" defer></script>
   <script>
     (function () {
-      if (!window.BlessBoardShellNav) return;
-      window.BlessBoardShellNav.bindShellDrawer({
-        drawerId: "bb-pa-drawer",
-        bodyOpenClass: "bb-pa-drawer-open",
+      function ready(fn) {
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", fn);
+        } else {
+          fn();
+        }
+      }
+      ready(function () {
+        if (!window.BlessBoardShellNav) return;
+        window.BlessBoardShellNav.bindShellDrawer({
+          drawerId: "bb-pa-drawer",
+          bodyOpenClass: "bb-pa-drawer-open",
+        });
       });
     })();
   </script>

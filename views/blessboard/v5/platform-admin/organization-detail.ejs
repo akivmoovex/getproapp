@@ -70,14 +70,31 @@
   var errorMsg = errorText(flashError);
 %>
 
-<section class="bb-pa-org-detail" data-bb-pa-organization-detail="1" data-bb-detail="organization">
-  <header class="bb-pa-page-head">
-    <p class="bb-pa-hint"><a class="bb-pa-link" href="/admin/organizations">← Organizations</a></p>
-    <h1 class="bb-pa-page-head__title"><%= org.displayName %></h1>
-    <p class="bb-pa-lede">
-      Organization catalogue, domains, and entitlements. Plan changes never delete branches or users.
-      No billing, payments, or DNS automation on this screen.
-    </p>
+<section
+  class="bb-pa-org-detail"
+  data-bb-pa-organization-detail="1"
+  data-bb-detail="organization"
+  data-bb-stitch-organization-detail="65-platform-branch-tenants"
+  aria-label="Organization detail"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin/organizations">Organizations</a>
+    <span aria-hidden="true">/</span>
+    <span><%= org.organizationKey %></span>
+  </nav>
+
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-org-detail__eyebrow">Organization detail</p>
+      <div class="bb-pa-org-detail__title-row">
+        <h1 class="bb-pa-page-head__title"><%= org.displayName %></h1>
+        <span class="bb-pa-chip <%= statusChip(org.organizationStatus) %>"><%= statusLabel(org.organizationStatus) %></span>
+      </div>
+      <p class="bb-pa-lede">
+        Catalogue, church mapping, domains, branches, and entitlements for this organization.
+        Plan and override forms below are the only editable controls.
+      </p>
+    </div>
   </header>
 
   <% if (noticeMsg) { %>
@@ -87,289 +104,356 @@
   <p class="bb-pa-flash bb-pa-flash--error" role="alert" data-bb-pa-error="1"><%= errorMsg %></p>
   <% } %>
 
-  <section class="bb-pa-summary" aria-label="Organization summary" data-bb-pa-org-summary="1">
-    <article class="bb-pa-card bb-pa-card--stat">
-      <h2 class="bb-pa-card__label">Organization key</h2>
-      <p class="bb-pa-card__value bb-pa-card__value--text"><code class="bb-pa-key"><%= org.organizationKey %></code></p>
+  <p class="bb-pa-org-detail__notice" role="note" data-bb-pa-org-detail-notice="1">
+    Design-comp KPIs (member totals, system health, cloud usage charts) and unsupported create/export actions are omitted.
+    Only live catalogue fields and entitlement actions already supported in V5 are shown.
+  </p>
+
+  <section class="bb-pa-org-detail-stats" aria-label="Organization summary" data-bb-pa-org-summary="1">
+    <article class="bb-pa-org-detail-stat">
+      <h2 class="bb-pa-org-detail-stat__label">Organization key</h2>
+      <p class="bb-pa-org-detail-stat__value"><code class="bb-pa-key"><%= org.organizationKey %></code></p>
+      <p class="bb-pa-org-detail-stat__hint">Read-only public key</p>
     </article>
-    <article class="bb-pa-card bb-pa-card--stat">
-      <h2 class="bb-pa-card__label">Status</h2>
-      <p class="bb-pa-card__value bb-pa-card__value--text">
+    <article class="bb-pa-org-detail-stat">
+      <h2 class="bb-pa-org-detail-stat__label">Status</h2>
+      <p class="bb-pa-org-detail-stat__value">
         <span class="bb-pa-chip <%= statusChip(org.organizationStatus) %>"><%= statusLabel(org.organizationStatus) %></span>
       </p>
+      <p class="bb-pa-org-detail-stat__hint">Read-only catalogue status</p>
     </article>
-    <article class="bb-pa-card bb-pa-card--stat">
-      <h2 class="bb-pa-card__label">Active branches</h2>
-      <p class="bb-pa-card__value" data-bb-count="active-branches"><%= org.activeBranchCount %></p>
+    <article class="bb-pa-org-detail-stat">
+      <h2 class="bb-pa-org-detail-stat__label">Active branches</h2>
+      <p class="bb-pa-org-detail-stat__value" data-bb-count="active-branches"><%= org.activeBranchCount %></p>
+      <p class="bb-pa-org-detail-stat__hint">Live BlessBoard count</p>
     </article>
   </section>
 
-  <section class="bb-pa-panel" aria-labelledby="pa-org-fields-heading">
-    <h2 id="pa-org-fields-heading" class="bb-pa-section-title">Catalogue fields</h2>
-    <dl class="bb-pa-dl bb-pa-dl--grid">
-      <div>
-        <dt>Display name</dt>
-        <dd><%= org.displayName %></dd>
-      </div>
-      <div>
-        <dt>Data environment</dt>
-        <dd><code class="bb-pa-key"><%= org.dataEnvironment %></code></dd>
-      </div>
-      <div>
-        <dt>BlessBoard enrolment</dt>
-        <dd>
-          <% if (org.enrolmentStatus) { %>
-          <span class="bb-pa-chip <%= statusChip(org.enrolmentStatus) %>"><%= statusLabel(org.enrolmentStatus) %></span>
-          <% } else { %>—<% } %>
-        </dd>
-      </div>
-      <div>
-        <dt>Canonical hostname</dt>
-        <dd><%= org.canonicalHostname || '—' %></dd>
-      </div>
-      <div>
-        <dt>Deployment</dt>
-        <dd><code class="bb-pa-key"><%= org.deploymentCode || '—' %></code></dd>
-      </div>
-      <div>
-        <dt>Church key</dt>
-        <dd>
-          <% if (org.churchKey) { %>
-          <code class="bb-pa-key"><%= org.churchKey %></code>
-          <span class="bb-pa-chip <%= statusChip(org.churchStatus) %>"><%= statusLabel(org.churchStatus) %></span>
-          <% } else { %>—<% } %>
-        </dd>
-      </div>
-    </dl>
-  </section>
+  <div class="bb-pa-org-detail__layout">
+    <div class="bb-pa-org-detail__main">
+      <section class="bb-pa-panel bb-pa-org-detail-panel" aria-labelledby="pa-org-fields-heading" data-bb-pa-org-catalogue="1">
+        <div class="bb-pa-panel__head">
+          <h2 id="pa-org-fields-heading" class="bb-pa-section-title">Catalogue &amp; church mapping</h2>
+          <span class="bb-pa-org-detail__ro">Read-only</span>
+        </div>
+        <dl class="bb-pa-dl bb-pa-dl--grid">
+          <div>
+            <dt>Display name</dt>
+            <dd><%= org.displayName %></dd>
+          </div>
+          <div>
+            <dt>Data environment</dt>
+            <dd><code class="bb-pa-key"><%= org.dataEnvironment %></code></dd>
+          </div>
+          <div>
+            <dt>BlessBoard enrolment</dt>
+            <dd>
+              <% if (org.enrolmentStatus) { %>
+              <span class="bb-pa-chip <%= statusChip(org.enrolmentStatus) %>"><%= statusLabel(org.enrolmentStatus) %></span>
+              <% } else { %>—<% } %>
+            </dd>
+          </div>
+          <div>
+            <dt>Canonical hostname</dt>
+            <dd><%= org.canonicalHostname || '—' %></dd>
+          </div>
+          <div>
+            <dt>Deployment</dt>
+            <dd><code class="bb-pa-key"><%= org.deploymentCode || '—' %></code></dd>
+          </div>
+          <div>
+            <dt>Church key</dt>
+            <dd>
+              <% if (org.churchKey) { %>
+              <code class="bb-pa-key"><%= org.churchKey %></code>
+              <span class="bb-pa-chip <%= statusChip(org.churchStatus) %>"><%= statusLabel(org.churchStatus) %></span>
+              <% } else { %>—<% } %>
+            </dd>
+          </div>
+        </dl>
+      </section>
 
-  <section class="bb-pa-panel" id="pa-org-entitlements" aria-labelledby="pa-org-entitlements-heading" data-bb-pa-org-entitlements="1">
-    <h2 id="pa-org-entitlements-heading" class="bb-pa-section-title">Subscription &amp; entitlements</h2>
-    <% if (!ent) { %>
-    <p class="bb-pa-empty" role="status">Entitlements are unavailable for this organization.</p>
-    <% } else { %>
-    <dl class="bb-pa-dl bb-pa-dl--grid">
-      <div>
-        <dt>Plan</dt>
-        <dd>
-          <% if (ent.planDisplayName || ent.planKey) { %>
-          <strong><%= ent.planDisplayName || ent.planKey %></strong>
-          <% if (ent.planKey) { %> <code class="bb-pa-key"><%= ent.planKey %></code><% } %>
-          <% } else { %>—<% } %>
-        </dd>
-      </div>
-      <div>
-        <dt>Subscription</dt>
-        <dd>
-          <% if (ent.subscriptionStatus) { %>
-          <span class="bb-pa-chip <%= statusChip(ent.subscriptionStatus) %>"><%= statusLabel(ent.subscriptionStatus) %></span>
-          <% } else { %>—<% } %>
-          · <%= ent.subscriptionActive ? 'Active for entitlement checks' : 'Inactive (fail closed)' %>
-        </dd>
-      </div>
-    </dl>
-
-    <% if (use) { %>
-    <h3 class="bb-pa-subsection-title">Usage vs limits</h3>
-    <ul class="bb-pa-usage" data-bb-pa-usage="1">
-      <li>Branches · <strong><%= use.branches %></strong> / <%= formatLimit(use.branchLimit) %></li>
-      <li>Staff accounts · <strong><%= use.staffAccounts %></strong> / <%= formatLimit(use.staffLimit) %></li>
-      <li>Users · <strong><%= use.users %></strong> / <%= formatLimit(use.userLimit) %></li>
-      <li>Custom domain · <%= use.customDomain ? 'Entitled' : 'Not entitled' %></li>
-      <li>Custom email · <%= use.customEmail ? 'Entitled' : 'Not entitled' %></li>
-      <li>Advanced reports · <%= use.advancedReports ? 'Entitled' : 'Not entitled' %></li>
-    </ul>
-    <% } %>
-
-    <% if (ent.features && ent.features.length) { %>
-    <div class="bb-pa-table-wrap">
-      <table class="bb-pa-table" data-bb-table="entitlements">
-        <thead>
-          <tr>
-            <th scope="col">Feature</th>
-            <th scope="col">Value</th>
-            <th scope="col">Source</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% ent.features.forEach(function (f) { %>
-          <tr data-bb-feature="<%= f.featureKey %>">
-            <td><%= featureLabel(f.featureKey) %> <code class="bb-pa-key"><%= f.featureKey %></code></td>
-            <td>
-              <% if (f.featureKind === 'limit') { %><%= formatLimit(f.limitValue) %><% } else { %><%= f.booleanValue ? 'Yes' : 'No' %><% } %>
-            </td>
-            <td>
-              <%= f.source === 'override' ? 'Override' : 'Plan' %>
-              <% if (f.reason) { %><span class="bb-pa-hint"> · <%= f.reason %></span><% } %>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-    <% } %>
-
-    <form
-      class="bb-pa-form"
-      method="post"
-      action="/admin/organizations/<%= org.organizationKey %>/plan"
-      data-bb-pa-plan-form="1"
-    >
-      <h3 class="bb-pa-subsection-title">Assign plan</h3>
-      <p class="bb-pa-hint">
-        Changing a plan updates the active subscription only. Existing branches and users are retained
-        even if the new tier is lower.
-      </p>
-      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
-      <label class="bb-pa-field">
-        <span class="bb-pa-field__label">Plan</span>
-        <select name="plan_key" required>
-          <option value="">Select a plan…</option>
-          <% planOptions.forEach(function (p) { %>
-          <option value="<%= p.planKey %>"<%= ent.planKey === p.planKey ? ' selected' : '' %>><%= p.displayName %> (<%= p.planKey %>)</option>
-          <% }) %>
-        </select>
-      </label>
-      <label class="bb-pa-field">
-        <span class="bb-pa-field__label">Notes (optional)</span>
-        <textarea name="notes" rows="2" maxlength="2000" placeholder="Internal note for this assignment"></textarea>
-      </label>
-      <label class="bb-pa-confirm">
-        <input type="checkbox" name="confirm_plan_change" value="1" required />
-        <span>I confirm this plan change. Existing branches and users will not be deleted.</span>
-      </label>
-      <button type="submit" class="bb-pa-btn">Save plan assignment</button>
-    </form>
-    <% } %>
-  </section>
-
-  <section class="bb-pa-panel" id="pa-org-overrides" aria-labelledby="pa-org-overrides-heading" data-bb-pa-org-overrides="1">
-    <h2 id="pa-org-overrides-heading" class="bb-pa-section-title">Entitlement override</h2>
-    <p class="bb-pa-hint">
-      Overrides require a reason and confirmation. They adjust effective limits/features for this organization only.
-    </p>
-    <form
-      class="bb-pa-form"
-      method="post"
-      action="/admin/organizations/<%= org.organizationKey %>/entitlement-override"
-      data-bb-pa-override-form="1"
-    >
-      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
-      <label class="bb-pa-field">
-        <span class="bb-pa-field__label">Feature</span>
-        <select name="feature_key" required>
-          <option value="">Select a feature…</option>
-          <% featureKeyOptions.forEach(function (fk) { %>
-          <option value="<%= fk %>"><%= featureLabel(fk) %> (<%= fk %>)</option>
-          <% }) %>
-        </select>
-      </label>
-      <label class="bb-pa-field">
-        <span class="bb-pa-field__label">Kind</span>
-        <select name="feature_kind" required>
-          <option value="boolean">Boolean</option>
-          <option value="limit">Limit</option>
-        </select>
-      </label>
-      <label class="bb-pa-field">
-        <span class="bb-pa-field__label">Boolean value</span>
-        <select name="boolean_value">
-          <option value="true">Enabled</option>
-          <option value="false">Disabled</option>
-        </select>
-      </label>
-      <label class="bb-pa-field">
-        <span class="bb-pa-field__label">Limit value</span>
-        <input type="text" name="limit_value" placeholder="Number, or leave blank / unlimited" />
-      </label>
-      <label class="bb-pa-field">
-        <span class="bb-pa-field__label">Reason</span>
-        <textarea name="reason" rows="2" maxlength="2000" required placeholder="Why this override is needed"></textarea>
-      </label>
-      <label class="bb-pa-confirm">
-        <input type="checkbox" name="confirm_override" value="1" required />
-        <span>I confirm this entitlement override for this organization.</span>
-      </label>
-      <button type="submit" class="bb-pa-btn">Save override</button>
-    </form>
-  </section>
-
-  <section class="bb-pa-panel" aria-labelledby="pa-org-domains-heading" data-bb-pa-org-domains="1">
-    <div class="bb-pa-panel__head">
-      <h2 id="pa-org-domains-heading" class="bb-pa-section-title">Domains</h2>
-      <span class="bb-pa-hint"><%= domainRows.length %> listed (max 100)</span>
-    </div>
-    <p class="bb-pa-hint">Registered hostnames only. No DNS verify or automation actions.</p>
-    <% if (!domainRows.length) { %>
-    <p class="bb-pa-empty" role="status" data-bb-empty="domains">No domains registered for this organization.</p>
-    <% } else { %>
-    <div class="bb-pa-table-wrap">
-      <table class="bb-pa-table" data-bb-table="domains">
-        <thead>
-          <tr>
-            <th scope="col">Hostname</th>
-            <th scope="col">Type</th>
-            <th scope="col">Status</th>
-            <th scope="col">Deployment</th>
-            <th scope="col">Verified</th>
-          </tr>
-        </thead>
-        <tbody>
+      <section class="bb-pa-panel bb-pa-org-detail-panel" aria-labelledby="pa-org-domains-heading" data-bb-pa-org-domains="1">
+        <div class="bb-pa-panel__head">
+          <h2 id="pa-org-domains-heading" class="bb-pa-section-title">Domains</h2>
+          <span class="bb-pa-org-detail__ro">Read-only · <%= domainRows.length %> listed (max 100)</span>
+        </div>
+        <p class="bb-pa-hint">Registered hostnames only. DNS verify and automation are not available here.</p>
+        <% if (!domainRows.length) { %>
+        <p class="bb-pa-empty" role="status" data-bb-empty="domains">No domains registered for this organization.</p>
+        <% } else { %>
+        <div class="bb-pa-table-wrap bb-pa-org-detail-table-wrap" data-bb-domain-table-wrap="1">
+          <table class="bb-pa-table" data-bb-table="domains" data-bb-domain-table="1">
+            <thead>
+              <tr>
+                <th scope="col">Hostname</th>
+                <th scope="col">Type</th>
+                <th scope="col">Status</th>
+                <th scope="col">Deployment</th>
+                <th scope="col">Verified</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% domainRows.forEach(function (d) { %>
+              <tr data-bb-hostname="<%= d.hostname %>">
+                <td>
+                  <strong><%= d.hostname %></strong>
+                  <% if (d.isPrimary) { %><span class="bb-pa-chip">Primary</span><% } %>
+                </td>
+                <td><%= typeLabel(d.domainType) %></td>
+                <td><span class="bb-pa-chip <%= statusChip(d.status) %>"><%= statusLabel(d.status) %></span></td>
+                <td><code class="bb-pa-key"><%= d.deploymentCode || '—' %></code></td>
+                <td><%= d.isVerified ? 'Yes' : 'No' %></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <ul class="bb-pa-org-detail-cards" data-bb-domain-cards="1">
           <% domainRows.forEach(function (d) { %>
-          <tr data-bb-hostname="<%= d.hostname %>">
-            <td>
+          <li class="bb-pa-org-detail-card" data-bb-hostname="<%= d.hostname %>">
+            <div class="bb-pa-org-detail-card__top">
               <strong><%= d.hostname %></strong>
-              <% if (d.isPrimary) { %><span class="bb-pa-chip">Primary</span><% } %>
-            </td>
-            <td><%= typeLabel(d.domainType) %></td>
-            <td><span class="bb-pa-chip <%= statusChip(d.status) %>"><%= statusLabel(d.status) %></span></td>
-            <td><code class="bb-pa-key"><%= d.deploymentCode || '—' %></code></td>
-            <td><%= d.isVerified ? 'Yes' : 'No' %></td>
-          </tr>
+              <span class="bb-pa-chip <%= statusChip(d.status) %>"><%= statusLabel(d.status) %></span>
+            </div>
+            <p class="bb-pa-org-detail-card__meta">
+              <%= typeLabel(d.domainType) %>
+              <% if (d.isPrimary) { %> · Primary<% } %>
+              · <%= d.isVerified ? 'Verified' : 'Unverified' %>
+              <% if (d.deploymentCode) { %> · <%= d.deploymentCode %><% } %>
+            </p>
+          </li>
           <% }) %>
-        </tbody>
-      </table>
-    </div>
-    <% } %>
-  </section>
+        </ul>
+        <% } %>
+      </section>
 
-  <section class="bb-pa-panel" aria-labelledby="pa-org-branches-heading" data-bb-pa-org-branches="1">
-    <div class="bb-pa-panel__head">
-      <h2 id="pa-org-branches-heading" class="bb-pa-section-title">Branches</h2>
-      <span class="bb-pa-hint"><%= branchRows.length %> listed (max 100)</span>
-    </div>
-    <p class="bb-pa-hint">Branch keys and labels only. No create or edit actions.</p>
-    <% if (!branchRows.length) { %>
-    <p class="bb-pa-empty" role="status" data-bb-empty="branches">No branches provisioned for this organization.</p>
-    <% } else { %>
-    <div class="bb-pa-table-wrap">
-      <table class="bb-pa-table" data-bb-table="branches">
-        <thead>
-          <tr>
-            <th scope="col">Branch</th>
-            <th scope="col">Type</th>
-            <th scope="col">Status</th>
-            <th scope="col">Country</th>
-          </tr>
-        </thead>
-        <tbody>
+      <section class="bb-pa-panel bb-pa-org-detail-panel" aria-labelledby="pa-org-branches-heading" data-bb-pa-org-branches="1">
+        <div class="bb-pa-panel__head">
+          <h2 id="pa-org-branches-heading" class="bb-pa-section-title">Branch summary</h2>
+          <span class="bb-pa-org-detail__ro">Read-only · <%= branchRows.length %> listed (max 100)</span>
+        </div>
+        <p class="bb-pa-hint">Branch keys and labels only. Create and edit actions are not available here.</p>
+        <% if (!branchRows.length) { %>
+        <p class="bb-pa-empty" role="status" data-bb-empty="branches">No branches provisioned for this organization.</p>
+        <% } else { %>
+        <div class="bb-pa-table-wrap bb-pa-org-detail-table-wrap" data-bb-branch-table-wrap="1">
+          <table class="bb-pa-table" data-bb-table="branches" data-bb-branch-table="1">
+            <thead>
+              <tr>
+                <th scope="col">Branch</th>
+                <th scope="col">Type</th>
+                <th scope="col">Status</th>
+                <th scope="col">Country</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% branchRows.forEach(function (b) { %>
+              <tr data-bb-branch-key="<%= b.key %>">
+                <td>
+                  <strong><%= b.displayName %></strong>
+                  <code class="bb-pa-key">key · <%= b.key %></code>
+                  <% if (b.isPrimary) { %><span class="bb-pa-chip">Primary</span><% } %>
+                </td>
+                <td><%= typeLabel(b.branchType) %></td>
+                <td><span class="bb-pa-chip <%= statusChip(b.status) %>"><%= statusLabel(b.status) %></span></td>
+                <td><%= b.countryCode || '—' %></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <ul class="bb-pa-org-detail-cards" data-bb-branch-cards="1">
           <% branchRows.forEach(function (b) { %>
-          <tr data-bb-branch-key="<%= b.key %>">
-            <td>
+          <li class="bb-pa-org-detail-card" data-bb-branch-key="<%= b.key %>">
+            <div class="bb-pa-org-detail-card__top">
               <strong><%= b.displayName %></strong>
-              <code class="bb-pa-key">key · <%= b.key %></code>
-              <% if (b.isPrimary) { %><span class="bb-pa-chip">Primary</span><% } %>
-            </td>
-            <td><%= typeLabel(b.branchType) %></td>
-            <td><span class="bb-pa-chip <%= statusChip(b.status) %>"><%= statusLabel(b.status) %></span></td>
-            <td><%= b.countryCode || '—' %></td>
-          </tr>
+              <span class="bb-pa-chip <%= statusChip(b.status) %>"><%= statusLabel(b.status) %></span>
+            </div>
+            <code class="bb-pa-key"><%= b.key %></code>
+            <p class="bb-pa-org-detail-card__meta">
+              <%= typeLabel(b.branchType) %>
+              <% if (b.isPrimary) { %> · Primary<% } %>
+              <% if (b.countryCode) { %> · <%= b.countryCode %><% } %>
+            </p>
+          </li>
           <% }) %>
-        </tbody>
-      </table>
+        </ul>
+        <% } %>
+      </section>
     </div>
-    <% } %>
-  </section>
+
+    <aside class="bb-pa-org-detail__aside" aria-label="Products and entitlements">
+      <section
+        class="bb-pa-panel bb-pa-org-detail-panel"
+        id="pa-org-entitlements"
+        aria-labelledby="pa-org-entitlements-heading"
+        data-bb-pa-org-entitlements="1"
+      >
+        <div class="bb-pa-panel__head">
+          <h2 id="pa-org-entitlements-heading" class="bb-pa-section-title">Products &amp; entitlements</h2>
+        </div>
+        <% if (!ent) { %>
+        <p class="bb-pa-empty" role="status">Entitlements are unavailable for this organization.</p>
+        <% } else { %>
+        <div class="bb-pa-org-detail__ro-block" data-bb-pa-entitlements-readonly="1">
+          <p class="bb-pa-org-detail__ro">Read-only summary</p>
+          <dl class="bb-pa-dl bb-pa-dl--grid">
+            <div>
+              <dt>Plan</dt>
+              <dd>
+                <% if (ent.planDisplayName || ent.planKey) { %>
+                <strong><%= ent.planDisplayName || ent.planKey %></strong>
+                <% if (ent.planKey) { %> <code class="bb-pa-key"><%= ent.planKey %></code><% } %>
+                <% } else { %>—<% } %>
+              </dd>
+            </div>
+            <div>
+              <dt>Subscription</dt>
+              <dd>
+                <% if (ent.subscriptionStatus) { %>
+                <span class="bb-pa-chip <%= statusChip(ent.subscriptionStatus) %>"><%= statusLabel(ent.subscriptionStatus) %></span>
+                <% } else { %>—<% } %>
+                · <%= ent.subscriptionActive ? 'Active for entitlement checks' : 'Inactive (fail closed)' %>
+              </dd>
+            </div>
+          </dl>
+
+          <% if (use) { %>
+          <h3 class="bb-pa-subsection-title">Usage vs limits</h3>
+          <ul class="bb-pa-usage" data-bb-pa-usage="1">
+            <li>Branches · <strong><%= use.branches %></strong> / <%= formatLimit(use.branchLimit) %></li>
+            <li>Staff accounts · <strong><%= use.staffAccounts %></strong> / <%= formatLimit(use.staffLimit) %></li>
+            <li>Users · <strong><%= use.users %></strong> / <%= formatLimit(use.userLimit) %></li>
+            <li>Custom domain · <%= use.customDomain ? 'Entitled' : 'Not entitled' %></li>
+            <li>Custom email · <%= use.customEmail ? 'Entitled' : 'Not entitled' %></li>
+            <li>Advanced reports · <%= use.advancedReports ? 'Entitled' : 'Not entitled' %></li>
+          </ul>
+          <% } %>
+
+          <% if (ent.features && ent.features.length) { %>
+          <div class="bb-pa-table-wrap">
+            <table class="bb-pa-table" data-bb-table="entitlements">
+              <thead>
+                <tr>
+                  <th scope="col">Feature</th>
+                  <th scope="col">Value</th>
+                  <th scope="col">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% ent.features.forEach(function (f) { %>
+                <tr data-bb-feature="<%= f.featureKey %>">
+                  <td><%= featureLabel(f.featureKey) %> <code class="bb-pa-key"><%= f.featureKey %></code></td>
+                  <td>
+                    <% if (f.featureKind === 'limit') { %><%= formatLimit(f.limitValue) %><% } else { %><%= f.booleanValue ? 'Yes' : 'No' %><% } %>
+                  </td>
+                  <td>
+                    <%= f.source === 'override' ? 'Override' : 'Plan' %>
+                    <% if (f.reason) { %><span class="bb-pa-hint"> · <%= f.reason %></span><% } %>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
+        </div>
+
+        <form
+          class="bb-pa-form bb-pa-org-detail-form"
+          method="post"
+          action="/admin/organizations/<%= org.organizationKey %>/plan"
+          data-bb-pa-plan-form="1"
+        >
+          <h3 class="bb-pa-subsection-title">Assign plan <span class="bb-pa-org-detail__edit">Editable</span></h3>
+          <p class="bb-pa-hint">
+            Changing a plan updates the active subscription only. Existing branches and users are retained
+            even if the new tier is lower. Checkout and invented pricing are not shown.
+          </p>
+          <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Plan</span>
+            <select name="plan_key" required>
+              <option value="">Select a plan…</option>
+              <% planOptions.forEach(function (p) { %>
+              <option value="<%= p.planKey %>"<%= ent.planKey === p.planKey ? ' selected' : '' %>><%= p.displayName %> (<%= p.planKey %>)</option>
+              <% }) %>
+            </select>
+          </label>
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Notes (optional)</span>
+            <textarea name="notes" rows="2" maxlength="2000" placeholder="Internal note for this assignment"></textarea>
+          </label>
+          <label class="bb-pa-confirm">
+            <input type="checkbox" name="confirm_plan_change" value="1" required />
+            <span>I confirm this plan change. Existing branches and users will not be deleted.</span>
+          </label>
+          <button type="submit" class="bb-pa-btn">Save plan assignment</button>
+        </form>
+        <% } %>
+      </section>
+
+      <section
+        class="bb-pa-panel bb-pa-org-detail-panel"
+        id="pa-org-overrides"
+        aria-labelledby="pa-org-overrides-heading"
+        data-bb-pa-org-overrides="1"
+      >
+        <div class="bb-pa-panel__head">
+          <h2 id="pa-org-overrides-heading" class="bb-pa-section-title">Entitlement override</h2>
+          <span class="bb-pa-org-detail__edit">Editable</span>
+        </div>
+        <p class="bb-pa-hint">
+          Overrides require a reason and confirmation. They adjust effective limits/features for this organization only.
+        </p>
+        <form
+          class="bb-pa-form bb-pa-org-detail-form"
+          method="post"
+          action="/admin/organizations/<%= org.organizationKey %>/entitlement-override"
+          data-bb-pa-override-form="1"
+        >
+          <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Feature</span>
+            <select name="feature_key" required>
+              <option value="">Select a feature…</option>
+              <% featureKeyOptions.forEach(function (fk) { %>
+              <option value="<%= fk %>"><%= featureLabel(fk) %> (<%= fk %>)</option>
+              <% }) %>
+            </select>
+          </label>
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Kind</span>
+            <select name="feature_kind" required>
+              <option value="boolean">Boolean</option>
+              <option value="limit">Limit</option>
+            </select>
+          </label>
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Boolean value</span>
+            <select name="boolean_value">
+              <option value="true">Enabled</option>
+              <option value="false">Disabled</option>
+            </select>
+          </label>
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Limit value</span>
+            <input type="text" name="limit_value" placeholder="Number, or leave blank / unlimited" />
+          </label>
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Reason</span>
+            <textarea name="reason" rows="2" maxlength="2000" required placeholder="Why this override is needed"></textarea>
+          </label>
+          <label class="bb-pa-confirm">
+            <input type="checkbox" name="confirm_override" value="1" required />
+            <span>I confirm this entitlement override for this organization.</span>
+          </label>
+          <button type="submit" class="bb-pa-btn">Save override</button>
+        </form>
+      </section>
+    </aside>
+  </div>
 </section>
 
 <%- include('../partials/platform-admin-shell-end') %>
