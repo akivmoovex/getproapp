@@ -3,30 +3,120 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
+<%
+  var pageRows = pages || [];
+  var titles = typeof pageTitles !== 'undefined' && pageTitles ? pageTitles : {};
+  var isBranchShell = shellKind === 'branch';
+  var isHqChurchWide = shellKind === 'hq' && scope && !scope.branchId;
+  var isHqBranchScoped = shellKind === 'hq' && scope && scope.branchId;
+  var entityModules = [
+    { key: 'leadership', label: 'Leadership', href: scope.basePath + '/leadership', icon: 'groups', blurb: 'Leaders shown on the public Leadership page.' },
+    { key: 'ministries', label: 'Ministries', href: scope.basePath + '/ministries', icon: 'volunteer_activism', blurb: 'Ministry cards for the public Ministries page.' },
+    { key: 'events', label: 'Events', href: scope.basePath + '/events', icon: 'event', blurb: 'Upcoming and past events for the public Events page.' },
+    { key: 'sermons', label: 'Sermons', href: scope.basePath + '/sermons', icon: 'record_voice_over', blurb: 'Sermon entries for the public Sermons page.' },
+    { key: 'contact', label: 'Contact channels', href: scope.basePath + '/contact', icon: 'call', blurb: 'Public contact methods for the Contact page.' },
+    { key: 'giving', label: 'Giving methods', href: scope.basePath + '/giving', icon: 'payments', blurb: 'Manual giving instructions for the Giving page.' }
+  ];
+  var unavailableModules = [
+    { key: 'branding', label: 'Main site branding', reason: 'Church name and lockup are managed outside this overview.' },
+    { key: 'service-times', label: 'Service times', reason: 'No dedicated service-times module in V5 yet.' },
+    { key: 'theme', label: 'Theme & appearance', reason: 'Theme controls are not available in V5.' },
+    { key: 'domain', label: 'Custom domain', reason: 'Hostname and DNS are platform-managed.' },
+    { key: 'seo', label: 'SEO tools', reason: 'SEO settings are not available in V5.' },
+    { key: 'builder', label: 'Drag-and-drop website builder', reason: 'Use page and section editors instead.' }
+  ];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+  function pageIcon(key) {
+    var map = {
+      home: 'home',
+      about: 'info',
+      leadership: 'groups',
+      ministries: 'volunteer_activism',
+      events: 'event',
+      sermons: 'record_voice_over',
+      contact: 'call',
+      giving: 'payments'
+    };
+    return map[key] || 'article';
+  }
+  function pageBlurb(key) {
+    var map = {
+      home: 'Public home page sections and hero copy.',
+      about: 'About page narrative sections.',
+      leadership: 'Page chrome for the Leadership directory.',
+      ministries: 'Page chrome for the Ministries directory.',
+      events: 'Page chrome for the Events list.',
+      sermons: 'Page chrome for the Sermons list.',
+      contact: 'Page chrome for Contact channels.',
+      giving: 'Page chrome for Giving methods.'
+    };
+    return map[key] || 'Public page content for this scope.';
+  }
+  var publishedCount = 0;
+  var draftCount = 0;
+  pageRows.forEach(function (p) {
+    var st = String(p.status || '').toLowerCase();
+    if (st === 'published') publishedCount += 1;
+    else if (st === 'draft') draftCount += 1;
+  });
+%>
 
-<section class="bb-ca-home" data-bb-content-admin="1">
-  <header class="bb-hq-page-head bb-hq-page-head--split">
+<section
+  class="bb-ca-home bb-ba-content"
+  data-bb-content-admin="1"
+  data-bb-stitch-content="34-branch-website-editor"
+  data-bb-content-scope="<%= isHqChurchWide ? 'church-wide' : 'branch' %>"
+>
+  <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
-      <h1 class="bb-hq-page-head__title">Website content</h1>
-      <p class="bb-hq-lede">
-        Edit public pages and structured content for
-        <strong><%= scope.scopeLabel %></strong>.
+      <p class="bb-ba-breadcrumb">
+        <% if (isBranchShell) { %>
+        <a href="/branch-admin">Dashboard</a>
+        <% } else { %>
+        <a href="/hq">HQ</a>
+        <% } %>
+        <span aria-hidden="true">›</span>
+        <span>Website</span>
+      </p>
+      <div class="bb-ba-content__title-row">
+        <h1 class="bb-ba-page-head__title">Website content</h1>
+        <% if (pageRows.length) { %>
+        <span class="bb-ba-content__count" data-bb-content-page-total="<%= pageRows.length %>">
+          <%= pageRows.length %> page<%= pageRows.length === 1 ? '' : 's' %>
+        </span>
+        <% } %>
+      </div>
+      <p class="bb-ba-lede">
+        Manage public pages and structured content for
+        <strong><%= scope.scopeLabel %></strong><% if (isHqChurchWide) { %> (church-wide)<% } %>.
         Publish requires confirmation. Content is archived, never hard-deleted.
       </p>
     </div>
   </header>
 
   <% if (saved) { %>
-  <p class="bb-ca-ok" role="status">Changes saved.</p>
+  <%- include('../partials/flash-message', { type: 'success', title: 'Saved', message: 'Changes saved.' }) %>
   <% } %>
   <% if (error) { %>
-  <p class="bb-ca-error" role="alert"><%= error %></p>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-ca-home-errors' }) %>
   <% } %>
 
-  <% if (shellKind === 'hq' && !scope.branchId && branches && branches.length) { %>
-  <section class="bb-hq-panel" data-bb-hq-content-branches="1" aria-labelledby="hq-content-branch-heading">
-    <h2 id="hq-content-branch-heading" class="bb-hq-section-title">Branch content</h2>
-    <p class="bb-ca-hint">Manage website content scoped to a specific branch.</p>
+  <% if (isHqChurchWide && branches && branches.length) { %>
+  <section class="bb-ba-panel bb-ba-content-panel" data-bb-hq-content-branches="1" aria-labelledby="hq-content-branch-heading">
+    <h2 id="hq-content-branch-heading" class="bb-ba-section-title">Branch content</h2>
+    <p class="bb-ba-hint">Open a branch to manage pages and modules scoped to that campus only.</p>
     <ul class="bb-ca-branch-list">
       <% branches.forEach(function (branch) { %>
       <li>
@@ -39,48 +129,169 @@
   </section>
   <% } %>
 
-  <% if (shellKind === 'hq' && scope.branchId) { %>
-  <p class="bb-ca-hint"><a href="/hq/content">← Church-wide content</a></p>
+  <% if (isHqBranchScoped) { %>
+  <p class="bb-ba-hint"><a href="/hq/content">← Church-wide content</a></p>
   <% } %>
 
-  <section class="bb-ca-block" data-bb-content-pages="1">
-    <h2 class="bb-hq-section-title">Pages</h2>
-    <% if (!pages || !pages.length) { %>
-      <p class="bb-ca-empty">No pages yet. Refresh to provision empty draft pages.</p>
-    <% } else { %>
-    <ul class="bb-ca-page-list">
-      <% pages.forEach(function (page) { %>
-      <li>
-        <span class="bb-ca-page-title"><%= page.title %></span>
-        <span class="bb-ca-pill bb-ca-pill--<%= page.status %>"><%= page.status %></span>
-        <span class="bb-ca-links">
-          <a href="<%= scope.basePath %>/pages/<%= page.pageKey %>">Edit</a>
-          <a href="<%= scope.basePath %>/preview/<%= page.pageKey %>">Preview</a>
+  <% if (isBranchShell) { %>
+  <section
+    class="bb-ba-panel bb-ba-content-panel bb-ba-content-panel--hq"
+    data-bb-content-hq-controlled="1"
+    aria-labelledby="bb-content-hq-heading"
+  >
+    <div class="bb-ba-content-panel__head">
+      <h2 id="bb-content-hq-heading" class="bb-ba-section-title">Church-controlled</h2>
+      <span class="bb-ds-badge bb-ds-badge--neutral">HQ</span>
+    </div>
+    <p class="bb-ba-hint">
+      Organization-level website content and HQ settings are managed outside this branch overview.
+      This screen only shows pages and modules for
+      <strong><%= scope.scopeLabel %></strong>.
+    </p>
+    <ul class="bb-ba-content-unavailable-list" data-bb-content-hq-items="1">
+      <li class="bb-ba-content-unavailable" data-bb-content-unavailable="church-wide-pages">
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <span>
+          <strong>HQ-managed pages</strong>
+          <span class="bb-ba-muted"> — Organization pages are managed in HQ content, not editable here.</span>
         </span>
+      </li>
+      <li class="bb-ba-content-unavailable" data-bb-content-unavailable="org-branding">
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <span>
+          <strong>Organization branding</strong>
+          <span class="bb-ba-muted"> — Logo and org identity are HQ / platform controlled.</span>
+        </span>
+      </li>
+    </ul>
+  </section>
+  <% } %>
+
+  <section class="bb-ba-content-summary" data-bb-content-summary="1" aria-label="Publication summary">
+    <div class="bb-ba-content-summary__card" data-bb-content-stat="pages">
+      <p class="bb-ba-content-summary__label">Pages in this scope</p>
+      <p class="bb-ba-content-summary__value"><%= pageRows.length %></p>
+    </div>
+    <div class="bb-ba-content-summary__card" data-bb-content-stat="published">
+      <p class="bb-ba-content-summary__label">Published</p>
+      <p class="bb-ba-content-summary__value"><%= publishedCount %></p>
+    </div>
+    <div class="bb-ba-content-summary__card" data-bb-content-stat="draft">
+      <p class="bb-ba-content-summary__label">Draft</p>
+      <p class="bb-ba-content-summary__value"><%= draftCount %></p>
+    </div>
+  </section>
+
+  <section class="bb-ba-content-block" data-bb-content-pages="1" aria-labelledby="bb-content-pages-heading">
+    <div class="bb-ba-content-block__head">
+      <h2 id="bb-content-pages-heading" class="bb-ba-section-title">Public pages</h2>
+      <p class="bb-ba-hint">Edit page title and sections. Status reflects the real page record for this scope.</p>
+    </div>
+
+    <% if (!pageRows.length) { %>
+    <div class="bb-ba-content-empty" data-bb-content-empty="pages" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No pages yet',
+        body: 'Empty draft pages are provisioned for this scope when you open Website content. Refresh if they do not appear.',
+        icon: 'web'
+      }) %>
+    </div>
+    <% } else { %>
+    <ul class="bb-ba-content-cards" data-bb-content-page-cards="1">
+      <% pageRows.forEach(function (page) {
+        var label = titles[page.pageKey] || page.title || page.pageKey;
+      %>
+      <li class="bb-ba-content-card" data-bb-content-page="<%= page.pageKey %>" data-bb-content-page-status="<%= page.status %>">
+        <div class="bb-ba-content-card__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= pageIcon(page.pageKey) %></span>
+        </div>
+        <div class="bb-ba-content-card__body">
+          <div class="bb-ba-content-card__title-row">
+            <h3 class="bb-ba-content-card__title"><%= label %></h3>
+            <span class="bb-ba-chip <%= statusChip(page.status) %>"><%= statusLabel(page.status) %></span>
+          </div>
+          <p class="bb-ba-content-card__blurb"><%= pageBlurb(page.pageKey) %></p>
+          <p class="bb-ba-content-card__meta">
+            Sections are edited on the page detail screen — no completion percentage is shown here.
+          </p>
+        </div>
+        <div class="bb-ba-content-card__actions">
+          <a
+            class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm"
+            href="<%= scope.basePath %>/pages/<%= page.pageKey %>"
+            data-bb-content-action="edit"
+          >Edit</a>
+          <a
+            class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+            href="<%= scope.basePath %>/preview/<%= page.pageKey %>"
+            data-bb-content-action="preview"
+          >Preview</a>
+        </div>
       </li>
       <% }) %>
     </ul>
     <% } %>
   </section>
 
-  <section class="bb-ca-block" data-bb-content-entities="1">
-    <h2 class="bb-hq-section-title">Structured content</h2>
-    <ul class="bb-ca-entity-nav">
-      <li><a href="<%= scope.basePath %>/leadership">Leadership</a></li>
-      <li><a href="<%= scope.basePath %>/ministries">Ministries</a></li>
-      <li><a href="<%= scope.basePath %>/events">Events</a></li>
-      <li><a href="<%= scope.basePath %>/sermons">Sermons</a></li>
-      <li><a href="<%= scope.basePath %>/contact">Contact channels</a></li>
-      <li><a href="<%= scope.basePath %>/giving">Giving methods</a></li>
+  <section class="bb-ba-content-block" data-bb-content-entities="1" aria-labelledby="bb-content-entities-heading">
+    <div class="bb-ba-content-block__head">
+      <h2 id="bb-content-entities-heading" class="bb-ba-section-title">Structured content</h2>
+      <p class="bb-ba-hint">Directories and methods that feed public pages. Counts are not fabricated on this overview.</p>
+    </div>
+    <ul class="bb-ba-content-cards bb-ba-content-cards--modules" data-bb-content-entity-cards="1">
+      <% entityModules.forEach(function (mod) { %>
+      <li class="bb-ba-content-card" data-bb-content-entity="<%= mod.key %>">
+        <div class="bb-ba-content-card__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= mod.icon %></span>
+        </div>
+        <div class="bb-ba-content-card__body">
+          <h3 class="bb-ba-content-card__title"><%= mod.label %></h3>
+          <p class="bb-ba-content-card__blurb"><%= mod.blurb %></p>
+        </div>
+        <div class="bb-ba-content-card__actions">
+          <a
+            class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+            href="<%= mod.href %>"
+            data-bb-content-action="manage"
+          >Manage</a>
+        </div>
+      </li>
+      <% }) %>
     </ul>
   </section>
 
-  <section class="bb-ca-block" data-bb-content-media="1">
-    <h2 class="bb-hq-section-title">Media</h2>
-    <p class="bb-ca-hint">
-      Upload images from page and section editors (HTTPS public URLs or uploaded assets).
-      Announcements may attach an asset id from this church’s media library.
-    </p>
+  <section class="bb-ba-content-block" data-bb-content-media="1" aria-labelledby="bb-content-media-heading">
+    <div class="bb-ba-content-block__head">
+      <h2 id="bb-content-media-heading" class="bb-ba-section-title">Media</h2>
+    </div>
+    <div class="bb-ba-panel bb-ba-content-media">
+      <p class="bb-ba-hint">
+        Upload images from page and section editors (HTTPS public URLs or uploaded assets).
+        Announcements may attach an asset id from this church’s media library.
+      </p>
+    </div>
+  </section>
+
+  <section
+    class="bb-ba-content-block"
+    data-bb-content-unavailable-modules="1"
+    aria-labelledby="bb-content-unavailable-heading"
+  >
+    <div class="bb-ba-content-block__head">
+      <h2 id="bb-content-unavailable-heading" class="bb-ba-section-title">Not available in V5</h2>
+      <p class="bb-ba-hint">Stitch website-editor features without a V5 product route stay unavailable.</p>
+    </div>
+    <ul class="bb-ba-content-unavailable-list">
+      <% unavailableModules.forEach(function (mod) { %>
+      <li class="bb-ba-content-unavailable" data-bb-content-unavailable="<%= mod.key %>">
+        <span class="material-symbols-outlined" aria-hidden="true">block</span>
+        <span>
+          <strong><%= mod.label %></strong>
+          <span class="bb-ba-muted"> — <%= mod.reason %></span>
+        </span>
+      </li>
+      <% }) %>
+    </ul>
   </section>
 </section>
 

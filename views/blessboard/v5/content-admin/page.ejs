@@ -1,101 +1,355 @@
-<!DOCTYPE html>
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-start') %>
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <p class="bb-ca-hint"><a href="<%= scope.basePath %>">← All content</a></p>
-  <h1>Edit page: <%= page.pageKey %></h1>
+<%
+  var pageStatus = submitted && submitted.status ? submitted.status : page.status;
+  var pageTitleVal = submitted && submitted.title != null ? submitted.title : page.title;
+  var sectionRows = sections || [];
+  var draft = typeof sectionDraft !== 'undefined' && sectionDraft ? sectionDraft : null;
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+  function snippet(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    if (t.length <= 100) return t;
+    return t.slice(0, 97) + '…';
+  }
+%>
+
+<section
+  class="bb-ca-page-editor bb-ba-page-editor"
+  data-bb-content-page-editor="1"
+  data-bb-stitch-page-editor="34-branch-website-editor"
+  data-bb-content-page-key="<%= page.pageKey %>"
+  data-bb-content-page-status="<%= page.status %>"
+>
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="<%= scope.basePath %>">Website content</a>
+        <span aria-hidden="true">›</span>
+        <span><%= page.pageKey %></span>
+      </p>
+      <div class="bb-ba-page-editor__title-row">
+        <h1 class="bb-ba-page-head__title">Edit page</h1>
+        <span class="bb-ba-chip <%= statusChip(page.status) %>" data-bb-page-status="<%= page.status %>">
+          <%= statusLabel(page.status) %>
+        </span>
+      </div>
+      <p class="bb-ba-lede">
+        Update the public <strong><%= page.pageKey %></strong> page for
+        <strong><%= scope.scopeLabel %></strong>.
+        Publishing requires confirmation. Sections are archived, never hard-deleted.
+      </p>
+    </div>
+    <p class="bb-ba-page-head__actions">
+      <a
+        class="bb-ba-btn bb-ba-btn--ghost"
+        href="<%= scope.basePath %>/preview/<%= page.pageKey %>"
+        data-bb-content-action="preview"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+        Preview
+      </a>
+    </p>
+  </header>
+
   <% if (typeof error !== 'undefined' && error) { %>
-    <p class="bb-ca-error" role="alert"><%= error %></p>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-ca-page-errors' }) %>
   <% } %>
   <% if (typeof saved !== 'undefined' && saved) { %>
-    <p class="bb-ca-ok" role="status">Page saved.</p>
+  <%- include('../partials/flash-message', { type: 'success', title: 'Saved', message: 'Page saved.' }) %>
   <% } %>
 
-  <form method="post" action="<%= scope.basePath %>/pages/<%= page.pageKey %>" class="<%= formClass %> bb-ca-form">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <input type="hidden" name="expected_updated_at" value="<%= page.updatedAt instanceof Date ? page.updatedAt.toISOString() : page.updatedAt %>" />
+  <div class="bb-ba-page-editor__layout">
+    <form
+      method="post"
+      action="<%= scope.basePath %>/pages/<%= page.pageKey %>"
+      class="<%= formClass %> bb-ca-form bb-ba-panel bb-ba-page-editor__form"
+      data-bb-page-form="1"
+      id="bb-ca-page-form"
+    >
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="expected_updated_at" value="<%= page.updatedAt instanceof Date ? page.updatedAt.toISOString() : page.updatedAt %>" />
 
-    <label for="title">Title</label>
-    <input id="title" name="title" type="text" required maxlength="200" value="<%= submitted && submitted.title != null ? submitted.title : page.title %>" />
+      <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-page-settings-heading" data-bb-page-section="settings">
+        <h2 id="bb-ca-page-settings-heading" class="bb-ba-section-title">Page settings</h2>
+        <div class="bb-ba-field">
+          <label for="title">Title</label>
+          <input
+            id="title"
+            name="title"
+            type="text"
+            required
+            maxlength="200"
+            value="<%= pageTitleVal %>"
+            autocomplete="off"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="status">Status</label>
+          <select id="status" name="status" data-bb-page-status-select>
+            <% ['draft','published','archived'].forEach(function (st) { %>
+            <option value="<%= st %>" <%= pageStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-ca-confirm-wrap" data-bb-page-confirm-wrap <%= pageStatus === 'published' ? '' : 'hidden' %>>
+          <label class="bb-ca-confirm">
+            <input type="checkbox" name="confirm_publish" value="1" data-bb-page-confirm-publish />
+            I confirm this page should be published and visible on the public website.
+          </label>
+        </div>
+      </section>
 
-    <label for="status">Status</label>
-    <select id="status" name="status">
-      <% ['draft','published','archived'].forEach(function (st) { %>
-      <option value="<%= st %>" <%= (submitted && submitted.status ? submitted.status : page.status) === st ? 'selected' : '' %>><%= st %></option>
-      <% }) %>
-    </select>
+      <div class="bb-ba-decision__actions bb-ba-page-editor__actions">
+        <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= scope.basePath %>" data-bb-content-action="back">Cancel</a>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-page-save="1">
+          <span class="material-symbols-outlined" aria-hidden="true">save</span>
+          Save page
+        </button>
+      </div>
+    </form>
 
-    <label class="bb-ca-confirm">
-      <input type="checkbox" name="confirm_publish" value="1" />
-      I confirm this page should be published and visible on the public website.
-    </label>
+    <aside class="bb-ba-panel bb-ba-page-editor__aside" data-bb-page-aside="1">
+      <h2 class="bb-ba-section-title">Publication</h2>
+      <dl class="bb-ann-dl bb-ba-page-editor__dl">
+        <div>
+          <dt>Current status</dt>
+          <dd><span class="bb-ba-chip <%= statusChip(page.status) %>"><%= statusLabel(page.status) %></span></dd>
+        </div>
+        <div>
+          <dt>Page key</dt>
+          <dd><code><%= page.pageKey %></code></dd>
+        </div>
+        <div>
+          <dt>Scope</dt>
+          <dd><%= scope.scopeLabel %></dd>
+        </div>
+        <div>
+          <dt>Sections</dt>
+          <dd data-bb-page-section-count="<%= sectionRows.length %>"><%= sectionRows.length %></dd>
+        </div>
+      </dl>
+      <p class="bb-ba-hint">
+        Choose <strong>Draft</strong> to keep work private. Choose <strong>Published</strong> and confirm before the page goes live.
+      </p>
+    </aside>
+  </div>
 
-    <button type="submit">Save page</button>
-  </form>
+  <section class="bb-ba-content-block" data-bb-page-sections="1" aria-labelledby="bb-ca-sections-heading">
+    <div class="bb-ba-content-block__head">
+      <h2 id="bb-ca-sections-heading" class="bb-ba-section-title">Sections</h2>
+      <p class="bb-ba-hint">Plain-text sections only. Builder canvas and unsupported widgets are not available.</p>
+    </div>
 
-  <section class="bb-ca-block">
-    <h2>Sections</h2>
-    <% if (!sections || !sections.length) { %>
-      <p class="bb-ca-empty">No sections yet.</p>
+    <% if (!sectionRows.length) { %>
+    <div class="bb-ba-content-empty" data-bb-page-sections-empty="1" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No sections yet',
+        body: 'Add a section below to build this page. Supported types are plain keys such as text or image.',
+        icon: 'view_agenda'
+      }) %>
+    </div>
     <% } else { %>
-    <ul class="bb-ca-section-list">
-      <% sections.forEach(function (section) { %>
-      <li>
-        <strong><%= section.sectionKey %></strong>
-        <span class="bb-ca-pill bb-ca-pill--<%= section.status %>"><%= section.status %></span>
-        <% if (section.heading) { %> — <%= section.heading %><% } %>
-        <a href="<%= scope.basePath %>/pages/<%= page.pageKey %>/sections/<%= section.sectionKey %>">Edit</a>
+    <ul class="bb-ba-page-section-cards" data-bb-page-section-cards="1">
+      <% sectionRows.forEach(function (section) { %>
+      <li
+        class="bb-ba-page-section-card"
+        data-bb-page-section-card="<%= section.sectionKey %>"
+        data-bb-section-status="<%= section.status %>"
+      >
+        <div class="bb-ba-page-section-card__head">
+          <div>
+            <p class="bb-ba-page-section-card__key"><%= section.sectionKey %></p>
+            <p class="bb-ba-page-section-card__type"><%= section.sectionType || 'section' %></p>
+          </div>
+          <span class="bb-ba-chip <%= statusChip(section.status) %>"><%= statusLabel(section.status) %></span>
+        </div>
+        <% if (section.heading) { %>
+        <p class="bb-ba-page-section-card__heading"><%= section.heading %></p>
+        <% } %>
+        <% if (section.bodyText) { %>
+        <p class="bb-ba-page-section-card__body"><%= snippet(section.bodyText) %></p>
+        <% } %>
+        <% if (section.mediaUrl) { %>
+        <p class="bb-ba-page-section-card__media">
+          <span class="material-symbols-outlined" aria-hidden="true">image</span>
+          Media attached
+        </p>
+        <% } %>
+        <div class="bb-ba-page-section-card__actions">
+          <a
+            class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+            href="<%= scope.basePath %>/pages/<%= page.pageKey %>/sections/<%= section.sectionKey %>"
+            data-bb-content-action="edit-section"
+          >Edit section</a>
+        </div>
       </li>
       <% }) %>
     </ul>
     <% } %>
   </section>
 
-  <section class="bb-ca-block">
-    <h2>Add section</h2>
+  <section
+    class="bb-ba-panel bb-ba-page-editor__add"
+    data-bb-page-add-section="1"
+    aria-labelledby="bb-ca-add-section-heading"
+  >
+    <h2 id="bb-ca-add-section-heading" class="bb-ba-section-title">Add section</h2>
     <% if (typeof sectionFormError !== 'undefined' && sectionFormError) { %>
-      <p class="bb-ca-error" role="alert">Could not create section. Check the fields below.</p>
+    <%- include('../partials/form-errors', {
+      errors: ['Could not create section. Check the fields below.'],
+      id: 'bb-ca-section-create-errors'
+    }) %>
     <% } %>
-    <form method="post" action="<%= scope.basePath %>/pages/<%= page.pageKey %>/sections" class="<%= formClass %> bb-ca-form">
+    <form
+      method="post"
+      action="<%= scope.basePath %>/pages/<%= page.pageKey %>/sections"
+      class="<%= formClass %> bb-ca-form bb-ba-page-editor__section-form"
+      data-bb-section-create-form="1"
+    >
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-      <label for="section_key">Section key</label>
-      <input id="section_key" name="section_key" type="text" required maxlength="64" pattern="[a-z][a-z0-9_-]*" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.section_key ? sectionDraft.section_key : '' %>" />
+      <div class="bb-ba-page-editor__grid">
+        <div class="bb-ba-field">
+          <label for="section_key">Section key</label>
+          <input
+            id="section_key"
+            name="section_key"
+            type="text"
+            required
+            maxlength="64"
+            pattern="[a-z][a-z0-9_-]*"
+            value="<%= draft && draft.section_key ? draft.section_key : '' %>"
+            autocomplete="off"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="section_type">Section type</label>
+          <input
+            id="section_type"
+            name="section_type"
+            type="text"
+            required
+            maxlength="64"
+            pattern="[a-z][a-z0-9_-]*"
+            value="<%= draft && draft.section_type ? draft.section_type : 'text' %>"
+            autocomplete="off"
+          />
+          <p class="bb-ba-hint">Supported keys only (for example <code>text</code> or <code>image</code>).</p>
+        </div>
+      </div>
 
-      <label for="section_type">Section type</label>
-      <input id="section_type" name="section_type" type="text" required maxlength="64" pattern="[a-z][a-z0-9_-]*" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.section_type ? sectionDraft.section_type : 'text' %>" />
-
-      <label for="heading">Heading</label>
-      <input id="heading" name="heading" type="text" maxlength="200" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.heading ? sectionDraft.heading : '' %>" />
-
-      <label for="body_text">Body text</label>
-      <textarea id="body_text" name="body_text" rows="4" maxlength="20000"><%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.body_text ? sectionDraft.body_text : '' %></textarea>
-
-      <label for="media_url">Media URL (HTTPS)</label>
-      <input id="media_url" name="media_url" type="url" maxlength="2000" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.media_url ? sectionDraft.media_url : '' %>" />
-
-      <label for="sort_order">Sort order</label>
-      <input id="sort_order" name="sort_order" type="number" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.sort_order != null ? sectionDraft.sort_order : '0' %>" />
-
-      <label for="section_status">Status</label>
-      <select id="section_status" name="status">
-        <% ['draft','published','archived'].forEach(function (st) { %>
-        <option value="<%= st %>" <%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.status === st ? 'selected' : '' %>><%= st %></option>
-        <% }) %>
-      </select>
-
-      <label class="bb-ca-confirm">
-        <input type="checkbox" name="confirm_publish" value="1" />
-        I confirm this section should be published on the public website.
-      </label>
-
-      <button type="submit">Create section</button>
+      <div class="bb-ba-field">
+        <label for="heading">Heading</label>
+        <input
+          id="heading"
+          name="heading"
+          type="text"
+          maxlength="200"
+          value="<%= draft && draft.heading ? draft.heading : '' %>"
+          autocomplete="off"
+        />
+      </div>
+      <div class="bb-ba-field">
+        <label for="body_text">Body text</label>
+        <textarea id="body_text" name="body_text" rows="4" maxlength="20000"><%= draft && draft.body_text ? draft.body_text : '' %></textarea>
+      </div>
+      <div class="bb-ba-field">
+        <label for="media_url">Media URL (HTTPS)</label>
+        <input
+          id="media_url"
+          name="media_url"
+          type="url"
+          maxlength="2000"
+          value="<%= draft && draft.media_url ? draft.media_url : '' %>"
+          placeholder="https://"
+          autocomplete="off"
+        />
+        <%- include('media-upload', {
+              uploadUrl: scope.basePath + '/media/upload',
+              targetInputId: 'media_url',
+              csrfToken: csrfToken,
+              visibility: 'public'
+            }) %>
+      </div>
+      <div class="bb-ba-page-editor__grid">
+        <div class="bb-ba-field">
+          <label for="sort_order">Sort order</label>
+          <input
+            id="sort_order"
+            name="sort_order"
+            type="number"
+            value="<%= draft && draft.sort_order != null ? draft.sort_order : '0' %>"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="section_status">Status</label>
+          <select id="section_status" name="status" data-bb-section-status-select>
+            <% ['draft','published','archived'].forEach(function (st) { %>
+            <option value="<%= st %>" <%= draft && draft.status === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="bb-ca-confirm-wrap" data-bb-section-confirm-wrap hidden>
+        <label class="bb-ca-confirm">
+          <input type="checkbox" name="confirm_publish" value="1" data-bb-section-confirm-publish />
+          I confirm this section should be published on the public website.
+        </label>
+      </div>
+      <div class="bb-ba-decision__actions">
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-section-create="1">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>
+          Create section
+        </button>
+      </div>
     </form>
   </section>
+</section>
 
-  <p><a href="<%= scope.basePath %>/preview/<%= page.pageKey %>">Preview this page</a></p>
+<script>
+(function () {
+  function wireConfirm(selectSel, wrapSel, inputSel) {
+    var status = document.querySelector(selectSel);
+    var wrap = document.querySelector(wrapSel);
+    var input = document.querySelector(inputSel);
+    function sync() {
+      if (!status || !wrap) return;
+      var show = status.value === "published";
+      wrap.hidden = !show;
+      if (input) {
+        if (show) input.setAttribute("required", "required");
+        else {
+          input.removeAttribute("required");
+          input.checked = false;
+        }
+      }
+    }
+    if (status) {
+      status.addEventListener("change", sync);
+      sync();
+    }
+  }
+  wireConfirm("[data-bb-page-status-select]", "[data-bb-page-confirm-wrap]", "[data-bb-page-confirm-publish]");
+  wireConfirm("[data-bb-section-status-select]", "[data-bb-section-confirm-wrap]", "[data-bb-section-confirm-publish]");
+})();
+</script>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

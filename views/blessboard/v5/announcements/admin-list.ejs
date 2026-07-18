@@ -5,6 +5,22 @@
 <% } %>
 <%
   var rows = items || [];
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
+  var activeAudience = typeof audienceFilter !== 'undefined' && audienceFilter ? String(audienceFilter) : '';
+  var hasFilter = Boolean(searchQ || activeStatus || activeAudience);
+  var listBase = typeof basePath !== 'undefined' && basePath ? String(basePath) : '/branch-admin/announcements';
+  var statusOptions = [
+    { key: '', label: 'All' },
+    { key: 'draft', label: 'Draft' },
+    { key: 'published', label: 'Published' },
+    { key: 'archived', label: 'Archived' }
+  ];
+  var audienceOptions = [
+    { key: '', label: 'All' },
+    { key: 'members', label: 'Members' },
+    { key: 'admins', label: 'Admins' }
+  ];
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'draft') return 'Draft';
@@ -37,34 +53,80 @@
     if (isNaN(d.getTime())) return String(value).slice(0, 10);
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
+  function formatWhenLong(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  }
+  function sourceLabel(item) {
+    return item && item.branchId ? 'Branch' : 'Church-wide';
+  }
   function buildQuery(overrides) {
-    var parts = [];
     var next = {
-      q: typeof q !== 'undefined' ? q : '',
-      status: typeof statusFilter !== 'undefined' ? statusFilter : '',
-      audience: typeof audienceFilter !== 'undefined' ? audienceFilter : '',
-      page: typeof page !== 'undefined' ? page : 1
+      q: searchQ,
+      status: activeStatus,
+      audience: activeAudience,
+      page: 1
     };
     Object.keys(overrides || {}).forEach(function (k) { next[k] = overrides[k]; });
+    var parts = [];
     if (next.q) parts.push('q=' + encodeURIComponent(next.q));
     if (next.status) parts.push('status=' + encodeURIComponent(next.status));
     if (next.audience) parts.push('audience=' + encodeURIComponent(next.audience));
     if (next.page && Number(next.page) > 1) parts.push('page=' + encodeURIComponent(next.page));
     return parts.length ? ('?' + parts.join('&')) : '';
   }
+  function filterHref(overrides) {
+    return listBase + buildQuery(overrides);
+  }
+  function pagerHref(pageNum) {
+    return listBase + buildQuery({ page: pageNum });
+  }
 %>
 
-<section class="bb-ann-admin" data-bb-announcement-admin-list="1">
+<section
+  class="bb-ann-admin bb-ba-ann"
+  data-bb-announcement-admin-list="1"
+  data-bb-stitch-announcements="35-branch-announcements-management"
+>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
-      <h1 class="bb-ba-page-head__title">Announcements management</h1>
+      <p class="bb-ba-breadcrumb">
+        <% if (shellKind === 'hq') { %>
+        <a href="/hq">HQ</a>
+        <% } else { %>
+        <a href="/branch-admin">Dashboard</a>
+        <% } %>
+        <span aria-hidden="true">›</span>
+        <span>Announcements</span>
+      </p>
+      <div class="bb-ba-ann__title-row">
+        <h1 class="bb-ba-page-head__title">Announcements management</h1>
+        <% if (typeof total === 'number' && total >= 0) { %>
+        <span class="bb-ba-ann__count" data-bb-ann-total="<%= total %>">
+          <%= total %> <%= hasFilter ? (total === 1 ? 'match' : 'matches') : (total === 1 ? 'announcement' : 'announcements') %>
+        </span>
+        <% } %>
+      </div>
       <p class="bb-ba-lede">
         Manage communications for
         <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : (churchDisplayName || scopeLabel) %></strong>
         (<%= scopeLabel %> scope). Publishing is confirmed separately — announcements are archived, never deleted.
       </p>
     </div>
-    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/new" data-bb-ann-create="1">Create announcement</a>
+    <p class="bb-ba-page-head__actions">
+      <a class="bb-ba-btn bb-ba-btn--primary" href="<%= listBase %>/new" data-bb-ann-create="1">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        Create announcement
+      </a>
+    </p>
   </header>
 
   <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
@@ -90,13 +152,21 @@
   <% } %>
 
   <% if (saved === '1' || saved === 'published' || saved === 'archived') { %>
-  <p class="bb-ba-ok" role="status">
-    <% if (saved === 'published') { %>Announcement published.<% } else if (saved === 'archived') { %>Announcement archived.<% } else { %>Saved.<% } %>
-  </p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: 'Updated',
+    message: saved === 'published' ? 'Announcement published.' : (saved === 'archived' ? 'Announcement archived.' : 'Saved.')
+  }) %>
   <% } %>
   <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
 
-  <form method="get" action="<%= basePath %>" class="bb-ba-filter bb-ann-filter" data-bb-ann-filter="1">
+  <form
+    method="get"
+    action="<%= listBase %>"
+    class="bb-ba-filter bb-ba-ann-filter"
+    data-bb-ann-filter="1"
+    role="search"
+  >
     <div class="bb-ba-field">
       <label for="q">Search</label>
       <input
@@ -104,7 +174,7 @@
         name="q"
         type="search"
         maxlength="100"
-        value="<%= q || '' %>"
+        value="<%= searchQ %>"
         placeholder="Search announcements…"
         autocomplete="off"
       />
@@ -114,7 +184,7 @@
       <select id="status" name="status">
         <option value="">All statuses</option>
         <% ['draft','published','archived'].forEach(function (st) { %>
-        <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <option value="<%= st %>" <%= activeStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
         <% }) %>
       </select>
     </div>
@@ -122,76 +192,201 @@
       <label for="audience">Audience</label>
       <select id="audience" name="audience">
         <option value="">All audiences</option>
-        <option value="members" <%= audienceFilter === 'members' ? 'selected' : '' %>>Members</option>
-        <option value="admins" <%= audienceFilter === 'admins' ? 'selected' : '' %>>Admins</option>
+        <option value="members" <%= activeAudience === 'members' ? 'selected' : '' %>>Members</option>
+        <option value="admins" <%= activeAudience === 'admins' ? 'selected' : '' %>>Admins</option>
       </select>
     </div>
     <div class="bb-ba-filter__actions">
-      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Filter</button>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= listBase %>">Clear</a>
+      <% } %>
     </div>
   </form>
 
-  <% if (!rows.length) { %>
-  <div class="bb-ba-empty" role="status">No announcements match this filter.</div>
-  <% } else { %>
-  <div class="bb-ba-table-wrap">
-    <table class="bb-ba-table" data-bb-ann-table="1">
-      <thead>
-        <tr>
-          <th scope="col">Title</th>
-          <th scope="col">Message</th>
-          <th scope="col">Audience</th>
-          <th scope="col">Source</th>
-          <th scope="col">Published</th>
-          <th scope="col">Status</th>
-          <th scope="col">Reads</th>
-          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% rows.forEach(function (item) { %>
-        <tr data-bb-announcement-status="<%= item.status %>">
-          <td>
-            <a href="<%= basePath %>/<%= item.id %>" class="bb-ann-title-link"><%= item.title %></a>
-            <% if (item.isPinned || item.isFeatured) { %>
-            <div class="bb-ba-chips">
-              <% if (item.isPinned) { %><span class="bb-ba-chip">Pinned</span><% } %>
-              <% if (item.isFeatured) { %><span class="bb-ba-chip">Featured</span><% } %>
-            </div>
-            <% } %>
-          </td>
-          <td class="bb-ann-snippet"><%= snippet(item.body) %></td>
-          <td><%= audienceLabel(item.audiences) %></td>
-          <td><%= item.branchId ? 'Branch' : 'Church-wide' %></td>
-          <td><%= formatWhen(item.publishedAt) %></td>
-          <td><span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
-          <td>
-            <% if (item.delivery) { %>
-            <span data-bb-delivery="read"><%= item.delivery.readCount %>/<%= item.delivery.eligibleCount %></span>
-            <% } else { %>—<% } %>
-          </td>
-          <td>
-            <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= item.id %>">Open</a>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+  <nav class="bb-ba-ann-chips" aria-label="Status filters" data-bb-ann-status-chips="1">
+    <% statusOptions.forEach(function (opt) { %>
+    <a
+      class="bb-ba-ann-chip<%= activeStatus === opt.key ? ' is-active' : '' %>"
+      href="<%= filterHref({ status: opt.key, audience: activeAudience, page: 1 }) %>"
+      <%= activeStatus === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-ann-status-filter="<%= opt.key || 'all' %>"
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
 
-  <div class="bb-ba-pager" data-bb-ann-pager="1">
-    <p class="bb-ba-pager__meta">
-      Showing <%= rows.length %> of <%= total %> · page <%= page %> of <%= totalPages %>
-    </p>
-    <div class="bb-ba-pager__nav">
-      <% if (page > 1) { %>
-      <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %><%= buildQuery({ page: page - 1 }) %>">Previous</a>
-      <% } %>
-      <% if (page < totalPages) { %>
-      <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %><%= buildQuery({ page: page + 1 }) %>">Next</a>
+  <nav class="bb-ba-ann-chips bb-ba-ann-chips--audience" aria-label="Audience filters" data-bb-ann-audience-chips="1">
+    <span class="bb-ba-ann-chips__label">Audience</span>
+    <% audienceOptions.forEach(function (opt) { %>
+    <a
+      class="bb-ba-ann-chip<%= activeAudience === opt.key ? ' is-active' : '' %>"
+      href="<%= filterHref({ audience: opt.key, status: activeStatus, page: 1 }) %>"
+      <%= activeAudience === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-ann-audience-filter="<%= opt.key || 'all' %>"
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
+
+  <% if (!rows.length && !hasFilter) { %>
+  <div class="bb-ba-ann-empty" data-bb-ann-empty="catalog" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No announcements yet',
+      body: 'Create a draft to start communicating with members or admins. Publishing requires a separate confirmation step.',
+      icon: 'campaign',
+      actionHref: listBase + '/new',
+      actionLabel: 'Create announcement'
+    }) %>
+  </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div class="bb-ba-ann-empty" data-bb-ann-empty="no-results" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No matching announcements',
+      body: 'Try a different search, status, or audience filter, or clear filters to see the full list.',
+      icon: 'search_off',
+      actionHref: listBase,
+      actionLabel: 'Clear filters'
+    }) %>
+  </div>
+  <% } else { %>
+
+  <section class="bb-ba-panel bb-ba-ann-panel" aria-labelledby="bb-ba-ann-list-heading">
+    <div class="bb-ba-ann-panel__head">
+      <h2 id="bb-ba-ann-list-heading" class="bb-ba-ann-panel__title">Announcements</h2>
+      <% if (typeof total === 'number') { %>
+      <p class="bb-ba-ann-panel__meta">
+        Showing <%= rows.length %> of <%= total %>
+        <% if (typeof page === 'number' && typeof totalPages === 'number' && totalPages > 1) { %>
+        · Page <%= page %> of <%= totalPages %>
+        <% } %>
+      </p>
       <% } %>
     </div>
-  </div>
+
+    <div class="bb-ba-table-wrap bb-ba-ann-table-wrap" data-bb-ann-table-wrap="1">
+      <table class="bb-ba-table bb-ba-ann-table" data-bb-ann-table="1">
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Message</th>
+            <th scope="col">Audience</th>
+            <th scope="col">Source</th>
+            <th scope="col">Published</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (item) {
+            var attachmentCount = item.attachments && item.attachments.length ? item.attachments.length : 0;
+          %>
+          <tr data-bb-announcement-status="<%= item.status %>" data-bb-ann-row="1">
+            <td>
+              <a href="<%= listBase %>/<%= item.id %>" class="bb-ann-title-link"><%= item.title %></a>
+              <% if (item.isPinned || item.isFeatured || attachmentCount) { %>
+              <div class="bb-ba-chips">
+                <% if (item.isPinned) { %><span class="bb-ba-chip bb-ba-chip--tiny">Pinned</span><% } %>
+                <% if (item.isFeatured) { %><span class="bb-ba-chip bb-ba-chip--tiny">Featured</span><% } %>
+                <% if (attachmentCount) { %>
+                <span class="bb-ba-chip bb-ba-chip--muted bb-ba-chip--tiny" data-bb-ann-attachments="<%= attachmentCount %>">
+                  <%= attachmentCount %> attachment<%= attachmentCount === 1 ? '' : 's' %>
+                </span>
+                <% } %>
+              </div>
+              <% } %>
+            </td>
+            <td class="bb-ann-snippet"><%= snippet(item.body) %></td>
+            <td><%= audienceLabel(item.audiences) %></td>
+            <td><%= sourceLabel(item) %></td>
+            <td><%= item.publishedAt ? formatWhenLong(item.publishedAt) : '—' %></td>
+            <td><span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
+            <td class="bb-ba-table__actions">
+              <a
+                class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+                href="<%= listBase %>/<%= item.id %>"
+                data-bb-ann-action="open"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                Open
+              </a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="bb-ba-ann-cards" data-bb-ann-cards="1">
+      <% rows.forEach(function (item) {
+        var whenLabel = item.publishedAt
+          ? formatWhenLong(item.publishedAt)
+          : (item.updatedAt ? ('Updated ' + formatWhen(item.updatedAt)) : '');
+        var attachmentCount = item.attachments && item.attachments.length ? item.attachments.length : 0;
+      %>
+      <li
+        class="bb-ba-ann-card"
+        data-bb-announcement-status="<%= item.status %>"
+        data-bb-ann-card="1"
+      >
+        <div class="bb-ba-ann-card__head">
+          <div class="bb-ba-ann-card__identity">
+            <p class="bb-ba-ann-card__name"><%= item.title %></p>
+            <% if (whenLabel) { %>
+            <p class="bb-ba-ann-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+              <%= whenLabel %>
+            </p>
+            <% } %>
+            <div class="bb-ba-ann-card__badges">
+              <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+              <% if (item.isPinned) { %><span class="bb-ba-chip bb-ba-chip--muted">Pinned</span><% } %>
+              <% if (item.isFeatured) { %><span class="bb-ba-chip bb-ba-chip--muted">Featured</span><% } %>
+              <% if (attachmentCount) { %>
+              <span class="bb-ba-chip bb-ba-chip--muted" data-bb-ann-attachments="<%= attachmentCount %>">
+                <%= attachmentCount %> attachment<%= attachmentCount === 1 ? '' : 's' %>
+              </span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <div class="bb-ba-ann-card__body">
+          <p class="bb-ba-ann-card__snippet"><%= snippet(item.body) %></p>
+          <p class="bb-ba-ann-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">group</span>
+            <%= audienceLabel(item.audiences) %>
+          </p>
+          <p class="bb-ba-ann-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">apartment</span>
+            <%= sourceLabel(item) %>
+          </p>
+        </div>
+        <div class="bb-ba-ann-card__actions">
+          <a
+            class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm"
+            href="<%= listBase %>/<%= item.id %>"
+            data-bb-ann-action="open"
+          >
+            Open
+          </a>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% if (totalPages > 1) { %>
+  <nav class="bb-ba-pager" aria-label="Pagination" data-bb-ann-pager="1">
+    <% if (page > 1) { %>
+    <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= pagerHref(page - 1) %>">Previous</a>
+    <% } %>
+    <span class="bb-ba-pager__meta">Page <%= page %> of <%= totalPages %> · <%= total %> total</span>
+    <% if (page < totalPages) { %>
+    <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= pagerHref(page + 1) %>">Next</a>
+    <% } %>
+  </nav>
   <% } %>
 </section>
 

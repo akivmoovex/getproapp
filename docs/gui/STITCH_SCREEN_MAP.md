@@ -44,8 +44,8 @@ Related prior audits (do not replace this map): `docs/ui/V5_STITCH_SCREEN_MAP.md
 | Unique Stitch screens (`list_screens`) | 196 |
 | Primary product rows in master table (logical screens) | 96 |
 | Rows status **MATCHED** | 0 |
-| Rows status **PARTIAL** | 48 |
-| Rows status **PLACEHOLDER** | 14 |
+| Rows status **PARTIAL** | 49 |
+| Rows status **PLACEHOLDER** | 13 |
 | Rows status **MISSING** | 24 |
 | Rows status **STITCH_MISSING** | 8 |
 | Rows status **NEEDS_VERIFICATION** | 2 |
@@ -105,8 +105,8 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 | 43 | Branch admin | Departments | `7ee4d401f26d45b8ae18f26fe9b391ec` | `3794bd0c398b42cbb3987964807b27c3` | — | — | — | branch_admin | MISSING | No departments schema/routes in V5. |
 | 44 | Branch admin | Events management | `ad136a0e8f0f41aa8c88c59c77df5455` | `112d23ce9441492cb5edc1c6ef1d5250` | `/branch-admin/content/events` | `/branch-admin/content/events` | `content-admin/entities.ejs` | branch_admin | PLACEHOLDER | |
 | 45 | Branch admin | Duty roster | `37bdc9ea66db4ca2b4375d37605bdbb2` | `51d3e5bfce8641f0837a1556d659b6b7` | — | — | — | branch_admin | MISSING | No V5 route/schema. |
-| 46 | Branch admin | Website editor | `3f3160664d91423d80cb4ba81e2af6c4` | `f2bb5e794f074a1aa3d248a2fe54ddeb` | `/branch-admin/content` | `/branch-admin/content` | `content-admin/index.ejs` (+ `page.ejs`, `section.ejs`, `preview.ejs`) | branch_admin | PLACEHOLDER | Functional CMS editor; not Stitch website-editor composition. |
-| 47 | Branch admin | Announcements | `65941542c13048edb2c62bccd01ddcea` | `daa416025c704a5693b295ef3139af89` | `/branch-admin/announcements` | `/branch-admin/announcements` | `announcements/admin-list.ejs` (+ form/detail/preview/publish) | branch_admin | PARTIAL | Extra form/preview states lack dedicated Stitch pairs. |
+| 46 | Branch admin | Website editor | `3f3160664d91423d80cb4ba81e2af6c4` | `f2bb5e794f074a1aa3d248a2fe54ddeb` | `/branch-admin/content` | `/branch-admin/content` | `content-admin/index.ejs` (+ `page.ejs`, `section.ejs`, `preview.ejs`) | branch_admin | PARTIAL | Batch 13C overview + 13D page/section editors. Ministries/events entity editors and builder chrome omitted. |
+| 47 | Branch admin | Announcements | `65941542c13048edb2c62bccd01ddcea` | `daa416025c704a5693b295ef3139af89` | `/branch-admin/announcements` | `/branch-admin/announcements` | `announcements/admin-list.ejs` (+ form/detail/preview/publish) | branch_admin | PARTIAL | Batch 13A list + Batch 13B create/edit form (adapted from 35-* + Shared UI States). Preview polish not started. |
 | 48 | Branch admin | Attendance tracker | `d351ae0e154f44cd827314e415c0633e` | `5ea15ec1eb9f4fceac664903c1778091` | `/branch-admin/attendance` | `/branch-admin/attendance` | `attendance/admin-list.ejs` | branch_admin | PARTIAL | |
 | 49 | Branch admin | Attendance detail | `12e5e7d87c894b059c437a4b38753514` | `18a7d7a77b724653a42882743fb8a736` | `/branch-admin/attendance/:id` | `/branch-admin/attendance/:id` | `attendance/admin-detail.ejs` | branch_admin | PARTIAL | |
 | 50 | Branch admin | Giving settings | `858c66cf5d654fffb90c5a264653f27a` | `0769a7e1813d490d921a72a8bc8c3334` | `/branch-admin/giving` | `/branch-admin/giving` | `giving/admin-list.ejs` | branch_admin | PARTIAL | Manual summaries; no bank/QR gateway UI. |

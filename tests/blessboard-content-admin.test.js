@@ -208,9 +208,16 @@ describe("blessboard content admin", () => {
     assert.match(res.text, /Website content/);
     assert.match(res.text, /Church-wide/);
     assert.match(res.text, /data-bb-content-admin="1"/);
+    assert.match(res.text, /data-bb-stitch-content="34-branch-website-editor"/);
+    assert.match(res.text, /data-bb-content-pages="1"/);
+    assert.match(res.text, /data-bb-content-entities="1"/);
+    assert.match(res.text, /data-bb-content-page-cards="1"/);
     assert.match(res.text, /data-bb-hq-content-branches="1"/);
     assert.match(res.text, /\/hq\/content\/pages\/about/);
+    assert.match(res.text, /\/hq\/content\/leadership/);
     assert.match(res.text, /href="\/hq\/announcements"/);
+    assert.match(res.text, /data-bb-content-unavailable="builder"/);
+    assert.doesNotMatch(res.text, /completion %|85%|You have \d+ unsaved changes/i);
     assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
   });
 
@@ -221,8 +228,16 @@ describe("blessboard content admin", () => {
 
     const ba = await authedGet("/branch-admin/content", HOST_A, users.branchA);
     assert.equal(ba.res.status, 200);
+    assert.match(ba.res.text, /data-bb-stitch-content="34-branch-website-editor"/);
     assert.match(ba.res.text, /\/branch-admin\/content\/pages\/home/);
-    assert.doesNotMatch(ba.res.text, /Church-wide/);
+    assert.match(ba.res.text, /\/branch-admin\/content\/preview\/home/);
+    assert.match(ba.res.text, /\/branch-admin\/content\/ministries/);
+    assert.match(ba.res.text, /data-bb-content-hq-controlled="1"/);
+    assert.match(ba.res.text, /data-bb-content-scope="branch"/);
+    assert.match(ba.res.text, /data-bb-content-unavailable="branding"/);
+    assert.doesNotMatch(ba.res.text, /data-bb-content-scope="church-wide"/);
+    assert.doesNotMatch(ba.res.text, /data-bb-hq-content-branches="1"/);
+    assert.doesNotMatch(ba.res.text, new RegExp(churchA.id, "i"));
   });
 
   it("rejects cross-tenant content access", async () => {
@@ -249,6 +264,20 @@ describe("blessboard content admin", () => {
     requireDb();
     const { res: pageRes, csrf } = await authedGet("/hq/content/pages/about", HOST_A, users.hqA);
     assert.equal(pageRes.status, 200);
+    assert.match(pageRes.text, /data-bb-content-page-editor="1"/);
+    assert.match(pageRes.text, /data-bb-stitch-page-editor="34-branch-website-editor"/);
+    assert.match(pageRes.text, /data-bb-page-form="1"/);
+    assert.match(pageRes.text, /data-bb-page-sections="1"/);
+    assert.match(pageRes.text, /data-bb-page-add-section="1"/);
+    assert.match(pageRes.text, /name="title"/);
+    assert.match(pageRes.text, /name="status"/);
+    assert.match(pageRes.text, /name="confirm_publish"/);
+    assert.match(pageRes.text, /name="expected_updated_at"/);
+    assert.match(pageRes.text, /name="section_key"/);
+    assert.match(pageRes.text, /name="section_type"/);
+    assert.match(pageRes.text, /name="media_url"/);
+    assert.match(pageRes.text, /data-bb-content-action="preview"/);
+    assert.doesNotMatch(pageRes.text, /drag.?and.?drop|live edit|custom HTML|theme picker/i);
     const expected = (pageRes.text.match(/name="expected_updated_at" value="([^"]+)"/) || [])[1];
     assert.ok(expected);
 
@@ -269,6 +298,17 @@ describe("blessboard content admin", () => {
       users.hqA
     );
     assert.equal(secGet.status, 200);
+    assert.match(secGet.text, /data-bb-content-section-editor="1"/);
+    assert.match(secGet.text, /data-bb-stitch-section-editor="34-branch-website-editor"/);
+    assert.match(secGet.text, /data-bb-section-form="1"/);
+    assert.match(secGet.text, /name="section_type"/);
+    assert.match(secGet.text, /name="heading"/);
+    assert.match(secGet.text, /name="body_text"/);
+    assert.match(secGet.text, /name="media_url"/);
+    assert.match(secGet.text, /name="sort_order"/);
+    assert.match(secGet.text, /name="confirm_publish"/);
+    assert.match(secGet.text, /name="expected_updated_at"/);
+    assert.doesNotMatch(secGet.text, /custom HTML|theme widget|drag.?and.?drop/i);
     const secExpected = (secGet.text.match(/name="expected_updated_at" value="([^"]+)"/) || [])[1];
 
     const noConfirm = await authedPost(

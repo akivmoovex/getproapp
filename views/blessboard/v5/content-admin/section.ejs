@@ -1,52 +1,197 @@
-<!DOCTYPE html>
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-start') %>
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <p class="bb-ca-hint"><a href="<%= scope.basePath %>/pages/<%= page.pageKey %>">← Back to page</a></p>
-  <h1>Edit section: <%= section.sectionKey %></h1>
+<%
+  var sectionStatus = submitted && submitted.status != null ? submitted.status : section.status;
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+%>
+
+<section
+  class="bb-ca-section-editor bb-ba-section-editor"
+  data-bb-content-section-editor="1"
+  data-bb-stitch-section-editor="34-branch-website-editor"
+  data-bb-content-section-key="<%= section.sectionKey %>"
+  data-bb-section-status="<%= section.status %>"
+>
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="<%= scope.basePath %>">Website content</a>
+        <span aria-hidden="true">›</span>
+        <a href="<%= scope.basePath %>/pages/<%= page.pageKey %>"><%= page.pageKey %></a>
+        <span aria-hidden="true">›</span>
+        <span><%= section.sectionKey %></span>
+      </p>
+      <div class="bb-ba-page-editor__title-row">
+        <h1 class="bb-ba-page-head__title">Edit section</h1>
+        <span class="bb-ba-chip <%= statusChip(section.status) %>" data-bb-section-status-chip="<%= section.status %>">
+          <%= statusLabel(section.status) %>
+        </span>
+      </div>
+      <p class="bb-ba-lede">
+        Plain-text section <strong><%= section.sectionKey %></strong> on the
+        <strong><%= page.pageKey %></strong> page.
+        Publishing requires confirmation.
+      </p>
+    </div>
+    <p class="bb-ba-page-head__actions">
+      <a
+        class="bb-ba-btn bb-ba-btn--ghost"
+        href="<%= scope.basePath %>/pages/<%= page.pageKey %>"
+        data-bb-content-action="back-page"
+      >Back to page</a>
+    </p>
+  </header>
+
   <% if (typeof error !== 'undefined' && error) { %>
-    <p class="bb-ca-error" role="alert"><%= error %></p>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-ca-section-errors' }) %>
   <% } %>
   <% if (typeof saved !== 'undefined' && saved) { %>
-    <p class="bb-ca-ok" role="status">Section saved.</p>
+  <%- include('../partials/flash-message', { type: 'success', title: 'Saved', message: 'Section saved.' }) %>
   <% } %>
 
-  <form method="post" action="<%= scope.basePath %>/pages/<%= page.pageKey %>/sections/<%= section.sectionKey %>" class="<%= formClass %> bb-ca-form">
+  <form
+    method="post"
+    action="<%= scope.basePath %>/pages/<%= page.pageKey %>/sections/<%= section.sectionKey %>"
+    class="<%= formClass %> bb-ca-form bb-ba-panel bb-ba-section-editor__form"
+    data-bb-section-form="1"
+    id="bb-ca-section-form"
+  >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <input type="hidden" name="expected_updated_at" value="<%= section.updatedAt instanceof Date ? section.updatedAt.toISOString() : section.updatedAt %>" />
 
-    <label for="section_type">Section type</label>
-    <input id="section_type" name="section_type" type="text" required maxlength="64" pattern="[a-z][a-z0-9_-]*" value="<%= submitted && submitted.section_type != null ? submitted.section_type : section.sectionType %>" />
+    <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-section-content-heading" data-bb-section-section="content">
+      <h2 id="bb-ca-section-content-heading" class="bb-ba-section-title">Content</h2>
+      <div class="bb-ba-field">
+        <label for="section_type">Section type</label>
+        <input
+          id="section_type"
+          name="section_type"
+          type="text"
+          required
+          maxlength="64"
+          pattern="[a-z][a-z0-9_-]*"
+          value="<%= submitted && submitted.section_type != null ? submitted.section_type : section.sectionType %>"
+          autocomplete="off"
+        />
+        <p class="bb-ba-hint">Supported keys only. Unsupported widgets are not available.</p>
+      </div>
+      <div class="bb-ba-field">
+        <label for="heading">Heading</label>
+        <input
+          id="heading"
+          name="heading"
+          type="text"
+          maxlength="200"
+          value="<%= submitted && submitted.heading != null ? submitted.heading : (section.heading || '') %>"
+          autocomplete="off"
+        />
+      </div>
+      <div class="bb-ba-field">
+        <label for="body_text">Body text</label>
+        <textarea id="body_text" name="body_text" rows="8" maxlength="20000"><%= submitted && submitted.body_text != null ? submitted.body_text : (section.bodyText || '') %></textarea>
+      </div>
+    </section>
 
-    <label for="heading">Heading</label>
-    <input id="heading" name="heading" type="text" maxlength="200" value="<%= submitted && submitted.heading != null ? submitted.heading : (section.heading || '') %>" />
+    <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-section-media-heading" data-bb-section-section="media">
+      <h2 id="bb-ca-section-media-heading" class="bb-ba-section-title">Media</h2>
+      <div class="bb-ba-field">
+        <label for="media_url">Media URL (HTTPS or uploaded)</label>
+        <input
+          id="media_url"
+          name="media_url"
+          type="text"
+          maxlength="2000"
+          value="<%= submitted && submitted.media_url != null ? submitted.media_url : (section.mediaUrl || '') %>"
+          autocomplete="off"
+        />
+        <%- include('media-upload', {
+              uploadUrl: scope.basePath + '/media/upload',
+              targetInputId: 'media_url',
+              csrfToken: csrfToken,
+              visibility: 'public'
+            }) %>
+        <p class="bb-ba-hint">Uses the existing church media library for this scope.</p>
+      </div>
+    </section>
 
-    <label for="body_text">Body text</label>
-    <textarea id="body_text" name="body_text" rows="6" maxlength="20000"><%= submitted && submitted.body_text != null ? submitted.body_text : (section.bodyText || '') %></textarea>
+    <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-section-status-heading" data-bb-section-section="status">
+      <h2 id="bb-ca-section-status-heading" class="bb-ba-section-title">Status &amp; order</h2>
+      <div class="bb-ba-page-editor__grid">
+        <div class="bb-ba-field">
+          <label for="sort_order">Sort order</label>
+          <input
+            id="sort_order"
+            name="sort_order"
+            type="number"
+            value="<%= submitted && submitted.sort_order != null ? submitted.sort_order : section.sortOrder %>"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="status">Status</label>
+          <select id="status" name="status" data-bb-section-status-select>
+            <% ['draft','published','archived'].forEach(function (st) { %>
+            <option value="<%= st %>" <%= sectionStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="bb-ca-confirm-wrap" data-bb-section-confirm-wrap <%= sectionStatus === 'published' ? '' : 'hidden' %>>
+        <label class="bb-ca-confirm">
+          <input type="checkbox" name="confirm_publish" value="1" data-bb-section-confirm-publish />
+          I confirm this section should be published on the public website.
+        </label>
+      </div>
+    </section>
 
-    <label for="media_url">Media URL (HTTPS or uploaded)</label>
-    <input id="media_url" name="media_url" type="text" maxlength="2000" value="<%= submitted && submitted.media_url != null ? submitted.media_url : (section.mediaUrl || '') %>" />
-    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: 'media_url', csrfToken: csrfToken, visibility: 'public' }) %>
-
-    <label for="sort_order">Sort order</label>
-    <input id="sort_order" name="sort_order" type="number" value="<%= submitted && submitted.sort_order != null ? submitted.sort_order : section.sortOrder %>" />
-
-    <label for="status">Status</label>
-    <select id="status" name="status">
-      <% ['draft','published','archived'].forEach(function (st) { %>
-      <option value="<%= st %>" <%= (submitted && submitted.status != null ? submitted.status : section.status) === st ? 'selected' : '' %>><%= st %></option>
-      <% }) %>
-    </select>
-
-    <label class="bb-ca-confirm">
-      <input type="checkbox" name="confirm_publish" value="1" />
-      I confirm this section should be published on the public website.
-    </label>
-
-    <button type="submit">Save section</button>
+    <div class="bb-ba-decision__actions bb-ba-page-editor__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= scope.basePath %>/pages/<%= page.pageKey %>">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-section-save="1">
+        <span class="material-symbols-outlined" aria-hidden="true">save</span>
+        Save section
+      </button>
+    </div>
   </form>
+</section>
+
+<script>
+(function () {
+  var status = document.querySelector("[data-bb-section-status-select]");
+  var wrap = document.querySelector("[data-bb-section-confirm-wrap]");
+  var input = document.querySelector("[data-bb-section-confirm-publish]");
+  function sync() {
+    if (!status || !wrap) return;
+    var show = status.value === "published";
+    wrap.hidden = !show;
+    if (input) {
+      if (show) input.setAttribute("required", "required");
+      else {
+        input.removeAttribute("required");
+        input.checked = false;
+      }
+    }
+  }
+  if (status) {
+    status.addEventListener("change", sync);
+    sync();
+  }
+})();
+</script>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

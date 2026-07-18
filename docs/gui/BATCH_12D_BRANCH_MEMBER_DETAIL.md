@@ -1,7 +1,7 @@
 # Batch 12D — Branch admin member detail
 
 **Date:** 2026-07-18  
-**Scope:** Branch Admin `/branch-admin/members/:id` presentation only. **Announcements not started.**  
+**Scope:** Branch Admin `/branch-admin/members/:id` presentation only. **Announcements list started in Batch 13A.**
 **References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md) (order 40), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_12C_BRANCH_MEMBERS.md`](./BATCH_12C_BRANCH_MEMBERS.md)
 
 ## 1. Canonical Stitch screen IDs
@@ -95,7 +95,7 @@ Desktop: two-column layout (≥900px). Mobile: stacked panels; tabs scroll horiz
 ## 10. Remaining gaps
 
 1. No branch-admin member update/status POST API in V5 — product decision deferred.
-2. Announcements admin Stitch polish not started.
+2. Form / detail / preview / publish Stitch polish not started (Batch 13A covered list only).
 3. Unavailable tabs are markers only (no deep links to attendance/requests for this member).
 
 ## 11. Suggested commit message

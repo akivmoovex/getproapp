@@ -14,7 +14,11 @@
   }
 %>
 
-<section class="bb-ann-admin" data-bb-announcement-admin-publish="1">
+<section
+  class="bb-ann-admin bb-ba-ann-publish"
+  data-bb-announcement-admin-publish="1"
+  data-bb-stitch-announcement-publish="35-branch-announcements-management"
+>
   <header class="bb-ba-page-head">
     <p class="bb-ba-breadcrumb">
       <a href="<%= basePath %>">Announcements</a>
@@ -25,13 +29,15 @@
     </p>
     <h1 class="bb-ba-page-head__title">Confirm publish</h1>
     <p class="bb-ba-lede">
-      Review audience and estimated delivery before publishing. This does not create member accounts or send email automatically.
+      Review audience and scope before publishing. This does not create member accounts or send email automatically.
     </p>
   </header>
 
-  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+  <% if (error) { %>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-ann-publish-errors' }) %>
+  <% } %>
 
-  <section class="bb-ba-panel">
+  <section class="bb-ba-panel" data-bb-ann-publish-review="1">
     <h2 class="bb-ba-section-title"><%= item.title %></h2>
     <p class="bb-ann-body"><%= item.body %></p>
     <dl class="bb-ann-dl">
@@ -43,7 +49,12 @@
     </dl>
   </section>
 
-  <form method="post" action="<%= basePath %>/<%= item.id %>/publish" class="bb-ba-decision" data-bb-ann-publish-form="1">
+  <form
+    method="post"
+    action="<%= basePath %>/<%= item.id %>/publish"
+    class="bb-ba-decision bb-ba-ann-publish__form"
+    data-bb-ann-publish-form="1"
+  >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt && item.updatedAt.toISOString ? item.updatedAt.toISOString() : item.updatedAt %>" />
     <label class="bb-ann-check">
@@ -51,8 +62,11 @@
       I confirm publishing this announcement to the selected audience in this scope
     </label>
     <div class="bb-ba-decision__actions">
-      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>">Cancel</a>
-      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Confirm publish</button>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>" data-bb-ann-cancel="1">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-ann-confirm-publish-submit="1">
+        <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+        Confirm publish
+      </button>
     </div>
   </form>
 </section>

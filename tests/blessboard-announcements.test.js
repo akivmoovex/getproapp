@@ -898,13 +898,48 @@ describe("blessboard announcements", () => {
       .set("Cookie", baCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-announcement-admin-list="1"/);
+    assert.match(list.text, /data-bb-stitch-announcements="35-branch-announcements-management"/);
     assert.match(list.text, /Announcements management/);
     assert.match(list.text, /Create announcement/);
-    assert.doesNotMatch(list.text, /Active Today|Scheduled|1,240|Total Views|Admin Tip/i);
+    assert.match(list.text, /data-bb-ann-filter="1"/);
+    assert.match(list.text, /data-bb-ann-status-chips="1"/);
+    assert.match(list.text, /data-bb-ann-audience-chips="1"/);
+    assert.match(list.text, /data-bb-ann-table="1"/);
+    assert.match(list.text, /data-bb-ann-cards="1"/);
+    assert.doesNotMatch(list.text, /Active Today|Scheduled|1,240|Total Views|Admin Tip|Engagement|Announcement Insights/i);
+    assert.doesNotMatch(list.text, /data-bb-delivery=/);
+    assert.doesNotMatch(list.text, /data-bb-ann-action="edit"/);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(list.text, new RegExp(branchA.id, "i"));
 
-    const csrf = extractCookie(list, CSRF_COOKIE);
+    const newForm = await request(app)
+      .get("/branch-admin/announcements/new")
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.equal(newForm.status, 200);
+    assert.match(newForm.text, /data-bb-announcement-admin-form="1"/);
+    assert.match(newForm.text, /data-bb-stitch-announcement-editor="35-branch-announcements-management"/);
+    assert.match(newForm.text, /data-bb-form-mode="create"/);
+    assert.match(newForm.text, /name="_csrf"/);
+    assert.match(newForm.text, /name="title"/);
+    assert.match(newForm.text, /name="body"/);
+    assert.match(newForm.text, /name="audience_members"/);
+    assert.match(newForm.text, /name="audience_admins"/);
+    assert.match(newForm.text, /name="is_pinned"/);
+    assert.match(newForm.text, /name="is_featured"/);
+    assert.match(newForm.text, /name="action_url"/);
+    assert.match(newForm.text, /name="action_label"/);
+    assert.match(newForm.text, /name="media_asset_id"/);
+    assert.match(newForm.text, /data-bb-ann-save-draft="1"/);
+    assert.match(newForm.text, /data-bb-ann-publish-submit="1"/);
+    assert.match(newForm.text, /name="status"[\s\S]*value="draft"/);
+    assert.match(newForm.text, /name="status"[\s\S]*value="published"/);
+    assert.match(newForm.text, /name="confirm_publish"/);
+    assert.match(newForm.text, /data-bb-ann-live-preview="1"/);
+    assert.doesNotMatch(newForm.text, /Schedule|Template|Delivery channel|Total Views|Engagement/i);
+    assert.doesNotMatch(newForm.text, new RegExp(churchA.id, "i"));
+
+    const csrf = extractCookie(newForm, CSRF_COOKIE);
     const createRes = await request(app)
       .post("/branch-admin/announcements")
       .set("Host", HOST_A)
@@ -920,6 +955,19 @@ describe("blessboard announcements", () => {
     assert.equal(createRes.status, 303);
     assert.match(createRes.headers.location, /\/branch-admin\/announcements\/[0-9a-f-]{36}/i);
     const annId = createRes.headers.location.split("/").pop().split("?")[0];
+
+    const editForm = await request(app)
+      .get(`/branch-admin/announcements/${annId}/edit`)
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.equal(editForm.status, 200);
+    assert.match(editForm.text, /data-bb-form-mode="edit"/);
+    assert.match(editForm.text, /data-bb-ann-editor-status="draft"/);
+    assert.match(editForm.text, /data-bb-ann-save-draft="1"/);
+    assert.match(editForm.text, /data-bb-ann-publish="1"/);
+    assert.match(editForm.text, /name="expected_updated_at"/);
+    assert.match(editForm.text, /Branch GUI draft/);
+    assert.doesNotMatch(editForm.text, /data-bb-ann-publish-submit="1"/);
 
     const detail = await request(app)
       .get(`/branch-admin/announcements/${annId}`)
