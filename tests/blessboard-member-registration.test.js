@@ -442,8 +442,15 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-registration-queue="1"/);
+    assert.match(list.text, /data-bb-stitch-registrations="26-branch-member-verification-queue"/);
+    assert.match(list.text, /data-bb-reg-filter="1"/);
+    assert.match(list.text, /data-bb-reg-status-chips="1"/);
+    assert.match(list.text, /data-bb-reg-table="1"/);
+    assert.match(list.text, /data-bb-reg-cards="1"/);
+    assert.match(list.text, /data-bb-reg-action="review"/);
     assert.match(list.text, /Nora Applicant|nora@example\.test/i);
-    assert.doesNotMatch(list.text, /\b24\b.*Pending|Today's Subs|1,248/i);
+    assert.doesNotMatch(list.text, /\b24\b.*Pending|Today's Subs|1,248|High Priority|Approved Today|Export List/i);
+    assert.doesNotMatch(list.text, /type="checkbox"|bulk|PRIORITY GUEST|QR Scan|Web App/i);
 
     const row = await pool.query(
       `SELECT id FROM blessboard.member_registrations
@@ -457,12 +464,21 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-registration-detail="1"/);
+    assert.match(detail.text, /data-bb-stitch-registration-detail="26-branch-member-verification-queue"/);
+    assert.match(detail.text, /data-bb-reg-summary="1"/);
+    assert.match(detail.text, /data-bb-reg-submitted="1"/);
+    assert.match(detail.text, /data-bb-reg-history="1"/);
+    assert.match(detail.text, /data-bb-reg-review="1"/);
     assert.match(detail.text, /Nora/);
     assert.match(detail.text, /data-bb-ds-modal-open="bb-ba-approve-modal"/);
     assert.match(detail.text, /data-bb-ds-modal-open="bb-ba-reject-modal"/);
     assert.match(detail.text, /data-bb-reg-approve="1"/);
     assert.match(detail.text, /data-bb-reg-reject="1"/);
+    assert.match(detail.text, /name="review_notes"/);
+    assert.match(detail.text, /name="_csrf"/);
     assert.match(detail.text, /does <strong>not<\/strong> create a login account|No login account/i);
+    assert.doesNotMatch(detail.text, /Identity Document|Background Check|identity score|message applicant/i);
+    assert.doesNotMatch(detail.text, /email_normalized|phone_normalized|churchId|branchId/i);
     assert.doesNotMatch(detail.text, new RegExp(churchA.id, "i"));
 
     const csrf = extractCookie(detail, CSRF_COOKIE);
@@ -490,10 +506,27 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(directory.status, 200);
     assert.match(directory.text, /data-bb-member-directory="1"/);
+    assert.match(directory.text, /data-bb-stitch-members="28-branch-member-directory"/);
+    assert.match(directory.text, /data-bb-member-filter="1"/);
+    assert.match(directory.text, /data-bb-member-status-chips="1"/);
+    assert.match(directory.text, /data-bb-member-table="1"/);
+    assert.match(directory.text, /data-bb-member-cards="1"/);
+    assert.match(directory.text, /data-bb-member-action="view"/);
     assert.match(directory.text, /Nora/);
     assert.match(directory.text, /href="\/branch-admin\/members\/[0-9a-f-]{36}"/i);
     assert.doesNotMatch(directory.text, /email_normalized|phone_normalized/i);
+    assert.doesNotMatch(directory.text, /1,248|42 New|Export CSV|Add Member|Small Groups|\bVolunteers\b|\bDonors\b/i);
+    assert.doesNotMatch(directory.text, /type="checkbox"|bulk/i);
     assert.doesNotMatch(directory.text, new RegExp(churchA.id, "i"));
+
+    const foreignDirectory = await request(app)
+      .get("/branch-admin/members")
+      .set("Host", HOST_B)
+      .set("Cookie", sessionCookie(users.hqB));
+    assert.ok(foreignDirectory.status === 200 || foreignDirectory.status === 403);
+    if (foreignDirectory.status === 200) {
+      assert.doesNotMatch(foreignDirectory.text, /Nora/);
+    }
 
     const profile = await request(app)
       .get(`/branch-admin/members/${memberId}`)
@@ -501,16 +534,40 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(profile.status, 200);
     assert.match(profile.text, /data-bb-member-detail="1"/);
+    assert.match(profile.text, /data-bb-stitch-member-detail="27-branch-member-profile"/);
+    assert.match(profile.text, /data-bb-member-summary="1"/);
+    assert.match(profile.text, /data-bb-member-contact="1"/);
+    assert.match(profile.text, /data-bb-member-membership="1"/);
+    assert.match(profile.text, /data-bb-member-account="1"/);
+    assert.match(profile.text, /data-bb-member-sections="1"/);
+    assert.match(profile.text, /data-bb-member-unavailable="1"/);
+    assert.match(profile.text, /Read-only/);
     assert.match(profile.text, /Nora/);
     assert.match(profile.text, /Login linked/);
+    assert.doesNotMatch(profile.text, /action="\/branch-admin\/members\/[0-9a-f-]+/i);
+    assert.doesNotMatch(profile.text, /name="preferredName"|name="emailDisplay"|name="membershipStatus"|name="status"/i);
+    assert.doesNotMatch(profile.text, /\bSuspend\b|Add Note|Verify Member|Edit Roles|Assign to Ministry/i);
+    assert.doesNotMatch(profile.text, /Attendance Rate|Volunteer Hours|Birthday|Home Address|ECCL-|fingerprint/i);
     assert.doesNotMatch(profile.text, new RegExp(churchA.id, "i"));
-    assert.doesNotMatch(profile.text, /email_normalized|phone_normalized|user_id/i);
+    assert.doesNotMatch(profile.text, /email_normalized|phone_normalized|user_id|churchId|branchId/i);
 
     const foreignMember = await request(app)
       .get(`/branch-admin/members/${memberId}`)
       .set("Host", HOST_B)
       .set("Cookie", sessionCookie(users.hqB));
     assert.ok(foreignMember.status === 403 || foreignMember.status === 404);
+
+    const badId = await request(app)
+      .get("/branch-admin/members/not-a-uuid")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(badId.status, 404);
+
+    const missing = await request(app)
+      .get("/branch-admin/members/00000000-0000-4000-8000-000000000099")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.ok(missing.status === 404 || missing.status === 403);
   });
 
   it("rejects cross-tenant verification and CSRF-less approve", async (t) => {
@@ -581,6 +638,49 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(page.status, 200);
     assert.match(page.text, /Nora/);
+    assert.match(page.text, /data-bb-reg-filter="1"/);
+    assert.match(page.text, /name="q"[\s\S]*value="Nora"|value="Nora"/);
+  });
+
+  it("shows designed empty and no-results states for registration queue", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sid = sessionCookie(users.branchA);
+    const noResults = await request(app)
+      .get("/branch-admin/registrations?q=zzznomatch999")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(noResults.status, 200);
+    assert.match(noResults.text, /data-bb-reg-empty="no-results"/);
+    assert.doesNotMatch(noResults.text, /data-bb-reg-table="1"/);
+  });
+
+  it("supports member directory search filter and no-results empty state", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sid = sessionCookie(users.branchA);
+    const found = await request(app)
+      .get("/branch-admin/members?q=Nora&page=1")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(found.status, 200);
+    assert.match(found.text, /Nora/);
+    assert.match(found.text, /data-bb-member-filter="1"/);
+    assert.match(found.text, /value="Nora"/);
+
+    const byStatus = await request(app)
+      .get("/branch-admin/members?status=active&page=1")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(byStatus.status, 200);
+    assert.match(byStatus.text, /data-bb-member-status-filter="active"/);
+    assert.match(byStatus.text, /Nora/);
+
+    const none = await request(app)
+      .get("/branch-admin/members?q=zzznomatch999")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(none.status, 200);
+    assert.match(none.text, /data-bb-member-empty="no-results"/);
+    assert.doesNotMatch(none.text, /data-bb-member-table="1"/);
   });
 
   it("lists church-wide registrations and members for HQ with privacy limits", async (t) => {

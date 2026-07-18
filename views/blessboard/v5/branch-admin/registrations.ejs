@@ -1,6 +1,17 @@
 <%- include('../partials/branch-admin-shell-start') %>
 <%
   var rows = items || [];
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
+  var hasFilter = Boolean(searchQ || activeStatus);
+  var statusOptions = [
+    { key: '', label: 'All' },
+    { key: 'submitted', label: 'Pending' },
+    { key: 'under_review', label: 'In review' },
+    { key: 'approved', label: 'Approved' },
+    { key: 'rejected', label: 'Rejected' },
+    { key: 'withdrawn', label: 'Withdrawn' }
+  ];
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'submitted') return 'Pending';
@@ -23,14 +34,42 @@
     if (isNaN(d.getTime())) return String(value).slice(0, 10);
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
+  function formatWhenLong(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  }
   function initials(item) {
     var a = String(item.firstName || '').charAt(0);
     var b = String(item.lastName || '').charAt(0);
     return (a + b).toUpperCase() || '?';
   }
+  function filterHref(statusKey) {
+    var params = [];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    if (statusKey) params.push('status=' + encodeURIComponent(statusKey));
+    return '/branch-admin/registrations' + (params.length ? '?' + params.join('&') : '');
+  }
+  function pagerHref(pageNum) {
+    var params = ['page=' + pageNum];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    if (activeStatus) params.push('status=' + encodeURIComponent(activeStatus));
+    return '/branch-admin/registrations?' + params.join('&');
+  }
 %>
 
-<section class="bb-ba-reg" data-bb-registration-queue="1">
+<section
+  class="bb-ba-reg"
+  data-bb-registration-queue="1"
+  data-bb-stitch-registrations="26-branch-member-verification-queue"
+>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
@@ -38,21 +77,37 @@
         <span aria-hidden="true">›</span>
         <span>Verification queue</span>
       </p>
-      <h1 class="bb-ba-page-head__title">Member verification queue</h1>
+      <div class="bb-ba-reg__title-row">
+        <h1 class="bb-ba-page-head__title">Member verification queue</h1>
+        <% if (typeof total === 'number' && total >= 0 && !hasFilter) { %>
+        <span class="bb-ba-reg__count" data-bb-reg-total="<%= total %>"><%= total %> total</span>
+        <% } else if (typeof total === 'number' && hasFilter) { %>
+        <span class="bb-ba-reg__count" data-bb-reg-total="<%= total %>"><%= total %> match<%= total === 1 ? '' : 'es' %></span>
+        <% } %>
+      </div>
       <p class="bb-ba-lede">
-        Review pending registrations for <strong><%= branchDisplayName || churchDisplayName %></strong>.
+        Review pending registrations for
+        <strong><%= branchDisplayName || churchDisplayName %></strong>.
         Approving creates a member record only — no login account is created automatically.
       </p>
     </div>
   </header>
 
   <% if (saved === 'approve' || saved === 'reject') { %>
-  <p class="bb-ba-ok" role="status">
-    Registration <%= saved === 'approve' ? 'approved' : 'rejected' %>.
-  </p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: 'Updated',
+    message: saved === 'approve' ? 'Registration approved.' : 'Registration rejected.'
+  }) %>
   <% } %>
 
-  <form method="get" action="/branch-admin/registrations" class="bb-ba-filter" data-bb-reg-filter="1">
+  <form
+    method="get"
+    action="/branch-admin/registrations"
+    class="bb-ba-filter bb-ba-reg-filter"
+    data-bb-reg-filter="1"
+    role="search"
+  >
     <div class="bb-ba-field">
       <label for="q">Search</label>
       <input
@@ -60,7 +115,7 @@
         name="q"
         type="search"
         maxlength="100"
-        value="<%= q || '' %>"
+        value="<%= searchQ %>"
         placeholder="Name, email, or phone"
         autocomplete="off"
       />
@@ -70,81 +125,185 @@
       <select id="status" name="status">
         <option value="">All statuses</option>
         <% ['submitted','under_review','approved','rejected','withdrawn'].forEach(function (st) { %>
-        <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <option value="<%= st %>" <%= activeStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
         <% }) %>
       </select>
     </div>
     <div class="bb-ba-filter__actions">
-      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Filter</button>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/registrations">Clear</a>
+      <% } %>
     </div>
   </form>
 
-  <% if (!rows.length) { %>
-  <div class="bb-ba-empty" role="status">No registrations match this filter.</div>
-  <% } else { %>
-  <div class="bb-ba-table-wrap">
-    <table class="bb-ba-table" data-bb-reg-table="1">
-      <thead>
-        <tr>
-          <th scope="col">Member</th>
-          <th scope="col">Contact</th>
-          <th scope="col">Submitted</th>
-          <th scope="col">Status</th>
-          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% rows.forEach(function (item) { %>
-        <tr data-bb-reg-status="<%= item.status %>">
-          <td>
-            <div class="bb-ba-person">
-              <span class="bb-ba-avatar" aria-hidden="true"><%= initials(item) %></span>
-              <span>
-                <strong><%= item.firstName %> <%= item.lastName %></strong>
-                <% if (item.preferredName) { %>
-                <span class="bb-ba-muted"> (<%= item.preferredName %>)</span>
-                <% } %>
-              </span>
-            </div>
-          </td>
-          <td>
-            <div class="bb-ba-contact">
-              <% if (item.phoneDisplay) { %><span><%= item.phoneDisplay %></span><% } %>
-              <% if (item.emailDisplay) { %><span><%= item.emailDisplay %></span><% } %>
-              <% if (!item.phoneDisplay && !item.emailDisplay) { %>—<% } %>
-            </div>
-          </td>
-          <td><%= formatWhen(item.createdAt) %></td>
-          <td><span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
-          <td class="bb-ba-table__actions">
-            <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/branch-admin/registrations/<%= item.id %>">
-              Review
-            </a>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <nav class="bb-ba-reg-chips" aria-label="Status filters" data-bb-reg-status-chips="1">
+    <% statusOptions.forEach(function (opt) { %>
+    <a
+      class="bb-ba-reg-chip<%= activeStatus === opt.key ? ' is-active' : '' %>"
+      href="<%= filterHref(opt.key) %>"
+      <%= activeStatus === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-reg-status-filter="<%= opt.key || 'all' %>"
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
+
+  <% if (!rows.length && !hasFilter) { %>
+  <div class="bb-ba-reg-empty" data-bb-reg-empty="catalog" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No registrations yet',
+      body: 'When people submit the public registration form for this branch, they will appear here for review.',
+      icon: 'how_to_reg'
+    }) %>
   </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div class="bb-ba-reg-empty" data-bb-reg-empty="no-results" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No matching registrations',
+      body: 'Try a different search or status filter, or clear filters to see the full queue.',
+      icon: 'search_off',
+      actionHref: '/branch-admin/registrations',
+      actionLabel: 'Clear filters'
+    }) %>
+  </div>
+  <% } else { %>
+
+  <section class="bb-ba-panel bb-ba-reg-panel" aria-labelledby="bb-ba-reg-list-heading">
+    <div class="bb-ba-reg-panel__head">
+      <h2 id="bb-ba-reg-list-heading" class="bb-ba-reg-panel__title">Registrations</h2>
+      <% if (typeof total === 'number') { %>
+      <p class="bb-ba-reg-panel__meta">
+        Showing <%= rows.length %> of <%= total %>
+        <% if (typeof page === 'number' && typeof totalPages === 'number' && totalPages > 1) { %>
+        · Page <%= page %> of <%= totalPages %>
+        <% } %>
+      </p>
+      <% } %>
+    </div>
+
+    <div class="bb-ba-table-wrap bb-ba-reg-table-wrap" data-bb-reg-table-wrap="1">
+      <table class="bb-ba-table bb-ba-reg-table" data-bb-reg-table="1">
+        <thead>
+          <tr>
+            <th scope="col">Member</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Email</th>
+            <th scope="col">Submitted</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (item) { %>
+          <tr data-bb-reg-status="<%= item.status %>" data-bb-reg-row="1">
+            <td>
+              <div class="bb-ba-person">
+                <span class="bb-ba-avatar" aria-hidden="true"><%= initials(item) %></span>
+                <span>
+                  <strong><%= item.firstName %> <%= item.lastName %></strong>
+                  <% if (item.preferredName) { %>
+                  <span class="bb-ba-muted"> (<%= item.preferredName %>)</span>
+                  <% } %>
+                </span>
+              </div>
+            </td>
+            <td><%= item.phoneDisplay || '—' %></td>
+            <td><%= item.emailDisplay || '—' %></td>
+            <td><%= formatWhenLong(item.createdAt) %></td>
+            <td>
+              <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+            </td>
+            <td class="bb-ba-table__actions">
+              <a
+                class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+                href="/branch-admin/registrations/<%= item.id %>"
+                data-bb-reg-action="review"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                Review
+              </a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="bb-ba-reg-cards" data-bb-reg-cards="1">
+      <% rows.forEach(function (item) { %>
+      <li
+        class="bb-ba-reg-card"
+        data-bb-reg-status="<%= item.status %>"
+        data-bb-reg-card="1"
+      >
+        <div class="bb-ba-reg-card__head">
+          <span class="bb-ba-avatar bb-ba-avatar--lg" aria-hidden="true"><%= initials(item) %></span>
+          <div class="bb-ba-reg-card__identity">
+            <p class="bb-ba-reg-card__name"><%= item.firstName %> <%= item.lastName %></p>
+            <p class="bb-ba-reg-card__meta"><%= formatWhen(item.createdAt) %></p>
+          </div>
+          <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+        </div>
+        <div class="bb-ba-reg-card__body">
+          <% if (item.emailDisplay) { %>
+          <p class="bb-ba-reg-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            <%= item.emailDisplay %>
+          </p>
+          <% } %>
+          <% if (item.phoneDisplay) { %>
+          <p class="bb-ba-reg-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            <%= item.phoneDisplay %>
+          </p>
+          <% } %>
+          <% if (!item.emailDisplay && !item.phoneDisplay) { %>
+          <p class="bb-ba-reg-card__line bb-ba-muted">No contact details provided</p>
+          <% } %>
+        </div>
+        <div class="bb-ba-reg-card__actions">
+          <a
+            class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm"
+            href="/branch-admin/registrations/<%= item.id %>"
+            data-bb-reg-action="review"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+            Review
+          </a>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
   <% } %>
 
   <% if (totalPages > 1) { %>
-  <nav class="bb-ba-pager" aria-label="Pagination">
+  <nav class="bb-ba-pager" aria-label="Pagination" data-bb-reg-pager="1">
     <% if (page > 1) { %>
-    <a
-      class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
-      href="/branch-admin/registrations?page=<%= page - 1 %>&amp;q=<%= encodeURIComponent(q || '') %>&amp;status=<%= encodeURIComponent(statusFilter || '') %>"
-    >Previous</a>
+    <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= pagerHref(page - 1) %>">Previous</a>
     <% } %>
     <span class="bb-ba-pager__meta">Page <%= page %> of <%= totalPages %> · <%= total %> total</span>
     <% if (page < totalPages) { %>
-    <a
-      class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
-      href="/branch-admin/registrations?page=<%= page + 1 %>&amp;q=<%= encodeURIComponent(q || '') %>&amp;status=<%= encodeURIComponent(statusFilter || '') %>"
-    >Next</a>
+    <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= pagerHref(page + 1) %>">Next</a>
     <% } %>
   </nav>
   <% } %>
+
+  <aside class="bb-ba-reg-checklist" data-bb-reg-checklist="1" aria-labelledby="bb-ba-reg-checklist-heading">
+    <div class="bb-ba-reg-checklist__icon" aria-hidden="true">
+      <span class="material-symbols-outlined">info</span>
+    </div>
+    <div>
+      <h2 id="bb-ba-reg-checklist-heading" class="bb-ba-reg-checklist__title">Verification checklist</h2>
+      <p class="bb-ba-reg-checklist__body">
+        Before approving, confirm contact details look valid and that this is not a duplicate of an existing member.
+        Approving creates a member record only — it does not create a login account.
+      </p>
+    </div>
+  </aside>
 </section>
 
 <%- include('../partials/branch-admin-shell-end') %>

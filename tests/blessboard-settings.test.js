@@ -328,9 +328,41 @@ describe("blessboard settings http", () => {
       .set("Accept", "text/html");
     assert.equal(page.status, 200);
     assert.match(page.text, /Branch settings/);
+    assert.match(page.text, /data-bb-branch-settings="1"/);
+    assert.match(page.text, /data-bb-stitch-settings="missing"/);
+    assert.match(page.text, /data-bb-settings-nav="1"/);
+    assert.match(page.text, /data-bb-settings-form="1"/);
+    assert.match(page.text, /data-bb-settings-section="profile"/);
+    assert.match(page.text, /data-bb-settings-section="location"/);
+    assert.match(page.text, /data-bb-settings-readonly="1"/);
+    assert.match(page.text, /data-bb-settings-unavailable="product"/);
+    assert.match(page.text, /name="publicName"/);
+    assert.match(page.text, /name="email"/);
+    assert.match(page.text, /name="phone"/);
+    assert.match(page.text, /name="timezone"/);
+    assert.match(page.text, /name="countryCode"/);
+    assert.match(page.text, /name="addressLine1"/);
+    assert.match(page.text, /name="latitude"/);
+    assert.match(page.text, /name="longitude"/);
+    assert.match(page.text, /name="_csrf"/);
+    assert.match(page.text, /method="post"/);
+    assert.match(page.text, /action="\/branch-admin\/settings"/);
+    assert.doesNotMatch(page.text, /name="denomination"|name="websiteStatus"|name="primaryEmail"/);
+    assert.doesNotMatch(page.text, /name="branding"|name="domain"|name="billing"|name="notification"|type="file"/);
     assert.doesNotMatch(page.text, new RegExp(hqA.id, "i"));
     const csrf = extractCookie(page, CSRF_COOKIE);
     const match = page.text.match(/name="_csrf" value="([^"]+)"/);
+    assert.ok(csrf && match);
+
+    const noCsrf = await request(app)
+      .post("/branch-admin/settings")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .type("form")
+      .send({
+        publicName: "Should Fail",
+      });
+    assert.equal(noCsrf.status, 403);
 
     const save = await request(app)
       .post("/branch-admin/settings")

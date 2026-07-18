@@ -272,7 +272,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(css, /\.bb-ba-dash-stat--desktop-only/);
     assert.match(css, /@media \(max-width:\s*320px\)/);
     assert.match(css, /@media \(min-width:\s*900px\)/);
-    assert.match(start, /branch-admin\.css\?v=13/);
+    assert.match(start, /branch-admin\.css\?v=18/);
   });
 
   it("branch admin account keeps identity summary without unsupported security surfaces", () => {
@@ -296,6 +296,142 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(css, /\.bb-ba-account__info/);
     assert.match(css, /@media \(min-width:\s*700px\)/);
     assert.match(css, /@media \(max-width:\s*320px\)/);
+  });
+
+  it("branch admin settings keeps editable V5 fields and unavailable HQ/product sections", () => {
+    const settings = read("views/blessboard/v5/branch-admin/settings.ejs");
+    const css = read("public/blessboard/v5/branch-admin.css");
+    assert.match(settings, /data-bb-stitch-settings="missing"/);
+    assert.match(settings, /data-bb-settings-nav="1"/);
+    assert.match(settings, /data-bb-settings-form="1"/);
+    assert.match(settings, /data-bb-settings-section="profile"/);
+    assert.match(settings, /data-bb-settings-section="location"/);
+    assert.match(settings, /data-bb-settings-readonly="1"/);
+    assert.match(settings, /data-bb-settings-unavailable="product"/);
+    assert.match(settings, /method="post"/);
+    assert.match(settings, /action="\/branch-admin\/settings"/);
+    assert.match(settings, /name="publicName"/);
+    assert.match(settings, /name="email"/);
+    assert.match(settings, /name="phone"/);
+    assert.match(settings, /name="timezone"/);
+    assert.match(settings, /name="countryCode"/);
+    assert.match(settings, /name="addressLine1"/);
+    assert.match(settings, /name="addressLine2"/);
+    assert.match(settings, /name="city"/);
+    assert.match(settings, /name="provinceState"/);
+    assert.match(settings, /name="postalCode"/);
+    assert.match(settings, /name="latitude"/);
+    assert.match(settings, /name="longitude"/);
+    assert.match(settings, /name="_csrf"/);
+    assert.match(settings, /form-errors|flash-message/);
+    assert.doesNotMatch(settings, /name="denomination"|name="websiteStatus"|name="primaryEmail"/);
+    assert.doesNotMatch(settings, /name="branding"|name="billing"|type="file"/);
+    assert.match(css, /\.bb-ba-settings-nav/);
+    assert.match(css, /\.bb-ba-settings-grid/);
+    assert.match(css, /\.bb-ba-settings-unavailable/);
+    assert.match(css, /@media \(min-width:\s*700px\)/);
+  });
+
+  it("branch admin registration queue keeps desktop table and mobile cards without fabricated metrics", () => {
+    const queue = read("views/blessboard/v5/branch-admin/registrations.ejs");
+    const css = read("public/blessboard/v5/branch-admin.css");
+    assert.match(queue, /data-bb-stitch-registrations="26-branch-member-verification-queue"/);
+    assert.match(queue, /data-bb-reg-filter="1"/);
+    assert.match(queue, /data-bb-reg-status-chips="1"/);
+    assert.match(queue, /data-bb-reg-table="1"/);
+    assert.match(queue, /data-bb-reg-cards="1"/);
+    assert.match(queue, /data-bb-reg-empty="catalog"/);
+    assert.match(queue, /data-bb-reg-empty="no-results"/);
+    assert.match(queue, /data-bb-reg-action="review"/);
+    assert.match(queue, /name="q"/);
+    assert.match(queue, /name="status"/);
+    assert.match(queue, /href="\/branch-admin\/registrations\/<%= item\.id %>"/);
+    assert.doesNotMatch(queue, /type="checkbox"|Export List|Today's Subs|High Priority|PRIORITY GUEST/i);
+    assert.match(css, /\.bb-ba-reg-cards/);
+    assert.match(css, /\.bb-ba-reg-table-wrap/);
+    assert.match(css, /\.bb-ba-reg-chip/);
+    assert.match(css, /@media \(min-width:\s*900px\)/);
+    assert.match(css, /\.bb-ba-reg-table-wrap\s*\{[^}]*display:\s*block/);
+    assert.match(css, /\.bb-ba-reg-cards\s*\{[^}]*display:\s*none/);
+  });
+
+  it("branch admin registration detail keeps review modals without unsupported verification chrome", () => {
+    const detail = read("views/blessboard/v5/branch-admin/registration-detail.ejs");
+    const css = read("public/blessboard/v5/branch-admin.css");
+    assert.match(detail, /data-bb-stitch-registration-detail="26-branch-member-verification-queue"/);
+    assert.match(detail, /data-bb-reg-summary="1"/);
+    assert.match(detail, /data-bb-reg-submitted="1"/);
+    assert.match(detail, /data-bb-reg-history="1"/);
+    assert.match(detail, /data-bb-reg-review="1"/);
+    assert.match(detail, /data-bb-reg-approve="1"/);
+    assert.match(detail, /data-bb-reg-reject="1"/);
+    assert.match(detail, /data-bb-ds-modal-open="bb-ba-approve-modal"/);
+    assert.match(detail, /data-bb-ds-modal-open="bb-ba-reject-modal"/);
+    assert.match(detail, /action="\/branch-admin\/registrations\/<%= reg\.id %>\/approve"/);
+    assert.match(detail, /action="\/branch-admin\/registrations\/<%= reg\.id %>\/reject"/);
+    assert.match(detail, /name="review_notes"/);
+    assert.match(detail, /name="_csrf"/);
+    assert.match(detail, /role="dialog"/);
+    assert.match(detail, /aria-modal="true"/);
+    assert.doesNotMatch(detail, /Identity Document|Background Check|identity score|send message|type="file"/i);
+    assert.doesNotMatch(detail, /churchId|branchId|emailNormalized|phoneNormalized/);
+    assert.match(css, /\.bb-ba-reg-detail__layout/);
+    assert.match(css, /\.bb-ba-reg-summary/);
+    assert.match(css, /\.bb-ba-reg-timeline/);
+    assert.match(css, /@media \(min-width:\s*900px\)/);
+  });
+
+  it("branch admin member directory keeps desktop table and mobile cards without fabricated metrics", () => {
+    const directory = read("views/blessboard/v5/branch-admin/members.ejs");
+    const css = read("public/blessboard/v5/branch-admin.css");
+    const shell = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
+    assert.match(shell, /branch-admin\.css\?v=18/);
+    assert.match(directory, /data-bb-stitch-members="28-branch-member-directory"/);
+    assert.match(directory, /data-bb-member-directory="1"/);
+    assert.match(directory, /data-bb-member-filter="1"/);
+    assert.match(directory, /data-bb-member-status-chips="1"/);
+    assert.match(directory, /data-bb-member-table="1"/);
+    assert.match(directory, /data-bb-member-cards="1"/);
+    assert.match(directory, /data-bb-member-empty="catalog"/);
+    assert.match(directory, /data-bb-member-empty="no-results"/);
+    assert.match(directory, /data-bb-member-action="view"/);
+    assert.match(directory, /name="q"/);
+    assert.match(directory, /name="status"/);
+    assert.match(directory, /href="\/branch-admin\/members\/<%= item\.id %>"/);
+    assert.doesNotMatch(directory, /type="checkbox"|Export CSV|Add Member|Small Groups/i);
+    assert.doesNotMatch(directory, /email_normalized|phone_normalized|churchId|branchId/);
+    assert.match(css, /\.bb-ba-members-cards/);
+    assert.match(css, /\.bb-ba-members-table-wrap/);
+    assert.match(css, /\.bb-ba-members-chip/);
+    assert.match(css, /@media \(min-width:\s*900px\)/);
+    assert.match(css, /\.bb-ba-members-table-wrap\s*\{[^}]*display:\s*block/);
+    assert.match(css, /\.bb-ba-members-cards\s*\{[^}]*display:\s*none/);
+  });
+
+  it("branch admin member detail keeps read-only profile sections without unsupported Stitch chrome", () => {
+    const detail = read("views/blessboard/v5/branch-admin/member-detail.ejs");
+    const css = read("public/blessboard/v5/branch-admin.css");
+    assert.match(detail, /data-bb-stitch-member-detail="27-branch-member-profile"/);
+    assert.match(detail, /data-bb-member-detail="1"/);
+    assert.match(detail, /data-bb-member-summary="1"/);
+    assert.match(detail, /data-bb-member-contact="1"/);
+    assert.match(detail, /data-bb-member-membership="1"/);
+    assert.match(detail, /data-bb-member-account="1"/);
+    assert.match(detail, /data-bb-member-sections="1"/);
+    assert.match(detail, /data-bb-member-unavailable="1"/);
+    assert.match(detail, /data-bb-member-section-unavailable="attendance"/);
+    assert.match(detail, /bb-ba-chip--readonly/);
+    assert.match(detail, /Read-only/);
+    assert.doesNotMatch(detail, /method="post"|name="_csrf"|name="status"/);
+    assert.doesNotMatch(detail, /\bSuspend\b|Add Note|Verify Member|Edit Roles|Assign to Ministry/i);
+    assert.doesNotMatch(detail, /email_normalized|phone_normalized|churchId|branchId|userId/);
+    assert.doesNotMatch(detail, /Attendance Rate|Volunteer Hours|Birthday|Home Address|ECCL-/i);
+    assert.match(css, /\.bb-ba-member-detail__layout/);
+    assert.match(css, /\.bb-ba-member-summary/);
+    assert.match(css, /\.bb-ba-member-dl/);
+    assert.match(css, /\.bb-ba-chip--readonly/);
+    assert.match(css, /@media \(min-width:\s*900px\)/);
+    assert.match(css, /\.bb-ba-member-detail__layout\s*\{[^}]*grid-template-columns/);
   });
 
   it("member profile distinguishes read-only vs editable fields without unsupported Stitch blocks", () => {

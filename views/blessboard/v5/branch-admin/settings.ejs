@@ -1,51 +1,312 @@
-<!DOCTYPE html>
+<%#
+  Branch Admin Settings — STITCH_MISSING (no dedicated branch Settings pair).
+  Visual reference: Shared UI States + platform settings card/section pattern.
+  Editable fields match existing POST /branch-admin/settings names only.
+%>
 <%- include('../partials/branch-admin-shell-start') %>
-  <h1>Branch settings</h1>
-  <p class="bb-ba-lede">Contact and location for this branch. Church-wide settings are managed in HQ.</p>
+<%
+  var s = typeof settings !== 'undefined' && settings ? settings : {};
+  function val(key) {
+    var v = s[key];
+    return v == null ? '' : String(v);
+  }
+%>
+
+<section
+  class="bb-ba-settings"
+  data-bb-branch-settings="1"
+  data-bb-stitch-settings="missing"
+  aria-labelledby="bb-ba-settings-heading"
+>
+  <header class="bb-ba-page-head">
+    <h1 class="bb-ba-page-head__title" id="bb-ba-settings-heading">Branch settings</h1>
+    <p class="bb-ba-lede">
+      Contact and location for
+      <strong><%= churchDisplayName || 'this church' %></strong><% if (branchDisplayName) { %>
+      · <%= branchDisplayName %><% } %>.
+      Church-wide settings are managed in HQ.
+    </p>
+  </header>
+
+  <nav class="bb-ba-settings-nav" aria-label="Settings sections" data-bb-settings-nav="1">
+    <a class="bb-ba-settings-nav__link" href="#bb-ba-settings-profile">Profile &amp; contact</a>
+    <a class="bb-ba-settings-nav__link" href="#bb-ba-settings-location">Location</a>
+    <a class="bb-ba-settings-nav__link" href="#bb-ba-settings-hq">Church-controlled</a>
+    <a class="bb-ba-settings-nav__link" href="#bb-ba-settings-unavailable">Not available</a>
+  </nav>
+
   <% if (error) { %>
-    <p class="bb-ba-error" role="alert"><%= error %></p>
+  <%- include('../partials/form-errors', { error: error, id: 'bb-ba-settings-errors', title: 'Could not save settings' }) %>
   <% } %>
   <% if (saved) { %>
-    <p class="bb-ba-ok" role="status">Settings saved.</p>
+  <%- include('../partials/flash-message', { type: 'success', message: 'Settings saved.', title: 'Saved' }) %>
   <% } %>
-  <form method="post" action="/branch-admin/settings" class="bb-ba-form">
+
+  <form
+    method="post"
+    action="/branch-admin/settings"
+    class="bb-ba-settings-form"
+    data-bb-settings-form="1"
+    novalidate
+  >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <label for="publicName">Public name</label>
-    <input id="publicName" name="publicName" type="text" required maxlength="200" value="<%= settings.publicName %>" />
 
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email" maxlength="254" value="<%= settings.email || '' %>" />
+    <section
+      id="bb-ba-settings-profile"
+      class="bb-ba-panel bb-ba-settings-card"
+      aria-labelledby="bb-ba-settings-profile-heading"
+      data-bb-settings-section="profile"
+    >
+      <div class="bb-ba-settings-card__head">
+        <h2 id="bb-ba-settings-profile-heading" class="bb-ba-settings-card__title">Profile &amp; contact</h2>
+        <span class="bb-ds-badge bb-ds-badge--success" data-bb-settings-editable="1">Editable</span>
+      </div>
+      <p class="bb-ba-hint">Public name and contact details shown on this branch’s pages.</p>
+      <div class="bb-ba-settings-grid">
+        <div class="bb-ba-field bb-ba-settings-grid__full">
+          <label for="publicName">Public name</label>
+          <input
+            id="publicName"
+            name="publicName"
+            type="text"
+            required
+            maxlength="200"
+            value="<%= val('publicName') %>"
+            autocomplete="organization"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            maxlength="254"
+            value="<%= val('email') %>"
+            autocomplete="email"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="phone">Phone</label>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            maxlength="32"
+            value="<%= val('phone') %>"
+            placeholder="+260…"
+            autocomplete="tel"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="timezone">Timezone</label>
+          <input
+            id="timezone"
+            name="timezone"
+            type="text"
+            maxlength="64"
+            value="<%= val('timezone') %>"
+            placeholder="Africa/Lusaka"
+            autocomplete="off"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="countryCode">Country</label>
+          <input
+            id="countryCode"
+            name="countryCode"
+            type="text"
+            maxlength="2"
+            value="<%= val('countryCode') %>"
+            placeholder="ZM"
+            autocomplete="country"
+          />
+        </div>
+      </div>
+    </section>
 
-    <label for="phone">Phone</label>
-    <input id="phone" name="phone" type="tel" maxlength="32" value="<%= settings.phone || '' %>" placeholder="+260…" />
+    <section
+      id="bb-ba-settings-location"
+      class="bb-ba-panel bb-ba-settings-card"
+      aria-labelledby="bb-ba-settings-location-heading"
+      data-bb-settings-section="location"
+    >
+      <div class="bb-ba-settings-card__head">
+        <h2 id="bb-ba-settings-location-heading" class="bb-ba-settings-card__title">Location</h2>
+        <span class="bb-ds-badge bb-ds-badge--success" data-bb-settings-editable="1">Editable</span>
+      </div>
+      <p class="bb-ba-hint">Address and map coordinates for this branch. Leave coordinates blank if unknown.</p>
+      <div class="bb-ba-settings-grid">
+        <div class="bb-ba-field bb-ba-settings-grid__full">
+          <label for="addressLine1">Address line 1</label>
+          <input
+            id="addressLine1"
+            name="addressLine1"
+            type="text"
+            maxlength="200"
+            value="<%= val('addressLine1') %>"
+            autocomplete="address-line1"
+          />
+        </div>
+        <div class="bb-ba-field bb-ba-settings-grid__full">
+          <label for="addressLine2">Address line 2</label>
+          <input
+            id="addressLine2"
+            name="addressLine2"
+            type="text"
+            maxlength="200"
+            value="<%= val('addressLine2') %>"
+            autocomplete="address-line2"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="city">City</label>
+          <input
+            id="city"
+            name="city"
+            type="text"
+            maxlength="120"
+            value="<%= val('city') %>"
+            autocomplete="address-level2"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="provinceState">Province / state</label>
+          <input
+            id="provinceState"
+            name="provinceState"
+            type="text"
+            maxlength="120"
+            value="<%= val('provinceState') %>"
+            autocomplete="address-level1"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="postalCode">Postal code</label>
+          <input
+            id="postalCode"
+            name="postalCode"
+            type="text"
+            maxlength="32"
+            value="<%= val('postalCode') %>"
+            autocomplete="postal-code"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="latitude">Latitude</label>
+          <input
+            id="latitude"
+            name="latitude"
+            type="text"
+            inputmode="decimal"
+            value="<%= s.latitude != null ? s.latitude : '' %>"
+            autocomplete="off"
+          />
+        </div>
+        <div class="bb-ba-field">
+          <label for="longitude">Longitude</label>
+          <input
+            id="longitude"
+            name="longitude"
+            type="text"
+            inputmode="decimal"
+            value="<%= s.longitude != null ? s.longitude : '' %>"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+    </section>
 
-    <label for="timezone">Timezone</label>
-    <input id="timezone" name="timezone" type="text" maxlength="64" value="<%= settings.timezone || '' %>" />
-
-    <label for="countryCode">Country</label>
-    <input id="countryCode" name="countryCode" type="text" maxlength="2" value="<%= settings.countryCode || '' %>" />
-
-    <label for="addressLine1">Address line 1</label>
-    <input id="addressLine1" name="addressLine1" type="text" maxlength="200" value="<%= settings.addressLine1 || '' %>" />
-
-    <label for="addressLine2">Address line 2</label>
-    <input id="addressLine2" name="addressLine2" type="text" maxlength="200" value="<%= settings.addressLine2 || '' %>" />
-
-    <label for="city">City</label>
-    <input id="city" name="city" type="text" maxlength="120" value="<%= settings.city || '' %>" />
-
-    <label for="provinceState">Province / state</label>
-    <input id="provinceState" name="provinceState" type="text" maxlength="120" value="<%= settings.provinceState || '' %>" />
-
-    <label for="postalCode">Postal code</label>
-    <input id="postalCode" name="postalCode" type="text" maxlength="32" value="<%= settings.postalCode || '' %>" />
-
-    <label for="latitude">Latitude</label>
-    <input id="latitude" name="latitude" type="text" inputmode="decimal" value="<%= settings.latitude != null ? settings.latitude : '' %>" />
-
-    <label for="longitude">Longitude</label>
-    <input id="longitude" name="longitude" type="text" inputmode="decimal" value="<%= settings.longitude != null ? settings.longitude : '' %>" />
-
-    <button type="submit">Save branch settings</button>
+    <div class="bb-ba-settings-actions">
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">save</span>
+        Save branch settings
+      </button>
+    </div>
   </form>
+
+  <section
+    id="bb-ba-settings-hq"
+    class="bb-ba-panel bb-ba-settings-card bb-ba-settings-card--readonly"
+    aria-labelledby="bb-ba-settings-hq-heading"
+    data-bb-settings-section="hq"
+    data-bb-settings-readonly="1"
+  >
+    <div class="bb-ba-settings-card__head">
+      <h2 id="bb-ba-settings-hq-heading" class="bb-ba-settings-card__title">Church-controlled</h2>
+      <span class="bb-ds-badge bb-ds-badge--neutral">Read-only here</span>
+    </div>
+    <p class="bb-ba-hint">
+      Denomination, website status, and church-wide contact defaults are managed in HQ — not on this branch form.
+    </p>
+    <ul class="bb-ba-settings-unavailable" data-bb-settings-unavailable="hq">
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <span>
+          <strong>Church profile</strong>
+          <span class="bb-ba-muted">Denomination, primary church contact, website status</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <span>
+          <strong>Church defaults</strong>
+          <span class="bb-ba-muted">Default timezone and country for the organization</span>
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <section
+    id="bb-ba-settings-unavailable"
+    class="bb-ba-panel bb-ba-settings-card bb-ba-settings-card--unavailable"
+    aria-labelledby="bb-ba-settings-unavailable-heading"
+    data-bb-settings-section="unavailable"
+    data-bb-settings-unavailable="product"
+  >
+    <div class="bb-ba-settings-card__head">
+      <h2 id="bb-ba-settings-unavailable-heading" class="bb-ba-settings-card__title">Not available</h2>
+      <span class="bb-ds-badge bb-ds-badge--warning">Unavailable</span>
+    </div>
+    <p class="bb-ba-hint">These controls are not part of V5 branch settings and are not inventable here.</p>
+    <ul class="bb-ba-settings-unavailable">
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">block</span>
+        <span>
+          <strong>Branding</strong>
+          <span class="bb-ba-muted">Logo, colors, and theme uploads</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">block</span>
+        <span>
+          <strong>Domain &amp; DNS</strong>
+          <span class="bb-ba-muted">Hostname and custom domain management</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">block</span>
+        <span>
+          <strong>Billing</strong>
+          <span class="bb-ba-muted">Plans, invoices, and payment methods</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">block</span>
+        <span>
+          <strong>Notifications</strong>
+          <span class="bb-ba-muted">Email/SMS preference toggles</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">block</span>
+        <span>
+          <strong>Integrations</strong>
+          <span class="bb-ba-muted">Third-party connectors and API keys</span>
+        </span>
+      </li>
+    </ul>
+  </section>
+</section>
+
 <%- include('../partials/branch-admin-shell-end') %>

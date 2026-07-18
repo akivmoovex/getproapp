@@ -1,6 +1,40 @@
 <%- include('../partials/branch-admin-shell-start') %>
 <%
   var m = member || {};
+  var displayHeading = [m.firstName, m.lastName].filter(Boolean).join(' ') || 'Member';
+  var initialsSource = [m.firstName, m.lastName].filter(Boolean);
+  var initials = initialsSource
+    .map(function (part) { return String(part).charAt(0); })
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  if (!initials) initials = '?';
+
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'Active';
+    if (key === 'pending') return 'Pending';
+    if (key === 'inactive') return 'Inactive';
+    if (key === 'suspended') return 'Suspended';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-ba-chip--ok';
+    if (key === 'pending') return 'bb-ba-chip--pending';
+    if (key === 'inactive' || key === 'archived') return 'bb-ba-chip--muted';
+    if (key === 'suspended') return 'bb-ba-chip--danger';
+    return 'bb-ba-chip--muted';
+  }
+  function membershipLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (!key) return '—';
+    if (key === 'active') return 'Active membership';
+    if (key === 'pending') return 'Pending membership';
+    if (key === 'inactive') return 'Inactive membership';
+    return s;
+  }
   function formatWhen(value) {
     if (!value) return '—';
     var d = value instanceof Date ? value : new Date(value);
@@ -9,49 +43,217 @@
   }
 %>
 
-<section class="bb-ba-member-detail" data-bb-member-detail="1">
-  <p class="bb-ba-back">
-    <a href="/branch-admin/members">
-      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-      Back to directory
-    </a>
-  </p>
-
-  <header class="bb-ba-page-head">
-    <h1 class="bb-ba-page-head__title"><%= m.firstName %> <%= m.lastName %></h1>
-    <p class="bb-ba-lede">Member profile for this branch. Privacy-limited fields only.</p>
+<section
+  class="bb-ba-member-detail"
+  data-bb-member-detail="1"
+  data-bb-stitch-member-detail="27-branch-member-profile"
+  data-bb-member-status="<%= m.status || '' %>"
+>
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="/branch-admin/members">Members</a>
+        <span aria-hidden="true">›</span>
+        <span><%= displayHeading %></span>
+      </p>
+      <h1 class="bb-ba-page-head__title">Member profile</h1>
+      <p class="bb-ba-lede">
+        Branch membership for
+        <strong><%= branchDisplayName || churchDisplayName %></strong>.
+        Profile fields shown here are read-only for branch admins.
+      </p>
+    </div>
+    <p class="bb-ba-back bb-ba-back--inline">
+      <a href="/branch-admin/members">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to directory
+      </a>
+    </p>
   </header>
 
-  <article class="bb-ba-panel">
-    <div class="bb-ba-chips" aria-label="Status">
-      <span class="bb-ba-chip"><%= m.status %></span>
-      <% if (m.membershipStatus) { %>
-      <span class="bb-ba-chip bb-ba-chip--muted"><%= m.membershipStatus %></span>
-      <% } %>
-    </div>
-    <dl class="bb-ba-dl">
-      <dt>Legal name</dt>
-      <dd><%= m.firstName %> <%= m.lastName %></dd>
-      <% if (m.preferredName) { %>
-      <dt>Preferred name</dt>
-      <dd><%= m.preferredName %></dd>
-      <% } %>
-      <dt>Email</dt>
-      <dd><%= m.emailDisplay || '—' %></dd>
-      <dt>Phone</dt>
-      <dd><%= m.phoneDisplay || '—' %></dd>
-      <dt>Joined this branch</dt>
-      <dd><%= formatWhen(m.joinedAt) %></dd>
-      <dt>Primary membership</dt>
-      <dd><%= m.isPrimary ? 'Yes' : 'No' %></dd>
-      <dt>Login linked</dt>
-      <dd><%= m.hasLoginLinked ? 'Yes' : 'No' %></dd>
-    </dl>
-  </article>
+  <nav class="bb-ba-member-detail__tabs" aria-label="Profile sections" data-bb-member-sections="1">
+    <a
+      class="bb-ba-member-detail__tab is-active"
+      href="#bb-ba-member-overview"
+      aria-current="page"
+      data-bb-member-section="overview"
+    >Overview</a>
+    <span
+      class="bb-ba-member-detail__tab is-unavailable"
+      title="Not available in this release"
+      data-bb-member-section-unavailable="attendance"
+    >Attendance</span>
+    <span
+      class="bb-ba-member-detail__tab is-unavailable"
+      title="Not available in this release"
+      data-bb-member-section-unavailable="requests"
+    >Requests</span>
+    <span
+      class="bb-ba-member-detail__tab is-unavailable"
+      title="Not available in this release"
+      data-bb-member-section-unavailable="notes"
+    >Notes</span>
+  </nav>
 
-  <p class="bb-ba-hint">
-    Linking a login is a separate step. Approving a registration never promises an automatic account.
-  </p>
+  <div class="bb-ba-member-detail__layout" id="bb-ba-member-overview">
+    <div class="bb-ba-member-detail__main">
+      <article class="bb-ba-panel bb-ba-member-summary" data-bb-member-summary="1">
+        <div class="bb-ba-member-summary__identity">
+          <span class="bb-ba-avatar bb-ba-avatar--xl" aria-hidden="true"><%= initials %></span>
+          <div class="bb-ba-member-summary__copy">
+            <div class="bb-ba-member-summary__badges" aria-label="Status">
+              <span class="bb-ba-chip <%= statusChip(m.status) %>" data-bb-member-status-badge="1">
+                <%= statusLabel(m.status) %>
+              </span>
+              <% if (m.membershipStatus) { %>
+              <span class="bb-ba-chip bb-ba-chip--muted" data-bb-member-membership-badge="1">
+                <%= membershipLabel(m.membershipStatus) %>
+              </span>
+              <% } %>
+              <% if (m.isPrimary) { %>
+              <span class="bb-ba-chip bb-ba-chip--muted">Primary</span>
+              <% } %>
+              <span class="bb-ba-chip bb-ba-chip--readonly">Read-only</span>
+            </div>
+            <h2 class="bb-ba-member-summary__name"><%= displayHeading %></h2>
+            <% if (m.preferredName) { %>
+            <p class="bb-ba-member-summary__preferred">Preferred: <%= m.preferredName %></p>
+            <% } %>
+            <p class="bb-ba-member-summary__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+              Joined <%= formatWhen(m.joinedAt || m.createdAt) %>
+            </p>
+            <% if (branchDisplayName || churchDisplayName) { %>
+            <p class="bb-ba-member-summary__branch">
+              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+              <%= branchDisplayName || churchDisplayName %>
+            </p>
+            <% } %>
+          </div>
+        </div>
+      </article>
+
+      <section
+        class="bb-ba-panel bb-ba-member-section"
+        aria-labelledby="bb-ba-member-contact-heading"
+        data-bb-member-contact="1"
+      >
+        <div class="bb-ba-member-section__head">
+          <h2 id="bb-ba-member-contact-heading" class="bb-ba-section-title">Contact information</h2>
+          <span class="bb-ba-chip bb-ba-chip--readonly">Read-only</span>
+        </div>
+        <p class="bb-ba-hint">Display values only — normalized identifiers are never shown.</p>
+        <dl class="bb-ba-member-dl">
+          <div class="bb-ba-member-dl__row">
+            <dt>
+              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+              Email
+            </dt>
+            <dd><%= m.emailDisplay || '—' %></dd>
+          </div>
+          <div class="bb-ba-member-dl__row">
+            <dt>
+              <span class="material-symbols-outlined" aria-hidden="true">call</span>
+              Phone
+            </dt>
+            <dd><%= m.phoneDisplay || '—' %></dd>
+          </div>
+        </dl>
+      </section>
+
+      <section
+        class="bb-ba-panel bb-ba-member-section"
+        aria-labelledby="bb-ba-member-membership-heading"
+        data-bb-member-membership="1"
+      >
+        <div class="bb-ba-member-section__head">
+          <h2 id="bb-ba-member-membership-heading" class="bb-ba-section-title">Branch membership</h2>
+          <span class="bb-ba-chip bb-ba-chip--readonly">Read-only</span>
+        </div>
+        <dl class="bb-ba-member-dl">
+          <div class="bb-ba-member-dl__row">
+            <dt>Branch</dt>
+            <dd><%= branchDisplayName || churchDisplayName || '—' %></dd>
+          </div>
+          <div class="bb-ba-member-dl__row">
+            <dt>Membership status</dt>
+            <dd><%= membershipLabel(m.membershipStatus) %></dd>
+          </div>
+          <div class="bb-ba-member-dl__row">
+            <dt>Account status</dt>
+            <dd><%= statusLabel(m.status) %></dd>
+          </div>
+          <div class="bb-ba-member-dl__row">
+            <dt>Primary membership</dt>
+            <dd><%= m.isPrimary ? 'Yes' : 'No' %></dd>
+          </div>
+          <div class="bb-ba-member-dl__row">
+            <dt>Joined this branch</dt>
+            <dd><%= formatWhen(m.joinedAt) %></dd>
+          </div>
+          <div class="bb-ba-member-dl__row">
+            <dt>Record updated</dt>
+            <dd><%= formatWhen(m.updatedAt) %></dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <aside class="bb-ba-member-detail__aside">
+      <section
+        class="bb-ba-panel bb-ba-member-section"
+        aria-labelledby="bb-ba-member-account-heading"
+        data-bb-member-account="1"
+      >
+        <div class="bb-ba-member-section__head">
+          <h2 id="bb-ba-member-account-heading" class="bb-ba-section-title">Account</h2>
+          <span class="bb-ba-chip bb-ba-chip--readonly">Read-only</span>
+        </div>
+        <dl class="bb-ba-member-dl">
+          <div class="bb-ba-member-dl__row">
+            <dt>Legal name</dt>
+            <dd><%= m.firstName %> <%= m.lastName %></dd>
+          </div>
+          <% if (m.preferredName) { %>
+          <div class="bb-ba-member-dl__row">
+            <dt>Preferred name</dt>
+            <dd><%= m.preferredName %></dd>
+          </div>
+          <% } %>
+          <div class="bb-ba-member-dl__row">
+            <dt>Login linked</dt>
+            <dd data-bb-member-login-linked="<%= m.hasLoginLinked ? '1' : '0' %>">
+              <%= m.hasLoginLinked ? 'Yes' : 'No' %>
+            </dd>
+          </div>
+        </dl>
+        <p class="bb-ba-hint">
+          Linking a login is a separate step. Approving a registration never creates an account automatically.
+          Contact details members can change themselves appear in the member portal when a login is linked.
+        </p>
+      </section>
+
+      <section
+        class="bb-ba-panel bb-ba-member-unavailable"
+        aria-labelledby="bb-ba-member-unavailable-heading"
+        data-bb-member-unavailable="1"
+      >
+        <h2 id="bb-ba-member-unavailable-heading" class="bb-ba-section-title bb-ba-section-title--sm">
+          Not available here
+        </h2>
+        <p class="bb-ba-hint">
+          These Stitch actions and histories are not supported on this branch-admin profile yet.
+        </p>
+        <ul class="bb-ba-member-unavailable__list">
+          <li>Profile editing and status changes</li>
+          <li>Administrative notes and activity history</li>
+          <li>Attendance, giving, and request timelines</li>
+          <li>Ministry assignments and family links</li>
+          <li>Identity documents and verification checklists</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
 </section>
 
 <%- include('../partials/branch-admin-shell-end') %>

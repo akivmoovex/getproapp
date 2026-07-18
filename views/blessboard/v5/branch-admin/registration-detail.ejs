@@ -2,6 +2,15 @@
 <%
   var reg = registration || {};
   var open = reg.status === 'submitted' || reg.status === 'under_review';
+  var displayHeading = [reg.firstName, reg.lastName].filter(Boolean).join(' ') || 'Registration';
+  var initialsSource = [reg.firstName, reg.lastName].filter(Boolean);
+  var initials = initialsSource
+    .map(function (part) { return String(part).charAt(0); })
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  if (!initials) initials = '?';
+
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'submitted') return 'Pending';
@@ -11,6 +20,13 @@
     if (key === 'withdrawn') return 'Withdrawn';
     return s || '—';
   }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted' || key === 'under_review') return 'bb-ba-chip--pending';
+    if (key === 'approved') return 'bb-ba-chip--ok';
+    if (key === 'rejected') return 'bb-ba-chip--danger';
+    return 'bb-ba-chip--muted';
+  }
   function formatWhen(value) {
     if (!value) return '—';
     var d = value instanceof Date ? value : new Date(value);
@@ -19,150 +35,344 @@
       year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
     });
   }
+
+  var history = [];
+  if (reg.createdAt) {
+    history.push({
+      key: 'submitted',
+      label: 'Submitted',
+      detail: 'Registration received for review.',
+      when: reg.createdAt,
+      icon: 'inbox'
+    });
+  }
+  if (reg.status === 'under_review' && reg.updatedAt && (!reg.reviewedAt || String(reg.updatedAt) !== String(reg.reviewedAt))) {
+    history.push({
+      key: 'under_review',
+      label: 'In review',
+      detail: 'Marked under review by branch leadership.',
+      when: reg.updatedAt,
+      icon: 'pending'
+    });
+  }
+  if (reg.reviewedAt) {
+    var decisionLabel = statusLabel(reg.status);
+    var decisionDetail = 'Decision recorded.';
+    if (reg.status === 'approved') {
+      decisionDetail = 'Approved. Member record created or linked — no login account was created automatically.';
+    } else if (reg.status === 'rejected') {
+      decisionDetail = 'Rejected. The applicant was not notified automatically.';
+    } else if (reg.status === 'withdrawn') {
+      decisionDetail = 'Registration withdrawn.';
+    }
+    history.push({
+      key: 'decision',
+      label: decisionLabel,
+      detail: decisionDetail,
+      when: reg.reviewedAt,
+      icon: reg.status === 'approved' ? 'check_circle' : (reg.status === 'rejected' ? 'cancel' : 'flag')
+    });
+  }
 %>
 
-<section class="bb-ba-reg-detail" data-bb-registration-detail="1">
-  <p class="bb-ba-back">
-    <a href="/branch-admin/registrations">
-      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-      Back to queue
-    </a>
-  </p>
-
-  <header class="bb-ba-page-head">
-    <h1 class="bb-ba-page-head__title"><%= reg.firstName %> <%= reg.lastName %></h1>
-    <p class="bb-ba-lede">Registration review. Internal notes stay in the admin console only.</p>
+<section
+  class="bb-ba-reg-detail"
+  data-bb-registration-detail="1"
+  data-bb-stitch-registration-detail="26-branch-member-verification-queue"
+  data-bb-reg-status="<%= reg.status || '' %>"
+>
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="/branch-admin/registrations">Verification queue</a>
+        <span aria-hidden="true">›</span>
+        <span><%= displayHeading %></span>
+      </p>
+      <h1 class="bb-ba-page-head__title">Registration review</h1>
+      <p class="bb-ba-lede">
+        Review the applicant for
+        <strong><%= branchDisplayName || churchDisplayName %></strong>.
+        Internal notes stay in the admin console only.
+      </p>
+    </div>
+    <p class="bb-ba-back bb-ba-back--inline">
+      <a href="/branch-admin/registrations">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to queue
+      </a>
+    </p>
   </header>
 
   <% if (error) { %>
-  <div class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></div>
+  <%- include('../partials/form-errors', {
+    error: error,
+    id: 'bb-ba-reg-detail-errors',
+    title: 'Could not update registration'
+  }) %>
   <% } %>
   <% if (saved === 'approve') { %>
-  <p class="bb-ba-ok" role="status" data-bb-reg-saved="approve">
-    Approved. A member record was created or linked. No login account was created, and the applicant was not notified automatically.
-  </p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: 'Approved',
+    message: 'A member record was created or linked. No login account was created, and the applicant was not notified automatically.'
+  }) %>
+  <p class="bb-ba-sr-only" role="status" data-bb-reg-saved="approve">Approved</p>
   <% } %>
   <% if (saved === 'reject') { %>
-  <p class="bb-ba-ok" role="status" data-bb-reg-saved="reject">
-    Rejected. The applicant was not notified automatically. Internal notes were not published.
-  </p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: 'Rejected',
+    message: 'The applicant was not notified automatically. Internal notes were not published.'
+  }) %>
+  <p class="bb-ba-sr-only" role="status" data-bb-reg-saved="reject">Rejected</p>
   <% } %>
 
-  <article class="bb-ba-panel">
-    <div class="bb-ba-chips" aria-label="Status">
-      <span class="bb-ba-chip"><%= statusLabel(reg.status) %></span>
+  <div class="bb-ba-reg-detail__layout">
+    <div class="bb-ba-reg-detail__main">
+      <article class="bb-ba-panel bb-ba-reg-summary" data-bb-reg-summary="1">
+        <div class="bb-ba-reg-summary__identity">
+          <span class="bb-ba-avatar bb-ba-avatar--xl" aria-hidden="true"><%= initials %></span>
+          <div class="bb-ba-reg-summary__copy">
+            <span class="bb-ba-chip <%= statusChip(reg.status) %>" data-bb-reg-status-badge="1">
+              <%= statusLabel(reg.status) %>
+            </span>
+            <h2 class="bb-ba-reg-summary__name"><%= displayHeading %></h2>
+            <% if (reg.preferredName) { %>
+            <p class="bb-ba-reg-summary__preferred">Preferred: <%= reg.preferredName %></p>
+            <% } %>
+            <% if (reg.branchDisplayName || reg.branchKey) { %>
+            <p class="bb-ba-reg-summary__branch">
+              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+              <%= reg.branchDisplayName || reg.branchKey %>
+            </p>
+            <% } %>
+          </div>
+        </div>
+        <ul class="bb-ba-reg-summary__contacts" aria-label="Contact">
+          <li>
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            <span><%= reg.emailDisplay || '—' %></span>
+          </li>
+          <li>
+            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            <span><%= reg.phoneDisplay || '—' %></span>
+          </li>
+        </ul>
+      </article>
+
+      <section class="bb-ba-panel" aria-labelledby="bb-ba-reg-submitted-heading" data-bb-reg-submitted="1">
+        <h2 id="bb-ba-reg-submitted-heading" class="bb-ba-section-title">Submitted details</h2>
+        <dl class="bb-ba-reg-dl">
+          <div class="bb-ba-reg-dl__row">
+            <dt>Legal name</dt>
+            <dd><%= reg.firstName %> <%= reg.lastName %></dd>
+          </div>
+          <% if (reg.preferredName) { %>
+          <div class="bb-ba-reg-dl__row">
+            <dt>Preferred name</dt>
+            <dd><%= reg.preferredName %></dd>
+          </div>
+          <% } %>
+          <div class="bb-ba-reg-dl__row">
+            <dt>Email</dt>
+            <dd><%= reg.emailDisplay || '—' %></dd>
+          </div>
+          <div class="bb-ba-reg-dl__row">
+            <dt>Phone</dt>
+            <dd><%= reg.phoneDisplay || '—' %></dd>
+          </div>
+          <div class="bb-ba-reg-dl__row">
+            <dt>Submitted</dt>
+            <dd><%= formatWhen(reg.createdAt) %></dd>
+          </div>
+          <% if (reg.reviewedAt) { %>
+          <div class="bb-ba-reg-dl__row">
+            <dt>Reviewed</dt>
+            <dd><%= formatWhen(reg.reviewedAt) %></dd>
+          </div>
+          <% } %>
+          <% if (reg.memberId) { %>
+          <div class="bb-ba-reg-dl__row">
+            <dt>Linked member</dt>
+            <dd>
+              <a class="bb-ba-link" href="/branch-admin/members/<%= reg.memberId %>" data-bb-reg-member-link="1">
+                View member profile
+              </a>
+            </dd>
+          </div>
+          <% } %>
+        </dl>
+      </section>
+
+      <section class="bb-ba-panel" aria-labelledby="bb-ba-reg-history-heading" data-bb-reg-history="1">
+        <h2 id="bb-ba-reg-history-heading" class="bb-ba-section-title">Status history</h2>
+        <% if (!history.length) { %>
+        <p class="bb-ba-hint" role="status">No timeline events are available for this registration.</p>
+        <% } else { %>
+        <ol class="bb-ba-reg-timeline">
+          <% history.forEach(function (event) { %>
+          <li class="bb-ba-reg-timeline__item" data-bb-reg-history-event="<%= event.key %>">
+            <span class="bb-ba-reg-timeline__icon" aria-hidden="true">
+              <span class="material-symbols-outlined"><%= event.icon %></span>
+            </span>
+            <div class="bb-ba-reg-timeline__copy">
+              <p class="bb-ba-reg-timeline__label"><%= event.label %></p>
+              <p class="bb-ba-reg-timeline__detail"><%= event.detail %></p>
+              <p class="bb-ba-reg-timeline__when"><%= formatWhen(event.when) %></p>
+            </div>
+          </li>
+          <% }) %>
+        </ol>
+        <% } %>
+      </section>
     </div>
-    <dl class="bb-ba-dl">
-      <dt>Legal name</dt>
-      <dd><%= reg.firstName %> <%= reg.lastName %></dd>
-      <% if (reg.preferredName) { %>
-      <dt>Preferred name</dt>
-      <dd><%= reg.preferredName %></dd>
+
+    <aside class="bb-ba-reg-detail__aside">
+      <% if (open) { %>
+      <section
+        class="bb-ba-panel bb-ba-decision"
+        aria-labelledby="bb-ba-reg-review-heading"
+        data-bb-reg-review="1"
+      >
+        <h2 id="bb-ba-reg-review-heading" class="bb-ba-section-title">Review decision</h2>
+        <p class="bb-ba-hint">
+          Approving creates or links a member record only. It does not create a login account or send a message.
+        </p>
+        <div class="bb-ba-field">
+          <label for="shared_review_notes">
+            Internal notes
+            <span class="bb-ba-optional">(optional, not shown publicly)</span>
+          </label>
+          <textarea
+            id="shared_review_notes"
+            name="review_notes"
+            form="bb-ba-approve-form"
+            rows="4"
+            maxlength="2000"
+            placeholder="Staff-only notes for this decision"
+          ></textarea>
+        </div>
+        <p class="bb-ba-hint">Rejection notes use the same field and remain internal to church leadership.</p>
+
+        <div class="bb-ba-decision__actions">
+          <button
+            type="button"
+            class="bb-ba-btn bb-ba-btn--primary"
+            data-bb-ds-modal-open="bb-ba-approve-modal"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+            Approve
+          </button>
+          <button
+            type="button"
+            class="bb-ba-btn bb-ba-btn--danger"
+            data-bb-ds-modal-open="bb-ba-reject-modal"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
+            Reject
+          </button>
+        </div>
+      </section>
+
+      <div
+        class="bb-ds-modal"
+        id="bb-ba-approve-modal"
+        data-bb-ds-modal
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bb-ba-approve-title"
+      >
+        <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+        <div class="bb-ds-modal__panel" tabindex="-1">
+          <h2 id="bb-ba-approve-title" class="bb-ds-modal__title">Approve this registration?</h2>
+          <p class="bb-ds-modal__body">
+            This creates or links a member record for <%= displayHeading %>.
+            It does <strong>not</strong> create a login account or send an automatic message.
+          </p>
+          <form
+            id="bb-ba-approve-form"
+            method="post"
+            action="/branch-admin/registrations/<%= reg.id %>/approve"
+            class="bb-ds-modal__actions"
+            data-bb-reg-approve="1"
+          >
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
+            <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Confirm approve</button>
+          </form>
+        </div>
+      </div>
+
+      <div
+        class="bb-ds-modal"
+        id="bb-ba-reject-modal"
+        data-bb-ds-modal
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bb-ba-reject-title"
+      >
+        <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+        <div class="bb-ds-modal__panel" tabindex="-1">
+          <h2 id="bb-ba-reject-title" class="bb-ds-modal__title">Reject this registration?</h2>
+          <p class="bb-ds-modal__body">
+            This is a final decision for this application. The applicant will not be notified automatically.
+            Internal notes stay private to leadership.
+          </p>
+          <form
+            method="post"
+            action="/branch-admin/registrations/<%= reg.id %>/reject"
+            class="bb-ds-modal__actions"
+            data-bb-reg-reject="1"
+            onsubmit="var src=document.getElementById('shared_review_notes'); var dest=this.querySelector('[name=review_notes]'); if(src&&dest){dest.value=src.value;} return true;"
+          >
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="review_notes" value="" />
+            <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
+            <button type="submit" class="bb-ba-btn bb-ba-btn--danger">Confirm reject</button>
+          </form>
+        </div>
+      </div>
+      <% } else { %>
+      <section class="bb-ba-panel" data-bb-reg-closed="1">
+        <h2 class="bb-ba-section-title">Decision complete</h2>
+        <p class="bb-ba-hint">
+          This registration is <strong><%= statusLabel(reg.status) %></strong>
+          <% if (reg.reviewedAt) { %> as of <%= formatWhen(reg.reviewedAt) %><% } %>.
+          Further approve or reject actions are not available.
+        </p>
+        <% if (reg.memberId) { %>
+        <p>
+          <a class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm" href="/branch-admin/members/<%= reg.memberId %>">
+            Open member profile
+          </a>
+        </p>
+        <% } %>
+      </section>
+      <% if (reg.reviewNotes) { %>
+      <section class="bb-ba-panel" data-bb-internal-notes="1">
+        <h2 class="bb-ba-section-title">Internal notes</h2>
+        <p class="bb-ba-notes"><%= reg.reviewNotes %></p>
+        <p class="bb-ba-hint">These notes are not shown on public registration pages.</p>
+      </section>
       <% } %>
-      <dt>Email</dt>
-      <dd><%= reg.emailDisplay || '—' %></dd>
-      <dt>Phone</dt>
-      <dd><%= reg.phoneDisplay || '—' %></dd>
-      <dt>Submitted</dt>
-      <dd><%= formatWhen(reg.createdAt) %></dd>
-    </dl>
-  </article>
+      <% } %>
 
-  <% if (open) { %>
-  <div class="bb-ba-decision">
-    <div class="bb-ba-field">
-      <label for="shared_review_notes">Internal notes <span class="bb-ba-optional">(optional, not shown publicly)</span></label>
-      <textarea
-        id="shared_review_notes"
-        name="review_notes"
-        form="bb-ba-approve-form"
-        rows="3"
-        maxlength="2000"
-        placeholder="Staff-only notes for this decision"
-      ></textarea>
-    </div>
-    <p class="bb-ba-hint">Rejection notes use the same field and remain internal to church leadership.</p>
-
-    <div class="bb-ba-decision__actions">
-      <button
-        type="button"
-        class="bb-ba-btn bb-ba-btn--primary"
-        data-bb-ds-modal-open="bb-ba-approve-modal"
-      >Approve</button>
-      <button
-        type="button"
-        class="bb-ba-btn bb-ba-btn--danger"
-        data-bb-ds-modal-open="bb-ba-reject-modal"
-      >Reject</button>
-    </div>
+      <aside class="bb-ba-reg-checklist bb-ba-reg-checklist--compact" data-bb-reg-detail-checklist="1">
+        <div class="bb-ba-reg-checklist__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">info</span>
+        </div>
+        <div>
+          <h2 class="bb-ba-reg-checklist__title">Before you decide</h2>
+          <p class="bb-ba-reg-checklist__body">
+            Confirm contact details look valid and this is not a duplicate member.
+            Document checks, scoring, and messaging are not available in V5.
+          </p>
+        </div>
+      </aside>
+    </aside>
   </div>
-
-  <div
-    class="bb-ds-modal"
-    id="bb-ba-approve-modal"
-    data-bb-ds-modal
-    hidden
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="bb-ba-approve-title"
-  >
-    <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
-    <div class="bb-ds-modal__panel" tabindex="-1">
-      <h2 id="bb-ba-approve-title" class="bb-ds-modal__title">Approve this registration?</h2>
-      <p class="bb-ds-modal__body">
-        This creates or links a member record for <%= reg.firstName %> <%= reg.lastName %>.
-        It does <strong>not</strong> create a login account or send an automatic message.
-      </p>
-      <form
-        id="bb-ba-approve-form"
-        method="post"
-        action="/branch-admin/registrations/<%= reg.id %>/approve"
-        class="bb-ds-modal__actions"
-        data-bb-reg-approve="1"
-      >
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
-        <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Confirm approve</button>
-      </form>
-    </div>
-  </div>
-
-  <div
-    class="bb-ds-modal"
-    id="bb-ba-reject-modal"
-    data-bb-ds-modal
-    hidden
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="bb-ba-reject-title"
-  >
-    <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
-    <div class="bb-ds-modal__panel" tabindex="-1">
-      <h2 id="bb-ba-reject-title" class="bb-ds-modal__title">Reject this registration?</h2>
-      <p class="bb-ds-modal__body">
-        The applicant will not be notified automatically. Internal notes stay private to leadership.
-      </p>
-      <form
-        method="post"
-        action="/branch-admin/registrations/<%= reg.id %>/reject"
-        class="bb-ds-modal__actions"
-        data-bb-reg-reject="1"
-        onsubmit="var src=document.getElementById('shared_review_notes'); var dest=this.querySelector('[name=review_notes]'); if(src&&dest){dest.value=src.value;} return true;"
-      >
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="review_notes" value="" />
-        <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
-        <button type="submit" class="bb-ba-btn bb-ba-btn--danger">Confirm reject</button>
-      </form>
-    </div>
-  </div>
-  <% } else if (reg.reviewNotes) { %>
-  <section class="bb-ba-panel" data-bb-internal-notes="1">
-    <h2 class="bb-ba-section-title">Internal notes</h2>
-    <p class="bb-ba-notes"><%= reg.reviewNotes %></p>
-    <p class="bb-ba-hint">These notes are not shown on public registration pages.</p>
-  </section>
-  <% } %>
 </section>
 
 <script>
