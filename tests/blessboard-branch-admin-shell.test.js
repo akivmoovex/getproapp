@@ -290,17 +290,39 @@ describe("blessboard branch-admin shell", () => {
     assert.match(res.text, /aria-label="Account"/);
     assert.match(res.text, /tabindex="-1"/);
     assert.match(res.text, /data-bb-branch-dashboard="1"/);
+    assert.match(res.text, /data-bb-stitch-dashboard="25-branch-admin-dashboard"/);
+    assert.match(res.text, /data-bb-dash-stats="1"/);
+    assert.match(res.text, /data-bb-dash-notices="1"/);
+    assert.match(res.text, /data-bb-dash-activity="1"/);
+    assert.match(res.text, /data-bb-dash-quick="desktop"/);
+    assert.match(res.text, /data-bb-dash-quick="mobile"/);
+    assert.match(res.text, /data-bb-dash-empty="notices"/);
+    assert.match(res.text, /data-bb-dash-empty="activity"/);
+    assert.match(res.text, /data-bb-dash-empty="requests"/);
+    assert.match(res.text, /data-bb-dash-stat-available="0"/);
     assert.match(res.text, new RegExp(CHURCH_A));
     assert.match(res.text, /HQ A/);
     assert.match(res.text, /Branch admin/);
     assert.match(res.text, /Not enabled/);
     assert.match(res.text, /data-bb-empty="dashboard"/);
+    assert.match(res.text, /Daily Pulse/);
+    assert.match(res.text, /Quick actions/i);
+    assert.match(res.text, /Recent activity/i);
     assert.match(res.text, /href="\/branch-admin\/registrations"/);
     assert.match(res.text, /href="\/branch-admin\/members"/);
+    assert.match(res.text, /href="\/branch-admin\/announcements\/new"/);
+    assert.match(res.text, /href="\/branch-admin\/attendance"/);
+    assert.match(res.text, /href="\/branch-admin\/requests"/);
+    assert.match(res.text, /href="\/branch-admin\/content\/events"/);
+    assert.match(res.text, /href="\/branch-admin\/giving"/);
     assert.match(res.text, /data-bb-module="members"[^>]*data-bb-module-enabled="1"|data-bb-module-enabled="1"[^>]*data-bb-module="members"/);
     assert.match(res.text, /data-bb-module="reports"[^>]*data-bb-module-enabled="0"|data-bb-module-enabled="0"[^>]*data-bb-module="reports"/);
     assert.doesNotMatch(res.text, /\b\d+\s+members\b/i);
-    assert.doesNotMatch(res.text, /1,248|Pending Verifications|Daily Pulse/i);
+    assert.doesNotMatch(
+      res.text,
+      /1,248|1,284|Ministry Budget|USD 42,000|72% Utilized|4 Urgent|Assign Deacon|\+4\.2%|\+12% vs last month|Luka Mwamba|Banda Family/i
+    );
+    assert.doesNotMatch(res.text, /Open Roadmap/i);
     assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(res.text, new RegExp(hqA.id, "i"));
     assert.doesNotMatch(res.text, /branch_admin/);
@@ -419,11 +441,25 @@ describe("blessboard branch-admin shell", () => {
       .set("Cookie", cookie);
     assert.equal(account.status, 200);
     assert.match(account.text, /data-bb-branch-account="1"/);
+    assert.match(account.text, /data-bb-stitch-account="missing"/);
+    assert.match(account.text, /data-bb-account-identity="1"/);
+    assert.match(account.text, /data-bb-account-context="1"/);
+    assert.match(account.text, /data-bb-account-info="1"/);
+    assert.match(account.text, /data-bb-account-role="1"/);
     assert.match(account.text, /BA Branch/);
+    assert.match(account.text, /Branch admin/);
+    assert.match(account.text, new RegExp(CHURCH_A));
+    assert.match(account.text, /HQ A/);
+    assert.match(account.text, /Display name/);
+    assert.match(account.text, /Account information/);
     assert.match(account.text, /method="post" action="\/branch-admin\/logout"/);
+    assert.match(account.text, /data-bb-account-logout="1"/);
+    assert.match(account.text, /name="_csrf"/);
+    assert.doesNotMatch(account.text, /change password|avatar upload|notification|billing|edit profile/i);
     assert.doesNotMatch(account.text, new RegExp(users.branch.id, "i"));
     assert.doesNotMatch(account.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(account.text, new RegExp(hqA.id, "i"));
+    assert.doesNotMatch(account.text, /session|csrfToken|email_normalized|user_status/i);
 
     const csrf = extractCookie(account, CSRF_COOKIE);
     const match = account.text.match(/name="_csrf" value="([^"]+)"/);

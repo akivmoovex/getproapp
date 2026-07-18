@@ -137,6 +137,8 @@ describe("blessboard v5 a11y structure — shells", () => {
         assert.match(css, /\.bb-ba-drawer__footer/);
         assert.match(css, /\.bb-ba-drawer__close/);
         assert.match(css, /\.bb-ba-page\b/);
+        assert.match(css, /\.bb-ba-dash-stats/);
+        assert.match(css, /\.bb-ba-dash-actions__item:focus-visible/);
         assert.match(css, /@media \(max-width:\s*320px\)/);
         assert.match(css, /@media \(min-width:\s*900px\)/);
       }
@@ -238,6 +240,62 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(css, /\.bb-mp-dash-actions/);
     assert.match(css, /\.bb-mp-dash-event__date/);
     assert.match(css, /@media \(min-width:\s*700px\)/);
+  });
+
+  it("branch admin dashboard keeps Stitch sections without fabricated metrics", () => {
+    const dash = read("views/blessboard/v5/branch-admin/dashboard.ejs");
+    const css = read("public/blessboard/v5/branch-admin.css");
+    const start = read("views/blessboard/v5/partials/branch-admin-shell-start.ejs");
+    assert.match(dash, /data-bb-stitch-dashboard="25-branch-admin-dashboard"/);
+    assert.match(dash, /data-bb-dash-stats="1"/);
+    assert.match(dash, /data-bb-dash-notices="1"/);
+    assert.match(dash, /data-bb-dash-activity="1"/);
+    assert.match(dash, /data-bb-dash-requests="1"/);
+    assert.match(dash, /data-bb-dash-quick="desktop"/);
+    assert.match(dash, /data-bb-dash-quick="mobile"/);
+    assert.match(dash, /data-bb-dash-empty="notices"/);
+    assert.match(dash, /data-bb-dash-empty="activity"/);
+    assert.match(dash, /data-bb-dash-empty="requests"/);
+    assert.match(dash, /data-bb-dash-stat-available="0"/);
+    assert.match(dash, /aria-labelledby="bb-ba-dash-stats-heading"/);
+    assert.match(dash, /\/branch-admin\/registrations/);
+    assert.match(dash, /\/branch-admin\/announcements\/new/);
+    assert.match(dash, /\/branch-admin\/attendance/);
+    assert.match(dash, /\/branch-admin\/requests/);
+    assert.match(dash, /\/branch-admin\/content\/events/);
+    assert.match(dash, /\/branch-admin\/giving/);
+    assert.doesNotMatch(dash, /\/branch-admin\/reports/);
+    assert.doesNotMatch(dash, /1,248|Ministry Budget|USD 42,000|Assign Deacon|Luka Mwamba/i);
+    assert.match(css, /\.bb-ba-dash-stats/);
+    assert.match(css, /\.bb-ba-dash-actions/);
+    assert.match(css, /\.bb-ba-dash-quick-icons/);
+    assert.match(css, /\.bb-ba-dash-stat--desktop-only/);
+    assert.match(css, /@media \(max-width:\s*320px\)/);
+    assert.match(css, /@media \(min-width:\s*900px\)/);
+    assert.match(start, /branch-admin\.css\?v=13/);
+  });
+
+  it("branch admin account keeps identity summary without unsupported security surfaces", () => {
+    const account = read("views/blessboard/v5/branch-admin/account.ejs");
+    const css = read("public/blessboard/v5/branch-admin.css");
+    assert.match(account, /data-bb-stitch-account="missing"/);
+    assert.match(account, /data-bb-account-identity="1"/);
+    assert.match(account, /data-bb-account-context="1"/);
+    assert.match(account, /data-bb-account-info="1"/);
+    assert.match(account, /data-bb-account-role="1"/);
+    assert.match(account, /aria-labelledby="bb-ba-account-heading"/);
+    assert.match(account, /method="post"/);
+    assert.match(account, /action="\/branch-admin\/logout"/);
+    assert.match(account, /name="_csrf"/);
+    assert.match(account, /data-bb-account-logout="1"/);
+    assert.match(account, /displayName|roleLabel|churchDisplayName|branchDisplayName/);
+    assert.doesNotMatch(account, /name="current_password"|name="new_password"|type="file"|href="\/branch-admin\/account\/edit"/i);
+    assert.doesNotMatch(account, /emailNormalized|session\.id|user_status/i);
+    assert.match(css, /\.bb-ba-account__identity/);
+    assert.match(css, /\.bb-ba-account__context/);
+    assert.match(css, /\.bb-ba-account__info/);
+    assert.match(css, /@media \(min-width:\s*700px\)/);
+    assert.match(css, /@media \(max-width:\s*320px\)/);
   });
 
   it("member profile distinguishes read-only vs editable fields without unsupported Stitch blocks", () => {

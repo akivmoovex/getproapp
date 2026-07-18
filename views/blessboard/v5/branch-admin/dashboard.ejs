@@ -2,58 +2,288 @@
 <%
   var modules = typeof portalModules !== 'undefined' && portalModules ? portalModules : [];
   var greetingName = displayName ? String(displayName).split(/\s+/)[0] : '';
+  var hour = new Date().getHours();
+  var greeting = hour < 12 ? 'Good morning' : (hour < 17 ? 'Good afternoon' : 'Good evening');
+  var placeLabel = churchDisplayName || 'your branch';
+  if (branchDisplayName) placeLabel = placeLabel + (churchDisplayName ? ' · ' + branchDisplayName : branchDisplayName);
+  var desktopQuickActions = [
+    { key: 'verify', label: 'Verify members', href: '/branch-admin/registrations', icon: 'how_to_reg' },
+    { key: 'announce', label: 'Add announcement', href: '/branch-admin/announcements/new', icon: 'campaign' },
+    { key: 'attendance', label: 'Record attendance', href: '/branch-admin/attendance', icon: 'edit_calendar' }
+  ];
+  var mobileQuickActions = [
+    { key: 'members', label: 'Members', href: '/branch-admin/members', icon: 'person_add' },
+    { key: 'schedule', label: 'Schedule', href: '/branch-admin/content/events', icon: 'event_note' },
+    { key: 'giving', label: 'Giving', href: '/branch-admin/giving', icon: 'payments' },
+    { key: 'broadcast', label: 'Broadcast', href: '/branch-admin/announcements', icon: 'campaign' }
+  ];
+  var summaryCards = [
+    {
+      key: 'pending',
+      label: 'Pending verifications',
+      icon: 'how_to_reg',
+      href: '/branch-admin/registrations',
+      tone: 'warn',
+      visibility: 'desktop'
+    },
+    {
+      key: 'members',
+      label: 'Active members',
+      icon: 'group',
+      href: '/branch-admin/members',
+      tone: 'ok',
+      visibility: 'both'
+    },
+    {
+      key: 'events',
+      label: 'Upcoming events',
+      icon: 'event',
+      href: '/branch-admin/content/events',
+      tone: 'accent',
+      visibility: 'desktop'
+    },
+    {
+      key: 'attendance',
+      label: 'Avg attendance',
+      icon: 'fact_check',
+      href: '/branch-admin/attendance',
+      tone: 'accent',
+      visibility: 'mobile'
+    },
+    {
+      key: 'reports',
+      label: 'Report status',
+      icon: 'analytics',
+      href: null,
+      tone: 'muted',
+      visibility: 'desktop'
+    }
+  ];
 %>
 
-<section class="bb-ba-dash" data-bb-branch-dashboard="1">
+<section
+  class="bb-ba-dash"
+  data-bb-branch-dashboard="1"
+  data-bb-stitch-dashboard="25-branch-admin-dashboard"
+>
   <header class="bb-ba-dash__hero">
-    <h1 class="bb-ba-dash__title">
-      <% if (greetingName) { %>Welcome, <%= greetingName %><% } else { %>Branch dashboard<% } %>
-    </h1>
-    <p class="bb-ba-lede">
-      Manage
-      <strong><%= churchDisplayName %></strong><% if (branchDisplayName) { %>
-      · <%= branchDisplayName %><% } %>.
-      Open a module below — counts and activity feeds appear only from live branch data inside each section.
-    </p>
-    <p class="bb-ba-role-line">
-      Signed in as <span class="bb-ba-role"><%= roleLabel %></span>
-    </p>
+    <div class="bb-ba-dash__pulse" data-bb-dash-pulse="1">
+      <h1 class="bb-ba-dash__pulse-title">Daily Pulse</h1>
+      <% if (branchDisplayName) { %>
+      <span class="bb-ba-dash__badge"><%= branchDisplayName %></span>
+      <% } else { %>
+      <span class="bb-ba-dash__badge">Branch</span>
+      <% } %>
+    </div>
+    <div class="bb-ba-dash__welcome" data-bb-dash-welcome="1">
+      <h1 class="bb-ba-dash__title">
+        <%= greeting %><% if (greetingName) { %>, <%= greetingName %><% } %>
+      </h1>
+      <p class="bb-ba-dash__lede">
+        Here is what’s happening at <strong><%= placeLabel %></strong> today.
+        Open a module below for live branch data — summary counts stay in each section.
+      </p>
+      <p class="bb-ba-role-line">
+        Signed in as <span class="bb-ba-role"><%= roleLabel %></span>
+      </p>
+      <a class="bb-ba-btn bb-ba-btn--primary bb-ba-dash__hero-cta" href="/branch-admin/registrations">
+        Review queue
+      </a>
+    </div>
   </header>
 
-  <p class="bb-ba-empty" data-bb-empty="dashboard" role="status">
-    No summary metrics are shown on this dashboard. Use the modules below for branch work.
-  </p>
+  <section
+    class="bb-ba-dash__notices"
+    aria-labelledby="bb-ba-dash-notices-heading"
+    data-bb-dash-notices="1"
+  >
+    <h2 id="bb-ba-dash-notices-heading" class="bb-ba-sr-only">Notices</h2>
+    <p class="bb-ba-dash__notice" role="status" data-bb-dash-empty="notices">
+      No branch notices on this dashboard. Check Announcements and Requests for updates.
+    </p>
+  </section>
 
-  <section class="bb-ba-grid" aria-label="Branch modules">
-    <% modules.forEach(function (mod) { %>
-      <% if (mod.enabled && mod.href) { %>
+  <section
+    class="bb-ba-dash-stats"
+    aria-labelledby="bb-ba-dash-stats-heading"
+    data-bb-dash-stats="1"
+  >
+    <h2 id="bb-ba-dash-stats-heading" class="bb-ba-sr-only">Summary</h2>
+    <div class="bb-ba-dash-stats__grid">
+      <% summaryCards.forEach(function (card) {
+        var visClass = card.visibility === 'desktop'
+          ? ' bb-ba-dash-stat--desktop-only'
+          : (card.visibility === 'mobile' ? ' bb-ba-dash-stat--mobile-only' : '');
+        var className = 'bb-ba-dash-stat bb-ba-dash-stat--' + card.tone + visClass;
+      %>
+      <% if (card.href) { %>
       <a
-        class="bb-ba-card bb-ba-card--link"
-        href="<%= mod.href %>"
-        data-bb-module="<%= mod.key %>"
-        data-bb-module-enabled="1"
+        class="<%= className %> bb-ba-dash-stat--link"
+        href="<%= card.href %>"
+        data-bb-dash-stat="<%= card.key %>"
+        data-bb-dash-stat-available="0"
       >
-        <span class="bb-ba-card__icon" aria-hidden="true">
-          <span class="material-symbols-outlined"><%= mod.icon || 'widgets' %></span>
+        <span class="bb-ba-dash-stat__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= card.icon %></span>
         </span>
-        <h2 class="bb-ba-card__title"><%= mod.label %></h2>
-        <p class="bb-ba-card__meta"><%= mod.blurb || 'Open' %></p>
+        <span class="bb-ba-dash-stat__label"><%= card.label %></span>
+        <strong class="bb-ba-dash-stat__value" aria-hidden="true">—</strong>
+        <span class="bb-ba-dash-stat__hint">Open module for live counts</span>
       </a>
       <% } else { %>
       <article
-        class="bb-ba-card is-disabled"
-        data-bb-module="<%= mod.key %>"
-        data-bb-module-enabled="0"
+        class="<%= className %> is-unavailable"
+        data-bb-dash-stat="<%= card.key %>"
+        data-bb-dash-stat-available="0"
         aria-disabled="true"
       >
-        <span class="bb-ba-card__icon" aria-hidden="true">
-          <span class="material-symbols-outlined"><%= mod.icon || 'block' %></span>
+        <span class="bb-ba-dash-stat__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= card.icon %></span>
         </span>
-        <h2 class="bb-ba-card__title"><%= mod.label %></h2>
-        <p class="bb-ba-card__meta">Not enabled</p>
+        <span class="bb-ba-dash-stat__label"><%= card.label %></span>
+        <strong class="bb-ba-dash-stat__value" aria-hidden="true">—</strong>
+        <span class="bb-ba-dash-stat__hint">Not available yet</span>
       </article>
       <% } %>
-    <% }) %>
+      <% }) %>
+    </div>
+  </section>
+
+  <div class="bb-ba-dash__layout">
+    <div class="bb-ba-dash__main">
+      <section
+        class="bb-ba-dash-panel bb-ba-show-mobile"
+        aria-labelledby="bb-ba-dash-quick-mobile-heading"
+        data-bb-dash-quick="mobile"
+      >
+        <h2 id="bb-ba-dash-quick-mobile-heading" class="bb-ba-dash-panel__title">Quick actions</h2>
+        <ul class="bb-ba-dash-quick-icons">
+          <% mobileQuickActions.forEach(function (action) { %>
+          <li>
+            <a
+              class="bb-ba-dash-quick-icon"
+              href="<%= action.href %>"
+              data-bb-quick-action="<%= action.key %>"
+              data-bb-quick-enabled="1"
+            >
+              <span class="bb-ba-dash-quick-icon__glyph" aria-hidden="true">
+                <span class="material-symbols-outlined"><%= action.icon %></span>
+              </span>
+              <span class="bb-ba-dash-quick-icon__label"><%= action.label %></span>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section
+        class="bb-ba-dash-panel"
+        aria-labelledby="bb-ba-dash-activity-heading"
+        data-bb-dash-activity="1"
+      >
+        <div class="bb-ba-dash-panel__head">
+          <h2 id="bb-ba-dash-activity-heading" class="bb-ba-dash-panel__title">Recent activity</h2>
+        </div>
+        <div class="bb-ba-dash-empty" role="status" data-bb-dash-empty="activity">
+          <span class="material-symbols-outlined" aria-hidden="true">history</span>
+          <p>No activity feed on this dashboard. Open Registrations, Announcements, or Requests for live branch work.</p>
+        </div>
+      </section>
+
+      <section
+        class="bb-ba-dash-panel"
+        aria-labelledby="bb-ba-dash-requests-heading"
+        data-bb-dash-requests="1"
+      >
+        <div class="bb-ba-dash-panel__head">
+          <h2 id="bb-ba-dash-requests-heading" class="bb-ba-dash-panel__title">Open requests</h2>
+        </div>
+        <div class="bb-ba-dash-empty" role="status" data-bb-dash-empty="requests">
+          <span class="material-symbols-outlined" aria-hidden="true">inbox</span>
+          <p>Request counts are not summarized here. Open the queue for live items.</p>
+          <a class="bb-ba-btn bb-ba-btn--outline" href="/branch-admin/requests">Open request queue</a>
+        </div>
+      </section>
+    </div>
+
+    <aside class="bb-ba-dash__aside bb-ba-show-desktop" aria-label="Shortcuts">
+      <section
+        class="bb-ba-dash-actions"
+        aria-labelledby="bb-ba-dash-quick-desktop-heading"
+        data-bb-dash-quick="desktop"
+      >
+        <h2 id="bb-ba-dash-quick-desktop-heading" class="bb-ba-dash-actions__title">
+          <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+          Quick actions
+        </h2>
+        <ul class="bb-ba-dash-actions__list">
+          <% desktopQuickActions.forEach(function (action) { %>
+          <li>
+            <a
+              class="bb-ba-dash-actions__item"
+              href="<%= action.href %>"
+              data-bb-quick-action="<%= action.key %>"
+              data-bb-quick-enabled="1"
+            >
+              <span class="bb-ba-dash-actions__icon" aria-hidden="true">
+                <span class="material-symbols-outlined"><%= action.icon %></span>
+              </span>
+              <span class="bb-ba-dash-actions__label"><%= action.label %></span>
+              <span class="material-symbols-outlined bb-ba-dash-actions__chevron" aria-hidden="true">chevron_right</span>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+        <a
+          class="bb-ba-btn bb-ba-btn--on-actions"
+          href="/branch-admin/content/events"
+          data-bb-quick-action="new-record"
+          data-bb-quick-enabled="1"
+        >
+          Manage events
+        </a>
+      </section>
+    </aside>
+  </div>
+
+  <section class="bb-ba-dash__modules" aria-labelledby="bb-ba-dash-modules-heading">
+    <div class="bb-ba-dash-panel__head">
+      <h2 id="bb-ba-dash-modules-heading" class="bb-ba-dash-panel__title">Branch modules</h2>
+    </div>
+    <p class="bb-ba-dash__modules-lede" data-bb-empty="dashboard" role="status">
+      No summary metrics are shown on this dashboard. Use the modules below for branch work.
+    </p>
+    <div class="bb-ba-grid" aria-label="Branch modules">
+      <% modules.forEach(function (mod) { %>
+        <% if (mod.enabled && mod.href) { %>
+        <a
+          class="bb-ba-card bb-ba-card--link"
+          href="<%= mod.href %>"
+          data-bb-module="<%= mod.key %>"
+          data-bb-module-enabled="1"
+        >
+          <span class="bb-ba-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= mod.icon || 'widgets' %></span>
+          </span>
+          <h3 class="bb-ba-card__title"><%= mod.label %></h3>
+          <p class="bb-ba-card__meta"><%= mod.blurb || 'Open' %></p>
+        </a>
+        <% } else { %>
+        <article
+          class="bb-ba-card is-disabled"
+          data-bb-module="<%= mod.key %>"
+          data-bb-module-enabled="0"
+          aria-disabled="true"
+        >
+          <span class="bb-ba-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= mod.icon || 'block' %></span>
+          </span>
+          <h3 class="bb-ba-card__title"><%= mod.label %></h3>
+          <p class="bb-ba-card__meta">Not enabled</p>
+        </article>
+        <% } %>
+      <% }) %>
+    </div>
   </section>
 </section>
 

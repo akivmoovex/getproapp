@@ -1,23 +1,97 @@
+<%#
+  Branch Admin Account — STITCH_MISSING (no dedicated desktop/mobile Account pair).
+  Visual reference: Shared UI States board + apex account identity chrome.
+  Locals: displayName, roleLabel, churchDisplayName, branchDisplayName, csrfToken
+  Session-safe read-only summary; CSRF logout only.
+%>
 <%- include('../partials/branch-admin-shell-start') %>
+<%
+  var accountName = displayName ? String(displayName) : '';
+  var initials = '';
+  if (accountName) {
+    var parts = accountName.trim().split(/\s+/).filter(Boolean);
+    initials = parts
+      .slice(0, 2)
+      .map(function (part) { return String(part).charAt(0); })
+      .join('')
+      .toUpperCase();
+  }
+  if (!initials) initials = '?';
+%>
 
-<section class="bb-ba-account" data-bb-branch-account="1">
+<section
+  class="bb-ba-account"
+  data-bb-branch-account="1"
+  data-bb-stitch-account="missing"
+  aria-labelledby="bb-ba-account-heading"
+>
   <header class="bb-ba-page-head">
-    <h1 class="bb-ba-page-head__title">Account</h1>
-    <p class="bb-ba-lede">Signed-in administrator details for this church site. Branch identity comes from the hostname — not from URL parameters.</p>
+    <h1 class="bb-ba-page-head__title" id="bb-ba-account-heading">Account</h1>
+    <p class="bb-ba-lede">
+      Signed-in administrator for
+      <strong><%= churchDisplayName || 'this church' %></strong><% if (branchDisplayName) { %>
+      · <%= branchDisplayName %><% } %>.
+      Branch identity comes from the hostname — not from URL parameters.
+    </p>
   </header>
 
-  <dl class="bb-ba-dl">
-    <dt>Display name</dt>
-    <dd><%= displayName %></dd>
-    <dt>Role</dt>
-    <dd><%= roleLabel %></dd>
-    <dt>Church</dt>
-    <dd><%= churchDisplayName %></dd>
-    <dt>Branch</dt>
-    <dd><%= branchDisplayName %></dd>
-  </dl>
+  <article class="bb-ba-account__identity" data-bb-account-identity="1">
+    <div class="bb-ba-account__avatar" aria-hidden="true"><%= initials %></div>
+    <div class="bb-ba-account__identity-copy">
+      <p class="bb-ba-account__name"><%= accountName || 'Signed-in administrator' %></p>
+      <ul class="bb-ba-account__badges" aria-label="Roles">
+        <li>
+          <span class="bb-ds-badge bb-ds-badge--neutral" data-bb-account-role="1"><%= roleLabel %></span>
+        </li>
+      </ul>
+    </div>
+  </article>
 
-  <form class="bb-ba-logout bb-ba-logout--page" method="post" action="/branch-admin/logout">
+  <section class="bb-ba-account__context" aria-label="Church and branch context" data-bb-account-context="1">
+    <article class="bb-ba-account__context-card">
+      <span class="bb-ba-account__context-icon material-symbols-outlined" aria-hidden="true">church</span>
+      <div>
+        <h2 class="bb-ba-account__context-title">Church</h2>
+        <p class="bb-ba-account__context-body"><%= churchDisplayName || '—' %></p>
+      </div>
+    </article>
+    <article class="bb-ba-account__context-card">
+      <span class="bb-ba-account__context-icon material-symbols-outlined" aria-hidden="true">location_on</span>
+      <div>
+        <h2 class="bb-ba-account__context-title">Branch</h2>
+        <p class="bb-ba-account__context-body"><%= branchDisplayName || '—' %></p>
+      </div>
+    </article>
+  </section>
+
+  <section class="bb-ba-account__info" aria-labelledby="bb-ba-account-info-heading" data-bb-account-info="1">
+    <h2 id="bb-ba-account-info-heading" class="bb-ba-account__info-title">Account information</h2>
+    <dl class="bb-ba-account__dl">
+      <div class="bb-ba-account__row">
+        <dt>Display name</dt>
+        <dd><%= accountName || '—' %></dd>
+      </div>
+      <div class="bb-ba-account__row">
+        <dt>Role</dt>
+        <dd><%= roleLabel %></dd>
+      </div>
+      <div class="bb-ba-account__row">
+        <dt>Church</dt>
+        <dd><%= churchDisplayName || '—' %></dd>
+      </div>
+      <div class="bb-ba-account__row">
+        <dt>Branch</dt>
+        <dd><%= branchDisplayName || '—' %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <form
+    class="bb-ba-logout bb-ba-logout--page bb-ba-account__logout"
+    method="post"
+    action="/branch-admin/logout"
+    data-bb-account-logout="1"
+  >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <button type="submit" class="bb-ba-btn bb-ba-btn--ghost">
       <span class="material-symbols-outlined" aria-hidden="true">logout</span>
