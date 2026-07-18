@@ -17,15 +17,15 @@ Markers: `data-bb-pa-dashboard="1"`, `data-bb-stitch-dashboard="62-platform-admi
 
 | Path | Change |
 |------|--------|
-| `views/blessboard/v5/platform-admin/dashboard.ejs` | Stitch “System Overview” heading, live/unavailable summary cards, deployment notices, directory sample, activity/health empty states, desktop + mobile quick actions |
-| `public/blessboard/v5/platform-admin.css` | Dashboard layout/chrome (`?v=9`) |
-| `views/blessboard/v5/partials/platform-admin-shell-start.ejs` | CSS cache bump only |
+| `views/blessboard/v5/platform-admin/dashboard.ejs` | Stitch “System Overview” heading, live/unavailable summary cards, deployment notices, directory sample, activity/health empty states, desktop + mobile quick actions; unavailable tickets/health cards navigate to Deployments (no fabricated values) |
+| `public/blessboard/v5/platform-admin.css` | Dashboard layout/chrome (shell cache `platform-admin.css?v=22`) |
+| `views/blessboard/v5/partials/platform-admin-shell-start.ejs` | Shell reuse only (no chrome redesign this batch) |
 | `tests/blessboard-platform-admin-shell.test.js` | Dashboard section + no-fabrication + authz/deployment assertions |
-| `tests/blessboard-v5-a11y-structure.test.js` | Dashboard structure assertions + CSS cache bump |
+| `tests/blessboard-v5-a11y-structure.test.js` | Dashboard structure assertions |
 | `docs/gui/STITCH_SCREEN_MAP.md` | Order 74 Batch 19B note |
 | `docs/gui/BATCH_19B_PLATFORM_DASHBOARD.md` | This document |
 
-**Unchanged:** `/admin` route handler queries/locals shape, auth gates, CSRF, sessions, apex host gate, shell chrome (aside from CSS bump), Organizations page body, no new queries or calculations.
+**Unchanged:** `/admin` route handler queries/locals shape, auth gates, CSRF, sessions, apex host gate, Organizations page body, no new queries or calculations.
 
 ## 3. Data locals used (existing route only)
 
@@ -38,9 +38,9 @@ Markers: `data-bb-pa-dashboard="1"`, `data-bb-stitch-dashboard="62-platform-admi
 | `roleLabel` | Signed-in role line |
 | `deploymentCode` | Deployment notice + role line (shell local) |
 
-No new controller locals, metrics services, or dashboard queries.
+No new controller locals, metrics services, or dashboard queries. Route continues to use `getPlatformAdminDashboardStats` + `listPlatformOrganizations({ page: 1, limit: 5 })` only.
 
-## 4. Metrics shown
+## 4. Cards shown
 
 | Card | Value shown | Notes |
 |------|-------------|-------|
@@ -48,10 +48,10 @@ No new controller locals, metrics services, or dashboard queries.
 | BlessBoard churches | `organizationsWithChurch` (live) | Links to `/admin/organizations` |
 | Branch tenants | `—` unavailable | Links to `/admin/organizations` |
 | Paid plans (desktop) | `—` unavailable | Links to `/admin/plans` |
-| Open tickets (desktop) | `—` unavailable | Links to `/admin/deployments` |
-| System health (mobile) | `—` unavailable | Links to `/admin/deployments` |
+| Open tickets (desktop) | `—` unavailable | Links to `/admin/deployments` (registry only; no ticket queue) |
+| System health (mobile) | `—` unavailable | Links to `/admin/deployments` (no health score) |
 
-## 5. Stitch metrics / panels omitted (neutral unavailable)
+## 5. Unsupported metrics omitted
 
 | Stitch expectation | Treatment |
 |--------------------|-----------|
@@ -66,8 +66,9 @@ No new controller locals, metrics services, or dashboard queries.
 | Top performing orgs table (health/users) | Directory sample keys/names only |
 | New Organization / Export Report / FAB | Omitted (no create-org route) |
 | Infrastructure Load banner | Omitted |
+| Mobile “Command Center” title | Unified “System Overview” (desktop Stitch title) |
 
-## 6. Quick-action routes
+## 6. Quick actions
 
 ### Desktop (violet panel)
 
@@ -89,7 +90,7 @@ No new controller locals, metrics services, or dashboard queries.
 
 Hero CTA: Browse organizations → `/admin/organizations`.
 
-## 7. Desktop / mobile differences
+## 7. Responsive status
 
 | Width | Behavior |
 |-------|----------|
@@ -97,14 +98,15 @@ Hero CTA: Browse organizations → `/admin/organizations`.
 | 375–899px | System-health card; quick governance icons; stacked panels |
 | ≥900px | Paid-plans + open-tickets cards; two-column layout with violet quick-actions aside; mobile quick icons hidden |
 
-## 8. Tests and results
+## 8. Tests
 
 | Command | Result |
 |---------|--------|
-| `npm run test:blessboard:platform-admin-shell` | **11/11 pass** |
-| `npm run test:blessboard:a11y-structure` | **74/74 pass** |
-| `npx stylelint public/blessboard/v5/platform-admin.css` | **0 errors** (hex warnings only) |
-| `git diff --check` (changed files) | **clean** |
+| `npm run test:blessboard:platform-admin-shell` (dashboard route/render + deployment/apex scope) | **12/12 pass** |
+| `npm run test:blessboard:authorization` (incl. wrong-deployment / platform_admin scope) | **16/16 pass** |
+| `npm run test:blessboard:a11y-structure` | **83/83 pass** |
+| `npx stylelint public/blessboard/v5/platform-admin.css` | **0 errors** (hex-token warnings only) |
+| `git diff --check` | **clean** |
 
 ## 9. Remaining gaps
 
