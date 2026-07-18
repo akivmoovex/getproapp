@@ -8,6 +8,8 @@
   var cats = categories || [];
   var monthSummary = summary || null;
   var categoryRows = (monthSummary && (monthSummary.churchTotals || monthSummary.byBranch)) || [];
+  var grandTotals = (monthSummary && monthSummary.grandTotalsByCurrency) || [];
+  var hasStatus = Boolean(statusFilter);
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'draft') return 'Draft';
@@ -23,30 +25,105 @@
     if (key === 'void') return 'bb-ba-chip--danger';
     return 'bb-ba-chip--muted';
   }
-  function formatDate(value) {
-    if (!value) return '—';
+  function toDate(value) {
+    if (!value) return null;
     var d = value instanceof Date ? value : new Date(String(value) + (String(value).length === 10 ? 'T00:00:00Z' : ''));
-    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    if (isNaN(d.getTime())) return null;
+    return d;
+  }
+  function formatDate(value) {
+    var d = toDate(value);
+    if (!d) return value ? String(value).slice(0, 10) : '—';
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
+  function dateMonth(value) {
+    var d = toDate(value);
+    if (!d) return '';
+    return d.toLocaleDateString(undefined, { month: 'short' }).toUpperCase();
+  }
+  function dateDay(value) {
+    var d = toDate(value);
+    if (!d) return '';
+    return String(d.getUTCDate());
+  }
+  /** V5 money display: exact decimal string + ISO code (no float math). */
+  function formatGivingMoney(amount, currency) {
+    var cur = String(currency || '').toUpperCase() || 'USD';
+    var raw = amount == null ? '' : String(amount);
+    if (!raw) return '—';
+    var neg = raw.charAt(0) === '-';
+    var body = neg ? raw.slice(1) : raw;
+    var parts = body.split('.');
+    var intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    var frac = parts.length > 1 ? '.' + parts[1] : '';
+    return cur + ' ' + (neg ? '-' : '') + intPart + frac;
+  }
+  function listQuery(overrides) {
+    var next = { month: yearMonth, status: statusFilter || '' };
+    Object.keys(overrides || {}).forEach(function (k) { next[k] = overrides[k]; });
+    var parts = [];
+    if (next.month) parts.push('month=' + encodeURIComponent(next.month));
+    if (next.status) parts.push('status=' + encodeURIComponent(next.status));
+    return parts.length ? ('?' + parts.join('&')) : '';
+  }
+  function statusHref(st) {
+    return basePath + listQuery({ status: st || '' });
+  }
+  function clearListHref() {
+    return basePath + listQuery({ status: '' });
+  }
+  var statusOptions = [
+    { key: '', label: 'All statuses' },
+    { key: 'draft', label: 'Draft' },
+    { key: 'submitted', label: 'Submitted' },
+    { key: 'approved', label: 'Approved' },
+    { key: 'void', label: 'Void' }
+  ];
+  var scopeName = typeof branchDisplayName !== 'undefined' && branchDisplayName
+    ? branchDisplayName
+    : churchDisplayName;
 %>
 
-<section class="bb-giv-admin" data-bb-giving-admin-list="1">
+<section
+  class="bb-giv-admin"
+  data-bb-giving-admin-list="1"
+  data-bb-stitch-giving="39-branch-giving-summary"
+  aria-label="Giving summaries"
+>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
+      <p class="bb-ba-breadcrumb">
+        <% if (shellKind === 'hq') { %>
+        <a href="/hq">HQ</a>
+        <% } else { %>
+        <a href="/branch-admin">Dashboard</a>
+        <% } %>
+        <span aria-hidden="true">›</span>
+        <span>Giving</span>
+      </p>
       <h1 class="bb-ba-page-head__title">Giving summaries</h1>
       <p class="bb-ba-lede">
         Manual aggregated totals for
-        <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
-        Category totals only — no individual donors and no gateway.
+        <strong><%= scopeName %></strong>.
+        Category totals only — no individual donors and no payment gateway.
+      </p>
+      <p class="bb-ba-hint bb-giv-disclaimer" data-bb-giv-disclaimer="1" role="note">
+        This is a summary for reporting, not a full accounting system.
       </p>
     </div>
     <% if (canCreate) { %>
-    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/new" data-bb-giv-create="1">Record giving</a>
+    <p class="bb-ba-page-head__actions">
+      <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/new" data-bb-giv-create="1">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        Record giving
+      </a>
+    </p>
     <% } %>
   </header>
 
-  <% if (saved) { %><p class="bb-ba-ok" role="status">Saved.</p><% } %>
+  <% if (saved) { %>
+  <%- include('../partials/flash-message', { type: 'success', title: 'Saved', message: 'Giving changes saved.' }) %>
+  <% } %>
 
   <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
   <p class="bb-ba-hint"><a href="/hq/giving">← Church-wide giving</a> · <a href="/hq/reports/giving">Giving report</a></p>
@@ -69,11 +146,17 @@
   <% } %>
   <% } %>
 
-  <section class="bb-ba-panel" data-bb-giving-categories="1">
+  <section class="bb-ba-panel bb-giv-categories" data-bb-giving-categories="1">
     <h2 class="bb-ba-section-title">Giving categories</h2>
     <p class="bb-ba-hint">Active categories for this church. Entries are category totals only.</p>
     <% if (!cats.length) { %>
-    <p class="bb-ba-empty">No categories available.</p>
+    <div data-bb-giv-categories-empty="1" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No categories available',
+        body: 'Giving categories are provisioned with the church. Contact HQ if this list is empty.',
+        icon: 'category'
+      }) %>
+    </div>
     <% } else { %>
     <ul class="bb-giv-cat-list">
       <% cats.forEach(function (c) { %>
@@ -83,35 +166,51 @@
     <% } %>
   </section>
 
-  <section class="bb-giv-summary" data-bb-giving-monthly="1">
+  <section class="bb-giv-summary bb-ba-panel" data-bb-giving-monthly="1">
     <div class="bb-giv-summary__head">
       <h2 class="bb-ba-section-title">Monthly summary · <%= yearMonth %></h2>
-      <form method="get" action="<%= basePath %>" class="bb-giv-month-form">
+      <form method="get" action="<%= basePath %>" class="bb-giv-month-form" role="search">
         <label class="bb-ba-sr-only" for="month">Month</label>
         <input id="month" type="month" name="month" value="<%= yearMonth %>" />
         <% if (statusFilter) { %><input type="hidden" name="status" value="<%= statusFilter %>" /><% } %>
         <button type="submit" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm">Show</button>
       </form>
     </div>
+
     <% if (!monthSummary || !categoryRows.length) { %>
-    <p class="bb-ba-empty" role="status">No submitted giving for this month.</p>
+    <div class="bb-giv-summary-empty" data-bb-giv-summary-empty="1" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No submitted giving this month',
+        body: 'Totals appear after you submit (or HQ approves) category entries for this month.',
+        icon: 'account_balance_wallet',
+        actionHref: canCreate ? (basePath + '/new') : null,
+        actionLabel: canCreate ? 'Record giving' : null
+      }) %>
+    </div>
     <% } else { %>
-      <% if (monthSummary.grandTotalsByCurrency && monthSummary.grandTotalsByCurrency.length) { %>
-      <div class="bb-giv-summary-cards" data-bb-giving-grand-totals>
-        <% monthSummary.grandTotalsByCurrency.forEach(function (gt) { %>
-        <article class="bb-att-stat" data-bb-currency="<%= gt.currency %>" data-bb-total="<%= gt.totalAmount %>">
-          <p class="bb-att-stat__label">Total <%= gt.currency %></p>
-          <p class="bb-att-stat__value"><%= gt.totalAmount %></p>
-          <p class="bb-ba-hint">Submitted / approved only</p>
+      <% if (grandTotals.length) { %>
+      <div class="bb-giv-summary-cards" data-bb-giv-summary-cards="1" data-bb-giving-grand-totals="1">
+        <% grandTotals.forEach(function (gt, idx) { %>
+        <article class="bb-giv-stat<%= idx === 0 ? ' bb-giv-stat--primary' : '' %>" data-bb-currency="<%= gt.currency %>" data-bb-total="<%= gt.totalAmount %>">
+          <p class="bb-giv-stat__label">Total reported</p>
+          <p class="bb-giv-stat__value"><%= formatGivingMoney(gt.totalAmount, gt.currency) %></p>
+          <p class="bb-giv-stat__hint">Submitted / approved · <%= yearMonth %></p>
+        </article>
+        <% }) %>
+        <% categoryRows.slice(0, 3).forEach(function (row) { %>
+        <article class="bb-giv-stat" data-bb-giv-summary-cat="<%= row.categoryKey %>" data-bb-currency="<%= row.currency %>">
+          <p class="bb-giv-stat__label"><%= row.categoryLabel || row.categoryKey %></p>
+          <p class="bb-giv-stat__value"><%= formatGivingMoney(row.totalAmount, row.currency) %></p>
+          <p class="bb-giv-stat__hint"><%= row.entryCount %> entr<%= row.entryCount === 1 ? 'y' : 'ies' %></p>
         </article>
         <% }) %>
       </div>
       <% } %>
       <ul class="bb-giv-summary-list" data-bb-giving-summary-list="1">
         <% categoryRows.forEach(function (row) { %>
-        <li>
+        <li data-bb-currency="<%= row.currency %>" data-bb-total="<%= row.totalAmount %>">
           <%= row.categoryLabel || row.categoryKey %>:
-          <%= row.totalAmount %> <%= row.currency %>
+          <%= formatGivingMoney(row.totalAmount, row.currency) %>
           (<%= row.entryCount %> entr<%= row.entryCount === 1 ? 'y' : 'ies' %>)
         </li>
         <% }) %>
@@ -119,7 +218,7 @@
     <% } %>
   </section>
 
-  <form method="get" action="<%= basePath %>" class="bb-ba-filter bb-giv-filter" data-bb-giv-filter="1">
+  <form method="get" action="<%= basePath %>" class="bb-ba-filter bb-giv-filter" data-bb-giv-filter="1" role="search">
     <input type="hidden" name="month" value="<%= yearMonth %>" />
     <div class="bb-ba-field">
       <label for="status">Status</label>
@@ -131,17 +230,49 @@
       </select>
     </div>
     <div class="bb-ba-filter__actions">
-      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Filter</button>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasStatus) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= clearListHref() %>">Clear</a>
+      <% } %>
     </div>
   </form>
 
-  <section class="bb-ba-panel">
-    <h2 class="bb-ba-section-title">Entries</h2>
+  <nav class="bb-ba-entities-chips" aria-label="Giving status filters" data-bb-giv-status-chips="1">
+    <% statusOptions.forEach(function (opt) { %>
+    <a
+      class="bb-ba-entities-chip<%= (statusFilter || '') === opt.key ? ' is-active' : '' %>"
+      href="<%= statusHref(opt.key) %>"
+      <%= (statusFilter || '') === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-giv-status-filter="<%= opt.key || 'all' %>"
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
+
+  <section class="bb-ba-panel bb-giv-history" data-bb-giv-history="1">
+    <div class="bb-giv-history__head">
+      <h2 class="bb-ba-section-title">Reporting history</h2>
+      <p class="bb-ba-entities-panel__meta"><%= rows.length %> shown · <%= yearMonth %></p>
+    </div>
+
     <% if (!rows.length) { %>
-    <p class="bb-ba-empty" role="status">No giving entries match this filter.</p>
+    <div class="bb-giv-history-empty" data-bb-giv-history-empty="<%= hasStatus ? 'no-results' : 'catalog' %>" role="status">
+      <%- include('../partials/empty-state', {
+        title: hasStatus ? 'No matching entries' : 'No giving entries yet',
+        body: hasStatus
+          ? 'Try another status, or clear the filter.'
+          : 'Create a draft category total, then submit to HQ for reporting.',
+        icon: hasStatus ? 'search_off' : 'payments',
+        actionHref: hasStatus ? clearListHref() : (canCreate ? (basePath + '/new') : null),
+        actionLabel: hasStatus ? 'Clear filters' : (canCreate ? 'Record giving' : null)
+      }) %>
+    </div>
     <% } else { %>
-    <div class="bb-ba-table-wrap">
-      <table class="bb-ba-table" data-bb-giv-table="1">
+
+    <div class="bb-ba-table-wrap bb-giv-table-wrap" role="region" aria-label="Giving entries table" tabindex="0" data-bb-giv-table-desktop="1">
+      <table class="bb-ba-table bb-giv-table" data-bb-giv-table="1">
         <thead>
           <tr>
             <th scope="col">Date</th>
@@ -153,10 +284,10 @@
         </thead>
         <tbody>
           <% rows.forEach(function (en) { %>
-          <tr data-bb-status="<%= en.status %>">
+          <tr data-bb-status="<%= en.status %>" data-bb-giv-row="<%= en.id %>" data-bb-currency="<%= en.currency %>">
             <td><%= formatDate(en.givingDate) %></td>
             <td><a class="bb-ann-title-link" href="<%= basePath %>/<%= en.id %>"><%= en.categoryLabel || en.categoryKey %></a></td>
-            <td class="bb-giv-amount"><%= en.amount %> <%= en.currency %></td>
+            <td class="bb-giv-amount" data-bb-giv-amount="<%= en.amount %>"><%= formatGivingMoney(en.amount, en.currency) %></td>
             <td><span class="bb-ba-chip <%= statusChip(en.status) %>"><%= statusLabel(en.status) %></span></td>
             <td><a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= en.id %>">Open</a></td>
           </tr>
@@ -164,9 +295,40 @@
         </tbody>
       </table>
     </div>
-    <p class="bb-ba-hint">Showing up to <%= rows.length %> entries for <%= yearMonth %> (bounded list). Amounts are decimal strings from NUMERIC storage.</p>
+
+    <div class="bb-giv-cards" data-bb-giv-cards="1">
+      <% rows.forEach(function (en) { %>
+      <article class="bb-giv-card bb-ba-panel" data-bb-giv-card="<%= en.id %>" data-bb-status="<%= en.status %>">
+        <div class="bb-giv-card__date" aria-hidden="true">
+          <span class="bb-giv-card__month"><%= dateMonth(en.givingDate) %></span>
+          <span class="bb-giv-card__day"><%= dateDay(en.givingDate) %></span>
+        </div>
+        <div class="bb-giv-card__body">
+          <h3 class="bb-giv-card__title">
+            <a href="<%= basePath %>/<%= en.id %>"><%= en.categoryLabel || en.categoryKey %></a>
+          </h3>
+          <p class="bb-giv-card__meta">
+            <span class="bb-giv-amount" data-bb-giv-amount="<%= en.amount %>"><%= formatGivingMoney(en.amount, en.currency) %></span>
+          </p>
+          <p class="bb-ba-sr-only"><%= formatDate(en.givingDate) %></p>
+        </div>
+        <span class="bb-ba-chip <%= statusChip(en.status) %>"><%= statusLabel(en.status) %></span>
+      </article>
+      <% }) %>
+    </div>
+
+    <p class="bb-ba-hint" data-bb-giv-list-bound="1">
+      Showing up to <%= rows.length %> entries for <%= yearMonth %> (bounded list).
+      Amounts are decimal strings from NUMERIC storage.
+    </p>
     <% } %>
   </section>
+
+  <aside class="bb-ba-entities-unavailable" data-bb-giv-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-giv-unavailable-row="donors">Donor-level records and personal contact details are not stored or shown.</p>
+    <p data-bb-giv-unavailable-row="payments">Online payments, bank reconciliation, and QR / mobile-money setup are not available here.</p>
+    <p data-bb-giv-unavailable-row="exports">Receipts, accounting exports, and trend comparisons are not available.</p>
+  </aside>
 </section>
 
 <% if (shellKind === 'hq') { %>

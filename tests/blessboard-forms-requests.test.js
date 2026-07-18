@@ -1271,7 +1271,18 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", adminCookie);
     assert.equal(formsList.status, 200);
     assert.match(formsList.text, /data-bb-forms-admin-list="1"/);
+    assert.match(formsList.text, /data-bb-stitch-forms="shared-ui-states"/);
+    assert.match(formsList.text, /data-bb-forms-status-chips="1"/);
+    assert.match(formsList.text, /data-bb-forms-create="1"/);
+    assert.match(formsList.text, /data-bb-forms-editor="1"/);
+    assert.match(formsList.text, /data-bb-forms-allowed-types="1"/);
+    assert.match(formsList.text, /name="title"/);
+    assert.match(formsList.text, /name="schema_json"/);
+    assert.match(formsList.text, /name="_csrf"/);
     assert.match(formsList.text, /Admin GUI Connect/);
+    assert.doesNotMatch(formsList.text, /signature pad|Stripe Checkout|PayPal|file-upload field type/i);
+    assert.match(formsList.text, /data-bb-forms-unavailable-row="signatures"/);
+    assert.match(formsList.text, /data-bb-forms-unavailable-row="logic"/);
     assert.doesNotMatch(formsList.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(formsList.text, new RegExp(branchA.id, "i"));
 
@@ -1281,11 +1292,21 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", adminCookie);
     assert.equal(formDetail.status, 200);
     assert.match(formDetail.text, /data-bb-forms-admin-detail="1"/);
+    assert.match(formDetail.text, /data-bb-stitch-forms-detail="shared-ui-states"/);
     assert.match(formDetail.text, /data-bb-form-submissions="1"/);
+    assert.match(formDetail.text, /data-bb-forms-privacy="1"/);
     assert.match(formDetail.text, /data-bb-submission=/);
     assert.match(formDetail.text, /Ada Member/);
     assert.match(formDetail.text, /ada@example\.test/);
     assert.doesNotMatch(formDetail.text, new RegExp(memberId, "i"));
+
+    const noResults = await request(app)
+      .get("/branch-admin/forms?status=archived")
+      .set("Host", HOST_A)
+      .set("Cookie", adminCookie);
+    assert.equal(noResults.status, 200);
+    assert.match(noResults.text, /data-bb-forms-empty="no-results"/);
+    assert.match(noResults.text, /data-bb-forms-status-filter="archived"/);
 
     const created = await createMemberRequest(pool, {
       churchId: churchA.id,
@@ -1305,13 +1326,27 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", adminCookie);
     assert.equal(reqList.status, 200);
     assert.match(reqList.text, /data-bb-request-admin-list="1"/);
+    assert.match(reqList.text, /data-bb-stitch-requests="44-branch-request-workflow-queue"/);
     assert.match(reqList.text, /Request workflow queue/);
     assert.match(reqList.text, /Admin GUI counseling/);
     assert.match(reqList.text, /data-bb-req-tabs="1"/);
+    assert.match(reqList.text, /data-bb-req-table="1"/);
+    assert.match(reqList.text, /data-bb-req-cards="1"/);
+    assert.match(reqList.text, /data-bb-req-privacy="1"/);
+    assert.match(reqList.text, /data-bb-req-unavailable="1"/);
     assert.doesNotMatch(reqList.text, /PENDING 24|TODAY'S GOAL|Export|My Assigned|Urgent/i);
     assert.doesNotMatch(reqList.text, /Active Donor|donor email|View Profile/i);
     assert.doesNotMatch(reqList.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(reqList.text, new RegExp(memberId, "i"));
+
+    const reqClosed = await request(app)
+      .get("/branch-admin/requests?status=closed")
+      .set("Host", HOST_A)
+      .set("Cookie", adminCookie);
+    assert.equal(reqClosed.status, 200);
+    assert.match(reqClosed.text, /data-bb-req-tab="closed"/);
+    assert.doesNotMatch(reqClosed.text, /Admin GUI counseling/);
+    assert.match(reqClosed.text, /data-bb-req-empty="no-results"|data-bb-req-status="closed"/);
 
     const detail = await request(app)
       .get(`/branch-admin/requests/${created.request.id}`)
@@ -1319,10 +1354,12 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", adminCookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-request-admin-detail="1"/);
+    assert.match(detail.text, /data-bb-stitch-requests-detail="45-branch-request-details"/);
     assert.match(detail.text, /data-bb-req-attachment="1"/);
     assert.match(detail.text, /data-bb-req-download="1"/);
     assert.match(detail.text, /data-bb-req-status-form="1"/);
     assert.match(detail.text, /data-bb-req-history="1"/);
+    assert.match(detail.text, /data-bb-req-detail-privacy="1"/);
     assert.match(detail.text, /internal_only/);
     assert.doesNotMatch(detail.text, /Reject|Approve Request|Request More Info|Public Correspondence/i);
     assert.doesNotMatch(detail.text, new RegExp(memberId, "i"));

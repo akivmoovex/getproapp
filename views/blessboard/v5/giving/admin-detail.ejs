@@ -19,27 +19,63 @@
     if (key === 'void') return 'bb-ba-chip--danger';
     return 'bb-ba-chip--muted';
   }
+  function formatDate(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(String(value) + (String(value).length === 10 ? 'T00:00:00Z' : ''));
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function formatGivingMoney(amount, currency) {
+    var cur = String(currency || '').toUpperCase() || 'USD';
+    var raw = amount == null ? '' : String(amount);
+    if (!raw) return '—';
+    var neg = raw.charAt(0) === '-';
+    var body = neg ? raw.slice(1) : raw;
+    var parts = body.split('.');
+    var intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    var frac = parts.length > 1 ? '.' + parts[1] : '';
+    return cur + ' ' + (neg ? '-' : '') + intPart + frac;
+  }
 %>
 
-<section class="bb-giv-admin bb-giv-detail" data-bb-giving-admin-detail="1" data-bb-status="<%= entry.status %>">
+<section
+  class="bb-giv-admin bb-giv-detail"
+  data-bb-giving-admin-detail="1"
+  data-bb-status="<%= entry.status %>"
+  data-bb-stitch-giving-detail="39-branch-giving-summary"
+>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
-        <a href="<%= basePath %>">Giving</a>
+        <a href="<%= basePath %>">
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+          Giving
+        </a>
         <span aria-hidden="true">›</span>
         <span>Entry</span>
       </p>
       <h1 class="bb-ba-page-head__title"><%= entry.categoryLabel || entry.categoryKey %></h1>
-      <p class="bb-ba-lede">
+      <p class="bb-ba-lede bb-giv-detail__lede">
         <span class="bb-ba-chip <%= statusChip(entry.status) %>"><%= statusLabel(entry.status) %></span>
-        · <%= entry.givingDate %>
-        · <span class="bb-giv-amount" data-bb-giv-amount="<%= entry.amount %>"><%= entry.amount %> <%= entry.currency %></span>
+        <span class="bb-giv-detail__meta">
+          <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+          <%= formatDate(entry.givingDate) %>
+        </span>
+        <span class="bb-giv-amount bb-giv-amount--lg" data-bb-giv-amount="<%= entry.amount %>" data-bb-currency="<%= entry.currency %>">
+          <%= formatGivingMoney(entry.amount, entry.currency) %>
+        </span>
       </p>
     </div>
-    <div class="bb-ba-decision__actions" style="margin:0">
+    <div class="bb-ba-page-head__actions bb-giv-detail__actions">
       <% if (canEdit) { %>
-      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= entry.id %>/edit" data-bb-giv-edit="1">Edit</a>
-      <button type="button" class="bb-ba-btn bb-ba-btn--primary" data-bb-ds-modal-open="bb-giv-submit-modal" data-bb-giv-submit-open="1">Submit</button>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= entry.id %>/edit" data-bb-giv-edit="1">
+        <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+        Edit
+      </a>
+      <button type="button" class="bb-ba-btn bb-ba-btn--primary" data-bb-ds-modal-open="bb-giv-submit-modal" data-bb-giv-submit-open="1">
+        <span class="material-symbols-outlined" aria-hidden="true">send</span>
+        Submit
+      </button>
       <% } %>
       <% if (canVoid) { %>
       <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-open="bb-giv-void-modal" data-bb-giv-void-open="1">Void</button>
@@ -48,15 +84,21 @@
   </header>
 
   <% if (saved === '1' || saved === 'updated' || saved === 'submitted' || saved === 'approved' || saved === 'voided') { %>
-  <p class="bb-ba-ok" role="status">
-    <% if (saved === 'submitted') { %>Giving entry submitted.<% }
-       else if (saved === 'updated') { %>Draft updated.<% }
-       else if (saved === 'approved') { %>Giving entry approved.<% }
-       else if (saved === 'voided') { %>Giving entry voided.<% }
-       else { %>Saved.<% } %>
-  </p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: saved === 'submitted' ? 'Submitted'
+      : (saved === 'updated' ? 'Updated'
+      : (saved === 'approved' ? 'Approved'
+      : (saved === 'voided' ? 'Voided' : 'Saved'))),
+    message: saved === 'submitted' ? 'Giving entry submitted.'
+      : (saved === 'updated' ? 'Draft updated.'
+      : (saved === 'approved' ? 'Giving entry approved.'
+      : (saved === 'voided' ? 'Giving entry voided.' : 'Saved.')))
+  }) %>
   <% } %>
-  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+  <% if (error) { %>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-giv-detail-errors' }) %>
+  <% } %>
 
   <div class="bb-att-lifecycle" data-bb-giv-lifecycle="1" aria-label="Workflow status">
     <div class="bb-att-lifecycle__step is-done">Created</div>
@@ -65,20 +107,26 @@
     <div class="bb-att-lifecycle__step<%= entry.status === 'approved' ? ' is-done' : (entry.status === 'void' ? ' is-done' : '') %>"><%= entry.status === 'void' ? 'Void' : 'HQ review' %></div>
   </div>
 
-  <section class="bb-ba-panel" data-bb-giv-meta="1">
+  <section class="bb-ba-panel bb-giv-meta-panel" data-bb-giv-meta="1">
     <h2 class="bb-ba-section-title">Entry details</h2>
     <dl class="bb-ann-dl">
       <div><dt>Category</dt><dd><%= entry.categoryLabel || entry.categoryKey %></dd></div>
-      <div><dt>Date</dt><dd><%= entry.givingDate %></dd></div>
-      <div><dt>Amount</dt><dd class="bb-giv-amount"><%= entry.amount %> <%= entry.currency %></dd></div>
+      <div><dt>Date</dt><dd><%= formatDate(entry.givingDate) %></dd></div>
+      <div>
+        <dt>Amount</dt>
+        <dd class="bb-giv-amount" data-bb-giv-amount="<%= entry.amount %>" data-bb-currency="<%= entry.currency %>">
+          <%= formatGivingMoney(entry.amount, entry.currency) %>
+        </dd>
+      </div>
       <% if (entry.reference) { %><div><dt>Reference</dt><dd><%= entry.reference %></dd></div><% } %>
       <% if (entry.notes) { %><div><dt>Notes</dt><dd><%= entry.notes %></dd></div><% } %>
       <% if (entry.status === 'void' && entry.voidReason) { %>
       <div><dt>Void reason</dt><dd><%= entry.voidReason %></dd></div>
       <% } %>
     </dl>
-    <p class="bb-ba-hint">
-      This is a reporting summary, not a payment ledger. Amounts use NUMERIC decimal strings. Entries are voided, never hard-deleted.
+    <p class="bb-ba-hint" data-bb-giv-privacy="1">
+      This is a reporting summary, not a payment ledger. Amounts use NUMERIC decimal strings.
+      Entries are voided, never hard-deleted. No donor PII is stored on this record.
     </p>
   </section>
 
@@ -106,7 +154,8 @@
     <div class="bb-ds-modal__panel" tabindex="-1">
       <h2 id="bb-giv-submit-title" class="bb-ds-modal__title">Submit this giving entry?</h2>
       <p class="bb-ds-modal__body">
-        Amount <strong><%= entry.amount %> <%= entry.currency %></strong> for <%= entry.categoryLabel || entry.categoryKey %>.
+        Amount <strong data-bb-giv-amount="<%= entry.amount %>"><%= formatGivingMoney(entry.amount, entry.currency) %></strong>
+        for <%= entry.categoryLabel || entry.categoryKey %>.
         After submit, branch edits are locked.
       </p>
       <form method="post" action="<%= basePath %>/<%= entry.id %>/submit" class="bb-ds-modal__actions" data-bb-giv-submit="1">
@@ -136,7 +185,7 @@
       </p>
       <form method="post" action="<%= basePath %>/<%= entry.id %>/void" class="bb-ds-modal__actions bb-giv-void-form" data-bb-giv-void="1">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <div class="bb-ba-field" style="flex:1; width:100%; margin-bottom:0.75rem">
+        <div class="bb-ba-field bb-giv-void-form__reason">
           <label for="void_reason">Void reason</label>
           <input id="void_reason" type="text" name="void_reason" maxlength="500" required />
         </div>

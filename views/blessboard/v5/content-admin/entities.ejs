@@ -1,54 +1,808 @@
-<!DOCTYPE html>
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-start') %>
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <p class="bb-ca-hint"><a href="<%= scope.basePath %>">← All content</a></p>
-  <h1><%= entityTitle %></h1>
-  <p class="bb-ca-lede">Scope: <strong><%= scope.scopeLabel %></strong></p>
-  <% if (typeof saved !== 'undefined' && saved) { %>
-    <p class="bb-ca-ok" role="status">Changes saved.</p>
+<%
+  var allItems = items || [];
+  var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
+  var searchQ = typeof q !== 'undefined' && q ? String(q).trim() : '';
+  var activeWhen = typeof whenFilter !== 'undefined' && whenFilter ? String(whenFilter) : '';
+  var isMinistries = entityKind === 'ministries';
+  var isEvents = entityKind === 'events';
+  var isSermons = entityKind === 'sermons';
+  var hasFilter = Boolean(activeStatus || searchQ || (isEvents && activeWhen));
+  var statusOptions = isMinistries
+    ? [
+        { key: '', label: 'All ministries' },
+        { key: 'published', label: 'Published' },
+        { key: 'draft', label: 'Draft' },
+        { key: 'archived', label: 'Archived' }
+      ]
+    : isEvents
+    ? [
+        { key: '', label: 'All statuses' },
+        { key: 'published', label: 'Published' },
+        { key: 'draft', label: 'Draft' },
+        { key: 'cancelled', label: 'Cancelled' },
+        { key: 'archived', label: 'Archived' }
+      ]
+    : isSermons
+    ? [
+        { key: '', label: 'All sermons' },
+        { key: 'published', label: 'Published' },
+        { key: 'draft', label: 'Draft' },
+        { key: 'archived', label: 'Archived' }
+      ]
+    : [
+        { key: '', label: 'All' },
+        { key: 'published', label: 'Published' },
+        { key: 'draft', label: 'Draft' },
+        { key: 'archived', label: 'Archived' }
+      ];
+  var whenOptions = [
+    { key: '', label: 'All dates' },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'past', label: 'Past' }
+  ];
+
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    if (key === 'cancelled') return 'Cancelled';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    if (key === 'cancelled') return 'bb-ba-chip--danger';
+    return 'bb-ba-chip--muted';
+  }
+  function itemTitle(item) {
+    if (entityKind === 'leadership') return item.displayName || '—';
+    if (entityKind === 'ministries') return item.name || '—';
+    return item.title || item.label || '—';
+  }
+  function itemSubtitle(item) {
+    if (entityKind === 'leadership') return item.roleTitle || '';
+    if (entityKind === 'ministries') return item.summary || '';
+    if (entityKind === 'events') return item.summary || '';
+    if (entityKind === 'sermons') return item.speakerName || '';
+    if (entityKind === 'contact') return item.channelType || '';
+    if (entityKind === 'giving') return item.methodType || '';
+    return '';
+  }
+  function snippet(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    if (t.length <= 100) return t;
+    return t.slice(0, 97) + '…';
+  }
+  function toDate(value) {
+    if (!value) return null;
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return d;
+  }
+  function formatWhen(value) {
+    var d = toDate(value);
+    if (!d) return value ? String(value).slice(0, 16) : '';
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  }
+  function formatWhenDate(value) {
+    var d = toDate(value);
+    if (!d) return '';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function formatWhenTime(value) {
+    var d = toDate(value);
+    if (!d) return '';
+    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+  function eventStartMs(item) {
+    var d = toDate(item && item.startsAt);
+    return d ? d.getTime() : null;
+  }
+  function matchesWhen(item) {
+    if (!isEvents || !activeWhen) return true;
+    var ms = eventStartMs(item);
+    if (ms == null) return activeWhen !== 'upcoming';
+    var now = Date.now();
+    if (activeWhen === 'upcoming') return ms >= now;
+    if (activeWhen === 'past') return ms < now;
+    return true;
+  }
+  function haystack(item) {
+    if (entityKind === 'ministries') {
+      return [item.name, item.summary, item.description, item.meetingDay, item.contactEmail].join(' ');
+    }
+    if (entityKind === 'events') {
+      return [item.title, item.summary, item.location, item.timezone, item.registrationUrl].join(' ');
+    }
+    if (entityKind === 'sermons') {
+      return [item.title, item.speakerName, item.summary, item.mediaUrl, item.resourceUrl].join(' ');
+    }
+    if (entityKind === 'leadership') {
+      return [item.displayName, item.roleTitle, item.biography].join(' ');
+    }
+    return [itemTitle(item), itemSubtitle(item), item.location, item.label, item.value].join(' ');
+  }
+  function sermonPreachedMs(item) {
+    var d = toDate(item && item.preachedAt);
+    return d ? d.getTime() : null;
+  }
+  function mediaLinkKind(url) {
+    var u = String(url || '').toLowerCase();
+    if (!u) return '';
+    if (/\.(mp3|m4a|aac|ogg|wav)(\?|$)/.test(u) || u.indexOf('soundcloud') !== -1) return 'audio';
+    if (/\.(mp4|webm|mov)(\?|$)/.test(u) || u.indexOf('youtube') !== -1 || u.indexOf('youtu.be') !== -1 || u.indexOf('vimeo') !== -1) return 'video';
+    return 'link';
+  }
+  function mediaLinkLabel(url) {
+    var kind = mediaLinkKind(url);
+    if (kind === 'audio') return 'Listen';
+    if (kind === 'video') return 'Watch';
+    return 'Media';
+  }
+  function resourceLinkLabel(url) {
+    var u = String(url || '').toLowerCase();
+    if (!u) return '';
+    if (/\.(pdf|docx?|pptx?)(\?|$)/.test(u)) return 'Notes';
+    return 'Resource';
+  }
+  function matchesSearch(item) {
+    if (!searchQ) return true;
+    var needle = searchQ.toLowerCase();
+    return String(haystack(item) || '').toLowerCase().indexOf(needle) !== -1;
+  }
+
+  var rows = allItems.filter(function (item) {
+    if (activeStatus && String(item.status || '') !== activeStatus) return false;
+    if (!matchesWhen(item)) return false;
+    return matchesSearch(item);
+  });
+  if (isEvents) {
+    rows = rows.slice().sort(function (a, b) {
+      var am = eventStartMs(a);
+      var bm = eventStartMs(b);
+      if (am == null && bm == null) return 0;
+      if (am == null) return 1;
+      if (bm == null) return -1;
+      return activeWhen === 'past' ? (bm - am) : (am - bm);
+    });
+  }
+  if (isSermons) {
+    rows = rows.slice().sort(function (a, b) {
+      var am = sermonPreachedMs(a);
+      var bm = sermonPreachedMs(b);
+      if (am == null && bm == null) return 0;
+      if (am == null) return 1;
+      if (bm == null) return -1;
+      return bm - am;
+    });
+  }
+  var totalAll = allItems.length;
+  var totalShown = rows.length;
+  var createOpen = Boolean(
+    !(typeof editItemId !== 'undefined' && editItemId) &&
+    submitted &&
+    !(typeof saved !== 'undefined' && saved)
+  );
+  if (!allItems.length) createOpen = true;
+
+  function buildQuery(overrides) {
+    var next = { q: searchQ, status: activeStatus, when: activeWhen };
+    Object.keys(overrides || {}).forEach(function (k) { next[k] = overrides[k]; });
+    var parts = [];
+    if (next.q) parts.push('q=' + encodeURIComponent(next.q));
+    if (next.status) parts.push('status=' + encodeURIComponent(next.status));
+    if (isEvents && next.when) parts.push('when=' + encodeURIComponent(next.when));
+    return parts.length ? ('?' + parts.join('&')) : '';
+  }
+  function filterHref(statusKey) {
+    return scope.basePath + '/' + entityKind + buildQuery({ status: statusKey || '' });
+  }
+  function whenHref(whenKey) {
+    return scope.basePath + '/' + entityKind + buildQuery({ when: whenKey || '' });
+  }
+  function clearHref() {
+    return scope.basePath + '/' + entityKind;
+  }
+%>
+
+<section
+  class="bb-ba-entities<%= isMinistries ? ' bb-ba-entities--ministries' : '' %><%= isEvents ? ' bb-ba-entities--events' : '' %><%= isSermons ? ' bb-ba-entities--sermons' : '' %>"
+  data-bb-entity-admin="1"
+  data-bb-entity-kind="<%= entityKind %>"
+  <% if (isMinistries) { %>
+  data-bb-ministries-admin="1"
+  data-bb-stitch-ministries="29-branch-ministries-directory"
+  data-bb-stitch-entities="29-branch-ministries-directory"
+  <% } else if (isEvents) { %>
+  data-bb-events-admin="1"
+  data-bb-stitch-events="32-branch-events-management"
+  data-bb-stitch-entities="32-branch-events-management"
+  <% } else if (isSermons) { %>
+  data-bb-sermons-admin="1"
+  data-bb-stitch-sermons="sermons-admin"
+  data-bb-stitch-entities="sermons-admin"
   <% } %>
+>
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="<%= scope.basePath %>">Website content</a>
+        <span aria-hidden="true">›</span>
+        <span><%= entityTitle %></span>
+      </p>
+      <div class="bb-ba-entities__title-row">
+        <h1 class="bb-ba-page-head__title">
+          <% if (isMinistries) { %>Ministries management<% } else if (isEvents) { %>Events management<% } else if (isSermons) { %>Sermons management<% } else { %><%= entityTitle %><% } %>
+        </h1>
+        <span
+          class="bb-ba-entities__count"
+          data-bb-entity-total="<%= totalAll %>"
+          <% if (isMinistries) { %>data-bb-ministries-total="<%= totalAll %>"<% } %>
+          <% if (isEvents) { %>data-bb-events-total="<%= totalAll %>"<% } %>
+          <% if (isSermons) { %>data-bb-sermons-total="<%= totalAll %>"<% } %>
+        >
+          <% if (isMinistries) { %>
+          <%= hasFilter
+            ? (totalShown + ' ' + (totalShown === 1 ? 'match' : 'matches'))
+            : (totalAll + ' ' + (totalAll === 1 ? 'ministry' : 'ministries')) %>
+          <% } else if (isEvents) { %>
+          <%= hasFilter
+            ? (totalShown + ' ' + (totalShown === 1 ? 'match' : 'matches'))
+            : (totalAll + ' ' + (totalAll === 1 ? 'event' : 'events')) %>
+          <% } else if (isSermons) { %>
+          <%= hasFilter
+            ? (totalShown + ' ' + (totalShown === 1 ? 'match' : 'matches'))
+            : (totalAll + ' ' + (totalAll === 1 ? 'sermon' : 'sermons')) %>
+          <% } else { %>
+          <%= hasFilter
+            ? (totalShown + ' ' + (totalShown === 1 ? 'match' : 'matches'))
+            : (totalAll + ' ' + (totalAll === 1 ? 'item' : 'items')) %>
+          <% } %>
+        </span>
+      </div>
+      <p class="bb-ba-lede">
+        <% if (isMinistries) { %>
+        Oversee public ministries for <strong><%= scope.scopeLabel %></strong>.
+        Publishing requires confirmation. Ministries are archived, never hard-deleted.
+        <% } else if (isEvents) { %>
+        Manage schedules and publication for <strong><%= scope.scopeLabel %></strong>.
+        Publishing requires confirmation. Ticketing, payments, and roster tools are not available here.
+        <% } else if (isSermons) { %>
+        Manage teaching entries for <strong><%= scope.scopeLabel %></strong>.
+        Publishing requires confirmation. External media and resource links only — no hosting or analytics.
+        <% } else { %>
+        Manage <strong><%= entityTitle.toLowerCase() %></strong> for
+        <strong><%= scope.scopeLabel %></strong>.
+        Publishing requires confirmation.
+        <% } %>
+      </p>
+    </div>
+    <p class="bb-ba-page-head__actions">
+      <a
+        class="bb-ba-btn bb-ba-btn--ghost"
+        href="<%= scope.basePath %>/preview/<%= entityKind === 'contact' ? 'contact' : entityKind === 'giving' ? 'giving' : entityKind %>"
+        data-bb-entity-action="preview"
+        <% if (isMinistries) { %>data-bb-ministries-action="preview"<% } %>
+        <% if (isEvents) { %>data-bb-events-action="preview"<% } %>
+        <% if (isSermons) { %>data-bb-sermons-action="preview"<% } %>
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+        Preview
+      </a>
+      <a
+        class="bb-ba-btn bb-ba-btn--primary"
+        href="#bb-ca-entity-create"
+        data-bb-entity-action="new"
+        <% if (isMinistries) { %>data-bb-ministries-action="new"<% } %>
+        <% if (isEvents) { %>data-bb-events-action="new"<% } %>
+        <% if (isSermons) { %>data-bb-sermons-action="new"<% } %>
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        <% if (isMinistries) { %>New ministry<% } else if (isEvents) { %>Create event<% } else if (isSermons) { %>Add sermon<% } else { %>Add <%= entityTitle.toLowerCase() %><% } %>
+      </a>
+    </p>
+  </header>
+
   <% if (typeof error !== 'undefined' && error) { %>
-    <p class="bb-ca-error" role="alert"><%= error %></p>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-ca-entity-errors' }) %>
+  <% } %>
+  <% if (typeof saved !== 'undefined' && saved) { %>
+  <%- include('../partials/flash-message', { type: 'success', title: 'Saved', message: 'Changes saved.' }) %>
   <% } %>
 
-  <section class="bb-ca-block">
-    <h2>Add <%= entityTitle.toLowerCase() %></h2>
-    <form method="post" action="<%= scope.basePath %>/<%= entityKind %>" class="<%= formClass %> bb-ca-form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <input type="hidden" name="action" value="create" />
-      <%- include('./entity-fields', { mode: 'create', item: submitted && !(typeof editItemId !== 'undefined' && editItemId) ? submitted : null, entityKind: entityKind }) %>
-      <button type="submit">Create</button>
-    </form>
-  </section>
-
-  <section class="bb-ca-block">
-    <h2>Existing items</h2>
-    <% if (!items || !items.length) { %>
-      <p class="bb-ca-empty">No items yet.</p>
-    <% } else { %>
-      <% items.forEach(function (item) { %>
-      <details class="bb-ca-item" <%= (typeof editItemId !== 'undefined' && editItemId === item.id) ? 'open' : '' %>>
-        <summary>
-          <%= entityKind === 'leadership' ? item.displayName : (entityKind === 'ministries' ? item.name : item.title || item.label) %>
-          <span class="bb-ca-pill bb-ca-pill--<%= item.status %>"><%= item.status %></span>
-        </summary>
-        <form method="post" action="<%= scope.basePath %>/<%= entityKind %>" class="<%= formClass %> bb-ca-form">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <input type="hidden" name="action" value="update" />
-          <input type="hidden" name="item_id" value="<%= item.id %>" />
-          <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt instanceof Date ? item.updatedAt.toISOString() : item.updatedAt %>" />
-          <%- include('./entity-fields', { mode: 'update', item: (typeof editItemId !== 'undefined' && editItemId === item.id && submitted) ? submitted : item, entityKind: entityKind }) %>
-          <button type="submit">Save changes</button>
-        </form>
-      </details>
-      <% }) %>
+  <form
+    method="get"
+    action="<%= scope.basePath %>/<%= entityKind %>"
+    class="bb-ba-filter bb-ba-entities-filter"
+    data-bb-entity-filter="1"
+    <% if (isMinistries) { %>data-bb-ministries-filter="1"<% } %>
+    <% if (isEvents) { %>data-bb-events-filter="1"<% } %>
+    <% if (isSermons) { %>data-bb-sermons-filter="1"<% } %>
+    role="search"
+  >
+    <div class="bb-ba-field">
+      <label for="bb-ca-entity-q"><%= isMinistries ? 'Search ministries' : (isEvents ? 'Search events' : (isSermons ? 'Search sermons' : 'Search')) %></label>
+      <input
+        id="bb-ca-entity-q"
+        name="q"
+        type="search"
+        maxlength="100"
+        value="<%= searchQ %>"
+        placeholder="<%= isMinistries ? 'Name, summary, meeting, or contact' : (isEvents ? 'Title, summary, location, or timezone' : (isSermons ? 'Title, speaker, summary, or media link' : 'Search items')) %>"
+        autocomplete="off"
+      />
+    </div>
+    <div class="bb-ba-field">
+      <label for="bb-ca-entity-status">Status</label>
+      <select id="bb-ca-entity-status" name="status">
+        <option value="">All statuses</option>
+        <% statusOptions.slice(1).forEach(function (opt) { %>
+        <option value="<%= opt.key %>" <%= activeStatus === opt.key ? 'selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <% if (isEvents) { %>
+    <div class="bb-ba-field">
+      <label for="bb-ca-entity-when">Schedule</label>
+      <select id="bb-ca-entity-when" name="when" data-bb-events-when-select>
+        <% whenOptions.forEach(function (opt) { %>
+        <option value="<%= opt.key %>" <%= activeWhen === opt.key ? 'selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
     <% } %>
+    <div class="bb-ba-filter__actions">
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= clearHref() %>">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (isEvents) { %>
+  <nav class="bb-ba-entities-chips bb-ba-entities-chips--when" aria-label="Event schedule filters" data-bb-events-when-chips="1">
+    <% whenOptions.forEach(function (opt) { %>
+    <a
+      class="bb-ba-entities-chip<%= activeWhen === opt.key ? ' is-active' : '' %>"
+      href="<%= whenHref(opt.key) %>"
+      <%= activeWhen === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-events-when-filter="<%= opt.key || 'all' %>"
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
+  <% } %>
+
+  <nav
+    class="bb-ba-entities-chips"
+    aria-label="<%= isMinistries ? 'Ministry status filters' : (isEvents ? 'Event status filters' : (isSermons ? 'Sermon status filters' : 'Status filters')) %>"
+    data-bb-entity-status-chips="1"
+    <% if (isMinistries) { %>data-bb-ministries-status-chips="1"<% } %>
+    <% if (isEvents) { %>data-bb-events-status-chips="1"<% } %>
+    <% if (isSermons) { %>data-bb-sermons-status-chips="1"<% } %>
+  >
+    <% statusOptions.forEach(function (opt) { %>
+    <a
+      class="bb-ba-entities-chip<%= activeStatus === opt.key ? ' is-active' : '' %>"
+      href="<%= filterHref(opt.key) %>"
+      <%= activeStatus === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-entity-status-filter="<%= opt.key || 'all' %>"
+      <% if (isMinistries) { %>data-bb-ministries-status-filter="<%= opt.key || 'all' %>"<% } %>
+      <% if (isEvents) { %>data-bb-events-status-filter="<%= opt.key || 'all' %>"<% } %>
+      <% if (isSermons) { %>data-bb-sermons-status-filter="<%= opt.key || 'all' %>"<% } %>
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
+
+  <% if (!rows.length && !hasFilter) { %>
+  <div
+    class="bb-ba-entities-empty"
+    data-bb-entity-empty="catalog"
+    <% if (isMinistries) { %>data-bb-ministries-empty="catalog"<% } %>
+    <% if (isEvents) { %>data-bb-events-empty="catalog"<% } %>
+    <% if (isSermons) { %>data-bb-sermons-empty="catalog"<% } %>
+    role="status"
+  >
+    <%- include('../partials/empty-state', {
+      title: isMinistries ? 'No ministries yet' : (isEvents ? 'No events yet' : (isSermons ? 'No sermons yet' : ('No ' + entityTitle.toLowerCase() + ' yet'))),
+      body: isMinistries
+        ? 'Create the first ministry below. Drafts stay private until you publish with confirmation.'
+        : (isEvents
+          ? 'Create the first event below. Drafts stay private until you publish with confirmation.'
+          : (isSermons
+            ? 'Create the first sermon below. Drafts stay private until you publish with confirmation.'
+            : 'Create the first item below. Drafts stay private until you publish with confirmation.')),
+      icon: isMinistries ? 'groups' : (isEvents ? 'event' : (isSermons ? 'record_voice_over' : 'inbox'))
+    }) %>
+  </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div
+    class="bb-ba-entities-empty"
+    data-bb-entity-empty="no-results"
+    <% if (isMinistries) { %>data-bb-ministries-empty="no-results"<% } %>
+    <% if (isEvents) { %>data-bb-events-empty="no-results"<% } %>
+    <% if (isSermons) { %>data-bb-sermons-empty="no-results"<% } %>
+    role="status"
+  >
+    <%- include('../partials/empty-state', {
+      title: isMinistries ? 'No matching ministries' : (isEvents ? 'No matching events' : (isSermons ? 'No matching sermons' : 'No matching items')),
+      body: 'Try another search or filter, or clear filters to see everything.',
+      icon: 'search_off'
+    }) %>
+    <p class="bb-ba-entities-empty__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= clearHref() %>">Clear filters</a>
+    </p>
+  </div>
+  <% } else { %>
+
+  <% if (isMinistries) { %>
+  <div class="bb-ba-entities-panel bb-ba-panel" data-bb-entity-table="1" data-bb-ministries-table="1">
+    <div class="bb-ba-entities-panel__head">
+      <h2 class="bb-ba-entities-panel__title">Ministries</h2>
+      <p class="bb-ba-entities-panel__meta">Showing <%= totalShown %> of <%= totalAll %></p>
+    </div>
+    <div class="bb-ba-entities-table-wrap" role="region" aria-label="Ministries table" tabindex="0">
+      <table class="bb-ba-table bb-ba-entities-table">
+        <thead>
+          <tr>
+            <th scope="col">Ministry</th>
+            <th scope="col">Meeting schedule</th>
+            <th scope="col">Contact</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (item) { %>
+          <tr
+            data-bb-entity-row="<%= item.id %>"
+            data-bb-ministries-row="<%= item.id %>"
+            data-bb-entity-status="<%= item.status %>"
+          >
+            <td>
+              <div class="bb-ba-entities-name">
+                <span class="bb-ba-entities-icon" aria-hidden="true">
+                  <span class="material-symbols-outlined">groups</span>
+                </span>
+                <span>
+                  <strong><%= item.name %></strong>
+                  <% if (item.summary) { %>
+                  <span class="bb-ba-entities-sub"><%= snippet(item.summary) %></span>
+                  <% } %>
+                </span>
+              </div>
+            </td>
+            <td><%= item.meetingDay || '—' %></td>
+            <td><%= item.contactEmail || '—' %></td>
+            <td>
+              <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+            </td>
+            <td>
+              <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="#bb-ca-entity-<%= item.id %>">Edit</a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% } %>
+
+  <div
+    class="bb-ba-entities-cards<%= isMinistries ? ' bb-ba-entities-cards--mobile-only' : '' %><%= isEvents ? ' bb-ba-entities-cards--events' : '' %><%= isSermons ? ' bb-ba-entities-cards--sermons' : '' %>"
+    data-bb-entity-cards="1"
+    <% if (isMinistries) { %>data-bb-ministries-cards="1"<% } %>
+    <% if (isEvents) { %>data-bb-events-cards="1"<% } %>
+    <% if (isSermons) { %>data-bb-sermons-cards="1"<% } %>
+  >
+    <% rows.forEach(function (item) { %>
+    <article
+      class="bb-ba-entities-card bb-ba-panel<%= isEvents ? ' bb-ba-entities-card--event' : '' %><%= isSermons ? ' bb-ba-entities-card--sermon' : '' %>"
+      data-bb-entity-card="<%= item.id %>"
+      <% if (isMinistries) { %>data-bb-ministries-card="<%= item.id %>"<% } %>
+      <% if (isEvents) { %>data-bb-events-card="<%= item.id %>"<% } %>
+      <% if (isSermons) { %>data-bb-sermons-card="<%= item.id %>"<% } %>
+      data-bb-entity-status="<%= item.status %>"
+    >
+      <% if (isEvents && item.imageUrl) { %>
+      <div class="bb-ba-entities-card__media">
+        <img src="<%= item.imageUrl %>" alt="" loading="lazy" width="640" height="360" />
+        <% if (item.startsAt) { %>
+        <span class="bb-ba-entities-card__date-badge"><%= formatWhenDate(item.startsAt) %></span>
+        <% } %>
+      </div>
+      <% } %>
+      <header class="bb-ba-entities-card__head">
+        <div class="bb-ba-entities-name">
+          <% if (!isEvents || !item.imageUrl) { %>
+          <span class="bb-ba-entities-icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= isMinistries ? 'groups' : (isEvents ? 'event' : (isSermons ? 'record_voice_over' : 'article')) %></span>
+          </span>
+          <% } %>
+          <div>
+            <h2 class="bb-ba-entities-card__title"><%= itemTitle(item) %></h2>
+            <% if (itemSubtitle(item)) { %>
+            <p class="bb-ba-entities-sub"><%= snippet(itemSubtitle(item)) %></p>
+            <% } %>
+          </div>
+        </div>
+        <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+      </header>
+      <% if (isMinistries) { %>
+      <dl class="bb-ba-entities-card__meta">
+        <% if (item.meetingDay) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><span class="bb-ba-sr-only">Meeting</span></dt>
+          <dd><%= item.meetingDay %></dd>
+        </div>
+        <% } %>
+        <% if (item.contactEmail) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">mail</span><span class="bb-ba-sr-only">Contact</span></dt>
+          <dd><%= item.contactEmail %></dd>
+        </div>
+        <% } %>
+      </dl>
+      <p class="bb-ba-entities-card__actions">
+        <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="#bb-ca-entity-<%= item.id %>">Edit</a>
+      </p>
+      <% } else if (isEvents) { %>
+      <dl class="bb-ba-entities-card__meta">
+        <% if (item.startsAt) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">schedule</span><span class="bb-ba-sr-only">Starts</span></dt>
+          <dd>
+            <%= formatWhen(item.startsAt) %>
+            <% if (item.endsAt) { %> – <%= formatWhenTime(item.endsAt) %><% } %>
+            <% if (item.timezone) { %> <span class="bb-ba-entities-sub">(<%= item.timezone %>)</span><% } %>
+          </dd>
+        </div>
+        <% } %>
+        <% if (item.location) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">location_on</span><span class="bb-ba-sr-only">Location</span></dt>
+          <dd><%= item.location %></dd>
+        </div>
+        <% } %>
+        <% if (item.registrationUrl) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">link</span><span class="bb-ba-sr-only">Registration</span></dt>
+          <dd><a href="<%= item.registrationUrl %>" rel="noopener noreferrer">Registration link</a></dd>
+        </div>
+        <% } %>
+      </dl>
+      <p class="bb-ba-entities-card__actions">
+        <a class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm" href="#bb-ca-entity-<%= item.id %>">Edit event</a>
+      </p>
+      <% } else if (isSermons) { %>
+      <dl class="bb-ba-entities-card__meta">
+        <% if (item.preachedAt) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><span class="bb-ba-sr-only">Preached</span></dt>
+          <dd><%= formatWhen(item.preachedAt) %></dd>
+        </div>
+        <% } %>
+        <% if (item.summary) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">notes</span><span class="bb-ba-sr-only">Summary</span></dt>
+          <dd><%= snippet(item.summary) %></dd>
+        </div>
+        <% } %>
+        <% if (item.mediaUrl) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true"><%= mediaLinkKind(item.mediaUrl) === 'audio' ? 'headphones' : (mediaLinkKind(item.mediaUrl) === 'video' ? 'play_circle' : 'link') %></span><span class="bb-ba-sr-only">Media</span></dt>
+          <dd><a href="<%= item.mediaUrl %>" rel="noopener noreferrer" data-bb-sermons-media-link="1"><%= mediaLinkLabel(item.mediaUrl) %></a></dd>
+        </div>
+        <% } %>
+        <% if (item.resourceUrl) { %>
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">description</span><span class="bb-ba-sr-only">Resource</span></dt>
+          <dd><a href="<%= item.resourceUrl %>" rel="noopener noreferrer" data-bb-sermons-resource-link="1"><%= resourceLinkLabel(item.resourceUrl) %></a></dd>
+        </div>
+        <% } %>
+      </dl>
+      <p class="bb-ba-entities-card__actions">
+        <a class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm" href="#bb-ca-entity-<%= item.id %>">Edit sermon</a>
+      </p>
+      <% } else if (entityKind === 'leadership' && item.roleTitle) { %>
+      <dl class="bb-ba-entities-card__meta">
+        <div class="bb-ba-entities-card__line">
+          <dt><span class="material-symbols-outlined" aria-hidden="true">badge</span><span class="bb-ba-sr-only">Role</span></dt>
+          <dd><%= item.roleTitle %></dd>
+        </div>
+      </dl>
+      <% } %>
+    </article>
+    <% }) %>
+    <% if (isEvents) { %>
+    <a
+      class="bb-ba-entities-card bb-ba-entities-card--create"
+      href="#bb-ca-entity-create"
+      data-bb-events-create-card="1"
+    >
+      <span class="bb-ba-entities-icon" aria-hidden="true">
+        <span class="material-symbols-outlined">add</span>
+      </span>
+      <strong>Create new event</strong>
+      <span class="bb-ba-entities-sub">Draft a new activity for this branch.</span>
+    </a>
+    <% } else if (isSermons) { %>
+    <a
+      class="bb-ba-entities-card bb-ba-entities-card--create"
+      href="#bb-ca-entity-create"
+      data-bb-sermons-create-card="1"
+    >
+      <span class="bb-ba-entities-icon" aria-hidden="true">
+        <span class="material-symbols-outlined">add</span>
+      </span>
+      <strong>Add new sermon</strong>
+      <span class="bb-ba-entities-sub">Draft a teaching entry with media links.</span>
+    </a>
+    <% } %>
+  </div>
+
+  <section
+    class="bb-ba-entities-editors"
+    aria-label="<%= isMinistries ? 'Edit ministries' : (isEvents ? 'Edit events' : (isSermons ? 'Edit sermons' : ('Edit ' + entityTitle.toLowerCase()))) %>"
+    data-bb-entity-editors="1"
+    <% if (isMinistries) { %>data-bb-ministries-editors="1"<% } %>
+    <% if (isEvents) { %>data-bb-events-editors="1"<% } %>
+    <% if (isSermons) { %>data-bb-sermons-editors="1"<% } %>
+  >
+    <h2 class="bb-ba-section-title"><%= isMinistries ? 'Edit ministry' : (isEvents ? 'Edit event' : (isSermons ? 'Edit sermon' : 'Edit items')) %></h2>
+    <% rows.forEach(function (item) { %>
+    <details
+      class="bb-ba-entities-editor bb-ba-panel"
+      id="bb-ca-entity-<%= item.id %>"
+      data-bb-entity-editor="<%= item.id %>"
+      <% if (isMinistries) { %>data-bb-ministries-editor="<%= item.id %>"<% } %>
+      <% if (isEvents) { %>data-bb-events-editor="<%= item.id %>"<% } %>
+      <% if (isSermons) { %>data-bb-sermons-editor="<%= item.id %>"<% } %>
+      <%= (typeof editItemId !== 'undefined' && editItemId === item.id) ? 'open' : '' %>
+    >
+      <summary class="bb-ba-entities-editor__summary">
+        <span><%= itemTitle(item) %></span>
+        <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+      </summary>
+      <form
+        method="post"
+        action="<%= scope.basePath %>/<%= entityKind %>"
+        class="<%= formClass %> bb-ca-form bb-ba-entities-form"
+        data-bb-entity-form="update"
+        <% if (isMinistries) { %>data-bb-ministries-form="update"<% } %>
+        <% if (isEvents) { %>data-bb-events-form="update"<% } %>
+        <% if (isSermons) { %>data-bb-sermons-form="update"<% } %>
+      >
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="action" value="update" />
+        <input type="hidden" name="item_id" value="<%= item.id %>" />
+        <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt instanceof Date ? item.updatedAt.toISOString() : item.updatedAt %>" />
+        <%- include('./entity-fields', {
+          mode: 'update_' + String(item.id).replace(/[^a-zA-Z0-9]/g, ''),
+          item: (typeof editItemId !== 'undefined' && editItemId === item.id && submitted) ? submitted : item,
+          entityKind: entityKind
+        }) %>
+        <div class="bb-ba-entities-form__actions">
+          <button type="submit" class="bb-ba-btn bb-ba-btn--primary">
+            <% if (isMinistries) { %>Save ministry<% } else if (isEvents) { %>Save event<% } else if (isSermons) { %>Save sermon<% } else { %>Save changes<% } %>
+          </button>
+        </div>
+      </form>
+    </details>
+    <% }) %>
+  </section>
+  <% } %>
+
+  <section
+    class="bb-ba-panel bb-ba-entities-create"
+    id="bb-ca-entity-create"
+    data-bb-entity-create="1"
+    <% if (isMinistries) { %>data-bb-ministries-create="1"<% } %>
+    <% if (isEvents) { %>data-bb-events-create="1"<% } %>
+    <% if (isSermons) { %>data-bb-sermons-create="1"<% } %>
+  >
+    <h2 class="bb-ba-section-title">
+      <% if (isMinistries) { %>Add ministry<% } else if (isEvents) { %>Create event<% } else if (isSermons) { %>Add sermon<% } else { %>Add <%= entityTitle.toLowerCase() %><% } %>
+    </h2>
+    <p class="bb-ba-lede bb-ba-lede--compact">
+      New items start as drafts unless you choose published and confirm.
+    </p>
+    <details class="bb-ba-entities-create__details" <%= createOpen ? 'open' : '' %>>
+      <summary class="bb-ba-entities-create__summary">Show create form</summary>
+      <form
+        method="post"
+        action="<%= scope.basePath %>/<%= entityKind %>"
+        class="<%= formClass %> bb-ca-form bb-ba-entities-form"
+        data-bb-entity-form="create"
+        <% if (isMinistries) { %>data-bb-ministries-form="create"<% } %>
+        <% if (isEvents) { %>data-bb-events-form="create"<% } %>
+        <% if (isSermons) { %>data-bb-sermons-form="create"<% } %>
+      >
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="action" value="create" />
+        <%- include('./entity-fields', {
+          mode: 'create',
+          item: submitted && !(typeof editItemId !== 'undefined' && editItemId) ? submitted : null,
+          entityKind: entityKind
+        }) %>
+        <div class="bb-ba-entities-form__actions">
+          <button type="submit" class="bb-ba-btn bb-ba-btn--primary">
+            <% if (isMinistries) { %>Create ministry<% } else if (isEvents) { %>Create event<% } else if (isSermons) { %>Create sermon<% } else { %>Create<% } %>
+          </button>
+        </div>
+      </form>
+    </details>
   </section>
 
-  <p><a href="<%= scope.basePath %>/preview/<%= entityKind === 'contact' ? 'contact' : entityKind === 'giving' ? 'giving' : entityKind %>">Preview on website</a></p>
+  <% if (isMinistries) { %>
+  <aside class="bb-ba-entities-unavailable" data-bb-entity-unavailable="1" data-bb-ministries-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-entity-unavailable-row="leaders">Ministry leader assignment is not available in this editor.</p>
+    <p data-bb-entity-unavailable-row="members">Member counts and meeting statistics are not shown here.</p>
+    <p data-bb-entity-unavailable-row="departments">Departments, chat, and duty rosters are not available.</p>
+    <p data-bb-entity-unavailable-row="export">Export and bulk actions are not available.</p>
+  </aside>
+  <% } else if (isEvents) { %>
+  <aside class="bb-ba-entities-unavailable" data-bb-entity-unavailable="1" data-bb-events-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-entity-unavailable-row="roster">Manage roster is not available in V5.</p>
+    <p data-bb-entity-unavailable-row="registrations">Registration totals are not fabricated for this list.</p>
+    <p data-bb-entity-unavailable-row="ticketing">Ticketing, payments, recurring events, and calendar sync are not available.</p>
+    <p data-bb-entity-unavailable-row="capacity">Capacity controls are not exposed in this editor.</p>
+  </aside>
+  <% } else if (isSermons) { %>
+  <aside class="bb-ba-entities-unavailable" data-bb-entity-unavailable="1" data-bb-sermons-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-entity-unavailable-row="hosting">Audio hosting, video transcoding, and livestreaming are not available.</p>
+    <p data-bb-entity-unavailable-row="analytics">View counts and download statistics are not shown here.</p>
+    <p data-bb-entity-unavailable-row="series">Series, scripture references, and duration fields are not in the V5 sermon schema.</p>
+  </aside>
+  <% } %>
+</section>
+
+<% if (isMinistries || isEvents || isSermons) { %>
+<script>
+(function () {
+  function wireForm(form) {
+    if (!form) return;
+    var status = form.querySelector("[data-bb-entity-status-select]");
+    var wrap = form.querySelector("[data-bb-entity-confirm-wrap]");
+    var input = form.querySelector("[data-bb-entity-confirm-publish]");
+    function sync() {
+      if (!status || !wrap) return;
+      var show = status.value === "published";
+      wrap.hidden = !show;
+      if (input) {
+        if (show) input.setAttribute("required", "required");
+        else {
+          input.removeAttribute("required");
+          input.checked = false;
+        }
+      }
+    }
+    if (status) {
+      status.addEventListener("change", sync);
+      sync();
+    }
+  }
+  document.querySelectorAll("[data-bb-ministries-form], [data-bb-events-form], [data-bb-sermons-form]").forEach(wireForm);
+})();
+</script>
+<% } %>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

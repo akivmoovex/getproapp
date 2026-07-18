@@ -44,7 +44,13 @@
   }
 %>
 
-<section class="bb-fr-admin bb-fr-req-detail" data-bb-request-admin-detail="1" data-bb-status="<%= reqItem.status %>">
+<section
+  class="bb-fr-admin bb-fr-req-detail"
+  data-bb-request-admin-detail="1"
+  data-bb-stitch-requests-detail="45-branch-request-details"
+  data-bb-status="<%= reqItem.status %>"
+  aria-label="Request details"
+>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
@@ -57,17 +63,26 @@
         <span>Detail</span>
       </p>
       <h1 class="bb-ba-page-head__title"><%= reqItem.subject %></h1>
-      <p class="bb-ba-lede">
+      <p class="bb-ba-lede bb-fr-req-detail__lede">
         <span class="bb-ba-chip bb-ba-chip--muted"><%= categoryLabel(reqItem.category) %></span>
         <span class="bb-ba-chip <%= statusChip(reqItem.status) %>"><%= statusLabel(reqItem.status) %></span>
-        · Submitted <%= formatWhen(reqItem.createdAt) %>
-        <% if (reqItem.memberRef) { %> · Member · <%= reqItem.memberRef %><% } %>
+        <span class="bb-fr-req-detail__meta">Submitted <%= formatWhen(reqItem.createdAt) %></span>
+        <% if (reqItem.memberRef) { %>
+        <span class="bb-fr-member-ref bb-fr-member-ref--inline">Member · <%= reqItem.memberRef %></span>
+        <% } %>
+      </p>
+      <p class="bb-ba-hint" data-bb-req-detail-privacy="1" role="note">
+        Member contact directories are not loaded here. Use status updates and optional notes to respond within this branch.
       </p>
     </div>
   </header>
 
   <% if (saved === 'status') { %>
-  <p class="bb-ba-ok" role="status">Status updated.</p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: 'Updated',
+    message: 'Status updated.'
+  }) %>
   <% } %>
   <% if (error === 'invalid_transition') { %>
   <p class="bb-ba-alert bb-ba-alert--error" role="alert">That status change is not allowed from the current state.</p>
@@ -77,7 +92,7 @@
 
   <div class="bb-fr-detail-grid">
     <div class="bb-fr-detail-main">
-      <section class="bb-ba-panel" data-bb-req-message="1">
+      <section class="bb-ba-panel bb-fr-req-message-panel" data-bb-req-message="1">
         <h2 class="bb-ba-section-title">Request</h2>
         <p class="bb-fr-message"><%= reqItem.message %></p>
 
@@ -98,8 +113,9 @@
       </section>
 
       <% if (nextStatuses.length) { %>
-      <section class="bb-ba-panel" data-bb-req-status-form="1">
+      <section class="bb-ba-panel bb-fr-req-status-panel" data-bb-req-status-form="1">
         <h2 class="bb-ba-section-title">Update status</h2>
+        <p class="bb-ba-hint">Allowed transitions from <strong><%= statusLabel(reqItem.status) %></strong> only.</p>
         <form method="post" action="<%= basePath %>/<%= reqItem.id %>/status" class="bb-fr-status-form">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <div class="bb-ba-field">
@@ -125,15 +141,23 @@
         </form>
       </section>
       <% } else { %>
-      <p class="bb-ba-hint" role="status">This request is closed. No further status changes are allowed.</p>
+      <p class="bb-ba-hint bb-fr-req-closed" data-bb-req-closed="1" role="status">
+        This request is closed. No further status changes are allowed.
+      </p>
       <% } %>
     </div>
 
     <aside class="bb-fr-detail-aside">
-      <section class="bb-ba-panel" data-bb-req-history="1" aria-labelledby="req-history-heading">
+      <section class="bb-ba-panel bb-fr-req-history-panel" data-bb-req-history="1" aria-labelledby="req-history-heading">
         <h2 id="req-history-heading" class="bb-ba-section-title">Activity</h2>
         <% if (!history.length) { %>
-        <p class="bb-ba-empty">No status history yet.</p>
+        <div class="bb-fr-req-history-empty" data-bb-req-history-empty="1" role="status">
+          <%- include('../partials/empty-state', {
+            title: 'No status history yet',
+            body: 'Status changes and notes will appear here after the first update.',
+            icon: 'history'
+          }) %>
+        </div>
         <% } else { %>
         <ol class="bb-fr-timeline">
           <% history.forEach(function (h) { %>
@@ -160,6 +184,12 @@
       </section>
     </aside>
   </div>
+
+  <aside class="bb-ba-entities-unavailable" data-bb-req-detail-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-req-unavailable-row="chat">Member chat threads and bidirectional message panels are not available.</p>
+    <p data-bb-req-unavailable-row="escalation">Internal escalation workflows and SLA timers are not available.</p>
+    <p data-bb-req-unavailable-row="profile">Member profile cards with email, phone, or donor badges are not shown.</p>
+  </aside>
 </section>
 
 <% if (shellKind === 'hq') { %>

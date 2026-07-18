@@ -372,6 +372,432 @@ describe("blessboard content admin", () => {
     assert.doesNotMatch(routeSrc, /router\.delete\(|method:\s*['"]DELETE['"]/i);
   });
 
+  it("ministries admin list/editor supports create, publish confirm, search, and scope privacy", async () => {
+    requireDb();
+    const { res } = await authedGet("/branch-admin/content/ministries", HOST_A, users.branchA);
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-ministries-admin="1"/);
+    assert.match(res.text, /data-bb-stitch-ministries="29-branch-ministries-directory"/);
+    assert.match(res.text, /data-bb-entity-kind="ministries"/);
+    assert.match(res.text, /Ministries management/);
+    assert.match(res.text, /data-bb-ministries-filter="1"/);
+    assert.match(res.text, /data-bb-ministries-status-chips="1"/);
+    assert.match(res.text, /data-bb-ministries-create="1"/);
+    assert.match(res.text, /name="q"/);
+    assert.match(res.text, /name="name"/);
+    assert.match(res.text, /name="meeting_day"/);
+    assert.match(res.text, /name="contact_email"/);
+    assert.match(res.text, /name="sort_order"/);
+    assert.match(res.text, /name="confirm_publish"/);
+    assert.match(res.text, /name="_csrf"/);
+    assert.match(res.text, /data-bb-ministries-unavailable="1"/);
+    assert.doesNotMatch(res.text, /Total Members|Active Leaders|1,248|\+12%/i);
+    assert.doesNotMatch(res.text, /Manage Roster|Export ministries|href="[^"]*\/export"/i);
+    assert.doesNotMatch(res.text, /data-bb-entity-leader=|data-bb-entity-member-count=/i);
+    assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
+
+    const denied = await authedGet("/branch-admin/content/ministries", HOST_A, users.hqB);
+    assert.ok(denied.res.status === 403 || denied.res.status === 503);
+
+    const { csrf } = await authedGet("/branch-admin/content/ministries", HOST_A, users.branchA);
+    const badCsrf = await request(app)
+      .post("/branch-admin/content/ministries")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchA.rawToken}`, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({
+        action: "create",
+        name: "Bad CSRF Ministry",
+        status: "draft",
+        sort_order: "1",
+      });
+    assert.equal(badCsrf.status, 403);
+
+    const created = await authedPost("/branch-admin/content/ministries", HOST_A, users.branchA, csrf, {
+      action: "create",
+      name: "Youth Fellowship",
+      summary: "Friday gathering",
+      meeting_day: "Friday",
+      contact_email: "youth@example.com",
+      sort_order: "2",
+      status: "draft",
+    });
+    assert.ok([302, 303].includes(created.status));
+
+    const listed = await authedGet("/branch-admin/content/ministries", HOST_A, users.branchA);
+    assert.match(listed.res.text, /Youth Fellowship/);
+    assert.match(listed.res.text, /Friday/);
+    assert.match(listed.res.text, /youth@example\.com/);
+    assert.match(listed.res.text, /data-bb-ministries-table="1"/);
+    assert.match(listed.res.text, /data-bb-ministries-cards="1"/);
+    assert.match(listed.res.text, /data-bb-ministries-editors="1"/);
+
+    const searched = await authedGet("/branch-admin/content/ministries?q=Youth", HOST_A, users.branchA);
+    assert.equal(searched.res.status, 200);
+    assert.match(searched.res.text, /Youth Fellowship/);
+    assert.match(searched.res.text, /name="q"[^>]*value="Youth"|value="Youth"[^>]*name="q"/);
+
+    const filtered = await authedGet("/branch-admin/content/ministries?status=published", HOST_A, users.branchA);
+    assert.equal(filtered.res.status, 200);
+    assert.match(filtered.res.text, /data-bb-ministries-status-filter="published"/);
+    assert.doesNotMatch(filtered.res.text, /Youth Fellowship/);
+
+    const { res: editList, csrf: csrf2 } = await authedGet("/branch-admin/content/ministries", HOST_A, users.branchA);
+    let itemId = null;
+    let expected = null;
+    const parts = editList.text.split('name="item_id" value="');
+    for (let i = 1; i < parts.length; i += 1) {
+      const id = parts[i].slice(0, 36);
+      const chunk = parts[i].slice(0, 1600);
+      if (chunk.includes("Youth Fellowship") || editList.text.includes("Youth Fellowship")) {
+        const m = chunk.match(/expected_updated_at" value="([^"]+)"/);
+        if (m) {
+          itemId = id;
+          expected = m[1];
+          break;
+        }
+      }
+    }
+    if (!itemId) {
+      const row = await pool.query(
+        `SELECT id, updated_at FROM blessboard.ministries
+          WHERE church_id = $1 AND name = 'Youth Fellowship'
+          ORDER BY created_at DESC LIMIT 1`,
+        [churchA.id]
+      );
+      itemId = row.rows[0].id;
+      expected = new Date(row.rows[0].updated_at).toISOString();
+    }
+
+    const noConfirm = await authedPost("/branch-admin/content/ministries", HOST_A, users.branchA, csrf2, {
+      action: "update",
+      item_id: itemId,
+      name: "Youth Fellowship",
+      summary: "Friday gathering",
+      meeting_day: "Friday",
+      contact_email: "youth@example.com",
+      sort_order: "2",
+      status: "published",
+      expected_updated_at: expected,
+    });
+    assert.equal(noConfirm.status, 400);
+    assert.match(noConfirm.text, /confirm/i);
+
+    const { res: editList2, csrf: csrf3 } = await authedGet("/branch-admin/content/ministries", HOST_A, users.branchA);
+    const expected2 =
+      (editList2.text.match(new RegExp(`name="item_id" value="${itemId}"[\\s\\S]{0,400}?expected_updated_at" value="([^"]+)"`)) ||
+        [])[1] || expected;
+    const published = await authedPost("/branch-admin/content/ministries", HOST_A, users.branchA, csrf3, {
+      action: "update",
+      item_id: itemId,
+      name: "Youth Fellowship",
+      summary: "Friday gathering",
+      meeting_day: "Friday evening",
+      contact_email: "youth@example.com",
+      sort_order: "3",
+      status: "published",
+      expected_updated_at: expected2,
+      confirm_publish: "1",
+    });
+    assert.ok([302, 303].includes(published.status));
+
+    const afterPublish = await authedGet("/branch-admin/content/ministries?status=published", HOST_A, users.branchA);
+    assert.match(afterPublish.res.text, /Youth Fellowship/);
+    assert.match(afterPublish.res.text, /Friday evening/);
+  });
+
+  it("events admin list/editor supports create, publish, schedule filters, and date fields", async () => {
+    requireDb();
+    const { res } = await authedGet("/branch-admin/content/events", HOST_A, users.branchA);
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-events-admin="1"/);
+    assert.match(res.text, /data-bb-stitch-events="32-branch-events-management"/);
+    assert.match(res.text, /Events management/);
+    assert.match(res.text, /data-bb-events-filter="1"/);
+    assert.match(res.text, /data-bb-events-when-chips="1"/);
+    assert.match(res.text, /data-bb-events-status-chips="1"/);
+    assert.match(res.text, /data-bb-events-create="1"/);
+    assert.match(res.text, /name="q"/);
+    assert.match(res.text, /name="when"/);
+    assert.match(res.text, /name="title"/);
+    assert.match(res.text, /name="starts_at"/);
+    assert.match(res.text, /name="ends_at"/);
+    assert.match(res.text, /name="timezone"/);
+    assert.match(res.text, /name="location"/);
+    assert.match(res.text, /name="registration_url"/);
+    assert.match(res.text, /name="confirm_publish"/);
+    assert.match(res.text, /name="_csrf"/);
+    assert.match(res.text, /data-bb-events-unavailable="1"/);
+    assert.doesNotMatch(res.text, /43 Registered|data-bb-events-registration-count=/i);
+    assert.doesNotMatch(res.text, /href="[^"]*\/roster"|bb-ba-btn[^>]*>\s*Manage roster/i);
+    assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
+
+    const denied = await authedGet("/branch-admin/content/events", HOST_A, users.hqB);
+    assert.ok(denied.res.status === 403 || denied.res.status === 503);
+
+    const { csrf } = await authedGet("/branch-admin/content/events", HOST_A, users.branchA);
+    const badCsrf = await request(app)
+      .post("/branch-admin/content/events")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchA.rawToken}`, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({
+        action: "create",
+        title: "Bad CSRF Event",
+        starts_at: "2030-01-15T18:00:00.000Z",
+        timezone: "UTC",
+        status: "draft",
+      });
+    assert.equal(badCsrf.status, 403);
+
+    const startsAt = "2030-06-15T18:00:00.000Z";
+    const endsAt = "2030-06-15T21:00:00.000Z";
+    const created = await authedPost("/branch-admin/content/events", HOST_A, users.branchA, csrf, {
+      action: "create",
+      title: "Youth Night Fellowship",
+      summary: "Evening gathering",
+      starts_at: startsAt,
+      ends_at: endsAt,
+      timezone: "Africa/Lusaka",
+      location: "Main Sanctuary",
+      registration_url: "https://example.com/register/youth-night",
+      sort_order: "1",
+      status: "draft",
+    });
+    assert.ok(
+      [302, 303].includes(created.status),
+      `create status ${created.status}: ${String(created.text).slice(0, 300)}`
+    );
+
+    const listed = await authedGet("/branch-admin/content/events", HOST_A, users.branchA);
+    assert.match(listed.res.text, /Youth Night Fellowship/);
+    assert.match(listed.res.text, /Main Sanctuary/);
+    assert.match(listed.res.text, /Africa\/Lusaka|data-bb-events-card=/);
+    assert.match(listed.res.text, /data-bb-events-cards="1"/);
+    assert.match(listed.res.text, /data-bb-events-editors="1"/);
+    assert.match(listed.res.text, /name="starts_at"[^>]*value="2030-06-15T18:00:00\.000Z"|value="2030-06-15T18:00:00\.000Z"/);
+
+    const upcoming = await authedGet("/branch-admin/content/events?when=upcoming", HOST_A, users.branchA);
+    assert.equal(upcoming.res.status, 200);
+    assert.match(upcoming.res.text, /data-bb-events-when-filter="upcoming"/);
+    assert.match(upcoming.res.text, /Youth Night Fellowship/);
+
+    const past = await authedGet("/branch-admin/content/events?when=past", HOST_A, users.branchA);
+    assert.equal(past.res.status, 200);
+    assert.match(past.res.text, /data-bb-events-when-filter="past"/);
+    assert.doesNotMatch(past.res.text, /Youth Night Fellowship/);
+
+    const searched = await authedGet("/branch-admin/content/events?q=Sanctuary", HOST_A, users.branchA);
+    assert.match(searched.res.text, /Youth Night Fellowship/);
+
+    const { res: editList, csrf: csrf2 } = await authedGet("/branch-admin/content/events", HOST_A, users.branchA);
+    let itemId = null;
+    let expected = null;
+    const parts = editList.text.split('name="item_id" value="');
+    for (let i = 1; i < parts.length; i += 1) {
+      const id = parts[i].slice(0, 36);
+      const chunk = parts[i].slice(0, 2000);
+      const m = chunk.match(/expected_updated_at" value="([^"]+)"/);
+      if (m && (chunk.includes("Youth Night") || editList.text.includes("Youth Night Fellowship"))) {
+        itemId = id;
+        expected = m[1];
+        break;
+      }
+    }
+    if (!itemId) {
+      const row = await pool.query(
+        `SELECT id, updated_at FROM blessboard.events
+          WHERE church_id = $1 AND title = 'Youth Night Fellowship'
+          ORDER BY created_at DESC LIMIT 1`,
+        [churchA.id]
+      );
+      itemId = row.rows[0].id;
+      expected = new Date(row.rows[0].updated_at).toISOString();
+    }
+
+    const noConfirm = await authedPost("/branch-admin/content/events", HOST_A, users.branchA, csrf2, {
+      action: "update",
+      item_id: itemId,
+      title: "Youth Night Fellowship",
+      summary: "Evening gathering",
+      starts_at: startsAt,
+      ends_at: endsAt,
+      timezone: "Africa/Lusaka",
+      location: "Hall B",
+      registration_url: "https://example.com/register/youth-night",
+      status: "published",
+      expected_updated_at: expected,
+    });
+    assert.equal(noConfirm.status, 400);
+    assert.match(noConfirm.text, /confirm/i);
+
+    const { res: editList2, csrf: csrf3 } = await authedGet("/branch-admin/content/events", HOST_A, users.branchA);
+    const expected2 =
+      (editList2.text.match(new RegExp(`name="item_id" value="${itemId}"[\\s\\S]{0,500}?expected_updated_at" value="([^"]+)"`)) ||
+        [])[1] || expected;
+    const published = await authedPost("/branch-admin/content/events", HOST_A, users.branchA, csrf3, {
+      action: "update",
+      item_id: itemId,
+      title: "Youth Night Fellowship",
+      summary: "Evening gathering",
+      starts_at: startsAt,
+      ends_at: endsAt,
+      timezone: "Africa/Lusaka",
+      location: "Hall B",
+      registration_url: "https://example.com/register/youth-night",
+      status: "published",
+      expected_updated_at: expected2,
+      confirm_publish: "1",
+    });
+    assert.ok([302, 303].includes(published.status));
+
+    const afterPublish = await authedGet("/branch-admin/content/events?status=published", HOST_A, users.branchA);
+    assert.match(afterPublish.res.text, /Youth Night Fellowship/);
+    assert.match(afterPublish.res.text, /Hall B/);
+  });
+
+  it("sermons admin list/editor supports create, publish, media validation, and ordering", async () => {
+    requireDb();
+    const { res } = await authedGet("/branch-admin/content/sermons", HOST_A, users.branchA);
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-sermons-admin="1"/);
+    assert.match(res.text, /data-bb-stitch-sermons="sermons-admin"/);
+    assert.match(res.text, /Sermons management/);
+    assert.match(res.text, /data-bb-sermons-filter="1"/);
+    assert.match(res.text, /data-bb-sermons-status-chips="1"/);
+    assert.match(res.text, /data-bb-sermons-create="1"/);
+    assert.match(res.text, /name="q"/);
+    assert.match(res.text, /name="title"/);
+    assert.match(res.text, /name="speaker_name"/);
+    assert.match(res.text, /name="preached_at"/);
+    assert.match(res.text, /name="media_url"/);
+    assert.match(res.text, /name="resource_url"/);
+    assert.match(res.text, /name="confirm_publish"/);
+    assert.match(res.text, /name="_csrf"/);
+    assert.match(res.text, /data-bb-sermons-unavailable="1"/);
+    assert.doesNotMatch(res.text, /1\.2k views|downloads today|engagement rate/i);
+    assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
+
+    const denied = await authedGet("/branch-admin/content/sermons", HOST_A, users.hqB);
+    assert.ok(denied.res.status === 403 || denied.res.status === 503);
+
+    const { csrf } = await authedGet("/branch-admin/content/sermons", HOST_A, users.branchA);
+    const badCsrf = await request(app)
+      .post("/branch-admin/content/sermons")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchA.rawToken}`, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({
+        action: "create",
+        title: "Bad CSRF Sermon",
+        speaker_name: "Pastor",
+        preached_at: "2026-01-15T10:00:00.000Z",
+        status: "draft",
+      });
+    assert.equal(badCsrf.status, 403);
+
+    const badMedia = await authedPost("/branch-admin/content/sermons", HOST_A, users.branchA, csrf, {
+      action: "create",
+      title: "Bad Media Sermon",
+      speaker_name: "Pastor A",
+      preached_at: "2026-02-01T10:00:00.000Z",
+      media_url: "http://example.com/sermon.mp3",
+      status: "draft",
+    });
+    assert.equal(badMedia.status, 400);
+
+    const preachedAt = "2026-03-20T09:30:00.000Z";
+    const created = await authedPost("/branch-admin/content/sermons", HOST_A, users.branchA, csrf, {
+      action: "create",
+      title: "Living Hope Teaching",
+      speaker_name: "Pastor Grace",
+      preached_at: preachedAt,
+      summary: "Hope for the week",
+      media_url: "https://example.com/sermons/living-hope.mp3",
+      resource_url: "https://example.com/notes/living-hope.pdf",
+      status: "draft",
+    });
+    assert.ok(
+      [302, 303].includes(created.status),
+      `create status ${created.status}: ${String(created.text).slice(0, 300)}`
+    );
+
+    const listed = await authedGet("/branch-admin/content/sermons", HOST_A, users.branchA);
+    assert.match(listed.res.text, /Living Hope Teaching/);
+    assert.match(listed.res.text, /Pastor Grace/);
+    assert.match(listed.res.text, /data-bb-sermons-cards="1"/);
+    assert.match(listed.res.text, /data-bb-sermons-editors="1"/);
+    assert.match(listed.res.text, /data-bb-sermons-media-link="1"/);
+    assert.match(listed.res.text, /data-bb-sermons-resource-link="1"/);
+    assert.match(listed.res.text, /name="preached_at"[^>]*value="2026-03-20T09:30:00\.000Z"|value="2026-03-20T09:30:00\.000Z"/);
+
+    const searched = await authedGet("/branch-admin/content/sermons?q=Grace", HOST_A, users.branchA);
+    assert.match(searched.res.text, /Living Hope Teaching/);
+
+    const { res: editList, csrf: csrf2 } = await authedGet("/branch-admin/content/sermons", HOST_A, users.branchA);
+    let itemId = null;
+    let expected = null;
+    const parts = editList.text.split('name="item_id" value="');
+    for (let i = 1; i < parts.length; i += 1) {
+      const id = parts[i].slice(0, 36);
+      const chunk = parts[i].slice(0, 2000);
+      const m = chunk.match(/expected_updated_at" value="([^"]+)"/);
+      if (m && (chunk.includes("Living Hope") || editList.text.includes("Living Hope Teaching"))) {
+        itemId = id;
+        expected = m[1];
+        break;
+      }
+    }
+    if (!itemId) {
+      const row = await pool.query(
+        `SELECT id, updated_at FROM blessboard.sermons
+          WHERE church_id = $1 AND title = 'Living Hope Teaching'
+          ORDER BY created_at DESC LIMIT 1`,
+        [churchA.id]
+      );
+      itemId = row.rows[0].id;
+      expected = new Date(row.rows[0].updated_at).toISOString();
+    }
+
+    const noConfirm = await authedPost("/branch-admin/content/sermons", HOST_A, users.branchA, csrf2, {
+      action: "update",
+      item_id: itemId,
+      title: "Living Hope Teaching",
+      speaker_name: "Pastor Grace",
+      preached_at: preachedAt,
+      summary: "Hope for the week",
+      media_url: "https://example.com/sermons/living-hope.mp3",
+      resource_url: "https://example.com/notes/living-hope.pdf",
+      status: "published",
+      expected_updated_at: expected,
+    });
+    assert.equal(noConfirm.status, 400);
+    assert.match(noConfirm.text, /confirm/i);
+
+    const { res: editList2, csrf: csrf3 } = await authedGet("/branch-admin/content/sermons", HOST_A, users.branchA);
+    const expected2 =
+      (editList2.text.match(new RegExp(`name="item_id" value="${itemId}"[\\s\\S]{0,500}?expected_updated_at" value="([^"]+)"`)) ||
+        [])[1] || expected;
+    const published = await authedPost("/branch-admin/content/sermons", HOST_A, users.branchA, csrf3, {
+      action: "update",
+      item_id: itemId,
+      title: "Living Hope Teaching",
+      speaker_name: "Pastor Grace",
+      preached_at: preachedAt,
+      summary: "Updated hope message",
+      media_url: "https://example.com/sermons/living-hope.mp3",
+      resource_url: "https://example.com/notes/living-hope.pdf",
+      status: "published",
+      expected_updated_at: expected2,
+      confirm_publish: "1",
+    });
+    assert.ok([302, 303].includes(published.status));
+
+    const afterPublish = await authedGet("/branch-admin/content/sermons?status=published", HOST_A, users.branchA);
+    assert.match(afterPublish.res.text, /Living Hope Teaching/);
+    assert.match(afterPublish.res.text, /Updated hope message/);
+  });
+
   it("detects optimistic conflicts on page update", async () => {
     requireDb();
     const { res: pageRes, csrf } = await authedGet("/hq/content/pages/home", HOST_A, users.hqA);
@@ -426,7 +852,13 @@ describe("blessboard content admin", () => {
 
   it("leadership CRUD with draft hidden on public and visible in preview", async () => {
     requireDb();
-    const { csrf } = await authedGet("/hq/content/leadership", HOST_A, users.hqA);
+    const { res: leadList, csrf } = await authedGet("/hq/content/leadership", HOST_A, users.hqA);
+    assert.equal(leadList.status, 200);
+    assert.match(leadList.text, /data-bb-entity-admin="1"/);
+    assert.match(leadList.text, /data-bb-entity-kind="leadership"/);
+    assert.match(leadList.text, /data-bb-entity-create="1"/);
+    assert.match(leadList.text, /name="display_name"/);
+    assert.match(leadList.text, /name="confirm_publish"/);
     const created = await authedPost("/hq/content/leadership", HOST_A, users.hqA, csrf, {
       action: "create",
       display_name: "Pastor Draft",

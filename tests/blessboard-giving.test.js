@@ -629,12 +629,18 @@ describe("blessboard giving", () => {
       .set("Cookie", cookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-giving-admin-list="1"/);
+    assert.match(list.text, /data-bb-stitch-giving="39-branch-giving-summary"/);
     assert.match(list.text, /Giving summaries/);
     assert.match(list.text, /Monthly summary/);
     assert.match(list.text, /data-bb-giving-categories="1"/);
     assert.match(list.text, /data-bb-category-key="tithes"/);
+    assert.match(list.text, /data-bb-giv-status-chips="1"/);
+    assert.match(list.text, /data-bb-giv-history="1"/);
+    assert.match(list.text, /data-bb-giv-unavailable="1"/);
+    assert.match(list.text, /data-bb-giv-disclaimer="1"/);
     assert.doesNotMatch(list.text, /Bank Name|Account Number|Merchant Number|Upload QR|Airtel Money|payment processing|Stripe|PayPal/i);
     assert.doesNotMatch(list.text, /donor email|donor phone|donor name/i);
+    assert.doesNotMatch(list.text, /\+12%|YTD Tithes|projectedGrowth|vs last month/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(list.text, new RegExp(branchA.id, "i"));
 
@@ -644,8 +650,14 @@ describe("blessboard giving", () => {
       .set("Cookie", cookie);
     assert.equal(form.status, 200);
     assert.match(form.text, /data-bb-giving-admin-form="1"/);
+    assert.match(form.text, /data-bb-stitch-giving-form="39-branch-giving-summary"/);
     assert.match(form.text, /Do not record donor names/);
     assert.match(form.text, /NUMERIC/);
+    assert.match(form.text, /name="category_key"/);
+    assert.match(form.text, /name="giving_date"/);
+    assert.match(form.text, /name="amount"/);
+    assert.match(form.text, /name="currency"/);
+    assert.match(form.text, /name="_csrf"/);
     const csrf = extractCookie(form, CSRF_COOKIE);
 
     const missingCsrf = await request(app)
@@ -684,6 +696,7 @@ describe("blessboard giving", () => {
       .set("Cookie", cookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-giving-admin-detail="1"/);
+    assert.match(detail.text, /data-bb-stitch-giving-detail="39-branch-giving-summary"/);
     assert.match(detail.text, /data-bb-giv-amount="25\.00"/);
     assert.match(detail.text, /bb-giv-submit-modal/);
     assert.match(detail.text, /bb-giv-void-modal/);

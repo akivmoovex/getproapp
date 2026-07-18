@@ -462,12 +462,18 @@ function createFormsRequestsAdminRouter(deps) {
             )
           );
       }
+      const formStatusRaw = String((req.query && req.query.status) || "")
+        .trim()
+        .toLowerCase();
+      const formStatuses = ["draft", "published", "archived"];
+      const statusFilter = formStatuses.includes(formStatusRaw) ? formStatusRaw : "";
       const listed = await listForms(getPool(), {
         churchId: scope.churchId,
         branchId: scope.branchId,
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         scopeBranchId: scope.branchId,
+        status: statusFilter || null,
         limit: LIST_LIMIT,
       });
       if (!listed.ok) {
@@ -483,6 +489,7 @@ function createFormsRequestsAdminRouter(deps) {
             shellLocals(req, res, "forms", {
               basePath: scope.basePath,
               forms: listed.forms,
+              statusFilter,
               canCreate: Boolean(scope.branchId) || variant === "hq",
               saved: String((req.query && req.query.saved) || ""),
               ...branchLocals,

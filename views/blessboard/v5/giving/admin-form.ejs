@@ -7,7 +7,12 @@
   var isEdit = formMode === 'edit' && entry && entry.id;
 %>
 
-<section class="bb-giv-admin" data-bb-giving-admin-form="1" data-bb-form-mode="<%= formMode || 'create' %>">
+<section
+  class="bb-giv-admin bb-giv-form-page"
+  data-bb-giving-admin-form="1"
+  data-bb-form-mode="<%= formMode || 'create' %>"
+  data-bb-stitch-giving-form="39-branch-giving-summary"
+>
   <header class="bb-ba-page-head">
     <p class="bb-ba-breadcrumb">
       <a href="<%= basePath %>">Giving</a>
@@ -20,7 +25,9 @@
     </p>
   </header>
 
-  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+  <% if (error) { %>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-giv-form-errors' }) %>
+  <% } %>
 
   <form
     method="post"
@@ -29,49 +36,63 @@
     data-bb-giv-form="1"
   >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <div class="bb-ba-field">
-      <label for="category_key">Category</label>
-      <select id="category_key" name="category_key" required>
-        <% categories.forEach(function (c) { %>
-        <option value="<%= c.categoryKey %>" <%= entry && entry.categoryKey === c.categoryKey ? 'selected' : '' %>><%= c.label %></option>
-        <% }) %>
-      </select>
-    </div>
-    <div class="bb-ba-field">
-      <label for="giving_date">Giving date</label>
-      <input id="giving_date" type="date" name="giving_date" required value="<%= entry && entry.givingDate ? entry.givingDate : '' %>" />
-    </div>
-    <div class="bb-ba-field">
-      <label for="amount">Amount</label>
-      <input
-        id="amount"
-        type="text"
-        name="amount"
-        inputmode="decimal"
-        pattern="^(0|[1-9]\d*)(\.\d{1,2})?$"
-        required
-        placeholder="0.00"
-        value="<%= entry && entry.amount ? entry.amount : '' %>"
-        autocomplete="off"
-      />
-      <p class="bb-ba-hint">Decimal string with up to 2 places (NUMERIC). Not a floating-point field.</p>
-    </div>
-    <div class="bb-ba-field">
-      <label for="currency">Currency (ISO)</label>
-      <input id="currency" type="text" name="currency" maxlength="3" pattern="[A-Za-z]{3}" required value="<%= entry && entry.currency ? entry.currency : 'USD' %>" />
-    </div>
-    <div class="bb-ba-field">
-      <label for="reference">Reference (optional)</label>
-      <input id="reference" type="text" name="reference" maxlength="120" value="<%= entry && entry.reference ? entry.reference : '' %>" />
-      <p class="bb-ba-hint">Internal batch label only — not a donor identifier.</p>
-    </div>
-    <div class="bb-ba-field">
-      <label for="notes">Notes (optional)</label>
-      <input id="notes" type="text" name="notes" maxlength="1000" value="<%= entry && entry.notes ? entry.notes : '' %>" />
-    </div>
-    <div class="bb-ba-decision__actions">
+
+    <section class="bb-giv-form__section" aria-labelledby="bb-giv-entry-heading" data-bb-giv-form-section="entry">
+      <h2 id="bb-giv-entry-heading" class="bb-ba-entities-form__section-title">Category total</h2>
+      <div class="bb-giv-form__grid">
+        <div class="bb-ba-field">
+          <label for="category_key">Category</label>
+          <select id="category_key" name="category_key" required>
+            <% categories.forEach(function (c) { %>
+            <option value="<%= c.categoryKey %>" <%= entry && entry.categoryKey === c.categoryKey ? 'selected' : '' %>><%= c.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-ba-field">
+          <label for="giving_date">Giving date</label>
+          <input id="giving_date" type="date" name="giving_date" required value="<%= entry && entry.givingDate ? entry.givingDate : '' %>" />
+        </div>
+      </div>
+      <div class="bb-giv-form__grid">
+        <div class="bb-ba-field">
+          <label for="amount">Amount</label>
+          <input
+            id="amount"
+            type="text"
+            name="amount"
+            inputmode="decimal"
+            pattern="^(0|[1-9]\d*)(\.\d{1,2})?$"
+            required
+            placeholder="0.00"
+            value="<%= entry && entry.amount ? entry.amount : '' %>"
+            autocomplete="off"
+            data-bb-giv-field="amount"
+          />
+          <p class="bb-ba-field__hint">Decimal string with up to 2 places (NUMERIC). Not a floating-point field.</p>
+        </div>
+        <div class="bb-ba-field">
+          <label for="currency">Currency (ISO)</label>
+          <input id="currency" type="text" name="currency" maxlength="3" pattern="[A-Za-z]{3}" required value="<%= entry && entry.currency ? entry.currency : 'USD' %>" autocomplete="off" data-bb-giv-field="currency" />
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-giv-form__section" aria-labelledby="bb-giv-notes-heading" data-bb-giv-form-section="notes">
+      <h2 id="bb-giv-notes-heading" class="bb-ba-entities-form__section-title">Internal notes</h2>
+      <div class="bb-ba-field">
+        <label for="reference">Reference (optional)</label>
+        <input id="reference" type="text" name="reference" maxlength="120" value="<%= entry && entry.reference ? entry.reference : '' %>" autocomplete="off" />
+        <p class="bb-ba-field__hint">Internal batch label only — not a donor identifier.</p>
+      </div>
+      <div class="bb-ba-field">
+        <label for="notes">Notes (optional)</label>
+        <input id="notes" type="text" name="notes" maxlength="1000" value="<%= entry && entry.notes ? entry.notes : '' %>" autocomplete="off" />
+      </div>
+    </section>
+
+    <div class="bb-ba-decision__actions bb-giv-form__actions">
       <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= isEdit ? (basePath + '/' + entry.id) : basePath %>">Cancel</a>
-      <button type="submit" class="bb-ba-btn bb-ba-btn--primary"><%= isEdit ? 'Save draft' : 'Create draft' %></button>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary"><%= isEdit ? 'Save draft' : 'Save as draft' %></button>
     </div>
   </form>
 </section>

@@ -5,6 +5,8 @@
 <% } %>
 <%
   var rows = requests || [];
+  var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
+  var hasFilter = Boolean(activeStatus);
   function categoryLabel(c) {
     var key = String(c || '').toLowerCase();
     if (key === 'prayer') return 'Prayer';
@@ -35,22 +37,45 @@
     if (isNaN(d.getTime())) return String(value).slice(0, 10);
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
+  function statusHref(st) {
+    if (!st) return basePath;
+    return basePath + '?status=' + encodeURIComponent(st);
+  }
 %>
 
-<section class="bb-fr-admin bb-fr-req-list" data-bb-request-admin-list="1">
+<section
+  class="bb-fr-admin bb-fr-req-list"
+  data-bb-request-admin-list="1"
+  data-bb-stitch-requests="44-branch-request-workflow-queue"
+  aria-label="Request workflow queue"
+>
   <header class="bb-ba-page-head">
-    <h1 class="bb-ba-page-head__title">Request workflow queue</h1>
-    <p class="bb-ba-lede">
-      <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide) { %>
-      Church-wide member-request oversight for
-      <strong><%= churchDisplayName %></strong>.
-      Open a branch queue for campus scope. Member refs are truncated; contact details are not listed here.
-      <% } else { %>
-      Review member requests for
-      <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
-      Status updates stay on this branch. Contact details are not listed here — open a request to respond.
-      <% } %>
-    </p>
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <% if (shellKind === 'hq') { %>
+        <a href="/hq">HQ</a>
+        <% } else { %>
+        <a href="/branch-admin">Dashboard</a>
+        <% } %>
+        <span aria-hidden="true">›</span>
+        <span>Requests</span>
+      </p>
+      <h1 class="bb-ba-page-head__title">Request workflow queue</h1>
+      <p class="bb-ba-lede">
+        <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide) { %>
+        Church-wide member-request oversight for
+        <strong><%= churchDisplayName %></strong>.
+        Open a branch queue for campus scope. Member refs are truncated; contact details are not listed here.
+        <% } else { %>
+        Review member requests for
+        <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
+        Status updates stay on this branch. Contact details are not listed here — open a request to respond.
+        <% } %>
+      </p>
+      <p class="bb-ba-hint bb-fr-req-privacy" data-bb-req-privacy="1" role="note">
+        Branch-scoped queue only. Full member profiles and contact directories are not shown.
+      </p>
+    </div>
   </header>
 
   <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
@@ -76,62 +101,134 @@
   <% } %>
 
   <% if (saved === 'status' || saved === '1') { %>
-  <p class="bb-ba-ok" role="status">Request updated.</p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: 'Updated',
+    message: 'Request updated.'
+  }) %>
   <% } %>
 
   <nav class="bb-fr-tabs" aria-label="Request status" data-bb-req-tabs="1">
-    <a class="bb-fr-tabs__link<%= !statusFilter ? ' is-active' : '' %>" href="<%= basePath %>">All</a>
+    <a
+      class="bb-fr-tabs__link<%= !activeStatus ? ' is-active' : '' %>"
+      href="<%= statusHref('') %>"
+      <%= !activeStatus ? 'aria-current="page"' : '' %>
+      data-bb-req-tab="all"
+    >All</a>
     <% requestStatuses.forEach(function (st) { %>
     <a
-      class="bb-fr-tabs__link<%= statusFilter === st ? ' is-active' : '' %>"
-      href="<%= basePath %>?status=<%= encodeURIComponent(st) %>"
+      class="bb-fr-tabs__link<%= activeStatus === st ? ' is-active' : '' %>"
+      href="<%= statusHref(st) %>"
+      <%= activeStatus === st ? 'aria-current="page"' : '' %>
       data-bb-req-tab="<%= st %>"
     ><%= statusLabel(st) %></a>
     <% }) %>
   </nav>
 
-  <% if (!rows.length) { %>
-  <div class="bb-ba-empty" role="status">No requests match this filter.</div>
-  <% } else { %>
-  <div class="bb-ba-table-wrap">
-    <table class="bb-ba-table" data-bb-req-table="1">
-      <thead>
-        <tr>
-          <th scope="col">Category</th>
-          <th scope="col">Subject</th>
-          <th scope="col">Submitted</th>
-          <th scope="col">Status</th>
-          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% rows.forEach(function (r) { %>
-        <tr data-bb-req-status="<%= r.status %>" data-bb-req-category="<%= r.category %>">
-          <td>
-            <span class="bb-fr-cat"><%= categoryLabel(r.category) %></span>
-            <% if (r.hasAttachment) { %>
-            <span class="bb-fr-attach-flag" title="Has private attachment" aria-label="Has private attachment">
-              <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
-            </span>
-            <% } %>
-          </td>
-          <td>
-            <strong><%= r.subject %></strong>
-            <% if (r.memberRef) { %>
-            <span class="bb-ba-muted bb-fr-member-ref">Member · <%= r.memberRef %></span>
-            <% } %>
-          </td>
-          <td><%= formatWhen(r.createdAt) %></td>
-          <td><span class="bb-ba-chip <%= statusChip(r.status) %>"><%= statusLabel(r.status) %></span></td>
-          <td class="bb-ba-table__actions">
-            <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= r.id %>">Review</a>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <% if (!rows.length && !hasFilter) { %>
+  <div class="bb-fr-req-empty" data-bb-req-empty="catalog" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No requests yet',
+      body: 'When members submit prayer, care, or support requests on this branch, they appear here for review.',
+      icon: 'inbox'
+    }) %>
   </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div class="bb-fr-req-empty" data-bb-req-empty="no-results" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No matching requests',
+      body: 'Try a different status filter, or clear filters to see the full branch queue.',
+      icon: 'search_off',
+      actionHref: basePath,
+      actionLabel: 'Clear filters'
+    }) %>
+  </div>
+  <% } else { %>
+
+  <section class="bb-ba-panel bb-fr-req-panel" data-bb-req-catalog="1" aria-labelledby="bb-fr-req-heading">
+    <div class="bb-fr-req-panel__head">
+      <h2 id="bb-fr-req-heading" class="bb-ba-section-title">Requests</h2>
+      <p class="bb-ba-hint" data-bb-req-count="<%= rows.length %>">
+        <%= rows.length %> request<%= rows.length === 1 ? '' : 's' %>
+        <% if (hasFilter) { %> · <%= statusLabel(activeStatus) %><% } %>
+      </p>
+    </div>
+
+    <div class="bb-ba-table-wrap bb-fr-req-table-wrap" role="region" aria-label="Requests table" tabindex="0" data-bb-req-table-desktop="1">
+      <table class="bb-ba-table bb-fr-req-table" data-bb-req-table="1">
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Subject</th>
+            <th scope="col">Submitted</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (r) { %>
+          <tr data-bb-req-status="<%= r.status %>" data-bb-req-category="<%= r.category %>" data-bb-req-row="<%= r.id %>">
+            <td>
+              <span class="bb-fr-cat"><%= categoryLabel(r.category) %></span>
+              <% if (r.hasAttachment) { %>
+              <span class="bb-fr-attach-flag" title="Has private attachment" aria-label="Has private attachment">
+                <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
+              </span>
+              <% } %>
+            </td>
+            <td>
+              <a href="<%= basePath %>/<%= r.id %>" class="bb-fr-title-link"><%= r.subject %></a>
+              <% if (r.memberRef) { %>
+              <span class="bb-ba-muted bb-fr-member-ref">Member · <%= r.memberRef %></span>
+              <% } %>
+            </td>
+            <td><%= formatWhen(r.createdAt) %></td>
+            <td><span class="bb-ba-chip <%= statusChip(r.status) %>"><%= statusLabel(r.status) %></span></td>
+            <td class="bb-ba-table__actions">
+              <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= r.id %>" data-bb-req-open="1">
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                Review
+              </a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bb-fr-req-cards" data-bb-req-cards="1">
+      <% rows.forEach(function (r) { %>
+      <article class="bb-fr-req-card bb-ba-panel" data-bb-req-card="<%= r.id %>" data-bb-req-status="<%= r.status %>" data-bb-req-category="<%= r.category %>">
+        <div class="bb-fr-req-card__top">
+          <span class="bb-fr-cat"><%= categoryLabel(r.category) %></span>
+          <span class="bb-ba-chip <%= statusChip(r.status) %>"><%= statusLabel(r.status) %></span>
+        </div>
+        <h3 class="bb-fr-req-card__title">
+          <a href="<%= basePath %>/<%= r.id %>"><%= r.subject %></a>
+          <% if (r.hasAttachment) { %>
+          <span class="bb-fr-attach-flag" title="Has private attachment" aria-label="Has private attachment">
+            <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
+          </span>
+          <% } %>
+        </h3>
+        <p class="bb-fr-req-card__meta">
+          <%= formatWhen(r.createdAt) %>
+          <% if (r.memberRef) { %> · Member · <%= r.memberRef %><% } %>
+        </p>
+        <p class="bb-fr-req-card__actions">
+          <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= r.id %>">Review</a>
+        </p>
+      </article>
+      <% }) %>
+    </div>
+  </section>
   <% } %>
+
+  <aside class="bb-ba-entities-unavailable" data-bb-req-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-req-unavailable-row="metrics">Queue KPI cards, processing-time averages, and trend comparisons are not shown.</p>
+    <p data-bb-req-unavailable-row="assignment">Staff assignment queues, SLA timers, and chat threads are not available.</p>
+    <p data-bb-req-unavailable-row="privacy">Donor badges and member contact directories are not loaded on this queue.</p>
+  </aside>
 </section>
 
 <% if (shellKind === 'hq') { %>

@@ -789,6 +789,22 @@ function createContentAdminRouter(deps) {
         const scope = await resolveScope(req, res);
         if (!scope) return;
         const listed = await cfg.listFn(getPool(), scopeInput(scope));
+        const rawStatus = String((req.query && req.query.status) || "")
+          .trim()
+          .toLowerCase();
+        const allowedStatus =
+          routeKey === "events"
+            ? ["draft", "published", "cancelled", "archived"]
+            : ["draft", "published", "archived"];
+        const statusFilter = allowedStatus.includes(rawStatus) ? rawStatus : "";
+        const q = String((req.query && req.query.q) || "")
+          .trim()
+          .slice(0, 100);
+        const rawWhen = String((req.query && req.query.when) || "")
+          .trim()
+          .toLowerCase();
+        const whenFilter =
+          routeKey === "events" && (rawWhen === "upcoming" || rawWhen === "past") ? rawWhen : "";
         const html = renderContentAdminView(
           "content-admin/entities.ejs",
           shellLocals(req, res, {
@@ -796,6 +812,9 @@ function createContentAdminRouter(deps) {
             entityKind: routeKey,
             entityTitle: cfg.title,
             items: (listed && listed.items) || [],
+            statusFilter,
+            q,
+            whenFilter,
             error: null,
             conflict: false,
             submitted: null,
@@ -840,6 +859,9 @@ function createContentAdminRouter(deps) {
               entityKind: routeKey,
               entityTitle: cfg.title,
               items: (listed && listed.items) || [],
+              statusFilter: "",
+              q: "",
+              whenFilter: "",
               error: errorMessage(result.reason, isConflict),
               conflict: isConflict,
               submitted: body,

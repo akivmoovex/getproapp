@@ -5,101 +5,226 @@
 }; %>
 
 <% if (entityKind === 'leadership') { %>
-  <label for="<%= mode %>_display_name">Display name</label>
-  <input id="<%= mode %>_display_name" name="display_name" type="text" required maxlength="200" value="<%= val('display_name', 'displayName', '') %>" />
-  <label for="<%= mode %>_role_title">Role title</label>
-  <input id="<%= mode %>_role_title" name="role_title" type="text" required maxlength="120" value="<%= val('role_title', 'roleTitle', '') %>" />
-  <label for="<%= mode %>_biography">Biography</label>
-  <textarea id="<%= mode %>_biography" name="biography" rows="3" maxlength="10000"><%= val('biography', 'biography', '') %></textarea>
-  <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-  <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" />
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_display_name">Display name</label>
+    <input id="<%= mode %>_display_name" name="display_name" type="text" required maxlength="200" value="<%= val('display_name', 'displayName', '') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_role_title">Role title</label>
+    <input id="<%= mode %>_role_title" name="role_title" type="text" required maxlength="120" value="<%= val('role_title', 'roleTitle', '') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_biography">Biography</label>
+    <textarea id="<%= mode %>_biography" name="biography" rows="3" maxlength="10000"><%= val('biography', 'biography', '') %></textarea>
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
+    <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+  </div>
   <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
 <% } %>
 
 <% if (entityKind === 'ministries') { %>
-  <label for="<%= mode %>_name">Name</label>
-  <input id="<%= mode %>_name" name="name" type="text" required maxlength="200" value="<%= val('name', 'name', '') %>" />
-  <label for="<%= mode %>_summary">Summary</label>
-  <input id="<%= mode %>_summary" name="summary" type="text" maxlength="500" value="<%= val('summary', 'summary', '') %>" />
-  <label for="<%= mode %>_description">Description</label>
-  <textarea id="<%= mode %>_description" name="description" rows="4" maxlength="20000"><%= val('description', 'description', '') %></textarea>
-  <label for="<%= mode %>_meeting_day">Meeting day</label>
-  <input id="<%= mode %>_meeting_day" name="meeting_day" type="text" maxlength="64" value="<%= val('meeting_day', 'meetingDay', '') %>" />
-  <label for="<%= mode %>_contact_email">Contact email</label>
-  <input id="<%= mode %>_contact_email" name="contact_email" type="email" maxlength="254" value="<%= val('contact_email', 'contactEmail', '') %>" />
-  <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-  <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" />
-  <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_content_heading" data-bb-ministries-section="content">
+    <h3 id="<%= mode %>_content_heading" class="bb-ba-entities-form__section-title">Ministry details</h3>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_name">Name</label>
+      <input id="<%= mode %>_name" name="name" type="text" required maxlength="200" value="<%= val('name', 'name', '') %>" autocomplete="off" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_summary">Summary</label>
+      <input id="<%= mode %>_summary" name="summary" type="text" maxlength="500" value="<%= val('summary', 'summary', '') %>" autocomplete="off" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_description">Description</label>
+      <textarea id="<%= mode %>_description" name="description" rows="4" maxlength="20000"><%= val('description', 'description', '') %></textarea>
+    </div>
+    <div class="bb-ba-entities-form__grid">
+      <div class="bb-ba-field">
+        <label for="<%= mode %>_meeting_day">Meeting day</label>
+        <input id="<%= mode %>_meeting_day" name="meeting_day" type="text" maxlength="64" value="<%= val('meeting_day', 'meetingDay', '') %>" autocomplete="off" />
+      </div>
+      <div class="bb-ba-field">
+        <label for="<%= mode %>_contact_email">Contact email</label>
+        <input id="<%= mode %>_contact_email" name="contact_email" type="email" maxlength="254" value="<%= val('contact_email', 'contactEmail', '') %>" autocomplete="off" />
+      </div>
+    </div>
+  </section>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-ministries-section="media">
+    <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media</h3>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
+      <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+    </div>
+    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
+  </section>
 <% } %>
 
 <% if (entityKind === 'events') { %>
-  <label for="<%= mode %>_title">Title</label>
-  <input id="<%= mode %>_title" name="title" type="text" required maxlength="200" value="<%= val('title', 'title', '') %>" />
-  <label for="<%= mode %>_summary">Summary</label>
-  <input id="<%= mode %>_summary" name="summary" type="text" maxlength="1000" value="<%= val('summary', 'summary', '') %>" />
-  <label for="<%= mode %>_starts_at">Starts at (ISO datetime)</label>
-  <input id="<%= mode %>_starts_at" name="starts_at" type="text" required value="<%= val('starts_at', 'startsAt', '') %>" placeholder="2026-07-18T10:00:00Z" />
-  <label for="<%= mode %>_ends_at">Ends at</label>
-  <input id="<%= mode %>_ends_at" name="ends_at" type="text" value="<%= val('ends_at', 'endsAt', '') %>" />
-  <label for="<%= mode %>_timezone">Timezone</label>
-  <input id="<%= mode %>_timezone" name="timezone" type="text" required maxlength="64" value="<%= val('timezone', 'timezone', 'UTC') %>" />
-  <label for="<%= mode %>_location">Location</label>
-  <input id="<%= mode %>_location" name="location" type="text" maxlength="300" value="<%= val('location', 'location', '') %>" />
-  <label for="<%= mode %>_registration_url">Registration URL (HTTPS)</label>
-  <input id="<%= mode %>_registration_url" name="registration_url" type="url" maxlength="2000" value="<%= val('registration_url', 'registrationUrl', '') %>" />
-  <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-  <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" />
-  <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
+  <%
+    function isoField(snake, camel) {
+      var v = val(snake, camel, '');
+      if (v && typeof v === 'object' && v.toISOString) return v.toISOString();
+      return v;
+    }
+  %>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_event_heading" data-bb-events-section="details">
+    <h3 id="<%= mode %>_event_heading" class="bb-ba-entities-form__section-title">Event details</h3>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_title">Title</label>
+      <input id="<%= mode %>_title" name="title" type="text" required maxlength="200" value="<%= val('title', 'title', '') %>" autocomplete="off" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_summary">Summary</label>
+      <input id="<%= mode %>_summary" name="summary" type="text" maxlength="1000" value="<%= val('summary', 'summary', '') %>" autocomplete="off" />
+    </div>
+  </section>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_schedule_heading" data-bb-events-section="schedule">
+    <h3 id="<%= mode %>_schedule_heading" class="bb-ba-entities-form__section-title">Schedule</h3>
+    <div class="bb-ba-entities-form__grid">
+      <div class="bb-ba-field">
+        <label for="<%= mode %>_starts_at">Starts at (ISO datetime)</label>
+        <input id="<%= mode %>_starts_at" name="starts_at" type="text" required value="<%= isoField('starts_at', 'startsAt') %>" placeholder="2026-07-18T10:00:00Z" autocomplete="off" data-bb-events-field="starts_at" />
+      </div>
+      <div class="bb-ba-field">
+        <label for="<%= mode %>_ends_at">Ends at (ISO datetime)</label>
+        <input id="<%= mode %>_ends_at" name="ends_at" type="text" value="<%= isoField('ends_at', 'endsAt') %>" placeholder="2026-07-18T12:00:00Z" autocomplete="off" data-bb-events-field="ends_at" />
+      </div>
+    </div>
+    <div class="bb-ba-entities-form__grid">
+      <div class="bb-ba-field">
+        <label for="<%= mode %>_timezone">Timezone</label>
+        <input id="<%= mode %>_timezone" name="timezone" type="text" required maxlength="64" value="<%= val('timezone', 'timezone', 'UTC') %>" autocomplete="off" data-bb-events-field="timezone" />
+      </div>
+      <div class="bb-ba-field">
+        <label for="<%= mode %>_location">Location</label>
+        <input id="<%= mode %>_location" name="location" type="text" maxlength="300" value="<%= val('location', 'location', '') %>" autocomplete="off" />
+      </div>
+    </div>
+  </section>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_reg_heading" data-bb-events-section="registration">
+    <h3 id="<%= mode %>_reg_heading" class="bb-ba-entities-form__section-title">Registration</h3>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_registration_url">Registration URL (HTTPS)</label>
+      <input id="<%= mode %>_registration_url" name="registration_url" type="url" maxlength="2000" value="<%= val('registration_url', 'registrationUrl', '') %>" autocomplete="off" data-bb-events-field="registration_url" />
+    </div>
+  </section>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-events-section="media">
+    <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media</h3>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
+      <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+    </div>
+    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
+  </section>
 <% } %>
 
 <% if (entityKind === 'sermons') { %>
-  <label for="<%= mode %>_title">Title</label>
-  <input id="<%= mode %>_title" name="title" type="text" required maxlength="200" value="<%= val('title', 'title', '') %>" />
-  <label for="<%= mode %>_speaker_name">Speaker</label>
-  <input id="<%= mode %>_speaker_name" name="speaker_name" type="text" required maxlength="200" value="<%= val('speaker_name', 'speakerName', '') %>" />
-  <label for="<%= mode %>_preached_at">Preached at (ISO datetime)</label>
-  <input id="<%= mode %>_preached_at" name="preached_at" type="text" required value="<%= val('preached_at', 'preachedAt', '') %>" />
-  <label for="<%= mode %>_summary">Summary</label>
-  <textarea id="<%= mode %>_summary" name="summary" rows="3" maxlength="5000"><%= val('summary', 'summary', '') %></textarea>
-  <label for="<%= mode %>_media_url">Media URL (HTTPS)</label>
-  <input id="<%= mode %>_media_url" name="media_url" type="url" maxlength="2000" value="<%= val('media_url', 'mediaUrl', '') %>" />
-  <label for="<%= mode %>_resource_url">Resource URL (HTTPS or uploaded)</label>
-  <input id="<%= mode %>_resource_url" name="resource_url" type="text" maxlength="2000" value="<%= val('resource_url', 'resourceUrl', '') %>" />
-  <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_resource_url', csrfToken: csrfToken, visibility: 'public' }) %>
+  <%
+    function isoSermonField(snake, camel) {
+      var v = val(snake, camel, '');
+      if (v && typeof v === 'object' && v.toISOString) return v.toISOString();
+      return v;
+    }
+  %>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_sermon_heading" data-bb-sermons-section="details">
+    <h3 id="<%= mode %>_sermon_heading" class="bb-ba-entities-form__section-title">Sermon details</h3>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_title">Title</label>
+      <input id="<%= mode %>_title" name="title" type="text" required maxlength="200" value="<%= val('title', 'title', '') %>" autocomplete="off" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_speaker_name">Speaker</label>
+      <input id="<%= mode %>_speaker_name" name="speaker_name" type="text" required maxlength="200" value="<%= val('speaker_name', 'speakerName', '') %>" autocomplete="off" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_summary">Summary</label>
+      <textarea id="<%= mode %>_summary" name="summary" rows="3" maxlength="5000"><%= val('summary', 'summary', '') %></textarea>
+    </div>
+  </section>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_preached_heading" data-bb-sermons-section="schedule">
+    <h3 id="<%= mode %>_preached_heading" class="bb-ba-entities-form__section-title">Preached date</h3>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_preached_at">Preached at (ISO datetime)</label>
+      <input id="<%= mode %>_preached_at" name="preached_at" type="text" required value="<%= isoSermonField('preached_at', 'preachedAt') %>" placeholder="2026-07-18T10:00:00Z" autocomplete="off" data-bb-sermons-field="preached_at" />
+    </div>
+  </section>
+  <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-sermons-section="media">
+    <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media &amp; resources</h3>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_media_url">Media URL (HTTPS)</label>
+      <input id="<%= mode %>_media_url" name="media_url" type="url" maxlength="2000" value="<%= val('media_url', 'mediaUrl', '') %>" autocomplete="off" data-bb-sermons-field="media_url" />
+      <p class="bb-ba-field__hint">External audio or video link only. Hosting and embeds are not supported.</p>
+    </div>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_resource_url">Resource URL (HTTPS or uploaded)</label>
+      <input id="<%= mode %>_resource_url" name="resource_url" type="text" maxlength="2000" value="<%= val('resource_url', 'resourceUrl', '') %>" autocomplete="off" data-bb-sermons-field="resource_url" />
+    </div>
+    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_resource_url', csrfToken: csrfToken, visibility: 'public' }) %>
+  </section>
 <% } %>
 
 <% if (entityKind === 'contact') { %>
-  <label for="<%= mode %>_channel_type">Channel type</label>
-  <input id="<%= mode %>_channel_type" name="channel_type" type="text" required maxlength="32" pattern="[a-z][a-z0-9_-]*" value="<%= val('channel_type', 'channelType', 'email') %>" />
-  <label for="<%= mode %>_label">Label</label>
-  <input id="<%= mode %>_label" name="label" type="text" required maxlength="120" value="<%= val('label', 'label', '') %>" />
-  <label for="<%= mode %>_value">Value</label>
-  <input id="<%= mode %>_value" name="value" type="text" required maxlength="500" value="<%= val('value', 'value', '') %>" />
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_channel_type">Channel type</label>
+    <input id="<%= mode %>_channel_type" name="channel_type" type="text" required maxlength="32" pattern="[a-z][a-z0-9_-]*" value="<%= val('channel_type', 'channelType', 'email') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_label">Label</label>
+    <input id="<%= mode %>_label" name="label" type="text" required maxlength="120" value="<%= val('label', 'label', '') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_value">Value</label>
+    <input id="<%= mode %>_value" name="value" type="text" required maxlength="500" value="<%= val('value', 'value', '') %>" autocomplete="off" />
+  </div>
 <% } %>
 
 <% if (entityKind === 'giving') { %>
-  <label for="<%= mode %>_method_type">Method type</label>
-  <input id="<%= mode %>_method_type" name="method_type" type="text" required maxlength="32" pattern="[a-z][a-z0-9_-]*" value="<%= val('method_type', 'methodType', 'online') %>" />
-  <label for="<%= mode %>_label">Label</label>
-  <input id="<%= mode %>_label" name="label" type="text" required maxlength="120" value="<%= val('label', 'label', '') %>" />
-  <label for="<%= mode %>_instructions">Instructions</label>
-  <textarea id="<%= mode %>_instructions" name="instructions" rows="3" maxlength="5000"><%= val('instructions', 'instructions', '') %></textarea>
-  <label for="<%= mode %>_external_url">External URL (HTTPS)</label>
-  <input id="<%= mode %>_external_url" name="external_url" type="url" maxlength="2000" value="<%= val('external_url', 'externalUrl', '') %>" />
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_method_type">Method type</label>
+    <input id="<%= mode %>_method_type" name="method_type" type="text" required maxlength="32" pattern="[a-z][a-z0-9_-]*" value="<%= val('method_type', 'methodType', 'online') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_label">Label</label>
+    <input id="<%= mode %>_label" name="label" type="text" required maxlength="120" value="<%= val('label', 'label', '') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_instructions">Instructions</label>
+    <textarea id="<%= mode %>_instructions" name="instructions" rows="3" maxlength="5000"><%= val('instructions', 'instructions', '') %></textarea>
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_external_url">External URL (HTTPS)</label>
+    <input id="<%= mode %>_external_url" name="external_url" type="url" maxlength="2000" value="<%= val('external_url', 'externalUrl', '') %>" autocomplete="off" />
+  </div>
 <% } %>
 
-<label for="<%= mode %>_sort_order">Sort order</label>
-<input id="<%= mode %>_sort_order" name="sort_order" type="number" value="<%= val('sort_order', 'sortOrder', '0') %>" />
+<div class="bb-ba-entities-form__section" <% if (entityKind === 'ministries') { %>data-bb-ministries-section="publication"<% } else if (entityKind === 'events') { %>data-bb-events-section="publication"<% } else if (entityKind === 'sermons') { %>data-bb-sermons-section="publication"<% } %>>
+  <% if (entityKind === 'ministries' || entityKind === 'events' || entityKind === 'sermons') { %>
+  <h3 class="bb-ba-entities-form__section-title">Publication</h3>
+  <% } %>
+  <div class="bb-ba-entities-form__grid">
+    <% if (entityKind !== 'sermons') { %>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_sort_order">Sort order</label>
+      <input id="<%= mode %>_sort_order" name="sort_order" type="number" value="<%= val('sort_order', 'sortOrder', '0') %>" />
+    </div>
+    <% } %>
+    <div class="bb-ba-field">
+      <label for="<%= mode %>_status">Status</label>
+      <% var currentStatus = val('status', 'status', 'draft'); %>
+      <select id="<%= mode %>_status" name="status" data-bb-entity-status-select>
+        <% var statusOpts = entityKind === 'events' ? ['draft','published','cancelled','archived'] : ['draft','published','archived']; %>
+        <% statusOpts.forEach(function (st) { %>
+        <option value="<%= st %>" <%= currentStatus === st ? 'selected' : '' %>><%= st %></option>
+        <% }) %>
+      </select>
+    </div>
+  </div>
 
-<label for="<%= mode %>_status">Status</label>
-<select id="<%= mode %>_status" name="status">
-  <% var statusOpts = entityKind === 'events' ? ['draft','published','cancelled','archived'] : ['draft','published','archived']; %>
-  <% statusOpts.forEach(function (st) { %>
-  <option value="<%= st %>" <%= val('status', 'status', 'draft') === st ? 'selected' : '' %>><%= st %></option>
-  <% }) %>
-</select>
-
-<label class="bb-ca-confirm">
-  <input type="checkbox" name="confirm_publish" value="1" />
-  I confirm this item should be published on the public website.
-</label>
+  <div class="bb-ca-confirm-wrap" data-bb-entity-confirm-wrap <%= currentStatus === 'published' ? '' : 'hidden' %>>
+    <label class="bb-ca-confirm">
+      <input type="checkbox" name="confirm_publish" value="1" data-bb-entity-confirm-publish />
+      I confirm this item should be published on the public website.
+    </label>
+  </div>
+</div>

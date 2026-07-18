@@ -43,43 +43,72 @@
   }
   var byCat = entryMap();
   function countOf(cat) { return byCat[cat] ? byCat[cat].count : 0; }
+  function formatDate(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(String(value) + (String(value).length === 10 ? 'T00:00:00Z' : ''));
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
 %>
 
-<section class="bb-att-admin bb-att-detail" data-bb-attendance-admin-detail="1" data-bb-status="<%= event.status %>">
+<section
+  class="bb-att-admin bb-att-detail"
+  data-bb-attendance-admin-detail="1"
+  data-bb-status="<%= event.status %>"
+  data-bb-stitch-attendance-detail="37-branch-attendance-record-detail"
+>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
-        <a href="<%= basePath %>">Attendance</a>
+        <a href="<%= basePath %>">
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+          Attendance
+        </a>
         <span aria-hidden="true">›</span>
         <span>Record</span>
       </p>
       <h1 class="bb-ba-page-head__title"><%= event.title %></h1>
-      <p class="bb-ba-lede">
+      <p class="bb-ba-lede bb-att-detail__lede">
         <span class="bb-ba-chip <%= statusChip(event.status) %>"><%= statusLabel(event.status) %></span>
-        · <%= typeLabel(event.eventType) %>
-        · <%= event.eventDate %>
+        <span class="bb-att-detail__meta">
+          <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+          <%= formatDate(event.eventDate) %>
+          · <%= typeLabel(event.eventType) %>
+        </span>
       </p>
     </div>
-    <div class="bb-ba-decision__actions" style="margin:0">
+    <div class="bb-ba-page-head__actions bb-att-detail__actions">
       <% if (canEditMeta) { %>
-      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= event.id %>/edit" data-bb-att-edit="1">Edit record</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= event.id %>/edit" data-bb-att-edit="1">
+        <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+        Edit record
+      </a>
       <% } %>
       <% if (event.status === 'draft') { %>
-      <button type="button" class="bb-ba-btn bb-ba-btn--primary" data-bb-ds-modal-open="bb-att-submit-modal" data-bb-att-submit-open="1">Submit to HQ</button>
+      <button type="button" class="bb-ba-btn bb-ba-btn--primary" data-bb-ds-modal-open="bb-att-submit-modal" data-bb-att-submit-open="1">
+        <span class="material-symbols-outlined" aria-hidden="true">send</span>
+        Submit to HQ
+      </button>
       <% } %>
     </div>
   </header>
 
   <% if (saved === '1' || saved === 'entry' || saved === 'submitted' || saved === 'approved' || saved === 'archived') { %>
-  <p class="bb-ba-ok" role="status">
-    <% if (saved === 'submitted') { %>Attendance submitted.<% }
-       else if (saved === 'entry') { %>Category count saved.<% }
-       else if (saved === 'approved') { %>Attendance approved.<% }
-       else if (saved === 'archived') { %>Attendance archived.<% }
-       else { %>Saved.<% } %>
-  </p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: saved === 'submitted' ? 'Submitted'
+      : (saved === 'entry' ? 'Entry saved'
+      : (saved === 'approved' ? 'Approved'
+      : (saved === 'archived' ? 'Archived' : 'Saved'))),
+    message: saved === 'submitted' ? 'Attendance submitted to HQ.'
+      : (saved === 'entry' ? 'Category count saved.'
+      : (saved === 'approved' ? 'Attendance approved.'
+      : (saved === 'archived' ? 'Attendance archived.' : 'Changes saved.')))
+  }) %>
   <% } %>
-  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+  <% if (error) { %>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-att-detail-errors' }) %>
+  <% } %>
 
   <div class="bb-att-lifecycle" data-bb-att-lifecycle="1" aria-label="Workflow status">
     <div class="bb-att-lifecycle__step<%= event.status !== 'archived' ? ' is-done' : '' %>">Created</div>
@@ -88,13 +117,13 @@
     <div class="bb-att-lifecycle__step<%= event.status === 'approved' || event.status === 'archived' ? ' is-done' : '' %>">HQ review</div>
   </div>
 
-  <section class="bb-ba-panel" data-bb-att-totals="1">
+  <section class="bb-ba-panel bb-att-totals-panel" data-bb-att-totals="1">
     <div class="bb-att-total-row">
       <div>
         <p class="bb-att-stat__label">Total attendance</p>
         <p class="bb-att-stat__value bb-att-stat__value--lg" data-bb-att-total="<%= event.totalCount %>"><%= event.totalCount %></p>
       </div>
-      <div class="bb-att-breakdown">
+      <div class="bb-att-breakdown" data-bb-att-breakdown="1">
         <% ['adults','youth','children','first_time_visitors','volunteers','other'].forEach(function (cat) { %>
         <div class="bb-att-breakdown__item" data-bb-att-cat="<%= cat %>">
           <span class="bb-att-breakdown__count"><%= countOf(cat) %></span>
@@ -118,12 +147,19 @@
       <% }) %>
     </ul>
     <% } else { %>
-    <p class="bb-ba-empty">No category counts yet.</p>
+    <div data-bb-att-entries-empty="1" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No category counts yet',
+        body: 'Add adults, youth, children, visitors, volunteers, or other totals below.',
+        icon: 'group'
+      }) %>
+    </div>
     <% } %>
 
     <% if (canEditEntries && event.status !== 'archived') { %>
     <form method="post" action="<%= basePath %>/<%= event.id %>/entries" class="bb-att-entry-form" data-bb-att-entry-form="1">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <h3 class="bb-ba-entities-form__section-title">Add or update a count</h3>
       <div class="bb-att-entry-grid">
         <div class="bb-ba-field">
           <label for="category">Category</label>

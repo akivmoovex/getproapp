@@ -619,10 +619,16 @@ describe("blessboard attendance", () => {
       .set("Cookie", cookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-attendance-admin-list="1"/);
+    assert.match(list.text, /data-bb-stitch-attendance="36-branch-attendance-tracker"/);
     assert.match(list.text, /Attendance tracker/);
     assert.match(list.text, /Monthly summary/);
     assert.match(list.text, /data-bb-attendance-monthly="1"/);
-    assert.doesNotMatch(list.text, /\+12%|Last 30 days avg|Pending Drafts|projectedGrowth/i);
+    assert.match(list.text, /data-bb-att-status-chips="1"/);
+    assert.match(list.text, /data-bb-att-type-chips="1"/);
+    assert.match(list.text, /data-bb-att-history="1"/);
+    assert.match(list.text, /data-bb-att-unavailable="1"/);
+    assert.doesNotMatch(list.text, /\+12%|Last 30 days avg|Pending Drafts|projectedGrowth|Average Sunday/i);
+    assert.doesNotMatch(list.text, /bb-ba-btn[^>]*>\s*QR|fingerprint scanner|sync now/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(list.text, new RegExp(branchA.id, "i"));
 
@@ -632,7 +638,12 @@ describe("blessboard attendance", () => {
       .set("Cookie", cookie);
     assert.equal(form.status, 200);
     assert.match(form.text, /data-bb-attendance-admin-form="1"/);
+    assert.match(form.text, /data-bb-stitch-attendance-form="36-branch-attendance-tracker"/);
     assert.match(form.text, /does not record individual members/);
+    assert.match(form.text, /name="title"/);
+    assert.match(form.text, /name="event_type"/);
+    assert.match(form.text, /name="event_date"/);
+    assert.match(form.text, /name="_csrf"/);
     const csrf = extractCookie(form, CSRF_COOKIE);
 
     const missingCsrf = await request(app)
@@ -668,9 +679,12 @@ describe("blessboard attendance", () => {
       .set("Cookie", cookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-attendance-admin-detail="1"/);
+    assert.match(detail.text, /data-bb-stitch-attendance-detail="37-branch-attendance-record-detail"/);
     assert.match(detail.text, /Category counts/);
     assert.match(detail.text, /bb-att-submit-modal/);
     assert.match(detail.text, /data-bb-att-edit="1"/);
+    assert.match(detail.text, /data-bb-att-totals="1"/);
+    assert.match(detail.text, /data-bb-att-entry-form="1"/);
     assert.doesNotMatch(detail.text, new RegExp(churchA.id, "i"));
     const csrf2 = extractCookie(detail, CSRF_COOKIE);
     const entry = await request(app)

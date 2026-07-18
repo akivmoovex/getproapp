@@ -5,6 +5,15 @@
 <% } %>
 <%
   var rows = forms || [];
+  var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
+  var hasFilter = Boolean(activeStatus);
+  var statusOptions = [
+    { key: '', label: 'All' },
+    { key: 'draft', label: 'Draft' },
+    { key: 'published', label: 'Published' },
+    { key: 'archived', label: 'Archived' }
+  ];
+  var allowedTypes = ['text', 'textarea', 'email', 'phone', 'number', 'select', 'checkbox', 'date'];
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'draft') return 'Draft';
@@ -18,12 +27,40 @@
     if (key === 'draft') return 'bb-ba-chip--pending';
     return 'bb-ba-chip--muted';
   }
+  function fieldCount(form) {
+    var fields = form && form.schema && Array.isArray(form.schema.fields) ? form.schema.fields : [];
+    return fields.length;
+  }
+  function snippet(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    if (t.length <= 90) return t;
+    return t.slice(0, 87) + '…';
+  }
+  function statusHref(st) {
+    if (!st) return basePath;
+    return basePath + '?status=' + encodeURIComponent(st);
+  }
 %>
 
-<section class="bb-fr-admin bb-fr-forms-list" data-bb-forms-admin-list="1">
+<section
+  class="bb-fr-admin bb-fr-forms-list"
+  data-bb-forms-admin-list="1"
+  data-bb-stitch-forms="shared-ui-states"
+  aria-label="Forms management"
+>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
-      <h1 class="bb-ba-page-head__title">Forms</h1>
+      <p class="bb-ba-breadcrumb">
+        <% if (shellKind === 'hq') { %>
+        <a href="/hq">HQ</a>
+        <% } else { %>
+        <a href="/branch-admin">Dashboard</a>
+        <% } %>
+        <span aria-hidden="true">›</span>
+        <span>Forms</span>
+      </p>
+      <h1 class="bb-ba-page-head__title">Forms management</h1>
       <p class="bb-ba-lede">
         <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide) { %>
         Church-wide form oversight for
@@ -36,6 +73,14 @@
         <% } %>
       </p>
     </div>
+    <% if (canCreate) { %>
+    <p class="bb-ba-page-head__actions">
+      <a class="bb-ba-btn bb-ba-btn--primary" href="#bb-fr-create" data-bb-forms-create-jump="1">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        Create draft
+      </a>
+    </p>
+    <% } %>
   </header>
 
   <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
@@ -61,58 +106,157 @@
   <% } %>
 
   <% if (saved === '1' || saved === 'published') { %>
-  <p class="bb-ba-ok" role="status"><%= saved === 'published' ? 'Form published.' : 'Form saved.' %></p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: 'Updated',
+    message: saved === 'published' ? 'Form published.' : 'Form saved.'
+  }) %>
   <% } %>
 
   <% if (canCreate) { %>
-  <section class="bb-ba-panel" data-bb-forms-create="1">
-    <h2 class="bb-ba-section-title">Create draft form</h2>
-    <form method="post" action="<%= basePath %>" class="bb-fr-form-create">
+  <section class="bb-ba-panel bb-fr-create" id="bb-fr-create" data-bb-forms-create="1" aria-labelledby="bb-fr-create-heading">
+    <div class="bb-fr-create__head">
+      <h2 id="bb-fr-create-heading" class="bb-ba-section-title">Create draft form</h2>
+      <p class="bb-ba-hint" data-bb-forms-allowed-types="1">
+        Allowed field types:
+        <% allowedTypes.forEach(function (t, i) { %>
+        <span class="bb-ba-chip bb-ba-chip--tiny bb-ba-chip--muted" data-bb-field-type-chip="<%= t %>"><%= t %></span><%= i < allowedTypes.length - 1 ? ' ' : '' %>
+        <% }) %>
+      </p>
+    </div>
+    <form method="post" action="<%= basePath %>" class="bb-fr-form-create" data-bb-forms-editor="1">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <div class="bb-ba-field">
-        <label for="title">Title</label>
-        <input id="title" type="text" name="title" maxlength="200" required />
-      </div>
-      <div class="bb-ba-field">
-        <label for="description">Description</label>
-        <input id="description" type="text" name="description" maxlength="5000" />
+      <div class="bb-fr-form-create__grid">
+        <div class="bb-ba-field">
+          <label for="title">Title</label>
+          <input id="title" type="text" name="title" maxlength="200" required autocomplete="off" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="description">Description</label>
+          <input id="description" type="text" name="description" maxlength="5000" autocomplete="off" />
+        </div>
       </div>
       <div class="bb-ba-field">
         <label for="schema_json">Schema JSON</label>
-        <textarea id="schema_json" name="schema_json" rows="8" required>{"version":1,"fields":[{"key":"full_name","type":"text","label":"Full name","required":true,"maxLength":100}]}</textarea>
-        <p class="bb-ba-hint">Allowed field types only (text, email, phone, textarea, select, checkbox, date, number).</p>
+        <textarea id="schema_json" name="schema_json" rows="8" required spellcheck="false">{"version":1,"fields":[{"key":"full_name","type":"text","label":"Full name","required":true,"maxLength":100}]}</textarea>
+        <p class="bb-ba-hint">
+          Controlled schema only — no signatures, payments, conditional logic, automation, or file-upload fields.
+        </p>
       </div>
-      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Create draft</button>
+      <div class="bb-fr-form-create__actions">
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Create draft</button>
+      </div>
     </form>
   </section>
   <% } %>
 
-  <% if (!rows.length) { %>
-  <div class="bb-ba-empty" role="status">No forms yet.</div>
-  <% } else { %>
-  <div class="bb-ba-table-wrap">
-    <table class="bb-ba-table" data-bb-forms-table="1">
-      <thead>
-        <tr>
-          <th scope="col">Title</th>
-          <th scope="col">Status</th>
-          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% rows.forEach(function (f) { %>
-        <tr data-bb-form-status="<%= f.status %>">
-          <td><strong><%= f.title %></strong></td>
-          <td><span class="bb-ba-chip <%= statusChip(f.status) %>"><%= statusLabel(f.status) %></span></td>
-          <td class="bb-ba-table__actions">
-            <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= f.id %>">Review</a>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <nav class="bb-ba-entities-chips" aria-label="Form status filters" data-bb-forms-status-chips="1">
+    <% statusOptions.forEach(function (opt) { %>
+    <a
+      class="bb-ba-entities-chip<%= activeStatus === opt.key ? ' is-active' : '' %>"
+      href="<%= statusHref(opt.key) %>"
+      <%= activeStatus === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-forms-status-filter="<%= opt.key || 'all' %>"
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
+
+  <% if (!rows.length && !hasFilter) { %>
+  <div class="bb-fr-forms-empty" data-bb-forms-empty="catalog" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No forms yet',
+      body: canCreate
+        ? 'Create a draft with allowlisted fields, then publish when ready for members.'
+        : 'Open a branch to create campus-scoped forms.',
+      icon: 'description',
+      actionHref: canCreate ? '#bb-fr-create' : null,
+      actionLabel: canCreate ? 'Create draft' : null
+    }) %>
   </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div class="bb-fr-forms-empty" data-bb-forms-empty="no-results" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No matching forms',
+      body: 'Try a different status filter, or clear filters to see all forms on this branch.',
+      icon: 'search_off',
+      actionHref: basePath,
+      actionLabel: 'Clear filters'
+    }) %>
+  </div>
+  <% } else { %>
+
+  <section class="bb-ba-panel bb-fr-forms-panel" data-bb-forms-catalog="1" aria-labelledby="bb-fr-forms-heading">
+    <div class="bb-fr-forms-panel__head">
+      <h2 id="bb-fr-forms-heading" class="bb-ba-section-title">Forms</h2>
+      <p class="bb-ba-hint"><%= rows.length %> form<%= rows.length === 1 ? '' : 's' %></p>
+    </div>
+
+    <div class="bb-ba-table-wrap bb-fr-forms-table-wrap" role="region" aria-label="Forms table" tabindex="0" data-bb-forms-table-desktop="1">
+      <table class="bb-ba-table bb-fr-forms-table" data-bb-forms-table="1">
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Fields</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (f) {
+            var count = fieldCount(f);
+          %>
+          <tr data-bb-form-status="<%= f.status %>" data-bb-form-row="<%= f.id %>">
+            <td>
+              <a href="<%= basePath %>/<%= f.id %>" class="bb-fr-title-link"><%= f.title %></a>
+              <% if (f.description) { %>
+              <p class="bb-fr-snippet"><%= snippet(f.description) %></p>
+              <% } %>
+            </td>
+            <td data-bb-form-field-count="<%= count %>"><%= count %> field<%= count === 1 ? '' : 's' %></td>
+            <td><span class="bb-ba-chip <%= statusChip(f.status) %>"><%= statusLabel(f.status) %></span></td>
+            <td class="bb-ba-table__actions">
+              <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= f.id %>" data-bb-forms-open="1">
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                Review
+              </a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bb-fr-forms-cards" data-bb-forms-cards="1">
+      <% rows.forEach(function (f) {
+        var count = fieldCount(f);
+      %>
+      <article class="bb-fr-form-card bb-ba-panel" data-bb-form-card="<%= f.id %>" data-bb-form-status="<%= f.status %>">
+        <div class="bb-fr-form-card__top">
+          <h3 class="bb-fr-form-card__title">
+            <a href="<%= basePath %>/<%= f.id %>"><%= f.title %></a>
+          </h3>
+          <span class="bb-ba-chip <%= statusChip(f.status) %>"><%= statusLabel(f.status) %></span>
+        </div>
+        <% if (f.description) { %>
+        <p class="bb-fr-form-card__meta"><%= snippet(f.description) %></p>
+        <% } %>
+        <p class="bb-fr-form-card__meta" data-bb-form-field-count="<%= count %>">
+          <%= count %> field<%= count === 1 ? '' : 's' %>
+        </p>
+        <p class="bb-fr-form-card__actions">
+          <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= f.id %>">Review</a>
+        </p>
+      </article>
+      <% }) %>
+    </div>
+  </section>
   <% } %>
+
+  <aside class="bb-ba-entities-unavailable" data-bb-forms-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-forms-unavailable-row="signatures">Signatures, payments, and checkout fields are not available.</p>
+    <p data-bb-forms-unavailable-row="logic">Conditional logic, automation, and unsupported file uploads are not available.</p>
+    <p data-bb-forms-unavailable-row="export">Bulk export and cross-branch submission browsing are not available.</p>
+  </aside>
 </section>
 
 <% if (shellKind === 'hq') { %>

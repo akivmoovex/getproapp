@@ -6,6 +6,7 @@
 <%
   var formItem = form || {};
   var rows = submissions || [];
+  var fields = (formItem.schema && formItem.schema.fields) || [];
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'draft') return 'Draft';
@@ -34,7 +35,13 @@
   }
 %>
 
-<section class="bb-fr-admin bb-fr-form-detail" data-bb-forms-admin-detail="1" data-bb-form-status="<%= formItem.status %>">
+<section
+  class="bb-fr-admin bb-fr-form-detail"
+  data-bb-forms-admin-detail="1"
+  data-bb-stitch-forms-detail="shared-ui-states"
+  data-bb-form-status="<%= formItem.status %>"
+  aria-label="Form detail and submissions"
+>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
@@ -47,54 +54,135 @@
         <span>Detail</span>
       </p>
       <h1 class="bb-ba-page-head__title"><%= formItem.title %></h1>
-      <p class="bb-ba-lede">
+      <p class="bb-ba-lede bb-fr-detail__lede">
         <span class="bb-ba-chip <%= statusChip(formItem.status) %>"><%= statusLabel(formItem.status) %></span>
-        <% if (formItem.description) { %> · <%= formItem.description %><% } %>
+        <span class="bb-ba-chip bb-ba-chip--muted" data-bb-form-field-count="<%= fields.length %>">
+          <%= fields.length %> field<%= fields.length === 1 ? '' : 's' %>
+        </span>
+        <% if (formItem.description) { %>
+        <span class="bb-fr-detail__desc"><%= formItem.description %></span>
+        <% } %>
       </p>
     </div>
     <% if (formItem.status === 'draft') { %>
-    <form method="post" action="<%= basePath %>/<%= formItem.id %>/publish">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-form-publish="1">Publish</button>
-    </form>
+    <div class="bb-fr-detail__actions">
+      <form method="post" action="<%= basePath %>/<%= formItem.id %>/publish" data-bb-forms-publish-form="1">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-form-publish="1">
+          <span class="material-symbols-outlined" aria-hidden="true">publish</span>
+          Publish
+        </button>
+      </form>
+    </div>
     <% } %>
   </header>
 
   <% if (saved === '1' || saved === 'published') { %>
-  <p class="bb-ba-ok" role="status"><%= saved === 'published' ? 'Form published.' : 'Saved.' %></p>
+  <%- include('../partials/flash-message', {
+    type: 'success',
+    title: 'Updated',
+    message: saved === 'published' ? 'Form published.' : 'Saved.'
+  }) %>
   <% } %>
 
-  <section class="bb-ba-panel" data-bb-form-schema="1">
-    <h2 class="bb-ba-section-title">Schema fields</h2>
-    <% var fields = (formItem.schema && formItem.schema.fields) || []; %>
+  <section class="bb-ba-panel bb-fr-schema-panel" data-bb-form-schema="1" aria-labelledby="bb-fr-schema-heading">
+    <div class="bb-fr-schema-panel__head">
+      <h2 id="bb-fr-schema-heading" class="bb-ba-section-title">Schema fields</h2>
+      <p class="bb-ba-hint">Allowlisted controls only — shown as configured for this branch form.</p>
+    </div>
     <% if (!fields.length) { %>
-    <p class="bb-ba-empty">No fields defined.</p>
+    <div class="bb-fr-schema-empty" data-bb-form-schema-empty="1" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No fields defined',
+        body: 'This form has no schema fields yet.',
+        icon: 'list_alt'
+      }) %>
+    </div>
     <% } else { %>
-    <ul class="bb-fr-field-list">
+    <ul class="bb-fr-field-list" data-bb-forms-field-list="1">
       <% fields.forEach(function (f) { %>
       <li data-bb-field-type="<%= f.type %>" data-bb-field-key="<%= f.key %>">
-        <strong><%= f.label || f.key %></strong>
-        <span class="bb-ba-muted"><%= f.type %><%= f.required ? ' · required' : '' %></span>
+        <div class="bb-fr-field-list__main">
+          <strong><%= f.label || f.key %></strong>
+          <span class="bb-ba-muted"><%= f.key %></span>
+        </div>
+        <div class="bb-fr-field-list__meta">
+          <span class="bb-ba-chip bb-ba-chip--tiny bb-ba-chip--muted"><%= f.type %></span>
+          <% if (f.required) { %><span class="bb-ba-chip bb-ba-chip--tiny bb-ba-chip--pending">Required</span><% } %>
+        </div>
       </li>
       <% }) %>
     </ul>
     <% } %>
   </section>
 
-  <section class="bb-ba-panel" data-bb-form-submissions="1">
-    <h2 class="bb-ba-section-title">Submission review</h2>
-    <p class="bb-ba-hint">
-      Answers are shown for branch-scoped review only. Member contact directories outside the form answers are not loaded here.
-    </p>
+  <section class="bb-ba-panel bb-fr-submissions-panel" data-bb-form-submissions="1" aria-labelledby="bb-fr-submissions-heading">
+    <div class="bb-fr-submissions-panel__head">
+      <h2 id="bb-fr-submissions-heading" class="bb-ba-section-title">Submission review</h2>
+      <p class="bb-ba-hint" data-bb-forms-privacy="1">
+        Answers are shown for branch-scoped review only. Member contact directories outside the form answers are not loaded here.
+      </p>
+    </div>
+
     <% if (!rows.length) { %>
-    <p class="bb-ba-empty" role="status">No submissions yet.</p>
+    <div class="bb-fr-submissions-empty" data-bb-forms-submissions-empty="1" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No submissions yet',
+        body: formItem.status === 'published'
+          ? 'Submissions from members on this branch will appear here.'
+          : 'Publish this form before members can submit answers.',
+        icon: 'inbox'
+      }) %>
+    </div>
     <% } else { %>
+
+    <div class="bb-ba-table-wrap bb-fr-submissions-table-wrap" role="region" aria-label="Submissions table" tabindex="0" data-bb-forms-submissions-desktop="1">
+      <table class="bb-ba-table bb-fr-submissions-table" data-bb-forms-submissions-table="1">
+        <thead>
+          <tr>
+            <th scope="col">Submitted</th>
+            <th scope="col">Status</th>
+            <th scope="col">Member ref</th>
+            <th scope="col">Answers</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (s) { %>
+          <tr data-bb-submission="<%= s.id %>" data-bb-submission-status="<%= s.status %>">
+            <td><%= formatWhen(s.submittedAt) %></td>
+            <td><span class="bb-ba-chip <%= statusChip(s.status) %>"><%= statusLabel(s.status) %></span></td>
+            <td>
+              <% if (s.memberRef) { %>
+              <span class="bb-fr-member-ref">Member · <%= s.memberRef %></span>
+              <% } else { %>—<% } %>
+            </td>
+            <td>
+              <% if (!s.answerRows || !s.answerRows.length) { %>
+              <span class="bb-ba-muted">No answers recorded.</span>
+              <% } else { %>
+              <dl class="bb-ann-dl bb-fr-answers bb-fr-answers--compact">
+                <% s.answerRows.forEach(function (row) { %>
+                <div data-bb-answer-key="<%= row.key %>">
+                  <dt><%= row.label %></dt>
+                  <dd><%= row.value %></dd>
+                </div>
+                <% }) %>
+              </dl>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bb-fr-submission-cards" data-bb-forms-submission-cards="1">
       <% rows.forEach(function (s) { %>
       <article class="bb-fr-submission" data-bb-submission="<%= s.id %>" data-bb-submission-status="<%= s.status %>">
         <header class="bb-fr-submission__head">
           <span class="bb-ba-chip <%= statusChip(s.status) %>"><%= statusLabel(s.status) %></span>
           <span class="bb-ba-muted"><%= formatWhen(s.submittedAt) %></span>
-          <% if (s.memberRef) { %><span class="bb-ba-muted">Member · <%= s.memberRef %></span><% } %>
+          <% if (s.memberRef) { %><span class="bb-ba-muted bb-fr-member-ref">Member · <%= s.memberRef %></span><% } %>
         </header>
         <% if (!s.answerRows || !s.answerRows.length) { %>
         <p class="bb-ba-muted">No answers recorded.</p>
@@ -110,6 +198,7 @@
         <% } %>
       </article>
       <% }) %>
+    </div>
     <% } %>
   </section>
 </section>
