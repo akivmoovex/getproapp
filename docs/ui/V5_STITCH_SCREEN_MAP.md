@@ -246,12 +246,12 @@ _14 screens_
 | 64-platform-create-church-organization-mobile — CLI provision only today | 0da4f454abf0402dbe09f82959f29afa | Mobile | /admin/organizations/new | platform_admin | — | — | missing | No | Yes (provisioning service) | — | — | — | B10 Platform admin |
 | 65-platform-branch-tenants-desktop | 10f1dceb6d694563aaf152ecaedac3d3 | Desktop | /admin/organizations/:key | platform_admin | platform-admin/organization-detail.ejs | — | placeholder | Yes | Partial | — | — | platform-admin-shell | B10 Platform admin |
 | 65-platform-branch-tenants-mobile | 6633fa49f7b9420a8c1705f1e43c9efb | Mobile | /admin/organizations/:key | platform_admin | platform-admin/organization-detail.ejs | — | placeholder | Yes | Partial | — | — | platform-admin-shell | B10 Platform admin |
-| 66-platform-plans-limits-desktop — Entitlements backend partial; no Stitch UI wired | 4d0f59ac6acf4fcc9e1e0ed746abb5fd | Desktop | — | platform_admin | — | — | missing | No | No | — | — | — | B10 Platform deferred |
-| 66-platform-plans-limits-mobile — Entitlements backend partial; no Stitch UI wired | b5953809962f4e0a8eae4ea96aa4575a | Mobile | — | platform_admin | — | — | missing | No | No | — | — | — | B10 Platform deferred |
-| 67-platform-settings-desktop — Entitlements backend partial; no Stitch UI wired | 30e3856782bd41b6bf14402e1e535cbd | Desktop | — | platform_admin | — | — | missing | No | No | — | — | — | B10 Platform deferred |
-| 67-platform-settings-mobile — Entitlements backend partial; no Stitch UI wired | efb0fd24f1184968be79083974dcd092 | Mobile | — | platform_admin | — | — | missing | No | No | — | — | — | B10 Platform deferred |
-| 68-platform-support-monitoring-desktop — Entitlements backend partial; no Stitch UI wired | 74cbe4a015754137ad414222f3941ef2 | Desktop | — | platform_admin | — | — | missing | No | No | — | — | — | B10 Platform deferred |
-| 68-platform-support-monitoring-mobile — Entitlements backend partial; no Stitch UI wired | 9f40042097d7471db1f5628fbb0d27d8 | Mobile | — | platform_admin | — | — | missing | No | No | — | — | — | B10 Platform deferred |
+| 66-platform-plans-limits-desktop — Catalogue + org assign/override; no billing UI | 4d0f59ac6acf4fcc9e1e0ed746abb5fd | Desktop | /admin/plans | platform_admin | platform-admin/plans.ejs | — | close | Yes | Yes | platform.plans + entitlements | — | platform-admin-shell | B10 Platform admin |
+| 66-platform-plans-limits-mobile — Catalogue + org assign/override; no billing UI | b5953809962f4e0a8eae4ea96aa4575a | Mobile | /admin/plans | platform_admin | platform-admin/plans.ejs | — | close | Yes | Yes | platform.plans + entitlements | — | platform-admin-shell | B10 Platform admin |
+| 67-platform-settings-desktop — Read-only DNS patterns; no save/failover | 30e3856782bd41b6bf14402e1e535cbd | Desktop | /admin/settings | platform_admin | platform-admin/settings.ejs | — | close | Yes | Partial | deployments + reserved slugs | — | platform-admin-shell | B10 Platform admin |
+| 67-platform-settings-mobile — Read-only DNS patterns; no save/failover | efb0fd24f1184968be79083974dcd092 | Mobile | /admin/settings | platform_admin | platform-admin/settings.ejs | — | close | Yes | Partial | deployments + reserved slugs | — | platform-admin-shell | B10 Platform admin |
+| 68-platform-support-monitoring-desktop — Deployment registry only; no tickets/fake health | 74cbe4a015754137ad414222f3941ef2 | Desktop | /admin/deployments | platform_admin | platform-admin/deployments.ejs | — | partial | Yes | Partial | platform.deployments | — | platform-admin-shell | B10 Platform admin |
+| 68-platform-support-monitoring-mobile — Deployment registry only; no tickets/fake health | 9f40042097d7471db1f5628fbb0d27d8 | Mobile | /admin/deployments | platform_admin | platform-admin/deployments.ejs | — | partial | Yes | Partial | platform.deployments | — | platform-admin-shell | B10 Platform admin |
 
 ## Appendix — Leader portal (no V5 role)
 
@@ -369,7 +369,7 @@ _9 screens_
 - HQ monthly report review
 - HQ permissions/templates/broadcast
 - /admin/organizations/new
-- plans/settings/support UI
+- plans/settings/support invent-billing UI (prices, tickets, failover)
 - waiting-verification
 - forgot-password
 - leader portal /*
@@ -410,7 +410,7 @@ _9 screens_
 | **B7** | Member portal Stitch chrome (14–22); defer 23–24 unless scoped | Backend **available** |
 | **B8** | Branch admin Stitch chrome (25–26, 29–30, 32, 34–39, 44–45); defer members/departments/roster/reports | |
 | **B9** | HQ Stitch chrome (51–52, 56–58); defer 53–55/59–61 if no backend | |
-| **B10** | Platform admin (62–65); defer create-org/plans/settings/support UI | |
+| **B10** | Platform admin (62–68); defer create-org + invent-billing/support-queue UI | |
 | **B11** | Playwright visual regression vs canonical Stitch pairs | |
 | **Out of scope** | Leader portal 46–50 | No V5 role |
 

@@ -41,6 +41,9 @@ function buildPlatformAdminShellLocals(req, res, opts) {
   const defaultTitles = {
     home: "Platform admin",
     organizations: "Organizations",
+    plans: "Plans",
+    deployments: "Deployments",
+    settings: "Settings",
     account: "Account",
   };
 

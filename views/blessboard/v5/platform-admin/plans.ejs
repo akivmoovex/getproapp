@@ -1,0 +1,68 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var planRows = plans || [];
+  function formatLimit(v) {
+    if (v == null) return 'Unlimited';
+    return String(v);
+  }
+  function formatFeature(f) {
+    if (!f) return '—';
+    if (f.featureKind === 'limit') {
+      return formatLimit(f.limitValue);
+    }
+    return f.booleanValue ? 'Included' : 'Not included';
+  }
+  function featureLabel(key) {
+    var k = String(key || '');
+    if (k === 'max_branches') return 'Branches';
+    if (k === 'max_users') return 'Users';
+    if (k === 'max_staff_accounts') return 'Staff accounts';
+    if (k === 'basic_reports') return 'Basic reports';
+    if (k === 'advanced_reports') return 'Advanced reports';
+    if (k === 'custom_domain') return 'Custom domain';
+    if (k === 'custom_email') return 'Custom email';
+    return k;
+  }
+%>
+
+<section class="bb-pa-plans" data-bb-pa-plans="1">
+  <header class="bb-pa-page-head">
+    <h1 class="bb-pa-page-head__title">Platform plans</h1>
+    <p class="bb-pa-lede">
+      Data-driven BlessBoard entitlement tiers and resource limits. Prices and billing are not managed here —
+      assign plans from an organization detail page.
+    </p>
+  </header>
+
+  <% if (!planRows.length) { %>
+  <p class="bb-pa-empty" role="status" data-bb-empty="plans">No active plans are configured.</p>
+  <% } else { %>
+  <div class="bb-pa-plan-grid" data-bb-pa-plan-grid="1">
+    <% planRows.forEach(function (plan) { %>
+    <article class="bb-pa-plan-card" data-bb-plan-key="<%= plan.planKey %>">
+      <header class="bb-pa-plan-card__head">
+        <h2 class="bb-pa-plan-card__title"><%= plan.displayName %></h2>
+        <code class="bb-pa-key"><%= plan.planKey %></code>
+      </header>
+      <% if (plan.description) { %>
+      <p class="bb-pa-plan-card__desc"><%= plan.description %></p>
+      <% } %>
+      <ul class="bb-pa-plan-features">
+        <% (plan.features || []).forEach(function (f) { %>
+        <li class="<%= f.featureKind === 'boolean' && !f.booleanValue ? 'is-off' : 'is-on' %>">
+          <span class="material-symbols-outlined" aria-hidden="true"><%= f.featureKind === 'boolean' && !f.booleanValue ? 'close' : 'check' %></span>
+          <span>
+            <strong><%= featureLabel(f.featureKey) %></strong>
+            · <%= formatFeature(f) %>
+          </span>
+        </li>
+        <% }) %>
+      </ul>
+      <p class="bb-pa-hint">Open an organization to assign this plan.</p>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

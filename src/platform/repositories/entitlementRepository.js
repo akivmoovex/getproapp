@@ -80,6 +80,18 @@ function mapOverride(row) {
   };
 }
 
+async function listActivePlans(client, productKey) {
+  const { rows } = await client.query(
+    `SELECT ${PLAN_COLS}
+       FROM platform.plans
+      WHERE product_key = $1
+        AND status = 'active'
+      ORDER BY sort_order ASC, plan_key ASC`,
+    [productKey]
+  );
+  return rows.map(mapPlan);
+}
+
 async function findPlanByKey(client, planKey) {
   const { rows } = await client.query(
     `SELECT ${PLAN_COLS} FROM platform.plans WHERE plan_key = $1`,
@@ -246,6 +258,7 @@ module.exports = {
   mapFeature,
   mapSubscription,
   mapOverride,
+  listActivePlans,
   findPlanByKey,
   findPlanById,
   listPlanFeatures,

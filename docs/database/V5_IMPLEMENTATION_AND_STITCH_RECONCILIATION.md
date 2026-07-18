@@ -140,7 +140,12 @@ Legend — **Implemented:** code mounted in `v5FoundationServer.js`. **Deployed:
 | `/admin/account` | GET | session | `platform_admin` | Yes | `platform-admin/account.ejs` | 200/401/403 | shell | Yes (apex) | In-shell account |
 | `/admin/logout` | POST | session + CSRF | `platform_admin` gate on shell; CSRF on post | Yes | — | 303/403 | shell | Yes (apex) | Revokes V5 session |
 | `/admin/organizations` | GET | session | `platform_admin` | Yes | `organizations.ejs` | 200/401 | `63-platform-church-organizations-*` | Yes (apex) | Bounded pagination; safe fields; read-only |
-| `/admin/organizations/:organizationKey` | GET | session | `platform_admin` | Yes | `organization-detail.ejs` | 200/404 | `65-*` (org+branches) | Yes (apex) | Branch keys/labels; no create org UI |
+| `/admin/organizations/:organizationKey` | GET | session | `platform_admin` | Yes | `organization-detail.ejs` | 200/404 | `65-*` + entitlements/domains | Yes (apex) | Org summary, branches, domains, entitlements; no org create |
+| `/admin/organizations/:organizationKey/plan` | POST | CSRF + confirm | `platform_admin` | Yes | — | 303 | `66-*` (assign) | Yes (apex) | `assignOrganizationPlan`; never deletes branches/users |
+| `/admin/organizations/:organizationKey/entitlement-override` | POST | CSRF + confirm + reason | `platform_admin` | Yes | — | 303 | `66-*` (override) | Yes (apex) | `setOrganizationEntitlementOverride` |
+| `/admin/plans` | GET | session | `platform_admin` | Yes | `plans.ejs` | 200/401 | `66-platform-plans-limits-*` | Yes (apex) | Catalogue + features; no prices/billing UI |
+| `/admin/deployments` | GET | session | `platform_admin` | Yes | `deployments.ejs` | 200/401 | `68-*` (registry subset) | Yes (apex) | Safe deployment fields; no fake health/tickets |
+| `/admin/settings` | GET | session | `platform_admin` | Yes | `settings.ejs` | 200/401 | `67-platform-settings-*` | Yes (apex) | Read-only DNS pattern + reserved labels; no save/failover |
 | `/features`, `/pricing`, `/for-churches`, `/register-church`, `/directory` | — | — | — | **Missing** | — | 503 | BlessBoard apex Stitch set | No | Not implemented on V5 |
 | `/healthz` | GET | anon | — | Yes | JSON | 200 | — | Yes | — |
 
@@ -327,8 +332,10 @@ Major gaps: Sacred Modernity layout, imagery, nav, typography density; V5 uses t
 | 62 Dashboard | `/admin` | **close** (live org counts; Stitch command shell; no fake metrics) | 10 |
 | 63 Organizations | `/admin/organizations` | **close** (bounded pagination; safe fields; status chips; no create/fake KPIs) | 10 |
 | 64 Create org | — | **missing** (CLI provision only) | 10 |
-| 65 Branch tenants (org detail) | `/admin/organizations/:key` | **close** (org summary + branch table; keys only; read-only) | 10 |
-| 66–68 plans / settings / support | entitlements backend only | **schema+service** / UI missing | deferred |
+| 65 Branch tenants (org detail) | `/admin/organizations/:key` | **close** (org + branches + domains + entitlements; confirmed plan/override writes) | 10 |
+| 66 Plans / limits | `/admin/plans` + org entitlements | **close** (catalogue + assign/override; no prices, create-tier, or fake KPIs) | 10 |
+| 67 Platform settings | `/admin/settings` | **close** (read-only hostname pattern + reserved labels; no branding save/MFA/failover) | 10 |
+| 68 Support / monitoring | `/admin/deployments` | **partial** (deployment registry only; no tickets/errors/fake health) | 10 |
 
 ---
 

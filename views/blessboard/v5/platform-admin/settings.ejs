@@ -1,0 +1,73 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var dep = currentDeployment || null;
+  var orgReserved = organizationReserved || [];
+  var hostReservedList = hostReserved || [];
+%>
+
+<section class="bb-pa-settings" data-bb-pa-settings="1">
+  <header class="bb-pa-page-head">
+    <h1 class="bb-pa-page-head__title">Platform settings</h1>
+    <p class="bb-pa-lede">
+      Read-only hostname patterns and reserved labels used by provisioning.
+      DNS automation, branding saves, MFA policy, and failover are not available in this shell.
+    </p>
+  </header>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-settings-deploy-heading">
+    <h2 id="pa-settings-deploy-heading" class="bb-pa-section-title">Current deployment</h2>
+    <dl class="bb-pa-dl bb-pa-dl--grid">
+      <div>
+        <dt>Deployment code</dt>
+        <dd><code class="bb-pa-key"><%= currentDeploymentCode || '—' %></code></dd>
+      </div>
+      <div>
+        <dt>Canonical domain</dt>
+        <dd><%= dep && dep.canonicalDomain ? dep.canonicalDomain : '—' %></dd>
+      </div>
+      <div>
+        <dt>Environment</dt>
+        <dd><%= dep && dep.environmentCode ? dep.environmentCode : '—' %></dd>
+      </div>
+      <div>
+        <dt>Release</dt>
+        <dd><%= dep && dep.releaseVersion ? dep.releaseVersion : '—' %></dd>
+      </div>
+    </dl>
+    <p class="bb-pa-hint"><a class="bb-pa-link" href="/admin/deployments">View full deployment registry</a></p>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-settings-dns-heading" data-bb-pa-dns-patterns="1">
+    <h2 id="pa-settings-dns-heading" class="bb-pa-section-title">Subdomain &amp; DNS patterns</h2>
+    <p class="bb-pa-hint">
+      Tenant hostnames are registered in <code class="bb-pa-key">platform.domains</code> and resolved by the hostname service.
+      Provisioning remains CLI-only — this page does not create or verify DNS records.
+    </p>
+    <div class="bb-pa-pattern" data-bb-pa-hostname-pattern="1">
+      <span class="bb-pa-chip bb-pa-chip--ok">Active pattern</span>
+      <code class="bb-pa-pattern__code"><%= hostnamePattern %></code>
+    </div>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-settings-reserved-heading">
+    <h2 id="pa-settings-reserved-heading" class="bb-pa-section-title">Reserved organization keys</h2>
+    <p class="bb-pa-hint">Labels that cannot be used as organization keys during provisioning.</p>
+    <ul class="bb-pa-chip-list" data-bb-pa-reserved="organization">
+      <% orgReserved.forEach(function (slug) { %>
+      <li><span class="bb-pa-chip"><%= slug %></span></li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-settings-host-reserved-heading">
+    <h2 id="pa-settings-host-reserved-heading" class="bb-pa-section-title">Reserved host labels</h2>
+    <p class="bb-pa-hint">Labels blocked for branch / host slug style names.</p>
+    <ul class="bb-pa-chip-list" data-bb-pa-reserved="host">
+      <% hostReservedList.forEach(function (slug) { %>
+      <li><span class="bb-pa-chip"><%= slug %></span></li>
+      <% }) %>
+    </ul>
+  </section>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

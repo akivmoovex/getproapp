@@ -427,4 +427,141 @@ describe("blessboard platform-admin shell", () => {
       []
     );
   });
+
+  it("plans, deployments, and settings pages stay read-safe without invented billing", async () => {
+    requireDb();
+    const cookie = await cookieFor(users.platform);
+
+    const plans = await request(app)
+      .get("/admin/plans")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(plans.status, 200);
+    assert.match(plans.text, /data-bb-pa-plans="1"/);
+    assert.match(plans.text, /data-bb-plan-key="free"/);
+    assert.match(plans.text, /data-bb-plan-key="growth"/);
+    assert.doesNotMatch(plans.text, /\$\d+|Create Custom Tier|Paid Tenants|Churn Rate|MRR/i);
+    assert.doesNotMatch(plans.text, new RegExp(org.id, "i"));
+
+    const deployments = await request(app)
+      .get("/admin/deployments")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(deployments.status, 200);
+    assert.match(deployments.text, /data-bb-pa-deployments="1"/);
+    assert.match(deployments.text, /data-bb-table="deployments"/);
+    assert.match(deployments.text, /blessboard-org-v5/);
+    assert.doesNotMatch(deployments.text, /session_cookie|Force Sync|Export Reports|Support Tickets/i);
+
+    const settings = await request(app)
+      .get("/admin/settings")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(settings.status, 200);
+    assert.match(settings.text, /data-bb-pa-settings="1"/);
+    assert.match(settings.text, /data-bb-pa-dns-patterns="1"/);
+    assert.match(settings.text, /data-bb-pa-hostname-pattern="1"/);
+    assert.doesNotMatch(settings.text, /Save Changes|Manual Failover|Export Logs|Primary Color/i);
+    assert.doesNotMatch(settings.text, /session_cookie_name|password|DATABASE_URL/i);
+  });
+
+  it("organization detail shows entitlements and domains; plan/override require confirmation", async () => {
+    requireDb();
+    const cookie = await cookieFor(users.platform);
+    const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
+    function extractCookie(res, name) {
+      const raw = res.headers["set-cookie"];
+      if (!raw) return null;
+      const list = Array.isArray(raw) ? raw : [raw];
+      for (const line of list) {
+        if (String(line).startsWith(`${name}=`)) {
+          return String(line).split(";")[0].slice(name.length + 1);
+        }
+      }
+      return null;
+    }
+
+    const detail = await request(app)
+      .get("/admin/organizations/pa-demo")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-bb-pa-org-entitlements="1"/);
+    assert.match(detail.text, /data-bb-pa-org-domains="1"/);
+    assert.match(detail.text, /data-bb-table="domains"/);
+    assert.match(detail.text, /pa-org\.blessboard\.org/);
+    assert.match(detail.text, /data-bb-pa-plan-form="1"/);
+    assert.match(detail.text, /name="confirm_plan_change"/);
+    assert.match(detail.text, /name="confirm_override"/);
+    assert.doesNotMatch(detail.text, new RegExp(org.id, "i"));
+    assert.doesNotMatch(detail.text, /\$249|Create Custom Tier|payment gateway/i);
+    assert.doesNotMatch(detail.text, /Verify DNS|Automate DNS|payment processor/i);
+
+    const csrf = extractCookie(detail, CSRF_COOKIE);
+    assert.ok(csrf);
+
+    const noConfirm = await request(app)
+      .post("/admin/organizations/pa-demo/plan")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        plan_key: "growth",
+      });
+    assert.equal(noConfirm.status, 303);
+    assert.match(String(noConfirm.headers.location || ""), /error=confirm_required/);
+
+    const assigned = await request(app)
+      .post("/admin/organizations/pa-demo/plan")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        plan_key: "growth",
+        confirm_plan_change: "1",
+        notes: "platform-admin shell test",
+      });
+    assert.equal(assigned.status, 303);
+    assert.match(String(assigned.headers.location || ""), /notice=plan_saved/);
+
+    const after = await request(app)
+      .get("/admin/organizations/pa-demo")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(after.status, 200);
+    assert.match(after.text, /growth/i);
+
+    const overrideNoConfirm = await request(app)
+      .post("/admin/organizations/pa-demo/entitlement-override")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        feature_key: "max_branches",
+        feature_kind: "limit",
+        limit_value: "5",
+        reason: "temporary capacity for test",
+      });
+    assert.equal(overrideNoConfirm.status, 303);
+    assert.match(String(overrideNoConfirm.headers.location || ""), /error=confirm_required/);
+
+    const overrideOk = await request(app)
+      .post("/admin/organizations/pa-demo/entitlement-override")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        feature_key: "max_branches",
+        feature_kind: "limit",
+        limit_value: "5",
+        reason: "temporary capacity for test",
+        confirm_override: "1",
+      });
+    assert.equal(overrideOk.status, 303);
+    assert.match(String(overrideOk.headers.location || ""), /notice=override_saved/);
+  });
 });

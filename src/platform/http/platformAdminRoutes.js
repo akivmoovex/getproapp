@@ -1,8 +1,10 @@
 "use strict";
 
 /**
- * Apex-only platform-admin shell (dashboard, account, logout + read-only org directory).
- * Requires active platform_admin role. No tenant-host access. No fabricated metrics.
+ * Apex-only platform-admin shell.
+ * Dashboard, org directory, plans/entitlements, deployments, settings.
+ * Writes limited to plan assign + entitlement override (CSRF + confirmation).
+ * No billing, payments, DNS automation, or destructive controls.
  */
 
 const fs = require("fs");
@@ -26,6 +28,20 @@ const {
   getPlatformOrganizationSummary,
   STATUS: DETAIL_STATUS,
 } = require("../services/getPlatformOrganizationSummary");
+const {
+  listPlatformPlansCatalogue,
+  STATUS: PLANS_STATUS,
+} = require("../services/listPlatformPlansCatalogue");
+const {
+  getPlatformOrganizationEntitlementsView,
+  assignOrganizationPlanByKey,
+  setOrganizationEntitlementOverrideByKey,
+  STATUS: ENTITLEMENTS_ADMIN_STATUS,
+} = require("../services/platformAdminEntitlements");
+const {
+  listPlatformDeployments,
+  STATUS: DEPLOY_STATUS,
+} = require("../services/listPlatformDeployments");
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
 const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
 const {
@@ -38,6 +54,10 @@ const {
 } = require("../session/v5SessionCookie");
 const { revokeV5Session } = require("../session/revokeV5Session");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
+const {
+  ORGANIZATION_RESERVED_SLUGS,
+  BRANCH_HOST_RESERVED_SLUGS,
+} = require("../../church/platformProvisioningValidation");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -92,6 +112,16 @@ function sendControlled(req, res, status, message) {
   </main>
 </body>
 </html>`);
+}
+
+/**
+ * @param {import('express').Request} req
+ * @returns {{ notice: string | null, error: string | null }}
+ */
+function readFlash(req) {
+  const notice = String((req.query && req.query.notice) || "").trim() || null;
+  const error = String((req.query && req.query.error) || "").trim() || null;
+  return { notice, error };
 }
 
 /**
@@ -266,6 +296,63 @@ function createPlatformAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
+  router.get("/admin/plans", requireApex, requirePlatformAdmin, async (req, res) => {
+    const catalogue = await listPlatformPlansCatalogue(getPool());
+    if (!catalogue.ok || catalogue.status === PLANS_STATUS.LOOKUP_ERROR) {
+      return sendControlled(req, res, 503, "Plan catalogue is temporarily unavailable.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/plans.ejs",
+      shellLocals(req, res, "plans", {
+        pageTitle: "Plans",
+        plans: catalogue.plans || [],
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/admin/deployments", requireApex, requirePlatformAdmin, async (req, res) => {
+    const list = await listPlatformDeployments(getPool(), env);
+    if (!list.ok || list.status === DEPLOY_STATUS.LOOKUP_ERROR) {
+      return sendControlled(req, res, 503, "Deployment registry is temporarily unavailable.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/deployments.ejs",
+      shellLocals(req, res, "deployments", {
+        pageTitle: "Deployments",
+        deployments: list.deployments || [],
+        currentDeploymentCode: list.currentDeploymentCode || "",
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/admin/settings", requireApex, requirePlatformAdmin, async (req, res) => {
+    const list = await listPlatformDeployments(getPool(), env);
+    if (!list.ok || list.status === DEPLOY_STATUS.LOOKUP_ERROR) {
+      return sendControlled(req, res, 503, "Platform settings are temporarily unavailable.");
+    }
+    const current =
+      (list.deployments || []).find((d) => d.deploymentCode === list.currentDeploymentCode) ||
+      null;
+    const orgReserved = Array.from(ORGANIZATION_RESERVED_SLUGS).sort();
+    const hostReserved = Array.from(BRANCH_HOST_RESERVED_SLUGS).sort();
+    const html = renderPlatformAdminView(
+      "platform-admin/settings.ejs",
+      shellLocals(req, res, "settings", {
+        pageTitle: "Settings",
+        currentDeployment: current,
+        currentDeploymentCode: list.currentDeploymentCode || "",
+        hostnamePattern: current && current.canonicalDomain
+          ? `{organization}.${current.canonicalDomain}`
+          : "{organization}.blessboard.org",
+        organizationReserved: orgReserved,
+        hostReserved,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
   router.get(
     "/admin/organizations/:organizationKey",
     requireApex,
@@ -281,15 +368,115 @@ function createPlatformAdminRouter(deps) {
         }
         return sendControlled(req, res, 404, "This organization could not be found.");
       }
+      const entitlementsView = await getPlatformOrganizationEntitlementsView(
+        getPool(),
+        req.params.organizationKey
+      );
+      if (!entitlementsView.ok && entitlementsView.status === ENTITLEMENTS_ADMIN_STATUS.LOOKUP_ERROR) {
+        return sendControlled(req, res, 503, "Entitlements lookup is temporarily unavailable.");
+      }
+      const flash = readFlash(req);
       const html = renderPlatformAdminView(
         "platform-admin/organization-detail.ejs",
         shellLocals(req, res, "organizations", {
           pageTitle: detail.organization.displayName || "Organization",
           organization: detail.organization,
           branches: detail.branches || [],
+          entitlements: entitlementsView.entitlements || null,
+          usage: entitlementsView.usage || null,
+          domains: entitlementsView.domains || [],
+          plans: entitlementsView.plans || [],
+          featureKeys: entitlementsView.featureKeys || [],
+          notice: flash.notice,
+          error: flash.error,
         })
       );
       return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/plan",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.status(403).type("text").send("Invalid or missing CSRF token.");
+      }
+      const confirmed = String((req.body && req.body.confirm_plan_change) || "") === "1";
+      const result = await assignOrganizationPlanByKey(getPool(), {
+        organizationKey,
+        planKey: req.body && req.body.plan_key,
+        notes: req.body && req.body.notes,
+        confirmed,
+      });
+      if (!result.ok) {
+        let error = "plan_failed";
+        if (result.status === ENTITLEMENTS_ADMIN_STATUS.CONFIRMATION_REQUIRED) {
+          error = "confirm_required";
+        } else if (result.status === ENTITLEMENTS_ADMIN_STATUS.NOT_FOUND) {
+          error = "not_found";
+        } else if (result.status === ENTITLEMENTS_ADMIN_STATUS.INVALID_INPUT) {
+          error = "invalid";
+        }
+        return res.redirect(
+          303,
+          `/admin/organizations/${encodeURIComponent(organizationKey)}?error=${error}#pa-org-entitlements`
+        );
+      }
+      return res.redirect(
+        303,
+        `/admin/organizations/${encodeURIComponent(organizationKey)}?notice=plan_saved#pa-org-entitlements`
+      );
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/entitlement-override",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.status(403).type("text").send("Invalid or missing CSRF token.");
+      }
+      const confirmed = String((req.body && req.body.confirm_override) || "") === "1";
+      const booleanRaw = String((req.body && req.body.boolean_value) || "").toLowerCase();
+      const result = await setOrganizationEntitlementOverrideByKey(getPool(), {
+        organizationKey,
+        featureKey: req.body && req.body.feature_key,
+        featureKind: req.body && req.body.feature_kind,
+        booleanValue: booleanRaw === "1" || booleanRaw === "true" || booleanRaw === "on",
+        limitValue: req.body && req.body.limit_value,
+        reason: req.body && req.body.reason,
+        confirmed,
+        createdByUserId: req.platformAdminContext && req.platformAdminContext.userId,
+      });
+      if (!result.ok) {
+        let error = "override_failed";
+        if (result.status === ENTITLEMENTS_ADMIN_STATUS.CONFIRMATION_REQUIRED) {
+          error = "confirm_required";
+        } else if (result.status === ENTITLEMENTS_ADMIN_STATUS.NOT_FOUND) {
+          error = "not_found";
+        } else if (result.status === ENTITLEMENTS_ADMIN_STATUS.INVALID_INPUT) {
+          error = "invalid";
+        }
+        return res.redirect(
+          303,
+          `/admin/organizations/${encodeURIComponent(organizationKey)}?error=${error}#pa-org-overrides`
+        );
+      }
+      return res.redirect(
+        303,
+        `/admin/organizations/${encodeURIComponent(organizationKey)}?notice=override_saved#pa-org-overrides`
+      );
     }
   );
 

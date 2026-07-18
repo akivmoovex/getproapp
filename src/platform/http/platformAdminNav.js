@@ -22,6 +22,30 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
     enabled: true,
   },
   {
+    key: "plans",
+    label: "Plans",
+    href: "/admin/plans",
+    icon: "workspace_premium",
+    nav: true,
+    enabled: true,
+  },
+  {
+    key: "deployments",
+    label: "Deployments",
+    href: "/admin/deployments",
+    icon: "dns",
+    nav: true,
+    enabled: true,
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    href: "/admin/settings",
+    icon: "settings",
+    nav: true,
+    enabled: true,
+  },
+  {
     key: "account",
     label: "Account",
     href: "/admin/account",
@@ -31,7 +55,12 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
   },
 ]);
 
-const PLATFORM_ADMIN_MOBILE_TABS = Object.freeze(["home", "organizations", "account"]);
+const PLATFORM_ADMIN_MOBILE_TABS = Object.freeze([
+  "home",
+  "organizations",
+  "plans",
+  "account",
+]);
 
 module.exports = {
   PLATFORM_ADMIN_NAV,

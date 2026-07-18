@@ -1,0 +1,74 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = deployments || [];
+  var current = currentDeploymentCode || '';
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'Active';
+    if (key === 'inactive') return 'Inactive';
+    if (key === 'retired') return 'Retired';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'retired') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip--warn';
+  }
+%>
+
+<section class="bb-pa-deployments" data-bb-pa-deployments="1">
+  <header class="bb-pa-page-head">
+    <h1 class="bb-pa-page-head__title">Deployments</h1>
+    <p class="bb-pa-lede">
+      Registry of platform deployments that own cookies, domains, and job flags.
+      Read-only — no failover, sync, or health fabrication.
+    </p>
+  </header>
+
+  <% if (current) { %>
+  <p class="bb-pa-hint" data-bb-pa-current-deployment="1">
+    This process · <code class="bb-pa-key"><%= current %></code>
+  </p>
+  <% } %>
+
+  <% if (!rows.length) { %>
+  <p class="bb-pa-empty" role="status" data-bb-empty="deployments">No deployments registered.</p>
+  <% } else { %>
+  <div class="bb-pa-table-wrap">
+    <table class="bb-pa-table" data-bb-table="deployments">
+      <thead>
+        <tr>
+          <th scope="col">Deployment</th>
+          <th scope="col">Application</th>
+          <th scope="col">Release</th>
+          <th scope="col">Canonical domain</th>
+          <th scope="col">Environment</th>
+          <th scope="col">Status</th>
+          <th scope="col">Jobs</th>
+          <th scope="col">DB access</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (d) { %>
+        <tr data-bb-deployment="<%= d.deploymentCode %>"<%= d.deploymentCode === current ? ' data-bb-current="1"' : '' %>>
+          <td>
+            <code class="bb-pa-key"><%= d.deploymentCode %></code>
+            <% if (d.deploymentCode === current) { %><span class="bb-pa-chip bb-pa-chip--ok">This process</span><% } %>
+          </td>
+          <td><%= d.applicationCode %></td>
+          <td><%= d.releaseVersion %></td>
+          <td><%= d.canonicalDomain %></td>
+          <td><%= d.environmentCode %></td>
+          <td><span class="bb-pa-chip <%= statusChip(d.status) %>"><%= statusLabel(d.status) %></span></td>
+          <td><%= d.jobsEnabled ? 'Enabled' : 'Disabled' %></td>
+          <td><%= d.databaseAccessMode %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

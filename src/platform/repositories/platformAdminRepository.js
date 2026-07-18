@@ -179,10 +179,64 @@ async function listBranchesForOrganizationKey(client, organizationKey) {
   return r.rows;
 }
 
+/**
+ * Safe domain rows for an organization key (no UUIDs).
+ * Bounded to 100 rows.
+ * @param {{ query: Function }} client
+ * @param {string} organizationKey
+ */
+async function listDomainsForOrganizationKey(client, organizationKey) {
+  const r = await client.query(
+    `SELECT
+        d.hostname,
+        d.domain_type,
+        d.status,
+        d.is_primary,
+        d.deployment_id AS deployment_code,
+        (d.verified_at IS NOT NULL) AS is_verified
+       FROM platform.organizations o
+       INNER JOIN platform.domains d
+         ON d.organization_id = o.id
+      WHERE o.organization_key = $1
+      ORDER BY
+        CASE WHEN d.is_primary THEN 0 ELSE 1 END,
+        CASE WHEN d.domain_type = 'canonical' THEN 0 ELSE 1 END,
+        d.hostname ASC
+      LIMIT 100`,
+    [organizationKey]
+  );
+  return r.rows;
+}
+
+/**
+ * Safe deployment registry rows (no session cookie names or secrets).
+ * Bounded to 100 rows.
+ * @param {{ query: Function }} client
+ */
+async function listDeploymentsSafe(client) {
+  const r = await client.query(
+    `SELECT
+        deployment_code,
+        application_code,
+        release_version,
+        canonical_domain,
+        environment_code,
+        status,
+        jobs_enabled,
+        database_access_mode
+       FROM platform.deployments
+      ORDER BY deployment_code ASC
+      LIMIT 100`
+  );
+  return r.rows;
+}
+
 module.exports = {
   listOrganizationDirectoryPage,
   countOrganizationDirectory,
   countOrganizationDirectoryStats,
   findOrganizationDirectoryByKey,
   listBranchesForOrganizationKey,
+  listDomainsForOrganizationKey,
+  listDeploymentsSafe,
 };
