@@ -67,6 +67,28 @@
     <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/new" data-bb-ann-create="1">Create announcement</a>
   </header>
 
+  <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
+  <p class="bb-ba-hint">
+    <a href="/hq/announcements">← Church-wide announcements</a>
+  </p>
+  <% } %>
+
+  <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide && branches && branches.length) { %>
+  <section class="bb-hq-panel bb-ann-branch-scopes" data-bb-hq-ann-branches="1" aria-labelledby="hq-ann-branch-heading">
+    <h2 id="hq-ann-branch-heading" class="bb-hq-section-title">Branch announcements</h2>
+    <p class="bb-ba-hint">Open a branch to manage announcements scoped to that campus only.</p>
+    <ul class="bb-ca-branch-list">
+      <% branches.forEach(function (branch) { %>
+      <li>
+        <a href="/hq/announcements/b/<%= branch.key %>"><%= branch.displayName %></a>
+        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
+        <code class="bb-hq-key"><%= branch.key %></code>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
   <% if (saved === '1' || saved === 'published' || saved === 'archived') { %>
   <p class="bb-ba-ok" role="status">
     <% if (saved === 'published') { %>Announcement published.<% } else if (saved === 'archived') { %>Announcement archived.<% } else { %>Saved.<% } %>

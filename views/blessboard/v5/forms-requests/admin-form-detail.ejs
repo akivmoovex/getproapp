@@ -38,6 +38,10 @@
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
+        <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
+        <a href="/hq/forms">Church-wide</a>
+        <span aria-hidden="true">›</span>
+        <% } %>
         <a href="<%= basePath %>">Forms</a>
         <span aria-hidden="true">›</span>
         <span>Detail</span>

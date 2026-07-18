@@ -1,0 +1,91 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var reg = registration || {};
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'Pending';
+    if (key === 'under_review') return 'In review';
+    if (key === 'approved') return 'Approved';
+    if (key === 'rejected') return 'Rejected';
+    if (key === 'withdrawn') return 'Withdrawn';
+    return s || '—';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section class="bb-hq-reg-detail" data-bb-hq-registration-detail="1">
+  <p class="bb-hq-back">
+    <a href="/hq/registrations">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to queue
+    </a>
+  </p>
+
+  <header class="bb-hq-page-head">
+    <h1 class="bb-hq-page-head__title"><%= reg.firstName %> <%= reg.lastName %></h1>
+    <p class="bb-hq-lede">
+      Read-only registration review. Approvals and rejections happen in branch admin.
+    </p>
+  </header>
+
+  <article class="bb-hq-panel">
+    <div class="bb-hq-chips" aria-label="Status">
+      <span class="bb-hq-chip"><%= statusLabel(reg.status) %></span>
+      <% if (reg.branchDisplayName || reg.branchKey) { %>
+      <span class="bb-hq-pill"><%= reg.branchDisplayName || reg.branchKey %></span>
+      <% } %>
+    </div>
+    <dl class="bb-hq-dl">
+      <dt>Legal name</dt>
+      <dd><%= reg.firstName %> <%= reg.lastName %></dd>
+      <% if (reg.preferredName) { %>
+      <dt>Preferred name</dt>
+      <dd><%= reg.preferredName %></dd>
+      <% } %>
+      <dt>Branch</dt>
+      <dd>
+        <% if (reg.branchDisplayName || reg.branchKey) { %>
+        <%= reg.branchDisplayName || reg.branchKey %>
+        <% if (reg.branchKey) { %>
+        <code class="bb-hq-key"><%= reg.branchKey %></code>
+        <% } %>
+        <% } else { %>—<% } %>
+      </dd>
+      <dt>Email</dt>
+      <dd><%= reg.emailDisplay || '—' %></dd>
+      <dt>Phone</dt>
+      <dd><%= reg.phoneDisplay || '—' %></dd>
+      <dt>Submitted</dt>
+      <dd><%= formatWhen(reg.createdAt) %></dd>
+      <% if (reg.reviewedAt) { %>
+      <dt>Reviewed</dt>
+      <dd><%= formatWhen(reg.reviewedAt) %></dd>
+      <% } %>
+      <% if (reg.memberId) { %>
+      <dt>Linked member</dt>
+      <dd><a href="/hq/members/<%= reg.memberId %>">View member profile</a></dd>
+      <% } %>
+    </dl>
+  </article>
+
+  <% if (reg.reviewNotes) { %>
+  <section class="bb-hq-panel" data-bb-internal-notes="1">
+    <h2 class="bb-hq-section-title">Internal notes</h2>
+    <p class="bb-hq-notes"><%= reg.reviewNotes %></p>
+    <p class="bb-hq-hint">These notes are not shown on public registration pages.</p>
+  </section>
+  <% } %>
+
+  <p class="bb-hq-hint">
+    To approve or reject, open this registration from the branch’s verification queue.
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

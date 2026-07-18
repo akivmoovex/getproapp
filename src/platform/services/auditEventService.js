@@ -247,12 +247,35 @@ async function listOrganizationAuditEvents(db, input) {
   if (churchId && !UUID_RE.test(churchId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "church_id" };
   }
+  let actionKey =
+    input.actionKey == null || input.actionKey === ""
+      ? null
+      : String(input.actionKey).trim().toLowerCase();
+  if (actionKey && !ACTION_KEY_RE.test(actionKey)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "action_key" };
+  }
+  let entityType =
+    input.entityType == null || input.entityType === ""
+      ? null
+      : String(input.entityType).trim().toLowerCase();
+  if (entityType && !ENTITY_TYPE_RE.test(entityType)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "entity_type" };
+  }
+  let outcome =
+    input.outcome == null || input.outcome === ""
+      ? null
+      : String(input.outcome).trim().toLowerCase();
+  if (outcome && !OUTCOMES.includes(outcome)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "outcome" };
+  }
   try {
     return await withClient(db, async (client) => {
       const page = await repo.listAuditEvents(client, {
         organizationId,
         churchId,
-        actionKey: input.actionKey || null,
+        actionKey,
+        entityType,
+        outcome,
         before: input.before || null,
         limit: input.limit,
       });

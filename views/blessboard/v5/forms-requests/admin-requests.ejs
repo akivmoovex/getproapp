@@ -41,11 +41,39 @@
   <header class="bb-ba-page-head">
     <h1 class="bb-ba-page-head__title">Request workflow queue</h1>
     <p class="bb-ba-lede">
+      <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide) { %>
+      Church-wide member-request oversight for
+      <strong><%= churchDisplayName %></strong>.
+      Open a branch queue for campus scope. Member refs are truncated; contact details are not listed here.
+      <% } else { %>
       Review member requests for
       <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
       Status updates stay on this branch. Contact details are not listed here — open a request to respond.
+      <% } %>
     </p>
   </header>
+
+  <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
+  <p class="bb-ba-hint">
+    <a href="/hq/requests">← Church-wide requests</a>
+  </p>
+  <% } %>
+
+  <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide && branches && branches.length) { %>
+  <section class="bb-hq-panel" data-bb-hq-requests-branches="1" aria-labelledby="hq-requests-branch-heading">
+    <h2 id="hq-requests-branch-heading" class="bb-hq-section-title">Branch request queues</h2>
+    <p class="bb-ba-hint">Open a branch to review and update requests scoped to that campus only.</p>
+    <ul class="bb-ca-branch-list">
+      <% branches.forEach(function (branch) { %>
+      <li>
+        <a href="/hq/requests/b/<%= branch.key %>"><%= branch.displayName %></a>
+        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
+        <code class="bb-hq-key"><%= branch.key %></code>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
 
   <% if (saved === 'status' || saved === '1') { %>
   <p class="bb-ba-ok" role="status">Request updated.</p>

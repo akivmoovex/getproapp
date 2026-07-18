@@ -1,27 +1,135 @@
 <%- include('../partials/platform-admin-shell-start') %>
-  <h1><%= organization.displayName %></h1>
-  <p class="bb-pa-lede">Read-only organization summary. No administrative actions are available in this phase.</p>
-  <dl class="bb-pa-dl" data-bb-detail="organization">
-    <dt>Organization key</dt>
-    <dd><%= organization.organizationKey %></dd>
-    <dt>Display name</dt>
-    <dd><%= organization.displayName %></dd>
-    <dt>Data environment</dt>
-    <dd><%= organization.dataEnvironment %></dd>
-    <dt>Organization status</dt>
-    <dd><%= organization.organizationStatus %></dd>
-    <dt>BlessBoard enrolment</dt>
-    <dd><%= organization.enrolmentStatus || "—" %></dd>
-    <dt>Canonical hostname</dt>
-    <dd><%= organization.canonicalHostname || "—" %></dd>
-    <dt>Deployment</dt>
-    <dd><%= organization.deploymentCode || "—" %></dd>
-    <dt>Church key</dt>
-    <dd><%= organization.churchKey || "—" %></dd>
-    <dt>Church status</dt>
-    <dd><%= organization.churchStatus || "—" %></dd>
-    <dt>Active branches</dt>
-    <dd data-bb-count="active-branches"><%= organization.activeBranchCount %></dd>
-  </dl>
-  <p><a href="/admin/organizations">Back to directory</a></p>
+<%
+  var org = organization || {};
+  var branchRows = branches || [];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'Active';
+    if (key === 'inactive') return 'Inactive';
+    if (key === 'suspended') return 'Suspended';
+    if (key === 'pending') return 'Pending';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'suspended') return 'bb-pa-chip--danger';
+    if (key === 'pending') return 'bb-pa-chip--warn';
+    if (key === 'inactive' || key === 'archived') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip--muted';
+  }
+  function typeLabel(t) {
+    var key = String(t || '').toLowerCase();
+    if (key === 'hq') return 'HQ';
+    if (key === 'branch') return 'Branch';
+    return t || '—';
+  }
+%>
+
+<section class="bb-pa-org-detail" data-bb-pa-organization-detail="1" data-bb-detail="organization">
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-hint"><a class="bb-pa-link" href="/admin/organizations">← Organizations</a></p>
+    <h1 class="bb-pa-page-head__title"><%= org.displayName %></h1>
+    <p class="bb-pa-lede">
+      Read-only organization and branch catalogue summary. Provisioning stays CLI-only —
+      no impersonation, billing, or write actions on this screen.
+    </p>
+  </header>
+
+  <section class="bb-pa-summary" aria-label="Organization summary" data-bb-pa-org-summary="1">
+    <article class="bb-pa-card bb-pa-card--stat">
+      <h2 class="bb-pa-card__label">Organization key</h2>
+      <p class="bb-pa-card__value bb-pa-card__value--text"><code class="bb-pa-key"><%= org.organizationKey %></code></p>
+    </article>
+    <article class="bb-pa-card bb-pa-card--stat">
+      <h2 class="bb-pa-card__label">Status</h2>
+      <p class="bb-pa-card__value bb-pa-card__value--text">
+        <span class="bb-pa-chip <%= statusChip(org.organizationStatus) %>"><%= statusLabel(org.organizationStatus) %></span>
+      </p>
+    </article>
+    <article class="bb-pa-card bb-pa-card--stat">
+      <h2 class="bb-pa-card__label">Active branches</h2>
+      <p class="bb-pa-card__value" data-bb-count="active-branches"><%= org.activeBranchCount %></p>
+    </article>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-org-fields-heading">
+    <h2 id="pa-org-fields-heading" class="bb-pa-section-title">Catalogue fields</h2>
+    <dl class="bb-pa-dl bb-pa-dl--grid">
+      <div>
+        <dt>Display name</dt>
+        <dd><%= org.displayName %></dd>
+      </div>
+      <div>
+        <dt>Data environment</dt>
+        <dd><code class="bb-pa-key"><%= org.dataEnvironment %></code></dd>
+      </div>
+      <div>
+        <dt>BlessBoard enrolment</dt>
+        <dd>
+          <% if (org.enrolmentStatus) { %>
+          <span class="bb-pa-chip <%= statusChip(org.enrolmentStatus) %>"><%= statusLabel(org.enrolmentStatus) %></span>
+          <% } else { %>—<% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Canonical hostname</dt>
+        <dd><%= org.canonicalHostname || '—' %></dd>
+      </div>
+      <div>
+        <dt>Deployment</dt>
+        <dd><code class="bb-pa-key"><%= org.deploymentCode || '—' %></code></dd>
+      </div>
+      <div>
+        <dt>Church key</dt>
+        <dd>
+          <% if (org.churchKey) { %>
+          <code class="bb-pa-key"><%= org.churchKey %></code>
+          <span class="bb-pa-chip <%= statusChip(org.churchStatus) %>"><%= statusLabel(org.churchStatus) %></span>
+          <% } else { %>—<% } %>
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-org-branches-heading" data-bb-pa-org-branches="1">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-org-branches-heading" class="bb-pa-section-title">Branches</h2>
+      <span class="bb-pa-hint"><%= branchRows.length %> listed (max 100)</span>
+    </div>
+    <p class="bb-pa-hint">Branch keys and labels only. No create or edit actions.</p>
+    <% if (!branchRows.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-empty="branches">No branches provisioned for this organization.</p>
+    <% } else { %>
+    <div class="bb-pa-table-wrap">
+      <table class="bb-pa-table" data-bb-table="branches">
+        <thead>
+          <tr>
+            <th scope="col">Branch</th>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+            <th scope="col">Country</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% branchRows.forEach(function (b) { %>
+          <tr data-bb-branch-key="<%= b.key %>">
+            <td>
+              <strong><%= b.displayName %></strong>
+              <code class="bb-pa-key">key · <%= b.key %></code>
+              <% if (b.isPrimary) { %><span class="bb-pa-chip">Primary</span><% } %>
+            </td>
+            <td><%= typeLabel(b.branchType) %></td>
+            <td><span class="bb-pa-chip <%= statusChip(b.status) %>"><%= statusLabel(b.status) %></span></td>
+            <td><%= b.countryCode || '—' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+</section>
+
 <%- include('../partials/platform-admin-shell-end') %>

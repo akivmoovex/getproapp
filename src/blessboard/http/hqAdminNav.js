@@ -16,6 +16,22 @@ const HQ_ADMIN_NAV = Object.freeze([
     nav: true,
   },
   {
+    key: "registrations",
+    label: "Registrations",
+    href: "/hq/registrations",
+    icon: "how_to_reg",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "members",
+    label: "Members",
+    href: "/hq/members",
+    icon: "badge",
+    enabled: true,
+    nav: true,
+  },
+  {
     key: "settings",
     label: "Settings",
     href: "/hq/settings",

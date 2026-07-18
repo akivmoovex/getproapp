@@ -1,0 +1,106 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var branchOptions = branches || [];
+  var monthSummary = summary || null;
+  var byBranch = (monthSummary && monthSummary.byBranch) || [];
+  var churchTotals = (monthSummary && monthSummary.churchTotals) || null;
+  var categoryRows = churchTotals || byBranch;
+  function categoryLabel(c) {
+    if (c === 'first_time_visitors') return 'Visitors';
+    if (c === 'adults') return 'Adults';
+    if (c === 'youth') return 'Youth';
+    if (c === 'children') return 'Children';
+    if (c === 'volunteers') return 'Volunteers';
+    if (c === 'other') return 'Other';
+    return c;
+  }
+%>
+
+<section class="bb-hq-att-report" data-bb-hq-attendance-report="1">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-hint"><a href="/hq/reports">← HQ reports</a></p>
+      <h1 class="bb-hq-page-head__title">Attendance report</h1>
+      <p class="bb-hq-lede">
+        Aggregate headcounts for
+        <strong><%= branchDisplayName || churchDisplayName %></strong>
+        <%= branchFilter ? '' : '(all branches)' %>.
+        Submitted / approved / archived only — no individual check-in and no charts.
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/attendance">Manage attendance</a>
+    </p>
+  </header>
+
+  <form method="get" action="/hq/reports/attendance" class="bb-hq-filter" data-bb-hq-att-report-filter="1">
+    <div class="bb-hq-field">
+      <label for="month">Month</label>
+      <input id="month" type="month" name="month" value="<%= yearMonth %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="branch">Branch</label>
+      <select id="branch" name="branch">
+        <option value="">All branches</option>
+        <% branchOptions.forEach(function (b) { %>
+        <option value="<%= b.key %>" <%= branchFilter === b.key ? 'selected' : '' %>><%= b.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Show</button>
+    </div>
+  </form>
+
+  <section class="bb-hq-panel">
+    <h2 class="bb-hq-section-title">Monthly totals · <%= yearMonth %></h2>
+    <% if (!monthSummary || !categoryRows.length) { %>
+    <p class="bb-hq-empty" role="status">No submitted attendance for this month.</p>
+    <% } else { %>
+    <p data-bb-attendance-grand-total="<%= monthSummary.grandTotal %>">
+      Total headcount: <strong><%= monthSummary.grandTotal %></strong>
+    </p>
+    <ul class="bb-hq-report-list" data-bb-attendance-summary-list="1">
+      <% categoryRows.forEach(function (row) { %>
+      <li data-bb-attendance-category="<%= row.category %>">
+        <%= categoryLabel(row.category) %>: <%= row.totalCount %>
+        (<%= row.eventCount %> event<%= row.eventCount === 1 ? '' : 's' %>)
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <% if (!branchFilter && byBranch.length) { %>
+  <section class="bb-hq-panel">
+    <h2 class="bb-hq-section-title">By branch</h2>
+    <div class="bb-hq-table-wrap">
+      <table class="bb-hq-table" data-bb-attendance-by-branch="1">
+        <thead>
+          <tr>
+            <th scope="col">Branch</th>
+            <th scope="col">Category</th>
+            <th scope="col">Headcount</th>
+            <th scope="col">Events</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% byBranch.forEach(function (row) { %>
+          <tr data-bb-branch="<%= row.branchKey || '' %>" data-bb-attendance-category="<%= row.category %>">
+            <td>
+              <%= row.branchDisplayName || '—' %>
+              <% if (row.branchKey) { %><code class="bb-hq-key"><%= row.branchKey %></code><% } %>
+            </td>
+            <td><%= categoryLabel(row.category) %></td>
+            <td data-bb-count="<%= row.totalCount %>"><%= row.totalCount %></td>
+            <td><%= row.eventCount %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

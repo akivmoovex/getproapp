@@ -14,13 +14,11 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
+const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   CSRF_FIELD,
-  issueCsrfToken,
   validateCsrf,
-  setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const {
   STATUS,
@@ -42,8 +40,14 @@ const {
   updateMemberRequestStatus,
 } = require("../services/formsRequestsService");
 const {
+  listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
+  STATUS: BRANCH_STATUS,
 } = require("../services/listBlessBoardBranches");
+const {
+  authorizeBlessBoardTenantAccess,
+  STATUS: AUTHZ_STATUS,
+} = require("../services/authorizeBlessBoardTenantAccess");
 const { createMediaUploadService } = require("../media/mediaUploadService");
 const formsRepo = require("../repositories/formsRequestsRepository");
 
@@ -220,26 +224,16 @@ function createFormsRequestsAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function primaryRoleLabel(req) {
-    const roles =
-      req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-        ? req.blessBoardAuthorizationContext.effectiveRoles
-        : [];
-    const order =
-      variant === "hq"
-        ? ["church_hq_admin", "platform_admin", "branch_admin"]
-        : ["branch_admin", "church_hq_admin", "platform_admin"];
-    for (const key of order) {
-      const hit = roles.find((r) => r.roleKey === key);
-      if (hit) return formatRoleLabel(hit.roleKey);
-    }
-    return roles[0] ? formatRoleLabel(roles[0].roleKey) : variant === "hq" ? "HQ admin" : "Branch admin";
-  }
-
   function shellLocals(req, res, activeNav, extra) {
     const pageTitle =
       (extra && extra.pageTitle) ||
       (activeNav === "requests" ? "Requests" : activeNav === "resources" ? "Resources" : "Forms");
+    const sharedExtra = {
+      audiences: AUDIENCES,
+      requestCategories: REQUEST_CATEGORIES,
+      requestStatuses: REQUEST_STATUSES,
+      ...(extra || {}),
+    };
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
         env,
@@ -248,33 +242,20 @@ function createFormsRequestsAdminRouter(deps) {
         pageTitle,
         extra: {
           shellKind: "branch",
-          audiences: AUDIENCES,
-          requestCategories: REQUEST_CATEGORIES,
-          requestStatuses: REQUEST_STATUSES,
-          ...(extra || {}),
+          ...sharedExtra,
         },
       });
     }
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    return {
-      pageTitle,
+    return buildHqAdminShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      shellKind: "hq",
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      roleLabel: primaryRoleLabel(req),
-      displayName:
-        req.v5Session && req.v5Session.session && req.v5Session.session.user
-          ? req.v5Session.session.user.displayName
-          : "",
-      hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
-      audiences: AUDIENCES,
-      requestCategories: REQUEST_CATEGORIES,
-      requestStatuses: REQUEST_STATUSES,
-      ...(extra || {}),
-    };
+      pageTitle,
+      extra: {
+        shellKind: "hq",
+        ...sharedExtra,
+      },
+    });
   }
 
   function validateCsrfPost(req, res) {
@@ -318,6 +299,8 @@ function createFormsRequestsAdminRouter(deps) {
       return {
         churchId: tenant.church.id,
         branchId: tenant.primaryBranch.id,
+        branchKey: tenant.primaryBranch.key || null,
+        branchDisplayName: tenant.primaryBranch.displayName || null,
         basePath: baseRoot,
         tenant,
         actorUserId: session.userId,
@@ -325,17 +308,40 @@ function createFormsRequestsAdminRouter(deps) {
     }
     const branchKey = req.params && req.params.branchKey ? String(req.params.branchKey) : "";
     if (branchKey) {
-      const resolved = await resolveBlessBoardBranchForChurch(getPool(), {
-        churchId: tenant.church.id,
-        branchKey,
-      });
+      const resolved = await resolveBlessBoardBranchForChurch(
+        getPool(),
+        tenant.church.id,
+        branchKey
+      );
       if (!resolved.ok || !resolved.branch) {
-        sendControlled(req, res, 404, "Branch not found.", shellKind);
+        const code = resolved.status === BRANCH_STATUS.LOOKUP_ERROR ? 503 : 404;
+        sendControlled(
+          req,
+          res,
+          code,
+          code === 503 ? "Branch lookup is temporarily unavailable." : "Branch not found.",
+          shellKind
+        );
+        return null;
+      }
+      const authz = await authorizeBlessBoardTenantAccess(getPool(), {
+        userId: session.userId,
+        tenant,
+        branchId: resolved.branch.id,
+      });
+      if (authz.status === AUTHZ_STATUS.LOOKUP_ERROR) {
+        sendControlled(req, res, 503, "Access check is temporarily unavailable.", shellKind);
+        return null;
+      }
+      if (!authz.ok) {
+        sendControlled(req, res, 403, "You do not have access to this branch.", shellKind);
         return null;
       }
       return {
         churchId: tenant.church.id,
         branchId: resolved.branch.id,
+        branchKey: resolved.branch.key,
+        branchDisplayName: resolved.branch.displayName,
         basePath: `${baseRoot}/b/${resolved.branch.key}`,
         tenant,
         actorUserId: session.userId,
@@ -344,9 +350,26 @@ function createFormsRequestsAdminRouter(deps) {
     return {
       churchId: tenant.church.id,
       branchId: null,
+      branchKey: null,
+      branchDisplayName: null,
       basePath: baseRoot,
       tenant,
       actorUserId: session.userId,
+    };
+  }
+
+  async function hqBranchListLocals(scope) {
+    let branches = [];
+    if (variant === "hq" && !scope.branchId) {
+      const listResult = await listBlessBoardBranches(getPool(), scope.churchId);
+      branches = listResult.ok ? listResult.branches : [];
+    }
+    return {
+      branchDisplayName: scope.branchDisplayName || null,
+      branchKey: scope.branchKey || null,
+      branches,
+      isHqChurchWide: variant === "hq" && !scope.branchId,
+      isHqBranchScoped: variant === "hq" && Boolean(scope.branchId),
     };
   }
 
@@ -366,6 +389,7 @@ function createFormsRequestsAdminRouter(deps) {
         if (!listed.ok) {
           return sendControlled(req, res, 503, "Resources unavailable.", shellKind);
         }
+        const branchLocals = await hqBranchListLocals(scope);
         return res
           .status(200)
           .type("html")
@@ -377,6 +401,7 @@ function createFormsRequestsAdminRouter(deps) {
                 resources: listed.resources,
                 canCreate: Boolean(scope.branchId) || variant === "hq",
                 saved: String((req.query && req.query.saved) || ""),
+                ...branchLocals,
               })
             )
           );
@@ -413,6 +438,7 @@ function createFormsRequestsAdminRouter(deps) {
           hasAttachment: Boolean(r.mediaAssetId),
           memberRef: r.memberId ? String(r.memberId).slice(-8) : null,
         }));
+        const branchLocals = await hqBranchListLocals(scope);
         return res
           .status(200)
           .type("html")
@@ -424,6 +450,7 @@ function createFormsRequestsAdminRouter(deps) {
                 requests,
                 statusFilter,
                 saved: String((req.query && req.query.saved) || ""),
+                ...branchLocals,
               })
             )
           );
@@ -439,6 +466,7 @@ function createFormsRequestsAdminRouter(deps) {
       if (!listed.ok) {
         return sendControlled(req, res, 503, "Forms unavailable.", shellKind);
       }
+      const branchLocals = await hqBranchListLocals(scope);
       return res
         .status(200)
         .type("html")
@@ -450,6 +478,7 @@ function createFormsRequestsAdminRouter(deps) {
               forms: listed.forms,
               canCreate: Boolean(scope.branchId) || variant === "hq",
               saved: String((req.query && req.query.saved) || ""),
+              ...branchLocals,
             })
           )
         );
@@ -554,6 +583,7 @@ function createFormsRequestsAdminRouter(deps) {
           scopeBranchId: scope.branchId,
           limit: LIST_LIMIT,
         });
+        const branchLocals = await hqBranchListLocals(scope);
         return res
           .status(200)
           .type("html")
@@ -570,6 +600,7 @@ function createFormsRequestsAdminRouter(deps) {
                 ),
                 fieldLabels: fieldLabelsFromForm(loaded.form),
                 saved: String((req.query && req.query.saved) || ""),
+                ...branchLocals,
               })
             )
           );
@@ -620,6 +651,7 @@ function createFormsRequestsAdminRouter(deps) {
           loaded.request.mediaAssetId,
           scope.churchId
         );
+        const branchLocals = await hqBranchListLocals(scope);
         return res
           .status(200)
           .type("html")
@@ -632,6 +664,7 @@ function createFormsRequestsAdminRouter(deps) {
                 request: presentAdminRequest(loaded.request, attachmentMeta),
                 saved: String((req.query && req.query.saved) || ""),
                 error: String((req.query && req.query.error) || ""),
+                ...branchLocals,
               })
             )
           );

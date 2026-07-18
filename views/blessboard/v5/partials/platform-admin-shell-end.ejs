@@ -1,13 +1,27 @@
-</main>
+      </main>
+    </div>
+  </div>
   <script>
     (function () {
+      var body = document.body;
       var toggle = document.querySelector('[data-bb-nav="mobile-toggle"]');
-      var panel = document.getElementById("bb-pa-mobile-nav");
-      if (!toggle || !panel) return;
-      toggle.addEventListener("click", function () {
-        var open = panel.classList.toggle("is-open");
-        panel.hidden = !open;
+      var drawer = document.getElementById("bb-pa-drawer");
+      if (!toggle || !drawer) return;
+
+      function setOpen(open) {
+        drawer.hidden = !open;
         toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        body.classList.toggle("bb-pa-drawer-open", open);
+      }
+
+      toggle.addEventListener("click", function () {
+        setOpen(drawer.hidden);
+      });
+
+      drawer.querySelectorAll('[data-bb-nav="drawer-close"]').forEach(function (el) {
+        el.addEventListener("click", function () {
+          setOpen(false);
+        });
       });
     })();
   </script>

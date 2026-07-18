@@ -1,22 +1,63 @@
 <%- include('../partials/platform-admin-shell-start') %>
-  <h1>Platform admin</h1>
-  <p class="bb-pa-lede">
-    Read-only BlessBoard V5 organization directory. Creation, editing, billing, and impersonation are not enabled.
-  </p>
-  <article class="bb-pa-card">
-    <h2>Organizations</h2>
-    <p data-bb-count="organizations-total"><%= totalOrganizations %></p>
-    <p><a href="/admin/organizations">Browse directory</a></p>
-  </article>
-  <% if (recentOrganizations && recentOrganizations.length) { %>
-    <h2>Recent keys</h2>
-    <ul>
-      <% recentOrganizations.forEach(function (org) { %>
-        <li>
-          <a href="/admin/organizations/<%= org.organizationKey %>"><%= org.organizationKey %></a>
-          — <%= org.displayName %>
-        </li>
+<%
+  var sample = directorySample || [];
+%>
+
+<section class="bb-pa-dash" data-bb-pa-dashboard="1">
+  <header class="bb-pa-page-head">
+    <h1 class="bb-pa-page-head__title">Platform admin</h1>
+    <p class="bb-pa-lede">
+      Apex command center for BlessBoard V5. Cards use live provisioned counts only —
+      no projected growth, billing, or fabricated health scores.
+    </p>
+  </header>
+
+  <section class="bb-pa-summary" aria-label="Directory summary" data-bb-pa-summary="1">
+    <article class="bb-pa-card bb-pa-card--stat">
+      <h2 class="bb-pa-card__label">Organizations</h2>
+      <p class="bb-pa-card__value" data-bb-count="organizations-total"><%= totalOrganizations %></p>
+      <p class="bb-pa-card__hint">Provisioned platform organizations</p>
+    </article>
+    <article class="bb-pa-card bb-pa-card--stat">
+      <h2 class="bb-pa-card__label">With BlessBoard church</h2>
+      <p class="bb-pa-card__value" data-bb-count="organizations-with-church"><%= organizationsWithChurch %></p>
+      <p class="bb-pa-card__hint">Organizations linked to a church catalogue row</p>
+    </article>
+    <article class="bb-pa-card">
+      <h2 class="bb-pa-card__label">Directory</h2>
+      <p class="bb-pa-card__value bb-pa-card__value--text">Read-only</p>
+      <p class="bb-pa-card__hint">
+        <a class="bb-pa-link" href="/admin/organizations">Browse organizations</a>
+      </p>
+    </article>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-sample-heading">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-sample-heading" class="bb-pa-section-title">Directory sample</h2>
+      <a class="bb-pa-link" href="/admin/organizations">View all</a>
+    </div>
+    <p class="bb-pa-hint">
+      First keys by organization key order. Creation, editing, billing, and impersonation stay CLI-only.
+    </p>
+    <% if (!sample.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-pa-empty="directory">No organizations provisioned yet.</p>
+    <% } else { %>
+    <ul class="bb-pa-org-list" data-bb-pa-directory-sample="1">
+      <% sample.forEach(function (org) { %>
+      <li>
+        <a href="/admin/organizations/<%= org.organizationKey %>">
+          <code class="bb-pa-key"><%= org.organizationKey %></code>
+          <span><%= org.displayName %></span>
+        </a>
+        <% if (org.churchKey) { %>
+        <span class="bb-pa-chip">Church · <%= org.churchKey %></span>
+        <% } %>
+      </li>
       <% }) %>
     </ul>
-  <% } %>
+    <% } %>
+  </section>
+</section>
+
 <%- include('../partials/platform-admin-shell-end') %>

@@ -1,0 +1,69 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var m = member || {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+%>
+
+<section class="bb-hq-member-detail" data-bb-hq-member-detail="1">
+  <p class="bb-hq-back">
+    <a href="/hq/members">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to directory
+    </a>
+  </p>
+
+  <header class="bb-hq-page-head">
+    <h1 class="bb-hq-page-head__title"><%= m.firstName %> <%= m.lastName %></h1>
+    <p class="bb-hq-lede">Church-wide member profile. Privacy-limited fields only.</p>
+  </header>
+
+  <article class="bb-hq-panel">
+    <div class="bb-hq-chips" aria-label="Status">
+      <span class="bb-hq-chip"><%= m.status %></span>
+      <% if (m.membershipStatus) { %>
+      <span class="bb-hq-chip bb-hq-chip--muted"><%= m.membershipStatus %></span>
+      <% } %>
+      <% if (m.branchDisplayName || m.branchKey) { %>
+      <span class="bb-hq-pill"><%= m.branchDisplayName || m.branchKey %></span>
+      <% } %>
+    </div>
+    <dl class="bb-hq-dl">
+      <dt>Legal name</dt>
+      <dd><%= m.firstName %> <%= m.lastName %></dd>
+      <% if (m.preferredName) { %>
+      <dt>Preferred name</dt>
+      <dd><%= m.preferredName %></dd>
+      <% } %>
+      <dt>Primary branch</dt>
+      <dd>
+        <% if (m.branchDisplayName || m.branchKey) { %>
+        <%= m.branchDisplayName || m.branchKey %>
+        <% if (m.branchKey) { %>
+        <code class="bb-hq-key"><%= m.branchKey %></code>
+        <% } %>
+        <% } else { %>—<% } %>
+      </dd>
+      <dt>Email</dt>
+      <dd><%= m.emailDisplay || '—' %></dd>
+      <dt>Phone</dt>
+      <dd><%= m.phoneDisplay || '—' %></dd>
+      <dt>Joined</dt>
+      <dd><%= formatWhen(m.joinedAt) %></dd>
+      <dt>Primary membership</dt>
+      <dd><%= m.isPrimary ? 'Yes' : 'No' %></dd>
+      <dt>Login linked</dt>
+      <dd><%= m.hasLoginLinked ? 'Yes' : 'No' %></dd>
+    </dl>
+  </article>
+
+  <p class="bb-hq-hint">
+    Linking a login is a separate step. Approving a registration never promises an automatic account.
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

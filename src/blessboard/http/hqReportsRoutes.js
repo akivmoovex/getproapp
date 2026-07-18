@@ -2,6 +2,7 @@
 
 /**
  * BlessBoard V5 HQ read-only reports + audit log viewer.
+ * Attendance/giving report screens use live aggregates only — no charts, no donor PII.
  */
 
 const fs = require("fs");
@@ -13,22 +14,34 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
-const {
-  issueCsrfToken,
-  setCsrfCookie,
-} = require("../../platform/http/v5Csrf");
+const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   STATUS,
   getHqOperationalReport,
 } = require("../services/hqReportsService");
 const {
+  getMonthlyAttendanceSummary,
+  STATUS: ATT_STATUS,
+} = require("../services/attendanceService");
+const {
+  getMonthlyGivingSummary,
+  STATUS: GIV_STATUS,
+} = require("../services/givingService");
+const {
+  listBlessBoardBranches,
+  resolveBlessBoardBranchForChurch,
+  STATUS: BRANCH_STATUS,
+} = require("../services/listBlessBoardBranches");
+const {
   listOrganizationAuditEvents,
+  OUTCOMES: AUDIT_OUTCOMES,
   STATUS: AUDIT_STATUS,
 } = require("../../platform/services/auditEventService");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
+const AUDIT_PAGE_SIZE = 50;
+const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;
+const ENTITY_TYPE_RE = /^[a-z][a-z0-9_]{1,63}$/;
 
 function renderView(relativePath, data) {
   const filename = path.join(VIEWS_ROOT, relativePath);
@@ -60,6 +73,58 @@ function sendControlled(req, res, status, message) {
 function currentYearMonth() {
   const d = new Date();
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function normalizeYearMonth(raw) {
+  const yearMonth = String(raw || currentYearMonth()).trim();
+  return /^\d{4}-\d{2}$/.test(yearMonth) ? yearMonth : currentYearMonth();
+}
+
+/**
+ * HQ-safe audit rows for HTML — no metadata, secrets, session data, or full UUIDs.
+ * @param {object[]} events
+ */
+function presentAuditEventsForHq(events) {
+  return (events || []).map((ev) => {
+    const createdAt = ev && ev.createdAt ? ev.createdAt : null;
+    let when = "";
+    if (createdAt) {
+      const d = createdAt instanceof Date ? createdAt : new Date(createdAt);
+      when = Number.isNaN(d.getTime()) ? String(createdAt) : d.toISOString();
+    }
+    return {
+      when,
+      actionKey: ev && ev.actionKey ? String(ev.actionKey) : "",
+      entityType: ev && ev.entityType ? String(ev.entityType) : "",
+      outcome: ev && ev.outcome ? String(ev.outcome) : "",
+      entityRef: ev && ev.entityId ? String(ev.entityId).slice(-8) : null,
+      actorRef: ev && ev.actorUserId ? String(ev.actorUserId).slice(-8) : null,
+    };
+  });
+}
+
+function parseAuditActionFilter(raw) {
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase();
+  if (!value) return "";
+  return ACTION_KEY_RE.test(value) ? value : "";
+}
+
+function parseAuditEntityTypeFilter(raw) {
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase();
+  if (!value) return "";
+  return ENTITY_TYPE_RE.test(value) ? value : "";
+}
+
+function parseAuditOutcomeFilter(raw) {
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase();
+  if (!value) return "";
+  return AUDIT_OUTCOMES.includes(value) ? value : "";
 }
 
 /**
@@ -104,30 +169,47 @@ function createHqReportsRouter(deps) {
   }
 
   function shellLocals(req, res, activeNav, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const roles =
-      req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-        ? req.blessBoardAuthorizationContext.effectiveRoles
-        : [];
-    const hit =
-      roles.find((r) => r.roleKey === "church_hq_admin") ||
-      roles.find((r) => r.roleKey === "platform_admin") ||
-      roles[0];
-    return {
-      pageTitle: activeNav === "audit" ? "Audit" : "Reports",
+    return buildHqAdminShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      shellKind: "hq",
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
-      roleLabel: hit ? formatRoleLabel(hit.roleKey) : "HQ admin",
-      displayName:
-        req.v5Session && req.v5Session.session && req.v5Session.session.user
-          ? req.v5Session.session.user.displayName
-          : "",
-      ...(extra || {}),
+      pageTitle:
+        (extra && extra.pageTitle) ||
+        (activeNav === "audit"
+          ? "Audit"
+          : activeNav === "attendance"
+            ? "Attendance report"
+            : activeNav === "giving"
+              ? "Giving report"
+              : "Reports"),
+      extra: {
+        shellKind: "hq",
+        ...(extra || {}),
+      },
+    });
+  }
+
+  async function resolveOptionalBranch(req, res, churchId) {
+    const branchKey = String((req.query && req.query.branch) || "")
+      .trim()
+      .toLowerCase();
+    if (!branchKey) {
+      return { ok: true, branchId: null, branchKey: "", branchDisplayName: null };
+    }
+    const resolved = await resolveBlessBoardBranchForChurch(getPool(), churchId, branchKey);
+    if (!resolved.ok) {
+      if (resolved.status === BRANCH_STATUS.LOOKUP_ERROR) {
+        sendControlled(req, res, 503, "Branch lookup is temporarily unavailable.");
+        return { ok: false };
+      }
+      sendControlled(req, res, 404, "That branch is not available for this church.");
+      return { ok: false };
+    }
+    return {
+      ok: true,
+      branchId: resolved.branch.id,
+      branchKey: resolved.branch.key,
+      branchDisplayName: resolved.branch.displayName,
     };
   }
 
@@ -137,12 +219,16 @@ function createHqReportsRouter(deps) {
     if (!tenant || !tenant.church || !session || !session.userId) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
     }
-    const yearMonth = String((req.query && req.query.month) || currentYearMonth());
+    const yearMonth = normalizeYearMonth(req.query && req.query.month);
+    const branch = await resolveOptionalBranch(req, res, tenant.church.id);
+    if (!branch.ok) return;
+
     const result = await getHqOperationalReport(getPool(), {
       churchId: tenant.church.id,
       actorUserId: session.userId,
       tenant,
-      yearMonth: /^\d{4}-\d{2}$/.test(yearMonth) ? yearMonth : currentYearMonth(),
+      yearMonth,
+      branchId: branch.branchId,
     });
     if (!result.ok) {
       return sendControlled(
@@ -152,11 +238,95 @@ function createHqReportsRouter(deps) {
         "Reports are temporarily unavailable."
       );
     }
+    const branches = await listBlessBoardBranches(getPool(), tenant.church.id);
     const html = renderView(
       "hq/reports.ejs",
       shellLocals(req, res, "reports", {
+        pageTitle: "HQ reports",
         report: result.report,
         yearMonth: result.report.yearMonth,
+        branchFilter: branch.branchKey,
+        branches: branches.ok ? branches.branches : [],
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/hq/reports/attendance", rejectApex, gate, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    const session = req.v5Session && req.v5Session.session;
+    if (!tenant || !tenant.church || !session || !session.userId) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    const yearMonth = normalizeYearMonth(req.query && req.query.month);
+    const branch = await resolveOptionalBranch(req, res, tenant.church.id);
+    if (!branch.ok) return;
+
+    const summary = await getMonthlyAttendanceSummary(getPool(), {
+      churchId: tenant.church.id,
+      branchId: branch.branchId,
+      yearMonth,
+      actorUserId: session.userId,
+      tenant,
+    });
+    if (!summary.ok) {
+      return sendControlled(
+        req,
+        res,
+        summary.status === ATT_STATUS.FORBIDDEN ? 403 : 503,
+        "Attendance report is temporarily unavailable."
+      );
+    }
+    const branches = await listBlessBoardBranches(getPool(), tenant.church.id);
+    const html = renderView(
+      "hq/attendance-report.ejs",
+      shellLocals(req, res, "attendance", {
+        pageTitle: "Attendance report",
+        summary: summary.summary,
+        yearMonth,
+        branchFilter: branch.branchKey,
+        branchDisplayName: branch.branchDisplayName,
+        branches: branches.ok ? branches.branches : [],
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/hq/reports/giving", rejectApex, gate, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    const session = req.v5Session && req.v5Session.session;
+    if (!tenant || !tenant.church || !session || !session.userId) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    const yearMonth = normalizeYearMonth(req.query && req.query.month);
+    const branch = await resolveOptionalBranch(req, res, tenant.church.id);
+    if (!branch.ok) return;
+
+    const summary = await getMonthlyGivingSummary(getPool(), {
+      churchId: tenant.church.id,
+      branchId: branch.branchId,
+      yearMonth,
+      actorUserId: session.userId,
+      tenant,
+    });
+    if (!summary.ok) {
+      return sendControlled(
+        req,
+        res,
+        summary.status === GIV_STATUS.FORBIDDEN ? 403 : 503,
+        "Giving report is temporarily unavailable."
+      );
+    }
+    const branches = await listBlessBoardBranches(getPool(), tenant.church.id);
+    const html = renderView(
+      "hq/giving-report.ejs",
+      shellLocals(req, res, "giving", {
+        pageTitle: "Giving report",
+        summary: summary.summary,
+        yearMonth,
+        branchFilter: branch.branchKey,
+        branchDisplayName: branch.branchDisplayName,
+        branches: branches.ok ? branches.branches : [],
       })
     );
     return res.status(200).type("html").send(html);
@@ -168,34 +338,51 @@ function createHqReportsRouter(deps) {
     if (!tenant || !tenant.church || !tenant.organization || !session || !session.userId) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
     }
-    const before = req.query && req.query.before ? String(req.query.before) : null;
-    const actionKey = req.query && req.query.action ? String(req.query.action) : null;
+    const beforeRaw = req.query && req.query.before ? String(req.query.before).trim() : "";
+    const before = beforeRaw || null;
+    const actionFilter = parseAuditActionFilter(req.query && req.query.action);
+    const entityTypeFilter = parseAuditEntityTypeFilter(req.query && req.query.entity);
+    const outcomeFilter = parseAuditOutcomeFilter(req.query && req.query.outcome);
+
     const listed = await listOrganizationAuditEvents(getPool(), {
       organizationId: tenant.organization.id,
       churchId: tenant.church.id,
       before,
-      actionKey: actionKey || null,
-      limit: 50,
+      actionKey: actionFilter || null,
+      entityType: entityTypeFilter || null,
+      outcome: outcomeFilter || null,
+      limit: AUDIT_PAGE_SIZE,
     });
     if (!listed.ok) {
+      const badFilter =
+        listed.reason === "action_key" ||
+        listed.reason === "entity_type" ||
+        listed.reason === "outcome";
       return sendControlled(
         req,
         res,
-        listed.status === AUDIT_STATUS.FORBIDDEN ? 403 : 503,
-        "Audit log is temporarily unavailable."
+        listed.status === AUDIT_STATUS.FORBIDDEN ? 403 : badFilter ? 400 : 503,
+        badFilter ? "That audit filter is not valid." : "Audit log is temporarily unavailable."
       );
     }
+    const nextBefore =
+      listed.nextBefore instanceof Date
+        ? listed.nextBefore.toISOString()
+        : listed.nextBefore
+          ? String(listed.nextBefore)
+          : null;
     const html = renderView(
       "hq/audit.ejs",
       shellLocals(req, res, "audit", {
-        events: listed.events,
-        hasMore: listed.hasMore,
-        nextBefore: listed.nextBefore,
-        actionFilter: actionKey || "",
-        deploymentCode: (() => {
-          const id = getPlatformDeploymentCode(env);
-          return id && id.ok ? id.code : "";
-        })(),
+        pageTitle: "Audit trail",
+        events: presentAuditEventsForHq(listed.events),
+        hasMore: Boolean(listed.hasMore),
+        nextBefore,
+        actionFilter,
+        entityTypeFilter,
+        outcomeFilter,
+        outcomes: AUDIT_OUTCOMES,
+        pageSize: AUDIT_PAGE_SIZE,
       })
     );
     return res.status(200).type("html").send(html);

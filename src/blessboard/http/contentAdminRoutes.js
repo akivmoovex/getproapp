@@ -13,7 +13,8 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
+const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
+const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const {
   listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
@@ -25,9 +26,7 @@ const {
 } = require("../services/authorizeBlessBoardTenantAccess");
 const {
   CSRF_FIELD,
-  issueCsrfToken,
   validateCsrf,
-  setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const multer = require("multer");
 const { createMediaUploadService, STATUS: MEDIA_STATUS } = require("../media/mediaUploadService");
@@ -173,25 +172,6 @@ function sendControlled(req, res, status, message, shellKind) {
 }
 
 /**
- * @param {import('express').Request} req
- */
-function primaryRoleLabel(req) {
-  const roles =
-    req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-      ? req.blessBoardAuthorizationContext.effectiveRoles
-      : [];
-  const order =
-    req.contentAdminVariant === "branch"
-      ? ["branch_admin", "church_hq_admin", "platform_admin"]
-      : ["church_hq_admin", "platform_admin", "branch_admin"];
-  for (const key of order) {
-    const hit = roles.find((r) => r.roleKey === key);
-    if (hit) return formatRoleLabel(hit.roleKey);
-  }
-  return roles[0] ? formatRoleLabel(roles[0].roleKey) : "Admin";
-}
-
-/**
  * @param {object|null} page
  * @param {{ churchId: string, branchId: string|null }} scope
  */
@@ -295,26 +275,30 @@ function createContentAdminRouter(deps) {
    * @param {object} [extra]
    */
   function shellLocals(req, res, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const base = {
-      pageTitle: "Website content",
-      activeNav: "content",
-      shellKind,
-      formClass,
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      roleLabel: primaryRoleLabel(req),
-      ...(extra || {}),
-    };
     if (variant === "hq") {
-      base.hqBranchDisplayName = tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "";
-    } else {
-      base.branchDisplayName =
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "";
+      return buildHqAdminShellLocals(req, res, {
+        env,
+        isProduction,
+        activeNav: "content",
+        pageTitle: (extra && extra.pageTitle) || "Website content",
+        extra: {
+          shellKind: "hq",
+          formClass,
+          ...(extra || {}),
+        },
+      });
     }
-    return base;
+    return buildBranchAdminShellLocals(req, res, {
+      env,
+      isProduction,
+      activeNav: "content",
+      pageTitle: (extra && extra.pageTitle) || "Website content",
+      extra: {
+        shellKind: "branch",
+        formClass,
+        ...(extra || {}),
+      },
+    });
   }
 
   function scopeInput(scope) {

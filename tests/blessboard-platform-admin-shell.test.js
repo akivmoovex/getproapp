@@ -24,8 +24,13 @@ const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie")
 const {
   listPlatformOrganizations,
   MAX_LIMIT,
+  ALLOWED_LIMITS,
   normalizeListInput,
 } = require("../src/platform/services/listPlatformOrganizations");
+const {
+  getPlatformOrganizationSummary,
+} = require("../src/platform/services/getPlatformOrganizationSummary");
+const platformAdminRepo = require("../src/platform/repositories/platformAdminRepository");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
@@ -52,6 +57,10 @@ describe("listPlatformOrganizations pagination", () => {
     const defaults = normalizeListInput({});
     assert.equal(defaults.value.page, 1);
     assert.equal(defaults.value.limit, 25);
+
+    const snapped = normalizeListInput({ limit: "30" });
+    assert.equal(snapped.value.limit, 25);
+    assert.ok(ALLOWED_LIMITS.includes(snapped.value.limit));
   });
 });
 
@@ -215,7 +224,14 @@ describe("blessboard platform-admin shell", () => {
     const home = await request(app).get("/admin").set("Host", "blessboard.org").set("Cookie", cookie);
     assert.equal(home.status, 200);
     assert.match(home.text, /data-bb-shell="platform-admin"/);
+    assert.match(home.text, /data-bb-pa-dashboard="1"/);
+    assert.match(home.text, /data-bb-count="organizations-total"/);
+    assert.match(home.text, /data-bb-count="organizations-with-church"/);
+    assert.match(home.text, /href="\/admin\/account"/);
+    assert.match(home.text, /data-bb-pa-logout="1"/);
     assert.match(home.text, /Platform admin/);
+    assert.doesNotMatch(home.text, /\bMRR\b|projectedGrowth|\+12%|fake metric/i);
+    assert.doesNotMatch(home.text, new RegExp(org.id, "i"));
 
     const list = await request(app)
       .get("/admin/organizations")
@@ -228,6 +244,62 @@ describe("blessboard platform-admin shell", () => {
     assert.match(list.text, /blessboard-org-v5/);
     assert.doesNotMatch(list.text, new RegExp(org.id, "i"));
     assert.doesNotMatch(list.text, /password|session_token|DATABASE_URL/i);
+  });
+
+  it("account page and CSRF logout work on apex only", async () => {
+    requireDb();
+    const cookie = await cookieFor(users.platform);
+    const account = await request(app)
+      .get("/admin/account")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(account.status, 200);
+    assert.match(account.text, /data-bb-pa-account="1"/);
+    assert.match(account.text, /data-bb-pa-logout="1"/);
+    assert.match(account.text, /name="_csrf"/);
+    assert.match(account.text, /blessboard-org-v5/);
+    assert.doesNotMatch(account.text, new RegExp(org.id, "i"));
+    assert.doesNotMatch(account.text, /password|session_token/i);
+
+    const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
+    function extractCookie(res, name) {
+      const raw = res.headers["set-cookie"];
+      if (!raw) return null;
+      const list = Array.isArray(raw) ? raw : [raw];
+      for (const line of list) {
+        if (String(line).startsWith(`${name}=`)) {
+          return String(line).split(";")[0].slice(name.length + 1);
+        }
+      }
+      return null;
+    }
+    const csrf = extractCookie(account, CSRF_COOKIE);
+    assert.ok(csrf);
+
+    const bad = await request(app)
+      .post("/admin/logout")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({});
+    assert.equal(bad.status, 403);
+
+    const ok = await request(app)
+      .post("/admin/logout")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.equal(ok.status, 303);
+    assert.equal(ok.headers.location, "/login");
+
+    const tenantLogout = await request(app)
+      .post("/admin/logout")
+      .set("Host", TENANT_HOST)
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.equal(tenantLogout.status, UNAVAILABLE_STATUS);
   });
 
   it("other roles are rejected; unauthenticated redirects to login", async () => {
@@ -251,7 +323,7 @@ describe("blessboard platform-admin shell", () => {
       .set("Accept", "text/html")
       .redirects(0);
     assert.equal(anon.status, 303);
-    assert.equal(anon.headers.location, "/login");
+    assert.match(String(anon.headers.location || ""), /^\/login(\?|$)/);
   });
 
   it("tenant hosts cannot serve platform-admin pages", async () => {
@@ -273,16 +345,63 @@ describe("blessboard platform-admin shell", () => {
       .set("Cookie", cookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-detail="organization"/);
+    assert.match(detail.text, /data-bb-pa-organization-detail="1"/);
+    assert.match(detail.text, /data-bb-pa-org-branches="1"/);
+    assert.match(detail.text, /data-bb-table="branches"/);
     assert.match(detail.text, /pa-demo/);
     assert.match(detail.text, /Platform Admin Demo/);
     assert.match(detail.text, /data-bb-count="active-branches">1</);
+    assert.match(detail.text, /data-bb-branch-key="hq"/);
     assert.doesNotMatch(detail.text, new RegExp(church.id, "i"));
+    assert.doesNotMatch(detail.text, new RegExp(org.id, "i"));
+    assert.doesNotMatch(detail.text, /password|session_token|Create New|Export CSV|MRR/i);
 
     const missing = await request(app)
       .get("/admin/organizations/does-not-exist")
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(missing.status, 404);
+  });
+
+  it("organization directory HTML stays privacy-safe with bounded pagination", async () => {
+    requireDb();
+    const cookie = await cookieFor(users.platform);
+    const list = await request(app)
+      .get("/admin/organizations?page=1&limit=10&q=pa")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(list.status, 200);
+    assert.match(list.text, /data-bb-pa-organizations="1"/);
+    assert.match(list.text, /data-bb-pa-org-filter="1"/);
+    assert.match(list.text, /Showing \d+–\d+ of \d+/);
+    assert.match(list.text, /name="limit"/);
+    assert.doesNotMatch(list.text, /Create New Organization|Monthly Revenue|Pending Verifications/i);
+    assert.doesNotMatch(list.text, new RegExp(org.id, "i"));
+    assert.doesNotMatch(list.text, /password|session_token|DATABASE_URL/i);
+  });
+
+  it("platform admin repository returns safe catalogue fields only", async () => {
+    requireDb();
+    const row = await platformAdminRepo.findOrganizationDirectoryByKey(pool, "pa-demo");
+    assert.ok(row);
+    assert.equal(row.organization_key, "pa-demo");
+    assert.equal(Object.prototype.hasOwnProperty.call(row, "id"), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(row, "organization_id"), false);
+    assert.doesNotMatch(JSON.stringify(row), /password|session|secret/i);
+
+    const branches = await platformAdminRepo.listBranchesForOrganizationKey(pool, "pa-demo");
+    assert.ok(Array.isArray(branches));
+    assert.ok(branches.length >= 1);
+    assert.equal(branches[0].branch_key, "hq");
+    assert.equal(Object.prototype.hasOwnProperty.call(branches[0], "id"), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(branches[0], "church_id"), false);
+
+    const summary = await getPlatformOrganizationSummary(pool, "pa-demo");
+    assert.equal(summary.ok, true, summary.message);
+    assert.equal(summary.organization.organizationKey, "pa-demo");
+    assert.ok(summary.branches.some((b) => b.key === "hq"));
+    assert.doesNotMatch(JSON.stringify(summary), new RegExp(org.id, "i"));
+    assert.doesNotMatch(JSON.stringify(summary), new RegExp(church.id, "i"));
   });
 
   it("pagination is bounded and list query is read-only", async () => {

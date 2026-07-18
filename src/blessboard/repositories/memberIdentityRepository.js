@@ -58,6 +58,8 @@ function mapRegistration(row) {
     reviewNotes: row.review_notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    branchKey: row.branch_key || null,
+    branchDisplayName: row.branch_display_name || null,
   };
 }
 
@@ -335,7 +337,7 @@ async function updateRegistrationStatus(client, fields) {
 
 async function findBranchById(client, branchId) {
   const { rows } = await client.query(
-    `SELECT id, church_id, branch_key, status
+    `SELECT id, church_id, branch_key, display_name, status
        FROM blessboard.branches
       WHERE id = $1
       LIMIT 1`,
@@ -393,23 +395,23 @@ async function listRegistrations(client, input) {
   const limit = Math.min(Math.max(Number(input.limit) || 20, 1), 50);
   const offset = Math.max(Number(input.offset) || 0, 0);
 
-  const where = ["church_id = $1"];
+  const where = ["r.church_id = $1"];
   const params = [churchId];
   let i = 2;
 
   if (branchId) {
-    where.push(`branch_id = $${i++}`);
+    where.push(`r.branch_id = $${i++}`);
     params.push(branchId);
   }
   if (status) {
-    where.push(`status = $${i++}`);
+    where.push(`r.status = $${i++}`);
     params.push(status);
   }
   if (q) {
     const like = `%${q.toLowerCase().replace(/[%_]/g, "")}%`;
     where.push(
-      `(lower(first_name) LIKE $${i} OR lower(last_name) LIKE $${i} OR lower(COALESCE(preferred_name, '')) LIKE $${i}
-        OR lower(COALESCE(email_normalized, '')) LIKE $${i} OR COALESCE(phone_normalized, '') LIKE $${i})`
+      `(lower(r.first_name) LIKE $${i} OR lower(r.last_name) LIKE $${i} OR lower(COALESCE(r.preferred_name, '')) LIKE $${i}
+        OR lower(COALESCE(r.email_normalized, '')) LIKE $${i} OR COALESCE(r.phone_normalized, '') LIKE $${i})`
     );
     params.push(like);
     i += 1;
@@ -418,7 +420,7 @@ async function listRegistrations(client, input) {
   const whereSql = where.join(" AND ");
   const countParams = params.slice();
   const { rows: countRows } = await client.query(
-    `SELECT COUNT(*)::int AS n FROM blessboard.member_registrations WHERE ${whereSql}`,
+    `SELECT COUNT(*)::int AS n FROM blessboard.member_registrations r WHERE ${whereSql}`,
     countParams
   );
   const total = countRows[0] ? Number(countRows[0].n) : 0;
@@ -426,10 +428,15 @@ async function listRegistrations(client, input) {
   params.push(limit);
   params.push(offset);
   const { rows } = await client.query(
-    `SELECT ${REGISTRATION_COLS}
-       FROM blessboard.member_registrations
+    `SELECT r.id, r.church_id, r.branch_id, r.first_name, r.last_name, r.preferred_name,
+            r.email_normalized, r.email_display, r.phone_normalized, r.phone_display,
+            r.status, r.member_id, r.reviewed_by_user_id, r.reviewed_at, r.review_notes,
+            r.created_at, r.updated_at,
+            b.branch_key, b.display_name AS branch_display_name
+       FROM blessboard.member_registrations r
+       LEFT JOIN blessboard.branches b ON b.id = r.branch_id
       WHERE ${whereSql}
-      ORDER BY created_at DESC, id DESC
+      ORDER BY r.created_at DESC, r.id DESC
       LIMIT $${i++} OFFSET $${i++}`,
     params
   );
@@ -566,6 +573,150 @@ async function findMemberOnBranch(client, input) {
   };
 }
 
+/**
+ * Church-wide member directory for HQ managers (optional branch filter).
+ * @param {{ query: Function }} client
+ * @param {{
+ *   churchId: string,
+ *   branchId?: string|null,
+ *   status?: string|null,
+ *   q?: string|null,
+ *   limit?: number,
+ *   offset?: number,
+ * }} input
+ */
+async function listMembersForChurch(client, input) {
+  const churchId = String(input.churchId || "").trim();
+  const branchId =
+    input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
+  const status =
+    input.status != null && String(input.status).trim()
+      ? String(input.status).trim().toLowerCase()
+      : null;
+  const qRaw = input.q != null ? String(input.q).trim() : "";
+  const q = qRaw.slice(0, 100);
+  const limit = Math.min(Math.max(Number(input.limit) || 20, 1), 50);
+  const offset = Math.max(Number(input.offset) || 0, 0);
+
+  const where = ["m.church_id = $1"];
+  const params = [churchId];
+  let i = 2;
+
+  if (branchId) {
+    where.push(`mb.branch_id = $${i++}`);
+    params.push(branchId);
+  }
+  if (status) {
+    where.push(`m.status = $${i++}`);
+    params.push(status);
+  }
+  if (q) {
+    const like = `%${q.toLowerCase().replace(/[%_]/g, "")}%`;
+    where.push(
+      `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
+        OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i})`
+    );
+    params.push(like);
+    i += 1;
+  }
+
+  const whereSql = where.join(" AND ");
+  const joinSql = branchId
+    ? `INNER JOIN blessboard.member_branch_memberships mb ON mb.member_id = m.id`
+    : `INNER JOIN LATERAL (
+         SELECT mb2.membership_status, mb2.is_primary, mb2.joined_at, mb2.branch_id
+           FROM blessboard.member_branch_memberships mb2
+          WHERE mb2.member_id = m.id
+          ORDER BY mb2.is_primary DESC, mb2.joined_at ASC NULLS LAST, mb2.id ASC
+          LIMIT 1
+       ) mb ON true`;
+
+  const { rows: countRows } = await client.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.members m
+       ${joinSql}
+      WHERE ${whereSql}`,
+    params
+  );
+  const total = countRows[0] ? Number(countRows[0].n) : 0;
+
+  params.push(limit);
+  params.push(offset);
+  const { rows } = await client.query(
+    `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
+            m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
+            m.status, m.created_at, m.updated_at,
+            mb.membership_status, mb.is_primary, mb.joined_at,
+            b.branch_key, b.display_name AS branch_display_name
+       FROM blessboard.members m
+       ${joinSql}
+       LEFT JOIN blessboard.branches b ON b.id = mb.branch_id
+      WHERE ${whereSql}
+      ORDER BY m.last_name ASC, m.first_name ASC, m.id ASC
+      LIMIT $${i++} OFFSET $${i++}`,
+    params
+  );
+
+  return {
+    items: rows.map((row) => {
+      const member = mapMember(row);
+      return {
+        ...member,
+        membershipStatus: row.membership_status,
+        isPrimary: Boolean(row.is_primary),
+        joinedAt: row.joined_at,
+        branchKey: row.branch_key || null,
+        branchDisplayName: row.branch_display_name || null,
+      };
+    }),
+    total,
+    limit,
+    offset,
+  };
+}
+
+/**
+ * Load one member in a church for HQ managers (any membership on the church).
+ * @param {{ query: Function }} client
+ * @param {{ memberId: string, churchId: string }} input
+ */
+async function findMemberInChurch(client, input) {
+  const memberId = String(input.memberId || "").trim();
+  const churchId = String(input.churchId || "").trim();
+  const { rows } = await client.query(
+    `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
+            m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
+            m.status, m.created_at, m.updated_at,
+            mb.membership_status, mb.is_primary, mb.joined_at,
+            b.branch_key, b.display_name AS branch_display_name
+       FROM blessboard.members m
+       INNER JOIN LATERAL (
+         SELECT mb2.membership_status, mb2.is_primary, mb2.joined_at, mb2.branch_id
+           FROM blessboard.member_branch_memberships mb2
+          WHERE mb2.member_id = m.id
+          ORDER BY mb2.is_primary DESC, mb2.joined_at ASC NULLS LAST, mb2.id ASC
+          LIMIT 1
+       ) mb ON true
+       LEFT JOIN blessboard.branches b ON b.id = mb.branch_id
+      WHERE m.id = $1
+        AND m.church_id = $2
+      LIMIT 1`,
+    [memberId, churchId]
+  );
+  if (!rows[0]) return null;
+  const member = mapMember(rows[0]);
+  return {
+    ...member,
+    membershipStatus: rows[0].membership_status,
+    isPrimary: Boolean(rows[0].is_primary),
+    joinedAt: rows[0].joined_at,
+    branchKey: rows[0].branch_key || null,
+    branchDisplayName: rows[0].branch_display_name || null,
+  };
+}
+
 module.exports = {
   mapMember,
   mapMembership,
@@ -590,6 +741,8 @@ module.exports = {
   listRegistrations,
   listMembersForBranch,
   findMemberOnBranch,
+  listMembersForChurch,
+  findMemberInChurch,
   findBranchById,
   findChurchById,
   findUserById,

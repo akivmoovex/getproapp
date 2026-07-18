@@ -136,9 +136,11 @@ Legend — **Implemented:** code mounted in `v5FoundationServer.js`. **Deployed:
 | `/login` | GET/POST | anon | — | Yes | inline login | 200 / 429 | `09-auth-member-login-*` (close intent) | Partial | Visual placeholder |
 | `/logout` | POST | session | — | Yes | redirect | 303 | — | Partial | GET → 503 |
 | `/account` | GET | session | any authed | Yes | inline account | 200/303 | — | Partial | Minimal UI |
-| `/admin` | GET | session | `platform_admin` | Yes | `platform-admin/dashboard.ejs` | 200/401/403 | `62-platform-admin-dashboard-*` | No | Hosted admin user + Stitch |
-| `/admin/organizations` | GET | session | `platform_admin` | Yes | `organizations.ejs` | 200/401 | `63-platform-church-organizations-*` | No | Read-only only |
-| `/admin/organizations/:organizationKey` | GET | session | `platform_admin` | Yes | `organization-detail.ejs` | 200/404 | — | No | No create org UI |
+| `/admin` | GET | session | `platform_admin` | Yes | `platform-admin/dashboard.ejs` | 200/401/403 | `62-platform-admin-dashboard-*` | Yes (apex) | Live org counts; Stitch command shell |
+| `/admin/account` | GET | session | `platform_admin` | Yes | `platform-admin/account.ejs` | 200/401/403 | shell | Yes (apex) | In-shell account |
+| `/admin/logout` | POST | session + CSRF | `platform_admin` gate on shell; CSRF on post | Yes | — | 303/403 | shell | Yes (apex) | Revokes V5 session |
+| `/admin/organizations` | GET | session | `platform_admin` | Yes | `organizations.ejs` | 200/401 | `63-platform-church-organizations-*` | Yes (apex) | Bounded pagination; safe fields; read-only |
+| `/admin/organizations/:organizationKey` | GET | session | `platform_admin` | Yes | `organization-detail.ejs` | 200/404 | `65-*` (org+branches) | Yes (apex) | Branch keys/labels; no create org UI |
 | `/features`, `/pricing`, `/for-churches`, `/register-church`, `/directory` | — | — | — | **Missing** | — | 503 | BlessBoard apex Stitch set | No | Not implemented on V5 |
 | `/healthz` | GET | anon | — | Yes | JSON | 200 | — | Yes | — |
 
@@ -205,9 +207,16 @@ Legend — **Implemented:** code mounted in `v5FoundationServer.js`. **Deployed:
 | `/hq/branches` (+ `/:branchKey`) | GET | Yes | `branches.ejs` | `52-*` | GUI shell batch1; active list + auth deep-link |
 | `/hq/account` (+ logout) | GET/POST | Yes | `account.ejs` | — | GUI shell batch1 |
 | `/hq/settings` | GET/POST | Yes | `settings.ejs` | — | Functional |
-| `/hq/reports` | GET | Yes | `reports.ejs` | `57-*` (partial) | Functional aggregates |
-| `/hq/audit` | GET | Yes | `audit.ejs` | `58-*` | Functional list |
-| `/hq/content`, announcements, attendance, giving, participation, forms/resources/requests | Yes | admin modules | various | Functional |
+| `/hq/reports` | GET | Yes | `reports.ejs` | `57-*` (partial) | Live aggregates; month + branch filters; no charts |
+| `/hq/reports/attendance` | GET | Yes | `hq/attendance-report.ejs` | `36`/`37` + HQ rollup | Real monthly aggregates; branch key filter; no fake charts |
+| `/hq/reports/giving` | GET | Yes | `hq/giving-report.ejs` | `38`/`39` + HQ rollup | NUMERIC string totals; no donor PII; branch filter |
+| `/hq/audit` | GET | Yes | `audit.ejs` | `58-*` (+ `56` trail intent) | Filters (action/entity/outcome); cursor pagination; privacy-safe rows; no export/metadata |
+| `/hq/registrations` (+ detail) | GET | Yes | `hq/registrations.ejs`, `registration-detail.ejs` | `26-*` (HQ oversight) | Church-wide read/review; branch labels; no approve/reject |
+| `/hq/members` (+ detail) | GET | Yes | `hq/members.ejs`, `member-detail.ejs` | `27`/`28-*` (HQ oversight) | Church-wide directory; privacy-limited; optional branch key filter |
+| `/hq/content` (+ `/b/:branchKey`, pages/entities/media/preview) | GET/POST | Yes | `content-admin/*` | `34-*` (HQ shell) | Church-wide + branch scope; publish confirm; optimistic concurrency; media upload |
+| `/hq/announcements` (+ `/b/:branchKey`, CRUD/preview/publish/archive) | GET/POST | Yes | `announcements/admin-*` | `35-*` (HQ shell; not `61` broadcast) | Church-wide + branch scope; soft archive; media attach; concurrency |
+| `/hq/forms|resources|requests` (+ `/b/:branchKey`) | GET/POST | Yes | forms-requests/* | `44`/`45-*` (HQ shell) | Church-wide + branch scope; private attachment download; memberRef privacy; status workflow |
+| `/hq/content` siblings: attendance, giving, participation | Yes | admin modules | various | Functional CRUD; reports at `/hq/reports/*` |
 | HQ performance, monthly report review queue, permissions, templates, broadcast center | — | **Missing** | — | `53`–`56`, `59`–`61` | Not V5 |
 
 ---
@@ -301,20 +310,25 @@ Major gaps: Sacred Modernity layout, imagery, nav, typography density; V5 uses t
 |--------|----------|--------|-------|
 | 51 Dashboard | `/hq` | **close ★batch1** (real cards only) | 9 |
 | 52 Branch registry | `/hq/branches` | **close ★batch1** | 9 |
+| Members / registrations oversight | `/hq/members`, `/hq/registrations` | **close** (reuse 26–28 language; church-wide read/review) | 9 |
+| Website + announcements (HQ) | `/hq/content`, `/hq/announcements` (+ `/b/:branchKey`) | **close** (reuse 34–35; church-wide + branch scope) | 9 |
+| Attendance / giving reports (HQ) | `/hq/reports/attendance`, `/hq/reports/giving` (+ consolidated `/hq/reports`) | **close** (real aggregates; no charts; no donor PII) | 9 |
+| Forms / resources / requests (HQ) | `/hq/forms`, `/hq/resources`, `/hq/requests` (+ `/b/:branchKey`) | **close** (reuse 44–45; church-wide + branch scope; private attachments) | 9 |
 | 53–56 Performance / monthly review / audit queue / analytics | partial via `/hq/reports` only | **missing** / obsolete vs Stitch | deferred |
-| 57 Consolidated analytics | `/hq/reports` | **close** intent / visual gap | 9 |
-| 58 Global audit | `/hq/audit` | **close** intent | 9 |
-| 59–61 Permissions / templates / broadcast | — | **missing** | deferred |
+| 57 Consolidated analytics | `/hq/reports` | **close** (branch filter + by-branch tables; visual gap vs Stitch charts omitted) | 9 |
+| 58 Global audit | `/hq/audit` | **close** (filters + cursor pagination; no export; no raw metadata/PII) | 9 |
+| 59–61 Permissions / templates / broadcast | — | **missing** (`61` broadcast deferred; not `/hq/announcements`) | deferred |
 
 ### H. Platform admin (62–68) + platform 01
 
 | Family | V5 route | Status | Phase |
 |--------|----------|--------|-------|
 | 01 Platform home / finder / branch selector | apex foundation / transfer | **obsolete** vs V5 | — |
-| 62 Dashboard | `/admin` | **placeholder** | 10 |
-| 63 Organizations | `/admin/organizations` | **placeholder** | 10 |
+| 62 Dashboard | `/admin` | **close** (live org counts; Stitch command shell; no fake metrics) | 10 |
+| 63 Organizations | `/admin/organizations` | **close** (bounded pagination; safe fields; status chips; no create/fake KPIs) | 10 |
 | 64 Create org | — | **missing** (CLI provision only) | 10 |
-| 65–68 Tenants / plans UI / settings / support | entitlements backend only | **schema+service** / UI missing | deferred |
+| 65 Branch tenants (org detail) | `/admin/organizations/:key` | **close** (org summary + branch table; keys only; read-only) | 10 |
+| 66–68 plans / settings / support | entitlements backend only | **schema+service** / UI missing | deferred |
 
 ---
 

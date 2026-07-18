@@ -14,13 +14,11 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
+const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   CSRF_FIELD,
-  issueCsrfToken,
   validateCsrf,
-  setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const {
   STATUS,
@@ -35,8 +33,14 @@ const {
   getMonthlyGivingSummary,
 } = require("../services/givingService");
 const {
+  listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
+  STATUS: BRANCH_STATUS,
 } = require("../services/listBlessBoardBranches");
+const {
+  authorizeBlessBoardTenantAccess,
+  STATUS: AUTHZ_STATUS,
+} = require("../services/authorizeBlessBoardTenantAccess");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -142,22 +146,6 @@ function createGivingAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function primaryRoleLabel(req) {
-    const roles =
-      req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-        ? req.blessBoardAuthorizationContext.effectiveRoles
-        : [];
-    const order =
-      variant === "hq"
-        ? ["church_hq_admin", "platform_admin", "branch_admin"]
-        : ["branch_admin", "church_hq_admin", "platform_admin"];
-    for (const key of order) {
-      const hit = roles.find((r) => r.roleKey === key);
-      if (hit) return formatRoleLabel(hit.roleKey);
-    }
-    return roles[0] ? formatRoleLabel(roles[0].roleKey) : variant === "hq" ? "HQ admin" : "Branch admin";
-  }
-
   function shellLocals(req, res, extra) {
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
@@ -171,23 +159,16 @@ function createGivingAdminRouter(deps) {
         },
       });
     }
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    return {
-      pageTitle: (extra && extra.pageTitle) || "Giving",
+    return buildHqAdminShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav: "giving",
-      shellKind: "hq",
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      roleLabel: primaryRoleLabel(req),
-      displayName:
-        req.v5Session && req.v5Session.session && req.v5Session.session.user
-          ? req.v5Session.session.user.displayName
-          : "",
-      hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
-      ...(extra || {}),
-    };
+      pageTitle: (extra && extra.pageTitle) || "Giving",
+      extra: {
+        shellKind: "hq",
+        ...(extra || {}),
+      },
+    });
   }
 
   function validateCsrfPost(req, res) {
@@ -218,6 +199,8 @@ function createGivingAdminRouter(deps) {
       return {
         churchId: tenant.church.id,
         branchId: tenant.primaryBranch.id,
+        branchKey: tenant.primaryBranch.key || null,
+        branchDisplayName: tenant.primaryBranch.displayName || null,
         basePath: "/branch-admin/giving",
         tenant,
         actorUserId: session.userId,
@@ -225,17 +208,40 @@ function createGivingAdminRouter(deps) {
     }
     const branchKey = req.params && req.params.branchKey ? String(req.params.branchKey) : "";
     if (branchKey) {
-      const resolved = await resolveBlessBoardBranchForChurch(getPool(), {
-        churchId: tenant.church.id,
-        branchKey,
-      });
+      const resolved = await resolveBlessBoardBranchForChurch(
+        getPool(),
+        tenant.church.id,
+        branchKey
+      );
       if (!resolved.ok || !resolved.branch) {
-        sendControlled(req, res, 404, "Branch not found.", shellKind);
+        const code = resolved.status === BRANCH_STATUS.LOOKUP_ERROR ? 503 : 404;
+        sendControlled(
+          req,
+          res,
+          code,
+          code === 503 ? "Branch lookup is temporarily unavailable." : "Branch not found.",
+          shellKind
+        );
+        return null;
+      }
+      const authz = await authorizeBlessBoardTenantAccess(getPool(), {
+        userId: session.userId,
+        tenant,
+        branchId: resolved.branch.id,
+      });
+      if (authz.status === AUTHZ_STATUS.LOOKUP_ERROR) {
+        sendControlled(req, res, 503, "Access check is temporarily unavailable.", shellKind);
+        return null;
+      }
+      if (!authz.ok) {
+        sendControlled(req, res, 403, "You do not have access to this branch.", shellKind);
         return null;
       }
       return {
         churchId: tenant.church.id,
         branchId: resolved.branch.id,
+        branchKey: resolved.branch.key,
+        branchDisplayName: resolved.branch.displayName,
         basePath: `/hq/giving/b/${resolved.branch.key}`,
         tenant,
         actorUserId: session.userId,
@@ -244,6 +250,8 @@ function createGivingAdminRouter(deps) {
     return {
       churchId: tenant.church.id,
       branchId: null,
+      branchKey: null,
+      branchDisplayName: null,
       basePath: "/hq/giving",
       tenant,
       actorUserId: session.userId,
@@ -311,6 +319,11 @@ function createGivingAdminRouter(deps) {
           shellKind
         );
       }
+      let branches = [];
+      if (variant === "hq" && !scope.branchId) {
+        const listResult = await listBlessBoardBranches(getPool(), scope.churchId);
+        branches = listResult.ok ? listResult.branches : [];
+      }
       const html = renderView(
         "giving/admin-list.ejs",
         shellLocals(req, res, {
@@ -321,6 +334,11 @@ function createGivingAdminRouter(deps) {
           yearMonth,
           statusFilter: status,
           branchScoped,
+          branchDisplayName: scope.branchDisplayName || null,
+          branchKey: scope.branchKey || null,
+          branches,
+          isHqChurchWide: variant === "hq" && !scope.branchId,
+          isHqBranchScoped: variant === "hq" && Boolean(scope.branchId),
           canCreate: Boolean(scope.branchId),
           saved: String((req.query && req.query.saved) || ""),
         })

@@ -9,6 +9,7 @@ const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
+const request = require("supertest");
 
 const {
   resetFoundationDatabase,
@@ -21,6 +22,8 @@ const { provisionBlessBoardChurch } = require("../src/blessboard/services/provis
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
+const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
+const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const {
   submitMemberRegistration,
   approveMemberRegistration,
@@ -49,6 +52,17 @@ const HOST_A = "ra-a.blessboard.org";
 const ROOT = path.join(__dirname, "..");
 const DEPLOYMENT = "blessboard-org-v5";
 
+function baseEnv(overrides) {
+  return {
+    NODE_ENV: "test",
+    PLATFORM_DEPLOYMENT_CODE: DEPLOYMENT,
+    SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
+    SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
+    BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
+    ...overrides,
+  };
+}
+
 function makeTenant(church, org, primaryBranch) {
   return {
     resolved: true,
@@ -63,6 +77,7 @@ describe("blessboard reports-audit", () => {
   let pool;
   let skipSuite = false;
   let skipReason = "";
+  let app;
   let orgA;
   let churchA;
   let branchA;
@@ -170,6 +185,11 @@ describe("blessboard reports-audit", () => {
 
       const today = new Date();
       yearMonth = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, "0")}`;
+
+      app = createV5FoundationApp({
+        getPool: () => pool,
+        env: baseEnv(),
+      });
     } catch (err) {
       skipSuite = true;
       skipReason = String((err && err.message) || err);
@@ -391,8 +411,17 @@ describe("blessboard reports-audit", () => {
     assert.equal(usd.totalAmount, "25.50");
     assert.ok(usd.entryCount >= 1);
 
+    const givingBranch = report.report.giving.byBranch.find(
+      (g) => g.branchKey === "hq" && g.currency === "USD"
+    );
+    assert.ok(givingBranch);
+    assert.equal(givingBranch.totalAmount, "25.50");
+    assert.doesNotMatch(JSON.stringify(report.report), /donor@|payer_name|card_number|iban/i);
+    assert.equal(Object.prototype.hasOwnProperty.call(report.report, "churchId"), false);
+
     assert.ok(report.report.openRequests.openCount >= 1);
     assert.ok(report.report.openRequests.inReviewCount >= 1);
+    assert.ok(Array.isArray(report.report.attendance.byBranch));
 
     const branchDenied = await getHqOperationalReport(pool, {
       churchId: churchA.id,
@@ -401,6 +430,154 @@ describe("blessboard reports-audit", () => {
       yearMonth,
     });
     assert.equal(branchDenied.ok, false);
+  });
+
+  it("serves HQ attendance and giving report screens with branch filters", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const cookie = `${DEFAULT_V5_COOKIE}=${hqAdmin.rawToken}`;
+
+    const consolidated = await request(app)
+      .get(`/hq/reports?month=${yearMonth}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(consolidated.status, 200);
+    assert.match(consolidated.text, /data-bb-hq-reports="1"/);
+    assert.match(consolidated.text, /data-bb-report="giving-totals"|data-bb-report="giving-empty"/);
+    assert.match(consolidated.text, /name="branch"/);
+    assert.doesNotMatch(consolidated.text, /chart\.js|canvas|projectedGrowth/i);
+    assert.doesNotMatch(consolidated.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(consolidated.text, /donor@|payer name|card number|iban[\s:]/i);
+
+    const att = await request(app)
+      .get(`/hq/reports/attendance?month=${yearMonth}&branch=hq`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(att.status, 200);
+    assert.match(att.text, /data-bb-hq-attendance-report="1"/);
+    assert.match(att.text, /name="branch"/);
+    assert.doesNotMatch(att.text, /chart\.js|canvas/i);
+    assert.doesNotMatch(att.text, new RegExp(churchA.id, "i"));
+
+    const giv = await request(app)
+      .get(`/hq/reports/giving?month=${yearMonth}&branch=hq`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(giv.status, 200);
+    assert.match(giv.text, /data-bb-hq-giving-report="1"/);
+    assert.match(giv.text, /25\.50|No submitted giving/i);
+    assert.doesNotMatch(giv.text, /donor@|card number|iban[\s:]/i);
+    assert.doesNotMatch(giv.text, new RegExp(churchA.id, "i"));
+
+    const filtered = await getHqOperationalReport(pool, {
+      churchId: churchA.id,
+      actorUserId: hqAdmin.user.id,
+      tenant,
+      yearMonth,
+      branchId: branchA.id,
+    });
+    assert.equal(filtered.ok, true, filtered.reason);
+    assert.equal(filtered.report.branchFilter.branchKey, "hq");
+    const usdFiltered = filtered.report.giving.byCurrency.find((g) => g.currency === "USD");
+    assert.ok(usdFiltered);
+    assert.equal(usdFiltered.totalAmount, "25.50");
+
+    const denied = await request(app)
+      .get("/hq/reports/giving")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
+    assert.ok(denied.status === 403 || denied.status === 303, `status=${denied.status}`);
+  });
+
+  it("serves HQ audit trail with filters, pagination, and privacy-safe HTML", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const cookie = `${DEFAULT_V5_COOKIE}=${hqAdmin.rawToken}`;
+
+    for (let i = 0; i < 3; i += 1) {
+      const recorded = await recordAuditEvent(pool, {
+        deploymentCode: DEPLOYMENT,
+        organizationId: orgA.records.organization.id,
+        churchId: churchA.id,
+        branchId: branchA.id,
+        actorUserId: hqAdmin.user.id,
+        actionKey: "test.hq.audit.gui",
+        entityType: "test_entity",
+        entityId: churchA.id,
+        outcome: i === 0 ? "denied" : "success",
+        metadata: {
+          password: "must-not-appear",
+          email: "secret@example.test",
+          status: "ok",
+          count: i,
+        },
+      });
+      assert.equal(recorded.ok, true, recorded.reason);
+    }
+
+    const list = await request(app)
+      .get("/hq/audit")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(list.status, 200);
+    assert.match(list.text, /data-bb-hq-audit="1"/);
+    assert.match(list.text, /data-bb-hq-audit-filter="1"/);
+    assert.match(list.text, /data-bb-hq-audit-table="1"/);
+    assert.match(list.text, /name="action"/);
+    assert.match(list.text, /name="entity"/);
+    assert.match(list.text, /name="outcome"/);
+    assert.match(list.text, /test\.hq\.audit\.gui/);
+    assert.doesNotMatch(list.text, /export\.csv|Download CSV|Export/i);
+    assert.doesNotMatch(list.text, /must-not-appear|secret@example\.test/i);
+    assert.doesNotMatch(list.text, /metadata|session_token|password_hash|csrf_token/i);
+    assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(list.text, new RegExp(hqAdmin.user.id, "i"));
+    assert.doesNotMatch(list.text, new RegExp(orgA.records.organization.id, "i"));
+    assert.match(list.text, new RegExp(String(churchA.id).slice(-8)));
+
+    const filtered = await request(app)
+      .get("/hq/audit?action=test.hq.audit.gui&outcome=denied&entity=test_entity")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(filtered.status, 200);
+    assert.match(filtered.text, /data-bb-outcome="denied"/);
+    assert.match(filtered.text, /test\.hq\.audit\.gui/);
+    assert.doesNotMatch(filtered.text, /data-bb-outcome="success"/);
+
+    const page1 = await listOrganizationAuditEvents(pool, {
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      actionKey: "test.hq.audit.gui",
+      limit: 2,
+    });
+    assert.equal(page1.ok, true, page1.reason);
+    assert.equal(page1.hasMore, true);
+    assert.ok(page1.nextBefore);
+
+    const paged = await request(app)
+      .get(
+        `/hq/audit?action=test.hq.audit.gui&before=${encodeURIComponent(
+          page1.nextBefore instanceof Date
+            ? page1.nextBefore.toISOString()
+            : String(page1.nextBefore)
+        )}`
+      )
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(paged.status, 200);
+    assert.match(paged.text, /data-bb-hq-audit-table="1"|data-bb-hq-audit-empty="1"/);
+    assert.match(paged.text, /test\.hq\.audit\.gui|No audit events match/i);
+
+    const empty = await request(app)
+      .get("/hq/audit?action=test.hq.audit.missing")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(empty.status, 200);
+    assert.match(empty.text, /data-bb-hq-audit-empty="1"/);
+
+    const denied = await request(app)
+      .get("/hq/audit")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
+    assert.ok(denied.status === 403 || denied.status === 303, `status=${denied.status}`);
   });
 
   it("leaves V4 wiring untouched", () => {

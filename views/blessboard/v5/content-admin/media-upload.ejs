@@ -1,5 +1,12 @@
-<%# Inline upload control for an existing URL field. Expects: uploadUrl, targetInputId, csrfToken, visibility (optional) %>
-<div class="bb-ca-upload" data-upload-url="<%= uploadUrl %>" data-target="<%= targetInputId %>" data-csrf="<%= csrfToken %>" data-visibility="<%= typeof visibility !== 'undefined' && visibility ? visibility : 'public' %>">
+<%# Inline upload control. Expects: uploadUrl, targetInputId, csrfToken, visibility (optional), fillField (optional: deliveryPath|assetId) %>
+<div
+  class="bb-ca-upload"
+  data-upload-url="<%= uploadUrl %>"
+  data-target="<%= targetInputId %>"
+  data-csrf="<%= csrfToken %>"
+  data-visibility="<%= typeof visibility !== 'undefined' && visibility ? visibility : 'public' %>"
+  data-fill="<%= typeof fillField !== 'undefined' && fillField ? fillField : 'deliveryPath' %>"
+>
   <label for="<%= targetInputId %>_file">Upload file</label>
   <input id="<%= targetInputId %>_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" />
   <button type="button" class="bb-ca-upload-btn">Upload</button>
@@ -46,7 +53,12 @@
             status.textContent = "Upload failed" + (pack.body && pack.body.reason ? ": " + pack.body.reason : ".");
             return;
           }
-          target.value = pack.body.deliveryPath;
+          var fill = root.getAttribute("data-fill") || "deliveryPath";
+          if (fill === "assetId" && pack.body.assetId) {
+            target.value = pack.body.assetId;
+          } else {
+            target.value = pack.body.deliveryPath;
+          }
           status.textContent = pack.body.deduped ? "Reused existing file." : "Uploaded.";
         })
         .catch(function () {

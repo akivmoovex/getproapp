@@ -72,6 +72,7 @@ function currentYearMonth() {
  *   actorUserId: string,
  *   tenant: object,
  *   yearMonth?: string,
+ *   branchId?: string|null,
  * }} input
  */
 async function getHqOperationalReport(db, input) {
@@ -82,6 +83,13 @@ async function getHqOperationalReport(db, input) {
   const yearMonth = String((input && input.yearMonth) || currentYearMonth()).trim();
   if (!YEAR_MONTH_RE.test(yearMonth)) {
     return { ok: false, status: STATUS.INVALID_INPUT, report: null, reason: "year_month" };
+  }
+  const branchId =
+    input && input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
+  if (branchId && !UUID_RE.test(branchId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, report: null, reason: "branch_id" };
   }
 
   try {
@@ -135,9 +143,10 @@ async function getHqOperationalReport(db, input) {
             AND m.membership_status = 'active'
           WHERE b.church_id = $1
             AND b.status = 'active'
+            AND ($2::uuid IS NULL OR b.id = $2)
           GROUP BY b.id, b.branch_key, b.display_name
           ORDER BY b.display_name ASC`,
-        [churchId]
+        [churchId, branchId]
       );
 
       const pendingRegs = await client.query(
@@ -148,9 +157,10 @@ async function getHqOperationalReport(db, input) {
              ON r.branch_id = b.id
             AND r.status IN ('submitted', 'under_review')
           WHERE b.church_id = $1
+            AND ($2::uuid IS NULL OR b.id = $2)
           GROUP BY b.id, b.branch_key, b.display_name
           ORDER BY b.display_name ASC`,
-        [churchId]
+        [churchId, branchId]
       );
 
       const announcements = await client.query(
@@ -162,8 +172,9 @@ async function getHqOperationalReport(db, input) {
            LEFT JOIN blessboard.announcement_reads ar
              ON ar.announcement_id = a.id
             AND ar.read_at IS NOT NULL
-          WHERE a.church_id = $1`,
-        [churchId]
+          WHERE a.church_id = $1
+            AND ($2::uuid IS NULL OR a.branch_id IS NULL OR a.branch_id = $2)`,
+        [churchId, branchId]
       );
 
       const events = await client.query(
@@ -175,8 +186,9 @@ async function getHqOperationalReport(db, input) {
              ON er.event_id = e.id
             AND er.status = 'registered'
           WHERE e.church_id = $1
-            AND e.status = 'published'`,
-        [churchId]
+            AND e.status = 'published'
+            AND ($2::uuid IS NULL OR e.branch_id IS NULL OR e.branch_id = $2)`,
+        [churchId, branchId]
       );
 
       const attendance = await client.query(
@@ -188,8 +200,28 @@ async function getHqOperationalReport(db, input) {
              ON en.attendance_event_id = e.id
           WHERE e.church_id = $1
             AND to_char(e.event_date, 'YYYY-MM') = $2
-            AND e.status IN ('submitted', 'approved', 'archived')`,
-        [churchId, yearMonth]
+            AND e.status IN ('submitted', 'approved', 'archived')
+            AND ($3::uuid IS NULL OR e.branch_id = $3)`,
+        [churchId, yearMonth, branchId]
+      );
+
+      const attendanceByBranch = await client.query(
+        `SELECT
+            b.branch_key,
+            b.display_name,
+            COALESCE(SUM(en.count), 0)::int AS total_count,
+            COUNT(DISTINCT e.id)::int AS event_count
+           FROM blessboard.attendance_events e
+           INNER JOIN blessboard.attendance_entries en
+             ON en.attendance_event_id = e.id
+           INNER JOIN blessboard.branches b ON b.id = e.branch_id
+          WHERE e.church_id = $1
+            AND to_char(e.event_date, 'YYYY-MM') = $2
+            AND e.status IN ('submitted', 'approved', 'archived')
+            AND ($3::uuid IS NULL OR e.branch_id = $3)
+          GROUP BY b.branch_key, b.display_name
+          ORDER BY b.display_name ASC`,
+        [churchId, yearMonth, branchId]
       );
 
       const giving = await client.query(
@@ -201,9 +233,28 @@ async function getHqOperationalReport(db, input) {
           WHERE e.church_id = $1
             AND to_char(e.giving_date, 'YYYY-MM') = $2
             AND e.status IN ('submitted', 'approved')
+            AND ($3::uuid IS NULL OR e.branch_id = $3)
           GROUP BY e.currency
           ORDER BY e.currency ASC`,
-        [churchId, yearMonth]
+        [churchId, yearMonth, branchId]
+      );
+
+      const givingByBranch = await client.query(
+        `SELECT
+            b.branch_key,
+            b.display_name,
+            e.currency,
+            COALESCE(SUM(e.amount), 0)::text AS total_amount,
+            COUNT(e.id)::int AS entry_count
+           FROM blessboard.giving_entries e
+           INNER JOIN blessboard.branches b ON b.id = e.branch_id
+          WHERE e.church_id = $1
+            AND to_char(e.giving_date, 'YYYY-MM') = $2
+            AND e.status IN ('submitted', 'approved')
+            AND ($3::uuid IS NULL OR e.branch_id = $3)
+          GROUP BY b.branch_key, b.display_name, e.currency
+          ORDER BY b.display_name ASC, e.currency ASC`,
+        [churchId, yearMonth, branchId]
       );
 
       const openRequests = await client.query(
@@ -212,26 +263,39 @@ async function getHqOperationalReport(db, input) {
             COUNT(*) FILTER (WHERE status = 'submitted')::int AS submitted_count,
             COUNT(*) FILTER (WHERE status = 'in_review')::int AS in_review_count
            FROM blessboard.member_requests
-          WHERE church_id = $1`,
-        [churchId]
+          WHERE church_id = $1
+            AND ($2::uuid IS NULL OR branch_id IS NULL OR branch_id = $2)`,
+        [churchId, branchId]
       );
+
+      let branchFilter = null;
+      if (branchId) {
+        const br = await client.query(
+          `SELECT branch_key, display_name FROM blessboard.branches WHERE id = $1 AND church_id = $2`,
+          [branchId, churchId]
+        );
+        if (br.rows[0]) {
+          branchFilter = {
+            branchKey: br.rows[0].branch_key,
+            displayName: br.rows[0].display_name,
+          };
+        }
+      }
 
       return {
         ok: true,
         status: STATUS.OK,
         report: {
-          churchId,
           yearMonth,
           generatedAt: new Date().toISOString(),
           reportTier,
+          branchFilter,
           activeMembersByBranch: activeMembers.rows.map((r) => ({
-            branchId: r.branch_id,
             branchKey: r.branch_key,
             displayName: r.display_name,
             activeMemberCount: Number(r.active_member_count) || 0,
           })),
           registrationsPendingByBranch: pendingRegs.rows.map((r) => ({
-            branchId: r.branch_id,
             branchKey: r.branch_key,
             displayName: r.display_name,
             pendingCount: Number(r.pending_count) || 0,
@@ -249,10 +313,23 @@ async function getHqOperationalReport(db, input) {
             yearMonth,
             totalCount: Number(attendance.rows[0].total_count) || 0,
             eventCount: Number(attendance.rows[0].event_count) || 0,
+            byBranch: attendanceByBranch.rows.map((r) => ({
+              branchKey: r.branch_key,
+              displayName: r.display_name,
+              totalCount: Number(r.total_count) || 0,
+              eventCount: Number(r.event_count) || 0,
+            })),
           },
           giving: {
             yearMonth,
             byCurrency: giving.rows.map((r) => ({
+              currency: r.currency,
+              totalAmount: String(r.total_amount),
+              entryCount: Number(r.entry_count) || 0,
+            })),
+            byBranch: givingByBranch.rows.map((r) => ({
+              branchKey: r.branch_key,
+              displayName: r.display_name,
               currency: r.currency,
               totalAmount: String(r.total_amount),
               entryCount: Number(r.entry_count) || 0,

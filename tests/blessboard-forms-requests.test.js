@@ -1073,6 +1073,193 @@ describe("blessboard forms-requests", () => {
     assert.ok(cross.status === 403 || cross.status === 404);
   });
 
+  it("HQ forms, resources, and requests preserve branch scope, privacy, and status workflow", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const tenant = makeTenant(churchA, orgA.records.organization, branchA);
+    const hqCookie = `${DEFAULT_V5_COOKIE}=${hqAdmin.rawToken}`;
+
+    const formsList = await request(app)
+      .get("/hq/forms")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(formsList.status, 200);
+    assert.match(formsList.text, /data-bb-forms-admin-list="1"/);
+    assert.match(formsList.text, /data-bb-hq-forms-branches="1"/);
+    assert.match(formsList.text, /href="\/hq\/forms\/b\/campus"/);
+    assert.match(formsList.text, /href="\/hq\/requests"/);
+    assert.doesNotMatch(formsList.text, new RegExp(churchA.id, "i"));
+
+    const resourcesList = await request(app)
+      .get("/hq/resources")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(resourcesList.status, 200);
+    assert.match(resourcesList.text, /data-bb-resources-admin-list="1"/);
+    assert.match(resourcesList.text, /data-bb-hq-resources-branches="1"/);
+    assert.match(resourcesList.text, /href="\/hq\/resources\/b\/campus"/);
+
+    const campusForm = await createForm(pool, {
+      churchId: churchA.id,
+      branchId: campusBranch.id,
+      scopeBranchId: campusBranch.id,
+      actorUserId: hqAdmin.user.id,
+      tenant,
+      title: "Campus HQ form",
+      schema: {
+        version: 1,
+        fields: [{ key: "full_name", type: "text", label: "Full name", required: true, maxLength: 100 }],
+      },
+    });
+    assert.equal(campusForm.ok, true, campusForm.reason);
+
+    const branchForms = await request(app)
+      .get("/hq/forms/b/campus")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(branchForms.status, 200);
+    assert.match(branchForms.text, /Campus HQ form/);
+    assert.match(branchForms.text, /href="\/hq\/forms"/);
+    assert.doesNotMatch(branchForms.text, /data-bb-hq-forms-branches="1"/);
+
+    const campusResource = await createResource(pool, {
+      churchId: churchA.id,
+      branchId: campusBranch.id,
+      scopeBranchId: campusBranch.id,
+      actorUserId: hqAdmin.user.id,
+      tenant,
+      title: "Campus study guide",
+      audience: "members",
+      mediaAssetId: privateMediaId,
+    });
+    assert.equal(campusResource.ok, true, campusResource.reason);
+
+    const branchResources = await request(app)
+      .get("/hq/resources/b/campus")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(branchResources.status, 200);
+    assert.match(branchResources.text, /Campus study guide/);
+    assert.match(branchResources.text, /href="\/hq\/resources"/);
+
+    const created = await createMemberRequest(pool, {
+      churchId: churchA.id,
+      branchId: campusBranch.id,
+      memberId,
+      actorUserId: memberUser.user.id,
+      category: "pastoral",
+      subject: "HQ oversight counseling",
+      message: "Need pastoral follow-up",
+      mediaAssetId: privateMediaId,
+    });
+    assert.equal(created.ok, true, created.reason);
+
+    const reqList = await request(app)
+      .get("/hq/requests")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(reqList.status, 200);
+    assert.match(reqList.text, /data-bb-request-admin-list="1"/);
+    assert.match(reqList.text, /data-bb-hq-requests-branches="1"/);
+    assert.match(reqList.text, /href="\/hq\/requests\/b\/campus"/);
+    assert.match(reqList.text, /HQ oversight counseling/);
+    assert.doesNotMatch(reqList.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(reqList.text, new RegExp(memberId, "i"));
+    assert.doesNotMatch(reqList.text, /Active Donor|donor email|View Profile/i);
+
+    const memberRef = String(memberId).slice(-8);
+    assert.match(reqList.text, new RegExp(memberRef));
+
+    const branchReqList = await request(app)
+      .get("/hq/requests/b/campus")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(branchReqList.status, 200);
+    assert.match(branchReqList.text, /HQ oversight counseling/);
+    assert.match(branchReqList.text, /href="\/hq\/requests"/);
+    assert.doesNotMatch(branchReqList.text, /data-bb-hq-requests-branches="1"/);
+
+    const detail = await request(app)
+      .get(`/hq/requests/b/campus/${created.request.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-bb-request-admin-detail="1"/);
+    assert.match(detail.text, /data-bb-req-attachment="1"/);
+    assert.match(detail.text, /data-bb-req-download="1"/);
+    assert.match(detail.text, /data-bb-req-status-form="1"/);
+    assert.match(detail.text, /href="\/hq\/requests"/);
+    assert.doesNotMatch(detail.text, new RegExp(memberId, "i"));
+    assert.match(detail.text, new RegExp(memberRef));
+
+    const csrf = extractCookie(detail, CSRF_COOKIE);
+    assert.ok(csrf);
+
+    const missingCsrf = await request(app)
+      .post(`/hq/requests/b/campus/${created.request.id}/status`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({ status: "in_review", note: "HQ assigned" });
+    assert.equal(missingCsrf.status, 403);
+
+    const updated = await request(app)
+      .post(`/hq/requests/b/campus/${created.request.id}/status`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        status: "in_review",
+        note: "HQ assigned",
+      });
+    assert.equal(updated.status, 303);
+    assert.match(String(updated.headers.location || ""), /\/hq\/requests\/b\/campus\/[0-9a-f-]{36}\?saved=status/i);
+
+    const after = await request(app)
+      .get(`/hq/requests/b/campus/${created.request.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(after.status, 200);
+    assert.match(after.text, /data-bb-status="in_review"/);
+    assert.match(after.text, /HQ assigned/);
+
+    const file = await request(app)
+      .get(`/hq/requests/b/campus/${created.request.id}/file`)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(file.status, 200);
+    assert.equal(file.headers["x-content-type-options"], "nosniff");
+    assert.match(String(file.headers["cache-control"] || ""), /private/i);
+    assert.match(String(file.headers["content-disposition"] || ""), /attachment/i);
+
+    const baDeniedForms = await request(app)
+      .get("/hq/forms")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
+    assert.ok(
+      baDeniedForms.status === 403 || baDeniedForms.status === 303,
+      `forms status=${baDeniedForms.status}`
+    );
+
+    const baDeniedRequests = await request(app)
+      .get("/hq/requests")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
+    assert.ok(
+      baDeniedRequests.status === 403 || baDeniedRequests.status === 303,
+      `requests status=${baDeniedRequests.status}`
+    );
+
+    const baDeniedResources = await request(app)
+      .get("/hq/resources")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
+    assert.ok(
+      baDeniedResources.status === 403 || baDeniedResources.status === 303,
+      `resources status=${baDeniedResources.status}`
+    );
+  });
+
   it("leaves V4 wiring untouched", () => {
     const legacy = fs.readFileSync(path.join(ROOT, "server.legacy.js"), "utf8");
     assert.doesNotMatch(legacy, /createFormsRequestsAdminRouter|formsRequestsService|formSchema/);

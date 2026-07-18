@@ -14,13 +14,11 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
+const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   CSRF_FIELD,
-  issueCsrfToken,
   validateCsrf,
-  setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const {
   STATUS,
@@ -30,8 +28,14 @@ const {
   getAdminAnnouncement,
 } = require("../services/announcementsService");
 const {
+  listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
+  STATUS: BRANCH_STATUS,
 } = require("../services/listBlessBoardBranches");
+const {
+  authorizeBlessBoardTenantAccess,
+  STATUS: AUTHZ_STATUS,
+} = require("../services/authorizeBlessBoardTenantAccess");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -175,22 +179,6 @@ function createAnnouncementAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function primaryRoleLabel(req) {
-    const roles =
-      req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-        ? req.blessBoardAuthorizationContext.effectiveRoles
-        : [];
-    const order =
-      variant === "hq"
-        ? ["church_hq_admin", "platform_admin", "branch_admin"]
-        : ["branch_admin", "church_hq_admin", "platform_admin"];
-    for (const key of order) {
-      const hit = roles.find((r) => r.roleKey === key);
-      if (hit) return formatRoleLabel(hit.roleKey);
-    }
-    return roles[0] ? formatRoleLabel(roles[0].roleKey) : variant === "hq" ? "HQ admin" : "Branch admin";
-  }
-
   function shellLocals(req, res, extra) {
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
@@ -204,23 +192,16 @@ function createAnnouncementAdminRouter(deps) {
         },
       });
     }
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    return {
-      pageTitle: (extra && extra.pageTitle) || "Announcements",
+    return buildHqAdminShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav: "announcements",
-      shellKind: "hq",
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      roleLabel: primaryRoleLabel(req),
-      displayName:
-        req.v5Session && req.v5Session.session && req.v5Session.session.user
-          ? req.v5Session.session.user.displayName
-          : "",
-      hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
-      ...(extra || {}),
-    };
+      pageTitle: (extra && extra.pageTitle) || "Announcements",
+      extra: {
+        shellKind: "hq",
+        ...(extra || {}),
+      },
+    });
   }
 
   function validateCsrfPost(req, res) {
@@ -255,6 +236,8 @@ function createAnnouncementAdminRouter(deps) {
       return {
         churchId: tenant.church.id,
         branchId: tenant.primaryBranch.id,
+        branchKey: tenant.primaryBranch.key || null,
+        branchDisplayName: tenant.primaryBranch.displayName || null,
         basePath: "/branch-admin/announcements",
         tenant,
         actorUserId: session.userId,
@@ -263,17 +246,45 @@ function createAnnouncementAdminRouter(deps) {
 
     const branchKey = req.params && req.params.branchKey ? String(req.params.branchKey) : "";
     if (branchKey) {
-      const resolved = await resolveBlessBoardBranchForChurch(getPool(), {
-        churchId: tenant.church.id,
-        branchKey,
-      });
+      const resolved = await resolveBlessBoardBranchForChurch(
+        getPool(),
+        tenant.church.id,
+        branchKey
+      );
       if (!resolved.ok || !resolved.branch) {
-        sendControlled(req, res, 404, "Branch not found.", shellKind);
+        const code =
+          resolved.status === BRANCH_STATUS.LOOKUP_ERROR
+            ? 503
+            : resolved.status === BRANCH_STATUS.INACTIVE
+              ? 404
+              : 404;
+        sendControlled(
+          req,
+          res,
+          code,
+          code === 503 ? "Branch lookup is temporarily unavailable." : "Branch not found.",
+          shellKind
+        );
+        return null;
+      }
+      const authz = await authorizeBlessBoardTenantAccess(getPool(), {
+        userId: session.userId,
+        tenant,
+        branchId: resolved.branch.id,
+      });
+      if (authz.status === AUTHZ_STATUS.LOOKUP_ERROR) {
+        sendControlled(req, res, 503, "Access check is temporarily unavailable.", shellKind);
+        return null;
+      }
+      if (!authz.ok) {
+        sendControlled(req, res, 403, "You do not have access to this branch.", shellKind);
         return null;
       }
       return {
         churchId: tenant.church.id,
         branchId: resolved.branch.id,
+        branchKey: resolved.branch.key,
+        branchDisplayName: resolved.branch.displayName,
         basePath: `/hq/announcements/b/${resolved.branch.key}`,
         tenant,
         actorUserId: session.userId,
@@ -283,10 +294,18 @@ function createAnnouncementAdminRouter(deps) {
     return {
       churchId: tenant.church.id,
       branchId: null,
+      branchKey: null,
+      branchDisplayName: null,
       basePath: "/hq/announcements",
       tenant,
       actorUserId: session.userId,
     };
+  }
+
+  function mediaUploadUrlForScope(scope) {
+    if (variant === "branch") return "/branch-admin/content/media/upload";
+    if (scope && scope.branchKey) return `/hq/content/b/${scope.branchKey}/media/upload`;
+    return "/hq/content/media/upload";
   }
 
   async function loadScopedAnnouncement(req, res, scope, id) {
@@ -348,12 +367,25 @@ function createAnnouncementAdminRouter(deps) {
       }
       const total = listed.total || 0;
       const totalPages = Math.max(1, Math.ceil(total / limit));
+      let branches = [];
+      if (variant === "hq" && !scope.branchId) {
+        const listResult = await listBlessBoardBranches(getPool(), scope.churchId);
+        branches = listResult.ok ? listResult.branches : [];
+      }
       const html = renderView(
         "announcements/admin-list.ejs",
         shellLocals(req, res, {
           items: listed.items,
           basePath: scope.basePath,
-          scopeLabel: isBranchScoped ? "Branch" : "Church-wide",
+          scopeLabel: isBranchScoped
+            ? scope.branchDisplayName || "Branch"
+            : "Church-wide",
+          branchDisplayName: scope.branchDisplayName || null,
+          branchKey: scope.branchKey || null,
+          branches,
+          isHqChurchWide: variant === "hq" && !scope.branchId,
+          isHqBranchScoped: variant === "hq" && Boolean(scope.branchId),
+          mediaUploadUrl: mediaUploadUrlForScope(scope),
           error: null,
           saved: String((req.query && req.query.saved) || ""),
           q,
@@ -380,6 +412,7 @@ function createAnnouncementAdminRouter(deps) {
           error: null,
           formMode: "create",
           showPreview: true,
+          mediaUploadUrl: mediaUploadUrlForScope(scope),
         })
       );
       return res.status(200).type("html").send(html);
@@ -418,6 +451,7 @@ function createAnnouncementAdminRouter(deps) {
             error: errorMessage(created.reason),
             formMode: "create",
             showPreview: true,
+            mediaUploadUrl: mediaUploadUrlForScope(scope),
           })
         );
         return res
@@ -466,6 +500,7 @@ function createAnnouncementAdminRouter(deps) {
           formMode: "edit",
           showPreview: true,
           saved: String((req.query && req.query.saved) || "") === "1",
+          mediaUploadUrl: mediaUploadUrlForScope(scope),
         })
       );
       return res.status(200).type("html").send(html);
@@ -650,6 +685,7 @@ function createAnnouncementAdminRouter(deps) {
             error: errorMessage(updated.reason),
             formMode: "edit",
             showPreview: true,
+            mediaUploadUrl: mediaUploadUrlForScope(scope),
           })
         );
         const code =

@@ -1022,6 +1022,145 @@ describe("blessboard announcements", () => {
     void tenant;
   });
 
+  it("HQ church-wide and branch-scoped announcement GUI preserve publish/preview/archive/concurrency", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const hqCookie = `${DEFAULT_V5_COOKIE}=${hqAdmin.rawToken}`;
+
+    const list = await request(app)
+      .get("/hq/announcements")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(list.status, 200);
+    assert.match(list.text, /data-bb-announcement-admin-list="1"/);
+    assert.match(list.text, /data-bb-hq-ann-branches="1"/);
+    assert.match(list.text, /href="\/hq\/announcements\/b\/campus"/);
+    assert.match(list.text, /href="\/hq\/registrations"/);
+    assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
+
+    const csrf = extractCookie(list, CSRF_COOKIE);
+    const createRes = await request(app)
+      .post("/hq/announcements")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        title: "HQ oversight draft",
+        body: "Church-wide message",
+        status: "draft",
+        audience_members: "1",
+      });
+    assert.equal(createRes.status, 303);
+    const annId = createRes.headers.location.split("/").pop().split("?")[0];
+
+    const preview = await request(app)
+      .get(`/hq/announcements/${annId}/preview`)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(preview.status, 200);
+    assert.match(preview.text, /data-bb-announcement-admin-preview="1"/);
+    assert.match(preview.text, /HQ oversight draft/);
+
+    const publishPage = await request(app)
+      .get(`/hq/announcements/${annId}/publish`)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(publishPage.status, 200);
+    assert.match(publishPage.text, /name="confirm_publish"/);
+    assert.match(publishPage.text, /name="expected_updated_at"/);
+    const pubCsrf = extractCookie(publishPage, CSRF_COOKIE);
+
+    const stale = await request(app)
+      .post(`/hq/announcements/${annId}/publish`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${pubCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: pubCsrf,
+        confirm_publish: "1",
+        expected_updated_at: "2000-01-01T00:00:00.000Z",
+      });
+    assert.equal(stale.status, 409);
+    assert.match(stale.text, /Someone else updated|try again/i);
+
+    const freshPage = await request(app)
+      .get(`/hq/announcements/${annId}/publish`)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    const expectedMatch = freshPage.text.match(
+      /name="expected_updated_at"\s+value="([^"]+)"/
+    );
+    assert.ok(expectedMatch, "expected_updated_at present");
+    const freshCsrf = extractCookie(freshPage, CSRF_COOKIE);
+    const published = await request(app)
+      .post(`/hq/announcements/${annId}/publish`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${freshCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: freshCsrf,
+        confirm_publish: "1",
+        expected_updated_at: expectedMatch[1],
+      });
+    assert.equal(published.status, 303);
+    assert.match(published.headers.location, /saved=published/);
+
+    const branchList = await request(app)
+      .get("/hq/announcements/b/campus")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(branchList.status, 200);
+    assert.match(branchList.text, /Campus A|Branch announcements|scope/i);
+    assert.match(branchList.text, /href="\/hq\/announcements"/);
+    assert.doesNotMatch(branchList.text, /HQ oversight draft/);
+
+    const branchCsrf = extractCookie(branchList, CSRF_COOKIE);
+    const branchCreate = await request(app)
+      .post("/hq/announcements/b/campus")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${branchCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: branchCsrf,
+        title: "Campus HQ managed",
+        body: "Branch scoped",
+        status: "draft",
+        audience_members: "1",
+      });
+    assert.equal(branchCreate.status, 303);
+    assert.match(branchCreate.headers.location, /\/hq\/announcements\/b\/campus\/[0-9a-f-]{36}/i);
+    const campusAnnId = branchCreate.headers.location.split("/").pop().split("?")[0];
+
+    const detail = await request(app)
+      .get(`/hq/announcements/b/campus/${campusAnnId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /Campus HQ managed/);
+    assert.match(detail.text, /data-bb-ann-preview="1"|Preview/i);
+    const archCsrf = extractCookie(detail, CSRF_COOKIE);
+    const expectedArch = detail.text.match(
+      /name="expected_updated_at"\s+value="([^"]+)"/
+    );
+    const archived = await request(app)
+      .post(`/hq/announcements/b/campus/${campusAnnId}/archive`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(hqCookie, `${CSRF_COOKIE}=${archCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: archCsrf,
+        expected_updated_at: expectedArch ? expectedArch[1] : undefined,
+      });
+    assert.equal(archived.status, 303);
+    assert.match(archived.headers.location, /saved=archived/);
+
+    const baDenied = await request(app)
+      .get("/hq/announcements")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
+    assert.ok(baDenied.status === 403 || baDenied.status === 303, `status=${baDenied.status}`);
+  });
+
   it("leaves V4 announcement wiring untouched", () => {
     const legacy = fs.readFileSync(path.join(ROOT, "server.legacy.js"), "utf8");
     assert.doesNotMatch(legacy, /createAnnouncementAdminRouter|createAnnouncementMemberRouter|announcementsService/);

@@ -54,6 +54,8 @@ async function insertAuditEvent(client, fields) {
  *   organizationId: string,
  *   churchId?: string|null,
  *   actionKey?: string|null,
+ *   entityType?: string|null,
+ *   outcome?: string|null,
  *   before?: string|null,
  *   limit?: number,
  * }} opts
@@ -68,6 +70,14 @@ async function listAuditEvents(client, opts) {
   if (opts.actionKey) {
     params.push(opts.actionKey);
     where += ` AND action_key = $${params.length}`;
+  }
+  if (opts.entityType) {
+    params.push(opts.entityType);
+    where += ` AND entity_type = $${params.length}`;
+  }
+  if (opts.outcome) {
+    params.push(opts.outcome);
+    where += ` AND outcome = $${params.length}`;
   }
   if (opts.before) {
     params.push(opts.before);

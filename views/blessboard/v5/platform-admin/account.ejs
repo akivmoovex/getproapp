@@ -1,0 +1,31 @@
+<%- include('../partials/platform-admin-shell-start') %>
+
+<section class="bb-pa-account" data-bb-pa-account="1">
+  <header class="bb-pa-page-head">
+    <h1 class="bb-pa-page-head__title">Account</h1>
+    <p class="bb-pa-lede">
+      Signed-in platform administrator on the BlessBoard apex host. Tenant church sites cannot open this shell.
+    </p>
+  </header>
+
+  <dl class="bb-pa-dl">
+    <dt>Display name</dt>
+    <dd><%= displayName || '—' %></dd>
+    <dt>Role</dt>
+    <dd><%= roleLabel %></dd>
+    <dt>Deployment</dt>
+    <dd><code class="bb-pa-key"><%= deploymentCode || '—' %></code></dd>
+    <dt>Host scope</dt>
+    <dd>Apex only · blessboard.org</dd>
+  </dl>
+
+  <form class="bb-pa-logout bb-pa-logout--page" method="post" action="/admin/logout" data-bb-pa-logout="1">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">
+      <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+      Sign out
+    </button>
+  </form>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

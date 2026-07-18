@@ -232,6 +232,20 @@ Role rules (active users + active roles only):
 - Private assets require content-admin authz; never served on `/_bb/media`.
 - Upload only from existing content-admin forms (no bulk library yet). Service-role credentials stay server-side.
 
+### Announcement administration (HQ + branch)
+
+| Surface | Path prefix | Scope |
+|---------|-------------|-------|
+| HQ church-wide | `/hq/announcements` | `branch_id` null |
+| HQ branch | `/hq/announcements/b/:branchKey` | Resolved branch in own church |
+| Branch admin | `/branch-admin/announcements` | Hostname primary branch only |
+
+- Roles: HQ routes `church_hq_admin` / `platform_admin`; branch-admin also allows `branch_admin`.
+- Soft lifecycle: draft → publish (requires `confirm_publish`) → archive; no hard delete.
+- Optimistic concurrency via `expected_updated_at` (409 on conflict).
+- Preview for authorized admins; media attach by asset id (upload reuses content-admin media endpoint).
+- Stitch `61` broadcast center remains deferred — HQ announcements reuse `35-*` patterns, not broadcast.
+
 ### Member identity + registration + portal shell
 
 | Table | Role |
@@ -246,6 +260,7 @@ Role rules (active users + active roles only):
 - Approval creates or links a member + membership transactionally; never auto-creates login users or plaintext passwords.
 - Public routes: `GET/POST /register`, `GET /register/submitted` (CSRF + rate limit; host-scoped).
 - Branch-admin: `/branch-admin/registrations` list/detail/approve/reject (pagination + search; internal rejection notes).
+- HQ oversight (read/review): `/hq/registrations`, `/hq/members` church-wide with optional branch-key filter; privacy-limited fields; no church/branch UUIDs in HTML.
 - Member portal: `GET /member`, `GET/POST /member/profile` — requires active user + active member + active membership on the host primary branch; admin roles alone never grant access. Profile edits are limited to preferred name, phone, and email display. Module cards are disabled placeholders (no fake counts). No member/church/branch UUIDs in URLs or HTML.
 - Duplicate open registrations return a generic public message; logs omit PII.
 - Tests: `npm run test:blessboard:members-schema`, `npm run test:blessboard:member-registration`, `npm run test:blessboard:member-portal`.
@@ -501,4 +516,4 @@ Means: **the hostname is assigned to a platform deployment that differs from the
 - Collecting national ID, health, financial, or family data on members
 - Registration exports / bulk download
 - Ministry role graphs beyond branch membership
-- Member directory / HQ cross-branch registration inbox
+- Member directory / HQ cross-branch registration inbox → **HQ read/review:** `/hq/members`, `/hq/registrations` (approve/reject remains branch-admin)

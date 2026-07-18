@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * Apex-only platform-admin shell (read-only BlessBoard organization directory).
- * Requires active platform_admin role. No tenant-host access.
+ * Apex-only platform-admin shell (dashboard, account, logout + read-only org directory).
+ * Requires active platform_admin role. No tenant-host access. No fabricated metrics.
  */
 
 const fs = require("fs");
@@ -16,15 +16,28 @@ const {
 } = require("../../blessboard/repositories/blessBoardAuthorizationRepository");
 const {
   listPlatformOrganizations,
+  getPlatformAdminDashboardStats,
   STATUS: LIST_STATUS,
   DEFAULT_LIMIT,
   MAX_LIMIT,
+  ALLOWED_LIMITS,
 } = require("../services/listPlatformOrganizations");
 const {
   getPlatformOrganizationSummary,
   STATUS: DETAIL_STATUS,
 } = require("../services/getPlatformOrganizationSummary");
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
+const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
+const {
+  CSRF_FIELD,
+  validateCsrf,
+} = require("./v5Csrf");
+const {
+  clearV5SessionCookie,
+  readV5SessionCookie,
+} = require("../session/v5SessionCookie");
+const { revokeV5Session } = require("../session/revokeV5Session");
+const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -85,13 +98,16 @@ function sendControlled(req, res, status, message) {
  * @param {{
  *   getPool: () => { query: Function },
  *   isApexHost: (req: import('express').Request) => boolean,
+ *   env?: NodeJS.ProcessEnv,
  *   sendUnavailable?: Function,
  * }} deps
  */
 function createPlatformAdminRouter(deps) {
   const getPool = deps.getPool;
   const isApexHost = deps.isApexHost;
+  const env = deps.env || process.env;
   const sendUnavailable = deps.sendUnavailable;
+  const isProduction = String(env.NODE_ENV || "") === "production";
   const router = express.Router();
 
   function requireApex(req, res, next) {
@@ -113,7 +129,10 @@ function createPlatformAdminRouter(deps) {
       if (!session) {
         const wantsHtml = String(req.get("accept") || "").includes("text/html");
         if (wantsHtml) {
-          return res.redirect(303, "/login");
+          return res.redirect(
+            303,
+            `/login?next=${encodeURIComponent(req.originalUrl || "/admin")}`
+          );
         }
         return sendControlled(req, res, 401, "Sign-in is required.");
       }
@@ -147,31 +166,72 @@ function createPlatformAdminRouter(deps) {
     }
   }
 
-  function shellLocals(req, activeNav, extra) {
-    const ctx = req.platformAdminContext || {};
-    return {
-      pageTitle: (extra && extra.pageTitle) || "Platform admin",
+  function shellLocals(req, res, activeNav, extra) {
+    return buildPlatformAdminShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      displayName: ctx.displayName || "",
-      roleLabel: ctx.roleLabel || "Platform admin",
-      ...(extra || {}),
-    };
+      pageTitle: extra && extra.pageTitle,
+      extra,
+    });
   }
 
   router.get("/admin", requireApex, requirePlatformAdmin, async (req, res) => {
-    const list = await listPlatformOrganizations(getPool(), { page: 1, limit: 5 });
-    if (!list.ok && list.status === LIST_STATUS.LOOKUP_ERROR) {
+    const [statsResult, list] = await Promise.all([
+      getPlatformAdminDashboardStats(getPool()),
+      listPlatformOrganizations(getPool(), { page: 1, limit: 5 }),
+    ]);
+    if (
+      (!statsResult.ok && statsResult.status === LIST_STATUS.LOOKUP_ERROR) ||
+      (!list.ok && list.status === LIST_STATUS.LOOKUP_ERROR)
+    ) {
       return sendControlled(req, res, 503, "Organization directory is temporarily unavailable.");
     }
     const html = renderPlatformAdminView(
       "platform-admin/dashboard.ejs",
-      shellLocals(req, "home", {
+      shellLocals(req, res, "home", {
         pageTitle: "Platform admin",
-        recentOrganizations: list.organizations || [],
-        totalOrganizations: list.total || 0,
+        directorySample: list.organizations || [],
+        totalOrganizations:
+          (statsResult.stats && statsResult.stats.totalOrganizations) || list.total || 0,
+        organizationsWithChurch:
+          (statsResult.stats && statsResult.stats.organizationsWithChurch) || 0,
       })
     );
     return res.status(200).type("html").send(html);
+  });
+
+  router.get("/admin/account", requireApex, requirePlatformAdmin, (req, res) => {
+    const deployment = getPlatformDeploymentCode(env);
+    const html = renderPlatformAdminView(
+      "platform-admin/account.ejs",
+      shellLocals(req, res, "account", {
+        pageTitle: "Account",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "",
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post("/admin/logout", requireApex, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return res.status(403).type("text").send("Invalid or missing CSRF token.");
+    }
+    const deployment = getPlatformDeploymentCode(env);
+    const rawToken = readV5SessionCookie(req, env);
+    try {
+      if (deployment.ok && deployment.code && rawToken) {
+        await revokeV5Session(getPool(), {
+          rawToken,
+          deploymentCode: deployment.code,
+        });
+      }
+    } catch {
+      /* fail-open clear cookie */
+    }
+    clearV5SessionCookie(res, { secure: isProduction, env });
+    return res.redirect(303, "/login");
   });
 
   router.get("/admin/organizations", requireApex, requirePlatformAdmin, async (req, res) => {
@@ -188,7 +248,7 @@ function createPlatformAdminRouter(deps) {
     }
     const html = renderPlatformAdminView(
       "platform-admin/organizations.ejs",
-      shellLocals(req, "organizations", {
+      shellLocals(req, res, "organizations", {
         pageTitle: "Organizations",
         organizations: list.organizations,
         page: list.page,
@@ -198,6 +258,9 @@ function createPlatformAdminRouter(deps) {
         keyPrefix: list.keyPrefix || "",
         defaultLimit: DEFAULT_LIMIT,
         maxLimit: MAX_LIMIT,
+        allowedLimits: ALLOWED_LIMITS,
+        rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
+        rangeTo: Math.min(list.page * list.limit, list.total),
       })
     );
     return res.status(200).type("html").send(html);
@@ -213,13 +276,17 @@ function createPlatformAdminRouter(deps) {
         if (detail.status === DETAIL_STATUS.LOOKUP_ERROR) {
           return sendControlled(req, res, 503, "Organization lookup is temporarily unavailable.");
         }
+        if (detail.status === DETAIL_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 404, "This organization could not be found.");
+        }
         return sendControlled(req, res, 404, "This organization could not be found.");
       }
       const html = renderPlatformAdminView(
         "platform-admin/organization-detail.ejs",
-        shellLocals(req, "organizations", {
+        shellLocals(req, res, "organizations", {
           pageTitle: detail.organization.displayName || "Organization",
           organization: detail.organization,
+          branches: detail.branches || [],
         })
       );
       return res.status(200).type("html").send(html);

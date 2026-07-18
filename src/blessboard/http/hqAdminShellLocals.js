@@ -58,6 +58,8 @@ function buildHqAdminShellLocals(req, res, opts) {
   const defaultTitles = {
     home: "Church HQ",
     branches: "Branches",
+    registrations: "Registration oversight",
+    members: "Member directory",
     settings: "Church settings",
     account: "Account",
     content: "Website",

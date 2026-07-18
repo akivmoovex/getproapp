@@ -248,6 +248,8 @@ async function monthlySummary(client, opts) {
     `SELECT
         to_char(e.giving_date, 'YYYY-MM') AS year_month,
         e.branch_id,
+        b.branch_key,
+        b.display_name AS branch_display_name,
         c.category_key,
         c.label AS category_label,
         e.currency,
@@ -255,17 +257,21 @@ async function monthlySummary(client, opts) {
         COALESCE(SUM(e.amount), 0)::text AS total_amount
        FROM blessboard.giving_entries e
        INNER JOIN blessboard.giving_categories c ON c.id = e.category_id
+       LEFT JOIN blessboard.branches b ON b.id = e.branch_id
       WHERE e.church_id = $1
         AND to_char(e.giving_date, 'YYYY-MM') = $2
         AND e.status IN ('submitted', 'approved')
         ${branchClause}
-      GROUP BY to_char(e.giving_date, 'YYYY-MM'), e.branch_id, c.category_key, c.label, e.currency
-      ORDER BY e.branch_id, c.category_key, e.currency`,
+      GROUP BY to_char(e.giving_date, 'YYYY-MM'), e.branch_id, b.branch_key, b.display_name,
+               c.category_key, c.label, e.currency
+      ORDER BY b.display_name NULLS LAST, c.category_key, e.currency`,
     params
   );
   return rows.map((row) => ({
     yearMonth: row.year_month,
     branchId: row.branch_id,
+    branchKey: row.branch_key || null,
+    branchDisplayName: row.branch_display_name || null,
     categoryKey: row.category_key,
     categoryLabel: row.category_label,
     currency: row.currency,

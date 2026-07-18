@@ -15,9 +15,11 @@ const STATUS = Object.freeze({
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
+const ALLOWED_LIMITS = Object.freeze([10, 25, 50, 100]);
 const ORG_KEY_PREFIX_RE = /^[a-z][a-z0-9_-]{0,63}$/;
 
 /**
+ * Compact DTO for platform-admin HTML — keys and labels only.
  * @param {object} row
  */
 function mapRow(row) {
@@ -47,7 +49,20 @@ function normalizeListInput(input) {
 
   let limit = Number.parseInt(String(raw.limit != null ? raw.limit : String(DEFAULT_LIMIT)), 10);
   if (!Number.isFinite(limit) || limit < 1) limit = DEFAULT_LIMIT;
-  if (limit > MAX_LIMIT) limit = MAX_LIMIT;
+  if (limit > MAX_LIMIT) {
+    limit = MAX_LIMIT;
+  } else if (!ALLOWED_LIMITS.includes(limit)) {
+    let best = ALLOWED_LIMITS[0];
+    let bestDist = Math.abs(limit - best);
+    for (const allowed of ALLOWED_LIMITS) {
+      const dist = Math.abs(limit - allowed);
+      if (dist < bestDist) {
+        best = allowed;
+        bestDist = dist;
+      }
+    }
+    limit = best;
+  }
 
   let keyPrefix = null;
   if (raw.q != null && String(raw.q).trim() !== "") {
@@ -134,11 +149,39 @@ async function listPlatformOrganizations(db, input) {
   }
 }
 
+/**
+ * Live dashboard totals only — organizations and churches already provisioned.
+ * @param {{ query: Function }} db
+ */
+async function getPlatformAdminDashboardStats(db) {
+  if (!db || typeof db.query !== "function") {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      stats: null,
+      reason: "database required",
+    };
+  }
+  try {
+    const stats = await repo.countOrganizationDirectoryStats(db);
+    return { ok: true, status: STATUS.OK, stats };
+  } catch {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      stats: null,
+      reason: "lookup_error",
+    };
+  }
+}
+
 module.exports = {
   STATUS,
   DEFAULT_LIMIT,
   MAX_LIMIT,
+  ALLOWED_LIMITS,
   normalizeListInput,
   mapRow,
   listPlatformOrganizations,
+  getPlatformAdminDashboardStats,
 };

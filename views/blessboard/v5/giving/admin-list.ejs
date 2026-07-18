@@ -48,6 +48,27 @@
 
   <% if (saved) { %><p class="bb-ba-ok" role="status">Saved.</p><% } %>
 
+  <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
+  <p class="bb-ba-hint"><a href="/hq/giving">← Church-wide giving</a> · <a href="/hq/reports/giving">Giving report</a></p>
+  <% } %>
+  <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide) { %>
+  <p class="bb-ba-hint"><a href="/hq/reports/giving">Open giving report</a></p>
+  <% if (branches && branches.length) { %>
+  <section class="bb-hq-panel" data-bb-hq-giv-branches="1" aria-labelledby="hq-giv-branch-heading">
+    <h2 id="hq-giv-branch-heading" class="bb-hq-section-title">Branch giving</h2>
+    <ul class="bb-ca-branch-list">
+      <% branches.forEach(function (branch) { %>
+      <li>
+        <a href="/hq/giving/b/<%= branch.key %>"><%= branch.displayName %></a>
+        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
+        <code class="bb-hq-key"><%= branch.key %></code>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+  <% } %>
+
   <section class="bb-ba-panel" data-bb-giving-categories="1">
     <h2 class="bb-ba-section-title">Giving categories</h2>
     <p class="bb-ba-hint">Active categories for this church. Entries are category totals only.</p>

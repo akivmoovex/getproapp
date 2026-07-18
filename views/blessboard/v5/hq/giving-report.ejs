@@ -1,0 +1,120 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var branchOptions = branches || [];
+  var monthSummary = summary || null;
+  var byBranch = (monthSummary && monthSummary.byBranch) || [];
+  var churchTotals = (monthSummary && monthSummary.churchTotals) || null;
+  var categoryRows = churchTotals || byBranch;
+  var grandTotals = (monthSummary && monthSummary.grandTotalsByCurrency) || [];
+%>
+
+<section class="bb-hq-giv-report" data-bb-hq-giving-report="1">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-hint"><a href="/hq/reports">← HQ reports</a></p>
+      <h1 class="bb-hq-page-head__title">Giving report</h1>
+      <p class="bb-hq-lede">
+        Manual category totals for
+        <strong><%= branchDisplayName || churchDisplayName %></strong>
+        <%= branchFilter ? '' : '(all branches)' %>.
+        Amounts are exact NUMERIC strings — no donor PII, no gateway, no charts.
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/giving">Manage giving</a>
+    </p>
+  </header>
+
+  <form method="get" action="/hq/reports/giving" class="bb-hq-filter" data-bb-hq-giv-report-filter="1">
+    <div class="bb-hq-field">
+      <label for="month">Month</label>
+      <input id="month" type="month" name="month" value="<%= yearMonth %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="branch">Branch</label>
+      <select id="branch" name="branch">
+        <option value="">All branches</option>
+        <% branchOptions.forEach(function (b) { %>
+        <option value="<%= b.key %>" <%= branchFilter === b.key ? 'selected' : '' %>><%= b.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Show</button>
+    </div>
+  </form>
+
+  <section class="bb-hq-panel">
+    <h2 class="bb-hq-section-title">Monthly totals · <%= yearMonth %></h2>
+    <% if (!monthSummary || !categoryRows.length) { %>
+    <p class="bb-hq-empty" role="status" data-bb-report="giving-empty">No submitted giving for this month.</p>
+    <% } else { %>
+      <% if (grandTotals.length) { %>
+      <ul class="bb-hq-report-list" data-bb-giving-grand-totals="1">
+        <% grandTotals.forEach(function (gt) { %>
+        <li data-bb-currency="<%= gt.currency %>" data-bb-total="<%= gt.totalAmount %>">
+          <%= gt.currency %>: <%= gt.totalAmount %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+      <div class="bb-hq-table-wrap">
+        <table class="bb-hq-table" data-bb-giving-summary-table="1">
+          <thead>
+            <tr>
+              <th scope="col">Category</th>
+              <th scope="col">Currency</th>
+              <th scope="col">Total</th>
+              <th scope="col">Entries</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% categoryRows.forEach(function (row) { %>
+            <tr data-bb-category-key="<%= row.categoryKey %>" data-bb-currency="<%= row.currency %>">
+              <td><%= row.categoryLabel %></td>
+              <td><%= row.currency %></td>
+              <td data-bb-total="<%= row.totalAmount %>"><%= row.totalAmount %></td>
+              <td><%= row.entryCount %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+  <% if (!branchFilter && byBranch.length) { %>
+  <section class="bb-hq-panel">
+    <h2 class="bb-hq-section-title">By branch</h2>
+    <div class="bb-hq-table-wrap">
+      <table class="bb-hq-table" data-bb-giving-by-branch="1">
+        <thead>
+          <tr>
+            <th scope="col">Branch</th>
+            <th scope="col">Category</th>
+            <th scope="col">Currency</th>
+            <th scope="col">Total</th>
+            <th scope="col">Entries</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% byBranch.forEach(function (row) { %>
+          <tr data-bb-branch="<%= row.branchKey || '' %>" data-bb-category-key="<%= row.categoryKey %>" data-bb-currency="<%= row.currency %>">
+            <td>
+              <%= row.branchDisplayName || '—' %>
+              <% if (row.branchKey) { %><code class="bb-hq-key"><%= row.branchKey %></code><% } %>
+            </td>
+            <td><%= row.categoryLabel %></td>
+            <td><%= row.currency %></td>
+            <td data-bb-total="<%= row.totalAmount %>"><%= row.totalAmount %></td>
+            <td><%= row.entryCount %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

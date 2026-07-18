@@ -167,6 +167,12 @@ describe("blessboard member registration http", () => {
         roleKey: "branch_admin",
         branchKey: "hq",
       });
+      users.hqA = await makeUser("hq@reg-a.example.test", {
+        email: "hq@reg-a.example.test",
+        organizationKey: "reg-a",
+        churchKey: "reg-a",
+        roleKey: "church_hq_admin",
+      });
       users.hqB = await makeUser("hq@reg-b.example.test", {
         email: "hq@reg-b.example.test",
         organizationKey: "reg-b",
@@ -553,6 +559,86 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(page.status, 200);
     assert.match(page.text, /Nora/);
+  });
+
+  it("lists church-wide registrations and members for HQ with privacy limits", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sid = sessionCookie(users.hqA);
+
+    const regs = await request(app)
+      .get("/hq/registrations")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(regs.status, 200);
+    assert.match(regs.text, /data-bb-hq-registration-queue="1"/);
+    assert.match(regs.text, /Nora|nora@example\.test|Cross Tenant|cross-tenant@example\.test/i);
+    assert.match(regs.text, /name="branch"/);
+    assert.doesNotMatch(regs.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(regs.text, /email_normalized|phone_normalized/i);
+
+    const row = await pool.query(
+      `SELECT id FROM blessboard.member_registrations
+        WHERE email_normalized = 'nora@example.test' LIMIT 1`
+    );
+    const regId = row.rows[0].id;
+    const regDetail = await request(app)
+      .get(`/hq/registrations/${regId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(regDetail.status, 200);
+    assert.match(regDetail.text, /data-bb-hq-registration-detail="1"/);
+    assert.match(regDetail.text, /Nora/);
+    assert.doesNotMatch(regDetail.text, /data-bb-reg-approve|data-bb-reg-reject/);
+    assert.doesNotMatch(regDetail.text, new RegExp(churchA.id, "i"));
+
+    const members = await request(app)
+      .get("/hq/members")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(members.status, 200);
+    assert.match(members.text, /data-bb-hq-member-directory="1"/);
+    assert.match(members.text, /Nora/);
+    assert.match(members.text, /href="\/hq\/members\/[0-9a-f-]{36}"/i);
+    assert.doesNotMatch(members.text, new RegExp(churchA.id, "i"));
+
+    const memberRow = await pool.query(
+      `SELECT id FROM blessboard.members WHERE email_normalized = 'nora@example.test' LIMIT 1`
+    );
+    const memberId = memberRow.rows[0].id;
+    const profile = await request(app)
+      .get(`/hq/members/${memberId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(profile.status, 200);
+    assert.match(profile.text, /data-bb-hq-member-detail="1"/);
+    assert.match(profile.text, /Nora/);
+    assert.doesNotMatch(profile.text, /email_normalized|phone_normalized|user_id/i);
+    assert.doesNotMatch(profile.text, new RegExp(churchA.id, "i"));
+
+    const filtered = await request(app)
+      .get("/hq/registrations?q=Nora&page=1&branch=hq")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(filtered.status, 200);
+    assert.match(filtered.text, /Nora/);
+
+    const foreign = await request(app)
+      .get("/hq/registrations")
+      .set("Host", HOST_B)
+      .set("Cookie", sid);
+    assert.ok(foreign.status === 403 || foreign.status === 404 || foreign.status === 303);
+
+    const crossMember = await request(app)
+      .get(`/hq/members/${memberId}`)
+      .set("Host", HOST_B)
+      .set("Cookie", sessionCookie(users.hqB));
+    assert.ok(crossMember.status === 403 || crossMember.status === 404);
+
+    const branchDenied = await request(app)
+      .get("/hq/members")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(users.branchA));
+    assert.ok(branchDenied.status === 403 || branchDenied.status === 404 || branchDenied.status === 303);
   });
 
   it("does not collect sensitive categories on the public form", async (t) => {

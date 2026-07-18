@@ -207,7 +207,10 @@ describe("blessboard content admin", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /Website content/);
     assert.match(res.text, /Church-wide/);
+    assert.match(res.text, /data-bb-content-admin="1"/);
+    assert.match(res.text, /data-bb-hq-content-branches="1"/);
     assert.match(res.text, /\/hq\/content\/pages\/about/);
+    assert.match(res.text, /href="\/hq\/announcements"/);
     assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
   });
 

@@ -79,6 +79,26 @@ async function countOrganizationDirectory(client, opts) {
 }
 
 /**
+ * Real directory totals for the platform-admin dashboard (no fabricated metrics).
+ * @param {{ query: Function }} client
+ */
+async function countOrganizationDirectoryStats(client) {
+  const r = await client.query(
+    `SELECT
+        COUNT(o.id)::int AS total_organizations,
+        COUNT(c.id)::int AS organizations_with_church
+       FROM platform.organizations o
+       LEFT JOIN blessboard.churches c
+         ON c.organization_id = o.id`
+  );
+  const row = r.rows[0] || {};
+  return {
+    totalOrganizations: Number(row.total_organizations) || 0,
+    organizationsWithChurch: Number(row.organizations_with_church) || 0,
+  };
+}
+
+/**
  * @param {{ query: Function }} client
  * @param {string} organizationKey
  */
@@ -128,8 +148,41 @@ async function findOrganizationDirectoryByKey(client, organizationKey) {
   return r.rows[0] || null;
 }
 
+/**
+ * Safe branch catalogue rows for an organization key (no UUIDs).
+ * Bounded to 100 rows.
+ * @param {{ query: Function }} client
+ * @param {string} organizationKey
+ */
+async function listBranchesForOrganizationKey(client, organizationKey) {
+  const r = await client.query(
+    `SELECT
+        b.branch_key,
+        b.display_name,
+        b.branch_type,
+        b.status,
+        b.is_primary,
+        b.country_code
+       FROM platform.organizations o
+       INNER JOIN blessboard.churches c
+         ON c.organization_id = o.id
+       INNER JOIN blessboard.branches b
+         ON b.church_id = c.id
+      WHERE o.organization_key = $1
+      ORDER BY
+        CASE WHEN b.branch_type = 'hq' THEN 0 ELSE 1 END,
+        CASE WHEN b.is_primary THEN 0 ELSE 1 END,
+        b.branch_key ASC
+      LIMIT 100`,
+    [organizationKey]
+  );
+  return r.rows;
+}
+
 module.exports = {
   listOrganizationDirectoryPage,
   countOrganizationDirectory,
+  countOrganizationDirectoryStats,
   findOrganizationDirectoryByKey,
+  listBranchesForOrganizationKey,
 };

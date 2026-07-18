@@ -107,8 +107,20 @@
         <input id="action_label" type="text" name="action_label" maxlength="100" value="<%= item && item.actionLabel ? item.actionLabel : '' %>" />
       </div>
       <div class="bb-ba-field">
-        <label for="media_asset_id">Attach media asset id</label>
-        <input id="media_asset_id" type="text" name="media_asset_id" maxlength="36" value="" placeholder="Optional UUID from media library" />
+        <label for="media_asset_id">Attach media asset</label>
+        <input id="media_asset_id" type="text" name="media_asset_id" maxlength="36" value="" placeholder="Optional asset UUID" data-bb-ann-media-id />
+        <% if (typeof mediaUploadUrl !== 'undefined' && mediaUploadUrl) { %>
+        <%- include('../content-admin/media-upload', {
+              uploadUrl: mediaUploadUrl,
+              targetInputId: 'media_asset_id',
+              csrfToken: csrfToken,
+              visibility: 'private',
+              fillField: 'assetId'
+            }) %>
+        <p class="bb-ba-hint">Upload fills the asset id field. Attachments stay private to church leadership unless published with the announcement.</p>
+        <% } else { %>
+        <p class="bb-ba-hint">Optional UUID from the church media library for this scope.</p>
+        <% } %>
       </div>
 
       <% if (item && item.attachments && item.attachments.length) { %>

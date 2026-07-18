@@ -1,74 +1,142 @@
 <%- include('../partials/platform-admin-shell-start') %>
-  <h1>Organizations</h1>
-  <p class="bb-pa-lede">Provisioned platform organizations with BlessBoard catalogue summary.</p>
+<%
+  var rows = organizations || [];
+  var limits = allowedLimits || [10, 25, 50, 100];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'Active';
+    if (key === 'inactive') return 'Inactive';
+    if (key === 'suspended') return 'Suspended';
+    if (key === 'pending') return 'Pending';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'suspended') return 'bb-pa-chip--danger';
+    if (key === 'pending') return 'bb-pa-chip--warn';
+    if (key === 'inactive' || key === 'archived') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip--muted';
+  }
+  function queryPage(p) {
+    var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
+    if (keyPrefix) parts.push('q=' + encodeURIComponent(keyPrefix));
+    return '/admin/organizations?' + parts.join('&');
+  }
+%>
 
-  <form class="bb-pa-search" method="get" action="/admin/organizations" role="search">
-    <label class="bb-pa-visually-hidden" for="q">Organization key prefix</label>
-    <input
-      id="q"
-      name="q"
-      type="search"
-      value="<%= keyPrefix || '' %>"
-      placeholder="Filter by organization key prefix"
-      maxlength="64"
-      autocomplete="off"
-    />
-    <input type="hidden" name="limit" value="<%= limit %>" />
-    <button type="submit">Search</button>
+<section class="bb-pa-orgs" data-bb-pa-organizations="1">
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <h1 class="bb-pa-page-head__title">Organizations</h1>
+      <p class="bb-pa-lede">
+        Read-only BlessBoard organization directory. Keys, hostnames, and live branch counts only —
+        no create/edit actions and no fabricated revenue metrics.
+      </p>
+    </div>
+  </header>
+
+  <form class="bb-pa-search bb-pa-org-filter" method="get" action="/admin/organizations" role="search" data-bb-pa-org-filter="1">
+    <div class="bb-pa-field">
+      <label for="q">Organization key prefix</label>
+      <input
+        id="q"
+        name="q"
+        type="search"
+        value="<%= keyPrefix || '' %>"
+        placeholder="e.g. pa-"
+        maxlength="64"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <div class="bb-pa-field">
+      <label for="limit">Rows per page</label>
+      <select id="limit" name="limit">
+        <% limits.forEach(function (n) { %>
+        <option value="<%= n %>" <%= Number(limit) === Number(n) ? 'selected' : '' %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-search__actions">
+      <button type="submit" class="bb-pa-btn">Filter</button>
+      <% if (keyPrefix) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/organizations?limit=<%= encodeURIComponent(limit) %>">Clear</a>
+      <% } %>
+    </div>
   </form>
 
-  <% if (!organizations || !organizations.length) { %>
-    <p class="bb-pa-empty" data-bb-empty="organizations">No organizations match this directory page.</p>
+  <% if (!rows.length) { %>
+  <p class="bb-pa-empty" role="status" data-bb-empty="organizations">No organizations match this directory page.</p>
   <% } else { %>
-    <div class="bb-pa-table-wrap">
-      <table class="bb-pa-table" data-bb-table="organizations">
-        <thead>
-          <tr>
-            <th>Key</th>
-            <th>Name</th>
-            <th>Environment</th>
-            <th>Org status</th>
-            <th>Enrolment</th>
-            <th>Hostname</th>
-            <th>Church</th>
-            <th>Active branches</th>
-            <th>Deployment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% organizations.forEach(function (org) { %>
-            <tr>
-              <td>
-                <a href="/admin/organizations/<%= org.organizationKey %>"><%= org.organizationKey %></a>
-              </td>
-              <td><%= org.displayName %></td>
-              <td><%= org.dataEnvironment %></td>
-              <td><%= org.organizationStatus %></td>
-              <td><%= org.enrolmentStatus || "—" %></td>
-              <td><%= org.canonicalHostname || "—" %></td>
-              <td>
-                <% if (org.churchKey) { %>
-                  <%= org.churchKey %> (<%= org.churchStatus || "—" %>)
-                <% } else { %>
-                  —
-                <% } %>
-              </td>
-              <td><%= org.activeBranchCount %></td>
-              <td><%= org.deploymentCode || "—" %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
+  <div class="bb-pa-table-wrap">
+    <table class="bb-pa-table" data-bb-table="organizations">
+      <thead>
+        <tr>
+          <th scope="col">Organization</th>
+          <th scope="col">Environment</th>
+          <th scope="col">Status</th>
+          <th scope="col">Enrolment</th>
+          <th scope="col">Hostname</th>
+          <th scope="col">Church</th>
+          <th scope="col">Active branches</th>
+          <th scope="col">Deployment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (org) { %>
+        <tr data-bb-org-key="<%= org.organizationKey %>">
+          <td>
+            <a href="/admin/organizations/<%= org.organizationKey %>">
+              <strong><%= org.displayName %></strong>
+              <code class="bb-pa-key">key · <%= org.organizationKey %></code>
+            </a>
+          </td>
+          <td><code class="bb-pa-key"><%= org.dataEnvironment %></code></td>
+          <td>
+            <span class="bb-pa-chip <%= statusChip(org.organizationStatus) %>"><%= statusLabel(org.organizationStatus) %></span>
+          </td>
+          <td>
+            <% if (org.enrolmentStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.enrolmentStatus) %>"><%= statusLabel(org.enrolmentStatus) %></span>
+            <% } else { %>—<% } %>
+          </td>
+          <td><%= org.canonicalHostname || '—' %></td>
+          <td>
+            <% if (org.churchKey) { %>
+            <code class="bb-pa-key"><%= org.churchKey %></code>
+            <span class="bb-pa-chip <%= statusChip(org.churchStatus) %>"><%= statusLabel(org.churchStatus) %></span>
+            <% } else { %>—<% } %>
+          </td>
+          <td data-bb-count="active-branches"><%= org.activeBranchCount %></td>
+          <td><code class="bb-pa-key"><%= org.deploymentCode || '—' %></code></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
   <% } %>
 
-  <nav class="bb-pa-pager" aria-label="Pagination" data-bb-pager="organizations">
-    <span>Page <%= page %> of <%= totalPages || 1 %> · <%= total %> total · limit <%= limit %></span>
-    <% if (page > 1) { %>
-      <a href="/admin/organizations?page=<%= page - 1 %>&limit=<%= limit %><%= keyPrefix ? ('&q=' + encodeURIComponent(keyPrefix)) : '' %>">Previous</a>
-    <% } %>
-    <% if (totalPages && page < totalPages) { %>
-      <a href="/admin/organizations?page=<%= page + 1 %>&limit=<%= limit %><%= keyPrefix ? ('&q=' + encodeURIComponent(keyPrefix)) : '' %>">Next</a>
-    <% } %>
+  <nav class="bb-pa-pager" aria-label="Organization pagination" data-bb-pager="organizations">
+    <span class="bb-pa-pager__meta">
+      <% if (total === 0) { %>
+      Showing 0 of 0
+      <% } else { %>
+      Showing <%= rangeFrom %>–<%= rangeTo %> of <%= total %>
+      <% } %>
+      · page <%= page %> of <%= totalPages || 1 %>
+      · limit <%= limit %> (max <%= maxLimit %>)
+    </span>
+    <span class="bb-pa-pager__nav">
+      <% if (page > 1) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= queryPage(page - 1) %>">Previous</a>
+      <% } %>
+      <% if (totalPages && page < totalPages) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= queryPage(page + 1) %>">Next</a>
+      <% } %>
+    </span>
   </nav>
+</section>
+
 <%- include('../partials/platform-admin-shell-end') %>

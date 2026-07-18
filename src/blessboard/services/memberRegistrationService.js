@@ -815,7 +815,27 @@ async function listMemberRegistrations(db, input) {
         limit: raw.limit,
         offset: raw.offset,
       });
-      return { ok: true, status: STATUS.OK, ...listed };
+      const items = listed.items.map((item) => ({
+        id: item.id,
+        firstName: item.firstName,
+        lastName: item.lastName,
+        preferredName: item.preferredName,
+        emailDisplay: item.emailDisplay,
+        phoneDisplay: item.phoneDisplay,
+        status: item.status,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        branchKey: item.branchKey || null,
+        branchDisplayName: item.branchDisplayName || null,
+      }));
+      return {
+        ok: true,
+        status: STATUS.OK,
+        items,
+        total: listed.total,
+        limit: listed.limit,
+        offset: listed.offset,
+      };
     });
   } catch {
     return {
@@ -856,7 +876,38 @@ async function getMemberRegistrationForManager(db, input) {
       if (!gate.ok) {
         return { ok: false, status: gate.status, reason: gate.reason, registration: null };
       }
-      return { ok: true, status: STATUS.OK, registration };
+      let branchKey = null;
+      let branchDisplayName = null;
+      if (registration.branchId) {
+        const branch = await repo.findBranchById(client, registration.branchId);
+        if (branch) {
+          branchKey = branch.branch_key || null;
+          branchDisplayName = branch.display_name || null;
+        }
+      }
+      return {
+        ok: true,
+        status: STATUS.OK,
+        registration: {
+          id: registration.id,
+          firstName: registration.firstName,
+          lastName: registration.lastName,
+          preferredName: registration.preferredName,
+          emailDisplay: registration.emailDisplay,
+          phoneDisplay: registration.phoneDisplay,
+          status: registration.status,
+          reviewNotes: registration.reviewNotes,
+          reviewedAt: registration.reviewedAt,
+          createdAt: registration.createdAt,
+          updatedAt: registration.updatedAt,
+          memberId: registration.memberId,
+          branchKey,
+          branchDisplayName,
+          // Internal authz only — not for templates
+          branchId: registration.branchId,
+          churchId: registration.churchId,
+        },
+      };
     });
   } catch {
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup", registration: null };
@@ -998,6 +1049,176 @@ async function getBranchMemberForManager(db, input) {
   }
 }
 
+/**
+ * Church-wide member directory for HQ/platform (optional branch filter).
+ * Privacy-limited fields only — no normalized identifiers, no church/branch UUIDs.
+ */
+async function listChurchMembersForManager(db, input) {
+  const raw = input && typeof input === "object" ? input : {};
+  const churchId = String(raw.churchId || "").trim();
+  const actorUserId = String(raw.actorUserId || "").trim();
+  const branchId =
+    raw.branchId != null && String(raw.branchId).trim() ? String(raw.branchId).trim() : null;
+  if (!churchId || !actorUserId) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: "scope",
+      items: [],
+      total: 0,
+      limit: 0,
+      offset: 0,
+    };
+  }
+
+  try {
+    return await withClient(db, async (client) => {
+      const gate = await requireMemberManager(client, {
+        actorUserId,
+        churchId,
+        branchId,
+      });
+      if (!gate.ok) {
+        return {
+          ok: false,
+          status: gate.status,
+          reason: gate.reason,
+          items: [],
+          total: 0,
+          limit: 0,
+          offset: 0,
+        };
+      }
+      // Branch admins must stay on their branch; HQ may omit branchId for church-wide.
+      const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
+      const isHqOrPlatform = (roles || []).some((r) => {
+        if (r.status && String(r.status) !== "active") return false;
+        const key = String(r.role_key || r.roleKey || "");
+        if (key === "platform_admin") return true;
+        const roleChurch = r.church_id || r.churchId || null;
+        return key === "church_hq_admin" && roleChurch && String(roleChurch) === churchId;
+      });
+      if (!isHqOrPlatform && !branchId) {
+        return {
+          ok: false,
+          status: STATUS.FORBIDDEN,
+          reason: "branch_required",
+          items: [],
+          total: 0,
+          limit: 0,
+          offset: 0,
+        };
+      }
+      const listed = await repo.listMembersForChurch(client, {
+        churchId,
+        branchId,
+        status: raw.status,
+        q: raw.q,
+        limit: raw.limit,
+        offset: raw.offset,
+      });
+      const items = listed.items.map((item) => ({
+        id: item.id,
+        firstName: item.firstName,
+        lastName: item.lastName,
+        preferredName: item.preferredName,
+        emailDisplay: item.emailDisplay,
+        phoneDisplay: item.phoneDisplay,
+        status: item.status,
+        membershipStatus: item.membershipStatus,
+        isPrimary: item.isPrimary,
+        joinedAt: item.joinedAt,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        branchKey: item.branchKey || null,
+        branchDisplayName: item.branchDisplayName || null,
+      }));
+      return {
+        ok: true,
+        status: STATUS.OK,
+        items,
+        total: listed.total,
+        limit: listed.limit,
+        offset: listed.offset,
+      };
+    });
+  } catch {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reason: "lookup",
+      items: [],
+      total: 0,
+      limit: 0,
+      offset: 0,
+    };
+  }
+}
+
+/**
+ * Load one member for HQ/platform within the church (any branch membership).
+ */
+async function getChurchMemberForManager(db, input) {
+  const raw = input && typeof input === "object" ? input : {};
+  const memberId = String(raw.memberId || "").trim();
+  const churchId = String(raw.churchId || "").trim();
+  const actorUserId = String(raw.actorUserId || "").trim();
+  if (!memberId || !churchId || !actorUserId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "scope", member: null };
+  }
+
+  try {
+    return await withClient(db, async (client) => {
+      const gate = await requireMemberManager(client, {
+        actorUserId,
+        churchId,
+        branchId: null,
+      });
+      if (!gate.ok) {
+        return { ok: false, status: gate.status, reason: gate.reason, member: null };
+      }
+      const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
+      const isHqOrPlatform = (roles || []).some((r) => {
+        if (r.status && String(r.status) !== "active") return false;
+        const key = String(r.role_key || r.roleKey || "");
+        if (key === "platform_admin") return true;
+        const roleChurch = r.church_id || r.churchId || null;
+        return key === "church_hq_admin" && roleChurch && String(roleChurch) === churchId;
+      });
+      if (!isHqOrPlatform) {
+        return { ok: false, status: STATUS.FORBIDDEN, reason: "role", member: null };
+      }
+      const member = await repo.findMemberInChurch(client, { memberId, churchId });
+      if (!member) {
+        return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found", member: null };
+      }
+      return {
+        ok: true,
+        status: STATUS.OK,
+        member: {
+          id: member.id,
+          firstName: member.firstName,
+          lastName: member.lastName,
+          preferredName: member.preferredName,
+          emailDisplay: member.emailDisplay,
+          phoneDisplay: member.phoneDisplay,
+          status: member.status,
+          membershipStatus: member.membershipStatus,
+          isPrimary: member.isPrimary,
+          joinedAt: member.joinedAt,
+          createdAt: member.createdAt,
+          updatedAt: member.updatedAt,
+          hasLoginLinked: Boolean(member.userId),
+          branchKey: member.branchKey || null,
+          branchDisplayName: member.branchDisplayName || null,
+        },
+      };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup", member: null };
+  }
+}
+
 module.exports = {
   STATUS,
   PRIVACY_ALLOWED_PROFILE_KEYS,
@@ -1012,4 +1233,6 @@ module.exports = {
   getMemberRegistrationForManager,
   listBranchMembersForManager,
   getBranchMemberForManager,
+  listChurchMembersForManager,
+  getChurchMemberForManager,
 };

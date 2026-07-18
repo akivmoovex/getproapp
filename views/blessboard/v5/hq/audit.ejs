@@ -1,30 +1,158 @@
 <%- include('../partials/hq-shell-start') %>
-  <h1>Audit log</h1>
-  <p>Append-only platform audit events for this church. Secrets and PII are redacted at write time.</p>
-  <form method="get" action="/hq/audit">
-    <label>Action key
-      <input type="text" name="action" value="<%= actionFilter %>" placeholder="e.g. giving.entry.approve" />
-    </label>
-    <button type="submit">Filter</button>
-  </form>
-  <% if (!events.length) { %>
-    <p>No audit events in this view.</p>
-  <% } else { %>
-    <ul data-bb-audit-list>
-      <% events.forEach(function (ev) { %>
-        <li data-bb-action="<%= ev.actionKey %>" data-bb-outcome="<%= ev.outcome %>">
-          <%= ev.createdAt %> · <%= ev.actionKey %> · <%= ev.entityType %>
-          · <%= ev.outcome %>
-          <% if (ev.entityId) { %> · entity <%= String(ev.entityId).slice(0, 8) %>…<% } %>
-        </li>
-      <% }) %>
-    </ul>
-    <% if (hasMore && nextBefore) { %>
-      <p>
-        <a href="/hq/audit?before=<%= encodeURIComponent(nextBefore) %><%= actionFilter ? '&action=' + encodeURIComponent(actionFilter) : '' %>">
-          Next page
-        </a>
+<%
+  var rows = events || [];
+  var outcomeOptions = outcomes || ['success', 'failure', 'denied'];
+  function outcomeLabel(o) {
+    var key = String(o || '').toLowerCase();
+    if (key === 'success') return 'Success';
+    if (key === 'failure') return 'Failure';
+    if (key === 'denied') return 'Denied';
+    return o || '—';
+  }
+  function outcomeChip(o) {
+    var key = String(o || '').toLowerCase();
+    if (key === 'success') return 'bb-hq-chip--ok';
+    if (key === 'failure') return 'bb-hq-chip--danger';
+    if (key === 'denied') return 'bb-hq-chip--warn';
+    return '';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 19);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+  function queryWith(extra) {
+    var parts = [];
+    if (actionFilter) parts.push('action=' + encodeURIComponent(actionFilter));
+    if (entityTypeFilter) parts.push('entity=' + encodeURIComponent(entityTypeFilter));
+    if (outcomeFilter) parts.push('outcome=' + encodeURIComponent(outcomeFilter));
+    if (extra && extra.before) parts.push('before=' + encodeURIComponent(extra.before));
+    return parts.length ? ('?' + parts.join('&')) : '';
+  }
+%>
+
+<section class="bb-hq-audit" data-bb-hq-audit="1">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <h1 class="bb-hq-page-head__title">Audit trail</h1>
+      <p class="bb-hq-lede">
+        Append-only operational events for
+        <strong><%= churchDisplayName %></strong>.
+        Secrets, session data, and full personal details are never shown here.
       </p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports">HQ reports</a>
+    </p>
+  </header>
+
+  <form method="get" action="/hq/audit" class="bb-hq-filter bb-hq-audit-filter" data-bb-hq-audit-filter="1">
+    <div class="bb-hq-field">
+      <label for="action">Action key</label>
+      <input
+        id="action"
+        type="text"
+        name="action"
+        value="<%= actionFilter || '' %>"
+        maxlength="96"
+        placeholder="e.g. giving.entry.approve"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <div class="bb-hq-field">
+      <label for="entity">Entity type</label>
+      <input
+        id="entity"
+        type="text"
+        name="entity"
+        value="<%= entityTypeFilter || '' %>"
+        maxlength="64"
+        placeholder="e.g. giving_entry"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <div class="bb-hq-field">
+      <label for="outcome">Outcome</label>
+      <select id="outcome" name="outcome">
+        <option value="">All outcomes</option>
+        <% outcomeOptions.forEach(function (o) { %>
+        <option value="<%= o %>" <%= outcomeFilter === o ? 'selected' : '' %>><%= outcomeLabel(o) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Filter</button>
+      <% if (actionFilter || entityTypeFilter || outcomeFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/audit">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-hq-empty" role="status" data-bb-hq-audit-empty="1">
+    No audit events match this view.
+    <% if (actionFilter || entityTypeFilter || outcomeFilter) { %>
+    Try clearing filters or choosing a broader action key.
+    <% } else { %>
+    Events appear here after HQ and branch staff take audited actions.
     <% } %>
+  </div>
+  <% } else { %>
+  <div class="bb-hq-table-wrap">
+    <table class="bb-hq-table" data-bb-hq-audit-table="1">
+      <thead>
+        <tr>
+          <th scope="col">When</th>
+          <th scope="col">Action</th>
+          <th scope="col">Entity</th>
+          <th scope="col">Outcome</th>
+          <th scope="col">Refs</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (ev) { %>
+        <tr data-bb-action="<%= ev.actionKey %>" data-bb-outcome="<%= ev.outcome %>">
+          <td><time datetime="<%= ev.when %>"><%= formatWhen(ev.when) %></time></td>
+          <td><code class="bb-hq-audit-action"><%= ev.actionKey %></code></td>
+          <td><%= ev.entityType || '—' %></td>
+          <td>
+            <span class="bb-hq-chip <%= outcomeChip(ev.outcome) %>"><%= outcomeLabel(ev.outcome) %></span>
+          </td>
+          <td class="bb-hq-muted">
+            <% if (ev.entityRef) { %>Entity · <%= ev.entityRef %><% } %>
+            <% if (ev.entityRef && ev.actorRef) { %> · <% } %>
+            <% if (ev.actorRef) { %>Actor · <%= ev.actorRef %><% } %>
+            <% if (!ev.entityRef && !ev.actorRef) { %>—<% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="bb-hq-pager" aria-label="Audit pagination" data-bb-hq-audit-pager="1">
+    <p class="bb-hq-pager__meta">
+      Showing up to <%= pageSize || 50 %> events
+      <% if (actionFilter || entityTypeFilter || outcomeFilter) { %>(filtered)<% } %>.
+    </p>
+    <% if (hasMore && nextBefore) { %>
+    <p class="bb-hq-pager__nav">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/audit<%= queryWith({ before: nextBefore }) %>">Older events</a>
+    </p>
+    <% } else { %>
+    <p class="bb-hq-pager__meta">End of results for this filter.</p>
+    <% } %>
+  </nav>
   <% } %>
+</section>
+
 <%- include('../partials/hq-shell-end') %>

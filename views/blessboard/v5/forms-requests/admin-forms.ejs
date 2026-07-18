@@ -25,12 +25,40 @@
     <div>
       <h1 class="bb-ba-page-head__title">Forms</h1>
       <p class="bb-ba-lede">
+        <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide) { %>
+        Church-wide form oversight for
+        <strong><%= churchDisplayName %></strong>.
+        Open a branch to manage campus-scoped drafts and submissions. Schemas use allowlisted field types only.
+        <% } else { %>
         Create branch forms and review submissions for
         <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
         Schemas are allowlisted field types only. Submissions stay on this branch.
+        <% } %>
       </p>
     </div>
   </header>
+
+  <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
+  <p class="bb-ba-hint">
+    <a href="/hq/forms">← Church-wide forms</a>
+  </p>
+  <% } %>
+
+  <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide && branches && branches.length) { %>
+  <section class="bb-hq-panel" data-bb-hq-forms-branches="1" aria-labelledby="hq-forms-branch-heading">
+    <h2 id="hq-forms-branch-heading" class="bb-hq-section-title">Branch forms</h2>
+    <p class="bb-ba-hint">Open a branch to manage forms scoped to that campus only.</p>
+    <ul class="bb-ca-branch-list">
+      <% branches.forEach(function (branch) { %>
+      <li>
+        <a href="/hq/forms/b/<%= branch.key %>"><%= branch.displayName %></a>
+        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
+        <code class="bb-hq-key"><%= branch.key %></code>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
 
   <% if (saved === '1' || saved === 'published') { %>
   <p class="bb-ba-ok" role="status"><%= saved === 'published' ? 'Form published.' : 'Form saved.' %></p>

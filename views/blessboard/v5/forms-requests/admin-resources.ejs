@@ -3,37 +3,142 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1>Resources</h1>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+<%
+  var rows = resources || [];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+  function audienceLabel(a) {
+    var key = String(a || '').toLowerCase();
+    if (key === 'public') return 'Public';
+    if (key === 'members') return 'Members';
+    if (key === 'leaders') return 'Leaders';
+    return a || '—';
+  }
+%>
+
+<section class="bb-fr-admin bb-fr-resources-list" data-bb-resources-admin-list="1">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <h1 class="bb-ba-page-head__title">Resources</h1>
+      <p class="bb-ba-lede">
+        <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide) { %>
+        Church-wide resource oversight for
+        <strong><%= churchDisplayName %></strong>.
+        Open a branch to manage campus-scoped drafts. Member downloads stay private when attachments are private.
+        <% } else { %>
+        Publish study and care resources for
+        <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
+        Private media is never exposed on public CDN paths.
+        <% } %>
+      </p>
+    </div>
+  </header>
+
+  <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
+  <p class="bb-ba-hint">
+    <a href="/hq/resources">← Church-wide resources</a>
+  </p>
+  <% } %>
+
+  <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide && branches && branches.length) { %>
+  <section class="bb-hq-panel" data-bb-hq-resources-branches="1" aria-labelledby="hq-resources-branch-heading">
+    <h2 id="hq-resources-branch-heading" class="bb-hq-section-title">Branch resources</h2>
+    <p class="bb-ba-hint">Open a branch to manage resources scoped to that campus only.</p>
+    <ul class="bb-ca-branch-list">
+      <% branches.forEach(function (branch) { %>
+      <li>
+        <a href="/hq/resources/b/<%= branch.key %>"><%= branch.displayName %></a>
+        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
+        <code class="bb-hq-key"><%= branch.key %></code>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% if (saved === '1' || saved === 'published') { %>
+  <p class="bb-ba-ok" role="status"><%= saved === 'published' ? 'Resource published.' : 'Resource saved.' %></p>
+  <% } %>
+
   <% if (canCreate) { %>
-    <form method="post" action="<%= basePath %>">
+  <section class="bb-ba-panel" data-bb-resources-create="1">
+    <h2 class="bb-ba-section-title">Create draft resource</h2>
+    <form method="post" action="<%= basePath %>" class="bb-fr-form-create">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <label>Title <input type="text" name="title" maxlength="200" required /></label>
-      <label>Description <input type="text" name="description" maxlength="5000" /></label>
-      <label>Audience
-        <select name="audience">
+      <div class="bb-ba-field">
+        <label for="title">Title</label>
+        <input id="title" type="text" name="title" maxlength="200" required />
+      </div>
+      <div class="bb-ba-field">
+        <label for="description">Description</label>
+        <input id="description" type="text" name="description" maxlength="5000" />
+      </div>
+      <div class="bb-ba-field">
+        <label for="audience">Audience</label>
+        <select id="audience" name="audience">
           <% audiences.forEach(function (a) { %>
-            <option value="<%= a %>"><%= a %></option>
+          <option value="<%= a %>"><%= audienceLabel(a) %></option>
           <% }) %>
         </select>
-      </label>
-      <label>Media asset id (optional) <input type="text" name="media_asset_id" /></label>
-      <button type="submit">Create draft</button>
+      </div>
+      <div class="bb-ba-field">
+        <label for="media_asset_id">Media asset id (optional)</label>
+        <input id="media_asset_id" type="text" name="media_asset_id" maxlength="36" autocomplete="off" />
+        <p class="bb-ba-hint">Use a private media asset id when the resource includes a downloadable file.</p>
+      </div>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Create draft</button>
     </form>
+  </section>
   <% } %>
-  <ul>
-    <% resources.forEach(function (r) { %>
-      <li data-bb-status="<%= r.status %>">
-        <%= r.title %> · <%= r.status %> · <%= r.audience %>
-        <% if (r.status === 'draft') { %>
-          <form method="post" action="<%= basePath %>/<%= r.id %>/publish" style="display:inline">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-            <button type="submit">Publish</button>
-          </form>
-        <% } %>
-      </li>
-    <% }) %>
-  </ul>
+
+  <% if (!rows.length) { %>
+  <div class="bb-ba-empty" role="status">No resources yet.</div>
+  <% } else { %>
+  <div class="bb-ba-table-wrap">
+    <table class="bb-ba-table" data-bb-resources-table="1">
+      <thead>
+        <tr>
+          <th scope="col">Title</th>
+          <th scope="col">Audience</th>
+          <th scope="col">Status</th>
+          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (r) { %>
+        <tr data-bb-status="<%= r.status %>">
+          <td><strong><%= r.title %></strong></td>
+          <td><%= audienceLabel(r.audience) %></td>
+          <td><span class="bb-ba-chip <%= statusChip(r.status) %>"><%= statusLabel(r.status) %></span></td>
+          <td class="bb-ba-table__actions">
+            <% if (r.status === 'draft') { %>
+            <form method="post" action="<%= basePath %>/<%= r.id %>/publish" class="bb-fr-inline-form">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm">Publish</button>
+            </form>
+            <% } else { %>
+            <span class="bb-ba-muted">—</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

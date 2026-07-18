@@ -29,6 +29,7 @@ const {
 } = require("../../blessboard/http/requireBlessBoardTenantRole");
 const { createBranchAdminRouter } = require("../../blessboard/http/branchAdminRoutes");
 const { createBranchRegistrationAdminRouter } = require("../../blessboard/http/branchRegistrationAdminRoutes");
+const { createHqMembersAdminRouter } = require("../../blessboard/http/hqMembersAdminRoutes");
 const { createHqAdminRouter } = require("../../blessboard/http/hqAdminRoutes");
 const { createContentAdminRouter } = require("../../blessboard/http/contentAdminRoutes");
 const { createPublicMediaRouter } = require("../../blessboard/http/publicMediaRoutes");
@@ -427,6 +428,7 @@ function createV5FoundationApp(options) {
     createPlatformAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
+      env,
       sendUnavailable,
     })
   );
@@ -581,6 +583,14 @@ function createV5FoundationApp(options) {
   );
   app.use(
     createBranchRegistrationAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  app.use(
+    createHqMembersAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       env,

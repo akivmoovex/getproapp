@@ -231,23 +231,28 @@ async function monthlySummary(client, opts) {
     `SELECT
         to_char(e.event_date, 'YYYY-MM') AS year_month,
         e.branch_id,
+        b.branch_key,
+        b.display_name AS branch_display_name,
         en.category,
         COUNT(DISTINCT e.id)::int AS event_count,
         COALESCE(SUM(en.count), 0)::int AS total_count
        FROM blessboard.attendance_events e
        INNER JOIN blessboard.attendance_entries en
          ON en.attendance_event_id = e.id
+       LEFT JOIN blessboard.branches b ON b.id = e.branch_id
       WHERE e.church_id = $1
         AND to_char(e.event_date, 'YYYY-MM') = $2
         AND e.status IN ('submitted', 'approved', 'archived')
         ${branchClause}
-      GROUP BY to_char(e.event_date, 'YYYY-MM'), e.branch_id, en.category
-      ORDER BY e.branch_id, en.category`,
+      GROUP BY to_char(e.event_date, 'YYYY-MM'), e.branch_id, b.branch_key, b.display_name, en.category
+      ORDER BY b.display_name NULLS LAST, en.category`,
     params
   );
   return rows.map((row) => ({
     yearMonth: row.year_month,
     branchId: row.branch_id,
+    branchKey: row.branch_key || null,
+    branchDisplayName: row.branch_display_name || null,
     category: row.category,
     eventCount: Number(row.event_count) || 0,
     totalCount: Number(row.total_count) || 0,
