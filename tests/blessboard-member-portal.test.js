@@ -458,6 +458,19 @@ describe("blessboard member portal", () => {
     assert.match(form.text, /name="emailDisplay"/);
     assert.match(form.text, /name="phone"/);
     assert.match(form.text, /name="_csrf"/);
+    assert.match(form.text, /readonly/);
+    assert.match(form.text, /bb-mp-form--profile is-view|is-view/);
+    assert.match(form.text, /href="\/member\/profile\?edit=1/);
+    assert.doesNotMatch(form.text, />Save profile</);
+
+    const editView = await request(app)
+      .get("/member/profile?edit=1")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser));
+    assert.equal(editView.status, 200);
+    assert.match(editView.text, /Save profile/);
+    assert.doesNotMatch(editView.text, /bb-mp-form--profile is-view/);
+    assert.match(editView.text, /name="preferredName"/);
     assert.match(form.text, /Legal Name/);
     assert.match(form.text, /Sign-in email/);
     assert.doesNotMatch(form.text, /name="firstName"/);

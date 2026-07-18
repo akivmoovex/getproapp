@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=10" />
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=11" />
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=2" />
 </head>
 <%
@@ -27,13 +27,10 @@
         { key: 'settings', label: 'Settings', href: '/branch-admin/settings', icon: 'settings' },
         { key: 'account', label: 'Account', href: '/branch-admin/account', icon: 'person' },
       ];
-  var baTabs = (typeof mobileTabs !== 'undefined' && mobileTabs && mobileTabs.length)
-    ? mobileTabs
-    : baNav.filter(function (item) {
-        return ['home', 'registrations', 'members', 'announcements', 'account'].indexOf(item.key) !== -1;
-      });
   var baRole = typeof roleLabel !== 'undefined' && roleLabel ? roleLabel : 'Branch admin';
   var baDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
+  var baChurch = typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : '';
+  var baBranch = typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : '';
 %>
 <body
   class="bb-ba-body"
@@ -41,6 +38,7 @@
   data-bb-product="blessboard-v5"
   data-bb-viewport="responsive"
   data-bb-page="<%= activeNav || 'home' %>"
+  data-bb-stitch-shell="25-branch-admin-dashboard"
 >
   <a class="bb-ba-skip" href="#bb-ba-main">Skip to content</a>
 
@@ -59,12 +57,15 @@
           <span>BlessBoard</span>
         </a>
         <p class="bb-ba-context">
-          <span class="bb-ba-context__church"><%= churchDisplayName %></span>
-          <% if (branchDisplayName) { %>
-          <span class="bb-ba-context__branch"><%= branchDisplayName %></span>
+          <span class="bb-ba-context__church"><%= baChurch %></span>
+          <% if (baBranch) { %>
+          <span class="bb-ba-context__branch"><%= baBranch %></span>
           <% } %>
         </p>
-        <span class="bb-ba-role"><%= baRole %></span>
+        <span class="bb-ba-role" data-bb-branch-role="1">
+          <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+          <%= baRole %>
+        </span>
       </div>
 
       <nav class="bb-ba-sidebar__nav" aria-label="Branch admin" data-bb-nav="desktop">
@@ -84,7 +85,7 @@
         <% if (baDisplay) { %>
         <p class="bb-ba-user" data-bb-admin-user="1">
           <span class="bb-ba-user__name"><%= baDisplay %></span>
-          <span class="bb-ba-user__meta"><%= churchDisplayName %></span>
+          <span class="bb-ba-user__meta"><%= baChurch %><% if (baBranch) { %> · <%= baBranch %><% } %></span>
         </p>
         <% } %>
         <form class="bb-ba-logout" method="post" action="/branch-admin/logout" data-bb-branch-logout="1">
@@ -101,10 +102,19 @@
     <div class="bb-ba-frame">
       <header class="bb-ba-top" data-bb-nav="mobile-header">
         <div class="bb-ba-top__brand">
-          <a class="bb-ba-wordmark bb-ba-wordmark--compact" href="/branch-admin">BlessBoard Admin</a>
+          <a class="bb-ba-wordmark bb-ba-wordmark--compact" href="/branch-admin">
+            <img
+              class="bb-ba-wordmark__mark"
+              src="/church/images/brand/blessboard-small-church-logo.png"
+              alt=""
+              width="24"
+              height="24"
+              decoding="async"
+            />
+            <span>BlessBoard</span>
+          </a>
           <p class="bb-ba-context bb-ba-context--compact">
-            <%= churchDisplayName %><% if (branchDisplayName) { %> · <%= branchDisplayName %><% } %>
-            <span class="bb-ba-role"><%= baRole %></span>
+            <%= baChurch %><% if (baBranch) { %> · <%= baBranch %><% } %>
           </p>
         </div>
         <div class="bb-ba-top__actions">
@@ -118,6 +128,7 @@
             data-bb-nav="mobile-toggle"
             aria-controls="bb-ba-drawer"
             aria-expanded="false"
+            aria-label="Open menu"
           >
             <span class="material-symbols-outlined" aria-hidden="true">menu</span>
             <span class="bb-ba-nav-toggle__label">Menu</span>
@@ -128,29 +139,54 @@
       <div
         id="bb-ba-drawer"
         class="bb-ba-drawer"
-        data-bb-nav="mobile"
+        data-bb-nav="mobile-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Branch admin menu"
+        inert
         hidden
       >
         <div class="bb-ba-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
         <nav class="bb-ba-drawer__panel" aria-label="Branch admin menu">
-          <p class="bb-ba-drawer__title">Menu</p>
+          <div class="bb-ba-drawer__head">
+            <p class="bb-ba-drawer__title">Menu</p>
+            <button
+              type="button"
+              class="bb-ba-drawer__close"
+              data-bb-nav="drawer-close"
+              aria-label="Close menu"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+          <% if (baDisplay) { %>
+          <p class="bb-ba-user bb-ba-user--drawer" data-bb-admin-user="1">
+            <span class="bb-ba-user__name"><%= baDisplay %></span>
+            <span class="bb-ba-user__meta"><%= baRole %></span>
+          </p>
+          <% } %>
           <% baNav.forEach(function (item) { %>
           <a
             href="<%= item.href %>"
             class="bb-ba-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+            <%= activeNav === item.key ? 'aria-current="page"' : '' %>
           >
             <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
             <span><%= item.label %></span>
           </a>
           <% }) %>
-          <form class="bb-ba-logout" method="post" action="/branch-admin/logout">
+          <form class="bb-ba-logout" method="post" action="/branch-admin/logout" data-bb-branch-logout="1">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <button type="submit">
               <span class="material-symbols-outlined" aria-hidden="true">logout</span>
               Sign out
             </button>
           </form>
+          <div class="bb-ba-drawer__footer" data-bb-footer="drawer">
+            <%- include('./powered-by-getpro') %>
+          </div>
         </nav>
       </div>
 
-      <main id="bb-ba-main" class="bb-ba-main">
+      <main id="bb-ba-main" class="bb-ba-main" tabindex="-1">
+        <div class="bb-ba-page" data-bb-page-area="1">

@@ -115,8 +115,13 @@
         Contact details
       </h2>
       <p class="bb-mp-profile__group-note">
+        <% if (showEdit) { %>
         <span class="bb-mp-chip bb-mp-chip--editable">Editable</span>
-        You can change preferred name, display email, and phone. Legal name and sign-in email stay with your church record.
+        Update preferred name, display email, and phone. Legal name and sign-in email stay with your church record.
+        <% } else { %>
+        <span class="bb-mp-chip bb-mp-chip--editable">Editable</span>
+        Preferred name, display email, and phone can be updated with Edit Profile. Legal name and sign-in email stay with your church record.
+        <% } %>
       </p>
 
       <% if (hasErrors) { %>
@@ -133,7 +138,7 @@
       <form
         method="post"
         action="/member/profile"
-        class="bb-mp-form bb-mp-form--panel bb-mp-form--profile"
+        class="bb-mp-form bb-mp-form--panel bb-mp-form--profile<%= showEdit ? '' : ' is-view' %>"
         aria-labelledby="bb-mp-profile-editable-heading"
         novalidate
       >
@@ -149,6 +154,7 @@
               maxlength="100"
               value="<%= profile.preferredName || '' %>"
               autocomplete="nickname"
+              <%= showEdit ? '' : 'readonly' %>
               <% if (fe.preferredName) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('preferredName') %>"<% } %>
             />
             <% if (fe.preferredName) { %>
@@ -165,6 +171,7 @@
               maxlength="254"
               value="<%= profile.emailDisplay || profile.emailNormalized || '' %>"
               autocomplete="email"
+              <%= showEdit ? '' : 'readonly' %>
               <% if (fe.emailDisplay) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('emailDisplay', ['hint-emailDisplay']) %>"<% } else { %>aria-describedby="hint-emailDisplay"<% } %>
             />
             <p class="bb-mp-hint" id="hint-emailDisplay">Changes how your email is shown. Your sign-in email stays the same.</p>
@@ -183,6 +190,7 @@
               value="<%= profile.phoneDisplay || profile.phoneNormalized || '' %>"
               placeholder="+260…"
               autocomplete="tel"
+              <%= showEdit ? '' : 'readonly' %>
               <% if (fe.phone) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('phone') %>"<% } %>
             />
             <% if (fe.phone) { %>
@@ -192,8 +200,8 @@
         </div>
 
         <div class="bb-mp-form__actions">
-          <button type="submit" class="bb-mp-btn bb-mp-btn--primary">Save profile</button>
           <% if (showEdit) { %>
+          <button type="submit" class="bb-mp-btn bb-mp-btn--primary">Save profile</button>
           <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/profile">Cancel</a>
           <% } %>
         </div>

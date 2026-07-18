@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=18" />
+  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=19" />
 </head>
 <%
   var mpDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
@@ -163,6 +163,9 @@
               Sign out
             </button>
           </form>
+          <div class="bb-mp-drawer__footer" data-bb-footer="drawer">
+            <%- include('./powered-by-getpro') %>
+          </div>
         </nav>
       </div>
 

@@ -84,6 +84,8 @@ describe("blessboard v5 a11y structure — shells", () => {
         assert.match(start, /\binert\b/);
         assert.match(start, /tabindex="-1"/);
         assert.match(start, /bb-mp-drawer__close/);
+        assert.match(start, /data-bb-footer="drawer"/);
+        assert.match(start, /powered-by-getpro/);
         assert.match(start, /data-bb-member-role/);
         assert.match(start, /data-bb-page-area/);
         assert.match(start, /aria-label="Profile"/);
@@ -91,6 +93,25 @@ describe("blessboard v5 a11y structure — shells", () => {
         assert.match(end, /powered-by-getpro/);
         assert.doesNotMatch(start, /href="\/member\/prayer"/);
         assert.doesNotMatch(start, /notifications/i);
+      }
+      if (shell.name === "branch") {
+        assert.match(start, /role="dialog"/);
+        assert.match(start, /aria-modal="true"/);
+        assert.match(start, /\binert\b/);
+        assert.match(start, /tabindex="-1"/);
+        assert.match(start, /bb-ba-drawer__close/);
+        assert.match(start, /data-bb-footer="drawer"/);
+        assert.match(start, /powered-by-getpro|bb-powered-by/);
+        assert.match(start, /data-bb-branch-role/);
+        assert.match(start, /data-bb-page-area/);
+        assert.match(start, /data-bb-stitch-shell="25-branch-admin-dashboard"/);
+        assert.match(start, /aria-label="Account"/);
+        assert.match(start, /aria-label="Open menu"/);
+        assert.match(start, /data-bb-nav="mobile-drawer"/);
+        assert.match(end, /data-bb-nav="mobile-tabs"/);
+        assert.match(end, /powered-by-getpro/);
+        assert.doesNotMatch(start, /href="\/branch-admin\/reports"/);
+        assert.doesNotMatch(start, /Support/i);
       }
     });
 
@@ -101,6 +122,24 @@ describe("blessboard v5 a11y structure — shells", () => {
       assert.match(css, /:focus-visible/);
       assert.match(css, /prefers-reduced-motion:\s*reduce/);
       assert.match(css, /--bb-touch-min|min-height:\s*var\(--bb-touch-min/);
+      if (shell.name === "member") {
+        assert.match(css, /\.bb-mp-ann-filter:focus-visible/);
+        assert.match(css, /\.bb-mp-part-card:focus-visible/);
+        assert.match(css, /\.bb-mp-req-type:focus-within/);
+        assert.match(css, /\.bb-mp-bottom__link > span:last-child/);
+        assert.match(css, /\.bb-mp-drawer__footer/);
+        assert.match(css, /\.bb-mp-form--profile\.is-view/);
+        assert.match(css, /@media \(max-width:\s*320px\)/);
+        assert.match(css, /@media \(min-width:\s*900px\)/);
+      }
+      if (shell.name === "branch") {
+        assert.match(css, /\.bb-ba-bottom__link > span:last-child/);
+        assert.match(css, /\.bb-ba-drawer__footer/);
+        assert.match(css, /\.bb-ba-drawer__close/);
+        assert.match(css, /\.bb-ba-page\b/);
+        assert.match(css, /@media \(max-width:\s*320px\)/);
+        assert.match(css, /@media \(min-width:\s*900px\)/);
+      }
     });
   }
 
@@ -214,6 +253,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(profile, /name="emailDisplay"/);
     assert.match(profile, /name="phone"/);
     assert.match(profile, /name="_csrf"/);
+    assert.match(profile, /readonly/);
+    assert.match(profile, /is-view/);
     assert.match(profile, /id="profile-error-summary"/);
     assert.match(profile, /role="alert"/);
     assert.match(profile, /Legal Name/);

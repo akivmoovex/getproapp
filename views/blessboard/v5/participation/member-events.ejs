@@ -153,9 +153,9 @@
   <% } %>
 
   <% if (activeFilter === 'registered' && registeredItems.length && searchQ) { %>
-  <section class="bb-mp-part-section" aria-label="Registered events" data-bb-events-registered="1">
-    <h2 class="bb-mp-section-title">You’re registered</h2>
-    <ul class="bb-mp-part-list">
+  <section class="bb-mp-part-section" aria-labelledby="bb-mp-events-registered-search-heading" data-bb-events-registered="1">
+    <h2 class="bb-mp-section-title" id="bb-mp-events-registered-search-heading">You’re registered</h2>
+    <ul class="bb-mp-part-list" aria-labelledby="bb-mp-events-registered-search-heading">
       <% registeredItems.forEach(function (item) { %>
       <li>
         <%- include('./partials/member-event-card', { item: item, isPast: Boolean(pastIds[item.id]) }) %>
