@@ -1,5 +1,5 @@
 /**
- * Apex auth presentation extras (login error variants + account card).
+ * Apex auth presentation extras (login error variants + account card + input icons).
  * Shared layout tokens live in tenant-auth.css / design-tokens.css.
  */
 
@@ -17,6 +17,67 @@
 
 .bb-auth-main--solo {
   grid-column: 1 / -1;
+}
+
+.bb-auth-card__brand-mark {
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 0 1rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: var(--bb-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  background: #fff;
+  transform: rotate(3deg);
+}
+
+.bb-auth-card__brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.bb-auth-input-wrap {
+  position: relative;
+}
+
+.bb-auth-input-wrap__icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  color: var(--bb-color-muted, #44474e);
+  pointer-events: none;
+  line-height: 1;
+}
+
+.bb-auth-input-wrap input {
+  padding-left: 2.75rem !important;
+}
+
+.bb-auth-password.bb-auth-input-wrap input {
+  padding-right: 3rem !important;
+}
+
+.bb-auth-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 1.25rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--bb-color-border, #d1dce0);
+  color: var(--bb-color-muted, #44474e);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.bb-auth-footnote .material-symbols-outlined {
+  font-size: 1.15rem;
+  color: var(--bb-color-primary, #6c5ce7);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
 }
 
 .bb-auth-field__error {
@@ -79,19 +140,19 @@
   line-height: 1;
 }
 
-/* Account card (apex shell) */
+/* Account card (apex shell) — STITCH_MISSING */
 .bb-apex-account {
-  max-width: 32rem;
+  max-width: 36rem;
   margin: 0 auto;
-  padding: 1.5rem 0 2.5rem;
+  padding: 1.75rem 0 2.75rem;
 }
 
 .bb-apex-account__card {
   background: var(--bb-color-surface, #fff);
-  border: 1px solid var(--bb-color-border, #e4dfec);
-  border-radius: 1rem;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--bb-radius, 1rem);
   box-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.08));
-  padding: 1.75rem 1.5rem;
+  padding: 1.85rem 1.5rem;
 }
 
 .bb-apex-account__icon {
@@ -122,25 +183,71 @@
   color: var(--bb-color-muted, #5c5668);
 }
 
-.bb-apex-account__dl {
+.bb-apex-account__identity {
   margin: 0 0 1.25rem;
-  display: grid;
-  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--bb-radius-sm, 0.5rem);
+  background: var(--bb-color-page, #fbf9f6);
+  border: 1px solid var(--bb-color-border, #d1dce0);
 }
 
-.bb-apex-account__dl dt {
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--bb-color-muted, #5c5668);
-  margin: 0 0 0.15rem;
+.bb-apex-account__name {
+  margin: 0 0 0.65rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--bb-color-ink, #1a1c1e);
 }
 
-.bb-apex-account__dl dd {
+.bb-apex-account__roles {
   margin: 0;
-  color: var(--bb-color-ink, #1a1625);
-  font-size: 1.05rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-account__badges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.bb-apex-account__access {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+}
+
+.bb-apex-account__access-card {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 0.95rem 1rem;
+  border-radius: var(--bb-radius-sm, 0.5rem);
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  background: #fff;
+}
+
+.bb-apex-account__access-icon {
+  color: var(--bb-color-primary, #6c5ce7);
+  font-size: 1.35rem;
+  margin-top: 0.1rem;
+}
+
+.bb-apex-account__access-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-account__access-body {
+  margin: 0;
+  font-size: 1.02rem;
+  color: var(--bb-color-ink, #1a1c1e);
+  font-weight: 600;
 }
 
 .bb-apex-account__note {
@@ -183,5 +290,11 @@
   .bb-apex-account__card {
     border-radius: 0.85rem;
     padding: 1.35rem 1.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-auth-card__brand-mark {
+    transform: none;
   }
 }

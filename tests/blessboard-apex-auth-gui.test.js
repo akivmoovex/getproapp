@@ -53,8 +53,15 @@ describe("blessboard apex auth gui states", () => {
     });
     assert.match(html, /data-bb-auth-transfer="1"/);
     assert.match(html, /church\.blessboard\.org/);
+    assert.match(html, /Member Access/);
     assert.doesNotMatch(html, /raw-transfer-token-SECRET-value/);
     assert.doesNotMatch(html, /name="tr"/);
+    assert.doesNotMatch(html, /Forgot password/i);
+    assert.doesNotMatch(html, /Register as Member/i);
+    assert.doesNotMatch(html, /Continue with (Google|Facebook)|Sign in with (Google|Facebook)|social.?login/i);
+    assert.match(html, /name="email"/);
+    assert.match(html, /name="password"/);
+    assert.match(html, /name="_csrf"/);
     assert.match(html, /name="referrer" content="no-referrer"/);
   });
 
@@ -92,11 +99,13 @@ describe("blessboard apex auth gui states", () => {
     });
     assert.match(html, /Administrator/);
     assert.match(html, /Church HQ admin/);
+    assert.match(html, /bb-ds-badge/);
     assert.match(html, /method="post" action="\/logout"/);
     assert.match(html, /data-bb-auth-logout="1"/);
     assert.match(html, /name="_csrf" value="csrf-token"/);
     assert.doesNotMatch(html, /11111111-1111-4111-8111-111111111111/);
     assert.doesNotMatch(html, /22222222-2222-4222-8222-222222222222/);
     assert.doesNotMatch(html, /blessboard-org-v5|session_token|password_hash/);
+    assert.doesNotMatch(html, /Forgot password|Change password|Billing|Notification/i);
   });
 });

@@ -1,6 +1,8 @@
 <%#
-  Apex account — authenticated entry. No UUIDs, session tokens, or deployment internals.
-  Locals from apex-shell + account fields: displayName, rolesLabel, hostKind, churchDisplayName, branchDisplayName, csrfToken
+  Apex account — STITCH_MISSING; Sacred Modernity shell + auth-card chrome.
+  Locals: displayName, rolesLabel, roleBadges[], hostKind, churchDisplayName,
+          branchDisplayName, csrfToken (+ apex-shell locals)
+  No UUIDs, session tokens, billing, editing, or password change.
 %>
 <%- include('../partials/apex-shell-start') %>
 
@@ -12,28 +14,41 @@
     <h1 class="bb-apex-account__title" id="bb-apex-account-heading">Account</h1>
     <p class="bb-apex-account__lead">You are signed in to BlessBoard.</p>
 
-    <dl class="bb-apex-account__dl">
-      <div>
-        <dt>Display name</dt>
-        <dd><%= displayName %></dd>
-      </div>
-      <div>
-        <dt>Roles</dt>
-        <dd><%= rolesLabel %></dd>
-      </div>
-      <% if (hostKind === 'tenant' && churchDisplayName) { %>
-      <div>
-        <dt>Church</dt>
-        <dd><%= churchDisplayName %></dd>
-      </div>
+    <div class="bb-apex-account__identity">
+      <p class="bb-apex-account__name"><%= displayName %></p>
+      <% if (typeof roleBadges !== 'undefined' && roleBadges && roleBadges.length) { %>
+      <ul class="bb-apex-account__badges" aria-label="Roles">
+        <% roleBadges.forEach(function (badge) { %>
+        <li><span class="bb-ds-badge"><%= badge %></span></li>
+        <% }) %>
+      </ul>
+      <% } else { %>
+      <p class="bb-apex-account__roles"><%= rolesLabel %></p>
       <% } %>
-      <% if (hostKind === 'tenant' && branchDisplayName) { %>
-      <div>
-        <dt>Branch</dt>
-        <dd><%= branchDisplayName %></dd>
-      </div>
+    </div>
+
+    <% if ((hostKind === 'tenant' && churchDisplayName) || (hostKind === 'tenant' && branchDisplayName)) { %>
+    <div class="bb-apex-account__access" aria-label="Church access">
+      <% if (churchDisplayName) { %>
+      <article class="bb-apex-account__access-card">
+        <span class="bb-apex-account__access-icon material-symbols-outlined" aria-hidden="true">church</span>
+        <div>
+          <h2 class="bb-apex-account__access-title">Church</h2>
+          <p class="bb-apex-account__access-body"><%= churchDisplayName %></p>
+        </div>
+      </article>
       <% } %>
-    </dl>
+      <% if (branchDisplayName) { %>
+      <article class="bb-apex-account__access-card">
+        <span class="bb-apex-account__access-icon material-symbols-outlined" aria-hidden="true">location_on</span>
+        <div>
+          <h2 class="bb-apex-account__access-title">Branch</h2>
+          <p class="bb-apex-account__access-body"><%= branchDisplayName %></p>
+        </div>
+      </article>
+      <% } %>
+    </div>
+    <% } %>
 
     <% if (hostKind === 'apex') { %>
     <p class="bb-apex-account__note">

@@ -1,15 +1,28 @@
 /**
- * Apex marketing shell — mobile drawer only (CSP-compatible external script).
+ * Apex marketing shell — mobile drawer (CSP-compatible external script).
  */
 (function () {
   "use strict";
+
+  function focusable(root) {
+    if (!root) return [];
+    return Array.prototype.slice
+      .call(
+        root.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      )
+      .filter(function (el) {
+        return el.getAttribute("aria-hidden") !== "true";
+      });
+  }
 
   function init() {
     var btn = document.getElementById("bb-apex-menu-btn");
     var drawer = document.getElementById("bb-apex-drawer");
     if (!btn || !drawer) return;
 
-    var backdrop = drawer.querySelector("[data-bb-apex-drawer-close]");
+    var panel = drawer.querySelector(".bb-apex-drawer__panel");
     var panelClose = drawer.querySelector(".bb-apex-drawer__close");
 
     function setOpen(open) {
@@ -47,14 +60,26 @@
     });
 
     document.addEventListener("keydown", function (ev) {
-      if (ev.key === "Escape" && !drawer.hasAttribute("hidden")) {
+      if (drawer.hasAttribute("hidden")) return;
+
+      if (ev.key === "Escape") {
         setOpen(false);
+        return;
+      }
+
+      if (ev.key !== "Tab" || !panel) return;
+      var nodes = focusable(panel);
+      if (!nodes.length) return;
+      var first = nodes[0];
+      var last = nodes[nodes.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
       }
     });
-
-    if (backdrop) {
-      /* already bound via data-bb-apex-drawer-close */
-    }
   }
 
   if (document.readyState === "loading") {

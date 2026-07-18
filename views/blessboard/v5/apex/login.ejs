@@ -1,9 +1,9 @@
 <%#
-  Apex login — Stitch 09-auth-member-login (desktop/mobile).
-  Locals: csrfToken, error, errorState, emailValue, transferHostname, hostKind, loggedOut
-  errorState: null | 'credentials' | 'throttled' | 'expired' | 'consumed' | 'unauthorized' | 'generic'
-  Raw transfer tokens must never appear in this HTML. When the page was opened as
-  GET /login?tr=…, omitting form action posts back to the current URL (query preserved).
+  Apex login — Stitch 09-auth-member-login desktop/mobile.
+  V5 keeps apex dual-pane + email/password fields (not tenant-centered Stitch mock).
+  Locals: csrfToken, error, errorState, errorTitle, emailValue, transferHostname,
+          hostKind, subtitle, panelTitle, panelLead, loggedOut
+  Raw transfer tokens must never appear in HTML.
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -14,8 +14,8 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>Sign in · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=3" />
-  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=2" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=4" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=3" />
 </head>
 <body
   class="bb-auth-body bb-auth-login"
@@ -57,10 +57,16 @@
 
       <div class="bb-auth-main__body">
         <div class="bb-auth-card">
-          <div class="bb-auth-card__icon" aria-hidden="true">
-            <span class="material-symbols-outlined">lock</span>
+          <div class="bb-auth-card__brand-mark" aria-hidden="true">
+            <img
+              src="/church/images/brand/blessboard-small-church-logo.png"
+              alt=""
+              width="56"
+              height="56"
+              decoding="async"
+            />
           </div>
-          <h1 class="bb-auth-card__title">Sign in</h1>
+          <h1 class="bb-auth-card__title"><%= transferHostname ? 'Member Access' : 'Sign in' %></h1>
           <p class="bb-auth-card__lead"><%= subtitle %></p>
 
           <% if (loggedOut) { %>
@@ -105,20 +111,24 @@
 
             <div class="bb-auth-field">
               <label for="email">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autocomplete="username"
-                inputmode="email"
-                spellcheck="false"
-                value="<%= emailValue || '' %>"
-                <% if (errorState === 'credentials' || errorState === 'generic' || errorState === 'throttled') { %>
-                aria-invalid="true"
-                aria-describedby="<%= errorState === 'credentials' ? 'email-error bb-auth-error-summary' : 'bb-auth-error-summary' %>"
-                <% } %>
-              />
+              <div class="bb-auth-input-wrap">
+                <span class="bb-auth-input-wrap__icon material-symbols-outlined" aria-hidden="true">mail</span>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autocomplete="username"
+                  inputmode="email"
+                  spellcheck="false"
+                  placeholder="you@example.com"
+                  value="<%= emailValue || '' %>"
+                  <% if (errorState === 'credentials' || errorState === 'generic' || errorState === 'throttled') { %>
+                  aria-invalid="true"
+                  aria-describedby="<%= errorState === 'credentials' ? 'email-error bb-auth-error-summary' : 'bb-auth-error-summary' %>"
+                  <% } %>
+                />
+              </div>
               <% if (errorState === 'credentials') { %>
               <p class="bb-auth-field__error" id="email-error">Check your email and try again.</p>
               <% } %>
@@ -126,13 +136,15 @@
 
             <div class="bb-auth-field">
               <label for="password">Password</label>
-              <div class="bb-auth-password">
+              <div class="bb-auth-password bb-auth-input-wrap">
+                <span class="bb-auth-input-wrap__icon material-symbols-outlined" aria-hidden="true">lock</span>
                 <input
                   id="password"
                   name="password"
                   type="password"
                   required
                   autocomplete="current-password"
+                  placeholder="••••••••"
                   <% if (errorState === 'credentials' || errorState === 'generic' || errorState === 'throttled') { %>
                   aria-invalid="true"
                   aria-describedby="<%= errorState === 'credentials' ? 'password-error bb-auth-error-summary' : 'bb-auth-error-summary' %>"
@@ -162,6 +174,11 @@
               </button>
             </div>
           </form>
+
+          <p class="bb-auth-footnote">
+            <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+            Access to church workspaces follows your BlessBoard roles after sign-in.
+          </p>
         </div>
       </div>
 

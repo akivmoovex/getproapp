@@ -1,21 +1,25 @@
 <%#
   Apex nav links. Locals: authenticated, activeNav, csrfToken, variant ('desktop'|'drawer')
+  Desktop center nav: Home (+ Account when signed in). Login CTA lives in header actions.
+  Drawer: Home + Login or Account + Logout.
 %>
 <%
-  var linkClass = variant === 'drawer' ? 'bb-apex-drawer__link' : '';
+  var linkClass = variant === 'drawer' ? 'bb-apex-drawer__link' : 'bb-apex-nav__link';
   function cls(key) {
     var base = linkClass;
-    if (activeNav === key) base = (base ? base + ' ' : '') + 'is-active';
-    return base ? ' class="' + base + '"' : '';
+    if (activeNav === key) base += ' is-active';
+    return ' class="' + base + '"';
   }
 %>
 <a href="/"<%= cls('home') %><%= activeNav === 'home' ? ' aria-current="page"' : '' %>>Home</a>
 <% if (authenticated) { %>
 <a href="/account"<%= cls('account') %><%= activeNav === 'account' ? ' aria-current="page"' : '' %>>Account</a>
-<form class="<%= variant === 'drawer' ? 'bb-apex-drawer__logout' : 'bb-apex-nav__logout' %>" method="post" action="/logout">
+<% if (variant === 'drawer') { %>
+<form class="bb-apex-drawer__logout" method="post" action="/logout">
   <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
   <button type="submit">Logout</button>
 </form>
-<% } else { %>
+<% } %>
+<% } else if (variant === 'drawer') { %>
 <a href="/login"<%= cls('login') %><%= activeNav === 'login' ? ' aria-current="page"' : '' %>>Login</a>
 <% } %>

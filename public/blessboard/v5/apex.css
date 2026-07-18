@@ -1,4 +1,7 @@
-/* BlessBoard V5 apex marketing chrome — tokens from design-tokens.css */
+/* BlessBoard V5 apex marketing chrome — Batch 2
+ * Stitch: home 46081ff8… / 9f9927a6… · login 9b264ef3… / 68a84bcc…
+ * Tokens from design-tokens.css
+ */
 
 * {
   box-sizing: border-box;
@@ -12,6 +15,8 @@ html.bb-apex-drawer-open body {
 body.bb-apex-body {
   margin: 0;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   font-family: var(--bb-font-sans, "Hanken Grotesk", system-ui, sans-serif);
   color: var(--bb-color-ink, #1a1c1e);
   background: var(--bb-color-page, #fbf9f6);
@@ -20,27 +25,39 @@ body.bb-apex-body {
 
 .bb-apex-skip {
   position: absolute;
-  left: -9999px;
-  top: 0;
+  left: var(--bb-space-3, 1rem);
+  top: var(--bb-space-3, 1rem);
   z-index: 100;
-  background: var(--bb-color-primary, #6c5ce7);
-  color: #fff;
   padding: 0.5rem 1rem;
+  border-radius: var(--bb-radius-sm, 0.5rem);
+  background: var(--bb-color-primary, #6c5ce7);
+  color: var(--bb-color-on-primary, #fff);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
 }
 
 .bb-apex-skip:focus {
-  left: 1rem;
-  top: 1rem;
+  outline: none;
 }
 
+.bb-apex-skip:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--bb-color-focus-ring, rgba(108, 92, 231, 0.45));
+}
+
+/* —— Header —— */
 .bb-apex-header {
   position: sticky;
   top: 0;
-  z-index: 40;
-  background: rgba(255, 255, 255, 0.9);
+  z-index: var(--bb-z-header, 40);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--bb-color-border, #d1dce0);
+  box-shadow: var(--bb-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
 }
 
 .bb-apex-header__inner {
@@ -80,26 +97,28 @@ body.bb-apex-body {
 .bb-apex-nav {
   display: none;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
-.bb-apex-nav a {
+.bb-apex-nav__link {
   color: var(--bb-color-muted, #44474e);
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 500;
-  min-height: 2.75rem;
+  min-height: var(--bb-touch-min, 2.75rem);
   display: inline-flex;
   align-items: center;
+  border-bottom: 2px solid transparent;
 }
 
-.bb-apex-nav a:hover,
-.bb-apex-nav a.is-active {
+.bb-apex-nav__link:hover {
   color: var(--bb-color-ink, #1a1c1e);
 }
 
-.bb-apex-nav a.is-active {
+.bb-apex-nav__link.is-active {
+  color: var(--bb-color-primary, #6c5ce7);
   font-weight: 600;
+  border-bottom-color: var(--bb-color-primary, #6c5ce7);
 }
 
 .bb-apex-nav__logout {
@@ -114,12 +133,19 @@ body.bb-apex-body {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
-  min-height: 2.75rem;
+  min-height: var(--bb-touch-min, 2.75rem);
   padding: 0 0.25rem;
 }
 
-.bb-apex-nav__logout button:hover {
+.bb-apex-nav__logout button:hover,
+.bb-apex-nav__logout button:focus-visible {
   color: var(--bb-color-ink, #1a1c1e);
+  outline: none;
+}
+
+.bb-apex-nav__logout button:focus-visible {
+  box-shadow: 0 0 0 3px var(--bb-color-focus-ring, rgba(108, 92, 231, 0.45));
+  border-radius: 6px;
 }
 
 .bb-apex-header__actions {
@@ -128,14 +154,20 @@ body.bb-apex-body {
   gap: 0.65rem;
 }
 
+.bb-apex-btn--header {
+  min-height: 2.5rem;
+  padding: 0 1.15rem;
+  font-size: 0.92rem;
+}
+
 .bb-apex-menu-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--bb-touch-min, 2.75rem);
+  height: var(--bb-touch-min, 2.75rem);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--bb-radius-sm, 0.5rem);
   background: transparent;
   color: var(--bb-color-ink, #1a1c1e);
   cursor: pointer;
@@ -152,6 +184,7 @@ body.bb-apex-body {
   box-shadow: 0 0 0 3px var(--bb-color-focus-ring, rgba(108, 92, 231, 0.45));
 }
 
+/* —— Drawer —— */
 .bb-apex-drawer[hidden] {
   display: none !important;
 }
@@ -159,7 +192,7 @@ body.bb-apex-body {
 .bb-apex-drawer {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--bb-z-drawer, 70);
 }
 
 .bb-apex-drawer__backdrop {
@@ -167,7 +200,7 @@ body.bb-apex-body {
   inset: 0;
   border: 0;
   padding: 0;
-  background: rgba(26, 28, 30, 0.45);
+  background: var(--bb-color-overlay, rgba(26, 28, 30, 0.45));
   cursor: pointer;
 }
 
@@ -175,14 +208,15 @@ body.bb-apex-body {
   position: absolute;
   top: 0;
   right: 0;
-  width: min(20rem, 88vw);
+  width: min(var(--bb-drawer-w, 22rem), 88vw);
   height: 100%;
-  background: #fff;
+  background: var(--bb-color-surface, #fff);
   box-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.08));
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  overflow: auto;
 }
 
 .bb-apex-drawer__close {
@@ -192,9 +226,9 @@ body.bb-apex-body {
 .bb-apex-drawer__link {
   display: flex;
   align-items: center;
-  min-height: 2.75rem;
+  min-height: var(--bb-touch-min, 2.75rem);
   padding: 0 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--bb-radius-sm, 0.5rem);
   color: var(--bb-color-ink, #1a1c1e);
   text-decoration: none;
   font-weight: 500;
@@ -212,9 +246,9 @@ body.bb-apex-body {
 
 .bb-apex-drawer__logout button {
   width: 100%;
-  min-height: 2.75rem;
+  min-height: var(--bb-touch-min, 2.75rem);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--bb-radius-sm, 0.5rem);
   background: transparent;
   color: var(--bb-color-muted, #44474e);
   font: inherit;
@@ -229,75 +263,112 @@ body.bb-apex-body {
   color: var(--bb-color-ink, #1a1c1e);
 }
 
+.bb-apex-drawer__powered {
+  margin-top: auto;
+  padding-top: 1.5rem;
+}
+
 .bb-apex-main {
-  min-height: 50vh;
+  flex: 1 0 auto;
+  min-width: 0;
 }
 
 .bb-apex-container {
   max-width: var(--bb-max, 80rem);
   margin: 0 auto;
   padding: 0 var(--bb-gutter, 1.5rem);
+  width: 100%;
 }
 
-/* —— Home —— */
+/* —— Buttons —— */
+.bb-apex-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: var(--bb-control-h, 3rem);
+  padding: 0 1.5rem;
+  border-radius: var(--bb-radius, 1rem);
+  border: 2px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.bb-apex-btn--primary {
+  background: var(--bb-color-primary, #6c5ce7);
+  color: var(--bb-color-on-primary, #fff);
+}
+
+.bb-apex-btn--primary:hover {
+  background: var(--bb-color-primary-hover, #5341cd);
+}
+
+.bb-apex-btn--secondary {
+  background: transparent;
+  color: var(--bb-color-primary, #6c5ce7);
+  border-color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-apex-btn--secondary:hover {
+  background: var(--bb-color-primary-soft, #efeaff);
+}
+
+.bb-apex-btn--on-dark {
+  background: #fff;
+  color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-apex-btn--on-dark:hover {
+  background: #efeaff;
+}
+
+.bb-apex-btn:focus-visible {
+  outline: 2px solid var(--bb-color-primary, #6c5ce7);
+  outline-offset: 3px;
+}
+
+.bb-apex-cta-band .bb-apex-btn:focus-visible {
+  outline-color: #fff;
+}
+
+/* —— Home hero (Stitch two-column) —— */
 .bb-apex-hero {
   position: relative;
   overflow: hidden;
-  color: #fff;
-  background: #3d348b;
-  min-height: clamp(22rem, 70vh, 36rem);
-  display: flex;
-  align-items: flex-end;
+  background: #f9f8f6;
+  padding: 2.5rem 0 3rem;
 }
 
-.bb-apex-hero__media {
-  position: absolute;
-  inset: 0;
-}
-
-.bb-apex-hero__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.bb-apex-hero__shade {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(26, 28, 30, 0.25) 0%, rgba(61, 52, 139, 0.72) 55%, rgba(26, 28, 30, 0.88) 100%);
-}
-
-.bb-apex-hero__content {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  padding: 3.5rem 0 3rem;
-}
-
-.bb-apex-hero__eyebrow {
-  margin: 0 0 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.9;
+.bb-apex-hero__grid {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
 }
 
 .bb-apex-hero__title {
   margin: 0 0 1rem;
-  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  font-size: clamp(2.15rem, 6vw, 3.75rem);
   line-height: 1.15;
   letter-spacing: -0.03em;
   font-weight: 700;
-  max-width: 16ch;
+  color: var(--bb-color-ink, #1a1c1e);
+  max-width: 14ch;
+}
+
+.bb-apex-hero__title-accent {
+  color: var(--bb-color-primary, #6c5ce7);
 }
 
 .bb-apex-hero__lead {
   margin: 0 0 1.5rem;
-  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  font-size: clamp(1.05rem, 2vw, 1.125rem);
+  line-height: 1.6;
+  color: var(--bb-color-muted, #44474e);
   max-width: 36rem;
-  opacity: 0.95;
 }
 
 .bb-apex-hero__cta {
@@ -306,13 +377,73 @@ body.bb-apex-body {
   gap: 0.75rem;
 }
 
-.bb-apex-section {
-  padding: 3.5rem 0;
+.bb-apex-hero__visual {
+  position: relative;
 }
 
-.bb-apex-section--tint {
-  background: #fff;
-  border-block: 1px solid var(--bb-color-border, #d1dce0);
+.bb-apex-hero__frame {
+  position: relative;
+  z-index: 1;
+  border-radius: var(--bb-radius, 1rem);
+  overflow: hidden;
+  box-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.08));
+  aspect-ratio: 4 / 3;
+  background: var(--bb-color-surface-dim, #f2f0ed);
+}
+
+.bb-apex-hero__frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  display: block;
+}
+
+.bb-apex-hero__glow {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bb-apex-hero__glow--a {
+  width: 8rem;
+  height: 8rem;
+  bottom: -1.5rem;
+  left: -1.5rem;
+  background: rgba(108, 92, 231, 0.12);
+  filter: blur(36px);
+}
+
+.bb-apex-hero__glow--b {
+  width: 12rem;
+  height: 12rem;
+  top: -2.5rem;
+  right: -2rem;
+  background: rgba(255, 152, 0, 0.18);
+  filter: blur(48px);
+}
+
+/* —— Sections —— */
+.bb-apex-section {
+  padding: 3.25rem 0;
+}
+
+.bb-apex-section--surface {
+  background: var(--bb-color-surface, #fff);
+}
+
+.bb-apex-section--cta {
+  padding-bottom: 3.5rem;
+}
+
+.bb-apex-section__intro {
+  margin-bottom: 2rem;
+}
+
+.bb-apex-section__intro--center {
+  text-align: center;
+  margin-bottom: 2.5rem;
 }
 
 .bb-apex-section__eyebrow {
@@ -325,16 +456,18 @@ body.bb-apex-body {
 }
 
 .bb-apex-section__title {
-  margin: 0 0 0.75rem;
-  font-size: clamp(1.6rem, 3vw, 2.35rem);
+  margin: 0;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
   letter-spacing: -0.02em;
   font-weight: 700;
 }
 
-.bb-apex-section__lead {
-  margin: 0 0 2rem;
-  color: var(--bb-color-muted, #44474e);
-  max-width: 40rem;
+.bb-apex-section__rule {
+  width: 5rem;
+  height: 0.35rem;
+  margin: 1rem auto 0;
+  border-radius: 999px;
+  background: var(--bb-color-primary, #6c5ce7);
 }
 
 .bb-apex-audience {
@@ -347,23 +480,27 @@ body.bb-apex-body {
 }
 
 .bb-apex-audience__card {
-  background: #fff;
-  border: 1px solid var(--bb-color-border, #d1dce0);
+  background: var(--bb-color-surface, #fff);
+  border: 1px solid rgba(209, 220, 224, 0.85);
   border-radius: var(--bb-radius, 1rem);
   box-shadow: var(--bb-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
-  padding: 1.35rem 1.25rem;
+  padding: 1.5rem 1.35rem;
+}
+
+.bb-apex-section--surface .bb-apex-audience__card {
+  background: var(--bb-color-page, #fbf9f6);
 }
 
 .bb-apex-audience__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3rem;
+  height: 3rem;
   border-radius: 0.75rem;
   background: var(--bb-color-primary-soft, #efeaff);
   color: var(--bb-color-primary, #6c5ce7);
-  margin-bottom: 0.85rem;
+  margin-bottom: 1rem;
 }
 
 .bb-apex-audience__title {
@@ -389,11 +526,12 @@ body.bb-apex-body {
 
 .bb-apex-feature {
   display: grid;
-  gap: 0.85rem;
-  background: var(--bb-color-page, #fbf9f6);
+  gap: 0;
+  background: var(--bb-color-surface, #fff);
   border: 1px solid var(--bb-color-border, #d1dce0);
   border-radius: var(--bb-radius, 1rem);
   overflow: hidden;
+  box-shadow: var(--bb-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
 }
 
 .bb-apex-feature__media {
@@ -405,11 +543,12 @@ body.bb-apex-body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
 }
 
 .bb-apex-feature__copy {
-  padding: 0 1.15rem 1.25rem;
+  padding: 1.15rem 1.25rem 1.35rem;
 }
 
 .bb-apex-feature__title {
@@ -425,11 +564,12 @@ body.bb-apex-body {
 }
 
 .bb-apex-cta-band {
-  background: linear-gradient(135deg, #5341cd 0%, #6c5ce7 55%, #3d348b 100%);
+  background: var(--bb-gradient-primary, linear-gradient(135deg, #5341cd 0%, #6c5ce7 55%, #3d348b 100%));
   color: #fff;
   border-radius: var(--bb-radius, 1rem);
-  padding: 2rem 1.5rem;
+  padding: 2.25rem 1.5rem;
   text-align: center;
+  box-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.08));
 }
 
 .bb-apex-cta-band__title {
@@ -451,100 +591,17 @@ body.bb-apex-body {
   justify-content: center;
 }
 
-.bb-apex-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  min-height: 3rem;
-  padding: 0 1.25rem;
-  border-radius: var(--bb-radius, 1rem);
-  border: 2px solid transparent;
-  font: inherit;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.bb-apex-btn--primary {
-  background: var(--bb-color-primary, #6c5ce7);
-  color: #fff;
-}
-
-.bb-apex-btn--primary:hover {
-  background: var(--bb-color-primary-hover, #5341cd);
-}
-
-.bb-apex-btn--on-dark {
-  background: #fff;
-  color: var(--bb-color-primary, #6c5ce7);
-}
-
-.bb-apex-btn--on-dark:hover {
-  background: #efeaff;
-}
-
-.bb-apex-btn--ghost-on-dark {
-  background: transparent;
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.65);
-}
-
-.bb-apex-btn--ghost-on-dark:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.bb-apex-btn--ghost {
-  background: transparent;
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.7);
-}
-
-.bb-apex-btn:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 3px;
-}
-
-.bb-apex-page {
-  max-width: 42rem;
-  margin: 0 auto;
-  padding: 2rem var(--bb-gutter, 1.5rem) 3rem;
-}
-
-.bb-apex-page h1 {
-  margin: 0 0 0.75rem;
-  color: var(--bb-color-primary, #6c5ce7);
-  letter-spacing: -0.02em;
-}
-
-.bb-apex-page p {
-  color: var(--bb-color-muted, #44474e);
-}
-
-.bb-apex-page dl {
-  line-height: 1.6;
-}
-
-.bb-apex-page dt {
-  font-weight: 600;
-  margin-top: 0.75rem;
-}
-
-.bb-apex-page dd {
-  margin: 0;
-  color: var(--bb-color-muted, #44474e);
-}
-
+/* —— Footer —— */
 .bb-apex-footer {
   border-top: 1px solid var(--bb-color-border, #d1dce0);
-  background: #fff;
-  padding: 2.5rem 0 2rem;
-  margin-top: 1rem;
+  background: var(--bb-color-surface, #fff);
+  padding: 2.75rem 0 2rem;
+  margin-top: auto;
 }
 
 .bb-apex-footer__grid {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.75rem;
 }
 
 .bb-apex-footer__name {
@@ -555,15 +612,25 @@ body.bb-apex-body {
 }
 
 .bb-apex-footer__tagline {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.85rem;
   color: var(--bb-color-muted, #44474e);
   font-size: 0.95rem;
+  max-width: 28rem;
+}
+
+.bb-apex-footer__heading {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-color-ink, #1a1c1e);
 }
 
 .bb-apex-footer__links {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.85rem 1.25rem;
+  flex-direction: column;
+  gap: 0.35rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -574,26 +641,38 @@ body.bb-apex-body {
   text-decoration: none;
   font-weight: 500;
   font-size: 0.95rem;
+  min-height: var(--bb-touch-min, 2.75rem);
+  display: inline-flex;
+  align-items: center;
 }
 
-.bb-apex-footer__links a:hover {
+.bb-apex-footer__links a:hover,
+.bb-apex-footer__links a:focus-visible {
   color: var(--bb-color-primary, #6c5ce7);
 }
 
 .bb-apex-footer__meta {
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
   padding-top: 1rem;
   border-top: 1px solid var(--bb-color-border, #d1dce0);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-  align-items: center;
-  justify-content: space-between;
   color: var(--bb-color-muted, #44474e);
   font-size: 0.88rem;
 }
 
 @media (min-width: 768px) {
+  .bb-apex-hero {
+    padding: 3.5rem 0 4rem;
+  }
+
+  .bb-apex-hero__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+
+  .bb-apex-hero__frame {
+    transform: rotate(2deg);
+  }
+
   .bb-apex-audience {
     grid-template-columns: 1fr 1fr;
   }
@@ -603,7 +682,7 @@ body.bb-apex-body {
   }
 
   .bb-apex-footer__grid {
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: 1.4fr 0.8fr;
     align-items: start;
   }
 }
@@ -628,14 +707,26 @@ body.bb-apex-body {
   .bb-apex-features {
     grid-template-columns: repeat(4, 1fr);
   }
+}
 
-  .bb-apex-hero__content {
-    padding: 5rem 0 4rem;
+@media (max-width: 374px) {
+  .bb-apex-hero__cta .bb-apex-btn {
+    width: 100%;
+  }
+
+  .bb-apex-header__inner {
+    padding-inline: 0.85rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .bb-apex-header {
     backdrop-filter: none;
+  }
+
+  .bb-apex-btn,
+  .bb-apex-hero__frame {
+    transition: none !important;
+    transform: none !important;
   }
 }

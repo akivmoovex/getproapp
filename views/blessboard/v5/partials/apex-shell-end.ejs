@@ -1,17 +1,18 @@
 <%#
-  Apex shell end.
+  Apex shell end — footer uses only existing routes (no dead marketing links).
 %>
   </main>
 
   <footer class="bb-apex-footer" data-bb-apex-footer="1">
     <div class="bb-apex-container">
       <div class="bb-apex-footer__grid">
-        <div>
+        <div class="bb-apex-footer__brand">
           <p class="bb-apex-footer__name">BlessBoard</p>
-          <p class="bb-apex-footer__tagline">One digital home for your church — websites, engagement, and administration on GetPro.</p>
-          <p><%- include('./powered-by-getpro') %></p>
+          <p class="bb-apex-footer__tagline">Building the digital foundation for the church community — websites, engagement, and administration on GetPro.</p>
+          <p class="bb-apex-footer__powered"><%- include('./powered-by-getpro') %></p>
         </div>
-        <div>
+        <div class="bb-apex-footer__col">
+          <h2 class="bb-apex-footer__heading">Navigate</h2>
           <ul class="bb-apex-footer__links">
             <li><a href="/">Home</a></li>
             <% if (authenticated) { %>
@@ -29,6 +30,6 @@
   </footer>
 
   <script src="/blessboard/v5/design-system.js?v=2" defer></script>
-  <script src="/blessboard/v5/apex.js?v=1" defer></script>
+  <script src="/blessboard/v5/apex.js?v=2" defer></script>
 </body>
 </html>

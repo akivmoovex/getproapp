@@ -255,8 +255,9 @@ function renderAuthErrorPage(message) {
  */
 function renderAccountPage(account) {
   const hostKind = account.hostKind === "tenant" ? "tenant" : "apex";
-  const rolesLabel =
-    (account.roles || []).map((r) => formatRoleLabel(r)).join(", ") || "(none)";
+  const roleKeys = Array.isArray(account.roles) ? account.roles : [];
+  const roleBadges = roleKeys.map((r) => formatRoleLabel(r)).filter(Boolean);
+  const rolesLabel = roleBadges.join(", ") || "(none)";
   return renderApexView("apex/account.ejs", {
     pageTitle: "Account",
     authenticated: true,
@@ -264,6 +265,7 @@ function renderAccountPage(account) {
     csrfToken: account.csrfToken || "",
     displayName: String(account.displayName || ""),
     rolesLabel,
+    roleBadges,
     hostKind,
     churchDisplayName: account.churchDisplayName ? String(account.churchDisplayName) : "",
     branchDisplayName: account.branchDisplayName ? String(account.branchDisplayName) : "",

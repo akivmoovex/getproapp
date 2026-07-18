@@ -9,8 +9,8 @@
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="description" content="BlessBoard — one digital home for your church." />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=2" />
-  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=2" />
+  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=3" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=3" />
 </head>
 <body class="bb-apex-body" data-bb-shell="apex" data-bb-product="blessboard-v5" data-bb-page="<%= activeNav %>">
   <a class="bb-apex-skip" href="#bb-apex-main">Skip to content</a>
@@ -34,8 +34,13 @@
       </nav>
 
       <div class="bb-apex-header__actions">
-        <% if (!authenticated) { %>
-        <a class="bb-apex-btn bb-apex-btn--primary" href="/login" data-bb-apex-cta="header-login">Login</a>
+        <% if (authenticated) { %>
+        <form class="bb-apex-nav__logout bb-apex-nav__logout--header" method="post" action="/logout">
+          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+          <button type="submit">Logout</button>
+        </form>
+        <% } else { %>
+        <a class="bb-apex-btn bb-apex-btn--primary bb-apex-btn--header" href="/login" data-bb-apex-cta="header-login">Login</a>
         <% } %>
         <button
           type="button"
@@ -60,6 +65,7 @@
       <nav aria-label="Mobile">
         <%- include('./apex-nav-links', { authenticated: authenticated, activeNav: activeNav, csrfToken: csrfToken, variant: 'drawer' }) %>
       </nav>
+      <p class="bb-apex-drawer__powered"><%- include('./powered-by-getpro') %></p>
     </div>
   </div>
 
