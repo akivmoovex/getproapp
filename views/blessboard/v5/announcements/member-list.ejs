@@ -1,0 +1,16 @@
+<%- include('../partials/member-shell-start') %>
+  <h1>Announcements</h1>
+  <% if (!items || !items.length) { %>
+    <p>No announcements right now.</p>
+  <% } else { %>
+    <ul class="bb-mp-ann-list">
+      <% items.forEach(function (item) { %>
+        <li data-bb-unread="<%= item.isUnread ? '1' : '0' %>">
+          <a href="/member/announcements/<%= item.id %>"><%= item.title %></a>
+          <% if (item.isPinned) { %><span>Pinned</span><% } %>
+          <% if (item.isUnread) { %><span>Unread</span><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+<%- include('../partials/member-shell-end') %>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Preview: <%= pageTitle %> · BlessBoard</title>
+  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css" />
+  <link rel="stylesheet" href="<%= shellKind === 'hq' ? '/blessboard/v5/hq-admin.css' : '/blessboard/v5/branch-admin.css' %>" />
+</head>
+<body class="bb-tp-body bb-ca-preview-body">
+  <div class="bb-ca-preview-banner" role="status">
+    <strong>Preview</strong> — This is an admin preview (includes drafts). Not visible to the public unless published.
+    <a href="<%= scope.basePath %>">Back to content admin</a>
+    · <a href="<%= scope.basePath %>/pages/<%= page.pageKey %>">Edit page</a>
+  </div>
+
+  <div class="bb-tp-shell">
+    <header class="bb-tp-top">
+      <div>
+        <span class="bb-tp-brand"><%= churchDisplayName %></span>
+        <% if (scope.scopeLabel) { %>
+        <div class="bb-tp-branch"><%= scope.scopeLabel %></div>
+        <% } %>
+      </div>
+      <span class="bb-tp-badge">Preview</span>
+    </header>
+
+    <main class="bb-tp-main">
+      <h1><%= page.title %></h1>
+      <p class="bb-ca-preview-meta">Page status: <%= page.status %></p>
+
+      <% if (sections && sections.length) { %>
+        <% sections.forEach(function (section) { %>
+        <section class="bb-tp-section" data-section="<%= section.sectionKey %>">
+          <p class="bb-ca-preview-meta">Section · <%= section.sectionKey %> · <%= section.status %></p>
+          <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
+          <% if (section.bodyText) { %><p><%= section.bodyText %></p><% } %>
+          <% if (section.mediaUrl) { %>
+          <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" />
+          <% } %>
+        </section>
+        <% }) %>
+      <% } %>
+
+      <% if (pageKey === 'leadership' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (leader) { %>
+        <li class="bb-tp-item">
+          <p class="bb-ca-preview-meta"><%= leader.status %></p>
+          <h2><%= leader.displayName %></h2>
+          <p class="bb-tp-meta"><%= leader.roleTitle %></p>
+          <% if (leader.biography) { %><p><%= leader.biography %></p><% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'ministries' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (ministry) { %>
+        <li class="bb-tp-item">
+          <p class="bb-ca-preview-meta"><%= ministry.status %></p>
+          <h2><%= ministry.name %></h2>
+          <% if (ministry.summary) { %><p><%= ministry.summary %></p><% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'events' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (event) { %>
+        <li class="bb-tp-item">
+          <p class="bb-ca-preview-meta"><%= event.status %></p>
+          <h2><%= event.title %></h2>
+          <% if (event.summary) { %><p><%= event.summary %></p><% } %>
+          <% if (event.startsAt) { %><p class="bb-tp-meta"><%= event.startsAt %></p><% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'sermons' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (sermon) { %>
+        <li class="bb-tp-item">
+          <p class="bb-ca-preview-meta"><%= sermon.status %></p>
+          <h2><%= sermon.title %></h2>
+          <p class="bb-tp-meta"><%= sermon.speakerName %></p>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'contact' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (channel) { %>
+        <li class="bb-tp-item">
+          <p class="bb-ca-preview-meta"><%= channel.status %></p>
+          <strong><%= channel.label %></strong>: <%= channel.value %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'giving' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (method) { %>
+        <li class="bb-tp-item">
+          <p class="bb-ca-preview-meta"><%= method.status %></p>
+          <h2><%= method.label %></h2>
+          <% if (method.instructions) { %><p><%= method.instructions %></p><% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </main>
+  </div>
+</body>
+</html>

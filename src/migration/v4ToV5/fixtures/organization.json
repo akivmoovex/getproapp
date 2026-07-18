@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "slug": "grace-chapel",
+    "name": "Grace Chapel",
+    "status": "active",
+    "plan_code": "growth",
+    "data_environment": "pilot"
+  },
+  {
+    "id": 2,
+    "slug": "BAD SLUG!",
+    "name": "Bad",
+    "status": "active",
+    "plan_code": "free",
+    "data_environment": "pilot"
+  },
+  {
+    "id": 3,
+    "slug": "legacy-org",
+    "name": "Legacy Org",
+    "status": "dormant",
+    "plan_code": "enterprise",
+    "data_environment": "production"
+  }
+]

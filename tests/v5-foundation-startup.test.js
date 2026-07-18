@@ -186,11 +186,22 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
 
   it("legacy tenant and portal routes return controlled unavailable", async () => {
     requireDb();
+    // Apex platform-admin requires sign-in (not the generic foundation unavailable page).
+    const adminUnauth = await request(app)
+      .get("/admin")
+      .set("Host", "blessboard.org")
+      .set("Accept", "text/plain");
+    assert.equal(adminUnauth.status, 401);
+
+    // Branch-admin is tenant-only; on apex it remains controlled unavailable.
+    const branchOnApex = await request(app)
+      .get("/branch-admin")
+      .set("Host", "blessboard.org")
+      .set("Accept", "text/plain");
+    assert.equal(branchOnApex.status, UNAVAILABLE_STATUS);
+
     const paths = [
-      "/admin",
       "/admin/login",
-      "/member",
-      "/branch-admin",
       "/hq-admin",
       "/getpro-admin",
       "/client",
@@ -205,6 +216,13 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
       assert.equal(res.status, UNAVAILABLE_STATUS, `expected 503 for ${p}`);
       assert.match(res.text, /foundation mode/i);
     }
+
+    // Member portal is mounted on tenant hosts; on apex it stays controlled unavailable.
+    const memberOnApex = await request(app)
+      .get("/member")
+      .set("Host", "blessboard.org")
+      .set("Accept", "text/plain");
+    assert.equal(memberOnApex.status, UNAVAILABLE_STATUS);
   });
 
   it("does not create public legacy tables after traffic", async () => {
@@ -260,14 +278,16 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
     assert.equal(
       (await request(diagApp).get("/login").set("Host", "foundation-tenant.blessboard.org").set("Accept", "text/plain"))
         .status,
-      UNAVAILABLE_STATUS
+      400
     );
 
-    const login = await request(diagApp)
+    // Member portal is no longer a blanket 503; unauthenticated tenants redirect to login.
+    const memberPortal = await request(diagApp)
       .get("/member")
       .set("Host", "foundation-tenant.blessboard.org")
-      .set("Accept", "text/plain");
-    assert.equal(login.status, UNAVAILABLE_STATUS);
+      .set("Accept", "text/html");
+    assert.equal(memberPortal.status, 303);
+    assert.match(String(memberPortal.headers.location || ""), /\/login/);
 
     // Catalogue lookup errors must not kill the process or change status.
     const boomApp = createV5FoundationApp({

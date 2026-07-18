@@ -1,0 +1,11 @@
+[
+  {
+    "id": 700,
+    "organization_id": 1,
+    "branch_id": 11,
+    "name": "Youth Ministry",
+    "slug": "youth",
+    "description": "Youth",
+    "status": "published"
+  }
+]

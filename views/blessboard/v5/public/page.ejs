@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= seo.title %></title>
+  <meta name="description" content="<%= seo.description %>" />
+  <meta name="robots" content="<%= seo.robots %>" />
+  <link rel="canonical" href="<%= seo.canonicalUrl %>" />
+  <meta property="og:type" content="<%= seo.ogType %>" />
+  <meta property="og:title" content="<%= seo.ogTitle %>" />
+  <meta property="og:description" content="<%= seo.ogDescription %>" />
+  <meta property="og:url" content="<%= seo.ogUrl %>" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css" />
+</head>
+<body class="bb-tp-body" data-bb-shell="tenant-public" data-bb-page="<%= pageKey %>">
+  <div class="bb-tp-shell">
+    <header class="bb-tp-top">
+      <div>
+        <a class="bb-tp-brand" href="/"><%= publicName %></a>
+        <% if (primaryBranchDisplayName) { %>
+        <div class="bb-tp-branch"><%= primaryBranchDisplayName %></div>
+        <% } %>
+      </div>
+      <div class="bb-tp-badges">
+        <span class="bb-tp-badge">BlessBoard V5</span>
+        <% if (showEnvBadge) { %><span class="bb-tp-env"><%= dataEnvironment %></span><% } %>
+      </div>
+    </header>
+
+    <nav class="bb-tp-nav" aria-label="Church pages">
+      <% navItems.forEach(function (item) { %>
+      <a href="<%= item.href %>" class="<%= activeNav === item.key ? 'is-active' : '' %>"><%= item.label %></a>
+      <% }) %>
+    </nav>
+
+    <main class="bb-tp-main">
+      <h1><%= pageTitle %></h1>
+
+      <% if (showEmptyState) { %>
+      <div class="bb-tp-empty" role="status">
+        <h2><%= emptyHeadline %></h2>
+        <p><%= emptyMessage %></p>
+      </div>
+      <% } %>
+
+      <% if (sections && sections.length) { %>
+        <% sections.forEach(function (section) { %>
+        <section class="bb-tp-section" data-section="<%= section.sectionKey %>">
+          <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
+          <% if (section.bodyText) { %><p><%= section.bodyText %></p><% } %>
+          <% if (section.mediaUrl) { %>
+          <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" />
+          <% } %>
+        </section>
+        <% }) %>
+      <% } %>
+
+      <% if (pageKey === 'leadership' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (leader) { %>
+        <li class="bb-tp-item">
+          <h2><%= leader.displayName %></h2>
+          <p class="bb-tp-meta"><%= leader.roleTitle %></p>
+          <% if (leader.biography) { %><p><%= leader.biography %></p><% } %>
+          <% if (leader.imageUrl) { %>
+          <img class="bb-tp-media" src="<%= leader.imageUrl %>" alt="" loading="lazy" />
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'ministries' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (ministry) { %>
+        <li class="bb-tp-item">
+          <h2><%= ministry.name %></h2>
+          <% if (ministry.summary) { %><p><%= ministry.summary %></p><% } %>
+          <% if (ministry.description) { %><p><%= ministry.description %></p><% } %>
+          <% if (ministry.meetingDay) { %><p class="bb-tp-meta">Meets: <%= ministry.meetingDay %></p><% } %>
+          <% if (ministry.imageUrl) { %>
+          <img class="bb-tp-media" src="<%= ministry.imageUrl %>" alt="" loading="lazy" />
+          <% } %>
+          <% if (ministry.contactHref && ministry.contactEmail) { %>
+          <p><a href="<%= ministry.contactHref %>"><%= ministry.contactEmail %></a></p>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'events' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (event) { %>
+        <li class="bb-tp-item">
+          <h2><%= event.title %></h2>
+          <% if (event.summary) { %><p><%= event.summary %></p><% } %>
+          <p class="bb-tp-meta"><%= formatWhen(event.startsAt, event.timezone) %><% if (event.location) { %> · <%= event.location %><% } %></p>
+          <% if (event.imageUrl) { %>
+          <img class="bb-tp-media" src="<%= event.imageUrl %>" alt="" loading="lazy" />
+          <% } %>
+          <% if (event.registrationUrl) { %>
+          <p><a href="<%= event.registrationUrl %>" rel="noopener noreferrer">Register</a></p>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'sermons' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (sermon) { %>
+        <li class="bb-tp-item">
+          <h2><%= sermon.title %></h2>
+          <p class="bb-tp-meta"><%= sermon.speakerName %> · <%= formatWhen(sermon.preachedAt) %></p>
+          <% if (sermon.summary) { %><p><%= sermon.summary %></p><% } %>
+          <% if (sermon.mediaUrl) { %>
+          <p><a href="<%= sermon.mediaUrl %>" rel="noopener noreferrer">Watch or listen</a></p>
+          <% } %>
+          <% if (sermon.resourceUrl) { %>
+          <p><a href="<%= sermon.resourceUrl %>" rel="noopener noreferrer">Resources</a></p>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'contact' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (channel) { %>
+        <li class="bb-tp-item">
+          <h3><%= channel.label %></h3>
+          <% if (channel.href) { %>
+          <p><a href="<%= channel.href %>"><%= channel.value %></a></p>
+          <% } else { %>
+          <p><%= channel.value %></p>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (pageKey === 'giving' && entities && entities.length) { %>
+      <ul class="bb-tp-list">
+        <% entities.forEach(function (method) { %>
+        <li class="bb-tp-item">
+          <h2><%= method.label %></h2>
+          <% if (method.instructions) { %><p><%= method.instructions %></p><% } %>
+          <% if (method.externalUrl) { %>
+          <p><a href="<%= method.externalUrl %>" rel="noopener noreferrer">Give online</a></p>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <% if (!showEmptyState && entitiesEmptyMessage && entities && !entities.length && sections && sections.length && ['leadership','ministries','events','sermons','contact','giving'].indexOf(pageKey) >= 0) { %>
+      <p class="bb-tp-lead"><%= entitiesEmptyMessage %></p>
+      <% } %>
+    </main>
+
+    <footer class="bb-tp-footer">
+      <div>
+        <% if (hqBranchDisplayName) { %>Headquarters: <%= hqBranchDisplayName %><% } %>
+      </div>
+      <div>
+        <a href="<%= loginHref %>">Sign in</a>
+        ·
+        <a href="<%= apexHref %>">BlessBoard</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

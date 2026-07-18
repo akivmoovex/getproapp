@@ -1,0 +1,65 @@
+<%- include('../partials/member-shell-start') %>
+  <h1>Your profile</h1>
+  <p class="bb-mp-lede">
+    Update how your name and contact details appear. Membership and church details are managed by your church.
+  </p>
+  <% if (error) { %>
+    <p class="bb-mp-error" role="alert"><%= error %></p>
+  <% } %>
+  <% if (saved) { %>
+    <p class="bb-mp-ok" role="status">Profile saved.</p>
+  <% } %>
+
+  <dl class="bb-mp-readonly">
+    <div>
+      <dt>Legal name</dt>
+      <dd><%= [profile.firstName, profile.lastName].filter(Boolean).join(' ') || '—' %></dd>
+    </div>
+    <div>
+      <dt>Membership</dt>
+      <dd><%= profile.membershipStatus === 'active' ? 'Active' : profile.membershipStatus %></dd>
+    </div>
+    <div>
+      <dt>Sign-in email</dt>
+      <dd><%= profile.emailNormalized || '—' %></dd>
+    </div>
+  </dl>
+
+  <form method="post" action="/member/profile" class="bb-mp-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <label for="preferredName">Preferred name</label>
+    <input
+      id="preferredName"
+      name="preferredName"
+      type="text"
+      maxlength="100"
+      value="<%= profile.preferredName || '' %>"
+      autocomplete="nickname"
+    />
+
+    <label for="emailDisplay">Display email</label>
+    <input
+      id="emailDisplay"
+      name="emailDisplay"
+      type="text"
+      maxlength="254"
+      value="<%= profile.emailDisplay || profile.emailNormalized || '' %>"
+      autocomplete="email"
+    />
+    <p class="bb-mp-hint">Changes how your email is shown. Your sign-in email stays the same.</p>
+
+    <label for="phone">Phone</label>
+    <input
+      id="phone"
+      name="phone"
+      type="tel"
+      maxlength="32"
+      value="<%= profile.phoneDisplay || profile.phoneNormalized || '' %>"
+      placeholder="+260…"
+      autocomplete="tel"
+    />
+
+    <button type="submit">Save profile</button>
+  </form>
+<%- include('../partials/member-shell-end') %>

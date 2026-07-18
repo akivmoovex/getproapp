@@ -1,0 +1,32 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1>Announcements</h1>
+  <p class="bb-ann-lede"><%= scopeLabel %> scope</p>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
+  <p><a href="<%= basePath %>/new">New announcement</a></p>
+  <% if (!items || !items.length) { %>
+    <p>No announcements yet.</p>
+  <% } else { %>
+    <ul class="bb-ann-list">
+      <% items.forEach(function (item) { %>
+        <li data-bb-announcement-status="<%= item.status %>">
+          <a href="<%= basePath %>/<%= item.id %>"><%= item.title %></a>
+          <span><%= item.status %></span>
+          <% if (item.isPinned) { %><span>Pinned</span><% } %>
+          <% if (item.isFeatured) { %><span>Featured</span><% } %>
+          <% if (item.delivery) { %>
+            <span data-bb-delivery="read"><%= item.delivery.readCount %>/<%= item.delivery.eligibleCount %> read</span>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

@@ -1,0 +1,65 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1>Giving</h1>
+  <p>Manual giving summaries — aggregated totals only. No donor or payment details.</p>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+
+  <section>
+    <h2>Monthly summary · <%= yearMonth %></h2>
+    <form method="get" action="<%= basePath %>">
+      <label>Month
+        <input type="month" name="month" value="<%= yearMonth %>" />
+      </label>
+      <button type="submit">Show</button>
+    </form>
+    <% if (!summary || (!summary.churchTotals && (!summary.byBranch || !summary.byBranch.length))) { %>
+      <p>No submitted giving for this month.</p>
+    <% } else { %>
+      <% if (summary.grandTotalsByCurrency && summary.grandTotalsByCurrency.length) { %>
+        <ul data-bb-giving-grand-totals>
+          <% summary.grandTotalsByCurrency.forEach(function (gt) { %>
+            <li data-bb-currency="<%= gt.currency %>" data-bb-total="<%= gt.totalAmount %>">
+              Total <%= gt.currency %>: <%= gt.totalAmount %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+      <ul>
+        <% (summary.churchTotals || summary.byBranch).forEach(function (row) { %>
+          <li>
+            <%= row.categoryLabel || row.categoryKey %>:
+            <%= row.totalAmount %> <%= row.currency %>
+            (<%= row.entryCount %> entr<%= row.entryCount === 1 ? 'y' : 'ies' %>)
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <% if (canCreate) { %>
+    <p><a href="<%= basePath %>/new">Record giving entry</a></p>
+  <% } %>
+
+  <section>
+    <h2>Entries</h2>
+    <% if (!entries || !entries.length) { %>
+      <p>No giving entries in this view.</p>
+    <% } else { %>
+      <ul>
+        <% entries.forEach(function (en) { %>
+          <li data-bb-status="<%= en.status %>">
+            <a href="<%= basePath %>/<%= en.id %>"><%= en.categoryLabel || en.categoryKey %></a>
+            · <%= en.givingDate %> · <%= en.amount %> <%= en.currency %> · <%= en.status %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

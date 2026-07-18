@@ -1,0 +1,8 @@
+<%- include('../partials/hq-shell-start') %>
+  <h1>Branches</h1>
+  <p class="bb-hq-lede">
+    Active branches for <%= churchDisplayName %>. Select a branch to open branch administration when authorized.
+  </p>
+  <p class="bb-hq-lede">Active count: <strong data-bb-count="active-branches"><%= activeBranchCount %></strong></p>
+  <%- include('../partials/branch-selector', { branches: branches }) %>
+<%- include('../partials/hq-shell-end') %>

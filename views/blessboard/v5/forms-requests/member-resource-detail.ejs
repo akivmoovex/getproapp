@@ -1,0 +1,8 @@
+<%- include('../partials/member-shell-start') %>
+  <p><a href="/member/resources">Back</a></p>
+  <h1><%= resource.title %></h1>
+  <% if (resource.description) { %><p><%= resource.description %></p><% } %>
+  <% if (resource.mediaAssetId) { %>
+    <p><a href="/member/resources/<%= resource.id %>/file">Open attachment</a></p>
+  <% } %>
+<%- include('../partials/member-shell-end') %>

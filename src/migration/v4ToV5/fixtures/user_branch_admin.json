@@ -1,0 +1,12 @@
+[
+  {
+    "id": 200,
+    "organization_id": 1,
+    "branch_id": 11,
+    "email": "branch@grace.example",
+    "username": "branch.admin",
+    "password_hash": "$2a$10$abcdefghijklmnopqrstuv",
+    "display_name": "Branch Admin",
+    "status": "active"
+  }
+]

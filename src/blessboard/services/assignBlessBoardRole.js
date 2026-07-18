@@ -112,6 +112,35 @@ async function assignBlessBoardRole(db, input) {
       };
     }
 
+    const existingStaff = await client.query(
+      `SELECT 1 FROM blessboard.user_roles
+        WHERE user_id = $1 AND organization_id = $2 AND status = 'active'
+          AND role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')
+        LIMIT 1`,
+      [user.id, organization.id]
+    );
+    const { evaluateStaffAccountLimit, STATUS: ENT_STATUS } = require("../../platform/services/entitlementService");
+    const staffGate = await evaluateStaffAccountLimit(client, {
+      organizationId: organization.id,
+      countsAsNewStaff: existingStaff.rows.length === 0,
+      countsAsNewUser: existingStaff.rows.length === 0,
+    });
+    if (!staffGate.ok) {
+      await client.query("ROLLBACK");
+      const message =
+        staffGate.status === ENT_STATUS.LIMIT_EXCEEDED
+          ? `limit_exceeded:${staffGate.reason}`
+          : staffGate.status === ENT_STATUS.SUBSCRIPTION_INACTIVE
+            ? "subscription_inactive"
+            : "entitlement_denied";
+      return {
+        ok: false,
+        status: STATUS.ROLE_CONFLICT,
+        message,
+        role: null,
+      };
+    }
+
     let churchId = null;
     let branchId = null;
     if (req.churchKey) {

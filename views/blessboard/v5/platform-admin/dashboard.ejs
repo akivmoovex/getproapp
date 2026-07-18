@@ -1,0 +1,22 @@
+<%- include('../partials/platform-admin-shell-start') %>
+  <h1>Platform admin</h1>
+  <p class="bb-pa-lede">
+    Read-only BlessBoard V5 organization directory. Creation, editing, billing, and impersonation are not enabled.
+  </p>
+  <article class="bb-pa-card">
+    <h2>Organizations</h2>
+    <p data-bb-count="organizations-total"><%= totalOrganizations %></p>
+    <p><a href="/admin/organizations">Browse directory</a></p>
+  </article>
+  <% if (recentOrganizations && recentOrganizations.length) { %>
+    <h2>Recent keys</h2>
+    <ul>
+      <% recentOrganizations.forEach(function (org) { %>
+        <li>
+          <a href="/admin/organizations/<%= org.organizationKey %>"><%= org.organizationKey %></a>
+          — <%= org.displayName %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+<%- include('../partials/platform-admin-shell-end') %>

@@ -1,0 +1,41 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1>Resources</h1>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <% if (canCreate) { %>
+    <form method="post" action="<%= basePath %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Title <input type="text" name="title" maxlength="200" required /></label>
+      <label>Description <input type="text" name="description" maxlength="5000" /></label>
+      <label>Audience
+        <select name="audience">
+          <% audiences.forEach(function (a) { %>
+            <option value="<%= a %>"><%= a %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Media asset id (optional) <input type="text" name="media_asset_id" /></label>
+      <button type="submit">Create draft</button>
+    </form>
+  <% } %>
+  <ul>
+    <% resources.forEach(function (r) { %>
+      <li data-bb-status="<%= r.status %>">
+        <%= r.title %> · <%= r.status %> · <%= r.audience %>
+        <% if (r.status === 'draft') { %>
+          <form method="post" action="<%= basePath %>/<%= r.id %>/publish" style="display:inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit">Publish</button>
+          </form>
+        <% } %>
+      </li>
+    <% }) %>
+  </ul>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

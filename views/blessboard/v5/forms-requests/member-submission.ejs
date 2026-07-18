@@ -1,0 +1,11 @@
+<%- include('../partials/member-shell-start') %>
+  <p><a href="/member/forms">Back</a></p>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Submitted.</p><% } %>
+  <h1>Your submission</h1>
+  <p>Status: <%= submission.status %></p>
+  <ul>
+    <% Object.keys(submission.answers || {}).forEach(function (key) { %>
+      <li><%= key %>: <%= submission.answers[key] %></li>
+    <% }) %>
+  </ul>
+<%- include('../partials/member-shell-end') %>

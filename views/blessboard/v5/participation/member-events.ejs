@@ -1,0 +1,19 @@
+<%- include('../partials/member-shell-start') %>
+  <h1>Events</h1>
+  <% if (saved) { %><p class="bb-mp-saved" role="status">Updated.</p><% } %>
+  <% if (!items || !items.length) { %>
+    <p>No events are available right now.</p>
+  <% } else { %>
+    <ul class="bb-mp-part-list">
+      <% items.forEach(function (item) { %>
+        <li>
+          <a href="/member/events/<%= item.id %>"><%= item.title %></a>
+          <% if (item.registration) { %><span>Registered</span><% } %>
+          <% if (item.capacity != null) { %>
+            <span data-bb-capacity="<%= item.spotsRemaining %>"><%= item.registeredCount %>/<%= item.capacity %></span>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+<%- include('../partials/member-shell-end') %>

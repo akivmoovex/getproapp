@@ -1,0 +1,12 @@
+[
+  {
+    "id": 600,
+    "organization_id": 1,
+    "branch_id": 11,
+    "title": "Welcome Sunday",
+    "body": "Join us this week.",
+    "status": "published",
+    "published_at": "2026-01-01T00:00:00.000Z",
+    "is_pinned": true
+  }
+]

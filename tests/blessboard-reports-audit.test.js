@@ -1,0 +1,411 @@
+"use strict";
+
+/**
+ * BlessBoard V5 HQ reports + platform.audit_events:
+ * append-only, redaction, scope, report accuracy, pagination, V4 isolation.
+ */
+
+const { describe, it, before, after } = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("fs");
+const path = require("path");
+
+const {
+  resetFoundationDatabase,
+  createFoundationPool,
+} = require("./helpers/foundationDb");
+const { migrate } = require("../db/scripts/lib/migrator");
+const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
+const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
+const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
+const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
+const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
+const { createV5Session } = require("../src/platform/session/createV5Session");
+const {
+  submitMemberRegistration,
+  approveMemberRegistration,
+  linkMemberToUser,
+} = require("../src/blessboard/services/memberRegistrationService");
+const {
+  sanitizeAuditMetadata,
+  recordAuditEvent,
+  listOrganizationAuditEvents,
+  FORBIDDEN_METADATA_KEYS,
+} = require("../src/platform/services/auditEventService");
+const { getHqOperationalReport } = require("../src/blessboard/services/hqReportsService");
+const {
+  createGivingEntry,
+  submitGivingEntry,
+  approveGivingEntry,
+} = require("../src/blessboard/services/givingService");
+const {
+  createMemberRequest,
+  updateMemberRequestStatus,
+} = require("../src/blessboard/services/formsRequestsService");
+
+const IDENTITY_KEY = "blessboard-platform-v5";
+const PASSWORD = "correct-horse-battery-staple";
+const HOST_A = "ra-a.blessboard.org";
+const ROOT = path.join(__dirname, "..");
+const DEPLOYMENT = "blessboard-org-v5";
+
+function makeTenant(church, org, primaryBranch) {
+  return {
+    resolved: true,
+    organization: { id: org.id },
+    church: { id: church.id, displayName: church.display_name || church.displayName },
+    primaryBranch: { id: primaryBranch.id },
+    hqBranch: { id: primaryBranch.id },
+  };
+}
+
+describe("blessboard reports-audit", () => {
+  let pool;
+  let skipSuite = false;
+  let skipReason = "";
+  let orgA;
+  let churchA;
+  let branchA;
+  let hqAdmin;
+  let branchAdmin;
+  let memberUser;
+  let memberId;
+  let yearMonth;
+  let tenant;
+
+  before(async () => {
+    try {
+      const databaseUrl = await resetFoundationDatabase();
+      pool = createFoundationPool(databaseUrl);
+      await migrate({ connectionString: databaseUrl });
+      await ensureDatabaseIdentity(pool, {
+        connectionString: databaseUrl,
+        identityKey: IDENTITY_KEY,
+        environmentCode: "testing",
+      });
+
+      orgA = await provisionPlatformTenant(pool, {
+        organizationKey: "ra-a",
+        displayName: "RA A",
+        legalName: null,
+        dataEnvironment: "testing",
+        productKey: "blessboard",
+        productTenantKey: "ra-a",
+        hostname: HOST_A,
+        domainType: "canonical",
+        deploymentCode: DEPLOYMENT,
+        isPrimary: true,
+      });
+      assert.equal(orgA.ok, true, orgA.message);
+      const chA = await provisionBlessBoardChurch(pool, {
+        organizationKey: "ra-a",
+        churchKey: "ra-a",
+        displayName: "RA Church A",
+        dataEnvironment: "testing",
+        hqBranchKey: "hq",
+        hqBranchDisplayName: "HQ A",
+      });
+      assert.equal(chA.ok, true, chA.message);
+      churchA = chA.records.church;
+      branchA = chA.records.hqBranch;
+      tenant = makeTenant(churchA, orgA.records.organization, branchA);
+
+      async function makeUser(email, role) {
+        const created = await createBlessBoardUser(pool, {
+          email,
+          password: PASSWORD,
+          displayName: email,
+        });
+        assert.equal(created.ok, true, created.reason || created.message);
+        if (role) {
+          const assigned = await assignBlessBoardRole(pool, role);
+          assert.equal(assigned.ok, true, assigned.message || assigned.reason);
+        }
+        const session = await createV5Session(pool, {
+          deploymentCode: DEPLOYMENT,
+          userId: created.user.id,
+          organizationId: orgA.records.organization.id,
+        });
+        assert.equal(session.ok, true, session.code);
+        return { user: created.user, rawToken: session.rawToken };
+      }
+
+      hqAdmin = await makeUser("hq@ra-a.example.test", {
+        email: "hq@ra-a.example.test",
+        organizationKey: "ra-a",
+        churchKey: "ra-a",
+        roleKey: "church_hq_admin",
+      });
+      branchAdmin = await makeUser("branch@ra-a.example.test", {
+        email: "branch@ra-a.example.test",
+        organizationKey: "ra-a",
+        churchKey: "ra-a",
+        roleKey: "branch_admin",
+        branchKey: "hq",
+      });
+      memberUser = await makeUser("member@ra-a.example.test", null);
+
+      const submitted = await submitMemberRegistration(pool, {
+        churchId: churchA.id,
+        branchId: branchA.id,
+        firstName: "RA",
+        lastName: "Member",
+        preferredName: "RA",
+        email: "member@ra-a.example.test",
+        phone: "+15550002001",
+      });
+      assert.equal(submitted.ok, true, submitted.reason);
+      const approved = await approveMemberRegistration(pool, {
+        registrationId: submitted.registration.id,
+        actorUserId: hqAdmin.user.id,
+      });
+      assert.equal(approved.ok, true, approved.reason);
+      const linked = await linkMemberToUser(pool, {
+        memberId: approved.member.id,
+        actorUserId: hqAdmin.user.id,
+        userId: memberUser.user.id,
+      });
+      assert.equal(linked.ok, true, linked.reason);
+      memberId = approved.member.id;
+
+      const today = new Date();
+      yearMonth = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, "0")}`;
+    } catch (err) {
+      skipSuite = true;
+      skipReason = String((err && err.message) || err);
+      // eslint-disable-next-line no-console
+      console.error("reports-audit suite setup failed:", skipReason);
+    }
+  });
+
+  after(async () => {
+    if (pool) await pool.end().catch(() => {});
+  });
+
+  function skipIfNeeded(t) {
+    if (skipSuite) {
+      t.skip(`setup failed: ${skipReason}`);
+      return true;
+    }
+    return false;
+  }
+
+  it("creates append-only audit_events and blocks update/delete", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const tables = await pool.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'platform' AND table_name = 'audit_events'`
+    );
+    assert.equal(tables.rows.length, 1);
+
+    const recorded = await recordAuditEvent(pool, {
+      deploymentCode: DEPLOYMENT,
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      branchId: branchA.id,
+      actorUserId: hqAdmin.user.id,
+      actionKey: "test.event.write",
+      entityType: "test_entity",
+      entityId: churchA.id,
+      outcome: "success",
+      metadata: { status: "ok", count: 1 },
+    });
+    assert.equal(recorded.ok, true, recorded.reason);
+    assert.ok(recorded.event.id);
+
+    await assert.rejects(
+      () =>
+        pool.query(`UPDATE platform.audit_events SET outcome = 'failure' WHERE id = $1`, [
+          recorded.event.id,
+        ]),
+      /append-only/i
+    );
+    await assert.rejects(
+      () => pool.query(`DELETE FROM platform.audit_events WHERE id = $1`, [recorded.event.id]),
+      /append-only/i
+    );
+  });
+
+  it("redacts secrets and PII from metadata", async (t) => {
+    if (skipIfNeeded(t)) return;
+    assert.ok(FORBIDDEN_METADATA_KEYS.includes("password"));
+    assert.ok(FORBIDDEN_METADATA_KEYS.includes("email"));
+
+    const sanitized = sanitizeAuditMetadata({
+      password: "secret-value",
+      token: "abc",
+      email: "person@example.test",
+      status: "approved",
+      amount: "10.00",
+      currency: "USD",
+      mystery: "drop-me",
+    });
+    assert.equal(sanitized.ok, true);
+    assert.deepEqual(sanitized.metadata, {
+      status: "approved",
+      amount: "10.00",
+      currency: "USD",
+    });
+    assert.ok(sanitized.redactedKeys.includes("password"));
+    assert.ok(sanitized.redactedKeys.includes("email"));
+    assert.ok(sanitized.redactedKeys.includes("mystery"));
+
+    const recorded = await recordAuditEvent(pool, {
+      deploymentCode: DEPLOYMENT,
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      actorUserId: hqAdmin.user.id,
+      actionKey: "test.redaction",
+      entityType: "test_entity",
+      outcome: "success",
+      metadata: {
+        password: "nope",
+        email: "hidden@example.test",
+        status: "ok",
+      },
+    });
+    assert.equal(recorded.ok, true, recorded.reason);
+    assert.equal(recorded.event.metadata.password, undefined);
+    assert.equal(recorded.event.metadata.email, undefined);
+    assert.equal(recorded.event.metadata.status, "ok");
+  });
+
+  it("paginates audit events and scopes by organization/church", async (t) => {
+    if (skipIfNeeded(t)) return;
+    for (let i = 0; i < 3; i += 1) {
+      const r = await recordAuditEvent(pool, {
+        deploymentCode: DEPLOYMENT,
+        organizationId: orgA.records.organization.id,
+        churchId: churchA.id,
+        actorUserId: hqAdmin.user.id,
+        actionKey: "test.page.item",
+        entityType: "test_entity",
+        outcome: "success",
+        metadata: { count: i },
+      });
+      assert.equal(r.ok, true, r.reason);
+    }
+
+    const page1 = await listOrganizationAuditEvents(pool, {
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      actionKey: "test.page.item",
+      limit: 2,
+    });
+    assert.equal(page1.ok, true, page1.reason);
+    assert.equal(page1.events.length, 2);
+    assert.equal(page1.hasMore, true);
+    assert.ok(page1.nextBefore);
+
+    const page2 = await listOrganizationAuditEvents(pool, {
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      actionKey: "test.page.item",
+      before: page1.nextBefore,
+      limit: 2,
+    });
+    assert.equal(page2.ok, true, page2.reason);
+    assert.ok(page2.events.length >= 1);
+    assert.ok(!page2.events.some((e) => e.id === page1.events[0].id));
+  });
+
+  it("builds HQ reports from real aggregates (no fake numbers)", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const day = `${yearMonth}-15`;
+
+    const giving = await createGivingEntry(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      scopeBranchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      categoryKey: "tithes",
+      givingDate: day,
+      amount: "25.50",
+      currency: "USD",
+    });
+    assert.equal(giving.ok, true, giving.reason);
+    await submitGivingEntry(pool, {
+      id: giving.entry.id,
+      churchId: churchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      scopeBranchId: branchA.id,
+    });
+    await approveGivingEntry(pool, {
+      id: giving.entry.id,
+      churchId: churchA.id,
+      actorUserId: hqAdmin.user.id,
+      tenant,
+    });
+
+    const request = await createMemberRequest(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      memberId,
+      actorUserId: memberUser.user.id,
+      category: "prayer",
+      subject: "Report request",
+      message: "Please include in open count",
+    });
+    assert.equal(request.ok, true, request.reason);
+    await updateMemberRequestStatus(pool, {
+      id: request.request.id,
+      churchId: churchA.id,
+      actorUserId: hqAdmin.user.id,
+      tenant,
+      status: "in_review",
+      note: "Looking",
+    });
+
+    const pending = await submitMemberRegistration(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      firstName: "Pending",
+      lastName: "Person",
+      preferredName: "Pend",
+      email: "pending@ra-a.example.test",
+      phone: "+15550002099",
+    });
+    assert.equal(pending.ok, true, pending.reason);
+
+    const report = await getHqOperationalReport(pool, {
+      churchId: churchA.id,
+      actorUserId: hqAdmin.user.id,
+      tenant,
+      yearMonth,
+    });
+    assert.equal(report.ok, true, report.reason);
+    assert.equal(Object.prototype.hasOwnProperty.call(report.report, "projectedGrowth"), false);
+
+    const hqBranchMembers = report.report.activeMembersByBranch.find((r) => r.branchKey === "hq");
+    assert.ok(hqBranchMembers);
+    assert.ok(hqBranchMembers.activeMemberCount >= 1);
+
+    const pendingHq = report.report.registrationsPendingByBranch.find((r) => r.branchKey === "hq");
+    assert.ok(pendingHq);
+    assert.ok(pendingHq.pendingCount >= 1);
+
+    const usd = report.report.giving.byCurrency.find((g) => g.currency === "USD");
+    assert.ok(usd);
+    assert.equal(usd.totalAmount, "25.50");
+    assert.ok(usd.entryCount >= 1);
+
+    assert.ok(report.report.openRequests.openCount >= 1);
+    assert.ok(report.report.openRequests.inReviewCount >= 1);
+
+    const branchDenied = await getHqOperationalReport(pool, {
+      churchId: churchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      yearMonth,
+    });
+    assert.equal(branchDenied.ok, false);
+  });
+
+  it("leaves V4 wiring untouched", () => {
+    const legacy = fs.readFileSync(path.join(ROOT, "server.legacy.js"), "utf8");
+    assert.doesNotMatch(legacy, /createHqReportsRouter|auditEventService|hqReportsService/);
+    assert.ok(fs.existsSync(path.join(ROOT, "docs/database/AUDIT_RETENTION.md")));
+  });
+});

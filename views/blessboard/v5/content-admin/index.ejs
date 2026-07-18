@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1>Website content</h1>
+  <p class="bb-ca-lede">Scope: <strong><%= scope.scopeLabel %></strong></p>
+  <% if (saved) { %>
+    <p class="bb-ca-ok" role="status">Changes saved.</p>
+  <% } %>
+  <% if (error) { %>
+    <p class="bb-ca-error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (shellKind === 'hq' && !scope.branchId && branches && branches.length) { %>
+  <section class="bb-ca-block">
+    <h2>Branch content</h2>
+    <p class="bb-ca-hint">Manage content scoped to a specific branch.</p>
+    <ul class="bb-ca-branch-list">
+      <% branches.forEach(function (branch) { %>
+      <li>
+        <a href="/hq/content/b/<%= branch.key %>"><%= branch.displayName %></a>
+        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% if (shellKind === 'hq' && scope.branchId) { %>
+  <p class="bb-ca-hint"><a href="/hq/content">← Church-wide content</a></p>
+  <% } %>
+
+  <section class="bb-ca-block">
+    <h2>Pages</h2>
+    <% if (!pages || !pages.length) { %>
+      <p class="bb-ca-empty">No pages yet. Refresh to provision empty draft pages.</p>
+    <% } else { %>
+    <ul class="bb-ca-page-list">
+      <% pages.forEach(function (page) { %>
+      <li>
+        <span class="bb-ca-page-title"><%= page.title %></span>
+        <span class="bb-ca-pill bb-ca-pill--<%= page.status %>"><%= page.status %></span>
+        <span class="bb-ca-links">
+          <a href="<%= scope.basePath %>/pages/<%= page.pageKey %>">Edit</a>
+          <a href="<%= scope.basePath %>/preview/<%= page.pageKey %>">Preview</a>
+        </span>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-ca-block">
+    <h2>Structured content</h2>
+    <ul class="bb-ca-entity-nav">
+      <li><a href="<%= scope.basePath %>/leadership">Leadership</a></li>
+      <li><a href="<%= scope.basePath %>/ministries">Ministries</a></li>
+      <li><a href="<%= scope.basePath %>/events">Events</a></li>
+      <li><a href="<%= scope.basePath %>/sermons">Sermons</a></li>
+      <li><a href="<%= scope.basePath %>/contact">Contact channels</a></li>
+      <li><a href="<%= scope.basePath %>/giving">Giving methods</a></li>
+    </ul>
+  </section>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

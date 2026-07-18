@@ -1,0 +1,16 @@
+[
+  {
+    "id": 900,
+    "organization_id": 1,
+    "branch_id": 11,
+    "actor_type": "hq_admin",
+    "actor_id": 100,
+    "action": "member.approved",
+    "metadata_json": {
+      "member_id": 300,
+      "password": "should-be-stripped",
+      "note": "ok"
+    },
+    "created_at": "2026-01-02T00:00:00.000Z"
+  }
+]

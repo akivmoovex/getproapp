@@ -26,3 +26,5 @@ tests/e2e/.foundation-e2e-state.json
 
 # Runtime church announcement uploads (not fixtures)
 data/uploads/church/announcements/
+# BlessBoard V5 local media (tests / local adapter)
+data/uploads/blessboard-v5-media/

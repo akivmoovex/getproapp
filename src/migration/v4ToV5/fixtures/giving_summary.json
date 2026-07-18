@@ -1,0 +1,14 @@
+[
+  {
+    "id": 500,
+    "organization_id": 1,
+    "branch_id": 11,
+    "period_year": 2026,
+    "period_month": 1,
+    "total_amount_cents": 125050,
+    "currency_code": "zmw",
+    "status": "finalized",
+    "notes": "January",
+    "updated_at": "2026-02-01T00:00:00.000Z"
+  }
+]

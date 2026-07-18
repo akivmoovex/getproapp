@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= pageTitle %> · BlessBoard</title>
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css" />
+</head>
+<body class="bb-hq-body" data-bb-shell="hq-admin" data-bb-viewport="responsive">
+  <header class="bb-hq-top" data-bb-nav="desktop-header">
+    <div>
+      <a class="bb-hq-wordmark" href="/hq">BlessBoard</a>
+      <div class="bb-hq-context">
+        <%= churchDisplayName %>
+        <span class="bb-hq-role"><%= roleLabel %></span>
+      </div>
+    </div>
+    <nav class="bb-hq-nav-desktop" aria-label="HQ desktop" data-bb-nav="desktop">
+      <a href="/hq" class="<%= activeNav === 'home' ? 'is-active' : '' %>">Home</a>
+      <a href="/hq/branches" class="<%= activeNav === 'branches' ? 'is-active' : '' %>">Branches</a>
+      <a href="/hq/settings" class="<%= activeNav === 'settings' ? 'is-active' : '' %>">Settings</a>
+      <a href="/hq/content" class="<%= activeNav === 'content' ? 'is-active' : '' %>">Content</a>
+      <a href="/hq/announcements" class="<%= activeNav === 'announcements' ? 'is-active' : '' %>">Announcements</a>
+      <a href="/hq/participation" class="<%= activeNav === 'participation' ? 'is-active' : '' %>">Participation</a>
+      <a href="/hq/attendance" class="<%= activeNav === 'attendance' ? 'is-active' : '' %>">Attendance</a>
+      <a href="/hq/giving" class="<%= activeNav === 'giving' ? 'is-active' : '' %>">Giving</a>
+      <a href="/hq/resources" class="<%= activeNav === 'resources' ? 'is-active' : '' %>">Resources</a>
+      <a href="/hq/forms" class="<%= activeNav === 'forms' ? 'is-active' : '' %>">Forms</a>
+      <a href="/hq/requests" class="<%= activeNav === 'requests' ? 'is-active' : '' %>">Requests</a>
+      <a href="/hq/reports" class="<%= activeNav === 'reports' ? 'is-active' : '' %>">Reports</a>
+      <a href="/hq/audit" class="<%= activeNav === 'audit' ? 'is-active' : '' %>">Audit</a>
+      <a href="/branch-admin">Branch admin</a>
+    </nav>
+    <button
+      type="button"
+      class="bb-hq-nav-toggle"
+      data-bb-nav="mobile-toggle"
+      aria-controls="bb-hq-mobile-nav"
+      aria-expanded="false"
+    >
+      Menu
+    </button>
+  </header>
+  <nav
+    id="bb-hq-mobile-nav"
+    class="bb-hq-nav-mobile"
+    aria-label="HQ mobile"
+    data-bb-nav="mobile"
+    hidden
+  >
+    <a href="/hq">Home</a>
+    <a href="/hq/branches">Branches</a>
+    <a href="/hq/settings">Settings</a>
+    <a href="/hq/content">Content</a>
+    <a href="/hq/announcements">Announcements</a>
+    <a href="/hq/participation">Participation</a>
+    <a href="/hq/attendance">Attendance</a>
+    <a href="/hq/giving">Giving</a>
+    <a href="/hq/resources">Resources</a>
+    <a href="/hq/forms">Forms</a>
+    <a href="/hq/requests">Requests</a>
+    <a href="/hq/reports">Reports</a>
+    <a href="/hq/audit">Audit</a>
+    <a href="/branch-admin">Branch admin</a>
+  </nav>
+  <main class="bb-hq-main">

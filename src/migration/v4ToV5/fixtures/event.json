@@ -1,0 +1,11 @@
+[
+  {
+    "id": 800,
+    "organization_id": 1,
+    "branch_id": 11,
+    "title": "Easter Service",
+    "status": "published",
+    "starts_at": "2026-04-05T09:00:00.000Z",
+    "registration_form_id": 99
+  }
+]

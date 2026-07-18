@@ -143,13 +143,13 @@ describe("blessboard v5 auth http", () => {
     return { getLogin, post, csrf };
   }
 
-  it("GET /login returns 200 on apex; unavailable on tenant host", async () => {
+  it("GET /login returns 200 on apex; transfer unavailable on tenant when routing off", async () => {
     requireDb();
     const apex = await request(app).get("/login").set("Host", "blessboard.org");
     assert.equal(apex.status, 200);
     assert.match(apex.text, /Sign in/);
     const tenant = await request(app).get("/login").set("Host", "auth-http.blessboard.org");
-    assert.equal(tenant.status, UNAVAILABLE_STATUS);
+    assert.equal(tenant.status, 400);
   });
 
   it("valid credentials create hashed session and HttpOnly cookie", async () => {

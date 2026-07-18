@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <p class="bb-ca-hint"><a href="<%= scope.basePath %>">← All content</a></p>
+  <h1>Edit page: <%= page.pageKey %></h1>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-ca-error" role="alert"><%= error %></p>
+  <% } %>
+  <% if (typeof saved !== 'undefined' && saved) { %>
+    <p class="bb-ca-ok" role="status">Page saved.</p>
+  <% } %>
+
+  <form method="post" action="<%= scope.basePath %>/pages/<%= page.pageKey %>" class="<%= formClass %> bb-ca-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="hidden" name="expected_updated_at" value="<%= page.updatedAt instanceof Date ? page.updatedAt.toISOString() : page.updatedAt %>" />
+
+    <label for="title">Title</label>
+    <input id="title" name="title" type="text" required maxlength="200" value="<%= submitted && submitted.title != null ? submitted.title : page.title %>" />
+
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <% ['draft','published','archived'].forEach(function (st) { %>
+      <option value="<%= st %>" <%= (submitted && submitted.status ? submitted.status : page.status) === st ? 'selected' : '' %>><%= st %></option>
+      <% }) %>
+    </select>
+
+    <label class="bb-ca-confirm">
+      <input type="checkbox" name="confirm_publish" value="1" />
+      I confirm this page should be published and visible on the public website.
+    </label>
+
+    <button type="submit">Save page</button>
+  </form>
+
+  <section class="bb-ca-block">
+    <h2>Sections</h2>
+    <% if (!sections || !sections.length) { %>
+      <p class="bb-ca-empty">No sections yet.</p>
+    <% } else { %>
+    <ul class="bb-ca-section-list">
+      <% sections.forEach(function (section) { %>
+      <li>
+        <strong><%= section.sectionKey %></strong>
+        <span class="bb-ca-pill bb-ca-pill--<%= section.status %>"><%= section.status %></span>
+        <% if (section.heading) { %> — <%= section.heading %><% } %>
+        <a href="<%= scope.basePath %>/pages/<%= page.pageKey %>/sections/<%= section.sectionKey %>">Edit</a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-ca-block">
+    <h2>Add section</h2>
+    <% if (typeof sectionFormError !== 'undefined' && sectionFormError) { %>
+      <p class="bb-ca-error" role="alert">Could not create section. Check the fields below.</p>
+    <% } %>
+    <form method="post" action="<%= scope.basePath %>/pages/<%= page.pageKey %>/sections" class="<%= formClass %> bb-ca-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+      <label for="section_key">Section key</label>
+      <input id="section_key" name="section_key" type="text" required maxlength="64" pattern="[a-z][a-z0-9_-]*" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.section_key ? sectionDraft.section_key : '' %>" />
+
+      <label for="section_type">Section type</label>
+      <input id="section_type" name="section_type" type="text" required maxlength="64" pattern="[a-z][a-z0-9_-]*" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.section_type ? sectionDraft.section_type : 'text' %>" />
+
+      <label for="heading">Heading</label>
+      <input id="heading" name="heading" type="text" maxlength="200" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.heading ? sectionDraft.heading : '' %>" />
+
+      <label for="body_text">Body text</label>
+      <textarea id="body_text" name="body_text" rows="4" maxlength="20000"><%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.body_text ? sectionDraft.body_text : '' %></textarea>
+
+      <label for="media_url">Media URL (HTTPS)</label>
+      <input id="media_url" name="media_url" type="url" maxlength="2000" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.media_url ? sectionDraft.media_url : '' %>" />
+
+      <label for="sort_order">Sort order</label>
+      <input id="sort_order" name="sort_order" type="number" value="<%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.sort_order != null ? sectionDraft.sort_order : '0' %>" />
+
+      <label for="section_status">Status</label>
+      <select id="section_status" name="status">
+        <% ['draft','published','archived'].forEach(function (st) { %>
+        <option value="<%= st %>" <%= typeof sectionDraft !== 'undefined' && sectionDraft && sectionDraft.status === st ? 'selected' : '' %>><%= st %></option>
+        <% }) %>
+      </select>
+
+      <label class="bb-ca-confirm">
+        <input type="checkbox" name="confirm_publish" value="1" />
+        I confirm this section should be published on the public website.
+      </label>
+
+      <button type="submit">Create section</button>
+    </form>
+  </section>
+
+  <p><a href="<%= scope.basePath %>/preview/<%= page.pageKey %>">Preview this page</a></p>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

@@ -1,0 +1,22 @@
+[
+  {
+    "id": 400,
+    "organization_id": 1,
+    "branch_id": 11,
+    "service_date": "2026-01-05",
+    "service_label": "Sunday Service",
+    "headcount": 120,
+    "status": "recorded",
+    "updated_at": "2026-01-05T12:00:00.000Z"
+  },
+  {
+    "id": 401,
+    "organization_id": 1,
+    "branch_id": 11,
+    "service_date": "2026-01-12",
+    "service_label": "Voided",
+    "headcount": 10,
+    "status": "void",
+    "updated_at": "2026-01-12T12:00:00.000Z"
+  }
+]

@@ -1,0 +1,21 @@
+[
+  {
+    "id": 100,
+    "organization_id": 1,
+    "organization_slug": "grace-chapel",
+    "username": "hq.admin",
+    "email": "hq@grace.example",
+    "password_hash": "$2a$10$abcdefghijklmnopqrstuv",
+    "display_name": "HQ Admin",
+    "status": "active"
+  },
+  {
+    "id": 101,
+    "organization_id": 1,
+    "organization_slug": "grace-chapel",
+    "username": "noemail",
+    "password_hash": "$2a$10$abcdefghijklmnopqrstuv",
+    "display_name": "No Email",
+    "status": "active"
+  }
+]

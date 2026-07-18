@@ -1,0 +1,46 @@
+<%- include('../partials/member-shell-start') %>
+  <h1>Welcome<%= displayName ? ', ' + displayName : '' %></h1>
+  <p class="bb-mp-lede">
+    Your member home for this church branch. More modules will appear here as they are enabled.
+  </p>
+  <section class="bb-mp-grid" aria-label="Member modules">
+    <% portalModules.forEach(function (mod) { %>
+      <% if (mod.key === 'announcements') { %>
+        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
+          <h2><%= mod.label %></h2>
+          <p><a href="/member/announcements">Open announcements</a></p>
+        </article>
+      <% } else if (mod.key === 'events') { %>
+        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
+          <h2><%= mod.label %></h2>
+          <p><a href="/member/events">Open events</a></p>
+        </article>
+      <% } else if (mod.key === 'ministries') { %>
+        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
+          <h2><%= mod.label %></h2>
+          <p><a href="/member/ministries">Open ministries</a></p>
+        </article>
+      <% } else if (mod.key === 'resources') { %>
+        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
+          <h2><%= mod.label %></h2>
+          <p><a href="/member/resources">Open resources</a></p>
+        </article>
+      <% } else if (mod.key === 'forms') { %>
+        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
+          <h2><%= mod.label %></h2>
+          <p><a href="/member/forms">Open forms</a></p>
+        </article>
+      <% } else if (mod.key === 'requests') { %>
+        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
+          <h2><%= mod.label %></h2>
+          <p><a href="/member/requests">Open requests</a></p>
+        </article>
+      <% } else { %>
+        <article class="bb-mp-card is-disabled" data-bb-module="<%= mod.key %>">
+          <h2><%= mod.label %></h2>
+          <p>Not enabled yet</p>
+        </article>
+      <% } %>
+    <% }) %>
+  </section>
+<%- include('../partials/member-shell-end') %>

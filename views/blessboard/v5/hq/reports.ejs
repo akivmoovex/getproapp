@@ -1,0 +1,73 @@
+<%- include('../partials/hq-shell-start') %>
+  <h1>HQ reports</h1>
+  <p>Read-only operational totals from live data. No projected or placeholder figures.</p>
+  <form method="get" action="/hq/reports">
+    <label>Month
+      <input type="month" name="month" value="<%= yearMonth %>" />
+    </label>
+    <button type="submit">Show</button>
+  </form>
+
+  <section>
+    <h2>Active members by branch</h2>
+    <ul data-bb-report="active-members">
+      <% report.activeMembersByBranch.forEach(function (row) { %>
+        <li data-bb-branch="<%= row.branchKey %>" data-bb-count="<%= row.activeMemberCount %>">
+          <%= row.displayName %>: <%= row.activeMemberCount %>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Registrations pending</h2>
+    <ul data-bb-report="registrations-pending">
+      <% report.registrationsPendingByBranch.forEach(function (row) { %>
+        <li data-bb-branch="<%= row.branchKey %>" data-bb-count="<%= row.pendingCount %>">
+          <%= row.displayName %>: <%= row.pendingCount %>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Announcements</h2>
+    <p data-bb-report="announcements-published">Published: <%= report.announcements.publishedCount %></p>
+    <p data-bb-report="announcements-readers">Unique readers: <%= report.announcements.uniqueReaders %></p>
+    <p data-bb-report="announcements-reads">Read receipts: <%= report.announcements.readReceiptCount %></p>
+  </section>
+
+  <section>
+    <h2>Events and registrations</h2>
+    <p data-bb-report="events-published">Published events: <%= report.events.publishedEventCount %></p>
+    <p data-bb-report="event-registrations">Registrations: <%= report.events.registrationCount %></p>
+  </section>
+
+  <section>
+    <h2>Attendance · <%= report.attendance.yearMonth %></h2>
+    <p data-bb-report="attendance-total">Total headcount: <%= report.attendance.totalCount %></p>
+    <p data-bb-report="attendance-events">Events counted: <%= report.attendance.eventCount %></p>
+  </section>
+
+  <section>
+    <h2>Giving · <%= report.giving.yearMonth %></h2>
+    <% if (!report.giving.byCurrency.length) { %>
+      <p data-bb-report="giving-empty">No submitted/approved giving this month.</p>
+    <% } else { %>
+      <ul data-bb-report="giving-totals">
+        <% report.giving.byCurrency.forEach(function (row) { %>
+          <li data-bb-currency="<%= row.currency %>" data-bb-total="<%= row.totalAmount %>">
+            <%= row.currency %>: <%= row.totalAmount %> (<%= row.entryCount %> entries)
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section>
+    <h2>Open requests</h2>
+    <p data-bb-report="requests-open">Open: <%= report.openRequests.openCount %></p>
+    <p data-bb-report="requests-submitted">Submitted: <%= report.openRequests.submittedCount %></p>
+    <p data-bb-report="requests-in-review">In review: <%= report.openRequests.inReviewCount %></p>
+  </section>
+<%- include('../partials/hq-shell-end') %>

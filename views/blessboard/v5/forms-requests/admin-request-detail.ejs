@@ -1,0 +1,33 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <p><a href="<%= basePath %>">Back</a></p>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <h1><%= request.subject %></h1>
+  <p><%= request.category %> · <%= request.status %></p>
+  <p><%= request.message %></p>
+  <h2>Status history</h2>
+  <ul>
+    <% (request.history || []).forEach(function (h) { %>
+      <li><%= h.fromStatus || '—' %> → <%= h.toStatus %><% if (h.note) { %> — <%= h.note %><% } %></li>
+    <% }) %>
+  </ul>
+  <form method="post" action="<%= basePath %>/<%= request.id %>/status">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>New status
+      <select name="status">
+        <% requestStatuses.forEach(function (s) { %>
+          <option value="<%= s %>" <%= request.status === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Note <input type="text" name="note" maxlength="1000" /></label>
+    <button type="submit">Update status</button>
+  </form>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

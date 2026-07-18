@@ -1,0 +1,18 @@
+<%- include('../partials/member-shell-start') %>
+  <h1>Ministries</h1>
+  <% if (saved) { %><p class="bb-mp-saved" role="status">Updated.</p><% } %>
+  <% if (!items || !items.length) { %>
+    <p>No ministries are available right now.</p>
+  <% } else { %>
+    <ul class="bb-mp-part-list">
+      <% items.forEach(function (item) { %>
+        <li>
+          <a href="/member/ministries/<%= item.id %>"><%= item.name %></a>
+          <% if (item.membership) { %>
+            <span data-bb-status="<%= item.membership.status %>"><%= item.membership.status %></span>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+<%- include('../partials/member-shell-end') %>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registration received · <%= publicName %></title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css" />
+</head>
+<body class="bb-tp-body" data-bb-shell="tenant-public" data-bb-page="register-submitted">
+  <div class="bb-tp-shell">
+    <header class="bb-tp-top">
+      <div>
+        <a class="bb-tp-brand" href="/"><%= publicName %></a>
+        <% if (branchName) { %>
+        <div class="bb-tp-branch"><%= branchName %></div>
+        <% } %>
+      </div>
+    </header>
+
+    <nav class="bb-tp-nav" aria-label="Church pages">
+      <% navItems.forEach(function (item) { %>
+      <a href="<%= item.href %>"><%= item.label %></a>
+      <% }) %>
+      <a href="/register">Register</a>
+    </nav>
+
+    <main class="bb-tp-main">
+      <h1>Registration received</h1>
+      <p>Thank you. Your application has been submitted for review. We will follow up if more information is needed.</p>
+      <p><a href="/">Return to homepage</a></p>
+    </main>
+  </div>
+</body>
+</html>

@@ -21,11 +21,49 @@ const STATUS = Object.freeze({
 const GENERIC_FAILURE = "invalid_credentials";
 
 /**
+ * @param {Array<{ role_key: string, organization_id: string, church_id: string | null, branch_id: string | null }>} roles
+ * @param {string | null} requireOrganizationId
+ */
+function rolesApplicableToOrganization(roles, requireOrganizationId) {
+  if (!requireOrganizationId) return roles;
+  const orgId = String(requireOrganizationId);
+  return (roles || []).filter((r) => {
+    if (String(r.role_key) === "platform_admin") return true;
+    return String(r.organization_id || "") === orgId;
+  });
+}
+
+/**
+ * Prefer HQ / branch / platform roles scoped to the required organization when present.
+ * @param {Array<{ role_key: string, organization_id: string, church_id: string | null, branch_id: string | null }>} roles
+ * @param {string | null} requireOrganizationId
+ */
+function preferSessionRole(roles, requireOrganizationId) {
+  const list = rolesApplicableToOrganization(roles, requireOrganizationId);
+  if (!list.length) return null;
+  if (requireOrganizationId) {
+    const orgId = String(requireOrganizationId);
+    const scoped =
+      list.find((r) => r.role_key === "church_hq_admin" && String(r.organization_id) === orgId) ||
+      list.find((r) => r.role_key === "branch_admin" && String(r.organization_id) === orgId) ||
+      list.find((r) => r.role_key === "platform_admin") ||
+      list[0];
+    return scoped;
+  }
+  return (
+    list.find((r) => r.role_key === "church_hq_admin") ||
+    list.find((r) => r.role_key === "branch_admin") ||
+    list[0]
+  );
+}
+
+/**
  * @param {{ connect?: Function, query?: Function }} db
  * @param {{
  *   email: string,
  *   password: string,
  *   deploymentCode: string,
+ *   requireOrganizationId?: string | null,
  *   ip?: string | null,
  *   userAgent?: string | null
  * }} input
@@ -36,6 +74,10 @@ async function authenticateBlessBoardUser(db, input) {
   const deploymentCode = String((input && input.deploymentCode) || "")
     .trim()
     .toLowerCase();
+  const requireOrganizationId =
+    input && input.requireOrganizationId != null && String(input.requireOrganizationId).trim() !== ""
+      ? String(input.requireOrganizationId).trim()
+      : null;
 
   if (!email || !password || !deploymentCode) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input", session: null, user: null };
@@ -97,7 +139,8 @@ async function authenticateBlessBoardUser(db, input) {
     }
 
     const roles = await repo.listActiveRolesForUser(client, user.id);
-    if (!roles.length) {
+    const applicable = rolesApplicableToOrganization(roles, requireOrganizationId);
+    if (!applicable.length) {
       await client.query("ROLLBACK");
       return {
         ok: false,
@@ -108,11 +151,17 @@ async function authenticateBlessBoardUser(db, input) {
       };
     }
 
-    // Prefer church_hq_admin / branch_admin scope for session org/church/branch; else first role.
-    const preferred =
-      roles.find((r) => r.role_key === "church_hq_admin") ||
-      roles.find((r) => r.role_key === "branch_admin") ||
-      roles[0];
+    const preferred = preferSessionRole(roles, requireOrganizationId);
+    if (!preferred) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        status: STATUS.NO_ACTIVE_ROLE,
+        message: "no_active_role",
+        session: null,
+        user: null,
+      };
+    }
 
     const created = await createV5Session(client, {
       deploymentCode,
@@ -149,7 +198,7 @@ async function authenticateBlessBoardUser(db, input) {
         displayName: user.display_name,
         status: user.status,
       },
-      roles: roles.map((r) => ({
+      roles: applicable.map((r) => ({
         roleKey: r.role_key,
         organizationId: r.organization_id,
         churchId: r.church_id,
@@ -177,4 +226,6 @@ async function authenticateBlessBoardUser(db, input) {
 module.exports = {
   STATUS,
   authenticateBlessBoardUser,
+  rolesApplicableToOrganization,
+  preferSessionRole,
 };

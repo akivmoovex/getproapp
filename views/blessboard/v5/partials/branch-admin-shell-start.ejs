@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= pageTitle %> · BlessBoard</title>
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css" />
+</head>
+<body class="bb-ba-body" data-bb-shell="branch-admin" data-bb-viewport="responsive">
+  <a class="bb-ba-skip" href="#bb-ba-main">Skip to content</a>
+  <header class="bb-ba-top" data-bb-nav="desktop-header">
+    <div class="bb-ba-brand">
+      <a class="bb-ba-wordmark" href="/branch-admin">BlessBoard</a>
+      <div class="bb-ba-context">
+        <%= churchDisplayName %> · <%= branchDisplayName %>
+        <span class="bb-ba-role"><%= roleLabel %></span>
+      </div>
+    </div>
+    <nav class="bb-ba-nav-desktop" aria-label="Branch admin desktop" data-bb-nav="desktop">
+      <a href="/branch-admin" class="<%= activeNav === 'home' ? 'is-active' : '' %>">Home</a>
+      <a href="/branch-admin/registrations" class="<%= activeNav === 'registrations' ? 'is-active' : '' %>">Registrations</a>
+      <a href="/branch-admin/announcements" class="<%= activeNav === 'announcements' ? 'is-active' : '' %>">Announcements</a>
+      <a href="/branch-admin/participation" class="<%= activeNav === 'participation' ? 'is-active' : '' %>">Participation</a>
+      <a href="/branch-admin/attendance" class="<%= activeNav === 'attendance' ? 'is-active' : '' %>">Attendance</a>
+      <a href="/branch-admin/giving" class="<%= activeNav === 'giving' ? 'is-active' : '' %>">Giving</a>
+      <a href="/branch-admin/resources" class="<%= activeNav === 'resources' ? 'is-active' : '' %>">Resources</a>
+      <a href="/branch-admin/forms" class="<%= activeNav === 'forms' ? 'is-active' : '' %>">Forms</a>
+      <a href="/branch-admin/requests" class="<%= activeNav === 'requests' ? 'is-active' : '' %>">Requests</a>
+      <a href="/branch-admin/settings" class="<%= activeNav === 'settings' ? 'is-active' : '' %>">Settings</a>
+      <a href="/branch-admin/content" class="<%= activeNav === 'content' ? 'is-active' : '' %>">Content</a>
+      <a href="/branch-admin/account" class="<%= activeNav === 'account' ? 'is-active' : '' %>">Account</a>
+      <form method="post" action="/branch-admin/logout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Logout</button>
+      </form>
+    </nav>
+    <button
+      type="button"
+      class="bb-ba-nav-toggle"
+      data-bb-nav="mobile-toggle"
+      aria-controls="bb-ba-mobile-nav"
+      aria-expanded="false"
+    >
+      Menu
+    </button>
+  </header>
+  <nav
+    id="bb-ba-mobile-nav"
+    class="bb-ba-nav-mobile"
+    aria-label="Branch admin mobile"
+    data-bb-nav="mobile"
+    hidden
+  >
+    <a href="/branch-admin">Home</a>
+    <a href="/branch-admin/registrations">Registrations</a>
+    <a href="/branch-admin/announcements">Announcements</a>
+    <a href="/branch-admin/participation">Participation</a>
+    <a href="/branch-admin/attendance">Attendance</a>
+    <a href="/branch-admin/giving">Giving</a>
+    <a href="/branch-admin/resources">Resources</a>
+    <a href="/branch-admin/forms">Forms</a>
+    <a href="/branch-admin/requests">Requests</a>
+    <a href="/branch-admin/settings">Settings</a>
+    <a href="/branch-admin/content">Content</a>
+    <a href="/branch-admin/account">Account</a>
+    <form method="post" action="/branch-admin/logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit">Logout</button>
+    </form>
+  </nav>
+  <main id="bb-ba-main" class="bb-ba-main">

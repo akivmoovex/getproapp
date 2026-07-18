@@ -1,0 +1,73 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1>Participation</h1>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+
+  <section>
+    <h2>Ministries</h2>
+    <% if (!ministries || !ministries.length) { %>
+      <p>No published ministries in this scope.</p>
+    <% } else { %>
+      <% ministries.forEach(function (block) { %>
+        <article>
+          <h3><%= block.ministry.name %></h3>
+          <p><%= block.activeCount %> active · <%= block.pendingCount %> pending</p>
+          <% if (block.memberships && block.memberships.length) { %>
+            <ul>
+              <% block.memberships.forEach(function (m) { %>
+                <li>
+                  <%= m.member ? m.member.displayName : 'Member' %>
+                  <% if (m.member && m.member.emailDisplay) { %> · <%= m.member.emailDisplay %><% } %>
+                  · <%= m.status %>
+                  <% if (m.status === 'pending') { %>
+                    <form method="post" action="<%= basePath %>/ministries/memberships/<%= m.id %>/review" style="display:inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                      <button type="submit" name="decision" value="approve">Approve</button>
+                      <button type="submit" name="decision" value="reject">Reject</button>
+                    </form>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </article>
+      <% }) %>
+    <% } %>
+  </section>
+
+  <section>
+    <h2>Events</h2>
+    <% if (!events || !events.length) { %>
+      <p>No published events in this scope.</p>
+    <% } else { %>
+      <% events.forEach(function (block) { %>
+        <article>
+          <h3><%= block.event.title %></h3>
+          <p>
+            <%= block.registeredCount %> registered
+            <% if (block.event.capacity != null) { %>
+              / <%= block.event.capacity %> capacity
+            <% } %>
+          </p>
+          <% if (block.registrations && block.registrations.length) { %>
+            <ul>
+              <% block.registrations.forEach(function (r) { %>
+                <li>
+                  <%= r.member ? r.member.displayName : 'Member' %>
+                  <% if (r.member && r.member.emailDisplay) { %> · <%= r.member.emailDisplay %><% } %>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </article>
+      <% }) %>
+    <% } %>
+  </section>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

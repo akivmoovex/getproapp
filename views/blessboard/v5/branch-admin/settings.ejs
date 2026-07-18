@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<%- include('../partials/branch-admin-shell-start') %>
+  <h1>Branch settings</h1>
+  <p class="bb-ba-lede">Contact and location for this branch. Church-wide settings are managed in HQ.</p>
+  <% if (error) { %>
+    <p class="bb-ba-error" role="alert"><%= error %></p>
+  <% } %>
+  <% if (saved) { %>
+    <p class="bb-ba-ok" role="status">Settings saved.</p>
+  <% } %>
+  <form method="post" action="/branch-admin/settings" class="bb-ba-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label for="publicName">Public name</label>
+    <input id="publicName" name="publicName" type="text" required maxlength="200" value="<%= settings.publicName %>" />
+
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" maxlength="254" value="<%= settings.email || '' %>" />
+
+    <label for="phone">Phone</label>
+    <input id="phone" name="phone" type="tel" maxlength="32" value="<%= settings.phone || '' %>" placeholder="+260…" />
+
+    <label for="timezone">Timezone</label>
+    <input id="timezone" name="timezone" type="text" maxlength="64" value="<%= settings.timezone || '' %>" />
+
+    <label for="countryCode">Country</label>
+    <input id="countryCode" name="countryCode" type="text" maxlength="2" value="<%= settings.countryCode || '' %>" />
+
+    <label for="addressLine1">Address line 1</label>
+    <input id="addressLine1" name="addressLine1" type="text" maxlength="200" value="<%= settings.addressLine1 || '' %>" />
+
+    <label for="addressLine2">Address line 2</label>
+    <input id="addressLine2" name="addressLine2" type="text" maxlength="200" value="<%= settings.addressLine2 || '' %>" />
+
+    <label for="city">City</label>
+    <input id="city" name="city" type="text" maxlength="120" value="<%= settings.city || '' %>" />
+
+    <label for="provinceState">Province / state</label>
+    <input id="provinceState" name="provinceState" type="text" maxlength="120" value="<%= settings.provinceState || '' %>" />
+
+    <label for="postalCode">Postal code</label>
+    <input id="postalCode" name="postalCode" type="text" maxlength="32" value="<%= settings.postalCode || '' %>" />
+
+    <label for="latitude">Latitude</label>
+    <input id="latitude" name="latitude" type="text" inputmode="decimal" value="<%= settings.latitude != null ? settings.latitude : '' %>" />
+
+    <label for="longitude">Longitude</label>
+    <input id="longitude" name="longitude" type="text" inputmode="decimal" value="<%= settings.longitude != null ? settings.longitude : '' %>" />
+
+    <button type="submit">Save branch settings</button>
+  </form>
+<%- include('../partials/branch-admin-shell-end') %>

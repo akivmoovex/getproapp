@@ -1,0 +1,74 @@
+<%- include('../partials/platform-admin-shell-start') %>
+  <h1>Organizations</h1>
+  <p class="bb-pa-lede">Provisioned platform organizations with BlessBoard catalogue summary.</p>
+
+  <form class="bb-pa-search" method="get" action="/admin/organizations" role="search">
+    <label class="bb-pa-visually-hidden" for="q">Organization key prefix</label>
+    <input
+      id="q"
+      name="q"
+      type="search"
+      value="<%= keyPrefix || '' %>"
+      placeholder="Filter by organization key prefix"
+      maxlength="64"
+      autocomplete="off"
+    />
+    <input type="hidden" name="limit" value="<%= limit %>" />
+    <button type="submit">Search</button>
+  </form>
+
+  <% if (!organizations || !organizations.length) { %>
+    <p class="bb-pa-empty" data-bb-empty="organizations">No organizations match this directory page.</p>
+  <% } else { %>
+    <div class="bb-pa-table-wrap">
+      <table class="bb-pa-table" data-bb-table="organizations">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Name</th>
+            <th>Environment</th>
+            <th>Org status</th>
+            <th>Enrolment</th>
+            <th>Hostname</th>
+            <th>Church</th>
+            <th>Active branches</th>
+            <th>Deployment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% organizations.forEach(function (org) { %>
+            <tr>
+              <td>
+                <a href="/admin/organizations/<%= org.organizationKey %>"><%= org.organizationKey %></a>
+              </td>
+              <td><%= org.displayName %></td>
+              <td><%= org.dataEnvironment %></td>
+              <td><%= org.organizationStatus %></td>
+              <td><%= org.enrolmentStatus || "—" %></td>
+              <td><%= org.canonicalHostname || "—" %></td>
+              <td>
+                <% if (org.churchKey) { %>
+                  <%= org.churchKey %> (<%= org.churchStatus || "—" %>)
+                <% } else { %>
+                  —
+                <% } %>
+              </td>
+              <td><%= org.activeBranchCount %></td>
+              <td><%= org.deploymentCode || "—" %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+  <nav class="bb-pa-pager" aria-label="Pagination" data-bb-pager="organizations">
+    <span>Page <%= page %> of <%= totalPages || 1 %> · <%= total %> total · limit <%= limit %></span>
+    <% if (page > 1) { %>
+      <a href="/admin/organizations?page=<%= page - 1 %>&limit=<%= limit %><%= keyPrefix ? ('&q=' + encodeURIComponent(keyPrefix)) : '' %>">Previous</a>
+    <% } %>
+    <% if (totalPages && page < totalPages) { %>
+      <a href="/admin/organizations?page=<%= page + 1 %>&limit=<%= limit %><%= keyPrefix ? ('&q=' + encodeURIComponent(keyPrefix)) : '' %>">Next</a>
+    <% } %>
+  </nav>
+<%- include('../partials/platform-admin-shell-end') %>

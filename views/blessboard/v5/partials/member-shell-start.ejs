@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= pageTitle %> · BlessBoard</title>
+  <link rel="stylesheet" href="/blessboard/v5/member-portal.css" />
+</head>
+<body class="bb-mp-body" data-bb-shell="member" data-bb-viewport="responsive">
+  <a class="bb-mp-skip" href="#bb-mp-main">Skip to content</a>
+  <header class="bb-mp-top" data-bb-nav="desktop-header">
+    <div class="bb-mp-brand">
+      <a class="bb-mp-wordmark" href="/member">BlessBoard</a>
+      <div class="bb-mp-context">
+        <%= churchDisplayName %> · <%= branchDisplayName %>
+        <span class="bb-mp-role">Member</span>
+      </div>
+    </div>
+    <nav class="bb-mp-nav-desktop" aria-label="Member portal desktop" data-bb-nav="desktop">
+      <a href="/member" class="<%= activeNav === 'home' ? 'is-active' : '' %>">Home</a>
+      <a href="/member/announcements" class="<%= activeNav === 'announcements' ? 'is-active' : '' %>">Announcements</a>
+      <a href="/member/events" class="<%= activeNav === 'events' ? 'is-active' : '' %>">Events</a>
+      <a href="/member/ministries" class="<%= activeNav === 'ministries' ? 'is-active' : '' %>">Ministries</a>
+      <a href="/member/resources" class="<%= activeNav === 'resources' ? 'is-active' : '' %>">Resources</a>
+      <a href="/member/forms" class="<%= activeNav === 'forms' ? 'is-active' : '' %>">Forms</a>
+      <a href="/member/requests" class="<%= activeNav === 'requests' ? 'is-active' : '' %>">Requests</a>
+      <a href="/member/profile" class="<%= activeNav === 'profile' ? 'is-active' : '' %>">Profile</a>
+      <form method="post" action="/member/logout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Logout</button>
+      </form>
+    </nav>
+    <button
+      type="button"
+      class="bb-mp-nav-toggle"
+      data-bb-nav="mobile-toggle"
+      aria-controls="bb-mp-mobile-nav"
+      aria-expanded="false"
+    >
+      Menu
+    </button>
+  </header>
+  <nav
+    id="bb-mp-mobile-nav"
+    class="bb-mp-nav-mobile"
+    aria-label="Member portal mobile"
+    data-bb-nav="mobile"
+    hidden
+  >
+    <a href="/member">Home</a>
+    <a href="/member/announcements">Announcements</a>
+    <a href="/member/events">Events</a>
+    <a href="/member/ministries">Ministries</a>
+    <a href="/member/resources">Resources</a>
+    <a href="/member/forms">Forms</a>
+    <a href="/member/requests">Requests</a>
+    <a href="/member/profile">Profile</a>
+    <form method="post" action="/member/logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit">Logout</button>
+    </form>
+  </nav>
+  <main id="bb-mp-main" class="bb-mp-main">

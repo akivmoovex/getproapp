@@ -1,0 +1,16 @@
+<%- include('../partials/member-shell-start') %>
+  <p><a href="/member/requests">Back</a></p>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <h1><%= request.subject %></h1>
+  <p><%= request.category %> · <%= request.status %></p>
+  <p><%= request.message %></p>
+  <% if (request.mediaAssetId) { %>
+    <p><a href="/member/requests/<%= request.id %>/file">Open attachment</a></p>
+  <% } %>
+  <h2>Status history</h2>
+  <ul>
+    <% (request.history || []).forEach(function (h) { %>
+      <li><%= h.fromStatus || '—' %> → <%= h.toStatus %><% if (h.note) { %> — <%= h.note %><% } %></li>
+    <% }) %>
+  </ul>
+<%- include('../partials/member-shell-end') %>

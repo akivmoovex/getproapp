@@ -1,0 +1,76 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <p><a href="<%= basePath %>">Back to attendance</a></p>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
+
+  <article data-bb-status="<%= event.status %>">
+    <h1><%= event.title %></h1>
+    <p>
+      <%= event.eventType %> · <%= event.eventDate %> · <%= event.status %>
+      · total <%= event.totalCount %>
+    </p>
+
+    <h2>Category counts</h2>
+    <% if (event.entries && event.entries.length) { %>
+      <ul>
+        <% event.entries.forEach(function (en) { %>
+          <li><%= en.category %>: <%= en.count %><% if (en.notes) { %> — <%= en.notes %><% } %></li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p>No entries yet.</p>
+    <% } %>
+
+    <% if (canEditEntries && event.status !== 'archived') { %>
+      <form method="post" action="<%= basePath %>/<%= event.id %>/entries">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>Category
+          <select name="category" required>
+            <% categories.forEach(function (c) { %>
+              <option value="<%= c %>"><%= c %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Count
+          <input type="number" name="count" min="0" step="1" required value="0" />
+        </label>
+        <label>Notes
+          <input type="text" name="notes" maxlength="1000" />
+        </label>
+        <button type="submit">Save entry</button>
+      </form>
+      <p class="bb-att-policy">
+        Submitted events: saving an entry returns the event to draft (resubmit required).
+      </p>
+    <% } %>
+
+    <% if (event.status === 'draft') { %>
+      <form method="post" action="<%= basePath %>/<%= event.id %>/submit">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Submit</button>
+      </form>
+    <% } %>
+
+    <% if (isHq && event.status === 'submitted') { %>
+      <form method="post" action="<%= basePath %>/<%= event.id %>/approve">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Approve</button>
+      </form>
+    <% } %>
+
+    <% if (isHq && (event.status === 'submitted' || event.status === 'approved')) { %>
+      <form method="post" action="<%= basePath %>/<%= event.id %>/archive">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Archive</button>
+      </form>
+    <% } %>
+  </article>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

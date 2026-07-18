@@ -1,0 +1,20 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1>Member requests</h1>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <ul>
+    <% requests.forEach(function (r) { %>
+      <li data-bb-status="<%= r.status %>">
+        <a href="<%= basePath %>/<%= r.id %>"><%= r.subject %></a>
+        · <%= r.category %> · <%= r.status %>
+      </li>
+    <% }) %>
+  </ul>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

@@ -1,0 +1,24 @@
+<%- include('../partials/member-shell-start') %>
+  <p><a href="/member/ministries">Back to ministries</a></p>
+  <% if (saved) { %><p class="bb-mp-saved" role="status">Saved.</p><% } %>
+  <article class="bb-mp-part-detail">
+    <h1><%= item.name %></h1>
+    <% if (item.summary) { %><p><%= item.summary %></p><% } %>
+    <% if (item.description) { %><div><%= item.description %></div><% } %>
+    <% if (item.membership) { %>
+      <p data-bb-status="<%= item.membership.status %>">Status: <%= item.membership.status %></p>
+      <form method="post" action="/member/ministries/<%= item.id %>/leave">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit"><%= item.membership.status === 'pending' ? 'Cancel request' : 'Leave ministry' %></button>
+      </form>
+    <% } else { %>
+      <form method="post" action="/member/ministries/<%= item.id %>/join">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>Message (optional)
+          <textarea name="message" rows="3" maxlength="1000"></textarea>
+        </label>
+        <button type="submit"><%= item.joinPolicy === 'open' ? 'Join' : 'Request to join' %></button>
+      </form>
+    <% } %>
+  </article>
+<%- include('../partials/member-shell-end') %>

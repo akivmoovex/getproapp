@@ -266,6 +266,25 @@ async function provisionPlatformTenant(db, input) {
       }
     }
 
+    // Default Free plan subscription (no billing). Never deletes existing resources on later plan changes.
+    if (req.productKey === "blessboard") {
+      const entitlementRepo = require("../repositories/entitlementRepository");
+      const existingSub = await entitlementRepo.findCurrentSubscription(
+        client,
+        organization.id,
+        "blessboard",
+        new Date().toISOString()
+      );
+      if (!existingSub) {
+        const { assignOrganizationPlan } = require("./entitlementService");
+        await assignOrganizationPlan(client, {
+          organizationId: organization.id,
+          productKey: "blessboard",
+          planKey: "free",
+        });
+      }
+    }
+
     const byTenantKey = await repo.findEnrolmentByProductTenantKey(
       client,
       product.id,
@@ -317,6 +336,18 @@ async function provisionPlatformTenant(db, input) {
         return fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict");
       }
     } else {
+      if (req.domainType === "custom" && req.productKey === "blessboard") {
+        const { assertFeature } = require("./entitlementService");
+        const domainGate = await assertFeature(client, {
+          organizationId: organization.id,
+          productKey: "blessboard",
+          featureKey: "custom_domain",
+        });
+        if (!domainGate.ok) {
+          await client.query("ROLLBACK");
+          return fail(STATUS.INVALID_INPUT, "custom_domain_not_entitled");
+        }
+      }
       try {
         domain = await repo.insertDomain(client, {
           organizationId: organization.id,

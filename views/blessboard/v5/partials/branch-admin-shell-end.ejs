@@ -1,0 +1,15 @@
+</main>
+  <script>
+    (function () {
+      var toggle = document.querySelector('[data-bb-nav="mobile-toggle"]');
+      var panel = document.getElementById("bb-ba-mobile-nav");
+      if (!toggle || !panel) return;
+      toggle.addEventListener("click", function () {
+        var open = panel.classList.toggle("is-open");
+        panel.hidden = !open;
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    })();
+  </script>
+</body>
+</html>

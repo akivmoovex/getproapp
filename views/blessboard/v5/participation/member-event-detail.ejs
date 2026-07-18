@@ -1,0 +1,27 @@
+<%- include('../partials/member-shell-start') %>
+  <p><a href="/member/events">Back to events</a></p>
+  <% if (saved) { %><p class="bb-mp-saved" role="status">Saved.</p><% } %>
+  <article class="bb-mp-part-detail">
+    <h1><%= item.title %></h1>
+    <% if (item.summary) { %><p><%= item.summary %></p><% } %>
+    <% if (item.location) { %><p>Location: <%= item.location %></p><% } %>
+    <% if (item.capacity != null) { %>
+      <p data-bb-capacity="<%= item.spotsRemaining %>">
+        <%= item.registeredCount %> registered / <%= item.capacity %> capacity
+        (<%= item.spotsRemaining %> remaining)
+      </p>
+    <% } %>
+    <% if (item.registration) { %>
+      <p>You are registered.</p>
+      <form method="post" action="/member/events/<%= item.id %>/cancel">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Cancel registration</button>
+      </form>
+    <% } else { %>
+      <form method="post" action="/member/events/<%= item.id %>/register">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" <%= item.spotsRemaining === 0 ? 'disabled' : '' %>>Register</button>
+      </form>
+    <% } %>
+  </article>
+<%- include('../partials/member-shell-end') %>

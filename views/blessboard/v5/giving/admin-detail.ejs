@@ -1,0 +1,79 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <p><a href="<%= basePath %>">Back to giving</a></p>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
+
+  <article data-bb-status="<%= entry.status %>">
+    <h1><%= entry.categoryLabel || entry.categoryKey %></h1>
+    <p>
+      <%= entry.givingDate %> · <%= entry.amount %> <%= entry.currency %> · <%= entry.status %>
+    </p>
+    <% if (entry.reference) { %><p>Reference: <%= entry.reference %></p><% } %>
+    <% if (entry.notes) { %><p>Notes: <%= entry.notes %></p><% } %>
+    <% if (entry.status === 'void' && entry.voidReason) { %>
+      <p>Void reason: <%= entry.voidReason %></p>
+    <% } %>
+
+    <% if (canEdit) { %>
+      <h2>Edit draft</h2>
+      <form method="post" action="<%= basePath %>/<%= entry.id %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>Category
+          <select name="category_key" required>
+            <% categories.forEach(function (c) { %>
+              <option value="<%= c.categoryKey %>" <%= entry.categoryKey === c.categoryKey ? 'selected' : '' %>><%= c.label %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Giving date
+          <input type="date" name="giving_date" required value="<%= entry.givingDate %>" />
+        </label>
+        <label>Amount
+          <input type="text" name="amount" inputmode="decimal" pattern="^(0|[1-9]\d*)(\.\d{1,2})?$" required value="<%= entry.amount %>" />
+        </label>
+        <label>Currency (ISO)
+          <input type="text" name="currency" maxlength="3" pattern="[A-Za-z]{3}" required value="<%= entry.currency %>" />
+        </label>
+        <label>Reference
+          <input type="text" name="reference" maxlength="120" value="<%= entry.reference || '' %>" />
+        </label>
+        <label>Notes
+          <input type="text" name="notes" maxlength="1000" value="<%= entry.notes || '' %>" />
+        </label>
+        <button type="submit">Save draft</button>
+      </form>
+    <% } %>
+
+    <% if (entry.status === 'draft') { %>
+      <form method="post" action="<%= basePath %>/<%= entry.id %>/submit">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Submit</button>
+      </form>
+    <% } %>
+
+    <% if (isHq && entry.status === 'submitted') { %>
+      <form method="post" action="<%= basePath %>/<%= entry.id %>/approve">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Approve</button>
+      </form>
+    <% } %>
+
+    <% if (canVoid) { %>
+      <form method="post" action="<%= basePath %>/<%= entry.id %>/void">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>Void reason
+          <input type="text" name="void_reason" maxlength="500" required />
+        </label>
+        <button type="submit">Void (do not delete)</button>
+      </form>
+    <% } %>
+  </article>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

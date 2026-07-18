@@ -1,0 +1,20 @@
+<%- include('../partials/member-shell-start') %>
+  <h1>Forms</h1>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <h2>Available</h2>
+  <% if (!forms.length) { %><p>No forms yet.</p><% } else { %>
+    <ul>
+      <% forms.forEach(function (f) { %>
+        <li><a href="/member/forms/<%= f.id %>"><%= f.title %></a></li>
+      <% }) %>
+    </ul>
+  <% } %>
+  <h2>Your submissions</h2>
+  <% if (!submissions.length) { %><p>No submissions yet.</p><% } else { %>
+    <ul>
+      <% submissions.forEach(function (s) { %>
+        <li><a href="/member/forms/submissions/<%= s.id %>"><%= s.formTitle || 'Submission' %></a></li>
+      <% }) %>
+    </ul>
+  <% } %>
+<%- include('../partials/member-shell-end') %>

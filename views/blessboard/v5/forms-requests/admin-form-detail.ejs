@@ -1,0 +1,28 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <p><a href="<%= basePath %>">Back</a></p>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <h1><%= form.title %></h1>
+  <p><%= form.status %></p>
+  <% if (form.status === 'draft') { %>
+    <form method="post" action="<%= basePath %>/<%= form.id %>/publish">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit">Publish</button>
+    </form>
+  <% } %>
+  <h2>Submissions</h2>
+  <% if (!submissions.length) { %><p>No submissions yet.</p><% } else { %>
+    <ul>
+      <% submissions.forEach(function (s) { %>
+        <li data-bb-submission="<%= s.id %>"><%= s.submittedAt %> · <%= s.status %></li>
+      <% }) %>
+    </ul>
+  <% } %>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

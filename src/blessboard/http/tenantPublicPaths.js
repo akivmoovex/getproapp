@@ -1,0 +1,96 @@
+"use strict";
+
+/**
+ * V5 tenant public page path ↔ page_key mapping.
+ */
+
+const { PUBLIC_PAGE_KEYS, PAGE_KEY_TITLES } = require("../services/publicContentConstants");
+
+const PATH_TO_PAGE_KEY = Object.freeze({
+  "/": "home",
+  "/about": "about",
+  "/leadership": "leadership",
+  "/ministries": "ministries",
+  "/events": "events",
+  "/sermons": "sermons",
+  "/contact": "contact",
+  "/giving": "giving",
+});
+
+const PAGE_KEY_TO_PATH = Object.freeze({
+  home: "/",
+  about: "/about",
+  leadership: "/leadership",
+  ministries: "/ministries",
+  events: "/events",
+  sermons: "/sermons",
+  contact: "/contact",
+  giving: "/giving",
+});
+
+const NAV_ITEMS = Object.freeze(
+  PUBLIC_PAGE_KEYS.map((key) =>
+    Object.freeze({
+      key,
+      href: PAGE_KEY_TO_PATH[key],
+      label: PAGE_KEY_TITLES[key],
+    })
+  )
+);
+
+/**
+ * @param {string} pathOnly
+ * @returns {string|null}
+ */
+function pageKeyFromPath(pathOnly) {
+  const raw = String(pathOnly || "/").split("?")[0] || "/";
+  const normalized = raw.length > 1 && raw.endsWith("/") ? raw.slice(0, -1) : raw;
+  return PATH_TO_PAGE_KEY[normalized] || null;
+}
+
+/**
+ * @param {string} pathOnly
+ */
+function isTenantPublicPagePath(pathOnly) {
+  return pageKeyFromPath(pathOnly) != null;
+}
+
+/** Public action paths (forms) that use tenant context but are not CMS pages. */
+const TENANT_PUBLIC_ACTION_PATHS = Object.freeze([
+  "/register",
+  "/register/submitted",
+]);
+
+/**
+ * @param {string} pathOnly
+ */
+function normalizePathOnly(pathOnly) {
+  const raw = String(pathOnly || "/").split("?")[0] || "/";
+  return raw.length > 1 && raw.endsWith("/") ? raw.slice(0, -1) : raw;
+}
+
+/**
+ * @param {string} pathOnly
+ */
+function isTenantPublicActionPath(pathOnly) {
+  return TENANT_PUBLIC_ACTION_PATHS.includes(normalizePathOnly(pathOnly));
+}
+
+/**
+ * CMS pages or public action forms that need authoritative tenant resolution.
+ * @param {string} pathOnly
+ */
+function isTenantPublicSurfacePath(pathOnly) {
+  return isTenantPublicPagePath(pathOnly) || isTenantPublicActionPath(pathOnly);
+}
+
+module.exports = {
+  PATH_TO_PAGE_KEY,
+  PAGE_KEY_TO_PATH,
+  NAV_ITEMS,
+  TENANT_PUBLIC_ACTION_PATHS,
+  pageKeyFromPath,
+  isTenantPublicPagePath,
+  isTenantPublicActionPath,
+  isTenantPublicSurfacePath,
+};

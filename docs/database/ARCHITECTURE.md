@@ -27,10 +27,13 @@ the HTTP process enters **V5 foundation mode** (`src/platform/config/v5Foundatio
 | Legacy seeds / scheduled jobs | Skipped | As before |
 | `/healthz` + apex `/` | 200 (foundation page) | Full product |
 | Apex `/login`, `/logout`, `/account` | Available (deployment-scoped sessions) | Full product |
-| Tenant portals / member / HQ / branch | Controlled 503 | Full product |
-| Platform host diagnostics | Optional (`PLATFORM_HOST_CONTEXT_MODE=diagnostic`); non-authoritative | Optional; non-authoritative |
+| Tenant-host login transfer | `GET /login` → apex → `GET /auth/callback` (host-only; no shared Domain) | Full product |
+| Member / giving / CMS portals | Controlled 503 | Full product |
+| Minimal HQ / branch-admin / platform-admin shells | Read-only shells when authorized | Full product |
+| Platform host diagnostics | Optional (`PLATFORM_HOST_CONTEXT_MODE=diagnostic`); non-authoritative alone | Optional; non-authoritative |
+| Tenant-host landing | Feature-flagged (`BLESSBOARD_TENANT_ROUTING_MODE`) | Full product |
 
-Foundation mode serves apex auth with deployment-scoped sessions. Platform hostname resolution and BlessBoard catalogue remain diagnostic only — not authoritative for tenant routing.
+Foundation mode serves apex auth with deployment-scoped sessions. Tenant-host content is **off by default** and becomes authoritative only when `BLESSBOARD_TENANT_ROUTING_MODE=authoritative` after platform + catalogue gates pass. There is no legacy `public.tenants` fallback.
 
 ## Target schemas
 
@@ -47,8 +50,8 @@ Foundation mode serves apex auth with deployment-scoped sessions. Platform hostn
 
 1. **Application tables belong only in product or platform schemas.** Never create new application tables in `public`.
 2. **Schema-qualified SQL is mandatory.** All new queries and migrations must use explicit qualifiers (`platform.deployments`, `blessboard.…`). Unqualified names are not allowed for application objects.
-3. **Platform owns cross-cutting registry tables** (`schema_migrations`, `database_identity`, `deployments`, `products`, `organizations`, `organization_products`, `domains`). Product domains do not own these.
-4. **BlessBoard owns BlessBoard product tables** under `blessboard` only. Current: `churches`, `branches`, `users`, `user_roles`.
+3. **Platform owns cross-cutting registry tables** (`schema_migrations`, `database_identity`, `deployments`, `products`, `organizations`, `organization_products`, `domains`, `plans`, `plan_features`, `organization_subscriptions`, `organization_entitlements`, `audit_events`). Product domains do not own these.
+4. **BlessBoard owns BlessBoard product tables** under `blessboard` only. Current: `churches`, `branches`, `church_settings`, `branch_settings`, `users`, `user_roles`, plus public website content (`public_pages`, `page_sections`, `leaders`, `ministries`, `events`, `sermons`, `contact_channels`, `giving_methods`).
 5. **GetPro and NGO** may only receive empty schema placeholders now. No product tables until those phases begin.
 6. **Supabase-managed schemas** (`auth`, `storage`, `realtime`, `extensions`) must not be altered by application migrations or scripts.
 7. **V5 sessions** live in `platform.deployment_sessions` (token hash only, deployment-scoped). Never `public.session` / `connect-pg-simple` on V5.
@@ -58,16 +61,208 @@ Foundation mode serves apex auth with deployment-scoped sessions. Platform hostn
 | Piece | Role |
 |-------|------|
 | `platform.deployment_sessions` | Session rows keyed by SHA-256 token hash + `deployment_code` |
+| `platform.auth_transfers` | Short-lived single-use tenant login handoff (hash only; ≤5 minutes) |
 | `blessboard.users` | Minimal login identity (bcrypt password hash) |
 | `blessboard.user_roles` | `platform_admin` / `church_hq_admin` / `branch_admin` scopes |
 | Cookie | `SESSION_COOKIE_NAME` (default `blessboard_org_v5_sid`); HttpOnly; Secure in production; SameSite=Lax; 12h |
 | CSRF | Signed double-submit cookie (`v5c1…`) using `SESSION_SECRET` — independent of express-session |
-| Routes | Apex only: `GET/POST /login`, `POST /logout`, `GET /account` |
+| Routes | Apex: `GET/POST /login`, `POST /logout`, `GET /account`. Tenant: `GET /login` (initiate), `GET /auth/callback` (redeem), `POST /logout` |
 
-- Login is **apex-only** (`blessboard.org` / `www.blessboard.org`). Tenant host `/login` stays controlled unavailable.
-- Sessions created for `blessboard-org-v5` do not authenticate on `blessboard-com-v4`.
-- No password reset, email verification, OAuth, MFA, or tenant portal access in this phase.
+### Tenant-host login transfer (no shared Domain cookie)
+
+1. Tenant `GET /login` validates resolved platform + catalogue tenant → inserts `platform.auth_transfers` (pending; `user_id` null) → redirects to apex `/login?tr=…`.
+2. Apex authenticates with CSRF; password never accepted on the tenant host.
+3. Apex verifies active role for the transfer’s organization/church/branch UUIDs, then rotates the transfer to a redeem code and redirects to `https://{requested_hostname}/auth/callback?code=…`.
+4. Tenant callback consumes the code (single-use), creates a **new** host-only `deployment_sessions` cookie, and never copies the apex cookie.
+5. Expired, consumed, hostname-mismatched, or deployment-mismatched codes fail closed (400). Unauthorized roles → 403. DB errors → 503.
+
+- Cookies are always **host-only** (no `Domain=.blessboard.org`). Apex and tenant jars are separate.
+- Transfer query params (`tr`, `code`) are redacted from access logs; callback responses set `Referrer-Policy: no-referrer`.
+- No user-supplied external redirect URLs; optional `next` is limited to `/hq`, `/branch-admin`, `/account` paths.
+- No password reset, email verification, OAuth, MFA in this phase. Public member registration is host-scoped at `/register`.
 - Provision users/roles explicitly via CLI — never at startup.
+
+## Tenant routing mode (`BLESSBOARD_TENANT_ROUTING_MODE`)
+
+| Mode | Behavior |
+|------|----------|
+| `off` (default) | Current foundation behavior. Tenant hosts do not render tenant content. |
+| `shadow` | Resolve platform + catalogue; log `blessboard_tenant_route_shadow`; still serve foundation HTML (no tenant data in the browser). |
+| `authoritative` | Valid active BlessBoard tenant hostname → read-only landing page. Failures → controlled 404/503. No legacy fallback. |
+
+- Mode is **never** inferred from `NODE_ENV`, `DEPLOYMENT_ENV`, hostname, Git branch, or deployment code.
+- Unsupported values safely fall back to `off`.
+- Authoritative gates: valid `PLATFORM_DEPLOYMENT_CODE`, `resolved_tenant`, product `blessboard`, deployment match, active domain/product/org/enrolment, active church, active HQ + primary branches.
+- Suggested HTTP policy: `unknown_domain` / `inactive_domain` / `deployment_mismatch` → **404**; inactive product/org/enrolment/church/branches and lookup errors → **503**. Browser pages stay generic (no internal reason codes).
+- Tenant landing shows church + primary branch display names, optional HQ indicator, testing/demo env badge, “BlessBoard V5” marker, apex link — never UUIDs, deployment codes, roles, or diagnostics.
+- `/healthz` remains available regardless of tenant routing outcome.
+- V4 (`server.legacy.js`) is unchanged. `public.tenants` / `public.session` remain absent on V5.
+
+## Tenant-scoped authorization (no portals yet)
+
+| Piece | Role |
+|-------|------|
+| `authorizeBlessBoardTenantAccess` | UUID-scoped grant evaluation against resolved tenant |
+| `loadBlessBoardAuthorizationContext` | Attaches `req.blessBoardAuthorizationContext` (fail-soft) |
+| `requireBlessBoardTenantRole` | Fail-closed 401 / 403 / 503 for protected routes |
+| `GET /tenant-access-check` | Temporary diagnostic only — not linked from nav |
+
+Authorization context (compact; no raw rows):
+
+```text
+authenticated, authorized, userId, organizationId, churchId, branchId, effectiveRoles[]
+```
+
+Role rules (active users + active roles only):
+
+| Role | Access |
+|------|--------|
+| `platform_admin` | Any active resolved BlessBoard tenant on this deployment (still requires resolved tenant; does not bypass inactive tenant gates) |
+| `church_hq_admin` | Assigned church UUID + all active branches of that church |
+| `branch_admin` | Assigned branch UUID only |
+
+- Comparisons use **UUIDs**, never display names or slugs.
+- Public tenant landing remains public; authorization failures must not crash it.
+- Cookie stays **host-only** (no `Domain=.blessboard.org`). Sign in on the tenant hostname to reach HQ / branch-admin; apex cookies are not sent to tenant hosts.
+
+## Minimal branch-admin portal shell
+
+| Route | Behavior |
+|-------|----------|
+| `GET /branch-admin` | Authorized empty dashboard (placeholder cards only) |
+| `GET /branch-admin/account` | Safe display name + role label + church/branch names |
+| `POST /branch-admin/logout` | CSRF-required; clears host-only session; redirects to tenant `/` |
+
+- Tenant + branch are derived from authoritative hostname context (primary branch). Query-string branch IDs are ignored.
+- Roles: `branch_admin` (assigned branch), `church_hq_admin` (own church), `platform_admin` (any active resolved tenant).
+- Unauthenticated HTML requests redirect to same-host **`/login?next=/branch-admin`** (host-only session after tenant login).
+- Operational modules: registrations review, announcements, participation (events/ministries), aggregate attendance, manual giving summaries, resources, forms, and member requests enabled; individual check-in / online payments still “Not enabled”.
+
+## Minimal church HQ shell + read-only branch selector
+
+| Route | Behavior |
+|-------|----------|
+| `GET /hq` | Church identity, HQ name, active branch count, branch selector |
+| `GET /hq/branches` | Full read-only active branch list |
+| `GET /hq/branches/:branchKey` | Resolve by church UUID + key → authorize → redirect to `/branch-admin` |
+
+- Inactive branches are **excluded** from the list; direct key access to inactive/unknown branches returns controlled **404**.
+- Public URLs use `branch_key` only (never branch UUIDs).
+- Access: `church_hq_admin` (own church), `platform_admin` (active resolved tenant). `branch_admin` receives **403** on HQ routes.
+- Branch list is one read-only query against `blessboard.branches`. No writes, no legacy tables.
+- Church settings: `GET/POST /hq/settings` (CSRF on POST) against `blessboard.church_settings`.
+
+## Church and branch settings (normalized)
+
+| Table | PK | Purpose |
+|-------|----|---------|
+| `blessboard.church_settings` | `church_id` | Public name, contact, website_status (`draft` / `published` / `suspended`) |
+| `blessboard.branch_settings` | `branch_id` | Public name, contact, address, lat/lng |
+
+- One row per church/branch. No JSON blobs for core settings.
+- Rows are **not** created at startup; `ensureChurchSettingsInitialized` / `ensureBranchSettingsInitialized` are idempotent and called when opening settings.
+- Updates are transactional upserts with `updated_at = now()`.
+- Country codes `^[A-Z]{2}$`; phones stored as `+[digits]`; lat ∈ [-90,90], lng ∈ [-180,180].
+- Routes: HQ `GET/POST /hq/settings`; branch `GET/POST /branch-admin/settings`.
+- Authorization: `platform_admin` / `church_hq_admin` for church settings; branch settings for `branch_admin` (assigned branch), HQ, and platform. `branch_admin` cannot open church settings.
+- **Audit:** `platform.audit_events` is append-only (no app UPDATE/DELETE). See `docs/database/AUDIT_RETENTION.md`. Settings / giving / registration / form / request writes record important outcomes with redacted metadata.
+- **Entitlements:** `platform.plans` / `plan_features` / `organization_subscriptions` / `organization_entitlements`. Plan keys are immutable. Resolves via `entitlementService` (not route-local plan checks). Premium writes fail closed; public reads use the soft resolver. Plan changes never delete excess branches/users.
+- **V4→V5 data migration:** Inventory/mapping in `docs/database/V4_TO_V5_DATA_MAPPING.md`. CLI tooling: `npm run migrate:v4-to-v5:{plan,dry-run,apply,verify}` under `src/migration/v4ToV5/` + `db/scripts/migrate-v4-to-v5.js`. Dry-run default; apply requires `--confirm`. Explicit `V4_SOURCE_DATABASE_URL` / `V5_TARGET_DATABASE_URL` / `DATABASE_IDENTITY_EXPECTED` only. Hosted cutover: `docs/database/V5_HOSTED_MIGRATION_AND_CUTOVER.md` (**do not execute** without signed go/no-go).
+
+## Public website content model (schema + services; no UI yet)
+
+| Table | Ownership | Purpose |
+|-------|-----------|---------|
+| `blessboard.public_pages` | `church_id` + optional `branch_id` | Page shells (`home`, `about`, …) with `draft` / `published` / `archived` |
+| `blessboard.page_sections` | `page_id` | Ordered sections; `section_key` immutable |
+| `blessboard.leaders` | church / optional branch | Leadership profiles |
+| `blessboard.ministries` | church / optional branch | Ministry listings |
+| `blessboard.events` | church / optional branch | Calendar events (`cancelled` allowed) |
+| `blessboard.sermons` | church / optional branch | Sermon records |
+| `blessboard.contact_channels` | church / optional branch | Contact methods |
+| `blessboard.giving_methods` | church / optional branch | Giving instructions / links (public CMS) |
+| `blessboard.giving_categories` | church | Catalog for manual giving summaries |
+| `blessboard.giving_entries` | branch | Aggregated giving amounts (NUMERIC; no donor PII) |
+
+- Content belongs to church or branch explicitly; branch must belong to church (trigger).
+- Published rows require active church (and active branch when scoped).
+- Archived rows cannot leave `archived` without a deliberate future policy change (trigger blocks silent reactivation).
+- `page_key` / `section_key` are immutable. Plain text preferred; admin service rejects HTML-looking bodies until a sanitization policy exists.
+- Limited JSONB `layout_metadata` on pages/sections only (object check).
+- Read path: `publicContentReadService` (published only). Write path: `publicContentAdminService` (separate).
+- `provisionEmptyPublicPages` creates empty draft page rows only — no demo sections or sample entities.
+- No legacy `public.*` content tables.
+
+### Public website rendering (authoritative tenant hosts)
+
+| Route | Content |
+|-------|---------|
+| `/` | Home page + sections |
+| `/about` | About page + sections |
+| `/leadership` | Page + published leaders |
+| `/ministries` | Page + published ministries |
+| `/events` | Page + published events |
+| `/sermons` | Page + published sermons |
+| `/contact` | Page + published contact channels |
+| `/giving` | Page + published giving methods |
+
+- Requires `BLESSBOARD_TENANT_ROUTING_MODE=authoritative` and a resolved active church (same gates as tenant landing).
+- **Branch override:** published primary-branch scoped page/entities win over church-wide (`branch_id` null).
+- Drafts never render. Wrong-church rows never render. Suspended `website_status` → 503.
+- SEO: host-aware canonical + Open Graph; `noindex` for testing/demo or non-published website status; no tenant UUIDs in metadata.
+- Security: EJS-escaped text; external URLs allowlisted (`http`/`https`/`mailto`/`tel` + same-site paths); external CSS only (CSP-friendly).
+- Public chrome includes Sign in (`/login` transfer) and BlessBoard apex link — no HQ/admin links.
+- V4 `views/church/public/*` and `server.legacy.js` remain the V4 path; V5 does not call `websiteContentService`.
+
+### Public content administration (HQ + branch)
+
+| Surface | Path prefix | Scope |
+|---------|-------------|-------|
+| HQ church-wide | `/hq/content` | `branch_id` null |
+| HQ branch | `/hq/content/b/:branchKey` | Resolved branch in own church |
+| Branch admin | `/branch-admin/content` | Hostname primary branch only |
+
+- Roles: HQ routes `church_hq_admin` / `platform_admin`; branch-admin routes also allow `branch_admin` (assigned branch).
+- CRUD for page shells (title/status), sections (`pageKey`/`sectionKey` URLs), and entities (ids in form bodies only).
+- Status workflow: draft → publish (requires `confirm_publish`) → archive; no hard delete from UI.
+- Optimistic concurrency: `expected_updated_at` must match (ms-truncated); conflicts return **409**.
+- Preview: `/…/preview/:pageKey` shows draft+published for authorized users only (`noindex`).
+- Media: binaries in object storage (local FS or Supabase Storage); metadata in `blessboard.media_assets`.
+- Content fields accept HTTPS URLs or app paths `/_bb/media/:uuid` (public assets tenant-scoped).
+- Private assets require content-admin authz; never served on `/_bb/media`.
+- Upload only from existing content-admin forms (no bulk library yet). Service-role credentials stay server-side.
+
+### Member identity + registration + portal shell
+
+| Table | Role |
+|-------|------|
+| `blessboard.members` | Church-scoped person profile (optional `user_id` link) |
+| `blessboard.member_branch_memberships` | Multi-branch membership; exactly one `is_primary` |
+| `blessboard.member_registrations` | Intake + review workflow before membership |
+
+- Privacy fields only: first/last/preferred name, email, phone (normalized + display).
+- No national ID, health, financial, family, or password fields.
+- Services: `submitMemberRegistration`, `reviewMemberRegistration`, `approveMemberRegistration`, `rejectMemberRegistration`, `linkMemberToUser`, `listMemberRegistrations`, `requireActiveMemberForTenant`, `getMemberPortalProfile` / `updateMemberPortalProfile`.
+- Approval creates or links a member + membership transactionally; never auto-creates login users or plaintext passwords.
+- Public routes: `GET/POST /register`, `GET /register/submitted` (CSRF + rate limit; host-scoped).
+- Branch-admin: `/branch-admin/registrations` list/detail/approve/reject (pagination + search; internal rejection notes).
+- Member portal: `GET /member`, `GET/POST /member/profile` — requires active user + active member + active membership on the host primary branch; admin roles alone never grant access. Profile edits are limited to preferred name, phone, and email display. Module cards are disabled placeholders (no fake counts). No member/church/branch UUIDs in URLs or HTML.
+- Duplicate open registrations return a generic public message; logs omit PII.
+- Tests: `npm run test:blessboard:members-schema`, `npm run test:blessboard:member-registration`, `npm run test:blessboard:member-portal`.
+
+## Minimal platform-admin shell (apex-only)
+
+| Route | Behavior |
+|-------|----------|
+| `GET /admin` | Platform-admin home + recent organization keys |
+| `GET /admin/organizations` | Paginated read-only directory (default 25, max 100) |
+| `GET /admin/organizations/:organizationKey` | Safe organization summary by key |
+
+- **Apex hosts only.** Tenant hosts receive the controlled unavailable response.
+- Requires an authenticated active user with `platform_admin`. `church_hq_admin` / `branch_admin` receive **403**. Unauthenticated HTML requests redirect to `/login`.
+- Directory fields: organization key/name/environment/status, BlessBoard enrolment status, canonical hostname, church key/status, active branch count, deployment code.
+- Optional filter: `organization_key` **prefix** only (unique index). No display-name scan / no new indexes.
+- No org create/edit/delete, billing, domain editing, or impersonation.
 
 ## BlessBoard catalogue (churches and branches)
 
@@ -83,7 +278,8 @@ Foundation mode serves apex auth with deployment-scoped sessions. Platform hostn
 - Branches belong only to a church (`church_id` FK `ON DELETE RESTRICT` — no silent cascade).
 - At most one `branch_type = hq` and at most one `is_primary = true` per church.
 - Provisioning is **explicit and transactional** (`npm run blessboard:church:provision`). No demo church is auto-created at migrate, bootstrap, or app startup.
-- Platform hostname routing remains **diagnostic / non-authoritative**. Apex auth is available; tenant portals remain unavailable on V5 foundation mode.
+- Platform hostname + catalogue resolution feed the tenant-routing flag; with `off`/`shadow` they remain non-authoritative for browser content.
+- Member / giving / CMS portals remain unavailable. Authoritative mode enables the read-only tenant landing; HQ / branch-admin shells require tenant-host login + authorization. Apex platform-admin is separate.
 - Legacy `public.tenants` / `public.session` remain absent. V4 remains on the legacy database unchanged.
 
 ## Separate concepts (do not collapse)
@@ -142,7 +338,7 @@ Product-specific organization details (church settings, CRM fields, NGO programm
 `npm run db:verify:foundation` expects:
 
 - Platform tables including `deployment_sessions`.
-- BlessBoard: `churches`, `branches`, `users`, `user_roles`.
+- BlessBoard: `churches`, `branches`, `church_settings`, `branch_settings`, `users`, `user_roles`, public content tables (`public_pages`, `page_sections`, `leaders`, `ministries`, `events`, `sermons`, `contact_channels`, `giving_methods`), `media_assets`, member identity tables (`members`, `member_branch_memberships`, `member_registrations`), announcements, participation, attendance, and manual giving (`giving_categories`, `giving_entries`).
 - `getpro` and `ngo` base-table empty.
 - `public.tenants` / `public.session` absent.
 
@@ -289,16 +485,20 @@ Means: **the hostname is assigned to a platform deployment that differs from the
 
 - `platform.branches`
 - GetPro / NGO product tables
-- BlessBoard members, ministry roles, events, public content, portals
+- BlessBoard member portal modules beyond announcements / events / ministries / resources / forms / requests (giving portal views)
 - Password reset, email verification, OAuth, MFA
 - Compatibility views over legacy `public`
 - Using host context for authoritative routing, redirects, or tenant content
 - Domain redirects (alias → canonical)
 - Application pool cutover for V4 away from legacy `public` schemas
-- Tenant-host login and portal dashboards
 - Hosted Supabase connection or deploy from CI/agents
 - Persistent metric tables or hosted telemetry
 - Automatic demo tenant/church/admin creation at startup
 - Silent reassignment of hostnames, product enrolments, or church ownership
 - Making platform hostname resolution or BlessBoard catalogue context authoritative
 - `public.session` / `connect-pg-simple` on V5
+- Automatic login-account creation from member registration approval
+- Collecting national ID, health, financial, or family data on members
+- Registration exports / bulk download
+- Ministry role graphs beyond branch membership
+- Member directory / HQ cross-branch registration inbox

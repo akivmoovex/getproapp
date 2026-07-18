@@ -1,0 +1,22 @@
+<%- include('../partials/hq-shell-start') %>
+  <h1>Church HQ</h1>
+  <p class="bb-hq-lede">
+    Read-only BlessBoard V5 headquarters shell. Operational modules are not enabled yet.
+  </p>
+  <section class="bb-hq-meta" aria-label="Church summary">
+    <article class="bb-hq-card">
+      <h2>Church</h2>
+      <p><%= churchDisplayName %></p>
+    </article>
+    <article class="bb-hq-card">
+      <h2>Headquarters</h2>
+      <p><%= hqBranchDisplayName || "—" %></p>
+    </article>
+    <article class="bb-hq-card">
+      <h2>Active branches</h2>
+      <p data-bb-count="active-branches"><%= activeBranchCount %></p>
+    </article>
+  </section>
+  <h2>Branches</h2>
+  <%- include('../partials/branch-selector', { branches: branches }) %>
+<%- include('../partials/hq-shell-end') %>

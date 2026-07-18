@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register · <%= publicName %></title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css" />
+</head>
+<body class="bb-tp-body" data-bb-shell="tenant-public" data-bb-page="register">
+  <div class="bb-tp-shell">
+    <header class="bb-tp-top">
+      <div>
+        <a class="bb-tp-brand" href="/"><%= publicName %></a>
+        <% if (branchName) { %>
+        <div class="bb-tp-branch"><%= branchName %></div>
+        <% } %>
+      </div>
+      <div class="bb-tp-badges">
+        <span class="bb-tp-badge">BlessBoard V5</span>
+      </div>
+    </header>
+
+    <nav class="bb-tp-nav" aria-label="Church pages">
+      <% navItems.forEach(function (item) { %>
+      <a href="<%= item.href %>"><%= item.label %></a>
+      <% }) %>
+      <a href="/register" class="is-active">Register</a>
+    </nav>
+
+    <main class="bb-tp-main">
+      <h1>Member registration</h1>
+      <p class="bb-tp-lede">Apply to join <%= publicName %><% if (branchName) { %> · <%= branchName %><% } %>.</p>
+
+      <% if (error) { %>
+      <p class="bb-tp-error" role="alert"><%= error %></p>
+      <% } %>
+
+      <form method="post" action="/register" class="bb-tp-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+
+        <label for="first_name">First name</label>
+        <input id="first_name" name="first_name" type="text" required maxlength="100" autocomplete="given-name"
+          value="<%= submitted && submitted.firstName != null ? submitted.firstName : '' %>" />
+
+        <label for="last_name">Last name</label>
+        <input id="last_name" name="last_name" type="text" required maxlength="100" autocomplete="family-name"
+          value="<%= submitted && submitted.lastName != null ? submitted.lastName : '' %>" />
+
+        <label for="preferred_name">Preferred name <span class="bb-tp-optional">(optional)</span></label>
+        <input id="preferred_name" name="preferred_name" type="text" maxlength="100"
+          value="<%= submitted && submitted.preferredName != null ? submitted.preferredName : '' %>" />
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" maxlength="254" autocomplete="email"
+          value="<%= submitted && submitted.email != null ? submitted.email : '' %>" />
+
+        <label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel" maxlength="40" autocomplete="tel"
+          value="<%= submitted && submitted.phone != null ? submitted.phone : '' %>" />
+
+        <p class="bb-tp-hint">Provide at least an email or a phone number.</p>
+
+        <button type="submit">Submit registration</button>
+      </form>
+    </main>
+
+    <footer class="bb-tp-foot">
+      <p><a href="/login">Sign in</a></p>
+    </footer>
+  </div>
+</body>
+</html>

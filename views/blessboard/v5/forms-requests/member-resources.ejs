@@ -1,0 +1,10 @@
+<%- include('../partials/member-shell-start') %>
+  <h1>Resources</h1>
+  <% if (!resources.length) { %><p>No resources yet.</p><% } else { %>
+    <ul>
+      <% resources.forEach(function (r) { %>
+        <li><a href="/member/resources/<%= r.id %>"><%= r.title %></a></li>
+      <% }) %>
+    </ul>
+  <% } %>
+<%- include('../partials/member-shell-end') %>

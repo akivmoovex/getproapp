@@ -1,0 +1,19 @@
+[
+  {
+    "id": 10,
+    "organization_id": 1,
+    "slug": "hq",
+    "name": "Headquarters",
+    "status": "active",
+    "welcome_message": "Welcome",
+    "host_slug": "grace-chapel"
+  },
+  {
+    "id": 11,
+    "organization_id": 1,
+    "slug": "kafue",
+    "name": "Kafue Campus",
+    "status": "active",
+    "country_code": "zm"
+  }
+]

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <p class="bb-ca-hint"><a href="<%= scope.basePath %>">← All content</a></p>
+  <h1><%= entityTitle %></h1>
+  <p class="bb-ca-lede">Scope: <strong><%= scope.scopeLabel %></strong></p>
+  <% if (typeof saved !== 'undefined' && saved) { %>
+    <p class="bb-ca-ok" role="status">Changes saved.</p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-ca-error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-ca-block">
+    <h2>Add <%= entityTitle.toLowerCase() %></h2>
+    <form method="post" action="<%= scope.basePath %>/<%= entityKind %>" class="<%= formClass %> bb-ca-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="action" value="create" />
+      <%- include('./entity-fields', { mode: 'create', item: submitted && !(typeof editItemId !== 'undefined' && editItemId) ? submitted : null, entityKind: entityKind }) %>
+      <button type="submit">Create</button>
+    </form>
+  </section>
+
+  <section class="bb-ca-block">
+    <h2>Existing items</h2>
+    <% if (!items || !items.length) { %>
+      <p class="bb-ca-empty">No items yet.</p>
+    <% } else { %>
+      <% items.forEach(function (item) { %>
+      <details class="bb-ca-item" <%= (typeof editItemId !== 'undefined' && editItemId === item.id) ? 'open' : '' %>>
+        <summary>
+          <%= entityKind === 'leadership' ? item.displayName : (entityKind === 'ministries' ? item.name : item.title || item.label) %>
+          <span class="bb-ca-pill bb-ca-pill--<%= item.status %>"><%= item.status %></span>
+        </summary>
+        <form method="post" action="<%= scope.basePath %>/<%= entityKind %>" class="<%= formClass %> bb-ca-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="action" value="update" />
+          <input type="hidden" name="item_id" value="<%= item.id %>" />
+          <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt instanceof Date ? item.updatedAt.toISOString() : item.updatedAt %>" />
+          <%- include('./entity-fields', { mode: 'update', item: (typeof editItemId !== 'undefined' && editItemId === item.id && submitted) ? submitted : item, entityKind: entityKind }) %>
+          <button type="submit">Save changes</button>
+        </form>
+      </details>
+      <% }) %>
+    <% } %>
+  </section>
+
+  <p><a href="<%= scope.basePath %>/preview/<%= entityKind === 'contact' ? 'contact' : entityKind === 'giving' ? 'giving' : entityKind %>">Preview on website</a></p>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

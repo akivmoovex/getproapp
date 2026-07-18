@@ -1,0 +1,50 @@
+<%- include('../partials/branch-admin-shell-start') %>
+  <p class="bb-ba-hint"><a href="/branch-admin/registrations">← All registrations</a></p>
+  <h1>Registration review</h1>
+
+  <% if (error) { %>
+  <p class="bb-ba-error" role="alert"><%= error %></p>
+  <% } %>
+  <% if (saved === 'approve') { %>
+  <p class="bb-ba-ok" role="status">Approved. A member record was created or linked. No login account was created.</p>
+  <% } %>
+  <% if (saved === 'reject') { %>
+  <p class="bb-ba-ok" role="status">Rejected. The applicant was not notified automatically.</p>
+  <% } %>
+
+  <dl class="bb-ba-dl">
+    <dt>Name</dt>
+    <dd><%= registration.firstName %> <%= registration.lastName %></dd>
+    <% if (registration.preferredName) { %>
+    <dt>Preferred name</dt>
+    <dd><%= registration.preferredName %></dd>
+    <% } %>
+    <dt>Email</dt>
+    <dd><%= registration.emailDisplay || '—' %></dd>
+    <dt>Phone</dt>
+    <dd><%= registration.phoneDisplay || '—' %></dd>
+    <dt>Status</dt>
+    <dd><%= registration.status %></dd>
+    <dt>Submitted</dt>
+    <dd><%= registration.createdAt instanceof Date ? registration.createdAt.toISOString() : registration.createdAt %></dd>
+  </dl>
+
+  <% if (registration.status === 'submitted' || registration.status === 'under_review') { %>
+  <form method="post" action="/branch-admin/registrations/<%= registration.id %>/approve" class="bb-ba-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label for="approve_notes">Internal notes <span class="bb-ba-optional">(optional, not shown publicly)</span></label>
+    <textarea id="approve_notes" name="review_notes" rows="3" maxlength="2000"></textarea>
+    <button type="submit">Approve</button>
+  </form>
+
+  <form method="post" action="/branch-admin/registrations/<%= registration.id %>/reject" class="bb-ba-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label for="reject_notes">Internal rejection notes <span class="bb-ba-optional">(optional, internal only)</span></label>
+    <textarea id="reject_notes" name="review_notes" rows="3" maxlength="2000"></textarea>
+    <button type="submit" class="bb-ba-danger">Reject</button>
+  </form>
+  <% } else if (registration.reviewNotes) { %>
+  <h2>Internal notes</h2>
+  <p class="bb-ba-notes"><%= registration.reviewNotes %></p>
+  <% } %>
+<%- include('../partials/branch-admin-shell-end') %>

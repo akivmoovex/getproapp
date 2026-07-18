@@ -1,0 +1,40 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1>Record giving entry</h1>
+  <p><a href="<%= basePath %>">Back</a></p>
+  <p>Enter an aggregated amount only. Do not record donor names or payment details.</p>
+  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
+  <form method="post" action="<%= basePath %>" class="bb-giving-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>Category
+      <select name="category_key" required>
+        <% categories.forEach(function (c) { %>
+          <option value="<%= c.categoryKey %>" <%= entry && entry.categoryKey === c.categoryKey ? 'selected' : '' %>><%= c.label %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Giving date
+      <input type="date" name="giving_date" required value="<%= entry && entry.givingDate ? entry.givingDate : '' %>" />
+    </label>
+    <label>Amount
+      <input type="text" name="amount" inputmode="decimal" pattern="^(0|[1-9]\d*)(\.\d{1,2})?$" required placeholder="0.00" value="<%= entry && entry.amount ? entry.amount : '' %>" />
+    </label>
+    <label>Currency (ISO)
+      <input type="text" name="currency" maxlength="3" pattern="[A-Za-z]{3}" required value="<%= entry && entry.currency ? entry.currency : 'USD' %>" />
+    </label>
+    <label>Reference (optional)
+      <input type="text" name="reference" maxlength="120" value="<%= entry && entry.reference ? entry.reference : '' %>" />
+    </label>
+    <label>Notes (optional)
+      <input type="text" name="notes" maxlength="1000" value="<%= entry && entry.notes ? entry.notes : '' %>" />
+    </label>
+    <button type="submit">Create draft</button>
+  </form>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

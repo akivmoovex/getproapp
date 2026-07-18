@@ -1,0 +1,30 @@
+<%- include('../partials/hq-shell-start') %>
+  <h1>Audit log</h1>
+  <p>Append-only platform audit events for this church. Secrets and PII are redacted at write time.</p>
+  <form method="get" action="/hq/audit">
+    <label>Action key
+      <input type="text" name="action" value="<%= actionFilter %>" placeholder="e.g. giving.entry.approve" />
+    </label>
+    <button type="submit">Filter</button>
+  </form>
+  <% if (!events.length) { %>
+    <p>No audit events in this view.</p>
+  <% } else { %>
+    <ul data-bb-audit-list>
+      <% events.forEach(function (ev) { %>
+        <li data-bb-action="<%= ev.actionKey %>" data-bb-outcome="<%= ev.outcome %>">
+          <%= ev.createdAt %> · <%= ev.actionKey %> · <%= ev.entityType %>
+          · <%= ev.outcome %>
+          <% if (ev.entityId) { %> · entity <%= String(ev.entityId).slice(0, 8) %>…<% } %>
+        </li>
+      <% }) %>
+    </ul>
+    <% if (hasMore && nextBefore) { %>
+      <p>
+        <a href="/hq/audit?before=<%= encodeURIComponent(nextBefore) %><%= actionFilter ? '&action=' + encodeURIComponent(actionFilter) : '' %>">
+          Next page
+        </a>
+      </p>
+    <% } %>
+  <% } %>
+<%- include('../partials/hq-shell-end') %>

@@ -1,0 +1,26 @@
+<%- include('../partials/member-shell-start') %>
+  <h1>Requests</h1>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
+  <form method="post" action="/member/requests">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>Category
+      <select name="category" required>
+        <% requestCategories.forEach(function (c) { %>
+          <option value="<%= c %>"><%= c %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Subject <input type="text" name="subject" maxlength="200" required /></label>
+    <label>Message <textarea name="message" maxlength="5000" required></textarea></label>
+    <button type="submit">Submit request</button>
+  </form>
+  <h2>Your requests</h2>
+  <ul>
+    <% requests.forEach(function (r) { %>
+      <li data-bb-status="<%= r.status %>">
+        <a href="/member/requests/<%= r.id %>"><%= r.subject %></a> · <%= r.status %>
+      </li>
+    <% }) %>
+  </ul>
+<%- include('../partials/member-shell-end') %>

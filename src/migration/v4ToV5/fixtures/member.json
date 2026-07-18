@@ -1,0 +1,29 @@
+[
+  {
+    "id": 300,
+    "organization_id": 1,
+    "branch_id": 11,
+    "full_name": "Alice Mulenga",
+    "email": "Alice@Example.COM",
+    "phone": "+260971234567",
+    "status": "verified",
+    "password_hash": "$2a$10$memberhashshouldnotmigratexx"
+  },
+  {
+    "id": 301,
+    "organization_id": 1,
+    "branch_id": 11,
+    "full_name": "No Contact",
+    "email": "",
+    "phone": "",
+    "status": "pending"
+  },
+  {
+    "id": 302,
+    "organization_id": 1,
+    "branch_id": 11,
+    "full_name": "Rejected Person",
+    "email": "rejected@example.com",
+    "status": "rejected"
+  }
+]

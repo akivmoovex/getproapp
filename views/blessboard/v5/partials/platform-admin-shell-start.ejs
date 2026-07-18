@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= pageTitle %> · BlessBoard</title>
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css" />
+</head>
+<body class="bb-pa-body" data-bb-shell="platform-admin" data-bb-viewport="responsive">
+  <header class="bb-pa-top" data-bb-nav="desktop-header">
+    <div>
+      <a class="bb-pa-wordmark" href="/admin">BlessBoard</a>
+      <div class="bb-pa-context">
+        Platform admin · <%= displayName %>
+        <span class="bb-pa-role"><%= roleLabel %></span>
+      </div>
+    </div>
+    <nav class="bb-pa-nav-desktop" aria-label="Platform admin desktop" data-bb-nav="desktop">
+      <a href="/admin" class="<%= activeNav === 'home' ? 'is-active' : '' %>">Home</a>
+      <a href="/admin/organizations" class="<%= activeNav === 'organizations' ? 'is-active' : '' %>">Organizations</a>
+      <a href="/account">Account</a>
+    </nav>
+    <button
+      type="button"
+      class="bb-pa-nav-toggle"
+      data-bb-nav="mobile-toggle"
+      aria-controls="bb-pa-mobile-nav"
+      aria-expanded="false"
+    >
+      Menu
+    </button>
+  </header>
+  <nav
+    id="bb-pa-mobile-nav"
+    class="bb-pa-nav-mobile"
+    aria-label="Platform admin mobile"
+    data-bb-nav="mobile"
+    hidden
+  >
+    <a href="/admin">Home</a>
+    <a href="/admin/organizations">Organizations</a>
+    <a href="/account">Account</a>
+  </nav>
+  <main class="bb-pa-main">

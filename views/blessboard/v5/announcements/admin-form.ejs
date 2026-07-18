@@ -1,0 +1,69 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1><%= formMode === 'create' ? 'New announcement' : 'Edit announcement' %></h1>
+  <p><a href="<%= basePath %>">Back to list</a></p>
+  <% if (typeof saved !== 'undefined' && saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
+  <%
+    var audiences = (item && item.audiences) || [];
+    var hasMembers = audiences.indexOf('members') !== -1;
+    var hasAdmins = audiences.indexOf('admins') !== -1;
+  %>
+  <form method="post" action="<%= formMode === 'create' ? basePath : (basePath + '/' + item.id) %>" class="bb-ann-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <% if (formMode === 'edit' && item && item.updatedAt) { %>
+      <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt.toISOString ? item.updatedAt.toISOString() : item.updatedAt %>" />
+    <% } %>
+    <label>Title
+      <input type="text" name="title" maxlength="200" required value="<%= item && item.title ? item.title : '' %>" />
+    </label>
+    <label>Body
+      <textarea name="body" rows="8" maxlength="20000" required><%= item && item.body ? item.body : '' %></textarea>
+    </label>
+    <label>Status
+      <select name="status">
+        <% ['draft', 'published', 'archived'].forEach(function (s) { %>
+          <option value="<%= s %>" <%= item && item.status === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </label>
+    <fieldset>
+      <legend>Audience</legend>
+      <label><input type="checkbox" name="audience_members" value="1" <%= hasMembers || formMode === 'create' ? 'checked' : '' %> /> Members</label>
+      <label><input type="checkbox" name="audience_admins" value="1" <%= hasAdmins ? 'checked' : '' %> /> Admins</label>
+    </fieldset>
+    <label><input type="checkbox" name="is_pinned" value="1" <%= item && item.isPinned ? 'checked' : '' %> /> Pinned</label>
+    <label><input type="checkbox" name="is_featured" value="1" <%= item && item.isFeatured ? 'checked' : '' %> /> Featured</label>
+    <label>Action URL
+      <input type="text" name="action_url" maxlength="2000" value="<%= item && item.actionUrl ? item.actionUrl : '' %>" />
+    </label>
+    <label>Action label
+      <input type="text" name="action_label" maxlength="100" value="<%= item && item.actionLabel ? item.actionLabel : '' %>" />
+    </label>
+    <label>Attach media asset id
+      <input type="text" name="media_asset_id" maxlength="36" value="" />
+    </label>
+    <label><input type="checkbox" name="confirm_publish" value="1" /> Confirm publish</label>
+    <% if (item && item.delivery) { %>
+      <p data-bb-delivery="summary">
+        Delivery: <%= item.delivery.readCount %> read / <%= item.delivery.eligibleCount %> eligible
+        (<%= item.delivery.unreadCount %> unread)
+      </p>
+    <% } %>
+    <% if (item && item.attachments && item.attachments.length) { %>
+      <ul>
+        <% item.attachments.forEach(function (att) { %>
+          <li><%= att.originalFilename || att.mediaAssetId %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <button type="submit"><%= formMode === 'create' ? 'Create' : 'Save' %></button>
+  </form>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

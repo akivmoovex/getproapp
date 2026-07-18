@@ -1,0 +1,30 @@
+<%- include('../partials/member-shell-start') %>
+  <p><a href="/member/announcements">Back to announcements</a></p>
+  <% if (marked) { %><p class="bb-mp-saved" role="status">Marked as read.</p><% } %>
+  <article class="bb-mp-ann-detail" data-bb-unread="<%= item.isUnread ? '1' : '0' %>">
+    <h1><%= item.title %></h1>
+    <% if (item.isPinned) { %><p>Pinned</p><% } %>
+    <% if (item.isFeatured) { %><p>Featured</p><% } %>
+    <div class="bb-mp-ann-body"><%= item.body %></div>
+    <% if (item.actionUrl && item.actionLabel) { %>
+      <p><a href="<%= item.actionUrl %>" rel="noopener noreferrer"><%= item.actionLabel %></a></p>
+    <% } %>
+    <% if (item.attachments && item.attachments.length) { %>
+      <ul>
+        <% item.attachments.forEach(function (att) { %>
+          <li>
+            <a href="/_bb/media/<%= att.mediaAssetId %>"><%= att.originalFilename || 'Attachment' %></a>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (item.isUnread) { %>
+      <form method="post" action="/member/announcements/<%= item.id %>/read">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit">Mark as read</button>
+      </form>
+    <% } else { %>
+      <p>Read</p>
+    <% } %>
+  </article>
+<%- include('../partials/member-shell-end') %>

@@ -21,9 +21,10 @@ Does **not** create:
 
 - `public.tenants`, `public.session`, or any legacy `public` application tables
 - GetPro / NGO product application tables
-- BlessBoard members, ministries, events, content, or portal tables
 - Demo organizations, churches, or admin users (provisioning is explicit and separate)
 - Changes to Supabase-managed schemas (`auth`, `storage`, `realtime`, `extensions`, …)
+
+`db:migrate` / bootstrap **do** apply approved BlessBoard migrations including content, `media_assets`, and member identity tables (`members`, `member_branch_memberships`, `member_registrations`). Member portal HTTP routes are application code, not created by migrations.
 
 ## Command boundary (Approach B)
 
@@ -253,31 +254,99 @@ Do **not** set that for hosted bootstrap.
 
 ## After bootstrap: Hostinger V5 foundation env
 
-Minimum for V5 foundation HTTP (`PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5` + `DEPLOYMENT_ENV=testing`):
+Exact safe Hostinger settings for this phase:
 
 ```bash
 NODE_ENV=production
 DEPLOYMENT_ENV=testing
-DATABASE_URL=<new initialized Supabase database>
-PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5
-BLESSBOARD_JOBS_ENABLED=0
-SESSION_SECRET=<long random secret>
-BASE_DOMAIN=blessboard.org
-```
-
-Recommended extras:
-
-```bash
+DATABASE_URL=<new V5 Supabase>
 DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5
+PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5
 PLATFORM_HOST_CONTEXT_MODE=diagnostic
+BLESSBOARD_TENANT_ROUTING_MODE=off
+BLESSBOARD_JOBS_ENABLED=0
+SESSION_SECRET=<secret>
+SESSION_COOKIE_NAME=blessboard_org_v5_sid
+BASE_DOMAIN=blessboard.org
 PUBLIC_SCHEME=https
 ```
 
-**Required for production boot (even in foundation mode):** `SESSION_SECRET` and `BASE_DOMAIN` — `assertProductionRequiredEnvOrExit` runs before the V5/legacy branch.
-
 **Leave unset:** `GETPRO_DATABASE_URL` (must not point V5 at the legacy DB). Do not omit `PLATFORM_DEPLOYMENT_CODE` or set `DEPLOYMENT_ENV` to anything other than `testing` — that loads `server.legacy.js` and will crash without `public.tenants`.
 
+**Required for production boot (even in foundation mode):** `SESSION_SECRET` and `BASE_DOMAIN` — `assertProductionRequiredEnvOrExit` runs before the V5/legacy branch.
+
 `FOUNDATION_PG_SSL` is **not** required for normal Supabase use (defaults to TLS). `DATABASE_IDENTITY_EXPECTED` is required for Mac bootstrap/verify/provision CLIs; unused by the HTTP foundation process but safe to set on Hostinger for operator consistency.
+
+### Tenant routing rollout (Hostinger)
+
+1. Deploy with `BLESSBOARD_TENANT_ROUTING_MODE=off`.
+2. Verify apex `/`, `/login`, `/account`, and `/healthz`.
+3. Set `BLESSBOARD_TENANT_ROUTING_MODE=shadow`.
+4. Request one known provisioned tenant hostname (`GET /`).
+5. Review logs for `blessboard_tenant_route_shadow` (organization/church/primary branch keys + deployment comparison).
+6. Confirm the HTML response is still the foundation page (no church display name).
+7. Set `BLESSBOARD_TENANT_ROUTING_MODE=authoritative` **only after** shadow output matches the expected org/church/branch and DNS is confirmed.
+8. Verify unknown and inactive hosts return controlled 404/503 (generic browser copy).
+9. Rollback anytime by setting `BLESSBOARD_TENANT_ROUTING_MODE=off` (no migration required).
+
+Do **not** enable authoritative mode before the provisioned tenant and DNS are confirmed. Mode is never inferred from `NODE_ENV` or hostname.
+
+### Tenant authorization note
+
+V5 can evaluate tenant-scoped roles (`platform_admin` / `church_hq_admin` / `branch_admin`) against a resolved tenant UUID context. Protected diagnostic route: `GET /tenant-access-check` (not linked in navigation).
+
+Because session cookies are **host-only**, an apex login will not authorize browser requests to a tenant hostname. Admins must start at the **tenant** `/login`, authenticate on apex, and return via `/auth/callback` (single-use transfer). Do **not** set `Domain=.blessboard.org` on the session cookie.
+
+Optional Hostinger env for absolute apex redirects:
+
+```bash
+BLESSBOARD_APEX_ORIGIN=https://blessboard.org
+PUBLIC_SCHEME=https
+```
+
+Branch-admin shell routes (`/branch-admin`, `/branch-admin/account`, `/branch-admin/settings`, `POST /branch-admin/logout`) and HQ shell routes (`/hq`, `/hq/branches`, `/hq/settings`, `/hq/branches/:branchKey`) use host-scoped cookies. Sign in via tenant `/login` → apex transfer → `/auth/callback`.
+
+Church/branch settings (`blessboard.church_settings`, `blessboard.branch_settings`) are editable after migrate; rows are created on first settings page open (idempotent), not at startup.
+
+Public website content tables (`public_pages`, `page_sections`, `leaders`, `ministries`, `events`, `sermons`, `contact_channels`, `giving_methods`) are created by migrate. Empty draft page shells are created only via `provisionEmptyPublicPages` (never at startup; no demo content).
+
+With `BLESSBOARD_TENANT_ROUTING_MODE=authoritative`, tenant hosts serve read-only public pages at `/`, `/about`, `/leadership`, `/ministries`, `/events`, `/sermons`, `/contact`, and `/giving` from published rows only.
+
+HQ and branch admins edit content under `/hq/content` and `/branch-admin/content` (CSRF, publish confirmation, optimistic conflict detection).
+
+### Media uploads (hosted Supabase Storage)
+
+Do **not** alter the managed `storage` schema via app migrations. Configure buckets in the Supabase dashboard (or Storage API with the service role), then set env:
+
+```bash
+# Object storage (hosted). Leave unset for local filesystem (BLESSBOARD_MEDIA_ROOT).
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=  # server-only; never expose to the browser
+BLESSBOARD_MEDIA_PUBLIC_BUCKET=blessboard-public
+BLESSBOARD_MEDIA_PRIVATE_BUCKET=blessboard-private
+# Optional: force local adapter even when Supabase env is present
+# BLESSBOARD_MEDIA_FORCE_LOCAL=1
+# BLESSBOARD_MEDIA_ROOT=/var/data/blessboard-media
+```
+
+Bucket policy notes:
+
+1. Create `blessboard-public` (public read) and `blessboard-private` (no public read).
+2. App uploads with the **service role** (`x-upsert: false` — no overwrite).
+3. Public website delivery prefers app-mediated `/_bb/media/:assetId` (checks church ownership + `visibility=public`).
+4. Private files are served only under `/hq/content/media/:assetId` or `/branch-admin/content/media/:assetId` after authz.
+5. Metadata lives in `blessboard.media_assets` (migration `019`); binaries never enter Postgres.
+
+### Member identity (migration `020`)
+
+Tables: `blessboard.members`, `blessboard.member_branch_memberships`, `blessboard.member_registrations`.
+
+- Privacy-limited profile fields only (names, email, phone).
+- Public form: `/register` (host → church + primary branch). Branch-admin review: `/branch-admin/registrations`.
+- Linking a member to a login user requires an existing `blessboard.users` row — never auto-create accounts or temporary passwords.
+- Verify with `npm run test:blessboard:members-schema` and `npm run test:blessboard:member-registration` on a local foundation database.
+
+Apex platform-admin (`/admin`, `/admin/organizations`, `/admin/organizations/:organizationKey`) is available on approved apex hosts for `platform_admin` users after apex login. It is read-only (directory inspection only).
 
 ## Why the hosted DB was empty before
 

@@ -1,0 +1,60 @@
+<%- include('../partials/branch-admin-shell-start') %>
+  <h1>Registrations</h1>
+  <p class="bb-ba-lede">Review member applications for <strong><%= branchDisplayName %></strong>.</p>
+
+  <% if (saved === 'approve' || saved === 'reject') { %>
+  <p class="bb-ba-ok" role="status">Registration <%= saved === 'approve' ? 'approved' : 'rejected' %>.</p>
+  <% } %>
+
+  <form method="get" action="/branch-admin/registrations" class="bb-ba-form bb-ba-filter">
+    <label for="q">Search (name, email, or phone)</label>
+    <input id="q" name="q" type="search" maxlength="100" value="<%= q || '' %>" />
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <option value="">All open + decided</option>
+      <% ['submitted','under_review','approved','rejected','withdrawn'].forEach(function (st) { %>
+      <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= st %></option>
+      <% }) %>
+    </select>
+    <button type="submit">Filter</button>
+  </form>
+
+  <% if (!items || !items.length) { %>
+  <p class="bb-ba-empty">No registrations match this filter.</p>
+  <% } else { %>
+  <table class="bb-ba-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Contact</th>
+        <th>Status</th>
+        <th>Submitted</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach(function (item) { %>
+      <tr>
+        <td><%= item.firstName %> <%= item.lastName %></td>
+        <td><%= item.emailDisplay || item.phoneDisplay || '—' %></td>
+        <td><%= item.status %></td>
+        <td><%= item.createdAt instanceof Date ? item.createdAt.toISOString().slice(0, 10) : String(item.createdAt || '').slice(0, 10) %></td>
+        <td><a href="/branch-admin/registrations/<%= item.id %>">Review</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+
+  <% if (totalPages > 1) { %>
+  <nav class="bb-ba-pager" aria-label="Pagination">
+    <% if (page > 1) { %>
+    <a href="/branch-admin/registrations?page=<%= page - 1 %>&amp;q=<%= encodeURIComponent(q || '') %>&amp;status=<%= encodeURIComponent(statusFilter || '') %>">Previous</a>
+    <% } %>
+    <span>Page <%= page %> of <%= totalPages %> (<%= total %> total)</span>
+    <% if (page < totalPages) { %>
+    <a href="/branch-admin/registrations?page=<%= page + 1 %>&amp;q=<%= encodeURIComponent(q || '') %>&amp;status=<%= encodeURIComponent(statusFilter || '') %>">Next</a>
+    <% } %>
+  </nav>
+  <% } %>
+<%- include('../partials/branch-admin-shell-end') %>

@@ -1,0 +1,58 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+  <h1>Attendance</h1>
+  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+
+  <section>
+    <h2>Monthly summary · <%= yearMonth %></h2>
+    <form method="get" action="<%= basePath %>">
+      <label>Month
+        <input type="month" name="month" value="<%= yearMonth %>" />
+      </label>
+      <button type="submit">Show</button>
+    </form>
+    <% if (!summary || (!summary.churchTotals && (!summary.byBranch || !summary.byBranch.length))) { %>
+      <p>No submitted attendance for this month.</p>
+    <% } else { %>
+      <p data-bb-attendance-grand-total="<%= summary.grandTotal %>">
+        Total headcount: <%= summary.grandTotal %>
+      </p>
+      <ul>
+        <% (summary.churchTotals || summary.byBranch).forEach(function (row) { %>
+          <li>
+            <%= row.category %>: <%= row.totalCount %>
+            (<%= row.eventCount %> event<%= row.eventCount === 1 ? '' : 's' %>)
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <% if (canCreate) { %>
+    <p><a href="<%= basePath %>/new">New attendance event</a></p>
+  <% } %>
+
+  <section>
+    <h2>Events</h2>
+    <% if (!events || !events.length) { %>
+      <p>No attendance events in this view.</p>
+    <% } else { %>
+      <ul>
+        <% events.forEach(function (ev) { %>
+          <li data-bb-status="<%= ev.status %>">
+            <a href="<%= basePath %>/<%= ev.id %>"><%= ev.title %></a>
+            · <%= ev.eventDate %> · <%= ev.status %>
+            · total <%= ev.totalCount %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>
