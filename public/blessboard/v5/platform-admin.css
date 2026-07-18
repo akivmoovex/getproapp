@@ -822,7 +822,7 @@ body.bb-pa-drawer-open { overflow: hidden; }
   color: #0f766e;
 }
 .bb-pa-chip--ok { background: #ecfdf5; color: #0f766e; }
-.bb-pa-chip--danger { background: #fef2f2; color: #b91c1c; }
+.bb-pa-chip--danger { background: var(--bb-color-error-bg, #fef3f2); color: var(--bb-color-error, #b3261e); }
 .bb-pa-chip--warn { background: #fff7ed; color: #9a5b00; }
 .bb-pa-chip--muted { background: #f3f4f6; color: #374151; }
 
@@ -1207,7 +1207,7 @@ body.bb-pa-drawer-open { overflow: hidden; }
 .bb-pa-field select {
   font: inherit;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #d0cad8;
+  border: 1px solid var(--bb-color-border, #d1dce0);
   border-radius: 0.45rem;
   background: #fff;
 }
@@ -1318,7 +1318,7 @@ body.bb-pa-drawer-open { overflow: hidden; }
 .bb-pa-search input {
   flex: 1 1 12rem;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #d0cad8;
+  border: 1px solid var(--bb-color-border, #d1dce0);
   border-radius: 0.45rem;
   font: inherit;
   background: #fff;
@@ -1865,7 +1865,7 @@ tr.is-disabled td {
 .bb-pa-field textarea {
   font: inherit;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #d0cad8;
+  border: 1px solid var(--bb-color-border, #d1dce0);
   border-radius: 0.45rem;
   background: #fff;
 }
@@ -2614,6 +2614,7 @@ tr.is-disabled td {
 .bb-pa-subs-card__cta:focus-visible,
 .bb-pa-subs__open:focus-visible,
 .bb-pa-domains-card__cta:focus-visible,
+.bb-pa-table a:focus-visible,
 .bb-pa-confirm:focus-within {
   outline: 2px solid var(--bb-violet, #6c5ce7);
   outline-offset: 2px;

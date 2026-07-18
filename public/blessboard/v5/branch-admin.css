@@ -424,9 +424,10 @@ body.bb-ba-drawer-open {
 
 .bb-ba-empty {
   margin: 0 0 1.25rem;
-  padding: 0.85rem 1rem;
-  border-radius: 0.75rem;
-  background: var(--bb-color-primary-soft, #efeaff);
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--bb-radius, 1rem);
+  background: var(--bb-surface, #fff);
+  border: 1px dashed var(--bb-line, #d1dce0);
   color: var(--bb-muted);
   font-size: 0.95rem;
 }
@@ -4304,7 +4305,7 @@ body.bb-ba-drawer-open {
   flex-wrap: wrap;
   gap: 0.35rem 1rem;
   margin: 0 0 1.25rem;
-  border-bottom: 1px solid var(--bb-border, #e2e8f0);
+  border-bottom: 1px solid var(--bb-line, #d1dce0);
 }
 .bb-fr-tabs__link {
   display: inline-block;
@@ -4422,7 +4423,7 @@ body.bb-ba-drawer-open {
 .bb-fr-attachment {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--bb-border, #e2e8f0);
+  border-top: 1px solid var(--bb-line, #d1dce0);
 }
 .bb-fr-status-form .bb-ba-field {
   margin-bottom: 0.85rem;
@@ -4455,7 +4456,7 @@ body.bb-ba-drawer-open {
   top: 0.85rem;
   bottom: 0;
   width: 2px;
-  background: var(--bb-border, #e2e8f0);
+  background: var(--bb-line, #d1dce0);
 }
 .bb-fr-timeline__dot {
   width: 0.65rem;
@@ -4595,7 +4596,7 @@ body.bb-ba-drawer-open {
 .bb-fr-resources-summary__card {
   padding: 0.85rem 1rem;
   background: var(--bb-surface, #fff);
-  border: 1px solid var(--bb-border, #e2e8f0);
+  border: 1px solid var(--bb-line, #d1dce0);
   border-radius: 1rem;
 }
 .bb-fr-forms-summary__label,
@@ -4640,7 +4641,7 @@ body.bb-ba-drawer-open {
 .bb-fr-req-summary__card {
   padding: 0.85rem 1rem;
   background: var(--bb-surface, #fff);
-  border: 1px solid var(--bb-border, #e2e8f0);
+  border: 1px solid var(--bb-line, #d1dce0);
   border-radius: 1rem;
 }
 .bb-fr-req-summary__label {
@@ -4715,7 +4716,7 @@ body.bb-ba-drawer-open {
   justify-content: space-between;
   gap: 0.5rem 1rem;
   padding: 0.75rem 0;
-  border-bottom: 1px solid var(--bb-border, #e2e8f0);
+  border-bottom: 1px solid var(--bb-line, #d1dce0);
 }
 .bb-fr-field-list li:last-child {
   border-bottom: 0;
@@ -4732,7 +4733,7 @@ body.bb-ba-drawer-open {
 }
 .bb-fr-submission {
   padding: 0.85rem 0;
-  border-bottom: 1px solid var(--bb-border, #e2e8f0);
+  border-bottom: 1px solid var(--bb-line, #d1dce0);
 }
 .bb-fr-submission:last-child {
   border-bottom: 0;
@@ -4840,7 +4841,8 @@ body.bb-ba-drawer-open {
 .bb-ann-title-link:focus-visible,
 .bb-fr-tabs__link:focus-visible,
 .bb-fr-form-card__title a:focus-visible,
-.bb-fr-req-card__title a:focus-visible {
+.bb-fr-req-card__title a:focus-visible,
+.bb-ba-table a:focus-visible {
   outline: 2px solid var(--bb-violet, #6c5ce7);
   outline-offset: 2px;
 }

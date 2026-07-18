@@ -619,7 +619,7 @@
   box-sizing: border-box;
   padding: 0.7rem 0.85rem;
   min-height: var(--bb-control-h, 3rem);
-  border: 1px solid #d0cad8;
+  border: 1px solid var(--bb-color-border, #d1dce0);
   border-radius: var(--bb-auth-radius, 1rem);
   font: inherit;
   background: #fbfaff;
@@ -641,7 +641,7 @@
 }
 
 .bb-auth-field input[aria-invalid="true"] {
-  border-color: #f97066;
+  border-color: var(--bb-color-error-border, #fecdca);
   background: #fffbfa;
 }
 

@@ -12,6 +12,19 @@
   var mpDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
   var mpChurch = typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : '';
   var mpBranch = typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : '';
+  var mpNav = (typeof navItems !== 'undefined' && navItems && navItems.length)
+    ? navItems
+    : [
+        { key: 'home', label: 'Dashboard', href: '/member', icon: 'dashboard' },
+        { key: 'announcements', label: 'Announcements', href: '/member/announcements', icon: 'campaign' },
+        { key: 'events', label: 'Events', href: '/member/events', icon: 'event' },
+        { key: 'ministries', label: 'Ministries', href: '/member/ministries', icon: 'groups' },
+        { key: 'resources', label: 'Resources', href: '/member/resources', icon: 'menu_book' },
+        { key: 'forms', label: 'Forms', href: '/member/forms', icon: 'description' },
+        { key: 'requests', label: 'Requests', href: '/member/requests', icon: 'inbox' },
+        { key: 'giving', label: 'Giving', href: '/member/giving', icon: 'payments' },
+        { key: 'profile', label: 'Profile', href: '/member/profile', icon: 'person' },
+      ];
 %>
 <body
   class="bb-mp-body"
@@ -50,7 +63,7 @@
       </div>
 
       <nav class="bb-mp-sidebar__nav" aria-label="Member portal" data-bb-nav="desktop">
-        <% (navItems || []).forEach(function (item) { %>
+        <% mpNav.forEach(function (item) { %>
         <a
           href="<%= item.href %>"
           class="bb-mp-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
@@ -146,7 +159,7 @@
             <span class="bb-mp-user__meta">Verified member</span>
           </p>
           <% } %>
-          <% (navItems || []).forEach(function (item) { %>
+          <% mpNav.forEach(function (item) { %>
           <a
             href="<%= item.href %>"
             class="bb-mp-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"

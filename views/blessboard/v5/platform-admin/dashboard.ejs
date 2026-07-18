@@ -68,7 +68,7 @@
       key: 'tickets',
       label: 'Open tickets',
       icon: 'contact_support',
-      href: '/admin/deployments',
+      href: null,
       tone: 'warn',
       available: false,
       value: '—',
@@ -79,11 +79,11 @@
       key: 'health',
       label: 'System health',
       icon: 'monitor_heart',
-      href: '/admin/deployments',
+      href: null,
       tone: 'warn',
       available: false,
       value: '—',
-      hint: 'Open deployments registry',
+      hint: 'Health scores are not fabricated here',
       visibility: 'mobile'
     }
   ];
@@ -147,6 +147,7 @@
         var className = 'bb-pa-dash-stat bb-pa-dash-stat--' + card.tone + visClass;
         var availAttr = card.available ? '1' : '0';
       %>
+      <% if (card.href) { %>
       <a
         class="<%= className %> bb-pa-dash-stat--link<%= card.available ? '' : ' is-unavailable' %>"
         href="<%= card.href %>"
@@ -164,6 +165,21 @@
         <% } %>
         <span class="bb-pa-dash-stat__hint"><%= card.hint %></span>
       </a>
+      <% } else { %>
+      <article
+        class="<%= className %> is-unavailable"
+        data-bb-dash-stat="<%= card.key %>"
+        data-bb-dash-stat-available="<%= availAttr %>"
+        aria-disabled="true"
+      >
+        <span class="bb-pa-dash-stat__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= card.icon %></span>
+        </span>
+        <span class="bb-pa-dash-stat__label"><%= card.label %></span>
+        <strong class="bb-pa-dash-stat__value" aria-hidden="true"><%= card.value %></strong>
+        <span class="bb-pa-dash-stat__hint"><%= card.hint %></span>
+      </article>
+      <% } %>
       <% }) %>
     </div>
   </section>

@@ -21,6 +21,7 @@ body.bb-apex-body {
   color: var(--bb-color-ink, #1a1c1e);
   background: var(--bb-color-page, #fbf9f6);
   line-height: var(--bb-leading-relaxed, 1.6);
+  overflow-x: clip;
 }
 
 .bb-apex-skip {
@@ -843,7 +844,7 @@ body.bb-apex-body {
 
 .bb-apex-mkt-split__media {
   min-width: 0;
-  border-radius: var(--bb-radius-lg, 1rem);
+  border-radius: var(--bb-radius, 1rem);
   overflow: hidden;
   box-shadow: var(--bb-shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08));
 }
@@ -1018,7 +1019,7 @@ body.bb-apex-body {
   flex-direction: column;
   gap: 0.75rem;
   padding: 1.5rem;
-  border-radius: var(--bb-radius-lg, 1rem);
+  border-radius: var(--bb-radius, 1rem);
   background: #fff;
   border: 1px solid var(--bb-color-border, #d1dce0);
   min-width: 0;
@@ -1096,7 +1097,7 @@ body.bb-apex-body {
 .bb-apex-partner-card {
   margin-top: 1.5rem;
   padding: 1.5rem;
-  border-radius: var(--bb-radius-lg, 1rem);
+  border-radius: var(--bb-radius, 1rem);
   background: linear-gradient(135deg, #1a1c1e 0%, #2c2548 100%);
   color: #fff;
   display: grid;
@@ -1236,7 +1237,7 @@ body.bb-apex-body {
 .bb-apex-directory-empty {
   text-align: center;
   padding: 2.5rem 1.25rem;
-  border-radius: var(--bb-radius-lg, 1rem);
+  border-radius: var(--bb-radius, 1rem);
   background: #fff;
   border: 1px dashed var(--bb-color-border, #d1dce0);
 }
@@ -1293,7 +1294,7 @@ body.bb-apex-body {
 
 .bb-apex-register__card {
   padding: 1.5rem;
-  border-radius: var(--bb-radius-lg, 1rem);
+  border-radius: var(--bb-radius, 1rem);
   background: #fff;
   border: 1px solid var(--bb-color-border, #d1dce0);
   box-shadow: var(--bb-shadow-md, 0 8px 24px rgba(0, 0, 0, 0.06));
@@ -1380,5 +1381,21 @@ body.bb-apex-body {
 
   .bb-apex-header__actions .bb-apex-btn--ghost {
     display: none;
+  }
+}
+
+/* Shared focus / overflow guards (cross-shell regression) */
+.bb-apex-brand:focus-visible,
+.bb-apex-nav__link:focus-visible,
+.bb-apex-drawer__link:focus-visible,
+.bb-apex-drawer__close:focus-visible,
+.bb-apex-drawer__logout button:focus-visible {
+  outline: 2px solid var(--bb-color-primary, #6c5ce7);
+  outline-offset: 2px;
+}
+
+@media (max-width: 320px) {
+  body.bb-apex-body {
+    overflow-x: hidden;
   }
 }

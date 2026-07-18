@@ -290,8 +290,14 @@ body[data-bb-page="auth-error"] .bb-auth-error {
   text-decoration: none;
 }
 
-.bb-apex-account__note a:hover {
+.bb-apex-account__note a:hover,
+.bb-apex-account__note a:focus-visible {
   text-decoration: underline;
+}
+
+.bb-apex-account__note a:focus-visible {
+  outline: 2px solid var(--bb-color-primary, #6c5ce7);
+  outline-offset: 2px;
 }
 
 .bb-apex-account__logout {

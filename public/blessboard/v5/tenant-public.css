@@ -1003,7 +1003,7 @@ body.bb-tp-body {
   height: 3rem;
   margin-bottom: 0.85rem;
   border-radius: 0.75rem;
-  background: var(--bb-primary-soft, #efeaff);
+  background: var(--bb-color-primary-soft, #efeaff);
   color: var(--bb-violet);
 }
 
@@ -1232,7 +1232,7 @@ body.bb-tp-body {
 }
 
 .bb-tp-error {
-  color: #b42318;
+  color: var(--bb-color-error, #b3261e);
   background: #fef2f2;
   border-radius: var(--bb-radius-sm);
   padding: 0.75rem 1rem;
@@ -2480,7 +2480,7 @@ body.bb-tp-body {
 
   .bb-tp-event-card__media {
     min-height: 100%;
-    background: var(--bb-primary-soft, #efeaff);
+    background: var(--bb-color-primary-soft, #efeaff);
   }
 
   .bb-tp-event-card__media img {
