@@ -37,6 +37,8 @@ describe("blessboard v5 design system", () => {
     assert.match(tokens, /--bb-font-sans:.*"Hanken Grotesk"/);
     assert.match(tokens, /--bb-max:\s*80rem/);
     assert.match(tokens, /--bb-control-h:\s*3rem/);
+    assert.match(tokens, /--bb-header-h:\s*5rem/);
+    assert.match(tokens, /--bb-gradient-page/);
     assert.match(tokens, /prefers-reduced-motion|@media \(max-width: 767px\)/);
     // Legacy aliases for existing shells
     assert.match(tokens, /--bb-violet:\s*var\(--bb-color-primary/);
@@ -46,16 +48,24 @@ describe("blessboard v5 design system", () => {
     const css = read("public/blessboard/v5/design-system.css");
     for (const sel of [
       ".bb-ds-btn",
+      ".bb-ds-btn--text",
       ".bb-ds-input",
       ".bb-ds-badge",
       ".bb-ds-card",
+      ".bb-ds-metric",
+      ".bb-ds-page-header",
       ".bb-ds-alert",
       ".bb-ds-empty",
       ".bb-ds-table",
+      ".bb-ds-table-cards",
       ".bb-ds-pagination",
       ".bb-ds-modal",
       ".bb-ds-drawer",
       ".bb-ds-nav",
+      ".bb-ds-footer",
+      ".bb-ds-portal-sidebar",
+      ".bb-ds-portal-top",
+      ".bb-powered-by",
       ":focus-visible",
       "prefers-reduced-motion",
     ]) {
@@ -84,6 +94,10 @@ describe("blessboard v5 design system", () => {
       "error-state.ejs",
       "success-state.ejs",
       "confirm-state.ejs",
+      "page-header.ejs",
+      "metric-card.ejs",
+      "modal-shell.ejs",
+      "powered-by-getpro.ejs",
     ];
     for (const name of required) {
       assert.equal(fs.existsSync(path.join(PARTIALS, name)), true, name);
@@ -92,6 +106,7 @@ describe("blessboard v5 design system", () => {
 
   it("wires head-design-system into V5 shells without removing shell CSS", () => {
     const shells = [
+      "views/blessboard/v5/partials/apex-shell-start.ejs",
       "views/blessboard/v5/partials/tenant-public-shell-start.ejs",
       "views/blessboard/v5/partials/member-shell-start.ejs",
       "views/blessboard/v5/partials/hq-shell-start.ejs",
@@ -162,5 +177,33 @@ describe("blessboard v5 design system", () => {
     assert.match(pages, /aria-current="page"/);
     assert.match(pages, /page=1/);
     assert.match(pages, /page=3/);
+
+    const header = render("page-header.ejs", {
+      title: "Members",
+      subtitle: "Directory",
+      eyebrow: "Branch",
+    });
+    assert.match(header, /bb-ds-page-header/);
+    assert.match(header, /Members/);
+    assert.match(header, /Directory/);
+
+    const metric = render("metric-card.ejs", {
+      label: "Pending",
+      value: "3",
+      hint: "Registrations",
+    });
+    assert.match(metric, /bb-ds-metric/);
+    assert.match(metric, /Pending/);
+    assert.match(metric, />3</);
+
+    const modal = render("modal-shell.ejs", {
+      id: "bb-test-modal",
+      title: "Confirm",
+      body: "Are you sure?",
+    });
+    assert.match(modal, /data-bb-ds-modal/);
+    assert.match(modal, /role="dialog"/);
+    assert.match(modal, /Confirm/);
+    assert.match(modal, /hidden/);
   });
 });

@@ -1,7 +1,9 @@
 /**
  * BlessBoard V5 design tokens — single source of truth.
- * Stitch: Visual System Specification (c8d8352b…) + Shared UI States (b61a1ea8…).
- * Product primary remains Sacred Modernity violet #6C5CE7 (not Stitch HTML Inter/#3b22b5).
+ * Stitch: Visual System Specification (c8d8352b1b95400cb25e32a79c2f0b2e)
+ *         Shared UI States Board (b61a1ea8176648408211b681e942e0a6)
+ * Product primary remains Sacred Modernity violet #6C5CE7
+ * (Stitch HTML mocks may use Inter / #3b22b5 — do not copy those).
  */
 
 :root {
@@ -11,6 +13,7 @@
   --bb-color-primary: #6c5ce7;
   --bb-color-primary-hover: #5341cd;
   --bb-color-primary-soft: #efeaff;
+  --bb-color-primary-deep: #3d348b;
   --bb-color-accent: #ff9800;
   --bb-color-on-primary: #ffffff;
 
@@ -22,18 +25,36 @@
   --bb-color-muted: #44474e;
   --bb-color-border: #d1dce0;
   --bb-color-focus-ring: rgba(108, 92, 231, 0.45);
+  --bb-color-overlay: rgba(26, 28, 30, 0.45);
 
   /* —— Feedback —— */
   --bb-color-success: #0f766e;
   --bb-color-success-bg: #ecfdf5;
+  --bb-color-success-border: #a7f3d0;
   --bb-color-error: #b3261e;
   --bb-color-error-bg: #fef3f2;
+  --bb-color-error-border: #fecdca;
   --bb-color-warning: #b54708;
   --bb-color-warning-bg: #fffaeb;
+  --bb-color-warning-border: #fedf89;
   --bb-color-info: #026aa2;
   --bb-color-info-bg: #f0f9ff;
+  --bb-color-info-border: #b2ddff;
 
-  /* —— Legacy aliases (existing shells use these names) —— */
+  /* —— Gradients (page atmosphere; local CSS only) —— */
+  --bb-gradient-page:
+    radial-gradient(1200px 500px at 0% 0%, #efeaff 0%, transparent 55%),
+    radial-gradient(900px 400px at 100% 0%, #f1fbff 0%, transparent 50%),
+    var(--bb-color-page);
+  --bb-gradient-primary: linear-gradient(
+    135deg,
+    var(--bb-color-primary-hover) 0%,
+    var(--bb-color-primary) 55%,
+    var(--bb-color-primary-deep) 100%
+  );
+  --bb-gradient-mesh: linear-gradient(145deg, #efeaff, #e4f0f4 50%, #d1cbff);
+
+  /* —— Legacy aliases (existing shells) —— */
   --bb-violet: var(--bb-color-primary);
   --bb-violet-deep: var(--bb-color-primary-hover);
   --bb-getpro: var(--bb-color-accent);
@@ -48,24 +69,27 @@
   --bb-warm: #f3efe8;
   --bb-disabled: #9a93a8;
 
-  /* —— Typography —— */
+  /* —— Typography (Stitch Hanken Grotesk scale) —— */
   --bb-font-sans: "Hanken Grotesk", system-ui, sans-serif;
   --bb-font-weight-regular: 400;
   --bb-font-weight-medium: 500;
   --bb-font-weight-semibold: 600;
   --bb-font-weight-bold: 700;
-  --bb-text-hero: 4rem; /* 64px */
-  --bb-text-h1: 2.5rem; /* 40px */
-  --bb-text-h2: 1.75rem; /* 28px */
+  /* Stitch: H1 Hero 64 / H2 Section 40 / H3 Subhead 28 */
+  --bb-text-hero: 4rem; /* 64px — Stitch H1 */
+  --bb-text-h1: 2.5rem; /* 40px — Stitch H2 */
+  --bb-text-h2: 1.75rem; /* 28px — Stitch H3 */
+  --bb-text-h3: 1.25rem; /* 20px — in-page titles */
   --bb-text-body-lg: 1.125rem; /* 18px */
   --bb-text-body: 1rem; /* 16px */
   --bb-text-label: 0.875rem; /* 14px */
+  --bb-text-caption: 0.75rem; /* 12px — badges */
   --bb-leading-tight: 1.2;
   --bb-leading-snug: 1.3;
   --bb-leading-normal: 1.5;
   --bb-leading-relaxed: 1.6;
 
-  /* —— Spacing (4px base) —— */
+  /* —— Spacing (4px base: 4–128) —— */
   --bb-space-1: 0.25rem; /* 4 */
   --bb-space-2: 0.5rem; /* 8 */
   --bb-space-3: 1rem; /* 16 */
@@ -78,27 +102,37 @@
 
   /* —— Layout —— */
   --bb-max: 80rem; /* 1280px */
+  --bb-max-narrow: 40rem; /* forms / auth */
   --bb-gutter: 2rem; /* 32 desktop */
   --bb-gutter-mobile: 1rem; /* 16 */
   --bb-section: 4rem;
   --bb-header-h: 5rem; /* 80px Stitch desktop header */
   --bb-header-h-compact: 4rem;
+  --bb-sidebar-w: 16.5rem; /* portal desktop sidebar */
+  --bb-drawer-w: 22rem;
 
   /* —— Radii & shadows —— */
-  --bb-radius: 1rem; /* 16 */
-  --bb-radius-sm: 0.5rem; /* 8 */
+  --bb-radius: 1rem; /* 16 — buttons, cards, inputs (Stitch) */
+  --bb-radius-sm: 0.5rem; /* 8 — icon buttons, chips */
   --bb-radius-pill: 999px;
   --bb-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --bb-shadow-md: 0 10px 30px rgba(108, 92, 231, 0.08);
   --bb-shadow: var(--bb-shadow-md);
+  --bb-shadow-focus: 0 0 0 4px var(--bb-color-focus-ring);
 
   /* —— Controls —— */
   --bb-control-h: 3rem; /* 48 */
   --bb-icon-size: 1.5rem; /* 24 */
   --bb-touch-min: 2.75rem; /* 44 */
 
-  /* —— Breakpoints (documented; used in media queries as literals) —— */
-  /* mobile: 0–767 · tablet+: 768 · drawer/nav: 900 (existing shells) */
+  /* —— Z-index —— */
+  --bb-z-header: 40;
+  --bb-z-drawer: 70;
+  --bb-z-modal: 80;
+  --bb-z-toast: 90;
+
+  /* —— Breakpoints (documented; media queries use literals) —— */
+  /* mobile: 0–767 · tablet+/desktop: 768+ · shell drawer/nav: 900 */
   --bb-bp-md: 768px;
   --bb-bp-lg: 900px;
 }
@@ -109,5 +143,6 @@
     --bb-header-h: var(--bb-header-h-compact);
     --bb-text-hero: 2.5rem;
     --bb-text-h1: 2rem;
+    --bb-section: 3rem;
   }
 }

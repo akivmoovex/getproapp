@@ -5,12 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Register · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/blessboard/v5/design-tokens.css?v=1" />
-  <link rel="stylesheet" href="/blessboard/v5/design-system.css?v=1" />
+  <%- include('../partials/head-design-system') %>
   <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=3" />
 </head>
 <body class="bb-auth-body" data-bb-shell="tenant-auth" data-bb-product="blessboard-v5" data-bb-page="register">
@@ -236,6 +231,7 @@
     </div>
   </div>
 
+  <script src="/blessboard/v5/design-system.js?v=2" defer></script>
   <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 /**
  * Shared design-system behaviors (CSP-compatible: external file, no inline handlers).
- * Opt-in via data attributes — does not replace existing shell drawer scripts.
+ * Opt-in via data attributes — does not replace existing shell drawer scripts
+ * (apex.js, tenant-public.js, shell-nav.js remain authoritative for shell chrome).
  *
  * - [data-bb-ds-drawer] + [data-bb-ds-drawer-open] / [data-bb-ds-drawer-close]
  * - [data-bb-ds-modal] + [data-bb-ds-modal-open] / [data-bb-ds-modal-close]
@@ -27,6 +28,16 @@
       el.removeAttribute("data-bb-ds-open");
       document.documentElement.classList.remove(htmlClass);
     }
+  }
+
+  function focusable(root) {
+    if (!root) return [];
+    return qsa(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      root
+    ).filter(function (el) {
+      return !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true";
+    });
   }
 
   function bindDrawers() {
@@ -75,6 +86,7 @@
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-bb-ds-modal-open");
         var modal = id ? document.getElementById(id) : null;
+        btn.setAttribute("data-bb-ds-modal-return", "1");
         setOpen(modal, true, "bb-ds-modal-open");
         var panel = modal && qs(".bb-ds-modal__panel", modal);
         if (panel) {
@@ -93,17 +105,55 @@
       btn.addEventListener("click", function () {
         var modal = btn.closest("[data-bb-ds-modal]");
         setOpen(modal, false, "bb-ds-modal-open");
+        var opener = qs('[data-bb-ds-modal-open][data-bb-ds-modal-return="1"]');
+        if (opener) {
+          opener.removeAttribute("data-bb-ds-modal-return");
+          try {
+            opener.focus();
+          } catch (_) {
+            /* ignore */
+          }
+        }
       });
     });
 
     document.addEventListener("keydown", function (ev) {
-      if (ev.key !== "Escape") return;
-      qsa('[data-bb-ds-modal][data-bb-ds-open="1"]').forEach(function (modal) {
-        setOpen(modal, false, "bb-ds-modal-open");
-      });
-      qsa('[data-bb-ds-drawer][data-bb-ds-open="1"]').forEach(function (drawer) {
-        setOpen(drawer, false, "bb-ds-drawer-open");
-      });
+      if (ev.key === "Escape") {
+        qsa('[data-bb-ds-modal][data-bb-ds-open="1"]').forEach(function (modal) {
+          setOpen(modal, false, "bb-ds-modal-open");
+        });
+        qsa('[data-bb-ds-drawer][data-bb-ds-open="1"]').forEach(function (drawer) {
+          setOpen(drawer, false, "bb-ds-drawer-open");
+          var toggle = drawer.id ? qs('[aria-controls="' + drawer.id + '"]') : null;
+          if (toggle) toggle.setAttribute("aria-expanded", "false");
+        });
+        var opener = qs('[data-bb-ds-modal-open][data-bb-ds-modal-return="1"]');
+        if (opener) {
+          opener.removeAttribute("data-bb-ds-modal-return");
+          try {
+            opener.focus();
+          } catch (_) {
+            /* ignore */
+          }
+        }
+        return;
+      }
+
+      if (ev.key !== "Tab") return;
+      var openModal = qs('[data-bb-ds-modal][data-bb-ds-open="1"]');
+      if (!openModal) return;
+      var panel = qs(".bb-ds-modal__panel", openModal);
+      var nodes = focusable(panel);
+      if (!nodes.length) return;
+      var first = nodes[0];
+      var last = nodes[nodes.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
+      }
     });
   }
 

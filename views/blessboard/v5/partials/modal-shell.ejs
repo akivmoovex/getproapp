@@ -1,0 +1,40 @@
+<%#
+  Modal shell. Locals:
+    - id (required)
+    - title (required)
+    - body (optional text)
+    - bodyHtml (optional raw HTML; takes precedence over body)
+    - labelledBy (optional; defaults to id + '-title')
+    - open (optional boolean; when true, no hidden attribute)
+    - panelClass (optional)
+  Place action buttons inside the caller after include, or pass actionsHtml.
+    - actionsHtml (optional)
+%>
+<%
+  var _id = typeof id !== 'undefined' && id ? String(id) : 'bb-ds-modal';
+  var _title = typeof title !== 'undefined' && title ? title : 'Dialog';
+  var _labelledBy = typeof labelledBy !== 'undefined' && labelledBy ? labelledBy : (_id + '-title');
+  var _open = typeof open !== 'undefined' && open;
+%>
+<div
+  class="bb-ds-modal"
+  id="<%= _id %>"
+  data-bb-ds-modal
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="<%= _labelledBy %>"
+  <% if (!_open) { %>hidden<% } %>
+>
+  <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+  <div class="bb-ds-modal__panel<%= typeof panelClass !== 'undefined' && panelClass ? ' ' + panelClass : '' %>" tabindex="-1">
+    <h2 id="<%= _labelledBy %>" class="bb-ds-modal__title"><%= _title %></h2>
+    <% if (typeof bodyHtml !== 'undefined' && bodyHtml) { %>
+    <div class="bb-ds-modal__body"><%- bodyHtml %></div>
+    <% } else if (typeof body !== 'undefined' && body) { %>
+    <p class="bb-ds-modal__body"><%= body %></p>
+    <% } %>
+    <% if (typeof actionsHtml !== 'undefined' && actionsHtml) { %>
+    <div class="bb-ds-modal__actions"><%- actionsHtml %></div>
+    <% } %>
+  </div>
+</div>

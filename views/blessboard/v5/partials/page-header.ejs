@@ -1,0 +1,26 @@
+<%#
+  Page title / header. Locals:
+    - title (required)
+    - subtitle (optional)
+    - eyebrow (optional)
+    - actionsHtml (optional raw HTML for action buttons — prefer caller-provided markup)
+    - className (optional)
+%>
+<%
+  var _title = typeof title !== 'undefined' && title ? title : '';
+  var _cls = 'bb-ds-page-header' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<header class="<%= _cls %>" data-bb-ds="page-header">
+  <div class="bb-ds-page-header__copy">
+    <% if (typeof eyebrow !== 'undefined' && eyebrow) { %>
+    <p class="bb-ds-page-header__eyebrow"><%= eyebrow %></p>
+    <% } %>
+    <h1 class="bb-ds-page-header__title"><%= _title %></h1>
+    <% if (typeof subtitle !== 'undefined' && subtitle) { %>
+    <p class="bb-ds-page-header__subtitle"><%= subtitle %></p>
+    <% } %>
+  </div>
+  <% if (typeof actionsHtml !== 'undefined' && actionsHtml) { %>
+  <div class="bb-ds-page-header__actions"><%- actionsHtml %></div>
+  <% } %>
+</header>

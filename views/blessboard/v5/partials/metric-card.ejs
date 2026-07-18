@@ -1,0 +1,17 @@
+<%#
+  Metric card. Locals: label, value, hint (optional), className (optional)
+%>
+<%
+  var _label = typeof label !== 'undefined' && label ? label : '';
+  var _value = typeof value !== 'undefined' ? value : '';
+  var _cls = 'bb-ds-metric' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<div class="<%= _cls %>" data-bb-ds="metric-card">
+  <% if (_label) { %>
+  <p class="bb-ds-metric__label"><%= _label %></p>
+  <% } %>
+  <p class="bb-ds-metric__value"><%= _value %></p>
+  <% if (typeof hint !== 'undefined' && hint) { %>
+  <p class="bb-ds-metric__hint"><%= hint %></p>
+  <% } %>
+</div>
