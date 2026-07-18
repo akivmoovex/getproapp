@@ -93,9 +93,20 @@
         </select>
       </div>
       <div class="bb-ba-field">
-        <label for="media_asset_id">Media asset id (optional)</label>
-        <input id="media_asset_id" type="text" name="media_asset_id" maxlength="36" autocomplete="off" />
+        <label for="media_asset_id">Media attachment (optional)</label>
+        <input id="media_asset_id" type="text" name="media_asset_id" maxlength="36" autocomplete="off" placeholder="Optional — use picker" />
+        <% if (typeof mediaUploadUrl !== 'undefined' && mediaUploadUrl) { %>
+        <%- include('../content-admin/media-upload', {
+              uploadUrl: mediaUploadUrl,
+              targetInputId: 'media_asset_id',
+              csrfToken: csrfToken,
+              visibility: 'private',
+              fillField: 'assetId'
+            }) %>
+        <p class="bb-ba-hint">Private media only. Member downloads use the authenticated resource file route — never public CDN for private assets.</p>
+        <% } else { %>
         <p class="bb-ba-hint">Use a private media asset id when the resource includes a downloadable file.</p>
+        <% } %>
       </div>
       <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Create draft</button>
     </form>

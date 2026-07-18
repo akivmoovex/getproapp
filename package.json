@@ -71,6 +71,7 @@
     "test:blessboard:public-content-schema": "node --test --test-concurrency=1 tests/blessboard-public-content-schema.test.js",
     "test:blessboard:apex-home": "node --test --test-concurrency=1 tests/blessboard-apex-home.test.js",
     "test:blessboard:design-system": "node --test tests/blessboard-design-system.test.js",
+    "test:blessboard:a11y-structure": "node --test tests/blessboard-v5-a11y-structure.test.js",
     "test:blessboard:public-pages": "node --test --test-concurrency=1 tests/blessboard-public-pages.test.js",
     "test:blessboard:content-admin": "node --test --test-concurrency=1 tests/blessboard-content-admin.test.js",
     "test:blessboard:media": "node --test --test-concurrency=1 tests/blessboard-media.test.js",

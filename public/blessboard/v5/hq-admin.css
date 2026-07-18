@@ -8,6 +8,7 @@ body.bb-hq-body {
   background: var(--bb-color-page, var(--bb-bg, #fbf9f6));
   color: var(--bb-ink);
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 body.bb-hq-drawer-open { overflow: hidden; }
@@ -266,8 +267,10 @@ body.bb-hq-drawer-open { overflow: hidden; }
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.15rem;
   padding: 0.4rem 0.2rem;
+  min-height: var(--bb-touch-min, 2.75rem);
   border-radius: 0.5rem;
   color: var(--bb-muted);
   text-decoration: none;
@@ -1098,4 +1101,44 @@ body.bb-hq-drawer-open { overflow: hidden; }
 .bb-hq-att-report .bb-hq-panel,
 .bb-hq-giv-report .bb-hq-panel {
   margin-bottom: 1.25rem;
+}
+
+/* Responsive / a11y sweep — focus, touch, overflow (no layout redesign) */
+.bb-hq-frame,
+.bb-hq-main {
+  min-width: 0;
+}
+.bb-hq-nav-link:focus-visible,
+.bb-hq-bottom__link:focus-visible,
+.bb-hq-icon-link:focus-visible,
+.bb-hq-nav-toggle:focus-visible,
+.bb-hq-drawer__close:focus-visible,
+.bb-hq-logout button:focus-visible,
+.bb-hq-btn:focus-visible,
+.bb-hq-link:focus-visible,
+.bb-ba-btn:focus-visible,
+.bb-media-picker__open:focus-visible {
+  outline: 2px solid var(--bb-violet, #6c5ce7);
+  outline-offset: 2px;
+}
+.bb-hq-icon-link,
+.bb-hq-nav-toggle,
+.bb-hq-drawer__close {
+  min-width: var(--bb-touch-min, 2.75rem);
+  min-height: var(--bb-touch-min, 2.75rem);
+}
+.bb-hq-table-wrap,
+.bb-ba-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-hq-body *,
+  .bb-hq-body *::before,
+  .bb-hq-body *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

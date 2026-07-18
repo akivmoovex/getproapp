@@ -446,6 +446,83 @@ describe("blessboard media service + http", () => {
     fs.rmSync(root, { recursive: true, force: true });
   });
 
+  it("lists church assets and archives via content-admin JSON; denies cross-tenant list", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sidA = sessionCookie(users.hqA);
+    const bootA = await request(app).get("/hq/content").set("Host", HOST_A).set("Cookie", sidA);
+    const csrfA = extractCookie(bootA, CSRF_COOKIE);
+    assert.ok(csrfA);
+
+    const up = await request(app)
+      .post("/hq/content/media/upload")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(sidA, `${CSRF_COOKIE}=${csrfA}`))
+      .field(CSRF_FIELD, csrfA)
+      .field("visibility", "public")
+      .attach("file", PNG_1X1, "library.png");
+    assert.equal(up.status, 200, JSON.stringify(up.body));
+    assert.equal(up.body.ok, true);
+
+    const listA = await request(app)
+      .get("/hq/content/media?visibility=public&limit=50")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "application/json");
+    assert.equal(listA.status, 200);
+    assert.equal(listA.body.ok, true);
+    assert.ok(Array.isArray(listA.body.assets));
+    assert.ok(listA.body.assets.some((a) => a.id === up.body.assetId));
+    const row = listA.body.assets.find((a) => a.id === up.body.assetId);
+    assert.equal(row.visibility, "public");
+    assert.match(row.previewPath, /\/hq\/content\/media\//);
+    assert.equal(Object.prototype.hasOwnProperty.call(row, "storageKey"), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(row, "storageBucket"), false);
+    assert.doesNotMatch(JSON.stringify(listA.body), /supabase|service_role|SECRET/i);
+
+    const page = await request(app)
+      .get("/hq/announcements/new")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA);
+    assert.equal(page.status, 200);
+    assert.match(page.text, /data-bb-media-picker="1"/);
+    assert.match(page.text, /media-picker\.js/);
+    assert.match(page.text, /data-visibility="private"/);
+
+    const sidB = sessionCookie(users.hqB);
+    const listCross = await request(app)
+      .get("/hq/content/media?visibility=public")
+      .set("Host", HOST_B)
+      .set("Cookie", sidB)
+      .set("Accept", "application/json");
+    assert.equal(listCross.status, 200);
+    assert.equal(listCross.body.ok, true);
+    assert.equal(
+      listCross.body.assets.some((a) => a.id === up.body.assetId),
+      false,
+      "church B must not see church A assets"
+    );
+
+    const archived = await request(app)
+      .post(`/hq/content/media/${up.body.assetId}/archive`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(sidA, `${CSRF_COOKIE}=${csrfA}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: csrfA });
+    assert.equal(archived.status, 200, JSON.stringify(archived.body));
+    assert.equal(archived.body.ok, true);
+    assert.equal(archived.body.status, "archived");
+
+    const listAfter = await request(app)
+      .get("/hq/content/media?visibility=public")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA);
+    assert.equal(listAfter.status, 200);
+    assert.equal(
+      listAfter.body.assets.some((a) => a.id === up.body.assetId),
+      false
+    );
+  });
+
   it("leaves V4 server.legacy.js unchanged (presence check)", () => {
     const legacy = path.join(__dirname, "..", "server.legacy.js");
     assert.equal(fs.existsSync(legacy), true);

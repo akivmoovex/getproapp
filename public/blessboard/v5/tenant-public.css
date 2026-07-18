@@ -1756,3 +1756,24 @@ body.bb-tp-body {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-tp-body *,
+  .bb-tp-body *::before,
+  .bb-tp-body *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.bb-tp-nav-link:focus-visible,
+.bb-tp-drawer__link:focus-visible,
+.bb-tp-menu-btn:focus-visible,
+.bb-tp-drawer__close:focus-visible,
+.bb-tp-btn:focus-visible,
+.bb-tp-link:focus-visible {
+  outline: 2px solid var(--bb-violet, #6c5ce7);
+  outline-offset: 2px;
+}

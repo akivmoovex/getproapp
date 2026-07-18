@@ -29,8 +29,9 @@
   else if (errorState === 'unauthorized') icon = 'block';
   else if (errorState === 'throttled') icon = 'hourglass_top';
 %>
+  <a class="bb-auth-skip" href="#bb-auth-error-main">Skip to content</a>
   <div class="bb-auth-layout">
-    <div class="bb-auth-main bb-auth-main--solo">
+    <div class="bb-auth-main bb-auth-main--solo" id="bb-auth-error-main">
       <header class="bb-auth-main__header">
         <a class="bb-auth-brand" href="/">
           <img

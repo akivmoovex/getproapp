@@ -10,6 +10,7 @@ body.bb-ba-body {
   background: var(--bb-color-page, var(--bb-bg, #fbf9f6));
   color: var(--bb-ink);
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 body.bb-ba-drawer-open {
@@ -313,8 +314,10 @@ body.bb-ba-drawer-open {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.1rem;
   padding: 0.35rem 0.2rem;
+  min-height: var(--bb-touch-min, 2.75rem);
   text-decoration: none;
   color: var(--bb-muted);
   font-size: 0.65rem;
@@ -1268,4 +1271,41 @@ body.bb-ba-drawer-open {
 }
 .bb-fr-form-create .bb-ba-field {
   margin-bottom: 0.85rem;
+}
+
+/* Responsive / a11y sweep — focus, touch, overflow (no layout redesign) */
+.bb-ba-frame,
+.bb-ba-main {
+  min-width: 0;
+}
+.bb-ba-nav-link:focus-visible,
+.bb-ba-bottom__link:focus-visible,
+.bb-ba-icon-link:focus-visible,
+.bb-ba-nav-toggle:focus-visible,
+.bb-ba-drawer__close:focus-visible,
+.bb-ba-btn:focus-visible,
+.bb-ba-link:focus-visible,
+.bb-media-picker__open:focus-visible {
+  outline: 2px solid var(--bb-violet, #6c5ce7);
+  outline-offset: 2px;
+}
+.bb-ba-icon-link,
+.bb-ba-nav-toggle,
+.bb-ba-drawer__close {
+  min-width: var(--bb-touch-min, 2.75rem);
+  min-height: var(--bb-touch-min, 2.75rem);
+}
+.bb-ba-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-ba-body *,
+  .bb-ba-body *::before,
+  .bb-ba-body *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

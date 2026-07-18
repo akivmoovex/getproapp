@@ -107,10 +107,43 @@ async function archiveMediaAsset(db, input) {
   return mapAsset(rows[0] || null);
 }
 
+/**
+ * Active media assets for one church (tenant-scoped library).
+ * Bounded; never returns storage credentials.
+ * @param {{ query: Function }} db
+ * @param {{
+ *   churchId: string,
+ *   visibility?: string | null,
+ *   limit?: number,
+ *   offset?: number,
+ * }} input
+ */
+async function listActiveMediaAssetsForChurch(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const visibility =
+    input && input.visibility != null && String(input.visibility).trim()
+      ? String(input.visibility).trim().toLowerCase()
+      : null;
+  const limit = Math.min(Math.max(Number(input && input.limit) || 50, 1), 100);
+  const offset = Math.max(Number(input && input.offset) || 0, 0);
+  const { rows } = await db.query(
+    `SELECT ${ASSET_COLS}
+       FROM blessboard.media_assets
+      WHERE church_id = $1
+        AND status = 'active'
+        AND ($2::text IS NULL OR visibility = $2)
+      ORDER BY created_at DESC
+      LIMIT $3 OFFSET $4`,
+    [churchId, visibility, limit, offset]
+  );
+  return rows.map(mapAsset);
+}
+
 module.exports = {
   mapAsset,
   findMediaAssetById,
   findActiveByChurchSha256,
   insertMediaAsset,
   archiveMediaAsset,
+  listActiveMediaAssetsForChurch,
 };

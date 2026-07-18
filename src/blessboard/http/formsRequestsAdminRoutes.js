@@ -267,6 +267,12 @@ function createFormsRequestsAdminRouter(deps) {
     return true;
   }
 
+  function mediaUploadUrlForScope(scope) {
+    if (variant === "branch") return "/branch-admin/content/media/upload";
+    if (scope && scope.branchKey) return `/hq/content/b/${scope.branchKey}/media/upload`;
+    return "/hq/content/media/upload";
+  }
+
   async function resolveScope(req, res, section) {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
@@ -401,6 +407,7 @@ function createFormsRequestsAdminRouter(deps) {
                 resources: listed.resources,
                 canCreate: Boolean(scope.branchId) || variant === "hq",
                 saved: String((req.query && req.query.saved) || ""),
+                mediaUploadUrl: mediaUploadUrlForScope(scope),
                 ...branchLocals,
               })
             )

@@ -453,7 +453,13 @@ function createContentAdminRouter(deps) {
               : result.status === MEDIA_STATUS.STORAGE_ERROR
                 ? 503
                 : 400;
-        return res.status(status).json({ ok: false, reason: result.reason || "upload_failed" });
+        const cleanup =
+          result.status === MEDIA_STATUS.STORAGE_ERROR || result.reason === "upload_failed";
+        return res.status(status).json({
+          ok: false,
+          reason: result.reason || "upload_failed",
+          cleanup: cleanup ? "removed" : null,
+        });
       }
 
       return res.status(200).json({
@@ -463,8 +469,34 @@ function createContentAdminRouter(deps) {
         mimeType: result.asset.mimeType,
         sizeBytes: result.asset.sizeBytes,
         visibility: result.asset.visibility,
+        originalFilename: result.asset.originalFilename,
         deduped: Boolean(result.deduped),
       });
+    });
+
+    router.get(`${p}/media`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const visibilityRaw = String((req.query && req.query.visibility) || "")
+        .trim()
+        .toLowerCase();
+      const visibility =
+        visibilityRaw === VISIBILITY.PUBLIC || visibilityRaw === VISIBILITY.PRIVATE
+          ? visibilityRaw
+          : null;
+      const listed = await mediaService.listMediaAssets(getPool(), {
+        churchId: scope.churchId,
+        visibility,
+        limit: req.query && req.query.limit,
+      });
+      if (!listed.ok) {
+        return res.status(503).json({ ok: false, reason: listed.reason || "lookup", assets: [] });
+      }
+      const assets = (listed.assets || []).map((a) => ({
+        ...a,
+        previewPath: `${String(scope.basePath || p).replace(/\/$/, "")}/media/${a.id}`,
+      }));
+      return res.status(200).json({ ok: true, assets });
     });
 
     router.post(`${p}/media/:assetId/archive`, rejectApex, gateContent, async (req, res) => {

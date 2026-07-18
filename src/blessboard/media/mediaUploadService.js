@@ -190,6 +190,7 @@ function createMediaUploadService(env, storageOverrides) {
   }
 
   /**
+   * Soft-archive only; object retained for audit / possible restore in a later phase.
    * @param {{ query: Function }} db
    * @param {{ assetId: string, churchId: string }} input
    */
@@ -206,10 +207,59 @@ function createMediaUploadService(env, storageOverrides) {
       if (!asset) {
         return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found", asset: null };
       }
-      // Soft-archive only; object retained for audit / possible restore in a later phase.
       return { ok: true, status: STATUS.OK, asset };
     } catch {
       return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup", asset: null };
+    }
+  }
+
+  /**
+   * Tenant-scoped library listing for the media picker (safe fields only).
+   * @param {{ query: Function }} db
+   * @param {{
+   *   churchId: string,
+   *   visibility?: string | null,
+   *   limit?: number,
+   * }} input
+   */
+  async function listMediaAssets(db, input) {
+    const churchId = String((input && input.churchId) || "").trim();
+    if (!UUID_RE.test(churchId)) {
+      return { ok: false, status: STATUS.INVALID_INPUT, reason: "church_id", assets: [] };
+    }
+    const visibilityRaw =
+      input && input.visibility != null ? String(input.visibility).trim().toLowerCase() : "";
+    const visibility =
+      visibilityRaw === VISIBILITY.PUBLIC || visibilityRaw === VISIBILITY.PRIVATE
+        ? visibilityRaw
+        : null;
+    const limit = Math.min(Math.max(Number(input && input.limit) || 50, 1), 100);
+    try {
+      const rows = await withClient(db, (client) =>
+        repo.listActiveMediaAssetsForChurch(client, {
+          churchId,
+          visibility,
+          limit,
+          offset: 0,
+        })
+      );
+      const assets = (rows || []).map((asset) => {
+        if (!asset) return null;
+        const mime = String(asset.mimeType || "");
+        return {
+          id: asset.id,
+          originalFilename: asset.originalFilename,
+          mimeType: mime,
+          sizeBytes: asset.sizeBytes,
+          visibility: asset.visibility,
+          createdAt: asset.createdAt,
+          category: mime.startsWith("image/") ? "image" : "document",
+          deliveryPath: deliveryPathForAsset(asset.id),
+        };
+      }).filter(Boolean);
+      return { ok: true, status: STATUS.OK, assets };
+    } catch {
+      return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup", assets: [] };
     }
   }
 
@@ -319,6 +369,7 @@ function createMediaUploadService(env, storageOverrides) {
     storage,
     uploadMediaAsset,
     archiveMediaAsset,
+    listMediaAssets,
     loadMediaBytes,
     resolveDeliveryUrl,
     deliveryPathForAsset,

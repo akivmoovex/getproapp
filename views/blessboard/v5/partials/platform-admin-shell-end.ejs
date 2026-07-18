@@ -1,27 +1,13 @@
       </main>
     </div>
   </div>
+  <script src="/blessboard/v5/shell-nav.js?v=1"></script>
   <script>
     (function () {
-      var body = document.body;
-      var toggle = document.querySelector('[data-bb-nav="mobile-toggle"]');
-      var drawer = document.getElementById("bb-pa-drawer");
-      if (!toggle || !drawer) return;
-
-      function setOpen(open) {
-        drawer.hidden = !open;
-        toggle.setAttribute("aria-expanded", open ? "true" : "false");
-        body.classList.toggle("bb-pa-drawer-open", open);
-      }
-
-      toggle.addEventListener("click", function () {
-        setOpen(drawer.hidden);
-      });
-
-      drawer.querySelectorAll('[data-bb-nav="drawer-close"]').forEach(function (el) {
-        el.addEventListener("click", function () {
-          setOpen(false);
-        });
+      if (!window.BlessBoardShellNav) return;
+      window.BlessBoardShellNav.bindShellDrawer({
+        drawerId: "bb-pa-drawer",
+        bodyOpenClass: "bb-pa-drawer-open",
       });
     })();
   </script>

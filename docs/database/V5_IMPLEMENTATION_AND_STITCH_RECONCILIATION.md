@@ -218,7 +218,7 @@ Legend — **Implemented:** code mounted in `v5FoundationServer.js`. **Deployed:
 | `/hq/audit` | GET | Yes | `audit.ejs` | `58-*` (+ `56` trail intent) | Filters (action/entity/outcome); cursor pagination; privacy-safe rows; no export/metadata |
 | `/hq/registrations` (+ detail) | GET | Yes | `hq/registrations.ejs`, `registration-detail.ejs` | `26-*` (HQ oversight) | Church-wide read/review; branch labels; no approve/reject |
 | `/hq/members` (+ detail) | GET | Yes | `hq/members.ejs`, `member-detail.ejs` | `27`/`28-*` (HQ oversight) | Church-wide directory; privacy-limited; optional branch key filter |
-| `/hq/content` (+ `/b/:branchKey`, pages/entities/media/preview) | GET/POST | Yes | `content-admin/*` | `34-*` (HQ shell) | Church-wide + branch scope; publish confirm; optimistic concurrency; media upload |
+| `/hq/content` (+ `/b/:branchKey`, pages/entities/media/preview) | GET/POST | Yes | `content-admin/*` | `34-*` (HQ shell) | Church-wide + branch scope; publish confirm; optimistic concurrency; shared media picker |
 | `/hq/announcements` (+ `/b/:branchKey`, CRUD/preview/publish/archive) | GET/POST | Yes | `announcements/admin-*` | `35-*` (HQ shell; not `61` broadcast) | Church-wide + branch scope; soft archive; media attach; concurrency |
 | `/hq/forms|resources|requests` (+ `/b/:branchKey`) | GET/POST | Yes | forms-requests/* | `44`/`45-*` (HQ shell) | Church-wide + branch scope; private attachment download; memberRef privacy; status workflow |
 | `/hq/content` siblings: attendance, giving, participation | Yes | admin modules | various | Functional CRUD; reports at `/hq/reports/*` |

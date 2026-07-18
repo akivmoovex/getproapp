@@ -108,7 +108,7 @@
       </div>
       <div class="bb-ba-field">
         <label for="media_asset_id">Attach media asset</label>
-        <input id="media_asset_id" type="text" name="media_asset_id" maxlength="36" value="" placeholder="Optional asset UUID" data-bb-ann-media-id />
+        <input id="media_asset_id" type="text" name="media_asset_id" maxlength="36" value="" placeholder="Optional — use picker" data-bb-ann-media-id />
         <% if (typeof mediaUploadUrl !== 'undefined' && mediaUploadUrl) { %>
         <%- include('../content-admin/media-upload', {
               uploadUrl: mediaUploadUrl,
@@ -117,7 +117,7 @@
               visibility: 'private',
               fillField: 'assetId'
             }) %>
-        <p class="bb-ba-hint">Upload fills the asset id field. Attachments stay private to church leadership unless published with the announcement.</p>
+        <p class="bb-ba-hint">Picker uploads stay private to this church. Soft-archive from the library tab when needed.</p>
         <% } else { %>
         <p class="bb-ba-hint">Optional UUID from the church media library for this scope.</p>
         <% } %>

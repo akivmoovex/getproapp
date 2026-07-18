@@ -230,7 +230,7 @@ Role rules (active users + active roles only):
 - Media: binaries in object storage (local FS or Supabase Storage); metadata in `blessboard.media_assets`.
 - Content fields accept HTTPS URLs or app paths `/_bb/media/:uuid` (public assets tenant-scoped).
 - Private assets require content-admin authz; never served on `/_bb/media`.
-- Upload only from existing content-admin forms (no bulk library yet). Service-role credentials stay server-side.
+- Upload from content-admin, announcements, and resources via the shared media picker dialog (library list + upload + archive confirm). Service-role credentials stay server-side.
 
 ### Announcement administration (HQ + branch)
 

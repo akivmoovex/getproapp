@@ -10,6 +10,7 @@ body.bb-mp-body {
   background: var(--bb-color-page, var(--bb-bg, #fbf9f6));
   color: var(--bb-ink);
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 body.bb-mp-drawer-open {
@@ -295,8 +296,10 @@ body.bb-mp-drawer-open {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.15rem;
   padding: 0.35rem 0.2rem;
+  min-height: var(--bb-touch-min, 2.75rem);
   text-decoration: none;
   color: var(--bb-muted);
   font-size: 0.68rem;
@@ -1575,5 +1578,41 @@ body.bb-mp-drawer-open {
   .bb-mp-form__actions .bb-mp-btn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* Responsive / a11y sweep — focus, touch, overflow (no layout redesign) */
+.bb-mp-frame,
+.bb-mp-main {
+  min-width: 0;
+}
+.bb-mp-nav-link:focus-visible,
+.bb-mp-bottom__link:focus-visible,
+.bb-mp-icon-link:focus-visible,
+.bb-mp-nav-toggle:focus-visible,
+.bb-mp-drawer__close:focus-visible,
+.bb-mp-btn:focus-visible,
+.bb-mp-link:focus-visible {
+  outline: 2px solid var(--bb-violet, #6c5ce7);
+  outline-offset: 2px;
+}
+.bb-mp-icon-link,
+.bb-mp-nav-toggle,
+.bb-mp-drawer__close {
+  min-width: var(--bb-touch-min, 2.75rem);
+  min-height: var(--bb-touch-min, 2.75rem);
+}
+.bb-mp-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-mp-body *,
+  .bb-mp-body *::before,
+  .bb-mp-body *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
