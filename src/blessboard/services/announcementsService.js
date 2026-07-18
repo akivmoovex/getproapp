@@ -573,7 +573,7 @@ async function updateAnnouncement(db, id, patch) {
 async function listAdminAnnouncements(db, input) {
   const churchId = String((input && input.churchId) || "").trim();
   if (!churchId) {
-    return { ok: false, status: STATUS.INVALID_INPUT, items: [], reason: "church_id" };
+    return { ok: false, status: STATUS.INVALID_INPUT, items: [], total: 0, reason: "church_id" };
   }
   let branchId;
   if (Object.prototype.hasOwnProperty.call(input || {}, "branchId")) {
@@ -588,7 +588,7 @@ async function listAdminAnnouncements(db, input) {
           branchId: branchId == null ? null : branchId,
         });
         if (!authz.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, items: [], reason: authz.reason };
+          return { ok: false, status: STATUS.FORBIDDEN, items: [], total: 0, reason: authz.reason };
         }
         const readCap = evaluateAnnouncementCapability(
           authz.effectiveRoles,
@@ -597,27 +597,42 @@ async function listAdminAnnouncements(db, input) {
           "read"
         );
         if (!readCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, items: [], reason: readCap.reason };
+          return { ok: false, status: STATUS.FORBIDDEN, items: [], total: 0, reason: readCap.reason };
         }
         if (branchId == null && readCap.mode === "branch") {
-          return { ok: false, status: STATUS.FORBIDDEN, items: [], reason: "church_wide_denied" };
+          return {
+            ok: false,
+            status: STATUS.FORBIDDEN,
+            items: [],
+            total: 0,
+            reason: "church_wide_denied",
+          };
         }
       }
-      const items = await repo.listAnnouncements(client, {
+      const listed = await repo.listAnnouncements(client, {
         churchId,
         branchId,
         status: input.status || null,
+        audienceKey: input.audienceKey || null,
+        q: input.q || null,
         limit: input.limit,
         offset: input.offset,
       });
       const bundles = [];
-      for (const item of items) {
+      for (const item of listed.items) {
         bundles.push(await loadAnnouncementBundle(client, item));
       }
-      return { ok: true, status: STATUS.OK, items: bundles };
+      return {
+        ok: true,
+        status: STATUS.OK,
+        items: bundles,
+        total: listed.total,
+        limit: listed.limit,
+        offset: listed.offset,
+      };
     });
   } catch (err) {
-    return { ...mapDbError(err), items: [] };
+    return { ...mapDbError(err), items: [], total: 0 };
   }
 }
 

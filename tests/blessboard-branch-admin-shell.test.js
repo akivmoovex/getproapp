@@ -272,17 +272,28 @@ describe("blessboard branch-admin shell", () => {
       .set("Cookie", cookie);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-shell="branch-admin"/);
+    assert.match(res.text, /data-bb-nav="desktop-sidebar"/);
     assert.match(res.text, /data-bb-nav="desktop"/);
     assert.match(res.text, /data-bb-nav="mobile"/);
+    assert.match(res.text, /data-bb-nav="mobile-tabs"/);
+    assert.match(res.text, /data-bb-nav="mobile-header"/);
+    assert.match(res.text, /data-bb-branch-dashboard="1"/);
     assert.match(res.text, new RegExp(CHURCH_A));
     assert.match(res.text, /HQ A/);
     assert.match(res.text, /Branch admin/);
     assert.match(res.text, /Not enabled/);
     assert.match(res.text, /data-bb-empty="dashboard"/);
+    assert.match(res.text, /href="\/branch-admin\/registrations"/);
+    assert.match(res.text, /href="\/branch-admin\/members"/);
+    assert.match(res.text, /data-bb-module="members"[^>]*data-bb-module-enabled="1"|data-bb-module-enabled="1"[^>]*data-bb-module="members"/);
+    assert.match(res.text, /data-bb-module="reports"[^>]*data-bb-module-enabled="0"|data-bb-module-enabled="0"[^>]*data-bb-module="reports"/);
     assert.doesNotMatch(res.text, /\b\d+\s+members\b/i);
+    assert.doesNotMatch(res.text, /1,248|Pending Verifications|Daily Pulse/i);
     assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(res.text, new RegExp(hqA.id, "i"));
     assert.doesNotMatch(res.text, /branch_admin/);
+    assert.match(res.text, /action="\/branch-admin\/logout"/);
+    assert.match(res.text, /name="_csrf"/);
   });
 
   it("church_hq_admin receives 200 for own church branch", async () => {
@@ -395,9 +406,12 @@ describe("blessboard branch-admin shell", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(account.status, 200);
+    assert.match(account.text, /data-bb-branch-account="1"/);
     assert.match(account.text, /BA Branch/);
     assert.match(account.text, /method="post" action="\/branch-admin\/logout"/);
     assert.doesNotMatch(account.text, new RegExp(users.branch.id, "i"));
+    assert.doesNotMatch(account.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(account.text, new RegExp(hqA.id, "i"));
 
     const csrf = extractCookie(account, CSRF_COOKIE);
     const match = account.text.match(/name="_csrf" value="([^"]+)"/);

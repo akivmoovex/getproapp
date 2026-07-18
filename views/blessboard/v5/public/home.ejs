@@ -1,0 +1,103 @@
+<%#
+  Home page body — Stitch desktop/mobile layouts, published CMS sections only.
+  Locals: publicName, sections, showEmptyState, emptyHeadline, emptyMessage, pageTitle
+%>
+<%
+  var hero = null;
+  var rest = [];
+  (sections || []).forEach(function (s) {
+    var isHero = !hero && (s.sectionType === 'hero' || String(s.sectionKey || '').indexOf('hero') >= 0);
+    if (isHero) hero = s;
+    else rest.push(s);
+  });
+  if (!hero && rest.length) {
+    hero = rest.shift();
+  }
+  var heroHeading = (hero && hero.heading) || pageTitle || publicName;
+  var heroBody = (hero && hero.bodyText) || '';
+  var heroMedia = hero && hero.mediaUrl ? hero.mediaUrl : null;
+%>
+
+<section class="bb-tp-home" data-bb-home="1">
+  <section class="bb-tp-hero" aria-label="Welcome">
+    <div class="bb-tp-hero__inner">
+      <div class="bb-tp-hero__copy">
+        <p class="bb-tp-eyebrow">
+          <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+          Official Church Portal
+        </p>
+        <h1 class="bb-tp-hero__title"><%= heroHeading %></h1>
+        <% if (heroBody) { %>
+        <p class="bb-tp-hero__lead"><%= heroBody %></p>
+        <% } %>
+        <div class="bb-tp-hero__cta">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">
+            Plan a Visit
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="/giving">
+            <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
+            Giving
+          </a>
+          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-hero__cta-mobile-extra" href="/register">Register as Member</a>
+        </div>
+      </div>
+      <div class="bb-tp-hero__visual<%= heroMedia ? ' has-media' : '' %>">
+        <% if (heroMedia) { %>
+        <img class="bb-tp-hero__img" src="<%= heroMedia %>" alt="" width="960" height="720" loading="eager" decoding="async" />
+        <% } else { %>
+        <div class="bb-tp-hero__fallback" aria-hidden="true"></div>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <% if (showEmptyState) { %>
+  <div class="bb-tp-container">
+    <div class="bb-tp-empty" role="status">
+      <h2><%= emptyHeadline %></h2>
+      <p><%= emptyMessage %></p>
+    </div>
+  </div>
+  <% } else if (rest.length) { %>
+  <div class="bb-tp-container bb-tp-home__sections">
+    <% rest.forEach(function (section) { %>
+    <section class="bb-tp-content-block" data-section="<%= section.sectionKey %>">
+      <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+      <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+      <% if (section.mediaUrl) { %>
+      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+      <% } %>
+    </section>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <section class="bb-tp-shortcuts" aria-label="Explore">
+    <div class="bb-tp-container">
+      <h2 class="bb-tp-section-title">Explore</h2>
+      <div class="bb-tp-shortcuts__grid">
+        <a class="bb-tp-shortcut" href="/events">
+          <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+          <span class="bb-tp-shortcut__label">Events</span>
+          <span class="bb-tp-shortcut__hint">Upcoming gatherings</span>
+        </a>
+        <a class="bb-tp-shortcut" href="/ministries">
+          <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          <span class="bb-tp-shortcut__label">Ministries</span>
+          <span class="bb-tp-shortcut__hint">Find your place</span>
+        </a>
+        <a class="bb-tp-shortcut" href="/sermons">
+          <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+          <span class="bb-tp-shortcut__label">Sermons</span>
+          <span class="bb-tp-shortcut__hint">Messages and resources</span>
+        </a>
+        <a class="bb-tp-shortcut" href="/about">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <span class="bb-tp-shortcut__label">About</span>
+          <span class="bb-tp-shortcut__hint">Our story and purpose</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</section>

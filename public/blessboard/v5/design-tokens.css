@@ -1,0 +1,113 @@
+/**
+ * BlessBoard V5 design tokens — single source of truth.
+ * Stitch: Visual System Specification (c8d8352b…) + Shared UI States (b61a1ea8…).
+ * Product primary remains Sacred Modernity violet #6C5CE7 (not Stitch HTML Inter/#3b22b5).
+ */
+
+:root {
+  color-scheme: light;
+
+  /* —— Brand —— */
+  --bb-color-primary: #6c5ce7;
+  --bb-color-primary-hover: #5341cd;
+  --bb-color-primary-soft: #efeaff;
+  --bb-color-accent: #ff9800;
+  --bb-color-on-primary: #ffffff;
+
+  /* —— Surfaces & text (Stitch warm neutrals) —— */
+  --bb-color-page: #fbf9f6;
+  --bb-color-surface: #ffffff;
+  --bb-color-surface-dim: #f2f0ed;
+  --bb-color-ink: #1a1c1e;
+  --bb-color-muted: #44474e;
+  --bb-color-border: #d1dce0;
+  --bb-color-focus-ring: rgba(108, 92, 231, 0.45);
+
+  /* —— Feedback —— */
+  --bb-color-success: #0f766e;
+  --bb-color-success-bg: #ecfdf5;
+  --bb-color-error: #b3261e;
+  --bb-color-error-bg: #fef3f2;
+  --bb-color-warning: #b54708;
+  --bb-color-warning-bg: #fffaeb;
+  --bb-color-info: #026aa2;
+  --bb-color-info-bg: #f0f9ff;
+
+  /* —— Legacy aliases (existing shells use these names) —— */
+  --bb-violet: var(--bb-color-primary);
+  --bb-violet-deep: var(--bb-color-primary-hover);
+  --bb-getpro: var(--bb-color-accent);
+  --bb-ink: var(--bb-color-ink);
+  --bb-muted: var(--bb-color-muted);
+  --bb-bg: var(--bb-color-page);
+  --bb-surface: var(--bb-color-surface);
+  --bb-surface-low: var(--bb-color-surface-dim);
+  --bb-line: var(--bb-color-border);
+  --bb-ok: var(--bb-color-success);
+  --bb-err: var(--bb-color-error);
+  --bb-warm: #f3efe8;
+  --bb-disabled: #9a93a8;
+
+  /* —— Typography —— */
+  --bb-font-sans: "Hanken Grotesk", system-ui, sans-serif;
+  --bb-font-weight-regular: 400;
+  --bb-font-weight-medium: 500;
+  --bb-font-weight-semibold: 600;
+  --bb-font-weight-bold: 700;
+  --bb-text-hero: 4rem; /* 64px */
+  --bb-text-h1: 2.5rem; /* 40px */
+  --bb-text-h2: 1.75rem; /* 28px */
+  --bb-text-body-lg: 1.125rem; /* 18px */
+  --bb-text-body: 1rem; /* 16px */
+  --bb-text-label: 0.875rem; /* 14px */
+  --bb-leading-tight: 1.2;
+  --bb-leading-snug: 1.3;
+  --bb-leading-normal: 1.5;
+  --bb-leading-relaxed: 1.6;
+
+  /* —— Spacing (4px base) —— */
+  --bb-space-1: 0.25rem; /* 4 */
+  --bb-space-2: 0.5rem; /* 8 */
+  --bb-space-3: 1rem; /* 16 */
+  --bb-space-4: 1.5rem; /* 24 */
+  --bb-space-5: 2rem; /* 32 */
+  --bb-space-6: 3rem; /* 48 */
+  --bb-space-7: 4rem; /* 64 */
+  --bb-space-8: 6rem; /* 96 */
+  --bb-space-9: 8rem; /* 128 */
+
+  /* —— Layout —— */
+  --bb-max: 80rem; /* 1280px */
+  --bb-gutter: 2rem; /* 32 desktop */
+  --bb-gutter-mobile: 1rem; /* 16 */
+  --bb-section: 4rem;
+  --bb-header-h: 5rem; /* 80px Stitch desktop header */
+  --bb-header-h-compact: 4rem;
+
+  /* —— Radii & shadows —— */
+  --bb-radius: 1rem; /* 16 */
+  --bb-radius-sm: 0.5rem; /* 8 */
+  --bb-radius-pill: 999px;
+  --bb-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --bb-shadow-md: 0 10px 30px rgba(108, 92, 231, 0.08);
+  --bb-shadow: var(--bb-shadow-md);
+
+  /* —— Controls —— */
+  --bb-control-h: 3rem; /* 48 */
+  --bb-icon-size: 1.5rem; /* 24 */
+  --bb-touch-min: 2.75rem; /* 44 */
+
+  /* —— Breakpoints (documented; used in media queries as literals) —— */
+  /* mobile: 0–767 · tablet+: 768 · drawer/nav: 900 (existing shells) */
+  --bb-bp-md: 768px;
+  --bb-bp-lg: 900px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --bb-gutter: var(--bb-gutter-mobile);
+    --bb-header-h: var(--bb-header-h-compact);
+    --bb-text-hero: 2.5rem;
+    --bb-text-h1: 2rem;
+  }
+}

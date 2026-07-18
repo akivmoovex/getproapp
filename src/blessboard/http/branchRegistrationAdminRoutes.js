@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * Branch-admin member registration review (hostname primary branch scope).
- * HQ/platform may act on other branches in the same church when opening a registration by key.
+ * Branch-admin member registration review + member directory (hostname primary branch scope).
+ * HQ/platform may open registrations by key within the same church.
  */
 
 const express = require("express");
@@ -11,25 +11,25 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
-const {
-  CSRF_FIELD,
-  issueCsrfToken,
-  validateCsrf,
-  setCsrfCookie,
-} = require("../../platform/http/v5Csrf");
+const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
 const {
   listMemberRegistrations,
   getMemberRegistrationForManager,
   approveMemberRegistration,
   rejectMemberRegistration,
   reviewMemberRegistration,
+  listBranchMembersForManager,
+  getBranchMemberForManager,
   STATUS,
 } = require("../services/memberRegistrationService");
 const {
   renderBranchAdminView,
   sendLoginUnavailable,
 } = require("./branchAdminRoutes");
+const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Safe structured log — no PII / no rejection notes.
@@ -91,35 +91,13 @@ function createBranchRegistrationAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function primaryRoleLabel(req) {
-    const roles =
-      req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-        ? req.blessBoardAuthorizationContext.effectiveRoles
-        : [];
-    const order = ["branch_admin", "church_hq_admin", "platform_admin"];
-    for (const key of order) {
-      const hit = roles.find((r) => r.roleKey === key);
-      if (hit) return formatRoleLabel(hit.roleKey);
-    }
-    return roles[0] ? formatRoleLabel(roles[0].roleKey) : "Branch admin";
-  }
-
-  function shellLocals(req, res, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
-    return {
-      pageTitle: "Registrations",
-      activeNav: "registrations",
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      branchDisplayName:
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
-      roleLabel: primaryRoleLabel(req),
-      displayName: session && session.user ? session.user.displayName : "",
-      ...(extra || {}),
-    };
+  function shellLocals(req, res, activeNav, extra) {
+    return buildBranchAdminShellLocals(req, res, {
+      env,
+      isProduction,
+      activeNav,
+      extra,
+    });
   }
 
   function hostScope(req, res) {
@@ -149,6 +127,7 @@ function createBranchRegistrationAdminRouter(deps) {
     return true;
   }
 
+  // --- registrations ---
   router.get("/branch-admin/registrations", rejectApex, gateAccess, async (req, res) => {
     const scope = hostScope(req, res);
     if (!scope) return;
@@ -188,7 +167,8 @@ function createBranchRegistrationAdminRouter(deps) {
     const totalPages = Math.max(1, Math.ceil(listed.total / limit));
     const html = renderBranchAdminView(
       "branch-admin/registrations.ejs",
-      shellLocals(req, res, {
+      shellLocals(req, res, "registrations", {
+        pageTitle: "Verification queue",
         items: listed.items,
         total: listed.total,
         page,
@@ -233,11 +213,10 @@ function createBranchRegistrationAdminRouter(deps) {
         );
       }
 
-      // Branch-admin hostname list is primary-branch scoped; detail for another branch
-      // is only allowed when getMemberRegistrationForManager already authorized (HQ/platform).
       const html = renderBranchAdminView(
         "branch-admin/registration-detail.ejs",
-        shellLocals(req, res, {
+        shellLocals(req, res, "registrations", {
+          pageTitle: "Registration review",
           registration: loaded.registration,
           hostBranchId: scope.branchId,
           error: null,
@@ -299,7 +278,8 @@ function createBranchRegistrationAdminRouter(deps) {
     if (!result.ok) {
       const html = renderBranchAdminView(
         "branch-admin/registration-detail.ejs",
-        shellLocals(req, res, {
+        shellLocals(req, res, "registrations", {
+          pageTitle: "Registration review",
           registration: loaded.registration,
           hostBranchId: scope.branchId,
           error: "This registration could not be updated. It may have already been decided.",
@@ -332,6 +312,100 @@ function createBranchRegistrationAdminRouter(deps) {
       Promise.resolve(postDecision(req, res, "reject")).catch(next);
     }
   );
+
+  // --- members directory (read-only; privacy-limited) ---
+  router.get("/branch-admin/members", rejectApex, gateAccess, async (req, res) => {
+    const scope = hostScope(req, res);
+    if (!scope) return;
+
+    const q = String((req.query && req.query.q) || "").slice(0, 100);
+    const status = String((req.query && req.query.status) || "").trim().toLowerCase();
+    const page = Math.max(Number((req.query && req.query.page) || 1) || 1, 1);
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    const listed = await listBranchMembersForManager(getPool(), {
+      actorUserId: scope.actorUserId,
+      churchId: scope.churchId,
+      branchId: scope.branchId,
+      status: status || null,
+      q: q || null,
+      limit,
+      offset,
+    });
+
+    if (!listed.ok) {
+      logReviewEvent({
+        op: "members_list",
+        outcome: "denied",
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        reason: listed.reason,
+      });
+      return sendLoginUnavailable(
+        req,
+        res,
+        listed.status === STATUS.FORBIDDEN ? 403 : 503,
+        "Members are temporarily unavailable."
+      );
+    }
+
+    const totalPages = Math.max(1, Math.ceil(listed.total / limit));
+    const html = renderBranchAdminView(
+      "branch-admin/members.ejs",
+      shellLocals(req, res, "members", {
+        pageTitle: "Member directory",
+        items: listed.items,
+        total: listed.total,
+        page,
+        totalPages,
+        limit,
+        q,
+        statusFilter: status,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/branch-admin/members/:id", rejectApex, gateAccess, async (req, res) => {
+    const scope = hostScope(req, res);
+    if (!scope) return;
+    const id = String(req.params.id || "").trim();
+    if (!UUID_RE.test(id)) {
+      return sendLoginUnavailable(req, res, 404, "Member not found.");
+    }
+
+    const loaded = await getBranchMemberForManager(getPool(), {
+      memberId: id,
+      actorUserId: scope.actorUserId,
+      churchId: scope.churchId,
+      branchId: scope.branchId,
+    });
+
+    if (!loaded.ok || !loaded.member) {
+      const code =
+        loaded.status === STATUS.FORBIDDEN
+          ? 403
+          : loaded.status === STATUS.NOT_FOUND
+            ? 404
+            : 503;
+      return sendLoginUnavailable(
+        req,
+        res,
+        code,
+        code === 404 ? "Member not found." : "You do not have access to this member."
+      );
+    }
+
+    const html = renderBranchAdminView(
+      "branch-admin/member-detail.ejs",
+      shellLocals(req, res, "members", {
+        pageTitle: "Member profile",
+        member: loaded.member,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
 
   return router;
 }

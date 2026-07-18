@@ -1,0 +1,21 @@
+<%#
+  Apex nav links. Locals: authenticated, activeNav, csrfToken, variant ('desktop'|'drawer')
+%>
+<%
+  var linkClass = variant === 'drawer' ? 'bb-apex-drawer__link' : '';
+  function cls(key) {
+    var base = linkClass;
+    if (activeNav === key) base = (base ? base + ' ' : '') + 'is-active';
+    return base ? ' class="' + base + '"' : '';
+  }
+%>
+<a href="/"<%= cls('home') %><%= activeNav === 'home' ? ' aria-current="page"' : '' %>>Home</a>
+<% if (authenticated) { %>
+<a href="/account"<%= cls('account') %><%= activeNav === 'account' ? ' aria-current="page"' : '' %>>Account</a>
+<form class="<%= variant === 'drawer' ? 'bb-apex-drawer__logout' : 'bb-apex-nav__logout' %>" method="post" action="/logout">
+  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+  <button type="submit">Logout</button>
+</form>
+<% } else { %>
+<a href="/login"<%= cls('login') %><%= activeNav === 'login' ? ' aria-current="page"' : '' %>>Login</a>
+<% } %>

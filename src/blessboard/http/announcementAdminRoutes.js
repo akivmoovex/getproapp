@@ -2,6 +2,7 @@
 
 /**
  * BlessBoard V5 announcement admin CRUD (HQ church-wide + branch-scoped).
+ * Soft lifecycle only — archive, never hard-delete announcements.
  */
 
 const fs = require("fs");
@@ -14,6 +15,7 @@ const {
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { formatRoleLabel } = require("./renderTenantLandingPage");
+const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const {
   CSRF_FIELD,
   issueCsrfToken,
@@ -34,6 +36,7 @@ const {
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const PAGE_SIZE = 20;
 
 /**
  * @param {string} relativePath
@@ -74,7 +77,7 @@ function sendControlled(req, res, status, message, shellKind) {
 
 function errorMessage(reason) {
   if (reason === "confirm_publish") {
-    return "You must check the box to confirm before publishing.";
+    return "You must confirm before publishing.";
   }
   if (reason === "platform_publish_denied") {
     return "Platform admins may inspect announcements but cannot publish unless product policy allows it.";
@@ -84,6 +87,12 @@ function errorMessage(reason) {
   }
   if (reason === "optimistic_conflict") {
     return "Someone else updated this record. Review the latest version and try again.";
+  }
+  if (reason === "already_archived") {
+    return "This announcement is already archived.";
+  }
+  if (reason === "already_published") {
+    return "This announcement is already published.";
   }
   return "Please check the form and try again.";
 }
@@ -98,6 +107,20 @@ function parseAudiencesFromBody(body) {
     keys.push(body.audiences);
   }
   return [...new Set(keys)];
+}
+
+function formItemFromBody(body, id) {
+  return {
+    id: id || null,
+    title: body.title || "",
+    body: body.body || "",
+    status: body.status || "draft",
+    isPinned: Boolean(body.is_pinned),
+    isFeatured: Boolean(body.is_featured),
+    actionUrl: body.action_url || "",
+    actionLabel: body.action_label || "",
+    audiences: parseAudiencesFromBody(body),
+  };
 }
 
 /**
@@ -169,13 +192,25 @@ function createAnnouncementAdminRouter(deps) {
   }
 
   function shellLocals(req, res, extra) {
+    if (variant === "branch") {
+      return buildBranchAdminShellLocals(req, res, {
+        env,
+        isProduction,
+        activeNav: "announcements",
+        pageTitle: (extra && extra.pageTitle) || "Announcements",
+        extra: {
+          shellKind: "branch",
+          ...(extra || {}),
+        },
+      });
+    }
     const tenant = resolveTenantForAuthorization(req);
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const base = {
-      pageTitle: "Announcements",
+    return {
+      pageTitle: (extra && extra.pageTitle) || "Announcements",
       activeNav: "announcements",
-      shellKind,
+      shellKind: "hq",
       csrfToken,
       churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
       roleLabel: primaryRoleLabel(req),
@@ -183,15 +218,9 @@ function createAnnouncementAdminRouter(deps) {
         req.v5Session && req.v5Session.session && req.v5Session.session.user
           ? req.v5Session.session.user.displayName
           : "",
+      hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
       ...(extra || {}),
     };
-    if (variant === "hq") {
-      base.hqBranchDisplayName = tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "";
-    } else {
-      base.branchDisplayName =
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "";
-    }
-    return base;
   }
 
   function validateCsrfPost(req, res) {
@@ -204,7 +233,7 @@ function createAnnouncementAdminRouter(deps) {
   }
 
   /**
-   * @returns {Promise<{ churchId: string, branchId: string|null, basePath: string, tenant: object }|null>}
+   * @returns {Promise<{ churchId: string, branchId: string|null, basePath: string, tenant: object, actorUserId: string }|null>}
    */
   async function resolveScope(req, res) {
     const tenant = resolveTenantForAuthorization(req);
@@ -260,17 +289,53 @@ function createAnnouncementAdminRouter(deps) {
     };
   }
 
+  async function loadScopedAnnouncement(req, res, scope, id) {
+    if (!UUID_RE.test(id)) {
+      sendControlled(req, res, 404, "Announcement not found.", shellKind);
+      return null;
+    }
+    const loaded = await getAdminAnnouncement(getPool(), {
+      id,
+      churchId: scope.churchId,
+      scopeBranchId: scope.branchId,
+      actorUserId: scope.actorUserId,
+      tenant: scope.tenant,
+      productPolicy,
+    });
+    if (!loaded.ok || !loaded.item) {
+      sendControlled(
+        req,
+        res,
+        loaded.status === STATUS.FORBIDDEN ? 403 : 404,
+        "Announcement not found.",
+        shellKind
+      );
+      return null;
+    }
+    return loaded.item;
+  }
+
   function registerRoutes(mountPrefix, isBranchScoped) {
     router.get(mountPrefix, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;
+      const q = String((req.query && req.query.q) || "").slice(0, 100);
+      const status = String((req.query && req.query.status) || "").trim().toLowerCase();
+      const audience = String((req.query && req.query.audience) || "").trim().toLowerCase();
+      const page = Math.max(Number((req.query && req.query.page) || 1) || 1, 1);
+      const limit = PAGE_SIZE;
+      const offset = (page - 1) * limit;
       const listed = await listAdminAnnouncements(getPool(), {
         churchId: scope.churchId,
         branchId: scope.branchId,
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         productPolicy,
-        status: String((req.query && req.query.status) || "").trim() || null,
+        status: status || null,
+        audienceKey: audience === "members" || audience === "admins" ? audience : null,
+        q: q || null,
+        limit,
+        offset,
       });
       if (!listed.ok) {
         return sendControlled(
@@ -281,6 +346,8 @@ function createAnnouncementAdminRouter(deps) {
           shellKind
         );
       }
+      const total = listed.total || 0;
+      const totalPages = Math.max(1, Math.ceil(total / limit));
       const html = renderView(
         "announcements/admin-list.ejs",
         shellLocals(req, res, {
@@ -289,6 +356,13 @@ function createAnnouncementAdminRouter(deps) {
           scopeLabel: isBranchScoped ? "Branch" : "Church-wide",
           error: null,
           saved: String((req.query && req.query.saved) || ""),
+          q,
+          statusFilter: status,
+          audienceFilter: audience,
+          page,
+          limit,
+          total,
+          totalPages,
         })
       );
       return res.status(200).type("html").send(html);
@@ -300,10 +374,12 @@ function createAnnouncementAdminRouter(deps) {
       const html = renderView(
         "announcements/admin-form.ejs",
         shellLocals(req, res, {
+          pageTitle: "New announcement",
           basePath: scope.basePath,
           item: null,
           error: null,
           formMode: "create",
+          showPreview: true,
         })
       );
       return res.status(200).type("html").send(html);
@@ -323,8 +399,8 @@ function createAnnouncementAdminRouter(deps) {
         title: body.title,
         body: body.body,
         status: body.status || "draft",
-        isPinned: body.is_pinned,
-        isFeatured: body.is_featured,
+        isPinned: body.is_pinned === "1" || body.is_pinned === "on",
+        isFeatured: body.is_featured === "1" || body.is_featured === "on",
         actionUrl: body.action_url,
         actionLabel: body.action_label,
         audiences: parseAudiencesFromBody(body),
@@ -336,19 +412,12 @@ function createAnnouncementAdminRouter(deps) {
         const html = renderView(
           "announcements/admin-form.ejs",
           shellLocals(req, res, {
+            pageTitle: "New announcement",
             basePath: scope.basePath,
-            item: {
-              title: body.title || "",
-              body: body.body || "",
-              status: body.status || "draft",
-              isPinned: Boolean(body.is_pinned),
-              isFeatured: Boolean(body.is_featured),
-              actionUrl: body.action_url || "",
-              actionLabel: body.action_label || "",
-              audiences: parseAudiencesFromBody(body),
-            },
+            item: formItemFromBody(body),
             error: errorMessage(created.reason),
             formMode: "create",
+            showPreview: true,
           })
         );
         return res
@@ -363,46 +432,98 @@ function createAnnouncementAdminRouter(deps) {
       const scope = await resolveScope(req, res);
       if (!scope) return;
       const id = String(req.params.id || "");
-      if (!UUID_RE.test(id)) {
-        return sendControlled(req, res, 404, "Announcement not found.", shellKind);
-      }
-      const loaded = await getAdminAnnouncement(getPool(), {
-        id,
-        churchId: scope.churchId,
-        scopeBranchId: scope.branchId,
-        actorUserId: scope.actorUserId,
-        tenant: scope.tenant,
-        productPolicy,
-      });
-      if (!loaded.ok || !loaded.item) {
-        return sendControlled(
-          req,
-          res,
-          loaded.status === STATUS.FORBIDDEN ? 403 : 404,
-          "Announcement not found.",
-          shellKind
-        );
+      const item = await loadScopedAnnouncement(req, res, scope, id);
+      if (!item) return;
+      const html = renderView(
+        "announcements/admin-detail.ejs",
+        shellLocals(req, res, {
+          pageTitle: item.title || "Announcement",
+          basePath: scope.basePath,
+          item,
+          error: null,
+          saved: String((req.query && req.query.saved) || ""),
+        })
+      );
+      return res.status(200).type("html").send(html);
+    });
+
+    router.get(`${mountPrefix}/:id/edit`, rejectApex, gate, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const id = String(req.params.id || "");
+      const item = await loadScopedAnnouncement(req, res, scope, id);
+      if (!item) return;
+      if (item.status === "archived") {
+        return res.redirect(303, `${scope.basePath}/${id}`);
       }
       const html = renderView(
         "announcements/admin-form.ejs",
         shellLocals(req, res, {
+          pageTitle: "Edit announcement",
           basePath: scope.basePath,
-          item: loaded.item,
+          item,
           error: null,
           formMode: "edit",
+          showPreview: true,
           saved: String((req.query && req.query.saved) || "") === "1",
         })
       );
       return res.status(200).type("html").send(html);
     });
 
-    router.post(`${mountPrefix}/:id`, rejectApex, gate, async (req, res) => {
+    router.get(`${mountPrefix}/:id/preview`, rejectApex, gate, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const id = String(req.params.id || "");
+      const item = await loadScopedAnnouncement(req, res, scope, id);
+      if (!item) return;
+      const html = renderView(
+        "announcements/admin-preview.ejs",
+        shellLocals(req, res, {
+          pageTitle: "Preview announcement",
+          basePath: scope.basePath,
+          item,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    });
+
+    router.get(`${mountPrefix}/:id/publish`, rejectApex, gate, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const id = String(req.params.id || "");
+      const item = await loadScopedAnnouncement(req, res, scope, id);
+      if (!item) return;
+      if (item.status === "published") {
+        return res.redirect(303, `${scope.basePath}/${id}?saved=already`);
+      }
+      if (item.status === "archived") {
+        return res.redirect(303, `${scope.basePath}/${id}`);
+      }
+      const html = renderView(
+        "announcements/admin-publish.ejs",
+        shellLocals(req, res, {
+          pageTitle: "Confirm publish",
+          basePath: scope.basePath,
+          item,
+          error: null,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    });
+
+    router.post(`${mountPrefix}/:id/publish`, rejectApex, gate, async (req, res) => {
       if (!validateCsrfPost(req, res)) return;
       const scope = await resolveScope(req, res);
       if (!scope) return;
       const id = String(req.params.id || "");
-      if (!UUID_RE.test(id)) {
-        return sendControlled(req, res, 404, "Announcement not found.", shellKind);
+      const item = await loadScopedAnnouncement(req, res, scope, id);
+      if (!item) return;
+      if (item.status === "published") {
+        return res.redirect(303, `${scope.basePath}/${id}?saved=already`);
+      }
+      if (item.status === "archived") {
+        return res.redirect(303, `${scope.basePath}/${id}`);
       }
       const body = req.body || {};
       const updated = await updateAnnouncement(getPool(), id, {
@@ -411,16 +532,103 @@ function createAnnouncementAdminRouter(deps) {
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         productPolicy,
+        status: "published",
+        confirmPublish: body.confirm_publish,
+        expectedUpdatedAt: body.expected_updated_at || item.updatedAt,
+        enforcePublishConfirm: true,
+      });
+      if (!updated.ok) {
+        const html = renderView(
+          "announcements/admin-publish.ejs",
+          shellLocals(req, res, {
+            pageTitle: "Confirm publish",
+            basePath: scope.basePath,
+            item,
+            error: errorMessage(updated.reason),
+          })
+        );
+        const code =
+          updated.status === STATUS.FORBIDDEN
+            ? 403
+            : updated.status === STATUS.CONFLICT
+              ? 409
+              : 400;
+        return res.status(code).type("html").send(html);
+      }
+      return res.redirect(303, `${scope.basePath}/${id}?saved=published`);
+    });
+
+    router.post(`${mountPrefix}/:id/archive`, rejectApex, gate, async (req, res) => {
+      if (!validateCsrfPost(req, res)) return;
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const id = String(req.params.id || "");
+      const item = await loadScopedAnnouncement(req, res, scope, id);
+      if (!item) return;
+      if (item.status === "archived") {
+        return res.redirect(303, `${scope.basePath}/${id}?saved=archived`);
+      }
+      const body = req.body || {};
+      const updated = await updateAnnouncement(getPool(), id, {
+        churchId: scope.churchId,
+        scopeBranchId: scope.branchId,
+        actorUserId: scope.actorUserId,
+        tenant: scope.tenant,
+        productPolicy,
+        status: "archived",
+        expectedUpdatedAt: body.expected_updated_at || item.updatedAt,
+        enforcePublishConfirm: false,
+      });
+      if (!updated.ok) {
+        return sendControlled(
+          req,
+          res,
+          updated.status === STATUS.FORBIDDEN
+            ? 403
+            : updated.status === STATUS.CONFLICT
+              ? 409
+              : 400,
+          errorMessage(updated.reason),
+          shellKind
+        );
+      }
+      return res.redirect(303, `${scope.basePath}/${id}?saved=archived`);
+    });
+
+    router.post(`${mountPrefix}/:id`, rejectApex, gate, async (req, res) => {
+      if (!validateCsrfPost(req, res)) return;
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const id = String(req.params.id || "");
+      const existing = await loadScopedAnnouncement(req, res, scope, id);
+      if (!existing) return;
+      if (existing.status === "archived") {
+        return res.redirect(303, `${scope.basePath}/${id}`);
+      }
+      const body = req.body || {};
+      // Soft lifecycle only: never hard-delete. Publish transitions require /publish.
+      let nextStatus = existing.status;
+      if (existing.status === "draft") {
+        nextStatus = "draft";
+      } else if (existing.status === "published") {
+        nextStatus = "published";
+      }
+      const updated = await updateAnnouncement(getPool(), id, {
+        churchId: scope.churchId,
+        scopeBranchId: scope.branchId,
+        actorUserId: scope.actorUserId,
+        tenant: scope.tenant,
+        productPolicy,
         title: body.title,
         body: body.body,
-        status: body.status,
-        isPinned: body.is_pinned,
-        isFeatured: body.is_featured,
+        status: nextStatus,
+        isPinned: body.is_pinned === "1" || body.is_pinned === "on",
+        isFeatured: body.is_featured === "1" || body.is_featured === "on",
         actionUrl: body.action_url,
         actionLabel: body.action_label,
         audiences: parseAudiencesFromBody(body),
         addMediaAssetIds: body.media_asset_id ? [body.media_asset_id] : undefined,
-        confirmPublish: body.confirm_publish,
+        confirmPublish: existing.status === "published" ? true : false,
         expectedUpdatedAt: body.expected_updated_at,
         enforcePublishConfirm: true,
       });
@@ -436,16 +644,12 @@ function createAnnouncementAdminRouter(deps) {
         const html = renderView(
           "announcements/admin-form.ejs",
           shellLocals(req, res, {
+            pageTitle: "Edit announcement",
             basePath: scope.basePath,
-            item: loaded.item || {
-              id,
-              title: body.title || "",
-              body: body.body || "",
-              status: body.status || "draft",
-              audiences: parseAudiencesFromBody(body),
-            },
+            item: loaded.item || formItemFromBody(body, id),
             error: errorMessage(updated.reason),
             formMode: "edit",
+            showPreview: true,
           })
         );
         const code =

@@ -1,0 +1,32 @@
+<%- include('../partials/hq-shell-start') %>
+
+<section class="bb-hq-account" data-bb-hq-account="1">
+  <header class="bb-hq-page-head">
+    <h1 class="bb-hq-page-head__title">Account</h1>
+    <p class="bb-hq-lede">
+      Signed-in HQ administrator for this church site. Church identity comes from the hostname —
+      not from URL parameters.
+    </p>
+  </header>
+
+  <dl class="bb-hq-dl">
+    <dt>Display name</dt>
+    <dd><%= displayName || '—' %></dd>
+    <dt>Role</dt>
+    <dd><%= roleLabel %></dd>
+    <dt>Church</dt>
+    <dd><%= churchDisplayName %></dd>
+    <dt>Headquarters</dt>
+    <dd><%= hqBranchDisplayName || '—' %></dd>
+  </dl>
+
+  <form class="bb-hq-logout bb-hq-logout--page" method="post" action="/hq/logout" data-bb-hq-logout="1">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <button type="submit" class="bb-hq-btn bb-hq-btn--ghost">
+      <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+      Sign out
+    </button>
+  </form>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

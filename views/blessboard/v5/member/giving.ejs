@@ -1,0 +1,63 @@
+<%- include('../partials/member-shell-start') %>
+<%
+  var methods = givingMethods || [];
+  var churchName = churchDisplayName || 'your church';
+%>
+
+<section class="bb-mp-giving" data-bb-member-giving="1">
+  <header class="bb-mp-page-head">
+    <div>
+      <h1 class="bb-mp-page-head__title">Giving information</h1>
+      <p class="bb-mp-lede">
+        Support the ministries of <%= churchName %> through the giving options published by leadership.
+        BlessBoard does not process payments or collect card details on this page.
+      </p>
+    </div>
+  </header>
+
+  <aside class="bb-mp-alert bb-mp-alert--info" role="note" data-bb-giving-info-only="1">
+    <p class="bb-mp-alert__title">Information only</p>
+    <p>Use the published methods below to give directly to the church. No payment forms or card collection are available here.</p>
+  </aside>
+
+  <% if (!methods.length) { %>
+  <div class="bb-mp-empty" role="status" data-bb-empty="giving">
+    <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+    <p>Giving information has not been published yet. Please contact the church office.</p>
+  </div>
+  <% } else { %>
+  <ul class="bb-mp-giving-grid" data-bb-giving-methods="1">
+    <% methods.forEach(function (method) { %>
+    <li class="bb-mp-giving-card" data-bb-giving-method="<%= method.methodType || 'other' %>">
+      <span class="bb-mp-giving-card__icon" aria-hidden="true">
+        <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
+      </span>
+      <h2 class="bb-mp-giving-card__label"><%= method.label %></h2>
+      <% if (method.instructions) { %>
+      <p class="bb-mp-giving-card__instructions"><%= method.instructions %></p>
+      <% } %>
+      <% if (method.externalUrl) { %>
+      <p class="bb-mp-giving-card__action">
+        <a
+          class="bb-mp-btn bb-mp-btn--primary"
+          href="<%= method.externalUrl %>"
+          rel="noopener noreferrer"
+          target="_blank"
+          data-bb-giving-link="1"
+        >
+          Open giving link
+          <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+        </a>
+      </p>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <p class="bb-mp-hint" role="note">
+    BlessBoard does not process payments or collect financial account details on this page.
+  </p>
+</section>
+
+<%- include('../partials/member-shell-end') %>

@@ -14,7 +14,6 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
 const {
   CSRF_FIELD,
   issueCsrfToken,
@@ -32,6 +31,7 @@ const {
   STATUS: SETTINGS_STATUS,
 } = require("../services/blessBoardSettingsService");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -89,24 +89,6 @@ function sendLoginUnavailable(req, res, status, message) {
 }
 
 /**
- * @param {import('express').Request} req
- */
-function primaryRoleLabel(req) {
-  const roles =
-    req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-      ? req.blessBoardAuthorizationContext.effectiveRoles
-      : [];
-  if (!roles.length) return "Branch admin";
-  // Prefer the most specific role label for display.
-  const order = ["branch_admin", "church_hq_admin", "platform_admin"];
-  for (const key of order) {
-    const hit = roles.find((r) => r.roleKey === key);
-    if (hit) return formatRoleLabel(hit.roleKey);
-  }
-  return formatRoleLabel(roles[0].roleKey);
-}
-
-/**
  * @param {{
  *   getPool: () => { query: Function },
  *   isApexHost: (req: import('express').Request) => boolean,
@@ -152,26 +134,16 @@ function createBranchAdminRouter(deps) {
   /**
    * @param {import('express').Request} req
    * @param {import('express').Response} res
-   * @param {'home'|'account'|'settings'} activeNav
+   * @param {string} activeNav
    * @param {object} [extra]
    */
   function shellLocals(req, res, activeNav, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
-    return {
-      pageTitle:
-        activeNav === "account" ? "Account" : activeNav === "settings" ? "Branch settings" : "Branch admin",
+    return buildBranchAdminShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      branchDisplayName:
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
-      roleLabel: primaryRoleLabel(req),
-      displayName: session && session.user ? session.user.displayName : "",
-      ...(extra || {}),
-    };
+      extra,
+    });
   }
 
   router.get("/branch-admin", rejectApex, gateAccess, (req, res) => {

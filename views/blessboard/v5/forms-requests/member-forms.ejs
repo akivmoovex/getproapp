@@ -1,20 +1,88 @@
 <%- include('../partials/member-shell-start') %>
-  <h1>Forms</h1>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <h2>Available</h2>
-  <% if (!forms.length) { %><p>No forms yet.</p><% } else { %>
-    <ul>
-      <% forms.forEach(function (f) { %>
-        <li><a href="/member/forms/<%= f.id %>"><%= f.title %></a></li>
+<%
+  var formList = forms || [];
+  var submissionList = submissions || [];
+  var flash = saved === '1' ? 'Your form was submitted.' : '';
+%>
+
+<section class="bb-mp-fr" data-bb-member-forms="1">
+  <header class="bb-mp-page-head">
+    <div>
+      <h1 class="bb-mp-page-head__title">Forms</h1>
+      <p class="bb-mp-lede">Fill out church forms online. Your submissions stay private to you and church leadership.</p>
+    </div>
+  </header>
+
+  <% if (flash) { %>
+  <p class="bb-mp-ok" role="status"><%= flash %></p>
+  <% } %>
+
+  <section class="bb-mp-part-section" aria-label="Available forms">
+    <h2 class="bb-mp-section-title">Available forms</h2>
+    <% if (!formList.length) { %>
+    <div class="bb-mp-empty" role="status">
+      <span class="material-symbols-outlined" aria-hidden="true">description</span>
+      <p>No forms are available right now.</p>
+    </div>
+    <% } else { %>
+    <ul class="bb-mp-part-list">
+      <% formList.forEach(function (f) { %>
+      <li>
+        <a
+          class="bb-mp-part-card"
+          href="/member/forms/<%= f.id %>"
+          data-bb-form="<%= f.id %>"
+        >
+          <div class="bb-mp-fr-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">edit_document</span>
+          </div>
+          <div class="bb-mp-part-card__body">
+            <div class="bb-mp-part-card__top">
+              <h3 class="bb-mp-part-card__title"><%= f.title %></h3>
+              <span class="bb-mp-chip bb-mp-chip--open" aria-label="Online form">Online form</span>
+            </div>
+            <% if (f.description) { %>
+            <p class="bb-mp-part-card__excerpt"><%= f.description.length > 120 ? f.description.slice(0, 119) + '…' : f.description %></p>
+            <% } %>
+          </div>
+          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+      </li>
       <% }) %>
     </ul>
-  <% } %>
-  <h2>Your submissions</h2>
-  <% if (!submissions.length) { %><p>No submissions yet.</p><% } else { %>
-    <ul>
-      <% submissions.forEach(function (s) { %>
-        <li><a href="/member/forms/submissions/<%= s.id %>"><%= s.formTitle || 'Submission' %></a></li>
+    <% } %>
+  </section>
+
+  <section class="bb-mp-part-section" aria-label="Your submissions">
+    <h2 class="bb-mp-section-title">Your submissions</h2>
+    <% if (!submissionList.length) { %>
+    <p class="bb-mp-lede bb-mp-lede--tight">You have not submitted any forms yet.</p>
+    <% } else { %>
+    <ul class="bb-mp-part-list">
+      <% submissionList.forEach(function (s) { %>
+      <li>
+        <a
+          class="bb-mp-part-card is-registered"
+          href="/member/forms/submissions/<%= s.id %>"
+          data-bb-submission="<%= s.id %>"
+          data-bb-submission-status="<%= s.status %>"
+        >
+          <div class="bb-mp-fr-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">task_alt</span>
+          </div>
+          <div class="bb-mp-part-card__body">
+            <div class="bb-mp-part-card__top">
+              <h3 class="bb-mp-part-card__title"><%= s.formTitle || 'Submission' %></h3>
+              <span class="bb-mp-chip bb-mp-chip--active" aria-label="<%= s.status %>"><%= s.status === 'submitted' ? 'Submitted' : s.status %></span>
+            </div>
+          </div>
+          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+      </li>
       <% }) %>
     </ul>
-  <% } %>
+    <% } %>
+  </section>
+</section>
+
 <%- include('../partials/member-shell-end') %>

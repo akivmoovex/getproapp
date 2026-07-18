@@ -3,54 +3,189 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1>Attendance</h1>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+<%
+  var rows = events || [];
+  var monthSummary = summary || null;
+  var categoryRows = (monthSummary && (monthSummary.churchTotals || monthSummary.byBranch)) || [];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'submitted') return 'Submitted';
+    if (key === 'approved') return 'Approved';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted' || key === 'approved') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+  function typeLabel(t) {
+    var key = String(t || '');
+    if (key === 'sunday_service') return 'Sunday service';
+    if (key === 'midweek') return 'Midweek';
+    if (key === 'special') return 'Special';
+    if (key === 'youth') return 'Youth';
+    if (key === 'children') return 'Children';
+    if (key === 'other') return 'Other';
+    return t || '—';
+  }
+  function categoryLabel(c) {
+    if (c === 'first_time_visitors') return 'Visitors';
+    if (c === 'adults') return 'Adults';
+    if (c === 'youth') return 'Youth';
+    if (c === 'children') return 'Children';
+    if (c === 'volunteers') return 'Volunteers';
+    if (c === 'other') return 'Other';
+    return c;
+  }
+  function entryCount(ev, cat) {
+    var list = ev.entries || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].category === cat) return list[i].count;
+    }
+    return 0;
+  }
+  function formatDate(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(String(value) + (String(value).length === 10 ? 'T00:00:00Z' : ''));
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function summaryTotalFor(cat) {
+    for (var i = 0; i < categoryRows.length; i++) {
+      if (categoryRows[i].category === cat) return categoryRows[i].totalCount;
+    }
+    return 0;
+  }
+%>
 
-  <section>
-    <h2>Monthly summary · <%= yearMonth %></h2>
-    <form method="get" action="<%= basePath %>">
-      <label>Month
-        <input type="month" name="month" value="<%= yearMonth %>" />
-      </label>
-      <button type="submit">Show</button>
-    </form>
-    <% if (!summary || (!summary.churchTotals && (!summary.byBranch || !summary.byBranch.length))) { %>
-      <p>No submitted attendance for this month.</p>
-    <% } else { %>
-      <p data-bb-attendance-grand-total="<%= summary.grandTotal %>">
-        Total headcount: <%= summary.grandTotal %>
+<section class="bb-att-admin" data-bb-attendance-admin-list="1">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <h1 class="bb-ba-page-head__title">Attendance tracker</h1>
+      <p class="bb-ba-lede">
+        Aggregate category counts for
+        <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
+        Individual member check-in is not enabled. Monthly totals use submitted records only.
       </p>
-      <ul>
-        <% (summary.churchTotals || summary.byBranch).forEach(function (row) { %>
-          <li>
-            <%= row.category %>: <%= row.totalCount %>
-            (<%= row.eventCount %> event<%= row.eventCount === 1 ? '' : 's' %>)
-          </li>
-        <% }) %>
-      </ul>
+    </div>
+    <% if (canCreate) { %>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/new" data-bb-att-create="1">Record attendance</a>
     <% } %>
-  </section>
+  </header>
 
-  <% if (canCreate) { %>
-    <p><a href="<%= basePath %>/new">New attendance event</a></p>
-  <% } %>
+  <% if (saved) { %><p class="bb-ba-ok" role="status">Saved.</p><% } %>
 
-  <section>
-    <h2>Events</h2>
-    <% if (!events || !events.length) { %>
-      <p>No attendance events in this view.</p>
+  <section class="bb-att-summary" data-bb-attendance-monthly="1">
+    <div class="bb-att-summary__head">
+      <h2 class="bb-ba-section-title">Monthly summary · <%= yearMonth %></h2>
+      <form method="get" action="<%= basePath %>" class="bb-att-month-form">
+        <label class="bb-ba-sr-only" for="month">Month</label>
+        <input id="month" type="month" name="month" value="<%= yearMonth %>" />
+        <% if (statusFilter) { %><input type="hidden" name="status" value="<%= statusFilter %>" /><% } %>
+        <% if (eventTypeFilter) { %><input type="hidden" name="event_type" value="<%= eventTypeFilter %>" /><% } %>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm">Show</button>
+      </form>
+    </div>
+
+    <% if (!monthSummary || !categoryRows.length) { %>
+    <p class="bb-ba-empty" role="status">No submitted attendance for this month.</p>
     <% } else { %>
-      <ul>
-        <% events.forEach(function (ev) { %>
-          <li data-bb-status="<%= ev.status %>">
-            <a href="<%= basePath %>/<%= ev.id %>"><%= ev.title %></a>
-            · <%= ev.eventDate %> · <%= ev.status %>
-            · total <%= ev.totalCount %>
-          </li>
-        <% }) %>
-      </ul>
+    <div class="bb-att-summary-cards">
+      <article class="bb-att-stat" data-bb-attendance-grand-total="<%= monthSummary.grandTotal %>">
+        <p class="bb-att-stat__label">Total headcount</p>
+        <p class="bb-att-stat__value"><%= monthSummary.grandTotal %></p>
+        <p class="bb-ba-hint">Submitted / approved / archived only</p>
+      </article>
+      <% ['adults','youth','children','first_time_visitors'].forEach(function (cat) { %>
+      <article class="bb-att-stat" data-bb-attendance-category="<%= cat %>">
+        <p class="bb-att-stat__label"><%= categoryLabel(cat) %></p>
+        <p class="bb-att-stat__value"><%= summaryTotalFor(cat) %></p>
+      </article>
+      <% }) %>
+    </div>
+    <ul class="bb-att-summary-list" data-bb-attendance-summary-list="1">
+      <% categoryRows.forEach(function (row) { %>
+      <li>
+        <%= categoryLabel(row.category) %>: <%= row.totalCount %>
+        (<%= row.eventCount %> event<%= row.eventCount === 1 ? '' : 's' %>)
+      </li>
+      <% }) %>
+    </ul>
     <% } %>
   </section>
+
+  <form method="get" action="<%= basePath %>" class="bb-ba-filter bb-att-filter" data-bb-att-filter="1">
+    <input type="hidden" name="month" value="<%= yearMonth %>" />
+    <div class="bb-ba-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">All statuses</option>
+        <% ['draft','submitted','approved','archived'].forEach(function (st) { %>
+        <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-ba-field">
+      <label for="event_type">Service type</label>
+      <select id="event_type" name="event_type">
+        <option value="">All types</option>
+        <% eventTypes.forEach(function (t) { %>
+        <option value="<%= t %>" <%= eventTypeFilter === t ? 'selected' : '' %>><%= typeLabel(t) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-ba-filter__actions">
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Filter</button>
+    </div>
+  </form>
+
+  <section class="bb-ba-panel bb-att-table-panel">
+    <h2 class="bb-ba-section-title">Recent records</h2>
+    <% if (!rows.length) { %>
+    <p class="bb-ba-empty" role="status">No attendance events match this filter.</p>
+    <% } else { %>
+    <div class="bb-ba-table-wrap">
+      <table class="bb-ba-table" data-bb-att-table="1">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Type</th>
+            <th scope="col">Title</th>
+            <th scope="col">Total</th>
+            <th scope="col">Adults</th>
+            <th scope="col">Youth</th>
+            <th scope="col">Children</th>
+            <th scope="col">Visitors</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="bb-ba-sr-only">Open</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (ev) { %>
+          <tr data-bb-status="<%= ev.status %>">
+            <td><%= formatDate(ev.eventDate) %></td>
+            <td><%= typeLabel(ev.eventType) %></td>
+            <td><a class="bb-ann-title-link" href="<%= basePath %>/<%= ev.id %>"><%= ev.title %></a></td>
+            <td><%= ev.totalCount %></td>
+            <td><%= entryCount(ev, 'adults') %></td>
+            <td><%= entryCount(ev, 'youth') %></td>
+            <td><%= entryCount(ev, 'children') %></td>
+            <td><%= entryCount(ev, 'first_time_visitors') %></td>
+            <td><span class="bb-ba-chip <%= statusChip(ev.status) %>"><%= statusLabel(ev.status) %></span></td>
+            <td><a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= ev.id %>">Open</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <p class="bb-ba-hint">Showing up to <%= rows.length %> events for <%= yearMonth %> (bounded list).</p>
+    <% } %>
+  </section>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

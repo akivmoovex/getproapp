@@ -1,0 +1,12 @@
+<%#
+  Loading state. Locals: title, body
+%>
+<div class="bb-ds-state bb-ds-state--loading" role="status" aria-live="polite" data-bb-ds="loading-state">
+  <div class="bb-ds-state__icon" aria-hidden="true">
+    <span class="bb-ds-spinner"></span>
+  </div>
+  <h2 class="bb-ds-state__title"><%= typeof title !== 'undefined' && title ? title : 'Loading' %></h2>
+  <% if (typeof body !== 'undefined' && body) { %>
+  <p class="bb-ds-state__body"><%= body %></p>
+  <% } %>
+</div>

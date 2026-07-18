@@ -1,24 +1,144 @@
 <%- include('../partials/member-shell-start') %>
-  <p><a href="/member/ministries">Back to ministries</a></p>
-  <% if (saved) { %><p class="bb-mp-saved" role="status">Saved.</p><% } %>
-  <article class="bb-mp-part-detail">
-    <h1><%= item.name %></h1>
-    <% if (item.summary) { %><p><%= item.summary %></p><% } %>
-    <% if (item.description) { %><div><%= item.description %></div><% } %>
-    <% if (item.membership) { %>
-      <p data-bb-status="<%= item.membership.status %>">Status: <%= item.membership.status %></p>
-      <form method="post" action="/member/ministries/<%= item.id %>/leave">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit"><%= item.membership.status === 'pending' ? 'Cancel request' : 'Leave ministry' %></button>
-      </form>
-    <% } else { %>
-      <form method="post" action="/member/ministries/<%= item.id %>/join">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <label>Message (optional)
-          <textarea name="message" rows="3" maxlength="1000"></textarea>
-        </label>
-        <button type="submit"><%= item.joinPolicy === 'open' ? 'Join' : 'Request to join' %></button>
-      </form>
+<%
+  var membership = item.membership || null;
+  var status = membership ? membership.status : null;
+  var isActive = status === 'active';
+  var isPending = status === 'pending';
+  var canJoin = !membership;
+  var isOpen = item.joinPolicy === 'open';
+
+  var flash = '';
+  if (saved === 'joined') {
+    flash = isPending ? 'Your request to join was submitted.' : 'You joined this ministry.';
+  } else if (saved === 'left') {
+    flash = 'Your ministry membership was updated.';
+  }
+%>
+
+<section class="bb-mp-part-detail-page" data-bb-member-ministry-detail="1">
+  <p class="bb-mp-back">
+    <a href="/member/ministries">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to ministries
+    </a>
+  </p>
+
+  <% if (flash) { %>
+  <p class="bb-mp-ok" role="status"><%= flash %></p>
+  <% } %>
+  <% if (error) { %>
+  <div class="bb-mp-alert bb-mp-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <article
+    class="bb-mp-part-detail<%= isActive ? ' is-member' : '' %><%= isPending ? ' is-pending' : '' %>"
+    data-bb-ministry="<%= item.id %>"
+    data-bb-status="<%= status || 'none' %>"
+    data-bb-join-policy="<%= item.joinPolicy || 'request' %>"
+  >
+    <div class="bb-mp-ann-chips" aria-label="Membership status">
+      <% if (isActive) { %>
+      <span class="bb-mp-chip bb-mp-chip--active" data-bb-status="active">Active</span>
+      <% } else if (isPending) { %>
+      <span class="bb-mp-chip bb-mp-chip--pending" data-bb-status="pending">Pending request</span>
+      <% } else if (isOpen) { %>
+      <span class="bb-mp-chip bb-mp-chip--open" data-bb-status="open">Open to join</span>
+      <% } else { %>
+      <span class="bb-mp-chip bb-mp-chip--request" data-bb-status="request">Request to join</span>
+      <% } %>
+    </div>
+
+    <h1 class="bb-mp-part-detail__title"><%= item.name %></h1>
+
+    <% if (item.meetingDay) { %>
+    <p class="bb-mp-part-card__meta">
+      <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+      <%= item.meetingDay %>
+    </p>
     <% } %>
+    <% if (item.contactEmail) { %>
+    <p class="bb-mp-part-card__meta">
+      <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+      <a href="mailto:<%= item.contactEmail %>"><%= item.contactEmail %></a>
+    </p>
+    <% } %>
+
+    <% if (item.summary) { %>
+    <p class="bb-mp-part-detail__summary"><%= item.summary %></p>
+    <% } %>
+    <% if (item.description) { %>
+    <div class="bb-mp-ann-body"><%= item.description %></div>
+    <% } %>
+
+    <div class="bb-mp-part-detail__actions">
+      <% if (isActive || isPending) { %>
+      <p class="bb-mp-part-detail__state" role="status">
+        <% if (isPending) { %>
+        Your request is waiting for church review.
+        <% } else { %>
+        You are an active member of this ministry.
+        <% } %>
+      </p>
+      <button
+        type="button"
+        class="bb-mp-btn bb-mp-btn--outline"
+        data-bb-ds-modal-open="bb-mp-ministry-leave"
+      >
+        <%= isPending ? 'Cancel request' : 'Leave ministry' %>
+      </button>
+
+      <div
+        id="bb-mp-ministry-leave"
+        class="bb-ds-modal"
+        data-bb-ds-modal
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bb-mp-ministry-leave-title"
+      >
+        <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+        <div class="bb-ds-modal__panel" tabindex="-1">
+          <h2 id="bb-mp-ministry-leave-title" class="bb-ds-modal__title">
+            <%= isPending ? 'Cancel join request?' : 'Leave this ministry?' %>
+          </h2>
+          <p class="bb-ds-modal__body">
+            <% if (isPending) { %>
+            This withdraws your request for <strong><%= item.name %></strong>.
+            <% } else { %>
+            You will leave <strong><%= item.name %></strong>. You can request to join again later if the ministry stays open.
+            <% } %>
+          </p>
+          <form method="post" action="/member/ministries/<%= item.id %>/leave" class="bb-ds-modal__actions">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="button" class="bb-mp-btn bb-mp-btn--ghost" data-bb-ds-modal-close>
+              <%= isPending ? 'Keep request' : 'Stay' %>
+            </button>
+            <button type="submit" class="bb-mp-btn bb-mp-btn--primary">
+              <%= isPending ? 'Confirm cancel' : 'Confirm leave' %>
+            </button>
+          </form>
+        </div>
+      </div>
+      <% } else if (canJoin) { %>
+      <form method="post" action="/member/ministries/<%= item.id %>/join" class="bb-mp-form bb-mp-form--panel">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="bb-mp-field">
+          <label for="ministry-message">Message<%= isOpen ? ' (optional)' : ' (optional)' %></label>
+          <textarea
+            id="ministry-message"
+            name="message"
+            rows="3"
+            maxlength="1000"
+            placeholder="<%= isOpen ? 'Optional note for ministry leaders' : 'Optional note with your request' %>"
+          ></textarea>
+        </div>
+        <button type="submit" class="bb-mp-btn bb-mp-btn--primary">
+          <%= isOpen ? 'Join ministry' : 'Request to join' %>
+        </button>
+      </form>
+      <% } %>
+    </div>
   </article>
+</section>
+
 <%- include('../partials/member-shell-end') %>

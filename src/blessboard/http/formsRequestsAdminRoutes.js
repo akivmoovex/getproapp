@@ -2,6 +2,7 @@
 
 /**
  * BlessBoard V5 HQ / branch admin for resources, forms, and member requests.
+ * Forms: submission review. Requests: workflow, private attachments, status updates.
  */
 
 const fs = require("fs");
@@ -14,6 +15,7 @@ const {
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { formatRoleLabel } = require("./renderTenantLandingPage");
+const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const {
   CSRF_FIELD,
   issueCsrfToken,
@@ -24,7 +26,9 @@ const {
   STATUS,
   REQUEST_CATEGORIES,
   REQUEST_STATUSES,
+  REQUEST_TRANSITIONS,
   AUDIENCES,
+  ALLOWED_FIELD_TYPES,
   createResource,
   publishResource,
   listResources,
@@ -40,10 +44,13 @@ const {
 const {
   resolveBlessBoardBranchForChurch,
 } = require("../services/listBlessBoardBranches");
+const { createMediaUploadService } = require("../media/mediaUploadService");
+const formsRepo = require("../repositories/formsRequestsRepository");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const LIST_LIMIT = 50;
 
 function renderView(relativePath, data) {
   const filename = path.join(VIEWS_ROOT, relativePath);
@@ -75,6 +82,105 @@ function sendControlled(req, res, status, message, shellKind) {
 <p><a href="/">Church homepage</a></p></main></body></html>`);
 }
 
+/**
+ * Safe private media download headers (nosniff, attachment disposition).
+ * @param {import('express').Response} res
+ * @param {{ asset?: object, buffer: Buffer }} delivered
+ */
+function sendPrivateMediaDownload(res, delivered) {
+  const asset = delivered.asset || {};
+  const mime = asset.mimeType || asset.contentType || "application/octet-stream";
+  const rawName = String(asset.originalFilename || "download")
+    .replace(/[\r\n"]/g, "")
+    .slice(0, 180);
+  const filename = rawName || "download";
+  res.setHeader("Content-Type", mime);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  return res.status(200).send(delivered.buffer);
+}
+
+function fieldLabelsFromForm(form) {
+  const labels = {};
+  const fields =
+    form && form.schema && Array.isArray(form.schema.fields) ? form.schema.fields : [];
+  for (const field of fields) {
+    if (!field || !field.key) continue;
+    if (!ALLOWED_FIELD_TYPES.includes(field.type)) continue;
+    labels[field.key] = field.label || field.key;
+  }
+  return labels;
+}
+
+function presentAdminSubmissions(submissions, form) {
+  const labels = fieldLabelsFromForm(form);
+  return (submissions || []).map((s) => {
+    const answers = s.answers && typeof s.answers === "object" ? s.answers : {};
+    const answerRows = Object.keys(answers).map((key) => ({
+      key,
+      label: labels[key] || key,
+      value: answers[key] == null ? "" : String(answers[key]),
+    }));
+    return {
+      id: s.id,
+      status: s.status,
+      submittedAt: s.submittedAt,
+      answerRows,
+      memberRef: s.memberId ? String(s.memberId).slice(-8) : null,
+    };
+  });
+}
+
+function presentAdminRequest(request, attachmentMeta) {
+  if (!request) return null;
+  const history = Array.isArray(request.history)
+    ? request.history.map((h) => ({
+        fromStatus: h.fromStatus || null,
+        toStatus: h.toStatus,
+        note: h.note || null,
+        memberVisible: h.memberVisible !== false,
+        createdAt: h.createdAt || null,
+      }))
+    : [];
+  return {
+    id: request.id,
+    category: request.category,
+    subject: request.subject,
+    message: request.message,
+    status: request.status,
+    mediaAssetId: request.mediaAssetId || null,
+    createdAt: request.createdAt || null,
+    updatedAt: request.updatedAt || null,
+    memberRef: request.memberId ? String(request.memberId).slice(-8) : null,
+    attachment: attachmentMeta,
+    history,
+    nextStatuses: REQUEST_TRANSITIONS[request.status] || [],
+  };
+}
+
+async function loadAttachmentMeta(pool, mediaAssetId, churchId) {
+  if (!mediaAssetId || !UUID_RE.test(mediaAssetId)) return null;
+  const client = await pool.connect();
+  try {
+    const media = await formsRepo.findMediaMeta(client, mediaAssetId);
+    if (
+      !media ||
+      String(media.church_id) !== String(churchId) ||
+      media.status !== "active" ||
+      media.visibility !== "private"
+    ) {
+      return null;
+    }
+    return {
+      filename: media.original_filename || "Private attachment",
+      mimeType: media.mime_type || null,
+    };
+  } finally {
+    client.release();
+  }
+}
+
 function createFormsRequestsAdminRouter(deps) {
   const getPool = deps.getPool;
   const isApexHost = deps.isApexHost;
@@ -83,6 +189,7 @@ function createFormsRequestsAdminRouter(deps) {
   const variant = deps.variant === "branch" ? "branch" : "hq";
   const isProduction = String(env.NODE_ENV || "") === "production";
   const shellKind = variant === "hq" ? "hq" : "branch";
+  const mediaService = deps.mediaService || createMediaUploadService(env);
 
   const allowedRoles =
     variant === "hq"
@@ -130,13 +237,31 @@ function createFormsRequestsAdminRouter(deps) {
   }
 
   function shellLocals(req, res, activeNav, extra) {
+    const pageTitle =
+      (extra && extra.pageTitle) ||
+      (activeNav === "requests" ? "Requests" : activeNav === "resources" ? "Resources" : "Forms");
+    if (variant === "branch") {
+      return buildBranchAdminShellLocals(req, res, {
+        env,
+        isProduction,
+        activeNav,
+        pageTitle,
+        extra: {
+          shellKind: "branch",
+          audiences: AUDIENCES,
+          requestCategories: REQUEST_CATEGORIES,
+          requestStatuses: REQUEST_STATUSES,
+          ...(extra || {}),
+        },
+      });
+    }
     const tenant = resolveTenantForAuthorization(req);
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const base = {
-      pageTitle: activeNav === "requests" ? "Requests" : activeNav === "resources" ? "Resources" : "Forms",
+    return {
+      pageTitle,
       activeNav,
-      shellKind,
+      shellKind: "hq",
       csrfToken,
       churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
       roleLabel: primaryRoleLabel(req),
@@ -144,18 +269,12 @@ function createFormsRequestsAdminRouter(deps) {
         req.v5Session && req.v5Session.session && req.v5Session.session.user
           ? req.v5Session.session.user.displayName
           : "",
+      hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
       audiences: AUDIENCES,
       requestCategories: REQUEST_CATEGORIES,
       requestStatuses: REQUEST_STATUSES,
       ...(extra || {}),
     };
-    if (variant === "hq") {
-      base.hqBranchDisplayName = tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "";
-    } else {
-      base.branchDisplayName =
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "";
-    }
-    return base;
   }
 
   function validateCsrfPost(req, res) {
@@ -242,6 +361,7 @@ function createFormsRequestsAdminRouter(deps) {
           actorUserId: scope.actorUserId,
           tenant: scope.tenant,
           scopeBranchId: scope.branchId,
+          limit: LIST_LIMIT,
         });
         if (!listed.ok) {
           return sendControlled(req, res, 503, "Resources unavailable.", shellKind);
@@ -262,16 +382,37 @@ function createFormsRequestsAdminRouter(deps) {
           );
       }
       if (section === "requests") {
+        const statusRaw = String((req.query && req.query.status) || "")
+          .trim()
+          .toLowerCase();
+        const statusFilter = REQUEST_STATUSES.includes(statusRaw) ? statusRaw : "";
         const listed = await listMemberRequests(getPool(), {
           churchId: scope.churchId,
           branchId: scope.branchId,
           actorUserId: scope.actorUserId,
           tenant: scope.tenant,
           scopeBranchId: scope.branchId,
+          status: statusFilter || null,
+          limit: LIST_LIMIT,
         });
         if (!listed.ok) {
-          return sendControlled(req, res, listed.status === STATUS.FORBIDDEN ? 403 : 503, "Requests unavailable.", shellKind);
+          return sendControlled(
+            req,
+            res,
+            listed.status === STATUS.FORBIDDEN ? 403 : 503,
+            "Requests unavailable.",
+            shellKind
+          );
         }
+        const requests = (listed.requests || []).map((r) => ({
+          id: r.id,
+          category: r.category,
+          subject: r.subject,
+          status: r.status,
+          createdAt: r.createdAt,
+          hasAttachment: Boolean(r.mediaAssetId),
+          memberRef: r.memberId ? String(r.memberId).slice(-8) : null,
+        }));
         return res
           .status(200)
           .type("html")
@@ -280,7 +421,8 @@ function createFormsRequestsAdminRouter(deps) {
               "forms-requests/admin-requests.ejs",
               shellLocals(req, res, "requests", {
                 basePath: scope.basePath,
-                requests: listed.requests,
+                requests,
+                statusFilter,
                 saved: String((req.query && req.query.saved) || ""),
               })
             )
@@ -292,6 +434,7 @@ function createFormsRequestsAdminRouter(deps) {
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         scopeBranchId: scope.branchId,
+        limit: LIST_LIMIT,
       });
       if (!listed.ok) {
         return sendControlled(req, res, 503, "Forms unavailable.", shellKind);
@@ -394,7 +537,13 @@ function createFormsRequestsAdminRouter(deps) {
           scopeBranchId: scope.branchId,
         });
         if (!loaded.ok) {
-          return sendControlled(req, res, loaded.status === STATUS.FORBIDDEN ? 403 : 404, "Not found.", shellKind);
+          return sendControlled(
+            req,
+            res,
+            loaded.status === STATUS.FORBIDDEN ? 403 : 404,
+            "Not found.",
+            shellKind
+          );
         }
         const submissions = await listFormSubmissions(getPool(), {
           churchId: scope.churchId,
@@ -403,6 +552,7 @@ function createFormsRequestsAdminRouter(deps) {
           actorUserId: scope.actorUserId,
           tenant: scope.tenant,
           scopeBranchId: scope.branchId,
+          limit: LIST_LIMIT,
         });
         return res
           .status(200)
@@ -411,9 +561,14 @@ function createFormsRequestsAdminRouter(deps) {
             renderView(
               "forms-requests/admin-form-detail.ejs",
               shellLocals(req, res, "forms", {
+                pageTitle: loaded.form.title || "Form",
                 basePath: scope.basePath,
                 form: loaded.form,
-                submissions: submissions.ok ? submissions.submissions : [],
+                submissions: presentAdminSubmissions(
+                  submissions.ok ? submissions.submissions : [],
+                  loaded.form
+                ),
+                fieldLabels: fieldLabelsFromForm(loaded.form),
                 saved: String((req.query && req.query.saved) || ""),
               })
             )
@@ -452,8 +607,19 @@ function createFormsRequestsAdminRouter(deps) {
           scopeBranchId: scope.branchId,
         });
         if (!loaded.ok) {
-          return sendControlled(req, res, loaded.status === STATUS.FORBIDDEN ? 403 : 404, "Not found.", shellKind);
+          return sendControlled(
+            req,
+            res,
+            loaded.status === STATUS.FORBIDDEN ? 403 : 404,
+            "Not found.",
+            shellKind
+          );
         }
+        const attachmentMeta = await loadAttachmentMeta(
+          getPool(),
+          loaded.request.mediaAssetId,
+          scope.churchId
+        );
         return res
           .status(200)
           .type("html")
@@ -461,12 +627,48 @@ function createFormsRequestsAdminRouter(deps) {
             renderView(
               "forms-requests/admin-request-detail.ejs",
               shellLocals(req, res, "requests", {
+                pageTitle: loaded.request.subject || "Request",
                 basePath: scope.basePath,
-                request: loaded.request,
+                request: presentAdminRequest(loaded.request, attachmentMeta),
                 saved: String((req.query && req.query.saved) || ""),
+                error: String((req.query && req.query.error) || ""),
               })
             )
           );
+      });
+
+      router.get(`${mountPrefix}/:id/file`, rejectApex, gate, async (req, res) => {
+        const scope = await resolveScope(req, res, section);
+        if (!scope) return;
+        const id = String(req.params.id || "");
+        if (!UUID_RE.test(id)) return res.status(404).type("text").send("Not found");
+        const loaded = await getMemberRequest(getPool(), {
+          id,
+          churchId: scope.churchId,
+          actorUserId: scope.actorUserId,
+          tenant: scope.tenant,
+          scopeBranchId: scope.branchId,
+        });
+        if (!loaded.ok || !loaded.request.mediaAssetId) {
+          return res.status(404).type("text").send("Not found");
+        }
+        const delivered = await mediaService.loadMediaBytes(getPool(), {
+          assetId: loaded.request.mediaAssetId,
+          churchId: scope.churchId,
+          allowPrivate: true,
+          viewerChurchId: scope.churchId,
+        });
+        if (!delivered.ok) {
+          return res.status(404).type("text").send("Not found");
+        }
+        if (delivered.redirectUrl) {
+          res.setHeader("Cache-Control", "private, no-store");
+          return res.redirect(302, delivered.redirectUrl);
+        }
+        if (!delivered.buffer) {
+          return res.status(404).type("text").send("Not found");
+        }
+        return sendPrivateMediaDownload(res, delivered);
       });
 
       router.post(`${mountPrefix}/:id/status`, rejectApex, gate, async (req, res) => {
@@ -476,6 +678,10 @@ function createFormsRequestsAdminRouter(deps) {
         const id = String(req.params.id || "");
         if (!UUID_RE.test(id)) return sendControlled(req, res, 404, "Not found.", shellKind);
         const body = req.body || {};
+        const internalOnly =
+          body.internal_only === "1" ||
+          body.internal_only === "on" ||
+          body.internal_only === "true";
         const updated = await updateMemberRequestStatus(getPool(), {
           id,
           churchId: scope.churchId,
@@ -484,9 +690,16 @@ function createFormsRequestsAdminRouter(deps) {
           scopeBranchId: scope.branchId,
           status: body.status,
           note: body.note,
+          memberVisible: internalOnly ? false : true,
         });
         if (!updated.ok) {
-          return sendControlled(req, res, 400, "Could not update status.", shellKind);
+          const reason =
+            updated.reason === "invalid_transition"
+              ? "invalid_transition"
+              : updated.reason === "status"
+                ? "status"
+                : "update";
+          return res.redirect(303, `${scope.basePath}/${id}?error=${encodeURIComponent(reason)}`);
         }
         return res.redirect(303, `${scope.basePath}/${id}?saved=status`);
       });

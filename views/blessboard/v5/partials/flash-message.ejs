@@ -1,0 +1,24 @@
+<%#
+  Flash / status message. Locals: message (required), type (success|error|warning|info), title (optional)
+%>
+<%
+  var _type = typeof type !== 'undefined' && type ? String(type) : 'info';
+  if (['success','error','warning','info'].indexOf(_type) < 0) _type = 'info';
+  var _icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+  var _icon = _icons[_type] || 'info';
+  var _msg = typeof message !== 'undefined' ? message : '';
+%>
+<% if (_msg) { %>
+<div
+  class="bb-ds-alert bb-ds-alert--<%= _type %>"
+  role="<%= _type === 'error' ? 'alert' : 'status' %>"
+  <%= _type === 'error' ? 'aria-live="assertive"' : 'aria-live="polite"' %>
+  data-bb-ds="flash"
+>
+  <%- include('./icon', { name: _icon }) %>
+  <% if (typeof title !== 'undefined' && title) { %>
+  <p class="bb-ds-alert__title"><%= title %></p>
+  <% } %>
+  <p class="bb-ds-alert__body"><%= _msg %></p>
+</div>
+<% } %>

@@ -3,28 +3,176 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1>Announcements</h1>
-  <p class="bb-ann-lede"><%= scopeLabel %> scope</p>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
-  <p><a href="<%= basePath %>/new">New announcement</a></p>
-  <% if (!items || !items.length) { %>
-    <p>No announcements yet.</p>
-  <% } else { %>
-    <ul class="bb-ann-list">
-      <% items.forEach(function (item) { %>
-        <li data-bb-announcement-status="<%= item.status %>">
-          <a href="<%= basePath %>/<%= item.id %>"><%= item.title %></a>
-          <span><%= item.status %></span>
-          <% if (item.isPinned) { %><span>Pinned</span><% } %>
-          <% if (item.isFeatured) { %><span>Featured</span><% } %>
-          <% if (item.delivery) { %>
-            <span data-bb-delivery="read"><%= item.delivery.readCount %>/<%= item.delivery.eligibleCount %> read</span>
-          <% } %>
-        </li>
-      <% }) %>
-    </ul>
+<%
+  var rows = items || [];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+  function audienceLabel(list) {
+    if (!list || !list.length) return '—';
+    return list.map(function (k) {
+      if (k === 'members') return 'Members';
+      if (k === 'admins') return 'Admins';
+      return k;
+    }).join(', ');
+  }
+  function snippet(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (t.length <= 90) return t;
+    return t.slice(0, 87) + '…';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function buildQuery(overrides) {
+    var parts = [];
+    var next = {
+      q: typeof q !== 'undefined' ? q : '',
+      status: typeof statusFilter !== 'undefined' ? statusFilter : '',
+      audience: typeof audienceFilter !== 'undefined' ? audienceFilter : '',
+      page: typeof page !== 'undefined' ? page : 1
+    };
+    Object.keys(overrides || {}).forEach(function (k) { next[k] = overrides[k]; });
+    if (next.q) parts.push('q=' + encodeURIComponent(next.q));
+    if (next.status) parts.push('status=' + encodeURIComponent(next.status));
+    if (next.audience) parts.push('audience=' + encodeURIComponent(next.audience));
+    if (next.page && Number(next.page) > 1) parts.push('page=' + encodeURIComponent(next.page));
+    return parts.length ? ('?' + parts.join('&')) : '';
+  }
+%>
+
+<section class="bb-ann-admin" data-bb-announcement-admin-list="1">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <h1 class="bb-ba-page-head__title">Announcements management</h1>
+      <p class="bb-ba-lede">
+        Manage communications for
+        <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : (churchDisplayName || scopeLabel) %></strong>
+        (<%= scopeLabel %> scope). Publishing is confirmed separately — announcements are archived, never deleted.
+      </p>
+    </div>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/new" data-bb-ann-create="1">Create announcement</a>
+  </header>
+
+  <% if (saved === '1' || saved === 'published' || saved === 'archived') { %>
+  <p class="bb-ba-ok" role="status">
+    <% if (saved === 'published') { %>Announcement published.<% } else if (saved === 'archived') { %>Announcement archived.<% } else { %>Saved.<% } %>
+  </p>
   <% } %>
+  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+
+  <form method="get" action="<%= basePath %>" class="bb-ba-filter bb-ann-filter" data-bb-ann-filter="1">
+    <div class="bb-ba-field">
+      <label for="q">Search</label>
+      <input
+        id="q"
+        name="q"
+        type="search"
+        maxlength="100"
+        value="<%= q || '' %>"
+        placeholder="Search announcements…"
+        autocomplete="off"
+      />
+    </div>
+    <div class="bb-ba-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">All statuses</option>
+        <% ['draft','published','archived'].forEach(function (st) { %>
+        <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-ba-field">
+      <label for="audience">Audience</label>
+      <select id="audience" name="audience">
+        <option value="">All audiences</option>
+        <option value="members" <%= audienceFilter === 'members' ? 'selected' : '' %>>Members</option>
+        <option value="admins" <%= audienceFilter === 'admins' ? 'selected' : '' %>>Admins</option>
+      </select>
+    </div>
+    <div class="bb-ba-filter__actions">
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Filter</button>
+    </div>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-ba-empty" role="status">No announcements match this filter.</div>
+  <% } else { %>
+  <div class="bb-ba-table-wrap">
+    <table class="bb-ba-table" data-bb-ann-table="1">
+      <thead>
+        <tr>
+          <th scope="col">Title</th>
+          <th scope="col">Message</th>
+          <th scope="col">Audience</th>
+          <th scope="col">Source</th>
+          <th scope="col">Published</th>
+          <th scope="col">Status</th>
+          <th scope="col">Reads</th>
+          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (item) { %>
+        <tr data-bb-announcement-status="<%= item.status %>">
+          <td>
+            <a href="<%= basePath %>/<%= item.id %>" class="bb-ann-title-link"><%= item.title %></a>
+            <% if (item.isPinned || item.isFeatured) { %>
+            <div class="bb-ba-chips">
+              <% if (item.isPinned) { %><span class="bb-ba-chip">Pinned</span><% } %>
+              <% if (item.isFeatured) { %><span class="bb-ba-chip">Featured</span><% } %>
+            </div>
+            <% } %>
+          </td>
+          <td class="bb-ann-snippet"><%= snippet(item.body) %></td>
+          <td><%= audienceLabel(item.audiences) %></td>
+          <td><%= item.branchId ? 'Branch' : 'Church-wide' %></td>
+          <td><%= formatWhen(item.publishedAt) %></td>
+          <td><span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
+          <td>
+            <% if (item.delivery) { %>
+            <span data-bb-delivery="read"><%= item.delivery.readCount %>/<%= item.delivery.eligibleCount %></span>
+            <% } else { %>—<% } %>
+          </td>
+          <td>
+            <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= item.id %>">Open</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bb-ba-pager" data-bb-ann-pager="1">
+    <p class="bb-ba-pager__meta">
+      Showing <%= rows.length %> of <%= total %> · page <%= page %> of <%= totalPages %>
+    </p>
+    <div class="bb-ba-pager__nav">
+      <% if (page > 1) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %><%= buildQuery({ page: page - 1 }) %>">Previous</a>
+      <% } %>
+      <% if (page < totalPages) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %><%= buildQuery({ page: page + 1 }) %>">Next</a>
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

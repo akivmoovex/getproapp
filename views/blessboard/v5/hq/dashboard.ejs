@@ -1,22 +1,42 @@
 <%- include('../partials/hq-shell-start') %>
-  <h1>Church HQ</h1>
-  <p class="bb-hq-lede">
-    Read-only BlessBoard V5 headquarters shell. Operational modules are not enabled yet.
-  </p>
-  <section class="bb-hq-meta" aria-label="Church summary">
+<%
+  var branchRows = branches || [];
+%>
+
+<section class="bb-hq-dash" data-bb-hq-dashboard="1">
+  <header class="bb-hq-page-head">
+    <h1 class="bb-hq-page-head__title"><%= churchDisplayName || 'Church' %> HQ</h1>
+    <p class="bb-hq-lede">
+      Church-level overview for authorized HQ admins. Summary cards use live branch counts only —
+      no projected growth, fabricated member totals, or invented reporting status.
+    </p>
+  </header>
+
+  <section class="bb-hq-summary" aria-label="Church summary" data-bb-hq-summary="1">
     <article class="bb-hq-card">
-      <h2>Church</h2>
-      <p><%= churchDisplayName %></p>
+      <h2 class="bb-hq-card__label">Church</h2>
+      <p class="bb-hq-card__value"><%= churchDisplayName %></p>
     </article>
     <article class="bb-hq-card">
-      <h2>Headquarters</h2>
-      <p><%= hqBranchDisplayName || "—" %></p>
+      <h2 class="bb-hq-card__label">Headquarters</h2>
+      <p class="bb-hq-card__value"><%= hqBranchDisplayName || '—' %></p>
     </article>
-    <article class="bb-hq-card">
-      <h2>Active branches</h2>
-      <p data-bb-count="active-branches"><%= activeBranchCount %></p>
+    <article class="bb-hq-card bb-hq-card--accent">
+      <h2 class="bb-hq-card__label">Active branches</h2>
+      <p class="bb-hq-card__value" data-bb-count="active-branches"><%= activeBranchCount %></p>
     </article>
   </section>
-  <h2>Branches</h2>
-  <%- include('../partials/branch-selector', { branches: branches }) %>
+
+  <section class="bb-hq-panel" aria-labelledby="hq-branch-selector-heading">
+    <div class="bb-hq-panel__head">
+      <h2 id="hq-branch-selector-heading" class="bb-hq-section-title">Branch selector</h2>
+      <a class="bb-hq-link" href="/hq/branches">View all branches</a>
+    </div>
+    <p class="bb-hq-hint">
+      Active branches only. Opening a branch validates church ownership, then deep-links to branch admin when authorized.
+    </p>
+    <%- include('../partials/branch-selector', { branches: branchRows }) %>
+  </section>
+</section>
+
 <%- include('../partials/hq-shell-end') %>

@@ -1,0 +1,70 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+<%
+  function audienceLabel(list) {
+    if (!list || !list.length) return '—';
+    return list.map(function (k) {
+      if (k === 'members') return 'Members';
+      if (k === 'admins') return 'Admins';
+      return k;
+    }).join(', ');
+  }
+%>
+
+<section class="bb-ann-admin" data-bb-announcement-admin-preview="1">
+  <header class="bb-ba-page-head">
+    <p class="bb-ba-breadcrumb">
+      <a href="<%= basePath %>">Announcements</a>
+      <span aria-hidden="true">›</span>
+      <a href="<%= basePath %>/<%= item.id %>"><%= item.title %></a>
+      <span aria-hidden="true">›</span>
+      <span>Preview</span>
+    </p>
+    <h1 class="bb-ba-page-head__title">Member preview</h1>
+    <p class="bb-ba-lede">
+      Approximate member-facing presentation. Status: <strong><%= item.status %></strong>
+      · Audience: <%= audienceLabel(item.audiences) %>.
+      Unpublished drafts are not visible to members.
+    </p>
+  </header>
+
+  <article class="bb-ann-preview-card bb-ann-preview-card--full">
+    <% if (item.isPinned || item.isFeatured) { %>
+    <div class="bb-ba-chips">
+      <% if (item.isPinned) { %><span class="bb-ba-chip">Pinned</span><% } %>
+      <% if (item.isFeatured) { %><span class="bb-ba-chip">Featured</span><% } %>
+      <% if (item.status !== 'published') { %><span class="bb-ba-chip bb-ba-chip--pending">Not published</span><% } %>
+    </div>
+    <% } else if (item.status !== 'published') { %>
+    <div class="bb-ba-chips"><span class="bb-ba-chip bb-ba-chip--pending">Not published</span></div>
+    <% } %>
+    <h2 class="bb-ann-preview-card__title"><%= item.title %></h2>
+    <p class="bb-ann-preview-card__body"><%= item.body %></p>
+    <% if (item.actionUrl) { %>
+    <p><span class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"><%= item.actionLabel || 'Open link' %></span></p>
+    <% } %>
+    <% if (item.attachments && item.attachments.length) { %>
+    <ul class="bb-ann-attachments">
+      <% item.attachments.forEach(function (att) { %>
+      <li><%= att.originalFilename || 'Attachment' %></li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </article>
+
+  <div class="bb-ba-decision__actions">
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>">Back to detail</a>
+    <% if (item.status === 'draft') { %>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/<%= item.id %>/publish">Review &amp; publish</a>
+    <% } %>
+  </div>
+</section>
+
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

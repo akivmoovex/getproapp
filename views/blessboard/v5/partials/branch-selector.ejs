@@ -1,22 +1,25 @@
 <%#
   Read-only branch selector.
   Expects: branches = [{ key, displayName, branchType, isPrimary }]
+  Never render branch UUIDs.
 %>
 <% if (!branches || !branches.length) { %>
   <p class="bb-hq-empty" data-bb-empty="branches">No active branches are available for this church.</p>
 <% } else { %>
   <ul class="bb-hq-branch-selector" data-bb-component="branch-selector" aria-label="Branch selector">
     <% branches.forEach(function (branch) { %>
-      <li>
-        <div>
+      <li data-bb-branch-key="<%= branch.key %>">
+        <div class="bb-hq-branch-selector__main">
           <a href="/hq/branches/<%= branch.key %>"><%= branch.displayName %></a>
-          <div>
+          <div class="bb-hq-branch-selector__meta">
             <span class="bb-hq-pill"><%= branch.branchType === 'hq' ? 'HQ' : 'Branch' %></span>
             <% if (branch.isPrimary) { %>
               <span class="bb-hq-pill bb-hq-pill--primary">Primary</span>
             <% } %>
+            <code class="bb-hq-key"><%= branch.key %></code>
           </div>
         </div>
+        <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="/hq/branches/<%= branch.key %>">Open</a>
       </li>
     <% }) %>
   </ul>

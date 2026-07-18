@@ -773,7 +773,8 @@ async function updateMemberRequestStatus(db, input) {
         fromStatus: request.status,
         toStatus,
         note: note.value,
-        memberVisible: true,
+        // Internal staff notes: pass memberVisible: false; default remains member-visible.
+        memberVisible: input.memberVisible === false ? false : true,
         changedByUserId: actorUserId,
       });
       const history = await repo.listRequestHistory(client, id, { memberVisibleOnly: false });

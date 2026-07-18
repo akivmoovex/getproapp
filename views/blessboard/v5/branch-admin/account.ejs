@@ -1,6 +1,11 @@
 <%- include('../partials/branch-admin-shell-start') %>
-  <h1>Account</h1>
-  <p class="bb-ba-lede">Signed-in branch administrator details for this church site.</p>
+
+<section class="bb-ba-account" data-bb-branch-account="1">
+  <header class="bb-ba-page-head">
+    <h1 class="bb-ba-page-head__title">Account</h1>
+    <p class="bb-ba-lede">Signed-in administrator details for this church site. Branch identity comes from the hostname — not from URL parameters.</p>
+  </header>
+
   <dl class="bb-ba-dl">
     <dt>Display name</dt>
     <dd><%= displayName %></dd>
@@ -11,4 +16,14 @@
     <dt>Branch</dt>
     <dd><%= branchDisplayName %></dd>
   </dl>
+
+  <form class="bb-ba-logout bb-ba-logout--page" method="post" action="/branch-admin/logout">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <button type="submit" class="bb-ba-btn bb-ba-btn--ghost">
+      <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+      Sign out
+    </button>
+  </form>
+</section>
+
 <%- include('../partials/branch-admin-shell-end') %>

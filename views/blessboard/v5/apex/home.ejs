@@ -1,0 +1,132 @@
+<%#
+  Apex home — Stitch “One digital home for your church”.
+  No fabricated metrics or testimonials. Nav stays Home/Login or Home/Account/Logout.
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section class="bb-apex-hero" data-bb-apex-hero="1" aria-label="BlessBoard home">
+  <div class="bb-apex-hero__media" aria-hidden="true">
+    <picture>
+      <source media="(max-width: 767px)" srcset="/church/images/homepage/apex-hero-mobile.jpg" />
+      <img
+        src="/church/images/homepage/desktop-hero-auditorium.jpg"
+        alt=""
+        width="1600"
+        height="900"
+        decoding="async"
+        fetchpriority="high"
+      />
+    </picture>
+    <div class="bb-apex-hero__shade"></div>
+  </div>
+  <div class="bb-apex-container bb-apex-hero__content">
+    <p class="bb-apex-hero__eyebrow">BlessBoard</p>
+    <h1 class="bb-apex-hero__title">One digital home for your church</h1>
+    <p class="bb-apex-hero__lead">
+      Public websites, member engagement, and church administration — built for single congregations and multi-branch organizations.
+    </p>
+    <div class="bb-apex-hero__cta">
+      <% if (authenticated) { %>
+      <a class="bb-apex-btn bb-apex-btn--on-dark" href="/account">Go to Account</a>
+      <a class="bb-apex-btn bb-apex-btn--ghost-on-dark" href="#capabilities">Explore capabilities</a>
+      <% } else { %>
+      <a class="bb-apex-btn bb-apex-btn--on-dark" href="/login">Login</a>
+      <a class="bb-apex-btn bb-apex-btn--ghost-on-dark" href="#capabilities">Explore capabilities</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<section class="bb-apex-section" aria-labelledby="bb-apex-audience-heading">
+  <div class="bb-apex-container">
+    <p class="bb-apex-section__eyebrow">Audience pathways</p>
+    <h2 class="bb-apex-section__title" id="bb-apex-audience-heading">Designed for every member of your community</h2>
+    <p class="bb-apex-section__lead">BlessBoard supports visitors, members, leaders, and multi-branch teams with the right tools for each role.</p>
+    <ul class="bb-apex-audience">
+      <li class="bb-apex-audience__card">
+        <span class="bb-apex-audience__icon" aria-hidden="true"><span class="material-symbols-outlined">person_add</span></span>
+        <h3 class="bb-apex-audience__title">For Visitors</h3>
+        <p class="bb-apex-audience__body">Find your place and stay connected through a clear public church presence.</p>
+      </li>
+      <li class="bb-apex-audience__card">
+        <span class="bb-apex-audience__icon" aria-hidden="true"><span class="material-symbols-outlined">favorite</span></span>
+        <h3 class="bb-apex-audience__title">For Members</h3>
+        <p class="bb-apex-audience__body">Deepen fellowship with announcements, events, ministries, forms, and requests.</p>
+      </li>
+      <li class="bb-apex-audience__card">
+        <span class="bb-apex-audience__icon" aria-hidden="true"><span class="material-symbols-outlined">auto_fix_high</span></span>
+        <h3 class="bb-apex-audience__title">For Leaders</h3>
+        <p class="bb-apex-audience__body">Run day-to-day ministry with attendance, giving summaries, and content tools.</p>
+      </li>
+      <li class="bb-apex-audience__card">
+        <span class="bb-apex-audience__icon" aria-hidden="true"><span class="material-symbols-outlined">account_tree</span></span>
+        <h3 class="bb-apex-audience__title">For Multi-Branch</h3>
+        <p class="bb-apex-audience__body">Keep unity and oversight across campuses with HQ reporting and shared standards.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="bb-apex-section bb-apex-section--tint" id="capabilities" aria-labelledby="bb-apex-features-heading">
+  <div class="bb-apex-container">
+    <p class="bb-apex-section__eyebrow">Platform capabilities</p>
+    <h2 class="bb-apex-section__title" id="bb-apex-features-heading">Powerful tools built for modern ministry</h2>
+    <p class="bb-apex-section__lead">A connected suite for public presence, member life, and church operations — without inventing demo metrics.</p>
+    <ul class="bb-apex-features">
+      <li class="bb-apex-feature">
+        <div class="bb-apex-feature__media">
+          <img src="/church/images/homepage/apex-feature-website.jpg" alt="" width="640" height="400" loading="lazy" decoding="async" />
+        </div>
+        <div class="bb-apex-feature__copy">
+          <h3 class="bb-apex-feature__title">Public Church Website</h3>
+          <p class="bb-apex-feature__body">A beautiful, data-driven home for your online presence.</p>
+        </div>
+      </li>
+      <li class="bb-apex-feature">
+        <div class="bb-apex-feature__media">
+          <img src="/church/images/homepage/apex-feature-engagement.jpg" alt="" width="640" height="400" loading="lazy" decoding="async" />
+        </div>
+        <div class="bb-apex-feature__copy">
+          <h3 class="bb-apex-feature__title">Member Engagement</h3>
+          <p class="bb-apex-feature__body">Tools for community life — announcements, events, ministries, and requests.</p>
+        </div>
+      </li>
+      <li class="bb-apex-feature">
+        <div class="bb-apex-feature__media">
+          <img src="/church/images/homepage/apex-feature-admin.jpg" alt="" width="640" height="400" loading="lazy" decoding="async" />
+        </div>
+        <div class="bb-apex-feature__copy">
+          <h3 class="bb-apex-feature__title">Church Administration</h3>
+          <p class="bb-apex-feature__body">Streamlined attendance, content, and operational workflows for branch teams.</p>
+        </div>
+      </li>
+      <li class="bb-apex-feature">
+        <div class="bb-apex-feature__media">
+          <img src="/church/images/homepage/apex-feature-multibranch.jpg" alt="" width="640" height="400" loading="lazy" decoding="async" />
+        </div>
+        <div class="bb-apex-feature__copy">
+          <h3 class="bb-apex-feature__title">Multi-Branch Management</h3>
+          <p class="bb-apex-feature__body">Consolidated oversight for growing organizations with multiple campuses.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="bb-apex-section" aria-labelledby="bb-apex-cta-heading">
+  <div class="bb-apex-container">
+    <div class="bb-apex-cta-band">
+      <h2 class="bb-apex-cta-band__title" id="bb-apex-cta-heading">Ready to empower your ministry?</h2>
+      <p class="bb-apex-cta-band__lead">Sign in to your BlessBoard account to continue. Church sites are available on each congregation’s hostname.</p>
+      <div class="bb-apex-cta-band__actions">
+        <% if (authenticated) { %>
+        <a class="bb-apex-btn bb-apex-btn--on-dark" href="/account">Open Account</a>
+        <% } else { %>
+        <a class="bb-apex-btn bb-apex-btn--on-dark" href="/login">Login</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>

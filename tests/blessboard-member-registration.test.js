@@ -26,6 +26,7 @@ const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie")
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
   GENERIC_DUPLICATE_MESSAGE,
+  mapRegistrationFieldErrors,
 } = require("../src/blessboard/http/tenantRegistrationRoutes");
 const {
   updateChurchSettings,
@@ -207,7 +208,91 @@ describe("blessboard member registration http", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /Member registration/);
     assert.match(res.text, /name="_csrf"/);
+    assert.match(res.text, /data-bb-shell="tenant-auth"/);
+    assert.match(res.text, /for="first_name"/);
+    assert.match(res.text, /for="last_name"/);
+    assert.match(res.text, /for="email"/);
+    assert.match(res.text, /for="phone"/);
+    assert.doesNotMatch(res.text, /name="church_id"|name="branch_id"|name="churchId"|name="branchId"/);
     assert.ok(extractCookie(res, CSRF_COOKIE));
+  });
+
+  it("maps validation reasons to field-level errors without leaking internals", () => {
+    const missing = mapRegistrationFieldErrors("first_name");
+    assert.equal(missing.fieldErrors.firstName, "Enter your first name.");
+    assert.equal(missing.summaryItems.length, 1);
+
+    const contact = mapRegistrationFieldErrors("contact_required");
+    assert.equal(contact.fieldErrors.email, contact.fieldErrors.phone);
+    assert.match(contact.fieldErrors.email, /email or a phone/i);
+
+    const unknown = mapRegistrationFieldErrors("branch_ownership");
+    assert.deepEqual(unknown.fieldErrors, {});
+  });
+
+  it("shows field-level errors, retains submitted values, and serves confirmation chrome", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const form = await request(app).get("/register").set("Host", HOST_A);
+    const csrf = extractCookie(form, CSRF_COOKIE);
+
+    const invalid = await request(app)
+      .post("/register")
+      .set("Host", HOST_A)
+      .set("Cookie", `${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        first_name: "",
+        last_name: "Applicant",
+        preferred_name: "Pat",
+        email: "",
+        phone: "",
+      });
+    assert.equal(invalid.status, 400);
+    assert.match(invalid.text, /id="bb-auth-error-summary"/);
+    assert.match(invalid.text, /id="err-firstName"|Enter your first name/);
+    assert.match(invalid.text, /value="Applicant"/);
+    assert.match(invalid.text, /value="Pat"/);
+    assert.doesNotMatch(invalid.text, /name="church_id"|name="branch_id"/);
+
+    const contactMissing = await request(app)
+      .post("/register")
+      .set("Host", HOST_A)
+      .set("Cookie", `${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        first_name: "Pat",
+        last_name: "Applicant",
+        email: "",
+        phone: "",
+      });
+    assert.equal(contactMissing.status, 400);
+    assert.match(contactMissing.text, /Provide at least an email or a phone number/);
+    assert.match(contactMissing.text, /aria-invalid="true"/);
+
+    const okForm = await request(app).get("/register").set("Host", HOST_A);
+    const okCsrf = extractCookie(okForm, CSRF_COOKIE);
+    const ok = await request(app)
+      .post("/register")
+      .set("Host", HOST_A)
+      .set("Cookie", `${CSRF_COOKIE}=${okCsrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: okCsrf,
+        first_name: "Sam",
+        last_name: "Confirmed",
+        email: "sam-confirmed@example.test",
+      });
+    assert.equal(ok.status, 303);
+    assert.equal(ok.headers.location, "/register/submitted");
+
+    const submitted = await request(app).get("/register/submitted").set("Host", HOST_A);
+    assert.equal(submitted.status, 200);
+    assert.match(submitted.text, /data-bb-register-submitted="1"/);
+    assert.match(submitted.text, /Registration received|Pending review/);
+    assert.doesNotMatch(submitted.text, /Submission ID|KBC-|account has been created|automatically created/i);
+    assert.match(submitted.text, /not created automatically|only after leadership approves/i);
   });
 
   it("ignores client church/branch ids and submits against host scope", async (t) => {
@@ -328,8 +413,9 @@ describe("blessboard member registration http", () => {
       .set("Host", HOST_A)
       .set("Cookie", sid);
     assert.equal(list.status, 200);
-    assert.match(list.text, /Registrations/);
+    assert.match(list.text, /data-bb-registration-queue="1"/);
     assert.match(list.text, /Nora Applicant|nora@example\.test/i);
+    assert.doesNotMatch(list.text, /\b24\b.*Pending|Today's Subs|1,248/i);
 
     const row = await pool.query(
       `SELECT id FROM blessboard.member_registrations
@@ -342,7 +428,14 @@ describe("blessboard member registration http", () => {
       .set("Host", HOST_A)
       .set("Cookie", sid);
     assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-bb-registration-detail="1"/);
     assert.match(detail.text, /Nora/);
+    assert.match(detail.text, /data-bb-ds-modal-open="bb-ba-approve-modal"/);
+    assert.match(detail.text, /data-bb-ds-modal-open="bb-ba-reject-modal"/);
+    assert.match(detail.text, /data-bb-reg-approve="1"/);
+    assert.match(detail.text, /data-bb-reg-reject="1"/);
+    assert.match(detail.text, /does <strong>not<\/strong> create a login account|No login account/i);
+    assert.doesNotMatch(detail.text, new RegExp(churchA.id, "i"));
 
     const csrf = extractCookie(detail, CSRF_COOKIE);
     const approve = await request(app)
@@ -361,6 +454,35 @@ describe("blessboard member registration http", () => {
     assert.equal(member.rows.length, 1);
     assert.equal(member.rows[0].status, "active");
     assert.equal(member.rows[0].user_id, null);
+
+    const memberId = member.rows[0].id;
+    const directory = await request(app)
+      .get("/branch-admin/members")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(directory.status, 200);
+    assert.match(directory.text, /data-bb-member-directory="1"/);
+    assert.match(directory.text, /Nora/);
+    assert.match(directory.text, /href="\/branch-admin\/members\/[0-9a-f-]{36}"/i);
+    assert.doesNotMatch(directory.text, /email_normalized|phone_normalized/i);
+    assert.doesNotMatch(directory.text, new RegExp(churchA.id, "i"));
+
+    const profile = await request(app)
+      .get(`/branch-admin/members/${memberId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(profile.status, 200);
+    assert.match(profile.text, /data-bb-member-detail="1"/);
+    assert.match(profile.text, /Nora/);
+    assert.match(profile.text, /Login linked/);
+    assert.doesNotMatch(profile.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(profile.text, /email_normalized|phone_normalized|user_id/i);
+
+    const foreignMember = await request(app)
+      .get(`/branch-admin/members/${memberId}`)
+      .set("Host", HOST_B)
+      .set("Cookie", sessionCookie(users.hqB));
+    assert.ok(foreignMember.status === 403 || foreignMember.status === 404);
   });
 
   it("rejects cross-tenant verification and CSRF-less approve", async (t) => {

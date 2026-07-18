@@ -94,40 +94,75 @@ async function findAnnouncementById(client, id) {
 }
 
 /**
+ * Bounded admin list. Search strips LIKE metacharacters; never returns more than maxLimit.
  * @param {{ query: Function }} client
  * @param {{
  *   churchId: string,
  *   branchId?: string|null,
  *   status?: string|null,
+ *   audienceKey?: string|null,
+ *   q?: string|null,
  *   limit?: number,
  *   offset?: number,
  * }} opts
+ * @returns {Promise<{ items: object[], total: number, limit: number, offset: number }>}
  */
 async function listAnnouncements(client, opts) {
   const params = [opts.churchId];
-  let where = `church_id = $1`;
+  let where = `a.church_id = $1`;
   if (opts.branchId === null) {
-    where += ` AND branch_id IS NULL`;
+    where += ` AND a.branch_id IS NULL`;
   } else if (opts.branchId) {
     params.push(opts.branchId);
-    where += ` AND branch_id = $${params.length}`;
+    where += ` AND a.branch_id = $${params.length}`;
   }
   if (opts.status) {
     params.push(opts.status);
-    where += ` AND status = $${params.length}`;
+    where += ` AND a.status = $${params.length}`;
   }
-  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
+  const audienceKey =
+    opts.audienceKey != null && String(opts.audienceKey).trim()
+      ? String(opts.audienceKey).trim().toLowerCase()
+      : "";
+  let from = `FROM blessboard.announcements a`;
+  if (audienceKey === "members" || audienceKey === "admins") {
+    params.push(audienceKey);
+    from += ` INNER JOIN blessboard.announcement_audiences aud
+                ON aud.announcement_id = a.id AND aud.audience_key = $${params.length}`;
+  }
+  const qRaw = opts.q != null ? String(opts.q).trim() : "";
+  const q = qRaw.slice(0, 100).replace(/[%_]/g, "");
+  if (q) {
+    params.push(`%${q.toLowerCase()}%`);
+    where += ` AND (lower(a.title) LIKE $${params.length} OR lower(a.body) LIKE $${params.length})`;
+  }
+  const limit = Math.min(Math.max(Number(opts.limit) || 20, 1), 50);
   const offset = Math.max(Number(opts.offset) || 0, 0);
-  params.push(limit, offset);
-  const { rows } = await client.query(
-    `SELECT ${ANNOUNCEMENT_COLS}
-       FROM blessboard.announcements
-      WHERE ${where}
-      ORDER BY is_pinned DESC, published_at DESC NULLS LAST, updated_at DESC
-      LIMIT $${params.length - 1} OFFSET $${params.length}`,
+
+  const countRes = await client.query(
+    `SELECT COUNT(*)::int AS total ${from} WHERE ${where}`,
     params
   );
-  return rows.map(mapAnnouncement);
+  const total = Number(countRes.rows[0] && countRes.rows[0].total) || 0;
+
+  const listParams = params.slice();
+  listParams.push(limit, offset);
+  const { rows } = await client.query(
+    `SELECT a.id, a.church_id, a.branch_id, a.title, a.body, a.status,
+            a.is_pinned, a.is_featured, a.featured_until, a.action_url, a.action_label,
+            a.published_at, a.created_by_user_id, a.created_at, a.updated_at
+       ${from}
+      WHERE ${where}
+      ORDER BY a.is_pinned DESC, a.published_at DESC NULLS LAST, a.updated_at DESC
+      LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`,
+    listParams
+  );
+  return {
+    items: rows.map(mapAnnouncement),
+    total,
+    limit,
+    offset,
+  };
 }
 
 /**

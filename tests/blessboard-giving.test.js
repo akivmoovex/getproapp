@@ -628,14 +628,24 @@ describe("blessboard giving", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(list.status, 200);
-    assert.match(list.text, /Giving/);
+    assert.match(list.text, /data-bb-giving-admin-list="1"/);
+    assert.match(list.text, /Giving summaries/);
+    assert.match(list.text, /Monthly summary/);
+    assert.match(list.text, /data-bb-giving-categories="1"/);
+    assert.match(list.text, /data-bb-category-key="tithes"/);
+    assert.doesNotMatch(list.text, /Bank Name|Account Number|Merchant Number|Upload QR|Airtel Money|payment processing|Stripe|PayPal/i);
+    assert.doesNotMatch(list.text, /donor email|donor phone|donor name/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(list.text, new RegExp(branchA.id, "i"));
 
     const form = await request(app)
       .get("/branch-admin/giving/new")
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(form.status, 200);
+    assert.match(form.text, /data-bb-giving-admin-form="1"/);
+    assert.match(form.text, /Do not record donor names/);
+    assert.match(form.text, /NUMERIC/);
     const csrf = extractCookie(form, CSRF_COOKIE);
 
     const missingCsrf = await request(app)
@@ -672,7 +682,42 @@ describe("blessboard giving", () => {
       .get(`/branch-admin/giving/${entryId}`)
       .set("Host", HOST_A)
       .set("Cookie", cookie);
-    const csrf2 = extractCookie(detail, CSRF_COOKIE);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-bb-giving-admin-detail="1"/);
+    assert.match(detail.text, /data-bb-giv-amount="25\.00"/);
+    assert.match(detail.text, /bb-giv-submit-modal/);
+    assert.match(detail.text, /bb-giv-void-modal/);
+    assert.match(detail.text, /data-bb-giv-edit="1"/);
+    assert.doesNotMatch(detail.text, new RegExp(churchA.id, "i"));
+
+    const editPage = await request(app)
+      .get(`/branch-admin/giving/${entryId}/edit`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(editPage.status, 200);
+    assert.match(editPage.text, /data-bb-form-mode="edit"/);
+    const editCsrf = extractCookie(editPage, CSRF_COOKIE);
+    const edited = await request(app)
+      .post(`/branch-admin/giving/${entryId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(cookie, `${CSRF_COOKIE}=${editCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: editCsrf,
+        category_key: "tithes",
+        giving_date: givingDateInMonth(6),
+        amount: "30.50",
+        currency: "USD",
+        reference: "http-batch-2",
+      });
+    assert.equal(edited.status, 303);
+
+    const detail2 = await request(app)
+      .get(`/branch-admin/giving/${entryId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.match(detail2.text, /data-bb-giv-amount="30\.50"/);
+    const csrf2 = extractCookie(detail2, CSRF_COOKIE);
     const submitted = await request(app)
       .post(`/branch-admin/giving/${entryId}/submit`)
       .set("Host", HOST_A)
@@ -680,6 +725,14 @@ describe("blessboard giving", () => {
       .type("form")
       .send({ [CSRF_FIELD]: csrf2 });
     assert.equal(submitted.status, 303);
+
+    const afterSubmit = await request(app)
+      .get(`/branch-admin/giving/${entryId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(afterSubmit.status, 200);
+    assert.match(afterSubmit.text, /data-bb-status="submitted"/);
+    assert.doesNotMatch(afterSubmit.text, /data-bb-giv-edit="1"/);
 
     const loaded = await getGivingEntry(pool, {
       id: entryId,
@@ -689,6 +742,7 @@ describe("blessboard giving", () => {
       scopeBranchId: branchA.id,
     });
     assert.equal(loaded.entry.status, "submitted");
+    assert.equal(loaded.entry.amount, "30.50");
 
     const hq = await request(app)
       .get("/hq/giving")
@@ -696,6 +750,7 @@ describe("blessboard giving", () => {
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${hqAdmin.rawToken}`);
     assert.equal(hq.status, 200);
     assert.match(hq.text, /Monthly summary/);
+    assert.match(hq.text, /data-bb-giving-admin-list="1"/);
     assert.doesNotMatch(hq.text, new RegExp(churchA.id, "i"));
   });
 

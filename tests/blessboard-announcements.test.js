@@ -784,6 +784,64 @@ describe("blessboard announcements", () => {
     assert.equal(mark.status, 200);
     assert.equal(mark.body.ok, true);
     assert.ok(mark.body.readAt);
+
+    const afterRead = await request(app)
+      .get(`/member/announcements/${annId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(afterRead.status, 200);
+    assert.match(afterRead.text, /data-bb-unread="0"/);
+    assert.match(afterRead.text, /data-bb-read-status="read"/);
+    assert.match(afterRead.text, /You have read this announcement/);
+    assert.doesNotMatch(afterRead.text, /Mark as read/);
+  });
+
+  it("renders pinned, featured, and unread announcement states in member GUI", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const tenant = makeTenant(churchA, orgA.records.organization, branchA);
+    const created = await createAnnouncement(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      actorUserId: hqAdmin.user.id,
+      tenant,
+      title: "Pinned featured notice",
+      body: "Body for GUI states",
+      status: "published",
+      audiences: ["members"],
+      isPinned: true,
+      isFeatured: true,
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+    });
+    assert.equal(created.ok, true, created.reason);
+
+    const memberCookie = `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`;
+    const list = await request(app)
+      .get("/member/announcements")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(list.status, 200);
+    assert.match(list.text, /data-bb-member-announcements="1"/);
+    assert.match(list.text, /Pinned featured notice/);
+    assert.match(list.text, /data-bb-pinned="1"/);
+    assert.match(list.text, /data-bb-featured="1"/);
+    assert.match(list.text, /data-bb-unread="1"/);
+    assert.match(list.text, /bb-mp-chip--pinned/);
+    assert.match(list.text, /bb-mp-chip--featured/);
+    assert.match(list.text, /bb-mp-chip--unread/);
+    assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(list.text, new RegExp(memberId, "i"));
+
+    const detail = await request(app)
+      .get(`/member/announcements/${created.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-bb-member-announcement-detail="1"/);
+    assert.match(detail.text, /data-bb-pinned="1"/);
+    assert.match(detail.text, /data-bb-featured="1"/);
+    assert.match(detail.text, /Mark as read/);
+    assert.match(detail.text, /name="_csrf"/);
   });
 
   it("blocks cross-tenant member access", async (t) => {
@@ -808,6 +866,160 @@ describe("blessboard announcements", () => {
       .set("Host", HOST_B)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${memberB.rawToken}`);
     assert.ok(foreign.status === 403 || foreign.status === 404);
+  });
+
+  it("branch admin list/create/preview/publish/archive GUI with CSRF and delivery summary", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const baCookie = `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`;
+    const list = await request(app)
+      .get("/branch-admin/announcements")
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.equal(list.status, 200);
+    assert.match(list.text, /data-bb-announcement-admin-list="1"/);
+    assert.match(list.text, /Announcements management/);
+    assert.match(list.text, /Create announcement/);
+    assert.doesNotMatch(list.text, /Active Today|Scheduled|1,240|Total Views|Admin Tip/i);
+    assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(list.text, new RegExp(branchA.id, "i"));
+
+    const csrf = extractCookie(list, CSRF_COOKIE);
+    const createRes = await request(app)
+      .post("/branch-admin/announcements")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(baCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        title: "Branch GUI draft",
+        body: "Branch scoped body for GUI",
+        status: "draft",
+        audience_members: "1",
+      });
+    assert.equal(createRes.status, 303);
+    assert.match(createRes.headers.location, /\/branch-admin\/announcements\/[0-9a-f-]{36}/i);
+    const annId = createRes.headers.location.split("/").pop().split("?")[0];
+
+    const detail = await request(app)
+      .get(`/branch-admin/announcements/${annId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-bb-announcement-admin-detail="1"/);
+    assert.match(detail.text, /Branch GUI draft/);
+    assert.match(detail.text, /data-bb-delivery="summary"/);
+    assert.match(detail.text, /Delivery \/ read summary/);
+    assert.match(detail.text, /data-bb-ann-preview="1"/);
+    assert.match(detail.text, /data-bb-ann-publish="1"/);
+    assert.match(detail.text, /bb-ann-archive-modal/);
+    assert.doesNotMatch(detail.text, /method="post"[^>]*action="[^"]*\/delete"/i);
+    assert.doesNotMatch(detail.text, /DELETE FROM/i);
+
+    const noCsrfArchive = await request(app)
+      .post(`/branch-admin/announcements/${annId}/archive`)
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie)
+      .type("form")
+      .send({});
+    assert.equal(noCsrfArchive.status, 403);
+
+    const preview = await request(app)
+      .get(`/branch-admin/announcements/${annId}/preview`)
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.equal(preview.status, 200);
+    assert.match(preview.text, /data-bb-announcement-admin-preview="1"/);
+    assert.match(preview.text, /Member preview/);
+    assert.match(preview.text, /Not published/);
+
+    const publishPage = await request(app)
+      .get(`/branch-admin/announcements/${annId}/publish`)
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.equal(publishPage.status, 200);
+    assert.match(publishPage.text, /data-bb-announcement-admin-publish="1"/);
+    assert.match(publishPage.text, /Confirm publish/);
+    assert.match(publishPage.text, /name="confirm_publish"/);
+    const pubCsrf = extractCookie(publishPage, CSRF_COOKIE);
+
+    const noConfirm = await request(app)
+      .post(`/branch-admin/announcements/${annId}/publish`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(baCookie, `${CSRF_COOKIE}=${pubCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: pubCsrf,
+      });
+    assert.equal(noConfirm.status, 400);
+    assert.match(noConfirm.text, /confirm/i);
+
+    const published = await request(app)
+      .post(`/branch-admin/announcements/${annId}/publish`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(baCookie, `${CSRF_COOKIE}=${pubCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: pubCsrf,
+        confirm_publish: "1",
+      });
+    assert.equal(published.status, 303);
+    assert.match(published.headers.location, /saved=published/);
+
+    const afterPublish = await request(app)
+      .get(`/branch-admin/announcements/${annId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.equal(afterPublish.status, 200);
+    assert.match(afterPublish.text, /data-bb-announcement-status="published"/);
+    assert.match(afterPublish.text, /Eligible members/);
+    const archCsrf = extractCookie(afterPublish, CSRF_COOKIE);
+
+    const archived = await request(app)
+      .post(`/branch-admin/announcements/${annId}/archive`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(baCookie, `${CSRF_COOKIE}=${archCsrf}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: archCsrf });
+    assert.equal(archived.status, 303);
+    assert.match(archived.headers.location, /saved=archived/);
+
+    const afterArchive = await request(app)
+      .get(`/branch-admin/announcements/${annId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.equal(afterArchive.status, 200);
+    assert.match(afterArchive.text, /data-bb-announcement-status="archived"/);
+    assert.doesNotMatch(afterArchive.text, /data-bb-ann-publish="1"/);
+
+    const { rows } = await pool.query(
+      `SELECT status FROM blessboard.announcements WHERE id = $1`,
+      [annId]
+    );
+    assert.equal(rows[0].status, "archived");
+  });
+
+  it("branch admin cannot open another campus announcement on host HQ scope", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const tenant = makeTenant(churchA, orgA.records.organization, campusBranch);
+    const created = await createAnnouncement(pool, {
+      churchId: churchA.id,
+      branchId: campusBranch.id,
+      actorUserId: hqAdmin.user.id,
+      tenant: makeTenant(churchA, orgA.records.organization, branchA),
+      title: "Campus only announcement",
+      body: "Not for HQ branch admin queue",
+      status: "draft",
+      audiences: ["members"],
+    });
+    assert.equal(created.ok, true, created.reason);
+
+    const baCookie = `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`;
+    const denied = await request(app)
+      .get(`/branch-admin/announcements/${created.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", baCookie);
+    assert.ok(denied.status === 403 || denied.status === 404, `status=${denied.status}`);
+    void tenant;
   });
 
   it("leaves V4 announcement wiring untouched", () => {

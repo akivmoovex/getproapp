@@ -1,46 +1,53 @@
 <%- include('../partials/member-shell-start') %>
-  <h1>Welcome<%= displayName ? ', ' + displayName : '' %></h1>
-  <p class="bb-mp-lede">
-    Your member home for this church branch. More modules will appear here as they are enabled.
-  </p>
+
+<section class="bb-mp-dash" data-bb-member-dashboard="1">
+  <header class="bb-mp-dash__hero">
+    <p class="bb-mp-badge" data-bb-member-verified="1">
+      <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+      Verified member
+    </p>
+    <h1 class="bb-mp-dash__title">
+      Welcome<%= displayName ? ', ' + displayName : '' %>
+    </h1>
+    <p class="bb-mp-lede">
+      Your home for
+      <strong><%= churchDisplayName %></strong><% if (branchDisplayName) { %>
+      · <%= branchDisplayName %><% } %>.
+      Open a module below — counts and listings appear only from live church data inside each section.
+    </p>
+  </header>
+
   <section class="bb-mp-grid" aria-label="Member modules">
-    <% portalModules.forEach(function (mod) { %>
-      <% if (mod.key === 'announcements') { %>
-        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
-          <h2><%= mod.label %></h2>
-          <p><a href="/member/announcements">Open announcements</a></p>
-        </article>
-      <% } else if (mod.key === 'events') { %>
-        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
-          <h2><%= mod.label %></h2>
-          <p><a href="/member/events">Open events</a></p>
-        </article>
-      <% } else if (mod.key === 'ministries') { %>
-        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
-          <h2><%= mod.label %></h2>
-          <p><a href="/member/ministries">Open ministries</a></p>
-        </article>
-      <% } else if (mod.key === 'resources') { %>
-        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
-          <h2><%= mod.label %></h2>
-          <p><a href="/member/resources">Open resources</a></p>
-        </article>
-      <% } else if (mod.key === 'forms') { %>
-        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
-          <h2><%= mod.label %></h2>
-          <p><a href="/member/forms">Open forms</a></p>
-        </article>
-      <% } else if (mod.key === 'requests') { %>
-        <article class="bb-mp-card" data-bb-module="<%= mod.key %>">
-          <h2><%= mod.label %></h2>
-          <p><a href="/member/requests">Open requests</a></p>
-        </article>
+    <% (portalModules || []).forEach(function (mod) { %>
+      <% if (mod.enabled && mod.href) { %>
+      <a
+        class="bb-mp-card bb-mp-card--link"
+        href="<%= mod.href %>"
+        data-bb-module="<%= mod.key %>"
+        data-bb-module-enabled="1"
+      >
+        <span class="bb-mp-card__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= mod.icon || 'widgets' %></span>
+        </span>
+        <h2 class="bb-mp-card__title"><%= mod.label %></h2>
+        <p class="bb-mp-card__meta">Open</p>
+      </a>
       <% } else { %>
-        <article class="bb-mp-card is-disabled" data-bb-module="<%= mod.key %>">
-          <h2><%= mod.label %></h2>
-          <p>Not enabled yet</p>
-        </article>
+      <article
+        class="bb-mp-card is-disabled"
+        data-bb-module="<%= mod.key %>"
+        data-bb-module-enabled="0"
+        aria-disabled="true"
+      >
+        <span class="bb-mp-card__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= mod.icon || 'block' %></span>
+        </span>
+        <h2 class="bb-mp-card__title"><%= mod.label %></h2>
+        <p class="bb-mp-card__meta">Not enabled yet</p>
+      </article>
       <% } %>
     <% }) %>
   </section>
+</section>
+
 <%- include('../partials/member-shell-end') %>

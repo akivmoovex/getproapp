@@ -618,14 +618,21 @@ describe("blessboard attendance", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(list.status, 200);
-    assert.match(list.text, /Attendance/);
+    assert.match(list.text, /data-bb-attendance-admin-list="1"/);
+    assert.match(list.text, /Attendance tracker/);
+    assert.match(list.text, /Monthly summary/);
+    assert.match(list.text, /data-bb-attendance-monthly="1"/);
+    assert.doesNotMatch(list.text, /\+12%|Last 30 days avg|Pending Drafts|projectedGrowth/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(list.text, new RegExp(branchA.id, "i"));
 
     const form = await request(app)
       .get("/branch-admin/attendance/new")
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(form.status, 200);
+    assert.match(form.text, /data-bb-attendance-admin-form="1"/);
+    assert.match(form.text, /does not record individual members/);
     const csrf = extractCookie(form, CSRF_COOKIE);
 
     const missingCsrf = await request(app)
@@ -659,6 +666,12 @@ describe("blessboard attendance", () => {
       .get(`/branch-admin/attendance/${eventId}`)
       .set("Host", HOST_A)
       .set("Cookie", cookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-bb-attendance-admin-detail="1"/);
+    assert.match(detail.text, /Category counts/);
+    assert.match(detail.text, /bb-att-submit-modal/);
+    assert.match(detail.text, /data-bb-att-edit="1"/);
+    assert.doesNotMatch(detail.text, new RegExp(churchA.id, "i"));
     const csrf2 = extractCookie(detail, CSRF_COOKIE);
     const entry = await request(app)
       .post(`/branch-admin/attendance/${eventId}/entries`)
@@ -672,10 +685,31 @@ describe("blessboard attendance", () => {
       });
     assert.equal(entry.status, 303);
 
+    const editPage = await request(app)
+      .get(`/branch-admin/attendance/${eventId}/edit`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(editPage.status, 200);
+    assert.match(editPage.text, /data-bb-form-mode="edit"/);
+    const editCsrf = extractCookie(editPage, CSRF_COOKIE);
+    const edited = await request(app)
+      .post(`/branch-admin/attendance/${eventId}/edit`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(cookie, `${CSRF_COOKIE}=${editCsrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: editCsrf,
+        title: "HTTP Sunday updated",
+        event_type: "sunday_service",
+        event_date: eventDateInMonth(4),
+      });
+    assert.equal(edited.status, 303);
+
     const detail2 = await request(app)
       .get(`/branch-admin/attendance/${eventId}`)
       .set("Host", HOST_A)
       .set("Cookie", cookie);
+    assert.match(detail2.text, /HTTP Sunday updated/);
     const csrf3 = extractCookie(detail2, CSRF_COOKIE);
     const submitted = await request(app)
       .post(`/branch-admin/attendance/${eventId}/submit`)
@@ -685,12 +719,22 @@ describe("blessboard attendance", () => {
       .send({ [CSRF_FIELD]: csrf3 });
     assert.equal(submitted.status, 303);
 
+    const afterSubmit = await request(app)
+      .get(`/branch-admin/attendance/${eventId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(afterSubmit.status, 200);
+    assert.match(afterSubmit.text, /data-bb-status="submitted"/);
+    assert.match(afterSubmit.text, /data-bb-att-amend-policy="1"/);
+    assert.doesNotMatch(afterSubmit.text, /data-bb-att-edit="1"/);
+
     const hq = await request(app)
       .get("/hq/attendance")
       .set("Host", HOST_A)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${hqAdmin.rawToken}`);
     assert.equal(hq.status, 200);
     assert.match(hq.text, /Monthly summary/);
+    assert.match(hq.text, /data-bb-attendance-admin-list="1"/);
     assert.doesNotMatch(hq.text, new RegExp(churchA.id, "i"));
   });
 

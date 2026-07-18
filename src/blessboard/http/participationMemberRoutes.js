@@ -11,12 +11,8 @@ const express = require("express");
 
 const { createRequireActiveMember } = require("./requireActiveMember");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const {
-  CSRF_FIELD,
-  issueCsrfToken,
-  validateCsrf,
-  setCsrfCookie,
-} = require("../../platform/http/v5Csrf");
+const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
+const { buildMemberShellLocals } = require("./memberShellLocals");
 const {
   STATUS,
   listMemberMinistries,
@@ -37,6 +33,38 @@ function renderMemberView(relativePath, data) {
   const filename = path.join(VIEWS_ROOT, relativePath);
   const source = fs.readFileSync(filename, "utf8");
   return ejs.render(source, data, { filename });
+}
+
+/**
+ * Presentation-only action error messages (does not change service rules).
+ * @param {string} kind
+ * @param {{ status?: string, reason?: string }} result
+ */
+function participationActionError(kind, result) {
+  const status = result && result.status;
+  const reason = result && result.reason;
+  if (kind === "event-register") {
+    if (status === STATUS.CAPACITY_FULL) return "This event is at capacity.";
+    if (status === STATUS.CONFLICT) return "You are already registered for this event.";
+    if (status === STATUS.UNAVAILABLE || reason === "inactive") {
+      return "This event is not open for registration.";
+    }
+    return "Could not register for this event.";
+  }
+  if (kind === "event-cancel") {
+    return "Could not cancel registration.";
+  }
+  if (kind === "ministry-join") {
+    if (status === STATUS.CONFLICT) return "You already have a membership for this ministry.";
+    if (status === STATUS.UNAVAILABLE || reason === "inactive") {
+      return "This ministry is not open to join.";
+    }
+    return "Could not join this ministry.";
+  }
+  if (kind === "ministry-leave") {
+    return "Could not update your ministry membership.";
+  }
+  return "Something went wrong. Please try again.";
 }
 
 /**
@@ -66,28 +94,12 @@ function createParticipationMemberRouter(deps) {
   }
 
   function shellLocals(req, res, activeNav, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
-    const access = req.blessBoardMemberAccess || null;
-    const preferred =
-      access && access.member && access.member.preferredName
-        ? access.member.preferredName
-        : session && session.user
-          ? session.user.displayName
-          : "";
-    return {
-      pageTitle:
-        activeNav === "ministries" ? "Ministries" : activeNav === "events" ? "Events" : "Member",
+    return buildMemberShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      branchDisplayName:
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
-      displayName: preferred || "",
-      ...(extra || {}),
-    };
+      extra,
+    });
   }
 
   function memberScope(req) {
@@ -110,6 +122,44 @@ function createParticipationMemberRouter(deps) {
       return false;
     }
     return true;
+  }
+
+  async function renderMinistryDetail(req, res, scope, id, extra) {
+    const loaded = await getMemberMinistry(getPool(), { ...scope, id });
+    if (!loaded.ok || !loaded.item) {
+      const code = loaded.status === STATUS.FORBIDDEN ? 403 : 404;
+      return res.status(code).type("text").send("Ministry not found.");
+    }
+    const opts = extra && typeof extra === "object" ? extra : {};
+    const statusCode = opts.statusCode || 200;
+    const html = renderMemberView(
+      "participation/member-ministry-detail.ejs",
+      shellLocals(req, res, "ministries", {
+        item: loaded.item,
+        error: opts.error || null,
+        saved: opts.saved != null ? String(opts.saved) : "",
+      })
+    );
+    return res.status(statusCode).type("html").send(html);
+  }
+
+  async function renderEventDetail(req, res, scope, id, extra) {
+    const loaded = await getMemberEvent(getPool(), { ...scope, id });
+    if (!loaded.ok || !loaded.item) {
+      const code = loaded.status === STATUS.FORBIDDEN ? 403 : 404;
+      return res.status(code).type("text").send("Event not found.");
+    }
+    const opts = extra && typeof extra === "object" ? extra : {};
+    const statusCode = opts.statusCode || 200;
+    const html = renderMemberView(
+      "participation/member-event-detail.ejs",
+      shellLocals(req, res, "events", {
+        item: loaded.item,
+        error: opts.error || null,
+        saved: opts.saved != null ? String(opts.saved) : "",
+      })
+    );
+    return res.status(statusCode).type("html").send(html);
   }
 
   // ----- Ministries -----
@@ -142,20 +192,9 @@ function createParticipationMemberRouter(deps) {
     if (!UUID_RE.test(id)) {
       return res.status(404).type("text").send("Ministry not found.");
     }
-    const loaded = await getMemberMinistry(getPool(), { ...scope, id });
-    if (!loaded.ok || !loaded.item) {
-      const code = loaded.status === STATUS.FORBIDDEN ? 403 : 404;
-      return res.status(code).type("text").send("Ministry not found.");
-    }
-    const html = renderMemberView(
-      "participation/member-ministry-detail.ejs",
-      shellLocals(req, res, "ministries", {
-        item: loaded.item,
-        error: null,
-        saved: String((req.query && req.query.saved) || ""),
-      })
-    );
-    return res.status(200).type("html").send(html);
+    return renderMinistryDetail(req, res, scope, id, {
+      saved: String((req.query && req.query.saved) || ""),
+    });
   });
 
   router.post("/member/ministries/:id/join", rejectApex, requireMember, async (req, res) => {
@@ -184,7 +223,13 @@ function createParticipationMemberRouter(deps) {
               : joined.status === STATUS.NOT_FOUND
                 ? 404
                 : 400;
-      return res.status(code).type("text").send("Could not join this ministry.");
+      if (code === 403 || code === 404) {
+        return res.status(code).type("text").send("Could not join this ministry.");
+      }
+      return renderMinistryDetail(req, res, scope, id, {
+        error: participationActionError("ministry-join", joined),
+        statusCode: code,
+      });
     }
     return res.redirect(303, `/member/ministries/${id}?saved=joined`);
   });
@@ -201,7 +246,14 @@ function createParticipationMemberRouter(deps) {
     }
     const left = await leaveMinistry(getPool(), { ...scope, ministryId: id });
     if (!left.ok) {
-      return res.status(left.status === STATUS.NOT_FOUND ? 404 : 400).type("text").send("Could not leave.");
+      const code = left.status === STATUS.NOT_FOUND ? 404 : 400;
+      if (code === 404) {
+        return res.status(404).type("text").send("Could not leave.");
+      }
+      return renderMinistryDetail(req, res, scope, id, {
+        error: participationActionError("ministry-leave", left),
+        statusCode: code,
+      });
     }
     return res.redirect(303, `/member/ministries/${id}?saved=left`);
   });
@@ -236,20 +288,9 @@ function createParticipationMemberRouter(deps) {
     if (!UUID_RE.test(id)) {
       return res.status(404).type("text").send("Event not found.");
     }
-    const loaded = await getMemberEvent(getPool(), { ...scope, id });
-    if (!loaded.ok || !loaded.item) {
-      const code = loaded.status === STATUS.FORBIDDEN ? 403 : 404;
-      return res.status(code).type("text").send("Event not found.");
-    }
-    const html = renderMemberView(
-      "participation/member-event-detail.ejs",
-      shellLocals(req, res, "events", {
-        item: loaded.item,
-        error: null,
-        saved: String((req.query && req.query.saved) || ""),
-      })
-    );
-    return res.status(200).type("html").send(html);
+    return renderEventDetail(req, res, scope, id, {
+      saved: String((req.query && req.query.saved) || ""),
+    });
   });
 
   router.post("/member/events/:id/register", rejectApex, requireMember, async (req, res) => {
@@ -274,11 +315,17 @@ function createParticipationMemberRouter(deps) {
               : registered.status === STATUS.NOT_FOUND
                 ? 404
                 : 400;
-      return res.status(code).type("text").send(
-        registered.status === STATUS.CAPACITY_FULL
-          ? "This event is at capacity."
-          : "Could not register for this event."
-      );
+      if (code === 403 || code === 404) {
+        return res.status(code).type("text").send(
+          registered.status === STATUS.CAPACITY_FULL
+            ? "This event is at capacity."
+            : "Could not register for this event."
+        );
+      }
+      return renderEventDetail(req, res, scope, id, {
+        error: participationActionError("event-register", registered),
+        statusCode: code,
+      });
     }
     return res.redirect(303, `/member/events/${id}?saved=registered`);
   });
@@ -295,10 +342,14 @@ function createParticipationMemberRouter(deps) {
     }
     const cancelled = await cancelEventRegistration(getPool(), { ...scope, eventId: id });
     if (!cancelled.ok) {
-      return res
-        .status(cancelled.status === STATUS.NOT_FOUND ? 404 : 400)
-        .type("text")
-        .send("Could not cancel registration.");
+      const code = cancelled.status === STATUS.NOT_FOUND ? 404 : 400;
+      if (code === 404) {
+        return res.status(404).type("text").send("Could not cancel registration.");
+      }
+      return renderEventDetail(req, res, scope, id, {
+        error: participationActionError("event-cancel", cancelled),
+        statusCode: code,
+      });
     }
     return res.redirect(303, `/member/events/${id}?saved=cancelled`);
   });

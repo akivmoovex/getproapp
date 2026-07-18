@@ -3,16 +3,109 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1>Member requests</h1>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <ul>
-    <% requests.forEach(function (r) { %>
-      <li data-bb-status="<%= r.status %>">
-        <a href="<%= basePath %>/<%= r.id %>"><%= r.subject %></a>
-        · <%= r.category %> · <%= r.status %>
-      </li>
+<%
+  var rows = requests || [];
+  function categoryLabel(c) {
+    var key = String(c || '').toLowerCase();
+    if (key === 'prayer') return 'Prayer';
+    if (key === 'pastoral') return 'Care';
+    if (key === 'practical') return 'Support';
+    if (key === 'other') return 'Other';
+    return c || 'Request';
+  }
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'Submitted';
+    if (key === 'in_review') return 'In review';
+    if (key === 'resolved') return 'Resolved';
+    if (key === 'closed') return 'Closed';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'bb-ba-chip--pending';
+    if (key === 'in_review') return 'bb-ba-chip--pending';
+    if (key === 'resolved') return 'bb-ba-chip--ok';
+    if (key === 'closed') return 'bb-ba-chip--muted';
+    return 'bb-ba-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+%>
+
+<section class="bb-fr-admin bb-fr-req-list" data-bb-request-admin-list="1">
+  <header class="bb-ba-page-head">
+    <h1 class="bb-ba-page-head__title">Request workflow queue</h1>
+    <p class="bb-ba-lede">
+      Review member requests for
+      <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
+      Status updates stay on this branch. Contact details are not listed here — open a request to respond.
+    </p>
+  </header>
+
+  <% if (saved === 'status' || saved === '1') { %>
+  <p class="bb-ba-ok" role="status">Request updated.</p>
+  <% } %>
+
+  <nav class="bb-fr-tabs" aria-label="Request status" data-bb-req-tabs="1">
+    <a class="bb-fr-tabs__link<%= !statusFilter ? ' is-active' : '' %>" href="<%= basePath %>">All</a>
+    <% requestStatuses.forEach(function (st) { %>
+    <a
+      class="bb-fr-tabs__link<%= statusFilter === st ? ' is-active' : '' %>"
+      href="<%= basePath %>?status=<%= encodeURIComponent(st) %>"
+      data-bb-req-tab="<%= st %>"
+    ><%= statusLabel(st) %></a>
     <% }) %>
-  </ul>
+  </nav>
+
+  <% if (!rows.length) { %>
+  <div class="bb-ba-empty" role="status">No requests match this filter.</div>
+  <% } else { %>
+  <div class="bb-ba-table-wrap">
+    <table class="bb-ba-table" data-bb-req-table="1">
+      <thead>
+        <tr>
+          <th scope="col">Category</th>
+          <th scope="col">Subject</th>
+          <th scope="col">Submitted</th>
+          <th scope="col">Status</th>
+          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (r) { %>
+        <tr data-bb-req-status="<%= r.status %>" data-bb-req-category="<%= r.category %>">
+          <td>
+            <span class="bb-fr-cat"><%= categoryLabel(r.category) %></span>
+            <% if (r.hasAttachment) { %>
+            <span class="bb-fr-attach-flag" title="Has private attachment" aria-label="Has private attachment">
+              <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
+            </span>
+            <% } %>
+          </td>
+          <td>
+            <strong><%= r.subject %></strong>
+            <% if (r.memberRef) { %>
+            <span class="bb-ba-muted bb-fr-member-ref">Member · <%= r.memberRef %></span>
+            <% } %>
+          </td>
+          <td><%= formatWhen(r.createdAt) %></td>
+          <td><span class="bb-ba-chip <%= statusChip(r.status) %>"><%= statusLabel(r.status) %></span></td>
+          <td class="bb-ba-table__actions">
+            <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= r.id %>">Review</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

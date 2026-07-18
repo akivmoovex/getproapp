@@ -190,9 +190,40 @@ describe("blessboard v5 auth http", () => {
     const missing = await loginFlow("nobody@example.org", PASSWORD);
     assert.equal(missing.post.status, 401);
     assert.match(missing.post.text, /Invalid email or password/i);
+    assert.match(missing.post.text, /data-bb-auth-error="credentials"/);
+    assert.match(missing.post.text, /id="bb-auth-error-summary"/);
+    assert.match(missing.post.text, /id="email-error"/);
+    assert.match(missing.post.text, /id="password-error"/);
+    assert.doesNotMatch(missing.post.text, /does not exist|no account|unknown user/i);
     const badPw = await loginFlow("admin@example.org", "wrong-password-xx");
     assert.equal(badPw.post.status, 401);
     assert.match(badPw.post.text, /Invalid email or password/i);
+    assert.match(badPw.post.text, /data-bb-auth-error="credentials"/);
+  });
+
+  it("login and account chrome expose accessible controls without session internals", async () => {
+    requireDb();
+    const login = await request(app).get("/login").set("Host", "blessboard.org");
+    assert.equal(login.status, 200);
+    assert.match(login.text, /data-bb-shell="apex-auth"/);
+    assert.match(login.text, /for="email"/);
+    assert.match(login.text, /for="password"/);
+    assert.match(login.text, /data-bb-auth-password-toggle/);
+    assert.match(login.text, /name="_csrf"/);
+    assert.match(login.text, /tenant-auth\.js/);
+
+    const { post } = await loginFlow("admin@example.org", PASSWORD);
+    const sid = extractCookie(post, DEFAULT_V5_COOKIE);
+    const account = await request(app)
+      .get("/account")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${sid}`));
+    assert.equal(account.status, 200);
+    assert.match(account.text, /data-bb-apex-account="1"/);
+    assert.match(account.text, /method="post" action="\/logout"/);
+    assert.match(account.text, /name="_csrf"/);
+    assert.doesNotMatch(account.text, /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    assert.doesNotMatch(account.text, /session_token|password_hash|organizationId|deploymentCode/i);
   });
 
   it("CSRF required for login and logout", async () => {

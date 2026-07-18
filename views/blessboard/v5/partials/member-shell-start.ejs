@@ -3,61 +3,115 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><%= pageTitle %> · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/member-portal.css" />
+  <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
+  <meta name="robots" content="noindex, nofollow" />
+  <%- include('./head-design-system') %>
+  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=7" />
 </head>
-<body class="bb-mp-body" data-bb-shell="member" data-bb-viewport="responsive">
+<body
+  class="bb-mp-body"
+  data-bb-shell="member"
+  data-bb-product="blessboard-v5"
+  data-bb-viewport="responsive"
+  data-bb-page="<%= activeNav || 'home' %>"
+>
   <a class="bb-mp-skip" href="#bb-mp-main">Skip to content</a>
-  <header class="bb-mp-top" data-bb-nav="desktop-header">
-    <div class="bb-mp-brand">
-      <a class="bb-mp-wordmark" href="/member">BlessBoard</a>
-      <div class="bb-mp-context">
-        <%= churchDisplayName %> · <%= branchDisplayName %>
+
+  <div class="bb-mp-app">
+    <aside class="bb-mp-sidebar" data-bb-nav="desktop-sidebar" aria-label="Member navigation">
+      <div class="bb-mp-sidebar__brand">
+        <a class="bb-mp-wordmark" href="/member">
+          <img
+            class="bb-mp-wordmark__mark"
+            src="/church/images/brand/blessboard-small-church-logo.png"
+            alt=""
+            width="28"
+            height="28"
+            decoding="async"
+          />
+          <span>BlessBoard</span>
+        </a>
+        <p class="bb-mp-context">
+          <span class="bb-mp-context__church"><%= churchDisplayName %></span>
+          <% if (branchDisplayName) { %>
+          <span class="bb-mp-context__branch"><%= branchDisplayName %></span>
+          <% } %>
+        </p>
         <span class="bb-mp-role">Member</span>
       </div>
-    </div>
-    <nav class="bb-mp-nav-desktop" aria-label="Member portal desktop" data-bb-nav="desktop">
-      <a href="/member" class="<%= activeNav === 'home' ? 'is-active' : '' %>">Home</a>
-      <a href="/member/announcements" class="<%= activeNav === 'announcements' ? 'is-active' : '' %>">Announcements</a>
-      <a href="/member/events" class="<%= activeNav === 'events' ? 'is-active' : '' %>">Events</a>
-      <a href="/member/ministries" class="<%= activeNav === 'ministries' ? 'is-active' : '' %>">Ministries</a>
-      <a href="/member/resources" class="<%= activeNav === 'resources' ? 'is-active' : '' %>">Resources</a>
-      <a href="/member/forms" class="<%= activeNav === 'forms' ? 'is-active' : '' %>">Forms</a>
-      <a href="/member/requests" class="<%= activeNav === 'requests' ? 'is-active' : '' %>">Requests</a>
-      <a href="/member/profile" class="<%= activeNav === 'profile' ? 'is-active' : '' %>">Profile</a>
-      <form method="post" action="/member/logout">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Logout</button>
-      </form>
-    </nav>
-    <button
-      type="button"
-      class="bb-mp-nav-toggle"
-      data-bb-nav="mobile-toggle"
-      aria-controls="bb-mp-mobile-nav"
-      aria-expanded="false"
-    >
-      Menu
-    </button>
-  </header>
-  <nav
-    id="bb-mp-mobile-nav"
-    class="bb-mp-nav-mobile"
-    aria-label="Member portal mobile"
-    data-bb-nav="mobile"
-    hidden
-  >
-    <a href="/member">Home</a>
-    <a href="/member/announcements">Announcements</a>
-    <a href="/member/events">Events</a>
-    <a href="/member/ministries">Ministries</a>
-    <a href="/member/resources">Resources</a>
-    <a href="/member/forms">Forms</a>
-    <a href="/member/requests">Requests</a>
-    <a href="/member/profile">Profile</a>
-    <form method="post" action="/member/logout">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <button type="submit">Logout</button>
-    </form>
-  </nav>
-  <main id="bb-mp-main" class="bb-mp-main">
+
+      <nav class="bb-mp-sidebar__nav" aria-label="Member portal">
+        <% (navItems || []).forEach(function (item) { %>
+        <a
+          href="<%= item.href %>"
+          class="bb-mp-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+          <span><%= item.label %></span>
+        </a>
+        <% }) %>
+      </nav>
+
+      <div class="bb-mp-sidebar__footer">
+        <form class="bb-mp-logout" method="post" action="/member/logout" data-bb-member-logout="1">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit">
+            <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+            Sign out
+          </button>
+        </form>
+        <%- include('./powered-by-getpro') %>
+      </div>
+    </aside>
+
+    <div class="bb-mp-frame">
+      <header class="bb-mp-top" data-bb-nav="mobile-header">
+        <div class="bb-mp-top__brand">
+          <a class="bb-mp-wordmark bb-mp-wordmark--compact" href="/member">BlessBoard</a>
+          <p class="bb-mp-context bb-mp-context--compact">
+            <%= churchDisplayName %><% if (branchDisplayName) { %> · <%= branchDisplayName %><% } %>
+          </p>
+        </div>
+        <button
+          type="button"
+          class="bb-mp-nav-toggle"
+          id="bb-mp-menu-btn"
+          data-bb-nav="mobile-toggle"
+          aria-controls="bb-mp-drawer"
+          aria-expanded="false"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+          <span class="bb-mp-nav-toggle__label">Menu</span>
+        </button>
+      </header>
+
+      <div
+        id="bb-mp-drawer"
+        class="bb-mp-drawer"
+        data-bb-nav="mobile-drawer"
+        hidden
+      >
+        <div class="bb-mp-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
+        <nav class="bb-mp-drawer__panel" aria-label="Member portal menu">
+          <p class="bb-mp-drawer__title">More</p>
+          <% (navItems || []).forEach(function (item) { %>
+          <a
+            href="<%= item.href %>"
+            class="bb-mp-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+            <span><%= item.label %></span>
+          </a>
+          <% }) %>
+          <form class="bb-mp-logout" method="post" action="/member/logout">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit">
+              <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+              Sign out
+            </button>
+          </form>
+        </nav>
+      </div>
+
+      <main id="bb-mp-main" class="bb-mp-main">

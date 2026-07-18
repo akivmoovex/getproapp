@@ -1,0 +1,10 @@
+<%#
+  Material Symbols icon. Locals: name (required), className (optional), label (optional decorative vs aria).
+%>
+<% var _icon = typeof name !== 'undefined' ? String(name) : 'circle'; %>
+<% var _cls = 'bb-ds-icon' + (typeof className !== 'undefined' && className ? ' ' + className : ''); %>
+<% if (typeof label !== 'undefined' && label) { %>
+<span class="<%= _cls %>" role="img" aria-label="<%= label %>"><%= _icon %></span>
+<% } else { %>
+<span class="<%= _cls %>" aria-hidden="true"><%= _icon %></span>
+<% } %>

@@ -1,0 +1,58 @@
+<%#
+  Apex account — authenticated entry. No UUIDs, session tokens, or deployment internals.
+  Locals from apex-shell + account fields: displayName, rolesLabel, hostKind, churchDisplayName, branchDisplayName, csrfToken
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section class="bb-apex-account" data-bb-apex-account="1" aria-labelledby="bb-apex-account-heading">
+  <div class="bb-apex-account__card">
+    <div class="bb-apex-account__icon" aria-hidden="true">
+      <span class="material-symbols-outlined">account_circle</span>
+    </div>
+    <h1 class="bb-apex-account__title" id="bb-apex-account-heading">Account</h1>
+    <p class="bb-apex-account__lead">You are signed in to BlessBoard.</p>
+
+    <dl class="bb-apex-account__dl">
+      <div>
+        <dt>Display name</dt>
+        <dd><%= displayName %></dd>
+      </div>
+      <div>
+        <dt>Roles</dt>
+        <dd><%= rolesLabel %></dd>
+      </div>
+      <% if (hostKind === 'tenant' && churchDisplayName) { %>
+      <div>
+        <dt>Church</dt>
+        <dd><%= churchDisplayName %></dd>
+      </div>
+      <% } %>
+      <% if (hostKind === 'tenant' && branchDisplayName) { %>
+      <div>
+        <dt>Branch</dt>
+        <dd><%= branchDisplayName %></dd>
+      </div>
+      <% } %>
+    </dl>
+
+    <% if (hostKind === 'apex') { %>
+    <p class="bb-apex-account__note">
+      Tenant administration requires signing in on the church hostname.
+    </p>
+    <% } else { %>
+    <p class="bb-apex-account__note">
+      <a href="/hq">Church HQ</a> · <a href="/branch-admin">Branch admin</a>
+    </p>
+    <% } %>
+
+    <form class="bb-apex-account__logout" method="post" action="/logout" data-bb-auth-logout="1">
+      <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+      <button type="submit" class="bb-apex-btn bb-apex-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+        Sign out
+      </button>
+    </form>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>

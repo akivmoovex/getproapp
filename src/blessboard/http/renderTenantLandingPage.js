@@ -19,12 +19,24 @@ const TENANT_LANDING_TEMPLATE = path.join(
   "tenant-landing.ejs"
 );
 
+const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
+
 let tenantLandingSource = null;
 function loadTenantLandingSource() {
   if (tenantLandingSource == null) {
     tenantLandingSource = fs.readFileSync(TENANT_LANDING_TEMPLATE, "utf8");
   }
   return tenantLandingSource;
+}
+
+/**
+ * @param {string} relativePath
+ * @param {object} data
+ */
+function renderApexView(relativePath, data) {
+  const filename = path.join(VIEWS_ROOT, relativePath);
+  const source = fs.readFileSync(filename, "utf8");
+  return ejs.render(source, data, { filename });
 }
 
 function escapeHtml(value) {
@@ -83,9 +95,9 @@ function renderApexNav(opts) {
 }
 
 const SHELL_STYLES = `
-:root { color-scheme: light; --violet: #6C5CE7; --ink: #1a1625; --muted: #5c5668; --bg: #f7f5fb; --line: #e4dfec; --err: #b42318; --ok: #0f766e; }
+:root { color-scheme: light; --violet: #6C5CE7; --violet-deep: #5341cd; --ink: #1a1625; --muted: #5c5668; --bg: #f7f5fb; --line: #e4dfec; --err: #b42318; --err-bg: #fef3f2; --ok: #0f766e; --getpro: #ff9800; }
 * { box-sizing: border-box; }
-body { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+body { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; }
 .bb-v5-shell { max-width: 42rem; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
 .bb-v5-brand { font-weight: 700; letter-spacing: -0.02em; color: var(--violet); text-decoration: none; font-size: 1.15rem; }
 .bb-v5-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line); margin-bottom: 2rem; }
@@ -111,6 +123,36 @@ dd { margin: 0; color: var(--muted); }
 `;
 
 /**
+ * Classify login/auth error copy for presentation only (does not change server messages).
+ * @param {string | null | undefined} message
+ * @returns {null | 'credentials' | 'throttled' | 'expired' | 'consumed' | 'unauthorized' | 'generic'}
+ */
+function classifyAuthErrorState(message) {
+  const m = String(message || "").trim();
+  if (!m) return null;
+  if (/too many sign-in attempts/i.test(m)) return "throttled";
+  if (/do not have access|not available for this account/i.test(m)) return "unauthorized";
+  if (/already been used|already used/i.test(m)) return "consumed";
+  if (/invalid or has expired|has expired|session has expired|please sign in again/i.test(m)) {
+    return "expired";
+  }
+  if (/invalid email or password/i.test(m)) return "credentials";
+  return "generic";
+}
+
+/**
+ * @param {string | null | undefined} state
+ */
+function authErrorTitle(state) {
+  if (state === "throttled") return "Too many sign-in attempts";
+  if (state === "expired") return "Sign-in link expired";
+  if (state === "consumed") return "Sign-in link already used";
+  if (state === "unauthorized") return "Access not available";
+  if (state === "credentials") return "Sign-in could not continue";
+  return "Sign-in could not continue";
+}
+
+/**
  * @param {{
  *   title: string,
  *   bodyHtml: string,
@@ -120,96 +162,81 @@ dd { margin: 0; color: var(--muted); }
  * }} opts
  */
 function renderApexShell(opts) {
-  const nav = renderApexNav({
-    authenticated: opts.authenticated,
-    active: opts.active,
-    csrfToken: opts.csrfToken,
+  return renderApexView("apex/page.ejs", {
+    pageTitle: opts.title || "BlessBoard",
+    bodyHtml: opts.bodyHtml || "",
+    authenticated: Boolean(opts.authenticated),
+    activeNav: opts.active || "home",
+    csrfToken: opts.csrfToken || "",
   });
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(opts.title)} · BlessBoard</title>
-  <style>${SHELL_STYLES}</style>
-</head>
-<body>
-  <div class="bb-v5-shell">
-    <header class="bb-v5-top">
-      <a class="bb-v5-brand" href="/">BlessBoard</a>
-      ${nav}
-    </header>
-    <main>
-      ${opts.bodyHtml}
-    </main>
-  </div>
-</body>
-</html>`;
 }
 
 /**
  * @param {{ authenticated?: boolean, csrfToken?: string | null }} opts
  */
 function renderFoundationHome(opts) {
-  const body = `
-    <h1>BlessBoard</h1>
-    <p>V5 foundation mode is running against the platform database.</p>
-    <p class="note">Apex sign-in is available. Tenant portals remain unavailable unless tenant routing is explicitly enabled.</p>
-  `;
-  return renderApexShell({
-    title: "Home",
-    bodyHtml: body,
-    authenticated: opts && opts.authenticated,
-    active: "home",
-    csrfToken: opts && opts.csrfToken,
+  return renderApexView("apex/home.ejs", {
+    pageTitle: "Home",
+    authenticated: Boolean(opts && opts.authenticated),
+    activeNav: "home",
+    csrfToken: (opts && opts.csrfToken) || "",
   });
 }
 
 /**
- * @param {{ error?: string, csrfToken: string, authenticated?: boolean, hostKind?: 'apex'|'tenant', churchDisplayName?: string, nextPath?: string | null, transferToken?: string | null, transferHostname?: string | null }} opts
+ * Apex continuation / password form.
+ * Never embeds raw transfer tokens in HTML — when opened as GET /login?tr=…,
+ * the form posts to the current URL so the query is preserved by the browser.
+ * @param {{ error?: string, csrfToken: string, authenticated?: boolean, hostKind?: 'apex'|'tenant', churchDisplayName?: string, nextPath?: string | null, transferToken?: string | null, transferHostname?: string | null, emailValue?: string | null, loggedOut?: boolean }} opts
  */
 function renderLoginPage(opts) {
   const hostKind = opts.hostKind === "tenant" ? "tenant" : "apex";
-  const error = opts.error
-    ? `<p class="err" role="alert">${escapeHtml(opts.error)}</p>`
-    : "";
-  const transferNote =
-    hostKind === "apex" && opts.transferHostname
-      ? `<p class="note">Continue sign-in for <strong>${escapeHtml(opts.transferHostname)}</strong></p>`
-      : "";
+  const error = opts.error ? String(opts.error) : "";
+  const errorState = classifyAuthErrorState(error);
+  // Hostname is safe to show only after authoritative transfer load (caller responsibility).
+  const transferHostname =
+    hostKind === "apex" && opts.transferHostname ? String(opts.transferHostname) : "";
   const subtitle =
     hostKind === "tenant"
       ? opts.churchDisplayName
-        ? `Sign in to ${escapeHtml(opts.churchDisplayName)}`
-        : "BlessBoard V5 tenant sign-in"
-      : opts.transferHostname
-        ? "BlessBoard V5 tenant transfer"
-        : "BlessBoard V5 apex authentication";
-  const transferField =
-    hostKind === "apex" && opts.transferToken
-      ? `<input type="hidden" name="tr" value="${escapeHtml(opts.transferToken)}" />`
-      : "";
-  const body = `
-    <h1>Sign in</h1>
-    <p class="note">${subtitle}</p>
-    ${transferNote}
-    ${error}
-    <form method="post" action="/login" autocomplete="on">
-      <input type="hidden" name="_csrf" value="${escapeHtml(opts.csrfToken)}" />
-      ${transferField}
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" required autocomplete="username" />
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" required autocomplete="current-password" />
-      <button class="bb-v5-btn" type="submit">Sign in</button>
-    </form>
-  `;
-  return renderApexShell({
-    title: "Sign in",
-    bodyHtml: body,
-    authenticated: false,
-    active: "login",
-    csrfToken: opts.csrfToken,
+        ? `Sign in to ${String(opts.churchDisplayName)}`
+        : "BlessBoard tenant sign-in"
+      : transferHostname
+        ? "Welcome back — continue to your church site"
+        : "Sign in with your BlessBoard account.";
+  const panelTitle = transferHostname ? "Member Access" : "Sign in";
+  const panelLead = transferHostname
+    ? "Authenticate on BlessBoard to open your church workspace. Passwords are never collected on the church hostname."
+    : "One secure place to access your church sites and account.";
+
+  return renderApexView("apex/login.ejs", {
+    csrfToken: opts.csrfToken || "",
+    error,
+    errorState,
+    errorTitle: authErrorTitle(errorState),
+    emailValue: opts.emailValue ? String(opts.emailValue) : "",
+    // Intentionally omitted from template: raw transfer tokens must not appear in HTML.
+    transferHostname,
+    hostKind,
+    subtitle,
+    panelTitle,
+    panelLead,
+    loggedOut: Boolean(opts.loggedOut),
+  });
+}
+
+/**
+ * Presentation-only auth error / callback failure screen (no secrets).
+ * @param {string} message
+ */
+function renderAuthErrorPage(message) {
+  const text = String(message || "Sign-in could not continue.");
+  const errorState = classifyAuthErrorState(text) || "generic";
+  const pageTitle = authErrorTitle(errorState);
+  return renderApexView("apex/auth-error.ejs", {
+    message: text,
+    errorState,
+    pageTitle,
   });
 }
 
@@ -228,35 +255,18 @@ function renderLoginPage(opts) {
  */
 function renderAccountPage(account) {
   const hostKind = account.hostKind === "tenant" ? "tenant" : "apex";
-  const roles = (account.roles || []).map((r) => escapeHtml(formatRoleLabel(r))).join(", ") || "(none)";
-  const church =
-    hostKind === "tenant" && account.churchDisplayName
-      ? `<dt>Church</dt><dd>${escapeHtml(account.churchDisplayName)}</dd>`
-      : "";
-  const branch =
-    hostKind === "tenant" && account.branchDisplayName
-      ? `<dt>Branch</dt><dd>${escapeHtml(account.branchDisplayName)}</dd>`
-      : "";
-  const note =
-    hostKind === "tenant"
-      ? `<p class="note"><a href="/hq">Church HQ</a> · <a href="/branch-admin">Branch admin</a></p>`
-      : `<p class="note">Tenant administration requires signing in on the church hostname.</p>`;
-  const body = `
-    <h1>Account</h1>
-    <dl>
-      <dt>Display name</dt><dd>${escapeHtml(account.displayName)}</dd>
-      <dt>Roles</dt><dd>${roles}</dd>
-      ${church}
-      ${branch}
-    </dl>
-    ${note}
-  `;
-  return renderApexShell({
-    title: "Account",
-    bodyHtml: body,
+  const rolesLabel =
+    (account.roles || []).map((r) => formatRoleLabel(r)).join(", ") || "(none)";
+  return renderApexView("apex/account.ejs", {
+    pageTitle: "Account",
     authenticated: true,
-    active: "account",
-    csrfToken: account.csrfToken,
+    activeNav: "account",
+    csrfToken: account.csrfToken || "",
+    displayName: String(account.displayName || ""),
+    rolesLabel,
+    hostKind,
+    churchDisplayName: account.churchDisplayName ? String(account.churchDisplayName) : "",
+    branchDisplayName: account.branchDisplayName ? String(account.branchDisplayName) : "",
   });
 }
 
@@ -312,10 +322,13 @@ function renderControlledErrorPage(status, message) {
 module.exports = {
   escapeHtml,
   formatRoleLabel,
+  classifyAuthErrorState,
+  authErrorTitle,
   renderApexNav,
   renderApexShell,
   renderFoundationHome,
   renderLoginPage,
+  renderAuthErrorPage,
   renderAccountPage,
   renderTenantLandingPage,
   renderControlledErrorPage,

@@ -1,0 +1,117 @@
+<%- include('../partials/member-shell-start') %>
+<%
+  var categories = requestCategories || [];
+  var submitted = typeof submittedValues !== 'undefined' && submittedValues ? submittedValues : {};
+  var selectedCategory = submitted.category || 'prayer';
+
+  var typeCards = [
+    { value: 'prayer', label: 'Prayer', icon: 'volunteer_activism', hint: 'Prayer support' },
+    { value: 'pastoral', label: 'Care', icon: 'medical_services', hint: 'Pastoral care' },
+    { value: 'practical', label: 'Support', icon: 'handshake', hint: 'Practical help' },
+    { value: 'other', label: 'Other', icon: 'more_horiz', hint: 'Something else' },
+  ].filter(function (card) {
+    return categories.indexOf(card.value) !== -1;
+  });
+%>
+
+<section class="bb-mp-req-new" data-bb-member-request-new="1">
+  <p class="bb-mp-back">
+    <a href="/member/requests">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to requests
+    </a>
+  </p>
+
+  <header class="bb-mp-req-hero">
+    <span class="bb-mp-req-hero__icon" aria-hidden="true">
+      <span class="material-symbols-outlined">volunteer_activism</span>
+    </span>
+    <h1 class="bb-mp-page-head__title">How can we support you?</h1>
+    <p class="bb-mp-lede">
+      Whether it is a prayer request, pastoral care, or practical assistance, fill out the form below.
+      Leadership reviews requests with pastoral care and confidentiality.
+    </p>
+  </header>
+
+  <% if (error) { %>
+  <div class="bb-mp-alert bb-mp-alert--error" role="alert">
+    <p class="bb-mp-alert__title">We could not submit this request</p>
+    <p><%= error %></p>
+  </div>
+  <% } %>
+
+  <form
+    method="post"
+    action="/member/requests"
+    class="bb-mp-form bb-mp-form--panel bb-mp-req-form"
+    data-bb-request-submit="1"
+    novalidate
+  >
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <fieldset class="bb-mp-req-types">
+      <legend>Select request type</legend>
+      <div class="bb-mp-req-types__grid" role="radiogroup" aria-label="Request type">
+        <% typeCards.forEach(function (card) { %>
+        <label class="bb-mp-req-type<%= selectedCategory === card.value ? ' is-selected' : '' %>">
+          <input
+            type="radio"
+            name="category"
+            value="<%= card.value %>"
+            <%= selectedCategory === card.value ? 'checked' : '' %>
+            required
+          />
+          <span class="bb-mp-req-type__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= card.icon %></span>
+          </span>
+          <span class="bb-mp-req-type__label"><%= card.label %></span>
+          <span class="bb-mp-req-type__hint"><%= card.hint %></span>
+        </label>
+        <% }) %>
+      </div>
+    </fieldset>
+
+    <div class="bb-mp-field">
+      <label for="request-subject">Subject <span class="bb-mp-required" aria-hidden="true">*</span></label>
+      <input
+        id="request-subject"
+        type="text"
+        name="subject"
+        maxlength="200"
+        required
+        placeholder="What is your request about?"
+        value="<%= submitted.subject || '' %>"
+      />
+    </div>
+
+    <div class="bb-mp-field">
+      <label for="request-message">Your message <span class="bb-mp-required" aria-hidden="true">*</span></label>
+      <textarea
+        id="request-message"
+        name="message"
+        rows="6"
+        maxlength="5000"
+        required
+        placeholder="Share as much or as little as you feel comfortable with…"
+      ><%= submitted.message || '' %></textarea>
+    </div>
+
+    <aside class="bb-mp-req-privacy" role="note">
+      <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+      <div>
+        <p class="bb-mp-req-privacy__title">Handled privately</p>
+        <p>Only pastoral leadership reviewing your request can see it. This form does not collect payment details.</p>
+      </div>
+    </aside>
+
+    <div class="bb-mp-form__actions">
+      <button type="submit" class="bb-mp-btn bb-mp-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">send</span>
+        Submit request
+      </button>
+      <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/requests">Cancel</a>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/member-shell-end') %>

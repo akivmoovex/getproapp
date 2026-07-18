@@ -66,6 +66,7 @@ const { OUTCOME } = require("../../blessboard/http/evaluateTenantRoute");
 const {
   renderFoundationHome,
   renderLoginPage,
+  renderAuthErrorPage,
   renderAccountPage,
   renderControlledErrorPage,
 } = require("../../blessboard/http/renderTenantLandingPage");
@@ -358,13 +359,21 @@ function createV5FoundationApp(options) {
         .status(429)
         .type("html")
         .send(`<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><title>Too many requests</title>
-<link rel="stylesheet" href="/blessboard/v5/tenant-public.css"/></head>
-<body class="bb-tp-body"><main class="bb-tp-main">
-<h1>Too many submissions</h1>
-<p>Please wait a few minutes and try again.</p>
-<p><a href="/register">Back to registration</a></p>
-</main></body></html>`);
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Too many requests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=1"/></head>
+<body class="bb-auth-body" data-bb-page="register-rate-limited">
+<main class="bb-auth-main__body">
+<div class="bb-auth-card" role="alert">
+<h1 class="bb-auth-card__title">Too many submissions</h1>
+<p class="bb-auth-card__lead">Please wait a few minutes and try again.</p>
+<p><a class="bb-auth-btn bb-auth-btn--primary" href="/register">Back to registration</a></p>
+</div>
+</main>
+</body></html>`);
     },
   });
 
@@ -469,6 +478,7 @@ function createV5FoundationApp(options) {
       isApexHost: (req) => isApexHost(req, opts),
       env,
       sendUnavailable,
+      mediaService,
     })
   );
   app.use(
@@ -634,14 +644,7 @@ function createV5FoundationApp(options) {
     if (!wantsHtml) {
       return res.status(status).type("text").send(message);
     }
-    return res.status(status).type("html").send(`<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="referrer" content="no-referrer"/>
-<title>Sign-in</title></head>
-<body><p>${String(message)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")}</p>
-<p><a href="/">Home</a></p></body></html>`);
+    return res.status(status).type("html").send(renderAuthErrorPage(message));
   }
 
   app.get("/login", async (req, res) => {
@@ -649,8 +652,8 @@ function createV5FoundationApp(options) {
     if (apex) {
       const rawTr = String((req.query && req.query.tr) || "").trim();
       let transferHostname = null;
-      let transferToken = null;
       if (rawTr) {
+        res.setHeader("Referrer-Policy", "no-referrer");
         const deployment = getPlatformDeploymentCode(env);
         if (!deployment.ok || !deployment.code) {
           return sendAuthError(req, res, 503, "Sign-in is temporarily unavailable.");
@@ -661,10 +664,21 @@ function createV5FoundationApp(options) {
             deploymentCode: deployment.code,
           });
           if (!loaded.ok || !loaded.transfer || loaded.transfer.userId) {
-            return sendAuthError(req, res, 400, "This sign-in link is invalid or has expired.");
+            const consumed =
+              loaded &&
+              (loaded.status === TRANSFER_STATUS.CONSUMED ||
+                (loaded.transfer && loaded.transfer.userId));
+            return sendAuthError(
+              req,
+              res,
+              400,
+              consumed
+                ? "This sign-in link has already been used."
+                : "This sign-in link is invalid or has expired."
+            );
           }
+          // Hostname only after authoritative transfer resolution (never from client input alone).
           transferHostname = loaded.transfer.requestedHostname;
-          transferToken = rawTr;
         } catch {
           return sendAuthError(req, res, 503, "Sign-in is temporarily unavailable.");
         }
@@ -675,8 +689,8 @@ function createV5FoundationApp(options) {
         renderLoginPage({
           csrfToken,
           hostKind: "apex",
-          transferToken,
           transferHostname,
+          loggedOut: String((req.query && req.query.logged_out) || "") === "1",
         })
       );
     }
@@ -726,13 +740,9 @@ function createV5FoundationApp(options) {
     const submitted = req.body && req.body[CSRF_FIELD];
     const rawTr = String((req.body && req.body.tr) || (req.query && req.query.tr) || "").trim();
     let transferHostname = null;
-    if (rawTr) {
-      transferHostname = "(tenant)";
-    }
     const loginPageOpts = {
       csrfToken,
       hostKind: "apex",
-      transferToken: rawTr || null,
       transferHostname,
     };
     if (!validateCsrf(req, submitted, env)) {
@@ -759,6 +769,7 @@ function createV5FoundationApp(options) {
 
     let pendingTransfer = null;
     if (rawTr) {
+      res.setHeader("Referrer-Policy", "no-referrer");
       try {
         const loaded = await loadAuthTransferByRawToken(getPool(), {
           rawToken: rawTr,
@@ -766,7 +777,18 @@ function createV5FoundationApp(options) {
         });
         if (!loaded.ok || !loaded.transfer || loaded.transfer.userId) {
           setCsrfCookie(res, csrfToken, { secure: isProduction });
-          return sendAuthError(req, res, 400, "This sign-in link is invalid or has expired.");
+          const consumed =
+            loaded &&
+            (loaded.status === TRANSFER_STATUS.CONSUMED ||
+              (loaded.transfer && loaded.transfer.userId));
+          return sendAuthError(
+            req,
+            res,
+            400,
+            consumed
+              ? "This sign-in link has already been used."
+              : "This sign-in link is invalid or has expired."
+          );
         }
         pendingTransfer = loaded.transfer;
         loginPageOpts.transferHostname = pendingTransfer.requestedHostname;
@@ -815,9 +837,11 @@ function createV5FoundationApp(options) {
         if (issued.status === TRANSFER_STATUS.UNAUTHORIZED) {
           return sendAuthError(req, res, 403, "You do not have access to that church site.");
         }
+        if (issued.status === TRANSFER_STATUS.CONSUMED) {
+          return sendAuthError(req, res, 400, "This sign-in link has already been used.");
+        }
         if (
           issued.status === TRANSFER_STATUS.EXPIRED ||
-          issued.status === TRANSFER_STATUS.CONSUMED ||
           issued.status === TRANSFER_STATUS.INVALID_TRANSFER
         ) {
           return sendAuthError(req, res, 400, "This sign-in link is invalid or has expired.");
@@ -879,14 +903,14 @@ function createV5FoundationApp(options) {
             : redeemed.status === TRANSFER_STATUS.UNAUTHORIZED
               ? 403
               : 400;
-        return sendAuthError(
-          req,
-          res,
-          status,
-          status === 503
-            ? "Sign-in is temporarily unavailable."
-            : "This sign-in link is invalid or has expired."
-        );
+        let message = "This sign-in link is invalid or has expired.";
+        if (status === 503) message = "Sign-in is temporarily unavailable.";
+        else if (redeemed.status === TRANSFER_STATUS.UNAUTHORIZED) {
+          message = "You do not have access to that church site.";
+        } else if (redeemed.status === TRANSFER_STATUS.CONSUMED) {
+          message = "This sign-in link has already been used.";
+        }
+        return sendAuthError(req, res, status, message);
       }
       setV5SessionCookie(res, redeemed.rawSessionToken, { secure: isProduction, env });
       const dest = safeTenantNextPath(redeemed.returnPath) || "/branch-admin";

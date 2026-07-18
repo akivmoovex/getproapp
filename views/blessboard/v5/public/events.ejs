@@ -1,0 +1,156 @@
+<%#
+  Events — Stitch list layout (not calendar).
+  Published + upcoming only; cancelled excluded by status; timezone-safe dates.
+%>
+<%
+  var pageSections = sections || [];
+  var events = entities || [];
+  var featured = events.length ? events[0] : null;
+  var rest = events.length > 1 ? events.slice(1) : [];
+  var intro = pageSections.length ? pageSections[0] : null;
+  var introHeading = (intro && intro.heading) || pageTitle || 'Gather with Us';
+  var introBody = (intro && intro.bodyText) || '';
+  var featuredParts = featured ? formatEventParts(featured.startsAt, featured.timezone) : null;
+%>
+
+<section class="bb-tp-directory bb-tp-events" data-bb-events="1">
+  <header class="bb-tp-dir-hero">
+    <div class="bb-tp-container">
+      <p class="bb-tp-eyebrow">Community Calendar</p>
+      <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
+      <% if (introBody) { %>
+      <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
+      <% } %>
+    </div>
+  </header>
+
+  <div class="bb-tp-container bb-tp-directory__body">
+    <% if (showEmptyState) { %>
+    <div class="bb-tp-empty" role="status" data-bb-empty="events">
+      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">event</span>
+      <h2><%= emptyHeadline %></h2>
+      <p><%= emptyMessage %></p>
+      <div class="bb-tp-page-hero__cta">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="/">Home</a>
+      </div>
+    </div>
+    <% } else { %>
+
+    <% if (featured) { %>
+    <section class="bb-tp-featured-event" aria-label="Featured event" data-bb-event-featured="1">
+      <p class="bb-tp-featured-event__label">Featured Gathering</p>
+      <article class="bb-tp-featured-event__card">
+        <div class="bb-tp-featured-event__media<%= featured.imageUrl ? '' : ' is-fallback' %>">
+          <% if (featured.imageUrl) { %>
+          <img src="<%= featured.imageUrl %>" alt="" width="960" height="540" loading="eager" decoding="async" />
+          <% } else { %>
+          <div class="bb-tp-featured-event__badge" aria-hidden="true">
+            <span><%= featuredParts.month %></span>
+            <strong><%= featuredParts.day %></strong>
+          </div>
+          <% } %>
+        </div>
+        <div class="bb-tp-featured-event__copy">
+          <% if (featuredParts.full) { %>
+          <p class="bb-tp-meta" data-bb-event-when="1">
+            <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+            <%= featuredParts.weekday %><% if (featuredParts.time) { %> · <%= featuredParts.time %><% } %>
+          </p>
+          <% } %>
+          <h2 class="bb-tp-featured-event__title"><%= featured.title %></h2>
+          <% if (featured.summary) { %>
+          <p class="bb-tp-body"><%= featured.summary %></p>
+          <% } %>
+          <% if (featured.location) { %>
+          <p class="bb-tp-meta">
+            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            <%= featured.location %>
+          </p>
+          <% } %>
+          <div class="bb-tp-page-hero__cta">
+            <% if (featured.registrationUrl) { %>
+            <a
+              class="bb-tp-btn bb-tp-btn--primary"
+              href="<%= featured.registrationUrl %>"
+              rel="noopener noreferrer"
+              data-bb-event-register="1"
+            >
+              Register
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+            <% } %>
+            <a class="bb-tp-btn bb-tp-btn--ghost" href="/contact">Contact for Details</a>
+          </div>
+        </div>
+      </article>
+    </section>
+    <% } %>
+
+    <% if (rest.length) { %>
+    <section class="bb-tp-event-list-wrap" aria-label="Upcoming events">
+      <h2 class="bb-tp-section-title">Upcoming Events</h2>
+      <ul class="bb-tp-event-list">
+        <% rest.forEach(function (event) { %>
+        <% var parts = formatEventParts(event.startsAt, event.timezone); %>
+        <li class="bb-tp-event-card" data-bb-event-item="1">
+          <div class="bb-tp-event-card__date" aria-hidden="true">
+            <span class="bb-tp-event-card__month"><%= parts.month %></span>
+            <strong class="bb-tp-event-card__day"><%= parts.day %></strong>
+          </div>
+          <div class="bb-tp-event-card__body">
+            <h3 class="bb-tp-event-card__title"><%= event.title %></h3>
+            <% if (parts.full) { %>
+            <p class="bb-tp-meta" data-bb-event-when="1">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <%= parts.full %>
+            </p>
+            <% } %>
+            <% if (event.location) { %>
+            <p class="bb-tp-meta">
+              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+              <%= event.location %>
+            </p>
+            <% } %>
+            <% if (event.summary) { %>
+            <p class="bb-tp-event-card__summary"><%= event.summary %></p>
+            <% } %>
+            <% if (event.registrationUrl) { %>
+            <p>
+              <a
+                class="bb-tp-inline-link"
+                href="<%= event.registrationUrl %>"
+                rel="noopener noreferrer"
+                data-bb-event-register="1"
+              >Register</a>
+            </p>
+            <% } %>
+          </div>
+          <% if (event.imageUrl) { %>
+          <div class="bb-tp-event-card__thumb">
+            <img src="<%= event.imageUrl %>" alt="" width="200" height="140" loading="lazy" decoding="async" />
+          </div>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
+    <% if (pageSections.length > 1) { %>
+    <div class="bb-tp-directory__sections">
+      <% pageSections.slice(1).forEach(function (section) { %>
+      <section class="bb-tp-content-block" data-section="<%= section.sectionKey %>">
+        <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+        <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+        <% if (section.mediaUrl) { %>
+        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+        <% } %>
+      </section>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <% } %>
+  </div>
+</section>

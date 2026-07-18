@@ -1,26 +1,109 @@
 <%- include('../partials/member-shell-start') %>
-  <h1>Requests</h1>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
-  <form method="post" action="/member/requests">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <label>Category
-      <select name="category" required>
-        <% requestCategories.forEach(function (c) { %>
-          <option value="<%= c %>"><%= c %></option>
-        <% }) %>
-      </select>
-    </label>
-    <label>Subject <input type="text" name="subject" maxlength="200" required /></label>
-    <label>Message <textarea name="message" maxlength="5000" required></textarea></label>
-    <button type="submit">Submit request</button>
-  </form>
-  <h2>Your requests</h2>
-  <ul>
-    <% requests.forEach(function (r) { %>
-      <li data-bb-status="<%= r.status %>">
-        <a href="/member/requests/<%= r.id %>"><%= r.subject %></a> · <%= r.status %>
-      </li>
+<%
+  var requestList = requests || [];
+  var flash = saved === '1' ? 'Your request was submitted.' : '';
+
+  function categoryLabel(c) {
+    var key = String(c || '').toLowerCase();
+    if (key === 'prayer') return 'Prayer';
+    if (key === 'pastoral') return 'Care';
+    if (key === 'practical') return 'Support';
+    if (key === 'other') return 'Other';
+    return c || 'Request';
+  }
+
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'Pending review';
+    if (key === 'in_review') return 'In review';
+    if (key === 'resolved') return 'Resolved';
+    if (key === 'closed') return 'Closed';
+    return s || 'Unknown';
+  }
+
+  function statusChipClass(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'bb-mp-chip--pending';
+    if (key === 'in_review') return 'bb-mp-chip--open';
+    if (key === 'resolved') return 'bb-mp-chip--active';
+    if (key === 'closed') return 'bb-mp-chip--request';
+    return 'bb-mp-chip--request';
+  }
+
+  function formatWhen(value) {
+    if (!value) return '';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+%>
+
+<section class="bb-mp-req" data-bb-member-requests="1">
+  <header class="bb-mp-page-head bb-mp-page-head--split">
+    <div>
+      <h1 class="bb-mp-page-head__title">Request status</h1>
+      <p class="bb-mp-lede">Track your own requests. Only you and church leadership can see them.</p>
+    </div>
+    <p class="bb-mp-page-head__actions">
+      <a class="bb-mp-btn bb-mp-btn--primary" href="/member/requests/new" data-bb-request-new="1">
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        New request
+      </a>
+    </p>
+  </header>
+
+  <% if (flash) { %>
+  <p class="bb-mp-ok" role="status"><%= flash %></p>
+  <% } %>
+
+  <% if (!requestList.length) { %>
+  <div class="bb-mp-empty" role="status">
+    <span class="material-symbols-outlined" aria-hidden="true">inbox</span>
+    <p>You have not submitted any requests yet.</p>
+    <p>
+      <a class="bb-mp-btn bb-mp-btn--primary" href="/member/requests/new">Submit a request</a>
+    </p>
+  </div>
+  <% } else { %>
+  <ul class="bb-mp-part-list" aria-label="Your requests">
+    <% requestList.forEach(function (r) { %>
+    <li>
+      <a
+        class="bb-mp-part-card"
+        href="/member/requests/<%= r.id %>"
+        data-bb-request="<%= r.id %>"
+        data-bb-status="<%= r.status %>"
+      >
+        <div class="bb-mp-fr-icon" aria-hidden="true">
+          <span class="material-symbols-outlined">inbox</span>
+        </div>
+        <div class="bb-mp-part-card__body">
+          <div class="bb-mp-part-card__top">
+            <h2 class="bb-mp-part-card__title"><%= r.subject %></h2>
+            <span class="bb-mp-chip <%= statusChipClass(r.status) %>"><%= statusLabel(r.status) %></span>
+          </div>
+          <p class="bb-mp-part-card__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">category</span>
+            <span><%= categoryLabel(r.category) %></span>
+          </p>
+          <% if (r.updatedAt || r.createdAt) { %>
+          <p class="bb-mp-part-card__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+            <span>Updated <%= formatWhen(r.updatedAt || r.createdAt) %></span>
+          </p>
+          <% } %>
+        </div>
+        <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+      </a>
+    </li>
     <% }) %>
   </ul>
+  <% } %>
+
+  <aside class="bb-mp-req-note" role="note">
+    <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+    <p>Requests are private to you and the pastoral team reviewing them. Status updates you see here never include internal staff review notes.</p>
+  </aside>
+</section>
+
 <%- include('../partials/member-shell-end') %>

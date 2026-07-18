@@ -132,7 +132,7 @@ async function listEntries(client, opts) {
     params.push(opts.yearMonth);
     where += ` AND to_char(e.giving_date, 'YYYY-MM') = $${params.length}`;
   }
-  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 200);
+  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 50);
   params.push(limit);
   const { rows } = await client.query(
     `SELECT e.id, e.church_id, e.branch_id, e.category_id, e.giving_date,

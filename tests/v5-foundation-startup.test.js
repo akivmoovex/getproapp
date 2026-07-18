@@ -142,7 +142,8 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
     const res = await request(app).get("/").set("Host", "blessboard.org");
     assert.equal(res.status, 200);
     assert.match(res.text, /BlessBoard/);
-    assert.match(res.text, /foundation mode/i);
+    assert.match(res.text, /data-bb-shell="apex"/);
+    assert.match(res.text, /One digital home for your church/);
     await assertNoPublicLegacyTables();
   });
 
@@ -266,13 +267,15 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
 
     const apex = await request(diagApp).get("/").set("Host", "blessboard.org");
     assert.equal(apex.status, 200);
-    assert.match(apex.text, /foundation mode/i);
+    assert.match(apex.text, /data-bb-shell="apex"/);
+    assert.match(apex.text, /One digital home for your church/);
 
     const tenant = await request(diagApp)
       .get("/")
       .set("Host", "foundation-tenant.blessboard.org");
     assert.equal(tenant.status, 200);
-    assert.match(tenant.text, /foundation mode/i);
+    assert.match(tenant.text, /data-bb-shell="apex"/);
+    assert.match(tenant.text, /One digital home for your church/);
     assert.doesNotMatch(tenant.text, /foundation-tenant|Headquarters/i);
 
     assert.equal(

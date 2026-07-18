@@ -3,69 +3,153 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><%= pageTitle %> · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css" />
+  <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
+  <meta name="robots" content="noindex, nofollow" />
+  <%- include('./head-design-system') %>
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=8" />
 </head>
-<body class="bb-ba-body" data-bb-shell="branch-admin" data-bb-viewport="responsive">
+<%
+  var baNav = (typeof navItems !== 'undefined' && navItems && navItems.length)
+    ? navItems
+    : [
+        { key: 'home', label: 'Dashboard', href: '/branch-admin', icon: 'dashboard' },
+        { key: 'registrations', label: 'Registrations', href: '/branch-admin/registrations', icon: 'how_to_reg' },
+        { key: 'members', label: 'Members', href: '/branch-admin/members', icon: 'group' },
+        { key: 'announcements', label: 'Announcements', href: '/branch-admin/announcements', icon: 'campaign' },
+        { key: 'participation', label: 'Participation', href: '/branch-admin/participation', icon: 'groups' },
+        { key: 'attendance', label: 'Attendance', href: '/branch-admin/attendance', icon: 'fact_check' },
+        { key: 'giving', label: 'Giving', href: '/branch-admin/giving', icon: 'payments' },
+        { key: 'resources', label: 'Resources', href: '/branch-admin/resources', icon: 'menu_book' },
+        { key: 'forms', label: 'Forms', href: '/branch-admin/forms', icon: 'description' },
+        { key: 'requests', label: 'Requests', href: '/branch-admin/requests', icon: 'inbox' },
+        { key: 'content', label: 'Website', href: '/branch-admin/content', icon: 'language' },
+        { key: 'settings', label: 'Settings', href: '/branch-admin/settings', icon: 'settings' },
+        { key: 'account', label: 'Account', href: '/branch-admin/account', icon: 'person' },
+      ];
+  var baTabs = (typeof mobileTabs !== 'undefined' && mobileTabs && mobileTabs.length)
+    ? mobileTabs
+    : baNav.filter(function (item) {
+        return ['home', 'registrations', 'members', 'announcements', 'account'].indexOf(item.key) !== -1;
+      });
+  var baRole = typeof roleLabel !== 'undefined' && roleLabel ? roleLabel : 'Branch admin';
+  var baDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
+%>
+<body
+  class="bb-ba-body"
+  data-bb-shell="branch-admin"
+  data-bb-product="blessboard-v5"
+  data-bb-viewport="responsive"
+  data-bb-page="<%= activeNav || 'home' %>"
+>
   <a class="bb-ba-skip" href="#bb-ba-main">Skip to content</a>
-  <header class="bb-ba-top" data-bb-nav="desktop-header">
-    <div class="bb-ba-brand">
-      <a class="bb-ba-wordmark" href="/branch-admin">BlessBoard</a>
-      <div class="bb-ba-context">
-        <%= churchDisplayName %> · <%= branchDisplayName %>
-        <span class="bb-ba-role"><%= roleLabel %></span>
+
+  <div class="bb-ba-app">
+    <aside class="bb-ba-sidebar" data-bb-nav="desktop-sidebar" aria-label="Branch admin navigation">
+      <div class="bb-ba-sidebar__brand">
+        <a class="bb-ba-wordmark" href="/branch-admin">
+          <img
+            class="bb-ba-wordmark__mark"
+            src="/church/images/brand/blessboard-small-church-logo.png"
+            alt=""
+            width="28"
+            height="28"
+            decoding="async"
+          />
+          <span>BlessBoard</span>
+        </a>
+        <p class="bb-ba-context">
+          <span class="bb-ba-context__church"><%= churchDisplayName %></span>
+          <% if (branchDisplayName) { %>
+          <span class="bb-ba-context__branch"><%= branchDisplayName %></span>
+          <% } %>
+        </p>
+        <span class="bb-ba-role"><%= baRole %></span>
       </div>
-    </div>
-    <nav class="bb-ba-nav-desktop" aria-label="Branch admin desktop" data-bb-nav="desktop">
-      <a href="/branch-admin" class="<%= activeNav === 'home' ? 'is-active' : '' %>">Home</a>
-      <a href="/branch-admin/registrations" class="<%= activeNav === 'registrations' ? 'is-active' : '' %>">Registrations</a>
-      <a href="/branch-admin/announcements" class="<%= activeNav === 'announcements' ? 'is-active' : '' %>">Announcements</a>
-      <a href="/branch-admin/participation" class="<%= activeNav === 'participation' ? 'is-active' : '' %>">Participation</a>
-      <a href="/branch-admin/attendance" class="<%= activeNav === 'attendance' ? 'is-active' : '' %>">Attendance</a>
-      <a href="/branch-admin/giving" class="<%= activeNav === 'giving' ? 'is-active' : '' %>">Giving</a>
-      <a href="/branch-admin/resources" class="<%= activeNav === 'resources' ? 'is-active' : '' %>">Resources</a>
-      <a href="/branch-admin/forms" class="<%= activeNav === 'forms' ? 'is-active' : '' %>">Forms</a>
-      <a href="/branch-admin/requests" class="<%= activeNav === 'requests' ? 'is-active' : '' %>">Requests</a>
-      <a href="/branch-admin/settings" class="<%= activeNav === 'settings' ? 'is-active' : '' %>">Settings</a>
-      <a href="/branch-admin/content" class="<%= activeNav === 'content' ? 'is-active' : '' %>">Content</a>
-      <a href="/branch-admin/account" class="<%= activeNav === 'account' ? 'is-active' : '' %>">Account</a>
-      <form method="post" action="/branch-admin/logout">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Logout</button>
-      </form>
-    </nav>
-    <button
-      type="button"
-      class="bb-ba-nav-toggle"
-      data-bb-nav="mobile-toggle"
-      aria-controls="bb-ba-mobile-nav"
-      aria-expanded="false"
-    >
-      Menu
-    </button>
-  </header>
-  <nav
-    id="bb-ba-mobile-nav"
-    class="bb-ba-nav-mobile"
-    aria-label="Branch admin mobile"
-    data-bb-nav="mobile"
-    hidden
-  >
-    <a href="/branch-admin">Home</a>
-    <a href="/branch-admin/registrations">Registrations</a>
-    <a href="/branch-admin/announcements">Announcements</a>
-    <a href="/branch-admin/participation">Participation</a>
-    <a href="/branch-admin/attendance">Attendance</a>
-    <a href="/branch-admin/giving">Giving</a>
-    <a href="/branch-admin/resources">Resources</a>
-    <a href="/branch-admin/forms">Forms</a>
-    <a href="/branch-admin/requests">Requests</a>
-    <a href="/branch-admin/settings">Settings</a>
-    <a href="/branch-admin/content">Content</a>
-    <a href="/branch-admin/account">Account</a>
-    <form method="post" action="/branch-admin/logout">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <button type="submit">Logout</button>
-    </form>
-  </nav>
-  <main id="bb-ba-main" class="bb-ba-main">
+
+      <nav class="bb-ba-sidebar__nav" aria-label="Branch admin" data-bb-nav="desktop">
+        <% baNav.forEach(function (item) { %>
+        <a
+          href="<%= item.href %>"
+          class="bb-ba-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+          <span><%= item.label %></span>
+        </a>
+        <% }) %>
+      </nav>
+
+      <div class="bb-ba-sidebar__footer">
+        <% if (baDisplay) { %>
+        <p class="bb-ba-user" data-bb-admin-user="1">
+          <span class="bb-ba-user__name"><%= baDisplay %></span>
+          <span class="bb-ba-user__meta"><%= churchDisplayName %></span>
+        </p>
+        <% } %>
+        <form class="bb-ba-logout" method="post" action="/branch-admin/logout" data-bb-branch-logout="1">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit">
+            <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+            Sign out
+          </button>
+        </form>
+        <%- include('./powered-by-getpro') %>
+      </div>
+    </aside>
+
+    <div class="bb-ba-frame">
+      <header class="bb-ba-top" data-bb-nav="mobile-header">
+        <div class="bb-ba-top__brand">
+          <a class="bb-ba-wordmark bb-ba-wordmark--compact" href="/branch-admin">BlessBoard Admin</a>
+          <p class="bb-ba-context bb-ba-context--compact">
+            <%= churchDisplayName %><% if (branchDisplayName) { %> · <%= branchDisplayName %><% } %>
+            <span class="bb-ba-role"><%= baRole %></span>
+          </p>
+        </div>
+        <div class="bb-ba-top__actions">
+          <a class="bb-ba-icon-link" href="/branch-admin/account" aria-label="Account">
+            <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+          </a>
+          <button
+            type="button"
+            class="bb-ba-nav-toggle"
+            id="bb-ba-menu-btn"
+            data-bb-nav="mobile-toggle"
+            aria-controls="bb-ba-drawer"
+            aria-expanded="false"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+            <span class="bb-ba-nav-toggle__label">Menu</span>
+          </button>
+        </div>
+      </header>
+
+      <div
+        id="bb-ba-drawer"
+        class="bb-ba-drawer"
+        data-bb-nav="mobile"
+        hidden
+      >
+        <div class="bb-ba-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
+        <nav class="bb-ba-drawer__panel" aria-label="Branch admin menu">
+          <p class="bb-ba-drawer__title">Menu</p>
+          <% baNav.forEach(function (item) { %>
+          <a
+            href="<%= item.href %>"
+            class="bb-ba-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+            <span><%= item.label %></span>
+          </a>
+          <% }) %>
+          <form class="bb-ba-logout" method="post" action="/branch-admin/logout">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit">
+              <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+              Sign out
+            </button>
+          </form>
+        </nav>
+      </div>
+
+      <main id="bb-ba-main" class="bb-ba-main">

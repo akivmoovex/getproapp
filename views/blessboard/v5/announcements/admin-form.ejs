@@ -3,65 +3,169 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1><%= formMode === 'create' ? 'New announcement' : 'Edit announcement' %></h1>
-  <p><a href="<%= basePath %>">Back to list</a></p>
-  <% if (typeof saved !== 'undefined' && saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
-  <%
-    var audiences = (item && item.audiences) || [];
-    var hasMembers = audiences.indexOf('members') !== -1;
-    var hasAdmins = audiences.indexOf('admins') !== -1;
-  %>
-  <form method="post" action="<%= formMode === 'create' ? basePath : (basePath + '/' + item.id) %>" class="bb-ann-form">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <% if (formMode === 'edit' && item && item.updatedAt) { %>
-      <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt.toISOString ? item.updatedAt.toISOString() : item.updatedAt %>" />
-    <% } %>
-    <label>Title
-      <input type="text" name="title" maxlength="200" required value="<%= item && item.title ? item.title : '' %>" />
-    </label>
-    <label>Body
-      <textarea name="body" rows="8" maxlength="20000" required><%= item && item.body ? item.body : '' %></textarea>
-    </label>
-    <label>Status
-      <select name="status">
-        <% ['draft', 'published', 'archived'].forEach(function (s) { %>
-          <option value="<%= s %>" <%= item && item.status === s ? 'selected' : '' %>><%= s %></option>
-        <% }) %>
-      </select>
-    </label>
-    <fieldset>
-      <legend>Audience</legend>
-      <label><input type="checkbox" name="audience_members" value="1" <%= hasMembers || formMode === 'create' ? 'checked' : '' %> /> Members</label>
-      <label><input type="checkbox" name="audience_admins" value="1" <%= hasAdmins ? 'checked' : '' %> /> Admins</label>
-    </fieldset>
-    <label><input type="checkbox" name="is_pinned" value="1" <%= item && item.isPinned ? 'checked' : '' %> /> Pinned</label>
-    <label><input type="checkbox" name="is_featured" value="1" <%= item && item.isFeatured ? 'checked' : '' %> /> Featured</label>
-    <label>Action URL
-      <input type="text" name="action_url" maxlength="2000" value="<%= item && item.actionUrl ? item.actionUrl : '' %>" />
-    </label>
-    <label>Action label
-      <input type="text" name="action_label" maxlength="100" value="<%= item && item.actionLabel ? item.actionLabel : '' %>" />
-    </label>
-    <label>Attach media asset id
-      <input type="text" name="media_asset_id" maxlength="36" value="" />
-    </label>
-    <label><input type="checkbox" name="confirm_publish" value="1" /> Confirm publish</label>
-    <% if (item && item.delivery) { %>
-      <p data-bb-delivery="summary">
-        Delivery: <%= item.delivery.readCount %> read / <%= item.delivery.eligibleCount %> eligible
-        (<%= item.delivery.unreadCount %> unread)
+<%
+  var audiences = (item && item.audiences) || [];
+  var hasMembers = audiences.indexOf('members') !== -1;
+  var hasAdmins = audiences.indexOf('admins') !== -1;
+  var previewTitle = item && item.title ? item.title : 'Announcement title';
+  var previewBody = item && item.body ? item.body : 'Message preview will appear here as you write.';
+%>
+
+<section class="bb-ann-admin" data-bb-announcement-admin-form="1" data-bb-form-mode="<%= formMode %>">
+  <header class="bb-ba-page-head">
+    <p class="bb-ba-breadcrumb">
+      <a href="<%= basePath %>">Announcements</a>
+      <span aria-hidden="true">›</span>
+      <span><%= formMode === 'create' ? 'Create' : 'Edit' %></span>
+    </p>
+    <h1 class="bb-ba-page-head__title"><%= formMode === 'create' ? 'New announcement' : 'Edit announcement' %></h1>
+    <p class="bb-ba-lede">
+      Save as draft first. Publishing uses a separate confirmation step and does not delete prior versions — archive instead of delete.
+    </p>
+  </header>
+
+  <% if (typeof saved !== 'undefined' && saved) { %><p class="bb-ba-ok" role="status">Saved.</p><% } %>
+  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+
+  <div class="bb-ann-form-layout">
+    <form
+      method="post"
+      action="<%= formMode === 'create' ? basePath : (basePath + '/' + item.id) %>"
+      class="bb-ann-form bb-ba-panel"
+      data-bb-ann-form="1"
+      id="bb-ann-form"
+    >
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <% if (formMode === 'edit' && item && item.updatedAt) { %>
+        <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt.toISOString ? item.updatedAt.toISOString() : item.updatedAt %>" />
+      <% } %>
+
+      <div class="bb-ba-field">
+        <label for="title">Title</label>
+        <input
+          id="title"
+          type="text"
+          name="title"
+          maxlength="200"
+          required
+          value="<%= item && item.title ? item.title : '' %>"
+          data-bb-ann-preview-title
+        />
+      </div>
+      <div class="bb-ba-field">
+        <label for="body">Body</label>
+        <textarea
+          id="body"
+          name="body"
+          rows="8"
+          maxlength="20000"
+          required
+          data-bb-ann-preview-body
+        ><%= item && item.body ? item.body : '' %></textarea>
+      </div>
+
+      <% if (formMode === 'create') { %>
+      <div class="bb-ba-field">
+        <label for="status">Initial status</label>
+        <select id="status" name="status" data-bb-ann-status>
+          <option value="draft" selected>Draft</option>
+          <option value="published">Publish now (requires confirmation)</option>
+        </select>
+      </div>
+      <div class="bb-ba-field bb-ann-confirm-publish" data-bb-ann-confirm-wrap hidden>
+        <label class="bb-ann-check">
+          <input type="checkbox" name="confirm_publish" value="1" />
+          I confirm publishing to the selected audience for this branch/church scope
+        </label>
+      </div>
+      <% } else { %>
+      <input type="hidden" name="status" value="<%= item && item.status === 'published' ? 'published' : 'draft' %>" />
+      <p class="bb-ba-hint">
+        Current status: <strong><%= item && item.status %></strong>.
+        <% if (item && item.status === 'draft') { %>
+        Use <a href="<%= basePath %>/<%= item.id %>/publish">Confirm publish</a> to publish.
+        <% } %>
+        Archive from the detail page — announcements are never hard-deleted.
       </p>
-    <% } %>
-    <% if (item && item.attachments && item.attachments.length) { %>
-      <ul>
-        <% item.attachments.forEach(function (att) { %>
+      <% } %>
+
+      <fieldset class="bb-ann-fieldset">
+        <legend>Audience</legend>
+        <label class="bb-ann-check"><input type="checkbox" name="audience_members" value="1" <%= hasMembers || formMode === 'create' ? 'checked' : '' %> /> Members</label>
+        <label class="bb-ann-check"><input type="checkbox" name="audience_admins" value="1" <%= hasAdmins ? 'checked' : '' %> /> Admins</label>
+      </fieldset>
+
+      <label class="bb-ann-check"><input type="checkbox" name="is_pinned" value="1" <%= item && item.isPinned ? 'checked' : '' %> /> Pinned</label>
+      <label class="bb-ann-check"><input type="checkbox" name="is_featured" value="1" <%= item && item.isFeatured ? 'checked' : '' %> /> Featured</label>
+
+      <div class="bb-ba-field">
+        <label for="action_url">Action URL</label>
+        <input id="action_url" type="text" name="action_url" maxlength="2000" value="<%= item && item.actionUrl ? item.actionUrl : '' %>" />
+      </div>
+      <div class="bb-ba-field">
+        <label for="action_label">Action label</label>
+        <input id="action_label" type="text" name="action_label" maxlength="100" value="<%= item && item.actionLabel ? item.actionLabel : '' %>" />
+      </div>
+      <div class="bb-ba-field">
+        <label for="media_asset_id">Attach media asset id</label>
+        <input id="media_asset_id" type="text" name="media_asset_id" maxlength="36" value="" placeholder="Optional UUID from media library" />
+      </div>
+
+      <% if (item && item.attachments && item.attachments.length) { %>
+      <div class="bb-ann-attachments">
+        <h2 class="bb-ba-section-title">Attachments</h2>
+        <ul>
+          <% item.attachments.forEach(function (att) { %>
           <li><%= att.originalFilename || att.mediaAssetId %></li>
-        <% }) %>
-      </ul>
+          <% }) %>
+        </ul>
+      </div>
+      <% } %>
+
+      <div class="bb-ba-decision__actions">
+        <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= formMode === 'edit' && item ? (basePath + '/' + item.id) : basePath %>">Cancel</a>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary"><%= formMode === 'create' ? 'Create' : 'Save draft' %></button>
+      </div>
+    </form>
+
+    <% if (typeof showPreview !== 'undefined' && showPreview) { %>
+    <aside class="bb-ann-preview-panel" data-bb-ann-live-preview="1" aria-live="polite">
+      <h2 class="bb-ba-section-title">Member preview</h2>
+      <p class="bb-ba-hint">How this may appear in the member feed (draft wording until published).</p>
+      <article class="bb-ann-preview-card">
+        <h3 class="bb-ann-preview-card__title" data-bb-ann-preview-title-out><%= previewTitle %></h3>
+        <p class="bb-ann-preview-card__body" data-bb-ann-preview-body-out><%= previewBody %></p>
+      </article>
+    </aside>
     <% } %>
-    <button type="submit"><%= formMode === 'create' ? 'Create' : 'Save' %></button>
-  </form>
+  </div>
+</section>
+
+<script>
+(function () {
+  var status = document.querySelector("[data-bb-ann-status]");
+  var wrap = document.querySelector("[data-bb-ann-confirm-wrap]");
+  function syncConfirm() {
+    if (!status || !wrap) return;
+    wrap.hidden = status.value !== "published";
+  }
+  if (status) {
+    status.addEventListener("change", syncConfirm);
+    syncConfirm();
+  }
+  var titleIn = document.querySelector("[data-bb-ann-preview-title]");
+  var bodyIn = document.querySelector("[data-bb-ann-preview-body]");
+  var titleOut = document.querySelector("[data-bb-ann-preview-title-out]");
+  var bodyOut = document.querySelector("[data-bb-ann-preview-body-out]");
+  function syncPreview() {
+    if (titleIn && titleOut) titleOut.textContent = titleIn.value || "Announcement title";
+    if (bodyIn && bodyOut) bodyOut.textContent = bodyIn.value || "Message preview will appear here as you write.";
+  }
+  if (titleIn) titleIn.addEventListener("input", syncPreview);
+  if (bodyIn) bodyIn.addEventListener("input", syncPreview);
+})();
+</script>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

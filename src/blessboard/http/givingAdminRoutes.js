@@ -2,6 +2,7 @@
 
 /**
  * BlessBoard V5 HQ / branch manual giving admin (aggregated summaries).
+ * No donor PII, no payment processing — NUMERIC amounts as decimal strings.
  */
 
 const fs = require("fs");
@@ -14,6 +15,7 @@ const {
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { formatRoleLabel } = require("./renderTenantLandingPage");
+const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const {
   CSRF_FIELD,
   issueCsrfToken,
@@ -39,6 +41,8 @@ const {
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const LIST_LIMIT = 50;
+const ENTRY_STATUSES = Object.freeze(["draft", "submitted", "approved", "void"]);
 
 function renderView(relativePath, data) {
   const filename = path.join(VIEWS_ROOT, relativePath);
@@ -73,6 +77,22 @@ function sendControlled(req, res, status, message, shellKind) {
 function currentYearMonth() {
   const d = new Date();
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function formError(reason) {
+  if (reason === "amount" || reason === "amount_must_be_decimal_string") {
+    return "Enter amount as a decimal string with up to 2 places (for example 25.00).";
+  }
+  if (reason === "currency") {
+    return "Currency must be a 3-letter ISO code.";
+  }
+  if (reason === "status_locked" || reason === "not_draft") {
+    return "This entry cannot be changed in its current status.";
+  }
+  if (reason === "void_reason") {
+    return "A void reason is required.";
+  }
+  return "Please check the form and try again.";
 }
 
 /**
@@ -139,13 +159,25 @@ function createGivingAdminRouter(deps) {
   }
 
   function shellLocals(req, res, extra) {
+    if (variant === "branch") {
+      return buildBranchAdminShellLocals(req, res, {
+        env,
+        isProduction,
+        activeNav: "giving",
+        pageTitle: (extra && extra.pageTitle) || "Giving",
+        extra: {
+          shellKind: "branch",
+          ...(extra || {}),
+        },
+      });
+    }
     const tenant = resolveTenantForAuthorization(req);
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const base = {
-      pageTitle: "Giving",
+    return {
+      pageTitle: (extra && extra.pageTitle) || "Giving",
       activeNav: "giving",
-      shellKind,
+      shellKind: "hq",
       csrfToken,
       churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
       roleLabel: primaryRoleLabel(req),
@@ -153,15 +185,9 @@ function createGivingAdminRouter(deps) {
         req.v5Session && req.v5Session.session && req.v5Session.session.user
           ? req.v5Session.session.user.displayName
           : "",
+      hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
       ...(extra || {}),
     };
-    if (variant === "hq") {
-      base.hqBranchDisplayName = tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "";
-    } else {
-      base.branchDisplayName =
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "";
-    }
-    return base;
   }
 
   function validateCsrfPost(req, res) {
@@ -224,6 +250,31 @@ function createGivingAdminRouter(deps) {
     };
   }
 
+  async function loadScopedEntry(req, res, scope, id) {
+    if (!UUID_RE.test(id)) {
+      sendControlled(req, res, 404, "Giving entry not found.", shellKind);
+      return null;
+    }
+    const loaded = await getGivingEntry(getPool(), {
+      id,
+      churchId: scope.churchId,
+      scopeBranchId: scope.branchId,
+      actorUserId: scope.actorUserId,
+      tenant: scope.tenant,
+    });
+    if (!loaded.ok || !loaded.entry) {
+      sendControlled(
+        req,
+        res,
+        loaded.status === STATUS.FORBIDDEN ? 403 : 404,
+        "Giving entry not found.",
+        shellKind
+      );
+      return null;
+    }
+    return loaded.entry;
+  }
+
   function registerRoutes(mountPrefix, branchScoped) {
     router.get(mountPrefix, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res);
@@ -231,21 +282,26 @@ function createGivingAdminRouter(deps) {
       if (variant === "branch" && !scope.branchId) {
         return sendControlled(req, res, 403, "Branch scope required.", shellKind);
       }
-      const yearMonth = String((req.query && req.query.month) || currentYearMonth());
+      const yearMonthRaw = String((req.query && req.query.month) || currentYearMonth());
+      const yearMonth = /^\d{4}-\d{2}$/.test(yearMonthRaw) ? yearMonthRaw : currentYearMonth();
+      const status = String((req.query && req.query.status) || "").trim().toLowerCase();
       const listed = await listGivingEntries(getPool(), {
         churchId: scope.churchId,
         branchId: scope.branchId,
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
-        yearMonth: /^\d{4}-\d{2}$/.test(yearMonth) ? yearMonth : null,
+        yearMonth,
+        status: ENTRY_STATUSES.includes(status) ? status : null,
+        limit: LIST_LIMIT,
       });
       const summary = await getMonthlyGivingSummary(getPool(), {
         churchId: scope.churchId,
         branchId: scope.branchId,
-        yearMonth: /^\d{4}-\d{2}$/.test(yearMonth) ? yearMonth : currentYearMonth(),
+        yearMonth,
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
       });
+      const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
       if (!listed.ok) {
         return sendControlled(
           req,
@@ -260,8 +316,10 @@ function createGivingAdminRouter(deps) {
         shellLocals(req, res, {
           basePath: scope.basePath,
           entries: listed.entries,
+          categories: cats.ok ? cats.categories : [],
           summary: summary.ok ? summary.summary : null,
           yearMonth,
+          statusFilter: status,
           branchScoped,
           canCreate: Boolean(scope.branchId),
           saved: String((req.query && req.query.saved) || ""),
@@ -280,10 +338,12 @@ function createGivingAdminRouter(deps) {
         const html = renderView(
           "giving/admin-form.ejs",
           shellLocals(req, res, {
+            pageTitle: "Record giving",
             basePath: scope.basePath,
             entry: null,
             categories: cats.ok ? cats.categories : [],
             error: null,
+            formMode: "create",
           })
         );
         return res.status(200).type("html").send(html);
@@ -314,6 +374,7 @@ function createGivingAdminRouter(deps) {
           const html = renderView(
             "giving/admin-form.ejs",
             shellLocals(req, res, {
+              pageTitle: "Record giving",
               basePath: scope.basePath,
               entry: {
                 categoryKey: body.category_key || "",
@@ -324,7 +385,8 @@ function createGivingAdminRouter(deps) {
                 notes: body.notes || "",
               },
               categories: cats.ok ? cats.categories : [],
-              error: "Please check the form and try again.",
+              error: formError(created.reason),
+              formMode: "create",
             })
           );
           return res.status(400).type("html").send(html);
@@ -337,39 +399,47 @@ function createGivingAdminRouter(deps) {
       const scope = await resolveScope(req, res);
       if (!scope) return;
       const id = String(req.params.id || "");
-      if (!UUID_RE.test(id)) {
-        return sendControlled(req, res, 404, "Giving entry not found.", shellKind);
-      }
-      const loaded = await getGivingEntry(getPool(), {
-        id,
-        churchId: scope.churchId,
-        scopeBranchId: scope.branchId,
-        actorUserId: scope.actorUserId,
-        tenant: scope.tenant,
-      });
-      if (!loaded.ok || !loaded.entry) {
-        return sendControlled(
-          req,
-          res,
-          loaded.status === STATUS.FORBIDDEN ? 403 : 404,
-          "Giving entry not found.",
-          shellKind
-        );
-      }
+      const entry = await loadScopedEntry(req, res, scope, id);
+      if (!entry) return;
       const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
       const html = renderView(
         "giving/admin-detail.ejs",
         shellLocals(req, res, {
+          pageTitle: entry.categoryLabel || "Giving entry",
           basePath: scope.basePath,
-          entry: loaded.entry,
+          entry,
           categories: cats.ok ? cats.categories : [],
           isHq: variant === "hq",
-          canEdit: loaded.entry.status === "draft",
+          canEdit: entry.status === "draft",
           canVoid:
-            loaded.entry.status === "draft" ||
-            (variant === "hq" && loaded.entry.status !== "void"),
+            entry.status === "draft" ||
+            (variant === "hq" && entry.status !== "void"),
           saved: String((req.query && req.query.saved) || ""),
           error: null,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    });
+
+    router.get(`${mountPrefix}/:id/edit`, rejectApex, gate, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const id = String(req.params.id || "");
+      const entry = await loadScopedEntry(req, res, scope, id);
+      if (!entry) return;
+      if (entry.status !== "draft") {
+        return res.redirect(303, `${scope.basePath}/${id}`);
+      }
+      const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
+      const html = renderView(
+        "giving/admin-form.ejs",
+        shellLocals(req, res, {
+          pageTitle: "Edit giving entry",
+          basePath: scope.basePath,
+          entry,
+          categories: cats.ok ? cats.categories : [],
+          error: null,
+          formMode: "edit",
         })
       );
       return res.status(200).type("html").send(html);
@@ -380,9 +450,8 @@ function createGivingAdminRouter(deps) {
       const scope = await resolveScope(req, res);
       if (!scope) return;
       const id = String(req.params.id || "");
-      if (!UUID_RE.test(id)) {
-        return sendControlled(req, res, 404, "Giving entry not found.", shellKind);
-      }
+      const existing = await loadScopedEntry(req, res, scope, id);
+      if (!existing) return;
       const body = req.body || {};
       const updated = await updateGivingEntry(getPool(), {
         id,
@@ -398,13 +467,29 @@ function createGivingAdminRouter(deps) {
         notes: body.notes,
       });
       if (!updated.ok) {
-        return sendControlled(
-          req,
-          res,
-          updated.status === STATUS.FORBIDDEN || updated.status === STATUS.POLICY ? 403 : 400,
-          "Could not update giving entry.",
-          shellKind
+        const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
+        const html = renderView(
+          "giving/admin-form.ejs",
+          shellLocals(req, res, {
+            pageTitle: "Edit giving entry",
+            basePath: scope.basePath,
+            entry: {
+              ...existing,
+              categoryKey: body.category_key || existing.categoryKey,
+              givingDate: body.giving_date || existing.givingDate,
+              amount: body.amount || existing.amount,
+              currency: body.currency || existing.currency,
+              reference: body.reference != null ? body.reference : existing.reference,
+              notes: body.notes != null ? body.notes : existing.notes,
+            },
+            categories: cats.ok ? cats.categories : [],
+            error: formError(updated.reason),
+            formMode: "edit",
+          })
         );
+        const code =
+          updated.status === STATUS.FORBIDDEN || updated.status === STATUS.POLICY ? 403 : 400;
+        return res.status(code).type("html").send(html);
       }
       return res.redirect(303, `${scope.basePath}/${id}?saved=updated`);
     });
@@ -425,7 +510,7 @@ function createGivingAdminRouter(deps) {
         tenant: scope.tenant,
       });
       if (!submitted.ok) {
-        return sendControlled(req, res, 400, "Could not submit giving entry.", shellKind);
+        return sendControlled(req, res, 400, formError(submitted.reason), shellKind);
       }
       return res.redirect(303, `${scope.basePath}/${id}?saved=submitted`);
     });
@@ -452,7 +537,7 @@ function createGivingAdminRouter(deps) {
           req,
           res,
           voided.status === STATUS.FORBIDDEN || voided.status === STATUS.POLICY ? 403 : 400,
-          "Could not void giving entry.",
+          formError(voided.reason),
           shellKind
         );
       }

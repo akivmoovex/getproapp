@@ -3,24 +3,113 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <p><a href="<%= basePath %>">Back</a></p>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <h1><%= form.title %></h1>
-  <p><%= form.status %></p>
-  <% if (form.status === 'draft') { %>
-    <form method="post" action="<%= basePath %>/<%= form.id %>/publish">
+<%
+  var formItem = form || {};
+  var rows = submissions || [];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    if (key === 'submitted') return 'Submitted';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published' || key === 'submitted') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+%>
+
+<section class="bb-fr-admin bb-fr-form-detail" data-bb-forms-admin-detail="1" data-bb-form-status="<%= formItem.status %>">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="<%= basePath %>">Forms</a>
+        <span aria-hidden="true">›</span>
+        <span>Detail</span>
+      </p>
+      <h1 class="bb-ba-page-head__title"><%= formItem.title %></h1>
+      <p class="bb-ba-lede">
+        <span class="bb-ba-chip <%= statusChip(formItem.status) %>"><%= statusLabel(formItem.status) %></span>
+        <% if (formItem.description) { %> · <%= formItem.description %><% } %>
+      </p>
+    </div>
+    <% if (formItem.status === 'draft') { %>
+    <form method="post" action="<%= basePath %>/<%= formItem.id %>/publish">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <button type="submit">Publish</button>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-form-publish="1">Publish</button>
     </form>
+    <% } %>
+  </header>
+
+  <% if (saved === '1' || saved === 'published') { %>
+  <p class="bb-ba-ok" role="status"><%= saved === 'published' ? 'Form published.' : 'Saved.' %></p>
   <% } %>
-  <h2>Submissions</h2>
-  <% if (!submissions.length) { %><p>No submissions yet.</p><% } else { %>
-    <ul>
-      <% submissions.forEach(function (s) { %>
-        <li data-bb-submission="<%= s.id %>"><%= s.submittedAt %> · <%= s.status %></li>
+
+  <section class="bb-ba-panel" data-bb-form-schema="1">
+    <h2 class="bb-ba-section-title">Schema fields</h2>
+    <% var fields = (formItem.schema && formItem.schema.fields) || []; %>
+    <% if (!fields.length) { %>
+    <p class="bb-ba-empty">No fields defined.</p>
+    <% } else { %>
+    <ul class="bb-fr-field-list">
+      <% fields.forEach(function (f) { %>
+      <li data-bb-field-type="<%= f.type %>" data-bb-field-key="<%= f.key %>">
+        <strong><%= f.label || f.key %></strong>
+        <span class="bb-ba-muted"><%= f.type %><%= f.required ? ' · required' : '' %></span>
+      </li>
       <% }) %>
     </ul>
-  <% } %>
+    <% } %>
+  </section>
+
+  <section class="bb-ba-panel" data-bb-form-submissions="1">
+    <h2 class="bb-ba-section-title">Submission review</h2>
+    <p class="bb-ba-hint">
+      Answers are shown for branch-scoped review only. Member contact directories outside the form answers are not loaded here.
+    </p>
+    <% if (!rows.length) { %>
+    <p class="bb-ba-empty" role="status">No submissions yet.</p>
+    <% } else { %>
+      <% rows.forEach(function (s) { %>
+      <article class="bb-fr-submission" data-bb-submission="<%= s.id %>" data-bb-submission-status="<%= s.status %>">
+        <header class="bb-fr-submission__head">
+          <span class="bb-ba-chip <%= statusChip(s.status) %>"><%= statusLabel(s.status) %></span>
+          <span class="bb-ba-muted"><%= formatWhen(s.submittedAt) %></span>
+          <% if (s.memberRef) { %><span class="bb-ba-muted">Member · <%= s.memberRef %></span><% } %>
+        </header>
+        <% if (!s.answerRows || !s.answerRows.length) { %>
+        <p class="bb-ba-muted">No answers recorded.</p>
+        <% } else { %>
+        <dl class="bb-ann-dl bb-fr-answers">
+          <% s.answerRows.forEach(function (row) { %>
+          <div data-bb-answer-key="<%= row.key %>">
+            <dt><%= row.label %></dt>
+            <dd><%= row.value %></dd>
+          </div>
+          <% }) %>
+        </dl>
+        <% } %>
+      </article>
+      <% }) %>
+    <% } %>
+  </section>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

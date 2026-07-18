@@ -2,7 +2,17 @@
 
 Last updated: 2026-07-18
 
-## Phase: V5 final migration readiness audit — complete
+## Phase: V5 implementation + Stitch reconciliation audit — complete
+
+| Item | Status |
+|------|--------|
+| `docs/database/V5_IMPLEMENTATION_AND_STITCH_RECONCILIATION.md` | Done |
+| Named V5 suites (re-run this audit) | **37/37 PASS** (453 tests, 0 skipped) |
+| Live apex | Foundation Home/Login only |
+| Stitch visual parity | Not started on V5 shells |
+| Hosted migrate verify / cutover | **Not done** |
+
+## Prior: V5 final migration readiness audit — complete
 
 | Item | Status |
 |------|--------|

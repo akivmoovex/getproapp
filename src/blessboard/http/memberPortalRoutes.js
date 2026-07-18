@@ -29,18 +29,79 @@ const {
   updateMemberPortalProfile,
   STATUS: PORTAL_STATUS,
 } = require("../services/memberPortalService");
+const { listPublishedGivingMethods } = require("../services/publicContentReadService");
+const { safeExternalUrl } = require("./tenantPublicSafe");
+const {
+  buildMemberShellLocals,
+  PORTAL_MODULES,
+  PORTAL_NAV,
+  PORTAL_MOBILE_TABS,
+} = require("./memberShellLocals");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
-const PORTAL_MODULES = Object.freeze([
-  { key: "announcements", label: "Announcements" },
-  { key: "events", label: "Events" },
-  { key: "ministries", label: "Ministries" },
-  { key: "resources", label: "Resources" },
-  { key: "forms", label: "Forms" },
-  { key: "requests", label: "Requests" },
-  { key: "giving", label: "Giving" },
-]);
+function givingMethodIcon(methodType) {
+  const t = String(methodType || "").toLowerCase();
+  if (t.includes("bank") || t.includes("transfer") || t.includes("wire")) {
+    return "account_balance";
+  }
+  if (t.includes("mobile") || t.includes("momo") || t.includes("airtel") || t.includes("mtn")) {
+    return "smartphone";
+  }
+  if (t.includes("person") || t.includes("cash") || t.includes("offering")) {
+    return "volunteer_activism";
+  }
+  return "payments";
+}
+
+/**
+ * Published giving methods for member info screen — no payment processing fields.
+ * @param {object[]} items
+ */
+function mapMemberGivingMethods(items) {
+  return (items || []).map((row) => ({
+    methodType: row.methodType,
+    label: row.label,
+    instructions: row.instructions,
+    externalUrl: safeExternalUrl(row.externalUrl),
+    icon: givingMethodIcon(row.methodType),
+  }));
+}
+
+/**
+ * Presentation-only mapping of profile update reasons → field errors.
+ * Does not change validation rules in memberPortalService.
+ * @param {string|null|undefined} reason
+ * @returns {{ fieldErrors: Record<string, string>, summaryItems: string[] }}
+ */
+function mapMemberProfileFieldErrors(reason) {
+  const fieldErrors = {};
+  const summaryItems = [];
+  const code = String(reason || "").trim();
+  if (!code) {
+    return { fieldErrors, summaryItems };
+  }
+  if (code.startsWith("immutable:")) {
+    summaryItems.push("That field cannot be changed from your member profile.");
+    return { fieldErrors, summaryItems };
+  }
+  const messages = {
+    preferred_name: "Enter a preferred name without special markup (max 100 characters).",
+    email_display: "Enter a valid display email, or leave blank to use your sign-in email.",
+    phone: "Enter a valid phone number, or leave it blank.",
+    contact_required: "Keep at least one contact method: your sign-in email or a phone number.",
+  };
+  const msg = messages[code] || "Please check your profile details and try again.";
+  if (code === "preferred_name") fieldErrors.preferredName = msg;
+  else if (code === "email_display") fieldErrors.emailDisplay = msg;
+  else if (code === "phone") fieldErrors.phone = msg;
+  else if (code === "contact_required") {
+    fieldErrors.phone = msg;
+    fieldErrors.emailDisplay = msg;
+  }
+  summaryItems.push(msg);
+  return { fieldErrors, summaryItems };
+}
 
 /**
  * @param {string} relativePath
@@ -83,36 +144,38 @@ function createMemberPortalRouter(deps) {
   /**
    * @param {import('express').Request} req
    * @param {import('express').Response} res
-   * @param {'home'|'profile'} activeNav
+   * @param {string} activeNav
    * @param {object} [extra]
    */
   function shellLocals(req, res, activeNav, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
-    const access = req.blessBoardMemberAccess || null;
-    const preferred =
-      access && access.member && access.member.preferredName
-        ? access.member.preferredName
-        : session && session.user
-          ? session.user.displayName
-          : "";
-    return {
-      pageTitle: activeNav === "profile" ? "Profile" : "Member home",
+    return buildMemberShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      branchDisplayName:
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
-      displayName: preferred || "",
-      portalModules: PORTAL_MODULES,
-      ...(extra || {}),
-    };
+      extra,
+    });
   }
 
   router.get("/member", rejectApex, requireMember, (req, res) => {
     const html = renderMemberView("member/dashboard.ejs", shellLocals(req, res, "home"));
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/member/giving", rejectApex, requireMember, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.church || !tenant.primaryBranch) {
+      return res.status(403).type("text").send("Forbidden");
+    }
+    const listed = await listPublishedGivingMethods(getPool(), {
+      churchId: tenant.church.id,
+      branchId: tenant.primaryBranch.id,
+    });
+    const html = renderMemberView(
+      "member/giving.ejs",
+      shellLocals(req, res, "giving", {
+        givingMethods: listed.ok ? mapMemberGivingMethods(listed.items) : [],
+      })
+    );
     return res.status(200).type("html").send(html);
   });
 
@@ -131,7 +194,10 @@ function createMemberPortalRouter(deps) {
       shellLocals(req, res, "profile", {
         profile: loaded.profile,
         error: null,
+        fieldErrors: {},
+        errorSummaryItems: [],
         saved: String((req.query && req.query.saved) || "") === "1",
+        editMode: String((req.query && req.query.edit) || "") === "1",
       })
     );
     return res.status(200).type("html").send(html);
@@ -177,22 +243,42 @@ function createMemberPortalRouter(deps) {
           churchId: tenant.church.id,
           branchId: tenant.primaryBranch.id,
         });
+        const mapped = mapMemberProfileFieldErrors(updated.reason);
         const html = renderMemberView(
           "member/profile.ejs",
           shellLocals(req, res, "profile", {
-            profile: loaded.profile || {
-              preferredName: String(body.preferredName || ""),
-              emailDisplay: String(body.emailDisplay || ""),
-              phoneDisplay: String(body.phone || ""),
-              firstName: "",
-              lastName: "",
-              emailNormalized: "",
-              phoneNormalized: null,
-              membershipStatus: "active",
-              isPrimaryBranch: true,
-            },
-            error: "Please check your profile details and try again.",
+            profile: loaded.profile
+              ? {
+                  ...loaded.profile,
+                  preferredName:
+                    body.preferredName !== undefined
+                      ? String(body.preferredName || "")
+                      : loaded.profile.preferredName,
+                  emailDisplay:
+                    body.emailDisplay !== undefined
+                      ? String(body.emailDisplay || "")
+                      : loaded.profile.emailDisplay,
+                  phoneDisplay:
+                    body.phone !== undefined
+                      ? String(body.phone || "")
+                      : loaded.profile.phoneDisplay,
+                }
+              : {
+                  preferredName: String(body.preferredName || ""),
+                  emailDisplay: String(body.emailDisplay || ""),
+                  phoneDisplay: String(body.phone || ""),
+                  firstName: "",
+                  lastName: "",
+                  emailNormalized: "",
+                  phoneNormalized: null,
+                  membershipStatus: "active",
+                  isPrimaryBranch: true,
+                },
+            error: mapped.summaryItems[0] || "Please check your profile details and try again.",
+            fieldErrors: mapped.fieldErrors,
+            errorSummaryItems: mapped.summaryItems,
             saved: false,
+            editMode: true,
           })
         );
         return res.status(400).type("html").send(html);
@@ -238,5 +324,8 @@ function createMemberPortalRouter(deps) {
 
 module.exports = {
   createMemberPortalRouter,
+  mapMemberProfileFieldErrors,
   PORTAL_MODULES,
+  PORTAL_NAV,
+  PORTAL_MOBILE_TABS,
 };

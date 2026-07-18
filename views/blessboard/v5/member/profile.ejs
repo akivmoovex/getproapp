@@ -1,65 +1,172 @@
 <%- include('../partials/member-shell-start') %>
-  <h1>Your profile</h1>
-  <p class="bb-mp-lede">
-    Update how your name and contact details appear. Membership and church details are managed by your church.
-  </p>
-  <% if (error) { %>
-    <p class="bb-mp-error" role="alert"><%= error %></p>
-  <% } %>
+<%
+  var fe = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
+  var summaryItems = typeof errorSummaryItems !== 'undefined' && errorSummaryItems && errorSummaryItems.length
+    ? errorSummaryItems
+    : (error ? [error] : []);
+  var hasErrors = Boolean(error) || summaryItems.length > 0;
+  var showEdit = Boolean(editMode) || hasErrors;
+  var legalName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || '—';
+  var displayHeading = profile.preferredName || legalName;
+  function fieldDescribedBy(key, extraIds) {
+    var ids = [];
+    if (fe[key]) ids.push('err-' + key);
+    if (extraIds) ids = ids.concat(extraIds);
+    return ids.length ? ids.join(' ') : null;
+  }
+%>
+
+<section class="bb-mp-profile" data-bb-member-profile="1">
+  <header class="bb-mp-page-head">
+    <div>
+      <h1 class="bb-mp-page-head__title">Member profile</h1>
+      <p class="bb-mp-lede">
+        Your details at
+        <strong><%= churchDisplayName %></strong><% if (branchDisplayName) { %>
+        · <%= branchDisplayName %><% } %>.
+        Membership and legal identity are managed by your church.
+      </p>
+    </div>
+    <% if (!showEdit) { %>
+    <a class="bb-mp-btn bb-mp-btn--primary" href="/member/profile?edit=1#profile-form">
+      <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+      Edit profile
+    </a>
+    <% } %>
+  </header>
+
   <% if (saved) { %>
-    <p class="bb-mp-ok" role="status">Profile saved.</p>
+  <p class="bb-mp-ok" role="status">Profile saved.</p>
   <% } %>
 
-  <dl class="bb-mp-readonly">
-    <div>
-      <dt>Legal name</dt>
-      <dd><%= [profile.firstName, profile.lastName].filter(Boolean).join(' ') || '—' %></dd>
+  <div class="bb-mp-profile__grid">
+    <article class="bb-mp-panel bb-mp-profile__overview">
+      <p class="bb-mp-badge" data-bb-member-verified="1">
+        <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+        Verified member
+      </p>
+      <h2 class="bb-mp-profile__name"><%= displayHeading %></h2>
+      <p class="bb-mp-profile__meta">
+        <% if (profile.membershipStatus === 'active') { %>Active membership<% } else { %><%= profile.membershipStatus %><% } %>
+        <% if (branchDisplayName) { %> · <%= branchDisplayName %><% } %>
+      </p>
+    </article>
+
+    <article class="bb-mp-panel">
+      <h2 class="bb-mp-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+        Personal information
+      </h2>
+      <dl class="bb-mp-kv">
+        <div>
+          <dt>Legal name</dt>
+          <dd><%= legalName %></dd>
+        </div>
+        <div>
+          <dt>Preferred name</dt>
+          <dd><%= profile.preferredName || '—' %></dd>
+        </div>
+        <div>
+          <dt>Sign-in email</dt>
+          <dd><%= profile.emailNormalized || '—' %></dd>
+        </div>
+        <div>
+          <dt>Display email</dt>
+          <dd><%= profile.emailDisplay || profile.emailNormalized || '—' %></dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd><%= profile.phoneDisplay || profile.phoneNormalized || '—' %></dd>
+        </div>
+        <div>
+          <dt>Membership</dt>
+          <dd><%= profile.membershipStatus === 'active' ? 'Active' : profile.membershipStatus %></dd>
+        </div>
+      </dl>
+    </article>
+  </div>
+
+  <section class="bb-mp-panel" id="profile-form" data-bb-profile-form="1">
+    <h2 class="bb-mp-panel__title">
+      <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+      Update contact details
+    </h2>
+    <p class="bb-mp-lede bb-mp-lede--tight">
+      You can change preferred name, display email, and phone. Legal name and sign-in email stay with your church record.
+    </p>
+
+    <% if (hasErrors) { %>
+    <div class="bb-mp-alert bb-mp-alert--error" role="alert" id="profile-error-summary" tabindex="-1">
+      <p class="bb-mp-alert__title">We could not save your profile</p>
+      <ul>
+        <% summaryItems.forEach(function (item) { %>
+        <li><%= item %></li>
+        <% }) %>
+      </ul>
     </div>
-    <div>
-      <dt>Membership</dt>
-      <dd><%= profile.membershipStatus === 'active' ? 'Active' : profile.membershipStatus %></dd>
-    </div>
-    <div>
-      <dt>Sign-in email</dt>
-      <dd><%= profile.emailNormalized || '—' %></dd>
-    </div>
-  </dl>
+    <% } %>
 
-  <form method="post" action="/member/profile" class="bb-mp-form">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <form method="post" action="/member/profile" class="bb-mp-form bb-mp-form--panel" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-    <label for="preferredName">Preferred name</label>
-    <input
-      id="preferredName"
-      name="preferredName"
-      type="text"
-      maxlength="100"
-      value="<%= profile.preferredName || '' %>"
-      autocomplete="nickname"
-    />
+      <div class="bb-mp-field<%= fe.preferredName ? ' is-invalid' : '' %>">
+        <label for="preferredName">Preferred name</label>
+        <input
+          id="preferredName"
+          name="preferredName"
+          type="text"
+          maxlength="100"
+          value="<%= profile.preferredName || '' %>"
+          autocomplete="nickname"
+          <% if (fe.preferredName) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('preferredName') %>"<% } %>
+        />
+        <% if (fe.preferredName) { %>
+        <p class="bb-mp-field__error" id="err-preferredName"><%= fe.preferredName %></p>
+        <% } %>
+      </div>
 
-    <label for="emailDisplay">Display email</label>
-    <input
-      id="emailDisplay"
-      name="emailDisplay"
-      type="text"
-      maxlength="254"
-      value="<%= profile.emailDisplay || profile.emailNormalized || '' %>"
-      autocomplete="email"
-    />
-    <p class="bb-mp-hint">Changes how your email is shown. Your sign-in email stays the same.</p>
+      <div class="bb-mp-field<%= fe.emailDisplay ? ' is-invalid' : '' %>">
+        <label for="emailDisplay">Display email</label>
+        <input
+          id="emailDisplay"
+          name="emailDisplay"
+          type="email"
+          maxlength="254"
+          value="<%= profile.emailDisplay || profile.emailNormalized || '' %>"
+          autocomplete="email"
+          <% if (fe.emailDisplay) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('emailDisplay', ['hint-emailDisplay']) %>"<% } else { %>aria-describedby="hint-emailDisplay"<% } %>
+        />
+        <p class="bb-mp-hint" id="hint-emailDisplay">Changes how your email is shown. Your sign-in email stays the same.</p>
+        <% if (fe.emailDisplay) { %>
+        <p class="bb-mp-field__error" id="err-emailDisplay"><%= fe.emailDisplay %></p>
+        <% } %>
+      </div>
 
-    <label for="phone">Phone</label>
-    <input
-      id="phone"
-      name="phone"
-      type="tel"
-      maxlength="32"
-      value="<%= profile.phoneDisplay || profile.phoneNormalized || '' %>"
-      placeholder="+260…"
-      autocomplete="tel"
-    />
+      <div class="bb-mp-field<%= fe.phone ? ' is-invalid' : '' %>">
+        <label for="phone">Phone</label>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          maxlength="32"
+          value="<%= profile.phoneDisplay || profile.phoneNormalized || '' %>"
+          placeholder="+260…"
+          autocomplete="tel"
+          <% if (fe.phone) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('phone') %>"<% } %>
+        />
+        <% if (fe.phone) { %>
+        <p class="bb-mp-field__error" id="err-phone"><%= fe.phone %></p>
+        <% } %>
+      </div>
 
-    <button type="submit">Save profile</button>
-  </form>
+      <div class="bb-mp-form__actions">
+        <button type="submit" class="bb-mp-btn bb-mp-btn--primary">Save profile</button>
+        <% if (showEdit) { %>
+        <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/profile">Cancel</a>
+        <% } %>
+      </div>
+    </form>
+  </section>
+</section>
+
 <%- include('../partials/member-shell-end') %>

@@ -1,8 +1,46 @@
 <%- include('../partials/member-shell-start') %>
-  <p><a href="/member/resources">Back</a></p>
-  <h1><%= resource.title %></h1>
-  <% if (resource.description) { %><p><%= resource.description %></p><% } %>
-  <% if (resource.mediaAssetId) { %>
-    <p><a href="/member/resources/<%= resource.id %>/file">Open attachment</a></p>
-  <% } %>
+
+<section class="bb-mp-fr-detail" data-bb-member-resource-detail="1">
+  <p class="bb-mp-back">
+    <a href="/member/resources">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to resources
+    </a>
+  </p>
+
+  <article class="bb-mp-part-detail" data-bb-resource="<%= resource.id %>">
+    <div class="bb-mp-ann-chips" aria-label="Resource type">
+      <% if (resource.mediaAssetId) { %>
+      <span class="bb-mp-chip bb-mp-chip--open">Downloadable file</span>
+      <% } else { %>
+      <span class="bb-mp-chip bb-mp-chip--request">Information</span>
+      <% } %>
+    </div>
+
+    <h1 class="bb-mp-part-detail__title"><%= resource.title %></h1>
+
+    <% if (resource.description) { %>
+    <div class="bb-mp-ann-body"><%= resource.description %></div>
+    <% } %>
+
+    <div class="bb-mp-part-detail__actions">
+      <% if (resource.mediaAssetId) { %>
+      <a
+        class="bb-mp-btn bb-mp-btn--primary"
+        href="/member/resources/<%= resource.id %>/file"
+        data-bb-resource-download="1"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">download</span>
+        Download file
+      </a>
+      <p class="bb-mp-hint">
+        Downloads are authorized for your membership on this church site and are not shared publicly.
+      </p>
+      <% } else { %>
+      <p class="bb-mp-part-detail__state" role="status">No file is attached to this resource.</p>
+      <% } %>
+    </div>
+  </article>
+</section>
+
 <%- include('../partials/member-shell-end') %>

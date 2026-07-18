@@ -227,6 +227,82 @@ async function createAttendanceEvent(db, input) {
   }
 }
 
+/**
+ * Update draft event metadata (title / type / date). Category counts use upsertAttendanceEntry.
+ * Branch may only edit metadata while draft.
+ */
+async function updateAttendanceEvent(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const eventId = String((input && input.id) || "").trim();
+  const actorUserId = String((input && input.actorUserId) || "").trim();
+  if (!churchId || !UUID_RE.test(eventId) || !actorUserId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: "scope" };
+  }
+  const title = plainText(input.title, "title", { required: true, max: 200 });
+  if (!title.ok) return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: title.reason };
+  const eventType = String(input.eventType || "").trim().toLowerCase();
+  if (!EVENT_TYPES.includes(eventType)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: "event_type" };
+  }
+  const eventDate = parseEventDate(input.eventDate);
+  if (!eventDate.ok) {
+    return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: eventDate.reason };
+  }
+  let eventAt = null;
+  let clearEventAt = false;
+  if (input.eventAt === null || input.eventAt === "") {
+    clearEventAt = true;
+  } else if (input.eventAt != null) {
+    const d = new Date(String(input.eventAt));
+    if (Number.isNaN(d.getTime())) {
+      return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: "event_at" };
+    }
+    eventAt = d.toISOString();
+  }
+
+  try {
+    return await withClient(db, async (client) => {
+      const existing = await repo.findEventById(client, eventId);
+      if (!existing || String(existing.churchId) !== churchId) {
+        return { ok: false, status: STATUS.NOT_FOUND, event: null };
+      }
+      if (input.tenant) {
+        const authz = await authorizeActor(client, {
+          actorUserId,
+          tenant: input.tenant,
+          branchId: existing.branchId,
+        });
+        if (!authz.ok) {
+          return { ok: false, status: STATUS.FORBIDDEN, event: null, reason: authz.reason };
+        }
+        if (authz.mode === "branch") {
+          if (input.scopeBranchId && String(input.scopeBranchId) !== String(existing.branchId)) {
+            return { ok: false, status: STATUS.FORBIDDEN, event: null, reason: "branch_scope" };
+          }
+          if (existing.status !== "draft") {
+            return { ok: false, status: STATUS.POLICY, event: null, reason: "status_locked" };
+          }
+        } else if (existing.status === "archived") {
+          return { ok: false, status: STATUS.POLICY, event: null, reason: "archived" };
+        }
+      } else if (existing.status === "archived") {
+        return { ok: false, status: STATUS.POLICY, event: null, reason: "archived" };
+      }
+
+      const updated = await repo.updateEventMeta(client, eventId, {
+        title: title.value,
+        eventType,
+        eventDate: eventDate.value,
+        eventAt,
+        clearEventAt,
+      });
+      return { ok: true, status: STATUS.OK, event: await loadBundle(client, updated) };
+    });
+  } catch (err) {
+    return { ...mapDbError(err), event: null };
+  }
+}
+
 async function upsertAttendanceEntry(db, input) {
   const churchId = String((input && input.churchId) || "").trim();
   const eventId = String((input && input.attendanceEventId) || "").trim();
@@ -498,6 +574,7 @@ async function listAttendanceEvents(db, input) {
         churchId,
         branchId: branchId || undefined,
         status: input.status || null,
+        eventType: input.eventType || null,
         yearMonth: input.yearMonth || null,
         limit: input.limit,
       });
@@ -575,6 +652,7 @@ module.exports = {
   EVENT_TYPES,
   CATEGORIES,
   createAttendanceEvent,
+  updateAttendanceEvent,
   upsertAttendanceEntry,
   submitAttendanceEvent,
   approveAttendanceEvent,

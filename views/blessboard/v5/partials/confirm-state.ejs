@@ -1,0 +1,25 @@
+<%#
+  Confirmation state panel (non-modal). Locals: title, body, confirmHref, confirmLabel, cancelHref, cancelLabel, icon
+%>
+<%
+  var _title = typeof title !== 'undefined' && title ? title : 'Please confirm';
+  var _body = typeof body !== 'undefined' ? body : '';
+  var _icon = typeof icon !== 'undefined' && icon ? icon : 'help';
+%>
+<div class="bb-ds-state" role="region" aria-label="<%= _title %>" data-bb-ds="confirm-state">
+  <div class="bb-ds-state__icon">
+    <%- include('./icon', { name: _icon }) %>
+  </div>
+  <h2 class="bb-ds-state__title"><%= _title %></h2>
+  <% if (_body) { %>
+  <p class="bb-ds-state__body"><%= _body %></p>
+  <% } %>
+  <p class="bb-ds-modal__actions bb-ds-actions--center">
+    <% if (typeof cancelHref !== 'undefined' && cancelHref) { %>
+    <a class="bb-ds-btn bb-ds-btn--secondary" href="<%= cancelHref %>"><%= typeof cancelLabel !== 'undefined' && cancelLabel ? cancelLabel : 'Cancel' %></a>
+    <% } %>
+    <% if (typeof confirmHref !== 'undefined' && confirmHref) { %>
+    <a class="bb-ds-btn bb-ds-btn--primary" href="<%= confirmHref %>"><%= typeof confirmLabel !== 'undefined' && confirmLabel ? confirmLabel : 'Confirm' %></a>
+    <% } %>
+  </p>
+</div>

@@ -36,6 +36,7 @@ const {
   ensureChurchSettingsInitialized,
   updateChurchSettings,
 } = require("../src/blessboard/services/blessBoardSettingsService");
+const { createGivingMethod } = require("../src/blessboard/services/publicContentAdminService");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
@@ -302,6 +303,54 @@ describe("blessboard member portal", () => {
     assert.equal(res.text.includes(branchA.id), false);
   });
 
+  it("renders shared member shell chrome with implemented nav only", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const res = await request(app)
+      .get("/member")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser))
+      .set("Accept", "text/html");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-shell="member"/);
+    assert.match(res.text, /data-bb-nav="desktop-sidebar"/);
+    assert.match(res.text, /data-bb-nav="mobile-tabs"/);
+    assert.match(res.text, /data-bb-nav="mobile-header"/);
+    assert.match(res.text, /data-bb-member-dashboard="1"/);
+    assert.match(res.text, /href="\/member\/announcements"/);
+    assert.match(res.text, /href="\/member\/events"/);
+    assert.match(res.text, /href="\/member\/ministries"/);
+    assert.match(res.text, /href="\/member\/resources"/);
+    assert.match(res.text, /href="\/member\/forms"/);
+    assert.match(res.text, /href="\/member\/requests"/);
+    assert.match(res.text, /href="\/member\/profile"/);
+    assert.match(res.text, /href="\/member\/giving"/);
+    assert.doesNotMatch(res.text, /href="\/member\/prayer"/);
+    assert.match(
+      res.text,
+      /data-bb-module="giving"[^>]*data-bb-module-enabled="1"|data-bb-module-enabled="1"[^>]*data-bb-module="giving"/
+    );
+    assert.match(
+      res.text,
+      /data-bb-module="prayer"[^>]*data-bb-module-enabled="0"|data-bb-module-enabled="0"[^>]*data-bb-module="prayer"/
+    );
+    assert.match(res.text, /action="\/member\/logout"/);
+    assert.match(res.text, /name="_csrf"/);
+  });
+
+  it("carries shared shell nav onto other member module pages", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const res = await request(app)
+      .get("/member/announcements")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser))
+      .set("Accept", "text/html");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-shell="member"/);
+    assert.match(res.text, /data-bb-nav="desktop-sidebar"/);
+    assert.match(res.text, /href="\/member"/);
+    assert.match(res.text, /href="\/member\/profile"/);
+  });
+
   it("rejects admin role without membership", async (t) => {
     if (skipIfNeeded(t)) return;
     const res = await request(app)
@@ -340,6 +389,42 @@ describe("blessboard member portal", () => {
       .set("Cookie", sessionCookie(memberUser))
       .set("Accept", "text/plain");
     assert.equal(res.status, 403);
+  });
+
+  it("renders profile GUI with approved editable fields and accessible validation", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const form = await request(app)
+      .get("/member/profile")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser));
+    assert.equal(form.status, 200);
+    assert.match(form.text, /data-bb-member-profile="1"/);
+    assert.match(form.text, /name="preferredName"/);
+    assert.match(form.text, /name="emailDisplay"/);
+    assert.match(form.text, /name="phone"/);
+    assert.match(form.text, /name="_csrf"/);
+    assert.match(form.text, /Legal name/);
+    assert.match(form.text, /Sign-in email/);
+    assert.doesNotMatch(form.text, /name="firstName"/);
+    assert.doesNotMatch(form.text, /name="status"/);
+    assert.doesNotMatch(form.text, /name="membershipStatus"/);
+
+    const csrf = extractCookie(form, CSRF_COOKIE);
+    const bad = await request(app)
+      .post("/member/profile")
+      .set("Host", HOST_A)
+      .set("Cookie", `${sessionCookie(memberUser)}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        preferredName: "<bad>",
+        phone: "+15559876543",
+        emailDisplay: "Member@MP-A.Example.Test",
+      });
+    assert.equal(bad.status, 400);
+    assert.match(bad.text, /id="err-preferredName"/);
+    assert.match(bad.text, /aria-invalid="true"/);
+    assert.match(bad.text, /role="alert"/);
   });
 
   it("updates only low-risk profile fields", async (t) => {
@@ -466,6 +551,67 @@ describe("blessboard member portal", () => {
         /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
       );
     }
+  });
+
+  it("renders giving information without payment collection", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const empty = await request(app)
+      .get("/member/giving")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser));
+    assert.equal(empty.status, 200);
+    assert.match(empty.text, /data-bb-member-giving="1"/);
+    assert.match(empty.text, /data-bb-giving-info-only="1"/);
+    assert.doesNotMatch(empty.text, /card number|cvv|iban|name="card"|name="amount"/i);
+    assert.doesNotMatch(empty.text, new RegExp(churchA.id, "i"));
+
+    const published = await createGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      methodType: "bank_transfer",
+      label: "Member Bank Transfer",
+      instructions: "Use the published bank details from the church office.",
+      status: "published",
+    });
+    assert.equal(published.ok, true, published.reason);
+
+    const live = await request(app)
+      .get("/member/giving")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser));
+    assert.equal(live.status, 200);
+    assert.match(live.text, /data-bb-giving-methods="1"/);
+    assert.match(live.text, /Member Bank Transfer/);
+    assert.doesNotMatch(live.text, /card number|cvv|name="card"|name="amount"/i);
+    assert.doesNotMatch(live.text, /85%|Generate One-Time Link/i);
+  });
+
+  it("requires CSRF on member logout", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const home = await request(app)
+      .get("/member")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser));
+    assert.equal(home.status, 200);
+    const csrf = extractCookie(home, CSRF_COOKIE);
+    assert.ok(csrf);
+
+    const bad = await request(app)
+      .post("/member/logout")
+      .set("Host", HOST_A)
+      .set("Cookie", `${sessionCookie(memberUser)}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({ [CSRF_FIELD]: "not-the-token" });
+    assert.equal(bad.status, 403);
+
+    const ok = await request(app)
+      .post("/member/logout")
+      .set("Host", HOST_A)
+      .set("Cookie", `${sessionCookie(memberUser)}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.equal(ok.status, 303);
+    assert.equal(ok.headers.location, "/");
   });
 
   it("keeps V4 legacy wiring unchanged", () => {

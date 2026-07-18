@@ -1,8 +1,68 @@
 <%- include('../partials/hq-shell-start') %>
-  <h1>Branches</h1>
-  <p class="bb-hq-lede">
-    Active branches for <%= churchDisplayName %>. Select a branch to open branch administration when authorized.
-  </p>
-  <p class="bb-hq-lede">Active count: <strong data-bb-count="active-branches"><%= activeBranchCount %></strong></p>
-  <%- include('../partials/branch-selector', { branches: branches }) %>
+<%
+  var rows = branches || [];
+  function typeLabel(t) {
+    return String(t || '').toLowerCase() === 'hq' ? 'HQ' : 'Branch';
+  }
+%>
+
+<section class="bb-hq-branches" data-bb-hq-branches="1">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <h1 class="bb-hq-page-head__title">Branch registry</h1>
+      <p class="bb-hq-lede">
+        Active branches for <strong><%= churchDisplayName %></strong>.
+        Inactive branches are hidden. Select a branch to open branch administration when authorized.
+      </p>
+    </div>
+    <p class="bb-hq-stat" aria-label="Active branch count">
+      <span class="bb-hq-stat__label">Active</span>
+      <strong data-bb-count="active-branches"><%= activeBranchCount %></strong>
+    </p>
+  </header>
+
+  <% if (!rows.length) { %>
+  <div class="bb-hq-empty" data-bb-empty="branches" role="status">
+    No active branches are available for this church.
+  </div>
+  <% } else { %>
+  <div class="bb-hq-table-wrap">
+    <table class="bb-hq-table" data-bb-branch-list="1">
+      <thead>
+        <tr>
+          <th scope="col">Branch</th>
+          <th scope="col">Type</th>
+          <th scope="col">Key</th>
+          <th scope="col"><span class="bb-hq-sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (branch) { %>
+        <tr data-bb-branch-key="<%= branch.key %>">
+          <td>
+            <strong><%= branch.displayName %></strong>
+            <% if (branch.isPrimary) { %>
+            <span class="bb-hq-pill bb-hq-pill--primary">Primary</span>
+            <% } %>
+          </td>
+          <td><span class="bb-hq-pill"><%= typeLabel(branch.branchType) %></span></td>
+          <td><code class="bb-hq-key"><%= branch.key %></code></td>
+          <td class="bb-hq-table__actions">
+            <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="/hq/branches/<%= branch.key %>">
+              Open branch admin
+            </a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="bb-hq-panel" aria-labelledby="hq-selector-heading">
+    <h2 id="hq-selector-heading" class="bb-hq-section-title">Quick selector</h2>
+    <%- include('../partials/branch-selector', { branches: rows }) %>
+  </section>
+  <% } %>
+</section>
+
 <%- include('../partials/hq-shell-end') %>

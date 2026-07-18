@@ -244,6 +244,9 @@ describe("blessboard tenant-auth transfer http", () => {
     const apexGet = await request(app).get(`/login?tr=${encodeURIComponent(tr)}`).set("Host", "blessboard.org");
     assert.equal(apexGet.status, 200);
     assert.match(apexGet.text, new RegExp(host.replace(/\./g, "\\.")));
+    assert.doesNotMatch(apexGet.text, new RegExp(tr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.doesNotMatch(apexGet.text, /name="tr"/);
+    assert.equal(apexGet.headers["referrer-policy"], "no-referrer");
     const csrf = extractCookie(apexGet, CSRF_COOKIE);
     const match = apexGet.text.match(/name="_csrf" value="([^"]+)"/);
     assert.ok(csrf && match);
@@ -395,8 +398,13 @@ describe("blessboard tenant-auth transfer http", () => {
     const { sid, code } = await completeTenantLogin(HOST_A, "ta-hq@example.org", PASSWORD);
     const replay = await request(app)
       .get(`/auth/callback?code=${encodeURIComponent(code)}`)
-      .set("Host", HOST_A);
+      .set("Host", HOST_A)
+      .set("Accept", "text/html");
     assert.equal(replay.status, 400);
+    assert.match(replay.text, /already been used/i);
+    assert.match(replay.text, /data-bb-auth-error="consumed"/);
+    assert.doesNotMatch(replay.text, new RegExp(code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.equal(replay.headers["referrer-policy"], "no-referrer");
 
     const otherHost = await request(app)
       .get(`/auth/callback?code=${encodeURIComponent(code)}`)

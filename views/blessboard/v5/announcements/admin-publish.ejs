@@ -1,0 +1,64 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+<%
+  function audienceLabel(list) {
+    if (!list || !list.length) return '—';
+    return list.map(function (k) {
+      if (k === 'members') return 'Members';
+      if (k === 'admins') return 'Admins';
+      return k;
+    }).join(', ');
+  }
+%>
+
+<section class="bb-ann-admin" data-bb-announcement-admin-publish="1">
+  <header class="bb-ba-page-head">
+    <p class="bb-ba-breadcrumb">
+      <a href="<%= basePath %>">Announcements</a>
+      <span aria-hidden="true">›</span>
+      <a href="<%= basePath %>/<%= item.id %>"><%= item.title %></a>
+      <span aria-hidden="true">›</span>
+      <span>Confirm publish</span>
+    </p>
+    <h1 class="bb-ba-page-head__title">Confirm publish</h1>
+    <p class="bb-ba-lede">
+      Review audience and estimated delivery before publishing. This does not create member accounts or send email automatically.
+    </p>
+  </header>
+
+  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+
+  <section class="bb-ba-panel">
+    <h2 class="bb-ba-section-title"><%= item.title %></h2>
+    <p class="bb-ann-body"><%= item.body %></p>
+    <dl class="bb-ann-dl">
+      <div><dt>Audience</dt><dd><%= audienceLabel(item.audiences) %></dd></div>
+      <div><dt>Scope</dt><dd><%= item.branchId ? 'Branch' : 'Church-wide' %></dd></div>
+      <% if (item.delivery) { %>
+      <div><dt>Estimated eligible members</dt><dd data-bb-delivery="eligible"><%= item.delivery.eligibleCount %></dd></div>
+      <% } %>
+    </dl>
+  </section>
+
+  <form method="post" action="<%= basePath %>/<%= item.id %>/publish" class="bb-ba-decision" data-bb-ann-publish-form="1">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt && item.updatedAt.toISOString ? item.updatedAt.toISOString() : item.updatedAt %>" />
+    <label class="bb-ann-check">
+      <input type="checkbox" name="confirm_publish" value="1" required />
+      I confirm publishing this announcement to the selected audience in this scope
+    </label>
+    <div class="bb-ba-decision__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Confirm publish</button>
+    </div>
+  </form>
+</section>
+
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

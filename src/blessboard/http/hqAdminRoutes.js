@@ -1,8 +1,9 @@
 "use strict";
 
 /**
- * Minimal BlessBoard V5 church HQ shell + read-only branch selector.
+ * BlessBoard V5 church HQ shell + read-only branch selector.
  * Branch keys in URLs; church/branch identity from hostname UUID context + DB lookup.
+ * No fabricated summary metrics. Active branches only.
  */
 
 const fs = require("fs");
@@ -14,7 +15,7 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
+const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
@@ -31,10 +32,14 @@ const {
 } = require("../services/blessBoardSettingsService");
 const {
   CSRF_FIELD,
-  issueCsrfToken,
   validateCsrf,
-  setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
+const {
+  clearV5SessionCookie,
+  readV5SessionCookie,
+} = require("../../platform/session/v5SessionCookie");
+const { revokeV5Session } = require("../../platform/session/revokeV5Session");
+const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -92,22 +97,6 @@ function sendControlled(req, res, status, message) {
 }
 
 /**
- * @param {import('express').Request} req
- */
-function primaryRoleLabel(req) {
-  const roles =
-    req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-      ? req.blessBoardAuthorizationContext.effectiveRoles
-      : [];
-  const order = ["church_hq_admin", "platform_admin", "branch_admin"];
-  for (const key of order) {
-    const hit = roles.find((r) => r.roleKey === key);
-    if (hit) return formatRoleLabel(hit.roleKey);
-  }
-  return roles[0] ? formatRoleLabel(roles[0].roleKey) : "HQ admin";
-}
-
-/**
  * @param {{
  *   getPool: () => { query: Function },
  *   isApexHost: (req: import('express').Request) => boolean,
@@ -153,26 +142,16 @@ function createHqAdminRouter(deps) {
   /**
    * @param {import('express').Request} req
    * @param {import('express').Response} res
-   * @param {'home'|'branches'|'settings'} activeNav
-   * @param {object} listResult
+   * @param {string} activeNav
    * @param {object} [extra]
    */
-  function shellLocals(req, res, activeNav, listResult, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    return {
-      pageTitle:
-        activeNav === "branches" ? "Branches" : activeNav === "settings" ? "Church settings" : "Church HQ",
+  function shellLocals(req, res, activeNav, extra) {
+    return buildHqAdminShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      hqBranchDisplayName: tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "",
-      roleLabel: primaryRoleLabel(req),
-      branches: (listResult && listResult.branches) || [],
-      activeBranchCount: (listResult && listResult.activeCount) || 0,
-      ...(extra || {}),
-    };
+      extra,
+    });
   }
 
   async function loadBranchList(req, res) {
@@ -192,15 +171,53 @@ function createHqAdminRouter(deps) {
   router.get("/hq", rejectApex, gateHq, async (req, res) => {
     const listResult = await loadBranchList(req, res);
     if (!listResult) return;
-    const html = renderHqView("hq/dashboard.ejs", shellLocals(req, res, "home", listResult));
+    const html = renderHqView(
+      "hq/dashboard.ejs",
+      shellLocals(req, res, "home", {
+        branches: listResult.branches,
+        activeBranchCount: listResult.activeCount || 0,
+      })
+    );
     return res.status(200).type("html").send(html);
   });
 
   router.get("/hq/branches", rejectApex, gateHq, async (req, res) => {
     const listResult = await loadBranchList(req, res);
     if (!listResult) return;
-    const html = renderHqView("hq/branches.ejs", shellLocals(req, res, "branches", listResult));
+    const html = renderHqView(
+      "hq/branches.ejs",
+      shellLocals(req, res, "branches", {
+        branches: listResult.branches,
+        activeBranchCount: listResult.activeCount || 0,
+      })
+    );
     return res.status(200).type("html").send(html);
+  });
+
+  router.get("/hq/account", rejectApex, gateHq, (req, res) => {
+    const html = renderHqView("hq/account.ejs", shellLocals(req, res, "account"));
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post("/hq/logout", rejectApex, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return res.status(403).type("text").send("Invalid or missing CSRF token.");
+    }
+    const deployment = getPlatformDeploymentCode(env);
+    const rawToken = readV5SessionCookie(req, env);
+    try {
+      if (deployment.ok && deployment.code && rawToken) {
+        await revokeV5Session(getPool(), {
+          rawToken,
+          deploymentCode: deployment.code,
+        });
+      }
+    } catch {
+      /* fail-open clear cookie */
+    }
+    clearV5SessionCookie(res, { secure: isProduction, env });
+    return res.redirect(303, "/");
   });
 
   router.get("/hq/settings", rejectApex, gateHq, async (req, res) => {
@@ -220,7 +237,7 @@ function createHqAdminRouter(deps) {
     }
     const html = renderHqView(
       "hq/settings.ejs",
-      shellLocals(req, res, "settings", { branches: [], activeCount: 0 }, {
+      shellLocals(req, res, "settings", {
         settings: loaded.settings,
         error: null,
         saved: String((req.query && req.query.saved) || "") === "1",
@@ -253,7 +270,7 @@ function createHqAdminRouter(deps) {
         const loaded = await getChurchSettings(getPool(), tenant.church.id);
         const html = renderHqView(
           "hq/settings.ejs",
-          shellLocals(req, res, "settings", { branches: [], activeCount: 0 }, {
+          shellLocals(req, res, "settings", {
             settings: loaded.settings || {
               publicName: String(body.publicName || ""),
               denomination: body.denomination || null,

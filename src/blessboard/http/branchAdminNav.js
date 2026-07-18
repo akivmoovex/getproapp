@@ -1,0 +1,220 @@
+"use strict";
+
+/**
+ * Branch-admin navigation + dashboard module model.
+ * Enabled entries match live /branch-admin routes; disabled are placeholders only.
+ */
+
+const BRANCH_ADMIN_NAV = Object.freeze([
+  { key: "home", label: "Dashboard", href: "/branch-admin", icon: "dashboard", enabled: true, nav: true },
+  {
+    key: "registrations",
+    label: "Registrations",
+    href: "/branch-admin/registrations",
+    icon: "how_to_reg",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "members",
+    label: "Members",
+    href: "/branch-admin/members",
+    icon: "group",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "announcements",
+    label: "Announcements",
+    href: "/branch-admin/announcements",
+    icon: "campaign",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "participation",
+    label: "Participation",
+    href: "/branch-admin/participation",
+    icon: "groups",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "attendance",
+    label: "Attendance",
+    href: "/branch-admin/attendance",
+    icon: "fact_check",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "giving",
+    label: "Giving",
+    href: "/branch-admin/giving",
+    icon: "payments",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "resources",
+    label: "Resources",
+    href: "/branch-admin/resources",
+    icon: "menu_book",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "forms",
+    label: "Forms",
+    href: "/branch-admin/forms",
+    icon: "description",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "requests",
+    label: "Requests",
+    href: "/branch-admin/requests",
+    icon: "inbox",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "content",
+    label: "Website",
+    href: "/branch-admin/content",
+    icon: "language",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    href: "/branch-admin/settings",
+    icon: "settings",
+    enabled: true,
+    nav: true,
+  },
+  {
+    key: "account",
+    label: "Account",
+    href: "/branch-admin/account",
+    icon: "person",
+    enabled: true,
+    nav: true,
+  },
+]);
+
+/** Dashboard tiles — live modules + deferred placeholders (no fabricated counts). */
+const BRANCH_ADMIN_MODULES = Object.freeze([
+  {
+    key: "registrations",
+    label: "Registrations",
+    href: "/branch-admin/registrations",
+    icon: "how_to_reg",
+    enabled: true,
+    blurb: "Review membership applications",
+  },
+  {
+    key: "members",
+    label: "Members",
+    href: "/branch-admin/members",
+    icon: "group",
+    enabled: true,
+    blurb: "Branch member directory",
+  },
+  {
+    key: "announcements",
+    label: "Announcements",
+    href: "/branch-admin/announcements",
+    icon: "campaign",
+    enabled: true,
+    blurb: "Publish branch announcements",
+  },
+  {
+    key: "attendance",
+    label: "Attendance",
+    href: "/branch-admin/attendance",
+    icon: "fact_check",
+    enabled: true,
+    blurb: "Record service attendance",
+  },
+  {
+    key: "giving",
+    label: "Giving",
+    href: "/branch-admin/giving",
+    icon: "payments",
+    enabled: true,
+    blurb: "Manual giving summaries",
+  },
+  {
+    key: "participation",
+    label: "Participation",
+    href: "/branch-admin/participation",
+    icon: "groups",
+    enabled: true,
+    blurb: "Ministries and event sign-ups",
+  },
+  {
+    key: "requests",
+    label: "Requests",
+    href: "/branch-admin/requests",
+    icon: "inbox",
+    enabled: true,
+    blurb: "Member request queue",
+  },
+  {
+    key: "forms",
+    label: "Forms",
+    href: "/branch-admin/forms",
+    icon: "description",
+    enabled: true,
+    blurb: "Forms and submissions",
+  },
+  {
+    key: "resources",
+    label: "Resources",
+    href: "/branch-admin/resources",
+    icon: "menu_book",
+    enabled: true,
+    blurb: "Member resource library",
+  },
+  {
+    key: "content",
+    label: "Website",
+    href: "/branch-admin/content",
+    icon: "language",
+    enabled: true,
+    blurb: "Public website content",
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    href: "/branch-admin/settings",
+    icon: "settings",
+    enabled: true,
+    blurb: "Branch profile and contact",
+  },
+  {
+    key: "reports",
+    label: "Reports",
+    href: null,
+    icon: "analytics",
+    enabled: false,
+    blurb: "Not enabled yet",
+  },
+]);
+
+const BRANCH_ADMIN_MOBILE_TABS = Object.freeze([
+  "home",
+  "registrations",
+  "members",
+  "announcements",
+  "account",
+]);
+
+module.exports = {
+  BRANCH_ADMIN_NAV,
+  BRANCH_ADMIN_MODULES,
+  BRANCH_ADMIN_MOBILE_TABS,
+};

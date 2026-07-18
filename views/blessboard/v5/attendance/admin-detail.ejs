@@ -3,72 +3,204 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <p><a href="<%= basePath %>">Back to attendance</a></p>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
+<%
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'submitted') return 'Submitted';
+    if (key === 'approved') return 'Approved';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted' || key === 'approved') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+  function typeLabel(t) {
+    if (t === 'sunday_service') return 'Sunday service';
+    if (t === 'midweek') return 'Midweek';
+    if (t === 'special') return 'Special';
+    if (t === 'youth') return 'Youth';
+    if (t === 'children') return 'Children';
+    if (t === 'other') return 'Other';
+    return t || '—';
+  }
+  function categoryLabel(c) {
+    if (c === 'first_time_visitors') return 'Visitors';
+    if (c === 'adults') return 'Adults';
+    if (c === 'youth') return 'Youth';
+    if (c === 'children') return 'Children';
+    if (c === 'volunteers') return 'Volunteers';
+    if (c === 'other') return 'Other';
+    return c;
+  }
+  function entryMap() {
+    var map = {};
+    (event.entries || []).forEach(function (en) { map[en.category] = en; });
+    return map;
+  }
+  var byCat = entryMap();
+  function countOf(cat) { return byCat[cat] ? byCat[cat].count : 0; }
+%>
 
-  <article data-bb-status="<%= event.status %>">
-    <h1><%= event.title %></h1>
-    <p>
-      <%= event.eventType %> · <%= event.eventDate %> · <%= event.status %>
-      · total <%= event.totalCount %>
-    </p>
+<section class="bb-att-admin bb-att-detail" data-bb-attendance-admin-detail="1" data-bb-status="<%= event.status %>">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="<%= basePath %>">Attendance</a>
+        <span aria-hidden="true">›</span>
+        <span>Record</span>
+      </p>
+      <h1 class="bb-ba-page-head__title"><%= event.title %></h1>
+      <p class="bb-ba-lede">
+        <span class="bb-ba-chip <%= statusChip(event.status) %>"><%= statusLabel(event.status) %></span>
+        · <%= typeLabel(event.eventType) %>
+        · <%= event.eventDate %>
+      </p>
+    </div>
+    <div class="bb-ba-decision__actions" style="margin:0">
+      <% if (canEditMeta) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= event.id %>/edit" data-bb-att-edit="1">Edit record</a>
+      <% } %>
+      <% if (event.status === 'draft') { %>
+      <button type="button" class="bb-ba-btn bb-ba-btn--primary" data-bb-ds-modal-open="bb-att-submit-modal" data-bb-att-submit-open="1">Submit to HQ</button>
+      <% } %>
+    </div>
+  </header>
 
-    <h2>Category counts</h2>
-    <% if (event.entries && event.entries.length) { %>
-      <ul>
-        <% event.entries.forEach(function (en) { %>
-          <li><%= en.category %>: <%= en.count %><% if (en.notes) { %> — <%= en.notes %><% } %></li>
+  <% if (saved === '1' || saved === 'entry' || saved === 'submitted' || saved === 'approved' || saved === 'archived') { %>
+  <p class="bb-ba-ok" role="status">
+    <% if (saved === 'submitted') { %>Attendance submitted.<% }
+       else if (saved === 'entry') { %>Category count saved.<% }
+       else if (saved === 'approved') { %>Attendance approved.<% }
+       else if (saved === 'archived') { %>Attendance archived.<% }
+       else { %>Saved.<% } %>
+  </p>
+  <% } %>
+  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+
+  <div class="bb-att-lifecycle" data-bb-att-lifecycle="1" aria-label="Workflow status">
+    <div class="bb-att-lifecycle__step<%= event.status !== 'archived' ? ' is-done' : '' %>">Created</div>
+    <div class="bb-att-lifecycle__step<%= event.status === 'draft' ? ' is-current' : (event.status !== 'draft' ? ' is-done' : '') %>">Draft</div>
+    <div class="bb-att-lifecycle__step<%= event.status === 'submitted' ? ' is-current' : (['approved','archived'].indexOf(event.status) !== -1 ? ' is-done' : '') %>">Submitted</div>
+    <div class="bb-att-lifecycle__step<%= event.status === 'approved' || event.status === 'archived' ? ' is-done' : '' %>">HQ review</div>
+  </div>
+
+  <section class="bb-ba-panel" data-bb-att-totals="1">
+    <div class="bb-att-total-row">
+      <div>
+        <p class="bb-att-stat__label">Total attendance</p>
+        <p class="bb-att-stat__value bb-att-stat__value--lg" data-bb-att-total="<%= event.totalCount %>"><%= event.totalCount %></p>
+      </div>
+      <div class="bb-att-breakdown">
+        <% ['adults','youth','children','first_time_visitors','volunteers','other'].forEach(function (cat) { %>
+        <div class="bb-att-breakdown__item" data-bb-att-cat="<%= cat %>">
+          <span class="bb-att-breakdown__count"><%= countOf(cat) %></span>
+          <span class="bb-att-breakdown__label"><%= categoryLabel(cat) %></span>
+        </div>
         <% }) %>
-      </ul>
+      </div>
+    </div>
+    <p class="bb-ba-hint">Aggregate category counts only — no individual member names or IDs.</p>
+  </section>
+
+  <section class="bb-ba-panel" data-bb-att-entries="1">
+    <h2 class="bb-ba-section-title">Category counts</h2>
+    <% if (event.entries && event.entries.length) { %>
+    <ul class="bb-att-entry-list">
+      <% event.entries.forEach(function (en) { %>
+      <li>
+        <strong><%= categoryLabel(en.category) %></strong>: <%= en.count %>
+        <% if (en.notes) { %><span class="bb-ba-muted"> — <%= en.notes %></span><% } %>
+      </li>
+      <% }) %>
+    </ul>
     <% } else { %>
-      <p>No entries yet.</p>
+    <p class="bb-ba-empty">No category counts yet.</p>
     <% } %>
 
     <% if (canEditEntries && event.status !== 'archived') { %>
-      <form method="post" action="<%= basePath %>/<%= event.id %>/entries">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <label>Category
-          <select name="category" required>
+    <form method="post" action="<%= basePath %>/<%= event.id %>/entries" class="bb-att-entry-form" data-bb-att-entry-form="1">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="bb-att-entry-grid">
+        <div class="bb-ba-field">
+          <label for="category">Category</label>
+          <select id="category" name="category" required>
             <% categories.forEach(function (c) { %>
-              <option value="<%= c %>"><%= c %></option>
+            <option value="<%= c %>"><%= categoryLabel(c) %></option>
             <% }) %>
           </select>
-        </label>
-        <label>Count
-          <input type="number" name="count" min="0" step="1" required value="0" />
-        </label>
-        <label>Notes
-          <input type="text" name="notes" maxlength="1000" />
-        </label>
-        <button type="submit">Save entry</button>
-      </form>
-      <p class="bb-att-policy">
-        Submitted events: saving an entry returns the event to draft (resubmit required).
+        </div>
+        <div class="bb-ba-field">
+          <label for="count">Count</label>
+          <input id="count" type="number" name="count" min="0" step="1" required value="0" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="notes">Notes</label>
+          <input id="notes" type="text" name="notes" maxlength="1000" />
+        </div>
+      </div>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Save entry</button>
+      <% if (event.status === 'submitted') { %>
+      <p class="bb-ba-hint bb-att-policy" data-bb-att-amend-policy="1">
+        This record is submitted. Saving a count returns it to <strong>draft</strong> — you must resubmit.
       </p>
+      <% } %>
+    </form>
     <% } %>
+  </section>
 
-    <% if (event.status === 'draft') { %>
-      <form method="post" action="<%= basePath %>/<%= event.id %>/submit">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Submit</button>
-      </form>
-    <% } %>
+  <% if (isHq && event.status === 'submitted') { %>
+  <section class="bb-ba-decision">
+    <h2 class="bb-ba-section-title">HQ actions</h2>
+    <form method="post" action="<%= basePath %>/<%= event.id %>/approve" class="bb-ba-decision__actions">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Approve</button>
+    </form>
+  </section>
+  <% } %>
 
-    <% if (isHq && event.status === 'submitted') { %>
-      <form method="post" action="<%= basePath %>/<%= event.id %>/approve">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Approve</button>
-      </form>
-    <% } %>
+  <% if (isHq && (event.status === 'submitted' || event.status === 'approved')) { %>
+  <form method="post" action="<%= basePath %>/<%= event.id %>/archive" class="bb-ba-decision__actions">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <button type="submit" class="bb-ba-btn bb-ba-btn--ghost">Archive</button>
+  </form>
+  <% } %>
 
-    <% if (isHq && (event.status === 'submitted' || event.status === 'approved')) { %>
-      <form method="post" action="<%= basePath %>/<%= event.id %>/archive">
+  <% if (event.status === 'draft') { %>
+  <div
+    class="bb-ds-modal"
+    id="bb-att-submit-modal"
+    data-bb-ds-modal
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bb-att-submit-title"
+  >
+    <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+    <div class="bb-ds-modal__panel" tabindex="-1">
+      <h2 id="bb-att-submit-title" class="bb-ds-modal__title">Submit this attendance record?</h2>
+      <p class="bb-ds-modal__body">
+        Total <strong><%= event.totalCount %></strong> across <%= (event.entries || []).length %> categor<%= (event.entries || []).length === 1 ? 'y' : 'ies' %>.
+        After submit, editing a count returns the record to draft (resubmit required).
+      </p>
+      <form
+        method="post"
+        action="<%= basePath %>/<%= event.id %>/submit"
+        class="bb-ds-modal__actions"
+        data-bb-att-submit="1"
+      >
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Archive</button>
+        <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Confirm submit</button>
       </form>
-    <% } %>
-  </article>
+    </div>
+  </div>
+  <% } %>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

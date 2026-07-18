@@ -1,0 +1,17 @@
+<%#
+  Success state panel. Locals: title, body, actionHref, actionLabel
+%>
+<div class="bb-ds-state" role="status" data-bb-ds="success-state">
+  <div class="bb-ds-state__icon">
+    <%- include('./icon', { name: 'check_circle' }) %>
+  </div>
+  <h2 class="bb-ds-state__title"><%= typeof title !== 'undefined' && title ? title : 'Success' %></h2>
+  <% if (typeof body !== 'undefined' && body) { %>
+  <p class="bb-ds-state__body"><%= body %></p>
+  <% } %>
+  <% if (typeof actionHref !== 'undefined' && actionHref) { %>
+  <p>
+    <a class="bb-ds-btn bb-ds-btn--primary" href="<%= actionHref %>"><%= typeof actionLabel !== 'undefined' && actionLabel ? actionLabel : 'Continue' %></a>
+  </p>
+  <% } %>
+</div>

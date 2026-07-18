@@ -1,28 +1,141 @@
 <%- include('../partials/member-shell-start') %>
-  <p><a href="/member/forms">Back</a></p>
-  <h1><%= form.title %></h1>
-  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
-  <form method="post" action="/member/forms/<%= form.id %>/submit">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <% (form.schema && form.schema.fields ? form.schema.fields : []).forEach(function (field) { %>
-      <label><%= field.label %>
-        <% if (field.type === 'textarea') { %>
-          <textarea name="<%= field.key %>" <%= field.required ? 'required' : '' %>></textarea>
-        <% } else if (field.type === 'select') { %>
-          <select name="<%= field.key %>" <%= field.required ? 'required' : '' %>>
-            <option value="">Choose…</option>
-            <% (field.options || []).forEach(function (o) { %>
-              <option value="<%= o %>"><%= o %></option>
-            <% }) %>
-          </select>
-        <% } else if (field.type === 'checkbox') { %>
-          <input type="checkbox" name="<%= field.key %>" value="true" />
+<%
+  var allowed = typeof allowedFieldTypes !== 'undefined' && allowedFieldTypes && allowedFieldTypes.length
+    ? allowedFieldTypes
+    : ['text', 'textarea', 'email', 'phone', 'number', 'select', 'checkbox', 'date'];
+  var fields = (form.schema && form.schema.fields) ? form.schema.fields : [];
+  var answers = typeof submittedAnswers !== 'undefined' && submittedAnswers ? submittedAnswers : {};
+
+  function isAllowed(type) {
+    return allowed.indexOf(type) !== -1;
+  }
+
+  function inputType(type) {
+    if (type === 'email') return 'email';
+    if (type === 'number') return 'number';
+    if (type === 'date') return 'date';
+    if (type === 'phone') return 'tel';
+    return 'text';
+  }
+
+  function fieldValue(key) {
+    if (!Object.prototype.hasOwnProperty.call(answers, key)) return '';
+    var v = answers[key];
+    if (v == null) return '';
+    if (typeof v === 'boolean') return v ? 'true' : '';
+    return String(v);
+  }
+
+  var renderable = fields.filter(function (field) {
+    return field && field.key && isAllowed(field.type);
+  });
+%>
+
+<section class="bb-mp-fr-detail" data-bb-member-form-detail="1">
+  <p class="bb-mp-back">
+    <a href="/member/forms">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to forms
+    </a>
+  </p>
+
+  <article class="bb-mp-part-detail">
+    <div class="bb-mp-ann-chips" aria-label="Form type">
+      <span class="bb-mp-chip bb-mp-chip--open">Online form</span>
+    </div>
+    <h1 class="bb-mp-part-detail__title"><%= form.title %></h1>
+    <% if (form.description) { %>
+    <p class="bb-mp-part-detail__summary"><%= form.description %></p>
+    <% } %>
+
+    <% if (error) { %>
+    <div class="bb-mp-alert bb-mp-alert--error" role="alert" id="form-error-summary" tabindex="-1">
+      <p class="bb-mp-alert__title">We could not submit this form</p>
+      <p><%= error %></p>
+    </div>
+    <% } %>
+
+    <form
+      method="post"
+      action="/member/forms/<%= form.id %>/submit"
+      class="bb-mp-form bb-mp-form--panel"
+      data-bb-form-submit="1"
+      novalidate
+    >
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+      <% if (!renderable.length) { %>
+      <p class="bb-mp-lede">This form has no fields yet.</p>
+      <% } %>
+
+      <% renderable.forEach(function (field) { %>
+      <div class="bb-mp-field" data-bb-field-type="<%= field.type %>" data-bb-field-key="<%= field.key %>">
+        <% if (field.type === 'checkbox') { %>
+        <label class="bb-mp-checkbox" for="field-<%= field.key %>">
+          <input
+            id="field-<%= field.key %>"
+            type="checkbox"
+            name="<%= field.key %>"
+            value="true"
+            <%= fieldValue(field.key) === 'true' || fieldValue(field.key) === '1' || fieldValue(field.key) === 'on' ? 'checked' : '' %>
+            <%= field.required ? 'required' : '' %>
+          />
+          <span>
+            <%= field.label %><% if (field.required) { %> <span class="bb-mp-required" aria-hidden="true">*</span><% } %>
+          </span>
+        </label>
         <% } else { %>
-          <input type="<%= field.type === 'email' ? 'email' : field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text' %>"
-                 name="<%= field.key %>" <%= field.required ? 'required' : '' %> />
+        <label for="field-<%= field.key %>">
+          <%= field.label %><% if (field.required) { %> <span class="bb-mp-required" aria-hidden="true">*</span><% } %>
+        </label>
+        <% if (field.help) { %>
+        <p class="bb-mp-hint" id="hint-<%= field.key %>"><%= field.help %></p>
         <% } %>
-      </label>
-    <% }) %>
-    <button type="submit">Submit</button>
-  </form>
+        <% if (field.type === 'textarea') { %>
+        <textarea
+          id="field-<%= field.key %>"
+          name="<%= field.key %>"
+          rows="4"
+          maxlength="<%= field.maxLength || 2000 %>"
+          <%= field.required ? 'required' : '' %>
+          <% if (field.help) { %>aria-describedby="hint-<%= field.key %>"<% } %>
+        ><%= fieldValue(field.key) %></textarea>
+        <% } else if (field.type === 'select') { %>
+        <select
+          id="field-<%= field.key %>"
+          name="<%= field.key %>"
+          <%= field.required ? 'required' : '' %>
+          <% if (field.help) { %>aria-describedby="hint-<%= field.key %>"<% } %>
+        >
+          <option value="">Choose…</option>
+          <% (field.options || []).forEach(function (o) { %>
+          <option value="<%= o %>" <%= fieldValue(field.key) === String(o) ? 'selected' : '' %>><%= o %></option>
+          <% }) %>
+        </select>
+        <% } else { %>
+        <input
+          id="field-<%= field.key %>"
+          type="<%= inputType(field.type) %>"
+          name="<%= field.key %>"
+          value="<%= fieldValue(field.key) %>"
+          maxlength="<%= field.maxLength || 2000 %>"
+          <%= field.required ? 'required' : '' %>
+          <% if (field.help) { %>aria-describedby="hint-<%= field.key %>"<% } %>
+          autocomplete="<%= field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : 'off' %>"
+        />
+        <% } %>
+        <% } %>
+      </div>
+      <% }) %>
+
+      <% if (renderable.length) { %>
+      <div class="bb-mp-form__actions">
+        <button type="submit" class="bb-mp-btn bb-mp-btn--primary">Submit form</button>
+        <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/forms">Cancel</a>
+      </div>
+      <% } %>
+    </form>
+  </article>
+</section>
+
 <%- include('../partials/member-shell-end') %>

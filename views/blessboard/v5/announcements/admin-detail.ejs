@@ -1,0 +1,161 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+<%
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+  function audienceLabel(list) {
+    if (!list || !list.length) return '—';
+    return list.map(function (k) {
+      if (k === 'members') return 'Members';
+      if (k === 'admins') return 'Admins';
+      return k;
+    }).join(', ');
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  }
+  var canEdit = item.status !== 'archived';
+  var canPublish = item.status === 'draft';
+  var canArchive = item.status !== 'archived';
+%>
+
+<section class="bb-ann-admin bb-ann-detail" data-bb-announcement-admin-detail="1" data-bb-announcement-status="<%= item.status %>">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="<%= basePath %>">Announcements</a>
+        <span aria-hidden="true">›</span>
+        <span>Detail</span>
+      </p>
+      <h1 class="bb-ba-page-head__title"><%= item.title %></h1>
+      <p class="bb-ba-lede">
+        <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+        · <%= audienceLabel(item.audiences) %>
+        · <%= item.branchId ? 'Branch' : 'Church-wide' %>
+      </p>
+    </div>
+  </header>
+
+  <% if (saved === '1' || saved === 'published' || saved === 'archived' || saved === 'already') { %>
+  <p class="bb-ba-ok" role="status">
+    <% if (saved === 'published') { %>Announcement published.<% }
+       else if (saved === 'archived') { %>Announcement archived.<% }
+       else if (saved === 'already') { %>Already published.<% }
+       else { %>Saved.<% } %>
+  </p>
+  <% } %>
+  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+
+  <section class="bb-ba-panel">
+    <h2 class="bb-ba-section-title">Message</h2>
+    <p class="bb-ann-body"><%= item.body %></p>
+    <% if (item.actionUrl) { %>
+    <p><a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= item.actionUrl %>" rel="noopener noreferrer"><%= item.actionLabel || 'Open link' %></a></p>
+    <% } %>
+    <dl class="bb-ann-dl">
+      <div><dt>Pinned</dt><dd><%= item.isPinned ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Featured</dt><dd><%= item.isFeatured ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Published</dt><dd><%= formatWhen(item.publishedAt) %></dd></div>
+      <div><dt>Updated</dt><dd><%= formatWhen(item.updatedAt) %></dd></div>
+    </dl>
+  </section>
+
+  <% if (item.delivery) { %>
+  <section class="bb-ba-panel" data-bb-delivery="summary">
+    <h2 class="bb-ba-section-title">Delivery / read summary</h2>
+    <dl class="bb-ann-dl">
+      <div><dt>Eligible members</dt><dd><%= item.delivery.eligibleCount %></dd></div>
+      <div><dt>Read</dt><dd><%= item.delivery.readCount %></dd></div>
+      <div><dt>Unread</dt><dd><%= item.delivery.unreadCount %></dd></div>
+      <% if (item.delivery.seenCount != null) { %>
+      <div><dt>Seen</dt><dd><%= item.delivery.seenCount %></dd></div>
+      <% } %>
+    </dl>
+    <p class="bb-ba-hint">Counts are for the members audience on this church/branch scope only. No member identities are listed here.</p>
+  </section>
+  <% } %>
+
+  <% if (item.attachments && item.attachments.length) { %>
+  <section class="bb-ba-panel">
+    <h2 class="bb-ba-section-title">Attachments</h2>
+    <ul>
+      <% item.attachments.forEach(function (att) { %>
+      <li><%= att.originalFilename || att.mediaAssetId %></li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <section class="bb-ba-decision">
+    <h2 class="bb-ba-section-title">Actions</h2>
+    <div class="bb-ba-decision__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>/preview" data-bb-ann-preview="1">Preview</a>
+      <% if (canEdit) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>/edit" data-bb-ann-edit="1">Edit</a>
+      <% } %>
+      <% if (canPublish) { %>
+      <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/<%= item.id %>/publish" data-bb-ann-publish="1">Review &amp; publish</a>
+      <% } %>
+      <% if (canArchive) { %>
+      <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-open="bb-ann-archive-modal">Archive</button>
+      <% } %>
+    </div>
+    <p class="bb-ba-hint">There is no hard delete. Archiving keeps the record for audit and history.</p>
+  </section>
+
+  <% if (canArchive) { %>
+  <div
+    class="bb-ds-modal"
+    id="bb-ann-archive-modal"
+    data-bb-ds-modal
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bb-ann-archive-title"
+  >
+    <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+    <div class="bb-ds-modal__panel" tabindex="-1">
+      <h2 id="bb-ann-archive-title" class="bb-ds-modal__title">Archive this announcement?</h2>
+      <p class="bb-ds-modal__body">
+        It will leave the member feed if published. The record is kept — announcements are never hard-deleted.
+      </p>
+      <form
+        method="post"
+        action="<%= basePath %>/<%= item.id %>/archive"
+        class="bb-ds-modal__actions"
+        data-bb-ann-archive="1"
+      >
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt && item.updatedAt.toISOString ? item.updatedAt.toISOString() : item.updatedAt %>" />
+        <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Confirm archive</button>
+      </form>
+    </div>
+  </div>
+  <% } %>
+</section>
+
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

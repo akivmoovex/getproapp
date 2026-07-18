@@ -1,0 +1,49 @@
+<%#
+  Form error summary + optional field errors.
+  Locals:
+    - error / errors: string | string[] | { field, message }[]
+    - title (optional)
+    - id (optional, default bb-ds-form-errors)
+%>
+<%
+  var _id = typeof id !== 'undefined' && id ? id : 'bb-ds-form-errors';
+  var _title = typeof title !== 'undefined' && title ? title : 'Please fix the following';
+  var _items = [];
+  if (typeof errors !== 'undefined' && errors) {
+    if (Array.isArray(errors)) {
+      errors.forEach(function (e) {
+        if (!e) return;
+        if (typeof e === 'string') _items.push({ message: e });
+        else if (e.message) _items.push({ field: e.field || '', message: e.message });
+      });
+    } else if (typeof errors === 'string') {
+      _items.push({ message: errors });
+    }
+  } else if (typeof error !== 'undefined' && error) {
+    _items.push({ message: String(error) });
+  }
+%>
+<% if (_items.length) { %>
+<div
+  class="bb-ds-alert bb-ds-alert--error"
+  id="<%= _id %>"
+  role="alert"
+  tabindex="-1"
+  aria-live="assertive"
+  data-bb-ds="form-errors"
+>
+  <%- include('./icon', { name: 'error', className: '' }) %>
+  <p class="bb-ds-alert__title"><%= _title %></p>
+  <% if (_items.length === 1 && !_items[0].field) { %>
+  <p class="bb-ds-alert__body"><%= _items[0].message %></p>
+  <% } else { %>
+  <ul class="bb-ds-alert__body bb-ds-alert__list">
+    <% _items.forEach(function (item) { %>
+    <li>
+      <% if (item.field) { %><strong><%= item.field %>:</strong> <% } %><%= item.message %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</div>
+<% } %>

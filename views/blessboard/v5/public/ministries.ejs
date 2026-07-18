@@ -1,0 +1,105 @@
+<%#
+  Ministries — Stitch card grid; published ministries only (sort_order ASC).
+  No fake schedules, downloads, or fabricated contact-leader actions.
+%>
+<%
+  var pageSections = sections || [];
+  var ministries = entities || [];
+  var intro = pageSections.length ? pageSections[0] : null;
+  var introHeading = (intro && intro.heading) || pageTitle || 'Our Ministries';
+  var introBody = (intro && intro.bodyText) || '';
+%>
+
+<section class="bb-tp-directory bb-tp-ministries" data-bb-ministries="1">
+  <header class="bb-tp-dir-hero">
+    <div class="bb-tp-container">
+      <p class="bb-tp-eyebrow">Our Impact</p>
+      <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
+      <% if (introBody) { %>
+      <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
+      <% } %>
+      <div class="bb-tp-page-hero__cta">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">
+          <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
+          Join a Ministry
+        </a>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="/events">
+          <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+          View Events
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="bb-tp-container bb-tp-directory__body">
+    <% if (showEmptyState) { %>
+    <div class="bb-tp-empty" role="status" data-bb-empty="ministries">
+      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">diversity_3</span>
+      <h2><%= emptyHeadline %></h2>
+      <p><%= emptyMessage %></p>
+      <div class="bb-tp-page-hero__cta">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register</a>
+      </div>
+    </div>
+    <% } else if (ministries.length) { %>
+    <ul class="bb-tp-ministry-grid">
+      <% ministries.forEach(function (ministry) { %>
+      <li class="bb-tp-ministry-card">
+        <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
+          <% if (ministry.imageUrl) { %>
+          <img src="<%= ministry.imageUrl %>" alt="" width="640" height="400" loading="lazy" decoding="async" />
+          <% } else { %>
+          <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          <% } %>
+        </div>
+        <div class="bb-tp-ministry-card__body">
+          <h2 class="bb-tp-ministry-card__title"><%= ministry.name %></h2>
+          <% if (ministry.summary) { %>
+          <p class="bb-tp-ministry-card__summary"><%= ministry.summary %></p>
+          <% } else if (ministry.description) { %>
+          <p class="bb-tp-ministry-card__summary"><%= ministry.description %></p>
+          <% } %>
+          <% if (ministry.meetingDay) { %>
+          <p class="bb-tp-meta">
+            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+            <%= ministry.meetingDay %>
+          </p>
+          <% } %>
+          <% if (ministry.contactHref && ministry.contactEmail) { %>
+          <p class="bb-tp-ministry-card__contact">
+            <a href="<%= ministry.contactHref %>"><%= ministry.contactEmail %></a>
+          </p>
+          <% } %>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+
+    <% if (!showEmptyState && pageSections.length > 1) { %>
+    <div class="bb-tp-directory__sections">
+      <% pageSections.slice(1).forEach(function (section) { %>
+      <section class="bb-tp-content-block" data-section="<%= section.sectionKey %>">
+        <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+        <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+        <% if (section.mediaUrl) { %>
+        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+        <% } %>
+      </section>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+
+  <section class="bb-tp-dir-cta">
+    <div class="bb-tp-container bb-tp-dir-cta__inner">
+      <h2 class="bb-tp-section-title">Still looking for your place?</h2>
+      <p class="bb-tp-body">Reach out — we will help you find a ministry fit at <%= publicName %>.</p>
+      <div class="bb-tp-page-hero__cta">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register as a Member</a>
+      </div>
+    </div>
+  </section>
+</section>

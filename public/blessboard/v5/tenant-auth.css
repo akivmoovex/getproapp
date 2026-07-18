@@ -1,0 +1,519 @@
+/* BlessBoard V5 tenant auth chrome — aliases onto design-tokens.css */
+
+:root {
+  --bb-auth-violet: var(--bb-color-primary, #6c5ce7);
+  --bb-auth-violet-deep: var(--bb-color-primary-hover, #5341cd);
+  --bb-auth-ink: var(--bb-color-ink, #1a1c1e);
+  --bb-auth-muted: var(--bb-color-muted, #44474e);
+  --bb-auth-bg: var(--bb-color-page, #fbf9f6);
+  --bb-auth-surface: var(--bb-color-surface, #ffffff);
+  --bb-auth-line: var(--bb-color-border, #d1dce0);
+  --bb-auth-err: var(--bb-color-error, #b3261e);
+  --bb-auth-err-bg: var(--bb-color-error-bg, #fef3f2);
+  --bb-auth-ok: var(--bb-color-success, #0f766e);
+  --bb-auth-ok-bg: var(--bb-color-success-bg, #ecfdf5);
+  --bb-auth-getpro: var(--bb-color-accent, #ff9800);
+  --bb-auth-radius: var(--bb-radius, 1rem);
+  --bb-auth-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.08));
+}
+
+.bb-auth-body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  color: var(--bb-auth-ink);
+  background: var(--bb-auth-bg);
+  line-height: 1.5;
+}
+
+.bb-auth-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--bb-auth-violet);
+  color: #fff;
+  padding: 0.5rem 1rem;
+}
+
+.bb-auth-skip:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+.bb-auth-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.bb-auth-panel {
+  display: none;
+  position: relative;
+  background:
+    radial-gradient(800px 420px at 20% 10%, #efeaff 0%, transparent 55%),
+    radial-gradient(600px 360px at 90% 80%, #e8f7ff 0%, transparent 50%),
+    linear-gradient(160deg, #5341cd 0%, #6c5ce7 48%, #3d348b 100%);
+  color: #fff;
+  padding: 2.5rem;
+  overflow: hidden;
+}
+
+.bb-auth-panel__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 26rem;
+  margin: auto 0;
+}
+
+.bb-auth-panel__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.bb-auth-panel__title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.bb-auth-panel__lead {
+  margin: 0;
+  font-size: 1.05rem;
+  opacity: 0.92;
+  line-height: 1.55;
+}
+
+.bb-auth-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bb-auth-bg);
+}
+
+.bb-auth-main__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid var(--bb-auth-line);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+}
+
+.bb-auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+  color: var(--bb-auth-ink);
+  min-width: 0;
+}
+
+.bb-auth-brand__mark {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.bb-auth-brand__name {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-auth-brand__branch {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--bb-auth-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-auth-main__header-link {
+  color: var(--bb-auth-violet);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.bb-auth-main__header-link:hover {
+  text-decoration: underline;
+}
+
+.bb-auth-main__body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.75rem 1.25rem 2.5rem;
+}
+
+.bb-auth-card {
+  width: 100%;
+  max-width: 28rem;
+  background: var(--bb-auth-surface);
+  border: 1px solid var(--bb-auth-line);
+  border-radius: calc(var(--bb-auth-radius) + 4px);
+  box-shadow: var(--bb-auth-shadow);
+  padding: 1.75rem 1.5rem 1.85rem;
+}
+
+.bb-auth-card--wide {
+  max-width: 32rem;
+}
+
+.bb-auth-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  background: rgba(108, 92, 231, 0.12);
+  color: var(--bb-auth-violet);
+  margin-bottom: 1rem;
+}
+
+.bb-auth-card__icon--ok {
+  background: var(--bb-auth-ok-bg);
+  color: var(--bb-auth-ok);
+}
+
+.bb-auth-card__icon .material-symbols-outlined {
+  font-size: 1.75rem;
+}
+
+.bb-auth-card__title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.45rem, 3vw, 1.85rem);
+  letter-spacing: -0.02em;
+  color: var(--bb-auth-violet);
+}
+
+.bb-auth-card__lead {
+  margin: 0 0 1.35rem;
+  color: var(--bb-auth-muted);
+}
+
+.bb-auth-note {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  background: #efeaff;
+  color: var(--bb-auth-ink);
+  font-size: 0.92rem;
+}
+
+.bb-auth-error {
+  margin: 0 0 1.15rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #fecdca;
+  background: var(--bb-auth-err-bg);
+  color: var(--bb-auth-err);
+}
+
+.bb-auth-error__title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.bb-auth-error__body {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.bb-auth-error__list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+  font-size: 0.92rem;
+}
+
+.bb-auth-error__list li + li {
+  margin-top: 0.25rem;
+}
+
+.bb-auth-form {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.bb-auth-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.bb-auth-fieldset__legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.15rem;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--bb-auth-violet);
+}
+
+.bb-auth-fieldset__legend .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.bb-auth-field-row {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.bb-auth-field label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+  color: var(--bb-auth-ink);
+}
+
+.bb-auth-optional {
+  font-weight: 500;
+  color: var(--bb-auth-muted);
+}
+
+.bb-auth-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #d0cad8;
+  border-radius: 8px;
+  font: inherit;
+  background: #fbfaff;
+  color: var(--bb-auth-ink);
+}
+
+.bb-auth-field input:focus {
+  outline: 2px solid rgba(108, 92, 231, 0.35);
+  outline-offset: 1px;
+  border-color: var(--bb-auth-violet);
+  background: #fff;
+}
+
+.bb-auth-field input[aria-invalid="true"] {
+  border-color: #f97066;
+  background: #fffbfa;
+}
+
+.bb-auth-field__error {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--bb-auth-err);
+}
+
+.bb-auth-password {
+  position: relative;
+}
+
+.bb-auth-password input {
+  padding-right: 2.85rem;
+}
+
+.bb-auth-password__toggle {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--bb-auth-muted);
+  cursor: pointer;
+}
+
+.bb-auth-password__toggle:hover,
+.bb-auth-password__toggle:focus-visible {
+  color: var(--bb-auth-violet);
+  background: rgba(108, 92, 231, 0.08);
+  outline: none;
+}
+
+.bb-auth-hint {
+  margin: -0.35rem 0 0;
+  font-size: 0.88rem;
+  color: var(--bb-auth-muted);
+}
+
+.bb-auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.bb-auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.8rem 1.1rem;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+
+.bb-auth-btn--primary {
+  background: var(--bb-auth-violet);
+  color: #fff;
+}
+
+.bb-auth-btn--primary:hover {
+  background: var(--bb-auth-violet-deep);
+}
+
+.bb-auth-btn--ghost {
+  background: transparent;
+  color: var(--bb-auth-violet);
+  border: 1px solid var(--bb-auth-line);
+}
+
+.bb-auth-btn--ghost:hover {
+  background: rgba(108, 92, 231, 0.06);
+}
+
+.bb-auth-footer {
+  padding: 1rem 1.35rem 1.5rem;
+  text-align: center;
+  color: var(--bb-auth-muted);
+  font-size: 0.88rem;
+}
+
+.bb-auth-footer a {
+  color: var(--bb-auth-violet);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.bb-auth-footer a:hover {
+  text-decoration: underline;
+}
+
+.bb-auth-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+.bb-powered-by {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--bb-auth-muted);
+}
+
+.bb-powered-by__getpro {
+  color: var(--bb-auth-getpro);
+  font-weight: 700;
+}
+
+.bb-auth-card__subtitle {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--bb-auth-ink);
+}
+
+.bb-auth-success-list {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.bb-auth-success-list li {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  border-radius: 8px;
+  background: var(--bb-auth-bg);
+  border: 1px solid var(--bb-auth-line);
+  color: var(--bb-auth-muted);
+  font-size: 0.95rem;
+}
+
+.bb-auth-success-list .material-symbols-outlined {
+  color: var(--bb-auth-violet);
+  flex-shrink: 0;
+}
+
+.bb-auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0 0 1rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: var(--bb-auth-ok-bg);
+  color: var(--bb-auth-ok);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .bb-auth-layout {
+    grid-template-columns: minmax(18rem, 0.95fr) minmax(22rem, 1.05fr);
+  }
+
+  .bb-auth-panel {
+    display: flex;
+  }
+
+  .bb-auth-main {
+    min-height: 100vh;
+  }
+
+  .bb-auth-card {
+    padding: 2rem 1.85rem 2.1rem;
+  }
+
+  .bb-auth-field-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 899px) {
+  .bb-auth-main__body {
+    align-items: flex-start;
+    padding-top: 1.25rem;
+  }
+}

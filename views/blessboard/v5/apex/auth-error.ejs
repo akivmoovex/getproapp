@@ -1,0 +1,86 @@
+<%#
+  Apex / tenant auth error — callback failure, expired/consumed/unauthorized transfer.
+  Locals: message, errorState, pageTitle
+  Never includes transfer tokens, session tokens, or tenant secrets.
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title><%= pageTitle || 'Sign in' %> · BlessBoard</title>
+  <%- include('../partials/head-design-system') %>
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=3" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=2" />
+</head>
+<body
+  class="bb-auth-body bb-auth-login"
+  data-bb-shell="apex-auth"
+  data-bb-product="blessboard-v5"
+  data-bb-page="auth-error"
+  data-bb-auth-error="<%= errorState || 'generic' %>"
+>
+<%
+  var icon = 'error';
+  if (errorState === 'expired') icon = 'schedule';
+  else if (errorState === 'consumed') icon = 'link_off';
+  else if (errorState === 'unauthorized') icon = 'block';
+  else if (errorState === 'throttled') icon = 'hourglass_top';
+%>
+  <div class="bb-auth-layout">
+    <div class="bb-auth-main bb-auth-main--solo">
+      <header class="bb-auth-main__header">
+        <a class="bb-auth-brand" href="/">
+          <img
+            class="bb-auth-brand__mark"
+            src="/church/images/brand/blessboard-small-church-logo.png"
+            alt=""
+            width="32"
+            height="32"
+            decoding="async"
+          />
+          <span class="bb-auth-brand__name">BlessBoard</span>
+        </a>
+        <a class="bb-auth-main__header-link" href="/">Home</a>
+      </header>
+
+      <div class="bb-auth-main__body">
+        <div class="bb-auth-card" id="bb-auth-error-card">
+          <div class="bb-auth-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= icon %></span>
+          </div>
+          <h1 class="bb-auth-card__title"><%= pageTitle %></h1>
+          <div
+            class="bb-auth-error bb-auth-error--<%= errorState || 'generic' %>"
+            id="bb-auth-error-summary"
+            role="alert"
+            tabindex="-1"
+            aria-live="assertive"
+          >
+            <p class="bb-auth-error__body"><%= message %></p>
+          </div>
+          <p class="bb-auth-card__lead bb-auth-error-hint">
+            <% if (errorState === 'unauthorized') { %>
+            Sign in from your church site only if your account is authorized for that congregation.
+            <% } else if (errorState === 'expired' || errorState === 'consumed') { %>
+            Start sign-in again from your church site’s Login link. Sign-in links are single-use and short-lived.
+            <% } else { %>
+            You can try again, or return home.
+            <% } %>
+          </p>
+          <div class="bb-auth-actions">
+            <a class="bb-auth-btn bb-auth-btn--primary" href="/login">Try again</a>
+            <a class="bb-auth-btn bb-auth-btn--ghost" href="/">Home</a>
+          </div>
+        </div>
+      </div>
+
+      <footer class="bb-auth-footer">
+        <%- include('../partials/powered-by-getpro') %>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

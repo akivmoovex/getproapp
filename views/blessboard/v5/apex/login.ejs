@@ -1,0 +1,176 @@
+<%#
+  Apex login — Stitch 09-auth-member-login (desktop/mobile).
+  Locals: csrfToken, error, errorState, emailValue, transferHostname, hostKind, loggedOut
+  errorState: null | 'credentials' | 'throttled' | 'expired' | 'consumed' | 'unauthorized' | 'generic'
+  Raw transfer tokens must never appear in this HTML. When the page was opened as
+  GET /login?tr=…, omitting form action posts back to the current URL (query preserved).
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Sign in · BlessBoard</title>
+  <%- include('../partials/head-design-system') %>
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=3" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=2" />
+</head>
+<body
+  class="bb-auth-body bb-auth-login"
+  data-bb-shell="apex-auth"
+  data-bb-product="blessboard-v5"
+  data-bb-page="login"
+  <% if (errorState) { %>data-bb-auth-error="<%= errorState %>"<% } %>
+  <% if (transferHostname) { %>data-bb-auth-transfer="1"<% } %>
+>
+  <a class="bb-auth-skip" href="#bb-auth-login-form">Skip to sign-in form</a>
+
+  <div class="bb-auth-layout">
+    <aside class="bb-auth-panel" aria-hidden="true">
+      <div class="bb-auth-panel__inner">
+        <p class="bb-auth-panel__eyebrow">
+          <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+          Secure access
+        </p>
+        <p class="bb-auth-panel__title"><%= panelTitle %></p>
+        <p class="bb-auth-panel__lead"><%= panelLead %></p>
+      </div>
+    </aside>
+
+    <div class="bb-auth-main">
+      <header class="bb-auth-main__header">
+        <a class="bb-auth-brand" href="/">
+          <img
+            class="bb-auth-brand__mark"
+            src="/church/images/brand/blessboard-small-church-logo.png"
+            alt=""
+            width="32"
+            height="32"
+            decoding="async"
+          />
+          <span class="bb-auth-brand__name">BlessBoard</span>
+        </a>
+        <a class="bb-auth-main__header-link" href="/">Home</a>
+      </header>
+
+      <div class="bb-auth-main__body">
+        <div class="bb-auth-card">
+          <div class="bb-auth-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined">lock</span>
+          </div>
+          <h1 class="bb-auth-card__title">Sign in</h1>
+          <p class="bb-auth-card__lead"><%= subtitle %></p>
+
+          <% if (loggedOut) { %>
+          <p class="bb-auth-success" role="status" data-bb-auth-logged-out="1">
+            You have been signed out.
+          </p>
+          <% } %>
+
+          <% if (transferHostname) { %>
+          <p class="bb-auth-note" data-bb-auth-transfer-host="1">
+            Continue sign-in for <strong><%= transferHostname %></strong>
+          </p>
+          <% } %>
+
+          <% if (error) { %>
+          <div
+            class="bb-auth-error bb-auth-error--<%= errorState || 'generic' %>"
+            id="bb-auth-error-summary"
+            role="alert"
+            tabindex="-1"
+            aria-live="assertive"
+          >
+            <p class="bb-auth-error__title"><%= errorTitle %></p>
+            <p class="bb-auth-error__body"><%= error %></p>
+            <% if (errorState === 'credentials') { %>
+            <ul class="bb-auth-error__list">
+              <li><a href="#email">Email</a></li>
+              <li><a href="#password">Password</a></li>
+            </ul>
+            <% } %>
+          </div>
+          <% } %>
+
+          <form
+            method="post"
+            class="bb-auth-form"
+            id="bb-auth-login-form"
+            autocomplete="on"
+            <% if (error) { %>aria-describedby="bb-auth-error-summary"<% } %>
+          >
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+            <div class="bb-auth-field">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autocomplete="username"
+                inputmode="email"
+                spellcheck="false"
+                value="<%= emailValue || '' %>"
+                <% if (errorState === 'credentials' || errorState === 'generic' || errorState === 'throttled') { %>
+                aria-invalid="true"
+                aria-describedby="<%= errorState === 'credentials' ? 'email-error bb-auth-error-summary' : 'bb-auth-error-summary' %>"
+                <% } %>
+              />
+              <% if (errorState === 'credentials') { %>
+              <p class="bb-auth-field__error" id="email-error">Check your email and try again.</p>
+              <% } %>
+            </div>
+
+            <div class="bb-auth-field">
+              <label for="password">Password</label>
+              <div class="bb-auth-password">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autocomplete="current-password"
+                  <% if (errorState === 'credentials' || errorState === 'generic' || errorState === 'throttled') { %>
+                  aria-invalid="true"
+                  aria-describedby="<%= errorState === 'credentials' ? 'password-error bb-auth-error-summary' : 'bb-auth-error-summary' %>"
+                  <% } %>
+                />
+                <button
+                  type="button"
+                  class="bb-auth-password__toggle"
+                  data-bb-auth-password-toggle
+                  aria-controls="password"
+                  aria-pressed="false"
+                  aria-label="Show password"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                  <span class="bb-auth-password__toggle-label bb-auth-sr-only">Show password</span>
+                </button>
+              </div>
+              <% if (errorState === 'credentials') { %>
+              <p class="bb-auth-field__error" id="password-error">Check your password and try again.</p>
+              <% } %>
+            </div>
+
+            <div class="bb-auth-actions">
+              <button class="bb-auth-btn bb-auth-btn--primary" type="submit">
+                <span class="material-symbols-outlined" aria-hidden="true">login</span>
+                Sign in
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <footer class="bb-auth-footer">
+        <%- include('../partials/powered-by-getpro') %>
+      </footer>
+    </div>
+  </div>
+
+  <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
+</body>
+</html>

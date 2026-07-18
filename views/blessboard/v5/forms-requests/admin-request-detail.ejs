@@ -3,29 +3,161 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <p><a href="<%= basePath %>">Back</a></p>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <h1><%= request.subject %></h1>
-  <p><%= request.category %> · <%= request.status %></p>
-  <p><%= request.message %></p>
-  <h2>Status history</h2>
-  <ul>
-    <% (request.history || []).forEach(function (h) { %>
-      <li><%= h.fromStatus || '—' %> → <%= h.toStatus %><% if (h.note) { %> — <%= h.note %><% } %></li>
-    <% }) %>
-  </ul>
-  <form method="post" action="<%= basePath %>/<%= request.id %>/status">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <label>New status
-      <select name="status">
-        <% requestStatuses.forEach(function (s) { %>
-          <option value="<%= s %>" <%= request.status === s ? 'selected' : '' %>><%= s %></option>
-        <% }) %>
-      </select>
-    </label>
-    <label>Note <input type="text" name="note" maxlength="1000" /></label>
-    <button type="submit">Update status</button>
-  </form>
+<%
+  var reqItem = request || {};
+  var history = Array.isArray(reqItem.history) ? reqItem.history : [];
+  var nextStatuses = Array.isArray(reqItem.nextStatuses) ? reqItem.nextStatuses : [];
+
+  function categoryLabel(c) {
+    var key = String(c || '').toLowerCase();
+    if (key === 'prayer') return 'Prayer';
+    if (key === 'pastoral') return 'Care';
+    if (key === 'practical') return 'Support';
+    if (key === 'other') return 'Other';
+    return c || 'Request';
+  }
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'Submitted';
+    if (key === 'in_review') return 'In review';
+    if (key === 'resolved') return 'Resolved';
+    if (key === 'closed') return 'Closed';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted' || key === 'in_review') return 'bb-ba-chip--pending';
+    if (key === 'resolved') return 'bb-ba-chip--ok';
+    return 'bb-ba-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+%>
+
+<section class="bb-fr-admin bb-fr-req-detail" data-bb-request-admin-detail="1" data-bb-status="<%= reqItem.status %>">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="<%= basePath %>">Requests</a>
+        <span aria-hidden="true">›</span>
+        <span>Detail</span>
+      </p>
+      <h1 class="bb-ba-page-head__title"><%= reqItem.subject %></h1>
+      <p class="bb-ba-lede">
+        <span class="bb-ba-chip bb-ba-chip--muted"><%= categoryLabel(reqItem.category) %></span>
+        <span class="bb-ba-chip <%= statusChip(reqItem.status) %>"><%= statusLabel(reqItem.status) %></span>
+        · Submitted <%= formatWhen(reqItem.createdAt) %>
+        <% if (reqItem.memberRef) { %> · Member · <%= reqItem.memberRef %><% } %>
+      </p>
+    </div>
+  </header>
+
+  <% if (saved === 'status') { %>
+  <p class="bb-ba-ok" role="status">Status updated.</p>
+  <% } %>
+  <% if (error === 'invalid_transition') { %>
+  <p class="bb-ba-alert bb-ba-alert--error" role="alert">That status change is not allowed from the current state.</p>
+  <% } else if (error) { %>
+  <p class="bb-ba-alert bb-ba-alert--error" role="alert">Could not update status. Check the form and try again.</p>
+  <% } %>
+
+  <div class="bb-fr-detail-grid">
+    <div class="bb-fr-detail-main">
+      <section class="bb-ba-panel" data-bb-req-message="1">
+        <h2 class="bb-ba-section-title">Request</h2>
+        <p class="bb-fr-message"><%= reqItem.message %></p>
+
+        <% if (reqItem.mediaAssetId) { %>
+        <div class="bb-fr-attachment" data-bb-req-attachment="1">
+          <h3 class="bb-ba-section-title bb-ba-section-title--sm">Private attachment</h3>
+          <p class="bb-ba-hint">Visible only to authorized branch and HQ admins. Download is private and not cached.</p>
+          <a
+            class="bb-ba-btn bb-ba-btn--ghost"
+            href="<%= basePath %>/<%= reqItem.id %>/file"
+            data-bb-req-download="1"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
+            <%= (reqItem.attachment && reqItem.attachment.filename) ? reqItem.attachment.filename : 'Download attachment' %>
+          </a>
+        </div>
+        <% } %>
+      </section>
+
+      <% if (nextStatuses.length) { %>
+      <section class="bb-ba-panel" data-bb-req-status-form="1">
+        <h2 class="bb-ba-section-title">Update status</h2>
+        <form method="post" action="<%= basePath %>/<%= reqItem.id %>/status" class="bb-fr-status-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="bb-ba-field">
+            <label for="status">New status</label>
+            <select id="status" name="status" required>
+              <% nextStatuses.forEach(function (s) { %>
+              <option value="<%= s %>"><%= statusLabel(s) %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="bb-ba-field">
+            <label for="note">Note</label>
+            <textarea id="note" name="note" rows="3" maxlength="1000" placeholder="Optional update note"></textarea>
+          </div>
+          <div class="bb-ba-field bb-fr-internal">
+            <label class="bb-fr-check">
+              <input type="checkbox" name="internal_only" value="1" />
+              Internal only — hide this note from the member
+            </label>
+            <p class="bb-ba-hint">Status still changes for the member; only the note stays staff-only when checked.</p>
+          </div>
+          <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-req-status-submit="1">Save status</button>
+        </form>
+      </section>
+      <% } else { %>
+      <p class="bb-ba-hint" role="status">This request is closed. No further status changes are allowed.</p>
+      <% } %>
+    </div>
+
+    <aside class="bb-fr-detail-aside">
+      <section class="bb-ba-panel" data-bb-req-history="1" aria-labelledby="req-history-heading">
+        <h2 id="req-history-heading" class="bb-ba-section-title">Activity</h2>
+        <% if (!history.length) { %>
+        <p class="bb-ba-empty">No status history yet.</p>
+        <% } else { %>
+        <ol class="bb-fr-timeline">
+          <% history.forEach(function (h) { %>
+          <li class="bb-fr-timeline__item" data-bb-history-to="<%= h.toStatus %>" data-bb-history-visible="<%= h.memberVisible ? 'member' : 'internal' %>">
+            <span class="bb-fr-timeline__dot" aria-hidden="true"></span>
+            <div class="bb-fr-timeline__body">
+              <p class="bb-fr-timeline__status">
+                <% if (h.fromStatus) { %>
+                <span><%= statusLabel(h.fromStatus) %></span>
+                <span aria-hidden="true"> → </span>
+                <% } %>
+                <strong><%= statusLabel(h.toStatus) %></strong>
+                <% if (!h.memberVisible) { %>
+                <span class="bb-ba-chip bb-ba-chip--muted">Admin only</span>
+                <% } %>
+              </p>
+              <% if (h.note) { %><p class="bb-fr-timeline__note"><%= h.note %></p><% } %>
+              <% if (h.createdAt) { %><p class="bb-fr-timeline__when"><%= formatWhen(h.createdAt) %></p><% } %>
+            </div>
+          </li>
+          <% }) %>
+        </ol>
+        <% } %>
+      </section>
+    </aside>
+  </div>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

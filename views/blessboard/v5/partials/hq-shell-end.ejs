@@ -1,15 +1,40 @@
 </main>
-  <script>
-    (function () {
-      var toggle = document.querySelector('[data-bb-nav="mobile-toggle"]');
-      var panel = document.getElementById("bb-hq-mobile-nav");
-      if (!toggle || !panel) return;
-      toggle.addEventListener("click", function () {
-        var open = panel.classList.toggle("is-open");
-        panel.hidden = !open;
-        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+<%
+  var hqNavEnd = (typeof navItems !== 'undefined' && navItems && navItems.length)
+    ? navItems
+    : [
+        { key: 'home', label: 'Dashboard', href: '/hq', icon: 'dashboard' },
+        { key: 'branches', label: 'Branches', href: '/hq/branches', icon: 'apartment' },
+        { key: 'reports', label: 'Reports', href: '/hq/reports', icon: 'analytics' },
+        { key: 'account', label: 'Account', href: '/hq/account', icon: 'person' },
+      ];
+  var hqTabsEnd = (typeof mobileTabs !== 'undefined' && mobileTabs && mobileTabs.length)
+    ? mobileTabs
+    : hqNavEnd.filter(function (item) {
+        return ['home', 'branches', 'reports', 'account'].indexOf(item.key) !== -1;
       });
-    })();
-  </script>
+%>
+
+      <nav class="bb-hq-bottom" aria-label="HQ primary" data-bb-nav="mobile-tabs">
+        <% hqTabsEnd.forEach(function (item) { %>
+        <a
+          href="<%= item.href %>"
+          class="bb-hq-bottom__link<%= activeNav === item.key ? ' is-active' : '' %>"
+          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+          <span><%= item.label %></span>
+        </a>
+        <% }) %>
+      </nav>
+
+      <footer class="bb-hq-footer" data-bb-footer="1">
+        <%- include('./powered-by-getpro') %>
+      </footer>
+    </div>
+  </div>
+
+  <script src="/blessboard/v5/design-system.js?v=1" defer></script>
+  <script src="/blessboard/v5/hq-admin.js?v=1" defer></script>
 </body>
 </html>

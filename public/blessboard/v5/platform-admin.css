@@ -1,12 +1,4 @@
-:root {
-  color-scheme: light;
-  --bb-violet: #6c5ce7;
-  --bb-ink: #1a1625;
-  --bb-muted: #5c5668;
-  --bb-bg: #f7f5fb;
-  --bb-surface: #ffffff;
-  --bb-line: #e4dfec;
-}
+/* Platform admin layout — tokens from design-tokens.css */
 
 * { box-sizing: border-box; }
 

@@ -11,12 +11,8 @@ const express = require("express");
 
 const { createRequireActiveMember } = require("./requireActiveMember");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const {
-  CSRF_FIELD,
-  issueCsrfToken,
-  validateCsrf,
-  setCsrfCookie,
-} = require("../../platform/http/v5Csrf");
+const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
+const { buildMemberShellLocals } = require("./memberShellLocals");
 const {
   STATUS,
   listMemberAnnouncements,
@@ -65,27 +61,12 @@ function createAnnouncementMemberRouter(deps) {
   }
 
   function shellLocals(req, res, activeNav, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
-    const access = req.blessBoardMemberAccess || null;
-    const preferred =
-      access && access.member && access.member.preferredName
-        ? access.member.preferredName
-        : session && session.user
-          ? session.user.displayName
-          : "";
-    return {
-      pageTitle: activeNav === "announcements" ? "Announcements" : "Member",
+    return buildMemberShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      branchDisplayName:
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
-      displayName: preferred || "",
-      ...(extra || {}),
-    };
+      extra,
+    });
   }
 
   function memberScope(req) {
@@ -110,9 +91,15 @@ function createAnnouncementMemberRouter(deps) {
     if (!listed.ok) {
       return res.status(503).type("text").send("Announcements are temporarily unavailable.");
     }
+    const items = listed.items || [];
+    const unreadCount = items.reduce((n, item) => n + (item && item.isUnread ? 1 : 0), 0);
     const html = renderMemberView(
       "announcements/member-list.ejs",
-      shellLocals(req, res, "announcements", { items: listed.items })
+      shellLocals(req, res, "announcements", {
+        items,
+        unreadCount,
+        featuredItems: items.filter((item) => item && item.isFeatured),
+      })
     );
     return res.status(200).type("html").send(html);
   });

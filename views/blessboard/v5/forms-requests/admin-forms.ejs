@@ -3,26 +3,90 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1>Forms</h1>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <% if (canCreate) { %>
-    <form method="post" action="<%= basePath %>">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <label>Title <input type="text" name="title" maxlength="200" required /></label>
-      <label>Description <input type="text" name="description" maxlength="5000" /></label>
-      <label>Schema JSON
-        <textarea name="schema_json" rows="8" required>{"version":1,"fields":[{"key":"full_name","type":"text","label":"Full name","required":true,"maxLength":100}]}</textarea>
-      </label>
-      <button type="submit">Create draft</button>
-    </form>
+<%
+  var rows = forms || [];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    return 'bb-ba-chip--muted';
+  }
+%>
+
+<section class="bb-fr-admin bb-fr-forms-list" data-bb-forms-admin-list="1">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <h1 class="bb-ba-page-head__title">Forms</h1>
+      <p class="bb-ba-lede">
+        Create branch forms and review submissions for
+        <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
+        Schemas are allowlisted field types only. Submissions stay on this branch.
+      </p>
+    </div>
+  </header>
+
+  <% if (saved === '1' || saved === 'published') { %>
+  <p class="bb-ba-ok" role="status"><%= saved === 'published' ? 'Form published.' : 'Form saved.' %></p>
   <% } %>
-  <ul>
-    <% forms.forEach(function (f) { %>
-      <li data-bb-status="<%= f.status %>">
-        <a href="<%= basePath %>/<%= f.id %>"><%= f.title %></a> · <%= f.status %>
-      </li>
-    <% }) %>
-  </ul>
+
+  <% if (canCreate) { %>
+  <section class="bb-ba-panel" data-bb-forms-create="1">
+    <h2 class="bb-ba-section-title">Create draft form</h2>
+    <form method="post" action="<%= basePath %>" class="bb-fr-form-create">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="bb-ba-field">
+        <label for="title">Title</label>
+        <input id="title" type="text" name="title" maxlength="200" required />
+      </div>
+      <div class="bb-ba-field">
+        <label for="description">Description</label>
+        <input id="description" type="text" name="description" maxlength="5000" />
+      </div>
+      <div class="bb-ba-field">
+        <label for="schema_json">Schema JSON</label>
+        <textarea id="schema_json" name="schema_json" rows="8" required>{"version":1,"fields":[{"key":"full_name","type":"text","label":"Full name","required":true,"maxLength":100}]}</textarea>
+        <p class="bb-ba-hint">Allowed field types only (text, email, phone, textarea, select, checkbox, date, number).</p>
+      </div>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Create draft</button>
+    </form>
+  </section>
+  <% } %>
+
+  <% if (!rows.length) { %>
+  <div class="bb-ba-empty" role="status">No forms yet.</div>
+  <% } else { %>
+  <div class="bb-ba-table-wrap">
+    <table class="bb-ba-table" data-bb-forms-table="1">
+      <thead>
+        <tr>
+          <th scope="col">Title</th>
+          <th scope="col">Status</th>
+          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (f) { %>
+        <tr data-bb-form-status="<%= f.status %>">
+          <td><strong><%= f.title %></strong></td>
+          <td><span class="bb-ba-chip <%= statusChip(f.status) %>"><%= statusLabel(f.status) %></span></td>
+          <td class="bb-ba-table__actions">
+            <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= f.id %>">Review</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

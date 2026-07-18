@@ -1,19 +1,165 @@
 <%- include('../partials/member-shell-start') %>
-  <h1>Events</h1>
-  <% if (saved) { %><p class="bb-mp-saved" role="status">Updated.</p><% } %>
-  <% if (!items || !items.length) { %>
+<%
+  var list = items || [];
+  var registeredItems = list.filter(function (i) { return i && i.registration; });
+  var upcomingItems = list;
+
+  function formatWhen(value, timezone) {
+    if (!value) return '';
+    try {
+      var d = value instanceof Date ? value : new Date(value);
+      if (isNaN(d.getTime())) return '';
+      var opts = {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      };
+      if (timezone) opts.timeZone = String(timezone);
+      return d.toLocaleString('en-GB', opts);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function formatDay(value) {
+    if (!value) return '';
+    try {
+      var d = value instanceof Date ? value : new Date(value);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  var flash =
+    saved === 'registered' ? 'You are registered for this event.' :
+    saved === 'cancelled' ? 'Your registration was cancelled.' :
+    '';
+%>
+
+<section class="bb-mp-part" data-bb-member-events="1">
+  <header class="bb-mp-page-head">
+    <div>
+      <h1 class="bb-mp-page-head__title">Events</h1>
+      <p class="bb-mp-lede">Upcoming gatherings from your church and branch. Registration uses live availability only.</p>
+    </div>
+  </header>
+
+  <% if (flash) { %>
+  <p class="bb-mp-ok" role="status"><%= flash %></p>
+  <% } %>
+
+  <% if (!list.length) { %>
+  <div class="bb-mp-empty" role="status">
+    <span class="material-symbols-outlined" aria-hidden="true">event</span>
     <p>No events are available right now.</p>
+  </div>
   <% } else { %>
+
+  <% if (registeredItems.length) { %>
+  <section class="bb-mp-part-section" aria-label="Your registrations">
+    <h2 class="bb-mp-section-title">You’re registered</h2>
     <ul class="bb-mp-part-list">
-      <% items.forEach(function (item) { %>
-        <li>
-          <a href="/member/events/<%= item.id %>"><%= item.title %></a>
-          <% if (item.registration) { %><span>Registered</span><% } %>
-          <% if (item.capacity != null) { %>
-            <span data-bb-capacity="<%= item.spotsRemaining %>"><%= item.registeredCount %>/<%= item.capacity %></span>
-          <% } %>
-        </li>
+      <% registeredItems.forEach(function (item) { %>
+      <li>
+        <a
+          class="bb-mp-part-card is-registered"
+          href="/member/events/<%= item.id %>"
+          data-bb-event="<%= item.id %>"
+          data-bb-registered="1"
+        >
+          <div class="bb-mp-part-card__when" aria-hidden="true">
+            <span class="bb-mp-part-card__day"><%= formatDay(item.startsAt) || '—' %></span>
+          </div>
+          <div class="bb-mp-part-card__body">
+            <div class="bb-mp-part-card__top">
+              <h3 class="bb-mp-part-card__title"><%= item.title %></h3>
+              <span class="bb-mp-chip bb-mp-chip--active" aria-label="Registered">Registered</span>
+            </div>
+            <% if (item.startsAt) { %>
+            <p class="bb-mp-part-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <%= formatWhen(item.startsAt, item.timezone) %>
+            </p>
+            <% } %>
+            <% if (item.location) { %>
+            <p class="bb-mp-part-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+              <%= item.location %>
+            </p>
+            <% } %>
+          </div>
+          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+      </li>
       <% }) %>
     </ul>
+  </section>
   <% } %>
+
+  <section class="bb-mp-part-section" aria-label="All events">
+    <h2 class="bb-mp-section-title">Upcoming events</h2>
+    <ul class="bb-mp-part-list">
+      <% upcomingItems.forEach(function (item) { %>
+      <li>
+        <a
+          class="bb-mp-part-card<%= item.registration ? ' is-registered' : '' %><%= item.capacity != null && item.spotsRemaining === 0 && !item.registration ? ' is-full' : '' %>"
+          href="/member/events/<%= item.id %>"
+          data-bb-event="<%= item.id %>"
+          data-bb-registered="<%= item.registration ? '1' : '0' %>"
+          <% if (item.capacity != null) { %>data-bb-capacity="<%= item.spotsRemaining %>"<% } %>
+        >
+          <div class="bb-mp-part-card__when" aria-hidden="true">
+            <span class="bb-mp-part-card__day"><%= formatDay(item.startsAt) || '—' %></span>
+          </div>
+          <div class="bb-mp-part-card__body">
+            <div class="bb-mp-part-card__top">
+              <h3 class="bb-mp-part-card__title"><%= item.title %></h3>
+              <% if (item.registration) { %>
+              <span class="bb-mp-chip bb-mp-chip--active" aria-label="Registered">Registered</span>
+              <% } else if (item.capacity != null && item.spotsRemaining === 0) { %>
+              <span class="bb-mp-chip bb-mp-chip--full" aria-label="Full">Full</span>
+              <% } else { %>
+              <span class="bb-mp-chip bb-mp-chip--open" aria-label="Open">Open</span>
+              <% } %>
+            </div>
+            <% if (item.summary) { %>
+            <p class="bb-mp-part-card__excerpt"><%= item.summary %></p>
+            <% } %>
+            <% if (item.startsAt) { %>
+            <p class="bb-mp-part-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <%= formatWhen(item.startsAt, item.timezone) %>
+            </p>
+            <% } %>
+            <% if (item.location) { %>
+            <p class="bb-mp-part-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+              <%= item.location %>
+            </p>
+            <% } %>
+            <% if (item.capacity != null) { %>
+            <p class="bb-mp-part-card__capacity">
+              <% if (item.spotsRemaining === 0) { %>
+              No spots remaining (<%= item.registeredCount %>/<%= item.capacity %>)
+              <% } else { %>
+              <%= item.spotsRemaining %> spot<%= item.spotsRemaining === 1 ? '' : 's' %> left
+              (<%= item.registeredCount %>/<%= item.capacity %>)
+              <% } %>
+            </p>
+            <% } %>
+          </div>
+          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+</section>
+
 <%- include('../partials/member-shell-end') %>

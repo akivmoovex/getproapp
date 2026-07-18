@@ -1,0 +1,33 @@
+<%#
+  Apex shell end.
+%>
+  </main>
+
+  <footer class="bb-apex-footer" data-bb-apex-footer="1">
+    <div class="bb-apex-container">
+      <div class="bb-apex-footer__grid">
+        <div>
+          <p class="bb-apex-footer__name">BlessBoard</p>
+          <p class="bb-apex-footer__tagline">One digital home for your church — websites, engagement, and administration on GetPro.</p>
+          <p><%- include('./powered-by-getpro') %></p>
+        </div>
+        <div>
+          <ul class="bb-apex-footer__links">
+            <li><a href="/">Home</a></li>
+            <% if (authenticated) { %>
+            <li><a href="/account">Account</a></li>
+            <% } else { %>
+            <li><a href="/login">Login</a></li>
+            <% } %>
+          </ul>
+        </div>
+      </div>
+      <div class="bb-apex-footer__meta">
+        <span>© BlessBoard</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/blessboard/v5/apex.js?v=1" defer></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<%#
+  BlessBoard V5 tenant public shell — footer + scripts.
+  Locals: publicName, hqBranchDisplayName, primaryEmail, primaryPhone,
+          loginHref, apexHref, footerTagline (optional)
+%>
+  </main>
+
+  <footer class="bb-tp-footer" data-bb-footer="1">
+    <div class="bb-tp-footer__inner">
+      <div class="bb-tp-footer__grid">
+        <div class="bb-tp-footer__brand">
+          <p class="bb-tp-footer__name"><%= publicName %></p>
+          <% if (typeof footerTagline !== 'undefined' && footerTagline) { %>
+          <p class="bb-tp-footer__tagline"><%= footerTagline %></p>
+          <% } else if (hqBranchDisplayName) { %>
+          <p class="bb-tp-footer__tagline">Headquarters: <%= hqBranchDisplayName %></p>
+          <% } %>
+          <p class="bb-tp-footer__powered"><%- include('./powered-by-getpro') %></p>
+        </div>
+
+        <div class="bb-tp-footer__col">
+          <h2 class="bb-tp-footer__heading">Quick Links</h2>
+          <ul class="bb-tp-footer__list">
+            <li><a href="/ministries">Ministries</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/sermons">Sermons</a></li>
+            <li><a href="/giving">Giving</a></li>
+          </ul>
+        </div>
+
+        <div class="bb-tp-footer__col">
+          <h2 class="bb-tp-footer__heading">Contact</h2>
+          <ul class="bb-tp-footer__list bb-tp-footer__list--contact">
+            <% if (typeof primaryEmail !== 'undefined' && primaryEmail) { %>
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+              <a href="mailto:<%= primaryEmail %>"><%= primaryEmail %></a>
+            </li>
+            <% } %>
+            <% if (typeof primaryPhone !== 'undefined' && primaryPhone) { %>
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">phone</span>
+              <a href="tel:<%= String(primaryPhone).replace(/[^\d+]/g, '') %>"><%= primaryPhone %></a>
+            </li>
+            <% } %>
+            <% if (!(typeof primaryEmail !== 'undefined' && primaryEmail) && !(typeof primaryPhone !== 'undefined' && primaryPhone)) { %>
+            <li><a href="/contact">Contact details</a></li>
+            <% } %>
+          </ul>
+        </div>
+
+        <div class="bb-tp-footer__col">
+          <h2 class="bb-tp-footer__heading">Members</h2>
+          <ul class="bb-tp-footer__list">
+            <li><a href="<%= loginHref %>">Sign in</a></li>
+            <li><a href="/register">Register</a></li>
+            <li><a href="<%= apexHref %>">BlessBoard</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="bb-tp-footer__bar">
+        <p class="bb-tp-footer__copy">&copy; <%= publicName %></p>
+        <p class="bb-tp-footer__bar-links">
+          <a href="/contact">Contact Us</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/blessboard/v5/tenant-public.js?v=3" defer></script>
+</body>
+</html>

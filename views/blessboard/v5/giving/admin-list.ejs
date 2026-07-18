@@ -3,61 +3,151 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1>Giving</h1>
-  <p>Manual giving summaries — aggregated totals only. No donor or payment details.</p>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
+<%
+  var rows = entries || [];
+  var cats = categories || [];
+  var monthSummary = summary || null;
+  var categoryRows = (monthSummary && (monthSummary.churchTotals || monthSummary.byBranch)) || [];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'submitted') return 'Submitted';
+    if (key === 'approved') return 'Approved';
+    if (key === 'void') return 'Void';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted' || key === 'approved') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    if (key === 'void') return 'bb-ba-chip--danger';
+    return 'bb-ba-chip--muted';
+  }
+  function formatDate(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(String(value) + (String(value).length === 10 ? 'T00:00:00Z' : ''));
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+%>
 
-  <section>
-    <h2>Monthly summary · <%= yearMonth %></h2>
-    <form method="get" action="<%= basePath %>">
-      <label>Month
-        <input type="month" name="month" value="<%= yearMonth %>" />
-      </label>
-      <button type="submit">Show</button>
-    </form>
-    <% if (!summary || (!summary.churchTotals && (!summary.byBranch || !summary.byBranch.length))) { %>
-      <p>No submitted giving for this month.</p>
+<section class="bb-giv-admin" data-bb-giving-admin-list="1">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <h1 class="bb-ba-page-head__title">Giving summaries</h1>
+      <p class="bb-ba-lede">
+        Manual aggregated totals for
+        <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
+        Category totals only — no individual donors and no gateway.
+      </p>
+    </div>
+    <% if (canCreate) { %>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= basePath %>/new" data-bb-giv-create="1">Record giving</a>
+    <% } %>
+  </header>
+
+  <% if (saved) { %><p class="bb-ba-ok" role="status">Saved.</p><% } %>
+
+  <section class="bb-ba-panel" data-bb-giving-categories="1">
+    <h2 class="bb-ba-section-title">Giving categories</h2>
+    <p class="bb-ba-hint">Active categories for this church. Entries are category totals only.</p>
+    <% if (!cats.length) { %>
+    <p class="bb-ba-empty">No categories available.</p>
     <% } else { %>
-      <% if (summary.grandTotalsByCurrency && summary.grandTotalsByCurrency.length) { %>
-        <ul data-bb-giving-grand-totals>
-          <% summary.grandTotalsByCurrency.forEach(function (gt) { %>
-            <li data-bb-currency="<%= gt.currency %>" data-bb-total="<%= gt.totalAmount %>">
-              Total <%= gt.currency %>: <%= gt.totalAmount %>
-            </li>
-          <% }) %>
-        </ul>
+    <ul class="bb-giv-cat-list">
+      <% cats.forEach(function (c) { %>
+      <li data-bb-category-key="<%= c.categoryKey %>"><%= c.label %></li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-giv-summary" data-bb-giving-monthly="1">
+    <div class="bb-giv-summary__head">
+      <h2 class="bb-ba-section-title">Monthly summary · <%= yearMonth %></h2>
+      <form method="get" action="<%= basePath %>" class="bb-giv-month-form">
+        <label class="bb-ba-sr-only" for="month">Month</label>
+        <input id="month" type="month" name="month" value="<%= yearMonth %>" />
+        <% if (statusFilter) { %><input type="hidden" name="status" value="<%= statusFilter %>" /><% } %>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm">Show</button>
+      </form>
+    </div>
+    <% if (!monthSummary || !categoryRows.length) { %>
+    <p class="bb-ba-empty" role="status">No submitted giving for this month.</p>
+    <% } else { %>
+      <% if (monthSummary.grandTotalsByCurrency && monthSummary.grandTotalsByCurrency.length) { %>
+      <div class="bb-giv-summary-cards" data-bb-giving-grand-totals>
+        <% monthSummary.grandTotalsByCurrency.forEach(function (gt) { %>
+        <article class="bb-att-stat" data-bb-currency="<%= gt.currency %>" data-bb-total="<%= gt.totalAmount %>">
+          <p class="bb-att-stat__label">Total <%= gt.currency %></p>
+          <p class="bb-att-stat__value"><%= gt.totalAmount %></p>
+          <p class="bb-ba-hint">Submitted / approved only</p>
+        </article>
+        <% }) %>
+      </div>
       <% } %>
-      <ul>
-        <% (summary.churchTotals || summary.byBranch).forEach(function (row) { %>
-          <li>
-            <%= row.categoryLabel || row.categoryKey %>:
-            <%= row.totalAmount %> <%= row.currency %>
-            (<%= row.entryCount %> entr<%= row.entryCount === 1 ? 'y' : 'ies' %>)
-          </li>
+      <ul class="bb-giv-summary-list" data-bb-giving-summary-list="1">
+        <% categoryRows.forEach(function (row) { %>
+        <li>
+          <%= row.categoryLabel || row.categoryKey %>:
+          <%= row.totalAmount %> <%= row.currency %>
+          (<%= row.entryCount %> entr<%= row.entryCount === 1 ? 'y' : 'ies' %>)
+        </li>
         <% }) %>
       </ul>
     <% } %>
   </section>
 
-  <% if (canCreate) { %>
-    <p><a href="<%= basePath %>/new">Record giving entry</a></p>
-  <% } %>
+  <form method="get" action="<%= basePath %>" class="bb-ba-filter bb-giv-filter" data-bb-giv-filter="1">
+    <input type="hidden" name="month" value="<%= yearMonth %>" />
+    <div class="bb-ba-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">All statuses</option>
+        <% ['draft','submitted','approved','void'].forEach(function (st) { %>
+        <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-ba-filter__actions">
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Filter</button>
+    </div>
+  </form>
 
-  <section>
-    <h2>Entries</h2>
-    <% if (!entries || !entries.length) { %>
-      <p>No giving entries in this view.</p>
+  <section class="bb-ba-panel">
+    <h2 class="bb-ba-section-title">Entries</h2>
+    <% if (!rows.length) { %>
+    <p class="bb-ba-empty" role="status">No giving entries match this filter.</p>
     <% } else { %>
-      <ul>
-        <% entries.forEach(function (en) { %>
-          <li data-bb-status="<%= en.status %>">
-            <a href="<%= basePath %>/<%= en.id %>"><%= en.categoryLabel || en.categoryKey %></a>
-            · <%= en.givingDate %> · <%= en.amount %> <%= en.currency %> · <%= en.status %>
-          </li>
-        <% }) %>
-      </ul>
+    <div class="bb-ba-table-wrap">
+      <table class="bb-ba-table" data-bb-giv-table="1">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Category</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="bb-ba-sr-only">Open</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (en) { %>
+          <tr data-bb-status="<%= en.status %>">
+            <td><%= formatDate(en.givingDate) %></td>
+            <td><a class="bb-ann-title-link" href="<%= basePath %>/<%= en.id %>"><%= en.categoryLabel || en.categoryKey %></a></td>
+            <td class="bb-giv-amount"><%= en.amount %> <%= en.currency %></td>
+            <td><span class="bb-ba-chip <%= statusChip(en.status) %>"><%= statusLabel(en.status) %></span></td>
+            <td><a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="<%= basePath %>/<%= en.id %>">Open</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <p class="bb-ba-hint">Showing up to <%= rows.length %> entries for <%= yearMonth %> (bounded list). Amounts are decimal strings from NUMERIC storage.</p>
     <% } %>
   </section>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

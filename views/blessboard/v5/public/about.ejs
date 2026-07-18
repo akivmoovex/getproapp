@@ -1,0 +1,78 @@
+<%#
+  About page body — Stitch desktop/mobile layouts, published CMS sections only.
+%>
+<%
+  var hero = null;
+  var rest = [];
+  (sections || []).forEach(function (s) {
+    var isHero = !hero && (s.sectionType === 'hero' || String(s.sectionKey || '').indexOf('hero') >= 0);
+    if (isHero) hero = s;
+    else rest.push(s);
+  });
+  if (!hero && rest.length) {
+    hero = rest.shift();
+  }
+  var heroHeading = (hero && hero.heading) || pageTitle || ('About ' + publicName);
+  var heroBody = (hero && hero.bodyText) || '';
+  var heroMedia = hero && hero.mediaUrl ? hero.mediaUrl : null;
+%>
+
+<section class="bb-tp-about" data-bb-about="1">
+  <header class="bb-tp-page-hero">
+    <div class="bb-tp-page-hero__inner">
+      <div class="bb-tp-page-hero__copy">
+        <p class="bb-tp-eyebrow">Our Journey</p>
+        <h1 class="bb-tp-page-hero__title"><%= heroHeading %></h1>
+        <% if (heroBody) { %>
+        <p class="bb-tp-page-hero__lead"><%= heroBody %></p>
+        <% } %>
+        <div class="bb-tp-page-hero__cta">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">
+            Contact Church
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register as a Member</a>
+        </div>
+      </div>
+      <div class="bb-tp-page-hero__visual<%= heroMedia ? ' has-media' : '' %>">
+        <% if (heroMedia) { %>
+        <img class="bb-tp-page-hero__img" src="<%= heroMedia %>" alt="" width="640" height="480" loading="eager" decoding="async" />
+        <% } else { %>
+        <div class="bb-tp-page-hero__fallback" aria-hidden="true"></div>
+        <% } %>
+      </div>
+    </div>
+  </header>
+
+  <% if (showEmptyState) { %>
+  <div class="bb-tp-container">
+    <div class="bb-tp-empty" role="status">
+      <h2><%= emptyHeadline %></h2>
+      <p><%= emptyMessage %></p>
+    </div>
+  </div>
+  <% } else if (rest.length) { %>
+  <div class="bb-tp-container bb-tp-about__body">
+    <% rest.forEach(function (section) { %>
+    <section class="bb-tp-content-block bb-tp-about__block" data-section="<%= section.sectionKey %>">
+      <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+      <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+      <% if (section.mediaUrl) { %>
+      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+      <% } %>
+    </section>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <section class="bb-tp-about__join" aria-label="Join">
+    <div class="bb-tp-container bb-tp-about__join-inner">
+      <h2 class="bb-tp-section-title">Join Our Community</h2>
+      <p class="bb-tp-body">Connect with <%= publicName %> — plan a visit or register as a member.</p>
+      <div class="bb-tp-page-hero__cta">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Plan Your Visit</a>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register</a>
+      </div>
+    </div>
+  </section>
+</section>

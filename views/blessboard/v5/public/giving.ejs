@@ -1,0 +1,109 @@
+<%#
+  Giving — Stitch method cards; published giving methods only.
+  Information display — no payment processing or financial data collection.
+%>
+<%
+  var pageSections = sections || [];
+  var methods = entities || [];
+  var intro = pageSections.length ? pageSections[0] : null;
+  var moreSections = pageSections.length > 1 ? pageSections.slice(1) : [];
+  var introHeading = (intro && intro.heading) || pageTitle || 'Ways to Give';
+  var introBody = (intro && intro.bodyText) || '';
+%>
+
+<section class="bb-tp-directory bb-tp-giving" data-bb-giving="1">
+  <header class="bb-tp-dir-hero bb-tp-giving__hero">
+    <div class="bb-tp-container">
+      <p class="bb-tp-eyebrow">
+        <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
+        Faithful Stewardship
+      </p>
+      <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
+      <% if (introBody) { %>
+      <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
+      <% } else if (!showEmptyState) { %>
+      <p class="bb-tp-dir-hero__lead">Support the ministry of <%= publicName %> through the giving options published by leadership.</p>
+      <% } %>
+      <% if (methods.length) { %>
+      <div class="bb-tp-page-hero__cta">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="#ways-to-give">
+          Explore Ways to Give
+        </a>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="/contact">
+          <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+          Contact Church
+        </a>
+      </div>
+      <% } %>
+    </div>
+  </header>
+
+  <div class="bb-tp-container bb-tp-directory__body">
+    <% if (showEmptyState) { %>
+    <div class="bb-tp-empty" role="status" data-bb-empty="giving">
+      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">volunteer_activism</span>
+      <h2><%= emptyHeadline %></h2>
+      <p><%= emptyMessage %></p>
+      <p class="bb-tp-empty__hint">Published giving methods will appear here when available. BlessBoard does not process payments on this page.</p>
+      <p class="bb-tp-empty__actions">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Church</a>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="/">Home</a>
+      </p>
+    </div>
+    <% } else { %>
+
+    <% if (methods.length) { %>
+    <section id="ways-to-give" class="bb-tp-giving-methods" aria-labelledby="ways-to-give-heading" data-bb-giving-methods="1">
+      <div class="bb-tp-giving-methods__head">
+        <h2 id="ways-to-give-heading" class="bb-tp-giving-methods__title">Ways to Give</h2>
+        <p class="bb-tp-giving-methods__note">Methods published by <%= publicName %>. This page does not collect payment details or process donations.</p>
+      </div>
+      <ul class="bb-tp-giving-grid">
+        <% methods.forEach(function (method) { %>
+        <li class="bb-tp-giving-card" data-bb-giving-method="<%= method.methodType || 'other' %>">
+          <span class="bb-tp-giving-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
+          </span>
+          <h3 class="bb-tp-giving-card__label"><%= method.label %></h3>
+          <% if (method.instructions) { %>
+          <p class="bb-tp-giving-card__instructions"><%= method.instructions %></p>
+          <% } %>
+          <% if (method.externalUrl) { %>
+          <p class="bb-tp-giving-card__action">
+            <a
+              class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block"
+              href="<%= method.externalUrl %>"
+              rel="noopener noreferrer"
+              target="_blank"
+              data-bb-giving-link="1"
+            >
+              Open giving link
+              <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+            </a>
+          </p>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } else if (entitiesEmptyMessage) { %>
+    <p class="bb-tp-lead"><%= entitiesEmptyMessage %></p>
+    <% } %>
+
+    <% moreSections.forEach(function (section) { %>
+    <section class="bb-tp-section bb-tp-giving-section" data-section="<%= section.sectionKey %>">
+      <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
+      <% if (section.bodyText) { %><p><%= section.bodyText %></p><% } %>
+      <% if (section.mediaUrl) { %>
+      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" />
+      <% } %>
+    </section>
+    <% }) %>
+
+    <p class="bb-tp-giving-disclaimer" role="note">
+      BlessBoard does not process payments or collect financial account details on this page. Use only the published methods above, or contact the church office for help.
+    </p>
+
+    <% } %>
+  </div>
+</section>

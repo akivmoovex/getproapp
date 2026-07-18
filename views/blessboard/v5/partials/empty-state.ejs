@@ -1,0 +1,23 @@
+<%#
+  Empty state. Locals: title, body, icon (material name), actionHref, actionLabel, className
+%>
+<%
+  var _title = typeof title !== 'undefined' && title ? title : 'Nothing here yet';
+  var _body = typeof body !== 'undefined' ? body : '';
+  var _icon = typeof icon !== 'undefined' && icon ? icon : 'inbox';
+  var _cls = 'bb-ds-empty' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+%>
+<div class="<%= _cls %>" role="status" data-bb-ds="empty-state">
+  <div class="bb-ds-empty__icon">
+    <%- include('./icon', { name: _icon }) %>
+  </div>
+  <h2 class="bb-ds-empty__title"><%= _title %></h2>
+  <% if (_body) { %>
+  <p class="bb-ds-empty__body"><%= _body %></p>
+  <% } %>
+  <% if (typeof actionHref !== 'undefined' && actionHref && typeof actionLabel !== 'undefined' && actionLabel) { %>
+  <p>
+    <a class="bb-ds-btn bb-ds-btn--primary" href="<%= actionHref %>"><%= actionLabel %></a>
+  </p>
+  <% } %>
+</div>

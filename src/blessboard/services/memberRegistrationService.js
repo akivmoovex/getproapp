@@ -863,6 +863,141 @@ async function getMemberRegistrationForManager(db, input) {
   }
 }
 
+/**
+ * List branch members for managers (paginated, bounded search). Privacy-limited fields only.
+ */
+async function listBranchMembersForManager(db, input) {
+  const raw = input && typeof input === "object" ? input : {};
+  const churchId = String(raw.churchId || "").trim();
+  const branchId = String(raw.branchId || "").trim();
+  const actorUserId = String(raw.actorUserId || "").trim();
+  if (!churchId || !branchId || !actorUserId) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: "scope",
+      items: [],
+      total: 0,
+      limit: 0,
+      offset: 0,
+    };
+  }
+
+  try {
+    return await withClient(db, async (client) => {
+      const gate = await requireMemberManager(client, {
+        actorUserId,
+        churchId,
+        branchId,
+      });
+      if (!gate.ok) {
+        return {
+          ok: false,
+          status: gate.status,
+          reason: gate.reason,
+          items: [],
+          total: 0,
+          limit: 0,
+          offset: 0,
+        };
+      }
+      const listed = await repo.listMembersForBranch(client, {
+        churchId,
+        branchId,
+        status: raw.status,
+        membershipStatus: raw.membershipStatus,
+        q: raw.q,
+        limit: raw.limit,
+        offset: raw.offset,
+      });
+      const items = listed.items.map((item) => ({
+        id: item.id,
+        firstName: item.firstName,
+        lastName: item.lastName,
+        preferredName: item.preferredName,
+        emailDisplay: item.emailDisplay,
+        phoneDisplay: item.phoneDisplay,
+        status: item.status,
+        membershipStatus: item.membershipStatus,
+        isPrimary: item.isPrimary,
+        joinedAt: item.joinedAt,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }));
+      return {
+        ok: true,
+        status: STATUS.OK,
+        items,
+        total: listed.total,
+        limit: listed.limit,
+        offset: listed.offset,
+      };
+    });
+  } catch {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reason: "lookup",
+      items: [],
+      total: 0,
+      limit: 0,
+      offset: 0,
+    };
+  }
+}
+
+/**
+ * Load one member on the host branch for managers.
+ */
+async function getBranchMemberForManager(db, input) {
+  const raw = input && typeof input === "object" ? input : {};
+  const memberId = String(raw.memberId || "").trim();
+  const churchId = String(raw.churchId || "").trim();
+  const branchId = String(raw.branchId || "").trim();
+  const actorUserId = String(raw.actorUserId || "").trim();
+  if (!memberId || !churchId || !branchId || !actorUserId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "scope", member: null };
+  }
+
+  try {
+    return await withClient(db, async (client) => {
+      const gate = await requireMemberManager(client, {
+        actorUserId,
+        churchId,
+        branchId,
+      });
+      if (!gate.ok) {
+        return { ok: false, status: gate.status, reason: gate.reason, member: null };
+      }
+      const member = await repo.findMemberOnBranch(client, { memberId, churchId, branchId });
+      if (!member) {
+        return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found", member: null };
+      }
+      return {
+        ok: true,
+        status: STATUS.OK,
+        member: {
+          id: member.id,
+          firstName: member.firstName,
+          lastName: member.lastName,
+          preferredName: member.preferredName,
+          emailDisplay: member.emailDisplay,
+          phoneDisplay: member.phoneDisplay,
+          status: member.status,
+          membershipStatus: member.membershipStatus,
+          isPrimary: member.isPrimary,
+          joinedAt: member.joinedAt,
+          createdAt: member.createdAt,
+          updatedAt: member.updatedAt,
+          hasLoginLinked: Boolean(member.userId),
+        },
+      };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup", member: null };
+  }
+}
+
 module.exports = {
   STATUS,
   PRIVACY_ALLOWED_PROFILE_KEYS,
@@ -875,4 +1010,6 @@ module.exports = {
   linkMemberToUser,
   listMemberRegistrations,
   getMemberRegistrationForManager,
+  listBranchMembersForManager,
+  getBranchMemberForManager,
 };

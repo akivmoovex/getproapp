@@ -1,16 +1,118 @@
 <%- include('../partials/member-shell-start') %>
-  <p><a href="/member/requests">Back</a></p>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <h1><%= request.subject %></h1>
-  <p><%= request.category %> · <%= request.status %></p>
-  <p><%= request.message %></p>
-  <% if (request.mediaAssetId) { %>
-    <p><a href="/member/requests/<%= request.id %>/file">Open attachment</a></p>
+<%
+  var reqItem = request || {};
+  var history = Array.isArray(reqItem.history) ? reqItem.history : [];
+  var flash = saved === '1' ? 'Your request was submitted.' : '';
+
+  function categoryLabel(c) {
+    var key = String(c || '').toLowerCase();
+    if (key === 'prayer') return 'Prayer';
+    if (key === 'pastoral') return 'Care';
+    if (key === 'practical') return 'Support';
+    if (key === 'other') return 'Other';
+    return c || 'Request';
+  }
+
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'Pending review';
+    if (key === 'in_review') return 'In review';
+    if (key === 'resolved') return 'Resolved';
+    if (key === 'closed') return 'Closed';
+    return s || 'Unknown';
+  }
+
+  function statusChipClass(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'bb-mp-chip--pending';
+    if (key === 'in_review') return 'bb-mp-chip--open';
+    if (key === 'resolved') return 'bb-mp-chip--active';
+    if (key === 'closed') return 'bb-mp-chip--request';
+    return 'bb-mp-chip--request';
+  }
+
+  function formatWhen(value) {
+    if (!value) return '';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+%>
+
+<section class="bb-mp-req-detail" data-bb-member-request-detail="1">
+  <p class="bb-mp-back">
+    <a href="/member/requests">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to requests
+    </a>
+  </p>
+
+  <% if (flash) { %>
+  <p class="bb-mp-ok" role="status"><%= flash %></p>
   <% } %>
-  <h2>Status history</h2>
-  <ul>
-    <% (request.history || []).forEach(function (h) { %>
-      <li><%= h.fromStatus || '—' %> → <%= h.toStatus %><% if (h.note) { %> — <%= h.note %><% } %></li>
-    <% }) %>
-  </ul>
+
+  <article class="bb-mp-part-detail" data-bb-status="<%= reqItem.status %>">
+    <div class="bb-mp-ann-chips" aria-label="Request status">
+      <span class="bb-mp-chip <%= statusChipClass(reqItem.status) %>"><%= statusLabel(reqItem.status) %></span>
+      <span class="bb-mp-chip bb-mp-chip--request"><%= categoryLabel(reqItem.category) %></span>
+    </div>
+
+    <h1 class="bb-mp-part-detail__title"><%= reqItem.subject %></h1>
+
+    <% if (reqItem.message) { %>
+    <p class="bb-mp-part-detail__summary"><%= reqItem.message %></p>
+    <% } %>
+
+    <% if (reqItem.mediaAssetId) { %>
+    <p class="bb-mp-part-detail__actions">
+      <a
+        class="bb-mp-btn bb-mp-btn--ghost"
+        href="/member/requests/<%= reqItem.id %>/file"
+        data-bb-request-download="1"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
+        Download attachment
+      </a>
+    </p>
+    <% } %>
+  </article>
+
+  <section class="bb-mp-req-history" aria-labelledby="status-history-heading" data-bb-request-history="1">
+    <h2 id="status-history-heading" class="bb-mp-section-title">Status history</h2>
+    <% if (!history.length) { %>
+    <p class="bb-mp-lede bb-mp-lede--tight">No status updates yet.</p>
+    <% } else { %>
+    <ol class="bb-mp-timeline">
+      <% history.forEach(function (h) { %>
+      <li class="bb-mp-timeline__item" data-bb-history-to="<%= h.toStatus %>">
+        <span class="bb-mp-timeline__dot" aria-hidden="true"></span>
+        <div class="bb-mp-timeline__body">
+          <p class="bb-mp-timeline__status">
+            <% if (h.fromStatus) { %>
+            <span class="bb-mp-timeline__from"><%= statusLabel(h.fromStatus) %></span>
+            <span aria-hidden="true"> → </span>
+            <% } %>
+            <span class="bb-mp-timeline__to"><%= statusLabel(h.toStatus) %></span>
+          </p>
+          <% if (h.note) { %>
+          <p class="bb-mp-timeline__note"><%= h.note %></p>
+          <% } %>
+          <% if (h.createdAt) { %>
+          <p class="bb-mp-timeline__when"><%= formatWhen(h.createdAt) %></p>
+          <% } %>
+        </div>
+      </li>
+      <% }) %>
+    </ol>
+    <% } %>
+    <p class="bb-mp-hint">Only member-visible updates appear here. Internal staff review notes are not shown.</p>
+  </section>
+</section>
+
 <%- include('../partials/member-shell-end') %>

@@ -1,10 +1,51 @@
 <%- include('../partials/member-shell-start') %>
-  <h1>Resources</h1>
-  <% if (!resources.length) { %><p>No resources yet.</p><% } else { %>
-    <ul>
-      <% resources.forEach(function (r) { %>
-        <li><a href="/member/resources/<%= r.id %>"><%= r.title %></a></li>
-      <% }) %>
-    </ul>
+<%
+  var list = resources || [];
+%>
+
+<section class="bb-mp-fr" data-bb-member-resources="1">
+  <header class="bb-mp-page-head">
+    <div>
+      <h1 class="bb-mp-page-head__title">Resources</h1>
+      <p class="bb-mp-lede">Study materials and files shared with members of your church.</p>
+    </div>
+  </header>
+
+  <% if (!list.length) { %>
+  <div class="bb-mp-empty" role="status">
+    <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+    <p>No resources are available right now.</p>
+  </div>
+  <% } else { %>
+  <ul class="bb-mp-part-list" aria-label="Resource library">
+    <% list.forEach(function (r) { %>
+    <li>
+      <a
+        class="bb-mp-part-card"
+        href="/member/resources/<%= r.id %>"
+        data-bb-resource="<%= r.id %>"
+        data-bb-has-file="<%= r.mediaAssetId ? '1' : '0' %>"
+      >
+        <div class="bb-mp-fr-icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= r.mediaAssetId ? 'description' : 'article' %></span>
+        </div>
+        <div class="bb-mp-part-card__body">
+          <div class="bb-mp-part-card__top">
+            <h2 class="bb-mp-part-card__title"><%= r.title %></h2>
+            <% if (r.mediaAssetId) { %>
+            <span class="bb-mp-chip bb-mp-chip--open" aria-label="Download available">File</span>
+            <% } %>
+          </div>
+          <% if (r.description) { %>
+          <p class="bb-mp-part-card__excerpt"><%= r.description.length > 140 ? r.description.slice(0, 139) + '…' : r.description %></p>
+          <% } %>
+        </div>
+        <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
+</section>
+
 <%- include('../partials/member-shell-end') %>

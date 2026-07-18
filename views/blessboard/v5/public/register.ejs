@@ -5,69 +5,237 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Register · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blessboard/v5/design-tokens.css?v=1" />
+  <link rel="stylesheet" href="/blessboard/v5/design-system.css?v=1" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=3" />
 </head>
-<body class="bb-tp-body" data-bb-shell="tenant-public" data-bb-page="register">
-  <div class="bb-tp-shell">
-    <header class="bb-tp-top">
-      <div>
-        <a class="bb-tp-brand" href="/"><%= publicName %></a>
-        <% if (branchName) { %>
-        <div class="bb-tp-branch"><%= branchName %></div>
-        <% } %>
+<body class="bb-auth-body" data-bb-shell="tenant-auth" data-bb-product="blessboard-v5" data-bb-page="register">
+<%
+  var fe = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
+  var summaryItems = typeof errorSummaryItems !== 'undefined' && errorSummaryItems && errorSummaryItems.length
+    ? errorSummaryItems
+    : (error ? [error] : []);
+  var hasErrors = Boolean(error) || summaryItems.length > 0;
+  var sub = submitted || {};
+  function fieldInvalid(key) { return Boolean(fe[key]); }
+  function fieldDescribedBy(key, extraIds) {
+    var ids = [];
+    if (fe[key]) ids.push('err-' + key);
+    if (extraIds) ids = ids.concat(extraIds);
+    return ids.length ? ids.join(' ') : null;
+  }
+%>
+  <a class="bb-auth-skip" href="#bb-auth-form">Skip to registration form</a>
+
+  <div class="bb-auth-layout">
+    <aside class="bb-auth-panel" aria-hidden="true">
+      <div class="bb-auth-panel__inner">
+        <p class="bb-auth-panel__eyebrow">
+          <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+          Join the family
+        </p>
+        <p class="bb-auth-panel__title">Become part of <%= publicName %></p>
+        <p class="bb-auth-panel__lead">
+          Submit your details for church leadership to review. This site’s address determines your church and branch — you never enter those IDs in the form.
+        </p>
       </div>
-      <div class="bb-tp-badges">
-        <span class="bb-tp-badge">BlessBoard V5</span>
+    </aside>
+
+    <div class="bb-auth-main">
+      <header class="bb-auth-main__header">
+        <a class="bb-auth-brand" href="/">
+          <img
+            class="bb-auth-brand__mark"
+            src="/church/images/brand/blessboard-small-church-logo.png"
+            alt=""
+            width="32"
+            height="32"
+            decoding="async"
+          />
+          <span>
+            <span class="bb-auth-brand__name"><%= publicName %></span>
+            <% if (branchName) { %>
+            <span class="bb-auth-brand__branch"><%= branchName %></span>
+            <% } %>
+          </span>
+        </a>
+        <a class="bb-auth-main__header-link" href="/login">Sign in</a>
+      </header>
+
+      <div class="bb-auth-main__body">
+        <div class="bb-auth-card bb-auth-card--wide">
+          <div class="bb-auth-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined">person</span>
+          </div>
+          <h1 class="bb-auth-card__title">Member registration</h1>
+          <p class="bb-auth-card__lead">
+            Apply to join <%= publicName %><% if (branchName) { %> · <%= branchName %><% } %>.
+            Registration is reviewed before member access is granted.
+          </p>
+
+          <% if (hasErrors) { %>
+          <div
+            class="bb-auth-error"
+            id="bb-auth-error-summary"
+            role="alert"
+            tabindex="-1"
+            aria-live="assertive"
+            data-bb-auth-error="register"
+          >
+            <p class="bb-auth-error__title">We could not submit your registration</p>
+            <% if (summaryItems.length === 1) { %>
+            <p class="bb-auth-error__body"><%= summaryItems[0] %></p>
+            <% } else { %>
+            <ul class="bb-auth-error__list">
+              <% summaryItems.forEach(function (item) { %>
+              <li><%= item %></li>
+              <% }) %>
+            </ul>
+            <% } %>
+          </div>
+          <% } %>
+
+          <form
+            method="post"
+            action="/register"
+            class="bb-auth-form"
+            id="bb-auth-form"
+            novalidate
+            aria-describedby="<%= hasErrors ? 'bb-auth-error-summary bb-auth-contact-hint' : 'bb-auth-contact-hint' %>"
+          >
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+
+            <fieldset class="bb-auth-fieldset">
+              <legend class="bb-auth-fieldset__legend">
+                <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+                Personal info
+              </legend>
+
+              <div class="bb-auth-field-row">
+                <div class="bb-auth-field">
+                  <label for="first_name">First name</label>
+                  <input
+                    id="first_name"
+                    name="first_name"
+                    type="text"
+                    required
+                    maxlength="100"
+                    autocomplete="given-name"
+                    aria-required="true"
+                    <% if (fieldInvalid('firstName')) { %>aria-invalid="true"<% } %>
+                    <% var firstDesc = fieldDescribedBy('firstName'); if (firstDesc) { %>aria-describedby="<%= firstDesc %>"<% } %>
+                    value="<%= sub.firstName != null ? sub.firstName : '' %>"
+                  />
+                  <% if (fe.firstName) { %>
+                  <p class="bb-auth-field__error" id="err-firstName" role="status"><%= fe.firstName %></p>
+                  <% } %>
+                </div>
+
+                <div class="bb-auth-field">
+                  <label for="last_name">Last name</label>
+                  <input
+                    id="last_name"
+                    name="last_name"
+                    type="text"
+                    required
+                    maxlength="100"
+                    autocomplete="family-name"
+                    aria-required="true"
+                    <% if (fieldInvalid('lastName')) { %>aria-invalid="true"<% } %>
+                    <% var lastDesc = fieldDescribedBy('lastName'); if (lastDesc) { %>aria-describedby="<%= lastDesc %>"<% } %>
+                    value="<%= sub.lastName != null ? sub.lastName : '' %>"
+                  />
+                  <% if (fe.lastName) { %>
+                  <p class="bb-auth-field__error" id="err-lastName" role="status"><%= fe.lastName %></p>
+                  <% } %>
+                </div>
+              </div>
+
+              <div class="bb-auth-field">
+                <label for="preferred_name">Preferred name <span class="bb-auth-optional">(optional)</span></label>
+                <input
+                  id="preferred_name"
+                  name="preferred_name"
+                  type="text"
+                  maxlength="100"
+                  autocomplete="nickname"
+                  <% if (fieldInvalid('preferredName')) { %>aria-invalid="true"<% } %>
+                  <% var prefDesc = fieldDescribedBy('preferredName'); if (prefDesc) { %>aria-describedby="<%= prefDesc %>"<% } %>
+                  value="<%= sub.preferredName != null ? sub.preferredName : '' %>"
+                />
+                <% if (fe.preferredName) { %>
+                <p class="bb-auth-field__error" id="err-preferredName" role="status"><%= fe.preferredName %></p>
+                <% } %>
+              </div>
+            </fieldset>
+
+            <fieldset class="bb-auth-fieldset">
+              <legend class="bb-auth-fieldset__legend">
+                <span class="material-symbols-outlined" aria-hidden="true">contact_mail</span>
+                Contact
+              </legend>
+
+              <div class="bb-auth-field">
+                <label for="email">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  maxlength="254"
+                  autocomplete="email"
+                  inputmode="email"
+                  <% if (fieldInvalid('email')) { %>aria-invalid="true"<% } %>
+                  aria-describedby="<%= fieldDescribedBy('email', ['bb-auth-contact-hint']) || 'bb-auth-contact-hint' %>"
+                  value="<%= sub.email != null ? sub.email : '' %>"
+                />
+                <% if (fe.email) { %>
+                <p class="bb-auth-field__error" id="err-email" role="status"><%= fe.email %></p>
+                <% } %>
+              </div>
+
+              <div class="bb-auth-field">
+                <label for="phone">Phone</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  maxlength="40"
+                  autocomplete="tel"
+                  inputmode="tel"
+                  <% if (fieldInvalid('phone')) { %>aria-invalid="true"<% } %>
+                  aria-describedby="<%= fieldDescribedBy('phone', ['bb-auth-contact-hint']) || 'bb-auth-contact-hint' %>"
+                  value="<%= sub.phone != null ? sub.phone : '' %>"
+                />
+                <% if (fe.phone) { %>
+                <p class="bb-auth-field__error" id="err-phone" role="status"><%= fe.phone %></p>
+                <% } %>
+              </div>
+
+              <p class="bb-auth-hint" id="bb-auth-contact-hint">Provide at least an email or a phone number.</p>
+            </fieldset>
+
+            <div class="bb-auth-actions">
+              <button class="bb-auth-btn bb-auth-btn--primary" type="submit">Submit registration</button>
+              <a class="bb-auth-btn bb-auth-btn--ghost" href="/">Back to homepage</a>
+            </div>
+          </form>
+        </div>
       </div>
-    </header>
 
-    <nav class="bb-tp-nav" aria-label="Church pages">
-      <% navItems.forEach(function (item) { %>
-      <a href="<%= item.href %>"><%= item.label %></a>
-      <% }) %>
-      <a href="/register" class="is-active">Register</a>
-    </nav>
-
-    <main class="bb-tp-main">
-      <h1>Member registration</h1>
-      <p class="bb-tp-lede">Apply to join <%= publicName %><% if (branchName) { %> · <%= branchName %><% } %>.</p>
-
-      <% if (error) { %>
-      <p class="bb-tp-error" role="alert"><%= error %></p>
-      <% } %>
-
-      <form method="post" action="/register" class="bb-tp-form">
-        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
-
-        <label for="first_name">First name</label>
-        <input id="first_name" name="first_name" type="text" required maxlength="100" autocomplete="given-name"
-          value="<%= submitted && submitted.firstName != null ? submitted.firstName : '' %>" />
-
-        <label for="last_name">Last name</label>
-        <input id="last_name" name="last_name" type="text" required maxlength="100" autocomplete="family-name"
-          value="<%= submitted && submitted.lastName != null ? submitted.lastName : '' %>" />
-
-        <label for="preferred_name">Preferred name <span class="bb-tp-optional">(optional)</span></label>
-        <input id="preferred_name" name="preferred_name" type="text" maxlength="100"
-          value="<%= submitted && submitted.preferredName != null ? submitted.preferredName : '' %>" />
-
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" maxlength="254" autocomplete="email"
-          value="<%= submitted && submitted.email != null ? submitted.email : '' %>" />
-
-        <label for="phone">Phone</label>
-        <input id="phone" name="phone" type="tel" maxlength="40" autocomplete="tel"
-          value="<%= submitted && submitted.phone != null ? submitted.phone : '' %>" />
-
-        <p class="bb-tp-hint">Provide at least an email or a phone number.</p>
-
-        <button type="submit">Submit registration</button>
-      </form>
-    </main>
-
-    <footer class="bb-tp-foot">
-      <p><a href="/login">Sign in</a></p>
-    </footer>
+      <footer class="bb-auth-footer">
+        <div class="bb-auth-footer__links">
+          <a href="/login">Already a member? Sign in</a>
+          <a href="/contact">Contact church</a>
+        </div>
+        <%- include('../partials/powered-by-getpro') %>
+      </footer>
+    </div>
   </div>
+
+  <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
 </body>
 </html>

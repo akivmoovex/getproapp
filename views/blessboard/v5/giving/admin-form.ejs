@@ -3,36 +3,79 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1>Record giving entry</h1>
-  <p><a href="<%= basePath %>">Back</a></p>
-  <p>Enter an aggregated amount only. Do not record donor names or payment details.</p>
-  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
-  <form method="post" action="<%= basePath %>" class="bb-giving-form">
+<%
+  var isEdit = formMode === 'edit' && entry && entry.id;
+%>
+
+<section class="bb-giv-admin" data-bb-giving-admin-form="1" data-bb-form-mode="<%= formMode || 'create' %>">
+  <header class="bb-ba-page-head">
+    <p class="bb-ba-breadcrumb">
+      <a href="<%= basePath %>">Giving</a>
+      <span aria-hidden="true">›</span>
+      <span><%= isEdit ? 'Edit' : 'Create' %></span>
+    </p>
+    <h1 class="bb-ba-page-head__title"><%= isEdit ? 'Edit giving entry' : 'Record giving entry' %></h1>
+    <p class="bb-ba-lede">
+      Enter an aggregated amount only. Do not record donor names, emails, phones, or payment instrument details.
+    </p>
+  </header>
+
+  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+
+  <form
+    method="post"
+    action="<%= isEdit ? (basePath + '/' + entry.id) : basePath %>"
+    class="bb-ba-panel bb-giv-form"
+    data-bb-giv-form="1"
+  >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <label>Category
-      <select name="category_key" required>
+    <div class="bb-ba-field">
+      <label for="category_key">Category</label>
+      <select id="category_key" name="category_key" required>
         <% categories.forEach(function (c) { %>
-          <option value="<%= c.categoryKey %>" <%= entry && entry.categoryKey === c.categoryKey ? 'selected' : '' %>><%= c.label %></option>
+        <option value="<%= c.categoryKey %>" <%= entry && entry.categoryKey === c.categoryKey ? 'selected' : '' %>><%= c.label %></option>
         <% }) %>
       </select>
-    </label>
-    <label>Giving date
-      <input type="date" name="giving_date" required value="<%= entry && entry.givingDate ? entry.givingDate : '' %>" />
-    </label>
-    <label>Amount
-      <input type="text" name="amount" inputmode="decimal" pattern="^(0|[1-9]\d*)(\.\d{1,2})?$" required placeholder="0.00" value="<%= entry && entry.amount ? entry.amount : '' %>" />
-    </label>
-    <label>Currency (ISO)
-      <input type="text" name="currency" maxlength="3" pattern="[A-Za-z]{3}" required value="<%= entry && entry.currency ? entry.currency : 'USD' %>" />
-    </label>
-    <label>Reference (optional)
-      <input type="text" name="reference" maxlength="120" value="<%= entry && entry.reference ? entry.reference : '' %>" />
-    </label>
-    <label>Notes (optional)
-      <input type="text" name="notes" maxlength="1000" value="<%= entry && entry.notes ? entry.notes : '' %>" />
-    </label>
-    <button type="submit">Create draft</button>
+    </div>
+    <div class="bb-ba-field">
+      <label for="giving_date">Giving date</label>
+      <input id="giving_date" type="date" name="giving_date" required value="<%= entry && entry.givingDate ? entry.givingDate : '' %>" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="amount">Amount</label>
+      <input
+        id="amount"
+        type="text"
+        name="amount"
+        inputmode="decimal"
+        pattern="^(0|[1-9]\d*)(\.\d{1,2})?$"
+        required
+        placeholder="0.00"
+        value="<%= entry && entry.amount ? entry.amount : '' %>"
+        autocomplete="off"
+      />
+      <p class="bb-ba-hint">Decimal string with up to 2 places (NUMERIC). Not a floating-point field.</p>
+    </div>
+    <div class="bb-ba-field">
+      <label for="currency">Currency (ISO)</label>
+      <input id="currency" type="text" name="currency" maxlength="3" pattern="[A-Za-z]{3}" required value="<%= entry && entry.currency ? entry.currency : 'USD' %>" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="reference">Reference (optional)</label>
+      <input id="reference" type="text" name="reference" maxlength="120" value="<%= entry && entry.reference ? entry.reference : '' %>" />
+      <p class="bb-ba-hint">Internal batch label only — not a donor identifier.</p>
+    </div>
+    <div class="bb-ba-field">
+      <label for="notes">Notes (optional)</label>
+      <input id="notes" type="text" name="notes" maxlength="1000" value="<%= entry && entry.notes ? entry.notes : '' %>" />
+    </div>
+    <div class="bb-ba-decision__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= isEdit ? (basePath + '/' + entry.id) : basePath %>">Cancel</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary"><%= isEdit ? 'Save draft' : 'Create draft' %></button>
+    </div>
   </form>
+</section>
+
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

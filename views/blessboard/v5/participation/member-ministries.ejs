@@ -1,18 +1,139 @@
 <%- include('../partials/member-shell-start') %>
-  <h1>Ministries</h1>
-  <% if (saved) { %><p class="bb-mp-saved" role="status">Updated.</p><% } %>
-  <% if (!items || !items.length) { %>
+<%
+  var list = items || [];
+  var mine = list.filter(function (i) {
+    return i && i.membership && (i.membership.status === 'active' || i.membership.status === 'pending');
+  });
+  var discover = list.filter(function (i) {
+    return !(i && i.membership && (i.membership.status === 'active' || i.membership.status === 'pending'));
+  });
+  var activeCount = mine.filter(function (i) { return i.membership && i.membership.status === 'active'; }).length;
+  var pendingCount = mine.filter(function (i) { return i.membership && i.membership.status === 'pending'; }).length;
+
+  function statusLabel(status) {
+    if (status === 'active') return 'Active';
+    if (status === 'pending') return 'Pending';
+    return status || '';
+  }
+
+  var flash =
+    saved === 'joined' ? 'Your ministry request was submitted.' :
+    saved === 'left' ? 'Your ministry membership was updated.' :
+    '';
+%>
+
+<section class="bb-mp-part" data-bb-member-ministries="1">
+  <header class="bb-mp-page-head">
+    <div>
+      <h1 class="bb-mp-page-head__title">Ministries</h1>
+      <p class="bb-mp-lede">Manage your commitments or find ways to serve. Status reflects your live membership only.</p>
+      <% if (activeCount || pendingCount) { %>
+      <p class="bb-mp-ann__unread-summary" aria-live="polite">
+        <% if (activeCount) { %><%= activeCount %> active<% } %>
+        <% if (activeCount && pendingCount) { %> · <% } %>
+        <% if (pendingCount) { %><%= pendingCount %> pending<% } %>
+      </p>
+      <% } %>
+    </div>
+  </header>
+
+  <% if (flash) { %>
+  <p class="bb-mp-ok" role="status"><%= flash %></p>
+  <% } %>
+
+  <% if (!list.length) { %>
+  <div class="bb-mp-empty" role="status">
+    <span class="material-symbols-outlined" aria-hidden="true">groups</span>
     <p>No ministries are available right now.</p>
+  </div>
   <% } else { %>
+
+  <section class="bb-mp-part-section" aria-label="Your ministries">
+    <h2 class="bb-mp-section-title">Your ministries</h2>
+    <% if (!mine.length) { %>
+    <p class="bb-mp-lede bb-mp-lede--tight">You are not active or pending in a ministry yet. Browse available ministries below.</p>
+    <% } else { %>
     <ul class="bb-mp-part-list">
-      <% items.forEach(function (item) { %>
-        <li>
-          <a href="/member/ministries/<%= item.id %>"><%= item.name %></a>
-          <% if (item.membership) { %>
-            <span data-bb-status="<%= item.membership.status %>"><%= item.membership.status %></span>
-          <% } %>
-        </li>
+      <% mine.forEach(function (item) { %>
+      <li>
+        <a
+          class="bb-mp-part-card is-member"
+          href="/member/ministries/<%= item.id %>"
+          data-bb-ministry="<%= item.id %>"
+          data-bb-status="<%= item.membership.status %>"
+        >
+          <div class="bb-mp-part-card__body">
+            <div class="bb-mp-part-card__top">
+              <h3 class="bb-mp-part-card__title"><%= item.name %></h3>
+              <span
+                class="bb-mp-chip<%= item.membership.status === 'pending' ? ' bb-mp-chip--pending' : ' bb-mp-chip--active' %>"
+                aria-label="<%= statusLabel(item.membership.status) %>"
+              ><%= statusLabel(item.membership.status) %></span>
+            </div>
+            <% if (item.summary) { %>
+            <p class="bb-mp-part-card__excerpt"><%= item.summary %></p>
+            <% } %>
+            <% if (item.meetingDay) { %>
+            <p class="bb-mp-part-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+              <%= item.meetingDay %>
+            </p>
+            <% } %>
+            <% if (item.joinPolicy === 'open') { %>
+            <p class="bb-mp-part-card__meta">Open membership</p>
+            <% } else { %>
+            <p class="bb-mp-part-card__meta">Request to join</p>
+            <% } %>
+          </div>
+          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+      </li>
       <% }) %>
     </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-mp-part-section" aria-label="Discover ministries">
+    <h2 class="bb-mp-section-title">Discover</h2>
+    <% if (!discover.length) { %>
+    <p class="bb-mp-lede bb-mp-lede--tight">You already have a connection with every published ministry.</p>
+    <% } else { %>
+    <ul class="bb-mp-part-list">
+      <% discover.forEach(function (item) { %>
+      <li>
+        <a
+          class="bb-mp-part-card"
+          href="/member/ministries/<%= item.id %>"
+          data-bb-ministry="<%= item.id %>"
+          data-bb-status="none"
+        >
+          <div class="bb-mp-part-card__body">
+            <div class="bb-mp-part-card__top">
+              <h3 class="bb-mp-part-card__title"><%= item.name %></h3>
+              <% if (item.joinPolicy === 'open') { %>
+              <span class="bb-mp-chip bb-mp-chip--open" aria-label="Open to join">Open</span>
+              <% } else { %>
+              <span class="bb-mp-chip bb-mp-chip--request" aria-label="Request to join">Request</span>
+              <% } %>
+            </div>
+            <% if (item.summary) { %>
+            <p class="bb-mp-part-card__excerpt"><%= item.summary %></p>
+            <% } %>
+            <% if (item.meetingDay) { %>
+            <p class="bb-mp-part-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+              <%= item.meetingDay %>
+            </p>
+            <% } %>
+          </div>
+          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
   <% } %>
+</section>
+
 <%- include('../partials/member-shell-end') %>

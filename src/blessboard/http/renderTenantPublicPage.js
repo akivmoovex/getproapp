@@ -54,16 +54,89 @@ function formatWhen(value, timezone) {
 }
 
 /**
+ * Date-only display (sermons / badges).
+ * @param {Date|string|null} value
+ * @param {string} [timezone]
+ */
+function formatDate(value, timezone) {
+  if (!value) return "";
+  try {
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    const opts = { dateStyle: "medium" };
+    if (timezone) opts.timeZone = timezone;
+    return new Intl.DateTimeFormat("en-GB", opts).format(d);
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Parts for event date chrome (timezone-aware).
+ * @param {Date|string|null} value
+ * @param {string} [timezone]
+ */
+function formatEventParts(value, timezone) {
+  if (!value) return { day: "", month: "", weekday: "", time: "", full: "" };
+  try {
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) {
+      return { day: "", month: "", weekday: "", time: "", full: "" };
+    }
+    const tz = timezone ? { timeZone: timezone } : {};
+    const day = new Intl.DateTimeFormat("en-GB", { day: "2-digit", ...tz }).format(d);
+    const month = new Intl.DateTimeFormat("en-GB", { month: "short", ...tz }).format(d);
+    const weekday = new Intl.DateTimeFormat("en-GB", { weekday: "long", ...tz }).format(d);
+    const time = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      ...tz,
+    }).format(d);
+    return {
+      day,
+      month,
+      weekday,
+      time,
+      full: formatWhen(d, timezone),
+    };
+  } catch {
+    return { day: "", month: "", weekday: "", time: "", full: "" };
+  }
+}
+
+/**
+ * Initials for avatar fallback (max 2 letters).
+ * @param {string} name
+ */
+function initials(name) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return "?";
+  return parts
+    .slice(0, 2)
+    .map((p) => p.charAt(0).toUpperCase())
+    .join("");
+}
+
+/**
  * @param {object} model - from loadTenantPublicPageModel
  */
 function renderTenantPublicPage(model) {
   return renderView("public/page.ejs", {
     ...model,
     formatWhen,
+    formatDate,
+    formatEventParts,
+    initials,
   });
 }
 
 module.exports = {
   renderTenantPublicPage,
   formatWhen,
+  formatDate,
+  formatEventParts,
+  initials,
 };

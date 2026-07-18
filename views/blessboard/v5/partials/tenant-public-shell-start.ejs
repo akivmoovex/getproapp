@@ -1,0 +1,105 @@
+<%#
+  BlessBoard V5 tenant public shell — document start + sticky header + mobile drawer.
+  Locals: seo, publicName, primaryBranchDisplayName, showEnvBadge, dataEnvironment,
+          navItems, activeNav, loginHref, cssHref (optional)
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= seo.title %></title>
+  <meta name="description" content="<%= seo.description %>" />
+  <meta name="robots" content="<%= seo.robots %>" />
+  <link rel="canonical" href="<%= seo.canonicalUrl %>" />
+  <meta property="og:type" content="<%= seo.ogType %>" />
+  <meta property="og:title" content="<%= seo.ogTitle %>" />
+  <meta property="og:description" content="<%= seo.ogDescription %>" />
+  <meta property="og:url" content="<%= seo.ogUrl %>" />
+  <%- include('./head-design-system') %>
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=9' %>" />
+</head>
+<body
+  class="bb-tp-body"
+  data-bb-shell="tenant-public"
+  data-bb-product="blessboard-v5"
+  data-bb-page="<%= pageKey %>"
+>
+  <a class="bb-tp-skip" href="#bb-tp-main">Skip to content</a>
+
+  <header class="bb-tp-header" data-bb-header="1">
+    <div class="bb-tp-header__inner">
+      <a class="bb-tp-brand" href="/">
+        <img
+          class="bb-tp-brand__mark"
+          src="/church/images/brand/blessboard-small-church-logo.png"
+          alt=""
+          width="32"
+          height="32"
+          decoding="async"
+        />
+        <span class="bb-tp-brand__text">
+          <span class="bb-tp-brand__name"><%= publicName %></span>
+          <% if (primaryBranchDisplayName) { %>
+          <span class="bb-tp-brand__branch"><%= primaryBranchDisplayName %></span>
+          <% } %>
+        </span>
+      </a>
+
+      <nav class="bb-tp-nav bb-tp-nav--desktop" aria-label="Primary">
+        <% navItems.forEach(function (item) { %>
+        <a
+          href="<%= item.href %>"
+          class="bb-tp-nav__link<%= activeNav === item.key ? ' is-active' : '' %>"
+          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+        ><%= item.label %></a>
+        <% }) %>
+      </nav>
+
+      <div class="bb-tp-header__actions">
+        <% if (showEnvBadge) { %>
+        <span class="bb-tp-env"><%= dataEnvironment %></span>
+        <% } %>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="/register">Register</a>
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= loginHref %>">Member Login</a>
+        <button
+          type="button"
+          class="bb-tp-menu-btn"
+          id="bb-tp-menu-btn"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="bb-tp-drawer"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="bb-tp-drawer-overlay" id="bb-tp-drawer-overlay" hidden></div>
+  <aside class="bb-tp-drawer" id="bb-tp-drawer" aria-label="Mobile navigation" aria-hidden="true">
+    <div class="bb-tp-drawer__head">
+      <a class="bb-tp-brand bb-tp-brand--drawer" href="/">
+        <span class="bb-tp-brand__name"><%= publicName %></span>
+      </a>
+      <button type="button" class="bb-tp-drawer__close" id="bb-tp-drawer-close" aria-label="Close menu">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </div>
+    <nav class="bb-tp-drawer__nav" aria-label="Primary">
+      <% navItems.forEach(function (item) { %>
+      <a
+        href="<%= item.href %>"
+        class="bb-tp-drawer__link<%= activeNav === item.key ? ' is-active' : '' %>"
+        <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+      ><%= item.label %></a>
+      <% }) %>
+    </nav>
+    <div class="bb-tp-drawer__actions">
+      <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block" href="/register">Register as a Member</a>
+      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="<%= loginHref %>">Member Login</a>
+      <p class="bb-tp-drawer__powered"><%- include('./powered-by-getpro') %></p>
+    </div>
+  </aside>
+
+  <main id="bb-tp-main" class="bb-tp-main">

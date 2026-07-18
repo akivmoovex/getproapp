@@ -157,7 +157,8 @@ describe("blessboard tenant routing http", () => {
     const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "off" });
     const res = await request(app).get("/").set("Host", TENANT_HOST);
     assert.equal(res.status, 200);
-    assert.match(res.text, /foundation mode/i);
+    assert.match(res.text, /data-bb-shell="apex"/);
+    assert.match(res.text, /One digital home for your church/);
     assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
   });
 
@@ -167,7 +168,8 @@ describe("blessboard tenant routing http", () => {
     const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "shadow" }, logs);
     const res = await request(app).get("/").set("Host", TENANT_HOST);
     assert.equal(res.status, 200);
-    assert.match(res.text, /foundation mode/i);
+    assert.match(res.text, /data-bb-shell="apex"/);
+    assert.match(res.text, /One digital home for your church/);
     assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
     assert.doesNotMatch(res.text, new RegExp(BRANCH_NAME));
     const shadow = logs.find((l) => l.includes("blessboard_tenant_route_shadow"));
@@ -194,7 +196,8 @@ describe("blessboard tenant routing http", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, new RegExp(CHURCH_NAME));
     assert.match(res.text, new RegExp(BRANCH_NAME));
-    assert.match(res.text, /BlessBoard V5/);
+    assert.match(res.text, /data-bb-product="blessboard-v5"/);
+    assert.match(res.text, /data-bb-shell="tenant-public"/);
     assert.match(res.text, /testing/i);
     assert.doesNotMatch(res.text, new RegExp(orgId || "never", "i"));
     assert.doesNotMatch(res.text, new RegExp(churchId || "never", "i"));

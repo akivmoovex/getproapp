@@ -134,6 +134,61 @@ function mapSermon(row) {
   };
 }
 
+/**
+ * Public events: published only (caller), cancelled excluded by status.
+ * Upcoming first (ASC); past published events omitted from the public list.
+ * An event remains upcoming until endsAt (if set) or startsAt.
+ * @param {ReturnType<typeof mapEvent>[]} events
+ * @param {number} [nowMs]
+ */
+function preparePublicEvents(events, nowMs) {
+  const now = typeof nowMs === "number" ? nowMs : Date.now();
+  const upcoming = [];
+  for (const event of events || []) {
+    const endRef = event.endsAt || event.startsAt;
+    if (!endRef) {
+      upcoming.push(event);
+      continue;
+    }
+    const t = new Date(endRef).getTime();
+    if (Number.isNaN(t) || t >= now) upcoming.push(event);
+  }
+  upcoming.sort((a, b) => {
+    const ta = a.startsAt ? new Date(a.startsAt).getTime() : Number.POSITIVE_INFINITY;
+    const tb = b.startsAt ? new Date(b.startsAt).getTime() : Number.POSITIVE_INFINITY;
+    if (ta !== tb) return ta - tb;
+    return 0;
+  });
+  return upcoming;
+}
+
+function channelIcon(channelType) {
+  const t = String(channelType || "").toLowerCase();
+  if (t === "email" || t.includes("mail")) return "mail";
+  if (t === "phone" || t.includes("tel") || t.includes("call")) return "call";
+  if (t.includes("address") || t.includes("location") || t.includes("map")) {
+    return "location_on";
+  }
+  if (t.includes("web") || t.includes("url") || t.includes("link")) return "language";
+  if (t.includes("whatsapp") || t.includes("chat") || t.includes("message")) return "chat";
+  return "contact_mail";
+}
+
+function methodIcon(methodType) {
+  const t = String(methodType || "").toLowerCase();
+  if (t.includes("bank") || t.includes("transfer") || t.includes("wire")) {
+    return "account_balance";
+  }
+  if (t.includes("mobile") || t.includes("momo") || t.includes("airtel") || t.includes("mtn")) {
+    return "smartphone";
+  }
+  if (t.includes("person") || t.includes("cash") || t.includes("offering")) {
+    return "volunteer_activism";
+  }
+  if (t.includes("card") || t.includes("online") || t.includes("pay")) return "payments";
+  return "payments";
+}
+
 function mapContact(row) {
   let href = null;
   if (row.channelType === "email") {
@@ -149,6 +204,7 @@ function mapContact(row) {
     label: row.label,
     value: row.value,
     href,
+    icon: channelIcon(row.channelType),
   };
 }
 
@@ -158,7 +214,122 @@ function mapGiving(row) {
     label: row.label,
     instructions: row.instructions,
     externalUrl: safeExternalUrl(row.externalUrl),
+    icon: methodIcon(row.methodType),
   };
+}
+
+/**
+ * @param {unknown} lat
+ * @param {unknown} lng
+ */
+function validCoordinates(lat, lng) {
+  if (lat == null || lng == null || lat === "" || lng === "") return null;
+  const latitude = typeof lat === "number" ? lat : Number(lat);
+  const longitude = typeof lng === "number" ? lng : Number(lng);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+  return { latitude, longitude };
+}
+
+/**
+ * Compose a public address from branch settings parts only (no fabrication).
+ * @param {object|null} branchSettings
+ */
+function formatPublicAddress(branchSettings) {
+  if (!branchSettings) return { lines: [], text: "" };
+  const lines = [
+    branchSettings.addressLine1,
+    branchSettings.addressLine2,
+    [branchSettings.city, branchSettings.provinceState].filter(Boolean).join(", "),
+    branchSettings.postalCode,
+  ]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean);
+  return { lines, text: lines.join("\n") };
+}
+
+/**
+ * Public contact chrome from church + primary-branch settings.
+ * @param {object|null} churchSettings
+ * @param {object|null} branchSettings
+ */
+function buildPublicContact(churchSettings, branchSettings) {
+  const branchEmail = branchSettings && branchSettings.email ? String(branchSettings.email).trim() : "";
+  const churchEmail =
+    churchSettings && churchSettings.primaryEmail ? String(churchSettings.primaryEmail).trim() : "";
+  const email = branchEmail || churchEmail;
+
+  const branchPhone = branchSettings && branchSettings.phone ? String(branchSettings.phone).trim() : "";
+  const churchPhone =
+    churchSettings && churchSettings.primaryPhone ? String(churchSettings.primaryPhone).trim() : "";
+  const phone = branchPhone || churchPhone;
+
+  const address = formatPublicAddress(branchSettings);
+  const coords = validCoordinates(
+    branchSettings && branchSettings.latitude,
+    branchSettings && branchSettings.longitude
+  );
+
+  let mapEmbedUrl = null;
+  let directionsUrl = null;
+  if (coords) {
+    const { latitude, longitude } = coords;
+    const pad = 0.02;
+    mapEmbedUrl = safeExternalUrl(
+      `https://www.openstreetmap.org/export/embed.html?bbox=${longitude - pad}%2C${latitude - pad}%2C${longitude + pad}%2C${latitude + pad}&layer=mapnik&marker=${latitude}%2C${longitude}`
+    );
+    directionsUrl = safeExternalUrl(
+      `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`
+    );
+  }
+
+  const emailHref = email ? safeExternalUrl(`mailto:${email}`) : null;
+  const phoneDigits = phone ? phone.replace(/[^\d+]/g, "") : "";
+  const phoneHref = phoneDigits ? safeExternalUrl(`tel:${phoneDigits}`) : null;
+
+  const hasAny = Boolean(email || phone || address.text || coords);
+
+  return {
+    email: email || "",
+    emailHref,
+    phone: phone || "",
+    phoneHref,
+    addressLines: address.lines,
+    addressText: address.text,
+    latitude: coords ? coords.latitude : null,
+    longitude: coords ? coords.longitude : null,
+    hasMap: Boolean(coords && mapEmbedUrl),
+    mapEmbedUrl,
+    directionsUrl,
+    hasAny,
+  };
+}
+
+/**
+ * Load church + primary-branch settings with one connection when possible.
+ */
+async function loadPublicSettings(db, churchId, primaryBranchId) {
+  try {
+    if (db && typeof db.connect === "function") {
+      const client = await db.connect();
+      try {
+        const [churchSettings, branchSettings] = await Promise.all([
+          repo.findChurchSettings(client, churchId),
+          repo.findBranchSettings(client, primaryBranchId),
+        ]);
+        return { churchSettings, branchSettings };
+      } finally {
+        if (typeof client.release === "function") client.release();
+      }
+    }
+    const [churchSettings, branchSettings] = await Promise.all([
+      repo.findChurchSettings(db, churchId),
+      repo.findBranchSettings(db, primaryBranchId),
+    ]);
+    return { churchSettings, branchSettings };
+  } catch {
+    return { churchSettings: null, branchSettings: null };
+  }
 }
 
 function firstSectionDescription(sections) {
@@ -188,28 +359,23 @@ async function loadTenantPublicPageModel(db, input) {
   const pageKey = String(input.pageKey || "home");
   const hostname = String(input.hostname || "");
 
-  const settings = await (async () => {
-    try {
-      if (db && typeof db.connect === "function") {
-        const client = await db.connect();
-        try {
-          return await repo.findChurchSettings(client, churchId);
-        } finally {
-          if (typeof client.release === "function") client.release();
-        }
-      }
-      return await repo.findChurchSettings(db, churchId);
-    } catch {
-      return null;
-    }
-  })();
+  const { churchSettings: settings, branchSettings } = await loadPublicSettings(
+    db,
+    churchId,
+    primaryBranchId
+  );
   const websiteStatus = settings ? settings.websiteStatus : "draft";
   const publicName =
-    (settings && settings.publicName) || tenant.church.displayName || "Church";
+    (settings && settings.publicName) ||
+    (branchSettings && branchSettings.publicName) ||
+    tenant.church.displayName ||
+    "Church";
 
   if (websiteStatus === "suspended") {
     return { kind: KIND.UNAVAILABLE, reason: "website_suspended" };
   }
+
+  const publicContact = buildPublicContact(settings, branchSettings);
 
   const pageResult = await resolvePublishedPage(db, {
     churchId,
@@ -237,7 +403,7 @@ async function loadTenantPublicPageModel(db, input) {
     entitiesEmptyMessage = "Ministries will appear here when published.";
   } else if (pageKey === "events") {
     const list = await resolvePublishedList(db, listPublishedEvents, churchId, primaryBranchId);
-    entities = (list.items || []).map(mapEvent);
+    entities = preparePublicEvents((list.items || []).map(mapEvent));
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Upcoming events will appear here when published.";
   } else if (pageKey === "sermons") {
@@ -270,6 +436,9 @@ async function loadTenantPublicPageModel(db, input) {
   const dataEnvironment = tenant.church.dataEnvironment || null;
   const env = String(dataEnvironment || "").toLowerCase();
   const showEnvBadge = env === "testing" || env === "demo";
+  const primaryEmail = settings && settings.primaryEmail ? String(settings.primaryEmail) : "";
+  const primaryPhone = settings && settings.primaryPhone ? String(settings.primaryPhone) : "";
+  const footerTagline = firstSectionDescription(sections);
 
   const seo = buildTenantPublicSeo({
     hostname,
@@ -286,8 +455,11 @@ async function loadTenantPublicPageModel(db, input) {
   const hasEntities = entities.length > 0;
 
   // Entity pages: empty if no entities (sections optional). Content pages: empty if no sections.
+  // Contact also considers public branch/church settings (address/phone/email/map).
   let showEmptyState = false;
-  if (["leadership", "ministries", "events", "sermons", "contact", "giving"].includes(pageKey)) {
+  if (pageKey === "contact") {
+    showEmptyState = !hasEntities && !hasSections && !publicContact.hasAny;
+  } else if (["leadership", "ministries", "events", "sermons", "giving"].includes(pageKey)) {
     showEmptyState = !hasEntities && !hasSections;
   } else {
     showEmptyState = !hasSections;
@@ -302,10 +474,15 @@ async function loadTenantPublicPageModel(db, input) {
     websiteStatus,
     dataEnvironment,
     showEnvBadge,
+    primaryEmail,
+    primaryPhone,
+    footerTagline,
+    publicContact,
     primaryBranchDisplayName: tenant.primaryBranch.displayName,
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
     loginHref: "/login",
     apexHref: "https://blessboard.org/",
+    cssHref: "/blessboard/v5/tenant-public.css?v=9",
     navItems: NAV_ITEMS,
     activeNav: pageKey,
     page: pageResult.page
@@ -320,9 +497,12 @@ async function loadTenantPublicPageModel(db, input) {
     entitiesEmptyMessage,
     showEmptyState,
     emptyHeadline: hasPage ? pageTitle : PAGE_KEY_TITLES[pageKey] || "Welcome",
-    emptyMessage: hasPage
-      ? "Content for this page is being prepared."
-      : "This page is not published yet. Please check back soon.",
+    emptyMessage:
+      showEmptyState && entitiesEmptyMessage
+        ? entitiesEmptyMessage
+        : hasPage
+          ? "Content for this page is being prepared."
+          : "This page is not published yet. Please check back soon.",
     seo,
   };
 }
@@ -332,5 +512,8 @@ module.exports = {
   loadTenantPublicPageModel,
   resolvePublishedPage,
   resolvePublishedList,
+  preparePublicEvents,
   safeExternalUrl,
+  buildPublicContact,
+  validCoordinates,
 };

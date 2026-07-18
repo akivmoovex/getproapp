@@ -1,27 +1,141 @@
 <%- include('../partials/member-shell-start') %>
-  <p><a href="/member/events">Back to events</a></p>
-  <% if (saved) { %><p class="bb-mp-saved" role="status">Saved.</p><% } %>
-  <article class="bb-mp-part-detail">
-    <h1><%= item.title %></h1>
-    <% if (item.summary) { %><p><%= item.summary %></p><% } %>
-    <% if (item.location) { %><p>Location: <%= item.location %></p><% } %>
+<%
+  function formatWhen(value, timezone) {
+    if (!value) return '';
+    try {
+      var d = value instanceof Date ? value : new Date(value);
+      if (isNaN(d.getTime())) return '';
+      var opts = {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      };
+      if (timezone) opts.timeZone = String(timezone);
+      return d.toLocaleString('en-GB', opts);
+    } catch (e) {
+      return '';
+    }
+  }
+  var isRegistered = Boolean(item.registration);
+  var isFull = item.capacity != null && item.spotsRemaining === 0 && !isRegistered;
+  var flash =
+    saved === 'registered' ? 'You are registered for this event.' :
+    saved === 'cancelled' ? 'Your registration was cancelled.' :
+    '';
+%>
+
+<section class="bb-mp-part-detail-page" data-bb-member-event-detail="1">
+  <p class="bb-mp-back">
+    <a href="/member/events">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to events
+    </a>
+  </p>
+
+  <% if (flash) { %>
+  <p class="bb-mp-ok" role="status"><%= flash %></p>
+  <% } %>
+  <% if (error) { %>
+  <div class="bb-mp-alert bb-mp-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <article
+    class="bb-mp-part-detail<%= isRegistered ? ' is-registered' : '' %><%= isFull ? ' is-full' : '' %>"
+    data-bb-event="<%= item.id %>"
+    data-bb-registered="<%= isRegistered ? '1' : '0' %>"
+    <% if (item.capacity != null) { %>data-bb-capacity="<%= item.spotsRemaining %>"<% } %>
+  >
+    <div class="bb-mp-ann-chips" aria-label="Registration status">
+      <% if (isRegistered) { %>
+      <span class="bb-mp-chip bb-mp-chip--active" data-bb-status="registered">Registered</span>
+      <% } else if (isFull) { %>
+      <span class="bb-mp-chip bb-mp-chip--full" data-bb-status="full">Full</span>
+      <% } else { %>
+      <span class="bb-mp-chip bb-mp-chip--open" data-bb-status="open">Open</span>
+      <% } %>
+    </div>
+
+    <h1 class="bb-mp-part-detail__title"><%= item.title %></h1>
+
+    <% if (item.startsAt) { %>
+    <p class="bb-mp-part-card__meta">
+      <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+      <%= formatWhen(item.startsAt, item.timezone) %>
+      <% if (item.endsAt) { %>
+      – <%= formatWhen(item.endsAt, item.timezone) %>
+      <% } %>
+    </p>
+    <% } %>
+    <% if (item.location) { %>
+    <p class="bb-mp-part-card__meta">
+      <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+      <%= item.location %>
+    </p>
+    <% } %>
+
+    <% if (item.summary) { %>
+    <p class="bb-mp-part-detail__summary"><%= item.summary %></p>
+    <% } %>
+
     <% if (item.capacity != null) { %>
-      <p data-bb-capacity="<%= item.spotsRemaining %>">
-        <%= item.registeredCount %> registered / <%= item.capacity %> capacity
-        (<%= item.spotsRemaining %> remaining)
-      </p>
+    <p class="bb-mp-part-detail__capacity" data-bb-capacity="<%= item.spotsRemaining %>">
+      <% if (item.spotsRemaining === 0) { %>
+      At capacity · <%= item.registeredCount %>/<%= item.capacity %> registered
+      <% } else { %>
+      <%= item.registeredCount %>/<%= item.capacity %> registered ·
+      <%= item.spotsRemaining %> remaining
+      <% } %>
+    </p>
     <% } %>
-    <% if (item.registration) { %>
-      <p>You are registered.</p>
-      <form method="post" action="/member/events/<%= item.id %>/cancel">
+
+    <div class="bb-mp-part-detail__actions">
+      <% if (isRegistered) { %>
+      <p class="bb-mp-part-detail__state" role="status">You are registered for this event.</p>
+      <button
+        type="button"
+        class="bb-mp-btn bb-mp-btn--outline"
+        data-bb-ds-modal-open="bb-mp-event-cancel"
+      >
+        Cancel registration
+      </button>
+
+      <div
+        id="bb-mp-event-cancel"
+        class="bb-ds-modal"
+        data-bb-ds-modal
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bb-mp-event-cancel-title"
+      >
+        <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+        <div class="bb-ds-modal__panel" tabindex="-1">
+          <h2 id="bb-mp-event-cancel-title" class="bb-ds-modal__title">Cancel registration?</h2>
+          <p class="bb-ds-modal__body">
+            You will lose your spot for <strong><%= item.title %></strong>.
+            <% if (item.capacity != null) { %>This may free capacity for another member.<% } %>
+          </p>
+          <form method="post" action="/member/events/<%= item.id %>/cancel" class="bb-ds-modal__actions">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="button" class="bb-mp-btn bb-mp-btn--ghost" data-bb-ds-modal-close>Keep registration</button>
+            <button type="submit" class="bb-mp-btn bb-mp-btn--primary">Confirm cancel</button>
+          </form>
+        </div>
+      </div>
+      <% } else if (isFull) { %>
+      <p class="bb-mp-part-detail__state" role="status">This event is at capacity. Registration is closed.</p>
+      <button type="button" class="bb-mp-btn bb-mp-btn--primary" disabled aria-disabled="true">Register</button>
+      <% } else { %>
+      <form method="post" action="/member/events/<%= item.id %>/register" class="bb-mp-inline-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Cancel registration</button>
+        <button type="submit" class="bb-mp-btn bb-mp-btn--primary">Register now</button>
       </form>
-    <% } else { %>
-      <form method="post" action="/member/events/<%= item.id %>/register">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit" <%= item.spotsRemaining === 0 ? 'disabled' : '' %>>Register</button>
-      </form>
-    <% } %>
+      <% } %>
+    </div>
   </article>
+</section>
+
 <%- include('../partials/member-shell-end') %>

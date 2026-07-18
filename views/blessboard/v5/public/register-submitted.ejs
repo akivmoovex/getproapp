@@ -5,31 +5,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registration received · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blessboard/v5/design-tokens.css?v=1" />
+  <link rel="stylesheet" href="/blessboard/v5/design-system.css?v=1" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=3" />
 </head>
-<body class="bb-tp-body" data-bb-shell="tenant-public" data-bb-page="register-submitted">
-  <div class="bb-tp-shell">
-    <header class="bb-tp-top">
-      <div>
-        <a class="bb-tp-brand" href="/"><%= publicName %></a>
-        <% if (branchName) { %>
-        <div class="bb-tp-branch"><%= branchName %></div>
-        <% } %>
+<body class="bb-auth-body" data-bb-shell="tenant-auth" data-bb-product="blessboard-v5" data-bb-page="register-submitted">
+  <a class="bb-auth-skip" href="#bb-auth-submitted">Skip to confirmation</a>
+
+  <div class="bb-auth-layout">
+    <aside class="bb-auth-panel" aria-hidden="true">
+      <div class="bb-auth-panel__inner">
+        <p class="bb-auth-panel__eyebrow">
+          <span class="material-symbols-outlined" aria-hidden="true">mark_email_read</span>
+          Application received
+        </p>
+        <p class="bb-auth-panel__title">Thank you for applying</p>
+        <p class="bb-auth-panel__lead">
+          Leadership at <%= publicName %> will review your registration. You do not need to resubmit unless asked.
+        </p>
       </div>
-    </header>
+    </aside>
 
-    <nav class="bb-tp-nav" aria-label="Church pages">
-      <% navItems.forEach(function (item) { %>
-      <a href="<%= item.href %>"><%= item.label %></a>
-      <% }) %>
-      <a href="/register">Register</a>
-    </nav>
+    <div class="bb-auth-main">
+      <header class="bb-auth-main__header">
+        <a class="bb-auth-brand" href="/">
+          <img
+            class="bb-auth-brand__mark"
+            src="/church/images/brand/blessboard-small-church-logo.png"
+            alt=""
+            width="32"
+            height="32"
+            decoding="async"
+          />
+          <span>
+            <span class="bb-auth-brand__name"><%= publicName %></span>
+            <% if (branchName) { %>
+            <span class="bb-auth-brand__branch"><%= branchName %></span>
+            <% } %>
+          </span>
+        </a>
+        <a class="bb-auth-main__header-link" href="/">Home</a>
+      </header>
 
-    <main class="bb-tp-main">
-      <h1>Registration received</h1>
-      <p>Thank you. Your application has been submitted for review. We will follow up if more information is needed.</p>
-      <p><a href="/">Return to homepage</a></p>
-    </main>
+      <div class="bb-auth-main__body">
+        <div class="bb-auth-card" id="bb-auth-submitted" data-bb-register-submitted="1">
+          <div class="bb-auth-card__icon bb-auth-card__icon--ok" aria-hidden="true">
+            <span class="material-symbols-outlined">check_circle</span>
+          </div>
+          <p class="bb-auth-badge">
+            <span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>
+            Pending review
+          </p>
+          <h1 class="bb-auth-card__title">Registration received</h1>
+          <p class="bb-auth-card__lead">
+            Thank you. Your application has been submitted for review. We will follow up if more information is needed.
+            An account is not created automatically.
+          </p>
+
+          <h2 class="bb-auth-card__subtitle">Next steps</h2>
+          <ul class="bb-auth-success-list">
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+              <span>Watch for a message from the church office using the contact details you provided.</span>
+            </li>
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">home</span>
+              <span>You can continue browsing the church site while your application is reviewed.</span>
+            </li>
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              <span>Member sign-in is available only after leadership approves your registration.</span>
+            </li>
+          </ul>
+
+          <div class="bb-auth-actions">
+            <a class="bb-auth-btn bb-auth-btn--primary" href="/">Return to homepage</a>
+            <a class="bb-auth-btn bb-auth-btn--ghost" href="/contact">Contact church</a>
+          </div>
+        </div>
+      </div>
+
+      <footer class="bb-auth-footer">
+        <%- include('../partials/powered-by-getpro') %>
+      </footer>
+    </div>
   </div>
 </body>
 </html>

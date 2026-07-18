@@ -442,6 +442,130 @@ async function listRegistrations(client, input) {
   };
 }
 
+/**
+ * Bounded branch member directory for managers (privacy-limited columns).
+ * @param {{ query: Function }} client
+ * @param {{
+ *   churchId: string,
+ *   branchId: string,
+ *   status?: string|null,
+ *   membershipStatus?: string|null,
+ *   q?: string|null,
+ *   limit?: number,
+ *   offset?: number,
+ * }} input
+ */
+async function listMembersForBranch(client, input) {
+  const churchId = String(input.churchId || "").trim();
+  const branchId = String(input.branchId || "").trim();
+  const status =
+    input.status != null && String(input.status).trim()
+      ? String(input.status).trim().toLowerCase()
+      : null;
+  const membershipStatus =
+    input.membershipStatus != null && String(input.membershipStatus).trim()
+      ? String(input.membershipStatus).trim().toLowerCase()
+      : null;
+  const qRaw = input.q != null ? String(input.q).trim() : "";
+  const q = qRaw.slice(0, 100);
+  const limit = Math.min(Math.max(Number(input.limit) || 20, 1), 50);
+  const offset = Math.max(Number(input.offset) || 0, 0);
+
+  const where = ["m.church_id = $1", "mb.branch_id = $2"];
+  const params = [churchId, branchId];
+  let i = 3;
+
+  if (status) {
+    where.push(`m.status = $${i++}`);
+    params.push(status);
+  }
+  if (membershipStatus) {
+    where.push(`mb.membership_status = $${i++}`);
+    params.push(membershipStatus);
+  }
+  if (q) {
+    const like = `%${q.toLowerCase().replace(/[%_]/g, "")}%`;
+    where.push(
+      `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
+        OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i})`
+    );
+    params.push(like);
+    i += 1;
+  }
+
+  const whereSql = where.join(" AND ");
+  const { rows: countRows } = await client.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.members m
+       INNER JOIN blessboard.member_branch_memberships mb ON mb.member_id = m.id
+      WHERE ${whereSql}`,
+    params
+  );
+  const total = countRows[0] ? Number(countRows[0].n) : 0;
+
+  params.push(limit);
+  params.push(offset);
+  const { rows } = await client.query(
+    `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
+            m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
+            m.status, m.created_at, m.updated_at,
+            mb.membership_status, mb.is_primary, mb.joined_at
+       FROM blessboard.members m
+       INNER JOIN blessboard.member_branch_memberships mb ON mb.member_id = m.id
+      WHERE ${whereSql}
+      ORDER BY m.last_name ASC, m.first_name ASC, m.id ASC
+      LIMIT $${i++} OFFSET $${i++}`,
+    params
+  );
+
+  return {
+    items: rows.map((row) => {
+      const member = mapMember(row);
+      return {
+        ...member,
+        membershipStatus: row.membership_status,
+        isPrimary: Boolean(row.is_primary),
+        joinedAt: row.joined_at,
+      };
+    }),
+    total,
+    limit,
+    offset,
+  };
+}
+
+/**
+ * Load one member for managers when they have a membership on the scoped branch.
+ * @param {{ query: Function }} client
+ * @param {{ memberId: string, churchId: string, branchId: string }} input
+ */
+async function findMemberOnBranch(client, input) {
+  const memberId = String(input.memberId || "").trim();
+  const churchId = String(input.churchId || "").trim();
+  const branchId = String(input.branchId || "").trim();
+  const { rows } = await client.query(
+    `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
+            m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
+            m.status, m.created_at, m.updated_at,
+            mb.membership_status, mb.is_primary, mb.joined_at
+       FROM blessboard.members m
+       INNER JOIN blessboard.member_branch_memberships mb ON mb.member_id = m.id
+      WHERE m.id = $1
+        AND m.church_id = $2
+        AND mb.branch_id = $3
+      LIMIT 1`,
+    [memberId, churchId, branchId]
+  );
+  if (!rows[0]) return null;
+  const member = mapMember(rows[0]);
+  return {
+    ...member,
+    membershipStatus: rows[0].membership_status,
+    isPrimary: Boolean(rows[0].is_primary),
+    joinedAt: rows[0].joined_at,
+  };
+}
+
 module.exports = {
   mapMember,
   mapMembership,
@@ -464,6 +588,8 @@ module.exports = {
   insertRegistration,
   updateRegistrationStatus,
   listRegistrations,
+  listMembersForBranch,
+  findMemberOnBranch,
   findBranchById,
   findChurchById,
   findUserById,

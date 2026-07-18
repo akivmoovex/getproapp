@@ -1,16 +1,137 @@
 <%- include('../partials/member-shell-start') %>
-  <h1>Announcements</h1>
-  <% if (!items || !items.length) { %>
-    <p>No announcements right now.</p>
+<%
+  var list = items || [];
+  var featured = typeof featuredItems !== 'undefined' && featuredItems ? featuredItems : list.filter(function (i) { return i && i.isFeatured; });
+  var unread = typeof unreadCount === 'number' ? unreadCount : list.filter(function (i) { return i && i.isUnread; }).length;
+
+  function excerpt(text, maxLen) {
+    var raw = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return '';
+    if (raw.length <= maxLen) return raw;
+    return raw.slice(0, maxLen - 1).trim() + '…';
+  }
+
+  function formatPublished(value) {
+    if (!value) return '';
+    try {
+      var d = value instanceof Date ? value : new Date(value);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return '';
+    }
+  }
+%>
+
+<section class="bb-mp-ann" data-bb-member-announcements="1">
+  <header class="bb-mp-page-head">
+    <div>
+      <h1 class="bb-mp-page-head__title">Announcements</h1>
+      <p class="bb-mp-lede">Stay updated with the latest from your community.</p>
+      <% if (unread > 0) { %>
+      <p class="bb-mp-ann__unread-summary" aria-live="polite">
+        <span class="bb-mp-ann__unread-dot" aria-hidden="true"></span>
+        <%= unread %> unread
+      </p>
+      <% } %>
+    </div>
+  </header>
+
+  <% if (!list.length) { %>
+  <div class="bb-mp-empty" role="status">
+    <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+    <p>No announcements right now. Your church leadership will post updates here.</p>
+  </div>
   <% } else { %>
+
+  <% if (featured.length) { %>
+  <section class="bb-mp-ann-featured" aria-label="Featured announcements">
+    <% featured.forEach(function (item) { %>
+    <a
+      class="bb-mp-ann-featured__card<%= item.isUnread ? ' is-unread' : ' is-read' %>"
+      href="/member/announcements/<%= item.id %>"
+      data-bb-announcement="<%= item.id %>"
+      data-bb-unread="<%= item.isUnread ? '1' : '0' %>"
+      data-bb-featured="1"
+    >
+      <div class="bb-mp-ann-chips">
+        <span class="bb-mp-chip bb-mp-chip--featured">Featured</span>
+        <% if (item.isPinned) { %><span class="bb-mp-chip bb-mp-chip--pinned">Pinned</span><% } %>
+        <% if (item.isUnread) { %>
+        <span class="bb-mp-chip bb-mp-chip--unread">
+          <span class="bb-mp-ann__unread-dot" aria-hidden="true"></span>
+          Unread
+        </span>
+        <% } else { %>
+        <span class="bb-mp-chip bb-mp-chip--read">
+          <span class="material-symbols-outlined" aria-hidden="true">done_all</span>
+          Read
+        </span>
+        <% } %>
+      </div>
+      <h2 class="bb-mp-ann-featured__title"><%= item.title %></h2>
+      <% if (item.body) { %>
+      <p class="bb-mp-ann-featured__excerpt"><%= excerpt(item.body, 160) %></p>
+      <% } %>
+      <p class="bb-mp-ann-card__meta">
+        <% var featDate = formatPublished(item.publishedAt); %>
+        <% if (featDate) { %><span><%= featDate %></span><% } %>
+        <span class="bb-mp-ann-card__cta">Read more</span>
+      </p>
+    </a>
+    <% }) %>
+  </section>
+  <% } %>
+
+  <section class="bb-mp-ann-list-wrap" aria-label="All announcements">
+    <h2 class="bb-mp-section-title">All announcements</h2>
     <ul class="bb-mp-ann-list">
-      <% items.forEach(function (item) { %>
-        <li data-bb-unread="<%= item.isUnread ? '1' : '0' %>">
-          <a href="/member/announcements/<%= item.id %>"><%= item.title %></a>
-          <% if (item.isPinned) { %><span>Pinned</span><% } %>
-          <% if (item.isUnread) { %><span>Unread</span><% } %>
-        </li>
+      <% list.forEach(function (item) { %>
+      <li>
+        <a
+          class="bb-mp-ann-card<%= item.isUnread ? ' is-unread' : ' is-read' %><%= item.isPinned ? ' is-pinned' : '' %><%= item.isFeatured ? ' is-featured' : '' %>"
+          href="/member/announcements/<%= item.id %>"
+          data-bb-announcement="<%= item.id %>"
+          data-bb-unread="<%= item.isUnread ? '1' : '0' %>"
+          data-bb-pinned="<%= item.isPinned ? '1' : '0' %>"
+          data-bb-featured="<%= item.isFeatured ? '1' : '0' %>"
+        >
+          <div class="bb-mp-ann-card__status">
+            <% if (item.isUnread) { %>
+            <span class="bb-mp-chip bb-mp-chip--unread" aria-label="Unread">
+              <span class="bb-mp-ann__unread-dot" aria-hidden="true"></span>
+              Unread
+            </span>
+            <% } else { %>
+            <span class="bb-mp-chip bb-mp-chip--read" aria-label="Read">
+              <span class="material-symbols-outlined" aria-hidden="true">done_all</span>
+              Read
+            </span>
+            <% } %>
+            <% if (item.isPinned) { %>
+            <span class="bb-mp-chip bb-mp-chip--pinned" aria-label="Pinned">Pinned</span>
+            <% } %>
+            <% if (item.isFeatured) { %>
+            <span class="bb-mp-chip bb-mp-chip--featured" aria-label="Featured">Featured</span>
+            <% } %>
+          </div>
+          <div class="bb-mp-ann-card__body">
+            <h3 class="bb-mp-ann-card__title"><%= item.title %></h3>
+            <% if (item.body) { %>
+            <p class="bb-mp-ann-card__excerpt"><%= excerpt(item.body, 120) %></p>
+            <% } %>
+            <% var pub = formatPublished(item.publishedAt); %>
+            <% if (pub) { %>
+            <p class="bb-mp-ann-card__date"><%= pub %></p>
+            <% } %>
+          </div>
+          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+      </li>
       <% }) %>
     </ul>
+  </section>
   <% } %>
+</section>
+
 <%- include('../partials/member-shell-end') %>

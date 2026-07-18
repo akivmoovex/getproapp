@@ -625,6 +625,63 @@ describe("blessboard participation", () => {
       .send({ [CSRF_FIELD]: csrf });
     assert.equal(reg.status, 303);
 
+    const after = await request(app)
+      .get(`/member/events/${event.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(after.status, 200);
+    assert.match(after.text, /data-bb-registered="1"/);
+    assert.match(after.text, /data-bb-ds-modal-open="bb-mp-event-cancel"/);
+    assert.match(after.text, /Confirm cancel/);
+    assert.match(after.text, /name="_csrf"/);
+
+    const ministry = await createMinistry(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      name: "HTTP Ministry",
+      summary: "Serve together",
+      status: "published",
+      joinPolicy: "request",
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+    });
+    assert.equal(ministry.ok, true, ministry.reason);
+
+    const ministries = await request(app)
+      .get("/member/ministries")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(ministries.status, 200);
+    assert.match(ministries.text, /data-bb-member-ministries="1"/);
+    assert.match(ministries.text, /HTTP Ministry/);
+    assert.match(ministries.text, /data-bb-status="none"/);
+    assert.doesNotMatch(ministries.text, new RegExp(churchA.id, "i"));
+
+    const ministryDetail = await request(app)
+      .get(`/member/ministries/${ministry.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(ministryDetail.status, 200);
+    assert.match(ministryDetail.text, /Request to join/);
+    assert.match(ministryDetail.text, /name="_csrf"/);
+    const ministryCsrf = extractCookie(ministryDetail, CSRF_COOKIE);
+    const join = await request(app)
+      .post(`/member/ministries/${ministry.item.id}/join`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(memberCookie, `${CSRF_COOKIE}=${ministryCsrf}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: ministryCsrf, message: "Happy to help" });
+    assert.equal(join.status, 303);
+
+    const pending = await request(app)
+      .get(`/member/ministries/${ministry.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(pending.status, 200);
+    assert.match(pending.text, /data-bb-status="pending"/);
+    assert.match(pending.text, /Cancel request/);
+    assert.match(pending.text, /data-bb-ds-modal-open="bb-mp-ministry-leave"/);
+
     const hqCookie = `${DEFAULT_V5_COOKIE}=${hqAdmin.rawToken}`;
     const admin = await request(app)
       .get("/hq/participation")
@@ -633,6 +690,78 @@ describe("blessboard participation", () => {
     assert.equal(admin.status, 200);
     assert.match(admin.text, /Participation/);
     assert.doesNotMatch(admin.text, new RegExp(churchA.id, "i"));
+  });
+
+  it("shows real capacity only and requires CSRF on event cancel", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const openEvent = await createEvent(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      title: "Open Capacity Event",
+      startsAt: new Date(Date.now() + 345600000).toISOString(),
+      timezone: "UTC",
+      capacity: 2,
+      status: "published",
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+    });
+    assert.equal(openEvent.ok, true, openEvent.reason);
+
+    const unlimited = await createEvent(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      title: "Unlimited Event",
+      startsAt: new Date(Date.now() + 432000000).toISOString(),
+      timezone: "UTC",
+      status: "published",
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+    });
+    assert.equal(unlimited.ok, true, unlimited.reason);
+
+    const memberCookie = `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`;
+    const list = await request(app)
+      .get("/member/events")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(list.status, 200);
+    assert.match(list.text, /data-bb-member-events="1"/);
+    assert.match(list.text, /Open Capacity Event/);
+    assert.match(list.text, /data-bb-capacity="2"/);
+    assert.match(list.text, /Unlimited Event/);
+    const unlimitedIdx = list.text.indexOf("Unlimited Event");
+    assert.ok(unlimitedIdx >= 0);
+    const unlimitedSnippet = list.text.slice(unlimitedIdx, unlimitedIdx + 900);
+    assert.doesNotMatch(unlimitedSnippet, /data-bb-capacity=/);
+
+    const detail = await request(app)
+      .get(`/member/events/${openEvent.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    const csrf = extractCookie(detail, CSRF_COOKIE);
+    const registered = await request(app)
+      .post(`/member/events/${openEvent.item.id}/register`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(memberCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.equal(registered.status, 303);
+
+    const badCancel = await request(app)
+      .post(`/member/events/${openEvent.item.id}/cancel`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(memberCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: "not-the-token" });
+    assert.equal(badCancel.status, 403);
+
+    const okCancel = await request(app)
+      .post(`/member/events/${openEvent.item.id}/cancel`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(memberCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.equal(okCancel.status, 303);
   });
 
   it("blocks cross-tenant participation", async (t) => {

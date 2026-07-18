@@ -3,75 +3,151 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <p><a href="<%= basePath %>">Back to giving</a></p>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
-  <% if (error) { %><p class="bb-ann-error" role="alert"><%= error %></p><% } %>
+<%
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'submitted') return 'Submitted';
+    if (key === 'approved') return 'Approved';
+    if (key === 'void') return 'Void';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted' || key === 'approved') return 'bb-ba-chip--ok';
+    if (key === 'draft') return 'bb-ba-chip--pending';
+    if (key === 'void') return 'bb-ba-chip--danger';
+    return 'bb-ba-chip--muted';
+  }
+%>
 
-  <article data-bb-status="<%= entry.status %>">
-    <h1><%= entry.categoryLabel || entry.categoryKey %></h1>
-    <p>
-      <%= entry.givingDate %> · <%= entry.amount %> <%= entry.currency %> · <%= entry.status %>
+<section class="bb-giv-admin bb-giv-detail" data-bb-giving-admin-detail="1" data-bb-status="<%= entry.status %>">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="<%= basePath %>">Giving</a>
+        <span aria-hidden="true">›</span>
+        <span>Entry</span>
+      </p>
+      <h1 class="bb-ba-page-head__title"><%= entry.categoryLabel || entry.categoryKey %></h1>
+      <p class="bb-ba-lede">
+        <span class="bb-ba-chip <%= statusChip(entry.status) %>"><%= statusLabel(entry.status) %></span>
+        · <%= entry.givingDate %>
+        · <span class="bb-giv-amount" data-bb-giv-amount="<%= entry.amount %>"><%= entry.amount %> <%= entry.currency %></span>
+      </p>
+    </div>
+    <div class="bb-ba-decision__actions" style="margin:0">
+      <% if (canEdit) { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= entry.id %>/edit" data-bb-giv-edit="1">Edit</a>
+      <button type="button" class="bb-ba-btn bb-ba-btn--primary" data-bb-ds-modal-open="bb-giv-submit-modal" data-bb-giv-submit-open="1">Submit</button>
+      <% } %>
+      <% if (canVoid) { %>
+      <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-open="bb-giv-void-modal" data-bb-giv-void-open="1">Void</button>
+      <% } %>
+    </div>
+  </header>
+
+  <% if (saved === '1' || saved === 'updated' || saved === 'submitted' || saved === 'approved' || saved === 'voided') { %>
+  <p class="bb-ba-ok" role="status">
+    <% if (saved === 'submitted') { %>Giving entry submitted.<% }
+       else if (saved === 'updated') { %>Draft updated.<% }
+       else if (saved === 'approved') { %>Giving entry approved.<% }
+       else if (saved === 'voided') { %>Giving entry voided.<% }
+       else { %>Saved.<% } %>
+  </p>
+  <% } %>
+  <% if (error) { %><p class="bb-ba-alert bb-ba-alert--error" role="alert"><%= error %></p><% } %>
+
+  <div class="bb-att-lifecycle" data-bb-giv-lifecycle="1" aria-label="Workflow status">
+    <div class="bb-att-lifecycle__step is-done">Created</div>
+    <div class="bb-att-lifecycle__step<%= entry.status === 'draft' ? ' is-current' : (entry.status !== 'draft' ? ' is-done' : '') %>">Draft</div>
+    <div class="bb-att-lifecycle__step<%= entry.status === 'submitted' ? ' is-current' : (['approved','void'].indexOf(entry.status) !== -1 && entry.status !== 'draft' ? ' is-done' : '') %>">Submitted</div>
+    <div class="bb-att-lifecycle__step<%= entry.status === 'approved' ? ' is-done' : (entry.status === 'void' ? ' is-done' : '') %>"><%= entry.status === 'void' ? 'Void' : 'HQ review' %></div>
+  </div>
+
+  <section class="bb-ba-panel" data-bb-giv-meta="1">
+    <h2 class="bb-ba-section-title">Entry details</h2>
+    <dl class="bb-ann-dl">
+      <div><dt>Category</dt><dd><%= entry.categoryLabel || entry.categoryKey %></dd></div>
+      <div><dt>Date</dt><dd><%= entry.givingDate %></dd></div>
+      <div><dt>Amount</dt><dd class="bb-giv-amount"><%= entry.amount %> <%= entry.currency %></dd></div>
+      <% if (entry.reference) { %><div><dt>Reference</dt><dd><%= entry.reference %></dd></div><% } %>
+      <% if (entry.notes) { %><div><dt>Notes</dt><dd><%= entry.notes %></dd></div><% } %>
+      <% if (entry.status === 'void' && entry.voidReason) { %>
+      <div><dt>Void reason</dt><dd><%= entry.voidReason %></dd></div>
+      <% } %>
+    </dl>
+    <p class="bb-ba-hint">
+      This is a reporting summary, not a payment ledger. Amounts use NUMERIC decimal strings. Entries are voided, never hard-deleted.
     </p>
-    <% if (entry.reference) { %><p>Reference: <%= entry.reference %></p><% } %>
-    <% if (entry.notes) { %><p>Notes: <%= entry.notes %></p><% } %>
-    <% if (entry.status === 'void' && entry.voidReason) { %>
-      <p>Void reason: <%= entry.voidReason %></p>
-    <% } %>
+  </section>
 
-    <% if (canEdit) { %>
-      <h2>Edit draft</h2>
-      <form method="post" action="<%= basePath %>/<%= entry.id %>">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <label>Category
-          <select name="category_key" required>
-            <% categories.forEach(function (c) { %>
-              <option value="<%= c.categoryKey %>" <%= entry.categoryKey === c.categoryKey ? 'selected' : '' %>><%= c.label %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label>Giving date
-          <input type="date" name="giving_date" required value="<%= entry.givingDate %>" />
-        </label>
-        <label>Amount
-          <input type="text" name="amount" inputmode="decimal" pattern="^(0|[1-9]\d*)(\.\d{1,2})?$" required value="<%= entry.amount %>" />
-        </label>
-        <label>Currency (ISO)
-          <input type="text" name="currency" maxlength="3" pattern="[A-Za-z]{3}" required value="<%= entry.currency %>" />
-        </label>
-        <label>Reference
-          <input type="text" name="reference" maxlength="120" value="<%= entry.reference || '' %>" />
-        </label>
-        <label>Notes
-          <input type="text" name="notes" maxlength="1000" value="<%= entry.notes || '' %>" />
-        </label>
-        <button type="submit">Save draft</button>
-      </form>
-    <% } %>
+  <% if (isHq && entry.status === 'submitted') { %>
+  <section class="bb-ba-decision">
+    <h2 class="bb-ba-section-title">HQ actions</h2>
+    <form method="post" action="<%= basePath %>/<%= entry.id %>/approve" class="bb-ba-decision__actions">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Approve</button>
+    </form>
+  </section>
+  <% } %>
 
-    <% if (entry.status === 'draft') { %>
-      <form method="post" action="<%= basePath %>/<%= entry.id %>/submit">
+  <% if (entry.status === 'draft') { %>
+  <div
+    class="bb-ds-modal"
+    id="bb-giv-submit-modal"
+    data-bb-ds-modal
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bb-giv-submit-title"
+  >
+    <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+    <div class="bb-ds-modal__panel" tabindex="-1">
+      <h2 id="bb-giv-submit-title" class="bb-ds-modal__title">Submit this giving entry?</h2>
+      <p class="bb-ds-modal__body">
+        Amount <strong><%= entry.amount %> <%= entry.currency %></strong> for <%= entry.categoryLabel || entry.categoryKey %>.
+        After submit, branch edits are locked.
+      </p>
+      <form method="post" action="<%= basePath %>/<%= entry.id %>/submit" class="bb-ds-modal__actions" data-bb-giv-submit="1">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Submit</button>
+        <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Confirm submit</button>
       </form>
-    <% } %>
+    </div>
+  </div>
+  <% } %>
 
-    <% if (isHq && entry.status === 'submitted') { %>
-      <form method="post" action="<%= basePath %>/<%= entry.id %>/approve">
+  <% if (canVoid) { %>
+  <div
+    class="bb-ds-modal"
+    id="bb-giv-void-modal"
+    data-bb-ds-modal
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bb-giv-void-title"
+  >
+    <div class="bb-ds-modal__backdrop" data-bb-ds-modal-close tabindex="-1"></div>
+    <div class="bb-ds-modal__panel" tabindex="-1">
+      <h2 id="bb-giv-void-title" class="bb-ds-modal__title">Void this giving entry?</h2>
+      <p class="bb-ds-modal__body">
+        Void keeps the record for audit. It does not delete the row and cannot be reactivated.
+      </p>
+      <form method="post" action="<%= basePath %>/<%= entry.id %>/void" class="bb-ds-modal__actions bb-giv-void-form" data-bb-giv-void="1">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Approve</button>
+        <div class="bb-ba-field" style="flex:1; width:100%; margin-bottom:0.75rem">
+          <label for="void_reason">Void reason</label>
+          <input id="void_reason" type="text" name="void_reason" maxlength="500" required />
+        </div>
+        <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-ds-modal-close>Cancel</button>
+        <button type="submit" class="bb-ba-btn bb-ba-btn--danger">Confirm void</button>
       </form>
-    <% } %>
+    </div>
+  </div>
+  <% } %>
+</section>
 
-    <% if (canVoid) { %>
-      <form method="post" action="<%= basePath %>/<%= entry.id %>/void">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <label>Void reason
-          <input type="text" name="void_reason" maxlength="500" required />
-        </label>
-        <button type="submit">Void (do not delete)</button>
-      </form>
-    <% } %>
-  </article>
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

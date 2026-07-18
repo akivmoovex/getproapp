@@ -1,0 +1,57 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var m = member || {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+%>
+
+<section class="bb-ba-member-detail" data-bb-member-detail="1">
+  <p class="bb-ba-back">
+    <a href="/branch-admin/members">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to directory
+    </a>
+  </p>
+
+  <header class="bb-ba-page-head">
+    <h1 class="bb-ba-page-head__title"><%= m.firstName %> <%= m.lastName %></h1>
+    <p class="bb-ba-lede">Member profile for this branch. Privacy-limited fields only.</p>
+  </header>
+
+  <article class="bb-ba-panel">
+    <div class="bb-ba-chips" aria-label="Status">
+      <span class="bb-ba-chip"><%= m.status %></span>
+      <% if (m.membershipStatus) { %>
+      <span class="bb-ba-chip bb-ba-chip--muted"><%= m.membershipStatus %></span>
+      <% } %>
+    </div>
+    <dl class="bb-ba-dl">
+      <dt>Legal name</dt>
+      <dd><%= m.firstName %> <%= m.lastName %></dd>
+      <% if (m.preferredName) { %>
+      <dt>Preferred name</dt>
+      <dd><%= m.preferredName %></dd>
+      <% } %>
+      <dt>Email</dt>
+      <dd><%= m.emailDisplay || '—' %></dd>
+      <dt>Phone</dt>
+      <dd><%= m.phoneDisplay || '—' %></dd>
+      <dt>Joined this branch</dt>
+      <dd><%= formatWhen(m.joinedAt) %></dd>
+      <dt>Primary membership</dt>
+      <dd><%= m.isPrimary ? 'Yes' : 'No' %></dd>
+      <dt>Login linked</dt>
+      <dd><%= m.hasLoginLinked ? 'Yes' : 'No' %></dd>
+    </dl>
+  </article>
+
+  <p class="bb-ba-hint">
+    Linking a login is a separate step. Approving a registration never promises an automatic account.
+  </p>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

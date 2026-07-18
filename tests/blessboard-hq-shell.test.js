@@ -226,6 +226,9 @@ describe("blessboard hq shell", () => {
     const res = await request(app).get("/hq").set("Host", HOST_A).set("Cookie", cookie);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-shell="hq-admin"/);
+    assert.match(res.text, /data-bb-hq-dashboard="1"/);
+    assert.match(res.text, /data-bb-nav="desktop-sidebar"/);
+    assert.match(res.text, /data-bb-nav="mobile-tabs"/);
     assert.match(res.text, new RegExp(CHURCH_A));
     assert.match(res.text, /Headquarters A/);
     assert.match(res.text, /Campus North/);
@@ -234,7 +237,53 @@ describe("blessboard hq shell", () => {
     assert.doesNotMatch(res.text, /Campus Old/);
     assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(res.text, new RegExp(campusA.id, "i"));
-    assert.doesNotMatch(res.text, /\b99\b|\bfake\b/i);
+    assert.doesNotMatch(res.text, /\bfake\b|4,?250|\+12%|SUBMITTED THIS MONTH|Report Overdue|Quick Export|New Branch Registry/i);
+  });
+
+  it("account page and CSRF logout are available", async () => {
+    requireDb();
+    const cookie = await cookieFor(users.hq);
+    const account = await request(app)
+      .get("/hq/account")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(account.status, 200);
+    assert.match(account.text, /data-bb-hq-account="1"/);
+    assert.match(account.text, /data-bb-hq-logout="1"/);
+    assert.match(account.text, /name="_csrf"/);
+    assert.doesNotMatch(account.text, new RegExp(churchA.id, "i"));
+
+    const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
+    function extractCookie(res, name) {
+      const raw = res.headers["set-cookie"];
+      if (!raw) return null;
+      const list = Array.isArray(raw) ? raw : [raw];
+      for (const line of list) {
+        if (String(line).startsWith(`${name}=`)) {
+          return String(line).split(";")[0].slice(name.length + 1);
+        }
+      }
+      return null;
+    }
+    const csrf = extractCookie(account, CSRF_COOKIE);
+    assert.ok(csrf);
+
+    const bad = await request(app)
+      .post("/hq/logout")
+      .set("Host", HOST_A)
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({});
+    assert.equal(bad.status, 403);
+
+    const ok = await request(app)
+      .post("/hq/logout")
+      .set("Host", HOST_A)
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.equal(ok.status, 303);
+    assert.equal(ok.headers.location, "/");
   });
 
   it("platform admin may access HQ; branch admin receives 403", async () => {
@@ -294,6 +343,8 @@ describe("blessboard hq shell", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(list.status, 200);
+    assert.match(list.text, /data-bb-hq-branches="1"/);
+    assert.match(list.text, /data-bb-branch-list="1"/);
     assert.match(list.text, /href="\/hq\/branches\/campus-north"/);
     assert.doesNotMatch(list.text, /[0-9a-f]{8}-[0-9a-f]{4}-/i);
 

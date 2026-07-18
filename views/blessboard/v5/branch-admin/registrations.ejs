@@ -1,60 +1,150 @@
 <%- include('../partials/branch-admin-shell-start') %>
-  <h1>Registrations</h1>
-  <p class="bb-ba-lede">Review member applications for <strong><%= branchDisplayName %></strong>.</p>
+<%
+  var rows = items || [];
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted') return 'Pending';
+    if (key === 'under_review') return 'In review';
+    if (key === 'approved') return 'Approved';
+    if (key === 'rejected') return 'Rejected';
+    if (key === 'withdrawn') return 'Withdrawn';
+    return s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'submitted' || key === 'under_review') return 'bb-ba-chip--pending';
+    if (key === 'approved') return 'bb-ba-chip--ok';
+    if (key === 'rejected') return 'bb-ba-chip--danger';
+    return 'bb-ba-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function initials(item) {
+    var a = String(item.firstName || '').charAt(0);
+    var b = String(item.lastName || '').charAt(0);
+    return (a + b).toUpperCase() || '?';
+  }
+%>
+
+<section class="bb-ba-reg" data-bb-registration-queue="1">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="/branch-admin/members">Members</a>
+        <span aria-hidden="true">›</span>
+        <span>Verification queue</span>
+      </p>
+      <h1 class="bb-ba-page-head__title">Member verification queue</h1>
+      <p class="bb-ba-lede">
+        Review pending registrations for <strong><%= branchDisplayName || churchDisplayName %></strong>.
+        Approving creates a member record only — no login account is created automatically.
+      </p>
+    </div>
+  </header>
 
   <% if (saved === 'approve' || saved === 'reject') { %>
-  <p class="bb-ba-ok" role="status">Registration <%= saved === 'approve' ? 'approved' : 'rejected' %>.</p>
+  <p class="bb-ba-ok" role="status">
+    Registration <%= saved === 'approve' ? 'approved' : 'rejected' %>.
+  </p>
   <% } %>
 
-  <form method="get" action="/branch-admin/registrations" class="bb-ba-form bb-ba-filter">
-    <label for="q">Search (name, email, or phone)</label>
-    <input id="q" name="q" type="search" maxlength="100" value="<%= q || '' %>" />
-    <label for="status">Status</label>
-    <select id="status" name="status">
-      <option value="">All open + decided</option>
-      <% ['submitted','under_review','approved','rejected','withdrawn'].forEach(function (st) { %>
-      <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= st %></option>
-      <% }) %>
-    </select>
-    <button type="submit">Filter</button>
+  <form method="get" action="/branch-admin/registrations" class="bb-ba-filter" data-bb-reg-filter="1">
+    <div class="bb-ba-field">
+      <label for="q">Search</label>
+      <input
+        id="q"
+        name="q"
+        type="search"
+        maxlength="100"
+        value="<%= q || '' %>"
+        placeholder="Name, email, or phone"
+        autocomplete="off"
+      />
+    </div>
+    <div class="bb-ba-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">All statuses</option>
+        <% ['submitted','under_review','approved','rejected','withdrawn'].forEach(function (st) { %>
+        <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-ba-filter__actions">
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Filter</button>
+    </div>
   </form>
 
-  <% if (!items || !items.length) { %>
-  <p class="bb-ba-empty">No registrations match this filter.</p>
+  <% if (!rows.length) { %>
+  <div class="bb-ba-empty" role="status">No registrations match this filter.</div>
   <% } else { %>
-  <table class="bb-ba-table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Contact</th>
-        <th>Status</th>
-        <th>Submitted</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% items.forEach(function (item) { %>
-      <tr>
-        <td><%= item.firstName %> <%= item.lastName %></td>
-        <td><%= item.emailDisplay || item.phoneDisplay || '—' %></td>
-        <td><%= item.status %></td>
-        <td><%= item.createdAt instanceof Date ? item.createdAt.toISOString().slice(0, 10) : String(item.createdAt || '').slice(0, 10) %></td>
-        <td><a href="/branch-admin/registrations/<%= item.id %>">Review</a></td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
+  <div class="bb-ba-table-wrap">
+    <table class="bb-ba-table" data-bb-reg-table="1">
+      <thead>
+        <tr>
+          <th scope="col">Member</th>
+          <th scope="col">Contact</th>
+          <th scope="col">Submitted</th>
+          <th scope="col">Status</th>
+          <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (item) { %>
+        <tr data-bb-reg-status="<%= item.status %>">
+          <td>
+            <div class="bb-ba-person">
+              <span class="bb-ba-avatar" aria-hidden="true"><%= initials(item) %></span>
+              <span>
+                <strong><%= item.firstName %> <%= item.lastName %></strong>
+                <% if (item.preferredName) { %>
+                <span class="bb-ba-muted"> (<%= item.preferredName %>)</span>
+                <% } %>
+              </span>
+            </div>
+          </td>
+          <td>
+            <div class="bb-ba-contact">
+              <% if (item.phoneDisplay) { %><span><%= item.phoneDisplay %></span><% } %>
+              <% if (item.emailDisplay) { %><span><%= item.emailDisplay %></span><% } %>
+              <% if (!item.phoneDisplay && !item.emailDisplay) { %>—<% } %>
+            </div>
+          </td>
+          <td><%= formatWhen(item.createdAt) %></td>
+          <td><span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
+          <td class="bb-ba-table__actions">
+            <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/branch-admin/registrations/<%= item.id %>">
+              Review
+            </a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
   <% } %>
 
   <% if (totalPages > 1) { %>
   <nav class="bb-ba-pager" aria-label="Pagination">
     <% if (page > 1) { %>
-    <a href="/branch-admin/registrations?page=<%= page - 1 %>&amp;q=<%= encodeURIComponent(q || '') %>&amp;status=<%= encodeURIComponent(statusFilter || '') %>">Previous</a>
+    <a
+      class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+      href="/branch-admin/registrations?page=<%= page - 1 %>&amp;q=<%= encodeURIComponent(q || '') %>&amp;status=<%= encodeURIComponent(statusFilter || '') %>"
+    >Previous</a>
     <% } %>
-    <span>Page <%= page %> of <%= totalPages %> (<%= total %> total)</span>
+    <span class="bb-ba-pager__meta">Page <%= page %> of <%= totalPages %> · <%= total %> total</span>
     <% if (page < totalPages) { %>
-    <a href="/branch-admin/registrations?page=<%= page + 1 %>&amp;q=<%= encodeURIComponent(q || '') %>&amp;status=<%= encodeURIComponent(statusFilter || '') %>">Next</a>
+    <a
+      class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+      href="/branch-admin/registrations?page=<%= page + 1 %>&amp;q=<%= encodeURIComponent(q || '') %>&amp;status=<%= encodeURIComponent(statusFilter || '') %>"
+    >Next</a>
     <% } %>
   </nav>
   <% } %>
+</section>
+
 <%- include('../partials/branch-admin-shell-end') %>

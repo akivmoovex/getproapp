@@ -76,7 +76,11 @@ async function listEvents(client, opts) {
     params.push(opts.yearMonth);
     where += ` AND to_char(event_date, 'YYYY-MM') = $${params.length}`;
   }
-  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 200);
+  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 50);
+  if (opts.eventType) {
+    params.push(opts.eventType);
+    where += ` AND event_type = $${params.length}`;
+  }
   params.push(limit);
   const { rows } = await client.query(
     `SELECT ${EVENT_COLS}

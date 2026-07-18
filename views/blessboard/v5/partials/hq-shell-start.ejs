@@ -3,64 +3,154 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><%= pageTitle %> · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css" />
+  <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
+  <meta name="robots" content="noindex, nofollow" />
+  <%- include('./head-design-system') %>
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=7" />
 </head>
-<body class="bb-hq-body" data-bb-shell="hq-admin" data-bb-viewport="responsive">
-  <header class="bb-hq-top" data-bb-nav="desktop-header">
-    <div>
-      <a class="bb-hq-wordmark" href="/hq">BlessBoard</a>
-      <div class="bb-hq-context">
-        <%= churchDisplayName %>
-        <span class="bb-hq-role"><%= roleLabel %></span>
+<%
+  var hqNav = (typeof navItems !== 'undefined' && navItems && navItems.length)
+    ? navItems
+    : [
+        { key: 'home', label: 'Dashboard', href: '/hq', icon: 'dashboard' },
+        { key: 'branches', label: 'Branches', href: '/hq/branches', icon: 'apartment' },
+        { key: 'settings', label: 'Settings', href: '/hq/settings', icon: 'settings' },
+        { key: 'content', label: 'Website', href: '/hq/content', icon: 'language' },
+        { key: 'announcements', label: 'Announcements', href: '/hq/announcements', icon: 'campaign' },
+        { key: 'participation', label: 'Participation', href: '/hq/participation', icon: 'groups' },
+        { key: 'attendance', label: 'Attendance', href: '/hq/attendance', icon: 'fact_check' },
+        { key: 'giving', label: 'Giving', href: '/hq/giving', icon: 'payments' },
+        { key: 'resources', label: 'Resources', href: '/hq/resources', icon: 'menu_book' },
+        { key: 'forms', label: 'Forms', href: '/hq/forms', icon: 'description' },
+        { key: 'requests', label: 'Requests', href: '/hq/requests', icon: 'inbox' },
+        { key: 'reports', label: 'Reports', href: '/hq/reports', icon: 'analytics' },
+        { key: 'audit', label: 'Audit', href: '/hq/audit', icon: 'history' },
+        { key: 'account', label: 'Account', href: '/hq/account', icon: 'person' },
+      ];
+  var hqTabs = (typeof mobileTabs !== 'undefined' && mobileTabs && mobileTabs.length)
+    ? mobileTabs
+    : hqNav.filter(function (item) {
+        return ['home', 'branches', 'reports', 'account'].indexOf(item.key) !== -1;
+      });
+  var hqRole = typeof roleLabel !== 'undefined' && roleLabel ? roleLabel : 'HQ admin';
+  var hqDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
+  var hqCsrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<body
+  class="bb-hq-body"
+  data-bb-shell="hq-admin"
+  data-bb-product="blessboard-v5"
+  data-bb-viewport="responsive"
+  data-bb-page="<%= activeNav || 'home' %>"
+>
+  <a class="bb-hq-skip" href="#bb-hq-main">Skip to content</a>
+
+  <div class="bb-hq-app">
+    <aside class="bb-hq-sidebar" data-bb-nav="desktop-sidebar" aria-label="HQ navigation">
+      <div class="bb-hq-sidebar__brand">
+        <a class="bb-hq-wordmark" href="/hq">
+          <img
+            class="bb-hq-wordmark__mark"
+            src="/church/images/brand/blessboard-small-church-logo.png"
+            alt=""
+            width="28"
+            height="28"
+            decoding="async"
+          />
+          <span>BlessBoard</span>
+        </a>
+        <p class="bb-hq-context">
+          <span class="bb-hq-context__church"><%= churchDisplayName %></span>
+          <% if (typeof hqBranchDisplayName !== 'undefined' && hqBranchDisplayName) { %>
+          <span class="bb-hq-context__hq"><%= hqBranchDisplayName %></span>
+          <% } %>
+        </p>
+        <span class="bb-hq-role"><%= hqRole %></span>
       </div>
-    </div>
-    <nav class="bb-hq-nav-desktop" aria-label="HQ desktop" data-bb-nav="desktop">
-      <a href="/hq" class="<%= activeNav === 'home' ? 'is-active' : '' %>">Home</a>
-      <a href="/hq/branches" class="<%= activeNav === 'branches' ? 'is-active' : '' %>">Branches</a>
-      <a href="/hq/settings" class="<%= activeNav === 'settings' ? 'is-active' : '' %>">Settings</a>
-      <a href="/hq/content" class="<%= activeNav === 'content' ? 'is-active' : '' %>">Content</a>
-      <a href="/hq/announcements" class="<%= activeNav === 'announcements' ? 'is-active' : '' %>">Announcements</a>
-      <a href="/hq/participation" class="<%= activeNav === 'participation' ? 'is-active' : '' %>">Participation</a>
-      <a href="/hq/attendance" class="<%= activeNav === 'attendance' ? 'is-active' : '' %>">Attendance</a>
-      <a href="/hq/giving" class="<%= activeNav === 'giving' ? 'is-active' : '' %>">Giving</a>
-      <a href="/hq/resources" class="<%= activeNav === 'resources' ? 'is-active' : '' %>">Resources</a>
-      <a href="/hq/forms" class="<%= activeNav === 'forms' ? 'is-active' : '' %>">Forms</a>
-      <a href="/hq/requests" class="<%= activeNav === 'requests' ? 'is-active' : '' %>">Requests</a>
-      <a href="/hq/reports" class="<%= activeNav === 'reports' ? 'is-active' : '' %>">Reports</a>
-      <a href="/hq/audit" class="<%= activeNav === 'audit' ? 'is-active' : '' %>">Audit</a>
-      <a href="/branch-admin">Branch admin</a>
-    </nav>
-    <button
-      type="button"
-      class="bb-hq-nav-toggle"
-      data-bb-nav="mobile-toggle"
-      aria-controls="bb-hq-mobile-nav"
-      aria-expanded="false"
-    >
-      Menu
-    </button>
-  </header>
-  <nav
-    id="bb-hq-mobile-nav"
-    class="bb-hq-nav-mobile"
-    aria-label="HQ mobile"
-    data-bb-nav="mobile"
-    hidden
-  >
-    <a href="/hq">Home</a>
-    <a href="/hq/branches">Branches</a>
-    <a href="/hq/settings">Settings</a>
-    <a href="/hq/content">Content</a>
-    <a href="/hq/announcements">Announcements</a>
-    <a href="/hq/participation">Participation</a>
-    <a href="/hq/attendance">Attendance</a>
-    <a href="/hq/giving">Giving</a>
-    <a href="/hq/resources">Resources</a>
-    <a href="/hq/forms">Forms</a>
-    <a href="/hq/requests">Requests</a>
-    <a href="/hq/reports">Reports</a>
-    <a href="/hq/audit">Audit</a>
-    <a href="/branch-admin">Branch admin</a>
-  </nav>
-  <main class="bb-hq-main">
+
+      <nav class="bb-hq-sidebar__nav" aria-label="HQ desktop" data-bb-nav="desktop">
+        <% hqNav.forEach(function (item) { %>
+        <a
+          href="<%= item.href %>"
+          class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+          <span><%= item.label %></span>
+        </a>
+        <% }) %>
+      </nav>
+
+      <div class="bb-hq-sidebar__footer">
+        <% if (hqDisplay) { %>
+        <p class="bb-hq-user" data-bb-admin-user="1">
+          <span class="bb-hq-user__name"><%= hqDisplay %></span>
+          <span class="bb-hq-user__meta"><%= churchDisplayName %></span>
+        </p>
+        <% } %>
+        <form class="bb-hq-logout" method="post" action="/hq/logout" data-bb-hq-logout="1">
+          <input type="hidden" name="_csrf" value="<%= hqCsrf %>" />
+          <button type="submit">
+            <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+            Sign out
+          </button>
+        </form>
+        <%- include('./powered-by-getpro') %>
+      </div>
+    </aside>
+
+    <div class="bb-hq-frame">
+      <header class="bb-hq-top" data-bb-nav="mobile-header">
+        <div class="bb-hq-top__brand">
+          <a class="bb-hq-wordmark bb-hq-wordmark--compact" href="/hq">BlessBoard HQ</a>
+          <p class="bb-hq-context bb-hq-context--compact">
+            <%= churchDisplayName %>
+            <span class="bb-hq-role"><%= hqRole %></span>
+          </p>
+        </div>
+        <div class="bb-hq-top__actions">
+          <a class="bb-hq-icon-link" href="/hq/account" aria-label="Account">
+            <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+          </a>
+          <button
+            type="button"
+            class="bb-hq-nav-toggle"
+            id="bb-hq-menu-btn"
+            data-bb-nav="mobile-toggle"
+            aria-controls="bb-hq-drawer"
+            aria-expanded="false"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+            <span class="bb-hq-nav-toggle__label">Menu</span>
+          </button>
+        </div>
+      </header>
+
+      <div
+        id="bb-hq-drawer"
+        class="bb-hq-drawer"
+        data-bb-nav="mobile"
+        hidden
+      >
+        <div class="bb-hq-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
+        <nav class="bb-hq-drawer__panel" aria-label="HQ mobile menu">
+          <div class="bb-hq-drawer__head">
+            <p class="bb-hq-drawer__title">Menu</p>
+            <button type="button" class="bb-hq-drawer__close" data-bb-nav="drawer-close" aria-label="Close menu">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+          <% hqNav.forEach(function (item) { %>
+          <a
+            href="<%= item.href %>"
+            class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+            <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+          >
+            <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+            <span><%= item.label %></span>
+          </a>
+          <% }) %>
+        </nav>
+      </div>
+
+      <main id="bb-hq-main" class="bb-hq-main">

@@ -11,15 +11,12 @@ const express = require("express");
 
 const { createRequireActiveMember } = require("./requireActiveMember");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
-const {
-  CSRF_FIELD,
-  issueCsrfToken,
-  validateCsrf,
-  setCsrfCookie,
-} = require("../../platform/http/v5Csrf");
+const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
+const { buildMemberShellLocals } = require("./memberShellLocals");
 const {
   STATUS,
   REQUEST_CATEGORIES,
+  ALLOWED_FIELD_TYPES,
   listResources,
   getResource,
   listForms,
@@ -43,13 +40,77 @@ function renderMemberView(relativePath, data) {
   return ejs.render(source, data, { filename });
 }
 
+/**
+ * Safe member media download headers (private, nosniff, attachment disposition).
+ * @param {import('express').Response} res
+ * @param {{ asset?: object, buffer: Buffer }} delivered
+ */
+function sendMemberMediaDownload(res, delivered) {
+  const asset = delivered.asset || {};
+  const mime = asset.mimeType || asset.contentType || "application/octet-stream";
+  const rawName = String(asset.originalFilename || "download")
+    .replace(/[\r\n"]/g, "")
+    .slice(0, 180);
+  const filename = rawName || "download";
+  res.setHeader("Content-Type", mime);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  return res.status(200).send(delivered.buffer);
+}
+
+/**
+ * @param {object|null|undefined} form
+ * @returns {Record<string, string>}
+ */
+function fieldLabelsFromForm(form) {
+  const labels = {};
+  const fields =
+    form && form.schema && Array.isArray(form.schema.fields) ? form.schema.fields : [];
+  for (const field of fields) {
+    if (!field || !field.key) continue;
+    if (!ALLOWED_FIELD_TYPES.includes(field.type)) continue;
+    labels[field.key] = field.label || field.key;
+  }
+  return labels;
+}
+
+/**
+ * Member-safe request history — status + member-visible note only.
+ * Omits changedByUserId, memberVisible flags, and other internal fields.
+ * @param {object|null|undefined} request
+ * @returns {object|null}
+ */
+function presentMemberRequest(request) {
+  if (!request) return null;
+  const history = Array.isArray(request.history)
+    ? request.history.map((h) => ({
+        fromStatus: h.fromStatus || null,
+        toStatus: h.toStatus,
+        note: h.note || null,
+        createdAt: h.createdAt || null,
+      }))
+    : [];
+  return {
+    id: request.id,
+    category: request.category,
+    subject: request.subject,
+    message: request.message,
+    status: request.status,
+    mediaAssetId: request.mediaAssetId || null,
+    createdAt: request.createdAt || null,
+    updatedAt: request.updatedAt || null,
+    history,
+  };
+}
+
 function createFormsRequestsMemberRouter(deps) {
   const getPool = deps.getPool;
   const isApexHost = deps.isApexHost;
   const env = deps.env || process.env;
   const sendUnavailable = deps.sendUnavailable;
   const isProduction = String(env.NODE_ENV || "") === "production";
-  const mediaService = createMediaUploadService({ getPool, env });
+  const mediaService = deps.mediaService || createMediaUploadService(env);
 
   const router = express.Router();
   const requireMember = createRequireActiveMember({ getPool });
@@ -63,35 +124,15 @@ function createFormsRequestsMemberRouter(deps) {
   }
 
   function shellLocals(req, res, activeNav, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
-    const access = req.blessBoardMemberAccess || null;
-    const preferred =
-      access && access.member && access.member.preferredName
-        ? access.member.preferredName
-        : session && session.user
-          ? session.user.displayName
-          : "";
-    return {
-      pageTitle:
-        activeNav === "resources"
-          ? "Resources"
-          : activeNav === "forms"
-            ? "Forms"
-            : activeNav === "requests"
-              ? "Requests"
-              : "Member",
+    return buildMemberShellLocals(req, res, {
+      env,
+      isProduction,
       activeNav,
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      branchDisplayName:
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
-      displayName: preferred || "",
-      requestCategories: REQUEST_CATEGORIES,
-      ...(extra || {}),
-    };
+      extra: {
+        requestCategories: REQUEST_CATEGORIES,
+        ...(extra || {}),
+      },
+    });
   }
 
   function memberScope(req) {
@@ -187,13 +228,13 @@ function createFormsRequestsMemberRouter(deps) {
       return res.status(404).type("text").send("Not found");
     }
     if (delivered.redirectUrl) {
+      res.setHeader("Cache-Control", "private, no-store");
       return res.redirect(302, delivered.redirectUrl);
     }
     if (!delivered.buffer) {
       return res.status(404).type("text").send("Not found");
     }
-    if (delivered.asset && delivered.asset.contentType) res.type(delivered.asset.contentType);
-    return res.status(200).send(delivered.buffer);
+    return sendMemberMediaDownload(res, delivered);
   });
 
   // --- forms ---
@@ -239,6 +280,16 @@ function createFormsRequestsMemberRouter(deps) {
     if (!loaded.ok) {
       return res.status(loaded.status === STATUS.FORBIDDEN ? 403 : 404).type("text").send("Not found");
     }
+    let form = null;
+    if (loaded.submission && loaded.submission.formId) {
+      const formLoaded = await getForm(getPool(), {
+        id: loaded.submission.formId,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        forMember: true,
+      });
+      if (formLoaded.ok) form = formLoaded.form;
+    }
     return res
       .status(200)
       .type("html")
@@ -247,6 +298,8 @@ function createFormsRequestsMemberRouter(deps) {
           "forms-requests/member-submission.ejs",
           shellLocals(req, res, "forms", {
             submission: loaded.submission,
+            form,
+            fieldLabels: fieldLabelsFromForm(form),
             saved: String((req.query && req.query.saved) || ""),
           })
         )
@@ -274,6 +327,8 @@ function createFormsRequestsMemberRouter(deps) {
           shellLocals(req, res, "forms", {
             form: loaded.form,
             error: null,
+            submittedAnswers: {},
+            allowedFieldTypes: ALLOWED_FIELD_TYPES,
           })
         )
       );
@@ -314,6 +369,8 @@ function createFormsRequestsMemberRouter(deps) {
             shellLocals(req, res, "forms", {
               form: loaded.ok ? loaded.form : { id, title: "Form", schema: { fields: [] } },
               error: "Please check your answers and try again.",
+              submittedAnswers: answers,
+              allowedFieldTypes: ALLOWED_FIELD_TYPES,
             })
           )
         );
@@ -337,9 +394,27 @@ function createFormsRequestsMemberRouter(deps) {
         renderMemberView(
           "forms-requests/member-requests.ejs",
           shellLocals(req, res, "requests", {
+            pageTitle: "Request status",
             requests: listed.ok ? listed.requests : [],
             saved: String((req.query && req.query.saved) || ""),
+          })
+        )
+      );
+  });
+
+  router.get("/member/requests/new", rejectApex, requireMember, async (req, res) => {
+    const scope = memberScope(req);
+    if (!scope) return res.status(403).type("text").send("Forbidden");
+    return res
+      .status(200)
+      .type("html")
+      .send(
+        renderMemberView(
+          "forms-requests/member-request-new.ejs",
+          shellLocals(req, res, "requests", {
+            pageTitle: "Submit a request",
             error: null,
+            submittedValues: {},
           })
         )
       );
@@ -361,21 +436,20 @@ function createFormsRequestsMemberRouter(deps) {
       mediaAssetId: body.media_asset_id || null,
     });
     if (!created.ok) {
-      const listed = await listMemberRequests(getPool(), {
-        churchId: scope.churchId,
-        memberId: scope.memberId,
-        forMember: true,
-      });
       return res
         .status(400)
         .type("html")
         .send(
           renderMemberView(
-            "forms-requests/member-requests.ejs",
+            "forms-requests/member-request-new.ejs",
             shellLocals(req, res, "requests", {
-              requests: listed.ok ? listed.requests : [],
-              saved: "",
+              pageTitle: "Submit a request",
               error: "Please check the form and try again.",
+              submittedValues: {
+                category: String(body.category || ""),
+                subject: String(body.subject || ""),
+                message: String(body.message || ""),
+              },
             })
           )
         );
@@ -404,7 +478,8 @@ function createFormsRequestsMemberRouter(deps) {
         renderMemberView(
           "forms-requests/member-request-detail.ejs",
           shellLocals(req, res, "requests", {
-            request: loaded.request,
+            pageTitle: loaded.request.subject || "Request",
+            request: presentMemberRequest(loaded.request),
             saved: String((req.query && req.query.saved) || ""),
           })
         )
@@ -435,13 +510,13 @@ function createFormsRequestsMemberRouter(deps) {
       return res.status(404).type("text").send("Not found");
     }
     if (delivered.redirectUrl) {
+      res.setHeader("Cache-Control", "private, no-store");
       return res.redirect(302, delivered.redirectUrl);
     }
     if (!delivered.buffer) {
       return res.status(404).type("text").send("Not found");
     }
-    if (delivered.asset && delivered.asset.contentType) res.type(delivered.asset.contentType);
-    return res.status(200).send(delivered.buffer);
+    return sendMemberMediaDownload(res, delivered);
   });
 
   return router;

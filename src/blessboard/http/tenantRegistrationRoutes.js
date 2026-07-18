@@ -35,6 +35,86 @@ const GENERIC_DUPLICATE_MESSAGE =
   "We could not accept this registration. If you already applied, please wait for a response.";
 const GENERIC_ERROR_MESSAGE = "Please check the form and try again.";
 
+const FIELD_ERROR_MESSAGES = Object.freeze({
+  first_name: "Enter your first name.",
+  first_name_html: "First name cannot include HTML characters.",
+  first_name_len: "First name is too long.",
+  last_name: "Enter your last name.",
+  last_name_html: "Last name cannot include HTML characters.",
+  last_name_len: "Last name is too long.",
+  preferred_name_html: "Preferred name cannot include HTML characters.",
+  preferred_name_len: "Preferred name is too long.",
+  email: "Enter a valid email address.",
+  phone: "Enter a valid phone number.",
+  contact_required: "Provide at least an email or a phone number.",
+});
+
+/**
+ * Map service rejection reasons to field-level display errors (presentation only).
+ * Does not change validation rules — only which fields to highlight.
+ * @param {string|null|undefined} reason
+ * @returns {{ fieldErrors: Record<string, string>, summaryItems: string[] }}
+ */
+function mapRegistrationFieldErrors(reason) {
+  const key = String(reason || "").trim();
+  const fieldErrors = {};
+  const summaryItems = [];
+
+  if (!key || key.startsWith("privacy_forbidden:")) {
+    return { fieldErrors, summaryItems };
+  }
+
+  if (key === "contact_required") {
+    const msg = FIELD_ERROR_MESSAGES.contact_required;
+    fieldErrors.email = msg;
+    fieldErrors.phone = msg;
+    summaryItems.push(msg);
+    return { fieldErrors, summaryItems };
+  }
+
+  const fieldKey = key.replace(/_(html|len)$/, "");
+  const knownFields = new Set([
+    "first_name",
+    "last_name",
+    "preferred_name",
+    "email",
+    "phone",
+  ]);
+  if (!knownFields.has(fieldKey) && !FIELD_ERROR_MESSAGES[key]) {
+    return { fieldErrors, summaryItems };
+  }
+
+  const message =
+    FIELD_ERROR_MESSAGES[key] ||
+    FIELD_ERROR_MESSAGES[fieldKey] ||
+    GENERIC_ERROR_MESSAGE;
+  const formField =
+    fieldKey === "first_name"
+      ? "firstName"
+      : fieldKey === "last_name"
+        ? "lastName"
+        : fieldKey === "preferred_name"
+          ? "preferredName"
+          : fieldKey;
+  fieldErrors[formField] = message;
+  summaryItems.push(message);
+  return { fieldErrors, summaryItems };
+}
+
+/**
+ * @param {import('express').Request['body']} body
+ */
+function submittedFromBody(body) {
+  const raw = body || {};
+  return {
+    firstName: String(raw.first_name || ""),
+    lastName: String(raw.last_name || ""),
+    preferredName: String(raw.preferred_name || ""),
+    email: String(raw.email || ""),
+    phone: String(raw.phone || ""),
+  };
+}
+
 /**
  * @param {string} relativePath
  * @param {object} data
@@ -157,6 +237,8 @@ function createTenantRegistrationRouter(deps) {
       csrfToken,
       csrfField: CSRF_FIELD,
       error: null,
+      fieldErrors: {},
+      errorSummaryItems: [],
       submitted: null,
       ...(extra || {}),
     };
@@ -209,13 +291,9 @@ function createTenantRegistrationRouter(deps) {
             "public/register.ejs",
             formLocals(req, res, scope, {
               error: GENERIC_ERROR_MESSAGE,
-              submitted: {
-                firstName: "",
-                lastName: "",
-                preferredName: "",
-                email: "",
-                phone: "",
-              },
+              fieldErrors: {},
+              errorSummaryItems: [GENERIC_ERROR_MESSAGE],
+              submitted: submittedFromBody(body),
             })
           );
           return res.status(403).type("html").send(html);
@@ -258,17 +336,22 @@ function createTenantRegistrationRouter(deps) {
           reason: result.reason || result.status,
         });
 
+        const mapped = duplicate
+          ? { fieldErrors: {}, summaryItems: [GENERIC_DUPLICATE_MESSAGE] }
+          : mapRegistrationFieldErrors(result.reason);
+        const errorMessage = duplicate
+          ? GENERIC_DUPLICATE_MESSAGE
+          : mapped.summaryItems[0] || GENERIC_ERROR_MESSAGE;
+
         const html = renderRegistrationView(
           "public/register.ejs",
           formLocals(req, res, scope, {
-            error: duplicate ? GENERIC_DUPLICATE_MESSAGE : GENERIC_ERROR_MESSAGE,
-            submitted: {
-              firstName: String(body.first_name || ""),
-              lastName: String(body.last_name || ""),
-              preferredName: String(body.preferred_name || ""),
-              email: String(body.email || ""),
-              phone: String(body.phone || ""),
-            },
+            error: errorMessage,
+            fieldErrors: mapped.fieldErrors,
+            errorSummaryItems: mapped.summaryItems.length
+              ? mapped.summaryItems
+              : [errorMessage],
+            submitted: submittedFromBody(body),
           })
         );
         return res.status(duplicate ? 409 : 400).type("html").send(html);
@@ -283,4 +366,6 @@ module.exports = {
   createTenantRegistrationRouter,
   GENERIC_DUPLICATE_MESSAGE,
   GENERIC_ERROR_MESSAGE,
+  mapRegistrationFieldErrors,
+  FIELD_ERROR_MESSAGES,
 };

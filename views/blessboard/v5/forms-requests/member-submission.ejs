@@ -1,11 +1,61 @@
 <%- include('../partials/member-shell-start') %>
-  <p><a href="/member/forms">Back</a></p>
-  <% if (saved) { %><p class="bb-ann-saved" role="status">Submitted.</p><% } %>
-  <h1>Your submission</h1>
-  <p>Status: <%= submission.status %></p>
-  <ul>
-    <% Object.keys(submission.answers || {}).forEach(function (key) { %>
-      <li><%= key %>: <%= submission.answers[key] %></li>
-    <% }) %>
-  </ul>
+<%
+  var answers = submission.answers || {};
+  var labelMap = typeof fieldLabels !== 'undefined' && fieldLabels ? fieldLabels : {};
+  var keys = Object.keys(answers);
+  var formTitle = (typeof form !== 'undefined' && form && form.title)
+    ? form.title
+    : (submission.formTitle || 'Your submission');
+%>
+
+<section class="bb-mp-fr-detail" data-bb-member-submission="1" data-bb-submission-status="<%= submission.status %>">
+  <p class="bb-mp-back">
+    <a href="/member/forms">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      Back to forms
+    </a>
+  </p>
+
+  <% if (saved) { %>
+  <p class="bb-mp-ok" role="status">Form submitted successfully.</p>
+  <% } %>
+
+  <article class="bb-mp-part-detail is-registered">
+    <div class="bb-mp-ann-chips" aria-label="Submission status">
+      <span class="bb-mp-chip bb-mp-chip--active" data-bb-status="<%= submission.status %>">
+        <%= submission.status === 'submitted' ? 'Submitted' : submission.status %>
+      </span>
+    </div>
+
+    <h1 class="bb-mp-part-detail__title"><%= formTitle %></h1>
+    <p class="bb-mp-lede bb-mp-lede--tight">
+      This is your submitted response. Only you and authorized church leaders can view it.
+    </p>
+
+    <% if (!keys.length) { %>
+    <p class="bb-mp-part-detail__state" role="status">No answers were recorded.</p>
+    <% } else { %>
+    <dl class="bb-mp-kv bb-mp-kv--stack" data-bb-submission-answers="1">
+      <% keys.forEach(function (key) { %>
+      <div>
+        <dt><%= labelMap[key] || key %></dt>
+        <dd>
+          <% var val = answers[key]; %>
+          <% if (typeof val === 'boolean') { %>
+            <%= val ? 'Yes' : 'No' %>
+          <% } else { %>
+            <%= val == null || val === '' ? '—' : val %>
+          <% } %>
+        </dd>
+      </div>
+      <% }) %>
+    </dl>
+    <% } %>
+
+    <div class="bb-mp-part-detail__actions">
+      <a class="bb-mp-btn bb-mp-btn--outline" href="/member/forms">Return to forms</a>
+    </div>
+  </article>
+</section>
+
 <%- include('../partials/member-shell-end') %>
