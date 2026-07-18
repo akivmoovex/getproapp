@@ -442,9 +442,21 @@ describe("blessboard reports-audit", () => {
       .set("Cookie", cookie);
     assert.equal(consolidated.status, 200);
     assert.match(consolidated.text, /data-bb-hq-reports="1"/);
+    assert.match(consolidated.text, /data-bb-stitch-reports="57-hq-consolidated-analytics"/);
+    assert.match(consolidated.text, /data-bb-report-links="1"/);
+    assert.match(consolidated.text, /data-bb-report-link="attendance"/);
+    assert.match(consolidated.text, /data-bb-report-link="giving"/);
+    assert.match(consolidated.text, /href="\/hq\/reports\/attendance/);
+    assert.match(consolidated.text, /href="\/hq\/reports\/giving/);
+    assert.match(consolidated.text, /data-bb-reports-summary="1"/);
+    assert.match(consolidated.text, /data-bb-hq-report-filter="1"/);
     assert.match(consolidated.text, /data-bb-report="giving-totals"|data-bb-report="giving-empty"/);
     assert.match(consolidated.text, /name="branch"/);
-    assert.doesNotMatch(consolidated.text, /chart\.js|canvas|projectedGrowth/i);
+    assert.match(consolidated.text, /name="month"/);
+    assert.match(consolidated.text, /data-bb-reports-unavailable="1"/);
+    assert.match(consolidated.text, /data-bb-reports-unavailable-row="generators"/);
+    assert.doesNotMatch(consolidated.text, /chart\.js|<canvas|projectedGrowth/i);
+    assert.doesNotMatch(consolidated.text, /compliance score:\s*\d+|risk rating:\s*\d+/i);
     assert.doesNotMatch(consolidated.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(consolidated.text, /donor@|payer name|card number|iban[\s:]/i);
 
@@ -454,9 +466,31 @@ describe("blessboard reports-audit", () => {
       .set("Cookie", cookie);
     assert.equal(att.status, 200);
     assert.match(att.text, /data-bb-hq-attendance-report="1"/);
+    assert.match(att.text, /data-bb-stitch-attendance-report="57-hq-consolidated-analytics"/);
+    assert.match(att.text, /data-bb-att-report-scope="branch"/);
+    assert.match(att.text, /data-bb-hq-att-report-filter="1"/);
+    assert.match(att.text, /name="month"/);
     assert.match(att.text, /name="branch"/);
-    assert.doesNotMatch(att.text, /chart\.js|canvas/i);
+    assert.match(att.text, /value="hq"[^>]*selected|selected[^>]*value="hq"/);
+    assert.match(att.text, /data-bb-att-report-summary="1"|data-bb-att-report-empty="1"/);
+    assert.match(att.text, /data-bb-att-report-unavailable="1"/);
+    assert.match(att.text, /data-bb-att-unavailable="trend"/);
+    assert.doesNotMatch(att.text, /chart\.js|<canvas|projectedGrowth|\+12%|YoY/i);
     assert.doesNotMatch(att.text, new RegExp(churchA.id, "i"));
+
+    const attAll = await request(app)
+      .get(`/hq/reports/attendance?month=${yearMonth}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(attAll.status, 200);
+    assert.match(attAll.text, /data-bb-att-report-scope="church"/);
+    assert.match(attAll.text, /data-bb-att-report-summary="1"|data-bb-att-report-empty="1"/);
+    if (/data-bb-att-report-summary="1"/.test(attAll.text)) {
+      assert.match(attAll.text, /data-bb-attendance-grand-total=/);
+      assert.match(attAll.text, /data-bb-attendance-summary-table="1"|data-bb-attendance-summary-cards="1"/);
+      assert.match(attAll.text, /data-bb-att-report-branches="1"/);
+    }
+    assert.doesNotMatch(attAll.text, /chart\.js|<canvas/i);
 
     const giv = await request(app)
       .get(`/hq/reports/giving?month=${yearMonth}&branch=hq`)
@@ -464,9 +498,32 @@ describe("blessboard reports-audit", () => {
       .set("Cookie", cookie);
     assert.equal(giv.status, 200);
     assert.match(giv.text, /data-bb-hq-giving-report="1"/);
-    assert.match(giv.text, /25\.50|No submitted giving/i);
-    assert.doesNotMatch(giv.text, /donor@|card number|iban[\s:]/i);
+    assert.match(giv.text, /data-bb-stitch-giving-report="57-hq-consolidated-analytics"/);
+    assert.match(giv.text, /data-bb-giv-report-scope="branch"/);
+    assert.match(giv.text, /data-bb-hq-giv-report-filter="1"/);
+    assert.match(giv.text, /name="month"/);
+    assert.match(giv.text, /name="branch"/);
+    assert.match(giv.text, /25\.50|No submitted giving|data-bb-giv-report-empty/i);
+    assert.match(giv.text, /data-bb-giv-report-summary="1"|data-bb-giv-report-empty="1"/);
+    assert.match(giv.text, /data-bb-giv-report-unavailable="1"/);
+    assert.match(giv.text, /data-bb-giv-unavailable="donor"/);
+    assert.doesNotMatch(giv.text, /donor@|card number|iban[\s:]|payer_name|account_number/i);
+    assert.doesNotMatch(giv.text, /chart\.js|<canvas|projectedGrowth|\+12%|YoY/i);
     assert.doesNotMatch(giv.text, new RegExp(churchA.id, "i"));
+
+    const givAll = await request(app)
+      .get(`/hq/reports/giving?month=${yearMonth}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(givAll.status, 200);
+    assert.match(givAll.text, /data-bb-giv-report-scope="church"/);
+    assert.match(givAll.text, /data-bb-giv-report-summary="1"|data-bb-giv-report-empty="1"/);
+    if (/data-bb-giv-report-summary="1"/.test(givAll.text)) {
+      assert.match(givAll.text, /data-bb-giving-summary-table="1"|data-bb-giving-summary-cards="1"/);
+      assert.match(givAll.text, /data-bb-giv-report-branches="1"/);
+      assert.match(givAll.text, /data-bb-total=/);
+    }
+    assert.doesNotMatch(givAll.text, /chart\.js|<canvas|donor@/i);
 
     const filtered = await getHqOperationalReport(pool, {
       churchId: churchA.id,
@@ -519,19 +576,27 @@ describe("blessboard reports-audit", () => {
       .set("Cookie", cookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-hq-audit="1"/);
+    assert.match(list.text, /data-bb-stitch-audit="58-hq-global-audit-trail"/);
     assert.match(list.text, /data-bb-hq-audit-filter="1"/);
     assert.match(list.text, /data-bb-hq-audit-table="1"/);
+    assert.match(list.text, /data-bb-hq-audit-cards="1"/);
+    assert.match(list.text, /data-bb-audit-summary="1"/);
+    assert.match(list.text, /data-bb-audit-privacy="1"/);
     assert.match(list.text, /name="action"/);
     assert.match(list.text, /name="entity"/);
     assert.match(list.text, /name="outcome"/);
     assert.match(list.text, /test\.hq\.audit\.gui/);
-    assert.doesNotMatch(list.text, /export\.csv|Download CSV|Export/i);
+    assert.match(list.text, /href="\/hq\/reports"/);
+    assert.doesNotMatch(list.text, /export\.csv|Download CSV/i);
     assert.doesNotMatch(list.text, /must-not-appear|secret@example\.test/i);
-    assert.doesNotMatch(list.text, /metadata|session_token|password_hash|csrf_token/i);
+    assert.doesNotMatch(list.text, /session_token|password_hash|csrf_token|authorization:\s*bearer/i);
+    assert.doesNotMatch(list.text, /"password"\s*:|"email"\s*:|metadata\.json/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(list.text, new RegExp(hqAdmin.user.id, "i"));
     assert.doesNotMatch(list.text, new RegExp(orgA.records.organization.id, "i"));
     assert.match(list.text, new RegExp(String(churchA.id).slice(-8)));
+    assert.match(list.text, /data-bb-audit-unavailable="1"/);
+    assert.match(list.text, /data-bb-audit-unavailable-row="payload"/);
 
     const filtered = await request(app)
       .get("/hq/audit?action=test.hq.audit.gui&outcome=denied&entity=test_entity")
@@ -563,15 +628,15 @@ describe("blessboard reports-audit", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(paged.status, 200);
-    assert.match(paged.text, /data-bb-hq-audit-table="1"|data-bb-hq-audit-empty="1"/);
-    assert.match(paged.text, /test\.hq\.audit\.gui|No audit events match/i);
+    assert.match(paged.text, /data-bb-hq-audit-table="1"|data-bb-hq-audit-empty=/);
+    assert.match(paged.text, /test\.hq\.audit\.gui|No matching events|No audit events/i);
 
     const empty = await request(app)
       .get("/hq/audit?action=test.hq.audit.missing")
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(empty.status, 200);
-    assert.match(empty.text, /data-bb-hq-audit-empty="1"/);
+    assert.match(empty.text, /data-bb-hq-audit-empty="no-results"/);
 
     const denied = await request(app)
       .get("/hq/audit")

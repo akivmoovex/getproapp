@@ -1,42 +1,272 @@
 <%- include('../partials/hq-shell-start') %>
 <%
   var branchRows = branches || [];
+  var branchCount = typeof activeBranchCount !== 'undefined' ? Number(activeBranchCount) || 0 : 0;
+  var greetingName = displayName ? String(displayName).split(/\s+/)[0] : '';
+  var churchLabel = churchDisplayName || 'Church';
+  var hqLabel = hqBranchDisplayName || '';
+  var desktopQuickActions = [
+    { key: 'branches', label: 'Branch registry', href: '/hq/branches', icon: 'apartment' },
+    { key: 'registrations', label: 'Registrations', href: '/hq/registrations', icon: 'how_to_reg' },
+    { key: 'reports', label: 'Reports', href: '/hq/reports', icon: 'analytics' },
+    { key: 'audit', label: 'Audit trail', href: '/hq/audit', icon: 'history' }
+  ];
+  var mobileQuickActions = [
+    { key: 'branches', label: 'Branches', href: '/hq/branches', icon: 'apartment' },
+    { key: 'members', label: 'Members', href: '/hq/members', icon: 'badge' },
+    { key: 'reports', label: 'Reports', href: '/hq/reports', icon: 'analytics' },
+    { key: 'announcements', label: 'Announce', href: '/hq/announcements', icon: 'campaign' }
+  ];
+  var summaryCards = [
+    {
+      key: 'branches',
+      label: 'Active branches',
+      icon: 'account_tree',
+      href: '/hq/branches',
+      tone: 'accent',
+      available: true,
+      value: String(branchCount),
+      hint: 'Live church total',
+      visibility: 'both'
+    },
+    {
+      key: 'members',
+      label: 'Active members',
+      icon: 'groups',
+      href: '/hq/members',
+      tone: 'ok',
+      available: false,
+      value: '—',
+      hint: 'Open directory for live counts',
+      visibility: 'both'
+    },
+    {
+      key: 'reporting',
+      label: 'Reporting status',
+      icon: 'description',
+      href: '/hq/reports',
+      tone: 'warn',
+      available: false,
+      value: '—',
+      hint: 'Aggregates live in Reports',
+      visibility: 'desktop'
+    },
+    {
+      key: 'pending-reports',
+      label: 'Pending reports',
+      icon: 'pending_actions',
+      href: '/hq/reports',
+      tone: 'warn',
+      available: false,
+      value: '—',
+      hint: 'Open Reports',
+      visibility: 'mobile'
+    }
+  ];
 %>
 
-<section class="bb-hq-dash" data-bb-hq-dashboard="1">
-  <header class="bb-hq-page-head">
-    <h1 class="bb-hq-page-head__title"><%= churchDisplayName || 'Church' %> HQ</h1>
-    <p class="bb-hq-lede">
-      Church-level overview for authorized HQ admins. Summary cards use live branch counts only —
-      no projected growth, fabricated member totals, or invented reporting status.
-    </p>
+<section
+  class="bb-hq-dash"
+  data-bb-hq-dashboard="1"
+  data-bb-stitch-dashboard="51-hq-dashboard"
+  aria-label="HQ dashboard"
+>
+  <header class="bb-hq-dash__hero">
+    <div class="bb-hq-dash__welcome" data-bb-dash-welcome="1">
+      <p class="bb-hq-dash__eyebrow">HQ overview</p>
+      <h1 class="bb-hq-dash__title"><%= churchLabel %> HQ Overview</h1>
+      <p class="bb-hq-dash__lede">
+        Welcome<% if (greetingName) { %>, <%= greetingName %><% } %>.
+        Church-level summary for authorized HQ admins.
+        <% if (hqLabel) { %>Headquarters: <strong><%= hqLabel %></strong>.<% } %>
+        Only the live active-branch count is shown here — member totals, giving, attendance trends, and report health are not invented on this page.
+      </p>
+      <p class="bb-hq-dash__role">
+        Signed in as <span class="bb-hq-role" data-bb-hq-role="1"><%= roleLabel %></span>
+      </p>
+      <a class="bb-hq-btn bb-hq-btn--primary bb-hq-dash__hero-cta" href="/hq/branches">
+        Open branch registry
+      </a>
+    </div>
   </header>
 
-  <section class="bb-hq-summary" aria-label="Church summary" data-bb-hq-summary="1">
-    <article class="bb-hq-card">
-      <h2 class="bb-hq-card__label">Church</h2>
-      <p class="bb-hq-card__value"><%= churchDisplayName %></p>
-    </article>
-    <article class="bb-hq-card">
-      <h2 class="bb-hq-card__label">Headquarters</h2>
-      <p class="bb-hq-card__value"><%= hqBranchDisplayName || '—' %></p>
-    </article>
-    <article class="bb-hq-card bb-hq-card--accent">
-      <h2 class="bb-hq-card__label">Active branches</h2>
-      <p class="bb-hq-card__value" data-bb-count="active-branches"><%= activeBranchCount %></p>
-    </article>
+  <section
+    class="bb-hq-dash__notices"
+    aria-labelledby="bb-hq-dash-notices-heading"
+    data-bb-dash-notices="1"
+  >
+    <h2 id="bb-hq-dash-notices-heading" class="bb-hq-sr-only">Notices</h2>
+    <p class="bb-hq-dash__notice" role="status" data-bb-dash-empty="notices">
+      No HQ notices on this dashboard. Check Announcements, Requests, or Audit for updates.
+    </p>
   </section>
 
-  <section class="bb-hq-panel" aria-labelledby="hq-branch-selector-heading">
-    <div class="bb-hq-panel__head">
-      <h2 id="hq-branch-selector-heading" class="bb-hq-section-title">Branch selector</h2>
-      <a class="bb-hq-link" href="/hq/branches">View all branches</a>
+  <section
+    class="bb-hq-dash-stats"
+    aria-labelledby="bb-hq-dash-stats-heading"
+    data-bb-dash-stats="1"
+  >
+    <h2 id="bb-hq-dash-stats-heading" class="bb-hq-sr-only">Summary</h2>
+    <div class="bb-hq-dash-stats__grid">
+      <% summaryCards.forEach(function (card) {
+        var visClass = card.visibility === 'desktop'
+          ? ' bb-hq-dash-stat--desktop-only'
+          : (card.visibility === 'mobile' ? ' bb-hq-dash-stat--mobile-only' : '');
+        var className = 'bb-hq-dash-stat bb-hq-dash-stat--' + card.tone + visClass;
+        var availAttr = card.available ? '1' : '0';
+      %>
+      <a
+        class="<%= className %> bb-hq-dash-stat--link<%= card.available ? '' : ' is-unavailable' %>"
+        href="<%= card.href %>"
+        data-bb-dash-stat="<%= card.key %>"
+        data-bb-dash-stat-available="<%= availAttr %>"
+      >
+        <span class="bb-hq-dash-stat__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= card.icon %></span>
+        </span>
+        <span class="bb-hq-dash-stat__label"><%= card.label %></span>
+        <% if (card.available) { %>
+        <strong class="bb-hq-dash-stat__value" data-bb-count="active-branches"><%= card.value %></strong>
+        <% } else { %>
+        <strong class="bb-hq-dash-stat__value" aria-hidden="true"><%= card.value %></strong>
+        <% } %>
+        <span class="bb-hq-dash-stat__hint"><%= card.hint %></span>
+      </a>
+      <% }) %>
     </div>
-    <p class="bb-hq-hint">
-      Active branches only. Opening a branch validates church ownership, then deep-links to branch admin when authorized.
-    </p>
-    <%- include('../partials/branch-selector', { branches: branchRows }) %>
   </section>
+
+  <div class="bb-hq-dash__layout">
+    <div class="bb-hq-dash__main">
+      <section
+        class="bb-hq-dash-panel bb-hq-show-mobile"
+        aria-labelledby="bb-hq-dash-quick-mobile-heading"
+        data-bb-dash-quick="mobile"
+      >
+        <h2 id="bb-hq-dash-quick-mobile-heading" class="bb-hq-dash-panel__title">Quick navigation</h2>
+        <ul class="bb-hq-dash-quick-icons">
+          <% mobileQuickActions.forEach(function (action) { %>
+          <li>
+            <a
+              class="bb-hq-dash-quick-icon"
+              href="<%= action.href %>"
+              data-bb-quick-action="<%= action.key %>"
+              data-bb-quick-enabled="1"
+            >
+              <span class="bb-hq-dash-quick-icon__glyph" aria-hidden="true">
+                <span class="material-symbols-outlined"><%= action.icon %></span>
+              </span>
+              <span class="bb-hq-dash-quick-icon__label"><%= action.label %></span>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section
+        class="bb-hq-dash-panel"
+        aria-labelledby="hq-branch-selector-heading"
+        data-bb-dash-branches="1"
+      >
+        <div class="bb-hq-dash-panel__head">
+          <h2 id="hq-branch-selector-heading" class="bb-hq-dash-panel__title">Branch overview</h2>
+          <a class="bb-hq-link" href="/hq/branches">View all branches</a>
+        </div>
+        <p class="bb-hq-hint">
+          Active branches only. Opening a branch validates church ownership, then deep-links to branch admin when authorized.
+        </p>
+        <%- include('../partials/branch-selector', { branches: branchRows }) %>
+      </section>
+
+      <section
+        class="bb-hq-dash-panel"
+        aria-labelledby="bb-hq-dash-attention-heading"
+        data-bb-dash-attention="1"
+      >
+        <div class="bb-hq-dash-panel__head">
+          <h2 id="bb-hq-dash-attention-heading" class="bb-hq-dash-panel__title">Branches needing attention</h2>
+        </div>
+        <div class="bb-hq-dash-empty" role="status" data-bb-dash-empty="attention">
+          <span class="material-symbols-outlined" aria-hidden="true">priority_high</span>
+          <p>
+            Branch health scores, overdue monthly reports, and discrepancy alerts are not available on this dashboard.
+            Use Reports and Audit for live church-level review.
+          </p>
+          <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports">Open reports</a>
+        </div>
+      </section>
+
+      <section
+        class="bb-hq-dash-panel"
+        aria-labelledby="bb-hq-dash-activity-heading"
+        data-bb-dash-activity="1"
+      >
+        <div class="bb-hq-dash-panel__head">
+          <h2 id="bb-hq-dash-activity-heading" class="bb-hq-dash-panel__title">Recent HQ activity</h2>
+          <a class="bb-hq-link" href="/hq/audit">View audit trail</a>
+        </div>
+        <div class="bb-hq-dash-empty" role="status" data-bb-dash-empty="activity">
+          <span class="material-symbols-outlined" aria-hidden="true">history</span>
+          <p>No activity feed is summarized here. Open the audit trail for church-scoped events.</p>
+        </div>
+      </section>
+
+      <section
+        class="bb-hq-dash-panel bb-hq-show-desktop"
+        aria-labelledby="bb-hq-dash-trends-heading"
+        data-bb-dash-trends="1"
+      >
+        <div class="bb-hq-dash-panel__head">
+          <h2 id="bb-hq-dash-trends-heading" class="bb-hq-dash-panel__title">Giving &amp; attendance</h2>
+        </div>
+        <div class="bb-hq-dash-empty" role="status" data-bb-dash-empty="trends">
+          <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
+          <p>
+            Giving totals and attendance trends are not calculated on this dashboard.
+            Open Giving or Attendance reports for live aggregates.
+          </p>
+          <div class="bb-hq-dash-empty__actions">
+            <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/giving">Giving</a>
+            <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/attendance">Attendance</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="bb-hq-dash__aside bb-hq-show-desktop" aria-label="Shortcuts">
+      <section
+        class="bb-hq-dash-actions"
+        aria-labelledby="bb-hq-dash-quick-desktop-heading"
+        data-bb-dash-quick="desktop"
+      >
+        <h2 id="bb-hq-dash-quick-desktop-heading" class="bb-hq-dash-actions__title">
+          <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+          Quick actions
+        </h2>
+        <ul class="bb-hq-dash-actions__list">
+          <% desktopQuickActions.forEach(function (action) { %>
+          <li>
+            <a
+              class="bb-hq-dash-actions__item"
+              href="<%= action.href %>"
+              data-bb-quick-action="<%= action.key %>"
+              data-bb-quick-enabled="1"
+            >
+              <span class="bb-hq-dash-actions__icon" aria-hidden="true">
+                <span class="material-symbols-outlined"><%= action.icon %></span>
+              </span>
+              <span class="bb-hq-dash-actions__label"><%= action.label %></span>
+              <span class="material-symbols-outlined bb-hq-dash-actions__chevron" aria-hidden="true">chevron_right</span>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+        <p class="bb-hq-dash-actions__note" data-bb-dash-empty="new-branch">
+          Branch creation is not available from this dashboard.
+        </p>
+      </section>
+    </aside>
+  </div>
 </section>
 
 <%- include('../partials/hq-shell-end') %>

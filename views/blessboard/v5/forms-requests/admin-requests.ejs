@@ -5,8 +5,24 @@
 <% } %>
 <%
   var rows = requests || [];
+  var isHq = shellKind === 'hq';
   var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
-  var hasFilter = Boolean(activeStatus);
+  var searchQ = typeof q !== 'undefined' && q ? String(q).trim() : '';
+  var hasFilter = Boolean(activeStatus || searchQ);
+  var statuses = typeof requestStatuses !== 'undefined' && requestStatuses && requestStatuses.length
+    ? requestStatuses
+    : ['submitted', 'in_review', 'resolved', 'closed'];
+  var submittedCount = 0;
+  var inReviewCount = 0;
+  var resolvedCount = 0;
+  var closedCount = 0;
+  rows.forEach(function (r) {
+    var st = String(r.status || '').toLowerCase();
+    if (st === 'submitted') submittedCount += 1;
+    else if (st === 'in_review') inReviewCount += 1;
+    else if (st === 'resolved') resolvedCount += 1;
+    else if (st === 'closed') closedCount += 1;
+  });
   function categoryLabel(c) {
     var key = String(c || '').toLowerCase();
     if (key === 'prayer') return 'Prayer';
@@ -37,22 +53,28 @@
     if (isNaN(d.getTime())) return String(value).slice(0, 10);
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
-  function statusHref(st) {
-    if (!st) return basePath;
-    return basePath + '?status=' + encodeURIComponent(st);
+  function filterHref(opts) {
+    var params = [];
+    var st = opts && Object.prototype.hasOwnProperty.call(opts, 'status') ? opts.status : activeStatus;
+    var qq = opts && Object.prototype.hasOwnProperty.call(opts, 'q') ? opts.q : searchQ;
+    if (qq) params.push('q=' + encodeURIComponent(qq));
+    if (st) params.push('status=' + encodeURIComponent(st));
+    return basePath + (params.length ? '?' + params.join('&') : '');
   }
 %>
 
 <section
-  class="bb-fr-admin bb-fr-req-list"
+  class="bb-fr-admin bb-fr-req-list<%= isHq ? ' bb-hq-requests' : '' %>"
   data-bb-request-admin-list="1"
   data-bb-stitch-requests="44-branch-request-workflow-queue"
-  aria-label="Request workflow queue"
+  <% if (isHq) { %>data-bb-hq-requests="1"<% } %>
+  data-bb-req-scope="<%= typeof isHqChurchWide !== 'undefined' && isHqChurchWide ? 'church-wide' : 'branch' %>"
+  aria-label="<%= isHq ? 'Requests oversight' : 'Request workflow queue' %>"
 >
-  <header class="bb-ba-page-head">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
-        <% if (shellKind === 'hq') { %>
+        <% if (isHq) { %>
         <a href="/hq">HQ</a>
         <% } else { %>
         <a href="/branch-admin">Dashboard</a>
@@ -60,12 +82,21 @@
         <span aria-hidden="true">›</span>
         <span>Requests</span>
       </p>
-      <h1 class="bb-ba-page-head__title">Request workflow queue</h1>
+      <div class="bb-fr-req-list__title-row">
+        <h1 class="bb-ba-page-head__title"><%= isHq ? 'Requests oversight' : 'Request workflow queue' %></h1>
+        <% if (rows.length || !hasFilter) { %>
+        <span class="bb-fr-req-list__count" data-bb-req-total="<%= rows.length %>"><%= rows.length %></span>
+        <% } %>
+      </div>
       <p class="bb-ba-lede">
         <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide) { %>
         Church-wide member-request oversight for
         <strong><%= churchDisplayName %></strong>.
         Open a branch queue for campus scope. Member refs are truncated; contact details are not listed here.
+        <% } else if (isHq) { %>
+        Branch request oversight for
+        <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
+        Status updates stay on this campus. Contact details are not listed here — open a request to respond.
         <% } else { %>
         Review member requests for
         <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : churchDisplayName %></strong>.
@@ -73,7 +104,8 @@
         <% } %>
       </p>
       <p class="bb-ba-hint bb-fr-req-privacy" data-bb-req-privacy="1" role="note">
-        Branch-scoped queue only. Full member profiles and contact directories are not shown.
+        <%= isHq ? 'Church-scoped queue only.' : 'Branch-scoped queue only.' %>
+        Full member profiles and contact directories are not shown.
       </p>
     </div>
   </header>
@@ -85,15 +117,47 @@
   <% } %>
 
   <% if (typeof isHqChurchWide !== 'undefined' && isHqChurchWide && branches && branches.length) { %>
-  <section class="bb-hq-panel" data-bb-hq-requests-branches="1" aria-labelledby="hq-requests-branch-heading">
-    <h2 id="hq-requests-branch-heading" class="bb-hq-section-title">Branch request queues</h2>
+  <section class="bb-hq-panel bb-hq-requests-branches" data-bb-hq-requests-branches="1" aria-labelledby="hq-requests-branch-heading">
+    <div class="bb-hq-requests-branches__head">
+      <h2 id="hq-requests-branch-heading" class="bb-hq-section-title">Branch request queues</h2>
+      <span class="bb-fr-req-list__count" data-bb-req-branch-total="<%= branches.length %>"><%= branches.length %></span>
+    </div>
     <p class="bb-ba-hint">Open a branch to review and update requests scoped to that campus only.</p>
-    <ul class="bb-ca-branch-list">
+    <div class="bb-hq-requests-branch-table-wrap" data-bb-req-branch-table="1">
+      <table class="bb-hq-requests-branch-table">
+        <thead>
+          <tr>
+            <th scope="col">Branch</th>
+            <th scope="col">Key</th>
+            <th scope="col">Role</th>
+            <th scope="col"><span class="bb-hq-sr-only">Open</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% branches.forEach(function (branch) { %>
+          <tr data-bb-req-branch="<%= branch.key %>">
+            <td><%= branch.displayName %></td>
+            <td><code class="bb-hq-key"><%= branch.key %></code></td>
+            <td><% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } else { %>—<% } %></td>
+            <td>
+              <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/hq/requests/b/<%= branch.key %>" data-bb-req-action="open-branch">Open</a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <ul class="bb-hq-requests-branch-cards" data-bb-req-branch-cards="1">
       <% branches.forEach(function (branch) { %>
-      <li>
-        <a href="/hq/requests/b/<%= branch.key %>"><%= branch.displayName %></a>
-        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
-        <code class="bb-hq-key"><%= branch.key %></code>
+      <li class="bb-hq-requests-branch-card" data-bb-req-branch="<%= branch.key %>">
+        <div>
+          <h3 class="bb-hq-requests-branch-card__title"><%= branch.displayName %></h3>
+          <p class="bb-hq-requests-branch-card__meta">
+            <code class="bb-hq-key"><%= branch.key %></code>
+            <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
+          </p>
+        </div>
+        <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/hq/requests/b/<%= branch.key %>" data-bb-req-action="open-branch">Open</a>
       </li>
       <% }) %>
     </ul>
@@ -108,17 +172,83 @@
   }) %>
   <% } %>
 
+  <% if (isHq || rows.length || hasFilter) { %>
+  <section class="bb-fr-req-summary" data-bb-req-summary="1" aria-label="Request status summary">
+    <div class="bb-fr-req-summary__card" data-bb-req-stat="listed">
+      <p class="bb-fr-req-summary__label">Listed</p>
+      <p class="bb-fr-req-summary__value"><%= rows.length %></p>
+    </div>
+    <div class="bb-fr-req-summary__card" data-bb-req-stat="submitted">
+      <p class="bb-fr-req-summary__label">Submitted</p>
+      <p class="bb-fr-req-summary__value"><%= submittedCount %></p>
+    </div>
+    <div class="bb-fr-req-summary__card" data-bb-req-stat="in_review">
+      <p class="bb-fr-req-summary__label">In review</p>
+      <p class="bb-fr-req-summary__value"><%= inReviewCount %></p>
+    </div>
+    <div class="bb-fr-req-summary__card" data-bb-req-stat="resolved">
+      <p class="bb-fr-req-summary__label">Resolved</p>
+      <p class="bb-fr-req-summary__value"><%= resolvedCount %></p>
+    </div>
+    <div class="bb-fr-req-summary__card" data-bb-req-stat="closed">
+      <p class="bb-fr-req-summary__label">Closed</p>
+      <p class="bb-fr-req-summary__value"><%= closedCount %></p>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (isHq) { %>
+  <form
+    method="get"
+    action="<%= basePath %>"
+    class="bb-hq-filter bb-fr-req-filter"
+    data-bb-req-filter="1"
+    role="search"
+  >
+    <div class="bb-hq-field">
+      <label for="bb-req-q">Search</label>
+      <input
+        id="bb-req-q"
+        name="q"
+        type="search"
+        maxlength="100"
+        value="<%= searchQ %>"
+        placeholder="Subject or category"
+        autocomplete="off"
+      />
+    </div>
+    <div class="bb-hq-field">
+      <label for="bb-req-status">Status</label>
+      <select id="bb-req-status" name="status">
+        <option value="">All statuses</option>
+        <% statuses.forEach(function (st) { %>
+        <option value="<%= st %>" <%= activeStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= basePath %>">Clear</a>
+      <% } %>
+    </div>
+  </form>
+  <% } %>
+
   <nav class="bb-fr-tabs" aria-label="Request status" data-bb-req-tabs="1">
     <a
       class="bb-fr-tabs__link<%= !activeStatus ? ' is-active' : '' %>"
-      href="<%= statusHref('') %>"
+      href="<%= filterHref({ status: '' }) %>"
       <%= !activeStatus ? 'aria-current="page"' : '' %>
       data-bb-req-tab="all"
     >All</a>
-    <% requestStatuses.forEach(function (st) { %>
+    <% statuses.forEach(function (st) { %>
     <a
       class="bb-fr-tabs__link<%= activeStatus === st ? ' is-active' : '' %>"
-      href="<%= statusHref(st) %>"
+      href="<%= filterHref({ status: st }) %>"
       <%= activeStatus === st ? 'aria-current="page"' : '' %>
       data-bb-req-tab="<%= st %>"
     ><%= statusLabel(st) %></a>
@@ -129,7 +259,9 @@
   <div class="bb-fr-req-empty" data-bb-req-empty="catalog" role="status">
     <%- include('../partials/empty-state', {
       title: 'No requests yet',
-      body: 'When members submit prayer, care, or support requests on this branch, they appear here for review.',
+      body: isHq
+        ? 'When members submit prayer, care, or support requests in this church, they appear here for oversight.'
+        : 'When members submit prayer, care, or support requests on this branch, they appear here for review.',
       icon: 'inbox'
     }) %>
   </div>
@@ -137,7 +269,7 @@
   <div class="bb-fr-req-empty" data-bb-req-empty="no-results" role="status">
     <%- include('../partials/empty-state', {
       title: 'No matching requests',
-      body: 'Try a different status filter, or clear filters to see the full branch queue.',
+      body: 'Try a different search or status filter, or clear filters to see the full queue in this scope.',
       icon: 'search_off',
       actionHref: basePath,
       actionLabel: 'Clear filters'
@@ -150,7 +282,7 @@
       <h2 id="bb-fr-req-heading" class="bb-ba-section-title">Requests</h2>
       <p class="bb-ba-hint" data-bb-req-count="<%= rows.length %>">
         <%= rows.length %> request<%= rows.length === 1 ? '' : 's' %>
-        <% if (hasFilter) { %> · <%= statusLabel(activeStatus) %><% } %>
+        <% if (hasFilter) { %> · filtered<% } %>
       </p>
     </div>
 
@@ -227,6 +359,7 @@
   <aside class="bb-ba-entities-unavailable" data-bb-req-unavailable="1" aria-label="Unavailable in V5">
     <p data-bb-req-unavailable-row="metrics">Queue KPI cards, processing-time averages, and trend comparisons are not shown.</p>
     <p data-bb-req-unavailable-row="assignment">Staff assignment queues, SLA timers, and chat threads are not available.</p>
+    <p data-bb-req-unavailable-row="escalation">Escalation automation and unsupported assignment workflows are not available.</p>
     <p data-bb-req-unavailable-row="privacy">Donor badges and member contact directories are not loaded on this queue.</p>
   </aside>
 </section>

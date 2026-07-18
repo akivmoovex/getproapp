@@ -4,25 +4,83 @@
   var attByBranch = (report.attendance && report.attendance.byBranch) || [];
   var givByBranch = (report.giving && report.giving.byBranch) || [];
   var givCurrency = (report.giving && report.giving.byCurrency) || [];
+  var members = report.activeMembersByBranch || [];
+  var pendingRegs = report.registrationsPendingByBranch || [];
+  var memberTotal = 0;
+  members.forEach(function (row) { memberTotal += Number(row.activeMemberCount) || 0; });
+  var pendingTotal = 0;
+  pendingRegs.forEach(function (row) { pendingTotal += Number(row.pendingCount) || 0; });
+  var attHref = '/hq/reports/attendance?month=' + encodeURIComponent(yearMonth) +
+    (branchFilter ? '&branch=' + encodeURIComponent(branchFilter) : '');
+  var givHref = '/hq/reports/giving?month=' + encodeURIComponent(yearMonth) +
+    (branchFilter ? '&branch=' + encodeURIComponent(branchFilter) : '');
+  var scopeLabel = branchFilter
+    ? (function () {
+        var found = null;
+        branchOptions.forEach(function (b) { if (b.key === branchFilter) found = b.displayName; });
+        return found || branchFilter;
+      })()
+    : (churchDisplayName || 'All branches');
 %>
 
-<section class="bb-hq-reports" data-bb-hq-reports="1">
+<section
+  class="bb-hq-reports"
+  data-bb-hq-reports="1"
+  data-bb-stitch-reports="57-hq-consolidated-analytics"
+  data-bb-reports-scope="<%= branchFilter ? 'branch' : 'church' %>"
+  aria-label="HQ reports"
+>
   <header class="bb-hq-page-head bb-hq-page-head--split">
     <div>
-      <h1 class="bb-hq-page-head__title">HQ reports</h1>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">HQ</a>
+        <span aria-hidden="true">›</span>
+        <span>Reports</span>
+      </p>
+      <div class="bb-hq-reports__title-row">
+        <h1 class="bb-hq-page-head__title">HQ reports</h1>
+        <span class="bb-hq-reports__month" data-bb-reports-month="<%= yearMonth %>"><%= yearMonth %></span>
+      </div>
       <p class="bb-hq-lede">
         Read-only operational totals from live data for
-        <strong><%= churchDisplayName %></strong>.
-        No projected figures and no charts.
+        <strong><%= churchDisplayName %></strong>
+        · <span data-bb-reports-scope-label="1"><%= scopeLabel %></span>.
+        No projected figures, compliance scores, or charts.
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports/attendance">Attendance report</a>
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports/giving">Giving report</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/audit" data-bb-reports-action="audit">Audit trail</a>
     </p>
   </header>
 
-  <form method="get" action="/hq/reports" class="bb-hq-filter" data-bb-hq-report-filter="1">
+  <section class="bb-hq-report-links" data-bb-report-links="1" aria-labelledby="bb-hq-report-links-heading">
+    <h2 id="bb-hq-report-links-heading" class="bb-hq-section-title">Report destinations</h2>
+    <p class="bb-hq-hint">Open detailed monthly reports that already exist for this church. No new generators are added here.</p>
+    <ul class="bb-hq-report-cards">
+      <li>
+        <a class="bb-hq-report-card" href="<%= attHref %>" data-bb-report-link="attendance">
+          <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
+          <span class="bb-hq-report-card__body">
+            <span class="bb-hq-report-card__title">Attendance report</span>
+            <span class="bb-hq-report-card__meta">Monthly headcount by category and branch</span>
+          </span>
+          <span class="bb-hq-chip">Live</span>
+        </a>
+      </li>
+      <li>
+        <a class="bb-hq-report-card" href="<%= givHref %>" data-bb-report-link="giving">
+          <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+          <span class="bb-hq-report-card__body">
+            <span class="bb-hq-report-card__title">Giving report</span>
+            <span class="bb-hq-report-card__meta">Category and currency totals only</span>
+          </span>
+          <span class="bb-hq-chip">Live</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  <form method="get" action="/hq/reports" class="bb-hq-filter" data-bb-hq-report-filter="1" role="search">
     <div class="bb-hq-field">
       <label for="month">Month</label>
       <input id="month" type="month" name="month" value="<%= yearMonth %>" />
@@ -37,17 +95,48 @@
       </select>
     </div>
     <div class="bb-hq-filter__actions">
-      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Show</button>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Show
+      </button>
+      <% if (branchFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports?month=<%= encodeURIComponent(yearMonth) %>">Clear branch</a>
+      <% } %>
     </div>
   </form>
 
+  <section class="bb-hq-reports-summary" data-bb-reports-summary="1" aria-label="Snapshot totals">
+    <div class="bb-hq-reports-summary__card" data-bb-report-stat="members">
+      <p class="bb-hq-reports-summary__label">Active members</p>
+      <p class="bb-hq-reports-summary__value"><%= memberTotal %></p>
+    </div>
+    <div class="bb-hq-reports-summary__card" data-bb-report-stat="pending">
+      <p class="bb-hq-reports-summary__label">Pending registrations</p>
+      <p class="bb-hq-reports-summary__value"><%= pendingTotal %></p>
+    </div>
+    <div class="bb-hq-reports-summary__card" data-bb-report-stat="attendance">
+      <p class="bb-hq-reports-summary__label">Attendance headcount</p>
+      <p class="bb-hq-reports-summary__value"><%= (report.attendance && report.attendance.totalCount) || 0 %></p>
+    </div>
+    <div class="bb-hq-reports-summary__card" data-bb-report-stat="requests">
+      <p class="bb-hq-reports-summary__label">Open requests</p>
+      <p class="bb-hq-reports-summary__value"><%= (report.openRequests && report.openRequests.openCount) || 0 %></p>
+    </div>
+  </section>
+
   <section class="bb-hq-panel" data-bb-report="active-members">
     <h2 class="bb-hq-section-title">Active members by branch</h2>
-    <% if (!report.activeMembersByBranch.length) { %>
-    <p class="bb-hq-empty">No active branches.</p>
+    <% if (!members.length) { %>
+    <div class="bb-hq-reports-empty" data-bb-report-empty="members" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No active branches',
+        body: 'Active member counts appear when branches are available for this church.',
+        icon: 'groups'
+      }) %>
+    </div>
     <% } else { %>
     <ul class="bb-hq-report-list">
-      <% report.activeMembersByBranch.forEach(function (row) { %>
+      <% members.forEach(function (row) { %>
       <li data-bb-branch="<%= row.branchKey %>" data-bb-count="<%= row.activeMemberCount %>">
         <%= row.displayName %>: <%= row.activeMemberCount %>
       </li>
@@ -58,11 +147,11 @@
 
   <section class="bb-hq-panel" data-bb-report="registrations-pending">
     <h2 class="bb-hq-section-title">Registrations pending</h2>
-    <% if (!report.registrationsPendingByBranch.length) { %>
-    <p class="bb-hq-empty" role="status">No pending registrations.</p>
+    <% if (!pendingRegs.length) { %>
+    <p class="bb-hq-empty" role="status" data-bb-report-empty="registrations">No pending registrations.</p>
     <% } else { %>
     <ul class="bb-hq-report-list">
-      <% report.registrationsPendingByBranch.forEach(function (row) { %>
+      <% pendingRegs.forEach(function (row) { %>
       <li data-bb-branch="<%= row.branchKey %>" data-bb-count="<%= row.pendingCount %>">
         <%= row.displayName %>: <%= row.pendingCount %>
       </li>
@@ -92,7 +181,7 @@
     <p data-bb-report="attendance-total">Total headcount: <%= report.attendance.totalCount %></p>
     <p data-bb-report="attendance-events">Events counted: <%= report.attendance.eventCount %></p>
     <% if (attByBranch.length) { %>
-    <div class="bb-hq-table-wrap">
+    <div class="bb-hq-table-wrap bb-hq-reports-table-wrap--desktop">
       <table class="bb-hq-table" data-bb-report="attendance-by-branch">
         <thead>
           <tr>
@@ -112,9 +201,17 @@
         </tbody>
       </table>
     </div>
+    <ul class="bb-hq-reports-cards" data-bb-report-attendance-cards="1">
+      <% attByBranch.forEach(function (row) { %>
+      <li class="bb-hq-reports-card" data-bb-branch="<%= row.branchKey %>">
+        <strong><%= row.displayName %></strong>
+        <span><%= row.totalCount %> headcount · <%= row.eventCount %> events</span>
+      </li>
+      <% }) %>
+    </ul>
     <% } %>
     <% } %>
-    <p class="bb-hq-hint"><a href="/hq/reports/attendance?month=<%= encodeURIComponent(yearMonth) %>&amp;branch=<%= encodeURIComponent(branchFilter || '') %>">Open attendance report</a></p>
+    <p class="bb-hq-hint"><a href="<%= attHref %>" data-bb-report-link="attendance-inline">Open attendance report</a></p>
   </section>
 
   <section class="bb-hq-panel" data-bb-report-section="giving">
@@ -132,7 +229,7 @@
     </ul>
     <% } %>
     <% if (givByBranch.length) { %>
-    <div class="bb-hq-table-wrap">
+    <div class="bb-hq-table-wrap bb-hq-reports-table-wrap--desktop">
       <table class="bb-hq-table" data-bb-report="giving-by-branch">
         <thead>
           <tr>
@@ -154,8 +251,16 @@
         </tbody>
       </table>
     </div>
+    <ul class="bb-hq-reports-cards" data-bb-report-giving-cards="1">
+      <% givByBranch.forEach(function (row) { %>
+      <li class="bb-hq-reports-card" data-bb-branch="<%= row.branchKey %>" data-bb-currency="<%= row.currency %>">
+        <strong><%= row.displayName %></strong>
+        <span><%= row.currency %>: <%= row.totalAmount %> · <%= row.entryCount %> entries</span>
+      </li>
+      <% }) %>
+    </ul>
     <% } %>
-    <p class="bb-hq-hint"><a href="/hq/reports/giving?month=<%= encodeURIComponent(yearMonth) %>&amp;branch=<%= encodeURIComponent(branchFilter || '') %>">Open giving report</a></p>
+    <p class="bb-hq-hint"><a href="<%= givHref %>" data-bb-report-link="giving-inline">Open giving report</a></p>
   </section>
 
   <section class="bb-hq-panel">
@@ -164,6 +269,13 @@
     <p data-bb-report="requests-submitted">Submitted: <%= report.openRequests.submittedCount %></p>
     <p data-bb-report="requests-in-review">In review: <%= report.openRequests.inReviewCount %></p>
   </section>
+
+  <aside class="bb-hq-unavailable" data-bb-reports-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-reports-unavailable-row="charts">Interactive charts and canvas visualizations are not available.</p>
+    <p data-bb-reports-unavailable-row="generators">New report generators and scheduled report builders are not available.</p>
+    <p data-bb-reports-unavailable-row="compliance">Compliance scores and fabricated risk ratings are not shown.</p>
+    <p data-bb-reports-unavailable-row="export">CSV and PDF downloads are not available on this index.</p>
+  </aside>
 </section>
 
 <%- include('../partials/hq-shell-end') %>

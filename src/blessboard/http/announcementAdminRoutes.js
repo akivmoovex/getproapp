@@ -308,6 +308,18 @@ function createAnnouncementAdminRouter(deps) {
     return "/hq/content/media/upload";
   }
 
+  function editorScopeExtras(scope, isBranchScoped) {
+    return {
+      branchDisplayName: (scope && scope.branchDisplayName) || null,
+      branchKey: (scope && scope.branchKey) || null,
+      scopeLabel: isBranchScoped
+        ? (scope && scope.branchDisplayName) || "Branch"
+        : "Church-wide",
+      isHqChurchWide: variant === "hq" && !(scope && scope.branchId),
+      isHqBranchScoped: variant === "hq" && Boolean(scope && scope.branchId),
+    };
+  }
+
   async function loadScopedAnnouncement(req, res, scope, id) {
     if (!UUID_RE.test(id)) {
       sendControlled(req, res, 404, "Announcement not found.", shellKind);
@@ -413,6 +425,7 @@ function createAnnouncementAdminRouter(deps) {
           formMode: "create",
           showPreview: true,
           mediaUploadUrl: mediaUploadUrlForScope(scope),
+          ...editorScopeExtras(scope, isBranchScoped),
         })
       );
       return res.status(200).type("html").send(html);
@@ -452,6 +465,7 @@ function createAnnouncementAdminRouter(deps) {
             formMode: "create",
             showPreview: true,
             mediaUploadUrl: mediaUploadUrlForScope(scope),
+            ...editorScopeExtras(scope, isBranchScoped),
           })
         );
         return res
@@ -501,6 +515,7 @@ function createAnnouncementAdminRouter(deps) {
           showPreview: true,
           saved: String((req.query && req.query.saved) || "") === "1",
           mediaUploadUrl: mediaUploadUrlForScope(scope),
+          ...editorScopeExtras(scope, isBranchScoped),
         })
       );
       return res.status(200).type("html").send(html);
@@ -542,6 +557,7 @@ function createAnnouncementAdminRouter(deps) {
           basePath: scope.basePath,
           item,
           error: null,
+          ...editorScopeExtras(scope, isBranchScoped),
         })
       );
       return res.status(200).type("html").send(html);
@@ -580,6 +596,7 @@ function createAnnouncementAdminRouter(deps) {
             basePath: scope.basePath,
             item,
             error: errorMessage(updated.reason),
+            ...editorScopeExtras(scope, isBranchScoped),
           })
         );
         const code =
@@ -686,6 +703,7 @@ function createAnnouncementAdminRouter(deps) {
             formMode: "edit",
             showPreview: true,
             mediaUploadUrl: mediaUploadUrlForScope(scope),
+            ...editorScopeExtras(scope, isBranchScoped),
           })
         );
         const code =

@@ -184,11 +184,18 @@ function createHqAdminRouter(deps) {
   router.get("/hq/branches", rejectApex, gateHq, async (req, res) => {
     const listResult = await loadBranchList(req, res);
     if (!listResult) return;
+    const q = String((req.query && req.query.q) || "").trim().slice(0, 100);
+    const typeRaw = String((req.query && req.query.type) || "")
+      .trim()
+      .toLowerCase();
+    const typeFilter = typeRaw === "hq" || typeRaw === "branch" ? typeRaw : "";
     const html = renderHqView(
       "hq/branches.ejs",
       shellLocals(req, res, "branches", {
         branches: listResult.branches,
         activeBranchCount: listResult.activeCount || 0,
+        q,
+        typeFilter,
       })
     );
     return res.status(200).type("html").send(html);

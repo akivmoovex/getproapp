@@ -908,6 +908,7 @@ describe("blessboard announcements", () => {
     assert.match(list.text, /data-bb-ann-cards="1"/);
     assert.doesNotMatch(list.text, /Active Today|Scheduled|1,240|Total Views|Admin Tip|Engagement|Announcement Insights/i);
     assert.doesNotMatch(list.text, /data-bb-delivery=/);
+    assert.doesNotMatch(list.text, /data-bb-hq-announcements=/);
     assert.doesNotMatch(list.text, /data-bb-ann-action="edit"/);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(list.text, new RegExp(branchA.id, "i"));
@@ -1101,10 +1102,39 @@ describe("blessboard announcements", () => {
       .set("Cookie", hqCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-announcement-admin-list="1"/);
+    assert.match(list.text, /data-bb-hq-announcements="1"/);
+    assert.match(list.text, /data-bb-stitch-announcements="61-hq-broadcast-center"/);
+    assert.match(list.text, /data-bb-delivery="overview"/);
     assert.match(list.text, /data-bb-hq-ann-branches="1"/);
+    assert.match(list.text, /data-bb-ann-filter="1"/);
+    assert.match(list.text, /data-bb-ann-status-chips="1"/);
+    assert.match(list.text, /data-bb-ann-audience-chips="1"/);
     assert.match(list.text, /href="\/hq\/announcements\/b\/campus"/);
     assert.match(list.text, /href="\/hq\/registrations"/);
+    assert.doesNotMatch(list.text, /delivery rate|%\s*read|branch reach|WhatsApp/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
+
+    const newForm = await request(app)
+      .get("/hq/announcements/new")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(newForm.status, 200);
+    assert.match(newForm.text, /data-bb-announcement-admin-form="1"/);
+    assert.match(newForm.text, /data-bb-hq-announcement-editor="1"/);
+    assert.match(newForm.text, /data-bb-stitch-announcement-editor="61-hq-broadcast-center"/);
+    assert.match(newForm.text, /data-bb-ann-scope-panel="1"/);
+    assert.match(newForm.text, /data-bb-ann-scope="church"/);
+    assert.match(newForm.text, /name="_csrf"/);
+    assert.match(newForm.text, /name="title"/);
+    assert.match(newForm.text, /name="body"/);
+    assert.match(newForm.text, /name="audience_members"/);
+    assert.match(newForm.text, /name="audience_admins"/);
+    assert.match(newForm.text, /name="is_pinned"/);
+    assert.match(newForm.text, /name="confirm_publish"/);
+    assert.match(newForm.text, /data-bb-ann-save-draft="1"/);
+    assert.match(newForm.text, /data-bb-ann-publish-submit="1"/);
+    assert.doesNotMatch(newForm.text, /Schedule for|Template library|WhatsApp|Push notification/i);
+    assert.doesNotMatch(newForm.text, new RegExp(churchA.id, "i"));
 
     const csrf = extractCookie(list, CSRF_COOKIE);
     const createRes = await request(app)
@@ -1122,6 +1152,18 @@ describe("blessboard announcements", () => {
     assert.equal(createRes.status, 303);
     const annId = createRes.headers.location.split("/").pop().split("?")[0];
 
+    const editForm = await request(app)
+      .get(`/hq/announcements/${annId}/edit`)
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(editForm.status, 200);
+    assert.match(editForm.text, /data-bb-hq-announcement-editor="1"/);
+    assert.match(editForm.text, /data-bb-form-mode="edit"/);
+    assert.match(editForm.text, /data-bb-ann-audience-estimate="1"/);
+    assert.match(editForm.text, /data-bb-delivery="eligible"/);
+    assert.match(editForm.text, /name="expected_updated_at"/);
+    assert.match(editForm.text, /HQ oversight draft/);
+
     const preview = await request(app)
       .get(`/hq/announcements/${annId}/preview`)
       .set("Host", HOST_A)
@@ -1135,8 +1177,12 @@ describe("blessboard announcements", () => {
       .set("Host", HOST_A)
       .set("Cookie", hqCookie);
     assert.equal(publishPage.status, 200);
+    assert.match(publishPage.text, /data-bb-hq-announcement-publish="1"/);
+    assert.match(publishPage.text, /data-bb-stitch-announcement-publish="61-hq-broadcast-center"/);
     assert.match(publishPage.text, /name="confirm_publish"/);
     assert.match(publishPage.text, /name="expected_updated_at"/);
+    assert.match(publishPage.text, /data-bb-delivery="eligible"|data-bb-ann-audience-estimate="1"/);
+    assert.match(publishPage.text, /data-bb-ann-publish-scope="church"/);
     const pubCsrf = extractCookie(publishPage, CSRF_COOKIE);
 
     const stale = await request(app)
@@ -1173,6 +1219,54 @@ describe("blessboard announcements", () => {
       });
     assert.equal(published.status, 303);
     assert.match(published.headers.location, /saved=published/);
+
+    const afterPublish = await request(app)
+      .get("/hq/announcements")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(afterPublish.status, 200);
+    assert.match(afterPublish.text, /HQ oversight draft/);
+    assert.match(afterPublish.text, /data-bb-delivery="row"/);
+    assert.match(afterPublish.text, /data-bb-eligible=/);
+    assert.match(afterPublish.text, /eligible/);
+    assert.doesNotMatch(afterPublish.text, /delivery rate|%\s*read|branch reach/i);
+
+    const searched = await request(app)
+      .get("/hq/announcements?q=oversight&status=published&page=1")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(searched.status, 200);
+    assert.match(searched.text, /HQ oversight draft/);
+    assert.match(searched.text, /value="oversight"/);
+
+    const noResults = await request(app)
+      .get("/hq/announcements?q=zzznomatch999")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(noResults.status, 200);
+    assert.match(noResults.text, /data-bb-ann-empty="no-results"/);
+    assert.doesNotMatch(noResults.text, /HQ oversight draft/);
+
+    const adminsOnly = await createAnnouncement(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      actorUserId: hqAdmin.user.id,
+      tenant: makeTenant(churchA, orgA.records.organization, branchA),
+      title: "Admins only HQ note",
+      body: "No member delivery",
+      status: "published",
+      audiences: ["admins"],
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+    });
+    assert.equal(adminsOnly.ok, true, adminsOnly.reason);
+    const adminsList = await request(app)
+      .get("/hq/announcements?q=Admins+only")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(adminsList.status, 200);
+    assert.match(adminsList.text, /Admins only HQ note/);
+    assert.match(adminsList.text, /data-bb-delivery="unavailable"/);
 
     const branchList = await request(app)
       .get("/hq/announcements/b/campus")

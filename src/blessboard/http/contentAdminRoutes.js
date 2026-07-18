@@ -556,6 +556,19 @@ function createContentAdminRouter(deps) {
         const listResult = await listBlessBoardBranches(getPool(), scope.churchId);
         branches = (listResult && listResult.branches) || [];
       }
+      const rawStatus = String((req.query && req.query.status) || "")
+        .trim()
+        .toLowerCase();
+      const statusFilter =
+        variant === "hq" && ["draft", "published", "archived"].includes(rawStatus)
+          ? rawStatus
+          : "";
+      const q =
+        variant === "hq"
+          ? String((req.query && req.query.q) || "")
+              .trim()
+              .slice(0, 100)
+          : "";
       const html = renderContentAdminView(
         "content-admin/index.ejs",
         shellLocals(req, res, {
@@ -563,6 +576,8 @@ function createContentAdminRouter(deps) {
           pages: (listed && listed.pages) || [],
           pageTitles: PAGE_KEY_TITLES,
           branches,
+          statusFilter,
+          q,
           error: null,
           saved: String((req.query && req.query.saved) || "") === "1",
         })

@@ -2,6 +2,16 @@
 <%
   var rows = events || [];
   var outcomeOptions = outcomes || ['success', 'failure', 'denied'];
+  var hasFilter = Boolean(actionFilter || entityTypeFilter || outcomeFilter);
+  var successCount = 0;
+  var failureCount = 0;
+  var deniedCount = 0;
+  rows.forEach(function (ev) {
+    var o = String(ev.outcome || '').toLowerCase();
+    if (o === 'success') successCount += 1;
+    else if (o === 'failure') failureCount += 1;
+    else if (o === 'denied') deniedCount += 1;
+  });
   function outcomeLabel(o) {
     var key = String(o || '').toLowerCase();
     if (key === 'success') return 'Success';
@@ -38,22 +48,65 @@
   }
 %>
 
-<section class="bb-hq-audit" data-bb-hq-audit="1">
+<section
+  class="bb-hq-audit"
+  data-bb-hq-audit="1"
+  data-bb-stitch-audit="58-hq-global-audit-trail"
+  aria-label="Audit trail"
+>
   <header class="bb-hq-page-head bb-hq-page-head--split">
     <div>
-      <h1 class="bb-hq-page-head__title">Audit trail</h1>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">HQ</a>
+        <span aria-hidden="true">›</span>
+        <span>Audit</span>
+      </p>
+      <div class="bb-hq-audit__title-row">
+        <h1 class="bb-hq-page-head__title">Audit trail</h1>
+        <span class="bb-hq-audit__count" data-bb-audit-total="<%= rows.length %>"><%= rows.length %></span>
+      </div>
       <p class="bb-hq-lede">
         Append-only operational events for
         <strong><%= churchDisplayName %></strong>.
-        Secrets, session data, and full personal details are never shown here.
+        Secrets, session tokens, passwords, and internal payloads are never shown.
+      </p>
+      <p class="bb-hq-hint" data-bb-audit-privacy="1" role="note">
+        Actor and entity refs are truncated. Full UUIDs and metadata JSON are not loaded on this page.
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports">HQ reports</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports" data-bb-audit-action="reports">HQ reports</a>
     </p>
   </header>
 
-  <form method="get" action="/hq/audit" class="bb-hq-filter bb-hq-audit-filter" data-bb-hq-audit-filter="1">
+  <% if (rows.length || hasFilter) { %>
+  <section class="bb-hq-audit-summary" data-bb-audit-summary="1" aria-label="Outcome summary for this page">
+    <div class="bb-hq-audit-summary__card" data-bb-audit-stat="listed">
+      <p class="bb-hq-audit-summary__label">Listed</p>
+      <p class="bb-hq-audit-summary__value"><%= rows.length %></p>
+    </div>
+    <div class="bb-hq-audit-summary__card" data-bb-audit-stat="success">
+      <p class="bb-hq-audit-summary__label">Success</p>
+      <p class="bb-hq-audit-summary__value"><%= successCount %></p>
+    </div>
+    <div class="bb-hq-audit-summary__card" data-bb-audit-stat="failure">
+      <p class="bb-hq-audit-summary__label">Failure</p>
+      <p class="bb-hq-audit-summary__value"><%= failureCount %></p>
+    </div>
+    <div class="bb-hq-audit-summary__card" data-bb-audit-stat="denied">
+      <p class="bb-hq-audit-summary__label">Denied</p>
+      <p class="bb-hq-audit-summary__value"><%= deniedCount %></p>
+    </div>
+  </section>
+  <% } %>
+
+  <form
+    method="get"
+    action="/hq/audit"
+    class="bb-hq-filter bb-hq-audit-filter"
+    data-bb-hq-audit-filter="1"
+    role="search"
+  >
     <div class="bb-hq-field">
       <label for="action">Action key</label>
       <input
@@ -90,59 +143,96 @@
       </select>
     </div>
     <div class="bb-hq-filter__actions">
-      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Filter</button>
-      <% if (actionFilter || entityTypeFilter || outcomeFilter) { %>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/audit">Clear</a>
       <% } %>
     </div>
   </form>
 
-  <% if (!rows.length) { %>
-  <div class="bb-hq-empty" role="status" data-bb-hq-audit-empty="1">
-    No audit events match this view.
-    <% if (actionFilter || entityTypeFilter || outcomeFilter) { %>
-    Try clearing filters or choosing a broader action key.
-    <% } else { %>
-    Events appear here after HQ and branch staff take audited actions.
-    <% } %>
+  <% if (!rows.length && !hasFilter) { %>
+  <div class="bb-hq-audit-empty" role="status" data-bb-hq-audit-empty="catalog">
+    <%- include('../partials/empty-state', {
+      title: 'No audit events yet',
+      body: 'Events appear here after HQ and branch staff take audited actions in this church.',
+      icon: 'history'
+    }) %>
+  </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div class="bb-hq-audit-empty" role="status" data-bb-hq-audit-empty="no-results">
+    <%- include('../partials/empty-state', {
+      title: 'No matching events',
+      body: 'Try a different action key, entity type, or outcome — or clear filters to see the latest events.',
+      icon: 'search_off',
+      actionHref: '/hq/audit',
+      actionLabel: 'Clear filters'
+    }) %>
   </div>
   <% } else { %>
-  <div class="bb-hq-table-wrap">
-    <table class="bb-hq-table" data-bb-hq-audit-table="1">
-      <thead>
-        <tr>
-          <th scope="col">When</th>
-          <th scope="col">Action</th>
-          <th scope="col">Entity</th>
-          <th scope="col">Outcome</th>
-          <th scope="col">Refs</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% rows.forEach(function (ev) { %>
-        <tr data-bb-action="<%= ev.actionKey %>" data-bb-outcome="<%= ev.outcome %>">
-          <td><time datetime="<%= ev.when %>"><%= formatWhen(ev.when) %></time></td>
-          <td><code class="bb-hq-audit-action"><%= ev.actionKey %></code></td>
-          <td><%= ev.entityType || '—' %></td>
-          <td>
-            <span class="bb-hq-chip <%= outcomeChip(ev.outcome) %>"><%= outcomeLabel(ev.outcome) %></span>
-          </td>
-          <td class="bb-hq-muted">
-            <% if (ev.entityRef) { %>Entity · <%= ev.entityRef %><% } %>
-            <% if (ev.entityRef && ev.actorRef) { %> · <% } %>
-            <% if (ev.actorRef) { %>Actor · <%= ev.actorRef %><% } %>
-            <% if (!ev.entityRef && !ev.actorRef) { %>—<% } %>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+
+  <section class="bb-hq-panel bb-hq-audit-panel" data-bb-audit-catalog="1" aria-labelledby="bb-hq-audit-heading">
+    <div class="bb-hq-audit-panel__head">
+      <h2 id="bb-hq-audit-heading" class="bb-hq-section-title">Events</h2>
+      <p class="bb-hq-hint">Church-scoped append-only log. Outcome badges reflect stored event outcomes only.</p>
+    </div>
+
+    <div class="bb-hq-table-wrap bb-hq-audit-table-wrap" role="region" aria-label="Audit events table" tabindex="0" data-bb-hq-audit-table-desktop="1">
+      <table class="bb-hq-table" data-bb-hq-audit-table="1">
+        <thead>
+          <tr>
+            <th scope="col">When</th>
+            <th scope="col">Action</th>
+            <th scope="col">Entity</th>
+            <th scope="col">Outcome</th>
+            <th scope="col">Refs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (ev) { %>
+          <tr data-bb-action="<%= ev.actionKey %>" data-bb-outcome="<%= ev.outcome %>" data-bb-audit-row="1">
+            <td><time datetime="<%= ev.when %>"><%= formatWhen(ev.when) %></time></td>
+            <td><code class="bb-hq-audit-action"><%= ev.actionKey %></code></td>
+            <td><%= ev.entityType || '—' %></td>
+            <td>
+              <span class="bb-hq-chip <%= outcomeChip(ev.outcome) %>"><%= outcomeLabel(ev.outcome) %></span>
+            </td>
+            <td class="bb-hq-muted">
+              <% if (ev.entityRef) { %>Entity · <%= ev.entityRef %><% } %>
+              <% if (ev.entityRef && ev.actorRef) { %> · <% } %>
+              <% if (ev.actorRef) { %>Actor · <%= ev.actorRef %><% } %>
+              <% if (!ev.entityRef && !ev.actorRef) { %>—<% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="bb-hq-audit-cards" data-bb-hq-audit-cards="1">
+      <% rows.forEach(function (ev) { %>
+      <li class="bb-hq-audit-card" data-bb-action="<%= ev.actionKey %>" data-bb-outcome="<%= ev.outcome %>" data-bb-audit-card="1">
+        <div class="bb-hq-audit-card__top">
+          <time class="bb-hq-audit-card__when" datetime="<%= ev.when %>"><%= formatWhen(ev.when) %></time>
+          <span class="bb-hq-chip <%= outcomeChip(ev.outcome) %>"><%= outcomeLabel(ev.outcome) %></span>
+        </div>
+        <p class="bb-hq-audit-card__action"><code class="bb-hq-audit-action"><%= ev.actionKey %></code></p>
+        <p class="bb-hq-audit-card__meta">
+          <%= ev.entityType || '—' %>
+          <% if (ev.entityRef) { %> · Entity · <%= ev.entityRef %><% } %>
+          <% if (ev.actorRef) { %> · Actor · <%= ev.actorRef %><% } %>
+        </p>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
 
   <nav class="bb-hq-pager" aria-label="Audit pagination" data-bb-hq-audit-pager="1">
     <p class="bb-hq-pager__meta">
       Showing up to <%= pageSize || 50 %> events
-      <% if (actionFilter || entityTypeFilter || outcomeFilter) { %>(filtered)<% } %>.
+      <% if (hasFilter) { %>(filtered)<% } %>.
     </p>
     <% if (hasMore && nextBefore) { %>
     <p class="bb-hq-pager__nav">
@@ -153,6 +243,13 @@
     <% } %>
   </nav>
   <% } %>
+
+  <aside class="bb-hq-unavailable" data-bb-audit-unavailable="1" aria-label="Unavailable in V5">
+    <p data-bb-audit-unavailable-row="export">CSV and bulk audit downloads are not available.</p>
+    <p data-bb-audit-unavailable-row="compliance">Compliance scores and fabricated risk ratings are not shown.</p>
+    <p data-bb-audit-unavailable-row="payload">Raw metadata payloads, secrets, and token values are not loaded.</p>
+    <p data-bb-audit-unavailable-row="identity">Full user identities and contact directories are not shown.</p>
+  </aside>
 </section>
 
 <%- include('../partials/hq-shell-end') %>

@@ -7,8 +7,20 @@
   var pageRows = pages || [];
   var titles = typeof pageTitles !== 'undefined' && pageTitles ? pageTitles : {};
   var isBranchShell = shellKind === 'branch';
-  var isHqChurchWide = shellKind === 'hq' && scope && !scope.branchId;
-  var isHqBranchScoped = shellKind === 'hq' && scope && scope.branchId;
+  var isHq = shellKind === 'hq';
+  var isHqChurchWide = isHq && scope && !scope.branchId;
+  var isHqBranchScoped = isHq && scope && scope.branchId;
+  var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
+  var searchQ = typeof q !== 'undefined' && q ? String(q).trim() : '';
+  var hasFilter = Boolean(activeStatus || searchQ);
+  var branchList = branches || [];
+  var filterBase = (scope && scope.basePath) || (isHq ? '/hq/content' : '/branch-admin/content');
+  var statusOptions = [
+    { key: '', label: 'All' },
+    { key: 'published', label: 'Published' },
+    { key: 'draft', label: 'Draft' },
+    { key: 'archived', label: 'Archived' }
+  ];
   var entityModules = [
     { key: 'leadership', label: 'Leadership', href: scope.basePath + '/leadership', icon: 'groups', blurb: 'Leaders shown on the public Leadership page.' },
     { key: 'ministries', label: 'Ministries', href: scope.basePath + '/ministries', icon: 'volunteer_activism', blurb: 'Ministry cards for the public Ministries page.' },
@@ -22,8 +34,9 @@
     { key: 'service-times', label: 'Service times', reason: 'No dedicated service-times module in V5 yet.' },
     { key: 'theme', label: 'Theme & appearance', reason: 'Theme controls are not available in V5.' },
     { key: 'domain', label: 'Custom domain', reason: 'Hostname and DNS are platform-managed.' },
-    { key: 'seo', label: 'SEO tools', reason: 'SEO settings are not available in V5.' },
-    { key: 'builder', label: 'Drag-and-drop website builder', reason: 'Use page and section editors instead.' }
+    { key: 'seo', label: 'SEO tools', reason: 'SEO analytics and SEO settings are not available in V5.' },
+    { key: 'builder', label: 'Drag-and-drop website builder', reason: 'Use page and section editors instead.' },
+    { key: 'templates', label: 'Organization templates', reason: 'Org-wide template libraries are not available in V5.' }
   ];
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
@@ -64,20 +77,43 @@
     };
     return map[key] || 'Public page content for this scope.';
   }
+  function pageLabel(page) {
+    return titles[page.pageKey] || page.title || page.pageKey;
+  }
+  function filterHref(statusKey) {
+    var params = [];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    if (statusKey) params.push('status=' + encodeURIComponent(statusKey));
+    return filterBase + (params.length ? '?' + params.join('&') : '');
+  }
+  function clearHref() {
+    return filterBase;
+  }
   var publishedCount = 0;
   var draftCount = 0;
+  var archivedCount = 0;
   pageRows.forEach(function (p) {
     var st = String(p.status || '').toLowerCase();
     if (st === 'published') publishedCount += 1;
     else if (st === 'draft') draftCount += 1;
+    else if (st === 'archived') archivedCount += 1;
+  });
+  var filteredPages = pageRows.filter(function (page) {
+    if (activeStatus && String(page.status || '').toLowerCase() !== activeStatus) return false;
+    if (searchQ) {
+      var hay = (pageLabel(page) + ' ' + (page.pageKey || '')).toLowerCase();
+      if (hay.indexOf(searchQ.toLowerCase()) === -1) return false;
+    }
+    return true;
   });
 %>
 
 <section
-  class="bb-ca-home bb-ba-content"
+  class="bb-ca-home bb-ba-content<%= isHq ? ' bb-hq-content' : '' %>"
   data-bb-content-admin="1"
   data-bb-stitch-content="34-branch-website-editor"
   data-bb-content-scope="<%= isHqChurchWide ? 'church-wide' : 'branch' %>"
+  <% if (isHq) { %>data-bb-hq-content="1"<% } %>
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
@@ -91,7 +127,7 @@
         <span>Website</span>
       </p>
       <div class="bb-ba-content__title-row">
-        <h1 class="bb-ba-page-head__title">Website content</h1>
+        <h1 class="bb-ba-page-head__title"><%= isHq ? 'Public content' : 'Website content' %></h1>
         <% if (pageRows.length) { %>
         <span class="bb-ba-content__count" data-bb-content-page-total="<%= pageRows.length %>">
           <%= pageRows.length %> page<%= pageRows.length === 1 ? '' : 's' %>
@@ -99,11 +135,25 @@
         <% } %>
       </div>
       <p class="bb-ba-lede">
-        Manage public pages and structured content for
+        <% if (isHq) { %>
+        Oversight of public pages and structured modules for
         <strong><%= scope.scopeLabel %></strong><% if (isHqChurchWide) { %> (church-wide)<% } %>.
+        Central editing stays on this screen for the current scope. Theme, domain, SEO analytics, and live website-builder tools are not available.
+        <% } else { %>
+        Manage public pages and structured content for
+        <strong><%= scope.scopeLabel %></strong>.
         Publish requires confirmation. Content is archived, never hard-deleted.
+        <% } %>
       </p>
     </div>
+    <% if (isHq) { %>
+    <p class="bb-ba-page-head__actions">
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/hq/announcements" data-bb-content-action="announcements">
+        <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+        Announcements
+      </a>
+    </p>
+    <% } %>
   </header>
 
   <% if (saved) { %>
@@ -113,19 +163,74 @@
   <%- include('../partials/form-errors', { errors: [error], id: 'bb-ca-home-errors' }) %>
   <% } %>
 
-  <% if (isHqChurchWide && branches && branches.length) { %>
-  <section class="bb-ba-panel bb-ba-content-panel" data-bb-hq-content-branches="1" aria-labelledby="hq-content-branch-heading">
-    <h2 id="hq-content-branch-heading" class="bb-ba-section-title">Branch content</h2>
-    <p class="bb-ba-hint">Open a branch to manage pages and modules scoped to that campus only.</p>
-    <ul class="bb-ca-branch-list">
-      <% branches.forEach(function (branch) { %>
-      <li>
-        <a href="/hq/content/b/<%= branch.key %>"><%= branch.displayName %></a>
-        <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
-        <code class="bb-hq-key"><%= branch.key %></code>
+  <% if (isHq) { %>
+  <aside class="bb-hq-content-scope" data-bb-content-scope-panel="1" aria-labelledby="bb-hq-content-scope-heading">
+    <h2 id="bb-hq-content-scope-heading" class="bb-hq-content-scope__title">Editing scope</h2>
+    <p class="bb-hq-content-scope__body">
+      <% if (isHqChurchWide) { %>
+      You are editing <strong>church-wide</strong> public content for <strong><%= scope.scopeLabel %></strong>.
+      Branch-scoped pages and modules open from the branch list below — existing central edit routes are unchanged.
+      <% } else { %>
+      You are editing <strong>branch</strong> public content for <strong><%= scope.scopeLabel %></strong>
+      <% if (scope.branchKey) { %>(<code class="bb-hq-key"><%= scope.branchKey %></code>)<% } %>.
+      Church-wide pages remain under <a href="/hq/content">church-wide content</a>.
+      <% } %>
+    </p>
+  </aside>
+  <% } %>
+
+  <% if (isHqChurchWide && branchList.length) { %>
+  <section class="bb-ba-panel bb-ba-content-panel bb-hq-content-branches" data-bb-hq-content-branches="1" aria-labelledby="hq-content-branch-heading">
+    <div class="bb-ba-content-panel__head">
+      <h2 id="hq-content-branch-heading" class="bb-ba-section-title">Branch content</h2>
+      <span class="bb-ba-content__count" data-bb-content-branch-total="<%= branchList.length %>"><%= branchList.length %></span>
+    </div>
+    <p class="bb-ba-hint">Open a branch to manage pages and modules scoped to that campus only. Church-wide editing stays on this page.</p>
+
+    <div class="bb-hq-content-branch-table-wrap" data-bb-content-branch-table="1">
+      <table class="bb-hq-content-branch-table">
+        <thead>
+          <tr>
+            <th scope="col">Branch</th>
+            <th scope="col">Key</th>
+            <th scope="col">Role</th>
+            <th scope="col"><span class="bb-hq-sr-only">Open</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% branchList.forEach(function (branch) { %>
+          <tr data-bb-content-branch="<%= branch.key %>">
+            <td><%= branch.displayName %></td>
+            <td><code class="bb-hq-key"><%= branch.key %></code></td>
+            <td><% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } else { %>—<% } %></td>
+            <td>
+              <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/hq/content/b/<%= branch.key %>" data-bb-content-action="open-branch">Open</a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="bb-hq-content-branch-cards" data-bb-content-branch-cards="1">
+      <% branchList.forEach(function (branch) { %>
+      <li class="bb-hq-content-branch-card" data-bb-content-branch="<%= branch.key %>">
+        <div class="bb-hq-content-branch-card__body">
+          <h3 class="bb-hq-content-branch-card__title"><%= branch.displayName %></h3>
+          <p class="bb-hq-content-branch-card__meta">
+            <code class="bb-hq-key"><%= branch.key %></code>
+            <% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } %>
+          </p>
+        </div>
+        <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/hq/content/b/<%= branch.key %>" data-bb-content-action="open-branch">Open</a>
       </li>
       <% }) %>
     </ul>
+  </section>
+  <% } else if (isHqChurchWide) { %>
+  <section class="bb-ba-panel bb-ba-content-panel" data-bb-hq-content-branches="1" data-bb-content-branch-empty="1" aria-labelledby="hq-content-branch-heading">
+    <h2 id="hq-content-branch-heading" class="bb-ba-section-title">Branch content</h2>
+    <p class="bb-ba-hint">No active branches are listed for this church yet. Church-wide pages below remain editable here.</p>
   </section>
   <% } %>
 
@@ -180,12 +285,77 @@
       <p class="bb-ba-content-summary__label">Draft</p>
       <p class="bb-ba-content-summary__value"><%= draftCount %></p>
     </div>
+    <% if (archivedCount > 0 || isHq) { %>
+    <div class="bb-ba-content-summary__card" data-bb-content-stat="archived">
+      <p class="bb-ba-content-summary__label">Archived</p>
+      <p class="bb-ba-content-summary__value"><%= archivedCount %></p>
+    </div>
+    <% } %>
   </section>
+
+  <% if (isHq) { %>
+  <form
+    method="get"
+    action="<%= filterBase %>"
+    class="bb-hq-filter bb-hq-content-filter"
+    data-bb-content-filter="1"
+    role="search"
+  >
+    <div class="bb-hq-field">
+      <label for="bb-content-q">Search pages</label>
+      <input
+        id="bb-content-q"
+        name="q"
+        type="search"
+        maxlength="100"
+        value="<%= searchQ %>"
+        placeholder="Page title or key"
+        autocomplete="off"
+      />
+    </div>
+    <div class="bb-hq-field">
+      <label for="bb-content-status">Status</label>
+      <select id="bb-content-status" name="status">
+        <option value="">All statuses</option>
+        <% ['published','draft','archived'].forEach(function (st) { %>
+        <option value="<%= st %>" <%= activeStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= clearHref() %>">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <nav class="bb-hq-content-chips" aria-label="Publication status filters" data-bb-content-status-chips="1">
+    <% statusOptions.forEach(function (opt) { %>
+    <a
+      class="bb-hq-content-chip<%= activeStatus === opt.key ? ' is-active' : '' %>"
+      href="<%= filterHref(opt.key) %>"
+      <%= activeStatus === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-content-status-filter="<%= opt.key || 'all' %>"
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
+  <% } %>
 
   <section class="bb-ba-content-block" data-bb-content-pages="1" aria-labelledby="bb-content-pages-heading">
     <div class="bb-ba-content-block__head">
       <h2 id="bb-content-pages-heading" class="bb-ba-section-title">Public pages</h2>
-      <p class="bb-ba-hint">Edit page title and sections. Status reflects the real page record for this scope.</p>
+      <p class="bb-ba-hint">
+        <% if (isHq && hasFilter) { %>
+        Showing <strong data-bb-content-match-total="<%= filteredPages.length %>"><%= filteredPages.length %></strong>
+        of <%= pageRows.length %> pages. Status reflects the real page record for this scope.
+        <% } else { %>
+        Edit page title and sections. Status reflects the real page record for this scope.
+        <% } %>
+      </p>
     </div>
 
     <% if (!pageRows.length) { %>
@@ -196,10 +366,20 @@
         icon: 'web'
       }) %>
     </div>
+    <% } else if (!filteredPages.length && hasFilter) { %>
+    <div class="bb-ba-content-empty" data-bb-content-empty="no-results" role="status">
+      <%- include('../partials/empty-state', {
+        title: 'No matching pages',
+        body: 'Try a different search or status filter, or clear filters to see every page in this scope.',
+        icon: 'search_off',
+        actionHref: clearHref(),
+        actionLabel: 'Clear filters'
+      }) %>
+    </div>
     <% } else { %>
     <ul class="bb-ba-content-cards" data-bb-content-page-cards="1">
-      <% pageRows.forEach(function (page) {
-        var label = titles[page.pageKey] || page.title || page.pageKey;
+      <% filteredPages.forEach(function (page) {
+        var label = pageLabel(page);
       %>
       <li class="bb-ba-content-card" data-bb-content-page="<%= page.pageKey %>" data-bb-content-page-status="<%= page.status %>">
         <div class="bb-ba-content-card__icon" aria-hidden="true">

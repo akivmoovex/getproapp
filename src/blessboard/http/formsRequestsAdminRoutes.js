@@ -383,17 +383,37 @@ function createFormsRequestsAdminRouter(deps) {
     router.get(mountPrefix, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res, section);
       if (!scope) return;
+      const searchQ = String((req.query && req.query.q) || "")
+        .trim()
+        .slice(0, 100);
       if (section === "resources") {
+        const resourceStatusRaw = String((req.query && req.query.status) || "")
+          .trim()
+          .toLowerCase();
+        const resourceStatuses = ["draft", "published", "archived"];
+        const statusFilter = resourceStatuses.includes(resourceStatusRaw)
+          ? resourceStatusRaw
+          : "";
         const listed = await listResources(getPool(), {
           churchId: scope.churchId,
           branchId: scope.branchId,
           actorUserId: scope.actorUserId,
           tenant: scope.tenant,
           scopeBranchId: scope.branchId,
+          status: statusFilter || null,
           limit: LIST_LIMIT,
         });
         if (!listed.ok) {
           return sendControlled(req, res, 503, "Resources unavailable.", shellKind);
+        }
+        let resources = listed.resources || [];
+        if (searchQ) {
+          const needle = searchQ.toLowerCase();
+          resources = resources.filter((r) => {
+            const title = String((r && r.title) || "").toLowerCase();
+            const description = String((r && r.description) || "").toLowerCase();
+            return title.includes(needle) || description.includes(needle);
+          });
         }
         const branchLocals = await hqBranchListLocals(scope);
         return res
@@ -404,7 +424,9 @@ function createFormsRequestsAdminRouter(deps) {
               "forms-requests/admin-resources.ejs",
               shellLocals(req, res, "resources", {
                 basePath: scope.basePath,
-                resources: listed.resources,
+                resources,
+                statusFilter,
+                q: searchQ,
                 canCreate: Boolean(scope.branchId) || variant === "hq",
                 saved: String((req.query && req.query.saved) || ""),
                 mediaUploadUrl: mediaUploadUrlForScope(scope),
@@ -436,7 +458,7 @@ function createFormsRequestsAdminRouter(deps) {
             shellKind
           );
         }
-        const requests = (listed.requests || []).map((r) => ({
+        let requests = (listed.requests || []).map((r) => ({
           id: r.id,
           category: r.category,
           subject: r.subject,
@@ -445,6 +467,14 @@ function createFormsRequestsAdminRouter(deps) {
           hasAttachment: Boolean(r.mediaAssetId),
           memberRef: r.memberId ? String(r.memberId).slice(-8) : null,
         }));
+        if (searchQ) {
+          const needle = searchQ.toLowerCase();
+          requests = requests.filter((r) => {
+            const subject = String((r && r.subject) || "").toLowerCase();
+            const category = String((r && r.category) || "").toLowerCase();
+            return subject.includes(needle) || category.includes(needle);
+          });
+        }
         const branchLocals = await hqBranchListLocals(scope);
         return res
           .status(200)
@@ -456,6 +486,7 @@ function createFormsRequestsAdminRouter(deps) {
                 basePath: scope.basePath,
                 requests,
                 statusFilter,
+                q: searchQ,
                 saved: String((req.query && req.query.saved) || ""),
                 ...branchLocals,
               })
@@ -479,6 +510,15 @@ function createFormsRequestsAdminRouter(deps) {
       if (!listed.ok) {
         return sendControlled(req, res, 503, "Forms unavailable.", shellKind);
       }
+      let forms = listed.forms || [];
+      if (searchQ) {
+        const needle = searchQ.toLowerCase();
+        forms = forms.filter((f) => {
+          const title = String((f && f.title) || "").toLowerCase();
+          const description = String((f && f.description) || "").toLowerCase();
+          return title.includes(needle) || description.includes(needle);
+        });
+      }
       const branchLocals = await hqBranchListLocals(scope);
       return res
         .status(200)
@@ -488,8 +528,9 @@ function createFormsRequestsAdminRouter(deps) {
             "forms-requests/admin-forms.ejs",
             shellLocals(req, res, "forms", {
               basePath: scope.basePath,
-              forms: listed.forms,
+              forms,
               statusFilter,
+              q: searchQ,
               canCreate: Boolean(scope.branchId) || variant === "hq",
               saved: String((req.query && req.query.saved) || ""),
               ...branchLocals,

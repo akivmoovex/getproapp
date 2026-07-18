@@ -2,6 +2,18 @@
 <%
   var rows = items || [];
   var branchOptions = branches || [];
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
+  var activeBranch = typeof branchFilter !== 'undefined' && branchFilter ? String(branchFilter) : '';
+  var hasFilter = Boolean(searchQ || activeStatus || activeBranch);
+  var statusOptions = [
+    { key: '', label: 'All' },
+    { key: 'active', label: 'Active' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'inactive', label: 'Inactive' },
+    { key: 'suspended', label: 'Suspended' },
+    { key: 'archived', label: 'Archived' }
+  ];
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'active') return 'Active';
@@ -19,34 +31,85 @@
     if (key === 'suspended') return 'bb-hq-chip--danger';
     return 'bb-hq-chip--muted';
   }
+  function membershipLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (!key) return '—';
+    if (key === 'active') return 'Active membership';
+    if (key === 'pending') return 'Pending membership';
+    if (key === 'inactive') return 'Inactive membership';
+    return s;
+  }
+  function formatWhen(value) {
+    if (!value) return '';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
   function initials(item) {
     var a = String(item.firstName || '').charAt(0);
     var b = String(item.lastName || '').charAt(0);
     return (a + b).toUpperCase() || '?';
   }
-  function pagerHref(p) {
-    return '/hq/members?page=' + p
-      + '&q=' + encodeURIComponent(q || '')
-      + '&status=' + encodeURIComponent(statusFilter || '')
-      + '&branch=' + encodeURIComponent(branchFilter || '');
+  function filterHref(statusKey) {
+    var params = [];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    if (statusKey) params.push('status=' + encodeURIComponent(statusKey));
+    if (activeBranch) params.push('branch=' + encodeURIComponent(activeBranch));
+    return '/hq/members' + (params.length ? '?' + params.join('&') : '');
+  }
+  function clearHref() {
+    return '/hq/members';
+  }
+  function pagerHref(pageNum) {
+    var params = ['page=' + pageNum];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    if (activeStatus) params.push('status=' + encodeURIComponent(activeStatus));
+    if (activeBranch) params.push('branch=' + encodeURIComponent(activeBranch));
+    return '/hq/members?' + params.join('&');
   }
 %>
 
-<section class="bb-hq-members" data-bb-hq-member-directory="1">
+<section
+  class="bb-hq-members"
+  data-bb-hq-member-directory="1"
+  data-bb-stitch-members="28-branch-member-directory"
+  aria-label="Member directory"
+>
   <header class="bb-hq-page-head bb-hq-page-head--split">
     <div>
-      <h1 class="bb-hq-page-head__title">Member directory</h1>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <span>Members</span>
+      </p>
+      <div class="bb-hq-members__title-row">
+        <h1 class="bb-hq-page-head__title">Member directory</h1>
+        <% if (typeof total === 'number' && total >= 0) { %>
+        <span class="bb-hq-members__count" data-bb-member-total="<%= total %>">
+          <%= total %> <%= hasFilter ? (total === 1 ? 'match' : 'matches') : (total === 1 ? 'member' : 'members') %>
+        </span>
+        <% } %>
+      </div>
       <p class="bb-hq-lede">
         Church-wide members for <strong><%= churchDisplayName %></strong>.
         Contact fields are display-only — no normalized identifiers are shown.
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/registrations">Registration oversight</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/registrations">
+        <span class="material-symbols-outlined" aria-hidden="true">how_to_reg</span>
+        Registration oversight
+      </a>
     </p>
   </header>
 
-  <form method="get" action="/hq/members" class="bb-hq-filter" data-bb-hq-member-filter="1">
+  <form
+    method="get"
+    action="/hq/members"
+    class="bb-hq-filter bb-hq-members-filter"
+    data-bb-hq-member-filter="1"
+    role="search"
+  >
     <div class="bb-hq-field">
       <label for="q">Search</label>
       <input
@@ -54,7 +117,7 @@
         name="q"
         type="search"
         maxlength="100"
-        value="<%= q || '' %>"
+        value="<%= searchQ %>"
         placeholder="Name, email, or phone"
         autocomplete="off"
       />
@@ -64,7 +127,7 @@
       <select id="status" name="status">
         <option value="">All statuses</option>
         <% ['active','pending','inactive','suspended','archived'].forEach(function (st) { %>
-        <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <option value="<%= st %>" <%= activeStatus === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
         <% }) %>
       </select>
     </div>
@@ -73,73 +136,205 @@
       <select id="branch" name="branch">
         <option value="">All branches</option>
         <% branchOptions.forEach(function (b) { %>
-        <option value="<%= b.key %>" <%= branchFilter === b.key ? 'selected' : '' %>><%= b.displayName %></option>
+        <option value="<%= b.key %>" <%= activeBranch === b.key ? 'selected' : '' %>><%= b.displayName %></option>
         <% }) %>
       </select>
     </div>
     <div class="bb-hq-filter__actions">
-      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Filter</button>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= clearHref() %>">Clear</a>
+      <% } %>
     </div>
   </form>
 
-  <% if (!rows.length) { %>
-  <div class="bb-hq-empty" role="status">No members match this filter.</div>
-  <% } else { %>
-  <div class="bb-hq-table-wrap">
-    <table class="bb-hq-table" data-bb-hq-member-table="1">
-      <thead>
-        <tr>
-          <th scope="col">Name</th>
-          <th scope="col">Branch</th>
-          <th scope="col">Contact</th>
-          <th scope="col">Membership</th>
-          <th scope="col">Status</th>
-          <th scope="col"><span class="bb-hq-sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% rows.forEach(function (item) { %>
-        <tr data-bb-member-status="<%= item.status %>">
-          <td>
-            <div class="bb-hq-person">
-              <span class="bb-hq-avatar" aria-hidden="true"><%= initials(item) %></span>
-              <span>
-                <strong><%= item.firstName %> <%= item.lastName %></strong>
-                <% if (item.preferredName) { %>
-                <span class="bb-hq-muted"> (<%= item.preferredName %>)</span>
-                <% } %>
-              </span>
-            </div>
-          </td>
-          <td>
-            <% if (item.branchDisplayName || item.branchKey) { %>
-            <span><%= item.branchDisplayName || item.branchKey %></span>
-            <% if (item.branchKey) { %>
-            <code class="bb-hq-key"><%= item.branchKey %></code>
-            <% } %>
-            <% } else { %>—<% } %>
-          </td>
-          <td>
-            <div class="bb-hq-contact">
-              <% if (item.phoneDisplay) { %><span><%= item.phoneDisplay %></span><% } %>
-              <% if (item.emailDisplay) { %><span><%= item.emailDisplay %></span><% } %>
-              <% if (!item.phoneDisplay && !item.emailDisplay) { %>—<% } %>
-            </div>
-          </td>
-          <td><%= item.membershipStatus || '—' %></td>
-          <td><span class="bb-hq-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
-          <td class="bb-hq-table__actions">
-            <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="/hq/members/<%= item.id %>">View</a>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <nav class="bb-hq-members-chips" aria-label="Status filters" data-bb-member-status-chips="1">
+    <% statusOptions.forEach(function (opt) { %>
+    <a
+      class="bb-hq-members-chip<%= activeStatus === opt.key ? ' is-active' : '' %>"
+      href="<%= filterHref(opt.key) %>"
+      <%= activeStatus === opt.key ? 'aria-current="page"' : '' %>
+      data-bb-member-status-filter="<%= opt.key || 'all' %>"
+    ><%= opt.label %></a>
+    <% }) %>
+  </nav>
+
+  <% if (!rows.length && !hasFilter) { %>
+  <div class="bb-hq-members-empty" data-bb-member-empty="catalog" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No members yet',
+      body: 'Approved members across branches of this church appear here. Open registration oversight to review pending applications.',
+      icon: 'group',
+      actionHref: '/hq/registrations',
+      actionLabel: 'Open registration oversight'
+    }) %>
   </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div class="bb-hq-members-empty" data-bb-member-empty="no-results" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No matching members',
+      body: 'Try a different search, status, or branch filter, or clear filters to see the full directory.',
+      icon: 'search_off',
+      actionHref: '/hq/members',
+      actionLabel: 'Clear filters'
+    }) %>
+  </div>
+  <% } else { %>
+
+  <section class="bb-hq-panel bb-hq-members-panel" aria-labelledby="bb-hq-members-list-heading">
+    <div class="bb-hq-members-panel__head">
+      <h2 id="bb-hq-members-list-heading" class="bb-hq-members-panel__title">Members</h2>
+      <% if (typeof total === 'number') { %>
+      <p class="bb-hq-members-panel__meta">
+        Showing <%= rows.length %> of <%= total %>
+        <% if (typeof page === 'number' && typeof totalPages === 'number' && totalPages > 1) { %>
+        · Page <%= page %> of <%= totalPages %>
+        <% } %>
+      </p>
+      <% } %>
+    </div>
+
+    <div
+      class="bb-hq-table-wrap bb-hq-members-table-wrap"
+      role="region"
+      aria-label="Members table"
+      tabindex="0"
+      data-bb-member-table-wrap="1"
+    >
+      <table class="bb-hq-table bb-hq-members-table" data-bb-hq-member-table="1" data-bb-member-table="1">
+        <thead>
+          <tr>
+            <th scope="col">Member</th>
+            <th scope="col">Branch</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Email</th>
+            <th scope="col">Membership</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="bb-hq-sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (item) { %>
+          <tr data-bb-member-status="<%= item.status %>" data-bb-member-row="1">
+            <td>
+              <div class="bb-hq-person">
+                <span class="bb-hq-avatar" aria-hidden="true"><%= initials(item) %></span>
+                <span>
+                  <strong><%= item.firstName %> <%= item.lastName %></strong>
+                  <% if (item.preferredName) { %>
+                  <span class="bb-hq-muted"> (<%= item.preferredName %>)</span>
+                  <% } %>
+                  <% if (item.isPrimary) { %>
+                  <span class="bb-hq-chip bb-hq-chip--muted bb-hq-chip--tiny">Primary</span>
+                  <% } %>
+                </span>
+              </div>
+            </td>
+            <td>
+              <% if (item.branchDisplayName || item.branchKey) { %>
+              <span><%= item.branchDisplayName || item.branchKey %></span>
+              <% if (item.branchKey) { %>
+              <code class="bb-hq-key"><%= item.branchKey %></code>
+              <% } %>
+              <% } else { %>—<% } %>
+            </td>
+            <td><%= item.phoneDisplay || '—' %></td>
+            <td><%= item.emailDisplay || '—' %></td>
+            <td><%= membershipLabel(item.membershipStatus) %></td>
+            <td>
+              <span class="bb-hq-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+            </td>
+            <td class="bb-hq-table__actions">
+              <a
+                class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm"
+                href="/hq/members/<%= item.id %>"
+                data-bb-member-action="view"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                View
+              </a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="bb-hq-members-cards" data-bb-member-cards="1">
+      <% rows.forEach(function (item) {
+        var joined = formatWhen(item.joinedAt || item.createdAt);
+      %>
+      <li
+        class="bb-hq-members-card"
+        data-bb-member-status="<%= item.status %>"
+        data-bb-member-card="1"
+      >
+        <div class="bb-hq-members-card__head">
+          <span class="bb-hq-avatar bb-hq-avatar--lg" aria-hidden="true"><%= initials(item) %></span>
+          <div class="bb-hq-members-card__identity">
+            <p class="bb-hq-members-card__name"><%= item.firstName %> <%= item.lastName %></p>
+            <% if (item.preferredName) { %>
+            <p class="bb-hq-members-card__meta">Preferred: <%= item.preferredName %></p>
+            <% } else if (joined) { %>
+            <p class="bb-hq-members-card__meta">Joined <%= joined %></p>
+            <% } %>
+            <% if (item.branchDisplayName || item.branchKey) { %>
+            <p class="bb-hq-members-card__meta">
+              <%= item.branchDisplayName || item.branchKey %>
+              <% if (item.branchKey) { %><code class="bb-hq-key"><%= item.branchKey %></code><% } %>
+            </p>
+            <% } %>
+            <div class="bb-hq-members-card__badges">
+              <span class="bb-hq-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+              <% if (item.isPrimary) { %>
+              <span class="bb-hq-chip bb-hq-chip--muted">Primary</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <div class="bb-hq-members-card__body">
+          <% if (item.emailDisplay) { %>
+          <p class="bb-hq-members-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            <%= item.emailDisplay %>
+          </p>
+          <% } %>
+          <% if (item.phoneDisplay) { %>
+          <p class="bb-hq-members-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            <%= item.phoneDisplay %>
+          </p>
+          <% } %>
+          <% if (item.membershipStatus) { %>
+          <p class="bb-hq-members-card__line">
+            <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+            <%= membershipLabel(item.membershipStatus) %>
+          </p>
+          <% } %>
+          <% if (!item.emailDisplay && !item.phoneDisplay && !item.membershipStatus) { %>
+          <p class="bb-hq-members-card__line bb-hq-muted">No contact details on file</p>
+          <% } %>
+        </div>
+        <div class="bb-hq-members-card__actions">
+          <a
+            class="bb-hq-btn bb-hq-btn--primary bb-hq-btn--sm"
+            href="/hq/members/<%= item.id %>"
+            data-bb-member-action="view"
+          >
+            View profile
+          </a>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
   <% } %>
 
   <% if (totalPages > 1) { %>
-  <nav class="bb-hq-pager" aria-label="Pagination">
+  <nav class="bb-hq-pager" aria-label="Pagination" data-bb-member-pager="1">
     <% if (page > 1) { %>
     <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="<%= pagerHref(page - 1) %>">Previous</a>
     <% } %>
@@ -148,6 +343,22 @@
     <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="<%= pagerHref(page + 1) %>">Next</a>
     <% } %>
   </nav>
+  <% } %>
+
+  <% if (branchOptions.length) { %>
+  <section
+    class="bb-hq-panel bb-hq-members-selector"
+    aria-labelledby="hq-members-selector-heading"
+    data-bb-branch-selector-panel="1"
+  >
+    <div class="bb-hq-panel__head">
+      <h2 id="hq-members-selector-heading" class="bb-hq-members-panel__title">Open a branch</h2>
+      <p class="bb-hq-lede bb-hq-lede--tight">
+        Switch into branch administration for an active branch of this church when authorized.
+      </p>
+    </div>
+    <%- include('../partials/branch-selector', { branches: branchOptions }) %>
+  </section>
   <% } %>
 </section>
 

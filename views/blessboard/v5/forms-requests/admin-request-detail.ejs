@@ -7,6 +7,7 @@
   var reqItem = request || {};
   var history = Array.isArray(reqItem.history) ? reqItem.history : [];
   var nextStatuses = Array.isArray(reqItem.nextStatuses) ? reqItem.nextStatuses : [];
+  var isHq = shellKind === 'hq';
 
   function categoryLabel(c) {
     var key = String(c || '').toLowerCase();
@@ -45,15 +46,21 @@
 %>
 
 <section
-  class="bb-fr-admin bb-fr-req-detail"
+  class="bb-fr-admin bb-fr-req-detail<%= isHq ? ' bb-hq-request-detail' : '' %>"
   data-bb-request-admin-detail="1"
   data-bb-stitch-requests-detail="45-branch-request-details"
+  <% if (isHq) { %>data-bb-hq-request-detail="1"<% } %>
+  data-bb-req-scope="<%= typeof isHqChurchWide !== 'undefined' && isHqChurchWide ? 'church-wide' : 'branch' %>"
   data-bb-status="<%= reqItem.status %>"
-  aria-label="Request details"
+  aria-label="<%= isHq ? 'Request oversight detail' : 'Request details' %>"
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
+        <% if (isHq) { %>
+        <a href="/hq">HQ</a>
+        <span aria-hidden="true">›</span>
+        <% } %>
         <% if (typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped) { %>
         <a href="/hq/requests">Church-wide</a>
         <span aria-hidden="true">›</span>
@@ -72,7 +79,8 @@
         <% } %>
       </p>
       <p class="bb-ba-hint" data-bb-req-detail-privacy="1" role="note">
-        Member contact directories are not loaded here. Use status updates and optional notes to respond within this branch.
+        Member contact directories are not loaded here. Use status updates and optional notes to respond
+        <%= isHq ? 'within authorized church scope.' : 'within this branch.' %>
       </p>
     </div>
   </header>

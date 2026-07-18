@@ -1,38 +1,138 @@
 <%- include('../partials/hq-shell-start') %>
 <%
-  var rows = branches || [];
+  var allRows = branches || [];
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var typeFilter = typeof typeFilter !== 'undefined' && typeFilter ? String(typeFilter) : '';
+  var needle = searchQ.trim().toLowerCase();
+  var typeKey = typeFilter.trim().toLowerCase();
+  var hasFilter = Boolean(needle || typeKey);
+  var rows = allRows.filter(function (branch) {
+    var bt = String(branch.branchType || '').toLowerCase();
+    if (typeKey === 'hq' && bt !== 'hq') return false;
+    if (typeKey === 'branch' && bt === 'hq') return false;
+    if (!needle) return true;
+    var name = String(branch.displayName || '').toLowerCase();
+    var key = String(branch.key || '').toLowerCase();
+    return name.indexOf(needle) !== -1 || key.indexOf(needle) !== -1;
+  });
+  var matchCount = rows.length;
+  var totalActive = typeof activeBranchCount === 'number' ? activeBranchCount : allRows.length;
+  var typeOptions = [
+    { key: '', label: 'All' },
+    { key: 'hq', label: 'HQ' },
+    { key: 'branch', label: 'Branch' }
+  ];
   function typeLabel(t) {
     return String(t || '').toLowerCase() === 'hq' ? 'HQ' : 'Branch';
   }
+  function initials(name) {
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+  }
+  function filterHref(nextType) {
+    var params = [];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    if (nextType) params.push('type=' + encodeURIComponent(nextType));
+    return '/hq/branches' + (params.length ? '?' + params.join('&') : '');
+  }
 %>
 
-<section class="bb-hq-branches" data-bb-hq-branches="1">
+<section
+  class="bb-hq-branches"
+  data-bb-hq-branches="1"
+  data-bb-stitch-branches="52-hq-branch-registry"
+  aria-label="Branch registry"
+>
   <header class="bb-hq-page-head bb-hq-page-head--split">
     <div>
-      <h1 class="bb-hq-page-head__title">Branch registry</h1>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <span>Branches</span>
+      </p>
+      <div class="bb-hq-branches__title-row">
+        <h1 class="bb-hq-page-head__title">Branch registry</h1>
+        <span class="bb-hq-branches__count" data-bb-count="active-branches"><%= totalActive %></span>
+      </div>
       <p class="bb-hq-lede">
         Active branches for <strong><%= churchDisplayName %></strong>.
-        Inactive branches are hidden. Select a branch to open branch administration when authorized.
+        Inactive branches are hidden. Open a branch to enter branch administration when authorized.
+        Member counts, leader names, locations, and performance scores are not shown here.
       </p>
     </div>
-    <p class="bb-hq-stat" aria-label="Active branch count">
-      <span class="bb-hq-stat__label">Active</span>
-      <strong data-bb-count="active-branches"><%= activeBranchCount %></strong>
-    </p>
   </header>
 
-  <% if (!rows.length) { %>
+  <% if (!allRows.length) { %>
   <div class="bb-hq-empty" data-bb-empty="branches" role="status">
     No active branches are available for this church.
   </div>
   <% } else { %>
-  <div class="bb-hq-table-wrap">
-    <table class="bb-hq-table" data-bb-branch-list="1">
+
+  <form
+    method="get"
+    action="/hq/branches"
+    class="bb-hq-branches-filter"
+    data-bb-branch-filter="1"
+    role="search"
+  >
+    <div class="bb-hq-field">
+      <label for="bb-hq-branch-q">Search</label>
+      <input
+        id="bb-hq-branch-q"
+        name="q"
+        type="search"
+        maxlength="100"
+        value="<%= searchQ %>"
+        placeholder="Branch name or key"
+        autocomplete="off"
+      />
+    </div>
+    <div class="bb-hq-branches-filter__chips" role="group" aria-label="Branch type">
+      <% typeOptions.forEach(function (opt) {
+        var chipActive = typeKey === opt.key;
+      %>
+      <a
+        class="bb-hq-branches-chip<%= chipActive ? ' is-active' : '' %>"
+        href="<%= filterHref(opt.key) %>"
+        data-bb-branch-type="<%= opt.key || 'all' %>"<% if (chipActive) { %> aria-current="true"<% } %>
+      ><%= opt.label %></a>
+      <% }) %>
+    </div>
+    <div class="bb-hq-branches-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary bb-hq-btn--sm">Search</button>
+      <% if (hasFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="/hq/branches">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-hq-empty" data-bb-empty="branch-no-results" role="status">
+    No branches match this search<%= typeKey ? ' and type filter' : '' %>.
+    <a class="bb-hq-link" href="/hq/branches">Clear filters</a>
+  </div>
+  <% } else { %>
+
+  <p class="bb-hq-branches__meta" data-bb-branch-match-count="<%= matchCount %>">
+    Showing <%= matchCount %> of <%= totalActive %> active
+    <%= totalActive === 1 ? 'branch' : 'branches' %><% if (hasFilter) { %> matching filters<% } %>.
+  </p>
+
+  <div
+    class="bb-hq-table-wrap bb-hq-branches-table-wrap"
+    role="region"
+    aria-label="Branch registry table"
+    data-bb-branch-list="1"
+  >
+    <table class="bb-hq-table bb-hq-branches-table">
       <thead>
         <tr>
           <th scope="col">Branch</th>
           <th scope="col">Type</th>
           <th scope="col">Key</th>
+          <th scope="col">Status</th>
           <th scope="col"><span class="bb-hq-sr-only">Actions</span></th>
         </tr>
       </thead>
@@ -40,16 +140,22 @@
         <% rows.forEach(function (branch) { %>
         <tr data-bb-branch-key="<%= branch.key %>">
           <td>
-            <strong><%= branch.displayName %></strong>
-            <% if (branch.isPrimary) { %>
-            <span class="bb-hq-pill bb-hq-pill--primary">Primary</span>
-            <% } %>
+            <div class="bb-hq-branches-name">
+              <span class="bb-hq-branches-avatar" aria-hidden="true"><%= initials(branch.displayName) %></span>
+              <span>
+                <strong><%= branch.displayName %></strong>
+                <% if (branch.isPrimary) { %>
+                <span class="bb-hq-pill bb-hq-pill--primary">Primary</span>
+                <% } %>
+              </span>
+            </div>
           </td>
           <td><span class="bb-hq-pill"><%= typeLabel(branch.branchType) %></span></td>
           <td><code class="bb-hq-key"><%= branch.key %></code></td>
+          <td><span class="bb-hq-pill bb-hq-pill--ok">Active</span></td>
           <td class="bb-hq-table__actions">
             <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="/hq/branches/<%= branch.key %>">
-              Open branch admin
+              Open
             </a>
           </td>
         </tr>
@@ -58,10 +164,48 @@
     </table>
   </div>
 
-  <section class="bb-hq-panel" aria-labelledby="hq-selector-heading">
-    <h2 id="hq-selector-heading" class="bb-hq-section-title">Quick selector</h2>
+  <ul class="bb-hq-branches-cards" data-bb-branch-cards="1" aria-label="Branch registry cards">
+    <% rows.forEach(function (branch) { %>
+    <li class="bb-hq-branches-card" data-bb-branch-key="<%= branch.key %>">
+      <div class="bb-hq-branches-card__head">
+        <span class="bb-hq-branches-avatar" aria-hidden="true"><%= initials(branch.displayName) %></span>
+        <div class="bb-hq-branches-card__copy">
+          <a class="bb-hq-branches-card__title" href="/hq/branches/<%= branch.key %>"><%= branch.displayName %></a>
+          <p class="bb-hq-branches-card__meta">
+            <span class="bb-hq-pill"><%= typeLabel(branch.branchType) %></span>
+            <% if (branch.isPrimary) { %>
+            <span class="bb-hq-pill bb-hq-pill--primary">Primary</span>
+            <% } %>
+            <span class="bb-hq-pill bb-hq-pill--ok">Active</span>
+          </p>
+          <p class="bb-hq-branches-card__key"><code class="bb-hq-key"><%= branch.key %></code></p>
+        </div>
+        <a
+          class="bb-hq-branches-card__open"
+          href="/hq/branches/<%= branch.key %>"
+          aria-label="Open <%= branch.displayName %>"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+      </div>
+    </li>
+    <% }) %>
+  </ul>
+
+  <section class="bb-hq-panel bb-hq-branches-selector" aria-labelledby="hq-selector-heading" data-bb-branch-selector-panel="1">
+    <div class="bb-hq-panel__head">
+      <h2 id="hq-selector-heading" class="bb-hq-section-title">Branch selector</h2>
+    </div>
+    <p class="bb-hq-hint">
+      Same active list and open path as the registry. Opening a branch validates church ownership, then deep-links to branch admin when authorized.
+    </p>
     <%- include('../partials/branch-selector', { branches: rows }) %>
   </section>
+  <% } %>
+
+  <p class="bb-hq-branches-note" data-bb-dash-empty="branch-metrics" role="note">
+    Export, create-branch, and design-comp KPI columns are not available in V5.
+  </p>
   <% } %>
 </section>
 

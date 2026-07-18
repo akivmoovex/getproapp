@@ -5,6 +5,13 @@
   var byBranch = (monthSummary && monthSummary.byBranch) || [];
   var churchTotals = (monthSummary && monthSummary.churchTotals) || null;
   var categoryRows = churchTotals || byBranch;
+  var grandTotal = monthSummary && typeof monthSummary.grandTotal === 'number' ? monthSummary.grandTotal : 0;
+  var hasData = Boolean(monthSummary && categoryRows.length);
+  var sourceStatuses = (monthSummary && monthSummary.sourceStatuses) || ['submitted', 'approved', 'archived'];
+  var scopeLabel = branchFilter
+    ? (branchDisplayName || branchFilter)
+    : (churchDisplayName || 'All branches');
+
   function categoryLabel(c) {
     if (c === 'first_time_visitors') return 'Visitors';
     if (c === 'adults') return 'Adults';
@@ -14,29 +21,98 @@
     if (c === 'other') return 'Other';
     return c;
   }
+  function categoryIcon(c) {
+    if (c === 'first_time_visitors') return 'person_add';
+    if (c === 'adults') return 'person';
+    if (c === 'youth') return 'face';
+    if (c === 'children') return 'child_care';
+    if (c === 'volunteers') return 'volunteer_activism';
+    return 'groups';
+  }
+  function pctOf(part, whole) {
+    var n = Number(part) || 0;
+    var d = Number(whole) || 0;
+    if (d <= 0 || n <= 0) return 0;
+    return Math.min(100, Math.round((n / d) * 1000) / 10);
+  }
+  function filterHref(opts) {
+    var params = [];
+    var m = opts && opts.month != null ? opts.month : yearMonth;
+    var b = opts && Object.prototype.hasOwnProperty.call(opts, 'branch') ? opts.branch : branchFilter;
+    if (m) params.push('month=' + encodeURIComponent(m));
+    if (b) params.push('branch=' + encodeURIComponent(b));
+    return '/hq/reports/attendance' + (params.length ? '?' + params.join('&') : '');
+  }
+
+  var branchRollup = [];
+  var branchMap = {};
+  byBranch.forEach(function (row) {
+    var key = row.branchKey || '__none__';
+    if (!branchMap[key]) {
+      branchMap[key] = {
+        branchKey: row.branchKey || '',
+        branchDisplayName: row.branchDisplayName || '—',
+        totalCount: 0,
+        eventCount: 0,
+        categories: []
+      };
+      branchRollup.push(branchMap[key]);
+    }
+    branchMap[key].totalCount += Number(row.totalCount) || 0;
+    branchMap[key].eventCount = Math.max(branchMap[key].eventCount, Number(row.eventCount) || 0);
+    branchMap[key].categories.push(row);
+  });
+  var maxBranchTotal = 0;
+  branchRollup.forEach(function (b) {
+    if (b.totalCount > maxBranchTotal) maxBranchTotal = b.totalCount;
+  });
+  var showBranchComparison = !branchFilter && branchRollup.length > 0;
 %>
 
-<section class="bb-hq-att-report" data-bb-hq-attendance-report="1">
+<section
+  class="bb-hq-att-report"
+  data-bb-hq-attendance-report="1"
+  data-bb-stitch-attendance-report="57-hq-consolidated-analytics"
+  data-bb-att-report-scope="<%= branchFilter ? 'branch' : 'church' %>"
+>
   <header class="bb-hq-page-head bb-hq-page-head--split">
     <div>
-      <p class="bb-hq-hint"><a href="/hq/reports">← HQ reports</a></p>
-      <h1 class="bb-hq-page-head__title">Attendance report</h1>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq/reports">Reports</a>
+        <span aria-hidden="true">›</span>
+        <span>Attendance</span>
+      </p>
+      <div class="bb-hq-att-report__title-row">
+        <h1 class="bb-hq-page-head__title">Attendance report</h1>
+        <span class="bb-hq-att-report__month" data-bb-att-report-month="<%= yearMonth %>"><%= yearMonth %></span>
+      </div>
       <p class="bb-hq-lede">
-        Aggregate headcounts for
-        <strong><%= branchDisplayName || churchDisplayName %></strong>
-        <%= branchFilter ? '' : '(all branches)' %>.
-        Submitted / approved / archived only — no individual check-in and no charts.
+        Aggregate headcounts for <strong><%= scopeLabel %></strong><% if (!branchFilter) { %> (all branches)<% } %>.
+        Totals include <%= sourceStatuses.join(', ') %> events only — no individual check-in, trend percentages, or forecasts.
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/attendance">Manage attendance</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/attendance" data-bb-att-report-action="manage">
+        <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
+        Manage attendance
+      </a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports" data-bb-att-report-action="reports">
+        <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+        All reports
+      </a>
     </p>
   </header>
 
-  <form method="get" action="/hq/reports/attendance" class="bb-hq-filter" data-bb-hq-att-report-filter="1">
+  <form
+    method="get"
+    action="/hq/reports/attendance"
+    class="bb-hq-filter bb-hq-att-report-filter"
+    data-bb-hq-att-report-filter="1"
+    role="search"
+  >
     <div class="bb-hq-field">
       <label for="month">Month</label>
-      <input id="month" type="month" name="month" value="<%= yearMonth %>" />
+      <input id="month" type="month" name="month" value="<%= yearMonth %>" required />
     </div>
     <div class="bb-hq-field">
       <label for="branch">Branch</label>
@@ -48,58 +124,260 @@
       </select>
     </div>
     <div class="bb-hq-filter__actions">
-      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Show</button>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Show
+      </button>
+      <% if (branchFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= filterHref({ branch: '' }) %>">All branches</a>
+      <% } %>
     </div>
   </form>
 
-  <section class="bb-hq-panel">
-    <h2 class="bb-hq-section-title">Monthly totals · <%= yearMonth %></h2>
-    <% if (!monthSummary || !categoryRows.length) { %>
-    <p class="bb-hq-empty" role="status">No submitted attendance for this month.</p>
-    <% } else { %>
-    <p data-bb-attendance-grand-total="<%= monthSummary.grandTotal %>">
-      Total headcount: <strong><%= monthSummary.grandTotal %></strong>
-    </p>
-    <ul class="bb-hq-report-list" data-bb-attendance-summary-list="1">
-      <% categoryRows.forEach(function (row) { %>
-      <li data-bb-attendance-category="<%= row.category %>">
-        <%= categoryLabel(row.category) %>: <%= row.totalCount %>
-        (<%= row.eventCount %> event<%= row.eventCount === 1 ? '' : 's' %>)
-      </li>
-      <% }) %>
+  <% if (!hasData) { %>
+  <div class="bb-hq-att-report-empty" data-bb-att-report-empty="1" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No attendance for this month',
+      body: 'Submitted, approved, or archived headcounts for ' + yearMonth + ' will appear here when branches record attendance.',
+      icon: 'fact_check',
+      actionHref: '/hq/attendance',
+      actionLabel: 'Open attendance'
+    }) %>
+  </div>
+
+  <aside class="bb-hq-att-report-unavailable" data-bb-att-report-unavailable="1" aria-labelledby="bb-att-unavailable-heading">
+    <h2 id="bb-att-unavailable-heading" class="bb-hq-section-title">Not available</h2>
+    <ul class="bb-hq-att-report-unavailable__list">
+      <li data-bb-att-unavailable="trend">Trend % / month-over-month deltas — not calculated in V5</li>
+      <li data-bb-att-unavailable="forecast">Forecasts and projections — not supported</li>
+      <li data-bb-att-unavailable="checkin">Individual / QR check-in analytics — not supported</li>
     </ul>
-    <% } %>
+  </aside>
+  <% } else { %>
+
+  <section class="bb-hq-att-report-summary" data-bb-att-report-summary="1" aria-label="Monthly attendance summary">
+    <div class="bb-hq-att-report-summary__card bb-hq-att-report-summary__card--grand" data-bb-att-stat="grand-total">
+      <p class="bb-hq-att-report-summary__label">Total headcount</p>
+      <p class="bb-hq-att-report-summary__value" data-bb-attendance-grand-total="<%= grandTotal %>"><%= grandTotal %></p>
+      <p class="bb-hq-att-report-summary__meta"><%= yearMonth %> · <%= categoryRows.length %> categor<%= categoryRows.length === 1 ? 'y' : 'ies' %></p>
+    </div>
+    <% categoryRows.forEach(function (row) { %>
+    <div
+      class="bb-hq-att-report-summary__card"
+      data-bb-att-stat="category"
+      data-bb-attendance-category="<%= row.category %>"
+    >
+      <p class="bb-hq-att-report-summary__label">
+        <span class="material-symbols-outlined" aria-hidden="true"><%= categoryIcon(row.category) %></span>
+        <%= categoryLabel(row.category) %>
+      </p>
+      <p class="bb-hq-att-report-summary__value" data-bb-count="<%= row.totalCount %>"><%= row.totalCount %></p>
+      <p class="bb-hq-att-report-summary__meta">
+        <%= row.eventCount %> event<%= row.eventCount === 1 ? '' : 's' %>
+        <% if (grandTotal > 0) { %>
+        · <%= pctOf(row.totalCount, grandTotal) %>% of total
+        <% } %>
+      </p>
+    </div>
+    <% }) %>
   </section>
 
-  <% if (!branchFilter && byBranch.length) { %>
-  <section class="bb-hq-panel">
-    <h2 class="bb-hq-section-title">By branch</h2>
-    <div class="bb-hq-table-wrap">
-      <table class="bb-hq-table" data-bb-attendance-by-branch="1">
+  <section class="bb-hq-panel bb-hq-att-report-panel" data-bb-att-report-composition="1" aria-labelledby="bb-att-composition-heading">
+    <div class="bb-hq-att-report-panel__head">
+      <h2 id="bb-att-composition-heading" class="bb-hq-section-title">Category composition</h2>
+      <p class="bb-hq-hint">Share of monthly total from the same aggregate counts — accessible table with bar lengths, not a chart library.</p>
+    </div>
+    <div class="bb-hq-table-wrap bb-hq-att-report-table-wrap--desktop">
+      <table class="bb-hq-table bb-hq-att-report-table" data-bb-attendance-summary-table="1">
+        <caption class="bb-hq-sr-only">Attendance by category for <%= yearMonth %></caption>
         <thead>
           <tr>
-            <th scope="col">Branch</th>
             <th scope="col">Category</th>
             <th scope="col">Headcount</th>
             <th scope="col">Events</th>
+            <th scope="col">Share of total</th>
           </tr>
         </thead>
         <tbody>
-          <% byBranch.forEach(function (row) { %>
-          <tr data-bb-branch="<%= row.branchKey || '' %>" data-bb-attendance-category="<%= row.category %>">
-            <td>
-              <%= row.branchDisplayName || '—' %>
-              <% if (row.branchKey) { %><code class="bb-hq-key"><%= row.branchKey %></code><% } %>
-            </td>
+          <% categoryRows.forEach(function (row) {
+            var share = pctOf(row.totalCount, grandTotal);
+          %>
+          <tr data-bb-attendance-category="<%= row.category %>">
             <td><%= categoryLabel(row.category) %></td>
             <td data-bb-count="<%= row.totalCount %>"><%= row.totalCount %></td>
             <td><%= row.eventCount %></td>
+            <td>
+              <div
+                class="bb-hq-att-bar"
+                role="img"
+                aria-label="<%= categoryLabel(row.category) %>: <%= row.totalCount %> headcount, <%= share %>% of monthly total <%= grandTotal %>"
+                data-bb-att-bar-pct="<%= share %>"
+              >
+                <span class="bb-hq-att-bar__track" aria-hidden="true">
+                  <span class="bb-hq-att-bar__fill" style="width: <%= share %>%;"></span>
+                </span>
+                <span class="bb-hq-att-bar__label"><%= share %>%</span>
+              </div>
+            </td>
           </tr>
           <% }) %>
         </tbody>
       </table>
     </div>
+    <ul class="bb-hq-att-report-cards" data-bb-attendance-summary-cards="1">
+      <% categoryRows.forEach(function (row) {
+        var share = pctOf(row.totalCount, grandTotal);
+      %>
+      <li class="bb-hq-att-report-card" data-bb-attendance-category="<%= row.category %>">
+        <div class="bb-hq-att-report-card__head">
+          <h3 class="bb-hq-att-report-card__title"><%= categoryLabel(row.category) %></h3>
+          <span class="bb-hq-att-report-card__count" data-bb-count="<%= row.totalCount %>"><%= row.totalCount %></span>
+        </div>
+        <p class="bb-hq-att-report-card__meta"><%= row.eventCount %> event<%= row.eventCount === 1 ? '' : 's' %></p>
+        <div
+          class="bb-hq-att-bar"
+          role="img"
+          aria-label="<%= categoryLabel(row.category) %>: <%= share %>% of monthly total"
+          data-bb-att-bar-pct="<%= share %>"
+        >
+          <span class="bb-hq-att-bar__track" aria-hidden="true">
+            <span class="bb-hq-att-bar__fill" style="width: <%= share %>%;"></span>
+          </span>
+          <span class="bb-hq-att-bar__label"><%= share %>%</span>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
   </section>
+
+  <% if (showBranchComparison) { %>
+  <section class="bb-hq-panel bb-hq-att-report-panel" data-bb-att-report-branches="1" aria-labelledby="bb-att-branches-heading">
+    <div class="bb-hq-att-report-panel__head">
+      <h2 id="bb-att-branches-heading" class="bb-hq-section-title">Branch comparison</h2>
+      <p class="bb-hq-hint">Headcounts rolled up from the same monthly by-branch rows. Bar length is relative to the largest branch total this month.</p>
+    </div>
+
+    <div class="bb-hq-table-wrap bb-hq-att-report-table-wrap--desktop" data-bb-attendance-branch-table="1">
+      <table class="bb-hq-table bb-hq-att-report-table" data-bb-attendance-by-branch="1">
+        <caption class="bb-hq-sr-only">Attendance by branch for <%= yearMonth %></caption>
+        <thead>
+          <tr>
+            <th scope="col">Branch</th>
+            <th scope="col">Headcount</th>
+            <th scope="col">Relative share</th>
+            <th scope="col"><span class="bb-hq-sr-only">Filter</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% branchRollup.forEach(function (branch) {
+            var share = pctOf(branch.totalCount, maxBranchTotal);
+          %>
+          <tr data-bb-branch="<%= branch.branchKey %>">
+            <td>
+              <%= branch.branchDisplayName %>
+              <% if (branch.branchKey) { %><code class="bb-hq-key"><%= branch.branchKey %></code><% } %>
+            </td>
+            <td data-bb-count="<%= branch.totalCount %>"><%= branch.totalCount %></td>
+            <td>
+              <div
+                class="bb-hq-att-bar"
+                role="img"
+                aria-label="<%= branch.branchDisplayName %>: <%= branch.totalCount %> headcount"
+                data-bb-att-bar-pct="<%= share %>"
+              >
+                <span class="bb-hq-att-bar__track" aria-hidden="true">
+                  <span class="bb-hq-att-bar__fill bb-hq-att-bar__fill--branch" style="width: <%= share %>%;"></span>
+                </span>
+                <span class="bb-hq-att-bar__label"><%= branch.totalCount %></span>
+              </div>
+            </td>
+            <td>
+              <% if (branch.branchKey) { %>
+              <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="<%= filterHref({ branch: branch.branchKey }) %>" data-bb-att-report-action="filter-branch">View</a>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="bb-hq-att-report-cards bb-hq-att-report-cards--branches" data-bb-attendance-branch-cards="1">
+      <% branchRollup.forEach(function (branch) {
+        var share = pctOf(branch.totalCount, maxBranchTotal);
+      %>
+      <li class="bb-hq-att-report-card" data-bb-branch="<%= branch.branchKey %>">
+        <div class="bb-hq-att-report-card__head">
+          <h3 class="bb-hq-att-report-card__title"><%= branch.branchDisplayName %></h3>
+          <span class="bb-hq-att-report-card__count" data-bb-count="<%= branch.totalCount %>"><%= branch.totalCount %></span>
+        </div>
+        <% if (branch.branchKey) { %>
+        <p class="bb-hq-att-report-card__meta"><code class="bb-hq-key"><%= branch.branchKey %></code></p>
+        <% } %>
+        <div
+          class="bb-hq-att-bar"
+          role="img"
+          aria-label="<%= branch.branchDisplayName %>: <%= branch.totalCount %> headcount"
+          data-bb-att-bar-pct="<%= share %>"
+        >
+          <span class="bb-hq-att-bar__track" aria-hidden="true">
+            <span class="bb-hq-att-bar__fill bb-hq-att-bar__fill--branch" style="width: <%= share %>%;"></span>
+          </span>
+        </div>
+        <% if (branch.branchKey) { %>
+        <p class="bb-hq-att-report-card__actions">
+          <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="<%= filterHref({ branch: branch.branchKey }) %>" data-bb-att-report-action="filter-branch">View branch</a>
+        </p>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+
+    <details class="bb-hq-att-report-detail" data-bb-attendance-by-branch-detail="1">
+      <summary>Category rows by branch</summary>
+      <div class="bb-hq-table-wrap">
+        <table class="bb-hq-table">
+          <thead>
+            <tr>
+              <th scope="col">Branch</th>
+              <th scope="col">Category</th>
+              <th scope="col">Headcount</th>
+              <th scope="col">Events</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% byBranch.forEach(function (row) { %>
+            <tr data-bb-branch="<%= row.branchKey || '' %>" data-bb-attendance-category="<%= row.category %>">
+              <td>
+                <%= row.branchDisplayName || '—' %>
+                <% if (row.branchKey) { %><code class="bb-hq-key"><%= row.branchKey %></code><% } %>
+              </td>
+              <td><%= categoryLabel(row.category) %></td>
+              <td data-bb-count="<%= row.totalCount %>"><%= row.totalCount %></td>
+              <td><%= row.eventCount %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+  <% } else if (!branchFilter) { %>
+  <section class="bb-hq-panel" data-bb-att-report-branches="1" data-bb-att-report-branches-empty="1" role="status">
+    <h2 class="bb-hq-section-title">Branch comparison</h2>
+    <p class="bb-hq-hint">No per-branch attendance rows for this month. Church-wide category totals above still reflect submitted aggregates when present.</p>
+  </section>
+  <% } %>
+
+  <aside class="bb-hq-att-report-unavailable" data-bb-att-report-unavailable="1" aria-labelledby="bb-att-unavailable-heading-data">
+    <h2 id="bb-att-unavailable-heading-data" class="bb-hq-section-title">Not available in this report</h2>
+    <ul class="bb-hq-att-report-unavailable__list">
+      <li data-bb-att-unavailable="trend">Month-over-month trend percentages</li>
+      <li data-bb-att-unavailable="forecast">Forecasts, projections, and capacity planning</li>
+      <li data-bb-att-unavailable="checkin">Individual member / QR / biometric check-in analytics</li>
+      <li data-bb-att-unavailable="export">CSV / PDF export</li>
+    </ul>
+  </aside>
   <% } %>
 </section>
 

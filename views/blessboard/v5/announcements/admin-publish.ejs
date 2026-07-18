@@ -4,6 +4,14 @@
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
 <%
+  var isHq = shellKind === 'hq';
+  var stitchKey = isHq ? '61-hq-broadcast-center' : '35-branch-announcements-management';
+  var scopeName = typeof branchDisplayName !== 'undefined' && branchDisplayName
+    ? branchDisplayName
+    : (typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : (scopeLabel || 'this church'));
+  var scopeKind = typeof isHqBranchScoped !== 'undefined' && isHqBranchScoped
+    ? 'Branch'
+    : (typeof isHqChurchWide !== 'undefined' && isHqChurchWide ? 'Church-wide' : (item && item.branchId ? 'Branch' : 'Church-wide'));
   function audienceLabel(list) {
     if (!list || !list.length) return '—';
     return list.map(function (k) {
@@ -15,9 +23,10 @@
 %>
 
 <section
-  class="bb-ann-admin bb-ba-ann-publish"
+  class="bb-ann-admin bb-ba-ann-publish<%= isHq ? ' bb-hq-ann-publish' : '' %>"
   data-bb-announcement-admin-publish="1"
-  data-bb-stitch-announcement-publish="35-branch-announcements-management"
+  data-bb-stitch-announcement-publish="<%= stitchKey %>"
+  <% if (isHq) { %>data-bb-hq-announcement-publish="1"<% } %>
 >
   <header class="bb-ba-page-head">
     <p class="bb-ba-breadcrumb">
@@ -29,7 +38,11 @@
     </p>
     <h1 class="bb-ba-page-head__title">Confirm publish</h1>
     <p class="bb-ba-lede">
-      Review audience and scope before publishing. This does not create member accounts or send email automatically.
+      Review audience and scope before publishing
+      <% if (isHq) { %>
+      for <strong><%= scopeName %></strong> (<%= scopeKind %>).
+      <% } %>
+      This does not create member accounts or send messages on other channels.
     </p>
   </header>
 
@@ -42,9 +55,20 @@
     <p class="bb-ann-body"><%= item.body %></p>
     <dl class="bb-ann-dl">
       <div><dt>Audience</dt><dd><%= audienceLabel(item.audiences) %></dd></div>
-      <div><dt>Scope</dt><dd><%= item.branchId ? 'Branch' : 'Church-wide' %></dd></div>
+      <div>
+        <dt>Scope</dt>
+        <dd data-bb-ann-publish-scope="<%= scopeKind === 'Church-wide' ? 'church' : 'branch' %>">
+          <%= scopeKind %>
+          <% if (typeof branchKey !== 'undefined' && branchKey) { %>
+          <code class="bb-hq-key"><%= branchKey %></code>
+          <% } %>
+        </dd>
+      </div>
       <% if (item.delivery) { %>
-      <div><dt>Estimated eligible members</dt><dd data-bb-delivery="eligible"><%= item.delivery.eligibleCount %></dd></div>
+      <div>
+        <dt>Estimated eligible members</dt>
+        <dd data-bb-delivery="eligible" data-bb-ann-audience-estimate="1"><%= item.delivery.eligibleCount %></dd>
+      </div>
       <% } %>
     </dl>
   </section>

@@ -693,10 +693,41 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(regs.status, 200);
     assert.match(regs.text, /data-bb-hq-registration-queue="1"/);
+    assert.match(regs.text, /data-bb-stitch-registrations="26-branch-member-verification-queue"/);
+    assert.match(regs.text, /data-bb-hq-reg-filter="1"/);
+    assert.match(regs.text, /data-bb-reg-status-chips="1"/);
+    assert.match(regs.text, /data-bb-reg-table="1"/);
+    assert.match(regs.text, /data-bb-reg-cards="1"/);
+    assert.match(regs.text, /data-bb-reg-checklist="1"/);
+    assert.match(regs.text, /data-bb-branch-selector-panel="1"/);
     assert.match(regs.text, /Nora|nora@example\.test|Cross Tenant|cross-tenant@example\.test/i);
     assert.match(regs.text, /name="branch"/);
+    assert.match(regs.text, /data-bb-reg-action="review"/);
+    assert.doesNotMatch(regs.text, /data-bb-reg-approve|data-bb-reg-reject/);
     assert.doesNotMatch(regs.text, new RegExp(churchA.id, "i"));
-    assert.doesNotMatch(regs.text, /email_normalized|phone_normalized/i);
+    assert.doesNotMatch(regs.text, /email_normalized|phone_normalized|Export CSV|Bulk select/i);
+
+    const regFiltered = await request(app)
+      .get("/hq/registrations?q=Nora&status=approved&branch=hq&page=1")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(regFiltered.status, 200);
+    assert.match(regFiltered.text, /Nora/);
+    assert.match(regFiltered.text, /value="Nora"/);
+
+    const regNoResults = await request(app)
+      .get("/hq/registrations?q=zzznomatch999")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(regNoResults.status, 200);
+    assert.match(regNoResults.text, /data-bb-reg-empty="no-results"/);
+    assert.doesNotMatch(regNoResults.text, /data-bb-reg-table="1"/);
+
+    const regBadBranch = await request(app)
+      .get("/hq/registrations?branch=does-not-exist")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(regBadBranch.status, 404);
 
     const row = await pool.query(
       `SELECT id FROM blessboard.member_registrations
@@ -719,9 +750,40 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sid);
     assert.equal(members.status, 200);
     assert.match(members.text, /data-bb-hq-member-directory="1"/);
+    assert.match(members.text, /data-bb-stitch-members="28-branch-member-directory"/);
+    assert.match(members.text, /data-bb-hq-member-filter="1"/);
+    assert.match(members.text, /data-bb-member-status-chips="1"/);
+    assert.match(members.text, /data-bb-member-table="1"/);
+    assert.match(members.text, /data-bb-member-cards="1"/);
+    assert.match(members.text, /data-bb-branch-selector-panel="1"/);
     assert.match(members.text, /Nora/);
     assert.match(members.text, /href="\/hq\/members\/[0-9a-f-]{36}"/i);
+    assert.match(members.text, /name="branch"/);
     assert.doesNotMatch(members.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(members.text, /email_normalized|phone_normalized|user_id|Export CSV|Bulk select|Demographic/i);
+
+    const memberFiltered = await request(app)
+      .get("/hq/members?q=Nora&status=active&branch=hq&page=1")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(memberFiltered.status, 200);
+    assert.match(memberFiltered.text, /Nora/);
+    assert.match(memberFiltered.text, /value="Nora"/);
+    assert.match(memberFiltered.text, /name="branch"[\s\S]*value="hq"|selected[^>]*>HQ A|value="hq"[^>]*selected/i);
+
+    const memberNoResults = await request(app)
+      .get("/hq/members?q=zzznomatch999")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(memberNoResults.status, 200);
+    assert.match(memberNoResults.text, /data-bb-member-empty="no-results"/);
+    assert.doesNotMatch(memberNoResults.text, /data-bb-member-table="1"/);
+
+    const badBranch = await request(app)
+      .get("/hq/members?branch=does-not-exist")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(badBranch.status, 404);
 
     const memberRow = await pool.query(
       `SELECT id FROM blessboard.members WHERE email_normalized = 'nora@example.test' LIMIT 1`
@@ -756,11 +818,209 @@ describe("blessboard member registration http", () => {
       .set("Cookie", sessionCookie(users.hqB));
     assert.ok(crossMember.status === 403 || crossMember.status === 404);
 
+    const crossList = await request(app)
+      .get("/hq/members?q=Nora")
+      .set("Host", HOST_B)
+      .set("Cookie", sessionCookie(users.hqB));
+    assert.ok(crossList.status === 403 || crossList.status === 404 || crossList.status === 200);
+    if (crossList.status === 200) {
+      assert.doesNotMatch(crossList.text, /data-bb-member-row|nora@example\.test|Nora Applicant/i);
+      assert.match(crossList.text, /data-bb-member-empty="no-results"|data-bb-member-empty="catalog"/);
+    }
+
     const branchDenied = await request(app)
       .get("/hq/members")
       .set("Host", HOST_A)
       .set("Cookie", sessionCookie(users.branchA));
     assert.ok(branchDenied.status === 403 || branchDenied.status === 404 || branchDenied.status === 303);
+  });
+
+  it("HQ member directory lists members across church branches and scopes filters", async (t) => {
+    if (skipIfNeeded(t)) return;
+    await pool.query(
+      `INSERT INTO blessboard.branches
+         (church_id, branch_key, display_name, branch_type, status, is_primary, timezone, country_code)
+       VALUES ($1, 'campus-east', 'Campus East', 'branch', 'active', false, 'UTC', NULL)
+       ON CONFLICT (church_id, branch_key) DO NOTHING`,
+      [churchA.id]
+    );
+
+    const form = await request(app).get("/register").set("Host", HOST_A);
+    const csrf = extractCookie(form, CSRF_COOKIE);
+    await request(app)
+      .post("/register")
+      .set("Host", HOST_A)
+      .set("Cookie", `${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        first_name: "East",
+        last_name: "Member",
+        email: "east-member@example.test",
+      });
+
+    const eastReg = await pool.query(
+      `SELECT id FROM blessboard.member_registrations
+        WHERE email_normalized = 'east-member@example.test' LIMIT 1`
+    );
+    assert.ok(eastReg.rows[0]);
+    const sidBranch = sessionCookie(users.branchA);
+    const detail = await request(app)
+      .get(`/branch-admin/registrations/${eastReg.rows[0].id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", sidBranch);
+    const csrfApprove = extractCookie(detail, CSRF_COOKIE);
+    await request(app)
+      .post(`/branch-admin/registrations/${eastReg.rows[0].id}/approve`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(sidBranch, `${CSRF_COOKIE}=${csrfApprove}`))
+      .type("form")
+      .send({ [CSRF_FIELD]: csrfApprove });
+
+    const eastMember = await pool.query(
+      `SELECT id FROM blessboard.members WHERE email_normalized = 'east-member@example.test' LIMIT 1`
+    );
+    assert.ok(eastMember.rows[0]);
+    await pool.query(
+      `UPDATE blessboard.member_branch_memberships mb
+          SET branch_id = b.id, is_primary = true, updated_at = now()
+         FROM blessboard.branches b
+        WHERE mb.member_id = $1
+          AND b.church_id = $2
+          AND b.branch_key = 'campus-east'`,
+      [eastMember.rows[0].id, churchA.id]
+    );
+
+    const sid = sessionCookie(users.hqA);
+    const all = await request(app)
+      .get("/hq/members")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(all.status, 200);
+    assert.match(all.text, /Nora/);
+    assert.match(all.text, /East Member|East/);
+    assert.match(all.text, /Campus East|campus-east/);
+    assert.match(all.text, /data-bb-component="branch-selector"/);
+    assert.match(all.text, /href="\/hq\/branches\/campus-east"/);
+
+    const byCampus = await request(app)
+      .get("/hq/members?branch=campus-east")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(byCampus.status, 200);
+    assert.match(byCampus.text, /East/);
+    assert.doesNotMatch(byCampus.text, /Nora Applicant|Nora</);
+
+    const byHq = await request(app)
+      .get("/hq/members?branch=hq")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(byHq.status, 200);
+    assert.match(byHq.text, /Nora/);
+    assert.doesNotMatch(byHq.text, /East Member/);
+
+    const page = await request(app)
+      .get("/hq/members?page=1&q=East")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(page.status, 200);
+    assert.match(page.text, /East/);
+    assert.match(page.text, /value="East"/);
+  });
+
+  it("HQ registration queue lists registrations across church branches and scopes filters", async (t) => {
+    if (skipIfNeeded(t)) return;
+    await pool.query(
+      `INSERT INTO blessboard.branches
+         (church_id, branch_key, display_name, branch_type, status, is_primary, timezone, country_code)
+       VALUES ($1, 'campus-east', 'Campus East', 'branch', 'active', false, 'UTC', NULL)
+       ON CONFLICT (church_id, branch_key) DO NOTHING`,
+      [churchA.id]
+    );
+
+    const form = await request(app).get("/register").set("Host", HOST_A);
+    const csrf = extractCookie(form, CSRF_COOKIE);
+    await request(app)
+      .post("/register")
+      .set("Host", HOST_A)
+      .set("Cookie", `${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        first_name: "Campus",
+        last_name: "Applicant",
+        email: "campus-applicant@example.test",
+      });
+
+    await pool.query(
+      `UPDATE blessboard.member_registrations r
+          SET branch_id = b.id, updated_at = now()
+         FROM blessboard.branches b
+        WHERE r.email_normalized = 'campus-applicant@example.test'
+          AND b.church_id = $1
+          AND b.branch_key = 'campus-east'`,
+      [churchA.id]
+    );
+
+    const sid = sessionCookie(users.hqA);
+    const all = await request(app)
+      .get("/hq/registrations")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(all.status, 200);
+    assert.match(all.text, /Campus Applicant|Campus/);
+    assert.match(all.text, /Nora|Cross Tenant/i);
+    assert.match(all.text, /Campus East|campus-east/);
+    assert.match(all.text, /data-bb-component="branch-selector"/);
+    assert.doesNotMatch(all.text, /data-bb-reg-approve|data-bb-reg-reject/);
+
+    const byCampus = await request(app)
+      .get("/hq/registrations?branch=campus-east")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(byCampus.status, 200);
+    assert.match(byCampus.text, /Campus/);
+    assert.doesNotMatch(byCampus.text, /Nora Applicant|Cross Tenant/);
+
+    const byHq = await request(app)
+      .get("/hq/registrations?branch=hq")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(byHq.status, 200);
+    assert.match(byHq.text, /Nora|Cross Tenant/i);
+    assert.doesNotMatch(byHq.text, /Campus Applicant/);
+
+    const byStatus = await request(app)
+      .get("/hq/registrations?status=submitted&page=1")
+      .set("Host", HOST_A)
+      .set("Cookie", sid);
+    assert.equal(byStatus.status, 200);
+    assert.match(byStatus.text, /Campus|data-bb-reg-status-filter="submitted"/);
+
+    const crossList = await request(app)
+      .get("/hq/registrations?q=Campus")
+      .set("Host", HOST_B)
+      .set("Cookie", sessionCookie(users.hqB));
+    assert.ok(crossList.status === 403 || crossList.status === 404 || crossList.status === 200);
+    if (crossList.status === 200) {
+      assert.doesNotMatch(crossList.text, /data-bb-reg-row|campus-applicant@example\.test|Campus Applicant/i);
+    }
+
+    const branchDenied = await request(app)
+      .get("/hq/registrations")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(users.branchA));
+    assert.ok(branchDenied.status === 403 || branchDenied.status === 404 || branchDenied.status === 303);
+
+    const campusRow = await pool.query(
+      `SELECT id FROM blessboard.member_registrations
+        WHERE email_normalized = 'campus-applicant@example.test' LIMIT 1`
+    );
+    const crossDetail = await request(app)
+      .get(`/hq/registrations/${campusRow.rows[0].id}`)
+      .set("Host", HOST_B)
+      .set("Cookie", sessionCookie(users.hqB));
+    assert.ok(crossDetail.status === 403 || crossDetail.status === 404);
   });
 
   it("does not collect sensitive categories on the public form", async (t) => {

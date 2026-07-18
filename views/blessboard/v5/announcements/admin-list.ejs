@@ -4,12 +4,14 @@
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
 <%
+  var isHq = shellKind === 'hq';
   var rows = items || [];
   var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
   var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
   var activeAudience = typeof audienceFilter !== 'undefined' && audienceFilter ? String(audienceFilter) : '';
   var hasFilter = Boolean(searchQ || activeStatus || activeAudience);
   var listBase = typeof basePath !== 'undefined' && basePath ? String(basePath) : '/branch-admin/announcements';
+  var stitchKey = isHq ? '61-hq-broadcast-center' : '35-branch-announcements-management';
   var statusOptions = [
     { key: '', label: 'All' },
     { key: 'draft', label: 'Draft' },
@@ -41,6 +43,12 @@
       if (k === 'admins') return 'Admins';
       return k;
     }).join(', ');
+  }
+  function hasMembersAudience(item) {
+    return item && item.audiences && item.audiences.indexOf('members') !== -1;
+  }
+  function showDelivery(item) {
+    return isHq && item && item.delivery && hasMembersAudience(item);
   }
   function snippet(text) {
     var t = String(text || '').replace(/\s+/g, ' ').trim();
@@ -92,15 +100,17 @@
 %>
 
 <section
-  class="bb-ann-admin bb-ba-ann"
+  class="bb-ann-admin bb-ba-ann<%= isHq ? ' bb-hq-ann' : '' %>"
   data-bb-announcement-admin-list="1"
-  data-bb-stitch-announcements="35-branch-announcements-management"
+  data-bb-stitch-announcements="<%= stitchKey %>"
+  <% if (isHq) { %>data-bb-hq-announcements="1"<% } %>
+  aria-label="<%= isHq ? 'HQ announcements' : 'Announcements management' %>"
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">
-        <% if (shellKind === 'hq') { %>
-        <a href="/hq">HQ</a>
+        <% if (isHq) { %>
+        <a href="/hq">Dashboard</a>
         <% } else { %>
         <a href="/branch-admin">Dashboard</a>
         <% } %>
@@ -108,7 +118,7 @@
         <span>Announcements</span>
       </p>
       <div class="bb-ba-ann__title-row">
-        <h1 class="bb-ba-page-head__title">Announcements management</h1>
+        <h1 class="bb-ba-page-head__title"><%= isHq ? 'Announcements' : 'Announcements management' %></h1>
         <% if (typeof total === 'number' && total >= 0) { %>
         <span class="bb-ba-ann__count" data-bb-ann-total="<%= total %>">
           <%= total %> <%= hasFilter ? (total === 1 ? 'match' : 'matches') : (total === 1 ? 'announcement' : 'announcements') %>
@@ -116,9 +126,15 @@
         <% } %>
       </div>
       <p class="bb-ba-lede">
+        <% if (isHq) { %>
+        Church-wide and campus announcements for
+        <strong><%= churchDisplayName || scopeLabel %></strong>.
+        Delivery counts show eligible members plus reads when the members audience is targeted — no percentages or branch-reach scores.
+        <% } else { %>
         Manage communications for
         <strong><%= typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : (churchDisplayName || scopeLabel) %></strong>
         (<%= scopeLabel %> scope). Publishing is confirmed separately — announcements are archived, never deleted.
+        <% } %>
       </p>
     </div>
     <p class="bb-ba-page-head__actions">
@@ -149,6 +165,16 @@
       <% }) %>
     </ul>
   </section>
+  <% } %>
+
+  <% if (isHq) { %>
+  <aside class="bb-hq-ann-delivery-note" data-bb-delivery="overview" aria-labelledby="hq-ann-delivery-heading">
+    <h2 id="hq-ann-delivery-heading" class="bb-hq-ann-delivery-note__title">Delivery overview</h2>
+    <p class="bb-hq-ann-delivery-note__body">
+      Eligible, read, and unread counts come from existing member-audience delivery data only.
+      Additional outbound channels are not available. Open an announcement for the full summary.
+    </p>
+  </aside>
   <% } %>
 
   <% if (saved === '1' || saved === 'published' || saved === 'archived') { %>
@@ -234,7 +260,9 @@
   <div class="bb-ba-ann-empty" data-bb-ann-empty="catalog" role="status">
     <%- include('../partials/empty-state', {
       title: 'No announcements yet',
-      body: 'Create a draft to start communicating with members or admins. Publishing requires a separate confirmation step.',
+      body: isHq
+        ? 'Create a church-wide draft to communicate with members or admins. Publishing requires a separate confirmation step.'
+        : 'Create a draft to start communicating with members or admins. Publishing requires a separate confirmation step.',
       icon: 'campaign',
       actionHref: listBase + '/new',
       actionLabel: 'Create announcement'
@@ -273,6 +301,7 @@
             <th scope="col">Message</th>
             <th scope="col">Audience</th>
             <th scope="col">Source</th>
+            <% if (isHq) { %><th scope="col">Delivery</th><% } %>
             <th scope="col">Published</th>
             <th scope="col">Status</th>
             <th scope="col"><span class="bb-ba-sr-only">Actions</span></th>
@@ -281,6 +310,7 @@
         <tbody>
           <% rows.forEach(function (item) {
             var attachmentCount = item.attachments && item.attachments.length ? item.attachments.length : 0;
+            var delivery = item.delivery || null;
           %>
           <tr data-bb-announcement-status="<%= item.status %>" data-bb-ann-row="1">
             <td>
@@ -300,6 +330,23 @@
             <td class="bb-ann-snippet"><%= snippet(item.body) %></td>
             <td><%= audienceLabel(item.audiences) %></td>
             <td><%= sourceLabel(item) %></td>
+            <% if (isHq) { %>
+            <td>
+              <% if (showDelivery(item)) { %>
+              <span
+                class="bb-hq-ann-delivery"
+                data-bb-delivery="row"
+                data-bb-eligible="<%= delivery.eligibleCount %>"
+                data-bb-read="<%= delivery.readCount %>"
+                data-bb-unread="<%= delivery.unreadCount %>"
+              >
+                <%= delivery.readCount %> read · <%= delivery.unreadCount %> unread · <%= delivery.eligibleCount %> eligible
+              </span>
+              <% } else { %>
+              <span class="bb-hq-muted" data-bb-delivery="unavailable">—</span>
+              <% } %>
+            </td>
+            <% } %>
             <td><%= item.publishedAt ? formatWhenLong(item.publishedAt) : '—' %></td>
             <td><span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span></td>
             <td class="bb-ba-table__actions">
@@ -324,6 +371,7 @@
           ? formatWhenLong(item.publishedAt)
           : (item.updatedAt ? ('Updated ' + formatWhen(item.updatedAt)) : '');
         var attachmentCount = item.attachments && item.attachments.length ? item.attachments.length : 0;
+        var delivery = item.delivery || null;
       %>
       <li
         class="bb-ba-ann-card"
@@ -361,6 +409,23 @@
             <span class="material-symbols-outlined" aria-hidden="true">apartment</span>
             <%= sourceLabel(item) %>
           </p>
+          <% if (showDelivery(item)) { %>
+          <p
+            class="bb-ba-ann-card__line"
+            data-bb-delivery="row"
+            data-bb-eligible="<%= delivery.eligibleCount %>"
+            data-bb-read="<%= delivery.readCount %>"
+            data-bb-unread="<%= delivery.unreadCount %>"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">mark_email_read</span>
+            <%= delivery.readCount %> read · <%= delivery.unreadCount %> unread · <%= delivery.eligibleCount %> eligible
+          </p>
+          <% } else if (isHq) { %>
+          <p class="bb-ba-ann-card__line bb-hq-muted" data-bb-delivery="unavailable">
+            <span class="material-symbols-outlined" aria-hidden="true">mark_email_unread</span>
+            Delivery counts available for members audience only
+          </p>
+          <% } %>
         </div>
         <div class="bb-ba-ann-card__actions">
           <a

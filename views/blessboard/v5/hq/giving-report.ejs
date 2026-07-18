@@ -6,29 +6,127 @@
   var churchTotals = (monthSummary && monthSummary.churchTotals) || null;
   var categoryRows = churchTotals || byBranch;
   var grandTotals = (monthSummary && monthSummary.grandTotalsByCurrency) || [];
+  var hasData = Boolean(monthSummary && categoryRows.length);
+  var sourceStatuses = (monthSummary && monthSummary.sourceStatuses) || ['submitted', 'approved', 'archived'];
+  var scopeLabel = branchFilter
+    ? (branchDisplayName || branchFilter)
+    : (churchDisplayName || 'All branches');
+  var currencyGrand = {};
+  grandTotals.forEach(function (gt) {
+    currencyGrand[gt.currency] = gt.totalAmount;
+  });
+
+  function moneyToNumber(s) {
+    var n = parseFloat(String(s == null ? '0' : s).replace(/,/g, ''));
+    return isFinite(n) ? n : 0;
+  }
+  function pctOfMoney(part, whole) {
+    var n = moneyToNumber(part);
+    var d = moneyToNumber(whole);
+    if (d <= 0 || n <= 0) return 0;
+    return Math.min(100, Math.round((n / d) * 1000) / 10);
+  }
+  function filterHref(opts) {
+    var params = [];
+    var m = opts && opts.month != null ? opts.month : yearMonth;
+    var b = opts && Object.prototype.hasOwnProperty.call(opts, 'branch') ? opts.branch : branchFilter;
+    if (m) params.push('month=' + encodeURIComponent(m));
+    if (b) params.push('branch=' + encodeURIComponent(b));
+    return '/hq/reports/giving' + (params.length ? '?' + params.join('&') : '');
+  }
+  function displayAmount(currency, amount) {
+    return String(currency || '') + ' ' + String(amount == null ? '0' : amount);
+  }
+
+  var branchRollup = [];
+  var branchMap = {};
+  function amountToCents(a) {
+    var m = String(a == null ? '' : a).trim().match(/^(-?)(\d+)(?:\.(\d{1,2}))?$/);
+    if (!m) return null;
+    var sign = m[1] === '-' ? -1 : 1;
+    var whole = parseInt(m[2], 10);
+    var frac = parseInt((m[3] || '00').padEnd(2, '0').slice(0, 2), 10);
+    return sign * (whole * 100 + frac);
+  }
+  function centsToAmount(cents) {
+    var sign = cents < 0 ? '-' : '';
+    var abs = Math.abs(cents);
+    return sign + Math.floor(abs / 100) + '.' + String(abs % 100).padStart(2, '0');
+  }
+  byBranch.forEach(function (row) {
+    var key = (row.branchKey || '__none__') + '|' + (row.currency || '');
+    if (!branchMap[key]) {
+      branchMap[key] = {
+        branchKey: row.branchKey || '',
+        branchDisplayName: row.branchDisplayName || '—',
+        currency: row.currency || '',
+        totalCents: 0,
+        entryCount: 0,
+        exact: true
+      };
+      branchRollup.push(branchMap[key]);
+    }
+    var add = amountToCents(row.totalAmount);
+    if (add == null) branchMap[key].exact = false;
+    else branchMap[key].totalCents += add;
+    branchMap[key].entryCount += Number(row.entryCount) || 0;
+  });
+  branchRollup.forEach(function (b) {
+    b.totalAmount = b.exact ? centsToAmount(b.totalCents) : String(b.totalCents / 100);
+  });
+  var maxByCurrency = {};
+  branchRollup.forEach(function (b) {
+    var cur = b.currency || '';
+    var n = moneyToNumber(b.totalAmount);
+    if (!maxByCurrency[cur] || n > maxByCurrency[cur]) maxByCurrency[cur] = n;
+  });
+  var showBranchComparison = !branchFilter && branchRollup.length > 0;
 %>
 
-<section class="bb-hq-giv-report" data-bb-hq-giving-report="1">
+<section
+  class="bb-hq-giv-report"
+  data-bb-hq-giving-report="1"
+  data-bb-stitch-giving-report="57-hq-consolidated-analytics"
+  data-bb-giv-report-scope="<%= branchFilter ? 'branch' : 'church' %>"
+>
   <header class="bb-hq-page-head bb-hq-page-head--split">
     <div>
-      <p class="bb-hq-hint"><a href="/hq/reports">← HQ reports</a></p>
-      <h1 class="bb-hq-page-head__title">Giving report</h1>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq/reports">Reports</a>
+        <span aria-hidden="true">›</span>
+        <span>Giving</span>
+      </p>
+      <div class="bb-hq-giv-report__title-row">
+        <h1 class="bb-hq-page-head__title">Giving report</h1>
+        <span class="bb-hq-giv-report__month" data-bb-giv-report-month="<%= yearMonth %>"><%= yearMonth %></span>
+      </div>
       <p class="bb-hq-lede">
-        Manual category totals for
-        <strong><%= branchDisplayName || churchDisplayName %></strong>
-        <%= branchFilter ? '' : '(all branches)' %>.
-        Amounts are exact NUMERIC strings — no donor PII, no gateway, no charts.
+        Aggregate category totals for <strong><%= scopeLabel %></strong><% if (!branchFilter) { %> (all branches)<% } %>.
+        Amounts are exact NUMERIC strings from <%= sourceStatuses.join(', ') %> entries — no donor records, bank reconciliation, exports, or forecasts.
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/giving">Manage giving</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/giving" data-bb-giv-report-action="manage">
+        <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+        Manage giving
+      </a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports" data-bb-giv-report-action="reports">
+        <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+        All reports
+      </a>
     </p>
   </header>
 
-  <form method="get" action="/hq/reports/giving" class="bb-hq-filter" data-bb-hq-giv-report-filter="1">
+  <form
+    method="get"
+    action="/hq/reports/giving"
+    class="bb-hq-filter bb-hq-giv-report-filter"
+    data-bb-hq-giv-report-filter="1"
+    role="search"
+  >
     <div class="bb-hq-field">
       <label for="month">Month</label>
-      <input id="month" type="month" name="month" value="<%= yearMonth %>" />
+      <input id="month" type="month" name="month" value="<%= yearMonth %>" required />
     </div>
     <div class="bb-hq-field">
       <label for="branch">Branch</label>
@@ -40,28 +138,241 @@
       </select>
     </div>
     <div class="bb-hq-filter__actions">
-      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Show</button>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Show
+      </button>
+      <% if (branchFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= filterHref({ branch: '' }) %>">All branches</a>
+      <% } %>
     </div>
   </form>
 
-  <section class="bb-hq-panel">
-    <h2 class="bb-hq-section-title">Monthly totals · <%= yearMonth %></h2>
-    <% if (!monthSummary || !categoryRows.length) { %>
-    <p class="bb-hq-empty" role="status" data-bb-report="giving-empty">No submitted giving for this month.</p>
-    <% } else { %>
-      <% if (grandTotals.length) { %>
-      <ul class="bb-hq-report-list" data-bb-giving-grand-totals="1">
-        <% grandTotals.forEach(function (gt) { %>
-        <li data-bb-currency="<%= gt.currency %>" data-bb-total="<%= gt.totalAmount %>">
-          <%= gt.currency %>: <%= gt.totalAmount %>
-        </li>
-        <% }) %>
-      </ul>
-      <% } %>
+  <% if (!hasData) { %>
+  <div class="bb-hq-giv-report-empty" data-bb-giv-report-empty="1" data-bb-report="giving-empty" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'No giving for this month',
+      body: 'Submitted, approved, or archived category totals for ' + yearMonth + ' will appear here when branches record giving.',
+      icon: 'payments',
+      actionHref: '/hq/giving',
+      actionLabel: 'Open giving'
+    }) %>
+  </div>
+
+  <aside class="bb-hq-giv-report-unavailable" data-bb-giv-report-unavailable="1" aria-labelledby="bb-giv-unavailable-heading">
+    <h2 id="bb-giv-unavailable-heading" class="bb-hq-section-title">Not available</h2>
+    <ul class="bb-hq-giv-report-unavailable__list">
+      <li data-bb-giv-unavailable="donor">Donor-level records and contact details</li>
+      <li data-bb-giv-unavailable="bank">Bank reconciliation and payment gateway data</li>
+      <li data-bb-giv-unavailable="forecast">Forecasts, trend percentages, and projections</li>
+      <li data-bb-giv-unavailable="export">Accounting CSV / PDF exports</li>
+    </ul>
+  </aside>
+  <% } else { %>
+
+  <section class="bb-hq-giv-report-summary" data-bb-giv-report-summary="1" aria-label="Monthly giving summary">
+    <% if (grandTotals.length) { %>
+      <% grandTotals.forEach(function (gt) { %>
+      <div
+        class="bb-hq-giv-report-summary__card bb-hq-giv-report-summary__card--grand"
+        data-bb-giv-stat="grand-total"
+        data-bb-currency="<%= gt.currency %>"
+        data-bb-total="<%= gt.totalAmount %>"
+      >
+        <p class="bb-hq-giv-report-summary__label">Total · <%= gt.currency %></p>
+        <p class="bb-hq-giv-report-summary__value" data-bb-giving-grand-total="<%= gt.currency %>"><%= gt.totalAmount %></p>
+        <p class="bb-hq-giv-report-summary__meta"><%= yearMonth %> · aggregate only</p>
+      </div>
+      <% }) %>
+    <% } %>
+    <% categoryRows.forEach(function (row) {
+      var currencyTotal = currencyGrand[row.currency] || row.totalAmount;
+      var share = pctOfMoney(row.totalAmount, currencyTotal);
+    %>
+    <div
+      class="bb-hq-giv-report-summary__card"
+      data-bb-giv-stat="category"
+      data-bb-category-key="<%= row.categoryKey %>"
+      data-bb-currency="<%= row.currency %>"
+    >
+      <p class="bb-hq-giv-report-summary__label"><%= row.categoryLabel %></p>
+      <p class="bb-hq-giv-report-summary__value" data-bb-total="<%= row.totalAmount %>"><%= displayAmount(row.currency, row.totalAmount) %></p>
+      <p class="bb-hq-giv-report-summary__meta">
+        <%= row.entryCount %> entr<%= row.entryCount === 1 ? 'y' : 'ies' %>
+        <% if (moneyToNumber(currencyTotal) > 0) { %>
+        · <%= share %>% of <%= row.currency %>
+        <% } %>
+      </p>
+    </div>
+    <% }) %>
+  </section>
+
+  <section class="bb-hq-panel bb-hq-giv-report-panel" data-bb-giv-report-composition="1" aria-labelledby="bb-giv-composition-heading">
+    <div class="bb-hq-giv-report-panel__head">
+      <h2 id="bb-giv-composition-heading" class="bb-hq-section-title">Category composition</h2>
+      <p class="bb-hq-hint">Share of each currency’s monthly total from the same aggregate rows — accessible table with bar lengths, not a chart library. Amounts stay exact NUMERIC strings.</p>
+    </div>
+    <div class="bb-hq-table-wrap bb-hq-giv-report-table-wrap--desktop">
+      <table class="bb-hq-table bb-hq-giv-report-table" data-bb-giving-summary-table="1">
+        <caption class="bb-hq-sr-only">Giving by category for <%= yearMonth %></caption>
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Currency</th>
+            <th scope="col">Total</th>
+            <th scope="col">Entries</th>
+            <th scope="col">Share of currency</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% categoryRows.forEach(function (row) {
+            var currencyTotal = currencyGrand[row.currency] || row.totalAmount;
+            var share = pctOfMoney(row.totalAmount, currencyTotal);
+          %>
+          <tr data-bb-category-key="<%= row.categoryKey %>" data-bb-currency="<%= row.currency %>">
+            <td><%= row.categoryLabel %></td>
+            <td><%= row.currency %></td>
+            <td data-bb-total="<%= row.totalAmount %>"><%= row.totalAmount %></td>
+            <td><%= row.entryCount %></td>
+            <td>
+              <div
+                class="bb-hq-giv-bar"
+                role="img"
+                aria-label="<%= row.categoryLabel %>: <%= displayAmount(row.currency, row.totalAmount) %>, <%= share %>% of <%= row.currency %> monthly total"
+                data-bb-giv-bar-pct="<%= share %>"
+              >
+                <span class="bb-hq-giv-bar__track" aria-hidden="true">
+                  <span class="bb-hq-giv-bar__fill" style="width: <%= share %>%;"></span>
+                </span>
+                <span class="bb-hq-giv-bar__label"><%= share %>%</span>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <ul class="bb-hq-giv-report-cards" data-bb-giving-summary-cards="1">
+      <% categoryRows.forEach(function (row) {
+        var currencyTotal = currencyGrand[row.currency] || row.totalAmount;
+        var share = pctOfMoney(row.totalAmount, currencyTotal);
+      %>
+      <li class="bb-hq-giv-report-card" data-bb-category-key="<%= row.categoryKey %>" data-bb-currency="<%= row.currency %>">
+        <div class="bb-hq-giv-report-card__head">
+          <h3 class="bb-hq-giv-report-card__title"><%= row.categoryLabel %></h3>
+          <span class="bb-hq-giv-report-card__count" data-bb-total="<%= row.totalAmount %>"><%= displayAmount(row.currency, row.totalAmount) %></span>
+        </div>
+        <p class="bb-hq-giv-report-card__meta"><%= row.entryCount %> entr<%= row.entryCount === 1 ? 'y' : 'ies' %></p>
+        <div
+          class="bb-hq-giv-bar"
+          role="img"
+          aria-label="<%= row.categoryLabel %>: <%= share %>% of <%= row.currency %>"
+          data-bb-giv-bar-pct="<%= share %>"
+        >
+          <span class="bb-hq-giv-bar__track" aria-hidden="true">
+            <span class="bb-hq-giv-bar__fill" style="width: <%= share %>%;"></span>
+          </span>
+          <span class="bb-hq-giv-bar__label"><%= share %>%</span>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <% if (showBranchComparison) { %>
+  <section class="bb-hq-panel bb-hq-giv-report-panel" data-bb-giv-report-branches="1" aria-labelledby="bb-giv-branches-heading">
+    <div class="bb-hq-giv-report-panel__head">
+      <h2 id="bb-giv-branches-heading" class="bb-hq-section-title">Branch comparison</h2>
+      <p class="bb-hq-hint">Totals rolled up from the same monthly by-branch rows, per currency. Bar length is relative to the largest branch total in that currency this month.</p>
+    </div>
+
+    <div class="bb-hq-table-wrap bb-hq-giv-report-table-wrap--desktop" data-bb-giving-branch-table="1">
+      <table class="bb-hq-table bb-hq-giv-report-table" data-bb-giving-by-branch="1">
+        <caption class="bb-hq-sr-only">Giving by branch for <%= yearMonth %></caption>
+        <thead>
+          <tr>
+            <th scope="col">Branch</th>
+            <th scope="col">Currency</th>
+            <th scope="col">Total</th>
+            <th scope="col">Relative share</th>
+            <th scope="col"><span class="bb-hq-sr-only">Filter</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% branchRollup.forEach(function (branch) {
+            var maxN = maxByCurrency[branch.currency] || 0;
+            var share = maxN > 0 ? Math.min(100, Math.round((moneyToNumber(branch.totalAmount) / maxN) * 1000) / 10) : 0;
+          %>
+          <tr data-bb-branch="<%= branch.branchKey %>" data-bb-currency="<%= branch.currency %>">
+            <td>
+              <%= branch.branchDisplayName %>
+              <% if (branch.branchKey) { %><code class="bb-hq-key"><%= branch.branchKey %></code><% } %>
+            </td>
+            <td><%= branch.currency %></td>
+            <td data-bb-total="<%= branch.totalAmount %>"><%= branch.totalAmount %></td>
+            <td>
+              <div
+                class="bb-hq-giv-bar"
+                role="img"
+                aria-label="<%= branch.branchDisplayName %>: <%= displayAmount(branch.currency, branch.totalAmount) %>"
+                data-bb-giv-bar-pct="<%= share %>"
+              >
+                <span class="bb-hq-giv-bar__track" aria-hidden="true">
+                  <span class="bb-hq-giv-bar__fill bb-hq-giv-bar__fill--branch" style="width: <%= share %>%;"></span>
+                </span>
+                <span class="bb-hq-giv-bar__label"><%= branch.totalAmount %></span>
+              </div>
+            </td>
+            <td>
+              <% if (branch.branchKey) { %>
+              <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="<%= filterHref({ branch: branch.branchKey }) %>" data-bb-giv-report-action="filter-branch">View</a>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="bb-hq-giv-report-cards bb-hq-giv-report-cards--branches" data-bb-giving-branch-cards="1">
+      <% branchRollup.forEach(function (branch) {
+        var maxN = maxByCurrency[branch.currency] || 0;
+        var share = maxN > 0 ? Math.min(100, Math.round((moneyToNumber(branch.totalAmount) / maxN) * 1000) / 10) : 0;
+      %>
+      <li class="bb-hq-giv-report-card" data-bb-branch="<%= branch.branchKey %>" data-bb-currency="<%= branch.currency %>">
+        <div class="bb-hq-giv-report-card__head">
+          <h3 class="bb-hq-giv-report-card__title"><%= branch.branchDisplayName %></h3>
+          <span class="bb-hq-giv-report-card__count" data-bb-total="<%= branch.totalAmount %>"><%= displayAmount(branch.currency, branch.totalAmount) %></span>
+        </div>
+        <% if (branch.branchKey) { %>
+        <p class="bb-hq-giv-report-card__meta"><code class="bb-hq-key"><%= branch.branchKey %></code></p>
+        <% } %>
+        <div
+          class="bb-hq-giv-bar"
+          role="img"
+          aria-label="<%= branch.branchDisplayName %>: <%= displayAmount(branch.currency, branch.totalAmount) %>"
+          data-bb-giv-bar-pct="<%= share %>"
+        >
+          <span class="bb-hq-giv-bar__track" aria-hidden="true">
+            <span class="bb-hq-giv-bar__fill bb-hq-giv-bar__fill--branch" style="width: <%= share %>%;"></span>
+          </span>
+        </div>
+        <% if (branch.branchKey) { %>
+        <p class="bb-hq-giv-report-card__actions">
+          <a class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm" href="<%= filterHref({ branch: branch.branchKey }) %>" data-bb-giv-report-action="filter-branch">View branch</a>
+        </p>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+
+    <details class="bb-hq-giv-report-detail" data-bb-giving-by-branch-detail="1">
+      <summary>Category rows by branch</summary>
       <div class="bb-hq-table-wrap">
-        <table class="bb-hq-table" data-bb-giving-summary-table="1">
+        <table class="bb-hq-table">
           <thead>
             <tr>
+              <th scope="col">Branch</th>
               <th scope="col">Category</th>
               <th scope="col">Currency</th>
               <th scope="col">Total</th>
@@ -69,8 +380,12 @@
             </tr>
           </thead>
           <tbody>
-            <% categoryRows.forEach(function (row) { %>
-            <tr data-bb-category-key="<%= row.categoryKey %>" data-bb-currency="<%= row.currency %>">
+            <% byBranch.forEach(function (row) { %>
+            <tr data-bb-branch="<%= row.branchKey || '' %>" data-bb-category-key="<%= row.categoryKey %>" data-bb-currency="<%= row.currency %>">
+              <td>
+                <%= row.branchDisplayName || '—' %>
+                <% if (row.branchKey) { %><code class="bb-hq-key"><%= row.branchKey %></code><% } %>
+              </td>
               <td><%= row.categoryLabel %></td>
               <td><%= row.currency %></td>
               <td data-bb-total="<%= row.totalAmount %>"><%= row.totalAmount %></td>
@@ -80,40 +395,24 @@
           </tbody>
         </table>
       </div>
-    <% } %>
+    </details>
   </section>
+  <% } else if (!branchFilter) { %>
+  <section class="bb-hq-panel" data-bb-giv-report-branches="1" data-bb-giv-report-branches-empty="1" role="status">
+    <h2 class="bb-hq-section-title">Branch comparison</h2>
+    <p class="bb-hq-hint">No per-branch giving rows for this month. Church-wide category totals above still reflect submitted aggregates when present.</p>
+  </section>
+  <% } %>
 
-  <% if (!branchFilter && byBranch.length) { %>
-  <section class="bb-hq-panel">
-    <h2 class="bb-hq-section-title">By branch</h2>
-    <div class="bb-hq-table-wrap">
-      <table class="bb-hq-table" data-bb-giving-by-branch="1">
-        <thead>
-          <tr>
-            <th scope="col">Branch</th>
-            <th scope="col">Category</th>
-            <th scope="col">Currency</th>
-            <th scope="col">Total</th>
-            <th scope="col">Entries</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% byBranch.forEach(function (row) { %>
-          <tr data-bb-branch="<%= row.branchKey || '' %>" data-bb-category-key="<%= row.categoryKey %>" data-bb-currency="<%= row.currency %>">
-            <td>
-              <%= row.branchDisplayName || '—' %>
-              <% if (row.branchKey) { %><code class="bb-hq-key"><%= row.branchKey %></code><% } %>
-            </td>
-            <td><%= row.categoryLabel %></td>
-            <td><%= row.currency %></td>
-            <td data-bb-total="<%= row.totalAmount %>"><%= row.totalAmount %></td>
-            <td><%= row.entryCount %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  </section>
+  <aside class="bb-hq-giv-report-unavailable" data-bb-giv-report-unavailable="1" aria-labelledby="bb-giv-unavailable-heading-data">
+    <h2 id="bb-giv-unavailable-heading-data" class="bb-hq-section-title">Not available in this report</h2>
+    <ul class="bb-hq-giv-report-unavailable__list">
+      <li data-bb-giv-unavailable="donor">Donor-level records, names, emails, or payment instruments</li>
+      <li data-bb-giv-unavailable="bank">Bank reconciliation and gateway settlement</li>
+      <li data-bb-giv-unavailable="forecast">Trend percentages, forecasts, and projections</li>
+      <li data-bb-giv-unavailable="export">Accounting CSV / PDF exports</li>
+    </ul>
+  </aside>
   <% } %>
 </section>
 

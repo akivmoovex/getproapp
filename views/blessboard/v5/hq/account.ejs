@@ -1,7 +1,12 @@
 <%- include('../partials/hq-shell-start') %>
 
-<section class="bb-hq-account" data-bb-hq-account="1">
+<section class="bb-hq-account" data-bb-hq-account="1" aria-label="Account">
   <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">HQ</a>
+      <span aria-hidden="true">›</span>
+      <span>Account</span>
+    </p>
     <h1 class="bb-hq-page-head__title">Account</h1>
     <p class="bb-hq-lede">
       Signed-in HQ administrator for this church site. Church identity comes from the hostname —
@@ -9,7 +14,7 @@
     </p>
   </header>
 
-  <dl class="bb-hq-dl">
+  <dl class="bb-hq-dl bb-hq-panel">
     <dt>Display name</dt>
     <dd><%= displayName || '—' %></dd>
     <dt>Role</dt>

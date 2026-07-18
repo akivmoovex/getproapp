@@ -1424,10 +1424,16 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", hqCookie);
     assert.equal(formsList.status, 200);
     assert.match(formsList.text, /data-bb-forms-admin-list="1"/);
+    assert.match(formsList.text, /data-bb-hq-forms="1"/);
+    assert.match(formsList.text, /data-bb-stitch-forms="20-member-forms-documents"/);
     assert.match(formsList.text, /data-bb-hq-forms-branches="1"/);
+    assert.match(formsList.text, /data-bb-forms-filter="1"/);
+    assert.match(formsList.text, /data-bb-forms-summary="1"/);
+    assert.match(formsList.text, /data-bb-forms-status-chips="1"/);
     assert.match(formsList.text, /href="\/hq\/forms\/b\/campus"/);
-    assert.match(formsList.text, /href="\/hq\/requests"/);
+    assert.match(formsList.text, /href="\/hq\/resources"/);
     assert.doesNotMatch(formsList.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(formsList.text, /Ada Member|ada@example\.test|answersJson|"full_name"\s*:/i);
 
     const resourcesList = await request(app)
       .get("/hq/resources")
@@ -1435,8 +1441,15 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", hqCookie);
     assert.equal(resourcesList.status, 200);
     assert.match(resourcesList.text, /data-bb-resources-admin-list="1"/);
+    assert.match(resourcesList.text, /data-bb-hq-resources="1"/);
+    assert.match(resourcesList.text, /data-bb-stitch-resources="19-member-resources-study"/);
     assert.match(resourcesList.text, /data-bb-hq-resources-branches="1"/);
+    assert.match(resourcesList.text, /data-bb-resources-filter="1"/);
+    assert.match(resourcesList.text, /data-bb-resources-summary="1"/);
     assert.match(resourcesList.text, /href="\/hq\/resources\/b\/campus"/);
+    assert.match(resourcesList.text, /href="\/hq\/forms"/);
+    assert.doesNotMatch(resourcesList.text, /\/member\/resources\/[^"]+\/file|cdn\.|public CDN url/i);
+    assert.doesNotMatch(resourcesList.text, new RegExp(churchA.id, "i"));
 
     const campusForm = await createForm(pool, {
       churchId: churchA.id,
@@ -1461,6 +1474,39 @@ describe("blessboard forms-requests", () => {
     assert.match(branchForms.text, /href="\/hq\/forms"/);
     assert.doesNotMatch(branchForms.text, /data-bb-hq-forms-branches="1"/);
 
+    const churchWideForms = await request(app)
+      .get("/hq/forms")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(churchWideForms.status, 200);
+    assert.match(churchWideForms.text, /Campus HQ form/);
+    assert.match(churchWideForms.text, /data-bb-forms-scope="church-wide"/);
+
+    const formsSearchHit = await request(app)
+      .get("/hq/forms?q=Campus%20HQ")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(formsSearchHit.status, 200);
+    assert.match(formsSearchHit.text, /Campus HQ form/);
+    assert.match(formsSearchHit.text, /name="q"/);
+    assert.match(formsSearchHit.text, /value="Campus HQ"/);
+
+    const formsSearchMiss = await request(app)
+      .get("/hq/forms?q=zzzz-no-match")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(formsSearchMiss.status, 200);
+    assert.match(formsSearchMiss.text, /data-bb-forms-empty="no-results"/);
+    assert.doesNotMatch(formsSearchMiss.text, /Campus HQ form/);
+
+    const formsStatusFilter = await request(app)
+      .get("/hq/forms?status=archived")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(formsStatusFilter.status, 200);
+    assert.match(formsStatusFilter.text, /data-bb-forms-status-filter="archived"/);
+    assert.match(formsStatusFilter.text, /data-bb-forms-empty="no-results"/);
+
     const campusResource = await createResource(pool, {
       churchId: churchA.id,
       branchId: campusBranch.id,
@@ -1480,6 +1526,52 @@ describe("blessboard forms-requests", () => {
     assert.equal(branchResources.status, 200);
     assert.match(branchResources.text, /Campus study guide/);
     assert.match(branchResources.text, /href="\/hq\/resources"/);
+    assert.match(branchResources.text, /Private file/);
+
+    const churchWideResources = await request(app)
+      .get("/hq/resources")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(churchWideResources.status, 200);
+    assert.match(churchWideResources.text, /Campus study guide/);
+    assert.match(churchWideResources.text, /data-bb-resources-scope="church-wide"/);
+    assert.match(churchWideResources.text, /Private file/);
+    assert.doesNotMatch(churchWideResources.text, new RegExp(privateMediaId, "i"));
+
+    const resourcesSearchHit = await request(app)
+      .get("/hq/resources?q=study%20guide")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(resourcesSearchHit.status, 200);
+    assert.match(resourcesSearchHit.text, /Campus study guide/);
+
+    const resourcesSearchMiss = await request(app)
+      .get("/hq/resources?q=zzzz-no-match")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(resourcesSearchMiss.status, 200);
+    assert.match(resourcesSearchMiss.text, /data-bb-resources-empty="no-results"/);
+    assert.doesNotMatch(resourcesSearchMiss.text, /Campus study guide/);
+
+    const resourcesStatusFilter = await request(app)
+      .get("/hq/resources?status=published")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(resourcesStatusFilter.status, 200);
+    assert.match(resourcesStatusFilter.text, /data-bb-resources-status-filter="published"/);
+    assert.doesNotMatch(resourcesStatusFilter.text, /Campus study guide/);
+
+    const anonDownloadDenied = await request(app)
+      .get(`/member/resources/${campusResource.resource.id}/file`)
+      .set("Host", HOST_A);
+    assert.ok(
+      anonDownloadDenied.status === 401 ||
+        anonDownloadDenied.status === 403 ||
+        anonDownloadDenied.status === 404 ||
+        anonDownloadDenied.status === 303,
+      `anon download status=${anonDownloadDenied.status}`
+    );
+    assert.doesNotMatch(String(anonDownloadDenied.headers.location || ""), /cdn\.|storage\.googleapis/i);
 
     const created = await createMemberRequest(pool, {
       churchId: churchA.id,
@@ -1499,15 +1591,46 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", hqCookie);
     assert.equal(reqList.status, 200);
     assert.match(reqList.text, /data-bb-request-admin-list="1"/);
+    assert.match(reqList.text, /data-bb-hq-requests="1"/);
+    assert.match(reqList.text, /data-bb-stitch-requests="44-branch-request-workflow-queue"/);
     assert.match(reqList.text, /data-bb-hq-requests-branches="1"/);
+    assert.match(reqList.text, /data-bb-req-filter="1"/);
+    assert.match(reqList.text, /data-bb-req-summary="1"/);
+    assert.match(reqList.text, /data-bb-req-scope="church-wide"/);
     assert.match(reqList.text, /href="\/hq\/requests\/b\/campus"/);
     assert.match(reqList.text, /HQ oversight counseling/);
     assert.doesNotMatch(reqList.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(reqList.text, new RegExp(memberId, "i"));
-    assert.doesNotMatch(reqList.text, /Active Donor|donor email|View Profile/i);
+    assert.doesNotMatch(reqList.text, /Active Donor|donor email|View Profile|Need pastoral follow-up/i);
 
     const memberRef = String(memberId).slice(-8);
     assert.match(reqList.text, new RegExp(memberRef));
+
+    const reqSearchHit = await request(app)
+      .get("/hq/requests?q=oversight%20counseling")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(reqSearchHit.status, 200);
+    assert.match(reqSearchHit.text, /HQ oversight counseling/);
+    assert.match(reqSearchHit.text, /name="q"/);
+
+    const reqSearchMiss = await request(app)
+      .get("/hq/requests?q=zzzz-no-match")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(reqSearchMiss.status, 200);
+    assert.match(reqSearchMiss.text, /data-bb-req-empty="no-results"/);
+    assert.doesNotMatch(reqSearchMiss.text, /HQ oversight counseling/);
+
+    const reqStatusFilter = await request(app)
+      .get("/hq/requests?status=resolved&q=HQ%20oversight%20counseling")
+      .set("Host", HOST_A)
+      .set("Cookie", hqCookie);
+    assert.equal(reqStatusFilter.status, 200);
+    assert.match(reqStatusFilter.text, /data-bb-req-tab="resolved"/);
+    assert.match(reqStatusFilter.text, /data-bb-req-empty="no-results"/);
+    assert.doesNotMatch(reqStatusFilter.text, /data-bb-req-row=/);
+    assert.doesNotMatch(reqStatusFilter.text, /data-bb-req-catalog="1"/);
 
     const branchReqList = await request(app)
       .get("/hq/requests/b/campus")
@@ -1516,6 +1639,7 @@ describe("blessboard forms-requests", () => {
     assert.equal(branchReqList.status, 200);
     assert.match(branchReqList.text, /HQ oversight counseling/);
     assert.match(branchReqList.text, /href="\/hq\/requests"/);
+    assert.match(branchReqList.text, /data-bb-hq-requests="1"/);
     assert.doesNotMatch(branchReqList.text, /data-bb-hq-requests-branches="1"/);
 
     const detail = await request(app)
@@ -1524,9 +1648,13 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", hqCookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-request-admin-detail="1"/);
+    assert.match(detail.text, /data-bb-hq-request-detail="1"/);
+    assert.match(detail.text, /data-bb-stitch-requests-detail="45-branch-request-details"/);
     assert.match(detail.text, /data-bb-req-attachment="1"/);
     assert.match(detail.text, /data-bb-req-download="1"/);
     assert.match(detail.text, /data-bb-req-status-form="1"/);
+    assert.match(detail.text, /data-bb-req-history="1"/);
+    assert.match(detail.text, /Need pastoral follow-up/);
     assert.match(detail.text, /href="\/hq\/requests"/);
     assert.doesNotMatch(detail.text, new RegExp(memberId, "i"));
     assert.match(detail.text, new RegExp(memberRef));
@@ -1562,6 +1690,8 @@ describe("blessboard forms-requests", () => {
     assert.equal(after.status, 200);
     assert.match(after.text, /data-bb-status="in_review"/);
     assert.match(after.text, /HQ assigned/);
+    assert.match(after.text, /data-bb-req-history="1"/);
+    assert.match(after.text, /data-bb-history-to="in_review"/);
 
     const file = await request(app)
       .get(`/hq/requests/b/campus/${created.request.id}/file`)

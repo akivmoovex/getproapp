@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=27" />
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=42" />
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=2" />
 </head>
 <%
@@ -30,13 +30,10 @@
         { key: 'audit', label: 'Audit', href: '/hq/audit', icon: 'history' },
         { key: 'account', label: 'Account', href: '/hq/account', icon: 'person' },
       ];
-  var hqTabs = (typeof mobileTabs !== 'undefined' && mobileTabs && mobileTabs.length)
-    ? mobileTabs
-    : hqNav.filter(function (item) {
-        return ['home', 'branches', 'reports', 'account'].indexOf(item.key) !== -1;
-      });
   var hqRole = typeof roleLabel !== 'undefined' && roleLabel ? roleLabel : 'HQ admin';
   var hqDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
+  var hqChurch = typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : '';
+  var hqBranch = typeof hqBranchDisplayName !== 'undefined' && hqBranchDisplayName ? hqBranchDisplayName : '';
   var hqCsrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
 %>
 <body
@@ -45,6 +42,7 @@
   data-bb-product="blessboard-v5"
   data-bb-viewport="responsive"
   data-bb-page="<%= activeNav || 'home' %>"
+  data-bb-stitch-shell="51-hq-dashboard"
 >
   <a class="bb-hq-skip" href="#bb-hq-main">Skip to content</a>
 
@@ -63,12 +61,15 @@
           <span>BlessBoard</span>
         </a>
         <p class="bb-hq-context">
-          <span class="bb-hq-context__church"><%= churchDisplayName %></span>
-          <% if (typeof hqBranchDisplayName !== 'undefined' && hqBranchDisplayName) { %>
-          <span class="bb-hq-context__hq"><%= hqBranchDisplayName %></span>
+          <span class="bb-hq-context__church"><%= hqChurch %></span>
+          <% if (hqBranch) { %>
+          <span class="bb-hq-context__hq"><%= hqBranch %></span>
           <% } %>
         </p>
-        <span class="bb-hq-role"><%= hqRole %></span>
+        <span class="bb-hq-role" data-bb-hq-role="1">
+          <span class="material-symbols-outlined" aria-hidden="true">domain</span>
+          <%= hqRole %>
+        </span>
       </div>
 
       <nav class="bb-hq-sidebar__nav" aria-label="HQ desktop" data-bb-nav="desktop">
@@ -88,7 +89,7 @@
         <% if (hqDisplay) { %>
         <p class="bb-hq-user" data-bb-admin-user="1">
           <span class="bb-hq-user__name"><%= hqDisplay %></span>
-          <span class="bb-hq-user__meta"><%= churchDisplayName %></span>
+          <span class="bb-hq-user__meta"><%= hqChurch %><% if (hqBranch) { %> · <%= hqBranch %><% } %></span>
         </p>
         <% } %>
         <form class="bb-hq-logout" method="post" action="/hq/logout" data-bb-hq-logout="1">
@@ -105,10 +106,19 @@
     <div class="bb-hq-frame">
       <header class="bb-hq-top" data-bb-nav="mobile-header">
         <div class="bb-hq-top__brand">
-          <a class="bb-hq-wordmark bb-hq-wordmark--compact" href="/hq">BlessBoard HQ</a>
+          <a class="bb-hq-wordmark bb-hq-wordmark--compact" href="/hq">
+            <img
+              class="bb-hq-wordmark__mark"
+              src="/church/images/brand/blessboard-small-church-logo.png"
+              alt=""
+              width="24"
+              height="24"
+              decoding="async"
+            />
+            <span>BlessBoard</span>
+          </a>
           <p class="bb-hq-context bb-hq-context--compact">
-            <%= churchDisplayName %>
-            <span class="bb-hq-role"><%= hqRole %></span>
+            <%= hqChurch %><% if (hqBranch) { %> · <%= hqBranch %><% } %>
           </p>
         </div>
         <div class="bb-hq-top__actions">
@@ -122,6 +132,7 @@
             data-bb-nav="mobile-toggle"
             aria-controls="bb-hq-drawer"
             aria-expanded="false"
+            aria-label="Open menu"
           >
             <span class="material-symbols-outlined" aria-hidden="true">menu</span>
             <span class="bb-hq-nav-toggle__label">Menu</span>
@@ -132,17 +143,32 @@
       <div
         id="bb-hq-drawer"
         class="bb-hq-drawer"
-        data-bb-nav="mobile"
+        data-bb-nav="mobile-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="HQ menu"
+        inert
         hidden
       >
         <div class="bb-hq-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
         <nav class="bb-hq-drawer__panel" aria-label="HQ mobile menu">
           <div class="bb-hq-drawer__head">
             <p class="bb-hq-drawer__title">Menu</p>
-            <button type="button" class="bb-hq-drawer__close" data-bb-nav="drawer-close" aria-label="Close menu">
+            <button
+              type="button"
+              class="bb-hq-drawer__close"
+              data-bb-nav="drawer-close"
+              aria-label="Close menu"
+            >
               <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
           </div>
+          <% if (hqDisplay) { %>
+          <p class="bb-hq-user bb-hq-user--drawer" data-bb-admin-user="1">
+            <span class="bb-hq-user__name"><%= hqDisplay %></span>
+            <span class="bb-hq-user__meta"><%= hqRole %></span>
+          </p>
+          <% } %>
           <% hqNav.forEach(function (item) { %>
           <a
             href="<%= item.href %>"
@@ -153,7 +179,18 @@
             <span><%= item.label %></span>
           </a>
           <% }) %>
+          <form class="bb-hq-logout" method="post" action="/hq/logout" data-bb-hq-logout="1">
+            <input type="hidden" name="_csrf" value="<%= hqCsrf %>" />
+            <button type="submit">
+              <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+              Sign out
+            </button>
+          </form>
+          <div class="bb-hq-drawer__footer" data-bb-footer="drawer">
+            <%- include('./powered-by-getpro') %>
+          </div>
         </nav>
       </div>
 
-      <main id="bb-hq-main" class="bb-hq-main">
+      <main id="bb-hq-main" class="bb-hq-main" tabindex="-1">
+        <div class="bb-hq-page" data-bb-page-area="1">

@@ -205,20 +205,42 @@ describe("blessboard content admin", () => {
     requireDb();
     const { res } = await authedGet("/hq/content", HOST_A, users.hqA);
     assert.equal(res.status, 200);
-    assert.match(res.text, /Website content/);
+    assert.match(res.text, /Public content|Website content/);
     assert.match(res.text, /Church-wide/);
     assert.match(res.text, /data-bb-content-admin="1"/);
+    assert.match(res.text, /data-bb-hq-content="1"/);
     assert.match(res.text, /data-bb-stitch-content="34-branch-website-editor"/);
+    assert.match(res.text, /data-bb-content-scope="church-wide"/);
+    assert.match(res.text, /data-bb-content-scope-panel="1"/);
+    assert.match(res.text, /data-bb-content-summary="1"/);
     assert.match(res.text, /data-bb-content-pages="1"/);
     assert.match(res.text, /data-bb-content-entities="1"/);
     assert.match(res.text, /data-bb-content-page-cards="1"/);
+    assert.match(res.text, /data-bb-content-filter="1"/);
+    assert.match(res.text, /data-bb-content-status-chips="1"/);
     assert.match(res.text, /data-bb-hq-content-branches="1"/);
+    assert.match(res.text, /data-bb-content-branch-table="1"/);
+    assert.match(res.text, /data-bb-content-branch-cards="1"/);
     assert.match(res.text, /\/hq\/content\/pages\/about/);
     assert.match(res.text, /\/hq\/content\/leadership/);
+    assert.match(res.text, /\/hq\/content\/ministries/);
+    assert.match(res.text, /\/hq\/content\/events/);
+    assert.match(res.text, /\/hq\/content\/sermons/);
+    assert.match(res.text, /\/hq\/content\/contact/);
+    assert.match(res.text, /\/hq\/content\/giving/);
     assert.match(res.text, /href="\/hq\/announcements"/);
     assert.match(res.text, /data-bb-content-unavailable="builder"/);
+    assert.match(res.text, /data-bb-content-unavailable="theme"/);
+    assert.match(res.text, /data-bb-content-unavailable="domain"/);
+    assert.match(res.text, /data-bb-content-unavailable="seo"/);
     assert.doesNotMatch(res.text, /completion %|85%|You have \d+ unsaved changes/i);
+    assert.doesNotMatch(res.text, /live website builder|SEO analytics dashboard/i);
     assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
+
+    const filtered = await authedGet("/hq/content?status=draft", HOST_A, users.hqA);
+    assert.equal(filtered.res.status, 200);
+    assert.match(filtered.res.text, /data-bb-content-status-filter="draft"/);
+    assert.match(filtered.res.text, /data-bb-content-page-status="draft"/);
   });
 
   it("branch_admin cannot access HQ content but can access branch-admin content", async () => {
@@ -831,6 +853,12 @@ describe("blessboard content admin", () => {
     const { res } = await authedGet("/hq/content/b/hq", HOST_A, users.hqA);
     assert.equal(res.status, 200);
     assert.match(res.text, /HQ A|Branch/i);
+    assert.match(res.text, /data-bb-hq-content="1"/);
+    assert.match(res.text, /data-bb-content-scope="branch"/);
+    assert.match(res.text, /data-bb-content-scope-panel="1"/);
+    assert.match(res.text, /href="\/hq\/content"/);
+    assert.match(res.text, /data-bb-content-filter="1"/);
+    assert.doesNotMatch(res.text, /data-bb-hq-content-branches="1"/);
 
     const { res: pageRes, csrf } = await authedGet("/hq/content/b/hq/pages/contact", HOST_A, users.hqA);
     assert.equal(pageRes.status, 200);
