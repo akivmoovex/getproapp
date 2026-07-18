@@ -4,59 +4,91 @@
   var churchName = churchDisplayName || 'your church';
 %>
 
-<section class="bb-mp-giving" data-bb-member-giving="1">
-  <header class="bb-mp-page-head">
-    <div>
-      <h1 class="bb-mp-page-head__title">Giving information</h1>
-      <p class="bb-mp-lede">
-        Support the ministries of <%= churchName %> through the giving options published by leadership.
-        BlessBoard does not process payments or collect card details on this page.
-      </p>
-    </div>
+<section
+  class="bb-mp-giving"
+  data-bb-member-giving="1"
+  data-bb-stitch-giving="24-member-giving-information"
+>
+  <header class="bb-mp-giving-hero">
+    <span class="bb-mp-giving-hero__icon" aria-hidden="true">
+      <span class="material-symbols-outlined">volunteer_activism</span>
+    </span>
+    <h1 class="bb-mp-page-head__title">Giving information</h1>
+    <p class="bb-mp-lede">
+      Support the ministries of <%= churchName %> through the giving options published by leadership.
+      This page is instructional — BlessBoard does not process payments or collect card details here.
+    </p>
   </header>
 
-  <aside class="bb-mp-alert bb-mp-alert--info" role="note" data-bb-giving-info-only="1">
-    <p class="bb-mp-alert__title">Information only</p>
-    <p>Use the published methods below to give directly to the church. No payment forms or card collection are available here.</p>
+  <aside class="bb-mp-giving-notice" role="note" data-bb-giving-info-only="1">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <div>
+      <p class="bb-mp-giving-notice__title">Information only</p>
+      <p>
+        Use the published methods below to give directly to the church.
+        No checkout or payment forms are available on this page.
+      </p>
+    </div>
   </aside>
 
   <% if (!methods.length) { %>
-  <div class="bb-mp-empty" role="status" data-bb-empty="giving">
+  <div class="bb-mp-empty bb-mp-giving-empty" role="status" data-bb-giving-empty="catalog">
     <span class="material-symbols-outlined" aria-hidden="true">payments</span>
-    <p>Giving information has not been published yet. Please contact the church office.</p>
+    <p class="bb-mp-giving-empty__title">No giving methods published yet</p>
+    <p>Giving information has not been published for this branch. Please contact the church office for instructions.</p>
+    <p class="bb-mp-hint">BlessBoard does not process payments or store private financial account details on this page.</p>
   </div>
   <% } else { %>
-  <ul class="bb-mp-giving-grid" data-bb-giving-methods="1">
-    <% methods.forEach(function (method) { %>
-    <li class="bb-mp-giving-card" data-bb-giving-method="<%= method.methodType || 'other' %>">
-      <span class="bb-mp-giving-card__icon" aria-hidden="true">
-        <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
-      </span>
-      <h2 class="bb-mp-giving-card__label"><%= method.label %></h2>
-      <% if (method.instructions) { %>
-      <p class="bb-mp-giving-card__instructions"><%= method.instructions %></p>
-      <% } %>
-      <% if (method.externalUrl) { %>
-      <p class="bb-mp-giving-card__action">
-        <a
-          class="bb-mp-btn bb-mp-btn--primary"
-          href="<%= method.externalUrl %>"
-          rel="noopener noreferrer"
-          target="_blank"
-          data-bb-giving-link="1"
-        >
-          Open giving link
-          <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-        </a>
+  <section class="bb-mp-giving-methods" aria-labelledby="bb-mp-giving-methods-heading">
+    <div class="bb-mp-giving-methods__head">
+      <h2 id="bb-mp-giving-methods-heading" class="bb-mp-section-title">Ways to give</h2>
+      <p class="bb-mp-giving-methods__note">
+        Methods published by <%= churchName %>. Follow the instructions below, or contact the church office if you need help.
       </p>
-      <% } %>
-    </li>
-    <% }) %>
-  </ul>
+    </div>
+
+    <ul class="bb-mp-giving-grid" data-bb-giving-methods="1">
+      <% methods.forEach(function (method) { %>
+      <li class="bb-mp-giving-card" data-bb-giving-method="<%= method.methodType || 'other' %>">
+        <span class="bb-mp-giving-card__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
+        </span>
+        <div class="bb-mp-giving-card__body">
+          <% if (method.typeLabel) { %>
+          <p class="bb-mp-giving-card__type"><%= method.typeLabel %></p>
+          <% } %>
+          <h3 class="bb-mp-giving-card__label"><%= method.label %></h3>
+          <% if (method.instructions) { %>
+          <div class="bb-mp-giving-card__instructions" data-bb-giving-instructions="1">
+            <p class="bb-mp-giving-card__instructions-label">Instructions</p>
+            <p class="bb-mp-giving-card__instructions-body"><%= method.instructions %></p>
+          </div>
+          <% } %>
+          <% if (method.externalUrl) { %>
+          <p class="bb-mp-giving-card__action">
+            <a
+              class="bb-mp-btn bb-mp-btn--primary"
+              href="<%= method.externalUrl %>"
+              rel="noopener noreferrer"
+              target="_blank"
+              data-bb-giving-link="1"
+              aria-label="Open published giving link for <%= method.label %> (opens in a new tab)"
+            >
+              Open published link
+              <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+            </a>
+          </p>
+          <% } %>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
   <% } %>
 
-  <p class="bb-mp-hint" role="note">
+  <p class="bb-mp-giving-disclaimer" role="note" data-bb-giving-disclaimer="1">
     BlessBoard does not process payments or collect financial account details on this page.
+    Use only the published methods above, or contact the church office for help.
   </p>
 </section>
 

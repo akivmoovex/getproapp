@@ -186,16 +186,38 @@ function givingMethodIcon(methodType) {
   if (t.includes("person") || t.includes("cash") || t.includes("offering")) {
     return "volunteer_activism";
   }
+  if (t.includes("online") || t.includes("card") || t.includes("pay") || t.includes("link")) {
+    return "link";
+  }
   return "payments";
 }
 
 /**
+ * Member-facing method type label — derived from published method_type only.
+ * @param {string|null|undefined} methodType
+ */
+function givingMethodTypeLabel(methodType) {
+  const t = String(methodType || "").toLowerCase();
+  if (t.includes("bank") || t.includes("transfer") || t.includes("wire")) return "Bank transfer";
+  if (t.includes("mobile") || t.includes("momo") || t.includes("airtel") || t.includes("mtn")) {
+    return "Mobile money";
+  }
+  if (t.includes("cash") || t.includes("offering") || t.includes("person")) return "In person";
+  if (t.includes("online") || t.includes("card") || t.includes("pay") || t.includes("link")) {
+    return "External link";
+  }
+  return "Giving method";
+}
+
+/**
  * Published giving methods for member info screen — no payment processing fields.
+ * Omits ids, church/branch UUIDs, and any admin-only metadata.
  * @param {object[]} items
  */
 function mapMemberGivingMethods(items) {
   return (items || []).map((row) => ({
     methodType: row.methodType,
+    typeLabel: givingMethodTypeLabel(row.methodType),
     label: row.label,
     instructions: row.instructions,
     externalUrl: safeExternalUrl(row.externalUrl),

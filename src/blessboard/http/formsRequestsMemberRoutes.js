@@ -16,6 +16,7 @@ const { buildMemberShellLocals } = require("./memberShellLocals");
 const {
   STATUS,
   REQUEST_CATEGORIES,
+  REQUEST_STATUSES,
   ALLOWED_FIELD_TYPES,
   listResources,
   getResource,
@@ -322,6 +323,134 @@ function fieldLabelsFromForm(form) {
 }
 
 /**
+ * Real V5 request categories only (`prayer` | `pastoral` | `practical` | `other`).
+ * @param {string|null|undefined} category
+ */
+function memberRequestCategoryLabel(category) {
+  const value = String(category || "")
+    .trim()
+    .toLowerCase();
+  if (value === "prayer") return "Prayer";
+  if (value === "pastoral") return "Care";
+  if (value === "practical") return "Support";
+  if (value === "other") return "Other";
+  return null;
+}
+
+/**
+ * @param {string|null|undefined} category
+ */
+function memberRequestCategoryIcon(category) {
+  const value = String(category || "")
+    .trim()
+    .toLowerCase();
+  if (value === "prayer") return "church";
+  if (value === "pastoral") return "medical_services";
+  if (value === "practical") return "handshake";
+  return "more_horiz";
+}
+
+/**
+ * Real V5 request statuses only (`submitted` | `in_review` | `resolved` | `closed`).
+ * @param {string|null|undefined} status
+ */
+function memberRequestStatusLabel(status) {
+  const value = String(status || "")
+    .trim()
+    .toLowerCase();
+  if (value === "submitted") return "Pending review";
+  if (value === "in_review") return "In review";
+  if (value === "resolved") return "Resolved";
+  if (value === "closed") return "Closed";
+  return null;
+}
+
+/**
+ * @param {string|null|undefined} status
+ */
+function memberRequestStatusChipClass(status) {
+  const value = String(status || "")
+    .trim()
+    .toLowerCase();
+  if (value === "submitted") return "bb-mp-chip--pending";
+  if (value === "in_review") return "bb-mp-chip--open";
+  if (value === "resolved") return "bb-mp-chip--active";
+  return "bb-mp-chip--request";
+}
+
+/**
+ * @param {string} raw
+ */
+function normalizeMemberRequestsFilter(raw) {
+  const value = String(raw || "all")
+    .trim()
+    .toLowerCase();
+  if (value === "active" || value === "resolved" || value === "closed") return value;
+  if (REQUEST_STATUSES.includes(value)) return value;
+  return "all";
+}
+
+/**
+ * @param {object[]} requests
+ * @param {string} filter
+ * @param {string} q
+ */
+function filterVisibleMemberRequests(requests, filter, q) {
+  let out = Array.isArray(requests) ? requests.slice() : [];
+  const mode = normalizeMemberRequestsFilter(filter);
+  if (mode === "active") {
+    out = out.filter((item) => item && (item.status === "submitted" || item.status === "in_review"));
+  } else if (mode === "submitted" || mode === "in_review" || mode === "resolved" || mode === "closed") {
+    out = out.filter((item) => item && item.status === mode);
+  }
+  const query = String(q || "")
+    .trim()
+    .toLowerCase()
+    .slice(0, 100);
+  if (!query) return out;
+  return out.filter((item) => {
+    if (!item) return false;
+    const subject = String(item.subject || "").toLowerCase();
+    const message = String(item.message || "").toLowerCase();
+    const category = String(item.categoryLabel || item.category || "").toLowerCase();
+    const status = String(item.statusLabel || item.status || "").toLowerCase();
+    return (
+      subject.includes(query) ||
+      message.includes(query) ||
+      category.includes(query) ||
+      status.includes(query)
+    );
+  });
+}
+
+/**
+ * Live summary counts from the member's own request list only.
+ * @param {object[]} requests
+ */
+function summarizeMemberRequests(requests) {
+  const list = Array.isArray(requests) ? requests : [];
+  let pending = 0;
+  let inReview = 0;
+  let resolved = 0;
+  let closed = 0;
+  for (const item of list) {
+    if (!item) continue;
+    if (item.status === "submitted") pending += 1;
+    else if (item.status === "in_review") inReview += 1;
+    else if (item.status === "resolved") resolved += 1;
+    else if (item.status === "closed") closed += 1;
+  }
+  return {
+    total: list.length,
+    active: pending + inReview,
+    pending,
+    inReview,
+    resolved,
+    closed,
+  };
+}
+
+/**
  * Member-safe request history — status + member-visible note only.
  * Omits changedByUserId, memberVisible flags, and other internal fields.
  * @param {object|null|undefined} request
@@ -333,19 +462,30 @@ function presentMemberRequest(request) {
     ? request.history.map((h) => ({
         fromStatus: h.fromStatus || null,
         toStatus: h.toStatus,
+        fromStatusLabel: h.fromStatus ? memberRequestStatusLabel(h.fromStatus) : null,
+        toStatusLabel: memberRequestStatusLabel(h.toStatus),
         note: h.note || null,
         createdAt: h.createdAt || null,
+        createdAtLabel: formatMemberSubmittedAt(h.createdAt),
       }))
     : [];
+  const statusLabel = memberRequestStatusLabel(request.status);
+  const categoryLabel = memberRequestCategoryLabel(request.category);
   return {
     id: request.id,
     category: request.category,
+    categoryLabel,
+    categoryIcon: memberRequestCategoryIcon(request.category),
     subject: request.subject,
     message: request.message,
     status: request.status,
+    statusLabel,
+    statusChipClass: memberRequestStatusChipClass(request.status),
     mediaAssetId: request.mediaAssetId || null,
     createdAt: request.createdAt || null,
+    createdAtLabel: formatMemberSubmittedAt(request.createdAt),
     updatedAt: request.updatedAt || null,
+    updatedAtLabel: formatMemberSubmittedAt(request.updatedAt || request.createdAt),
     history,
   };
 }
@@ -666,6 +806,12 @@ function createFormsRequestsMemberRouter(deps) {
       memberId: scope.memberId,
       forMember: true,
     });
+    const allRequests = (listed.ok ? listed.requests : []).map(presentMemberRequest).filter(Boolean);
+    const filter = normalizeMemberRequestsFilter(req.query && req.query.filter);
+    const q = String((req.query && req.query.q) || "")
+      .trim()
+      .slice(0, 100);
+    const requests = filterVisibleMemberRequests(allRequests, filter, q);
     return res
       .status(200)
       .type("html")
@@ -674,7 +820,11 @@ function createFormsRequestsMemberRouter(deps) {
           "forms-requests/member-requests.ejs",
           shellLocals(req, res, "requests", {
             pageTitle: "Request status",
-            requests: listed.ok ? listed.requests : [],
+            allRequests,
+            requests,
+            summary: summarizeMemberRequests(allRequests),
+            filter,
+            q,
             saved: String((req.query && req.query.saved) || ""),
           })
         )

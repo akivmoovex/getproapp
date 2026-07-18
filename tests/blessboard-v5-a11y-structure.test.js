@@ -379,6 +379,75 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(css, /\.bb-mp-forms-toolbar/);
     assert.match(css, /@media \(min-width:\s*700px\)/);
   });
+
+  it("member requests keep supported categories/statuses without SLA, chat, or attachment upload chrome", () => {
+    const list = read("views/blessboard/v5/forms-requests/member-requests.ejs");
+    const create = read("views/blessboard/v5/forms-requests/member-request-new.ejs");
+    const detail = read("views/blessboard/v5/forms-requests/member-request-detail.ejs");
+    const css = read("public/blessboard/v5/member-portal.css");
+    assert.match(list, /data-bb-stitch-requests="22-member-request-status"/);
+    assert.match(list, /data-bb-requests-toolbar="1"/);
+    assert.match(list, /data-bb-requests-search="1"/);
+    assert.match(list, /key: 'active'/);
+    assert.match(list, /key: 'resolved'/);
+    assert.match(list, /key: 'closed'/);
+    assert.match(list, /data-bb-requests-empty="catalog"/);
+    assert.match(list, /data-bb-requests-empty="no-results"/);
+    assert.match(list, /data-bb-request-summary="1"/);
+    assert.match(list, /counts\.active/);
+    assert.match(list, /r\.statusLabel/);
+    assert.match(list, /r\.categoryLabel/);
+    assert.doesNotMatch(list, /crisis hotline|24.?48 hours|REQ-20\d{2}|Facility Use|In Progress|chat/i);
+    assert.match(create, /data-bb-stitch-request-new="21-member-submit-online-request"/);
+    assert.match(create, /action="\/member\/requests"/);
+    assert.match(create, /name="_csrf"/);
+    assert.match(create, /name="category"/);
+    assert.match(create, /value:\s*'prayer'/);
+    assert.match(create, /value:\s*'pastoral'/);
+    assert.match(create, /value:\s*'practical'/);
+    assert.match(create, /value:\s*'other'/);
+    assert.match(create, /value="<%= card\.value %>"/);
+    assert.match(create, /name="subject"/);
+    assert.match(create, /name="message"/);
+    assert.match(create, /data-bb-request-next="1"/);
+    assert.doesNotMatch(create, /Mark as Urgent|Tap to upload|Max 5MB|24.?48 hours|type="file"|name="attachment"/i);
+    assert.match(detail, /data-bb-request-history="1"/);
+    assert.match(detail, /data-bb-request-success="1"/);
+    assert.match(detail, /bb-mp-timeline/);
+    assert.match(detail, /h\.toStatusLabel|h\.note/);
+    assert.doesNotMatch(detail, /changedByUserId|memberVisible|crisis hotline|chat/i);
+    assert.match(css, /\.bb-mp-req-summary/);
+    assert.match(css, /\.bb-mp-req-card/);
+    assert.match(css, /\.bb-mp-req-panel/);
+    assert.match(css, /\.bb-mp-timeline/);
+    assert.match(css, /@media \(min-width:\s*700px\)/);
+  });
+
+  it("member giving keeps published methods only without checkout or fabricated balances", () => {
+    const giving = read("views/blessboard/v5/member/giving.ejs");
+    const css = read("public/blessboard/v5/member-portal.css");
+    assert.match(giving, /data-bb-stitch-giving="24-member-giving-information"/);
+    assert.match(giving, /data-bb-member-giving="1"/);
+    assert.match(giving, /data-bb-giving-info-only="1"/);
+    assert.match(giving, /data-bb-giving-empty="catalog"/);
+    assert.match(giving, /data-bb-giving-methods="1"/);
+    assert.match(giving, /data-bb-giving-instructions="1"/);
+    assert.match(giving, /data-bb-giving-disclaimer="1"/);
+    assert.match(giving, /Information only|instructional/i);
+    assert.match(giving, /Open published link/);
+    assert.match(giving, /method\.typeLabel/);
+    assert.match(giving, /method\.instructions/);
+    assert.match(giving, /method\.externalUrl/);
+    assert.doesNotMatch(
+      giving,
+      /Scan to Give|Generate One-Time Link|85%|Merchant Code|donation history|Your balance|Give Online|Donate Now/i
+    );
+    assert.match(css, /\.bb-mp-giving-hero/);
+    assert.match(css, /\.bb-mp-giving-notice/);
+    assert.match(css, /\.bb-mp-giving-card__instructions/);
+    assert.match(css, /\.bb-mp-giving-grid/);
+    assert.match(css, /@media \(min-width:\s*700px\)/);
+  });
 });
 
 describe("blessboard v5 a11y structure — viewport CSS breakpoints present", () => {

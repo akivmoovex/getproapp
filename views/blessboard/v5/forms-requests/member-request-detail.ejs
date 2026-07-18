@@ -2,50 +2,14 @@
 <%
   var reqItem = request || {};
   var history = Array.isArray(reqItem.history) ? reqItem.history : [];
-  var flash = saved === '1' ? 'Your request was submitted.' : '';
-
-  function categoryLabel(c) {
-    var key = String(c || '').toLowerCase();
-    if (key === 'prayer') return 'Prayer';
-    if (key === 'pastoral') return 'Care';
-    if (key === 'practical') return 'Support';
-    if (key === 'other') return 'Other';
-    return c || 'Request';
-  }
-
-  function statusLabel(s) {
-    var key = String(s || '').toLowerCase();
-    if (key === 'submitted') return 'Pending review';
-    if (key === 'in_review') return 'In review';
-    if (key === 'resolved') return 'Resolved';
-    if (key === 'closed') return 'Closed';
-    return s || 'Unknown';
-  }
-
-  function statusChipClass(s) {
-    var key = String(s || '').toLowerCase();
-    if (key === 'submitted') return 'bb-mp-chip--pending';
-    if (key === 'in_review') return 'bb-mp-chip--open';
-    if (key === 'resolved') return 'bb-mp-chip--active';
-    if (key === 'closed') return 'bb-mp-chip--request';
-    return 'bb-mp-chip--request';
-  }
-
-  function formatWhen(value) {
-    if (!value) return '';
-    var d = value instanceof Date ? value : new Date(value);
-    if (isNaN(d.getTime())) return '';
-    return d.toLocaleString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  }
+  var isSaved = saved === '1';
 %>
 
-<section class="bb-mp-req-detail" data-bb-member-request-detail="1">
+<section
+  class="bb-mp-req-detail"
+  data-bb-member-request-detail="1"
+  data-bb-stitch-request-detail="22-member-request-status"
+>
   <p class="bb-mp-back">
     <a href="/member/requests">
       <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -53,17 +17,35 @@
     </a>
   </p>
 
-  <% if (flash) { %>
-  <p class="bb-mp-ok" role="status"><%= flash %></p>
+  <% if (isSaved) { %>
+  <div class="bb-mp-ok bb-mp-req-success" role="status" data-bb-request-success="1">
+    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+    <div>
+      <p class="bb-mp-req-success__title">Request submitted</p>
+      <p>Your request was sent to church leadership. You can track status updates below.</p>
+    </div>
+  </div>
   <% } %>
 
-  <article class="bb-mp-part-detail" data-bb-status="<%= reqItem.status %>">
+  <article class="bb-mp-part-detail bb-mp-req-detail__card" data-bb-status="<%= reqItem.status %>">
     <div class="bb-mp-ann-chips" aria-label="Request status">
-      <span class="bb-mp-chip <%= statusChipClass(reqItem.status) %>"><%= statusLabel(reqItem.status) %></span>
-      <span class="bb-mp-chip bb-mp-chip--request"><%= categoryLabel(reqItem.category) %></span>
+      <span class="bb-mp-chip <%= reqItem.statusChipClass || 'bb-mp-chip--request' %>"><%= reqItem.statusLabel || reqItem.status %></span>
+      <span class="bb-mp-chip bb-mp-chip--request"><%= reqItem.categoryLabel || reqItem.category %></span>
     </div>
 
     <h1 class="bb-mp-part-detail__title"><%= reqItem.subject %></h1>
+
+    <% if (reqItem.createdAtLabel || reqItem.updatedAtLabel) { %>
+    <p class="bb-mp-req-detail__when">
+      <% if (reqItem.createdAtLabel) { %>
+      <span>Submitted <%= reqItem.createdAtLabel %></span>
+      <% } %>
+      <% if (reqItem.updatedAtLabel && reqItem.updatedAtLabel !== reqItem.createdAtLabel) { %>
+      <span aria-hidden="true">·</span>
+      <span>Updated <%= reqItem.updatedAtLabel %></span>
+      <% } %>
+    </p>
+    <% } %>
 
     <% if (reqItem.message) { %>
     <p class="bb-mp-part-detail__summary"><%= reqItem.message %></p>
@@ -86,7 +68,10 @@
   <section class="bb-mp-req-history" aria-labelledby="status-history-heading" data-bb-request-history="1">
     <h2 id="status-history-heading" class="bb-mp-section-title">Status history</h2>
     <% if (!history.length) { %>
-    <p class="bb-mp-lede bb-mp-lede--tight">No status updates yet.</p>
+    <div class="bb-mp-empty bb-mp-empty--compact" role="status" data-bb-request-history-empty="1">
+      <span class="material-symbols-outlined" aria-hidden="true">timeline</span>
+      <p>No status updates yet.</p>
+    </div>
     <% } else { %>
     <ol class="bb-mp-timeline">
       <% history.forEach(function (h) { %>
@@ -95,16 +80,16 @@
         <div class="bb-mp-timeline__body">
           <p class="bb-mp-timeline__status">
             <% if (h.fromStatus) { %>
-            <span class="bb-mp-timeline__from"><%= statusLabel(h.fromStatus) %></span>
+            <span class="bb-mp-timeline__from"><%= h.fromStatusLabel || h.fromStatus %></span>
             <span aria-hidden="true"> → </span>
             <% } %>
-            <span class="bb-mp-timeline__to"><%= statusLabel(h.toStatus) %></span>
+            <span class="bb-mp-timeline__to"><%= h.toStatusLabel || h.toStatus %></span>
           </p>
           <% if (h.note) { %>
           <p class="bb-mp-timeline__note"><%= h.note %></p>
           <% } %>
-          <% if (h.createdAt) { %>
-          <p class="bb-mp-timeline__when"><%= formatWhen(h.createdAt) %></p>
+          <% if (h.createdAtLabel || h.createdAt) { %>
+          <p class="bb-mp-timeline__when"><%= h.createdAtLabel || h.createdAt %></p>
           <% } %>
         </div>
       </li>

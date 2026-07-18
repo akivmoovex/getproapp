@@ -1,44 +1,42 @@
 <%- include('../partials/member-shell-start') %>
 <%
+  var allRequestList = typeof allRequests !== 'undefined' && allRequests ? allRequests : (requests || []);
   var requestList = requests || [];
+  var counts = typeof summary !== 'undefined' && summary ? summary : {
+    total: allRequestList.length,
+    active: 0,
+    pending: 0,
+    inReview: 0,
+    resolved: 0,
+    closed: 0,
+  };
+  var activeFilter = typeof filter !== 'undefined' && filter ? String(filter) : 'all';
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
   var flash = saved === '1' ? 'Your request was submitted.' : '';
+  var isEmptyCatalog = !allRequestList.length;
+  var isNoResults = !isEmptyCatalog && !requestList.length;
 
-  function categoryLabel(c) {
-    var key = String(c || '').toLowerCase();
-    if (key === 'prayer') return 'Prayer';
-    if (key === 'pastoral') return 'Care';
-    if (key === 'practical') return 'Support';
-    if (key === 'other') return 'Other';
-    return c || 'Request';
+  function filterHref(nextFilter, nextQ) {
+    var parts = [];
+    if (nextFilter && nextFilter !== 'all') parts.push('filter=' + encodeURIComponent(nextFilter));
+    if (nextQ) parts.push('q=' + encodeURIComponent(nextQ));
+    return parts.length ? ('/member/requests?' + parts.join('&')) : '/member/requests';
   }
 
-  function statusLabel(s) {
-    var key = String(s || '').toLowerCase();
-    if (key === 'submitted') return 'Pending review';
-    if (key === 'in_review') return 'In review';
-    if (key === 'resolved') return 'Resolved';
-    if (key === 'closed') return 'Closed';
-    return s || 'Unknown';
-  }
-
-  function statusChipClass(s) {
-    var key = String(s || '').toLowerCase();
-    if (key === 'submitted') return 'bb-mp-chip--pending';
-    if (key === 'in_review') return 'bb-mp-chip--open';
-    if (key === 'resolved') return 'bb-mp-chip--active';
-    if (key === 'closed') return 'bb-mp-chip--request';
-    return 'bb-mp-chip--request';
-  }
-
-  function formatWhen(value) {
-    if (!value) return '';
-    var d = value instanceof Date ? value : new Date(value);
-    if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  }
+  var filters = [
+    { key: 'all', label: 'All' },
+    { key: 'active', label: 'Active' },
+    { key: 'resolved', label: 'Resolved' },
+    { key: 'closed', label: 'Closed' },
+  ];
 %>
 
-<section class="bb-mp-req" data-bb-member-requests="1">
+<section
+  class="bb-mp-req"
+  data-bb-member-requests="1"
+  data-bb-stitch-requests="22-member-request-status"
+  data-bb-requests-filter="<%= activeFilter %>"
+>
   <header class="bb-mp-page-head bb-mp-page-head--split">
     <div>
       <h1 class="bb-mp-page-head__title">Request status</h1>
@@ -53,48 +51,114 @@
   </header>
 
   <% if (flash) { %>
-  <p class="bb-mp-ok" role="status"><%= flash %></p>
+  <div class="bb-mp-ok bb-mp-req-success" role="status" data-bb-request-success="1">
+    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+    <p><%= flash %></p>
+  </div>
   <% } %>
 
-  <% if (!requestList.length) { %>
-  <div class="bb-mp-empty" role="status">
+  <% if (!isEmptyCatalog) { %>
+  <ul class="bb-mp-req-summary" aria-label="Your request summary" data-bb-request-summary="1">
+    <li class="bb-mp-req-summary__card bb-mp-req-summary__card--active">
+      <span class="bb-mp-req-summary__label">Active</span>
+      <span class="bb-mp-req-summary__value"><%= counts.active %></span>
+    </li>
+    <li class="bb-mp-req-summary__card">
+      <span class="bb-mp-req-summary__label">Pending</span>
+      <span class="bb-mp-req-summary__value"><%= counts.pending %></span>
+    </li>
+    <li class="bb-mp-req-summary__card">
+      <span class="bb-mp-req-summary__label">Resolved</span>
+      <span class="bb-mp-req-summary__value"><%= counts.resolved %></span>
+    </li>
+    <li class="bb-mp-req-summary__card">
+      <span class="bb-mp-req-summary__label">Total</span>
+      <span class="bb-mp-req-summary__value"><%= counts.total %></span>
+    </li>
+  </ul>
+
+  <div class="bb-mp-ann-toolbar bb-mp-req-toolbar" data-bb-requests-toolbar="1">
+    <nav class="bb-mp-ann-filters" aria-label="Filter requests">
+      <% filters.forEach(function (f) { %>
+      <a
+        class="bb-mp-ann-filter<%= activeFilter === f.key ? ' is-active' : '' %>"
+        href="<%= filterHref(f.key, searchQ) %>"
+        data-bb-requests-filter-link="<%= f.key %>"
+        <%= activeFilter === f.key ? 'aria-current="page"' : '' %>
+      ><%= f.label %></a>
+      <% }) %>
+    </nav>
+    <form method="get" action="/member/requests" class="bb-mp-ann-search" role="search" data-bb-requests-search="1">
+      <% if (activeFilter !== 'all') { %>
+      <input type="hidden" name="filter" value="<%= activeFilter %>" />
+      <% } %>
+      <label class="bb-ds-sr-only" for="bb-mp-requests-q">Search requests</label>
+      <span class="material-symbols-outlined bb-mp-ann-search__icon" aria-hidden="true">search</span>
+      <input
+        id="bb-mp-requests-q"
+        type="search"
+        name="q"
+        value="<%= searchQ %>"
+        maxlength="100"
+        placeholder="Search by subject or status"
+        autocomplete="off"
+      />
+      <button type="submit" class="bb-mp-btn bb-mp-btn--ghost bb-mp-ann-search__submit">Search</button>
+    </form>
+  </div>
+  <% } %>
+
+  <% if (isEmptyCatalog) { %>
+  <div class="bb-mp-empty" role="status" data-bb-requests-empty="catalog">
     <span class="material-symbols-outlined" aria-hidden="true">inbox</span>
     <p>You have not submitted any requests yet.</p>
     <p>
       <a class="bb-mp-btn bb-mp-btn--primary" href="/member/requests/new">Submit a request</a>
     </p>
   </div>
+  <% } else if (isNoResults) { %>
+  <div class="bb-mp-empty bb-mp-empty--compact" role="status" data-bb-requests-empty="no-results">
+    <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+    <p>No requests match this filter<%= searchQ ? ' or search' : '' %>.</p>
+    <p>
+      <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/requests">Clear filters</a>
+    </p>
+  </div>
   <% } else { %>
-  <ul class="bb-mp-part-list" aria-label="Your requests">
+  <ul class="bb-mp-req-list" aria-label="Your requests">
     <% requestList.forEach(function (r) { %>
     <li>
-      <a
-        class="bb-mp-part-card"
-        href="/member/requests/<%= r.id %>"
+      <article
+        class="bb-mp-req-card"
         data-bb-request="<%= r.id %>"
         data-bb-status="<%= r.status %>"
+        data-bb-category="<%= r.category %>"
       >
-        <div class="bb-mp-fr-icon" aria-hidden="true">
-          <span class="material-symbols-outlined">inbox</span>
-        </div>
-        <div class="bb-mp-part-card__body">
-          <div class="bb-mp-part-card__top">
-            <h2 class="bb-mp-part-card__title"><%= r.subject %></h2>
-            <span class="bb-mp-chip <%= statusChipClass(r.status) %>"><%= statusLabel(r.status) %></span>
+        <div class="bb-mp-req-card__top">
+          <div class="bb-mp-fr-icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= r.categoryIcon || 'inbox' %></span>
           </div>
-          <p class="bb-mp-part-card__meta">
-            <span class="material-symbols-outlined" aria-hidden="true">category</span>
-            <span><%= categoryLabel(r.category) %></span>
-          </p>
-          <% if (r.updatedAt || r.createdAt) { %>
-          <p class="bb-mp-part-card__meta">
-            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
-            <span>Updated <%= formatWhen(r.updatedAt || r.createdAt) %></span>
-          </p>
-          <% } %>
+          <div class="bb-mp-req-card__heading">
+            <h2 class="bb-mp-req-card__title"><%= r.subject %></h2>
+            <p class="bb-mp-req-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">category</span>
+              <span><%= r.categoryLabel || r.category %></span>
+              <% if (r.updatedAtLabel || r.createdAtLabel) { %>
+              <span aria-hidden="true">·</span>
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <span>Updated <%= r.updatedAtLabel || r.createdAtLabel %></span>
+              <% } %>
+            </p>
+          </div>
+          <span class="bb-mp-chip <%= r.statusChipClass || 'bb-mp-chip--request' %>"><%= r.statusLabel || r.status %></span>
         </div>
-        <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
-      </a>
+        <p class="bb-mp-req-card__actions">
+          <a class="bb-mp-btn bb-mp-btn--ghost bb-mp-req-card__view" href="/member/requests/<%= r.id %>">
+            View details
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </a>
+        </p>
+      </article>
     </li>
     <% }) %>
   </ul>

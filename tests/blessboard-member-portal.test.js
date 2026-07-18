@@ -618,9 +618,33 @@ describe("blessboard member portal", () => {
       .set("Cookie", sessionCookie(memberUser));
     assert.equal(empty.status, 200);
     assert.match(empty.text, /data-bb-member-giving="1"/);
+    assert.match(empty.text, /data-bb-stitch-giving="24-member-giving-information"/);
     assert.match(empty.text, /data-bb-giving-info-only="1"/);
+    assert.match(empty.text, /data-bb-giving-empty="catalog"/);
+    assert.match(empty.text, /Information only|instructional/i);
     assert.doesNotMatch(empty.text, /card number|cvv|iban|name="card"|name="amount"/i);
+    assert.doesNotMatch(empty.text, /Scan to Give|Generate One-Time Link|85%|Merchant Code/i);
     assert.doesNotMatch(empty.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(empty.text, new RegExp(branchA.id, "i"));
+    assert.doesNotMatch(empty.text, new RegExp(memberId, "i"));
+
+    const draft = await createGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      methodType: "mobile_money",
+      label: "Draft Mobile Money",
+      instructions: "Should stay unpublished.",
+      status: "draft",
+    });
+    assert.equal(draft.ok, true, draft.reason);
+
+    const stillEmpty = await request(app)
+      .get("/member/giving")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser));
+    assert.equal(stillEmpty.status, 200);
+    assert.match(stillEmpty.text, /data-bb-giving-empty="catalog"/);
+    assert.doesNotMatch(stillEmpty.text, /Draft Mobile Money/);
 
     const published = await createGivingMethod(pool, {
       churchId: churchA.id,
@@ -628,6 +652,7 @@ describe("blessboard member portal", () => {
       methodType: "bank_transfer",
       label: "Member Bank Transfer",
       instructions: "Use the published bank details from the church office.",
+      externalUrl: "https://example.org/give",
       status: "published",
     });
     assert.equal(published.ok, true, published.reason);
@@ -638,9 +663,30 @@ describe("blessboard member portal", () => {
       .set("Cookie", sessionCookie(memberUser));
     assert.equal(live.status, 200);
     assert.match(live.text, /data-bb-giving-methods="1"/);
+    assert.match(live.text, /data-bb-giving-method="bank_transfer"/);
     assert.match(live.text, /Member Bank Transfer/);
+    assert.match(live.text, /Bank transfer/);
+    assert.match(live.text, /data-bb-giving-instructions="1"/);
+    assert.match(live.text, /Use the published bank details from the church office/);
+    assert.match(live.text, /data-bb-giving-link="1"/);
+    assert.match(live.text, /Open published link/);
+    assert.match(live.text, /href="https:\/\/example\.org\/give"/);
+    assert.match(live.text, /data-bb-giving-disclaimer="1"/);
+    assert.doesNotMatch(live.text, /Draft Mobile Money/);
     assert.doesNotMatch(live.text, /card number|cvv|name="card"|name="amount"/i);
-    assert.doesNotMatch(live.text, /85%|Generate One-Time Link/i);
+    assert.doesNotMatch(live.text, /85%|Generate One-Time Link|Scan to Give|donation history|Your balance|Account balance/i);
+    assert.doesNotMatch(live.text, /action="\/member\/giving"|method="post"[^>]*giving/i);
+    assert.doesNotMatch(live.text, new RegExp(churchA.id, "i"));
+    assert.doesNotMatch(live.text, new RegExp(published.item ? published.item.id : "never", "i"));
+
+    const denied = await request(app).get("/member/giving").set("Host", HOST_A);
+    assert.ok(denied.status === 401 || denied.status === 302 || denied.status === 303);
+
+    const otherChurch = await request(app)
+      .get("/member/giving")
+      .set("Host", HOST_B)
+      .set("Cookie", sessionCookie(memberUser));
+    assert.ok(otherChurch.status === 403 || otherChurch.status === 401 || otherChurch.status === 302);
   });
 
   it("requires CSRF on member logout", async (t) => {

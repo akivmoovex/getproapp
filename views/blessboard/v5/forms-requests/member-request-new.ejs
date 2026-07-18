@@ -5,7 +5,7 @@
   var selectedCategory = submitted.category || 'prayer';
 
   var typeCards = [
-    { value: 'prayer', label: 'Prayer', icon: 'volunteer_activism', hint: 'Prayer support' },
+    { value: 'prayer', label: 'Prayer', icon: 'church', hint: 'Prayer support' },
     { value: 'pastoral', label: 'Care', icon: 'medical_services', hint: 'Pastoral care' },
     { value: 'practical', label: 'Support', icon: 'handshake', hint: 'Practical help' },
     { value: 'other', label: 'Other', icon: 'more_horiz', hint: 'Something else' },
@@ -14,7 +14,11 @@
   });
 %>
 
-<section class="bb-mp-req-new" data-bb-member-request-new="1">
+<section
+  class="bb-mp-req-new"
+  data-bb-member-request-new="1"
+  data-bb-stitch-request-new="21-member-submit-online-request"
+>
   <p class="bb-mp-back">
     <a href="/member/requests">
       <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -40,78 +44,89 @@
   </div>
   <% } %>
 
-  <form
-    method="post"
-    action="/member/requests"
-    class="bb-mp-form bb-mp-form--panel bb-mp-req-form"
-    data-bb-request-submit="1"
-    novalidate
-  >
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+  <div class="bb-mp-req-panel">
+    <form
+      method="post"
+      action="/member/requests"
+      class="bb-mp-form bb-mp-form--panel bb-mp-req-form"
+      data-bb-request-submit="1"
+      novalidate
+    >
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-    <fieldset class="bb-mp-req-types">
-      <legend>Select request type</legend>
-      <div class="bb-mp-req-types__grid" role="radiogroup" aria-label="Request type">
-        <% typeCards.forEach(function (card) { %>
-        <label class="bb-mp-req-type<%= selectedCategory === card.value ? ' is-selected' : '' %>">
-          <input
-            type="radio"
-            name="category"
-            value="<%= card.value %>"
-            <%= selectedCategory === card.value ? 'checked' : '' %>
-            required
-          />
-          <span class="bb-mp-req-type__icon" aria-hidden="true">
-            <span class="material-symbols-outlined"><%= card.icon %></span>
-          </span>
-          <span class="bb-mp-req-type__label"><%= card.label %></span>
-          <span class="bb-mp-req-type__hint"><%= card.hint %></span>
-        </label>
-        <% }) %>
+      <fieldset class="bb-mp-req-types">
+        <legend>Select request type</legend>
+        <div class="bb-mp-req-types__grid" role="radiogroup" aria-label="Request type">
+          <% typeCards.forEach(function (card) { %>
+          <label class="bb-mp-req-type<%= selectedCategory === card.value ? ' is-selected' : '' %>">
+            <input
+              type="radio"
+              name="category"
+              value="<%= card.value %>"
+              <%= selectedCategory === card.value ? 'checked' : '' %>
+              required
+            />
+            <span class="bb-mp-req-type__check material-symbols-outlined" aria-hidden="true">check_circle</span>
+            <span class="bb-mp-req-type__icon" aria-hidden="true">
+              <span class="material-symbols-outlined"><%= card.icon %></span>
+            </span>
+            <span class="bb-mp-req-type__label"><%= card.label %></span>
+            <span class="bb-mp-req-type__hint"><%= card.hint %></span>
+          </label>
+          <% }) %>
+        </div>
+      </fieldset>
+
+      <div class="bb-mp-field">
+        <label for="request-subject">Subject <span class="bb-mp-required" aria-hidden="true">*</span></label>
+        <input
+          id="request-subject"
+          type="text"
+          name="subject"
+          maxlength="200"
+          required
+          placeholder="What is your request about?"
+          value="<%= submitted.subject || '' %>"
+        />
       </div>
-    </fieldset>
 
-    <div class="bb-mp-field">
-      <label for="request-subject">Subject <span class="bb-mp-required" aria-hidden="true">*</span></label>
-      <input
-        id="request-subject"
-        type="text"
-        name="subject"
-        maxlength="200"
-        required
-        placeholder="What is your request about?"
-        value="<%= submitted.subject || '' %>"
-      />
-    </div>
-
-    <div class="bb-mp-field">
-      <label for="request-message">Your message <span class="bb-mp-required" aria-hidden="true">*</span></label>
-      <textarea
-        id="request-message"
-        name="message"
-        rows="6"
-        maxlength="5000"
-        required
-        placeholder="Share as much or as little as you feel comfortable with…"
-      ><%= submitted.message || '' %></textarea>
-    </div>
-
-    <aside class="bb-mp-req-privacy" role="note">
-      <span class="material-symbols-outlined" aria-hidden="true">lock</span>
-      <div>
-        <p class="bb-mp-req-privacy__title">Handled privately</p>
-        <p>Only pastoral leadership reviewing your request can see it. This form does not collect payment details.</p>
+      <div class="bb-mp-field">
+        <label for="request-message">Your message <span class="bb-mp-required" aria-hidden="true">*</span></label>
+        <textarea
+          id="request-message"
+          name="message"
+          rows="6"
+          maxlength="5000"
+          required
+          placeholder="Share as much or as little as you feel comfortable with…"
+        ><%= submitted.message || '' %></textarea>
       </div>
-    </aside>
 
-    <div class="bb-mp-form__actions">
-      <button type="submit" class="bb-mp-btn bb-mp-btn--primary">
-        <span class="material-symbols-outlined" aria-hidden="true">send</span>
-        Submit request
-      </button>
-      <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/requests">Cancel</a>
+      <aside class="bb-mp-req-privacy" role="note">
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <div>
+          <p class="bb-mp-req-privacy__title">Handled privately</p>
+          <p>Only pastoral leadership reviewing your request can see it. This form does not collect payment details.</p>
+        </div>
+      </aside>
+
+      <div class="bb-mp-form__actions bb-mp-req-form__actions">
+        <button type="submit" class="bb-mp-btn bb-mp-btn--primary bb-mp-req-form__submit">
+          <span class="material-symbols-outlined" aria-hidden="true">send</span>
+          Submit request
+        </button>
+        <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/requests">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <aside class="bb-mp-req-next" role="note" data-bb-request-next="1">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <div>
+      <p class="bb-mp-req-next__title">What happens next?</p>
+      <p>After you submit, leadership can review your request. Status updates appear on your Request status page.</p>
     </div>
-  </form>
+  </aside>
 </section>
 
 <%- include('../partials/member-shell-end') %>

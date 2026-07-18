@@ -1036,7 +1036,10 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", memberCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-member-requests="1"/);
+    assert.match(list.text, /data-bb-stitch-requests="22-member-request-status"/);
     assert.match(list.text, /href="\/member\/requests\/new"/);
+    assert.match(list.text, /data-bb-requests-empty="catalog"|data-bb-request-summary="1"/);
+    assert.doesNotMatch(list.text, /24.?48 hours|crisis hotline|REQ-20\d{2}|Facility Use|In Progress/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
 
     const form = await request(app)
@@ -1045,11 +1048,20 @@ describe("blessboard forms-requests", () => {
       .set("Cookie", memberCookie);
     assert.equal(form.status, 200);
     assert.match(form.text, /data-bb-member-request-new="1"/);
+    assert.match(form.text, /data-bb-stitch-request-new="21-member-submit-online-request"/);
     assert.match(form.text, /name="_csrf"/);
     assert.match(form.text, /name="category"/);
+    assert.match(form.text, /value="prayer"/);
+    assert.match(form.text, /value="pastoral"/);
+    assert.match(form.text, /value="practical"/);
+    assert.match(form.text, /value="other"/);
     assert.match(form.text, /name="subject"/);
     assert.match(form.text, /name="message"/);
+    assert.match(form.text, /action="\/member\/requests"/);
+    assert.match(form.text, /data-bb-request-next="1"/);
     assert.doesNotMatch(form.text, /card number|cvv|name="card"|name="amount"/i);
+    assert.doesNotMatch(form.text, /Mark as Urgent|Tap to upload|Max 5MB|24.?48 hours|Baptism|Baby Dedication/i);
+    assert.doesNotMatch(form.text, /type="file"|name="attachment"/i);
     assert.match(form.text, /does not collect payment details/i);
 
     const csrf = extractCookie(form, CSRF_COOKIE);
@@ -1068,6 +1080,33 @@ describe("blessboard forms-requests", () => {
       });
     assert.equal(badCsrf.status, 403);
 
+    const invalidCategory = await request(app)
+      .post("/member/requests")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(memberCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        category: "baptism",
+        subject: "Invalid category",
+        message: "Should be rejected",
+      });
+    assert.equal(invalidCategory.status, 400);
+    assert.match(invalidCategory.text, /data-bb-member-request-new="1"/);
+
+    const missingSubject = await request(app)
+      .post("/member/requests")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(memberCookie, `${CSRF_COOKIE}=${csrf}`))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        category: "prayer",
+        subject: "",
+        message: "Missing subject",
+      });
+    assert.equal(missingSubject.status, 400);
+
     const ok = await request(app)
       .post("/member/requests")
       .set("Host", HOST_A)
@@ -1082,6 +1121,39 @@ describe("blessboard forms-requests", () => {
     assert.equal(ok.status, 303);
     assert.match(ok.headers.location, /\/member\/requests\/[0-9a-f-]{36}/i);
     const requestId = ok.headers.location.split("/").pop().split("?")[0];
+
+    const listAfter = await request(app)
+      .get("/member/requests")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(listAfter.status, 200);
+    assert.match(listAfter.text, /data-bb-request-summary="1"/);
+    assert.match(listAfter.text, /data-bb-requests-toolbar="1"/);
+    assert.match(listAfter.text, /data-bb-requests-search="1"/);
+    assert.match(listAfter.text, /Counseling request/);
+    assert.match(listAfter.text, /data-bb-status="submitted"/);
+    assert.match(listAfter.text, /Pending review/);
+
+    const searchHit = await request(app)
+      .get("/member/requests?q=Counseling")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(searchHit.status, 200);
+    assert.match(searchHit.text, /Counseling request/);
+
+    const searchMiss = await request(app)
+      .get("/member/requests?q=zzz-no-match")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(searchMiss.status, 200);
+    assert.match(searchMiss.text, /data-bb-requests-empty="no-results"/);
+
+    const activeFilter = await request(app)
+      .get("/member/requests?filter=active")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(activeFilter.status, 200);
+    assert.match(activeFilter.text, /Counseling request/);
 
     const reviewed = await updateMemberRequestStatus(pool, {
       id: requestId,
@@ -1107,14 +1179,16 @@ describe("blessboard forms-requests", () => {
     assert.equal(hidden.ok, true, hidden.reason);
 
     const detail = await request(app)
-      .get(`/member/requests/${requestId}`)
+      .get(`/member/requests/${requestId}?saved=1`)
       .set("Host", HOST_A)
       .set("Cookie", memberCookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-member-request-detail="1"/);
     assert.match(detail.text, /data-bb-request-history="1"/);
+    assert.match(detail.text, /data-bb-request-success="1"/);
     assert.match(detail.text, /Counseling request/);
     assert.match(detail.text, /Visible to member/);
+    assert.match(detail.text, /Pending review|In review|Resolved/);
     assert.doesNotMatch(detail.text, /SECRET_INTERNAL_REVIEW/);
     assert.doesNotMatch(detail.text, /changedByUserId|memberVisible/i);
     assert.doesNotMatch(detail.text, new RegExp(churchA.id, "i"));
