@@ -526,8 +526,13 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /Powered by/);
     assert.match(home.text, /GetPro/);
     assert.match(home.text, /data-bb-stitch-home="refined-v2"/);
-    assert.match(home.text, /Official Church Portal/);
+    assert.match(home.text, /Official Church Portal|Welcome to our Digital Sanctuary/);
+    assert.match(home.text, /Join a Service|Join Our Next Service/);
+    assert.match(home.text, /href="\/events"/);
+    assert.match(home.text, /href="\/giving"/);
+    assert.match(home.text, /href="\/ministries"/);
     assert.match(home.text, /bb-tp-member-band/);
+    assert.match(home.text, /Already a Member\?/);
     assert.doesNotMatch(home.text, /1\.2k\+|Active Members|lorem ipsum/i);
     assert.doesNotMatch(home.text, /We are glad you are here/);
     assert.doesNotMatch(home.text, /Need Prayer|Send Prayer Request|Subscribe to our weekly/i);
@@ -559,6 +564,7 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /bb-tp-empty|data-bb-home="1"/);
+    assert.match(res.text, /data-bb-empty="home"|Content coming soon/);
     assert.doesNotMatch(res.text, /\d+\+?\s*(Members|Hearts|Ministries|Active)/i);
     assert.doesNotMatch(res.text, /Annual Youth Summit|Service Times|Need Prayer/i);
   });

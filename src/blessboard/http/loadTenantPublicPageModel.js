@@ -482,7 +482,7 @@ async function loadTenantPublicPageModel(db, input) {
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
     loginHref: "/login",
     apexHref: "https://blessboard.org/",
-    cssHref: "/blessboard/v5/tenant-public.css?v=16",
+    cssHref: "/blessboard/v5/tenant-public.css?v=17",
     navItems: NAV_ITEMS,
     activeNav: pageKey,
     page: pageResult.page

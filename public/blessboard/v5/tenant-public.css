@@ -458,7 +458,7 @@ body.bb-tp-body {
   color: var(--bb-muted);
 }
 
-/* —— Home hero —— */
+/* —— Home hero (Stitch 01-public-home-*-v2 Refined) —— */
 .bb-tp-hero {
   position: relative;
   padding: 2.5rem 0 3rem;
@@ -484,19 +484,32 @@ body.bb-tp-body {
   min-width: 0;
 }
 
+/* Mobile Stitch: centered sanctuary hero; desktop: left-aligned portal chrome */
+.bb-tp-hero__eyebrow-desktop {
+  display: none;
+}
+
+.bb-tp-hero__eyebrow-mobile {
+  display: inline-flex;
+}
+
 .bb-tp-hero__title {
   margin: 0 0 0.85rem;
   font-size: var(--bb-text-hero, clamp(1.85rem, 5vw, 4rem));
   letter-spacing: -0.03em;
   line-height: 1.15;
-  color: var(--bb-violet);
+  color: var(--bb-ink);
   overflow-wrap: anywhere;
+}
+
+.bb-tp-hero__title-accent {
+  color: var(--bb-violet);
 }
 
 .bb-tp-hero__lead {
   margin: 0 0 1.5rem;
   color: var(--bb-muted);
-  font-size: 1.05rem;
+  font-size: var(--bb-text-body-lg, 1.125rem);
   line-height: 1.6;
   max-width: 36rem;
   white-space: pre-wrap;
@@ -508,8 +521,14 @@ body.bb-tp-body {
   gap: 0.65rem;
 }
 
-.bb-tp-hero__cta-mobile-extra {
+.bb-tp-hero__cta-desktop {
+  display: none;
+}
+
+.bb-tp-hero__cta-mobile {
   display: inline-flex;
+  width: 100%;
+  justify-content: center;
 }
 
 .bb-tp-hero__visual {
@@ -520,6 +539,7 @@ body.bb-tp-body {
   min-width: 0;
   background: linear-gradient(145deg, #efeaff, #e4f0f4 50%, #d1cbff);
   box-shadow: var(--bb-shadow-md, 0 12px 32px rgba(26, 22, 37, 0.12));
+  border: 4px solid #fff;
 }
 
 .bb-tp-hero__img {
@@ -527,13 +547,14 @@ body.bb-tp-body {
   width: 100%;
   height: 100%;
   min-height: 14rem;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   object-position: center 35%;
 }
 
 .bb-tp-hero__fallback {
   min-height: 14rem;
+  aspect-ratio: 1 / 1;
   height: 100%;
   background:
     radial-gradient(circle at 30% 30%, rgba(108, 92, 231, 0.35), transparent 55%),
@@ -548,13 +569,32 @@ body.bb-tp-body {
 
 .bb-tp-content-block--media {
   display: grid;
-  gap: 1.25rem;
-  align-items: start;
+  gap: 0;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+
+.bb-tp-content-block__media {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.bb-tp-content-block--media .bb-tp-media {
+  margin: 0;
+  border-radius: 0;
+  width: 100%;
+  max-height: 14rem;
+  object-fit: cover;
+}
+
+.bb-tp-content-block--media .bb-tp-content-block__copy {
+  padding: 1.25rem 1.5rem 1.5rem;
 }
 
 .bb-tp-shortcuts {
   padding: 2.5rem 0 var(--bb-section);
-  background: var(--bb-surface-low);
+  background: var(--bb-surface-low, var(--bb-surface-dim, #f2f0ed));
 }
 
 .bb-tp-shortcuts__header {
@@ -588,6 +628,7 @@ body.bb-tp-body {
   color: inherit;
   box-shadow: var(--bb-shadow);
   min-width: 0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .bb-tp-shortcut .material-symbols-outlined {
@@ -608,6 +649,8 @@ body.bb-tp-body {
 
 .bb-tp-shortcut:hover {
   border-color: #c8c4d7;
+  box-shadow: var(--bb-shadow-md, 0 12px 32px rgba(26, 22, 37, 0.12));
+  transform: translateY(-1px);
 }
 
 .bb-tp-member-band {
@@ -649,6 +692,69 @@ body.bb-tp-body {
 .bb-tp-btn--on-dark:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
+}
+
+/* Mobile Stitch home: centered hero copy + stacked CTAs */
+@media (max-width: 767px) {
+  .bb-tp-hero {
+    padding: 3rem 0 2.5rem;
+    text-align: center;
+    min-height: 22rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .bb-tp-hero__inner {
+    width: 100%;
+  }
+
+  .bb-tp-hero__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .bb-tp-hero__lead {
+    max-width: 28rem;
+  }
+
+  .bb-tp-hero__cta {
+    width: 100%;
+    max-width: 24rem;
+    flex-direction: column;
+  }
+
+  .bb-tp-hero__visual {
+    display: none;
+  }
+
+  .bb-tp-member-band {
+    background: transparent;
+    padding: 0 0 var(--bb-section);
+  }
+
+  .bb-tp-member-band__inner {
+    padding: 1.75rem 1.25rem;
+    background: #1a1c1e;
+    border-radius: var(--bb-radius);
+    text-align: center;
+    justify-items: center;
+  }
+
+  .bb-tp-member-band__lead {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .bb-tp-member-band__cta {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .bb-tp-member-band__cta .bb-tp-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* —— About —— */
@@ -1117,7 +1223,20 @@ body.bb-tp-body {
     gap: 2.5rem;
   }
 
-  .bb-tp-hero__cta-mobile-extra {
+  .bb-tp-hero__eyebrow-desktop {
+    display: inline-flex;
+  }
+
+  .bb-tp-hero__eyebrow-mobile {
+    display: none;
+  }
+
+  .bb-tp-hero__cta-desktop {
+    display: inline-flex;
+    width: auto;
+  }
+
+  .bb-tp-hero__cta-mobile {
     display: none;
   }
 
@@ -1127,7 +1246,13 @@ body.bb-tp-body {
 
   .bb-tp-content-block--media {
     grid-template-columns: 1.1fr 0.9fr;
-    align-items: center;
+    align-items: stretch;
+  }
+
+  .bb-tp-content-block--media .bb-tp-media {
+    max-height: none;
+    height: 100%;
+    min-height: 12rem;
   }
 
   .bb-tp-about-story {
@@ -1185,7 +1310,8 @@ body.bb-tp-body {
   }
 
   .bb-tp-hero__fallback,
-  .bb-tp-hero__visual {
+  .bb-tp-hero__visual,
+  .bb-tp-hero__img {
     min-height: 20rem;
   }
 
@@ -1251,8 +1377,7 @@ body.bb-tp-body {
   }
 
   .bb-tp-hero__cta .bb-tp-btn,
-  .bb-tp-page-hero__cta .bb-tp-btn,
-  .bb-tp-member-band__cta .bb-tp-btn {
+  .bb-tp-page-hero__cta .bb-tp-btn {
     width: 100%;
   }
 }
@@ -2070,6 +2195,14 @@ body.bb-tp-body {
   }
 
   .bb-tp-sermon-card:hover {
+    transform: none;
+  }
+
+  .bb-tp-shortcut {
+    transition: none;
+  }
+
+  .bb-tp-shortcut:hover {
     transform: none;
   }
 }

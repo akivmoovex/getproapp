@@ -1,7 +1,9 @@
 <%#
   Tenant Home — Stitch 01-public-home-*-v2 (Refined).
-  Desktop: ead45db5… · Mobile: 89177588…
-  Published CMS sections only. No fabricated metrics, announcements, prayer, or service times.
+  Desktop: ead45db5be774baa9454412262096ffc
+  Mobile:  89177588fbf8405dbebd5747c38e19ce
+  Published CMS sections only. No fabricated metrics, announcements,
+  prayer widgets, schedule sidebars, or ministry demo cards.
 %>
 <%
   var hero = null;
@@ -17,30 +19,54 @@
   var heroHeading = (hero && hero.heading) || pageTitle || publicName;
   var heroBody = (hero && hero.bodyText) || '';
   var heroMedia = hero && hero.mediaUrl ? hero.mediaUrl : null;
+
+  // Stitch display titles accent the trailing phrase (e.g. "Growth & Community").
+  // Apply the same treatment to live headings without inventing copy.
+  var accentBefore = heroHeading;
+  var accentPhrase = '';
+  var headingWords = String(heroHeading || '').trim().split(/\s+/).filter(Boolean);
+  if (headingWords.length >= 4) {
+    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
+    accentPhrase = headingWords.slice(-2).join(' ');
+  }
 %>
 
 <section class="bb-tp-home" data-bb-home="1" data-bb-stitch-home="refined-v2">
   <section class="bb-tp-hero" aria-label="Welcome">
     <div class="bb-tp-hero__inner">
       <div class="bb-tp-hero__copy">
-        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">
+        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-hero__eyebrow-desktop">
           <span class="material-symbols-outlined" aria-hidden="true">verified</span>
           Official Church Portal
         </p>
-        <h1 class="bb-tp-hero__title"><%= heroHeading %></h1>
+        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-hero__eyebrow-mobile">
+          Welcome to our Digital Sanctuary
+        </p>
+        <h1 class="bb-tp-hero__title">
+          <% if (accentPhrase) { %>
+          <%= accentBefore %><span class="bb-tp-hero__title-accent"><%= accentPhrase %></span>
+          <% } else { %>
+          <%= heroHeading %>
+          <% } %>
+        </h1>
         <% if (heroBody) { %>
         <p class="bb-tp-hero__lead"><%= heroBody %></p>
         <% } %>
         <div class="bb-tp-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">
-            Plan a Visit
+          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-hero__cta-desktop" href="/events">
+            Join a Service
             <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
           </a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/giving">
+          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-hero__cta-desktop" href="/giving">
             <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
             Giving
           </a>
-          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-hero__cta-mobile-extra" href="/register">Register as Member</a>
+          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-hero__cta-mobile" href="/events">
+            Join Our Next Service
+          </a>
+          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-hero__cta-mobile" href="/ministries">
+            Explore Ministries
+          </a>
         </div>
       </div>
       <div class="bb-tp-hero__visual<%= heroMedia ? ' has-media' : '' %>">
@@ -50,7 +76,7 @@
           src="<%= heroMedia %>"
           alt=""
           width="960"
-          height="720"
+          height="960"
           loading="eager"
           decoding="async"
         />
@@ -63,23 +89,34 @@
 
   <% if (showEmptyState) { %>
   <div class="bb-tp-container">
-    <div class="bb-tp-empty" role="status">
-      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">info</span>
-      <h2><%= emptyHeadline %></h2>
-      <p><%= emptyMessage %></p>
+    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="home">
+      <div class="bb-tp-empty__visual" aria-hidden="true">
+        <span class="material-symbols-outlined bb-tp-empty__icon">info</span>
+      </div>
+      <div class="bb-tp-empty__copy">
+        <p class="bb-tp-empty__badge">Content coming soon</p>
+        <h2><%= emptyHeadline %></h2>
+        <p><%= emptyMessage %></p>
+        <div class="bb-tp-page-hero__cta">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="/about">About</a>
+        </div>
+      </div>
     </div>
   </div>
   <% } else if (rest.length) { %>
   <div class="bb-tp-container bb-tp-home__sections">
     <% rest.forEach(function (section) { %>
     <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
+      <% if (section.mediaUrl) { %>
+      <div class="bb-tp-content-block__media">
+        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+      </div>
+      <% } %>
       <div class="bb-tp-content-block__copy">
         <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
         <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
       </div>
-      <% if (section.mediaUrl) { %>
-      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
-      <% } %>
     </section>
     <% }) %>
   </div>
@@ -119,7 +156,7 @@
   <section class="bb-tp-member-band" aria-label="Members">
     <div class="bb-tp-container bb-tp-member-band__inner">
       <div class="bb-tp-member-band__copy">
-        <h2 class="bb-tp-member-band__title">Already a member?</h2>
+        <h2 class="bb-tp-member-band__title">Already a Member?</h2>
         <p class="bb-tp-member-band__lead">Sign in for this church, or register if you are new.</p>
       </div>
       <div class="bb-tp-member-band__cta">

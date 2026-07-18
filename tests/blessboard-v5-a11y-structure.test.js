@@ -197,6 +197,24 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     assert.doesNotMatch(sermons, /iframe|youtube\.com\/embed/i);
   });
 
+  it("home template keeps Stitch hero hierarchy without fabricated widgets", () => {
+    const home = read("views/blessboard/v5/public/home.ejs");
+    const css = read("public/blessboard/v5/tenant-public.css");
+    assert.match(home, /data-bb-stitch-home="refined-v2"/);
+    assert.match(home, /aria-label="Welcome"/);
+    assert.match(home, /Join a Service/);
+    assert.match(home, /Join Our Next Service/);
+    assert.match(home, /Explore Ministries/);
+    assert.match(home, /role="status"/);
+    assert.match(home, /data-bb-empty="home"/);
+    assert.match(home, /Already a Member\?/);
+    assert.doesNotMatch(home, /1\.2k\+|Need Prayer|Weekly Service Times|Active Members/i);
+    assert.match(css, /\.bb-tp-hero__title-accent/);
+    assert.match(css, /\.bb-tp-hero__cta-desktop/);
+    assert.match(css, /@media \(max-width:\s*767px\)/);
+    assert.match(css, /aspect-ratio:\s*1\s*\/\s*1/);
+  });
+
   it("tenant public CSS keeps events/sermons overflow and 320px guards", () => {
     const css = read("public/blessboard/v5/tenant-public.css");
     assert.match(css, /\.bb-tp-event-grid/);
