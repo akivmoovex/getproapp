@@ -1,6 +1,7 @@
 <%#
-  Home page body — Stitch desktop/mobile layouts, published CMS sections only.
-  Locals: publicName, sections, showEmptyState, emptyHeadline, emptyMessage, pageTitle
+  Tenant Home — Stitch 01-public-home-*-v2 (Refined).
+  Desktop: ead45db5… · Mobile: 89177588…
+  Published CMS sections only. No fabricated metrics, announcements, prayer, or service times.
 %>
 <%
   var hero = null;
@@ -18,11 +19,11 @@
   var heroMedia = hero && hero.mediaUrl ? hero.mediaUrl : null;
 %>
 
-<section class="bb-tp-home" data-bb-home="1">
+<section class="bb-tp-home" data-bb-home="1" data-bb-stitch-home="refined-v2">
   <section class="bb-tp-hero" aria-label="Welcome">
     <div class="bb-tp-hero__inner">
       <div class="bb-tp-hero__copy">
-        <p class="bb-tp-eyebrow">
+        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">
           <span class="material-symbols-outlined" aria-hidden="true">verified</span>
           Official Church Portal
         </p>
@@ -44,7 +45,15 @@
       </div>
       <div class="bb-tp-hero__visual<%= heroMedia ? ' has-media' : '' %>">
         <% if (heroMedia) { %>
-        <img class="bb-tp-hero__img" src="<%= heroMedia %>" alt="" width="960" height="720" loading="eager" decoding="async" />
+        <img
+          class="bb-tp-hero__img"
+          src="<%= heroMedia %>"
+          alt=""
+          width="960"
+          height="720"
+          loading="eager"
+          decoding="async"
+        />
         <% } else { %>
         <div class="bb-tp-hero__fallback" aria-hidden="true"></div>
         <% } %>
@@ -55,6 +64,7 @@
   <% if (showEmptyState) { %>
   <div class="bb-tp-container">
     <div class="bb-tp-empty" role="status">
+      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">info</span>
       <h2><%= emptyHeadline %></h2>
       <p><%= emptyMessage %></p>
     </div>
@@ -62,9 +72,11 @@
   <% } else if (rest.length) { %>
   <div class="bb-tp-container bb-tp-home__sections">
     <% rest.forEach(function (section) { %>
-    <section class="bb-tp-content-block" data-section="<%= section.sectionKey %>">
-      <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
-      <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+    <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
+      <div class="bb-tp-content-block__copy">
+        <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+        <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+      </div>
       <% if (section.mediaUrl) { %>
       <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
       <% } %>
@@ -75,7 +87,10 @@
 
   <section class="bb-tp-shortcuts" aria-label="Explore">
     <div class="bb-tp-container">
-      <h2 class="bb-tp-section-title">Explore</h2>
+      <header class="bb-tp-shortcuts__header">
+        <h2 class="bb-tp-section-title">Explore</h2>
+        <p class="bb-tp-shortcuts__lead">Find gatherings, ministries, messages, and our story.</p>
+      </header>
       <div class="bb-tp-shortcuts__grid">
         <a class="bb-tp-shortcut" href="/events">
           <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
@@ -97,6 +112,19 @@
           <span class="bb-tp-shortcut__label">About</span>
           <span class="bb-tp-shortcut__hint">Our story and purpose</span>
         </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="bb-tp-member-band" aria-label="Members">
+    <div class="bb-tp-container bb-tp-member-band__inner">
+      <div class="bb-tp-member-band__copy">
+        <h2 class="bb-tp-member-band__title">Already a member?</h2>
+        <p class="bb-tp-member-band__lead">Sign in for this church, or register if you are new.</p>
+      </div>
+      <div class="bb-tp-member-band__cta">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= loginHref %>">Member Login</a>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="/register">Register</a>
       </div>
     </div>
   </section>

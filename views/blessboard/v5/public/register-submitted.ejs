@@ -6,9 +6,15 @@
   <title>Registration received · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=3" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=6" />
 </head>
-<body class="bb-auth-body" data-bb-shell="tenant-auth" data-bb-product="blessboard-v5" data-bb-page="register-submitted">
+<body
+  class="bb-auth-body"
+  data-bb-shell="tenant-auth"
+  data-bb-product="blessboard-v5"
+  data-bb-page="register-submitted"
+  data-bb-stitch-register-submitted="11-auth-registration-submitted"
+>
   <a class="bb-auth-skip" href="#bb-auth-submitted">Skip to confirmation</a>
 
   <div class="bb-auth-layout">
@@ -47,7 +53,11 @@
       </header>
 
       <div class="bb-auth-main__body">
-        <div class="bb-auth-card" id="bb-auth-submitted" data-bb-register-submitted="1">
+        <div
+          class="bb-auth-card bb-auth-card--submitted"
+          id="bb-auth-submitted"
+          data-bb-register-submitted="1"
+        >
           <div class="bb-auth-card__icon bb-auth-card__icon--ok" aria-hidden="true">
             <span class="material-symbols-outlined">check_circle</span>
           </div>
@@ -55,31 +65,35 @@
             <span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>
             Pending review
           </p>
-          <h1 class="bb-auth-card__title">Registration received</h1>
+          <h1 class="bb-auth-card__title">Registration submitted</h1>
           <p class="bb-auth-card__lead">
-            Thank you. Your application has been submitted for review. We will follow up if more information is needed.
+            Thank you. Your application has been received and is pending administrator review.
             An account is not created automatically.
           </p>
 
           <h2 class="bb-auth-card__subtitle">Next steps</h2>
           <ul class="bb-auth-success-list">
             <li>
-              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-              <span>Watch for a message from the church office using the contact details you provided.</span>
+              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              <span>Church leadership will review your registration when they are ready.</span>
             </li>
             <li>
               <span class="material-symbols-outlined" aria-hidden="true">home</span>
               <span>You can continue browsing the church site while your application is reviewed.</span>
             </li>
             <li>
-              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              <span class="material-symbols-outlined" aria-hidden="true">login</span>
               <span>Member sign-in is available only after leadership approves your registration.</span>
+            </li>
+            <li>
+              <span class="material-symbols-outlined" aria-hidden="true">contact_support</span>
+              <span>If you need help, contact the church office using the details you provided or the Contact page.</span>
             </li>
           </ul>
 
           <div class="bb-auth-actions">
-            <a class="bb-auth-btn bb-auth-btn--primary" href="/">Return to homepage</a>
-            <a class="bb-auth-btn bb-auth-btn--ghost" href="/contact">Contact church</a>
+            <a class="bb-auth-btn bb-auth-btn--primary" href="/">Return home</a>
+            <a class="bb-auth-btn bb-auth-btn--ghost" href="/contact">Contact office</a>
           </div>
         </div>
       </div>

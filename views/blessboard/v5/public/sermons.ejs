@@ -1,6 +1,8 @@
 <%#
-  Sermons — Stitch featured + recent list; published sermons only.
-  Media/resource links only when safeExternalUrl allows; no embeds.
+  Sermons — Stitch 06-public-sermons-desktop-v2 (Populated) / mobile-v2 (Populated).
+  Desktop: 4f4995dc… · Mobile: 96b380d4… · Empty: 0c7262cd…
+  Published sermons only (preached_at DESC). Media/resource links only when safeExternalUrl allows.
+  No scripture/series/duration fields, embeds, filters, or fabricated archive.
 %>
 <%
   var pageSections = sections || [];
@@ -10,12 +12,23 @@
   var intro = pageSections.length ? pageSections[0] : null;
   var introHeading = (intro && intro.heading) || pageTitle || 'Sermons & Resources';
   var introBody = (intro && intro.bodyText) || '';
+
+  function mediaLabel(kind, title) {
+    if (kind === 'audio') return 'Listen to sermon: ' + title;
+    if (kind === 'video') return 'Watch sermon: ' + title;
+    return 'Open media for sermon: ' + title;
+  }
+  function mediaButton(kind) {
+    if (kind === 'audio') return { icon: 'headphones', text: 'Listen' };
+    if (kind === 'video') return { icon: 'play_circle', text: 'Watch Sermon' };
+    return { icon: 'play_circle', text: 'Watch or Listen' };
+  }
 %>
 
-<section class="bb-tp-directory bb-tp-sermons" data-bb-sermons="1">
+<section class="bb-tp-directory bb-tp-sermons" data-bb-sermons="1" data-bb-stitch-sermons="populated-v2">
   <header class="bb-tp-dir-hero">
     <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow">Teaching Library</p>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">Teaching Library</p>
       <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
       <% if (introBody) { %>
       <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
@@ -25,18 +38,27 @@
 
   <div class="bb-tp-container bb-tp-directory__body">
     <% if (showEmptyState) { %>
-    <div class="bb-tp-empty" role="status" data-bb-empty="sermons">
-      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">menu_book</span>
-      <h2><%= emptyHeadline %></h2>
-      <p><%= emptyMessage %></p>
-      <div class="bb-tp-page-hero__cta">
-        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="/">Home</a>
+    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="sermons">
+      <div class="bb-tp-empty__visual" aria-hidden="true">
+        <span class="material-symbols-outlined bb-tp-empty__icon">menu_book</span>
+      </div>
+      <div class="bb-tp-empty__copy">
+        <p class="bb-tp-empty__badge">Update in progress</p>
+        <h2><%= emptyHeadline %></h2>
+        <p><%= emptyMessage %></p>
+        <div class="bb-tp-page-hero__cta">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="/events">View Events</a>
+        </div>
       </div>
     </div>
     <% } else { %>
 
     <% if (featured) { %>
+    <%
+      var featuredKind = featured.mediaUrl ? sermonMediaKind(featured.mediaUrl) : null;
+      var featuredBtn = featuredKind ? mediaButton(featuredKind) : null;
+    %>
     <section class="bb-tp-featured-sermon" aria-label="Featured sermon" data-bb-sermon-featured="1">
       <p class="bb-tp-featured-sermon__label">
         <span class="material-symbols-outlined" aria-hidden="true">star</span>
@@ -45,30 +67,38 @@
       <article class="bb-tp-featured-sermon__card">
         <div class="bb-tp-featured-sermon__copy">
           <h2 class="bb-tp-featured-sermon__title"><%= featured.title %></h2>
-          <p class="bb-tp-meta">
+          <% if (featured.speakerName || featured.preachedAt) { %>
+          <p class="bb-tp-meta bb-tp-featured-sermon__meta">
             <% if (featured.speakerName) { %>
-            <span class="material-symbols-outlined" aria-hidden="true">person</span>
-            <%= featured.speakerName %>
+            <span class="bb-tp-meta__item">
+              <span class="material-symbols-outlined" aria-hidden="true">person</span>
+              <%= featured.speakerName %>
+            </span>
             <% } %>
             <% if (featured.preachedAt) { %>
-            <% if (featured.speakerName) { %> · <% } %>
-            <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
-            <%= formatDate(featured.preachedAt) %>
+            <span class="bb-tp-meta__item">
+              <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+              <%= formatDate(featured.preachedAt) %>
+            </span>
             <% } %>
           </p>
+          <% } %>
           <% if (featured.summary) { %>
           <p class="bb-tp-body"><%= featured.summary %></p>
           <% } %>
+          <% if (featured.mediaUrl || featured.resourceUrl) { %>
           <div class="bb-tp-page-hero__cta">
-            <% if (featured.mediaUrl) { %>
+            <% if (featured.mediaUrl && featuredBtn) { %>
             <a
               class="bb-tp-btn bb-tp-btn--primary"
               href="<%= featured.mediaUrl %>"
               rel="noopener noreferrer"
               data-bb-sermon-media="1"
+              data-bb-media-kind="<%= featuredKind %>"
+              aria-label="<%= mediaLabel(featuredKind, featured.title) %>"
             >
-              <span class="material-symbols-outlined" aria-hidden="true">play_circle</span>
-              Watch or Listen
+              <span class="material-symbols-outlined" aria-hidden="true"><%= featuredBtn.icon %></span>
+              <%= featuredBtn.text %>
             </a>
             <% } %>
             <% if (featured.resourceUrl) { %>
@@ -77,12 +107,14 @@
               href="<%= featured.resourceUrl %>"
               rel="noopener noreferrer"
               data-bb-sermon-resource="1"
+              aria-label="Open resources for sermon: <%= featured.title %>"
             >
               <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
               Resources
             </a>
             <% } %>
           </div>
+          <% } %>
         </div>
       </article>
     </section>
@@ -93,35 +125,56 @@
       <h2 class="bb-tp-section-title">Recent Sermons</h2>
       <ul class="bb-tp-sermon-grid">
         <% rest.forEach(function (sermon) { %>
+        <%
+          var kind = sermon.mediaUrl ? sermonMediaKind(sermon.mediaUrl) : null;
+          var btn = kind ? mediaButton(kind) : null;
+        %>
         <li class="bb-tp-sermon-card" data-bb-sermon-item="1">
-          <h3 class="bb-tp-sermon-card__title"><%= sermon.title %></h3>
-          <p class="bb-tp-meta">
-            <% if (sermon.speakerName) { %>
-            <span class="material-symbols-outlined" aria-hidden="true">person</span>
-            <%= sermon.speakerName %>
+          <div class="bb-tp-sermon-card__body">
+            <h3 class="bb-tp-sermon-card__title"><%= sermon.title %></h3>
+            <% if (sermon.speakerName || sermon.preachedAt) { %>
+            <p class="bb-tp-meta">
+              <% if (sermon.speakerName) { %>
+              <span class="material-symbols-outlined" aria-hidden="true">person</span>
+              <%= sermon.speakerName %>
+              <% } %>
+              <% if (sermon.preachedAt) { %>
+              <% if (sermon.speakerName) { %> · <% } %>
+              <%= formatDate(sermon.preachedAt) %>
+              <% } %>
+            </p>
             <% } %>
-            <% if (sermon.preachedAt) { %>
-            <% if (sermon.speakerName) { %> · <% } %>
-            <%= formatDate(sermon.preachedAt) %>
+            <% if (sermon.summary) { %>
+            <p class="bb-tp-sermon-card__summary"><%= sermon.summary %></p>
             <% } %>
-          </p>
-          <% if (sermon.summary) { %>
-          <p class="bb-tp-sermon-card__summary"><%= sermon.summary %></p>
-          <% } %>
-          <p class="bb-tp-sermon-card__actions">
-            <% if (sermon.mediaUrl) { %>
-            <a href="<%= sermon.mediaUrl %>" rel="noopener noreferrer" data-bb-sermon-media="1">
-              <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
-              Watch
-            </a>
+            <% if (sermon.mediaUrl || sermon.resourceUrl) { %>
+            <p class="bb-tp-sermon-card__actions">
+              <% if (sermon.mediaUrl && btn) { %>
+              <a
+                href="<%= sermon.mediaUrl %>"
+                rel="noopener noreferrer"
+                data-bb-sermon-media="1"
+                data-bb-media-kind="<%= kind %>"
+                aria-label="<%= mediaLabel(kind, sermon.title) %>"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true"><%= kind === 'audio' ? 'headphones' : 'play_arrow' %></span>
+                <%= kind === 'audio' ? 'Listen' : (kind === 'video' ? 'Watch' : 'Open') %>
+              </a>
+              <% } %>
+              <% if (sermon.resourceUrl) { %>
+              <a
+                href="<%= sermon.resourceUrl %>"
+                rel="noopener noreferrer"
+                data-bb-sermon-resource="1"
+                aria-label="Open resources for sermon: <%= sermon.title %>"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">description</span>
+                Notes
+              </a>
+              <% } %>
+            </p>
             <% } %>
-            <% if (sermon.resourceUrl) { %>
-            <a href="<%= sermon.resourceUrl %>" rel="noopener noreferrer" data-bb-sermon-resource="1">
-              <span class="material-symbols-outlined" aria-hidden="true">description</span>
-              Notes
-            </a>
-            <% } %>
-          </p>
+          </div>
         </li>
         <% }) %>
       </ul>

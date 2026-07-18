@@ -75,33 +75,65 @@ function formatDate(value, timezone) {
  * Parts for event date chrome (timezone-aware).
  * @param {Date|string|null} value
  * @param {string} [timezone]
+ * @param {Date|string|null} [endsAt]
  */
-function formatEventParts(value, timezone) {
-  if (!value) return { day: "", month: "", weekday: "", time: "", full: "" };
+function formatEventParts(value, timezone, endsAt) {
+  const empty = { day: "", month: "", weekday: "", time: "", timeRange: "", full: "" };
+  if (!value) return empty;
   try {
     const d = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(d.getTime())) {
-      return { day: "", month: "", weekday: "", time: "", full: "" };
-    }
+    if (Number.isNaN(d.getTime())) return empty;
     const tz = timezone ? { timeZone: timezone } : {};
     const day = new Intl.DateTimeFormat("en-GB", { day: "2-digit", ...tz }).format(d);
     const month = new Intl.DateTimeFormat("en-GB", { month: "short", ...tz }).format(d);
     const weekday = new Intl.DateTimeFormat("en-GB", { weekday: "long", ...tz }).format(d);
-    const time = new Intl.DateTimeFormat("en-GB", {
+    const timeFmt = new Intl.DateTimeFormat("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
       ...tz,
-    }).format(d);
+    });
+    const time = timeFmt.format(d);
+    let timeRange = time;
+    if (endsAt) {
+      const end = endsAt instanceof Date ? endsAt : new Date(endsAt);
+      if (!Number.isNaN(end.getTime())) {
+        const endTime = timeFmt.format(end);
+        if (endTime && endTime !== time) timeRange = `${time} – ${endTime}`;
+      }
+    }
     return {
       day,
       month,
       weekday,
       time,
+      timeRange,
       full: formatWhen(d, timezone),
     };
   } catch {
-    return { day: "", month: "", weekday: "", time: "", full: "" };
+    return empty;
   }
+}
+
+/**
+ * Accessible label kind for a sermon media URL (no fabricated streams).
+ * @param {string|null|undefined} url
+ * @returns {"audio"|"video"|"media"}
+ */
+function sermonMediaKind(url) {
+  const u = String(url || "").toLowerCase();
+  if (!u) return "media";
+  if (/\.(mp3|m4a|aac|wav|ogg|flac)(\?|#|$)/.test(u) || u.includes("soundcloud")) {
+    return "audio";
+  }
+  if (
+    /\.(mp4|webm|mov|m4v)(\?|#|$)/.test(u) ||
+    u.includes("youtube") ||
+    u.includes("youtu.be") ||
+    u.includes("vimeo")
+  ) {
+    return "video";
+  }
+  return "media";
 }
 
 /**
@@ -129,6 +161,7 @@ function renderTenantPublicPage(model) {
     formatWhen,
     formatDate,
     formatEventParts,
+    sermonMediaKind,
     initials,
   });
 }
@@ -138,5 +171,6 @@ module.exports = {
   formatWhen,
   formatDate,
   formatEventParts,
+  sermonMediaKind,
   initials,
 };

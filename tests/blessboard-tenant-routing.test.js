@@ -158,7 +158,7 @@ describe("blessboard tenant routing http", () => {
     const res = await request(app).get("/").set("Host", TENANT_HOST);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-shell="apex"/);
-    assert.match(res.text, /One digital home for your church/);
+    assert.match(res.text, /One digital home for[\s\S]*your church/);
     assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
   });
 
@@ -169,7 +169,7 @@ describe("blessboard tenant routing http", () => {
     const res = await request(app).get("/").set("Host", TENANT_HOST);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-shell="apex"/);
-    assert.match(res.text, /One digital home for your church/);
+    assert.match(res.text, /One digital home for[\s\S]*your church/);
     assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
     assert.doesNotMatch(res.text, new RegExp(BRANCH_NAME));
     const shadow = logs.find((l) => l.includes("blessboard_tenant_route_shadow"));

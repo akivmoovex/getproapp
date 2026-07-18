@@ -3,7 +3,8 @@
   V5 keeps apex dual-pane + email/password fields (not tenant-centered Stitch mock).
   Locals: csrfToken, error, errorState, errorTitle, emailValue, transferHostname,
           hostKind, subtitle, panelTitle, panelLead, loggedOut
-  Raw transfer tokens must never appear in HTML.
+  Raw transfer tokens must never appear in HTML. Form posts to current URL so ?tr= is preserved by the browser.
+  No forgot-password, social login, or user-controlled redirect fields.
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -14,14 +15,15 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>Sign in · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=4" />
-  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=3" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=6" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=4" />
 </head>
 <body
   class="bb-auth-body bb-auth-login"
   data-bb-shell="apex-auth"
   data-bb-product="blessboard-v5"
   data-bb-page="login"
+  data-bb-stitch-login="09-auth-member-login"
   <% if (errorState) { %>data-bb-auth-error="<%= errorState %>"<% } %>
   <% if (transferHostname) { %>data-bb-auth-transfer="1"<% } %>
 >
@@ -76,8 +78,12 @@
           <% } %>
 
           <% if (transferHostname) { %>
-          <p class="bb-auth-note" data-bb-auth-transfer-host="1">
-            Continue sign-in for <strong><%= transferHostname %></strong>
+          <p class="bb-auth-transfer-status" role="status" data-bb-auth-transfer-host="1">
+            <span class="material-symbols-outlined" aria-hidden="true">domain</span>
+            <span>
+              Continue sign-in for
+              <strong class="bb-auth-transfer-status__host"><%= transferHostname %></strong>
+            </span>
           </p>
           <% } %>
 
@@ -178,6 +184,9 @@
           <p class="bb-auth-footnote">
             <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
             Access to church workspaces follows your BlessBoard roles after sign-in.
+            <% if (transferHostname) { %>
+            Passwords are never collected on the church hostname.
+            <% } %>
           </p>
         </div>
       </div>

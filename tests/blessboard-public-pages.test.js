@@ -414,12 +414,22 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/leadership").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-leadership="1"/);
+    assert.match(res.text, /data-bb-stitch-leadership="populated-v2"/);
     assert.match(res.text, /Zeta Pastor/);
     assert.match(res.text, /bb-tp-avatar/);
+    assert.match(res.text, /bb-tp-featured-leader/);
     assert.doesNotMatch(res.text, /Rev\. Dr\. Samuel|placeholder|stock photo/i);
+    assert.doesNotMatch(res.text, /Contact Pastor|View Profile/i);
+    // Featured is first by sort_order (Alpha), not by role-title inference.
+    const featuredBlock = res.text.match(
+      /bb-tp-featured-leader[\s\S]*?bb-tp-featured-leader__name[^>]*>([^<]+)/
+    );
+    assert.ok(featuredBlock);
+    assert.equal(featuredBlock[1].trim(), "Alpha Deacon");
     const alphaIdx = res.text.indexOf("Alpha Deacon");
     const betaIdx = res.text.indexOf("Beta Elder");
-    assert.ok(alphaIdx > 0 && betaIdx > alphaIdx, "non-featured leaders keep sort order");
+    const zetaIdx = res.text.indexOf("Zeta Pastor");
+    assert.ok(alphaIdx > 0 && betaIdx > alphaIdx && zetaIdx > betaIdx, "leaders keep sort order");
   });
 
   it("ministries show published only in sort order without fabricated actions", async () => {
@@ -457,12 +467,15 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/ministries").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-ministries="1"/);
+    assert.match(res.text, /data-bb-stitch-ministries="populated-v4"/);
     assert.match(res.text, /Youth Ministry/);
     assert.match(res.text, /Music Ministry/);
     assert.match(res.text, /Fridays/);
+    assert.match(res.text, /bb-tp-ministry-card--featured/);
     assert.doesNotMatch(res.text, /Draft Choir|Hidden draft ministry/);
-    assert.doesNotMatch(res.text, /download|View Schedule|Contact Leader|Learn More/i);
-    assert.doesNotMatch(res.text, /Explore ministries serving/);
+    assert.doesNotMatch(res.text, /download|View Schedule|Contact Leader|Learn More|Join Team/i);
+    assert.doesNotMatch(res.text, /Explore ministries serving|500\+|Global Missions|All Ministries/);
+    assert.doesNotMatch(res.text, /bb-tp-ministry-filter|data-bb-filter=/);
     const youthIdx = res.text.indexOf("Youth Ministry");
     const musicIdx = res.text.indexOf("Music Ministry");
     assert.ok(youthIdx > 0 && musicIdx > youthIdx);
@@ -507,19 +520,29 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /id="bb-tp-drawer"/);
     assert.match(home.text, /id="bb-tp-menu-btn"/);
     assert.match(home.text, /aria-controls="bb-tp-drawer"/);
+    assert.match(home.text, /role="dialog"/);
+    assert.match(home.text, /aria-modal="true"/);
     assert.match(home.text, /bb-tp-nav__link is-active[^>]*>Home</);
     assert.match(home.text, /Powered by/);
     assert.match(home.text, /GetPro/);
+    assert.match(home.text, /data-bb-stitch-home="refined-v2"/);
+    assert.match(home.text, /Official Church Portal/);
+    assert.match(home.text, /bb-tp-member-band/);
     assert.doesNotMatch(home.text, /1\.2k\+|Active Members|lorem ipsum/i);
     assert.doesNotMatch(home.text, /We are glad you are here/);
+    assert.doesNotMatch(home.text, /Need Prayer|Send Prayer Request|Subscribe to our weekly/i);
+    assert.doesNotMatch(home.text, /bottom.?nav|bb-tp-fab/i);
 
     const about = await request(app).get("/about").set("Host", HOST_A);
     assert.equal(about.status, 200);
     assert.match(about.text, /data-bb-page="about"/);
     assert.match(about.text, /bb-tp-nav__link is-active[^>]*>About</);
     assert.match(about.text, /data-bb-about="1"|bb-tp-about/);
+    assert.match(about.text, /data-bb-stitch-about="populated-v3"/);
+    assert.match(about.text, /Join Our Community/);
     assert.match(about.text, /href="\/contact"/);
     assert.match(about.text, /href="\/register"/);
+    assert.doesNotMatch(about.text, /1,200\+|Year Established|Hearts transformed|Watch Our Story/i);
   });
 
   it("home empty state is intentional without fabricated metrics", async () => {
@@ -565,6 +588,13 @@ describe("blessboard public pages", () => {
     assert.ok(tokyo.full);
     assert.notEqual(ny.full, tokyo.full);
     assert.match(ny.day + ny.month, /\d/);
+    const ranged = formatEventParts(
+      "2026-01-15T15:00:00.000Z",
+      "UTC",
+      "2026-01-15T17:30:00.000Z"
+    );
+    assert.match(ranged.timeRange, /–/);
+    assert.ok(ranged.timeRange.includes(ranged.time));
   });
 
   it("events: upcoming order, draft/cancelled/past filtered, safe registration only", async () => {
@@ -627,17 +657,22 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/events").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-events="1"/);
+    assert.match(res.text, /data-bb-stitch-events="populated-v2"/);
+    assert.match(res.text, /bb-tp-featured-event|Soon Gathering/);
     assert.match(res.text, /Soon Gathering/);
     assert.match(res.text, /Later Conference/);
     assert.doesNotMatch(res.text, /Draft Picnic|Cancelled Retreat|Past Fellowship/);
     assert.doesNotMatch(res.text, /javascript:alert|5\+ Events|event count/i);
-    assert.doesNotMatch(res.text, /Find a place to grow/);
+    assert.doesNotMatch(res.text, /Find a place to grow|View Past Events|All Events|Conferences/);
+    assert.doesNotMatch(res.text, /Past Events Archive|Weekly Worship|Cell Groups/);
     const soonIdx = res.text.indexOf("Soon Gathering");
     const laterIdx = res.text.indexOf("Later Conference");
     assert.ok(soonIdx > 0 && laterIdx > soonIdx);
     assert.doesNotMatch(res.text, /data-bb-event-register="1"[^>]*javascript:/);
     // Featured (soon) has unsafe registration stripped; later still has safe register link.
     assert.match(res.text, /https:\/\/example\.org\/register-later/);
+    assert.match(res.text, /aria-label="Register for Later Conference"/);
+    assert.match(res.text, /Contact for Details|Contact Church/);
 
     const isolated = await request(app).get("/events").set("Host", HOST_B);
     assert.doesNotMatch(isolated.text, /Soon Gathering|Later Conference/);
@@ -672,11 +707,23 @@ describe("blessboard public pages", () => {
       title: "Living Hope",
       speakerName: "Pastor B",
       preachedAt: new Date("2026-07-01T10:00:00.000Z"),
-      mediaUrl: "https://example.org/watch",
+      mediaUrl: "https://example.org/watch.mp4",
       resourceUrl: "https://example.org/notes.pdf",
       status: "published",
     });
-    assert.equal(draft.ok && unsafe.ok && live.ok, true, live.message || unsafe.message);
+    const audio = await createSermon(pool, {
+      churchId: churchA.id,
+      title: "Quiet Faith",
+      speakerName: "Pastor C",
+      preachedAt: new Date("2026-05-01T10:00:00.000Z"),
+      mediaUrl: "https://example.org/message.mp3",
+      status: "published",
+    });
+    assert.equal(
+      draft.ok && unsafe.ok && live.ok && audio.ok,
+      true,
+      live.message || unsafe.message || audio.message
+    );
     await pool.query(
       `UPDATE blessboard.sermons
           SET media_url = $1, resource_url = $2
@@ -687,16 +734,31 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/sermons").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-sermons="1"/);
+    assert.match(res.text, /data-bb-stitch-sermons="populated-v2"/);
+    assert.match(res.text, /bb-tp-featured-sermon/);
     assert.match(res.text, /Living Hope/);
     assert.match(res.text, /Safe Title Unsafe Links/);
+    assert.match(res.text, /Quiet Faith/);
     assert.doesNotMatch(res.text, /Draft Message/);
-    assert.match(res.text, /https:\/\/example\.org\/watch/);
+    // Featured is newest by preached_at DESC
+    const livingIdx = res.text.indexOf("Living Hope");
+    const quietIdx = res.text.indexOf("Quiet Faith");
+    const unsafeIdx = res.text.indexOf("Safe Title Unsafe Links");
+    assert.ok(livingIdx > 0 && livingIdx < quietIdx && livingIdx < unsafeIdx);
+    assert.match(res.text, /https:\/\/example\.org\/watch\.mp4/);
     assert.match(res.text, /https:\/\/example\.org\/notes\.pdf/);
+    assert.match(res.text, /https:\/\/example\.org\/message\.mp3/);
+    assert.match(res.text, /aria-label="Watch sermon: Living Hope"/);
+    assert.match(res.text, /aria-label="Listen to sermon: Quiet Faith"/);
+    assert.match(res.text, /aria-label="Open resources for sermon: Living Hope"/);
     assert.doesNotMatch(res.text, /javascript:alert|data:text\/html|<iframe|youtube\.com\/embed/i);
-    assert.doesNotMatch(res.text, /Weekly teachings and spiritual resources|demo sermon|placeholder/i);
+    assert.doesNotMatch(
+      res.text,
+      /Weekly teachings and spiritual resources|demo sermon|placeholder|The Book of Acts Series|Notify Me|View Past Series|All Messages/i
+    );
 
     const isolated = await request(app).get("/sermons").set("Host", HOST_B);
-    assert.doesNotMatch(isolated.text, /Living Hope|Safe Title Unsafe Links/);
+    assert.doesNotMatch(isolated.text, /Living Hope|Safe Title Unsafe Links|Quiet Faith/);
   });
 
   it("buildPublicContact prefers branch settings and maps only with valid coordinates", () => {
@@ -754,13 +816,15 @@ describe("blessboard public pages", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-shell="tenant-public"/);
     assert.match(res.text, /data-bb-contact="1"/);
+    assert.match(res.text, /data-bb-stitch-contact="populated-v2"/);
     assert.match(res.text, /data-bb-header="1"/);
     assert.match(res.text, /data-bb-footer="1"/);
     assert.match(res.text, /bb-tp-nav__link is-active[^>]*>Contact</);
     assert.match(res.text, /church-office@example\.org|\+260900000001/);
+    assert.match(res.text, /mailto:church-office@example\.org|tel:\+?260900000001/);
     assert.doesNotMatch(res.text, /data-bb-contact-map=/);
     assert.doesNotMatch(res.text, /123 Faith Lane|Send a Message|Service Times|Office Hours|<form/i);
-    assert.doesNotMatch(res.text, /name="message"|newsletter|mailing list/i);
+    assert.doesNotMatch(res.text, /name="message"|newsletter|mailing list|Stay Connected With/i);
 
     const branchUp = await updateBranchSettings(pool, branchA.id, {
       publicName: BRANCH_A,
@@ -803,16 +867,20 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /data-bb-contact-map="1"/);
     assert.match(res.text, /openstreetmap\.org\/export\/embed/);
     assert.match(res.text, /Get Directions/);
-    assert.doesNotMatch(res.text, /<form|Send a Message|Full Name|Prayer Request/i);
+    assert.match(res.text, /aria-label="Email hq-branch@example\.org"/);
+    assert.match(res.text, /aria-label="Call \+260900000099"/);
+    assert.doesNotMatch(res.text, /<form|Send a Message|Full Name|Prayer Request|csrf/i);
 
-    // Clear coordinates — map must not render without a valid pair.
+    // Clear coordinates — map must not render without a valid pair; address still shown.
     await pool.query(
       `UPDATE blessboard.branch_settings SET latitude = NULL, longitude = NULL WHERE branch_id = $1`,
       [branchA.id]
     );
     res = await request(app).get("/contact").set("Host", HOST_A);
-    assert.doesNotMatch(res.text, /data-bb-contact-map=/);
+    assert.doesNotMatch(res.text, /data-bb-contact-map="1"/);
     assert.doesNotMatch(res.text, /openstreetmap\.org\/export\/embed/);
+    assert.match(res.text, /data-bb-contact-map="unavailable"/);
+    assert.match(res.text, /12 Faith Lane/);
 
     const isolated = await request(app).get("/contact").set("Host", HOST_B);
     assert.equal(isolated.status, 200);
@@ -829,8 +897,10 @@ describe("blessboard public pages", () => {
     assert.equal(emptyRes.status, 200);
     assert.match(emptyRes.text, /data-bb-shell="tenant-public"/);
     assert.match(emptyRes.text, /data-bb-giving="1"/);
+    assert.match(emptyRes.text, /data-bb-stitch-giving="populated-v2"/);
     assert.match(emptyRes.text, /data-bb-empty="giving"|does not process payments/i);
-    assert.doesNotMatch(emptyRes.text, /<form|card number|cvv|account number|amount/i);
+    assert.doesNotMatch(emptyRes.text, /<form|card number|cvv|account number|amount|Give Online|Donate Now/i);
+    assert.doesNotMatch(emptyRes.text, /Standard Chartered|Airtel Money|1\.2k Families|Your Recent Contributions/i);
 
     const draft = await createGivingMethod(pool, {
       churchId: churchA.id,
@@ -874,9 +944,14 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /Sunday Offering/);
     assert.match(res.text, /https:\/\/example\.org\/give/);
     assert.match(res.text, /data-bb-giving-link="1"/);
+    assert.match(res.text, /data-bb-giving-notice="1"/);
+    assert.match(res.text, /data-bb-giving-instructions="1"/);
+    assert.match(res.text, /Open published link/);
+    assert.match(res.text, /Contact for details/);
     assert.doesNotMatch(res.text, /Draft Bank|Hidden draft account/);
     assert.doesNotMatch(res.text, /javascript:alert/);
-    assert.doesNotMatch(res.text, /<form|card number|cvv|iban|account number|donate now amount/i);
+    assert.doesNotMatch(res.text, /<form|card number|cvv|iban|account number|donate now amount|Give Online|Donate Now/i);
+    assert.doesNotMatch(res.text, /csrf|_csrf|payment gateway|process your donation/i);
     assert.match(res.text, /does not process payments|does not collect payment|financial account/i);
 
     const isolated = await request(app).get("/giving").set("Host", HOST_B);

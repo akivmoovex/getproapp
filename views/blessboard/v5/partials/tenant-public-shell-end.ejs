@@ -1,7 +1,37 @@
 <%#
   BlessBoard V5 tenant public shell — footer + scripts.
   Locals: publicName, hqBranchDisplayName, primaryEmail, primaryPhone,
-          loginHref, apexHref, footerTagline (optional)
+          publicContact (optional), loginHref, apexHref, footerTagline (optional),
+          navItems (optional — Quick Links; falls back to canonical public paths)
+%>
+<%
+  var footerEmail = (typeof publicContact !== 'undefined' && publicContact && publicContact.email)
+    ? publicContact.email
+    : (typeof primaryEmail !== 'undefined' ? primaryEmail : '');
+  var footerPhone = (typeof publicContact !== 'undefined' && publicContact && publicContact.phone)
+    ? publicContact.phone
+    : (typeof primaryPhone !== 'undefined' ? primaryPhone : '');
+  var footerEmailHref = (typeof publicContact !== 'undefined' && publicContact && publicContact.emailHref)
+    ? publicContact.emailHref
+    : (footerEmail ? ('mailto:' + footerEmail) : null);
+  var footerPhoneHref = (typeof publicContact !== 'undefined' && publicContact && publicContact.phoneHref)
+    ? publicContact.phoneHref
+    : null;
+  if (!footerPhoneHref && footerPhone) {
+    footerPhoneHref = 'tel:' + String(footerPhone).replace(/[^\d+]/g, '');
+  }
+  var footerNavItems = (typeof navItems !== 'undefined' && navItems && navItems.length)
+    ? navItems
+    : [
+        { href: '/', label: 'Home' },
+        { href: '/about', label: 'About' },
+        { href: '/leadership', label: 'Leadership' },
+        { href: '/ministries', label: 'Ministries' },
+        { href: '/events', label: 'Events' },
+        { href: '/sermons', label: 'Sermons' },
+        { href: '/contact', label: 'Contact' },
+        { href: '/giving', label: 'Giving' }
+      ];
 %>
   </main>
 
@@ -9,41 +39,51 @@
     <div class="bb-tp-footer__inner">
       <div class="bb-tp-footer__grid">
         <div class="bb-tp-footer__brand">
-          <p class="bb-tp-footer__name"><%= publicName %></p>
-          <% if (typeof footerTagline !== 'undefined' && footerTagline) { %>
-          <p class="bb-tp-footer__tagline"><%= footerTagline %></p>
-          <% } else if (hqBranchDisplayName) { %>
-          <p class="bb-tp-footer__tagline">Headquarters: <%= hqBranchDisplayName %></p>
-          <% } %>
-          <p class="bb-tp-footer__powered"><%- include('./powered-by-getpro') %></p>
+          <div class="bb-tp-footer__brand-lockup">
+            <img
+              class="bb-tp-footer__mark"
+              src="/church/images/brand/blessboard-small-church-logo.png"
+              alt=""
+              width="28"
+              height="28"
+              decoding="async"
+            />
+            <div class="bb-tp-footer__brand-text">
+              <p class="bb-tp-footer__name"><%= publicName %></p>
+              <% if (typeof footerTagline !== 'undefined' && footerTagline) { %>
+              <p class="bb-tp-footer__tagline"><%= footerTagline %></p>
+              <% } else if (hqBranchDisplayName) { %>
+              <p class="bb-tp-footer__tagline">Headquarters: <%= hqBranchDisplayName %></p>
+              <% } %>
+            </div>
+          </div>
         </div>
 
         <div class="bb-tp-footer__col">
           <h2 class="bb-tp-footer__heading">Quick Links</h2>
           <ul class="bb-tp-footer__list">
-            <li><a href="/ministries">Ministries</a></li>
-            <li><a href="/events">Events</a></li>
-            <li><a href="/sermons">Sermons</a></li>
-            <li><a href="/giving">Giving</a></li>
+            <% footerNavItems.forEach(function (item) { %>
+            <li><a href="<%= item.href %>"><%= item.label %></a></li>
+            <% }) %>
           </ul>
         </div>
 
         <div class="bb-tp-footer__col">
           <h2 class="bb-tp-footer__heading">Contact</h2>
           <ul class="bb-tp-footer__list bb-tp-footer__list--contact">
-            <% if (typeof primaryEmail !== 'undefined' && primaryEmail) { %>
+            <% if (footerEmail && footerEmailHref) { %>
             <li>
               <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-              <a href="mailto:<%= primaryEmail %>"><%= primaryEmail %></a>
+              <a href="<%= footerEmailHref %>"><%= footerEmail %></a>
             </li>
             <% } %>
-            <% if (typeof primaryPhone !== 'undefined' && primaryPhone) { %>
+            <% if (footerPhone && footerPhoneHref) { %>
             <li>
               <span class="material-symbols-outlined" aria-hidden="true">phone</span>
-              <a href="tel:<%= String(primaryPhone).replace(/[^\d+]/g, '') %>"><%= primaryPhone %></a>
+              <a href="<%= footerPhoneHref %>"><%= footerPhone %></a>
             </li>
             <% } %>
-            <% if (!(typeof primaryEmail !== 'undefined' && primaryEmail) && !(typeof primaryPhone !== 'undefined' && primaryPhone)) { %>
+            <% if (!footerEmail && !footerPhone) { %>
             <li><a href="/contact">Contact details</a></li>
             <% } %>
           </ul>
@@ -60,7 +100,7 @@
       </div>
 
       <div class="bb-tp-footer__bar">
-        <p class="bb-tp-footer__copy">&copy; <%= publicName %></p>
+        <p class="bb-tp-footer__copy">&copy; <%= publicName %>. <%- include('./powered-by-getpro') %></p>
         <p class="bb-tp-footer__bar-links">
           <a href="/contact">Contact Us</a>
         </p>
@@ -69,6 +109,6 @@
   </footer>
 
   <script src="/blessboard/v5/design-system.js?v=2" defer></script>
-  <script src="/blessboard/v5/tenant-public.js?v=3" defer></script>
+  <script src="/blessboard/v5/tenant-public.js?v=5" defer></script>
 </body>
 </html>

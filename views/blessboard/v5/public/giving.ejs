@@ -1,6 +1,8 @@
 <%#
-  Giving — Stitch method cards; published giving methods only.
-  Information display — no payment processing or financial data collection.
+  Giving — Stitch 07-public-giving-desktop-v2 / mobile-v2 (Populated).
+  Desktop: 59c8fded… · Mobile: a0616f23… · Empty: a08093b9…
+  Published giving methods only. Information display — no payment processing,
+  no fabricated bank/mobile-money details, impact stats, or contribution history.
 %>
 <%
   var pageSections = sections || [];
@@ -9,12 +11,21 @@
   var moreSections = pageSections.length > 1 ? pageSections.slice(1) : [];
   var introHeading = (intro && intro.heading) || pageTitle || 'Ways to Give';
   var introBody = (intro && intro.bodyText) || '';
+
+  function methodTypeLabel(type) {
+    var t = String(type || '').toLowerCase();
+    if (t.indexOf('bank') >= 0 || t.indexOf('transfer') >= 0) return 'Bank transfer';
+    if (t.indexOf('mobile') >= 0 || t.indexOf('momo') >= 0 || t.indexOf('airtel') >= 0) return 'Mobile money';
+    if (t.indexOf('cash') >= 0 || t.indexOf('offering') >= 0 || t.indexOf('person') >= 0) return 'In person';
+    if (t.indexOf('online') >= 0 || t.indexOf('card') >= 0 || t.indexOf('pay') >= 0) return 'External link';
+    return 'Giving method';
+  }
 %>
 
-<section class="bb-tp-directory bb-tp-giving" data-bb-giving="1">
+<section class="bb-tp-directory bb-tp-giving" data-bb-giving="1" data-bb-stitch-giving="populated-v2">
   <header class="bb-tp-dir-hero bb-tp-giving__hero">
     <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow">
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">
         <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
         Faithful Stewardship
       </p>
@@ -40,23 +51,35 @@
 
   <div class="bb-tp-container bb-tp-directory__body">
     <% if (showEmptyState) { %>
-    <div class="bb-tp-empty" role="status" data-bb-empty="giving">
-      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">volunteer_activism</span>
-      <h2><%= emptyHeadline %></h2>
-      <p><%= emptyMessage %></p>
-      <p class="bb-tp-empty__hint">Published giving methods will appear here when available. BlessBoard does not process payments on this page.</p>
-      <p class="bb-tp-empty__actions">
-        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Church</a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="/">Home</a>
-      </p>
+    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="giving">
+      <div class="bb-tp-empty__visual" aria-hidden="true">
+        <span class="material-symbols-outlined bb-tp-empty__icon">volunteer_activism</span>
+      </div>
+      <div class="bb-tp-empty__copy">
+        <p class="bb-tp-empty__badge">Not available online</p>
+        <h2><%= emptyHeadline %></h2>
+        <p><%= emptyMessage %></p>
+        <p class="bb-tp-empty__hint">Published giving methods will appear here when available. BlessBoard does not process payments on this page.</p>
+        <div class="bb-tp-page-hero__cta">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Church</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="/">Home</a>
+        </div>
+      </div>
     </div>
     <% } else { %>
+
+    <aside class="bb-tp-giving-notice" role="note" data-bb-giving-notice="1">
+      <span class="material-symbols-outlined" aria-hidden="true">info</span>
+      <p>
+        This page shares published giving instructions only. BlessBoard does not process payments or collect card, bank, or mobile-money account details here.
+      </p>
+    </aside>
 
     <% if (methods.length) { %>
     <section id="ways-to-give" class="bb-tp-giving-methods" aria-labelledby="ways-to-give-heading" data-bb-giving-methods="1">
       <div class="bb-tp-giving-methods__head">
         <h2 id="ways-to-give-heading" class="bb-tp-giving-methods__title">Ways to Give</h2>
-        <p class="bb-tp-giving-methods__note">Methods published by <%= publicName %>. This page does not collect payment details or process donations.</p>
+        <p class="bb-tp-giving-methods__note">Methods published by <%= publicName %>. Follow the instructions below, or contact the church office if you need help.</p>
       </div>
       <ul class="bb-tp-giving-grid">
         <% methods.forEach(function (method) { %>
@@ -64,9 +87,13 @@
           <span class="bb-tp-giving-card__icon" aria-hidden="true">
             <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
           </span>
+          <p class="bb-tp-giving-card__type"><%= methodTypeLabel(method.methodType) %></p>
           <h3 class="bb-tp-giving-card__label"><%= method.label %></h3>
           <% if (method.instructions) { %>
-          <p class="bb-tp-giving-card__instructions"><%= method.instructions %></p>
+          <div class="bb-tp-giving-card__instructions" data-bb-giving-instructions="1">
+            <p class="bb-tp-giving-card__instructions-label">Instructions</p>
+            <p class="bb-tp-giving-card__instructions-body"><%= method.instructions %></p>
+          </div>
           <% } %>
           <% if (method.externalUrl) { %>
           <p class="bb-tp-giving-card__action">
@@ -76,9 +103,16 @@
               rel="noopener noreferrer"
               target="_blank"
               data-bb-giving-link="1"
+              aria-label="Open published giving link for <%= method.label %> (opens in a new tab)"
             >
-              Open giving link
+              Open published link
               <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+            </a>
+          </p>
+          <% } else { %>
+          <p class="bb-tp-giving-card__action">
+            <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="/contact">
+              Contact for details
             </a>
           </p>
           <% } %>
@@ -87,15 +121,15 @@
       </ul>
     </section>
     <% } else if (entitiesEmptyMessage) { %>
-    <p class="bb-tp-lead"><%= entitiesEmptyMessage %></p>
+    <p class="bb-tp-lead" role="status"><%= entitiesEmptyMessage %></p>
     <% } %>
 
     <% moreSections.forEach(function (section) { %>
-    <section class="bb-tp-section bb-tp-giving-section" data-section="<%= section.sectionKey %>">
-      <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
-      <% if (section.bodyText) { %><p><%= section.bodyText %></p><% } %>
+    <section class="bb-tp-section bb-tp-giving-section bb-tp-content-block" data-section="<%= section.sectionKey %>">
+      <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+      <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
       <% if (section.mediaUrl) { %>
-      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" />
+      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
       <% } %>
     </section>
     <% }) %>

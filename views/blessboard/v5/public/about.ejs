@@ -1,7 +1,21 @@
 <%#
-  About page body — Stitch desktop/mobile layouts, published CMS sections only.
+  Tenant About — Stitch 02-public-about-*-v3 (Populated).
+  Desktop: 44492f6a… · Mobile: 3f0b8a5c…
+  Published CMS fields only. No fabricated history, stats, or mission copy.
 %>
 <%
+  function classifyAboutSection(s) {
+    var key = String(s.sectionKey || '').toLowerCase();
+    var type = String(s.sectionType || '').toLowerCase();
+    var heading = String(s.heading || '').toLowerCase();
+    var blob = key + ' ' + type + ' ' + heading;
+    if (blob.indexOf('mission') >= 0) return 'mission';
+    if (blob.indexOf('vision') >= 0) return 'vision';
+    if (blob.indexOf('value') >= 0) return 'values';
+    if (blob.indexOf('story') >= 0 || blob.indexOf('history') >= 0) return 'story';
+    return 'generic';
+  }
+
   var hero = null;
   var rest = [];
   (sections || []).forEach(function (s) {
@@ -15,9 +29,25 @@
   var heroHeading = (hero && hero.heading) || pageTitle || ('About ' + publicName);
   var heroBody = (hero && hero.bodyText) || '';
   var heroMedia = hero && hero.mediaUrl ? hero.mediaUrl : null;
+
+  var storySections = [];
+  var missionSection = null;
+  var visionSection = null;
+  var valueSections = [];
+  var genericSections = [];
+  rest.forEach(function (s) {
+    var kind = classifyAboutSection(s);
+    if (kind === 'story') storySections.push(s);
+    else if (kind === 'mission' && !missionSection) missionSection = s;
+    else if (kind === 'vision' && !visionSection) visionSection = s;
+    else if (kind === 'values') valueSections.push(s);
+    else genericSections.push(s);
+  });
+  var hasPurpose = missionSection || visionSection;
+  var hasBodyContent = storySections.length || hasPurpose || valueSections.length || genericSections.length;
 %>
 
-<section class="bb-tp-about" data-bb-about="1">
+<section class="bb-tp-about" data-bb-about="1" data-bb-stitch-about="populated-v3">
   <header class="bb-tp-page-hero">
     <div class="bb-tp-page-hero__inner">
       <div class="bb-tp-page-hero__copy">
@@ -36,7 +66,15 @@
       </div>
       <div class="bb-tp-page-hero__visual<%= heroMedia ? ' has-media' : '' %>">
         <% if (heroMedia) { %>
-        <img class="bb-tp-page-hero__img" src="<%= heroMedia %>" alt="" width="640" height="480" loading="eager" decoding="async" />
+        <img
+          class="bb-tp-page-hero__img"
+          src="<%= heroMedia %>"
+          alt=""
+          width="640"
+          height="480"
+          loading="eager"
+          decoding="async"
+        />
         <% } else { %>
         <div class="bb-tp-page-hero__fallback" aria-hidden="true"></div>
         <% } %>
@@ -47,13 +85,80 @@
   <% if (showEmptyState) { %>
   <div class="bb-tp-container">
     <div class="bb-tp-empty" role="status">
+      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">info</span>
       <h2><%= emptyHeadline %></h2>
       <p><%= emptyMessage %></p>
     </div>
   </div>
-  <% } else if (rest.length) { %>
+  <% } else if (hasBodyContent) { %>
+
+  <% if (storySections.length) { %>
+  <div class="bb-tp-container bb-tp-about__story-wrap">
+    <% storySections.forEach(function (section) { %>
+    <section class="bb-tp-about-story" data-section="<%= section.sectionKey %>">
+      <div class="bb-tp-about-story__copy">
+        <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+        <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+      </div>
+      <% if (section.mediaUrl) { %>
+      <div class="bb-tp-about-story__media">
+        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+      </div>
+      <% } %>
+    </section>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <% if (hasPurpose) { %>
+  <section class="bb-tp-about-purpose" aria-label="Purpose">
+    <div class="bb-tp-container bb-tp-about-purpose__grid">
+      <% if (missionSection) { %>
+      <article class="bb-tp-purpose-card" data-section="<%= missionSection.sectionKey %>">
+        <span class="bb-tp-purpose-card__icon material-symbols-outlined" aria-hidden="true">flag</span>
+        <% if (missionSection.heading) { %><h2 class="bb-tp-purpose-card__title"><%= missionSection.heading %></h2><% } %>
+        <% if (missionSection.bodyText) { %><p class="bb-tp-body"><%= missionSection.bodyText %></p><% } %>
+        <% if (missionSection.mediaUrl) { %>
+        <img class="bb-tp-media" src="<%= missionSection.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+        <% } %>
+      </article>
+      <% } %>
+      <% if (visionSection) { %>
+      <article class="bb-tp-purpose-card bb-tp-purpose-card--accent" data-section="<%= visionSection.sectionKey %>">
+        <span class="bb-tp-purpose-card__icon material-symbols-outlined" aria-hidden="true">visibility</span>
+        <% if (visionSection.heading) { %><h2 class="bb-tp-purpose-card__title"><%= visionSection.heading %></h2><% } %>
+        <% if (visionSection.bodyText) { %><p class="bb-tp-body"><%= visionSection.bodyText %></p><% } %>
+        <% if (visionSection.mediaUrl) { %>
+        <img class="bb-tp-media" src="<%= visionSection.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+        <% } %>
+      </article>
+      <% } %>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (valueSections.length) { %>
+  <section class="bb-tp-about-values" aria-label="Values">
+    <div class="bb-tp-container">
+      <h2 class="bb-tp-section-title">Core Values</h2>
+      <ul class="bb-tp-about-values__list">
+        <% valueSections.forEach(function (section) { %>
+        <li class="bb-tp-about-values__item" data-section="<%= section.sectionKey %>">
+          <span class="bb-tp-about-values__icon material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+          <div>
+            <% if (section.heading) { %><h3 class="bb-tp-about-values__title"><%= section.heading %></h3><% } %>
+            <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (genericSections.length) { %>
   <div class="bb-tp-container bb-tp-about__body">
-    <% rest.forEach(function (section) { %>
+    <% genericSections.forEach(function (section) { %>
     <section class="bb-tp-content-block bb-tp-about__block" data-section="<%= section.sectionKey %>">
       <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
       <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
@@ -65,13 +170,15 @@
   </div>
   <% } %>
 
+  <% } %>
+
   <section class="bb-tp-about__join" aria-label="Join">
     <div class="bb-tp-container bb-tp-about__join-inner">
       <h2 class="bb-tp-section-title">Join Our Community</h2>
       <p class="bb-tp-body">Connect with <%= publicName %> — plan a visit or register as a member.</p>
       <div class="bb-tp-page-hero__cta">
         <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Plan Your Visit</a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register</a>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="/register">Register</a>
       </div>
     </div>
   </section>

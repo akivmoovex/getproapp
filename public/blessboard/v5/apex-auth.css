@@ -135,6 +135,14 @@
   margin-top: 0.25rem;
 }
 
+.bb-auth-login .bb-auth-card {
+  max-width: 26rem;
+}
+
+body[data-bb-page="auth-error"] .bb-auth-card {
+  max-width: 28rem;
+}
+
 .bb-auth-password__toggle .material-symbols-outlined {
   font-size: 1.25rem;
   line-height: 1;

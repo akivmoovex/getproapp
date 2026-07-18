@@ -1,7 +1,7 @@
 <%#
   Apex / tenant auth error — callback failure, expired/consumed/unauthorized transfer.
   Locals: message, errorState, pageTitle
-  Never includes transfer tokens, session tokens, or tenant secrets.
+  Never includes transfer tokens, session tokens, tenant secrets, or user-controlled redirect URLs.
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -12,8 +12,8 @@
   <meta name="robots" content="noindex, nofollow" />
   <title><%= pageTitle || 'Sign in' %> · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=3" />
-  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=3" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=6" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=4" />
 </head>
 <body
   class="bb-auth-body bb-auth-login"
@@ -31,7 +31,20 @@
 %>
   <a class="bb-auth-skip" href="#bb-auth-error-main">Skip to content</a>
   <div class="bb-auth-layout">
-    <div class="bb-auth-main bb-auth-main--solo" id="bb-auth-error-main">
+    <aside class="bb-auth-panel" aria-hidden="true">
+      <div class="bb-auth-panel__inner">
+        <p class="bb-auth-panel__eyebrow">
+          <span class="material-symbols-outlined" aria-hidden="true">shield</span>
+          Secure sign-in
+        </p>
+        <p class="bb-auth-panel__title">We could not continue</p>
+        <p class="bb-auth-panel__lead">
+          Sign-in links are single-use and short-lived. Start again from your church site when needed.
+        </p>
+      </div>
+    </aside>
+
+    <div class="bb-auth-main" id="bb-auth-error-main">
       <header class="bb-auth-main__header">
         <a class="bb-auth-brand" href="/">
           <img
@@ -67,6 +80,8 @@
             Sign in from your church site only if your account is authorized for that congregation.
             <% } else if (errorState === 'expired' || errorState === 'consumed') { %>
             Start sign-in again from your church site’s Login link. Sign-in links are single-use and short-lived.
+            <% } else if (errorState === 'throttled') { %>
+            Wait a few minutes, then try again from your church site’s Login link.
             <% } else { %>
             You can try again, or return home.
             <% } %>

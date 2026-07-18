@@ -54,8 +54,10 @@ describe("blessboard apex auth gui states", () => {
     assert.match(html, /data-bb-auth-transfer="1"/);
     assert.match(html, /church\.blessboard\.org/);
     assert.match(html, /Member Access/);
+    assert.match(html, /bb-auth-transfer-status/);
     assert.doesNotMatch(html, /raw-transfer-token-SECRET-value/);
     assert.doesNotMatch(html, /name="tr"/);
+    assert.doesNotMatch(html, /name="next"|name="return_to"|name="redirect"/i);
     assert.doesNotMatch(html, /Forgot password/i);
     assert.doesNotMatch(html, /Register as Member/i);
     assert.doesNotMatch(html, /Continue with (Google|Facebook)|Sign in with (Google|Facebook)|social.?login/i);
@@ -74,10 +76,12 @@ describe("blessboard apex auth gui states", () => {
     assert.match(expired, /Sign-in link expired/);
     assert.match(expired, /href="\/login"/);
     assert.match(expired, /name="referrer" content="no-referrer"/);
+    assert.doesNotMatch(expired, /name="next"|name="return_to"|tr=/i);
 
     const consumed = renderAuthErrorPage("This sign-in link has already been used.");
     assert.match(consumed, /data-bb-auth-error="consumed"/);
     assert.match(consumed, /already used/i);
+    assert.match(consumed, /bb-auth-panel/);
 
     const unauthorized = renderAuthErrorPage("You do not have access to that church site.");
     assert.match(unauthorized, /data-bb-auth-error="unauthorized"/);

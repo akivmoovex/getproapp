@@ -1,6 +1,8 @@
 <%#
-  Contact — Stitch populated layout; settings + published channels only.
-  No contact form, service-times, or fabricated address/phone/email/map.
+  Contact — Stitch 08-public-contact-desktop-v2 / mobile-v2 (Populated).
+  Desktop: ab93d842… · Mobile: 9cbad6aa…
+  Published channels + branch/church settings only. No contact form (unsupported).
+  Map/directions only with valid lat/lng. No fabricated hours or newsletter.
 %>
 <%
   var pageSections = sections || [];
@@ -22,7 +24,8 @@
       icon: 'call',
       label: 'Phone',
       value: contact.phone,
-      href: contact.phoneHref
+      href: contact.phoneHref,
+      kind: 'phone'
     });
   }
   if (contact.email && !typesSeen.email && !typesSeen.mail) {
@@ -30,7 +33,8 @@
       icon: 'mail',
       label: 'Email',
       value: contact.email,
-      href: contact.emailHref
+      href: contact.emailHref,
+      kind: 'email'
     });
   }
   if (contact.addressText && !typesSeen.address && !typesSeen.location && !typesSeen.map) {
@@ -39,35 +43,43 @@
       label: 'Location',
       value: contact.addressText,
       href: null,
-      multiline: true
+      multiline: true,
+      kind: 'location'
     });
   }
 
   var hasChannelCards = channels.length > 0 || settingsCards.length > 0;
+  var showMapUnavailable = Boolean(contact.addressText && !contact.hasMap);
 %>
 
-<section class="bb-tp-directory bb-tp-contact" data-bb-contact="1">
-  <header class="bb-tp-dir-hero">
+<section class="bb-tp-directory bb-tp-contact" data-bb-contact="1" data-bb-stitch-contact="populated-v2">
+  <header class="bb-tp-dir-hero bb-tp-dir-hero--center">
     <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow">Connect With Us</p>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">Connect With Us</p>
       <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
       <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
+      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center"><%= introBody %></p>
       <% } else if (!showEmptyState) { %>
-      <p class="bb-tp-dir-hero__lead">Reach <%= publicName %> through the published contact details below.</p>
+      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center">Reach <%= publicName %> through the published contact details below.</p>
       <% } %>
     </div>
   </header>
 
   <div class="bb-tp-container bb-tp-directory__body">
     <% if (showEmptyState) { %>
-    <div class="bb-tp-empty" role="status" data-bb-empty="contact">
-      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">contact_mail</span>
-      <h2><%= emptyHeadline %></h2>
-      <p><%= emptyMessage %></p>
-      <p class="bb-tp-empty__hint">Published contact channels and branch address details will appear here when available.</p>
-      <div class="bb-tp-page-hero__cta">
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="/">Home</a>
+    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="contact">
+      <div class="bb-tp-empty__visual" aria-hidden="true">
+        <span class="material-symbols-outlined bb-tp-empty__icon">contact_mail</span>
+      </div>
+      <div class="bb-tp-empty__copy">
+        <p class="bb-tp-empty__badge">Update in progress</p>
+        <h2><%= emptyHeadline %></h2>
+        <p><%= emptyMessage %></p>
+        <p class="bb-tp-empty__hint">Published contact channels and branch address details will appear here when available.</p>
+        <div class="bb-tp-page-hero__cta">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="/">Home</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="/about">About</a>
+        </div>
       </div>
     </div>
     <% } else { %>
@@ -82,7 +94,12 @@
         <h2 class="bb-tp-contact-card__label"><%= channel.label %></h2>
         <% if (channel.href) { %>
         <p class="bb-tp-contact-card__value">
-          <a href="<%= channel.href %>"<%= channel.href.indexOf('http') === 0 ? ' rel="noopener noreferrer"' : '' %>><%= channel.value %></a>
+          <a
+            href="<%= channel.href %>"
+            <% if (channel.href.indexOf('http') === 0) { %>rel="noopener noreferrer"<% } %>
+            <% if (channel.channelType === 'email') { %>aria-label="Email <%= channel.value %>"<% } %>
+            <% if (channel.channelType === 'phone') { %>aria-label="Call <%= channel.value %>"<% } %>
+          ><%= channel.value %></a>
         </p>
         <% } else { %>
         <p class="bb-tp-contact-card__value"><%= channel.value %></p>
@@ -96,7 +113,13 @@
         </span>
         <h2 class="bb-tp-contact-card__label"><%= card.label %></h2>
         <% if (card.href) { %>
-        <p class="bb-tp-contact-card__value"><a href="<%= card.href %>"><%= card.value %></a></p>
+        <p class="bb-tp-contact-card__value">
+          <a
+            href="<%= card.href %>"
+            <% if (card.kind === 'email') { %>aria-label="Email <%= card.value %>"<% } %>
+            <% if (card.kind === 'phone') { %>aria-label="Call <%= card.value %>"<% } %>
+          ><%= card.value %></a>
+        </p>
         <% } else if (card.multiline && contact.addressLines && contact.addressLines.length) { %>
         <p class="bb-tp-contact-card__value bb-tp-contact-card__value--multi">
           <% contact.addressLines.forEach(function (line) { %><span><%= line %></span><% }) %>
@@ -108,7 +131,7 @@
       <% }) %>
     </ul>
     <% } else if (entitiesEmptyMessage && !contact.hasAny) { %>
-    <p class="bb-tp-lead"><%= entitiesEmptyMessage %></p>
+    <p class="bb-tp-lead" role="status"><%= entitiesEmptyMessage %></p>
     <% } %>
 
     <% if (contact.hasMap && contact.mapEmbedUrl) { %>
@@ -133,7 +156,13 @@
           allowfullscreen
         ></iframe>
         <% if (contact.directionsUrl) { %>
-        <a class="bb-tp-contact-map__directions" href="<%= contact.directionsUrl %>" rel="noopener noreferrer" target="_blank">
+        <a
+          class="bb-tp-contact-map__directions"
+          href="<%= contact.directionsUrl %>"
+          rel="noopener noreferrer"
+          target="_blank"
+          aria-label="Get directions to <%= publicName %> (opens in a new tab)"
+        >
           <span class="material-symbols-outlined" aria-hidden="true">pin_drop</span>
           Get Directions
           <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
@@ -143,19 +172,30 @@
     </section>
     <% } else if (contact.directionsUrl) { %>
     <p class="bb-tp-contact-map__link-only" data-bb-contact-map="directions-only">
-      <a class="bb-tp-btn bb-tp-btn--primary" href="<%= contact.directionsUrl %>" rel="noopener noreferrer" target="_blank">
+      <a
+        class="bb-tp-btn bb-tp-btn--primary"
+        href="<%= contact.directionsUrl %>"
+        rel="noopener noreferrer"
+        target="_blank"
+        aria-label="Get directions to <%= publicName %> (opens in a new tab)"
+      >
         <span class="material-symbols-outlined" aria-hidden="true">pin_drop</span>
         Get Directions
       </a>
     </p>
+    <% } else if (showMapUnavailable) { %>
+    <p class="bb-tp-contact-map__unavailable" role="status" data-bb-contact-map="unavailable">
+      <span class="material-symbols-outlined" aria-hidden="true">info</span>
+      A map is not available for this location yet. Use the address details above when visiting.
+    </p>
     <% } %>
 
     <% moreSections.forEach(function (section) { %>
-    <section class="bb-tp-section" data-section="<%= section.sectionKey %>">
-      <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
-      <% if (section.bodyText) { %><p><%= section.bodyText %></p><% } %>
+    <section class="bb-tp-section bb-tp-content-block" data-section="<%= section.sectionKey %>">
+      <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+      <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
       <% if (section.mediaUrl) { %>
-      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" />
+      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
       <% } %>
     </section>
     <% }) %>

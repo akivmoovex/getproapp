@@ -212,14 +212,17 @@ describe("blessboard member registration http", () => {
     if (skipIfNeeded(t)) return;
     const res = await request(app).get("/register").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /Member registration/);
+    assert.match(res.text, /Member [Rr]egistration/);
     assert.match(res.text, /name="_csrf"/);
     assert.match(res.text, /data-bb-shell="tenant-auth"/);
+    assert.match(res.text, /data-bb-stitch-register=/);
+    assert.match(res.text, /data-bb-auth-privacy="1"/);
     assert.match(res.text, /for="first_name"/);
     assert.match(res.text, /for="last_name"/);
     assert.match(res.text, /for="email"/);
     assert.match(res.text, /for="phone"/);
     assert.doesNotMatch(res.text, /name="church_id"|name="branch_id"|name="churchId"|name="branchId"/);
+    assert.doesNotMatch(res.text, /name="password"|name="gender"|name="address"|Forgot password/i);
     assert.ok(extractCookie(res, CSRF_COOKIE));
   });
 
@@ -296,8 +299,9 @@ describe("blessboard member registration http", () => {
     const submitted = await request(app).get("/register/submitted").set("Host", HOST_A);
     assert.equal(submitted.status, 200);
     assert.match(submitted.text, /data-bb-register-submitted="1"/);
-    assert.match(submitted.text, /Registration received|Pending review/);
+    assert.match(submitted.text, /Registration submitted|Pending review/);
     assert.doesNotMatch(submitted.text, /Submission ID|KBC-|account has been created|automatically created/i);
+    assert.doesNotMatch(submitted.text, /24\s*-\s*48|Est\.\s*Processing|Watch for a message|SMS/i);
     assert.match(submitted.text, /not created automatically|only after leadership approves/i);
   });
 

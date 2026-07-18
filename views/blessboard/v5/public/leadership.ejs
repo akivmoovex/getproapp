@@ -1,33 +1,22 @@
 <%#
-  Leadership — Stitch populated/empty layouts; published leaders only (sort_order ASC).
-  No placeholder people, Contact Pastor, or View Profile actions.
+  Leadership — Stitch 03-public-leadership-desktop-v2 (Populated) /
+  03-public-leadership-mobile-v4 (Restored); empty: 5f7b1d44…
+  Published leaders only (sort_order ASC). No role inference, Contact Pastor, or View Profile.
 %>
 <%
   var pageSections = sections || [];
   var leaders = entities || [];
-  var featured = null;
-  var others = [];
-  leaders.forEach(function (leader) {
-    var role = String(leader.roleTitle || '').toLowerCase();
-    if (!featured && /pastor|shepherd|senior/.test(role)) {
-      featured = leader;
-    }
-  });
-  if (!featured && leaders.length) {
-    featured = leaders[0];
-  }
-  leaders.forEach(function (leader) {
-    if (leader !== featured) others.push(leader);
-  });
+  var featured = leaders.length ? leaders[0] : null;
+  var others = leaders.length > 1 ? leaders.slice(1) : [];
   var intro = pageSections.length ? pageSections[0] : null;
   var introHeading = (intro && intro.heading) || pageTitle || 'Our Leadership';
   var introBody = (intro && intro.bodyText) || '';
 %>
 
-<section class="bb-tp-directory bb-tp-leadership" data-bb-leadership="1">
+<section class="bb-tp-directory bb-tp-leadership" data-bb-leadership="1" data-bb-stitch-leadership="populated-v2">
   <header class="bb-tp-dir-hero">
     <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow">Faith &amp; Community</p>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">Faith &amp; Community</p>
       <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
       <% if (introBody) { %>
       <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
@@ -37,13 +26,18 @@
 
   <div class="bb-tp-container bb-tp-directory__body">
     <% if (showEmptyState) { %>
-    <div class="bb-tp-empty" role="status" data-bb-empty="leadership">
-      <span class="material-symbols-outlined bb-tp-empty__icon" aria-hidden="true">groups</span>
-      <h2><%= emptyHeadline %></h2>
-      <p><%= emptyMessage %></p>
-      <div class="bb-tp-page-hero__cta">
-        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="/about">About</a>
+    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="leadership">
+      <div class="bb-tp-empty__visual" aria-hidden="true">
+        <span class="material-symbols-outlined bb-tp-empty__icon">groups</span>
+      </div>
+      <div class="bb-tp-empty__copy">
+        <p class="bb-tp-empty__badge">Update in progress</p>
+        <h2><%= emptyHeadline %></h2>
+        <p><%= emptyMessage %></p>
+        <div class="bb-tp-page-hero__cta">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="/about">About</a>
+        </div>
       </div>
     </div>
     <% } else { %>
@@ -52,6 +46,8 @@
     <section class="bb-tp-featured-leader" aria-label="Featured leader">
       <% if (featured.roleTitle) { %>
       <p class="bb-tp-featured-leader__label"><%= featured.roleTitle %></p>
+      <% } else { %>
+      <p class="bb-tp-featured-leader__label">Leadership</p>
       <% } %>
       <article class="bb-tp-featured-leader__card">
         <div class="bb-tp-featured-leader__media<%= featured.imageUrl ? '' : ' is-fallback' %>">
@@ -76,7 +72,7 @@
 
     <% if (others.length) { %>
     <section class="bb-tp-leader-grid-wrap" aria-label="Ministry leaders">
-      <h2 class="bb-tp-section-title">Ministry Leaders</h2>
+      <h2 class="bb-tp-section-title bb-tp-section-title--ruled">Ministry Leaders</h2>
       <ul class="bb-tp-leader-grid">
         <% others.forEach(function (leader) { %>
         <li class="bb-tp-leader-card">
@@ -119,13 +115,15 @@
     <% } %>
   </div>
 
-  <section class="bb-tp-dir-cta">
-    <div class="bb-tp-container bb-tp-dir-cta__inner">
-      <h2 class="bb-tp-section-title">Want to serve with us?</h2>
-      <p class="bb-tp-body">Connect with <%= publicName %> to learn about serving opportunities.</p>
+  <section class="bb-tp-dir-cta bb-tp-dir-cta--accent">
+    <div class="bb-tp-container bb-tp-dir-cta__inner bb-tp-dir-cta__inner--split">
+      <div class="bb-tp-dir-cta__copy">
+        <h2 class="bb-tp-section-title">Want to serve with us?</h2>
+        <p class="bb-tp-body">Connect with <%= publicName %> to learn about serving opportunities.</p>
+      </div>
       <div class="bb-tp-page-hero__cta">
-        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Church</a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="/ministries">Explore Ministries</a>
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--on-accent" href="/ministries">Explore Ministries</a>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="/contact">Contact Church</a>
       </div>
     </div>
   </section>
