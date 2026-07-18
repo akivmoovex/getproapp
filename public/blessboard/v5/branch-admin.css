@@ -182,8 +182,7 @@ body.bb-ba-drawer-open {
   margin: 0;
 }
 
-.bb-ba-logout button,
-.bb-ba-btn {
+.bb-ba-logout button {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -193,19 +192,12 @@ body.bb-ba-drawer-open {
   font: inherit;
   cursor: pointer;
   padding: 0.45rem 0.65rem;
-  border-radius: 0.5rem;
+  border-radius: var(--bb-radius-sm, 0.5rem);
 }
 
-.bb-ba-logout button:hover,
-.bb-ba-btn:hover {
+.bb-ba-logout button:hover {
   color: var(--bb-ink);
   background: var(--bb-color-primary-soft, #efeaff);
-}
-
-.bb-ba-btn--ghost {
-  border: 1px solid var(--bb-line);
-  background: var(--bb-surface);
-  color: var(--bb-ink);
 }
 
 .bb-ba-frame {
@@ -1504,7 +1496,7 @@ body.bb-ba-drawer-open {
   justify-content: center;
   gap: 0.35rem;
   border: 0;
-  border-radius: 0.55rem;
+  border-radius: var(--bb-radius-sm, 0.5rem);
   padding: 0.55rem 0.9rem;
   font: inherit;
   font-weight: 600;
@@ -1517,10 +1509,18 @@ body.bb-ba-drawer-open {
   color: #fff;
 }
 
+.bb-ba-btn--primary:hover {
+  background: var(--bb-violet-deep, #5341cd);
+}
+
 .bb-ba-btn--ghost {
   background: var(--bb-surface);
   color: var(--bb-ink);
   border: 1px solid var(--bb-line);
+}
+
+.bb-ba-btn--ghost:hover {
+  background: var(--bb-color-primary-soft, #efeaff);
 }
 
 .bb-ba-btn--danger {
@@ -5333,4 +5333,48 @@ body.bb-ba-drawer-open {
     flex: 1 1 auto;
     justify-content: center;
   }
+}
+
+/* Participation admin overview (shared BA/HQ chrome) */
+.bb-part-admin {
+  display: grid;
+  gap: 1.25rem;
+}
+.bb-part-admin__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.bb-part-admin__item {
+  margin: 0;
+}
+.bb-part-admin__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+.bb-part-admin__members {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.bb-part-admin__members > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--bb-line);
+  border-radius: var(--bb-radius-sm, 0.5rem);
+  background: var(--bb-surface);
+}
+.bb-part-admin__review {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
 }

@@ -2,9 +2,28 @@
 
 **Date:** 2026-07-18  
 **Scope:** Platform Admin `/admin/plans` directory presentation only. **Subscriptions not started.**  
-**References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md) (order 78), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_19E_PLATFORM_PLANS.md`](./BATCH_19E_PLATFORM_PLANS.md), [`BLESSBOARD_PRICING_DECISION.md`](../product/BLESSBOARD_PRICING_DECISION.md)
+**References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md) (order 78), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_19D_PLATFORM_ORGANIZATION_DETAIL.md`](./BATCH_19D_PLATFORM_ORGANIZATION_DETAIL.md), [`BLESSBOARD_PRICING_DECISION.md`](../product/BLESSBOARD_PRICING_DECISION.md)
 
-## 1. Canonical Stitch screen IDs
+## 1. Files changed
+
+| Path | Change |
+|------|--------|
+| `views/blessboard/v5/platform-admin/plans.ejs` | Directory: active cards, desktop table + mobile cards, inactive/legacy section; Foundation/Growth/Network via `displayName`; persisted keys read-only |
+| `public/blessboard/v5/platform-admin.css` | Plans directory layout (shell cache `platform-admin.css?v=23`) |
+| `views/blessboard/v5/partials/platform-admin-shell-start.ejs` | CSS cache |
+| `src/platform/repositories/entitlementRepository.js` | `listPlansForProduct` (all statuses) |
+| `src/platform/services/listPlatformPlansCatalogue.js` | `includeInactive` for directory; `isActive` / `isLegacy` presentation |
+| `src/platform/http/platformAdminRoutes.js` | Plans GET uses `includeInactive: true` |
+| `tests/blessboard-platform-admin-shell.test.js` | Render, display-name mapping, active/inactive/legacy, authz, no price/create chrome |
+| `tests/blessboard-v5-a11y-structure.test.js` | Directory structure + CSS version |
+| `docs/gui/STITCH_SCREEN_MAP.md` | Order 78 Batch 20A note |
+| `docs/gui/BATCH_20A_PLATFORM_PLANS.md` | This document |
+
+**Unchanged:** Org-detail assign/override POSTs, active-only assignability, entitlement resolution logic, seed `plan_key` values, billing catalogues, plan creation (absent), schema/migrations.
+
+**This pass:** Verified against Stitch 66 + pricing decision approved packages. No further code edits required on branch `V5`.
+
+## 2. Stitch IDs
 
 | Role | Exact title | ID |
 |------|-------------|-----|
@@ -13,77 +32,52 @@
 
 Marker: `data-bb-stitch-plans="66-platform-plans-limits"`.
 
-## 2. Files changed
+## 3. Plans displayed
 
-| Path | Change |
-|------|--------|
-| `views/blessboard/v5/platform-admin/plans.ejs` | Directory: active cards, desktop table + mobile cards, inactive/legacy section |
-| `public/blessboard/v5/platform-admin.css` | Directory layout (`?v=13`) |
-| `views/blessboard/v5/partials/platform-admin-shell-start.ejs` | CSS cache bump |
-| `src/platform/repositories/entitlementRepository.js` | `listPlansForProduct` (all statuses) |
-| `src/platform/services/listPlatformPlansCatalogue.js` | `includeInactive` for directory; present status/legacy flags |
-| `src/platform/http/platformAdminRoutes.js` | Plans GET uses `includeInactive: true` |
-| `tests/blessboard-platform-admin-shell.test.js` | Directory markers, mapping, inactive visibility, plans authz |
-| `tests/blessboard-v5-a11y-structure.test.js` | Directory structure + CSS version |
-| `docs/gui/STITCH_SCREEN_MAP.md` | Order 78 Batch 20A note |
-| `docs/gui/BATCH_20A_PLATFORM_PLANS.md` | This document |
+| `plan_key` (persisted) | `display_name` (public) | Status | Directory treatment |
+|------------------------|-------------------------|--------|---------------------|
+| `free` | Foundation | active | Active package card + catalogue directory |
+| `growth` | Growth | active | Active package card + catalogue directory |
+| `professional` | Network | active | Active package card + catalogue directory |
+| `partner` | Partner (legacy) | inactive | Catalogue directory + Inactive & legacy section |
 
-**Unchanged:** Org-detail assign/override POSTs, active-only assignability, entitlement resolution, seed `plan_key` values, billing catalogues, plan creation (still absent).
-
-## 3. Plans shown
-
-| `plan_key` | `display_name` | Status | Directory treatment |
-|------------|----------------|--------|---------------------|
-| `free` | Foundation | active | Active package card + directory row |
-| `growth` | Growth | active | Active package card + directory row |
-| `professional` | Network | active | Active package card + directory row |
-| `partner` | Partner (legacy) | inactive | Directory + inactive/legacy section only |
-
-Source: live `platform.plans` (+ `plan_features`) for product `blessboard`.
+Source: live `platform.plans` (+ `plan_features`) for product `blessboard` only. Entitlement summaries from stored feature rows (limits/booleans). No invented prices.
 
 ## 4. Display names versus persisted keys
 
 | Public name | Persisted key | Notes |
 |-------------|---------------|-------|
-| Foundation | `free` | Mapped via catalogue `display_name` |
+| Foundation | `free` | Safe display via catalogue `display_name` |
 | Growth | `growth` | Same key |
-| Network | `professional` | Mapped via catalogue `display_name` |
+| Network | `professional` | Safe display via catalogue `display_name` |
 | Partner (legacy) | `partner` | Inactive; Legacy badge; not assignable |
 
-Keys are shown as read-only codes. No rename.
+Keys remain visible as read-only codes. **No rename or delete.**
 
-## 5. Legacy-plan handling
+## 5. Legacy-plan treatment
 
-- Inactive rows listed with **Inactive** + **Legacy** chips.
+- Inactive rows use **Inactive** + **Legacy** chips (`data-bb-plan-legacy-badge`).
+- Dedicated “Inactive & legacy” section for non-active catalogue rows.
 - Operator copy: retained for existing subscriptions; not offered as new assignments.
-- Seed migration prose is **not** shown in the UI.
-- Assign CTAs appear only on **active** package cards.
-- Org-detail plan dropdown still uses active-only catalogue (`includeInactive` default false).
-- `assignOrganizationPlan` still rejects non-active plans.
+- Migration internals (`Phase B`, `plan_key migration`, rename prose) are **not** shown in the UI.
+- Active cards link to Organizations for assignment; org-detail dropdown stays active-only.
+- `assignOrganizationPlan` still rejects non-active plans (entitlement logic unchanged).
 
-## 6. Omissions (intentional)
-
-| Stitch / product expectation | Treatment |
-|------------------------------|-----------|
-| Create Custom Tier / plan create | Omitted (no route) |
-| Price columns / Stitch `$` KPIs | Omitted (no price columns in DB) |
-| Subscription health meters | Omitted |
-| Subscriptions area | Not started |
-
-## 7. Tests and results
+## 6. Tests
 
 | Command | Result |
 |---------|--------|
-| `npm run test:blessboard:platform-admin-shell` | **11/11 pass** |
-| `npm run test:blessboard:a11y-structure` | **77/77 pass** |
-| `npx stylelint public/blessboard/v5/platform-admin.css` | **0 errors** (hex warnings only) |
-| `git diff --check` (changed files) | **clean** |
+| `npm run test:blessboard:platform-admin-shell` (render, display-name mapping, active/inactive/legacy visibility, apex authz) | **12/12 pass** |
+| `npm run test:blessboard:authorization` | **16/16 pass** |
+| `npm run test:blessboard:a11y-structure` | **83/83 pass** |
+| `npx stylelint public/blessboard/v5/platform-admin.css` | **0 errors** (hex-token warnings only) |
+| `git diff --check` | **clean** |
 
-## 8. Migration still required
+## 7. Migration still required
 
-Yes — Phase B in [`BLESSBOARD_PRICING_DECISION.md`](../product/BLESSBOARD_PRICING_DECISION.md) to align persisted `plan_key` values to `foundation` / `growth` / `network`. **Not performed in this batch.**
+**Yes.** Phase B in [`BLESSBOARD_PRICING_DECISION.md`](../product/BLESSBOARD_PRICING_DECISION.md) to align persisted `plan_key` values to `foundation` / `growth` / `network`. **Not performed in this batch.**
 
-## 9. Suggested commit message
+## 8. Suggested commit message
 
 ```
 Polish platform-admin plans directory with active/legacy catalogue rows from platform.plans.

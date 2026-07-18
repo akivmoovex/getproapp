@@ -1,12 +1,33 @@
 # Batch 21A — Platform Admin Domains Directory
 
-**Date:** 2026-07-18  
-**Scope:** Platform Admin `/admin/domains` directory only. Domain Detail continues in [`BATCH_21B_PLATFORM_DOMAIN_DETAIL.md`](./BATCH_21B_PLATFORM_DOMAIN_DETAIL.md).  
-**References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_20B_PLATFORM_SUBSCRIPTIONS.md`](./BATCH_20B_PLATFORM_SUBSCRIPTIONS.md)
+**Date:** 2026-07-18
+**Scope:** Platform Admin `/admin/domains` directory only. **Domain Detail not started in this batch.**
+**References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md) (order 78b), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_20C_PLATFORM_ENTITLEMENTS.md`](./BATCH_20C_PLATFORM_ENTITLEMENTS.md)
 
-## 1. Canonical Stitch screen IDs
+## 1. Files changed
 
-No dedicated Domains Directory Stitch pair exists. Adapted from Settings (DNS / hostname chrome) with directory table/card cues from Organizations / Subscriptions.
+| Path | Change |
+|------|--------|
+| `views/blessboard/v5/platform-admin/domains.ejs` | Directory: filters, desktop table + mobile cards, org links, empty/no-results |
+| `public/blessboard/v5/platform-admin.css` | Domains layout (shell cache `platform-admin.css?v=23`) |
+| `views/blessboard/v5/partials/platform-admin-shell-start.ejs` | CSS cache |
+| `src/platform/http/platformAdminNav.js` | Domains nav item |
+| `src/platform/http/platformAdminShellLocals.js` | Title map |
+| `src/platform/http/platformAdminRoutes.js` | `GET /admin/domains` |
+| `src/platform/repositories/platformAdminRepository.js` | Domains directory SQL (safe columns only) |
+| `src/platform/services/listPlatformDomains.js` | List service + filter normalization |
+| `tests/blessboard-platform-admin-shell.test.js` | Render, org/hostname scope, status, no-results, authz |
+| `tests/blessboard-v5-a11y-structure.test.js` | Structure + CSS version |
+| `docs/gui/STITCH_SCREEN_MAP.md` | Order 78b |
+| `docs/gui/BATCH_21A_PLATFORM_DOMAINS.md` | This document |
+
+**Unchanged:** `resolveHostname`, domain lookup SQL used by routing, tenant sessions, authorization gates, provisioning CLI. Domain Detail UI/routes not modified in this batch.
+
+**This pass:** Verified against Stitch 67 (Settings DNS chrome adapted to directory). No further code edits required on branch `V5`.
+
+## 2. Stitch IDs
+
+No dedicated Domains Directory Stitch pair. Adapted from Settings (DNS / hostname chrome).
 
 | Role | Exact title | ID |
 |------|-------------|-----|
@@ -15,37 +36,21 @@ No dedicated Domains Directory Stitch pair exists. Adapted from Settings (DNS / 
 
 Markers: `data-bb-stitch-domains="67-platform-settings"`, `data-bb-pa-domains-directory="1"`.
 
-## 2. Files changed
-
-| Path | Change |
-|------|--------|
-| `views/blessboard/v5/platform-admin/domains.ejs` | New directory: filters, desktop table + mobile cards, org links, empty/no-results |
-| `public/blessboard/v5/platform-admin.css` | Domains directory layout (`?v=17`) |
-| `views/blessboard/v5/partials/platform-admin-shell-start.ejs` | CSS cache bump |
-| `src/platform/http/platformAdminNav.js` | Domains nav item |
-| `src/platform/http/platformAdminShellLocals.js` | Title map |
-| `src/platform/http/platformAdminRoutes.js` | `GET /admin/domains` |
-| `src/platform/repositories/platformAdminRepository.js` | Domains directory SQL (safe columns only) |
-| `src/platform/services/listPlatformDomains.js` | List service + filter normalization |
-| `tests/blessboard-platform-admin-shell.test.js` | Rendering, scope, status, authz |
-| `tests/blessboard-v5-a11y-structure.test.js` | Structure + CSS version |
-| `docs/gui/STITCH_SCREEN_MAP.md` | Domains directory row |
-| `docs/gui/BATCH_21A_PLATFORM_DOMAINS.md` | This document |
-
-**Unchanged:** `resolveHostname`, `domainRepository` lookup SQL, tenant routing, sessions, authorization gates, provisioning CLI, org-detail domains list (read-only cue only). No Domain Detail route.
-
-## 3. Visible fields (live `platform.domains` only)
+## 3. Fields displayed
 
 | Field | Source | Notes |
 |-------|--------|-------|
 | Hostname | `domains.hostname` | Primary label |
-| Type | `domains.domain_type` | Apex / Canonical / Custom / Alias |
+| Type | `domains.domain_type` | Apex / Canonical / Custom / Alias from stored enum |
 | Status | `domains.status` | Active / Inactive chips |
-| Verified | `domains.verified_at IS NOT NULL` | Verified / Unverified |
+| Verified | `domains.verified_at IS NOT NULL` | Verified / Unverified from stored data only |
 | Primary | `domains.is_primary` | Chip when true |
-| Organization | `organizations.organization_key` / `display_name` | Link to `/admin/organizations/:key#pa-org-domains` when present |
-| Product | `products.product_key` / `display_name` | BlessBoard label |
+| Organization | `organizations.organization_key` / `display_name` | Link to `/admin/organizations/:key#pa-org-domains` |
+| Product | `products.display_name` / `product_key` | BlessBoard label |
 | Deployment | `domains.deployment_id` | Deployment code text only |
+| Directory total | list `total` | Live count badge |
+
+Filters (GET): `q` (hostname prefix), `org`, `status`, `type`, `verified`, `limit`, `page`.
 
 ## 4. Status / type / verification handling
 
@@ -53,24 +58,25 @@ Markers: `data-bb-stitch-domains="67-platform-settings"`, `data-bb-pa-domains-di
 |-------|-----------|
 | `status=active` | `bb-pa-chip--ok` Active |
 | `status=inactive` | `bb-pa-chip--muted` Inactive |
-| `domain_type=canonical` (and apex/custom/alias) | Type chip from stored enum only |
+| `domain_type` apex/canonical/custom/alias | Type chip from stored enum only |
 | `verified_at` set | Verified chip |
 | `verified_at` null | Unverified chip |
-
-Filters: hostname prefix (`q`), organization key prefix (`org`), status, type, verification, page size. Empty catalogue vs no-results states.
+| Empty catalogue | `data-bb-pa-empty="domains"` |
+| Filtered no-results | `data-bb-pa-empty="no-results"` + Clear filter |
 
 ## 5. Unsupported automation omitted
 
-DNS lookup, certificate provisioning / TLS issuance, domain purchase, automatic verification, Force Verify, Buy Domain, destructive domain controls, Domain Detail, internal routing secrets (`session_cookie*`, `ResolveHostname`, `expectedDeploymentCode`, UUIDs, `DATABASE_URL`).
+DNS lookup, certificate provisioning / TLS issuance, domain purchase, automatic verification, Force Verify, Buy Domain, destructive domain controls, internal routing secrets (`session_cookie*`, `ResolveHostname`, `expectedDeploymentCode`, organization UUIDs, `DATABASE_URL`).
 
-## 6. Tests and results
+## 6. Tests
 
 | Command | Result |
 |---------|--------|
-| `npm run test:blessboard:platform-admin-shell` | **11/11 pass** |
-| `npm run test:blessboard:a11y-structure` | **81/81 pass** |
-| `npx stylelint public/blessboard/v5/platform-admin.css` | **0 errors** (hex warnings only) |
-| `git diff --check` (changed files) | **clean** |
+| `npm run test:blessboard:platform-admin-shell` (directory render, org/hostname scope, status filter, no-results, hq 403 / anon 303) | **12/12 pass** |
+| `npm run test:blessboard:authorization` | **16/16 pass** |
+| `npm run test:blessboard:a11y-structure` | **83/83 pass** |
+| `npx stylelint public/blessboard/v5/platform-admin.css` | **0 errors** (hex-token warnings only) |
+| `git diff --check` | **clean** |
 
 ## 7. Suggested commit message
 

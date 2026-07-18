@@ -1,18 +1,19 @@
 # BlessBoard V5 — Demo tenant end-to-end smoke-test plan
 
-**Date:** 2026-07-18  
-**Purpose:** Final manual smoke plan for one BlessBoard V5 demo tenant after catalogue readiness + test users/content are in place.  
-**Constraint:** Documentation only. Does **not** change application code, seed data, or authorize deploy.  
-**Companions:** [`V5_DEMO_TENANT_READINESS.md`](./V5_DEMO_TENANT_READINESS.md) · [`V5_GUI_PRODUCTION_SMOKE_TEST.md`](../ui/V5_GUI_PRODUCTION_SMOKE_TEST.md) · [`V5_HOSTED_MIGRATION_AND_CUTOVER.md`](../database/V5_HOSTED_MIGRATION_AND_CUTOVER.md)
+**Date:** 2026-07-19
+**Purpose:** Final manual smoke plan for one BlessBoard V5 demo tenant after catalogue readiness + test users/content are in place.
+**Constraint:** Documentation only. Does **not** change application code, seed data, or authorize deploy.
+**Companions:** [`V5_DEMO_TENANT_READINESS.md`](./V5_DEMO_TENANT_READINESS.md) · [`V5_GUI_PRODUCTION_SMOKE_TEST.md`](../ui/V5_GUI_PRODUCTION_SMOKE_TEST.md) · [`V5_FULL_GUI_REGRESSION_AUDIT.md`](../gui/V5_FULL_GUI_REGRESSION_AUDIT.md) · [`V5_HOSTED_MIGRATION_AND_CUTOVER.md`](../database/V5_HOSTED_MIGRATION_AND_CUTOVER.md) · [`V5_SHADOW_ROUTING_READINESS.md`](../deployment/V5_SHADOW_ROUTING_READINESS.md)
 
 ---
 
-## 0. Execution readiness
+## 0. Plan execution readiness
 
 | Question | Answer |
 |----------|--------|
-| Is this **plan** complete and ready to execute? | **YES** — journey, checklists, evidence, and rollback are defined. |
-| Can operators run it **against hosted data today**? | **NO** until [`V5_DEMO_TENANT_READINESS.md`](./V5_DEMO_TENANT_READINESS.md) full-E2E gaps are closed (users, published Home/About, sample module rows) **and** `BLESSBOARD_TENANT_ROUTING_MODE=authoritative` after shadow sign-off. |
+| Is this **plan** complete and ready to execute as a runbook? | **YES** — 31 journey tests, failure taxonomy, evidence, checklists, and rollback are defined. |
+| Can operators run the **full** plan against hosted data **today**? | **NO** until [`V5_DEMO_TENANT_READINESS.md`](./V5_DEMO_TENANT_READINESS.md) full-E2E gaps are closed (users, roles, published Home/About, sample module rows) **and** `BLESSBOARD_TENANT_ROUTING_MODE=authoritative` after shadow sign-off. |
+| Partial execution allowed now? | **YES** — Apex-only rows (T01–T05, parts of T09/T20/T29–T31) under `off`/`shadow`; full tenant journey only in `authoritative`. |
 
 ### Hosts (fill before run)
 
@@ -24,8 +25,9 @@
 | **Church key** | `diagnostic-church` | Role assign / verification |
 | **Primary branch key** | `hq` | Branch admin scope (HQ is primary) |
 | **Deployment** | `blessboard-org-v5` | Session / routing identity |
+| **DB identity** | `blessboard-platform-v5` / `testing` | Physical database purpose |
 
-### Required personas (create before run)
+### Required personas (create before full run)
 
 | Persona | Role key | Notes |
 |---------|----------|-------|
@@ -34,6 +36,8 @@
 | **BA** | `branch_admin` on `hq` | Tenant `/branch-admin*` |
 | **MEM** | active member + primary membership on `hq` | Tenant `/member*` |
 | **ANON** | none | Public pages |
+| **INACTIVE_USER** | user with `status≠active` (disposable fixture) | Negative only |
+| **WRONG_BRANCH_BA** | `branch_admin` on a non-target branch (if second branch exists) | Negative only; else Skip |
 
 Use private/incognito windows per persona. Never reuse a staff session for member checks.
 
@@ -42,256 +46,492 @@ Use private/incognito windows per persona. Never reuse a staff session for membe
 | Phase | Mode | Smoke allowed |
 |-------|------|---------------|
 | Preflight | `off` or `shadow` | Apex-only + shadow log checks (not full tenant CMS) |
-| Full journey (this plan) | `authoritative` | All rows below |
+| Full journey (this plan) | `authoritative` | All rows below except fixture-gated negatives |
 | On failure | set `off`, restart | Re-check Apex `/healthz` + `/login` |
 
 ### Marking
 
 Each test: ☐ Pass · ☐ Fail · ☐ Blocked (precondition) · ☐ Skip (reason)
 
+### Failure classification taxonomy
+
+| Code | Meaning |
+|------|---------|
+| **SECURITY** | Secret leak, authz bypass, CSRF bypass, private media public, cookie Domain parent-shared |
+| **CONFIG** | Routing mode, env, DNS, cookie name, deployment identity mismatch |
+| **DATA** | Missing user/role/content; fixture not provisioned |
+| **PRODUCT** | Wrong UI/shell, 5xx, dead enabled nav, broken transfer |
+| **A11Y_UX** | Overflow, focus trap, unusable mobile chrome (non-blocking unless smoke gate) |
+| **SKIP_FIXTURE** | No safe inactive/wrong-branch/wrong-church fixture without harming shared demo |
+
 ---
 
-## 1. Journey tests
+## 1. Journey tests (T01–T31)
 
 ### T01 — Apex homepage
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET /` on **Apex** |
+| **Test number** | T01 |
+| **Route** | `GET /` |
+| **Hostname** | Apex |
 | **Role** | ANON (optional: any signed-in) |
-| **Setup** | App healthy; apex marketing assets deployable |
-| **Action** | Open Apex home; scroll hero → capabilities → footer |
-| **Expected result** | **200**; Sacred Modernity apex chrome; nav includes Home / Pricing / Directory / Login (or Account); footer Powered by GetPro; no tenant CMS chrome; no fabricated org KPIs |
-| **Failure evidence** | Desktop+mobile screenshots; response status; View Source CSS `?v=`; note if GetPro/V4 shell appears |
-| **Rollback / cleanup** | If 5xx or wrong product shell → set routing `off`, restart, stop smoke. No DB cleanup. |
+| **Setup** | App healthy; apex marketing assets deployed; routing any mode |
+| **Action** | Open Apex home; scroll hero → capabilities → footer; check primary nav |
+| **Expected result** | **200**; Sacred Modernity apex chrome; nav includes Home / Features / Pricing / Directory / Register / Login (or Account); footer Powered by GetPro; no tenant CMS chrome; no fabricated org KPIs |
+| **Evidence to capture** | Desktop + mobile first-viewport screenshots; status; CSS `apex.css?v=` in source |
+| **Cleanup** | None |
+| **Failure classification** | PRODUCT (wrong shell/5xx) · CONFIG if healthz also fails |
 
-### T02 — Pricing and directory
+### T02 — Features
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET /pricing`, `GET /directory` on **Apex** (optional: `/features`, `/for-churches`) |
+| **Test number** | T02 |
+| **Route** | `GET /features` |
+| **Hostname** | Apex |
 | **Role** | ANON |
-| **Setup** | Same as T01; directory may list testing/demo orgs only when env allows |
-| **Action** | Open Pricing; open Directory; try search if present; follow one listed tenant link if shown |
-| **Expected result** | Both **200**; Pricing has no live checkout; Directory shows safe org labels/hosts only (no UUIDs/secrets); dead nav links absent |
-| **Failure evidence** | Screenshots; HAR for failed assets; list of broken `href`s |
-| **Rollback / cleanup** | None for content; if directory leaks UUIDs/secrets → stop and treat as security fail (T18). |
+| **Setup** | Same as T01 |
+| **Action** | Open Features; follow in-page CTAs that stay on apex |
+| **Expected result** | **200**; marketing features content; no live checkout; no tenant admin chrome |
+| **Evidence to capture** | Screenshot; note any broken in-page anchors |
+| **Cleanup** | None |
+| **Failure classification** | PRODUCT |
 
-### T03 — Tenant homepage
+### T03 — Pricing
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET /` on **Tenant** |
+| **Test number** | T03 |
+| **Route** | `GET /pricing` |
+| **Hostname** | Apex |
 | **Role** | ANON |
-| **Setup** | Authoritative routing; published `home` (or honest empty); active org/church/domain |
-| **Action** | Open tenant `/`; check header, main, footer, Sign in link |
-| **Expected result** | **200** tenant public shell; church display name; published Home content **or** intentional empty; apex link present; **no** HQ/admin links in public chrome; no UUID leakage |
-| **Failure evidence** | Screenshot first viewport; HTML snippet of title/h1; Host header used |
-| **Rollback / cleanup** | If apex marketing renders on tenant host → routing misconfig: set `off`, restart. |
+| **Setup** | Same as T01 |
+| **Action** | Open Pricing; inspect plan cards/CTAs |
+| **Expected result** | **200**; plans/copy render; **no** live payment checkout; amounts only from content/locals (no fabricated MRR) |
+| **Evidence to capture** | Screenshot; confirm no Stripe/checkout iframe |
+| **Cleanup** | None |
+| **Failure classification** | PRODUCT · SECURITY if payment secrets appear |
 
-### T04 — Tenant login redirect
+### T04 — Directory
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET /login` on **Tenant** (optional `?next=/member` or `?next=/hq`) |
+| **Test number** | T04 |
+| **Route** | `GET /directory` |
+| **Hostname** | Apex |
+| **Role** | ANON |
+| **Setup** | Same as T01; directory may list testing orgs when env allows |
+| **Action** | Open Directory; try search if present; follow one listed tenant link if shown |
+| **Expected result** | **200**; safe org labels/hosts only (no UUIDs/secrets); dead nav absent |
+| **Evidence to capture** | Screenshot; list of `href`s followed + status |
+| **Cleanup** | None |
+| **Failure classification** | PRODUCT · SECURITY if UUID/secret leak |
+
+### T05 — Register Church enquiry state
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T05 |
+| **Route** | `GET /register-church` |
+| **Hostname** | Apex |
+| **Role** | ANON |
+| **Setup** | Same as T01 |
+| **Action** | Open Register Your Church; confirm enquiry-only chrome (no provision POST success) |
+| **Expected result** | **200**; visual enquiry layout; **no** self-serve provisioning POST; **no** fake “request sent” success |
+| **Evidence to capture** | Screenshot; confirm no `method=post` provision form that creates orgs |
+| **Cleanup** | None |
+| **Failure classification** | PRODUCT · DATA if page invents provisioned org |
+
+### T06 — Tenant homepage
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T06 |
+| **Route** | `GET /` |
+| **Hostname** | Tenant |
+| **Role** | ANON |
+| **Setup** | `authoritative` routing; published `home` **or** accepted honest empty; active org/church/domain |
+| **Action** | Open tenant `/`; check header, main, footer, Sign in |
+| **Expected result** | **200** tenant public shell; church display name; published Home **or** intentional empty; apex link present; **no** HQ/admin links in public chrome; no UUID leakage |
+| **Evidence to capture** | First-viewport screenshot; title/h1 snippet; Host used |
+| **Cleanup** | None |
+| **Failure classification** | CONFIG if apex marketing on tenant host · DATA if content expected but missing · PRODUCT |
+
+### T07 — Tenant navigation
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T07 |
+| **Route** | Tenant public nav/footer links (e.g. `/`, `/about`, `/contact`, `/register`, sermons/events/ministries as published) |
+| **Hostname** | Tenant |
+| **Role** | ANON |
+| **Setup** | Authoritative; published About recommended |
+| **Action** | Click every enabled header + footer link once (desktop + mobile drawer) |
+| **Expected result** | Enabled links **200** or intentional empty; draft not public; no admin portal links in public nav |
+| **Evidence to capture** | `href` → status table; mobile drawer screenshot |
+| **Cleanup** | None |
+| **Failure classification** | PRODUCT (dead enabled link) · DATA (missing About when required for demo) |
+
+### T08 — Tenant login redirect
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T08 |
+| **Route** | `GET /login` (optional `?next=/member` / `?next=/hq` / `?next=/branch-admin`) |
+| **Hostname** | Tenant |
 | **Role** | ANON |
 | **Setup** | Authoritative tenant resolution |
 | **Action** | Click Sign in or open `/login` |
-| **Expected result** | Redirect to Apex `/login?tr=…` (transfer id); **no** tenant password form; HTML never embeds raw transfer secrets beyond opaque `tr` query |
-| **Failure evidence** | Location header / final URL; page source search for token-like strings |
-| **Rollback / cleanup** | Abandoned transfers expire via product TTL; no manual cleanup required. |
+| **Expected result** | Redirect to Apex `/login?tr=…`; **no** tenant password form; HTML never embeds raw transfer secrets beyond opaque `tr` |
+| **Evidence to capture** | Redirect chain (status + Location); tenant HTML snippet proving no password fields |
+| **Cleanup** | Abandoned transfers expire via product TTL |
+| **Failure classification** | PRODUCT · SECURITY if raw token/secret in HTML |
 
-### T05 — Apex authentication
+### T09 — Apex authentication
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET/POST /login` on **Apex** |
-| **Role** | ANON → PA / HQ / BA / MEM (run once per persona) |
-| **Setup** | Known active user + password; CSRF cookie/field present |
-| **Action** | Submit valid credentials; separately submit invalid password |
+| **Test number** | T09 |
+| **Route** | `GET/POST /login` (and controlled auth-error) |
+| **Hostname** | Apex |
+| **Role** | PA / HQ / BA / MEM (each as needed) |
+| **Setup** | Valid test users with passwords; CSRF field present |
+| **Action** | Valid login; invalid password; observe cookie attributes |
 | **Expected result** | Valid → **303** to `/`, `/account`, or transfer continuation; invalid → controlled error, no stack; session cookie **host-only** (not `.blessboard.org` parent Domain) |
-| **Failure evidence** | DevTools Application → cookie attributes; failed-login screenshot; status codes |
-| **Rollback / cleanup** | `POST /logout` with CSRF; close window. |
+| **Evidence to capture** | Cookie jar (Name/Domain/Secure/HttpOnly); error page screenshot; status |
+| **Cleanup** | Logout after suite section or use fresh windows |
+| **Failure classification** | SECURITY (parent Domain cookie) · PRODUCT · DATA (user missing) |
 
-### T06 — Tenant transfer callback
+### T10 — Tenant transfer callback
 
 | Field | Detail |
 |-------|--------|
-| **Route** | Apex login continuation → Tenant `GET /auth/callback` → destination |
-| **Role** | HQ, BA, MEM (separate runs) |
-| **Setup** | Start from Tenant `/login?next=/hq` (HQ), `/login?next=/branch-admin` (BA), `/login?next=/member` (MEM) |
+| **Test number** | T10 |
+| **Route** | Tenant login → Apex login → transfer callback → destination (`/member`, `/hq`, `/branch-admin`) |
+| **Hostname** | Tenant → Apex → Tenant |
+| **Role** | MEM, HQ, BA (separate windows) |
+| **Setup** | Start from Tenant `/login?next=…` for each destination |
 | **Action** | Complete apex login from transfer; land on callback then destination |
-| **Expected result** | Callback redeems once; lands on allowed `next` (`/hq`, `/branch-admin`, `/member`, `/account`); second callback use fails closed; no open redirect off-host |
-| **Failure evidence** | Full redirect chain (HAR); final URL; whether session exists on tenant host |
-| **Rollback / cleanup** | Logout on tenant; do not reuse spent `tr` values. |
+| **Expected result** | Lands on intended portal **200**; transfer single-use; replay fails closed; cookie remains host-scoped |
+| **Evidence to capture** | Final URL per persona; one replay attempt status |
+| **Cleanup** | None beyond logout later |
+| **Failure classification** | PRODUCT · SECURITY · CONFIG |
 
-### T07 — Member registration
+### T11 — Member registration
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET/POST /register`, `GET /register/submitted` on **Tenant** |
+| **Test number** | T11 |
+| **Route** | `GET/POST /register` |
+| **Hostname** | Tenant |
 | **Role** | ANON |
-| **Setup** | Registration enabled for church; CSRF; unique test email |
-| **Action** | Submit valid registration; optionally resubmit duplicate |
-| **Expected result** | Valid → redirect/submitted success (pending review); CSRF reject without token; no password/wizard fields beyond V5 schema; rate limit controlled |
-| **Failure evidence** | Form payload (redact PII in tickets); status; submitted page screenshot |
-| **Rollback / cleanup** | Leave pending row for T08; or reject after review. Do not invent DELETE SQL. |
+| **Setup** | Authoritative; CSRF; use disposable email |
+| **Action** | Submit valid registration; try invalid required fields |
+| **Expected result** | Valid → redirect to submitted confirmation; invalid → field errors, no stack; no sensitive category collection beyond product fields |
+| **Evidence to capture** | Form screenshot; success redirect URL; validation error shot |
+| **Cleanup** | Leave pending registration for T13; do not invent DELETE SQL |
+| **Failure classification** | PRODUCT · DATA · SECURITY if secrets in response |
 
-### T08 — Registration review
-
-| Field | Detail |
-|-------|--------|
-| **Route** | `GET /branch-admin/registrations`, detail + approve/reject POSTs on **Tenant** |
-| **Role** | BA (HQ may oversee read-only at `/hq/registrations`) |
-| **Setup** | Pending registration from T07; BA session via T06 |
-| **Action** | Open queue; open detail; approve one test registrant (or reject with note) |
-| **Expected result** | Queue shows pending; approve creates/activates member + primary membership; HQ list is privacy-limited; no fabricated verification scores |
-| **Failure evidence** | Before/after screenshots; role of actor; response status on POST |
-| **Rollback / cleanup** | Prefer reject unused applicants; keep one approved MEM for T09. |
-
-### T09 — Member portal
+### T12 — Registration submitted
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET /member`, `/member/profile`, `/member/announcements`, `/member/events`, `/member/ministries`, `/member/resources`, `/member/forms`, `/member/requests`, `/member/giving` on **Tenant** |
-| **Role** | MEM |
-| **Setup** | Active member + primary membership on `hq`; published samples optional (honest empty OK) |
-| **Action** | Walk each nav item; edit profile contact fields only; open one request/form if present |
-| **Expected result** | Dashboard loads; empty states honest; prayer CTA disabled/absent; no admin chrome; CSRF on POSTs; staff-only roles alone cannot open `/member` |
-| **Failure evidence** | Screenshot per module; 403 when using BA/HQ session on `/member` |
-| **Rollback / cleanup** | Logout; revert profile edits if needed via UI. |
+| **Test number** | T12 |
+| **Route** | `GET /register/submitted` |
+| **Hostname** | Tenant |
+| **Role** | ANON (post T11) |
+| **Setup** | Arrived via successful T11 |
+| **Action** | Read confirmation; follow Home/Contact links |
+| **Expected result** | **200** confirmation chrome; honest “pending review” messaging; no auto-login as member |
+| **Evidence to capture** | Screenshot |
+| **Cleanup** | None |
+| **Failure classification** | PRODUCT |
 
-### T10 — Branch Admin
+### T13 — Branch registration review
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET /branch-admin` and modules: `/account`, `/settings`, `/registrations`, `/members`, `/announcements`, `/content`, `/attendance`, `/giving`, `/forms`, `/requests` (+ media picker where wired) on **Tenant** |
+| **Test number** | T13 |
+| **Route** | `GET /branch-admin/registrations` (+ detail if present) |
+| **Hostname** | Tenant |
 | **Role** | BA |
-| **Setup** | BA role on `hq`; optional sample published content |
-| **Action** | Open dashboard; open each nav item; create/edit one safe draft if policy allows; do not invent metrics |
-| **Expected result** | **200** for in-scope routes; sidebar/drawer nav works; empty/no-results honest; CSRF on mutations; no Reports module; no fabricated KPIs |
-| **Failure evidence** | Screenshot dashboard + one write flow; POST status without CSRF |
-| **Rollback / cleanup** | Archive/unpublish test drafts via UI; logout. |
+| **Setup** | BA session via T10; pending registration from T11 |
+| **Action** | Open registrations list/detail; approve/activate per product UI (CSRF) |
+| **Expected result** | Pending row visible in branch scope; approve succeeds with CSRF; cross-branch/church rows absent |
+| **Evidence to capture** | List screenshot; post-approve status; CSRF network note |
+| **Cleanup** | Keep member for T14; document email key only |
+| **Failure classification** | PRODUCT · DATA · SECURITY if cross-tenant leak |
 
-### T11 — HQ Admin
+### T14 — Member portal
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET /hq`, `/hq/branches`, `/hq/members`, `/hq/registrations`, `/hq/announcements`, `/hq/content`, `/hq/attendance`, `/hq/giving`, `/hq/forms`, `/hq/resources`, `/hq/requests`, `/hq/reports`, `/hq/audit`, `/hq/settings`, `/hq/account` on **Tenant** |
+| **Test number** | T14 |
+| **Route** | `/member`, `/member/profile`, announcements, events, ministries, giving, forms/requests as mounted |
+| **Hostname** | Tenant |
+| **Role** | MEM |
+| **Setup** | Active member + primary membership; sample content optional |
+| **Action** | Walk enabled member nav; open one item per module; attempt staff URLs |
+| **Expected result** | Enabled modules **200** or honest empty; staff URLs **403**/redirect; no prayer route required; giving instructional only |
+| **Evidence to capture** | Dashboard screenshot; one 403 proof to `/branch-admin` |
+| **Cleanup** | Logout in T20 |
+| **Failure classification** | PRODUCT · DATA · SECURITY |
+
+### T15 — Branch Admin
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T15 |
+| **Route** | `/branch-admin` + modules: account, settings, registrations, members, announcements, content, attendance, giving, forms, requests, participation as mounted |
+| **Hostname** | Tenant |
+| **Role** | BA |
+| **Setup** | BA on `hq`; sample rows for modules you click |
+| **Action** | Open each enabled nav item; spot-check one write with CSRF where safe |
+| **Expected result** | Branch-scoped data only; no fabricated KPIs; media picker entry where wired; HQ-only routes forbidden |
+| **Evidence to capture** | Dashboard + one module shot; one CSRF POST status |
+| **Cleanup** | Soft-revert test writes via UI when possible |
+| **Failure classification** | PRODUCT · DATA · SECURITY |
+
+### T16 — HQ Admin
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T16 |
+| **Route** | `/hq` + branches, members, registrations, announcements, content, attendance/giving, reports, audit, settings, account |
+| **Hostname** | Tenant |
 | **Role** | HQ |
-| **Setup** | HQ session; church-scoped data |
-| **Action** | Open dashboard; use branch selector if present; open oversight lists; open reports/audit read-only |
-| **Expected result** | Live branch count only where wired; no fabricated charts; BA receives **403** on `/hq`; audit shows truncated refs, no secrets |
-| **Failure evidence** | 403 page for BA on `/hq`; HQ screenshots; audit row sample (redact) |
-| **Rollback / cleanup** | Logout; no audit deletion. |
+| **Setup** | HQ session; optional branch jump to `hq` |
+| **Action** | Walk enabled HQ nav; open reports/audit; jump to branch admin for `hq` if offered |
+| **Expected result** | Church-wide oversight chrome; no fabricated charts; audit privacy-safe; inactive branch jump fail-closed |
+| **Evidence to capture** | Dashboard + reports/audit shots |
+| **Cleanup** | Logout in T20 |
+| **Failure classification** | PRODUCT · DATA · SECURITY |
 
-### T12 — Platform Admin
+### T17 — Platform Admin
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `GET /admin`, `/admin/organizations`, `/admin/organizations/diagnostic-church`, `/admin/plans`, `/admin/subscriptions`, `/admin/domains`, `/admin/deployments`, `/admin/settings`, `/admin/account` on **Apex** |
+| **Test number** | T17 |
+| **Route** | `/admin`, `/admin/organizations`, org detail, plans, subscriptions, domains, deployments, settings, account |
+| **Hostname** | Apex |
 | **Role** | PA |
-| **Setup** | PA session on Apex |
-| **Action** | Walk enabled nav; open org detail; confirm unavailable cards stay non-fabricated |
-| **Expected result** | Org key `diagnostic-church` visible; no create-org UI; no MRR/uptime inventions; HQ/BA get **403** on `/admin`; secrets never rendered |
-| **Failure evidence** | Directory screenshot; 403 as HQ; HTML search for `DATABASE_URL` / `SESSION_SECRET` |
-| **Rollback / cleanup** | Avoid entitlement/plan POSTs unless intentionally testing; logout. |
+| **Setup** | PA login on apex |
+| **Action** | Walk enabled PA nav; open `diagnostic-church` detail; open deployments/domains; avoid inventing ops actions |
+| **Expected result** | Live counts only; unavailable cards non-linked; no MRR/uptime fabrication; secrets absent on deployment detail |
+| **Evidence to capture** | Dashboard + org detail + one deployment detail shot |
+| **Cleanup** | Logout |
+| **Failure classification** | PRODUCT · SECURITY · CONFIG |
 
-### T13 — Logout
+### T18 — Media picker
 
 | Field | Detail |
 |-------|--------|
-| **Route** | `POST /logout` (Apex), `POST /member/logout`, `POST /branch-admin/logout`, `POST /hq/logout` (or shell equivalents) |
+| **Test number** | T18 |
+| **Route** | Content-admin media picker dialog (BA `/branch-admin/content…` or HQ `/hq/content…`) |
+| **Hostname** | Tenant |
+| **Role** | BA or HQ |
+| **Setup** | Storage configured; at least one library asset optional |
+| **Action** | Open picker; filter/grid; focus/select; Escape closes; check empty library honesty |
+| **Expected result** | Picker opens with Shared UI States chrome; church-scoped library only; focus trap; no stock/Unsplash search |
+| **Evidence to capture** | Desktop + mobile drawer screenshots |
+| **Cleanup** | Close dialog |
+| **Failure classification** | PRODUCT · DATA · A11Y_UX |
+
+### T19 — Media upload
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T19 |
+| **Route** | Media upload in picker; soft-archive confirm; `GET /_bb/media/:id` for public assets |
+| **Hostname** | Tenant (+ Apex N/A) |
+| **Role** | BA or HQ; ANON for private deny |
+| **Setup** | Allowlisted JPEG/PNG/WebP/GIF ≤5MiB or PDF ≤15MiB; CSRF |
+| **Action** | Upload valid; reject SVG/oversize; archive confirm (soft); ANON fetch private |
+| **Expected result** | Upload OK; CSRF **403** without token (safe JSON `reason` where API); SVG rejected; soft-archive only; private not public; no storage keys in HTML/JSON |
+| **Evidence to capture** | Network statuses; success + reject shots; private GET status |
+| **Cleanup** | Soft-archive test asset via UI; no hard-delete SQL |
+| **Failure classification** | SECURITY · PRODUCT · CONFIG (buckets) |
+
+### T20 — Logout
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T20 |
+| **Route** | `POST` logout on Apex `/logout` (or account), `/member/logout`, `/branch-admin/logout`, `/hq/logout`, `/admin/logout` |
+| **Hostname** | Matching shell host |
 | **Role** | Each persona |
 | **Setup** | Authenticated session |
-| **Action** | Logout with CSRF; then hit a protected route |
-| **Expected result** | Session cleared; protected route redirects to login/transfer; CSRF required (403 without token) |
-| **Failure evidence** | Cookie jar after logout; status on replay without session |
-| **Rollback / cleanup** | None. |
+| **Action** | Logout **with** CSRF; retry protected route; attempt logout **without** CSRF |
+| **Expected result** | Session cleared; protected → login/transfer; missing CSRF → **403** |
+| **Evidence to capture** | Cookie jar after logout; 403 proof |
+| **Cleanup** | None |
+| **Failure classification** | SECURITY · PRODUCT |
 
-### T14 — Unauthorized-role checks
+### T21 — Wrong-role access
 
 | Field | Detail |
 |-------|--------|
-| **Route** | Cross-hit: MEM → `/branch-admin`, `/hq`, `/admin`; BA → `/hq`, `/admin`; HQ → `/admin`; PA → tenant `/member` (should not imply membership) |
+| **Test number** | T21 |
+| **Route** | Cross-hit matrix: MEM→`/branch-admin`,`/hq`,`/admin`; BA→`/hq`,`/admin`; HQ→`/admin`; PA on tenant `/member` (must not imply membership) |
+| **Hostname** | Tenant and Apex as applicable |
 | **Role** | Wrong role for target |
 | **Setup** | Four persona sessions |
 | **Action** | Request each forbidden surface |
-| **Expected result** | **403** (HTML forbidden) or controlled redirect policy as implemented; never 200 with other-role data; never UUID dump |
-| **Failure evidence** | Status + body snippet per pair; screenshot |
-| **Rollback / cleanup** | Close windows. |
+| **Expected result** | **403** HTML forbidden or controlled redirect policy; never **200** with other-role data; never UUID dump |
+| **Evidence to capture** | Status + short body snippet per pair |
+| **Cleanup** | Close windows |
+| **Failure classification** | SECURITY (if 200 with data) · PRODUCT |
 
-### T15 — Inactive church/branch checks
-
-| Field | Detail |
-|-------|--------|
-| **Route** | Tenant `/` and `/login` under inactive church **or** inactive primary branch (operator-controlled staging only) |
-| **Role** | ANON / staff |
-| **Setup** | **Only** if a disposable inactive copy exists — do **not** inactivate `diagnostic-church` on shared testing without approval. Prefer a separate throwaway org if available. |
-| **Action** | Resolve host; attempt public + login transfer |
-| **Expected result** | Controlled unavailable / fail-closed (not 500 stack); no catalogue bypass; shadow/authoritative logs show typed miss if applicable |
-| **Failure evidence** | Status body; log line keys only |
-| **Rollback / cleanup** | Re-activate only via approved operator procedure; document who changed status. If no safe inactive fixture → mark **Skip** with reason. |
-
-### T16 — Mobile navigation
+### T22 — Wrong-branch access
 
 | Field | Detail |
 |-------|--------|
-| **Route** | Same hosts as T01–T12 at ≤390px (and 320px spot-check) |
+| **Test number** | T22 |
+| **Route** | BA scoped to `hq` attempts another branch’s BA URLs / HQ branch jump to foreign key |
+| **Hostname** | Tenant |
+| **Role** | BA (and HQ jump) |
+| **Setup** | Prefer second disposable branch fixture. If only `hq` exists → **Skip** (`SKIP_FIXTURE`) |
+| **Action** | Request other-branch admin paths; HQ open inactive/unknown branch key |
+| **Expected result** | **403**/**404** controlled; no other-branch member/registration leak |
+| **Evidence to capture** | Status + URL; note fixture used |
+| **Cleanup** | Do not leave shared demo branch inactive |
+| **Failure classification** | SECURITY · SKIP_FIXTURE · PRODUCT |
+
+### T23 — Wrong-church access
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T23 |
+| **Route** | Staff/member of `diagnostic-church` hits another org’s tenant host (if exists) or forged church-scoped IDs |
+| **Hostname** | Other tenant host **or** Tenant with forged IDs |
+| **Role** | HQ/BA/MEM |
+| **Setup** | Second org only if disposable. Else attempt IDOR on known object IDs from HTML (should 404) |
+| **Action** | Open other host portals; swap IDs in URLs |
+| **Expected result** | Fail-closed **403**/**404**; no cross-church data |
+| **Evidence to capture** | Status table; keys only |
+| **Cleanup** | None |
+| **Failure classification** | SECURITY · SKIP_FIXTURE · DATA |
+
+### T24 — Inactive user
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T24 |
+| **Route** | Apex `POST /login` with inactive user; then protected routes |
+| **Hostname** | Apex / Tenant |
+| **Role** | INACTIVE_USER fixture |
+| **Setup** | Disposable user with `blessboard.users.status` ≠ `active` (operator-approved). Do not disable shared PA/HQ/BA without recovery plan |
+| **Action** | Attempt login and transfer |
+| **Expected result** | Login denied / controlled error; no session grant; no stack |
+| **Evidence to capture** | Error page shot; status |
+| **Cleanup** | Re-activate fixture via approved CLI/UI only |
+| **Failure classification** | SECURITY · SKIP_FIXTURE · PRODUCT |
+
+### T25 — Inactive branch
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T25 |
+| **Route** | HQ `/hq/branches/:branchKey` and BA entry for inactive branch |
+| **Hostname** | Tenant |
+| **Role** | HQ / BA |
+| **Setup** | **Only** disposable inactive branch — do **not** inactivate primary `hq` on shared demo without approval |
+| **Action** | Resolve/jump to inactive branch |
+| **Expected result** | Controlled inactive / **404**; not served as live admin |
+| **Evidence to capture** | Status + body reason keys |
+| **Cleanup** | Re-activate via approved procedure |
+| **Failure classification** | PRODUCT · SKIP_FIXTURE · CONFIG |
+
+### T26 — Suspended church / website
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T26 |
+| **Route** | Tenant `/` (and login) when church/website suspended |
+| **Hostname** | Tenant (throwaway) or documented suspended fixture |
+| **Role** | ANON |
+| **Setup** | Do **not** suspend `diagnostic-church` on shared testing without approval. Prefer separate throwaway org |
+| **Action** | Open public home + `/login` |
+| **Expected result** | Controlled unavailable (`website_suspended` / catalogue inactive) — not 500 stack; no catalogue bypass |
+| **Evidence to capture** | Status; log keys only |
+| **Cleanup** | Restore status via approved operator procedure |
+| **Failure classification** | PRODUCT · SKIP_FIXTURE · SECURITY if bypass |
+
+### T27 — CSRF rejection
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T27 |
+| **Route** | Representative POSTs: apex logout, BA settings or registration decision, media upload/archive, PA mutation if exercised |
+| **Hostname** | Apex / Tenant |
+| **Role** | Matching authenticated role |
+| **Setup** | Valid session; strip/omit CSRF token |
+| **Action** | Submit without `_csrf` / header |
+| **Expected result** | **403**; HTML or JSON `{ ok:false, reason:"csrf" }` for media APIs; **no** state change |
+| **Evidence to capture** | Network status + response body (redact cookies) |
+| **Cleanup** | Re-submit correctly once to confirm still works |
+| **Failure classification** | SECURITY |
+
+### T28 — Mobile navigation
+
+| Field | Detail |
+|-------|--------|
+| **Test number** | T28 |
+| **Route** | Same hosts as T01–T17 at ≤390px (spot 320px) |
+| **Hostname** | Apex + Tenant |
 | **Role** | ANON + one staff + MEM |
 | **Setup** | Device or DevTools responsive |
-| **Action** | Open drawers/bottom tabs; Tab/Escape; follow primary CTAs |
-| **Expected result** | No horizontal scroll; focus trap in drawers; bottom tabs match enabled subset; touch targets usable; Powered by GetPro visible where shell requires |
-| **Failure evidence** | 320/390 screenshots; video optional; note overflow element |
-| **Rollback / cleanup** | None. |
+| **Action** | Open drawers/bottom tabs; Tab/Escape; primary CTAs |
+| **Expected result** | No horizontal scroll; focus trap in drawers; bottom tabs = enabled subset; touch targets usable; Powered by GetPro where required |
+| **Evidence to capture** | 320/390 screenshots; note overflow selector if any |
+| **Cleanup** | None |
+| **Failure classification** | A11Y_UX · PRODUCT |
 
-### T17 — Upload / media checks
-
-| Field | Detail |
-|-------|--------|
-| **Route** | Content-admin media picker/upload (HQ or BA content screens); `GET /_bb/media/:id` for public assets only |
-| **Role** | BA or HQ |
-| **Setup** | Storage buckets configured; CSRF; allowlisted file (JPEG/PNG/WebP/GIF ≤5MiB or PDF ≤15MiB) |
-| **Action** | Open picker; upload valid file; reject SVG/oversize; select into field; archive confirm (soft); attempt private asset as ANON |
-| **Expected result** | Upload succeeds with safe UI; CSRF 403 without token; SVG rejected; archive soft-only; ANON cannot fetch private; no storage keys/credentials in HTML/JSON |
-| **Failure evidence** | Network panel (status + JSON `reason`); picker screenshots; response headers for media GET |
-| **Rollback / cleanup** | Soft-archive test asset via picker confirm; do not hard-delete via invented SQL. |
-
-### T18 — No secret leakage
+### T29 — No secret leakage
 
 | Field | Detail |
 |-------|--------|
-| **Route** | Spot-check Apex `/`, `/login`, `/account`, `/admin/deployments/:code`; Tenant `/`, `/register`, `/member`, `/hq/audit`, `/branch-admin` |
+| **Test number** | T29 |
+| **Route** | Spot: Apex `/`, `/login`, `/account`, `/admin/deployments/:code`; Tenant `/`, `/register`, `/member`, `/hq/audit`, `/branch-admin` |
+| **Hostname** | Both |
 | **Role** | ANON + PA + HQ |
-| **Setup** | View Source / search in HTML and JSON |
-| **Action** | Search for `DATABASE_URL`, `SESSION_SECRET`, `password`, connection strings, raw transfer tokens, storage keys, cookie names from env |
-| **Expected result** | No secrets; deployment diagnostics show pass/fail only; audit refs truncated; org UUIDs not required in directory |
-| **Failure evidence** | Exact matching snippet (redact mid-secret); URL; role |
-| **Rollback / cleanup** | Treat as release blocker; set routing `off` if actively leaking. |
+| **Setup** | View Source / search HTML+JSON |
+| **Action** | Search `DATABASE_URL`, `SESSION_SECRET`, `password`, connection strings, raw transfer tokens, storage keys, env cookie names |
+| **Expected result** | No secrets; deployment diagnostics pass/fail only; audit refs truncated |
+| **Evidence to capture** | Matching snippet redacted mid-value; URL; role |
+| **Cleanup** | If leaking → routing `off` immediately |
+| **Failure classification** | SECURITY |
 
-### T19 — No dead links
+### T30 — No dead links
 
 | Field | Detail |
 |-------|--------|
+| **Test number** | T30 |
 | **Route** | Primary nav + footer + dashboard quick actions on Apex, Tenant public, Member, BA, HQ, PA |
+| **Hostname** | Both |
 | **Role** | Matching persona per shell |
 | **Setup** | Authoritative mode |
-| **Action** | Click every primary nav/footer/quick link once |
-| **Expected result** | **200** or intentional disabled/unavailable control; no 404 for enabled nav; unavailable PA cards are non-links |
-| **Failure evidence** | Table of `href` → status; screenshot of 404 |
-| **Rollback / cleanup** | None (file defect ticket). |
+| **Action** | Click every primary enabled control once |
+| **Expected result** | **200** or intentional unavailable non-link; no **404** for enabled nav |
+| **Evidence to capture** | `href` → status table |
+| **Cleanup** | File defect ticket; no DB change |
+| **Failure classification** | PRODUCT |
 
-### T20 — No legacy database / session usage
+### T31 — No legacy database / session usage
 
 | Field | Detail |
 |-------|--------|
+| **Test number** | T31 |
 | **Route** | N/A (ops + runtime) |
+| **Hostname** | N/A (DB + Hostinger env) |
 | **Role** | Operator |
-| **Setup** | Access to DB verify + app env |
-| **Action** | Confirm `to_regclass('public.tenants')` and `to_regclass('public.session')` are null; confirm app uses `DATABASE_URL` + V5 sessions (`PLATFORM_DEPLOYMENT_CODE`, host-only cookie); confirm no `GETPRO_DATABASE_URL` on V5 host |
-| **Expected result** | Legacy tables absent; identity `blessboard-platform-v5`; session cookie name host-scoped; no V4 `public.session` store |
-| **Failure evidence** | `db:identity:check` / verify foundation output (no secrets); env key presence list (values redacted) |
-| **Rollback / cleanup** | Do not recreate legacy tables. |
+| **Setup** | Read-only DB verify + env inspection (values redacted) |
+| **Action** | Confirm `public.tenants` / `public.session` absent; app uses `DATABASE_URL` + V5 `platform.deployment_sessions`; `GETPRO_DATABASE_URL` unset; identity `blessboard-platform-v5` |
+| **Expected result** | Legacy tables null; host-only session cookie; no V4 `public.session` store |
+| **Evidence to capture** | Identity check output (no secrets); env key presence list |
+| **Cleanup** | Do not recreate legacy tables |
+| **Failure classification** | CONFIG · SECURITY |
 
 ---
 
@@ -300,9 +540,9 @@ Each test: ☐ Pass · ☐ Fail · ☐ Blocked (precondition) · ☐ Skip (reaso
 | # | Check | ☐ |
 |---|-------|---|
 | D1 | Apex first viewport: brand, hero, CTAs, no KPI clutter | ☐ |
-| D2 | Apex Pricing + Directory usable; no checkout | ☐ |
+| D2 | Features / Pricing / Directory / Register-Church enquiry OK | ☐ |
 | D3 | Tenant Home desktop nav (not hamburger) | ☐ |
-| D4 | Login dual-pane / account chrome | ☐ |
+| D4 | Apex login dual-pane / account chrome | ☐ |
 | D5 | Member sidebar ≥900px | ☐ |
 | D6 | Branch Admin sidebar + tables | ☐ |
 | D7 | HQ sidebar + branch selector | ☐ |
@@ -317,7 +557,7 @@ Each test: ☐ Pass · ☐ Fail · ☐ Blocked (precondition) · ☐ Skip (reaso
 | # | Check | ☐ |
 |---|-------|---|
 | M1 | Apex drawer open/close + Escape | ☐ |
-| M2 | Tenant public drawer; no bottom-tab FAB expectation | ☐ |
+| M2 | Tenant public drawer | ☐ |
 | M3 | Member bottom tabs + drawer | ☐ |
 | M4 | BA / HQ / PA bottom tabs + drawer | ☐ |
 | M5 | Forms usable; primary button not clipped by keyboard | ☐ |
@@ -331,25 +571,43 @@ Each test: ☐ Pass · ☐ Fail · ☐ Blocked (precondition) · ☐ Skip (reaso
 
 ## 4. Database verification checklist
 
-Run **read-only** checks only (documented patterns). Do not invent INSERT/UPDATE/DELETE for smoke.
+Run **read-only** checks only. Do not invent INSERT/UPDATE/DELETE for smoke.
 
 | # | Check | Pass criteria | ☐ |
 |---|-------|---------------|---|
-| DB1 | Identity | `platform.database_identity` → `blessboard-platform-v5` / expected env | ☐ |
+| DB1 | Identity | `blessboard-platform-v5` / expected env | ☐ |
 | DB2 | Forbidden legacy | `public.tenants` and `public.session` absent | ☐ |
-| DB3 | Org | `diagnostic-church` active | ☐ |
-| DB4 | Enrolment | BlessBoard product enrolment active | ☐ |
+| DB3 | Org | `diagnostic-church` active / `testing` | ☐ |
+| DB4 | Enrolment | BlessBoard product enrolment `active` | ☐ |
 | DB5 | Church + HQ/primary | `diagnostic-church` / `hq` active; `is_primary` true | ☐ |
-| DB6 | Domain | `diagnostic.blessboard.org` active canonical | ☐ |
-| DB7 | Deployment | `blessboard-org-v5` active | ☐ |
-| DB8 | Roles | Active PA, HQ, BA role rows for test emails | ☐ |
+| DB6 | Domain | `diagnostic.blessboard.org` active canonical → `blessboard-org-v5` | ☐ |
+| DB7 | Deployment | `blessboard-org-v5` active / `testing` | ☐ |
+| DB8 | Roles | Active PA, HQ, BA role rows | ☐ |
 | DB9 | Member | Active member + primary membership on `hq` | ☐ |
-| DB10 | Content | Published `home` + `about` in `blessboard.public_pages` (or accepted empty with ticket) | ☐ |
-| DB11 | Samples | ≥1 safe row in modules you will click (optional per module) | ☐ |
+| DB10 | Content | Published `home` + `about` (or accepted empty with ticket) | ☐ |
+| DB11 | Samples | ≥1 safe row in modules you will click | ☐ |
+| DB12 | No `GETPRO_DATABASE_URL` on V5 host | Unset | ☐ |
 
 ---
 
-## 5. Security checklist
+## 5. Authorization checklist
+
+| # | Check | ☐ |
+|---|-------|---|
+| A1 | MEM cannot open BA / HQ / PA | ☐ |
+| A2 | BA cannot open HQ / PA | ☐ |
+| A3 | HQ cannot open PA | ☐ |
+| A4 | PA on tenant does not gain membership portal by default | ☐ |
+| A5 | Branch scope: BA sees only assigned branch data | ☐ |
+| A6 | Church scope: no cross-org IDOR on object URLs | ☐ |
+| A7 | Unauthenticated protected routes → login/transfer | ☐ |
+| A8 | Inactive user cannot establish session (T24) | ☐ |
+| A9 | Inactive branch / suspended church fail closed (T25–T26) | ☐ |
+| A10 | Wrong-role matrix evidence saved (T21) | ☐ |
+
+---
+
+## 6. Security checklist
 
 | # | Check | ☐ |
 |---|-------|---|
@@ -357,16 +615,33 @@ Run **read-only** checks only (documented patterns). Do not invent INSERT/UPDATE
 | S2 | CSRF missing → 403 / safe JSON `reason` (media) | ☐ |
 | S3 | Session cookie host-only; not parent-domain shared | ☐ |
 | S4 | Transfer `tr` opaque; not raw secrets in HTML | ☐ |
-| S5 | No open redirect on `next` (only allowlisted paths) | ☐ |
-| S6 | Role isolation 403 matrix (T14) | ☐ |
-| S7 | No secret leakage (T18) | ☐ |
-| S8 | Media: SVG rejected; private not public | ☐ |
-| S9 | Audit/admin pages redact tokens/connection strings | ☐ |
-| S10 | Unknown host controlled 404/503 (not stack) | ☐ |
+| S5 | No open redirect on `next` (allowlisted paths only) | ☐ |
+| S6 | No secret leakage (T29) | ☐ |
+| S7 | Media: SVG rejected; private not public | ☐ |
+| S8 | Audit/admin pages redact tokens/connection strings | ☐ |
+| S9 | Unknown host controlled 404/503 (not stack) | ☐ |
+| S10 | Legacy `public.tenants` / `public.session` / `GETPRO_DATABASE_URL` unused (T31) | ☐ |
 
 ---
 
-## 6. Post-deployment smoke checklist
+## 7. Media checklist
+
+| # | Check | ☐ |
+|---|-------|---|
+| MD1 | Picker opens from content admin | ☐ |
+| MD2 | Library church-scoped only | ☐ |
+| MD3 | Upload allowlisted types/sizes | ☐ |
+| MD4 | SVG / oversize rejected | ☐ |
+| MD5 | CSRF required on upload + archive | ☐ |
+| MD6 | Soft-archive confirm honest (no fabricated in-use blockers) | ☐ |
+| MD7 | Detail panel shows safe metadata only | ☐ |
+| MD8 | Public delivery path works for public assets | ☐ |
+| MD9 | Private assets denied to ANON | ☐ |
+| MD10 | No storage keys / credentials in HTML or JSON | ☐ |
+
+---
+
+## 8. Post-deployment checklist
 
 Run immediately after Hostinger restart / routing change.
 
@@ -385,20 +660,45 @@ Run immediately after Hostinger restart / routing change.
 | P11 | Capture evidence pack | screenshots + HAR notes + mode timestamp | ☐ |
 | P12 | Go / Hold / Rollback decision | recorded below | ☐ |
 
-**Decision:** ☐ Go · ☐ Hold · ☐ Rollback  
-
-**Routing rollback (if needed):**
-
-```bash
-# Hostinger env + restart
-BLESSBOARD_TENANT_ROUTING_MODE=off
-```
-
-Then re-check Apex `/healthz` and `/login`.
+**Decision:** ☐ Go · ☐ Hold · ☐ Rollback
 
 ---
 
-## 7. Evidence pack (minimum)
+## 9. Rollback checklist
+
+**Immediate rollback triggers**
+
+1. Apex `/` or `/login` **5xx** or auth completely broken.
+2. Session cookie set on parent `.blessboard.org` Domain.
+3. Cross-tenant / cross-church data visible (**SECURITY**).
+4. Secret leakage in HTML/JSON (**SECURITY**).
+5. Private media publicly readable.
+6. Tenant host serves wrong product shell after authoritative cutover with no recovery path.
+
+**Rollback steps**
+
+```bash
+# Hostinger env + restart all workers
+BLESSBOARD_TENANT_ROUTING_MODE=off
+```
+
+Then:
+
+| Step | Action | ☐ |
+|------|--------|---|
+| R1 | Confirm mode `off` after restart | ☐ |
+| R2 | Apex `/healthz` **200** | ☐ |
+| R3 | Apex `/` + `/login` **200** | ☐ |
+| R4 | Tenant host no longer serves authoritative CMS (foundation/unavailable as designed) | ☐ |
+| R5 | Notify stakeholders; preserve evidence pack | ☐ |
+| R6 | Do **not** recreate `public.tenants` / `public.session` | ☐ |
+| R7 | Do **not** set `GETPRO_DATABASE_URL` on V5 | ☐ |
+
+DNS revert only if apex itself is broken beyond routing mode.
+
+---
+
+## 10. Evidence pack (minimum)
 
 | Artifact | Required |
 |----------|----------|
@@ -407,33 +707,37 @@ Then re-check Apex `/healthz` and `/login`.
 | Cookie attribute shot (host-only) | Yes |
 | One CSRF failure proof | Yes |
 | One 403 wrong-role proof | Yes |
-| Media upload success + SVG reject | If T17 run |
+| Media upload success + SVG reject | If T18–T19 run |
 | DB verify notes (keys only, no secrets) | Yes |
 | Routing mode + timestamp | Yes |
+| Go/Hold/Rollback decision | Yes |
 
 ---
 
-## 8. Suggested run order (same day)
+## 11. Suggested run order (same day)
 
-1. DB verification checklist (DB1–DB11)  
-2. Security spot env (S3, T20)  
-3. Post-deploy P1–P5  
-4. T01 → T06 (apex + auth transfer)  
-5. T07 → T09 (registration → member)  
-6. T10 → T12 (BA → HQ → PA)  
-7. T13 → T14 (logout + authz)  
-8. T16 → T19 (mobile, media, secrets, links)  
-9. T15 only if safe inactive fixture exists  
-10. Sign-off (section 6)
+1. Database checklist DB1–DB12
+2. Security/env spot (S3, T31)
+3. Post-deploy P1–P5
+4. T01–T05 (apex marketing)
+5. T06–T10 (tenant public + auth transfer)
+6. T11–T14 (registration → member)
+7. T15–T17 (BA → HQ → PA)
+8. T18–T19 (media)
+9. T20–T21, T27, T29–T30 (logout, authz, CSRF, secrets, links)
+10. T28 (mobile sweep)
+11. T22–T26 only with safe fixtures (else Skip)
+12. Sign-off (section 8)
 
 ---
 
-## 9. Plan execution verdict
+## 12. Plan execution verdict
 
 | Item | Status |
 |------|--------|
-| Plan document complete (journeys 1–20 + checklists) | **Ready** |
+| Plan document complete (T01–T31 + all checklists) | **Ready** |
 | Executable against current hosted demo tenant **without** further setup | **Not yet** — close gaps in [`V5_DEMO_TENANT_READINESS.md`](./V5_DEMO_TENANT_READINESS.md) first |
 | Executable after users + published content + authoritative routing | **Yes** |
+| Apex-only / shadow partial run | **Yes** (T01–T05, T09 partial, T29–T31) |
 
-**Bottom line:** The smoke-test **plan is ready to execute** as an operator runbook. Do not start the full authoritative journey until demo-tenant readiness reports users, Home/About, and (for module clicks) sample rows as READY.
+**Bottom line:** The smoke-test **plan is ready to execute** as an operator runbook. Do **not** start the full authoritative journey until demo-tenant readiness reports users, roles, Home/About, and (for module clicks) sample rows as READY.

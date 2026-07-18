@@ -1183,7 +1183,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
 
 .bb-hq-form label, .bb-ba-form label { display:block; margin:0.85rem 0 0.25rem; font-size:0.9rem; }
 .bb-hq-form input, .bb-hq-form select, .bb-ba-form input { width:100%; max-width:28rem; padding:0.55rem 0.65rem; border:1px solid var(--bb-color-border, #d1dce0); border-radius:var(--bb-radius-sm, 0.5rem); font:inherit; }
-.bb-hq-form button, .bb-ba-form button[type="submit"] { margin-top:1.1rem; padding:0.65rem 1rem; border:0; border-radius:8px; background:#6c5ce7; color:#fff; font:inherit; cursor:pointer; }
+.bb-hq-form button, .bb-ba-form button[type="submit"] { margin-top:1.1rem; padding:0.65rem 1rem; border:0; border-radius:var(--bb-radius-sm, 0.5rem); background:var(--bb-color-primary, #6c5ce7); color:#fff; font:inherit; cursor:pointer; }
 .bb-hq-form.bb-hq-panel .bb-hq-field { margin: 0 0 0.85rem; }
 .bb-hq-form.bb-hq-panel .bb-hq-field label { margin-top: 0; }
 .bb-hq-form.bb-hq-panel input,
@@ -1259,7 +1259,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
 .bb-ba-field { display:flex; flex-direction:column; gap:0.35rem; }
 .bb-ba-field label { font-size:0.85rem; font-weight:600; }
 .bb-ba-field input, .bb-ba-field select, .bb-ba-field textarea { font:inherit; padding:0.55rem 0.7rem; border:1px solid var(--bb-line); border-radius:0.5rem; background:#fff; }
-.bb-ba-btn { display:inline-flex; align-items:center; justify-content:center; gap:0.35rem; border:0; border-radius:0.55rem; padding:0.55rem 0.9rem; font:inherit; font-weight:600; cursor:pointer; text-decoration:none; }
+.bb-ba-btn { display:inline-flex; align-items:center; justify-content:center; gap:0.35rem; border:0; border-radius:var(--bb-radius-sm, 0.5rem); padding:0.55rem 0.9rem; font:inherit; font-weight:600; cursor:pointer; text-decoration:none; }
 .bb-ba-btn--primary { background:var(--bb-violet); color:#fff; }
 .bb-ba-btn--ghost { background:var(--bb-surface); color:var(--bb-ink); border:1px solid var(--bb-line); }
 .bb-ba-btn--sm { padding:0.35rem 0.65rem; font-size:0.85rem; }
@@ -3830,4 +3830,46 @@ body.bb-hq-drawer-open { overflow: hidden; }
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Participation admin overview (HQ shell) */
+.bb-part-admin {
+  display: grid;
+  gap: 1.25rem;
+}
+.bb-part-admin__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.bb-part-admin__item { margin: 0; }
+.bb-part-admin__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+.bb-part-admin__members {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.bb-part-admin__members > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--bb-line);
+  border-radius: var(--bb-radius-sm, 0.5rem);
+  background: var(--bb-surface);
+}
+.bb-part-admin__review {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
 }

@@ -21,6 +21,13 @@
     if (key === 'inactive' || key === 'archived') return 'bb-pa-chip--muted';
     return 'bb-pa-chip--muted';
   }
+  function statusTone(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'ok';
+    if (key === 'suspended') return 'danger';
+    if (key === 'pending') return 'warn';
+    return 'muted';
+  }
   function queryPage(p) {
     var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
     if (keyPrefix) parts.push('q=' + encodeURIComponent(keyPrefix));
@@ -170,7 +177,10 @@
 
   <ul class="bb-pa-orgs-cards" data-bb-org-cards="1">
     <% rows.forEach(function (org) { %>
-    <li class="bb-pa-orgs-card" data-bb-org-key="<%= org.organizationKey %>">
+    <li
+      class="bb-pa-orgs-card bb-pa-orgs-card--<%= statusTone(org.organizationStatus) %>"
+      data-bb-org-key="<%= org.organizationKey %>"
+    >
       <a class="bb-pa-orgs-card__link" href="/admin/organizations/<%= org.organizationKey %>">
         <span class="bb-pa-orgs-card__icon" aria-hidden="true">
           <span class="material-symbols-outlined">corporate_fare</span>
@@ -183,6 +193,12 @@
           <code class="bb-pa-key"><%= org.organizationKey %></code>
           <span class="bb-pa-orgs-card__meta">
             <span>Branches · <strong data-bb-count="active-branches"><%= org.activeBranchCount %></strong></span>
+            <% if (org.dataEnvironment) { %>
+            <span><code class="bb-pa-key"><%= org.dataEnvironment %></code></span>
+            <% } %>
+            <% if (org.enrolmentStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.enrolmentStatus) %>"><%= statusLabel(org.enrolmentStatus) %></span>
+            <% } %>
             <% if (org.canonicalHostname) { %>
             <span><%= org.canonicalHostname %></span>
             <% } %>

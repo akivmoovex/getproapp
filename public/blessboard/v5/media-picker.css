@@ -846,8 +846,8 @@
 @media (max-width: 767px) {
   .bb-media-picker-dialog.bb-media-picker-dialog--drawer,
   .bb-media-picker-dialog {
-    width: 100vw;
-    max-width: 100vw;
+    width: 100%;
+    max-width: 100%;
     max-height: min(92vh, 40rem);
     margin: 0;
     border-radius: var(--bb-radius, 1rem) var(--bb-radius, 1rem) 0 0;

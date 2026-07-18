@@ -921,10 +921,15 @@ body.bb-pa-drawer-open { overflow: hidden; }
 .bb-pa-orgs-card {
   margin: 0;
   border: 1px solid var(--bb-line, #d9e4e9);
+  border-left-width: 3px;
   border-radius: var(--bb-radius, 1rem);
   background: var(--bb-color-surface-dim, #f2f0ed);
   overflow: hidden;
 }
+.bb-pa-orgs-card--ok { border-left-color: #0f766e; }
+.bb-pa-orgs-card--danger { border-left-color: var(--bb-color-error, #b3261e); }
+.bb-pa-orgs-card--warn { border-left-color: #9a5b00; }
+.bb-pa-orgs-card--muted { border-left-color: #9ca3af; }
 .bb-pa-orgs-card__link {
   display: flex;
   gap: 0.85rem;
@@ -2615,6 +2620,9 @@ tr.is-disabled td {
 .bb-pa-subs__open:focus-visible,
 .bb-pa-domains-card__cta:focus-visible,
 .bb-pa-table a:focus-visible,
+.bb-pa-deploy-card a:focus-visible,
+.bb-pa-deploy-domain-card a:focus-visible,
+.bb-pa-domain-form .bb-pa-btn:focus-visible,
 .bb-pa-confirm:focus-within {
   outline: 2px solid var(--bb-violet, #6c5ce7);
   outline-offset: 2px;

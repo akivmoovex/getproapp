@@ -1,12 +1,13 @@
-# BlessBoard V5 — Demo tenant readiness
+# BlessBoard V5 — Demo tenant data readiness
 
-**Date:** 2026-07-18  
-**Mode:** Read-only audit (no seed, migrate, or data modification)  
-**Target database:** Hosted V5 foundation identified as `platform.database_identity.identity_key = blessboard-platform-v5` (`environment_code = testing`)  
-**Target tenant:** `diagnostic-church` (only `platform.organizations` row present)  
+**Date:** 2026-07-19
+**Mode:** Read-only audit (no seed, migrate, or hosted data modification)
+**Target database:** Hosted V5 foundation · `platform.database_identity.identity_key = blessboard-platform-v5` · `environment_code = testing`
+**Target tenant:** `diagnostic-church` (sole `platform.organizations` row)
 **Canonical hostname:** `diagnostic.blessboard.org`
+**Expected deployment:** `blessboard-org-v5` (`active` / `testing`)
 
-**Related:** [`HOSTED_SUPABASE_RUNBOOK.md`](../database/HOSTED_SUPABASE_RUNBOOK.md) · [`V5_HOSTED_MIGRATION_AND_CUTOVER.md`](../database/V5_HOSTED_MIGRATION_AND_CUTOVER.md) · [`V5_GUI_PRODUCTION_SMOKE_TEST.md`](../ui/V5_GUI_PRODUCTION_SMOKE_TEST.md)
+**Related:** [`HOSTED_SUPABASE_RUNBOOK.md`](../database/HOSTED_SUPABASE_RUNBOOK.md) · [`V5_HOSTED_MIGRATION_AND_CUTOVER.md`](../database/V5_HOSTED_MIGRATION_AND_CUTOVER.md) · [`V5_SHADOW_ROUTING_READINESS.md`](../deployment/V5_SHADOW_ROUTING_READINESS.md) · [`V5_GUI_PRODUCTION_SMOKE_TEST.md`](../ui/V5_GUI_PRODUCTION_SMOKE_TEST.md) · [`V5_DEMO_E2E_SMOKE_TEST.md`](./V5_DEMO_E2E_SMOKE_TEST.md)
 
 ---
 
@@ -14,8 +15,8 @@
 
 | Question | Answer |
 |----------|--------|
-| Catalogue shape ready for **shadow-routing validation**? | **YES** — organization, BlessBoard enrolment, church, HQ/primary branch, active domain, and active `blessboard-org-v5` deployment are present. |
-| Ready for **full end-to-end GUI/role testing**? | **NO** — no active test users (member / branch admin / HQ admin / platform admin), no published Home/About pages, and no operational sample rows. |
+| Catalogue shape ready for **shadow-routing validation**? | **YES** — organization, BlessBoard enrolment, church, HQ/primary branch, active canonical domain, and active `blessboard-org-v5` deployment are present and environment-compatible. |
+| Ready for **full end-to-end GUI/role testing**? | **NO** — no users, no role assignments, no published Home/About, no operational sample rows. |
 
 Do **not** use legacy `npm run church:seed-demos` for this gate. That path seeds `public.church_*` and depends on legacy `public.tenants`, which must stay absent on V5.
 
@@ -23,53 +24,88 @@ Do **not** use legacy `npm run church:seed-demos` for this gate. That path seeds
 
 ## 2. Audit method
 
-1. Connected read-only to the configured hosted database (after normalizing a malformed local `DATABASE_URL` env value that was prefixed twice as `DATABASE_URL=DATABASE_URL=…`; `.env` was not written).
-2. Confirmed identity + forbidden legacy tables using the checks already documented in [`V5_FINAL_MIGRATION_READINESS.md`](../database/V5_FINAL_MIGRATION_READINESS.md).
-3. Confirmed tenant shape using the verify-one-church pattern from [`HOSTED_SUPABASE_RUNBOOK.md`](../database/HOSTED_SUPABASE_RUNBOOK.md).
-4. Inspected roles, members, `blessboard.public_pages`, and module row counts without inserting or updating anything.
+1. Connected **read-only** to the configured hosted database (normalized a local duplicated `DATABASE_URL=` prefix **in memory only**; `.env` was not written).
+2. Confirmed identity + forbidden legacy tables (`public.tenants`, `public.session`).
+3. Confirmed tenant catalogue shape (org → product → church → branch → domain → deployment).
+4. Counted users/roles/members/`public_pages`/module rows **without** selecting emails, passwords, cookies, or connection strings.
+5. Confirmed local operator `.env` does **not** set `GETPRO_DATABASE_URL` (commented placeholder only). Hostinger V5 must keep it unset per cutover docs.
 
-No invented remediation SQL. Remediation commands below are existing npm scripts / documented UI workflows only.
+No invented remediation SQL. Remediation below uses existing npm scripts / documented UI workflows only.
 
 ---
 
-## 3. Requirement matrix
+## 3. Expected relationships (keys only)
+
+```
+organization_key = diagnostic-church (active, data_environment=testing)
+  └─ organization_products: product_key=blessboard, product_tenant_key=diagnostic-church, status=active
+  └─ church_key = diagnostic-church (active, data_environment=testing)
+       └─ branch_key = hq (branch_type=hq, is_primary=true, status=active)
+  └─ hostname = diagnostic.blessboard.org (canonical, primary, active)
+       └─ deployment_id/code = blessboard-org-v5 (active, environment_code=testing)
+```
+
+Database identity (`blessboard-platform-v5` / `testing`) is the **physical DB purpose**, not the deployment code. Do not treat them as interchangeable.
+
+---
+
+## 4. Requirement matrix
 
 Status legend: **READY** · **MISSING** · **INVALID** · **NOT REQUIRED**
 
-| # | Requirement | Status | Evidence (keys only) |
-|---|-------------|--------|----------------------|
-| 1 | Platform organization | **READY** | `organization_key=diagnostic-church`, `status=active`, `data_environment=testing` |
-| 2 | Active BlessBoard product enrolment | **READY** | `product_key=blessboard`, `product_tenant_key=diagnostic-church`, `enrolment_status=active` |
-| 3 | BlessBoard church | **READY** | `church_key=diagnostic-church`, `status=active` |
-| 4 | HQ branch | **READY** | `branch_key=hq`, `branch_type=hq`, `status=active` |
-| 5 | Primary branch | **READY** | Same row: `hq` has `is_primary=true` (HQ may be primary per architecture) |
-| 6 | Active domain mapping | **READY** | `hostname=diagnostic.blessboard.org`, `domain_type=canonical`, `status=active`, `is_primary=true`; deployment `blessboard-org-v5` is `active` / `testing` |
-| 7 | Active test user — member | **MISSING** | `blessboard.members` empty for this church; no primary membership |
-| 8 | Active test user — branch admin | **MISSING** | No `user_roles` with `role_key=branch_admin` for this org |
-| 9 | Active test user — HQ admin | **MISSING** | No `user_roles` with `role_key=church_hq_admin` for this org |
-| 10 | Active test user — platform admin | **MISSING** | No active `platform_admin` roles found |
-| 11 | Published Home/About content | **MISSING** | `blessboard.public_pages` empty for this church (`home` / `about` absent) |
-| 12 | ≥1 safe test item in operational modules | **MISSING** | Counts all `0`: announcements, events, ministries, sermons, resources, forms, member_requests, giving_methods, attendance_events |
-| 13 | No `public.tenants` dependency | **READY** | `to_regclass('public.tenants')` → `null` |
-| 14 | No `public.session` dependency | **READY** | `to_regclass('public.session')` → `null` |
+| # | Requirement | Status | Evidence (safe identifiers only) |
+|---|-------------|--------|----------------------------------|
+| 1 | Platform organization exists | **READY** | `organization_key=diagnostic-church`, `status=active`, `data_environment=testing` |
+| 2 | BlessBoard product enrolment active | **READY** | `product_key=blessboard`, `product_tenant_key=diagnostic-church`, `status=active` |
+| 3 | BlessBoard church exists | **READY** | `church_key=diagnostic-church`, `status=active`, `data_environment=testing` |
+| 4 | HQ branch exists | **READY** | `branch_key=hq`, `branch_type=hq`, `status=active` |
+| 5 | Primary branch exists | **READY** | Same row: `hq` has `is_primary=true` |
+| 6 | Domain mapping exists | **READY** | `hostname=diagnostic.blessboard.org`, `domain_type=canonical`, `status=active`, `is_primary=true` → `blessboard-org-v5` |
+| 7 | Statuses / environments compatible | **READY** | Org, church, domain, and `blessboard-org-v5` all `active` / `testing`; identity `testing` |
+| 8 | Member test user exists | **MISSING** | `blessboard.members` count `0`; primary active memberships `0`; `blessboard.users` count `0` |
+| 9 | Branch-admin test user exists | **MISSING** | Active `branch_admin` roles for org: `0` |
+| 10 | HQ-admin test user exists | **MISSING** | Active `church_hq_admin` roles for org: `0` |
+| 11 | Platform-admin test user exists | **MISSING** | Active `platform_admin` roles (platform-wide): `0` |
+| 12 | Role assignments active | **MISSING** | No active `blessboard.user_roles` rows for this org / platform admin |
+| 13 | Published Home content | **MISSING** | No `blessboard.public_pages` row with `page_key=home` |
+| 14 | Published About content | **MISSING** | No `blessboard.public_pages` row with `page_key=about` |
+| 15 | Operational test content | **MISSING** | Module counts all `0`: announcements, events, ministries, sermons, resources, forms, member_requests, giving_methods, attendance_events |
+| 16 | No dependency on `public.tenants` | **READY** | `to_regclass('public.tenants')` → `null` |
+| 17 | No dependency on `public.session` | **READY** | `to_regclass('public.session')` → `null` |
+| 18 | No dependency on `GETPRO_DATABASE_URL` | **READY** | Local `.env`: unset (commented placeholder only); process env unset during audit. Hostinger V5 must keep unset ([`V5_HOSTED_MIGRATION_AND_CUTOVER.md`](../database/V5_HOSTED_MIGRATION_AND_CUTOVER.md)). |
 
-### Notes on statuses
+### Notes on classifications
 
-- **Separate campus primary ≠ HQ:** **NOT REQUIRED** when HQ is already `is_primary=true` (current shape). Adding a second primary would be **INVALID**.
-- **Legacy catalogue seeds (`demo` / `demo2` via `church:seed-demos`):** **INVALID** for this V5 readiness gate (wrong schema generation; conflicts with “no `public.tenants`”).
-- **Published content empty states:** UI can render honest empties, but smoke-test precondition P5 in [`V5_GUI_PRODUCTION_SMOKE_TEST.md`](../ui/V5_GUI_PRODUCTION_SMOKE_TEST.md) still expects published sample content before full E2E.
+| Item | Classification note |
+|------|---------------------|
+| Separate campus primary ≠ HQ | **NOT REQUIRED** while `hq` is already `is_primary=true`. A second primary would be **INVALID**. |
+| Legacy `church:seed-demos` / `demo` / `demo2` | **INVALID** for this V5 gate (wrong schema generation; conflicts with no `public.tenants`). |
+| Honest empty CMS UI | UI may render empties, but smoke precondition P5 still expects published sample content for full E2E demos. |
+| Invalid catalogue relationships | **None observed** on this tenant (no orphan church, no inactive enrolment with active domain, no domain→wrong deployment). |
 
 ---
 
-## 4. Safe remediation (existing tooling only)
+## 5. Missing prerequisites (blocks full E2E)
 
-Fix local operator env first (do not commit secrets):
+1. At least one active `platform_admin` user (apex `/admin`).
+2. Active `church_hq_admin` for `diagnostic-church`.
+3. Active `branch_admin` scoped to `church_key=diagnostic-church` + `branch_key=hq`.
+4. Active member with linked user + primary `member_branch_memberships` (`membership_status=active`, `is_primary=true`).
+5. Published `public_pages` for `home` and `about`.
+6. ≥1 safe published/operational row per module you intend to demo.
+
+---
+
+## 6. Safe remediation (existing tooling only)
+
+Fix local operator env first (do **not** commit secrets):
 
 - Ensure `DATABASE_URL` is a single `postgresql://…` value (no duplicated `DATABASE_URL=` prefix).
 - Set `DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5`.
 - For V5 app/CLI context: `PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5`, `DEPLOYMENT_ENV=testing`.
+- Keep `GETPRO_DATABASE_URL` **unset**.
 
-### 4.1 Confirm catalogue (idempotent; expect `already_provisioned`)
+### 6.1 Confirm catalogue (idempotent; expect `already_provisioned`)
 
 ```bash
 npm run platform:tenant:provision -- \
@@ -91,7 +127,7 @@ npm run blessboard:church:provision -- \
   --hq-branch-name "Headquarters"
 ```
 
-### 4.2 Create staff / platform users + roles
+### 6.2 Create staff / platform users + roles
 
 There is **no** V5 member-create CLI. Staff roles use:
 
@@ -135,7 +171,7 @@ npm run blessboard:user:role:assign -- \
 
 Replace placeholder emails/passwords with operator-owned test credentials. Do not commit them.
 
-### 4.3 Member test user
+### 6.3 Member test user
 
 **No dedicated `blessboard:user` member seed.** After routing allows tenant registration:
 
@@ -144,27 +180,27 @@ Replace placeholder emails/passwords with operator-owned test credentials. Do no
 
 Until then, member portal E2E remains blocked.
 
-### 4.4 Published Home/About + operational samples
+### 6.4 Published Home/About + operational samples
 
-**No V5 content seed CLI.** After HQ/branch admin users exist:
+**No V5 content seed CLI / seed name** for CMS or modules.
 
 1. Sign in via apex transfer → `/hq` or `/branch-admin`.
-2. Publish `home` and `about` under content admin (`blessboard.public_pages` / sections).
-3. Create one safe published row each for modules you intend to demo (announcement, event, ministry, sermon, resource, form, giving method, attendance event) via existing admin UIs.
+2. Publish `home` and `about` under content admin (`blessboard.public_pages`).
+3. Create one safe published row each for modules you intend to demo via existing admin UIs.
 
 Do not invent INSERT SQL for these tables.
 
-### 4.5 Explicitly do not run
+### 6.5 Explicitly do not run
 
 | Command / seed | Why |
 |----------------|-----|
-| `npm run church:seed-demos` | Legacy `public.church_*` + `public.tenants` path |
+| `npm run church:seed-demos` | Legacy `public.church_*` + `public.tenants` path — **INVALID** for V5 |
 | `npm run church:pilot:seed` / V4 demo seeds | Not V5 platform/blessboard catalogue |
 | Ad-hoc invented INSERT SQL | Out of policy for this readiness gate |
 
 ---
 
-## 5. Shadow-routing validation gate
+## 7. Shadow-routing validation gate
 
 From [`V5_HOSTED_MIGRATION_AND_CUTOVER.md`](../database/V5_HOSTED_MIGRATION_AND_CUTOVER.md) Step 10:
 
@@ -193,7 +229,7 @@ Catalogue resolution prerequisites are **READY**. Missing users/content block **
 
 ---
 
-## 6. Full E2E readiness checklist (remaining)
+## 8. Full E2E readiness checklist (remaining)
 
 | Gate | Status |
 |------|--------|
@@ -206,7 +242,7 @@ Catalogue resolution prerequisites are **READY**. Missing users/content block **
 
 ---
 
-## 7. Operator env defects observed (local workspace)
+## 9. Operator env defects observed (local workspace)
 
 These are configuration issues in the local `.env` used for this audit — **not** hosted data defects:
 
@@ -217,12 +253,13 @@ These are configuration issues in the local `.env` used for this audit — **not
 | `PLATFORM_DEPLOYMENT_CODE` / `DEPLOYMENT_ENV` / `BLESSBOARD_TENANT_ROUTING_MODE` unset locally | Local app context is not a V5 testing runtime |
 
 Hosted identity row itself is present and valid (`blessboard-platform-v5` / `testing`).
+`GETPRO_DATABASE_URL` is correctly **unset** locally (commented placeholder only).
 
 ---
 
-## 8. Suggested next operator actions (ordered)
+## 10. Suggested next operator actions (ordered)
 
-1. Fix local `DATABASE_URL` + set `DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5`.
+1. Fix local `DATABASE_URL` + set `DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5`; keep `GETPRO_DATABASE_URL` unset.
 2. Run shadow routing against `diagnostic.blessboard.org` and capture `blessboard_tenant_route_shadow` logs.
 3. Create platform / HQ / branch admin users via `blessboard:user:create` + `blessboard:user:role:assign`.
 4. Publish Home/About + one operational sample each via admin UI.

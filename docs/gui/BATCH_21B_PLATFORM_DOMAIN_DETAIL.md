@@ -1,12 +1,31 @@
 # Batch 21B — Platform Admin Domain Detail
 
-**Date:** 2026-07-18  
-**Scope:** Platform Admin `/admin/domains/:hostname` detail + confirmed status / organization assignment. **Deployments not started in this batch.**  
-**References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_21A_PLATFORM_DOMAINS.md`](./BATCH_21A_PLATFORM_DOMAINS.md)
+**Date:** 2026-07-18
+**Scope:** Platform Admin `/admin/domains/:hostname` detail + confirmed status / organization assignment. **Deployments not started.**
+**References:** [`STITCH_SCREEN_MAP.md`](./STITCH_SCREEN_MAP.md) (order 78c), [`VISUAL_SYSTEM.md`](./VISUAL_SYSTEM.md), [`BATCH_21A_PLATFORM_DOMAINS.md`](./BATCH_21A_PLATFORM_DOMAINS.md)
 
-## 1. Canonical Stitch screen IDs
+## 1. Files changed
 
-No dedicated Domain Detail Stitch pair. Adapted from Settings DNS / hostname chrome (same pair as Domains Directory).
+| Path | Change |
+|------|--------|
+| `views/blessboard/v5/platform-admin/domain-detail.ejs` | Summary, operational vs verification, org + status forms, unavailable ops |
+| `views/blessboard/v5/platform-admin/domains.ejs` | Directory links to detail |
+| `public/blessboard/v5/platform-admin.css` | Detail layout (shell cache `platform-admin.css?v=23`) |
+| `views/blessboard/v5/partials/platform-admin-shell-start.ejs` | CSS cache |
+| `src/platform/services/platformAdminDomains.js` | Detail + status/org mutations (deployment-scoped) |
+| `src/platform/http/platformAdminRoutes.js` | GET detail + POST status + POST organization |
+| `tests/blessboard-platform-admin-shell.test.js` | Detail render, CSRF, status, org assignment, secrets exclusion, authz |
+| `tests/blessboard-v5-a11y-structure.test.js` | Structure + CSS version |
+| `docs/gui/STITCH_SCREEN_MAP.md` | Order 78c |
+| `docs/gui/BATCH_21B_PLATFORM_DOMAIN_DETAIL.md` | This document |
+
+**Unchanged:** `resolveHostname`, tenant routing, sessions, authorization, provisioning CLI create path. Deployments UI not modified.
+
+**This pass:** Verified against Stitch 67. No further code edits required on branch `V5`.
+
+## 2. Stitch IDs
+
+No dedicated Domain Detail Stitch pair. Adapted from Settings (same pair as Domains Directory).
 
 | Role | Exact title | ID |
 |------|-------------|-----|
@@ -15,59 +34,40 @@ No dedicated Domain Detail Stitch pair. Adapted from Settings DNS / hostname chr
 
 Marker: `data-bb-stitch-domain-detail="67-platform-settings"`.
 
-## 2. Files changed
+## 3. Fields / actions
 
-| Path | Change |
-|------|--------|
-| `views/blessboard/v5/platform-admin/domain-detail.ejs` | New detail: summary, operational vs verification, org + status forms |
-| `views/blessboard/v5/platform-admin/domains.ejs` | Directory links to detail |
-| `public/blessboard/v5/platform-admin.css` | Detail layout (`?v=18`) |
-| `views/blessboard/v5/partials/platform-admin-shell-start.ejs` | CSS cache bump |
-| `src/platform/services/platformAdminDomains.js` | Detail + status/org mutations (deployment-scoped) |
-| `src/platform/http/platformAdminRoutes.js` | GET detail + POST status + POST organization |
-| `tests/blessboard-platform-admin-shell.test.js` | Detail rendering, CSRF, status, org assignment, authz |
-| `tests/blessboard-v5-a11y-structure.test.js` | Structure + CSS version |
-| `docs/gui/STITCH_SCREEN_MAP.md` | Domain detail row |
-| `docs/gui/BATCH_21B_PLATFORM_DOMAIN_DETAIL.md` | This document |
+| Field / action | Mode | Notes |
+|----------------|------|-------|
+| Hostname, type, product, deployment, primary, created/updated | Read-only | Existing `platform.domains` columns only |
+| Operational status (`active` / `inactive` / `retired`) | Editable when deployment-scoped | CSRF + `confirm_status=1` |
+| DNS ownership verification (`verified_at`) | Read-only | Clearly separated from operational status |
+| Organization assignment | Editable when deployment-scoped | CSRF + `confirm_organization=1`; enrolment check for tenant types |
+| Create domain | Not supported in UI | Unavailable panel — CLI provisioning only |
 
-**Unchanged:** `resolveHostname`, tenant routing, session model, provisioning CLI create path, deployments UI polish batch.
+Operational vs verification markers: `data-bb-domain-state="operational"` / `"verification"`.
 
-## 3. Fields shown
+## 4. Omitted automation
 
-| Field | Mode |
-|-------|------|
-| Hostname, type, product, deployment, primary | Read-only |
-| Created / updated timestamps | Read-only |
-| Operational status (`active` / `inactive` / `retired`) | Editable when domain `deployment_id` matches current deployment |
-| DNS ownership verification (`verified_at`) | Read-only — clearly separated from operational status |
-| Organization key / display name | Editable assignment when mutable |
+Automated DNS lookup/writes, SSL / certificate issuance, hostname redirects, verification jobs that set `verified_at`, Buy Domain / Force Verify.
 
-## 4. Actions
-
-| Action | Support | Notes |
-|--------|---------|-------|
-| Create domain | **Not supported** (CLI provisioning only) | Unavailable panel |
-| Update operational status | Supported | CSRF + `confirm_status=1` + deployment match |
-| Assign organization | Supported | CSRF + `confirm_organization=1` + enrolment check for tenant types |
-| DNS / SSL / redirects / verify jobs | Omitted | Unavailable panel |
-
-## 5. Security
+## 5. Security confirmation
 
 - Apex + `platform_admin` gate preserved.
-- CSRF validated on both POSTs.
-- Confirmation checkboxes required.
+- CSRF validated on both POSTs (`error=csrf` on failure).
+- Confirmation checkboxes required (`confirm_status` / `confirm_organization`).
 - Mutations only when `domains.deployment_id === PLATFORM_DEPLOYMENT_CODE`.
 - Tenant types require active BlessBoard enrolment for the target organization.
-- Never renders UUIDs, session cookies, `DATABASE_URL`, or resolver internals.
+- Never renders organization UUIDs, session cookies, `DATABASE_URL`, tokens, hashes, or resolver internals.
 
-## 6. Tests and results
+## 6. Tests
 
 | Command | Result |
 |---------|--------|
-| `npm run test:blessboard:platform-admin-shell` | **12/12 pass** |
-| `npm run test:blessboard:a11y-structure` | **82/82 pass** |
-| `npx stylelint public/blessboard/v5/platform-admin.css` | **0 errors** (hex warnings only) |
-| `git diff --check` (changed files) | **clean** |
+| `npm run test:blessboard:platform-admin-shell` (detail render, status/org CSRF/confirm, secrets exclusion, hq 403) | **12/12 pass** |
+| `npm run test:blessboard:authorization` | **16/16 pass** |
+| `npm run test:blessboard:a11y-structure` | **83/83 pass** |
+| `npx stylelint public/blessboard/v5/platform-admin.css` | **0 errors** (hex-token warnings only) |
+| `git diff --check` | **clean** |
 
 ## 7. Suggested commit message
 

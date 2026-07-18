@@ -63,6 +63,8 @@
   --bb-bg: var(--bb-color-page);
   --bb-surface: var(--bb-color-surface);
   --bb-surface-low: var(--bb-color-surface-dim);
+  --bb-surface-dim: var(--bb-color-surface-dim);
+  --bb-text: var(--bb-color-ink);
   --bb-line: var(--bb-color-border);
   --bb-ok: var(--bb-color-success);
   --bb-err: var(--bb-color-error);
@@ -114,6 +116,7 @@
   /* —— Radii & shadows —— */
   --bb-radius: 1rem; /* 16 — buttons, cards, inputs (Stitch) */
   --bb-radius-sm: 0.5rem; /* 8 — icon buttons, chips */
+  --bb-radius-md: 0.75rem; /* intermediate cards / marketing tiles */
   --bb-radius-pill: 999px;
   --bb-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --bb-shadow-md: 0 10px 30px rgba(108, 92, 231, 0.08);

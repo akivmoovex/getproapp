@@ -3,69 +3,119 @@
 <% } else { %>
 <%- include('../partials/branch-admin-shell-start') %>
 <% } %>
-  <h1>Participation</h1>
+<%
+  var isHq = shellKind === 'hq';
+  var headClass = isHq ? 'bb-hq-page-head' : 'bb-ba-page-head';
+  var titleClass = isHq ? 'bb-hq-page-head__title' : 'bb-ba-page-head__title';
+  var panelClass = isHq ? 'bb-hq-panel' : 'bb-ba-panel';
+  var emptyClass = isHq ? 'bb-hq-empty' : 'bb-ba-empty';
+  var sectionTitle = isHq ? 'bb-hq-section-title' : 'bb-ba-section-title';
+  var crumb = isHq ? 'bb-hq-breadcrumb' : 'bb-ba-breadcrumb';
+  var homeHref = isHq ? '/hq' : '/branch-admin';
+  var homeLabel = isHq ? 'HQ' : 'Dashboard';
+%>
+<section
+  class="bb-part-admin"
+  data-bb-participation-admin="1"
+  aria-label="Participation"
+>
+  <header class="<%= headClass %>">
+    <p class="<%= crumb %>">
+      <a href="<%= homeHref %>"><%= homeLabel %></a>
+      <span aria-hidden="true">/</span>
+      <span>Participation</span>
+    </p>
+    <h1 class="<%= titleClass %>">Participation</h1>
+    <p class="bb-ba-hint">Review ministry membership requests and event registrations in this scope.</p>
+  </header>
+
   <% if (saved) { %><p class="bb-ann-saved" role="status">Saved.</p><% } %>
 
-  <section>
-    <h2>Ministries</h2>
+  <section class="<%= panelClass %>" data-bb-part-section="ministries">
+    <h2 class="<%= sectionTitle %>">Ministries</h2>
     <% if (!ministries || !ministries.length) { %>
-      <p>No published ministries in this scope.</p>
+      <p class="<%= emptyClass %>" role="status" data-bb-part-empty="ministries">
+        No published ministries in this scope.
+      </p>
     <% } else { %>
-      <% ministries.forEach(function (block) { %>
-        <article>
-          <h3><%= block.ministry.name %></h3>
-          <p><%= block.activeCount %> active · <%= block.pendingCount %> pending</p>
-          <% if (block.memberships && block.memberships.length) { %>
-            <ul>
-              <% block.memberships.forEach(function (m) { %>
-                <li>
-                  <%= m.member ? m.member.displayName : 'Member' %>
-                  <% if (m.member && m.member.emailDisplay) { %> · <%= m.member.emailDisplay %><% } %>
-                  · <%= m.status %>
-                  <% if (m.status === 'pending') { %>
-                    <form method="post" action="<%= basePath %>/ministries/memberships/<%= m.id %>/review" style="display:inline">
-                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                      <button type="submit" name="decision" value="approve">Approve</button>
-                      <button type="submit" name="decision" value="reject">Reject</button>
-                    </form>
-                  <% } %>
-                </li>
-              <% }) %>
-            </ul>
-          <% } %>
-        </article>
-      <% }) %>
+      <ul class="bb-part-admin__list">
+        <% ministries.forEach(function (block) { %>
+          <li class="bb-part-admin__item">
+            <article>
+              <h3 class="bb-part-admin__title"><%= block.ministry.name %></h3>
+              <p class="bb-ba-muted">
+                <%= block.activeCount %> active · <%= block.pendingCount %> pending
+              </p>
+              <% if (block.memberships && block.memberships.length) { %>
+                <ul class="bb-part-admin__members">
+                  <% block.memberships.forEach(function (m) { %>
+                    <li>
+                      <span>
+                        <%= m.member ? m.member.displayName : 'Member' %>
+                        <% if (m.member && m.member.emailDisplay) { %> · <%= m.member.emailDisplay %><% } %>
+                        · <%= m.status %>
+                      </span>
+                      <% if (m.status === 'pending') { %>
+                        <form
+                          class="bb-part-admin__review"
+                          method="post"
+                          action="<%= basePath %>/ministries/memberships/<%= m.id %>/review"
+                        >
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                          <button type="submit" name="decision" value="approve" class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm">
+                            Approve
+                          </button>
+                          <button type="submit" name="decision" value="reject" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm">
+                            Reject
+                          </button>
+                        </form>
+                      <% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } %>
+            </article>
+          </li>
+        <% }) %>
+      </ul>
     <% } %>
   </section>
 
-  <section>
-    <h2>Events</h2>
+  <section class="<%= panelClass %>" data-bb-part-section="events">
+    <h2 class="<%= sectionTitle %>">Events</h2>
     <% if (!events || !events.length) { %>
-      <p>No published events in this scope.</p>
+      <p class="<%= emptyClass %>" role="status" data-bb-part-empty="events">
+        No published events in this scope.
+      </p>
     <% } else { %>
-      <% events.forEach(function (block) { %>
-        <article>
-          <h3><%= block.event.title %></h3>
-          <p>
-            <%= block.registeredCount %> registered
-            <% if (block.event.capacity != null) { %>
-              / <%= block.event.capacity %> capacity
-            <% } %>
-          </p>
-          <% if (block.registrations && block.registrations.length) { %>
-            <ul>
-              <% block.registrations.forEach(function (r) { %>
-                <li>
-                  <%= r.member ? r.member.displayName : 'Member' %>
-                  <% if (r.member && r.member.emailDisplay) { %> · <%= r.member.emailDisplay %><% } %>
-                </li>
-              <% }) %>
-            </ul>
-          <% } %>
-        </article>
-      <% }) %>
+      <ul class="bb-part-admin__list">
+        <% events.forEach(function (block) { %>
+          <li class="bb-part-admin__item">
+            <article>
+              <h3 class="bb-part-admin__title"><%= block.event.title %></h3>
+              <p class="bb-ba-muted">
+                <%= block.registeredCount %> registered
+                <% if (block.event.capacity != null) { %>
+                  / <%= block.event.capacity %> capacity
+                <% } %>
+              </p>
+              <% if (block.registrations && block.registrations.length) { %>
+                <ul class="bb-part-admin__members">
+                  <% block.registrations.forEach(function (r) { %>
+                    <li>
+                      <%= r.member ? r.member.displayName : 'Member' %>
+                      <% if (r.member && r.member.emailDisplay) { %> · <%= r.member.emailDisplay %><% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } %>
+            </article>
+          </li>
+        <% }) %>
+      </ul>
     <% } %>
   </section>
+</section>
 <% if (shellKind === 'hq') { %>
 <%- include('../partials/hq-shell-end') %>
 <% } else { %>

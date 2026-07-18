@@ -218,7 +218,7 @@
     <h2 class="bb-hq-section-title">Giving · <%= report.giving.yearMonth %></h2>
     <p class="bb-hq-hint">Category and currency totals only — no donor names or payment details.</p>
     <% if (!givCurrency.length) { %>
-    <p data-bb-report="giving-empty">No submitted/approved giving this month.</p>
+    <p class="bb-hq-empty" role="status" data-bb-report="giving-empty">No submitted/approved giving this month.</p>
     <% } else { %>
     <ul data-bb-report="giving-totals" class="bb-hq-report-list">
       <% givCurrency.forEach(function (row) { %>

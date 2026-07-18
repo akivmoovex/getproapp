@@ -14,6 +14,7 @@
   --bb-auth-ok-bg: var(--bb-color-success-bg, #ecfdf5);
   --bb-auth-getpro: var(--bb-color-accent, #ff9800);
   --bb-auth-radius: var(--bb-radius, 1rem);
+  --bb-auth-radius-sm: var(--bb-radius-sm, 0.5rem);
   --bb-auth-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.08));
 }
 
@@ -24,6 +25,7 @@
   color: var(--bb-auth-ink);
   background: var(--bb-auth-bg);
   line-height: 1.5;
+  overflow-x: clip;
 }
 
 .bb-auth-skip {

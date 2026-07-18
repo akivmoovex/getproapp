@@ -70,7 +70,7 @@ describe("blessboard apex auth gui states", () => {
     assert.match(html, /name="password"/);
     assert.match(html, /name="_csrf"/);
     assert.match(html, /name="referrer" content="no-referrer"/);
-    assert.match(html, /tenant-auth\.css\?v=11/);
+    assert.match(html, /tenant-auth\.css\?v=12/);
     assert.match(html, /apex-auth\.css\?v=6/);
   });
 
