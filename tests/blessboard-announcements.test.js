@@ -822,6 +822,10 @@ describe("blessboard announcements", () => {
       .set("Cookie", memberCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-member-announcements="1"/);
+    assert.match(list.text, /data-bb-stitch-announcements="16-member-announcements"/);
+    assert.match(list.text, /data-bb-ann-toolbar="1"/);
+    assert.match(list.text, /data-bb-ann-filter-link="unread"/);
+    assert.match(list.text, /data-bb-ann-search="1"/);
     assert.match(list.text, /Pinned featured notice/);
     assert.match(list.text, /data-bb-pinned="1"/);
     assert.match(list.text, /data-bb-featured="1"/);
@@ -829,8 +833,25 @@ describe("blessboard announcements", () => {
     assert.match(list.text, /bb-mp-chip--pinned/);
     assert.match(list.text, /bb-mp-chip--featured/);
     assert.match(list.text, /bb-mp-chip--unread/);
+    assert.doesNotMatch(list.text, /Showing \d+ of \d+|1,240|Total Views|delivery rate/i);
     assert.doesNotMatch(list.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(list.text, new RegExp(memberId, "i"));
+
+    const unreadOnly = await request(app)
+      .get("/member/announcements?filter=unread")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(unreadOnly.status, 200);
+    assert.match(unreadOnly.text, /data-bb-ann-filter="unread"/);
+    assert.match(unreadOnly.text, /Pinned featured notice/);
+
+    const noResults = await request(app)
+      .get("/member/announcements?q=zzzz-no-match-term")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(noResults.status, 200);
+    assert.match(noResults.text, /data-bb-ann-empty="no-results"/);
+    assert.doesNotMatch(noResults.text, /Pinned featured notice/);
 
     const detail = await request(app)
       .get(`/member/announcements/${created.item.id}`)

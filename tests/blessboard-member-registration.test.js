@@ -213,16 +213,25 @@ describe("blessboard member registration http", () => {
     const res = await request(app).get("/register").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /Member [Rr]egistration/);
+    assert.match(res.text, /Join Our Community/);
     assert.match(res.text, /name="_csrf"/);
     assert.match(res.text, /data-bb-shell="tenant-auth"/);
-    assert.match(res.text, /data-bb-stitch-register=/);
+    assert.match(res.text, /data-bb-stitch-register="10-auth-member-registration"/);
     assert.match(res.text, /data-bb-auth-privacy="1"/);
+    assert.match(res.text, /data-bb-auth-group="personal"/);
+    assert.match(res.text, /data-bb-auth-group="contact"/);
+    assert.match(res.text, /Personal Info|Personal Information/);
     assert.match(res.text, /for="first_name"/);
     assert.match(res.text, /for="last_name"/);
+    assert.match(res.text, /for="preferred_name"/);
     assert.match(res.text, /for="email"/);
     assert.match(res.text, /for="phone"/);
+    assert.match(res.text, /Email Address/);
+    assert.match(res.text, /Phone Number/);
+    assert.match(res.text, /Provide at least an email or a phone number/);
+    assert.match(res.text, /Submit Registration/);
     assert.doesNotMatch(res.text, /name="church_id"|name="branch_id"|name="churchId"|name="branchId"/);
-    assert.doesNotMatch(res.text, /name="password"|name="gender"|name="address"|Forgot password/i);
+    assert.doesNotMatch(res.text, /name="password"|name="gender"|name="address"|Forgot password|waiting.?verification|email verification|SMS/i);
     assert.ok(extractCookie(res, CSRF_COOKIE));
   });
 
@@ -298,11 +307,20 @@ describe("blessboard member registration http", () => {
 
     const submitted = await request(app).get("/register/submitted").set("Host", HOST_A);
     assert.equal(submitted.status, 200);
+    assert.match(submitted.text, /data-bb-shell="tenant-auth"/);
     assert.match(submitted.text, /data-bb-register-submitted="1"/);
-    assert.match(submitted.text, /Registration submitted|Pending review/);
+    assert.match(submitted.text, /data-bb-stitch-register-submitted="11-auth-registration-submitted"/);
+    assert.match(submitted.text, /Registration [Ss]ubmitted/);
+    assert.match(submitted.text, /Pending review/);
+    assert.match(submitted.text, /pending administrator review/i);
+    assert.match(submitted.text, /data-bb-register-next="1"/);
+    assert.match(submitted.text, /Return Home/);
+    assert.match(submitted.text, /Contact Office/);
+    assert.match(submitted.text, /not created automatically/);
+    assert.match(submitted.text, /only after leadership approves/i);
+    assert.match(submitted.text, /does not send email or SMS/i);
     assert.doesNotMatch(submitted.text, /Submission ID|KBC-|account has been created|automatically created/i);
-    assert.doesNotMatch(submitted.text, /24\s*-\s*48|Est\.\s*Processing|Watch for a message|SMS/i);
-    assert.match(submitted.text, /not created automatically|only after leadership approves/i);
+    assert.doesNotMatch(submitted.text, /24\s*-\s*48|Est\.\s*Processing|Watch for a message|email confirmation|email notification/i);
   });
 
   it("ignores client church/branch ids and submits against host scope", async (t) => {

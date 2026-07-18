@@ -31,6 +31,7 @@
       toggle.setAttribute("aria-expanded", open ? "true" : "false");
       document.body.classList.toggle(opts.bodyOpenClass, open);
       if (open) {
+        drawer.removeAttribute("inert");
         drawer.setAttribute("aria-modal", "true");
         if (!drawer.getAttribute("role")) drawer.setAttribute("role", "dialog");
         if (!drawer.getAttribute("aria-label")) drawer.setAttribute("aria-label", "Menu");
@@ -46,6 +47,7 @@
           }
         }
       } else {
+        drawer.setAttribute("inert", "");
         drawer.removeAttribute("aria-modal");
         try {
           toggle.focus();

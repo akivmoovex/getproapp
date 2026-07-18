@@ -1,8 +1,10 @@
 <%#
-  Giving — Stitch 07-public-giving-desktop-v2 / mobile-v2 (Populated).
-  Desktop: 59c8fded… · Mobile: a0616f23… · Empty: a08093b9…
+  Giving — Stitch 07-public-giving-*-v2 (Populated).
+  Desktop: 59c8fdedf68a43e3a5d2384b0c2212df
+  Mobile:  a0616f23568c464a95eda9e317e2fa9d
+  Empty:   a08093b9ec32467bad300ef43ac800fa
   Published giving methods only. Information display — no payment processing,
-  no fabricated bank/mobile-money details, impact stats, or contribution history.
+  no fabricated bank or wallet details, impact stats, codes, or contribution history.
 %>
 <%
   var pageSections = sections || [];
@@ -11,32 +13,70 @@
   var moreSections = pageSections.length > 1 ? pageSections.slice(1) : [];
   var introHeading = (intro && intro.heading) || pageTitle || 'Ways to Give';
   var introBody = (intro && intro.bodyText) || '';
+  var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
+
+  var accentBefore = introHeading;
+  var accentPhrase = '';
+  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
+  if (headingWords.length >= 4) {
+    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
+    accentPhrase = headingWords.slice(-2).join(' ');
+  } else if (headingWords.length >= 3) {
+    accentBefore = headingWords.slice(0, -1).join(' ') + ' ';
+    accentPhrase = headingWords.slice(-1).join(' ');
+  }
 
   function methodTypeLabel(type) {
     var t = String(type || '').toLowerCase();
     if (t.indexOf('bank') >= 0 || t.indexOf('transfer') >= 0) return 'Bank transfer';
-    if (t.indexOf('mobile') >= 0 || t.indexOf('momo') >= 0 || t.indexOf('airtel') >= 0) return 'Mobile money';
+    if (t.indexOf('mobile') >= 0 || t.indexOf('momo') >= 0 || t.indexOf('airtel') >= 0 || t.indexOf('mtn') >= 0) {
+      return 'Mobile money';
+    }
     if (t.indexOf('cash') >= 0 || t.indexOf('offering') >= 0 || t.indexOf('person') >= 0) return 'In person';
     if (t.indexOf('online') >= 0 || t.indexOf('card') >= 0 || t.indexOf('pay') >= 0) return 'External link';
     return 'Giving method';
   }
 %>
 
-<section class="bb-tp-directory bb-tp-giving" data-bb-giving="1" data-bb-stitch-giving="populated-v2">
-  <header class="bb-tp-dir-hero bb-tp-giving__hero">
+<section
+  class="bb-tp-directory bb-tp-giving"
+  data-bb-giving="1"
+  data-bb-stitch-giving="populated-v2"
+>
+  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-giving-hero" aria-label="Giving">
     <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-giving-hero__eyebrow-desktop">
         <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
         Faithful Stewardship
       </p>
-      <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-giving-hero__eyebrow-mobile">
+        Giving
+      </p>
+      <h1 class="bb-tp-dir-hero__title">
+        <% if (accentPhrase) { %>
+        <%= accentBefore %><span class="bb-tp-giving-hero__title-accent"><%= accentPhrase %></span>
+        <% } else { %>
+        <%= introHeading %>
+        <% } %>
+      </h1>
       <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
-      <% } else if (!showEmptyState) { %>
-      <p class="bb-tp-dir-hero__lead">Support the ministry of <%= publicName %> through the giving options published by leadership.</p>
+      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center"><%= introBody %></p>
+      <% } %>
+      <% if (introMedia) { %>
+      <div class="bb-tp-giving-hero__media">
+        <img
+          class="bb-tp-media"
+          src="<%= introMedia %>"
+          alt=""
+          width="960"
+          height="420"
+          loading="eager"
+          decoding="async"
+        />
+      </div>
       <% } %>
       <% if (methods.length) { %>
-      <div class="bb-tp-page-hero__cta">
+      <div class="bb-tp-page-hero__cta bb-tp-giving-hero__cta">
         <a class="bb-tp-btn bb-tp-btn--primary" href="#ways-to-give">
           Explore Ways to Give
         </a>
@@ -78,8 +118,10 @@
     <% if (methods.length) { %>
     <section id="ways-to-give" class="bb-tp-giving-methods" aria-labelledby="ways-to-give-heading" data-bb-giving-methods="1">
       <div class="bb-tp-giving-methods__head">
-        <h2 id="ways-to-give-heading" class="bb-tp-giving-methods__title">Ways to Give</h2>
-        <p class="bb-tp-giving-methods__note">Methods published by <%= publicName %>. Follow the instructions below, or contact the church office if you need help.</p>
+        <h2 id="ways-to-give-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Ways to Give</h2>
+        <p class="bb-tp-giving-methods__note">
+          Methods published by <%= publicName %>. Follow the instructions below, or contact the church office if you need help.
+        </p>
       </div>
       <ul class="bb-tp-giving-grid">
         <% methods.forEach(function (method) { %>
@@ -87,35 +129,37 @@
           <span class="bb-tp-giving-card__icon" aria-hidden="true">
             <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
           </span>
-          <p class="bb-tp-giving-card__type"><%= methodTypeLabel(method.methodType) %></p>
-          <h3 class="bb-tp-giving-card__label"><%= method.label %></h3>
-          <% if (method.instructions) { %>
-          <div class="bb-tp-giving-card__instructions" data-bb-giving-instructions="1">
-            <p class="bb-tp-giving-card__instructions-label">Instructions</p>
-            <p class="bb-tp-giving-card__instructions-body"><%= method.instructions %></p>
+          <div class="bb-tp-giving-card__body">
+            <p class="bb-tp-giving-card__type"><%= methodTypeLabel(method.methodType) %></p>
+            <h3 class="bb-tp-giving-card__label"><%= method.label %></h3>
+            <% if (method.instructions) { %>
+            <div class="bb-tp-giving-card__instructions" data-bb-giving-instructions="1">
+              <p class="bb-tp-giving-card__instructions-label">Instructions</p>
+              <p class="bb-tp-giving-card__instructions-body"><%= method.instructions %></p>
+            </div>
+            <% } %>
+            <% if (method.externalUrl) { %>
+            <p class="bb-tp-giving-card__action">
+              <a
+                class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block"
+                href="<%= method.externalUrl %>"
+                rel="noopener noreferrer"
+                target="_blank"
+                data-bb-giving-link="1"
+                aria-label="Open published giving link for <%= method.label %> (opens in a new tab)"
+              >
+                Open published link
+                <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+              </a>
+            </p>
+            <% } else { %>
+            <p class="bb-tp-giving-card__action">
+              <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="/contact">
+                Contact for details
+              </a>
+            </p>
+            <% } %>
           </div>
-          <% } %>
-          <% if (method.externalUrl) { %>
-          <p class="bb-tp-giving-card__action">
-            <a
-              class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block"
-              href="<%= method.externalUrl %>"
-              rel="noopener noreferrer"
-              target="_blank"
-              data-bb-giving-link="1"
-              aria-label="Open published giving link for <%= method.label %> (opens in a new tab)"
-            >
-              Open published link
-              <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-            </a>
-          </p>
-          <% } else { %>
-          <p class="bb-tp-giving-card__action">
-            <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="/contact">
-              Contact for details
-            </a>
-          </p>
-          <% } %>
         </li>
         <% }) %>
       </ul>

@@ -202,7 +202,7 @@ function renderLoginPage(opts) {
         ? `Sign in to ${String(opts.churchDisplayName)}`
         : "BlessBoard tenant sign-in"
       : transferHostname
-        ? "Welcome back — continue to your church site"
+        ? "Welcome back to your church family"
         : "Sign in with your BlessBoard account.";
   const panelTitle = transferHostname ? "Member Access" : "Sign in";
   const panelLead = transferHostname

@@ -1,8 +1,14 @@
 <%- include('../partials/member-shell-start') %>
 <%
+  var allItems = typeof allItems !== 'undefined' && allItems ? allItems : (items || []);
   var list = items || [];
   var featured = typeof featuredItems !== 'undefined' && featuredItems ? featuredItems : list.filter(function (i) { return i && i.isFeatured; });
-  var unread = typeof unreadCount === 'number' ? unreadCount : list.filter(function (i) { return i && i.isUnread; }).length;
+  var unread = typeof unreadCount === 'number' ? unreadCount : allItems.filter(function (i) { return i && i.isUnread; }).length;
+  var activeFilter = typeof filter !== 'undefined' && filter ? String(filter) : 'all';
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var hasQuery = Boolean(searchQ) || activeFilter !== 'all';
+  var isEmptyCatalog = !allItems.length;
+  var isNoResults = !isEmptyCatalog && !list.length;
 
   function excerpt(text, maxLen) {
     var raw = String(text || '').replace(/\s+/g, ' ').trim();
@@ -21,15 +27,34 @@
       return '';
     }
   }
+
+  function filterHref(nextFilter, nextQ) {
+    var parts = [];
+    if (nextFilter && nextFilter !== 'all') parts.push('filter=' + encodeURIComponent(nextFilter));
+    if (nextQ) parts.push('q=' + encodeURIComponent(nextQ));
+    return parts.length ? ('/member/announcements?' + parts.join('&')) : '/member/announcements';
+  }
+
+  var filters = [
+    { key: 'all', label: 'All' },
+    { key: 'unread', label: 'Unread' },
+    { key: 'pinned', label: 'Pinned' },
+    { key: 'featured', label: 'Featured' },
+  ];
 %>
 
-<section class="bb-mp-ann" data-bb-member-announcements="1">
-  <header class="bb-mp-page-head">
+<section
+  class="bb-mp-ann"
+  data-bb-member-announcements="1"
+  data-bb-stitch-announcements="16-member-announcements"
+  data-bb-ann-filter="<%= activeFilter %>"
+>
+  <header class="bb-mp-page-head bb-mp-page-head--split">
     <div>
       <h1 class="bb-mp-page-head__title">Announcements</h1>
       <p class="bb-mp-lede">Stay updated with the latest from your community.</p>
       <% if (unread > 0) { %>
-      <p class="bb-mp-ann__unread-summary" aria-live="polite">
+      <p class="bb-mp-ann__unread-summary" aria-live="polite" data-bb-ann-unread-count="<%= unread %>">
         <span class="bb-mp-ann__unread-dot" aria-hidden="true"></span>
         <%= unread %> unread
       </p>
@@ -37,22 +62,61 @@
     </div>
   </header>
 
-  <% if (!list.length) { %>
-  <div class="bb-mp-empty" role="status">
+  <% if (!isEmptyCatalog) { %>
+  <div class="bb-mp-ann-toolbar" data-bb-ann-toolbar="1">
+    <nav class="bb-mp-ann-filters" aria-label="Filter announcements">
+      <% filters.forEach(function (f) { %>
+      <a
+        class="bb-mp-ann-filter<%= activeFilter === f.key ? ' is-active' : '' %>"
+        href="<%= filterHref(f.key, searchQ) %>"
+        data-bb-ann-filter-link="<%= f.key %>"
+        <%= activeFilter === f.key ? 'aria-current="page"' : '' %>
+      ><%= f.label %></a>
+      <% }) %>
+    </nav>
+    <form method="get" action="/member/announcements" class="bb-mp-ann-search" role="search" data-bb-ann-search="1">
+      <% if (activeFilter !== 'all') { %>
+      <input type="hidden" name="filter" value="<%= activeFilter %>" />
+      <% } %>
+      <label class="bb-ds-sr-only" for="bb-mp-ann-q">Search announcements</label>
+      <span class="material-symbols-outlined bb-mp-ann-search__icon" aria-hidden="true">search</span>
+      <input
+        id="bb-mp-ann-q"
+        type="search"
+        name="q"
+        value="<%= searchQ %>"
+        maxlength="100"
+        placeholder="Search title or message"
+        autocomplete="off"
+      />
+      <button type="submit" class="bb-mp-btn bb-mp-btn--ghost bb-mp-ann-search__submit">Search</button>
+    </form>
+  </div>
+  <% } %>
+
+  <% if (isEmptyCatalog) { %>
+  <div class="bb-mp-empty" role="status" data-bb-ann-empty="catalog">
     <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
     <p>No announcements right now. Your church leadership will post updates here.</p>
   </div>
+  <% } else if (isNoResults) { %>
+  <div class="bb-mp-empty" role="status" data-bb-ann-empty="no-results">
+    <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+    <p>No announcements match this filter<%= searchQ ? ' or search' : '' %>.</p>
+    <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/announcements">Clear filters</a>
+  </div>
   <% } else { %>
 
-  <% if (featured.length) { %>
-  <section class="bb-mp-ann-featured" aria-label="Featured announcements">
+  <% if (featured.length && activeFilter === 'all' && !searchQ) { %>
+  <section class="bb-mp-ann-featured" aria-label="Featured announcements" data-bb-ann-featured="1">
     <% featured.forEach(function (item) { %>
     <a
-      class="bb-mp-ann-featured__card<%= item.isUnread ? ' is-unread' : ' is-read' %>"
+      class="bb-mp-ann-featured__card<%= item.isUnread ? ' is-unread' : ' is-read' %><%= item.isPinned ? ' is-pinned' : '' %>"
       href="/member/announcements/<%= item.id %>"
       data-bb-announcement="<%= item.id %>"
       data-bb-unread="<%= item.isUnread ? '1' : '0' %>"
       data-bb-featured="1"
+      data-bb-pinned="<%= item.isPinned ? '1' : '0' %>"
     >
       <div class="bb-mp-ann-chips">
         <span class="bb-mp-chip bb-mp-chip--featured">Featured</span>
@@ -75,8 +139,16 @@
       <% } %>
       <p class="bb-mp-ann-card__meta">
         <% var featDate = formatPublished(item.publishedAt); %>
-        <% if (featDate) { %><span><%= featDate %></span><% } %>
-        <span class="bb-mp-ann-card__cta">Read more</span>
+        <% if (featDate) { %>
+        <span class="bb-mp-ann-card__date">
+          <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+          <%= featDate %>
+        </span>
+        <% } %>
+        <span class="bb-mp-ann-card__cta">
+          <%= item.actionLabel ? item.actionLabel : 'Read more' %>
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </span>
       </p>
     </a>
     <% }) %>
@@ -84,8 +156,15 @@
   <% } %>
 
   <section class="bb-mp-ann-list-wrap" aria-label="All announcements">
-    <h2 class="bb-mp-section-title">All announcements</h2>
-    <ul class="bb-mp-ann-list">
+    <div class="bb-mp-ann-list-head">
+      <h2 class="bb-mp-section-title" id="bb-mp-ann-list-heading">All announcements</h2>
+      <% if (hasQuery) { %>
+      <p class="bb-mp-ann-list-count" data-bb-ann-result-count="<%= list.length %>">
+        <%= list.length %> result<%= list.length === 1 ? '' : 's' %>
+      </p>
+      <% } %>
+    </div>
+    <ul class="bb-mp-ann-list" aria-labelledby="bb-mp-ann-list-heading">
       <% list.forEach(function (item) { %>
       <li>
         <a
@@ -122,7 +201,10 @@
             <% } %>
             <% var pub = formatPublished(item.publishedAt); %>
             <% if (pub) { %>
-            <p class="bb-mp-ann-card__date"><%= pub %></p>
+            <p class="bb-mp-ann-card__date">
+              <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+              <%= pub %>
+            </p>
             <% } %>
           </div>
           <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>

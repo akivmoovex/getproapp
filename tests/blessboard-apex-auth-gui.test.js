@@ -52,9 +52,14 @@ describe("blessboard apex auth gui states", () => {
       transferHostname: "church.blessboard.org",
     });
     assert.match(html, /data-bb-auth-transfer="1"/);
+    assert.match(html, /data-bb-auth-transfer-status="continue"/);
+    assert.match(html, /bb-auth-login--transfer/);
+    assert.match(html, /bb-auth-card--transfer/);
     assert.match(html, /church\.blessboard\.org/);
     assert.match(html, /Member Access/);
+    assert.match(html, /Welcome back to your church family/);
     assert.match(html, /bb-auth-transfer-status/);
+    assert.match(html, /Continue sign-in for your church site/);
     assert.doesNotMatch(html, /raw-transfer-token-SECRET-value/);
     assert.doesNotMatch(html, /name="tr"/);
     assert.doesNotMatch(html, /name="next"|name="return_to"|name="redirect"/i);
@@ -65,6 +70,8 @@ describe("blessboard apex auth gui states", () => {
     assert.match(html, /name="password"/);
     assert.match(html, /name="_csrf"/);
     assert.match(html, /name="referrer" content="no-referrer"/);
+    assert.match(html, /tenant-auth\.css\?v=10/);
+    assert.match(html, /apex-auth\.css\?v=5/);
   });
 
   it("auth error page classifies expired, consumed, and unauthorized messages", () => {
@@ -73,22 +80,29 @@ describe("blessboard apex auth gui states", () => {
 
     const expired = renderAuthErrorPage("This sign-in link is invalid or has expired.");
     assert.match(expired, /data-bb-auth-error="expired"/);
+    assert.match(expired, /data-bb-auth-error-card="expired"/);
     assert.match(expired, /Sign-in link expired/);
+    assert.match(expired, /Link expired/);
     assert.match(expired, /href="\/login"/);
     assert.match(expired, /name="referrer" content="no-referrer"/);
     assert.doesNotMatch(expired, /name="next"|name="return_to"|tr=/i);
+    assert.doesNotMatch(expired, /raw-transfer|transfer_token|session_token|SECRET|stack trace|internal error/i);
 
     const consumed = renderAuthErrorPage("This sign-in link has already been used.");
     assert.match(consumed, /data-bb-auth-error="consumed"/);
     assert.match(consumed, /already used/i);
     assert.match(consumed, /bb-auth-panel/);
+    assert.match(consumed, /bb-auth-card--error-consumed/);
 
     const unauthorized = renderAuthErrorPage("You do not have access to that church site.");
     assert.match(unauthorized, /data-bb-auth-error="unauthorized"/);
     assert.match(unauthorized, /Access not available/);
+    assert.match(unauthorized, /Access unavailable/);
 
     const generic = renderAuthErrorPage("Sign-in is temporarily unavailable.");
     assert.match(generic, /data-bb-auth-error="generic"/);
+    assert.match(generic, /bb-auth-card--error/);
+    assert.match(generic, /Try again/);
   });
 
   it("account page shows display name and POST logout without UUIDs or session details", () => {

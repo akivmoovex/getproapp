@@ -2,6 +2,7 @@
   Apex / tenant auth error — callback failure, expired/consumed/unauthorized transfer.
   Locals: message, errorState, pageTitle
   Never includes transfer tokens, session tokens, tenant secrets, or user-controlled redirect URLs.
+  STITCH_MISSING — reuses apex dual-pane auth chrome with safe generic wording.
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -12,11 +13,11 @@
   <meta name="robots" content="noindex, nofollow" />
   <title><%= pageTitle || 'Sign in' %> · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=6" />
-  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=4" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=10" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=5" />
 </head>
 <body
-  class="bb-auth-body bb-auth-login"
+  class="bb-auth-body bb-auth-login bb-auth-error-page"
   data-bb-shell="apex-auth"
   data-bb-product="blessboard-v5"
   data-bb-page="auth-error"
@@ -24,10 +25,11 @@
 >
 <%
   var icon = 'error';
-  if (errorState === 'expired') icon = 'schedule';
-  else if (errorState === 'consumed') icon = 'link_off';
-  else if (errorState === 'unauthorized') icon = 'block';
-  else if (errorState === 'throttled') icon = 'hourglass_top';
+  var badge = 'Sign-in issue';
+  if (errorState === 'expired') { icon = 'schedule'; badge = 'Link expired'; }
+  else if (errorState === 'consumed') { icon = 'link_off'; badge = 'Link already used'; }
+  else if (errorState === 'unauthorized') { icon = 'block'; badge = 'Access unavailable'; }
+  else if (errorState === 'throttled') { icon = 'hourglass_top'; badge = 'Please wait'; }
 %>
   <a class="bb-auth-skip" href="#bb-auth-error-main">Skip to content</a>
   <div class="bb-auth-layout">
@@ -61,8 +63,16 @@
       </header>
 
       <div class="bb-auth-main__body">
-        <div class="bb-auth-card" id="bb-auth-error-card">
-          <div class="bb-auth-card__icon" aria-hidden="true">
+        <div
+          class="bb-auth-card bb-auth-card--error bb-auth-card--error-<%= errorState || 'generic' %>"
+          id="bb-auth-error-card"
+          data-bb-auth-error-card="<%= errorState || 'generic' %>"
+        >
+          <p class="bb-auth-badge bb-auth-badge--error" data-bb-auth-error-badge="1">
+            <span class="material-symbols-outlined" aria-hidden="true"><%= icon %></span>
+            <%= badge %>
+          </p>
+          <div class="bb-auth-card__icon bb-auth-card__icon--error" aria-hidden="true">
             <span class="material-symbols-outlined"><%= icon %></span>
           </div>
           <h1 class="bb-auth-card__title"><%= pageTitle %></h1>
@@ -86,7 +96,7 @@
             You can try again, or return home.
             <% } %>
           </p>
-          <div class="bb-auth-actions">
+          <div class="bb-auth-actions bb-auth-actions--stack">
             <a class="bb-auth-btn bb-auth-btn--primary" href="/login">Try again</a>
             <a class="bb-auth-btn bb-auth-btn--ghost" href="/">Home</a>
           </div>

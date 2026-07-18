@@ -6,14 +6,20 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=8" />
+  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=13" />
 </head>
+<%
+  var mpDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
+  var mpChurch = typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : '';
+  var mpBranch = typeof branchDisplayName !== 'undefined' && branchDisplayName ? branchDisplayName : '';
+%>
 <body
   class="bb-mp-body"
   data-bb-shell="member"
   data-bb-product="blessboard-v5"
   data-bb-viewport="responsive"
   data-bb-page="<%= activeNav || 'home' %>"
+  data-bb-stitch-shell="14-member-dashboard"
 >
   <a class="bb-mp-skip" href="#bb-mp-main">Skip to content</a>
 
@@ -32,15 +38,18 @@
           <span>BlessBoard</span>
         </a>
         <p class="bb-mp-context">
-          <span class="bb-mp-context__church"><%= churchDisplayName %></span>
-          <% if (branchDisplayName) { %>
-          <span class="bb-mp-context__branch"><%= branchDisplayName %></span>
+          <span class="bb-mp-context__church"><%= mpChurch %></span>
+          <% if (mpBranch) { %>
+          <span class="bb-mp-context__branch"><%= mpBranch %></span>
           <% } %>
         </p>
-        <span class="bb-mp-role">Member</span>
+        <span class="bb-mp-role" data-bb-member-role="1">
+          <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+          Verified member
+        </span>
       </div>
 
-      <nav class="bb-mp-sidebar__nav" aria-label="Member portal">
+      <nav class="bb-mp-sidebar__nav" aria-label="Member portal" data-bb-nav="desktop">
         <% (navItems || []).forEach(function (item) { %>
         <a
           href="<%= item.href %>"
@@ -54,6 +63,12 @@
       </nav>
 
       <div class="bb-mp-sidebar__footer">
+        <% if (mpDisplay) { %>
+        <p class="bb-mp-user" data-bb-member-identity="1">
+          <span class="bb-mp-user__name"><%= mpDisplay %></span>
+          <span class="bb-mp-user__meta"><%= mpChurch %><% if (mpBranch) { %> · <%= mpBranch %><% } %></span>
+        </p>
+        <% } %>
         <form class="bb-mp-logout" method="post" action="/member/logout" data-bb-member-logout="1">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button type="submit">
@@ -68,43 +83,80 @@
     <div class="bb-mp-frame">
       <header class="bb-mp-top" data-bb-nav="mobile-header">
         <div class="bb-mp-top__brand">
-          <a class="bb-mp-wordmark bb-mp-wordmark--compact" href="/member">BlessBoard</a>
+          <a class="bb-mp-wordmark bb-mp-wordmark--compact" href="/member">
+            <img
+              class="bb-mp-wordmark__mark"
+              src="/church/images/brand/blessboard-small-church-logo.png"
+              alt=""
+              width="24"
+              height="24"
+              decoding="async"
+            />
+            <span>BlessBoard</span>
+          </a>
           <p class="bb-mp-context bb-mp-context--compact">
-            <%= churchDisplayName %><% if (branchDisplayName) { %> · <%= branchDisplayName %><% } %>
+            <%= mpChurch %><% if (mpBranch) { %> · <%= mpBranch %><% } %>
           </p>
         </div>
-        <button
-          type="button"
-          class="bb-mp-nav-toggle"
-          id="bb-mp-menu-btn"
-          data-bb-nav="mobile-toggle"
-          aria-controls="bb-mp-drawer"
-          aria-expanded="false"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
-          <span class="bb-mp-nav-toggle__label">Menu</span>
-        </button>
+        <div class="bb-mp-top__actions">
+          <a class="bb-mp-icon-link" href="/member/profile" aria-label="Profile">
+            <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+          </a>
+          <button
+            type="button"
+            class="bb-mp-nav-toggle"
+            id="bb-mp-menu-btn"
+            data-bb-nav="mobile-toggle"
+            aria-controls="bb-mp-drawer"
+            aria-expanded="false"
+            aria-label="Open menu"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+            <span class="bb-mp-nav-toggle__label">Menu</span>
+          </button>
+        </div>
       </header>
 
       <div
         id="bb-mp-drawer"
         class="bb-mp-drawer"
         data-bb-nav="mobile-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Member portal menu"
+        inert
         hidden
       >
         <div class="bb-mp-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
         <nav class="bb-mp-drawer__panel" aria-label="Member portal menu">
-          <p class="bb-mp-drawer__title">More</p>
+          <div class="bb-mp-drawer__head">
+            <p class="bb-mp-drawer__title">Menu</p>
+            <button
+              type="button"
+              class="bb-mp-drawer__close"
+              data-bb-nav="drawer-close"
+              aria-label="Close menu"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+          <% if (mpDisplay) { %>
+          <p class="bb-mp-user bb-mp-user--drawer" data-bb-member-identity="1">
+            <span class="bb-mp-user__name"><%= mpDisplay %></span>
+            <span class="bb-mp-user__meta">Verified member</span>
+          </p>
+          <% } %>
           <% (navItems || []).forEach(function (item) { %>
           <a
             href="<%= item.href %>"
             class="bb-mp-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+            <%= activeNav === item.key ? 'aria-current="page"' : '' %>
           >
             <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
             <span><%= item.label %></span>
           </a>
           <% }) %>
-          <form class="bb-mp-logout" method="post" action="/member/logout">
+          <form class="bb-mp-logout" method="post" action="/member/logout" data-bb-member-logout="1">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <button type="submit">
               <span class="material-symbols-outlined" aria-hidden="true">logout</span>
@@ -114,4 +166,5 @@
         </nav>
       </div>
 
-      <main id="bb-mp-main" class="bb-mp-main">
+      <main id="bb-mp-main" class="bb-mp-main" tabindex="-1">
+        <div class="bb-mp-page" data-bb-page-area="1">

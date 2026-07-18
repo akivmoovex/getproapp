@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Registration received · <%= publicName %></title>
+  <title>Registration Submitted · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=6" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=10" />
 </head>
 <body
   class="bb-auth-body"
@@ -57,19 +57,39 @@
           class="bb-auth-card bb-auth-card--submitted"
           id="bb-auth-submitted"
           data-bb-register-submitted="1"
+          role="status"
         >
-          <div class="bb-auth-card__icon bb-auth-card__icon--ok" aria-hidden="true">
+          <div class="bb-auth-card__icon bb-auth-card__icon--ok bb-auth-card__icon--xl" aria-hidden="true">
             <span class="material-symbols-outlined">check_circle</span>
           </div>
-          <p class="bb-auth-badge">
+
+          <p class="bb-auth-badge bb-auth-badge--success bb-auth-badge--mobile">
+            <span class="material-symbols-outlined" aria-hidden="true">check</span>
+            Success
+          </p>
+          <p class="bb-auth-badge bb-auth-badge--pending">
             <span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>
             Pending review
           </p>
-          <h1 class="bb-auth-card__title">Registration submitted</h1>
+
+          <h1 class="bb-auth-card__title">Registration Submitted</h1>
           <p class="bb-auth-card__lead">
-            Thank you. Your application has been received and is pending administrator review.
+            Thank you for joining our community at <%= publicName %>.
+            Your registration has been received and is
+            <strong class="bb-auth-emphasis">pending administrator review</strong>.
             An account is not created automatically.
           </p>
+
+          <aside class="bb-auth-callout" data-bb-register-next="1">
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            <div>
+              <p class="bb-auth-callout__title">What happens next</p>
+              <p class="bb-auth-callout__body">
+                A branch administrator must review your details before member access is granted.
+                This page does not send email or SMS updates.
+              </p>
+            </div>
+          </aside>
 
           <h2 class="bb-auth-card__subtitle">Next steps</h2>
           <ul class="bb-auth-success-list">
@@ -79,26 +99,32 @@
             </li>
             <li>
               <span class="material-symbols-outlined" aria-hidden="true">home</span>
-              <span>You can continue browsing the church site while your application is reviewed.</span>
+              <span>You can continue browsing the public church site while your application is reviewed.</span>
             </li>
             <li>
               <span class="material-symbols-outlined" aria-hidden="true">login</span>
               <span>Member sign-in is available only after leadership approves your registration.</span>
             </li>
-            <li>
-              <span class="material-symbols-outlined" aria-hidden="true">contact_support</span>
-              <span>If you need help, contact the church office using the details you provided or the Contact page.</span>
-            </li>
           </ul>
 
           <div class="bb-auth-actions">
-            <a class="bb-auth-btn bb-auth-btn--primary" href="/">Return home</a>
-            <a class="bb-auth-btn bb-auth-btn--ghost" href="/contact">Contact office</a>
+            <a class="bb-auth-btn bb-auth-btn--primary" href="/">
+              <span class="material-symbols-outlined" aria-hidden="true">home</span>
+              Return Home
+            </a>
+            <a class="bb-auth-btn bb-auth-btn--ghost" href="/contact">
+              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+              Contact Office
+            </a>
           </div>
         </div>
       </div>
 
       <footer class="bb-auth-footer">
+        <div class="bb-auth-footer__links">
+          <a href="/contact">Contact church</a>
+          <a href="/">Back to homepage</a>
+        </div>
         <%- include('../partials/powered-by-getpro') %>
       </footer>
     </div>

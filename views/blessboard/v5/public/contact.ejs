@@ -1,8 +1,10 @@
 <%#
-  Contact — Stitch 08-public-contact-desktop-v2 / mobile-v2 (Populated).
-  Desktop: ab93d842… · Mobile: 9cbad6aa…
-  Published channels + branch/church settings only. No contact form (unsupported).
-  Map/directions only with valid lat/lng. No fabricated hours or newsletter.
+  Contact — Stitch 08-public-contact-*-v2 (Populated).
+  Desktop: ab93d842bf2e49caa838a1fd414eb35b
+  Mobile:  9cbad6aacb6246549913e275f228fa80
+  Published channels + branch/church settings only.
+  No contact POST / CSRF form (unsupported in V5). Map only with valid lat/lng.
+  No fabricated hours, mailing lists, or phone/email/address.
 %>
 <%
   var pageSections = sections || [];
@@ -13,10 +15,30 @@
   var introHeading = (intro && intro.heading) || pageTitle || 'Contact Us';
   var introBody = (intro && intro.bodyText) || '';
 
+  var accentBefore = introHeading;
+  var accentPhrase = '';
+  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
+  if (headingWords.length >= 4) {
+    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
+    accentPhrase = headingWords.slice(-2).join(' ');
+  } else if (headingWords.length >= 3) {
+    accentBefore = headingWords.slice(0, -1).join(' ') + ' ';
+    accentPhrase = headingWords.slice(-1).join(' ');
+  }
+
   var typesSeen = {};
   channels.forEach(function (ch) {
     typesSeen[String(ch.channelType || '').toLowerCase()] = true;
   });
+
+  function channelIsEmail(type) {
+    var t = String(type || '').toLowerCase();
+    return t === 'email' || t.indexOf('mail') !== -1;
+  }
+  function channelIsPhone(type) {
+    var t = String(type || '').toLowerCase();
+    return t === 'phone' || t.indexOf('tel') !== -1 || t.indexOf('call') !== -1;
+  }
 
   var settingsCards = [];
   if (contact.phone && !typesSeen.phone && !typesSeen.tel && !typesSeen.call) {
@@ -50,17 +72,32 @@
 
   var hasChannelCards = channels.length > 0 || settingsCards.length > 0;
   var showMapUnavailable = Boolean(contact.addressText && !contact.hasMap);
+  var messageEmailHref = contact.emailHref || null;
+  var messageEmail = contact.email || '';
 %>
 
-<section class="bb-tp-directory bb-tp-contact" data-bb-contact="1" data-bb-stitch-contact="populated-v2">
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center">
+<section
+  class="bb-tp-directory bb-tp-contact"
+  data-bb-contact="1"
+  data-bb-stitch-contact="populated-v2"
+>
+  <header class="bb-tp-dir-hero bb-tp-contact-hero" aria-label="Contact">
     <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">Connect With Us</p>
-      <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-contact-hero__eyebrow-desktop">
+        Connect With Us
+      </p>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-contact-hero__eyebrow-mobile">
+        Contact Us
+      </p>
+      <h1 class="bb-tp-dir-hero__title">
+        <% if (accentPhrase) { %>
+        <%= accentBefore %><span class="bb-tp-contact-hero__title-accent"><%= accentPhrase %></span>
+        <% } else { %>
+        <%= introHeading %>
+        <% } %>
+      </h1>
       <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center"><%= introBody %></p>
-      <% } else if (!showEmptyState) { %>
-      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center">Reach <%= publicName %> through the published contact details below.</p>
+      <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
       <% } %>
     </div>
   </header>
@@ -72,7 +109,7 @@
         <span class="material-symbols-outlined bb-tp-empty__icon">contact_mail</span>
       </div>
       <div class="bb-tp-empty__copy">
-        <p class="bb-tp-empty__badge">Update in progress</p>
+        <p class="bb-tp-empty__badge">No contact details published</p>
         <h2><%= emptyHeadline %></h2>
         <p><%= emptyMessage %></p>
         <p class="bb-tp-empty__hint">Published contact channels and branch address details will appear here when available.</p>
@@ -91,19 +128,21 @@
         <span class="bb-tp-contact-card__icon" aria-hidden="true">
           <span class="material-symbols-outlined"><%= channel.icon || 'contact_mail' %></span>
         </span>
-        <h2 class="bb-tp-contact-card__label"><%= channel.label %></h2>
-        <% if (channel.href) { %>
-        <p class="bb-tp-contact-card__value">
-          <a
-            href="<%= channel.href %>"
-            <% if (channel.href.indexOf('http') === 0) { %>rel="noopener noreferrer"<% } %>
-            <% if (channel.channelType === 'email') { %>aria-label="Email <%= channel.value %>"<% } %>
-            <% if (channel.channelType === 'phone') { %>aria-label="Call <%= channel.value %>"<% } %>
-          ><%= channel.value %></a>
-        </p>
-        <% } else { %>
-        <p class="bb-tp-contact-card__value"><%= channel.value %></p>
-        <% } %>
+        <div class="bb-tp-contact-card__body">
+          <h3 class="bb-tp-contact-card__label"><%= channel.label %></h3>
+          <% if (channel.href) { %>
+          <p class="bb-tp-contact-card__value">
+            <a
+              href="<%= channel.href %>"
+              <% if (channel.href.indexOf('http') === 0) { %>rel="noopener noreferrer"<% } %>
+              <% if (channelIsEmail(channel.channelType)) { %>aria-label="Email <%= channel.value %>"<% } %>
+              <% if (channelIsPhone(channel.channelType)) { %>aria-label="Call <%= channel.value %>"<% } %>
+            ><%= channel.value %></a>
+          </p>
+          <% } else { %>
+          <p class="bb-tp-contact-card__value"><%= channel.value %></p>
+          <% } %>
+        </div>
       </li>
       <% }) %>
       <% settingsCards.forEach(function (card) { %>
@@ -111,22 +150,24 @@
         <span class="bb-tp-contact-card__icon" aria-hidden="true">
           <span class="material-symbols-outlined"><%= card.icon %></span>
         </span>
-        <h2 class="bb-tp-contact-card__label"><%= card.label %></h2>
-        <% if (card.href) { %>
-        <p class="bb-tp-contact-card__value">
-          <a
-            href="<%= card.href %>"
-            <% if (card.kind === 'email') { %>aria-label="Email <%= card.value %>"<% } %>
-            <% if (card.kind === 'phone') { %>aria-label="Call <%= card.value %>"<% } %>
-          ><%= card.value %></a>
-        </p>
-        <% } else if (card.multiline && contact.addressLines && contact.addressLines.length) { %>
-        <p class="bb-tp-contact-card__value bb-tp-contact-card__value--multi">
-          <% contact.addressLines.forEach(function (line) { %><span><%= line %></span><% }) %>
-        </p>
-        <% } else { %>
-        <p class="bb-tp-contact-card__value"><%= card.value %></p>
-        <% } %>
+        <div class="bb-tp-contact-card__body">
+          <h3 class="bb-tp-contact-card__label"><%= card.label %></h3>
+          <% if (card.href) { %>
+          <p class="bb-tp-contact-card__value">
+            <a
+              href="<%= card.href %>"
+              <% if (card.kind === 'email') { %>aria-label="Email <%= card.value %>"<% } %>
+              <% if (card.kind === 'phone') { %>aria-label="Call <%= card.value %>"<% } %>
+            ><%= card.value %></a>
+          </p>
+          <% } else if (card.multiline && contact.addressLines && contact.addressLines.length) { %>
+          <p class="bb-tp-contact-card__value bb-tp-contact-card__value--multi">
+            <% contact.addressLines.forEach(function (line) { %><span><%= line %></span><% }) %>
+          </p>
+          <% } else { %>
+          <p class="bb-tp-contact-card__value"><%= card.value %></p>
+          <% } %>
+        </div>
       </li>
       <% }) %>
     </ul>
@@ -134,61 +175,101 @@
     <p class="bb-tp-lead" role="status"><%= entitiesEmptyMessage %></p>
     <% } %>
 
-    <% if (contact.hasMap && contact.mapEmbedUrl) { %>
-    <section class="bb-tp-contact-map" aria-label="Map" data-bb-contact-map="1">
-      <% if (contact.addressText) { %>
-      <div class="bb-tp-contact-map__address">
-        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
-        <div>
-          <h2 class="bb-tp-contact-map__heading">Find Us</h2>
-          <p class="bb-tp-contact-map__text bb-tp-contact-card__value--multi">
-            <% contact.addressLines.forEach(function (line) { %><span><%= line %></span><% }) %>
-          </p>
+    <div class="bb-tp-contact-main">
+      <section
+        class="bb-tp-contact-message"
+        aria-labelledby="bb-tp-contact-message-heading"
+        data-bb-contact-message="unavailable"
+      >
+        <h2 id="bb-tp-contact-message-heading" class="bb-tp-section-title">Send a Message</h2>
+        <p class="bb-tp-body" role="status" data-bb-contact-form="unavailable">
+          Online message forms are not available on this site. Use the published contact details above<% if (messageEmailHref) { %>, or email us directly<% } %>.
+        </p>
+        <div class="bb-tp-page-hero__cta">
+          <% if (messageEmailHref) { %>
+          <a
+            class="bb-tp-btn bb-tp-btn--primary"
+            href="<%= messageEmailHref %>"
+            aria-label="Email <%= messageEmail %>"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            Email Us
+          </a>
+          <% } %>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="/events">View Events</a>
         </div>
-      </div>
-      <% } %>
-      <div class="bb-tp-contact-map__frame">
-        <iframe
-          title="Map of <%= publicName %>"
-          src="<%= contact.mapEmbedUrl %>"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          allowfullscreen
-        ></iframe>
-        <% if (contact.directionsUrl) { %>
-        <a
-          class="bb-tp-contact-map__directions"
-          href="<%= contact.directionsUrl %>"
-          rel="noopener noreferrer"
-          target="_blank"
-          aria-label="Get directions to <%= publicName %> (opens in a new tab)"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">pin_drop</span>
-          Get Directions
-          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-        </a>
+      </section>
+
+      <div class="bb-tp-contact-aside">
+        <% if (contact.hasMap && contact.mapEmbedUrl) { %>
+        <section class="bb-tp-contact-map" aria-label="Map" data-bb-contact-map="1">
+          <% if (contact.addressText) { %>
+          <div class="bb-tp-contact-map__address">
+            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            <div>
+              <h2 class="bb-tp-contact-map__heading">Find Us</h2>
+              <p class="bb-tp-contact-map__text bb-tp-contact-card__value--multi">
+                <% contact.addressLines.forEach(function (line) { %><span><%= line %></span><% }) %>
+              </p>
+            </div>
+          </div>
+          <% } %>
+          <div class="bb-tp-contact-map__frame">
+            <iframe
+              title="Map of <%= publicName %>"
+              src="<%= contact.mapEmbedUrl %>"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen
+            ></iframe>
+            <% if (contact.directionsUrl) { %>
+            <a
+              class="bb-tp-contact-map__directions"
+              href="<%= contact.directionsUrl %>"
+              rel="noopener noreferrer"
+              target="_blank"
+              aria-label="Get directions to <%= publicName %> (opens in a new tab)"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">pin_drop</span>
+              Get Directions
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+            <% } %>
+          </div>
+        </section>
+        <% } else if (contact.directionsUrl) { %>
+        <p class="bb-tp-contact-map__link-only" data-bb-contact-map="directions-only">
+          <a
+            class="bb-tp-btn bb-tp-btn--primary"
+            href="<%= contact.directionsUrl %>"
+            rel="noopener noreferrer"
+            target="_blank"
+            aria-label="Get directions to <%= publicName %> (opens in a new tab)"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">pin_drop</span>
+            Get Directions
+          </a>
+        </p>
+        <% } else if (showMapUnavailable) { %>
+        <p class="bb-tp-contact-map__unavailable" role="status" data-bb-contact-map="unavailable">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          A map is not available for this location yet. Use the address details above when visiting.
+        </p>
+        <% } else if (contact.addressText) { %>
+        <section class="bb-tp-contact-map" aria-label="Location" data-bb-contact-map="address-only">
+          <div class="bb-tp-contact-map__address">
+            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            <div>
+              <h2 class="bb-tp-contact-map__heading">Find Us</h2>
+              <p class="bb-tp-contact-map__text bb-tp-contact-card__value--multi">
+                <% contact.addressLines.forEach(function (line) { %><span><%= line %></span><% }) %>
+              </p>
+            </div>
+          </div>
+        </section>
         <% } %>
       </div>
-    </section>
-    <% } else if (contact.directionsUrl) { %>
-    <p class="bb-tp-contact-map__link-only" data-bb-contact-map="directions-only">
-      <a
-        class="bb-tp-btn bb-tp-btn--primary"
-        href="<%= contact.directionsUrl %>"
-        rel="noopener noreferrer"
-        target="_blank"
-        aria-label="Get directions to <%= publicName %> (opens in a new tab)"
-      >
-        <span class="material-symbols-outlined" aria-hidden="true">pin_drop</span>
-        Get Directions
-      </a>
-    </p>
-    <% } else if (showMapUnavailable) { %>
-    <p class="bb-tp-contact-map__unavailable" role="status" data-bb-contact-map="unavailable">
-      <span class="material-symbols-outlined" aria-hidden="true">info</span>
-      A map is not available for this location yet. Use the address details above when visiting.
-    </p>
-    <% } %>
+    </div>
 
     <% moreSections.forEach(function (section) { %>
     <section class="bb-tp-section bb-tp-content-block" data-section="<%= section.sectionKey %>">

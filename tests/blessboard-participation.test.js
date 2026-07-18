@@ -719,6 +719,19 @@ describe("blessboard participation", () => {
     });
     assert.equal(unlimited.ok, true, unlimited.reason);
 
+    const pastEvent = await createEvent(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      title: "Past Fellowship Night",
+      startsAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+      timezone: "UTC",
+      location: "Main Hall",
+      status: "published",
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+    });
+    assert.equal(pastEvent.ok, true, pastEvent.reason);
+
     const memberCookie = `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`;
     const list = await request(app)
       .get("/member/events")
@@ -726,13 +739,60 @@ describe("blessboard participation", () => {
       .set("Cookie", memberCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-member-events="1"/);
+    assert.match(list.text, /data-bb-stitch-events="17-member-events"/);
+    assert.match(list.text, /data-bb-events-toolbar="1"/);
     assert.match(list.text, /Open Capacity Event/);
     assert.match(list.text, /data-bb-capacity="2"/);
     assert.match(list.text, /Unlimited Event/);
+    assert.match(list.text, /data-bb-events-upcoming="1"/);
+    assert.match(list.text, /data-bb-events-past="1"/);
+    assert.match(list.text, /Past Fellowship Night/);
+    assert.match(list.text, /data-bb-event-when="past"/);
+    assert.doesNotMatch(list.text, /Calendar View|Add to calendar|Buy ticket|Google Calendar|Apple Calendar/i);
+    assert.doesNotMatch(list.text, /\+\d{2,}\s*(going|attendees|registered)/i);
     const unlimitedIdx = list.text.indexOf("Unlimited Event");
     assert.ok(unlimitedIdx >= 0);
     const unlimitedSnippet = list.text.slice(unlimitedIdx, unlimitedIdx + 900);
     assert.doesNotMatch(unlimitedSnippet, /data-bb-capacity=/);
+
+    const upcomingOnly = await request(app)
+      .get("/member/events?filter=upcoming")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(upcomingOnly.status, 200);
+    assert.match(upcomingOnly.text, /data-bb-event-filter="upcoming"/);
+    assert.match(upcomingOnly.text, /Open Capacity Event/);
+    assert.doesNotMatch(upcomingOnly.text, /Past Fellowship Night/);
+
+    const pastOnly = await request(app)
+      .get("/member/events?filter=past")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(pastOnly.status, 200);
+    assert.match(pastOnly.text, /data-bb-event-filter="past"/);
+    assert.match(pastOnly.text, /Past Fellowship Night/);
+    assert.doesNotMatch(pastOnly.text, /Open Capacity Event/);
+
+    const noResults = await request(app)
+      .get("/member/events?q=zzzz-no-match-term")
+      .set("Host", HOST_A)
+      .set("Cookie", memberCookie);
+    assert.equal(noResults.status, 200);
+    assert.match(noResults.text, /data-bb-events-empty="no-results"/);
+
+    const listed = await listMemberEvents(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      memberId,
+    });
+    assert.equal(listed.ok, true);
+    const titles = listed.items.map((i) => i.title);
+    const openIdx = titles.indexOf("Open Capacity Event");
+    const unlimitedListIdx = titles.indexOf("Unlimited Event");
+    const pastIdx = titles.indexOf("Past Fellowship Night");
+    assert.ok(pastIdx >= 0 && openIdx >= 0 && unlimitedListIdx >= 0);
+    assert.ok(pastIdx < openIdx);
+    assert.ok(openIdx < unlimitedListIdx);
 
     const detail = await request(app)
       .get(`/member/events/${openEvent.item.id}`)

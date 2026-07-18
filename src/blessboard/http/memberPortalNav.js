@@ -5,7 +5,7 @@
  */
 
 const PORTAL_NAV = Object.freeze([
-  { key: "home", label: "Home", href: "/member", icon: "home", enabled: true, nav: true },
+  { key: "home", label: "Dashboard", href: "/member", icon: "dashboard", enabled: true, nav: true },
   {
     key: "announcements",
     label: "Announcements",

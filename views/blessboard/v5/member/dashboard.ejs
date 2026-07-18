@@ -1,52 +1,233 @@
 <%- include('../partials/member-shell-start') %>
+<%
+  var actions = typeof quickActions !== 'undefined' && quickActions ? quickActions : [];
+  var annPreview = typeof previewAnnouncements !== 'undefined' && previewAnnouncements ? previewAnnouncements : [];
+  var eventPreview = typeof previewEvents !== 'undefined' && previewEvents ? previewEvents : [];
+  var ministryPreview = typeof previewMinistries !== 'undefined' && previewMinistries ? previewMinistries : [];
+  var modules = portalModules || [];
+%>
 
-<section class="bb-mp-dash" data-bb-member-dashboard="1">
-  <header class="bb-mp-dash__hero">
-    <p class="bb-mp-badge" data-bb-member-verified="1">
+<section
+  class="bb-mp-dash"
+  data-bb-member-dashboard="1"
+  data-bb-stitch-dashboard="14-member-dashboard"
+>
+  <header class="bb-mp-dash__hero" data-bb-dash-hero="1">
+    <p class="bb-mp-badge bb-mp-badge--on-hero" data-bb-member-verified="1">
       <span class="material-symbols-outlined" aria-hidden="true">verified</span>
       Verified member
     </p>
     <h1 class="bb-mp-dash__title">
       Welcome<%= displayName ? ', ' + displayName : '' %>
     </h1>
-    <p class="bb-mp-lede">
+    <p class="bb-mp-dash__lede">
       Your home for
       <strong><%= churchDisplayName %></strong><% if (branchDisplayName) { %>
       · <%= branchDisplayName %><% } %>.
-      Open a module below — counts and listings appear only from live church data inside each section.
+      Explore upcoming events and what’s happening in your ministries.
     </p>
+    <div class="bb-mp-dash__hero-actions">
+      <a class="bb-mp-btn bb-mp-btn--on-hero" href="/member/events">View events</a>
+      <a class="bb-mp-btn bb-mp-btn--ghost-on-hero" href="/member/announcements">Announcements</a>
+    </div>
   </header>
 
-  <section class="bb-mp-grid" aria-label="Member modules">
-    <% (portalModules || []).forEach(function (mod) { %>
-      <% if (mod.enabled && mod.href) { %>
-      <a
-        class="bb-mp-card bb-mp-card--link"
-        href="<%= mod.href %>"
-        data-bb-module="<%= mod.key %>"
-        data-bb-module-enabled="1"
-      >
-        <span class="bb-mp-card__icon" aria-hidden="true">
-          <span class="material-symbols-outlined"><%= mod.icon || 'widgets' %></span>
-        </span>
-        <h2 class="bb-mp-card__title"><%= mod.label %></h2>
-        <p class="bb-mp-card__meta">Open</p>
-      </a>
-      <% } else { %>
-      <article
-        class="bb-mp-card is-disabled"
-        data-bb-module="<%= mod.key %>"
-        data-bb-module-enabled="0"
-        aria-disabled="true"
-      >
-        <span class="bb-mp-card__icon" aria-hidden="true">
-          <span class="material-symbols-outlined"><%= mod.icon || 'block' %></span>
-        </span>
-        <h2 class="bb-mp-card__title"><%= mod.label %></h2>
-        <p class="bb-mp-card__meta">Not enabled yet</p>
-      </article>
-      <% } %>
-    <% }) %>
+  <section class="bb-mp-dash__section" aria-labelledby="bb-mp-dash-quick-heading">
+    <div class="bb-mp-dash__section-head">
+      <h2 id="bb-mp-dash-quick-heading" class="bb-mp-dash__section-title">Quick actions</h2>
+    </div>
+    <ul class="bb-mp-dash-actions" data-bb-dash-quick-actions="1">
+      <% actions.forEach(function (action) { %>
+      <li>
+        <% if (action.enabled && action.href) { %>
+        <a
+          class="bb-mp-dash-action"
+          href="<%= action.href %>"
+          data-bb-quick-action="<%= action.key %>"
+          data-bb-quick-enabled="1"
+        >
+          <span class="bb-mp-dash-action__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= action.icon %></span>
+          </span>
+          <span class="bb-mp-dash-action__label"><%= action.label %></span>
+        </a>
+        <% } else { %>
+        <div
+          class="bb-mp-dash-action is-disabled"
+          data-bb-quick-action="<%= action.key %>"
+          data-bb-quick-enabled="0"
+          aria-disabled="true"
+        >
+          <span class="bb-mp-dash-action__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= action.icon %></span>
+          </span>
+          <span class="bb-mp-dash-action__label"><%= action.label %></span>
+          <span class="bb-mp-dash-action__meta">Not enabled yet</span>
+        </div>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section class="bb-mp-dash__section" aria-labelledby="bb-mp-dash-events-heading" data-bb-dash-events="1">
+    <div class="bb-mp-dash__section-head">
+      <h2 id="bb-mp-dash-events-heading" class="bb-mp-dash__section-title">Upcoming events</h2>
+      <a class="bb-mp-link" href="/member/events">View all</a>
+    </div>
+    <% if (!eventPreview.length) { %>
+    <div class="bb-mp-empty bb-mp-empty--compact" role="status" data-bb-dash-empty="events">
+      <span class="material-symbols-outlined" aria-hidden="true">event</span>
+      <p>No upcoming events published yet. Check back soon, or open Events for the full list.</p>
+      <a class="bb-mp-btn bb-mp-btn--outline" href="/member/events">Open events</a>
+    </div>
+    <% } else { %>
+    <ul class="bb-mp-dash-events">
+      <% eventPreview.forEach(function (item) { %>
+      <li>
+        <a class="bb-mp-dash-event" href="<%= item.href %>" data-bb-dash-event="1">
+          <% if (item.when) { %>
+          <span class="bb-mp-dash-event__date" aria-hidden="true">
+            <span class="bb-mp-dash-event__day"><%= item.when.day %></span>
+            <span class="bb-mp-dash-event__month"><%= item.when.month %></span>
+          </span>
+          <% } else { %>
+          <span class="bb-mp-dash-event__date bb-mp-dash-event__date--icon" aria-hidden="true">
+            <span class="material-symbols-outlined">event</span>
+          </span>
+          <% } %>
+          <span class="bb-mp-dash-event__copy">
+            <span class="bb-mp-dash-event__title"><%= item.title %></span>
+            <% if (item.when && item.when.time) { %>
+            <span class="bb-mp-dash-event__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <%= item.when.time %><% if (item.location) { %> · <%= item.location %><% } %>
+            </span>
+            <% } else if (item.location) { %>
+            <span class="bb-mp-dash-event__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+              <%= item.location %>
+            </span>
+            <% } %>
+            <% if (item.summary) { %>
+            <span class="bb-mp-dash-event__summary"><%= item.summary %></span>
+            <% } %>
+          </span>
+          <span class="material-symbols-outlined bb-mp-dash-event__chevron" aria-hidden="true">chevron_right</span>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-mp-dash__section" aria-labelledby="bb-mp-dash-ministries-heading" data-bb-dash-ministries="1">
+    <div class="bb-mp-dash__section-head">
+      <h2 id="bb-mp-dash-ministries-heading" class="bb-mp-dash__section-title">Ministries</h2>
+      <a class="bb-mp-link" href="/member/ministries">View all</a>
+    </div>
+    <% if (!ministryPreview.length) { %>
+    <div class="bb-mp-empty bb-mp-empty--compact" role="status" data-bb-dash-empty="ministries">
+      <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+      <p>No published ministries to show yet.</p>
+      <a class="bb-mp-btn bb-mp-btn--outline" href="/member/ministries">Browse ministries</a>
+    </div>
+    <% } else { %>
+    <ul class="bb-mp-dash-ministries">
+      <% ministryPreview.forEach(function (item) { %>
+      <li>
+        <a class="bb-mp-dash-ministry" href="<%= item.href %>" data-bb-dash-ministry="1">
+          <span class="bb-mp-dash-ministry__icon" aria-hidden="true">
+            <span class="material-symbols-outlined">diversity_3</span>
+          </span>
+          <span class="bb-mp-dash-ministry__copy">
+            <span class="bb-mp-dash-ministry__name"><%= item.name %></span>
+            <% if (item.isMember) { %>
+            <span class="bb-mp-chip bb-mp-chip--member">Member</span>
+            <% } else if (item.isPending) { %>
+            <span class="bb-mp-chip bb-mp-chip--pending">Pending</span>
+            <% } %>
+            <% if (item.summary) { %>
+            <span class="bb-mp-dash-ministry__summary"><%= item.summary %></span>
+            <% } %>
+          </span>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-mp-dash__section" aria-labelledby="bb-mp-dash-ann-heading" data-bb-dash-announcements="1">
+    <div class="bb-mp-dash__section-head">
+      <h2 id="bb-mp-dash-ann-heading" class="bb-mp-dash__section-title">Announcements</h2>
+      <a class="bb-mp-link" href="/member/announcements">View all</a>
+    </div>
+    <% if (!annPreview.length) { %>
+    <div class="bb-mp-empty bb-mp-empty--compact" role="status" data-bb-dash-empty="announcements">
+      <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+      <p>No announcements right now. Leadership updates will appear here when published.</p>
+      <a class="bb-mp-btn bb-mp-btn--outline" href="/member/announcements">Open announcements</a>
+    </div>
+    <% } else { %>
+    <ul class="bb-mp-dash-ann">
+      <% annPreview.forEach(function (item) { %>
+      <li>
+        <a class="bb-mp-dash-ann__card" href="<%= item.href %>" data-bb-dash-announcement="1">
+          <span class="bb-mp-dash-ann__icon" aria-hidden="true">
+            <span class="material-symbols-outlined">campaign</span>
+          </span>
+          <span class="bb-mp-dash-ann__copy">
+            <% if (item.isFeatured) { %>
+            <span class="bb-mp-chip bb-mp-chip--featured">Featured</span>
+            <% } %>
+            <span class="bb-mp-dash-ann__title"><%= item.title %></span>
+            <% if (item.excerpt) { %>
+            <span class="bb-mp-dash-ann__excerpt"><%= item.excerpt %></span>
+            <% } %>
+          </span>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-mp-dash__section" aria-labelledby="bb-mp-dash-modules-heading">
+    <div class="bb-mp-dash__section-head">
+      <h2 id="bb-mp-dash-modules-heading" class="bb-mp-dash__section-title">More for members</h2>
+    </div>
+    <section class="bb-mp-grid" aria-label="Member modules">
+      <% modules.forEach(function (mod) { %>
+        <% if (mod.enabled && mod.href) { %>
+        <a
+          class="bb-mp-card bb-mp-card--link"
+          href="<%= mod.href %>"
+          data-bb-module="<%= mod.key %>"
+          data-bb-module-enabled="1"
+        >
+          <span class="bb-mp-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= mod.icon || 'widgets' %></span>
+          </span>
+          <h3 class="bb-mp-card__title"><%= mod.label %></h3>
+          <p class="bb-mp-card__meta">Open</p>
+        </a>
+        <% } else { %>
+        <article
+          class="bb-mp-card is-disabled"
+          data-bb-module="<%= mod.key %>"
+          data-bb-module-enabled="0"
+          aria-disabled="true"
+        >
+          <span class="bb-mp-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= mod.icon || 'block' %></span>
+          </span>
+          <h3 class="bb-mp-card__title"><%= mod.label %></h3>
+          <p class="bb-mp-card__meta">Not enabled yet</p>
+        </article>
+        <% } %>
+      <% }) %>
+    </section>
   </section>
 </section>
 

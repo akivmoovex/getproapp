@@ -36,9 +36,13 @@
   padding: 0.5rem 1rem;
 }
 
-.bb-auth-skip:focus {
+.bb-auth-skip:focus,
+.bb-auth-skip:focus-visible {
   left: 1rem;
   top: 1rem;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: var(--bb-shadow-focus, 0 0 0 4px rgba(108, 92, 231, 0.35));
 }
 
 .bb-auth-layout {
@@ -122,7 +126,7 @@
 .bb-auth-brand__mark {
   width: 2rem;
   height: 2rem;
-  border-radius: 8px;
+  border-radius: var(--bb-auth-radius-sm, 0.5rem);
   flex-shrink: 0;
 }
 
@@ -190,6 +194,23 @@
   color: #fff;
 }
 
+.bb-auth-card__hero-eyebrow {
+  display: none;
+  margin: 0 0 0.55rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.bb-auth-card__hero-eyebrow--mobile {
+  display: inline-flex;
+}
+
 .bb-auth-card__hero-title {
   margin: 0 0 0.45rem;
   font-size: clamp(1.4rem, 3vw, 1.75rem);
@@ -239,29 +260,140 @@
   text-decoration: underline;
 }
 
+.bb-auth-card__intro {
+  margin: 0 0 0.25rem;
+}
+
+.bb-auth-card--login .bb-auth-card__intro {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bb-auth-card--login .bb-auth-card__brand-mark {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bb-auth-card--login .bb-auth-card__lead {
+  max-width: 22rem;
+}
+
 .bb-auth-transfer-status {
   display: flex;
   align-items: flex-start;
-  gap: 0.55rem;
-  margin: 0 0 1rem;
-  padding: 0.8rem 0.95rem;
+  gap: 0.65rem;
+  margin: 0 0 1.15rem;
+  padding: 0.9rem 1rem;
   border-radius: var(--bb-auth-radius, 1rem);
   background: #efeaff;
   border: 1px solid rgba(108, 92, 231, 0.22);
   color: var(--bb-auth-ink);
   font-size: 0.92rem;
   line-height: 1.45;
+  text-align: left;
+  animation: bb-auth-rise 0.45s ease both;
 }
 
 .bb-auth-transfer-status .material-symbols-outlined {
   color: var(--bb-auth-violet);
   flex-shrink: 0;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   margin-top: 0.05rem;
+}
+
+.bb-auth-transfer-status__copy {
+  min-width: 0;
+}
+
+.bb-auth-transfer-status__title {
+  margin: 0 0 0.2rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bb-auth-violet);
+}
+
+.bb-auth-transfer-status__body {
+  margin: 0;
+  color: var(--bb-auth-ink);
 }
 
 .bb-auth-transfer-status__host {
   word-break: break-word;
+  font-weight: 700;
+}
+
+.bb-auth-card--error {
+  text-align: center;
+  max-width: 28rem;
+  animation: bb-auth-rise 0.4s ease both;
+}
+
+.bb-auth-card--error .bb-auth-card__title {
+  margin-top: 0.15rem;
+}
+
+.bb-auth-card--error .bb-auth-card__lead,
+.bb-auth-card--error .bb-auth-error {
+  text-align: left;
+}
+
+.bb-auth-card--error .bb-auth-actions {
+  justify-content: center;
+}
+
+.bb-auth-card__icon--error {
+  background: var(--bb-auth-err-bg);
+  color: var(--bb-auth-err);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bb-auth-card--error-expired .bb-auth-card__icon--error,
+.bb-auth-card--error-throttled .bb-auth-card__icon--error {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.bb-auth-card--error-consumed .bb-auth-card__icon--error {
+  background: #fdf2f8;
+  color: #9d174d;
+}
+
+.bb-auth-card--error-unauthorized .bb-auth-card__icon--error {
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.bb-auth-badge--error {
+  background: var(--bb-auth-err-bg);
+  color: var(--bb-auth-err);
+  margin: 0 auto 1rem;
+}
+
+.bb-auth-actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.bb-auth-actions--stack .bb-auth-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+@keyframes bb-auth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.45rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .bb-auth-card__icon {
@@ -279,6 +411,84 @@
 .bb-auth-card__icon--ok {
   background: var(--bb-auth-ok-bg);
   color: var(--bb-auth-ok);
+}
+
+.bb-auth-card__icon--xl {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bb-auth-card__icon--xl .material-symbols-outlined {
+  font-size: 2.75rem;
+}
+
+.bb-auth-card--submitted {
+  text-align: center;
+  max-width: 32rem;
+  padding: 2rem 1.5rem 1.85rem;
+}
+
+.bb-auth-card--submitted .bb-auth-card__title {
+  margin-top: 0.35rem;
+}
+
+.bb-auth-card--submitted .bb-auth-card__lead {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 28rem;
+  line-height: 1.55;
+}
+
+.bb-auth-card--submitted .bb-auth-card__subtitle {
+  text-align: left;
+  margin-top: 1.5rem;
+}
+
+.bb-auth-card--submitted .bb-auth-success-list {
+  text-align: left;
+}
+
+.bb-auth-card--submitted .bb-auth-actions {
+  margin-top: 0.25rem;
+}
+
+.bb-auth-emphasis {
+  color: var(--bb-auth-violet);
+  font-weight: 700;
+}
+
+.bb-auth-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0 0 0.25rem;
+  padding: 0.95rem 1rem;
+  border-radius: var(--bb-auth-radius);
+  background: #efeaff;
+  border: 1px solid rgba(108, 92, 231, 0.22);
+  text-align: left;
+  color: var(--bb-auth-ink);
+}
+
+.bb-auth-callout .material-symbols-outlined {
+  color: var(--bb-auth-violet);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.bb-auth-callout__title {
+  margin: 0 0 0.25rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.bb-auth-callout__body {
+  margin: 0;
+  color: var(--bb-auth-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .bb-auth-card__icon .material-symbols-outlined {
@@ -300,7 +510,7 @@
 .bb-auth-note {
   margin: 0 0 1rem;
   padding: 0.75rem 0.9rem;
-  border-radius: 8px;
+  border-radius: var(--bb-auth-radius-sm, 0.5rem);
   background: #efeaff;
   color: var(--bb-auth-ink);
   font-size: 0.92rem;
@@ -309,7 +519,7 @@
 .bb-auth-error {
   margin: 0 0 1.15rem;
   padding: 0.85rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--bb-auth-radius-sm, 0.5rem);
   border: 1px solid #fecdca;
   background: var(--bb-auth-err-bg);
   color: var(--bb-auth-err);
@@ -343,8 +553,10 @@
 
 .bb-auth-fieldset {
   margin: 0;
-  padding: 0;
-  border: 0;
+  padding: 1.1rem 1rem 1.15rem;
+  border: 1px solid var(--bb-auth-line);
+  border-radius: var(--bb-auth-radius);
+  background: var(--bb-auth-bg);
   min-width: 0;
   display: grid;
   gap: 1rem;
@@ -354,15 +566,33 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0 0 0.15rem;
-  padding: 0;
+  margin: 0;
+  padding: 0 0.25rem;
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--bb-auth-violet);
 }
 
+.bb-auth-fieldset__legend-desktop {
+  display: none;
+}
+
+.bb-auth-fieldset__legend-mobile {
+  display: inline;
+}
+
 .bb-auth-fieldset__legend .material-symbols-outlined {
   font-size: 1.15rem;
+}
+
+.bb-auth-required {
+  color: var(--bb-auth-err);
+  font-weight: 700;
+  margin-left: 0.15rem;
+}
+
+.bb-auth-form--register .bb-auth-hint {
+  margin-top: 0;
 }
 
 .bb-auth-field-row {
@@ -560,7 +790,7 @@
   gap: 0.65rem;
   align-items: flex-start;
   padding: 0.85rem 0.95rem;
-  border-radius: 8px;
+  border-radius: var(--bb-auth-radius-sm, 0.5rem);
   background: var(--bb-auth-bg);
   border: 1px solid var(--bb-auth-line);
   color: var(--bb-auth-muted);
@@ -576,13 +806,26 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  margin: 0 0 1rem;
+  margin: 0 0 0.65rem;
   padding: 0.3rem 0.65rem;
   border-radius: 999px;
   background: var(--bb-auth-ok-bg);
   color: var(--bb-auth-ok);
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.bb-auth-badge--pending {
+  background: #efeaff;
+  color: var(--bb-auth-violet);
+}
+
+.bb-auth-badge--success {
+  display: none;
+}
+
+.bb-auth-badge .material-symbols-outlined {
+  font-size: 1rem;
 }
 
 @media (min-width: 900px) {
@@ -610,12 +853,24 @@
     padding: 1.6rem 1.85rem 1.7rem;
   }
 
+  .bb-auth-card__hero-eyebrow--mobile {
+    display: none;
+  }
+
   .bb-auth-card__body {
     padding: 1.75rem 1.85rem 2rem;
   }
 
   .bb-auth-field-row {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .bb-auth-fieldset__legend-desktop {
+    display: inline;
+  }
+
+  .bb-auth-fieldset__legend-mobile {
+    display: none;
   }
 }
 
@@ -628,6 +883,26 @@
   .bb-auth-card--register,
   .bb-auth-card--submitted {
     max-width: 100%;
+  }
+
+  .bb-auth-card--register {
+    border-radius: calc(var(--bb-auth-radius) + 2px);
+  }
+
+  .bb-auth-form--register .bb-auth-actions {
+    position: sticky;
+    bottom: 0;
+    margin: 0.5rem -0.25rem 0;
+    padding: 0.85rem 0.25rem 0.15rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--bb-auth-surface) 28%);
+  }
+
+  .bb-auth-badge--success {
+    display: inline-flex;
+  }
+
+  .bb-auth-card--submitted {
+    padding: 1.75rem 1.25rem 1.65rem;
   }
 }
 
@@ -671,7 +946,9 @@
 .bb-auth-btn:focus-visible,
 .bb-auth-brand:focus-visible,
 .bb-auth-main__header-link:focus-visible,
-.bb-auth-footer a:focus-visible {
+.bb-auth-footer a:focus-visible,
+.bb-auth-privacy a:focus-visible,
+.bb-auth-error__list a:focus-visible {
   outline: 2px solid var(--bb-auth-violet);
   outline-offset: 2px;
   box-shadow: var(--bb-shadow-focus, 0 0 0 4px rgba(108, 92, 231, 0.28));

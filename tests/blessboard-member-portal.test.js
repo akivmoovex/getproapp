@@ -295,12 +295,44 @@ describe("blessboard member portal", () => {
       .set("Accept", "text/html");
     assert.equal(res.status, 200);
     assert.match(res.text, /Welcome/);
+    assert.match(res.text, /data-bb-stitch-dashboard="14-member-dashboard"/);
+    assert.match(res.text, /data-bb-dash-hero="1"/);
+    assert.match(res.text, /Quick actions/);
+    assert.match(res.text, /Upcoming events/);
     assert.match(res.text, /Announcements/);
+    assert.match(res.text, /data-bb-dash-empty="events"/);
+    assert.match(res.text, /data-bb-dash-empty="announcements"/);
+    assert.match(res.text, /data-bb-dash-empty="ministries"/);
     assert.match(res.text, /Not enabled yet/);
-    assert.doesNotMatch(res.text, /\b\d+\s+(announcements|events|forms)/i);
+    assert.match(res.text, /data-bb-quick-action="prayer"[^>]*data-bb-quick-enabled="0"|data-bb-quick-enabled="0"[^>]*data-bb-quick-action="prayer"/);
+    assert.match(res.text, /href="\/member\/events"/);
+    assert.match(res.text, /href="\/member\/giving"/);
+    assert.doesNotMatch(res.text, /href="\/member\/prayer"/);
+    assert.doesNotMatch(res.text, /Check-in|Member Directory|View Calendar/i);
+    assert.doesNotMatch(res.text, /\b\d+\s+(announcements|events|forms|ministries)/i);
+    assert.doesNotMatch(res.text, /attendance|spots remaining|registered count/i);
     assert.equal(res.text.includes(memberId), false);
     assert.equal(res.text.includes(churchA.id), false);
     assert.equal(res.text.includes(branchA.id), false);
+  });
+
+  it("renders dashboard empty states and implemented quick actions only", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const res = await request(app)
+      .get("/member")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie(memberUser))
+      .set("Accept", "text/html");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-dash-quick-actions="1"/);
+    assert.match(res.text, /data-bb-quick-action="giving"/);
+    assert.match(res.text, /data-bb-quick-action="ministries"/);
+    assert.match(res.text, /data-bb-quick-action="events"/);
+    assert.match(res.text, /role="status"/);
+    assert.match(res.text, /No upcoming events published yet/);
+    assert.match(res.text, /No announcements right now/);
+    assert.match(res.text, /No published ministries to show yet/);
+    assert.doesNotMatch(res.text, /href="\/member\/check-in"|href="\/member\/directory"/i);
   });
 
   it("renders shared member shell chrome with implemented nav only", async (t) => {
@@ -312,19 +344,34 @@ describe("blessboard member portal", () => {
       .set("Accept", "text/html");
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-shell="member"/);
+    assert.match(res.text, /data-bb-stitch-shell="14-member-dashboard"/);
     assert.match(res.text, /data-bb-nav="desktop-sidebar"/);
     assert.match(res.text, /data-bb-nav="mobile-tabs"/);
     assert.match(res.text, /data-bb-nav="mobile-header"/);
+    assert.match(res.text, /data-bb-nav="mobile-drawer"/);
     assert.match(res.text, /data-bb-member-dashboard="1"/);
+    assert.match(res.text, /data-bb-member-role="1"/);
+    assert.match(res.text, /data-bb-page-area="1"/);
+    assert.match(res.text, /Verified member/);
+    assert.match(res.text, /id="bb-mp-main"/);
+    assert.match(res.text, /tabindex="-1"/);
+    assert.match(res.text, /role="dialog"/);
+    assert.match(res.text, /aria-modal="true"/);
+    assert.match(res.text, /\binert\b/);
+    assert.match(res.text, /bb-mp-drawer__close/);
+    assert.match(res.text, /href="\/member\/profile"/);
+    assert.match(res.text, /aria-label="Profile"/);
     assert.match(res.text, /href="\/member\/announcements"/);
     assert.match(res.text, /href="\/member\/events"/);
     assert.match(res.text, /href="\/member\/ministries"/);
     assert.match(res.text, /href="\/member\/resources"/);
     assert.match(res.text, /href="\/member\/forms"/);
     assert.match(res.text, /href="\/member\/requests"/);
-    assert.match(res.text, /href="\/member\/profile"/);
     assert.match(res.text, /href="\/member\/giving"/);
+    assert.match(res.text, />Dashboard</);
     assert.doesNotMatch(res.text, /href="\/member\/prayer"/);
+    assert.doesNotMatch(res.text, /href="\/member\/prayer-request"/);
+    assert.doesNotMatch(res.text, /notifications/i);
     assert.match(
       res.text,
       /data-bb-module="giving"[^>]*data-bb-module-enabled="1"|data-bb-module-enabled="1"[^>]*data-bb-module="giving"/
@@ -335,6 +382,7 @@ describe("blessboard member portal", () => {
     );
     assert.match(res.text, /action="\/member\/logout"/);
     assert.match(res.text, /name="_csrf"/);
+    assert.match(res.text, /Powered by|bb-powered-by/);
   });
 
   it("carries shared shell nav onto other member module pages", async (t) => {
@@ -399,15 +447,24 @@ describe("blessboard member portal", () => {
       .set("Cookie", sessionCookie(memberUser));
     assert.equal(form.status, 200);
     assert.match(form.text, /data-bb-member-profile="1"/);
+    assert.match(form.text, /data-bb-stitch-profile="15-member-profile"/);
+    assert.match(form.text, /data-bb-profile-header="1"/);
+    assert.match(form.text, /data-bb-profile-readonly="1"/);
+    assert.match(form.text, /data-bb-profile-form="1"/);
+    assert.match(form.text, /Verified Member/);
+    assert.match(form.text, /Read-only/);
+    assert.match(form.text, /Editable/);
     assert.match(form.text, /name="preferredName"/);
     assert.match(form.text, /name="emailDisplay"/);
     assert.match(form.text, /name="phone"/);
     assert.match(form.text, /name="_csrf"/);
-    assert.match(form.text, /Legal name/);
+    assert.match(form.text, /Legal Name/);
     assert.match(form.text, /Sign-in email/);
     assert.doesNotMatch(form.text, /name="firstName"/);
     assert.doesNotMatch(form.text, /name="status"/);
     assert.doesNotMatch(form.text, /name="membershipStatus"/);
+    assert.doesNotMatch(form.text, /type="file"|avatar upload|change password|notification prefer/i);
+    assert.doesNotMatch(form.text, /Date of Birth|Residential Address|Emergency Contact|Medical Notes|Member Digital ID/i);
 
     const csrf = extractCookie(form, CSRF_COOKIE);
     const bad = await request(app)

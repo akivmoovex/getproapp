@@ -137,6 +137,20 @@ function sermonMediaKind(url) {
 }
 
 /**
+ * Accessible label kind for a sermon resource/download URL.
+ * @param {string|null|undefined} url
+ * @returns {"download"|"resource"}
+ */
+function sermonResourceKind(url) {
+  const u = String(url || "").toLowerCase();
+  if (!u) return "resource";
+  if (/\.(pdf|doc|docx|ppt|pptx|odt|rtf|epub)(\?|#|$)/.test(u)) {
+    return "download";
+  }
+  return "resource";
+}
+
+/**
  * Initials for avatar fallback (max 2 letters).
  * @param {string} name
  */
@@ -162,6 +176,7 @@ function renderTenantPublicPage(model) {
     formatDate,
     formatEventParts,
     sermonMediaKind,
+    sermonResourceKind,
     initials,
   });
 }
@@ -172,5 +187,6 @@ module.exports = {
   formatDate,
   formatEventParts,
   sermonMediaKind,
+  sermonResourceKind,
   initials,
 };

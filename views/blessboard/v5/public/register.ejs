@@ -6,7 +6,7 @@
   <title>Register · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=6" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=10" />
 </head>
 <body
   class="bb-auth-body"
@@ -70,10 +70,13 @@
       <div class="bb-auth-main__body">
         <div class="bb-auth-card bb-auth-card--wide bb-auth-card--register">
           <div class="bb-auth-card__hero">
+            <p class="bb-auth-card__hero-eyebrow bb-auth-card__hero-eyebrow--mobile">
+              Join Our Community
+            </p>
             <h1 class="bb-auth-card__hero-title">Member Registration</h1>
             <p class="bb-auth-card__hero-lead">
               Join our community at <%= publicName %><% if (branchName) { %> · <%= branchName %><% } %>.
-              Leadership reviews applications before member access is granted.
+              Please fill in your details below. Leadership reviews applications before member access is granted.
             </p>
           </div>
 
@@ -103,22 +106,26 @@
             <form
               method="post"
               action="/register"
-              class="bb-auth-form"
+              class="bb-auth-form bb-auth-form--register"
               id="bb-auth-form"
               novalidate
               aria-describedby="<%= hasErrors ? 'bb-auth-error-summary bb-auth-contact-hint bb-auth-privacy-note' : 'bb-auth-contact-hint bb-auth-privacy-note' %>"
             >
               <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
 
-              <fieldset class="bb-auth-fieldset">
+              <fieldset class="bb-auth-fieldset" data-bb-auth-group="personal">
                 <legend class="bb-auth-fieldset__legend">
                   <span class="material-symbols-outlined" aria-hidden="true">badge</span>
-                  Personal info
+                  <span class="bb-auth-fieldset__legend-desktop">Personal Info</span>
+                  <span class="bb-auth-fieldset__legend-mobile">Personal Information</span>
                 </legend>
 
                 <div class="bb-auth-field-row">
                   <div class="bb-auth-field">
-                    <label for="first_name">First name</label>
+                    <label for="first_name">
+                      First name
+                      <span class="bb-auth-required" aria-hidden="true">*</span>
+                    </label>
                     <input
                       id="first_name"
                       name="first_name"
@@ -137,7 +144,10 @@
                   </div>
 
                   <div class="bb-auth-field">
-                    <label for="last_name">Last name</label>
+                    <label for="last_name">
+                      Last name
+                      <span class="bb-auth-required" aria-hidden="true">*</span>
+                    </label>
                     <input
                       id="last_name"
                       name="last_name"
@@ -157,24 +167,28 @@
                 </div>
 
                 <div class="bb-auth-field">
-                  <label for="preferred_name">Preferred name <span class="bb-auth-optional">(optional)</span></label>
+                  <label for="preferred_name">
+                    Preferred name
+                    <span class="bb-auth-optional">(optional)</span>
+                  </label>
                   <input
                     id="preferred_name"
                     name="preferred_name"
                     type="text"
                     maxlength="100"
                     autocomplete="nickname"
+                    aria-describedby="<%= fieldDescribedBy('preferredName', ['hint-preferredName']) || 'hint-preferredName' %>"
                     <% if (fieldInvalid('preferredName')) { %>aria-invalid="true"<% } %>
-                    <% var prefDesc = fieldDescribedBy('preferredName'); if (prefDesc) { %>aria-describedby="<%= prefDesc %>"<% } %>
                     value="<%= sub.preferredName != null ? sub.preferredName : '' %>"
                   />
+                  <p class="bb-auth-hint" id="hint-preferredName">How you would like to be addressed, if different from your first name.</p>
                   <% if (fe.preferredName) { %>
                   <p class="bb-auth-field__error" id="err-preferredName" role="status"><%= fe.preferredName %></p>
                   <% } %>
                 </div>
               </fieldset>
 
-              <fieldset class="bb-auth-fieldset">
+              <fieldset class="bb-auth-fieldset" data-bb-auth-group="contact">
                 <legend class="bb-auth-fieldset__legend">
                   <span class="material-symbols-outlined" aria-hidden="true">contact_mail</span>
                   Contact
@@ -182,7 +196,7 @@
 
                 <div class="bb-auth-field-row">
                   <div class="bb-auth-field">
-                    <label for="email">Email</label>
+                    <label for="email">Email Address</label>
                     <input
                       id="email"
                       name="email"
@@ -200,7 +214,7 @@
                   </div>
 
                   <div class="bb-auth-field">
-                    <label for="phone">Phone</label>
+                    <label for="phone">Phone Number</label>
                     <input
                       id="phone"
                       name="phone"
@@ -231,7 +245,7 @@
               </p>
 
               <div class="bb-auth-actions">
-                <button class="bb-auth-btn bb-auth-btn--primary" type="submit">Submit registration</button>
+                <button class="bb-auth-btn bb-auth-btn--primary" type="submit">Submit Registration</button>
                 <a class="bb-auth-btn bb-auth-btn--ghost" href="/">Back to homepage</a>
               </div>
             </form>

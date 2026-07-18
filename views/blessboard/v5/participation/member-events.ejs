@@ -1,39 +1,35 @@
 <%- include('../partials/member-shell-start') %>
 <%
+  var allItems = typeof allItems !== 'undefined' && allItems ? allItems : (items || []);
   var list = items || [];
-  var registeredItems = list.filter(function (i) { return i && i.registration; });
-  var upcomingItems = list;
+  var upcomingItems = typeof upcomingItems !== 'undefined' && upcomingItems ? upcomingItems : [];
+  var pastItems = typeof pastItems !== 'undefined' && pastItems ? pastItems : [];
+  var registeredItems = typeof registeredItems !== 'undefined' && registeredItems
+    ? registeredItems
+    : list.filter(function (i) { return i && i.registration; });
+  var activeFilter = typeof filter !== 'undefined' && filter ? String(filter) : 'all';
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var hasQuery = Boolean(searchQ) || activeFilter !== 'all';
+  var isEmptyCatalog = !allItems.length;
+  var isNoResults = !isEmptyCatalog && !list.length;
+  var pastIds = {};
+  pastItems.forEach(function (p) {
+    if (p && p.id) pastIds[p.id] = true;
+  });
 
-  function formatWhen(value, timezone) {
-    if (!value) return '';
-    try {
-      var d = value instanceof Date ? value : new Date(value);
-      if (isNaN(d.getTime())) return '';
-      var opts = {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      };
-      if (timezone) opts.timeZone = String(timezone);
-      return d.toLocaleString('en-GB', opts);
-    } catch (e) {
-      return '';
-    }
+  function filterHref(nextFilter, nextQ) {
+    var parts = [];
+    if (nextFilter && nextFilter !== 'all') parts.push('filter=' + encodeURIComponent(nextFilter));
+    if (nextQ) parts.push('q=' + encodeURIComponent(nextQ));
+    return parts.length ? ('/member/events?' + parts.join('&')) : '/member/events';
   }
 
-  function formatDay(value) {
-    if (!value) return '';
-    try {
-      var d = value instanceof Date ? value : new Date(value);
-      if (isNaN(d.getTime())) return '';
-      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-    } catch (e) {
-      return '';
-    }
-  }
+  var filters = [
+    { key: 'all', label: 'All' },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'past', label: 'Past' },
+    { key: 'registered', label: 'Registered' },
+  ];
 
   var flash =
     saved === 'registered' ? 'You are registered for this event.' :
@@ -41,8 +37,13 @@
     '';
 %>
 
-<section class="bb-mp-part" data-bb-member-events="1">
-  <header class="bb-mp-page-head">
+<section
+  class="bb-mp-part bb-mp-events"
+  data-bb-member-events="1"
+  data-bb-stitch-events="17-member-events"
+  data-bb-event-filter="<%= activeFilter %>"
+>
+  <header class="bb-mp-page-head bb-mp-page-head--split">
     <div>
       <h1 class="bb-mp-page-head__title">Events</h1>
       <p class="bb-mp-lede">Upcoming gatherings from your church and branch. Registration uses live availability only.</p>
@@ -53,112 +54,117 @@
   <p class="bb-mp-ok" role="status"><%= flash %></p>
   <% } %>
 
-  <% if (!list.length) { %>
-  <div class="bb-mp-empty" role="status">
+  <% if (!isEmptyCatalog) { %>
+  <div class="bb-mp-ann-toolbar bb-mp-events-toolbar" data-bb-events-toolbar="1">
+    <nav class="bb-mp-ann-filters" aria-label="Filter events">
+      <% filters.forEach(function (f) { %>
+      <a
+        class="bb-mp-ann-filter<%= activeFilter === f.key ? ' is-active' : '' %>"
+        href="<%= filterHref(f.key, searchQ) %>"
+        data-bb-event-filter-link="<%= f.key %>"
+        <%= activeFilter === f.key ? 'aria-current="page"' : '' %>
+      ><%= f.label %></a>
+      <% }) %>
+    </nav>
+    <form method="get" action="/member/events" class="bb-mp-ann-search" role="search" data-bb-events-search="1">
+      <% if (activeFilter !== 'all') { %>
+      <input type="hidden" name="filter" value="<%= activeFilter %>" />
+      <% } %>
+      <label class="bb-ds-sr-only" for="bb-mp-events-q">Search events</label>
+      <span class="material-symbols-outlined bb-mp-ann-search__icon" aria-hidden="true">search</span>
+      <input
+        id="bb-mp-events-q"
+        type="search"
+        name="q"
+        value="<%= searchQ %>"
+        maxlength="100"
+        placeholder="Search title, venue, or summary"
+        autocomplete="off"
+      />
+      <button type="submit" class="bb-mp-btn bb-mp-btn--ghost bb-mp-ann-search__submit">Search</button>
+    </form>
+  </div>
+  <% } %>
+
+  <% if (isEmptyCatalog) { %>
+  <div class="bb-mp-empty" role="status" data-bb-events-empty="catalog">
     <span class="material-symbols-outlined" aria-hidden="true">event</span>
-    <p>No events are available right now.</p>
+    <p>No events are available right now. When your church publishes gatherings, they will appear here.</p>
+  </div>
+  <% } else if (isNoResults) { %>
+  <div class="bb-mp-empty" role="status" data-bb-events-empty="no-results">
+    <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+    <p>No events match this filter<%= searchQ ? ' or search' : '' %>.</p>
+    <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/events">Clear filters</a>
   </div>
   <% } else { %>
 
-  <% if (registeredItems.length) { %>
-  <section class="bb-mp-part-section" aria-label="Your registrations">
-    <h2 class="bb-mp-section-title">You’re registered</h2>
-    <ul class="bb-mp-part-list">
+  <% if (registeredItems.length && (activeFilter === 'all' || activeFilter === 'registered') && !searchQ) { %>
+  <section class="bb-mp-part-section" aria-label="Your registrations" data-bb-events-registered="1">
+    <h2 class="bb-mp-section-title" id="bb-mp-events-registered-heading">You’re registered</h2>
+    <ul class="bb-mp-part-list" aria-labelledby="bb-mp-events-registered-heading">
       <% registeredItems.forEach(function (item) { %>
       <li>
-        <a
-          class="bb-mp-part-card is-registered"
-          href="/member/events/<%= item.id %>"
-          data-bb-event="<%= item.id %>"
-          data-bb-registered="1"
-        >
-          <div class="bb-mp-part-card__when" aria-hidden="true">
-            <span class="bb-mp-part-card__day"><%= formatDay(item.startsAt) || '—' %></span>
-          </div>
-          <div class="bb-mp-part-card__body">
-            <div class="bb-mp-part-card__top">
-              <h3 class="bb-mp-part-card__title"><%= item.title %></h3>
-              <span class="bb-mp-chip bb-mp-chip--active" aria-label="Registered">Registered</span>
-            </div>
-            <% if (item.startsAt) { %>
-            <p class="bb-mp-part-card__meta">
-              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
-              <%= formatWhen(item.startsAt, item.timezone) %>
-            </p>
-            <% } %>
-            <% if (item.location) { %>
-            <p class="bb-mp-part-card__meta">
-              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
-              <%= item.location %>
-            </p>
-            <% } %>
-          </div>
-          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
-        </a>
+        <%- include('./partials/member-event-card', { item: item, isPast: Boolean(pastIds[item.id]) }) %>
       </li>
       <% }) %>
     </ul>
   </section>
   <% } %>
 
-  <section class="bb-mp-part-section" aria-label="All events">
-    <h2 class="bb-mp-section-title">Upcoming events</h2>
-    <ul class="bb-mp-part-list">
+  <% if (upcomingItems.length && activeFilter !== 'past' && activeFilter !== 'registered') { %>
+  <section class="bb-mp-part-section" aria-label="Upcoming events" data-bb-events-upcoming="1">
+    <div class="bb-mp-ann-list-head">
+      <h2 class="bb-mp-section-title" id="bb-mp-events-upcoming-heading">Upcoming events</h2>
+      <% if (hasQuery) { %>
+      <p class="bb-mp-ann-list-count" data-bb-events-upcoming-count="<%= upcomingItems.length %>">
+        <%= upcomingItems.length %> upcoming
+      </p>
+      <% } %>
+    </div>
+    <ul class="bb-mp-part-list" aria-labelledby="bb-mp-events-upcoming-heading">
       <% upcomingItems.forEach(function (item) { %>
       <li>
-        <a
-          class="bb-mp-part-card<%= item.registration ? ' is-registered' : '' %><%= item.capacity != null && item.spotsRemaining === 0 && !item.registration ? ' is-full' : '' %>"
-          href="/member/events/<%= item.id %>"
-          data-bb-event="<%= item.id %>"
-          data-bb-registered="<%= item.registration ? '1' : '0' %>"
-          <% if (item.capacity != null) { %>data-bb-capacity="<%= item.spotsRemaining %>"<% } %>
-        >
-          <div class="bb-mp-part-card__when" aria-hidden="true">
-            <span class="bb-mp-part-card__day"><%= formatDay(item.startsAt) || '—' %></span>
-          </div>
-          <div class="bb-mp-part-card__body">
-            <div class="bb-mp-part-card__top">
-              <h3 class="bb-mp-part-card__title"><%= item.title %></h3>
-              <% if (item.registration) { %>
-              <span class="bb-mp-chip bb-mp-chip--active" aria-label="Registered">Registered</span>
-              <% } else if (item.capacity != null && item.spotsRemaining === 0) { %>
-              <span class="bb-mp-chip bb-mp-chip--full" aria-label="Full">Full</span>
-              <% } else { %>
-              <span class="bb-mp-chip bb-mp-chip--open" aria-label="Open">Open</span>
-              <% } %>
-            </div>
-            <% if (item.summary) { %>
-            <p class="bb-mp-part-card__excerpt"><%= item.summary %></p>
-            <% } %>
-            <% if (item.startsAt) { %>
-            <p class="bb-mp-part-card__meta">
-              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
-              <%= formatWhen(item.startsAt, item.timezone) %>
-            </p>
-            <% } %>
-            <% if (item.location) { %>
-            <p class="bb-mp-part-card__meta">
-              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
-              <%= item.location %>
-            </p>
-            <% } %>
-            <% if (item.capacity != null) { %>
-            <p class="bb-mp-part-card__capacity">
-              <% if (item.spotsRemaining === 0) { %>
-              No spots remaining (<%= item.registeredCount %>/<%= item.capacity %>)
-              <% } else { %>
-              <%= item.spotsRemaining %> spot<%= item.spotsRemaining === 1 ? '' : 's' %> left
-              (<%= item.registeredCount %>/<%= item.capacity %>)
-              <% } %>
-            </p>
-            <% } %>
-          </div>
-          <span class="bb-mp-ann-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
-        </a>
+        <%- include('./partials/member-event-card', { item: item, isPast: false }) %>
       </li>
       <% }) %>
     </ul>
   </section>
+  <% } %>
+
+  <% if (pastItems.length && activeFilter !== 'upcoming' && activeFilter !== 'registered') { %>
+  <section class="bb-mp-part-section" aria-label="Past events" data-bb-events-past="1">
+    <div class="bb-mp-ann-list-head">
+      <h2 class="bb-mp-section-title" id="bb-mp-events-past-heading">Past events</h2>
+      <% if (hasQuery || activeFilter === 'past') { %>
+      <p class="bb-mp-ann-list-count" data-bb-events-past-count="<%= pastItems.length %>">
+        <%= pastItems.length %> past
+      </p>
+      <% } %>
+    </div>
+    <ul class="bb-mp-part-list" aria-labelledby="bb-mp-events-past-heading">
+      <% pastItems.forEach(function (item) { %>
+      <li>
+        <%- include('./partials/member-event-card', { item: item, isPast: true }) %>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% if (activeFilter === 'registered' && registeredItems.length && searchQ) { %>
+  <section class="bb-mp-part-section" aria-label="Registered events" data-bb-events-registered="1">
+    <h2 class="bb-mp-section-title">You’re registered</h2>
+    <ul class="bb-mp-part-list">
+      <% registeredItems.forEach(function (item) { %>
+      <li>
+        <%- include('./partials/member-event-card', { item: item, isPast: Boolean(pastIds[item.id]) }) %>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
   <% } %>
 </section>
 

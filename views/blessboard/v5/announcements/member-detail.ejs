@@ -16,10 +16,26 @@
       return '';
     }
   }
+
+  function isRenderableAttachment(att) {
+    if (!att || !att.mediaAssetId) return false;
+    var id = String(att.mediaAssetId);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+      return false;
+    }
+    if (att.mediaStatus && String(att.mediaStatus) !== 'active') return false;
+    return true;
+  }
+
   var publishedLabel = formatPublished(item.publishedAt);
+  var attachments = (item.attachments || []).filter(isRenderableAttachment);
 %>
 
-<section class="bb-mp-ann-detail-page" data-bb-member-announcement-detail="1">
+<section
+  class="bb-mp-ann-detail-page"
+  data-bb-member-announcement-detail="1"
+  data-bb-stitch-announcements="16-member-announcements"
+>
   <p class="bb-mp-back">
     <a href="/member/announcements">
       <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -60,7 +76,10 @@
 
     <h1 class="bb-mp-ann-detail__title"><%= item.title %></h1>
     <% if (publishedLabel) { %>
-    <p class="bb-mp-ann-detail__meta"><%= publishedLabel %></p>
+    <p class="bb-mp-ann-detail__meta">
+      <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+      <%= publishedLabel %>
+    </p>
     <% } %>
 
     <div class="bb-mp-ann-body"><%= item.body %></div>
@@ -74,15 +93,20 @@
     </p>
     <% } %>
 
-    <% if (item.attachments && item.attachments.length) { %>
-    <section class="bb-mp-ann-attachments" aria-label="Attachments">
+    <% if (attachments.length) { %>
+    <section class="bb-mp-ann-attachments" aria-label="Attachments" data-bb-ann-attachments="1">
       <h2 class="bb-mp-section-title">Attachments</h2>
       <ul class="bb-mp-ann-attachments__list">
-        <% item.attachments.forEach(function (att) { %>
+        <% attachments.forEach(function (att) { %>
         <li>
-          <a href="/_bb/media/<%= att.mediaAssetId %>">
+          <a
+            class="bb-mp-ann-attachment"
+            href="/_bb/media/<%= att.mediaAssetId %>"
+            data-bb-ann-attachment="<%= att.mediaAssetId %>"
+          >
             <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
-            <%= att.originalFilename || 'Attachment' %>
+            <span class="bb-mp-ann-attachment__name"><%= att.originalFilename || 'Attachment' %></span>
+            <span class="material-symbols-outlined bb-mp-ann-attachment__open" aria-hidden="true">open_in_new</span>
           </a>
         </li>
         <% }) %>

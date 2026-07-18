@@ -260,6 +260,66 @@ function createParticipationMemberRouter(deps) {
 
   // ----- Events -----
 
+  /**
+   * Presentation filters over events already visible to this member.
+   * @param {string} raw
+   */
+  function normalizeMemberEventFilter(raw) {
+    const value = String(raw || "all")
+      .trim()
+      .toLowerCase();
+    if (value === "upcoming" || value === "past" || value === "registered") return value;
+    return "all";
+  }
+
+  /**
+   * @param {object} item
+   * @param {number} nowMs
+   */
+  function eventIsPast(item, nowMs) {
+    if (!item || !item.startsAt) return false;
+    const t = new Date(item.startsAt).getTime();
+    return Number.isFinite(t) && t < nowMs;
+  }
+
+  /**
+   * @param {object[]} items
+   * @param {string} filter
+   * @param {string} q
+   * @param {number} nowMs
+   */
+  function partitionVisibleMemberEvents(items, filter, q, nowMs) {
+    const query = String(q || "")
+      .trim()
+      .toLowerCase()
+      .slice(0, 100);
+    let scoped = Array.isArray(items) ? items.slice() : [];
+    if (filter === "registered") {
+      scoped = scoped.filter((item) => item && item.registration);
+    } else if (filter === "upcoming") {
+      scoped = scoped.filter((item) => item && !eventIsPast(item, nowMs));
+    } else if (filter === "past") {
+      scoped = scoped.filter((item) => item && eventIsPast(item, nowMs));
+    }
+    if (query) {
+      scoped = scoped.filter((item) => {
+        if (!item) return false;
+        const title = String(item.title || "").toLowerCase();
+        const summary = String(item.summary || "").toLowerCase();
+        const location = String(item.location || "").toLowerCase();
+        return title.includes(query) || summary.includes(query) || location.includes(query);
+      });
+    }
+    const upcomingItems = scoped
+      .filter((item) => item && !eventIsPast(item, nowMs))
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+    const pastItems = scoped
+      .filter((item) => item && eventIsPast(item, nowMs))
+      .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime());
+    const registeredItems = scoped.filter((item) => item && item.registration);
+    return { items: scoped, upcomingItems, pastItems, registeredItems };
+  }
+
   router.get("/member/events", rejectApex, requireMember, async (req, res) => {
     const scope = memberScope(req);
     if (!scope) {
@@ -269,10 +329,22 @@ function createParticipationMemberRouter(deps) {
     if (!listed.ok) {
       return res.status(503).type("text").send("Events are temporarily unavailable.");
     }
+    const allItems = listed.items || [];
+    const filter = normalizeMemberEventFilter(req.query && req.query.filter);
+    const q = String((req.query && req.query.q) || "")
+      .trim()
+      .slice(0, 100);
+    const partitioned = partitionVisibleMemberEvents(allItems, filter, q, Date.now());
     const html = renderMemberView(
       "participation/member-events.ejs",
       shellLocals(req, res, "events", {
-        items: listed.items,
+        allItems,
+        items: partitioned.items,
+        upcomingItems: partitioned.upcomingItems,
+        pastItems: partitioned.pastItems,
+        registeredItems: partitioned.registeredItems,
+        filter,
+        q,
         saved: String((req.query && req.query.saved) || ""),
       })
     );

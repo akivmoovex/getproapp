@@ -82,6 +82,45 @@ function createAnnouncementMemberRouter(deps) {
     };
   }
 
+  /**
+   * Presentation filters over announcements already visible to this member.
+   * Does not invent Branch/HQ categories or delivery metrics.
+   * @param {string} raw
+   */
+  function normalizeMemberAnnFilter(raw) {
+    const value = String(raw || "all")
+      .trim()
+      .toLowerCase();
+    if (value === "unread" || value === "pinned" || value === "featured") return value;
+    return "all";
+  }
+
+  /**
+   * @param {object[]} items
+   * @param {string} filter
+   * @param {string} q
+   */
+  function filterVisibleMemberAnnouncements(items, filter, q) {
+    let out = Array.isArray(items) ? items.slice() : [];
+    if (filter === "unread") out = out.filter((item) => item && item.isUnread);
+    else if (filter === "pinned") out = out.filter((item) => item && item.isPinned);
+    else if (filter === "featured") out = out.filter((item) => item && item.isFeatured);
+
+    const query = String(q || "")
+      .trim()
+      .toLowerCase()
+      .slice(0, 100);
+    if (query) {
+      out = out.filter((item) => {
+        if (!item) return false;
+        const title = String(item.title || "").toLowerCase();
+        const body = String(item.body || "").toLowerCase();
+        return title.includes(query) || body.includes(query);
+      });
+    }
+    return out;
+  }
+
   router.get("/member/announcements", rejectApex, requireMember, async (req, res) => {
     const scope = memberScope(req);
     if (!scope) {
@@ -91,13 +130,21 @@ function createAnnouncementMemberRouter(deps) {
     if (!listed.ok) {
       return res.status(503).type("text").send("Announcements are temporarily unavailable.");
     }
-    const items = listed.items || [];
-    const unreadCount = items.reduce((n, item) => n + (item && item.isUnread ? 1 : 0), 0);
+    const allItems = listed.items || [];
+    const filter = normalizeMemberAnnFilter(req.query && req.query.filter);
+    const q = String((req.query && req.query.q) || "")
+      .trim()
+      .slice(0, 100);
+    const items = filterVisibleMemberAnnouncements(allItems, filter, q);
+    const unreadCount = allItems.reduce((n, item) => n + (item && item.isUnread ? 1 : 0), 0);
     const html = renderMemberView(
       "announcements/member-list.ejs",
       shellLocals(req, res, "announcements", {
+        allItems,
         items,
         unreadCount,
+        filter,
+        q,
         featuredItems: items.filter((item) => item && item.isFeatured),
       })
     );

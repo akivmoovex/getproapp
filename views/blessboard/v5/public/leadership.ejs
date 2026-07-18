@@ -1,7 +1,10 @@
 <%#
   Leadership — Stitch 03-public-leadership-desktop-v2 (Populated) /
   03-public-leadership-mobile-v4 (Restored); empty: 5f7b1d44…
-  Published leaders only (sort_order ASC). No role inference, Contact Pastor, or View Profile.
+  Desktop: 372faa60f8df4983b627db3cb5d35f9d
+  Mobile:  0f4e816fd64d4592bd3677fbde3b7544
+  Published leaders only (sort_order ASC). No role/department inference,
+  unsupported contact/profile actions, or invented biographies.
 %>
 <%
   var pageSections = sections || [];
@@ -11,15 +14,53 @@
   var intro = pageSections.length ? pageSections[0] : null;
   var introHeading = (intro && intro.heading) || pageTitle || 'Our Leadership';
   var introBody = (intro && intro.bodyText) || '';
+  var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
+
+  // Stitch display titles accent the trailing phrase without inventing copy.
+  var accentBefore = introHeading;
+  var accentPhrase = '';
+  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
+  if (headingWords.length >= 4) {
+    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
+    accentPhrase = headingWords.slice(-2).join(' ');
+  }
 %>
 
-<section class="bb-tp-directory bb-tp-leadership" data-bb-leadership="1" data-bb-stitch-leadership="populated-v2">
-  <header class="bb-tp-dir-hero">
+<section
+  class="bb-tp-directory bb-tp-leadership"
+  data-bb-leadership="1"
+  data-bb-stitch-leadership="populated-v2"
+>
+  <header class="bb-tp-dir-hero bb-tp-leadership-hero" aria-label="Leadership">
     <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">Faith &amp; Community</p>
-      <h1 class="bb-tp-dir-hero__title"><%= introHeading %></h1>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-leadership-hero__eyebrow-desktop">
+        Faith &amp; Community
+      </p>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-leadership-hero__eyebrow-mobile">
+        Leadership
+      </p>
+      <h1 class="bb-tp-dir-hero__title">
+        <% if (accentPhrase) { %>
+        <%= accentBefore %><span class="bb-tp-leadership-hero__title-accent"><%= accentPhrase %></span>
+        <% } else { %>
+        <%= introHeading %>
+        <% } %>
+      </h1>
       <% if (introBody) { %>
       <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
+      <% } %>
+      <% if (introMedia) { %>
+      <div class="bb-tp-leadership-hero__media">
+        <img
+          class="bb-tp-media"
+          src="<%= introMedia %>"
+          alt=""
+          width="960"
+          height="420"
+          loading="eager"
+          decoding="async"
+        />
+      </div>
       <% } %>
     </div>
   </header>
@@ -46,15 +87,24 @@
     <section class="bb-tp-featured-leader" aria-label="Featured leader">
       <% if (featured.roleTitle) { %>
       <p class="bb-tp-featured-leader__label"><%= featured.roleTitle %></p>
-      <% } else { %>
-      <p class="bb-tp-featured-leader__label">Leadership</p>
       <% } %>
       <article class="bb-tp-featured-leader__card">
         <div class="bb-tp-featured-leader__media<%= featured.imageUrl ? '' : ' is-fallback' %>">
           <% if (featured.imageUrl) { %>
-          <img src="<%= featured.imageUrl %>" alt="" width="480" height="560" loading="eager" decoding="async" />
+          <img
+            src="<%= featured.imageUrl %>"
+            alt="<%= featured.displayName %>"
+            width="480"
+            height="560"
+            loading="eager"
+            decoding="async"
+          />
           <% } else { %>
-          <div class="bb-tp-avatar bb-tp-avatar--xl" aria-hidden="true"><%= initials(featured.displayName) %></div>
+          <div
+            class="bb-tp-avatar bb-tp-avatar--xl"
+            role="img"
+            aria-label="<%= featured.displayName %>"
+          ><%= initials(featured.displayName) %></div>
           <% } %>
         </div>
         <div class="bb-tp-featured-leader__copy">
@@ -71,16 +121,27 @@
     <% } %>
 
     <% if (others.length) { %>
-    <section class="bb-tp-leader-grid-wrap" aria-label="Ministry leaders">
+    <section class="bb-tp-leader-grid-wrap" aria-label="Leaders">
       <h2 class="bb-tp-section-title bb-tp-section-title--ruled">Ministry Leaders</h2>
       <ul class="bb-tp-leader-grid">
         <% others.forEach(function (leader) { %>
         <li class="bb-tp-leader-card">
           <div class="bb-tp-leader-card__media<%= leader.imageUrl ? '' : ' is-fallback' %>">
             <% if (leader.imageUrl) { %>
-            <img src="<%= leader.imageUrl %>" alt="" width="320" height="320" loading="lazy" decoding="async" />
+            <img
+              src="<%= leader.imageUrl %>"
+              alt="<%= leader.displayName %>"
+              width="320"
+              height="320"
+              loading="lazy"
+              decoding="async"
+            />
             <% } else { %>
-            <div class="bb-tp-avatar" aria-hidden="true"><%= initials(leader.displayName) %></div>
+            <div
+              class="bb-tp-avatar"
+              role="img"
+              aria-label="<%= leader.displayName %>"
+            ><%= initials(leader.displayName) %></div>
             <% } %>
           </div>
           <div class="bb-tp-leader-card__body">
@@ -101,12 +162,19 @@
     <% if (pageSections.length > 1) { %>
     <div class="bb-tp-directory__sections">
       <% pageSections.slice(1).forEach(function (section) { %>
-      <section class="bb-tp-content-block" data-section="<%= section.sectionKey %>">
-        <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
-        <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+      <section
+        class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>"
+        data-section="<%= section.sectionKey %>"
+      >
         <% if (section.mediaUrl) { %>
-        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+        <div class="bb-tp-content-block__media">
+          <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+        </div>
         <% } %>
+        <div class="bb-tp-content-block__copy">
+          <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
+          <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+        </div>
       </section>
       <% }) %>
     </div>
@@ -115,15 +183,17 @@
     <% } %>
   </div>
 
-  <section class="bb-tp-dir-cta bb-tp-dir-cta--accent">
-    <div class="bb-tp-container bb-tp-dir-cta__inner bb-tp-dir-cta__inner--split">
-      <div class="bb-tp-dir-cta__copy">
-        <h2 class="bb-tp-section-title">Want to serve with us?</h2>
-        <p class="bb-tp-body">Connect with <%= publicName %> to learn about serving opportunities.</p>
-      </div>
-      <div class="bb-tp-page-hero__cta">
-        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--on-accent" href="/ministries">Explore Ministries</a>
-        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="/contact">Contact Church</a>
+  <section class="bb-tp-dir-cta bb-tp-dir-cta--accent bb-tp-leadership-cta" aria-label="Serve">
+    <div class="bb-tp-container">
+      <div class="bb-tp-dir-cta__inner bb-tp-dir-cta__inner--split bb-tp-leadership-cta__inner">
+        <div class="bb-tp-dir-cta__copy">
+          <h2 class="bb-tp-section-title">Want to serve with us?</h2>
+          <p class="bb-tp-body">Connect with <%= publicName %> to learn about serving opportunities.</p>
+        </div>
+        <div class="bb-tp-page-hero__cta">
+          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--on-accent" href="/ministries">Explore Ministries</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="/contact">Contact Church</a>
+        </div>
       </div>
     </div>
   </section>

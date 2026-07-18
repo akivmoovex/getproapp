@@ -4,7 +4,7 @@
   Locals: csrfToken, error, errorState, errorTitle, emailValue, transferHostname,
           hostKind, subtitle, panelTitle, panelLead, loggedOut
   Raw transfer tokens must never appear in HTML. Form posts to current URL so ?tr= is preserved by the browser.
-  No forgot-password, social login, or user-controlled redirect fields.
+  No forgot-password, OAuth providers, or user-controlled redirect fields.
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,11 +15,11 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>Sign in · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=6" />
-  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=4" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=10" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=5" />
 </head>
 <body
-  class="bb-auth-body bb-auth-login"
+  class="bb-auth-body bb-auth-login<%= transferHostname ? ' bb-auth-login--transfer' : '' %>"
   data-bb-shell="apex-auth"
   data-bb-product="blessboard-v5"
   data-bb-page="login"
@@ -58,18 +58,20 @@
       </header>
 
       <div class="bb-auth-main__body">
-        <div class="bb-auth-card">
-          <div class="bb-auth-card__brand-mark" aria-hidden="true">
-            <img
-              src="/church/images/brand/blessboard-small-church-logo.png"
-              alt=""
-              width="56"
-              height="56"
-              decoding="async"
-            />
+        <div class="bb-auth-card bb-auth-card--login<%= transferHostname ? ' bb-auth-card--transfer' : '' %>">
+          <div class="bb-auth-card__intro">
+            <div class="bb-auth-card__brand-mark" aria-hidden="true">
+              <img
+                src="/church/images/brand/blessboard-small-church-logo.png"
+                alt=""
+                width="56"
+                height="56"
+                decoding="async"
+              />
+            </div>
+            <h1 class="bb-auth-card__title"><%= transferHostname ? 'Member Access' : 'Sign in' %></h1>
+            <p class="bb-auth-card__lead"><%= subtitle %></p>
           </div>
-          <h1 class="bb-auth-card__title"><%= transferHostname ? 'Member Access' : 'Sign in' %></h1>
-          <p class="bb-auth-card__lead"><%= subtitle %></p>
 
           <% if (loggedOut) { %>
           <p class="bb-auth-success" role="status" data-bb-auth-logged-out="1">
@@ -78,13 +80,20 @@
           <% } %>
 
           <% if (transferHostname) { %>
-          <p class="bb-auth-transfer-status" role="status" data-bb-auth-transfer-host="1">
+          <div
+            class="bb-auth-transfer-status"
+            role="status"
+            data-bb-auth-transfer-host="1"
+            data-bb-auth-transfer-status="continue"
+          >
             <span class="material-symbols-outlined" aria-hidden="true">domain</span>
-            <span>
-              Continue sign-in for
-              <strong class="bb-auth-transfer-status__host"><%= transferHostname %></strong>
-            </span>
-          </p>
+            <div class="bb-auth-transfer-status__copy">
+              <p class="bb-auth-transfer-status__title">Continue sign-in for your church site</p>
+              <p class="bb-auth-transfer-status__body">
+                <strong class="bb-auth-transfer-status__host"><%= transferHostname %></strong>
+              </p>
+            </div>
+          </div>
           <% } %>
 
           <% if (error) { %>
@@ -94,6 +103,7 @@
             role="alert"
             tabindex="-1"
             aria-live="assertive"
+            data-bb-auth-error-banner="<%= errorState || 'generic' %>"
           >
             <p class="bb-auth-error__title"><%= errorTitle %></p>
             <p class="bb-auth-error__body"><%= error %></p>

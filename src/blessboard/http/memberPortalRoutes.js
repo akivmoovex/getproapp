@@ -30,6 +30,11 @@ const {
   STATUS: PORTAL_STATUS,
 } = require("../services/memberPortalService");
 const { listPublishedGivingMethods } = require("../services/publicContentReadService");
+const { listMemberAnnouncements } = require("../services/announcementsService");
+const {
+  listMemberEvents,
+  listMemberMinistries,
+} = require("../services/participationService");
 const { safeExternalUrl } = require("./tenantPublicSafe");
 const {
   buildMemberShellLocals,
@@ -39,6 +44,136 @@ const {
 } = require("./memberShellLocals");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
+const DASHBOARD_PREVIEW_LIMIT = 3;
+
+/**
+ * Quick actions for the member dashboard — implemented routes only.
+ * Prayer remains visible but disabled (no V5 route). Check-in / directory omitted.
+ */
+const DASHBOARD_QUICK_ACTIONS = Object.freeze([
+  {
+    key: "giving",
+    label: "Giving",
+    href: "/member/giving",
+    icon: "volunteer_activism",
+    enabled: true,
+  },
+  {
+    key: "ministries",
+    label: "Ministries",
+    href: "/member/ministries",
+    icon: "groups",
+    enabled: true,
+  },
+  {
+    key: "events",
+    label: "Events",
+    href: "/member/events",
+    icon: "event_available",
+    enabled: true,
+  },
+  {
+    key: "prayer",
+    label: "Prayer request",
+    href: null,
+    icon: "favorite",
+    enabled: false,
+  },
+]);
+
+/**
+ * @param {unknown} value
+ * @param {number} maxLen
+ */
+function excerptText(value, maxLen) {
+  const raw = String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!raw) return "";
+  if (raw.length <= maxLen) return raw;
+  return `${raw.slice(0, maxLen - 1).trim()}…`;
+}
+
+/**
+ * @param {unknown} value
+ */
+function formatDashDateParts(value) {
+  if (!value) return null;
+  try {
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+    return {
+      day: String(d.getDate()),
+      month: d.toLocaleDateString("en-GB", { month: "short" }),
+      time: d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+    };
+  } catch (_err) {
+    return null;
+  }
+}
+
+/**
+ * Soft-fail dashboard previews from existing member list services (no new query shapes).
+ * @param {{ query: Function, connect?: Function }} pool
+ * @param {{ churchId: string, branchId: string, memberId: string }} scope
+ */
+async function loadMemberDashboardPreviews(pool, scope) {
+  const [announcementsListed, eventsListed, ministriesListed] = await Promise.all([
+    listMemberAnnouncements(pool, { ...scope, limit: DASHBOARD_PREVIEW_LIMIT, offset: 0 }),
+    listMemberEvents(pool, scope),
+    listMemberMinistries(pool, scope),
+  ]);
+
+  const now = Date.now();
+  const announcements = (announcementsListed.ok ? announcementsListed.items || [] : [])
+    .slice(0, DASHBOARD_PREVIEW_LIMIT)
+    .map((item) => ({
+      id: item.id,
+      title: item.title,
+      excerpt: excerptText(item.body, 120),
+      href: `/member/announcements/${item.id}`,
+      isFeatured: Boolean(item.isFeatured),
+    }));
+
+  const events = (eventsListed.ok ? eventsListed.items || [] : [])
+    .filter((item) => {
+      if (!item || !item.startsAt) return false;
+      const t = new Date(item.startsAt).getTime();
+      return !Number.isNaN(t) && t >= now;
+    })
+    .slice(0, DASHBOARD_PREVIEW_LIMIT)
+    .map((item) => {
+      const when = formatDashDateParts(item.startsAt);
+      return {
+        id: item.id,
+        title: item.title,
+        summary: excerptText(item.summary, 100),
+        href: `/member/events/${item.id}`,
+        when,
+        location: item.location ? String(item.location) : "",
+      };
+    });
+
+  const ministries = (ministriesListed.ok ? ministriesListed.items || [] : [])
+    .slice()
+    .sort((a, b) => {
+      const aActive = a && a.membership ? 0 : 1;
+      const bActive = b && b.membership ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return String((a && a.name) || "").localeCompare(String((b && b.name) || ""));
+    })
+    .slice(0, DASHBOARD_PREVIEW_LIMIT)
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      summary: excerptText(item.summary, 100),
+      href: `/member/ministries/${item.id}`,
+      isMember: Boolean(item.membership && item.membership.status === "active"),
+      isPending: Boolean(item.membership && item.membership.status === "pending"),
+    }));
+
+  return { announcements, events, ministries };
+}
 
 function givingMethodIcon(methodType) {
   const t = String(methodType || "").toLowerCase();
@@ -156,8 +291,31 @@ function createMemberPortalRouter(deps) {
     });
   }
 
-  router.get("/member", rejectApex, requireMember, (req, res) => {
-    const html = renderMemberView("member/dashboard.ejs", shellLocals(req, res, "home"));
+  router.get("/member", rejectApex, requireMember, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    const access = req.blessBoardMemberAccess;
+    let announcements = [];
+    let events = [];
+    let ministries = [];
+    if (tenant && tenant.church && tenant.primaryBranch && access && access.member) {
+      const previews = await loadMemberDashboardPreviews(getPool(), {
+        churchId: tenant.church.id,
+        branchId: tenant.primaryBranch.id,
+        memberId: access.member.id,
+      });
+      announcements = previews.announcements;
+      events = previews.events;
+      ministries = previews.ministries;
+    }
+    const html = renderMemberView(
+      "member/dashboard.ejs",
+      shellLocals(req, res, "home", {
+        quickActions: DASHBOARD_QUICK_ACTIONS,
+        previewAnnouncements: announcements,
+        previewEvents: events,
+        previewMinistries: ministries,
+      })
+    );
     return res.status(200).type("html").send(html);
   });
 
