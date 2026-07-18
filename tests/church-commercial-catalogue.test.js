@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * Proves Foundation / Growth commercial numbers live in the package catalogue
- * (and Growth price in the billing price book) — consumers must not restate them.
+ * Proves Foundation / Growth / Network commercial numbers live in the package
+ * catalogue (and active-branch prices in the billing price book).
  */
 
 const test = require("node:test");
@@ -13,6 +13,7 @@ const path = require("path");
 const catalogue = require("../src/church/blessBoardPackageCatalogue");
 const {
   BLESSBOARD_PACKAGES,
+  PACKAGE_CODES,
   FOUNDATION_ACTIVE_BRANCHES,
   FOUNDATION_ACTIVE_MEMBERS,
   FOUNDATION_ADMIN_ACCOUNTS,
@@ -24,14 +25,17 @@ const {
   GROWTH_EXTERNAL_EMAILS_MONTHLY_BASE,
   GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH,
   GROWTH_SCHEDULED_REPORTS_MONTHLY,
+  NETWORK_MAILBOXES_PER_BRANCH,
   DEFAULT_GROWTH_TRIAL_DURATION_DAYS,
   BYTES_PER_GIB,
   getCommercialCapacitySnapshot,
   getPackageDefinition,
   readEntitlementPath,
+  resolvePackageFromPlanCode,
 } = catalogue;
 const {
   GROWTH_MONTHLY_PER_BRANCH_CENTS,
+  NETWORK_MONTHLY_PER_BRANCH_CENTS,
   BILLING_CURRENCY,
 } = require("../src/church/blessBoardBillingCatalogue");
 const { DEFAULT_DURATION_DAYS } = require("../src/services/church/churchGrowthTrialService");
@@ -40,9 +44,10 @@ const { getNumericLimit } = require("../src/services/church/churchEntitlementSer
 
 const ROOT = path.join(__dirname, "..");
 
-test("package catalogue is the sole Foundation/Growth capacity source of truth", () => {
+test("package catalogue is the sole Foundation/Growth/Network capacity source of truth", () => {
   const snap = getCommercialCapacitySnapshot();
 
+  assert.deepEqual([...PACKAGE_CODES], ["foundation", "growth", "network"]);
   assert.equal(FOUNDATION_ACTIVE_BRANCHES, 1);
   assert.equal(FOUNDATION_ACTIVE_MEMBERS, 250);
   assert.equal(FOUNDATION_ADMIN_ACCOUNTS, 10);
@@ -56,45 +61,46 @@ test("package catalogue is the sole Foundation/Growth capacity source of truth",
   assert.equal(GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH, 1000);
   assert.equal(GROWTH_SCHEDULED_REPORTS_MONTHLY, 20);
   assert.equal(DEFAULT_GROWTH_TRIAL_DURATION_DAYS, 30);
+  assert.equal(NETWORK_MAILBOXES_PER_BRANCH, 5);
 
   const foundation = getPackageDefinition("foundation").entitlements;
   assert.equal(readEntitlementPath(foundation, "branches.max_active"), FOUNDATION_ACTIVE_BRANCHES);
   assert.equal(readEntitlementPath(foundation, "members.max_active"), FOUNDATION_ACTIVE_MEMBERS);
   assert.equal(readEntitlementPath(foundation, "admins.max"), FOUNDATION_ADMIN_ACCOUNTS);
-  assert.equal(readEntitlementPath(foundation, "storage.bytes"), FOUNDATION_STORAGE_BYTES);
-  assert.equal(readEntitlementPath(foundation, "external_emails.monthly"), FOUNDATION_EXTERNAL_EMAILS_MONTHLY);
-  assert.equal(
-    readEntitlementPath(foundation, "reports.scheduled_monthly"),
-    FOUNDATION_SCHEDULED_REPORTS_MONTHLY
-  );
+  assert.equal(readEntitlementPath(foundation, "domains.custom"), false);
+  assert.equal(readEntitlementPath(foundation, "email.mailboxes_per_branch"), 0);
 
   const growth = getPackageDefinition("growth").entitlements;
-  assert.equal(readEntitlementPath(growth, "storage.bytes_base"), GROWTH_STORAGE_BYTES_BASE);
-  assert.equal(
-    readEntitlementPath(growth, "storage.bytes_per_active_branch"),
-    GROWTH_STORAGE_BYTES_PER_ACTIVE_BRANCH
-  );
-  assert.equal(
-    readEntitlementPath(growth, "external_emails.monthly_base"),
-    GROWTH_EXTERNAL_EMAILS_MONTHLY_BASE
-  );
-  assert.equal(
-    readEntitlementPath(growth, "external_emails.monthly_per_active_branch"),
-    GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH
-  );
-  assert.equal(readEntitlementPath(growth, "reports.scheduled_monthly"), GROWTH_SCHEDULED_REPORTS_MONTHLY);
+  assert.equal(readEntitlementPath(growth, "reports.cross_branch"), true);
+  assert.equal(readEntitlementPath(growth, "domains.custom"), false);
+  assert.equal(readEntitlementPath(growth, "email.mailboxes_per_branch"), 0);
+
+  const network = getPackageDefinition("network").entitlements;
+  assert.equal(readEntitlementPath(network, "domains.custom"), true);
+  assert.equal(readEntitlementPath(network, "email.mailboxes_per_branch"), NETWORK_MAILBOXES_PER_BRANCH);
+  assert.equal(readEntitlementPath(network, "integrations.webhooks"), true);
+  assert.equal(readEntitlementPath(network, "network.priority_support"), true);
 
   assert.equal(snap.foundation.activeMembers, FOUNDATION_ACTIVE_MEMBERS);
   assert.equal(snap.growth.scheduledReportsMonthly, GROWTH_SCHEDULED_REPORTS_MONTHLY);
-  assert.equal(snap.growth.defaultTrialDurationDays, DEFAULT_GROWTH_TRIAL_DURATION_DAYS);
+  assert.equal(snap.network.mailboxesPerBranch, NETWORK_MAILBOXES_PER_BRANCH);
 
   assert.ok(BLESSBOARD_PACKAGES.foundation);
   assert.ok(BLESSBOARD_PACKAGES.growth);
+  assert.ok(BLESSBOARD_PACKAGES.network);
 });
 
-test("Growth price book is the sole USD 14.90 / active-branch source", () => {
+test("Growth and Network price book are the sole active-branch USD sources", () => {
   assert.equal(BILLING_CURRENCY, "USD");
-  assert.equal(GROWTH_MONTHLY_PER_BRANCH_CENTS, 1490);
+  assert.equal(GROWTH_MONTHLY_PER_BRANCH_CENTS, 1499);
+  assert.equal(NETWORK_MONTHLY_PER_BRANCH_CENTS, 2999);
+});
+
+test("legacy plan codes map to Foundation / Growth / Network", () => {
+  assert.equal(resolvePackageFromPlanCode("free").packageCode, "foundation");
+  assert.equal(resolvePackageFromPlanCode("professional").packageCode, "network");
+  assert.equal(resolvePackageFromPlanCode("partner").packageCode, "network");
+  assert.equal(resolvePackageFromPlanCode("pro").packageCode, "growth");
 });
 
 test("trial default duration and Foundation branch message use the package catalogue", () => {

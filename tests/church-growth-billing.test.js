@@ -39,16 +39,16 @@ function makeSuffix(prefix) {
 }
 
 test("Growth price book constants and annual discount", () => {
-  assert.equal(GROWTH_MONTHLY_PER_BRANCH_CENTS, 1490);
+  assert.equal(GROWTH_MONTHLY_PER_BRANCH_CENTS, 1499);
   assert.equal(ANNUAL_DISCOUNT_BPS, 1500);
   const annual = annualUnitAmountCents();
-  assert.equal(annual, 1490 * 12 - Math.round((1490 * 12 * 1500) / 10000));
-  assert.equal(annual, 15198);
+  assert.equal(annual, 1499 * 12 - Math.round((1499 * 12 * 1500) / 10000));
+  assert.equal(annual, 15290);
 });
 
 test("proration and inclusive day counts", () => {
   assert.equal(inclusiveDayCount("2026-07-01", "2026-07-31"), 31);
-  assert.equal(prorateAmountCents(1490, 16, 31), Math.round((1490 * 16) / 31));
+  assert.equal(prorateAmountCents(1499, 16, 31), Math.round((1499 * 16) / 31));
   const overlap = branchBillableOverlap(
     "2026-07-01",
     "2026-07-31",
@@ -80,8 +80,8 @@ test("draft invoice: every active branch including first; HQ has no line", () =>
     ],
   });
   assert.equal(calc.billableBranchCount, 2);
-  assert.equal(calc.subtotalCents, 1490 * 2);
-  assert.equal(calc.totalCents, 2980);
+  assert.equal(calc.subtotalCents, 1499 * 2);
+  assert.equal(calc.totalCents, 2998);
   assert.equal(calc.paymentStatus, "awaiting_provider");
   assert.equal(calc.status, "draft");
   assert.ok(calc.notes.some((n) => /HQ has no separate charge/i.test(n)));
@@ -101,7 +101,7 @@ test("draft invoice: first partial month proration", () => {
   });
   assert.equal(calc.isProrated, true);
   assert.equal(calc.lines[0].billableDays, 16);
-  assert.equal(calc.totalCents, Math.round((1490 * 16) / 31));
+  assert.equal(calc.totalCents, Math.round((1499 * 16) / 31));
 });
 
 test("draft invoice: annual 15% discount", () => {
@@ -117,8 +117,8 @@ test("draft invoice: annual 15% discount", () => {
     ],
   });
   assert.equal(calc.annualDiscountApplied, true);
-  assert.equal(calc.subtotalCents, 1490 * 12);
-  assert.equal(calc.discountCents, Math.round((1490 * 12 * 1500) / 10000));
+  assert.equal(calc.subtotalCents, 1499 * 12);
+  assert.equal(calc.discountCents, Math.round((1499 * 12 * 1500) / 10000));
   assert.equal(calc.totalCents, annualUnitAmountCents());
 });
 

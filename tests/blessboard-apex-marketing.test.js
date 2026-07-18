@@ -92,8 +92,7 @@ describe("blessboard apex marketing batch 2b", () => {
       assert.equal(plan.ctaHref, "/register-church");
       assert.match(plan.ctaLabel, /Register Your Church/);
     }
-    const partner = buildApexPartnerPlan();
-    assert.equal(partner.ctaHref, "/register-church");
+    assert.equal(buildApexPartnerPlan(), null);
     assert.equal(mapDirectoryVisitUrl({ is_single_branch: false, branch_slug: "x" }), null);
   });
 
@@ -156,13 +155,19 @@ describe("blessboard apex marketing batch 2b", () => {
     const app = makeApp();
     const res = await request(app).get("/pricing").set("Host", "blessboard.org");
     assert.equal(res.status, 200);
+    assert.match(res.text, /Foundation/);
+    assert.match(res.text, /Growth/);
+    assert.match(res.text, /Network/);
     assert.match(res.text, /USD 0/);
-    assert.match(res.text, /USD 4\.90/);
-    assert.match(res.text, /USD 8\.90/);
+    assert.match(res.text, /USD 14\.99/);
+    assert.match(res.text, /USD 29\.99/);
+    assert.match(res.text, /active branch/i);
     assert.match(res.text, /id="faq"/);
-    assert.match(res.text, /Ordinary church-member accounts are not billed/);
+    assert.match(res.text, /Church members are not billed individually/);
     assert.match(res.text, /href="\/register-church"/);
     assert.doesNotMatch(res.text, /href="\/contact"/);
+    assert.doesNotMatch(res.text, /USD 4\.90|USD 8\.90|USD 14\.90/);
+    assert.doesNotMatch(res.text, /\bProfessional\b|\bPartner\b/);
   });
 
   it("marketing routes are apex-only (404 on non-apex host text)", async () => {

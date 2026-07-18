@@ -63,7 +63,7 @@ const PLATFORM_FAQ_ITEMS = [
     id: "custom-domain",
     question: "Can a church connect its own domain?",
     answer:
-      "Each branch is published on a BlessBoard subdomain such as yourchurch.blessboard.com. Connecting a separate custom domain is not self-service in the current product. Contact BlessBoard for current availability and plan information.",
+      "Branches publish on a BlessBoard subdomain such as yourchurch.blessboard.com. A custom organization domain is included on the Network package and is provisioned with assisted onboarding — it is not self-service DNS today.",
   },
   {
     id: "request-access",
@@ -81,7 +81,7 @@ const PLATFORM_FAQ_ITEMS = [
     id: "pricing",
     question: "How does BlessBoard pricing work?",
     answer:
-      "BlessBoard is currently onboarding selected churches. Plans and available services may vary according to church size, branch structure and setup requirements. Contact the BlessBoard team to discuss access.",
+      "BlessBoard offers Foundation (USD 0), Growth (USD 14.99 per active branch/month), and Network (USD 29.99 per active branch/month). HQ is not billed as a branch. Church members are not billed individually. Checkout is not available on the public site — onboarding is contact-led.",
   },
   {
     id: "who-can-view",

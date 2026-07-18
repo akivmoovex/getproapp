@@ -4,12 +4,12 @@
   heroVariant: 'apex-center',
   heroEyebrow: 'Transparent Pricing',
   heroTitle: 'Simple plans for every stage of church growth',
-  heroLead: 'Start free, grow across branches, build a professional digital presence, or combine BlessBoard technology with managed services.'
+  heroLead: 'Foundation for single-branch churches, Growth for multi-branch operations, and Network for custom domains, mailboxes, and governance.'
 }) %>
 
 <p class="bb-apex-pricing__staff-note" role="note">
   <span class="material-symbols-outlined" aria-hidden="true">info</span>
-  <span><%= typeof staffBillingNote !== 'undefined' ? staffBillingNote : 'Ordinary church-member accounts are not billed as staff or administrator accounts.' %></span>
+  <span><%= typeof staffBillingNote !== 'undefined' ? staffBillingNote : 'Church members are not billed individually. Paid packages are billed per active branch; HQ is not billed as a branch.' %></span>
 </p>
 
 <% var tiers = typeof pricingPlans !== 'undefined' ? pricingPlans : []; %>

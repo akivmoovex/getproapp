@@ -1,25 +1,33 @@
 "use strict";
 
 /**
- * Growth billing commercial constants (readiness layer — no payment provider).
+ * BlessBoard billing commercial constants (readiness layer — no payment provider).
  *
  * Rules:
- * - USD 14.90 per active branch per month
+ * - Foundation: USD 0 (not billed per branch)
+ * - Growth: USD 14.99 per active branch per month
+ * - Network: USD 29.99 per active branch per month
  * - HQ has no separate charge
- * - Every active branch, including the first, is billable
+ * - Every active branch, including the first, is billable on Growth/Network
  * - Monthly billing in advance; annual option with 15% discount
  * - First partial month supports proration
  */
 
 const GROWTH_PACKAGE_CODE = "growth";
+const NETWORK_PACKAGE_CODE = "network";
+const FOUNDATION_PACKAGE_CODE = "foundation";
 const BILLING_CURRENCY = "USD";
 const ACTIVE_BRANCH_ITEM_CODE = "active_branch";
 
-/** USD 14.90 → cents */
-const GROWTH_MONTHLY_PER_BRANCH_CENTS = 1490;
+/** USD 14.99 → cents */
+const GROWTH_MONTHLY_PER_BRANCH_CENTS = 1499;
+
+/** USD 29.99 → cents */
+const NETWORK_MONTHLY_PER_BRANCH_CENTS = 2999;
 
 /** Annual list before discount = 12 × monthly */
 const GROWTH_ANNUAL_LIST_PER_BRANCH_CENTS = GROWTH_MONTHLY_PER_BRANCH_CENTS * 12;
+const NETWORK_ANNUAL_LIST_PER_BRANCH_CENTS = NETWORK_MONTHLY_PER_BRANCH_CENTS * 12;
 
 /** 15% annual prepay discount in basis points */
 const ANNUAL_DISCOUNT_BPS = 1500;
@@ -88,15 +96,37 @@ function defaultPriceBookEntries() {
       billingInterval: "annual",
       billableUnit: "active_branch",
     },
+    {
+      packageCode: NETWORK_PACKAGE_CODE,
+      itemCode: ACTIVE_BRANCH_ITEM_CODE,
+      label: "Network active branch",
+      currency: BILLING_CURRENCY,
+      unitAmountCents: NETWORK_MONTHLY_PER_BRANCH_CENTS,
+      billingInterval: "monthly",
+      billableUnit: "active_branch",
+    },
+    {
+      packageCode: NETWORK_PACKAGE_CODE,
+      itemCode: ACTIVE_BRANCH_ITEM_CODE,
+      label: "Network active branch (annual list)",
+      currency: BILLING_CURRENCY,
+      unitAmountCents: NETWORK_ANNUAL_LIST_PER_BRANCH_CENTS,
+      billingInterval: "annual",
+      billableUnit: "active_branch",
+    },
   ];
 }
 
 module.exports = {
+  FOUNDATION_PACKAGE_CODE,
   GROWTH_PACKAGE_CODE,
+  NETWORK_PACKAGE_CODE,
   BILLING_CURRENCY,
   ACTIVE_BRANCH_ITEM_CODE,
   GROWTH_MONTHLY_PER_BRANCH_CENTS,
+  NETWORK_MONTHLY_PER_BRANCH_CENTS,
   GROWTH_ANNUAL_LIST_PER_BRANCH_CENTS,
+  NETWORK_ANNUAL_LIST_PER_BRANCH_CENTS,
   ANNUAL_DISCOUNT_BPS,
   BILLING_CADENCES,
   DUNNING_SCHEDULE,

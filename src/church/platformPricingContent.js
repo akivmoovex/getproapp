@@ -1,36 +1,57 @@
 "use strict";
 
+/**
+ * Approved public BlessBoard pricing presentation (Foundation / Growth / Network).
+ * Amounts and capacity must stay aligned with blessBoardPackageCatalogue +
+ * blessBoardBillingCatalogue — do not restate cents elsewhere.
+ */
+
 const { BLESSBOARD_ONBOARDING_POSITIONING } = require("./platformPublicContent");
+const {
+  FOUNDATION_ACTIVE_BRANCHES,
+  FOUNDATION_ACTIVE_MEMBERS,
+  FOUNDATION_ADMIN_ACCOUNTS,
+  NETWORK_MAILBOXES_PER_BRANCH,
+} = require("./blessBoardPackageCatalogue");
+const {
+  GROWTH_MONTHLY_PER_BRANCH_CENTS,
+  NETWORK_MONTHLY_PER_BRANCH_CENTS,
+} = require("./blessBoardBillingCatalogue");
 
 const FEATURED_PLAN_CODE = "growth";
-const TIER_PLAN_CODES = ["free", "growth", "professional"];
-const ALL_PLAN_CODES = [...TIER_PLAN_CODES, "partner"];
+const TIER_PLAN_CODES = ["foundation", "growth", "network"];
+const ALL_PLAN_CODES = [...TIER_PLAN_CODES];
 
 const STAFF_BILLING_NOTE =
-  "Ordinary church-member accounts are not billed as staff or administrator accounts.";
+  "Church members are not billed individually. Paid packages are billed per active branch; HQ is not billed as a branch.";
 
 const THIRD_PARTY_COSTS_NOTE =
-  "Third-party costs such as custom domain registration, professional mailbox hosting, and payment processing remain separately quoted where applicable.";
+  "Third-party costs such as custom domain registrar fees and payment processing remain separately quoted where applicable. Hosted mailbox capacity is included on Network; registrar and DNS work are assisted during onboarding.";
+
+function formatUsdFromCents(cents) {
+  const n = Number(cents) || 0;
+  return `USD ${(n / 100).toFixed(2)}`;
+}
 
 function buildTierPlans() {
   return [
     {
-      code: "free",
-      label: "Free",
+      code: "foundation",
+      label: "Foundation",
       eyebrow: null,
       priceAmount: "USD 0",
       priceSuffix: "/month",
-      description: "Ideal for small congregations or new church plants.",
+      description: "Ideal for small congregations or new church plants with a single active branch.",
       featured: false,
       badge: null,
       ctaLabel: "Register Your Church",
       ctaHref: "/register-church",
       ctaVariant: "outline",
       features: [
-        "Up to 10 total users",
-        "1 HQ and 1 branch",
-        "Public church website",
-        "Member portal",
+        "1 HQ and maximum 1 active branch",
+        `Up to ${FOUNDATION_ACTIVE_MEMBERS} active members`,
+        `Up to ${FOUNDATION_ADMIN_ACCOUNTS} administrator / leadership accounts`,
+        "Public church website and member portal",
         "Basic reporting",
       ],
     },
@@ -38,67 +59,53 @@ function buildTierPlans() {
       code: "growth",
       label: "Growth",
       eyebrow: null,
-      priceAmount: "USD 4.90",
-      priceSuffix: "/active staff/mo",
-      description: "Scale your operations across multiple branches and roles.",
+      priceAmount: formatUsdFromCents(GROWTH_MONTHLY_PER_BRANCH_CENTS),
+      priceSuffix: "/active branch/mo",
+      description: "Scale operations across unlimited branches with advanced workflows and cross-branch administration.",
       featured: true,
       badge: "Most Popular",
       ctaLabel: "Register Your Church",
       ctaHref: "/register-church",
       ctaVariant: "primary",
       features: [
-        "Everything in Free",
-        "1 HQ and up to 10 branches",
-        "Standard multi-branch reporting",
-        "Multiple staff and administrator roles",
-        "Ordinary members are not billed as staff accounts",
+        "Everything in Foundation",
+        "1 HQ and unlimited active branches",
+        "Unlimited members subject to fair use",
+        "Advanced workflows, scheduling, and reporting",
+        "Cross-branch administration",
+        "HQ is not billed as a branch",
       ],
     },
     {
-      code: "professional",
-      label: "Professional",
-      eyebrow: "Best for established churches",
-      priceAmount: "USD 8.90",
-      priceSuffix: "/active staff/mo",
-      description: "Premium branding and high-capacity church management.",
+      code: "network",
+      label: "Network",
+      eyebrow: "Infrastructure & governance",
+      priceAmount: formatUsdFromCents(NETWORK_MONTHLY_PER_BRANCH_CENTS),
+      priceSuffix: "/active branch/mo",
+      description:
+        "Custom organization domain, hosted mailboxes, integrations, executive reporting, and priority support for multi-site networks.",
       featured: false,
       badge: null,
-      ctaLabel: "Contact BlessBoard",
-      ctaHref: "/contact",
+      ctaLabel: "Register Your Church",
+      ctaHref: "/register-church",
       ctaVariant: "outline",
       features: [
         "Everything in Growth",
-        "No minimum commitment",
-        "1 HQ and up to 50 branches",
-        "Up to 50 staff/admin accounts",
-        "Custom domain",
-        "One professional mailbox",
-        "Advanced reporting",
+        "Custom organization domain (assisted onboarding — not self-service DNS today)",
+        `Up to ${NETWORK_MAILBOXES_PER_BRANCH} hosted mailboxes per active branch`,
+        "Advanced roles and executive reports",
+        "API, webhooks, and integrations (availability by arrangement)",
+        "Priority support and assisted onboarding",
       ],
     },
   ];
 }
 
+/**
+ * @deprecated Partner tier retired — use Network. Kept returning null for callers that still expect the export.
+ */
 function buildPartnerPlan() {
-  return {
-    code: "partner",
-    label: "Partner",
-    eyebrow: "Enterprise & Services",
-    priceDisplay: "Custom quotation",
-    description:
-      "Bespoke capacity, dedicated stewardship, and managed digital services for large networks or denominations.",
-    ctaLabel: "Request a Quotation",
-    ctaHref: "/contact",
-    features: [
-      "Everything in Professional",
-      "Contract-defined capacity",
-      "Call-center services",
-      "Digital marketing",
-      "Outdoor events",
-      "Custom managed reporting",
-      "Custom domain",
-    ],
-  };
+  return null;
 }
 
 function buildPublicPricingPlans() {
@@ -112,43 +119,39 @@ function buildPublicPricingComparisonRows() {
       label: "Monthly platform fee",
       type: "text",
       values: {
-        free: "USD 0/month",
-        growth: "USD 4.90 per active staff",
-        professional: "USD 8.90 per active staff",
-        partner: "Custom quotation",
-      },
-    },
-    {
-      key: "users",
-      label: "Total users",
-      type: "text",
-      values: {
-        free: "Up to 10",
-        growth: "Unlimited members",
-        professional: "Unlimited members",
-        partner: "Contract-defined",
+        foundation: "USD 0/month",
+        growth: `${formatUsdFromCents(GROWTH_MONTHLY_PER_BRANCH_CENTS)} per active branch`,
+        network: `${formatUsdFromCents(NETWORK_MONTHLY_PER_BRANCH_CENTS)} per active branch`,
       },
     },
     {
       key: "hq_branches",
-      label: "HQ & branches",
+      label: "HQ & active branches",
       type: "text",
       values: {
-        free: "1 HQ, 1 branch",
-        growth: "1 HQ, up to 10 branches",
-        professional: "1 HQ, up to 50 branches",
-        partner: "Contract-defined",
+        foundation: `1 HQ, max ${FOUNDATION_ACTIVE_BRANCHES} active branch`,
+        growth: "1 HQ, unlimited active branches",
+        network: "1 HQ, unlimited active branches",
       },
     },
     {
-      key: "staff_accounts",
-      label: "Staff/admin accounts",
+      key: "members",
+      label: "Members",
       type: "text",
       values: {
-        free: "Included in user limit",
-        growth: "Billed per active staff",
-        professional: "Up to 50",
-        partner: "Contract-defined",
+        foundation: `Up to ${FOUNDATION_ACTIVE_MEMBERS} active`,
+        growth: "Unlimited (fair use)",
+        network: "Unlimited (fair use)",
+      },
+    },
+    {
+      key: "admins",
+      label: "Administrator / leadership accounts",
+      type: "text",
+      values: {
+        foundation: `Up to ${FOUNDATION_ADMIN_ACCOUNTS}`,
+        growth: "Fair use",
+        network: "Fair use + advanced roles",
       },
     },
     {
@@ -156,32 +159,29 @@ function buildPublicPricingComparisonRows() {
       label: "Reporting",
       type: "text",
       values: {
-        free: "Basic",
-        growth: "Standard multi-branch",
-        professional: "Advanced",
-        partner: "Custom managed",
+        foundation: "Basic",
+        growth: "Advanced + cross-branch",
+        network: "Executive + API exports",
       },
     },
     {
       key: "custom_domain",
-      label: "Custom domain",
+      label: "Custom organization domain",
       type: "bool",
       values: {
-        free: false,
+        foundation: false,
         growth: false,
-        professional: true,
-        partner: true,
+        network: true,
       },
     },
     {
-      key: "professional_mailbox",
-      label: "Professional mailbox",
-      type: "bool",
+      key: "hosted_mailboxes",
+      label: "Hosted mailboxes per active branch",
+      type: "text",
       values: {
-        free: false,
-        growth: false,
-        professional: true,
-        partner: true,
+        foundation: "None",
+        growth: "None",
+        network: `Up to ${NETWORK_MAILBOXES_PER_BRANCH}`,
       },
     },
   ];
@@ -194,6 +194,7 @@ module.exports = {
   ALL_PLAN_CODES,
   STAFF_BILLING_NOTE,
   THIRD_PARTY_COSTS_NOTE,
+  formatUsdFromCents,
   buildTierPlans,
   buildPartnerPlan,
   buildPublicPricingPlans,

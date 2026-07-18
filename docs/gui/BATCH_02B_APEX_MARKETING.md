@@ -63,7 +63,7 @@ No remote runtime image URLs. Stitch screenshots inspected for composition only.
 
 | Data | Status |
 |------|--------|
-| Pricing Free / Growth / Professional / Partner labels & amounts | **Real** — from `platformPricingContent.js` |
+| Pricing Foundation / Growth / Network labels & amounts | **Real** — from `platformPricingContent.js` (aligned with package + billing catalogues) |
 | FAQ answers | **Curated** — implemented-behavior subset only |
 | Directory listings | **Real** when DB returns active public orgs (env filter excludes testing/demo on production deployments) |
 | Directory Visit URL | **Real** `https://{branch}.…` for single-branch cards via `churchPublicUrl`; multi-branch has no `/churches/:slug` detail route |
@@ -79,7 +79,7 @@ No remote runtime image URLs. Stitch screenshots inspected for composition only.
 4. All pricing CTAs point to `/register-church` (no `/contact`).
 5. Register Church is a **non-submitting enquiry** — no fake “Request Sent!” success.
 6. Directory does not implement Stitch demo listings; empty state when no active orgs.
-7. Growth billing catalogue (`USD 14.90`/branch) is **not** shown on marketing pricing — public catalogue in `platformPricingContent` remains the approved display SoT for this page.
+7. Growth/Network billing uses **USD 14.99 / 29.99** per active branch — shown on marketing pricing via `platformPricingContent` (see §9 and [`BLESSBOARD_PRICING_DECISION.md`](../product/BLESSBOARD_PRICING_DECISION.md)).
 
 ## 6. Unsupported Stitch functionality omitted
 
@@ -105,7 +105,49 @@ No remote runtime image URLs. Stitch screenshots inspected for composition only.
 
 - Register Church still needs a product-backed inquiry/provisioning workflow before Stitch form parity.
 - Multi-branch directory visit path needs an approved V5 detail route or hostname selector.
-- Align public pricing display with entitlement codes (`foundation`/`growth`) if product retires Free/Professional/Partner marketing names.
+- **Platform `plan_key` migration still required** — seed keys remain `free` / `growth` / `professional` / `partner` with display remapped; see [`BLESSBOARD_PRICING_DECISION.md`](../product/BLESSBOARD_PRICING_DECISION.md).
 - Optional: export Stitch assets into `public/church/images` for closer hero imagery.
+- Stitch Pricing frames still depict the retired four-tier / staff model (decorative only).
 
-**Recommended next batch:** Batch 3 — Tenant public shell, Home and About.
+## 9. Pricing source-of-truth reconciliation
+
+**Date of decision:** 2026-07-18
+**Approved commercial model:** **Foundation / Growth / Network** (active-branch billing).
+**Authoritative product doc:** [`docs/product/BLESSBOARD_PRICING_DECISION.md`](../product/BLESSBOARD_PRICING_DECISION.md)
+
+### Decision (resolved)
+
+Public marketing, church package catalogue, and billing price book are aligned to three packages:
+
+| Package | Price | Billing unit |
+|---------|-------|--------------|
+| Foundation | USD 0 / month | — (not per-branch) |
+| Growth | USD 14.99 | per **active branch** / month |
+| Network | USD 29.99 | per **active branch** / month |
+
+HQ is not billed. Members are not billed individually. Custom domain + hosted mailboxes are Network-only. No checkout in this batch.
+
+### Runtime vs seed (remaining conflict)
+
+| Layer | Status |
+|-------|--------|
+| `blessBoardPackageCatalogue` | `foundation` / `growth` / `network` |
+| `blessBoardBillingCatalogue` | 1499¢ / 2999¢ per active branch |
+| `platformPricingContent` + apex `/pricing` | Matches above |
+| `db/seeds/003_blessboard_plans.sql` | **Keys unchanged** (`free` / `growth` / `professional` / `partner`); **display** remapped; `partner` inactive |
+| Platform-admin assignable church packages | **Foundation + Growth only** (Network = assisted onboarding) |
+
+**Migration still required** to rename `plan_key` values and reconcile platform subscriptions — see pricing decision doc §8. Do not destructively rename without that plan.
+
+### Package-name consistency on apex pages (current)
+
+| Page | Package names shown |
+|------|---------------------|
+| `/pricing` | Foundation, Growth, Network |
+| `/pricing#faq` | FAQ includes three-package / active-branch answer |
+| `/features` | Network called out for custom domains |
+| `/for-churches` | No tier price table |
+| `/register-church` | Plan interest: Foundation, Growth, or Network |
+| Homepage | No pricing tier names |
+
+**Recommended next batch:** Batch 3 — Tenant public shell, Home and About (commercial SoT resolved for marketing).

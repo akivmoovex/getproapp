@@ -9,7 +9,6 @@
 const {
   BLESSBOARD_PRICING_ONBOARDING_NOTE,
   buildPublicPricingPlans,
-  buildPartnerPlan,
   buildPublicPricingComparisonRows,
   STAFF_BILLING_NOTE,
   THIRD_PARTY_COSTS_NOTE,
@@ -41,12 +40,7 @@ function buildApexPricingPlans() {
 }
 
 function buildApexPartnerPlan() {
-  const partner = buildPartnerPlan();
-  return {
-    ...partner,
-    ctaLabel: "Register Your Church",
-    ctaHref: "/register-church",
-  };
+  return null;
 }
 
 function buildApexPricingFaq() {

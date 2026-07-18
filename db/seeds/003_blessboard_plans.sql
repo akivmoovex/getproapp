@@ -1,16 +1,19 @@
--- BlessBoard plan catalogue from approved public pricing (no prices stored — billing later).
+-- BlessBoard plan catalogue display alignment (Foundation / Growth / Network).
+-- plan_key values remain free / growth / professional / partner for compatibility.
+-- No schema changes. Prices are not stored (see blessBoardBillingCatalogue).
 -- Limits: NULL limit_value means unlimited.
+-- Migration to rename plan_key values is proposed in docs/product/BLESSBOARD_PRICING_DECISION.md.
 
 INSERT INTO platform.plans (product_key, plan_key, display_name, description, sort_order, status)
 VALUES
-  ('blessboard', 'free', 'Free',
-   'Ideal for small congregations or new church plants.', 10, 'active'),
+  ('blessboard', 'free', 'Foundation',
+   'USD 0/month — 1 HQ, maximum 1 active branch, up to 250 members and 10 administrator accounts.', 10, 'active'),
   ('blessboard', 'growth', 'Growth',
-   'Scale operations across multiple branches and roles.', 20, 'active'),
-  ('blessboard', 'professional', 'Professional',
-   'Premium branding and high-capacity church management.', 30, 'active'),
-  ('blessboard', 'partner', 'Partner',
-   'Contract-defined capacity for large networks or denominations.', 40, 'active')
+   'USD 14.99 per active branch/month — unlimited branches, fair-use members, advanced workflows and cross-branch administration.', 20, 'active'),
+  ('blessboard', 'professional', 'Network',
+   'USD 29.99 per active branch/month — custom domain, hosted mailboxes, integrations, executive reports, priority support.', 30, 'active'),
+  ('blessboard', 'partner', 'Partner (legacy)',
+   'Legacy catalogue key — use Network for new assignments. Kept for existing subscriptions until plan_key migration.', 40, 'inactive')
 ON CONFLICT (plan_key) DO UPDATE SET
   display_name = EXCLUDED.display_name,
   description = EXCLUDED.description,
@@ -18,37 +21,36 @@ ON CONFLICT (plan_key) DO UPDATE SET
   status = EXCLUDED.status,
   updated_at = now();
 
--- Helper: upsert feature by plan_key
 WITH plan_map AS (
   SELECT id, plan_key FROM platform.plans WHERE product_key = 'blessboard'
 ),
 features (plan_key, feature_key, feature_kind, boolean_value, limit_value) AS (
   VALUES
-    -- free
-    ('free', 'max_branches', 'limit', NULL::boolean, 2),          -- 1 HQ + 1 branch
-    ('free', 'max_users', 'limit', NULL, 10),
+    -- free key = Foundation (display)
+    ('free', 'max_branches', 'limit', NULL::boolean, 1),
+    ('free', 'max_users', 'limit', NULL, 250),
     ('free', 'max_staff_accounts', 'limit', NULL, 10),
     ('free', 'basic_reports', 'boolean', true, NULL::int),
     ('free', 'advanced_reports', 'boolean', false, NULL),
     ('free', 'custom_domain', 'boolean', false, NULL),
     ('free', 'custom_email', 'boolean', false, NULL),
     -- growth
-    ('growth', 'max_branches', 'limit', NULL, 11),               -- 1 HQ + 10 branches
-    ('growth', 'max_users', 'limit', NULL, NULL),                -- unlimited members
-    ('growth', 'max_staff_accounts', 'limit', NULL, NULL),       -- billed per staff; no hard cap here
+    ('growth', 'max_branches', 'limit', NULL, NULL),
+    ('growth', 'max_users', 'limit', NULL, NULL),
+    ('growth', 'max_staff_accounts', 'limit', NULL, NULL),
     ('growth', 'basic_reports', 'boolean', true, NULL),
-    ('growth', 'advanced_reports', 'boolean', false, NULL),
+    ('growth', 'advanced_reports', 'boolean', true, NULL),
     ('growth', 'custom_domain', 'boolean', false, NULL),
     ('growth', 'custom_email', 'boolean', false, NULL),
-    -- professional
-    ('professional', 'max_branches', 'limit', NULL, 51),        -- 1 HQ + 50 branches
+    -- professional key = Network (display)
+    ('professional', 'max_branches', 'limit', NULL, NULL),
     ('professional', 'max_users', 'limit', NULL, NULL),
-    ('professional', 'max_staff_accounts', 'limit', NULL, 50),
+    ('professional', 'max_staff_accounts', 'limit', NULL, NULL),
     ('professional', 'basic_reports', 'boolean', true, NULL),
     ('professional', 'advanced_reports', 'boolean', true, NULL),
     ('professional', 'custom_domain', 'boolean', true, NULL),
     ('professional', 'custom_email', 'boolean', true, NULL),
-    -- partner
+    -- partner legacy (inactive plan; features retained for existing subs)
     ('partner', 'max_branches', 'limit', NULL, NULL),
     ('partner', 'max_users', 'limit', NULL, NULL),
     ('partner', 'max_staff_accounts', 'limit', NULL, NULL),
