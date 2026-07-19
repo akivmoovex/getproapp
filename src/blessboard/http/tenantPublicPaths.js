@@ -77,11 +77,24 @@ function isTenantPublicActionPath(pathOnly) {
 }
 
 /**
- * CMS pages or public action forms that need authoritative tenant resolution.
+ * CMS pages, public action forms, or public media delivery that need
+ * authoritative tenant resolution.
  * @param {string} pathOnly
  */
 function isTenantPublicSurfacePath(pathOnly) {
-  return isTenantPublicPagePath(pathOnly) || isTenantPublicActionPath(pathOnly);
+  return (
+    isTenantPublicPagePath(pathOnly) ||
+    isTenantPublicActionPath(pathOnly) ||
+    isTenantPublicMediaPath(pathOnly)
+  );
+}
+
+/**
+ * Public bytes delivery (/_bb/media/:id) — not CMS HTML, but must resolve tenant church.
+ * @param {string} pathOnly
+ */
+function isTenantPublicMediaPath(pathOnly) {
+  return normalizePathOnly(pathOnly).startsWith("/_bb/media");
 }
 
 module.exports = {
@@ -92,5 +105,6 @@ module.exports = {
   pageKeyFromPath,
   isTenantPublicPagePath,
   isTenantPublicActionPath,
+  isTenantPublicMediaPath,
   isTenantPublicSurfacePath,
 };

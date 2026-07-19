@@ -3,125 +3,213 @@
 /**
  * Read-only PostgreSQL extractor for V4 church_* tables.
  * SELECT only. Never UPDATE/DELETE/INSERT on source.
+ * Optional columns are probed via information_schema so older V4 DBs degrade gracefully.
  */
 
 const ENTITY_SQL = Object.freeze({
   organization: {
     table: "public.church_organizations",
-    sql: `SELECT id, slug, name, status,
-            COALESCE(plan_code, 'free') AS plan_code,
-            data_environment, legal_name, created_at, updated_at
-         FROM public.church_organizations
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: ["id", "slug", "name", "status"],
     optionalColumns: ["plan_code", "data_environment", "legal_name"],
+    orderBy: "id ASC",
   },
   domain: {
+    // All branches — missing host_slug is classified at transform (missing_host_slug).
     table: "public.church_branches",
-    sql: `SELECT id, organization_id, slug, host_slug, status
-         FROM public.church_branches
-        WHERE host_slug IS NOT NULL AND trim(host_slug) <> ''
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: ["id", "organization_id", "slug", "status"],
+    optionalColumns: ["host_slug", "is_primary"],
+    orderBy: "id ASC",
   },
   branch: {
     table: "public.church_branches",
-    sql: `SELECT id, organization_id, slug, name, status, welcome_message,
-            service_times, location_text, host_slug, timezone, country_code
-         FROM public.church_branches
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
-    optionalColumns: ["timezone", "country_code", "host_slug", "welcome_message", "service_times", "location_text"],
+    baseColumns: ["id", "organization_id", "slug", "name", "status"],
+    optionalColumns: [
+      "timezone",
+      "country_code",
+      "host_slug",
+      "welcome_message",
+      "service_times",
+      "location_text",
+      "is_hq",
+      "is_primary",
+    ],
+    orderBy: "id ASC",
   },
   user_hq_admin: {
     table: "public.church_hq_admins",
-    sql: `SELECT a.id, a.organization_id, a.username, a.password_hash, a.display_name, a.status,
-            a.email, o.slug AS organization_slug
-         FROM public.church_hq_admins a
-         JOIN public.church_organizations o ON o.id = a.organization_id
-        ORDER BY a.id ASC
-        OFFSET $1 LIMIT $2`,
-    optionalColumns: ["email"],
+    baseColumns: [
+      "a.id",
+      "a.organization_id",
+      "a.username",
+      "a.password_hash",
+      "a.display_name",
+      "a.status",
+      "o.slug AS organization_slug",
+    ],
+    optionalColumns: ["a.email"],
+    fromSql: `FROM public.church_hq_admins a
+         JOIN public.church_organizations o ON o.id = a.organization_id`,
+    orderBy: "a.id ASC",
+    columnProbeTable: "church_hq_admins",
+    optionalBare: ["email"],
   },
   user_branch_admin: {
     table: "public.church_branch_admins",
-    sql: `SELECT a.id, a.organization_id, a.branch_id, a.username, a.password_hash,
-            a.display_name, a.status, a.email, o.slug AS organization_slug
-         FROM public.church_branch_admins a
-         JOIN public.church_organizations o ON o.id = a.organization_id
-        ORDER BY a.id ASC
-        OFFSET $1 LIMIT $2`,
-    optionalColumns: ["email"],
+    baseColumns: [
+      "a.id",
+      "a.organization_id",
+      "a.branch_id",
+      "a.username",
+      "a.password_hash",
+      "a.display_name",
+      "a.status",
+      "o.slug AS organization_slug",
+    ],
+    optionalColumns: ["a.email"],
+    fromSql: `FROM public.church_branch_admins a
+         JOIN public.church_organizations o ON o.id = a.organization_id`,
+    orderBy: "a.id ASC",
+    columnProbeTable: "church_branch_admins",
+    optionalBare: ["email"],
   },
   member: {
     table: "public.church_members",
-    sql: `SELECT id, organization_id, branch_id, email, phone, full_name, status,
-            password_hash, created_at, updated_at
-         FROM public.church_members
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: [
+      "id",
+      "organization_id",
+      "branch_id",
+      "email",
+      "phone",
+      "full_name",
+      "status",
+      "password_hash",
+      "created_at",
+      "updated_at",
+    ],
+    optionalColumns: [],
+    orderBy: "id ASC",
   },
   attendance_record: {
     table: "public.church_attendance_records",
-    sql: `SELECT id, organization_id, branch_id, service_date, service_label, headcount,
-            notes, status, created_at, updated_at
-         FROM public.church_attendance_records
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: [
+      "id",
+      "organization_id",
+      "branch_id",
+      "service_date",
+      "service_label",
+      "headcount",
+      "notes",
+      "status",
+      "created_at",
+      "updated_at",
+    ],
+    optionalColumns: [],
+    orderBy: "id ASC",
   },
   giving_summary: {
     table: "public.church_giving_summaries",
-    sql: `SELECT id, organization_id, branch_id, period_year, period_month,
-            total_amount_cents, currency_code, notes, status, created_at, updated_at
-         FROM public.church_giving_summaries
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: [
+      "id",
+      "organization_id",
+      "branch_id",
+      "period_year",
+      "period_month",
+      "total_amount_cents",
+      "currency_code",
+      "notes",
+      "status",
+      "created_at",
+      "updated_at",
+    ],
+    optionalColumns: [],
+    orderBy: "id ASC",
   },
   announcement: {
     table: "public.church_announcements",
-    sql: `SELECT id, organization_id, branch_id, title, body, status, published_at,
-            is_pinned, is_featured, created_at, updated_at
-         FROM public.church_announcements
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: ["id", "organization_id", "branch_id", "title", "status", "created_at", "updated_at"],
     optionalColumns: ["body", "is_pinned", "is_featured", "published_at"],
+    orderBy: "id ASC",
   },
   ministry: {
     table: "public.church_ministries",
-    sql: `SELECT id, organization_id, branch_id, name, slug, description, status
-         FROM public.church_ministries
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: ["id", "organization_id", "branch_id", "name", "slug", "description", "status"],
+    optionalColumns: [],
+    orderBy: "id ASC",
   },
   event: {
     table: "public.church_events",
-    sql: `SELECT id, organization_id, branch_id, title, description, status,
-            starts_at, ends_at, location_text, registration_form_id
-         FROM public.church_events
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: ["id", "organization_id", "branch_id", "title", "status"],
     optionalColumns: ["starts_at", "ends_at", "location_text", "registration_form_id", "description"],
+    orderBy: "id ASC",
   },
   audit_log: {
     table: "public.church_audit_logs",
-    sql: `SELECT id, organization_id, branch_id, actor_type, actor_id, action,
-            entity_type, entity_id, metadata_json, created_at
-         FROM public.church_audit_logs
-        ORDER BY id ASC
-        OFFSET $1 LIMIT $2`,
+    baseColumns: [
+      "id",
+      "organization_id",
+      "branch_id",
+      "actor_type",
+      "actor_id",
+      "action",
+      "entity_type",
+      "entity_id",
+      "metadata_json",
+      "created_at",
+    ],
+    optionalColumns: [],
+    orderBy: "id ASC",
   },
 });
 
 async function tableExists(client, schemaTable) {
-  const [schema, table] = String(schemaTable).replace(/^public\./, "public.").split(".");
-  const sch = schema === "public" || !table ? "public" : schema;
-  const tbl = table || schemaTable.replace(/^public\./, "");
+  const bare = String(schemaTable).replace(/^public\./, "");
   const r = await client.query(
     `SELECT 1 FROM information_schema.tables
-      WHERE table_schema = $1 AND table_name = $2`,
-    [sch, tbl.replace(/^public\./, "")]
+      WHERE table_schema = 'public' AND table_name = $1`,
+    [bare]
   );
   return r.rowCount > 0;
+}
+
+async function existingColumns(client, tableName, candidates) {
+  if (!candidates.length) return new Set();
+  const r = await client.query(
+    `SELECT column_name
+       FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = $1
+        AND column_name = ANY($2::text[])`,
+    [tableName, candidates]
+  );
+  return new Set(r.rows.map((row) => row.column_name));
+}
+
+function bareColumnName(expr) {
+  const s = String(expr || "").trim();
+  if (s.includes(" AS ")) {
+    return s.split(/\s+AS\s+/i).pop().trim();
+  }
+  if (s.includes(".")) return s.split(".").pop().trim();
+  return s;
+}
+
+/**
+ * @param {object} spec
+ * @param {Set<string>} presentOptional — bare optional column names present on table
+ */
+function buildSelectSql(spec, presentOptional) {
+  const cols = spec.baseColumns.slice();
+  const optionalExprs = spec.optionalColumns || [];
+  const optionalBare = spec.optionalBare || optionalExprs.map(bareColumnName);
+  for (let i = 0; i < optionalExprs.length; i += 1) {
+    const bare = optionalBare[i] || bareColumnName(optionalExprs[i]);
+    if (presentOptional.has(bare)) {
+      cols.push(optionalExprs[i]);
+    } else {
+      cols.push(`NULL AS ${bare}`);
+    }
+  }
+  const fromSql = spec.fromSql || `FROM ${spec.table}`;
+  return `SELECT ${cols.join(", ")} ${fromSql} ORDER BY ${spec.orderBy} OFFSET $1 LIMIT $2`;
 }
 
 /**
@@ -130,6 +218,8 @@ async function tableExists(client, schemaTable) {
  */
 function createPgExtractor(pool, options = {}) {
   const batchSize = options.batchSize || 50;
+  /** @type {Map<string, string>} */
+  const sqlCache = new Map();
 
   return {
     kind: "pg_readonly",
@@ -144,7 +234,6 @@ function createPgExtractor(pool, options = {}) {
 
       const client = await pool.connect();
       try {
-        // Per-transaction read-only; do not poison pooled connections.
         await client.query("BEGIN");
         await client.query("SET LOCAL default_transaction_read_only = on");
 
@@ -160,10 +249,20 @@ function createPgExtractor(pool, options = {}) {
           };
         }
 
+        let sql = sqlCache.get(entity);
+        if (!sql) {
+          const probeTable = spec.columnProbeTable || String(spec.table).replace(/^public\./, "");
+          const optionalBare =
+            spec.optionalBare || (spec.optionalColumns || []).map(bareColumnName);
+          const present = await existingColumns(client, probeTable, optionalBare);
+          sql = buildSelectSql(spec, present);
+          sqlCache.set(entity, sql);
+        }
+
         const offset = cursor ? Number(cursor) : 0;
         let rows;
         try {
-          const result = await client.query(spec.sql, [offset, batchSize]);
+          const result = await client.query(sql, [offset, batchSize]);
           rows = result.rows;
         } catch (err) {
           await client.query("ROLLBACK");
@@ -224,4 +323,6 @@ module.exports = {
   ENTITY_SQL,
   createPgExtractor,
   tableExists,
+  buildSelectSql,
+  existingColumns,
 };

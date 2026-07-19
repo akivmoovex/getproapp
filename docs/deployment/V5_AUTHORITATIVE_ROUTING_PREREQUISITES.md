@@ -16,6 +16,8 @@
 
 **Demo pilot target (when later approved):** `diagnostic.blessboard.org` / `diagnostic-church` / `hq` / `blessboard-org-v5`
 
+**Pilot blast-radius control (code present; not Hostinger-enabled here):** when gates later pass, pair `BLESSBOARD_TENANT_ROUTING_MODE=authoritative` with `BLESSBOARD_AUTHORITATIVE_HOST_ALLOWLIST=diagnostic.blessboard.org` ([`V5_AUTHORITATIVE_PILOT_ALLOWLIST_DESIGN.md`](./V5_AUTHORITATIVE_PILOT_ALLOWLIST_DESIGN.md)). Empty allow-list fails closed. Rollback: clear allow-list and/or set mode `off`/`shadow`, restart all workers.
+
 ---
 
 ## Verdict
@@ -172,6 +174,8 @@ From [`V5_HOSTED_MIGRATION_AND_CUTOVER.md`](../database/V5_HOSTED_MIGRATION_AND_
 ```bash
 # Hostinger V5 + restart ALL workers
 BLESSBOARD_TENANT_ROUTING_MODE=off
+# Optional: clear pilot allow-list (fail-closed if mode left authoritative by mistake)
+# BLESSBOARD_AUTHORITATIVE_HOST_ALLOWLIST=
 BLESSBOARD_JOBS_ENABLED=0
 ```
 

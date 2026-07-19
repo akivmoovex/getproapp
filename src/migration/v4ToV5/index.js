@@ -41,6 +41,7 @@ function createMigrationRunner(options = {}) {
     canonicalDomainSuffix: "blessboard.org",
     deploymentCode: "blessboard-org-v5",
     synthesizeHqIfMissing: false,
+    includeSampleContent: false,
     ...(options.runConfig || {}),
   };
 

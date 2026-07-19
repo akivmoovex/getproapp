@@ -28,6 +28,8 @@ function sanitizeQuarantine(quarantine) {
     reason: quarantine.reason,
     sourceId: row && row.id != null ? row.id : null,
     sourceTableHint: quarantine.sourceTable || null,
+    organizationId: row && row.organization_id != null ? row.organization_id : null,
+    branchId: row && row.branch_id != null ? row.branch_id : null,
   };
 }
 
@@ -66,6 +68,18 @@ function buildDryRunSummary(summary) {
   };
 }
 
+function buildApplySummary(summary) {
+  return {
+    generatedAt: new Date().toISOString(),
+    mode: "apply",
+    groups: summary.groups || [],
+    totals: summary.totals || {},
+    conflictCount: summary.conflictCount || 0,
+    skippedCount: summary.skippedCount || 0,
+    identityVerified: Boolean(summary.identityVerified),
+  };
+}
+
 function buildReconciliationFile(report) {
   return {
     generatedAt: new Date().toISOString(),
@@ -83,6 +97,12 @@ function writeReportBundle(outputDir, bundle) {
   if (bundle.plan) files.plan = writeJson(path.join(outputDir, "migration-plan.json"), bundle.plan);
   if (bundle.dryRun) {
     files.dryRun = writeJson(path.join(outputDir, "dry-run-summary.json"), bundle.dryRun);
+  }
+  if (bundle.applySummary) {
+    files.applySummary = writeJson(
+      path.join(outputDir, "apply-summary.json"),
+      buildApplySummary(bundle.applySummary)
+    );
   }
   if (bundle.conflicts) {
     files.conflicts = writeJson(
@@ -126,6 +146,7 @@ module.exports = {
   buildConflictReport,
   buildSkippedReport,
   buildDryRunSummary,
+  buildApplySummary,
   buildReconciliationFile,
   consoleSafeSummary,
 };

@@ -4,6 +4,27 @@
     "organization_id": 1,
     "slug": "hq",
     "host_slug": "grace-chapel",
+    "status": "active",
     "is_primary": true
+  },
+  {
+    "id": 11,
+    "organization_id": 1,
+    "slug": "kafue",
+    "status": "active"
+  },
+  {
+    "id": 12,
+    "organization_id": 1,
+    "slug": "bad-host",
+    "host_slug": "localhost",
+    "status": "active"
+  },
+  {
+    "id": 99,
+    "organization_id": 999,
+    "slug": "orphan-campus",
+    "host_slug": "orphan-campus",
+    "status": "active"
   }
 ]

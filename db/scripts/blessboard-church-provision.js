@@ -5,20 +5,32 @@
  * Explicit administrative BlessBoard church + HQ branch provisioner.
  * Never runs during startup or migrations. DATABASE_URL only. Never prints secrets.
  *
- * Usage:
+ * Dry-run is the default. Writes require --confirm.
+ *
+ * Usage (preview):
  *   DATABASE_URL=… DATABASE_IDENTITY_EXPECTED=… npm run blessboard:church:provision -- \
- *     --organization-key demo-church \
- *     --church-key demo-church \
- *     --display-name "Demo Church" \
+ *     --organization-key diagnostic-church \
+ *     --church-key diagnostic-church \
+ *     --display-name "BlessBoard Diagnostic Church" \
  *     --environment testing \
  *     --hq-branch-key hq \
- *     --hq-branch-name "Headquarters"
+ *     --hq-branch-name "Headquarters" \
+ *     --deployment blessboard-org-v5
+ *
+ * Usage (write): same args + --confirm
  */
 
 const { Pool } = require("pg");
-const { requireDatabaseUrl, parseDatabaseName } = require("./lib/databaseUrl");
-const { sanitizeHostFingerprint } = require("./lib/hostFingerprint");
-const { checkDatabaseIdentity } = require("./lib/databaseIdentity");
+const {
+  parseWriteMode,
+  resolveDatabaseUrlSafe,
+  requireMatchedIdentity,
+  assertNoLegacyPublicTables,
+  assertDeploymentTarget,
+  buildProvisionReport,
+  emitProvisionReport,
+  assertNoSecretsInText,
+} = require("./lib/provisionCliSafety");
 const {
   provisionBlessBoardChurch,
   STATUS,
@@ -35,6 +47,7 @@ function parseArgs(argv) {
     hqBranchName: "",
     timezone: "",
     countryCode: "",
+    deployment: "",
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -58,12 +71,76 @@ function parseArgs(argv) {
     else if (arg.startsWith("--timezone=")) out.timezone = take("--timezone=");
     else if (arg === "--country-code") out.countryCode = next();
     else if (arg.startsWith("--country-code=")) out.countryCode = take("--country-code=");
+    else if (arg === "--deployment") out.deployment = next();
+    else if (arg.startsWith("--deployment=")) out.deployment = take("--deployment=");
   }
   return out;
 }
 
+/**
+ * Resolve deployment to verify: explicit --deployment, else PLATFORM_DEPLOYMENT_CODE,
+ * else first active domain for the organization.
+ */
+async function resolveChurchDeployment(pool, organizationKey, explicitDeployment) {
+  const code =
+    String(explicitDeployment || "").trim() ||
+    String(process.env.PLATFORM_DEPLOYMENT_CODE || "").trim();
+  if (code) {
+    return assertDeploymentTarget(pool, code);
+  }
+  const r = await pool.query(
+    `SELECT d.deployment_code, COUNT(*)::int AS n
+       FROM platform.domains d
+       JOIN platform.organizations o ON o.id = d.organization_id
+      WHERE o.organization_key = $1 AND d.status = 'active'
+      GROUP BY d.deployment_code`,
+    [String(organizationKey).trim().toLowerCase()]
+  );
+  if (r.rowCount === 0) {
+    return { ok: false, message: "deployment_code_required" };
+  }
+  if (r.rowCount > 1) {
+    return {
+      ok: false,
+      message: "deployment_ambiguous",
+      detail: r.rows.map((row) => row.deployment_code).join(","),
+    };
+  }
+  return assertDeploymentTarget(pool, r.rows[0].deployment_code);
+}
+
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const mode = parseWriteMode(process.argv.slice(2));
+  const args = parseArgs(mode.rest);
+  let exitCode = 0;
+
+  const finish = (payload) => {
+    const report = buildProvisionReport({
+      tool: "blessboard:church:provision",
+      dryRun: mode.dryRun,
+      ok: Boolean(payload.ok),
+      status: payload.status || STATUS.TRANSACTION_ERROR,
+      message: payload.message,
+      error: payload.error,
+      planned: payload.planned,
+      created: payload.created,
+      identityKey: payload.identityKey,
+      environmentCode: payload.environmentCode,
+      deploymentCode: payload.deploymentCode,
+      databaseName: payload.databaseName,
+      hostFingerprint: payload.hostFingerprint,
+      keys: payload.keys,
+    });
+    assertNoSecretsInText(report.human, payload.connectionString);
+    assertNoSecretsInText(JSON.stringify(report.machine), payload.connectionString);
+    emitProvisionReport(report);
+    if (payload.ok === true) {
+      exitCode = 0;
+    } else {
+      exitCode = payload.exitCode != null ? Number(payload.exitCode) : 2;
+    }
+  };
+
   const required = [
     ["organizationKey", args.organizationKey],
     ["churchKey", args.churchKey],
@@ -74,62 +151,71 @@ async function main() {
   ];
   const missing = required.filter(([, v]) => !String(v || "").trim()).map(([k]) => k);
   if (missing.length) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
-        ok: false,
-        status: STATUS.INVALID_INPUT,
-        message: "missing_required_arguments",
-        missing,
-      })
-    );
-    process.exit(2);
+    finish({
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      message: "missing_required_arguments",
+      error: missing.join(","),
+    });
+    process.exit(exitCode);
   }
 
-  let connectionString;
+  const dbResolved = resolveDatabaseUrlSafe();
+  if (!dbResolved.ok) {
+    finish({
+      ok: false,
+      status: STATUS.TRANSACTION_ERROR,
+      message: dbResolved.message,
+      error: dbResolved.detail,
+    });
+    process.exit(exitCode);
+  }
+
+  const pool = new Pool({ connectionString: dbResolved.connectionString, max: 2 });
+
   try {
-    connectionString = requireDatabaseUrl();
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({ ok: false, status: STATUS.TRANSACTION_ERROR, message: err.message })
-    );
-    process.exit(1);
-  }
-
-  const expectedIdentity = String(process.env.DATABASE_IDENTITY_EXPECTED || "").trim();
-  if (!expectedIdentity) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
+    const identity = await requireMatchedIdentity(pool);
+    if (!identity.ok) {
+      finish({
         ok: false,
         status: STATUS.TRANSACTION_ERROR,
-        message: "DATABASE_IDENTITY_EXPECTED is required",
-      })
-    );
-    process.exit(2);
-  }
+        message: identity.message,
+        error: identity.code || identity.identity_code,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
+    }
 
-  const databaseName = parseDatabaseName(connectionString);
-  const hostFingerprint = sanitizeHostFingerprint(connectionString);
-  const pool = new Pool({ connectionString, max: 2 });
+    const legacy = await assertNoLegacyPublicTables(pool);
+    if (!legacy.ok) {
+      finish({
+        ok: false,
+        status: STATUS.TRANSACTION_ERROR,
+        message: legacy.message,
+        error: (legacy.tables || []).join(","),
+        identityKey: identity.identityKey,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
+    }
 
-  try {
-    const identity = await checkDatabaseIdentity(pool, { identityKey: expectedIdentity });
-    if (!identity.ok) {
-      // eslint-disable-next-line no-console
-      console.error(
-        JSON.stringify({
-          ok: false,
-          status: STATUS.TRANSACTION_ERROR,
-          message: "database_identity_required",
-          identity_code: identity.code,
-          hint: "Set DATABASE_IDENTITY_EXPECTED and ensure platform.database_identity is initialized",
-          current_database: databaseName || null,
-          host_fingerprint: hostFingerprint,
-        })
-      );
-      process.exit(2);
+    const deployment = await resolveChurchDeployment(pool, args.organizationKey, args.deployment);
+    if (!deployment.ok) {
+      finish({
+        ok: false,
+        status: STATUS.TRANSACTION_ERROR,
+        message: deployment.message,
+        error: deployment.detail,
+        identityKey: identity.identityKey,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
     }
 
     const result = await provisionBlessBoardChurch(pool, {
@@ -142,43 +228,41 @@ async function main() {
       hqBranchDisplayName: args.hqBranchName,
       timezone: args.timezone || null,
       countryCode: args.countryCode || null,
+      dryRun: mode.dryRun,
     });
 
-    const safe = {
+    finish({
       ok: result.ok,
       status: result.status,
       message: result.message,
-      created: result.created,
-      organizationKey:
-        result.records && result.records.organization ? result.records.organization.key : null,
-      churchKey: result.records && result.records.church ? result.records.church.key : null,
-      hqBranchKey: result.records && result.records.hqBranch ? result.records.hqBranch.key : null,
-      identity_key: identity.row && identity.row.identity_key,
-      database_environment: identity.row && identity.row.environment_code,
-      current_database: databaseName || null,
-      host_fingerprint: hostFingerprint,
-    };
-
-    if (result.ok) {
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify(safe, null, 2));
-      process.exit(0);
-    }
-    // eslint-disable-next-line no-console
-    console.error(JSON.stringify(safe, null, 2));
-    process.exit(2);
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
-        ok: false,
-        status: STATUS.TRANSACTION_ERROR,
-        message: "cli_failure",
-      })
-    );
-    process.exit(1);
+      planned: result.planned || null,
+      created: result.created || null,
+      identityKey: identity.identityKey,
+      environmentCode: identity.environmentCode,
+      deploymentCode: deployment.deploymentCode,
+      databaseName: dbResolved.databaseName,
+      hostFingerprint: dbResolved.hostFingerprint,
+      connectionString: dbResolved.connectionString,
+      keys: {
+        organization_key: args.organizationKey,
+        church_key: args.churchKey,
+        hq_branch_key: args.hqBranchKey,
+        deployment: deployment.deploymentCode,
+      },
+    });
+  } catch {
+    finish({
+      ok: false,
+      status: STATUS.TRANSACTION_ERROR,
+      message: "cli_failure",
+      exitCode: 1,
+      databaseName: dbResolved.databaseName,
+      hostFingerprint: dbResolved.hostFingerprint,
+      connectionString: dbResolved.connectionString,
+    });
   } finally {
     await pool.end();
+    process.exit(exitCode);
   }
 }
 

@@ -11,6 +11,11 @@ const {
   MODE_SHADOW,
   MODE_AUTHORITATIVE,
 } = require("../config/tenantRoutingMode");
+const {
+  parseAuthoritativeHostAllowlist,
+  warnAuthoritativeAllowlistIfNeeded,
+  ALLOWLIST_DECISION,
+} = require("../config/authoritativeHostAllowlist");
 const { evaluateTenantRoute, OUTCOME } = require("./evaluateTenantRoute");
 
 /**
@@ -30,6 +35,7 @@ function logShadow(req, decision, logFn) {
     catalogueResultType: catalogue.resultType || null,
     proposedRouteOutcome: decision.outcome || null,
     proposedReason: decision.reason || null,
+    allowlistDecision: decision.allowlistDecision || ALLOWLIST_DECISION.N_A,
     organizationKey:
       (resolution.organization && resolution.organization.key) ||
       (decision.tenant && decision.tenant.organization && decision.tenant.organization.key) ||
@@ -70,6 +76,7 @@ function logAuthoritative(req, decision, logFn) {
     hostname: platform.hostname || null,
     outcome: decision.outcome || null,
     reason: decision.reason || null,
+    allowlistDecision: decision.allowlistDecision || ALLOWLIST_DECISION.N_A,
     httpStatus: decision.httpStatus || null,
     churchKey: decision.tenant && decision.tenant.church ? decision.tenant.church.key : null,
     path: String((req && (req.path || req.url)) || "").split("?")[0] || null,
@@ -82,6 +89,7 @@ function logAuthoritative(req, decision, logFn) {
 /**
  * @param {{
  *   getMode?: () => string,
+ *   getEnv?: () => NodeJS.ProcessEnv,
  *   isApexHost?: (req: import('express').Request) => boolean,
  *   log?: (line: string) => void,
  * }} [deps]
@@ -89,6 +97,7 @@ function logAuthoritative(req, decision, logFn) {
 function createBlessBoardTenantRoutingDecision(deps) {
   const options = deps && typeof deps === "object" ? deps : {};
   const getMode = options.getMode || (() => getBlessBoardTenantRoutingMode());
+  const getEnv = options.getEnv || (() => process.env);
   const isApex =
     options.isApexHost ||
     ((req) => {
@@ -102,12 +111,19 @@ function createBlessBoardTenantRoutingDecision(deps) {
   return function blessBoardTenantRoutingDecision(req, res, next) {
     try {
       const mode = getMode();
+      const env = getEnv() || {};
+      const allowlist = parseAuthoritativeHostAllowlist(env);
+      if (mode === MODE_AUTHORITATIVE) {
+        warnAuthoritativeAllowlistIfNeeded(allowlist, logFn);
+      }
+
       const decision = evaluateTenantRoute({
         routingMode: mode,
         isApex: Boolean(isApex(req)),
         path: req.path || req.url,
         platformHostContext: req.platformHostContext,
         blessBoardCatalogueContext: req.blessBoardCatalogueContext,
+        authoritativeHostAllowlist: allowlist,
       });
 
       req.blessBoardTenantRoute = {
@@ -116,11 +132,12 @@ function createBlessBoardTenantRoutingDecision(deps) {
         reason: decision.reason,
         httpStatus: decision.httpStatus,
         authoritative: Boolean(decision.authoritative),
+        allowlistDecision: decision.allowlistDecision || ALLOWLIST_DECISION.N_A,
       };
 
-      // Only authoritative mode marks req.blessBoardTenantContext as resolved.
-      // Shadow keeps proposedTenant for observational logs / future handoff tests.
-      if ((decision.authoritative || mode === MODE_AUTHORITATIVE) && decision.tenant) {
+      // Only a positive authoritative decision marks tenant context as resolved.
+      // Non-allowlisted hosts under mode=authoritative keep proposedTenant for diagnostics.
+      if (decision.authoritative && decision.tenant) {
         req.blessBoardTenantContext = decision.tenant;
       } else {
         req.blessBoardTenantContext = {
@@ -134,7 +151,16 @@ function createBlessBoardTenantRoutingDecision(deps) {
       if (mode === MODE_SHADOW) {
         logShadow(req, decision, logFn);
       } else if (mode === MODE_AUTHORITATIVE) {
-        logAuthoritative(req, decision, logFn);
+        // Pilot deny / empty allow-list: keep shadow-style diagnostics (foundation HTML).
+        if (
+          decision.allowlistDecision === ALLOWLIST_DECISION.DENY ||
+          decision.allowlistDecision === ALLOWLIST_DECISION.DENY_EMPTY ||
+          decision.outcome === OUTCOME.FOUNDATION
+        ) {
+          logShadow(req, decision, logFn);
+        } else {
+          logAuthoritative(req, decision, logFn);
+        }
       }
 
       return next();
@@ -146,6 +172,7 @@ function createBlessBoardTenantRoutingDecision(deps) {
         httpStatus: 503,
         authoritative: false,
         proposedTenant: null,
+        allowlistDecision: ALLOWLIST_DECISION.N_A,
       };
       req.blessBoardTenantContext = { resolved: false, reason: "routing_error" };
       return next();

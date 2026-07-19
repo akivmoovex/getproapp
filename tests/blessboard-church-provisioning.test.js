@@ -329,12 +329,16 @@ describe("blessboard church provisioning", () => {
         "Africa/Lusaka",
         "--country-code",
         "ZM",
+        "--deployment",
+        "blessboard-org-v5",
+        "--confirm",
       ],
       { DATABASE_URL: databaseUrl, DATABASE_IDENTITY_EXPECTED: IDENTITY_KEY }
     );
     assert.equal(ok.status, 0, ok.stderr || ok.stdout);
     const payload = JSON.parse(ok.stdout);
     assert.equal(payload.ok, true);
+    assert.equal(payload.mode, "write");
     assert.equal(payload.status, STATUS.ALREADY_PROVISIONED);
     assert.doesNotMatch(ok.stdout, /postgres(ql)?:\/\//i);
     assert.doesNotMatch(ok.stdout, /password=/i);

@@ -145,17 +145,83 @@ describe("evaluateTenantRoute policy", () => {
     assert.equal(d.tenant.church.displayName, "Demo Church");
   });
 
-  it("authoritative match renders tenant", () => {
+  it("authoritative match renders tenant when host is allow-listed", () => {
     const d = evaluateTenantRoute({
       routingMode: "authoritative",
       isApex: false,
       path: "/",
-      platformHostContext: basePlatform,
+      platformHostContext: { ...basePlatform, hostname: "demo.blessboard.org" },
       blessBoardCatalogueContext: baseCatalogue,
+      authoritativeHostAllowlist: {
+        mode: "hosts",
+        hosts: ["demo.blessboard.org"],
+        hostSet: new Set(["demo.blessboard.org"]),
+        invalidEntryCount: 0,
+      },
     });
     assert.equal(d.outcome, OUTCOME.RENDER_TENANT);
     assert.equal(d.authoritative, true);
     assert.equal(d.httpStatus, 200);
+    assert.equal(d.allowlistDecision, "allow");
+  });
+
+  it("authoritative without allow-list stays foundation (fail closed)", () => {
+    const d = evaluateTenantRoute({
+      routingMode: "authoritative",
+      isApex: false,
+      path: "/",
+      platformHostContext: { ...basePlatform, hostname: "demo.blessboard.org" },
+      blessBoardCatalogueContext: baseCatalogue,
+      authoritativeHostAllowlist: {
+        mode: "empty",
+        hosts: [],
+        hostSet: new Set(),
+        invalidEntryCount: 0,
+      },
+    });
+    assert.equal(d.outcome, OUTCOME.FOUNDATION);
+    assert.equal(d.authoritative, false);
+    assert.equal(d.reason, "authoritative_allowlist_empty");
+    assert.ok(d.tenant);
+  });
+
+  it("authoritative denies unlisted host with foundation + proposed tenant", () => {
+    const d = evaluateTenantRoute({
+      routingMode: "authoritative",
+      isApex: false,
+      path: "/",
+      platformHostContext: { ...basePlatform, hostname: "other.blessboard.org" },
+      blessBoardCatalogueContext: baseCatalogue,
+      authoritativeHostAllowlist: {
+        mode: "hosts",
+        hosts: ["demo.blessboard.org"],
+        hostSet: new Set(["demo.blessboard.org"]),
+        invalidEntryCount: 0,
+      },
+    });
+    assert.equal(d.outcome, OUTCOME.FOUNDATION);
+    assert.equal(d.authoritative, false);
+    assert.equal(d.reason, "authoritative_host_not_allowlisted");
+    assert.equal(d.allowlistDecision, "deny");
+  });
+
+  it("authoritative estate token * allows any resolved host", () => {
+    const d = evaluateTenantRoute({
+      routingMode: "authoritative",
+      isApex: false,
+      path: "/",
+      platformHostContext: { ...basePlatform, hostname: "any.blessboard.org" },
+      blessBoardCatalogueContext: baseCatalogue,
+      authoritativeHostAllowlist: {
+        mode: "all",
+        hosts: [],
+        hostSet: new Set(),
+        invalidEntryCount: 0,
+      },
+    });
+    assert.equal(d.outcome, OUTCOME.RENDER_TENANT);
+    assert.equal(d.authoritative, true);
+    assert.equal(d.allowlistDecision, "allow");
   });
 
   it("unknown_domain → 404 in authoritative", () => {

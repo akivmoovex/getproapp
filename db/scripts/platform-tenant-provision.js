@@ -5,21 +5,35 @@
  * Explicit administrative platform tenant catalogue provisioner.
  * Never runs during startup or migrations. DATABASE_URL only. Never prints secrets.
  *
- * Usage:
- *   DATABASE_URL=… npm run platform:tenant:provision -- \
- *     --organization-key demo-church \
- *     --display-name "Demo Church" \
+ * Dry-run is the default. Writes require --confirm.
+ *
+ * Usage (preview):
+ *   DATABASE_URL=… DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5 \
+ *     npm run platform:tenant:provision -- \
+ *     --organization-key diagnostic-church \
+ *     --display-name "BlessBoard Diagnostic Church" \
  *     --environment testing \
  *     --product blessboard \
- *     --tenant-key demo-church \
- *     --hostname demo.blessboard.test \
+ *     --tenant-key diagnostic-church \
+ *     --hostname diagnostic.blessboard.org \
  *     --domain-type canonical \
  *     --deployment blessboard-org-v5
+ *
+ * Usage (write):
+ *   … same args … --confirm
  */
 
 const { Pool } = require("pg");
-const { requireDatabaseUrl, parseDatabaseName } = require("./lib/databaseUrl");
-const { sanitizeHostFingerprint } = require("./lib/hostFingerprint");
+const {
+  parseWriteMode,
+  resolveDatabaseUrlSafe,
+  requireMatchedIdentity,
+  assertNoLegacyPublicTables,
+  assertDeploymentTarget,
+  buildProvisionReport,
+  emitProvisionReport,
+  assertNoSecretsInText,
+} = require("./lib/provisionCliSafety");
 const {
   provisionPlatformTenant,
   STATUS,
@@ -74,28 +88,38 @@ function parsePrimary(raw) {
   return null;
 }
 
-/**
- * Lightweight identity presence check (does not print secrets).
- * @param {import('pg').Pool} pool
- */
-async function requireDatabaseIdentityPresent(pool) {
-  const table = await pool.query(
-    `SELECT 1
-       FROM information_schema.tables
-      WHERE table_schema = 'platform' AND table_name = 'database_identity'`
-  );
-  if (table.rowCount === 0) {
-    return { ok: false, reason: "missing_table" };
-  }
-  const row = await pool.query(`SELECT environment_code FROM platform.database_identity WHERE id = 1`);
-  if (row.rowCount === 0) {
-    return { ok: false, reason: "missing_row" };
-  }
-  return { ok: true, environmentCode: row.rows[0].environment_code };
-}
-
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const mode = parseWriteMode(process.argv.slice(2));
+  const args = parseArgs(mode.rest);
+  let exitCode = 0;
+
+  const finish = (payload) => {
+    const report = buildProvisionReport({
+      tool: "platform:tenant:provision",
+      dryRun: mode.dryRun,
+      ok: Boolean(payload.ok),
+      status: payload.status || STATUS.TRANSACTION_ERROR,
+      message: payload.message,
+      error: payload.error,
+      planned: payload.planned,
+      created: payload.created,
+      identityKey: payload.identityKey,
+      environmentCode: payload.environmentCode,
+      deploymentCode: payload.deploymentCode,
+      databaseName: payload.databaseName,
+      hostFingerprint: payload.hostFingerprint,
+      keys: payload.keys,
+    });
+    assertNoSecretsInText(report.human, payload.connectionString);
+    assertNoSecretsInText(JSON.stringify(report.machine), payload.connectionString);
+    emitProvisionReport(report);
+    if (payload.ok === true) {
+      exitCode = 0;
+    } else {
+      exitCode = payload.exitCode != null ? Number(payload.exitCode) : 2;
+    }
+  };
+
   const required = [
     ["organizationKey", args.organizationKey],
     ["displayName", args.displayName],
@@ -108,59 +132,77 @@ async function main() {
   ];
   const missing = required.filter(([, v]) => !String(v || "").trim()).map(([k]) => k);
   if (missing.length) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
-        ok: false,
-        status: STATUS.INVALID_INPUT,
-        message: "missing_required_arguments",
-        missing,
-      })
-    );
-    process.exit(2);
+    finish({
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      message: "missing_required_arguments",
+      error: missing.join(","),
+    });
+    process.exit(exitCode);
   }
 
   const primary = parsePrimary(args.primary);
   if (primary === null) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
-        ok: false,
-        status: STATUS.INVALID_INPUT,
-        message: "invalid_primary",
-      })
-    );
-    process.exit(2);
+    finish({ ok: false, status: STATUS.INVALID_INPUT, message: "invalid_primary" });
+    process.exit(exitCode);
   }
 
-  let connectionString;
-  try {
-    connectionString = requireDatabaseUrl();
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(JSON.stringify({ ok: false, status: STATUS.TRANSACTION_ERROR, message: err.message }));
-    process.exit(1);
+  const dbResolved = resolveDatabaseUrlSafe();
+  if (!dbResolved.ok) {
+    finish({
+      ok: false,
+      status: STATUS.TRANSACTION_ERROR,
+      message: dbResolved.message,
+      error: dbResolved.detail,
+    });
+    process.exit(exitCode);
   }
 
-  const databaseName = parseDatabaseName(connectionString);
-  const hostFingerprint = sanitizeHostFingerprint(connectionString);
-  const pool = new Pool({ connectionString, max: 2 });
+  const pool = new Pool({ connectionString: dbResolved.connectionString, max: 2 });
 
   try {
-    const identity = await requireDatabaseIdentityPresent(pool);
+    const identity = await requireMatchedIdentity(pool);
     if (!identity.ok) {
-      // eslint-disable-next-line no-console
-      console.error(
-        JSON.stringify({
-          ok: false,
-          status: STATUS.TRANSACTION_ERROR,
-          message: "database_identity_required",
-          hint: "Run npm run db:identity:init -- --env <code> --confirm",
-          current_database: databaseName || null,
-          host_fingerprint: hostFingerprint,
-        })
-      );
-      process.exit(2);
+      finish({
+        ok: false,
+        status: STATUS.TRANSACTION_ERROR,
+        message: identity.message,
+        error: identity.code || identity.identity_code,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
+    }
+
+    const legacy = await assertNoLegacyPublicTables(pool);
+    if (!legacy.ok) {
+      finish({
+        ok: false,
+        status: STATUS.TRANSACTION_ERROR,
+        message: legacy.message,
+        error: (legacy.tables || []).join(","),
+        identityKey: identity.identityKey,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
+    }
+
+    const deployment = await assertDeploymentTarget(pool, args.deployment);
+    if (!deployment.ok) {
+      finish({
+        ok: false,
+        status: STATUS.TRANSACTION_ERROR,
+        message: deployment.message,
+        deploymentCode: args.deployment,
+        identityKey: identity.identityKey,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
     }
 
     const result = await provisionPlatformTenant(pool, {
@@ -174,42 +216,42 @@ async function main() {
       domainType: args.domainType,
       deploymentCode: args.deployment,
       isPrimary: primary,
+      dryRun: mode.dryRun,
     });
 
-    const safe = {
+    finish({
       ok: result.ok,
       status: result.status,
       message: result.message,
-      created: result.created,
-      organizationKey: result.records && result.records.organization ? result.records.organization.key : null,
-      hostname: result.records && result.records.domain ? result.records.domain.hostname : null,
-      deploymentCode: result.records && result.records.domain ? result.records.domain.deploymentCode : null,
-      productKey: result.records && result.records.product ? result.records.product.key : null,
-      database_environment: identity.environmentCode,
-      current_database: databaseName || null,
-      host_fingerprint: hostFingerprint,
-    };
-
-    if (result.ok) {
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify(safe, null, 2));
-      process.exit(0);
-    }
-    // eslint-disable-next-line no-console
-    console.error(JSON.stringify(safe, null, 2));
-    process.exit(2);
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
-        ok: false,
-        status: STATUS.TRANSACTION_ERROR,
-        message: "cli_failure",
-      })
-    );
-    process.exit(1);
+      planned: result.planned || null,
+      created: result.created || null,
+      identityKey: identity.identityKey,
+      environmentCode: identity.environmentCode,
+      deploymentCode: deployment.deploymentCode,
+      databaseName: dbResolved.databaseName,
+      hostFingerprint: dbResolved.hostFingerprint,
+      connectionString: dbResolved.connectionString,
+      keys: {
+        organization_key: args.organizationKey,
+        tenant_key: args.tenantKey,
+        hostname: args.hostname,
+        product: args.product,
+        deployment: args.deployment,
+      },
+    });
+  } catch {
+    finish({
+      ok: false,
+      status: STATUS.TRANSACTION_ERROR,
+      message: "cli_failure",
+      exitCode: 1,
+      databaseName: dbResolved.databaseName,
+      hostFingerprint: dbResolved.hostFingerprint,
+      connectionString: dbResolved.connectionString,
+    });
   } finally {
     await pool.end();
+    process.exit(exitCode);
   }
 }
 

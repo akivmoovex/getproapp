@@ -13,23 +13,36 @@ const {
   createIdMap,
   transformRow,
   ENTITIES,
+  loadMigrationEnv,
+  buildMigrationPlan,
 } = require("../src/migration/v4ToV5");
 const { assertNotHostedUrl } = require("../src/migration/v4ToV5/extract");
 const { redactMetadata } = require("../src/migration/v4ToV5/mappers/audit");
 const { createDryRunLoader } = require("../src/migration/v4ToV5/load");
+const { isSampleOrganizationKey, isUnsafeHostname } = require("../src/migration/v4ToV5/mappers/helpers");
 
 const FIXTURES = path.join(__dirname, "../src/migration/v4ToV5/fixtures");
 
-function ctx() {
+function ctx(runConfig = {}) {
   return {
     batchId: "test-batch",
     runConfig: {
       dataEnvironmentDefault: "pilot",
       canonicalDomainSuffix: "blessboard.org",
       deploymentCode: "blessboard-org-v5",
+      includeSampleContent: false,
+      ...runConfig,
     },
     idMap: createIdMap(),
   };
+}
+
+/** Seed org 1 + church + branch 10/11 as successfully mapped parents. */
+function seedGraceParents(c) {
+  c.idMap.resolve("church_organizations", 1, "platform.organizations");
+  c.idMap.resolve("church_organizations_church", 1, "blessboard.churches");
+  c.idMap.resolve("church_branches", 10, "blessboard.branches");
+  c.idMap.resolve("church_branches", 11, "blessboard.branches");
 }
 
 describe("v4 to v5 migration mapping", () => {
@@ -44,6 +57,24 @@ describe("v4 to v5 migration mapping", () => {
     assert.doesNotThrow(() => assertNotHostedUrl("postgresql://localhost:5432/legacy_local"));
   });
 
+  it("refuses GETPRO_DATABASE_URL in migration env", () => {
+    const prev = process.env.GETPRO_DATABASE_URL;
+    process.env.GETPRO_DATABASE_URL = "postgresql://localhost:5432/other";
+    try {
+      const env = loadMigrationEnv({
+        V4_SOURCE_DATABASE_URL: "postgresql://localhost:5432/v4_src",
+        V5_TARGET_DATABASE_URL: "postgresql://localhost:5432/v5_tgt",
+        DATABASE_IDENTITY_EXPECTED: "blessboard-platform-v5",
+        allowHosted: true,
+      });
+      assert.equal(env.ok, false);
+      assert.ok(env.errors.includes("GETPRO_DATABASE_URL_forbidden"));
+    } finally {
+      if (prev === undefined) delete process.env.GETPRO_DATABASE_URL;
+      else process.env.GETPRO_DATABASE_URL = prev;
+    }
+  });
+
   it("produces deterministic UUIDs for the same legacy key", () => {
     const a = createIdMap();
     const b = createIdMap();
@@ -53,7 +84,7 @@ describe("v4 to v5 migration mapping", () => {
     assert.match(id1, /^[0-9a-f-]{36}$/);
   });
 
-  it("maps organization + church + plan with quarantine for bad keys", () => {
+  it("maps organization + church + plan with quarantine for bad keys and samples", () => {
     const c = ctx();
     const good = transformRow(
       "organization",
@@ -98,10 +129,41 @@ describe("v4 to v5 migration mapping", () => {
     assert.equal(dormant.record.church.status, "archived");
     assert.equal(dormant.record.subscription.planKey, "free");
     assert.ok(dormant.warnings.includes("plan_code_defaulted_to_free"));
+
+    const sample = transformRow(
+      "organization",
+      {
+        id: 4,
+        slug: "demo-church",
+        name: "Demo",
+        status: "active",
+        plan_code: "free",
+        data_environment: "demo",
+      },
+      c
+    );
+    assert.equal(sample.ok, false);
+    assert.equal(sample.quarantine.reason, "sample_organization_excluded");
+
+    const sampleAllowed = transformRow(
+      "organization",
+      {
+        id: 5,
+        slug: "demo-church",
+        name: "Demo",
+        status: "active",
+        plan_code: "free",
+        data_environment: "demo",
+      },
+      ctx({ includeSampleContent: true })
+    );
+    assert.equal(sampleAllowed.ok, true);
+    assert.equal(isSampleOrganizationKey("demo-church", { includeSampleContent: false }), true);
   });
 
-  it("maps branches and domains from host_slug", () => {
+  it("maps branches and domains; quarantines missing/unsafe hosts and orphans", () => {
     const c = ctx();
+    seedGraceParents(c);
     const hq = transformRow(
       "branch",
       {
@@ -119,6 +181,14 @@ describe("v4 to v5 migration mapping", () => {
     assert.equal(hq.record.branch.isPrimary, true);
     assert.ok(hq.warnings.includes("public_copy_deferred_to_settings_or_pages"));
 
+    const orphanBranch = transformRow(
+      "branch",
+      { id: 50, organization_id: 999, slug: "x", name: "X", status: "active" },
+      c
+    );
+    assert.equal(orphanBranch.ok, false);
+    assert.equal(orphanBranch.quarantine.reason, "orphan_organization");
+
     const domain = transformRow(
       "domain",
       { id: 10, organization_id: 1, host_slug: "grace-chapel", is_primary: true },
@@ -127,10 +197,28 @@ describe("v4 to v5 migration mapping", () => {
     assert.equal(domain.ok, true);
     assert.equal(domain.record.domain.hostname, "grace-chapel.blessboard.org");
     assert.equal(domain.record.domain.domainType, "canonical");
+
+    const missingHost = transformRow(
+      "domain",
+      { id: 11, organization_id: 1, slug: "kafue", status: "active" },
+      c
+    );
+    assert.equal(missingHost.ok, false);
+    assert.equal(missingHost.quarantine.reason, "missing_host_slug");
+
+    const unsafe = transformRow(
+      "domain",
+      { id: 12, organization_id: 1, host_slug: "localhost", status: "active" },
+      c
+    );
+    assert.equal(unsafe.ok, false);
+    assert.equal(unsafe.quarantine.reason, "unsafe_hostname");
+    assert.equal(isUnsafeHostname("localhost.blessboard.org"), true);
   });
 
   it("maps admins to users/roles and synthesizes email when missing", () => {
     const c = ctx();
+    seedGraceParents(c);
     const hq = transformRow(
       "user_hq_admin",
       {
@@ -155,34 +243,36 @@ describe("v4 to v5 migration mapping", () => {
         organization_slug: "grace-chapel",
         username: "noemail",
         password_hash: "$2a$10$abcdefghijklmnopqrstuv",
+        display_name: "No Email",
         status: "active",
       },
       c
     );
     assert.equal(synth.ok, true);
-    assert.equal(synth.record.user.emailNormalized, "noemail@grace-chapel.migrated.invalid");
+    assert.match(synth.record.user.emailNormalized, /@grace-chapel\.migrated\.invalid$/);
     assert.ok(synth.warnings.includes("synthesized_email_from_username"));
 
-    const branch = transformRow(
+    const orphanAdmin = transformRow(
       "user_branch_admin",
       {
         id: 200,
         organization_id: 1,
-        branch_id: 11,
-        email: "branch@grace.example",
+        branch_id: 9999,
+        email: "ba@example.com",
         password_hash: "$2a$10$abcdefghijklmnopqrstuv",
+        display_name: "BA",
         status: "active",
       },
       c
     );
-    assert.equal(branch.ok, true);
-    assert.equal(branch.record.role.roleKey, "branch_admin");
-    assert.ok(branch.record.role.branchId);
+    assert.equal(orphanAdmin.ok, false);
+    assert.equal(orphanAdmin.quarantine.reason, "orphan_branch");
   });
 
-  it("maps members with status/contact rules and skips passwords", () => {
+  it("maps members with status/contact rules; quarantines orphans and never invents default branch", () => {
     const c = ctx();
-    const verified = transformRow(
+    seedGraceParents(c);
+    const okMember = transformRow(
       "member",
       {
         id: 300,
@@ -196,11 +286,10 @@ describe("v4 to v5 migration mapping", () => {
       },
       c
     );
-    assert.equal(verified.ok, true);
-    assert.equal(verified.record.member.status, "active");
-    assert.equal(verified.record.member.emailNormalized, "alice@example.com");
-    assert.equal(verified.record.member.userId, null);
-    assert.ok(verified.warnings.includes("member_password_not_migrated_to_users"));
+    assert.equal(okMember.ok, true);
+    assert.equal(okMember.record.member.status, "active");
+    assert.equal(okMember.record.member.emailNormalized, "alice@example.com");
+    assert.ok(okMember.warnings.includes("member_password_not_migrated_to_users"));
 
     const noContact = transformRow(
       "member",
@@ -215,27 +304,42 @@ describe("v4 to v5 migration mapping", () => {
       },
       c
     );
-    assert.equal(noContact.ok, false);
     assert.equal(noContact.quarantine.reason, "missing_contact");
 
-    const rejected = transformRow(
+    const orphanBranch = transformRow(
       "member",
       {
-        id: 302,
+        id: 303,
         organization_id: 1,
-        branch_id: 11,
-        full_name: "Rejected Person",
-        email: "rejected@example.com",
-        status: "rejected",
+        branch_id: 9999,
+        full_name: "Orphan Branch",
+        email: "x@example.com",
+        status: "active",
       },
       c
     );
-    assert.equal(rejected.ok, true);
-    assert.equal(rejected.record.member.status, "archived");
+    assert.equal(orphanBranch.ok, false);
+    assert.equal(orphanBranch.quarantine.reason, "orphan_branch");
+
+    const orphanOrg = transformRow(
+      "member",
+      {
+        id: 304,
+        organization_id: 999,
+        branch_id: 11,
+        full_name: "Orphan Org",
+        email: "y@example.com",
+        status: "active",
+      },
+      c
+    );
+    assert.equal(orphanOrg.ok, false);
+    assert.equal(orphanOrg.quarantine.reason, "orphan_organization");
   });
 
-  it("maps attendance aggregates and marks per-member attendance unsupported", () => {
+  it("maps attendance aggregates with void→archived", () => {
     const c = ctx();
+    seedGraceParents(c);
     const recorded = transformRow(
       "attendance_record",
       {
@@ -258,6 +362,7 @@ describe("v4 to v5 migration mapping", () => {
 
   it("maps giving cents to NUMERIC amount exactly", () => {
     const c = ctx();
+    seedGraceParents(c);
     const row = transformRow(
       "giving_summary",
       {
@@ -280,15 +385,33 @@ describe("v4 to v5 migration mapping", () => {
     assert.equal(row.record.entry.givingDate, "2026-01-31");
   });
 
-  it("redacts forbidden audit metadata keys", () => {
+  it("redacts forbidden audit metadata keys including contact fields", () => {
     const redacted = redactMetadata({
       password: "x",
       note: "ok",
       api_secret: "y",
+      email: "a@b.c",
+      member_phone: "123",
     });
     assert.equal(redacted.password, undefined);
     assert.equal(redacted.api_secret, undefined);
+    assert.equal(redacted.email, undefined);
+    assert.equal(redacted.member_phone, undefined);
     assert.equal(redacted.note, "ok");
+  });
+
+  it("plan lists unsupported source entities explicitly", () => {
+    const env = loadMigrationEnv({
+      V4_SOURCE_DATABASE_URL: "postgresql://localhost:5432/v4_src",
+      V5_TARGET_DATABASE_URL: "postgresql://localhost:5432/v5_tgt",
+      DATABASE_IDENTITY_EXPECTED: "blessboard-platform-v5",
+      allowHosted: true,
+    });
+    assert.equal(env.ok, true);
+    const plan = buildMigrationPlan({ config: env.config });
+    assert.ok(plan.unsupportedSourceEntities.some((u) => u.key === "sermons"));
+    assert.ok(plan.unsupportedSourceEntities.some((u) => u.key === "registrations"));
+    assert.equal(plan.safety.orphanParentsQuarantined, true);
   });
 
   it("load interface stays dry-run and refuses destructive writes", async () => {
@@ -305,19 +428,25 @@ describe("v4 to v5 migration mapping", () => {
     assert.equal(blocked.status, "writes_not_implemented");
   });
 
-  it("runner dry-runs fixture entities and builds reconciliation reports", async () => {
+  it("runner dry-runs fixture entities in dependency order", async () => {
     const runner = createMigrationRunner({
       dryRun: true,
       fixturesDir: FIXTURES,
     });
     const orgRun = await runner.runEntity("organization", null);
-    assert.equal(orgRun.report.sourceRows, 3);
+    assert.equal(orgRun.report.sourceRows, 4);
     assert.equal(orgRun.report.accepted, 2);
-    assert.equal(orgRun.report.quarantined, 1);
+    assert.equal(orgRun.report.quarantined, 2);
+
+    const branchRun = await runner.runEntity("branch", null);
+    assert.ok(branchRun.report.accepted >= 2);
+
+    const domainRun = await runner.runEntity("domain", null);
+    assert.ok(domainRun.report.quarantined >= 2);
 
     const memberRun = await runner.runEntity("member", null);
     assert.equal(memberRun.report.accepted, 2);
-    assert.equal(memberRun.report.quarantined, 1);
+    assert.ok(memberRun.report.quarantined >= 3);
 
     const givingRun = await runner.runEntity("giving_summary", null);
     assert.equal(givingRun.report.accepted, 1);

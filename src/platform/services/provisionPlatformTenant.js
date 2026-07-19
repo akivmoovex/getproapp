@@ -12,6 +12,8 @@ const repo = require("../repositories/platformProvisioningRepository");
 const STATUS = Object.freeze({
   PROVISIONED: "provisioned",
   ALREADY_PROVISIONED: "already_provisioned",
+  DRY_RUN_WOULD_PROVISION: "dry_run_would_provision",
+  DRY_RUN_ALREADY_PROVISIONED: "dry_run_already_provisioned",
   INVALID_INPUT: "invalid_input",
   PRODUCT_NOT_FOUND: "product_not_found",
   INACTIVE_PRODUCT: "inactive_product",
@@ -36,18 +38,23 @@ function fail(status, message, extra) {
     status,
     message: message || status,
     created: { organization: false, enrolment: false, domain: false },
+    planned: null,
+    dryRun: false,
     records: null,
     ...(extra || {}),
   };
 }
 
-function success(status, created, records) {
+function success(status, created, records, extra) {
   return {
     ok: true,
     status,
     message: status,
     created,
+    planned: null,
+    dryRun: false,
     records,
+    ...(extra || {}),
   };
 }
 
@@ -204,6 +211,7 @@ async function provisionPlatformTenant(db, input) {
     return fail(STATUS.INVALID_INPUT, `invalid_input:${validated.reason}`);
   }
   const req = validated.value;
+  const dryRun = Boolean(input && input.dryRun);
 
   if (!db || (typeof db.connect !== "function" && typeof db.query !== "function")) {
     return fail(STATUS.TRANSACTION_ERROR, "database client or pool required");
@@ -249,7 +257,7 @@ async function provisionPlatformTenant(db, input) {
         await client.query("ROLLBACK");
         return fail(STATUS.ORGANIZATION_CONFLICT, "organization_conflict");
       }
-    } else {
+    } else if (!dryRun) {
       try {
         organization = await repo.insertOrganization(client, req);
         created.organization = true;
@@ -266,8 +274,8 @@ async function provisionPlatformTenant(db, input) {
       }
     }
 
-    // Default Free plan subscription (no billing). Never deletes existing resources on later plan changes.
-    if (req.productKey === "blessboard") {
+    let plannedSubscription = false;
+    if (organization && req.productKey === "blessboard") {
       const entitlementRepo = require("../repositories/entitlementRepository");
       const existingSub = await entitlementRepo.findCurrentSubscription(
         client,
@@ -276,99 +284,152 @@ async function provisionPlatformTenant(db, input) {
         new Date().toISOString()
       );
       if (!existingSub) {
-        const { assignOrganizationPlan } = require("./entitlementService");
-        await assignOrganizationPlan(client, {
-          organizationId: organization.id,
-          productKey: "blessboard",
-          planKey: "free",
-        });
+        plannedSubscription = true;
+        if (!dryRun) {
+          const { assignOrganizationPlan } = require("./entitlementService");
+          await assignOrganizationPlan(client, {
+            organizationId: organization.id,
+            productKey: "blessboard",
+            planKey: "free",
+          });
+        }
       }
+    } else if (!organization && req.productKey === "blessboard") {
+      plannedSubscription = true;
     }
 
-    const byTenantKey = await repo.findEnrolmentByProductTenantKey(
-      client,
-      product.id,
-      req.productTenantKey
-    );
-    if (byTenantKey && String(byTenantKey.organization_id) !== String(organization.id)) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
-    }
+    let enrolment = null;
+    let domain = null;
 
-    let enrolment = await repo.findEnrolmentByOrgProduct(client, organization.id, product.id);
-    if (enrolment) {
-      if (!enrolmentMatches(enrolment, req, organization.id, product.id)) {
+    if (organization) {
+      const byTenantKey = await repo.findEnrolmentByProductTenantKey(
+        client,
+        product.id,
+        req.productTenantKey
+      );
+      if (byTenantKey && String(byTenantKey.organization_id) !== String(organization.id)) {
         await client.query("ROLLBACK");
         return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
       }
-    } else {
-      try {
-        enrolment = await repo.insertEnrolment(client, {
-          organizationId: organization.id,
-          productId: product.id,
-          productTenantKey: req.productTenantKey,
-        });
-        created.enrolment = true;
-      } catch (err) {
-        if (!repo.isUniqueViolation(err)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.TRANSACTION_ERROR, "enrolment_insert_failed");
-        }
-        enrolment = await repo.findEnrolmentByOrgProduct(client, organization.id, product.id);
-        if (!enrolment) {
-          enrolment = await repo.findEnrolmentByProductTenantKey(
-            client,
-            product.id,
-            req.productTenantKey
-          );
-        }
+
+      enrolment = await repo.findEnrolmentByOrgProduct(client, organization.id, product.id);
+      if (enrolment) {
         if (!enrolmentMatches(enrolment, req, organization.id, product.id)) {
           await client.query("ROLLBACK");
           return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
         }
+      } else if (!dryRun) {
+        try {
+          enrolment = await repo.insertEnrolment(client, {
+            organizationId: organization.id,
+            productId: product.id,
+            productTenantKey: req.productTenantKey,
+          });
+          created.enrolment = true;
+        } catch (err) {
+          if (!repo.isUniqueViolation(err)) {
+            await client.query("ROLLBACK");
+            return fail(STATUS.TRANSACTION_ERROR, "enrolment_insert_failed");
+          }
+          enrolment = await repo.findEnrolmentByOrgProduct(client, organization.id, product.id);
+          if (!enrolment) {
+            enrolment = await repo.findEnrolmentByProductTenantKey(
+              client,
+              product.id,
+              req.productTenantKey
+            );
+          }
+          if (!enrolmentMatches(enrolment, req, organization.id, product.id)) {
+            await client.query("ROLLBACK");
+            return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
+          }
+        }
       }
-    }
 
-    let domain = await repo.findDomainByHostname(client, req.hostname);
-    if (domain) {
-      if (!domainMatches(domain, req, organization.id, product.id)) {
-        await client.query("ROLLBACK");
-        return fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict");
-      }
-    } else {
-      if (req.domainType === "custom" && req.productKey === "blessboard") {
-        const { assertFeature } = require("./entitlementService");
-        const domainGate = await assertFeature(client, {
-          organizationId: organization.id,
-          productKey: "blessboard",
-          featureKey: "custom_domain",
-        });
-        if (!domainGate.ok) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.INVALID_INPUT, "custom_domain_not_entitled");
-        }
-      }
-      try {
-        domain = await repo.insertDomain(client, {
-          organizationId: organization.id,
-          productId: product.id,
-          deploymentCode: req.deploymentCode,
-          hostname: req.hostname,
-          domainType: req.domainType,
-          isPrimary: req.isPrimary,
-        });
-        created.domain = true;
-      } catch (err) {
-        if (!repo.isUniqueViolation(err)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.TRANSACTION_ERROR, "domain_insert_failed");
-        }
-        domain = await repo.findDomainByHostname(client, req.hostname);
+      domain = await repo.findDomainByHostname(client, req.hostname);
+      if (domain) {
         if (!domainMatches(domain, req, organization.id, product.id)) {
           await client.query("ROLLBACK");
           return fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict");
         }
+      } else if (!dryRun) {
+        if (req.domainType === "custom" && req.productKey === "blessboard") {
+          const { assertFeature } = require("./entitlementService");
+          const domainGate = await assertFeature(client, {
+            organizationId: organization.id,
+            productKey: "blessboard",
+            featureKey: "custom_domain",
+          });
+          if (!domainGate.ok) {
+            await client.query("ROLLBACK");
+            return fail(STATUS.INVALID_INPUT, "custom_domain_not_entitled");
+          }
+        }
+        try {
+          domain = await repo.insertDomain(client, {
+            organizationId: organization.id,
+            productId: product.id,
+            deploymentCode: req.deploymentCode,
+            hostname: req.hostname,
+            domainType: req.domainType,
+            isPrimary: req.isPrimary,
+          });
+          created.domain = true;
+        } catch (err) {
+          if (!repo.isUniqueViolation(err)) {
+            await client.query("ROLLBACK");
+            return fail(STATUS.TRANSACTION_ERROR, "domain_insert_failed");
+          }
+          domain = await repo.findDomainByHostname(client, req.hostname);
+          if (!domainMatches(domain, req, organization.id, product.id)) {
+            await client.query("ROLLBACK");
+            return fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict");
+          }
+        }
       }
+    } else {
+      // Dry-run with no organization yet: still detect hostname ownership conflicts.
+      domain = await repo.findDomainByHostname(client, req.hostname);
+      if (domain) {
+        await client.query("ROLLBACK");
+        return fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict");
+      }
+      const byTenantKey = await repo.findEnrolmentByProductTenantKey(
+        client,
+        product.id,
+        req.productTenantKey
+      );
+      if (byTenantKey) {
+        await client.query("ROLLBACK");
+        return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
+      }
+    }
+
+    if (dryRun) {
+      const planned = {
+        organization: !organization,
+        enrolment: !organization || !enrolment,
+        domain: !organization || !domain,
+        default_subscription: plannedSubscription,
+      };
+      await client.query("ROLLBACK");
+      const anyPlanned =
+        planned.organization || planned.enrolment || planned.domain || planned.default_subscription;
+      return success(
+        anyPlanned ? STATUS.DRY_RUN_WOULD_PROVISION : STATUS.DRY_RUN_ALREADY_PROVISIONED,
+        { organization: false, enrolment: false, domain: false },
+        organization && enrolment && domain
+          ? mapRecords(organization, enrolment, domain, product, deployment)
+          : {
+              organization: organization
+                ? { key: organization.organization_key }
+                : { key: req.organizationKey },
+              domain: domain ? { hostname: domain.hostname } : { hostname: req.hostname },
+              product: { key: product.product_key },
+              deployment: { code: deployment.deployment_code },
+            },
+        { dryRun: true, planned }
+      );
     }
 
     await client.query("COMMIT");

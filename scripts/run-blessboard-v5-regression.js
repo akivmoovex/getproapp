@@ -104,6 +104,14 @@ const FULL_SUITES = [
     script: "test:blessboard:provisioning",
   },
   {
+    name: "Provision CLI safety",
+    script: "test:blessboard:provision-cli-safety",
+  },
+  {
+    name: "Demo V5 minimum dataset tool",
+    script: "test:blessboard:demo-v5-dataset",
+  },
+  {
     name: "Platform entitlements",
     script: "test:platform:entitlements",
   },

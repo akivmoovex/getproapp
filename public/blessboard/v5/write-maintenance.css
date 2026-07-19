@@ -1,0 +1,77 @@
+/**
+ * Write-maintenance page — Sacred Modernity (Hanken Grotesk, BlessBoard violet).
+ * Scoped to .bb-maint only.
+ */
+
+.bb-maint {
+  --bb-maint-violet: #6c5ce7;
+  --bb-maint-ink: #1c1b1f;
+  --bb-maint-muted: #5c5a66;
+  --bb-maint-surface: #f7f5ff;
+  --bb-maint-getpro: #e67e22;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  color: var(--bb-maint-ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(108, 92, 231, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(230, 126, 34, 0.08), transparent 50%),
+    var(--bb-maint-surface);
+}
+
+.bb-maint__main {
+  flex: 1;
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: 4.5rem 1.5rem 2rem;
+}
+
+.bb-maint__brand {
+  margin: 0 0 1.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bb-maint-violet);
+}
+
+.bb-maint__title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.bb-maint__lead {
+  margin: 0 0 1rem;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--bb-maint-muted);
+}
+
+.bb-maint__hint {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--bb-maint-muted);
+}
+
+.bb-maint__footer {
+  padding: 1.25rem 1.5rem 2rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--bb-maint-muted);
+}
+
+.bb-maint__getpro {
+  color: var(--bb-maint-getpro);
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .bb-maint__main {
+    padding-top: 3rem;
+  }
+}

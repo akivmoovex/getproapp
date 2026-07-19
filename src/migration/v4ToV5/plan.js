@@ -4,7 +4,7 @@
  * Build a migration plan JSON (no DB writes).
  */
 
-const { ENTITY_GROUPS, listAllEntities } = require("./groups");
+const { ENTITY_GROUPS, listAllEntities, UNSUPPORTED_SOURCE_ENTITIES } = require("./groups");
 
 /**
  * @param {object} input
@@ -37,21 +37,28 @@ function buildMigrationPlan(input) {
       canonicalDomainSuffix: config.runConfig.canonicalDomainSuffix,
       deploymentCode: config.runConfig.deploymentCode,
       batchSize: config.runConfig.batchSize,
+      includeSampleContent: Boolean(config.runConfig.includeSampleContent),
     },
     safety: {
       dryRunDefault: true,
       applyRequiresConfirm: true,
       sourceReadOnly: true,
       refuseSameFingerprint: true,
+      refuseGetproDatabaseUrl: true,
       noSourceMutations: true,
       noPublicTenantsOrSession: true,
       noStartupAutoRun: true,
+      orphanParentsQuarantined: true,
+      sampleOrgsExcludedUnlessSelected: true,
     },
     groups,
     entities: listAllEntities(),
+    unsupportedSourceEntities: UNSUPPORTED_SOURCE_ENTITIES.map((u) => ({ ...u })),
     notes: [
-      "Outputs: migration-plan.json, dry-run-summary.json, conflict-report.json, skipped-record-report.json, reconciliation-report.json",
+      "Outputs: migration-plan.json, dry-run-summary.json, apply-summary.json, conflict-report.json, skipped-record-report.json, reconciliation-report.json",
       "Media blob copy is deferred (metadata group skipped).",
+      "Sample/demo org keys are quarantined unless V4_TO_V5_INCLUDE_SAMPLE_CONTENT=1.",
+      "Orphan members/admins (unmapped org/branch) are quarantined — never assigned to a default branch.",
       "Use npm run migrate:v4-to-v5:dry-run before apply.",
     ],
   };

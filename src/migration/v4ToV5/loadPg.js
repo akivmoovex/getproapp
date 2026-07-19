@@ -264,7 +264,21 @@ async function applyUserRole(client, record) {
       [u.emailNormalized, u.id]
     );
     if (emailClash.rows[0]) {
-      // Merge: use existing user id for role only
+      const existingUser = await client.query(
+        `SELECT id, password_hash FROM blessboard.users WHERE id = $1`,
+        [emailClash.rows[0].id]
+      );
+      if (
+        existingUser.rows[0] &&
+        String(existingUser.rows[0].password_hash) !== String(u.passwordHash)
+      ) {
+        return {
+          status: "conflict",
+          code: "user_email_credential_conflict",
+          detail: "email already owned by a user with a different password_hash",
+        };
+      }
+      // Same email + matching hash: attach role to existing user (multi-branch/org staff).
       role.userId = emailClash.rows[0].id;
     } else {
       await client.query(

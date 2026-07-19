@@ -1,6 +1,7 @@
 "use strict";
 
 const { ok, quarantine } = require("./helpers");
+const { requireMappedParent } = require("./parents");
 
 function transform(row, ctx) {
   const id = row && row.id;
@@ -8,6 +9,24 @@ function transform(row, ctx) {
   if (row.organization_id == null || row.branch_id == null) {
     return quarantine("missing_scope", row);
   }
+
+  const church = requireMappedParent(
+    ctx.idMap,
+    "church_organizations_church",
+    row.organization_id,
+    "orphan_organization",
+    row
+  );
+  if (!church.ok) return church.result;
+
+  const branch = requireMappedParent(
+    ctx.idMap,
+    "church_branches",
+    row.branch_id,
+    "orphan_branch",
+    row
+  );
+  if (!branch.ok) return branch.result;
 
   const year = Number(row.period_year);
   const month = Number(row.period_month);
@@ -36,26 +55,20 @@ function transform(row, ctx) {
 
   const givingDate = `${year}-${String(month).padStart(2, "0")}-${new Date(year, month, 0).getDate()}`;
 
-  const churchId = ctx.idMap.resolve(
-    "church_organizations_church",
-    row.organization_id,
-    "blessboard.churches"
-  );
-  const branchId = ctx.idMap.resolve("church_branches", row.branch_id, "blessboard.branches");
   const entryId = ctx.idMap.resolve("church_giving_summaries", id, "blessboard.giving_entries");
 
   return ok(
     {
       category: {
-        churchId,
+        churchId: church.id,
         categoryKey: "general",
         label: "General",
         status: "active",
       },
       entry: {
         id: entryId,
-        churchId,
-        branchId,
+        churchId: church.id,
+        branchId: branch.id,
         givingDate,
         amount: (cents / 100).toFixed(2),
         currency,

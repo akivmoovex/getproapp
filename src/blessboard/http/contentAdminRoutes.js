@@ -30,6 +30,7 @@ const {
 } = require("../../platform/http/v5Csrf");
 const multer = require("multer");
 const { createMediaUploadService, STATUS: MEDIA_STATUS } = require("../media/mediaUploadService");
+const { areMediaUploadsEnabled } = require("../config/mediaUploadsEnabled");
 const { MAX_ANY_BYTES, VISIBILITY } = require("../media/mediaConstants");
 const {
   provisionEmptyPublicPages,
@@ -418,7 +419,18 @@ function createContentAdminRouter(deps) {
       });
     }
 
-    router.post(`${p}/media/upload`, rejectApex, gateContent, multerSingle, async (req, res) => {
+    router.post(
+      `${p}/media/upload`,
+      rejectApex,
+      gateContent,
+      (req, res, next) => {
+        if (!areMediaUploadsEnabled(env)) {
+          return res.status(403).json({ ok: false, reason: "media_uploads_disabled" });
+        }
+        return next();
+      },
+      multerSingle,
+      async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;
       const submitted =
@@ -475,7 +487,8 @@ function createContentAdminRouter(deps) {
         originalFilename: result.asset.originalFilename,
         deduped: Boolean(result.deduped),
       });
-    });
+      }
+    );
 
     router.get(`${p}/media`, rejectApex, gateContent, async (req, res) => {
       const scope = await resolveScope(req, res);

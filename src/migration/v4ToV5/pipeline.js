@@ -77,7 +77,7 @@ async function runMigrationPipeline(options) {
     };
   }
 
-  if (mode === "plan") {
+    if (mode === "plan") {
     const sourceCounts = {};
     if (extractor && typeof extractor.count === "function") {
       for (const g of ENTITY_GROUPS) {
@@ -88,7 +88,16 @@ async function runMigrationPipeline(options) {
       }
     }
     const plan = buildMigrationPlan({ config, sourceCounts });
-    const files = writeReportBundle(outputDir, { plan, conflicts: [], skipped: [] });
+    const unsupportedSkipped = (plan.unsupportedSourceEntities || []).map((u) => ({
+      entity: u.key,
+      sourceId: null,
+      reason: u.reason,
+    }));
+    const files = writeReportBundle(outputDir, {
+      plan,
+      conflicts: [],
+      skipped: unsupportedSkipped,
+    });
     return {
       ok: true,
       mode: "plan",
@@ -274,10 +283,11 @@ async function runMigrationPipeline(options) {
 
   const files = writeReportBundle(outputDir, {
     dryRun: mode === "dry-run" ? { ...reconciliation, outputDir } : null,
+    applySummary: mode === "apply" ? reconciliation : null,
     conflicts,
     skipped,
     reconciliation,
-    plan: mode === "dry-run" ? buildMigrationPlan({ config }) : null,
+    plan: mode === "dry-run" || mode === "apply" ? buildMigrationPlan({ config }) : null,
   });
 
   return {

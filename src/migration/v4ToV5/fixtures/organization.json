@@ -22,5 +22,13 @@
     "status": "dormant",
     "plan_code": "enterprise",
     "data_environment": "production"
+  },
+  {
+    "id": 4,
+    "slug": "demo-church",
+    "name": "Demo Sample Church",
+    "status": "active",
+    "plan_code": "free",
+    "data_environment": "demo"
   }
 ]

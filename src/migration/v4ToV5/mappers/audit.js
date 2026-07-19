@@ -1,6 +1,7 @@
 "use strict";
 
 const { ok, quarantine } = require("./helpers");
+const { requireMappedParent } = require("./parents");
 
 const FORBIDDEN_META_KEYS = new Set([
   "password",
@@ -11,6 +12,9 @@ const FORBIDDEN_META_KEYS = new Set([
   "cookie",
   "ssn",
   "national_id",
+  "email",
+  "phone",
+  "full_name",
 ]);
 
 function redactMetadata(meta) {
@@ -18,7 +22,13 @@ function redactMetadata(meta) {
   const out = {};
   for (const [k, v] of Object.entries(meta)) {
     const key = String(k).toLowerCase();
-    if (FORBIDDEN_META_KEYS.has(key) || key.includes("password") || key.includes("secret")) {
+    if (
+      FORBIDDEN_META_KEYS.has(key) ||
+      key.includes("password") ||
+      key.includes("secret") ||
+      key.includes("email") ||
+      key.includes("phone")
+    ) {
       continue;
     }
     out[k] = v;
@@ -37,19 +47,43 @@ function transform(row, ctx) {
     warnings.push("metadata_truncated");
   }
 
-  const organizationId =
-    row.organization_id != null
-      ? ctx.idMap.resolve(
-          "church_organizations",
-          row.organization_id,
-          "platform.organizations"
-        )
-      : null;
-  if (!organizationId) return quarantine("missing_organization_id", row, warnings);
+  if (row.organization_id == null) {
+    return quarantine("missing_organization_id", row, warnings);
+  }
+
+  const org = requireMappedParent(
+    ctx.idMap,
+    "church_organizations",
+    row.organization_id,
+    "orphan_organization",
+    row
+  );
+  if (!org.ok) return org.result;
+
+  const church = requireMappedParent(
+    ctx.idMap,
+    "church_organizations_church",
+    row.organization_id,
+    "orphan_organization",
+    row
+  );
+  if (!church.ok) return church.result;
+
+  let branchId = null;
+  if (row.branch_id != null) {
+    const branch = requireMappedParent(
+      ctx.idMap,
+      "church_branches",
+      row.branch_id,
+      "orphan_branch",
+      row
+    );
+    if (!branch.ok) return branch.result;
+    branchId = branch.id;
+  }
 
   const eventId = ctx.idMap.resolve("church_audit_logs", id, "platform.audit_events");
 
-  // Normalize legacy action strings into V5 action_key format.
   let actionKey = String(row.action)
     .trim()
     .toLowerCase()
@@ -71,19 +105,9 @@ function transform(row, ctx) {
       auditEvent: {
         id: eventId,
         deploymentCode: ctx.runConfig.deploymentCode,
-        organizationId,
-        churchId:
-          row.organization_id != null
-            ? ctx.idMap.resolve(
-                "church_organizations_church",
-                row.organization_id,
-                "blessboard.churches"
-              )
-            : null,
-        branchId:
-          row.branch_id != null
-            ? ctx.idMap.resolve("church_branches", row.branch_id, "blessboard.branches")
-            : null,
+        organizationId: org.id,
+        churchId: church.id,
+        branchId,
         actorUserId: null,
         actionKey,
         entityType,

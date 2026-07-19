@@ -78,6 +78,15 @@ function loadMigrationEnv(overrides = {}) {
     errors.push("refusing_DATABASE_URL_fallback");
   }
 
+  // Refuse GETPRO attach trap (ops policy aligned with dry-run checklist).
+  if (
+    !overrides.allowGetproDatabaseUrl &&
+    process.env.GETPRO_DATABASE_URL &&
+    String(process.env.GETPRO_DATABASE_URL).trim()
+  ) {
+    errors.push("GETPRO_DATABASE_URL_forbidden");
+  }
+
   if (errors.length) {
     return { ok: false, errors, config: null };
   }
@@ -98,6 +107,19 @@ function loadMigrationEnv(overrides = {}) {
     if (!overrides.allowHosted) {
       return { ok: false, errors: ["hosted_database_forbidden_in_default_mode"], config: null };
     }
+  }
+
+  const includeSampleContent =
+    overrides.includeSampleContent === true ||
+    String(process.env.V4_TO_V5_INCLUDE_SAMPLE_CONTENT || "").trim() === "1";
+  let sampleOrgKeys;
+  if (Array.isArray(overrides.sampleOrgKeys)) {
+    sampleOrgKeys = overrides.sampleOrgKeys;
+  } else if (process.env.V4_TO_V5_SAMPLE_ORG_KEYS) {
+    sampleOrgKeys = String(process.env.V4_TO_V5_SAMPLE_ORG_KEYS)
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
   }
 
   return {
@@ -131,6 +153,8 @@ function loadMigrationEnv(overrides = {}) {
           200,
           Math.max(1, Number(overrides.batchSize || process.env.V4_TO_V5_BATCH_SIZE || 50) || 50)
         ),
+        includeSampleContent,
+        sampleOrgKeys,
       },
     },
   };

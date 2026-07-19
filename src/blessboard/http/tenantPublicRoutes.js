@@ -64,6 +64,20 @@ function createTenantPublicRouter(deps) {
       );
     }
 
+    // Allow-list deny / empty under authoritative: keep foundation (pilot-safe).
+    if (
+      route.outcome === OUTCOME.FOUNDATION ||
+      route.reason === "authoritative_host_not_allowlisted" ||
+      route.reason === "authoritative_allowlist_empty"
+    ) {
+      return res.status(200).type("html").send(
+        renderFoundationHome({
+          authenticated: false,
+          csrfToken: null,
+        })
+      );
+    }
+
     if (route.outcome === OUTCOME.NOT_FOUND || route.httpStatus === 404) {
       return res
         .status(404)

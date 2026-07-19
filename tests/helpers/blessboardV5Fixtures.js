@@ -46,6 +46,10 @@ function baseV5TestEnv(overrides) {
     SESSION_SECRET: V5_TEST_SESSION_SECRET,
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
+    // Tests that need a one-host pilot override this; default * preserves prior suite behavior.
+    BLESSBOARD_AUTHORITATIVE_HOST_ALLOWLIST: "*",
+    // Opt-in for suites that exercise upload; Hostinger should leave unset/0.
+    BLESSBOARD_MEDIA_UPLOADS_ENABLED: "1",
     ...(overrides || {}),
   };
 }

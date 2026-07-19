@@ -62,6 +62,11 @@ const {
   getPlatformDeploymentCode,
   warnOnceIfDiagnosticDeploymentUnavailable,
 } = require("../config/platformDeploymentCode");
+const { createWriteMaintenanceMiddleware } = require("../../blessboard/http/writeMaintenanceMiddleware");
+const {
+  isWriteMaintenanceEnabled,
+  formatWriteMaintenanceLog,
+} = require("../../blessboard/config/writeMaintenance");
 const { logV5FoundationModeActive } = require("../config/v5FoundationMode");
 const {
   getBlessBoardTenantRoutingMode,
@@ -250,6 +255,13 @@ function createV5FoundationApp(options) {
 
   app.use(assignV5RequestId);
 
+  // Global write freeze (migrate/cutover). Host-agnostic; GET/HEAD/OPTIONS + logout POSTs pass.
+  app.use(
+    createWriteMaintenanceMiddleware({
+      getEnv: () => env,
+    })
+  );
+
   morgan.token("url-redacted", (req) => redactAuthTransferQuery(req.originalUrl || req.url || ""));
   morgan.token("req-id", (req) => (req && req.requestId) || "-");
   const accessFormat = ":method :url-redacted :status :res[content-length] - :response-time ms req_id=:req-id";
@@ -296,6 +308,7 @@ function createV5FoundationApp(options) {
   app.use(
     createBlessBoardTenantRoutingDecision({
       getMode: () => getBlessBoardTenantRoutingMode(env),
+      getEnv: () => env,
       isApexHost: (req) => isApexHost(req, opts),
       log: opts.log,
     })
@@ -388,18 +401,20 @@ function createV5FoundationApp(options) {
     },
   });
 
-  // Health is independent of tenant DB state.
+  // Health is independent of tenant DB state and of write maintenance (GET only).
   app.get("/healthz", (req, res) => {
+    const writeMaintenance = isWriteMaintenanceEnabled(env);
     if (env.DEBUG_HOST === "1") {
       return res.json({
         ok: true,
         mode: "v5-foundation",
+        writeMaintenance,
         resolvedHost: resolveHostname(req),
         xForwardedHost: req.headers["x-forwarded-host"] || null,
         hostHeader: req.headers.host || null,
       });
     }
-    return res.json({ ok: true, mode: "v5-foundation" });
+    return res.json({ ok: true, mode: "v5-foundation", writeMaintenance });
   });
 
   // 6. Temporary protected diagnostic (tenant hosts only; not linked from nav)
@@ -1053,6 +1068,19 @@ function createV5FoundationApp(options) {
       );
     }
     if (mode === MODE_AUTHORITATIVE) {
+      // Pilot allow-list deny / empty → foundation (same HTML class as shadow), not 503.
+      if (
+        route.outcome === OUTCOME.FOUNDATION ||
+        route.reason === "authoritative_host_not_allowlisted" ||
+        route.reason === "authoritative_allowlist_empty"
+      ) {
+        return res.status(200).type("html").send(
+          renderFoundationHome({
+            authenticated: false,
+            csrfToken: null,
+          })
+        );
+      }
       if (route.outcome === OUTCOME.NOT_FOUND || route.httpStatus === 404) {
         return res
           .status(404)
@@ -1125,7 +1153,9 @@ async function startV5FoundationServer(opts) {
   const {
     assertV5SessionSecretPolicyOrExit,
     summarizeV5DatabaseEnv,
+    parseBlessBoardJobsEnabled,
   } = require("../config/v5EnvValidation");
+  const { formatMediaUploadsEnabledLog } = require("../../blessboard/config/mediaUploadsEnabled");
   assertV5SessionSecretPolicyOrExit();
 
   logV5FoundationModeActive();
@@ -1142,10 +1172,15 @@ async function startV5FoundationServer(opts) {
     );
   }
 
+  const jobsParsed = parseBlessBoardJobsEnabled();
   // eslint-disable-next-line no-console
   console.log(
-    "[blessboard] V5 foundation mode: scheduled jobs remain disabled in this process (no job workers started)"
+    `[blessboard] BLESSBOARD_JOBS_ENABLED=${jobsParsed.enabled ? "1" : "0"} (${jobsParsed.reason}); no job workers started in foundation process`
   );
+  // eslint-disable-next-line no-console
+  console.log(`[blessboard] ${formatMediaUploadsEnabledLog()}`);
+  // eslint-disable-next-line no-console
+  console.log(`[blessboard] ${formatWriteMaintenanceLog()}`);
 
   const routingMode = getBlessBoardTenantRoutingMode();
   // eslint-disable-next-line no-console

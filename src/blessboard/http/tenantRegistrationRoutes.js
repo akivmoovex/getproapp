@@ -195,6 +195,19 @@ function createTenantRegistrationRouter(deps) {
       );
       return null;
     }
+    if (
+      route.outcome === OUTCOME.FOUNDATION ||
+      route.reason === "authoritative_host_not_allowlisted" ||
+      route.reason === "authoritative_allowlist_empty"
+    ) {
+      res.status(200).type("html").send(
+        renderFoundationHome({
+          authenticated: false,
+          csrfToken: null,
+        })
+      );
+      return null;
+    }
     if (route.outcome === OUTCOME.NOT_FOUND || route.httpStatus === 404) {
       res
         .status(404)

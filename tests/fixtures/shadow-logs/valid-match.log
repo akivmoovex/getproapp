@@ -1,0 +1,4 @@
+# Sample Hostinger / app log extract (redacted). Local validator input only.
+2026-07-19T12:00:00Z INFO boot ok
+[blessboard-tenant-routing] {"event":"blessboard_tenant_route_shadow","hostname":"diagnostic.blessboard.org","platformResultType":"resolved_tenant","catalogueResultType":"resolved","proposedRouteOutcome":"foundation","proposedReason":"shadow_match","organizationKey":"diagnostic-church","churchKey":"diagnostic-church","primaryBranchKey":"hq","deploymentComparisonResult":"match","path":"/","requestId":"req-shadow-match-001"}
+2026-07-19T12:00:01Z INFO request complete

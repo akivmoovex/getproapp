@@ -79,6 +79,54 @@ function mapDataEnvironment(raw, fallback) {
   return null;
 }
 
+/** Default V4 sample/demo org keys — skipped unless includeSampleContent is true. */
+const DEFAULT_SAMPLE_ORG_KEYS = Object.freeze([
+  "demo",
+  "demo2",
+  "demo-church",
+  "rehearsal-a",
+  "rehearsal-b",
+  "rehearsal-demo",
+]);
+
+/**
+ * @param {string} organizationKey
+ * @param {{ includeSampleContent?: boolean, sampleOrgKeys?: string[] }} [runConfig]
+ */
+function isSampleOrganizationKey(organizationKey, runConfig) {
+  if (runConfig && runConfig.includeSampleContent === true) return false;
+  const key = String(organizationKey || "")
+    .trim()
+    .toLowerCase();
+  if (!key) return false;
+  const denylist = Array.isArray(runConfig && runConfig.sampleOrgKeys)
+    ? runConfig.sampleOrgKeys.map((k) => String(k).trim().toLowerCase()).filter(Boolean)
+    : DEFAULT_SAMPLE_ORG_KEYS.slice();
+  if (denylist.includes(key)) return true;
+  if (/^demo[-_]/.test(key)) return true;
+  if (/^rehearsal[-_]/.test(key)) return true;
+  return false;
+}
+
+/**
+ * Reject unsafe hostnames for canonical migration domains.
+ * @param {string} hostname
+ */
+function isUnsafeHostname(hostname) {
+  const h = String(hostname || "")
+    .trim()
+    .toLowerCase();
+  if (!h || h.length > 253 || h.includes("..")) return true;
+  if (h === "localhost" || h.endsWith(".localhost")) return true;
+  if (h === "invalid" || h.endsWith(".invalid")) return true;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) return true;
+  if (h.includes(" ") || h.includes("/") || h.includes(":")) return true;
+  const labels = h.split(".");
+  if (labels.some((l) => l === "localhost" || l === "invalid" || l === "")) return true;
+  if (!/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/.test(h)) return true;
+  return false;
+}
+
 function ok(record, warnings = []) {
   return { ok: true, status: "mapped", record, warnings, quarantine: null };
 }
@@ -95,6 +143,7 @@ function quarantine(reason, row, warnings = []) {
 
 module.exports = {
   KEY_RE,
+  DEFAULT_SAMPLE_ORG_KEYS,
   normalizeKey,
   normalizeEmail,
   normalizePhone,
@@ -103,6 +152,8 @@ module.exports = {
   splitFullName,
   mapPlanKey,
   mapDataEnvironment,
+  isSampleOrganizationKey,
+  isUnsafeHostname,
   ok,
   quarantine,
 };

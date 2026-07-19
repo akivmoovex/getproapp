@@ -1,6 +1,7 @@
 "use strict";
 
 const { normalizeKey, ok, quarantine } = require("./helpers");
+const { requireMappedParent } = require("./parents");
 
 const HQ_SLUGS = new Set(["hq", "head-office", "headquarters", "head_office"]);
 
@@ -13,11 +14,15 @@ function transform(row, ctx) {
 
   if (row.organization_id == null) return quarantine("missing_organization_id", row);
 
-  const churchId = ctx.idMap.resolve(
+  const church = requireMappedParent(
+    ctx.idMap,
     "church_organizations_church",
     row.organization_id,
-    "blessboard.churches"
+    "orphan_organization",
+    row
   );
+  if (!church.ok) return church.result;
+
   const branchId = ctx.idMap.resolve("church_branches", id, "blessboard.branches");
 
   const statusRaw = String(row.status || "active").toLowerCase();
@@ -43,7 +48,7 @@ function transform(row, ctx) {
     {
       branch: {
         id: branchId,
-        churchId,
+        churchId: church.id,
         branchKey,
         displayName: String(row.name || branchKey).trim().slice(0, 200),
         branchType: isHq ? "hq" : "branch",

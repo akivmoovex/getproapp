@@ -25,5 +25,21 @@
     "full_name": "Rejected Person",
     "email": "rejected@example.com",
     "status": "rejected"
+  },
+  {
+    "id": 303,
+    "organization_id": 1,
+    "branch_id": 9999,
+    "full_name": "Orphan Branch Member",
+    "email": "orphan.branch@example.com",
+    "status": "active"
+  },
+  {
+    "id": 304,
+    "organization_id": 999,
+    "branch_id": 11,
+    "full_name": "Orphan Org Member",
+    "email": "orphan.org@example.com",
+    "status": "active"
   }
 ]

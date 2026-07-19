@@ -113,6 +113,24 @@ describe("v4 to v5 migration tooling", () => {
     assert.equal(parseCliArgs(["apply", "--confirm"]).confirm, true);
   });
 
+  it("refuses GETPRO_DATABASE_URL even when V4/V5 URLs are set", () => {
+    const prev = process.env.GETPRO_DATABASE_URL;
+    process.env.GETPRO_DATABASE_URL = "postgresql://localhost:5432/getpro_trap";
+    try {
+      const env = loadMigrationEnv({
+        V4_SOURCE_DATABASE_URL: "postgresql://localhost:5432/v4_a",
+        V5_TARGET_DATABASE_URL: "postgresql://localhost:5432/v5_b",
+        DATABASE_IDENTITY_EXPECTED: "blessboard-platform-v5",
+        allowHosted: true,
+      });
+      assert.equal(env.ok, false);
+      assert.ok(env.errors.includes("GETPRO_DATABASE_URL_forbidden"));
+    } finally {
+      if (prev === undefined) delete process.env.GETPRO_DATABASE_URL;
+      else process.env.GETPRO_DATABASE_URL = prev;
+    }
+  });
+
   it("verifies target identity before writes and opens source read-only", async () => {
     requireDb();
     const env = loadMigrationEnv({
@@ -180,6 +198,10 @@ describe("v4 to v5 migration tooling", () => {
     });
     assert.equal(planResult.ok, true);
     assert.ok(fs.existsSync(planResult.files.plan));
+    assert.ok(fs.existsSync(planResult.files.skipped));
+    const planJson = JSON.parse(fs.readFileSync(planResult.files.plan, "utf8"));
+    assert.ok(planJson.unsupportedSourceEntities.some((u) => u.key === "sermons"));
+    assert.equal(planJson.safety.orphanParentsQuarantined, true);
 
     const dry = await runMigrationPipeline({
       mode: "dry-run",
@@ -227,6 +249,7 @@ describe("v4 to v5 migration tooling", () => {
     });
     assert.equal(first.ok, true, first.message || first.code);
     assert.ok(first.totals.written >= 1);
+    assert.ok(fs.existsSync(first.files.applySummary));
 
     const orgs = await targetPool.query(
       `SELECT organization_key FROM platform.organizations WHERE organization_key = 'grace-chapel'`
@@ -247,6 +270,7 @@ describe("v4 to v5 migration tooling", () => {
     });
     assert.equal(second.ok, true);
     assert.equal(second.totals.written, 0);
+    assert.ok(fs.existsSync(second.files.applySummary));
     assert.ok(second.totals.skipped >= 1);
 
     const cp = createCheckpointStore(path.join(dir, "cp.json"));

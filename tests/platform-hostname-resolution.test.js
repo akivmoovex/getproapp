@@ -325,6 +325,19 @@ describe("platform hostname resolution", () => {
     assert.equal(result.type, RESULT_TYPES.MISSING_ORGANIZATION);
   });
 
+  it("same hostname cannot be assigned twice", async () => {
+    requireDb();
+    await insertDomain({ hostname: "dup-host.example.test", domainType: "custom" });
+    let rejected = false;
+    try {
+      await insertDomain({ hostname: "dup-host.example.test", domainType: "alias" });
+    } catch (err) {
+      rejected = true;
+      assert.equal(err.code, "23505");
+    }
+    assert.equal(rejected, true);
+  });
+
   it("apex domain does not require an organization-product enrolment", async () => {
     requireDb();
     const result = await resolveHostname(pool, "apex.example.test");

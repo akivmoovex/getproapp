@@ -219,6 +219,7 @@ describe("blessboard tenant-auth transfer http", () => {
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
+        BLESSBOARD_AUTHORITATIVE_HOST_ALLOWLIST: "*",
         PUBLIC_SCHEME: "https",
         BLESSBOARD_APEX_ORIGIN: "https://blessboard.org",
       };

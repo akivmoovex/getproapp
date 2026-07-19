@@ -15,6 +15,8 @@ const {
 const STATUS = Object.freeze({
   PROVISIONED: "provisioned",
   ALREADY_PROVISIONED: "already_provisioned",
+  DRY_RUN_WOULD_PROVISION: "dry_run_would_provision",
+  DRY_RUN_ALREADY_PROVISIONED: "dry_run_already_provisioned",
   INVALID_INPUT: "invalid_input",
   ORGANIZATION_NOT_FOUND: "organization_not_found",
   INACTIVE_ORGANIZATION: "inactive_organization",
@@ -37,18 +39,23 @@ function fail(status, message, extra) {
     status,
     message: message || status,
     created: { church: false, hqBranch: false },
+    planned: null,
+    dryRun: false,
     records: null,
     ...(extra || {}),
   };
 }
 
-function success(status, created, records) {
+function success(status, created, records, extra) {
   return {
     ok: true,
     status,
     message: status,
     created,
+    planned: null,
+    dryRun: false,
     records,
+    ...(extra || {}),
   };
 }
 
@@ -192,6 +199,7 @@ async function provisionBlessBoardChurch(db, input) {
     return fail(STATUS.INVALID_INPUT, `invalid_input:${validated.reason}`);
   }
   const req = validated.value;
+  const dryRun = Boolean(input && input.dryRun);
 
   if (!db || (typeof db.connect !== "function" && typeof db.query !== "function")) {
     return fail(STATUS.TRANSACTION_ERROR, "database client or pool required");
@@ -257,7 +265,7 @@ async function provisionBlessBoardChurch(db, input) {
         await client.query("ROLLBACK");
         return fail(STATUS.CHURCH_CONFLICT, "church_conflict");
       }
-    } else {
+    } else if (!dryRun) {
       try {
         church = await repo.insertChurch(client, {
           organizationId: organization.id,
@@ -283,26 +291,72 @@ async function provisionBlessBoardChurch(db, input) {
       }
     }
 
-    const existingHq = await repo.findHqBranch(client, church.id);
-    const byBranchKey = await repo.findBranchByChurchAndKey(client, church.id, req.hqBranchKey);
+    let hqBranch = null;
+    if (church) {
+      const existingHq = await repo.findHqBranch(client, church.id);
+      const byBranchKey = await repo.findBranchByChurchAndKey(client, church.id, req.hqBranchKey);
 
-    if (existingHq && byBranchKey && String(existingHq.id) !== String(byBranchKey.id)) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
-    }
-    if (byBranchKey && String(byBranchKey.branch_type) !== "hq") {
-      await client.query("ROLLBACK");
-      return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
-    }
-
-    let hqBranch = existingHq || byBranchKey;
-    if (hqBranch) {
-      if (!hqBranchMatches(hqBranch, req, church.id)) {
+      if (existingHq && byBranchKey && String(existingHq.id) !== String(byBranchKey.id)) {
         await client.query("ROLLBACK");
         return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
       }
-    } else {
-      try {
+      if (byBranchKey && String(byBranchKey.branch_type) !== "hq") {
+        await client.query("ROLLBACK");
+        return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
+      }
+
+      hqBranch = existingHq || byBranchKey;
+      if (hqBranch) {
+        if (!hqBranchMatches(hqBranch, req, church.id)) {
+          await client.query("ROLLBACK");
+          return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
+        }
+      } else if (!dryRun) {
+        try {
+          const capacity = await evaluateBranchCreateLimit(client, {
+            organizationId: organization.id,
+          });
+          if (!capacity.ok) {
+            await client.query("ROLLBACK");
+            if (capacity.status === ENTITLEMENT_STATUS.LIMIT_EXCEEDED) {
+              return fail(STATUS.LIMIT_EXCEEDED, "max_branches", {
+                current: capacity.current,
+                limit: capacity.limit,
+              });
+            }
+            return fail(STATUS.TRANSACTION_ERROR, "branch_capacity_check_failed");
+          }
+          hqBranch = await repo.insertHqBranch(client, {
+            churchId: church.id,
+            branchKey: req.hqBranchKey,
+            displayName: req.hqBranchDisplayName,
+            timezone: req.timezone,
+            countryCode: req.countryCode,
+          });
+          created.hqBranch = true;
+        } catch (err) {
+          if (!repo.isUniqueViolation(err) && !repo.isCheckOrTriggerViolation(err)) {
+            await client.query("ROLLBACK");
+            return fail(STATUS.TRANSACTION_ERROR, "branch_insert_failed");
+          }
+          hqBranch = await repo.findHqBranch(client, church.id);
+          if (!hqBranch) {
+            hqBranch = await repo.findBranchByChurchAndKey(client, church.id, req.hqBranchKey);
+          }
+          if (!hqBranchMatches(hqBranch, req, church.id)) {
+            await client.query("ROLLBACK");
+            return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
+          }
+        }
+      }
+    }
+
+    if (dryRun) {
+      const planned = {
+        church: !church,
+        hqBranch: !church || !hqBranch,
+      };
+      if (planned.hqBranch && church) {
         const capacity = await evaluateBranchCreateLimit(client, {
           organizationId: organization.id,
         });
@@ -316,28 +370,21 @@ async function provisionBlessBoardChurch(db, input) {
           }
           return fail(STATUS.TRANSACTION_ERROR, "branch_capacity_check_failed");
         }
-        hqBranch = await repo.insertHqBranch(client, {
-          churchId: church.id,
-          branchKey: req.hqBranchKey,
-          displayName: req.hqBranchDisplayName,
-          timezone: req.timezone,
-          countryCode: req.countryCode,
-        });
-        created.hqBranch = true;
-      } catch (err) {
-        if (!repo.isUniqueViolation(err) && !repo.isCheckOrTriggerViolation(err)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.TRANSACTION_ERROR, "branch_insert_failed");
-        }
-        hqBranch = await repo.findHqBranch(client, church.id);
-        if (!hqBranch) {
-          hqBranch = await repo.findBranchByChurchAndKey(client, church.id, req.hqBranchKey);
-        }
-        if (!hqBranchMatches(hqBranch, req, church.id)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
-        }
       }
+      await client.query("ROLLBACK");
+      const anyPlanned = planned.church || planned.hqBranch;
+      return success(
+        anyPlanned ? STATUS.DRY_RUN_WOULD_PROVISION : STATUS.DRY_RUN_ALREADY_PROVISIONED,
+        { church: false, hqBranch: false },
+        church && hqBranch
+          ? mapRecords(organization, church, hqBranch)
+          : {
+              organization: { key: organization.organization_key },
+              church: church ? { key: church.church_key } : { key: req.churchKey },
+              hqBranch: hqBranch ? { key: hqBranch.branch_key } : { key: req.hqBranchKey },
+            },
+        { dryRun: true, planned }
+      );
     }
 
     await client.query("COMMIT");

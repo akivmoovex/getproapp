@@ -1,6 +1,7 @@
 "use strict";
 
 const { ok, quarantine } = require("./helpers");
+const { requireMappedParent } = require("./parents");
 
 function toIsoDate(value) {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
@@ -19,6 +20,25 @@ function transform(row, ctx) {
   if (row.organization_id == null || row.branch_id == null) {
     return quarantine("missing_scope", row);
   }
+
+  const church = requireMappedParent(
+    ctx.idMap,
+    "church_organizations_church",
+    row.organization_id,
+    "orphan_organization",
+    row
+  );
+  if (!church.ok) return church.result;
+
+  const branch = requireMappedParent(
+    ctx.idMap,
+    "church_branches",
+    row.branch_id,
+    "orphan_branch",
+    row
+  );
+  if (!branch.ok) return branch.result;
+
   const eventDate = toIsoDate(row.service_date);
   if (!eventDate) return quarantine("missing_service_date", row);
 
@@ -43,12 +63,6 @@ function transform(row, ctx) {
     return quarantine("invalid_headcount", row);
   }
 
-  const churchId = ctx.idMap.resolve(
-    "church_organizations_church",
-    row.organization_id,
-    "blessboard.churches"
-  );
-  const branchId = ctx.idMap.resolve("church_branches", row.branch_id, "blessboard.branches");
   const eventId = ctx.idMap.resolve(
     "church_attendance_records",
     id,
@@ -62,8 +76,8 @@ function transform(row, ctx) {
     {
       attendanceEvent: {
         id: eventId,
-        churchId,
-        branchId,
+        churchId: church.id,
+        branchId: branch.id,
         eventDate,
         eventType: "other",
         title: String(row.service_label || "Service").trim().slice(0, 200) || "Service",
@@ -73,7 +87,7 @@ function transform(row, ctx) {
       },
       attendanceEntry: {
         attendanceEventId: eventId,
-        churchId,
+        churchId: church.id,
         category: "other",
         count: Math.trunc(headcount),
       },

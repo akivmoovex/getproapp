@@ -100,24 +100,43 @@ function parsePublicScheme(env) {
 }
 
 /**
- * Jobs master switch. Unset → enabled (V4 default). Explicit disable tokens → off.
- * V5 foundation pairing always reports disabled (legacy cron must not run).
+ * Jobs master switch.
+ * - V5 foundation mode: always disabled.
+ * - PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5 (any pairing): unset/invalid → disabled (fail-closed).
+ * - Other deployments (V4): unset → enabled; invalid → enabled (legacy).
+ * Explicit enable/disable tokens always honored outside foundation mode.
  * @param {NodeJS.ProcessEnv} [env]
  */
 function parseBlessBoardJobsEnabled(env) {
   const source = env || process.env;
+  const { isWriteMaintenanceEnabled } = require("../../blessboard/config/writeMaintenance");
+  if (isWriteMaintenanceEnabled(source)) {
+    return { ok: true, enabled: false, reason: "write_maintenance" };
+  }
   if (isV5FoundationMode(source)) {
     return { ok: true, enabled: false, reason: "v5_foundation_mode" };
   }
+  const deploy = getPlatformDeploymentCode(source);
+  const isV5DeploymentCode = Boolean(
+    deploy.ok && deploy.code === V5_FOUNDATION_DEPLOYMENT_CODE
+  );
   const raw = String(source.BLESSBOARD_JOBS_ENABLED || "")
     .trim()
     .toLowerCase();
-  if (!raw) return { ok: true, enabled: true, reason: "default_enabled" };
+  if (!raw) {
+    if (isV5DeploymentCode) {
+      return { ok: true, enabled: false, reason: "v5_default_disabled" };
+    }
+    return { ok: true, enabled: true, reason: "default_enabled" };
+  }
   if (JOBS_DISABLE_VALUES.includes(raw)) {
     return { ok: true, enabled: false, reason: "explicit_disable" };
   }
   if (raw === "1" || raw === "true" || raw === "yes" || raw === "on") {
     return { ok: true, enabled: true, reason: "explicit_enable" };
+  }
+  if (isV5DeploymentCode) {
+    return { ok: false, reason: "unsupported", raw, enabled: false };
   }
   return { ok: false, reason: "unsupported", raw, enabled: true };
 }

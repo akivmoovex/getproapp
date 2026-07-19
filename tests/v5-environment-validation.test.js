@@ -299,6 +299,25 @@ describe("V5 jobs gate", () => {
     assert.equal(areBlessBoardJobsEnabled(), true);
   });
 
+  it("V5 deployment code unset defaults disabled outside foundation pairing", () => {
+    process.env.PLATFORM_DEPLOYMENT_CODE = V5_FOUNDATION_DEPLOYMENT_CODE;
+    process.env.DEPLOYMENT_ENV = "production";
+    delete process.env.BLESSBOARD_JOBS_ENABLED;
+    const parsed = parseBlessBoardJobsEnabled(process.env);
+    assert.equal(parsed.enabled, false);
+    assert.equal(parsed.reason, "v5_default_disabled");
+    assert.equal(areBlessBoardJobsEnabled(), false);
+  });
+
+  it("V5 unsupported jobs token fails closed", () => {
+    process.env.PLATFORM_DEPLOYMENT_CODE = V5_FOUNDATION_DEPLOYMENT_CODE;
+    process.env.DEPLOYMENT_ENV = "production";
+    process.env.BLESSBOARD_JOBS_ENABLED = "maybe";
+    const parsed = parseBlessBoardJobsEnabled(process.env);
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.enabled, false);
+  });
+
   it("explicit disable works outside foundation", () => {
     process.env.PLATFORM_DEPLOYMENT_CODE = "blessboard-com-v4";
     process.env.DEPLOYMENT_ENV = "production";
@@ -322,6 +341,8 @@ describe("V5 env reference + startup source safety", () => {
       "PLATFORM_HOST_CONTEXT_MODE",
       "BLESSBOARD_TENANT_ROUTING_MODE",
       "BLESSBOARD_JOBS_ENABLED",
+      "BLESSBOARD_MEDIA_UPLOADS_ENABLED",
+      "BLESSBOARD_WRITE_MAINTENANCE",
       "SESSION_SECRET",
       "SESSION_COOKIE_NAME",
       "BASE_DOMAIN",

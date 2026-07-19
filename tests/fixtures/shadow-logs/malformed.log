@@ -1,0 +1,3 @@
+[blessboard-tenant-routing] {event:blessboard_tenant_route_shadow, hostname:broken
+not even json
+[blessboard-tenant-routing] blessboard_tenant_route_shadow without braces

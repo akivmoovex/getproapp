@@ -271,15 +271,14 @@ function getUploadRootLogLabel() {
 
 /**
  * Master switch for BlessBoard scheduled/cron jobs.
- * Default true (V4-compatible). Set BLESSBOARD_JOBS_ENABLED=0|false|no|off to disable.
- * V5 foundation mode always disables jobs (no silent cron against platform DB).
+ * V5 foundation mode and blessboard-org-v5 deployment code default to disabled.
+ * V4-compatible deployments: unset remains enabled. Explicit 0|false|no|off disables.
  * Manual web workflows are unaffected — only cron/ops entrypoints should check this.
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function areBlessBoardJobsEnabled() {
-  const { isV5FoundationMode } = require("../platform/config/v5FoundationMode");
-  if (isV5FoundationMode()) return false;
-  if (!envTrim("BLESSBOARD_JOBS_ENABLED")) return true;
-  return !isEnvFlagDisabled("BLESSBOARD_JOBS_ENABLED");
+function areBlessBoardJobsEnabled(env) {
+  const { parseBlessBoardJobsEnabled } = require("../platform/config/v5EnvValidation");
+  return Boolean(parseBlessBoardJobsEnabled(env || process.env).enabled);
 }
 
 /** Accepted DEPLOYMENT_ENV modes for demo visibility / seed gates (not NODE_ENV). */

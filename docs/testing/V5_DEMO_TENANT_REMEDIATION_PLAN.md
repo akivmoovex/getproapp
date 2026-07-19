@@ -115,14 +115,16 @@ Re-check before creating users. If any fail, stop and escalate — do **not** in
 
 ### Catalogue re-confirm (idempotent; hosted write only if confirmation given)
 
-If catalogue rows were somehow missing, operators may re-run provision. On current audit they should print **already provisioned** and not expand the graph incorrectly.
+Dry-run is the **default** for provision CLIs. Preview first (no write), then add `--confirm` for writes. Requires `DATABASE_IDENTITY_EXPECTED` match, unset `GETPRO_DATABASE_URL`, and `--deployment` (or resolvable org domain deployment for church).
+
+If catalogue rows were somehow missing, operators may re-run provision. On current audit they should print **already provisioned** / `dry_run_already_provisioned` and not expand the graph incorrectly.
 
 **Hosted confirmation ID:** `CAT-RECONFIRM`
 
 | Item | Required state | Existing tool | Command template | Writes data | Verification |
 |------|----------------|---------------|------------------|-------------|--------------|
-| Organization + product enrolment + domain | Same keys as readiness §3 | `npm run platform:tenant:provision` | ```bash<br>npm run platform:tenant:provision -- \<br>  --organization-key diagnostic-church \<br>  --display-name "BlessBoard Diagnostic Church" \<br>  --environment testing \<br>  --product blessboard \<br>  --tenant-key diagnostic-church \<br>  --hostname diagnostic.blessboard.org \<br>  --domain-type canonical \<br>  --deployment blessboard-org-v5<br>``` | Yes (idempotent upsert path) | JSON `ok` + `already_provisioned` or provisioned; hostname still sole primary |
-| Church + HQ/primary | Keys above | `npm run blessboard:church:provision` | ```bash<br>npm run blessboard:church:provision -- \<br>  --organization-key diagnostic-church \<br>  --church-key diagnostic-church \<br>  --display-name "BlessBoard Diagnostic Church" \<br>  --environment testing \<br>  --hq-branch-key hq \<br>  --hq-branch-name "Headquarters"<br>``` | Yes (idempotent) | Church + `hq` primary present |
+| Organization + product enrolment + domain | Same keys as readiness §3 | `npm run platform:tenant:provision` | ```bash<br># Preview (default dry-run)<br>npm run platform:tenant:provision -- \<br>  --organization-key diagnostic-church \<br>  --display-name "BlessBoard Diagnostic Church" \<br>  --environment testing \<br>  --product blessboard \<br>  --tenant-key diagnostic-church \<br>  --hostname diagnostic.blessboard.org \<br>  --domain-type canonical \<br>  --deployment blessboard-org-v5<br># Write<br>npm run platform:tenant:provision -- …same args… --confirm<br>``` | Only with `--confirm` | JSON `mode=dry_run` then `mode=write`; `already_provisioned` / `dry_run_already_provisioned` on re-run |
+| Church + HQ/primary | Keys above | `npm run blessboard:church:provision` | ```bash<br>npm run blessboard:church:provision -- \<br>  --organization-key diagnostic-church \<br>  --church-key diagnostic-church \<br>  --display-name "BlessBoard Diagnostic Church" \<br>  --environment testing \<br>  --hq-branch-key hq \<br>  --hq-branch-name "Headquarters" \<br>  --deployment blessboard-org-v5<br># then add --confirm to write<br>``` | Only with `--confirm` | Church + `hq` primary present |
 
 **Rollback / cleanup (catalogue):** **TOOLING GAP** — no approved CLI to delete org/church/domain. Do not invent DELETE SQL. If a bad re-provision creates conflict, stop and escalate to DBA with product approval.
 
@@ -136,12 +138,12 @@ Placeholders: `<PA_EMAIL>`, `<HQ_EMAIL>`, `<BA_EMAIL>`, `<MEMBER_EMAIL>` — ope
 
 | Item | Required state | Existing tool | Command template | Writes data | Verification |
 |------|----------------|---------------|------------------|-------------|--------------|
-| Platform-admin user | Active `blessboard.users` row usable for Apex `/admin` | `npm run blessboard:user:create` | ```bash<br>printf '%s' '<TEMP_PASSWORD>' \| npm run blessboard:user:create -- \<br>  --email '<PA_EMAIL>' \<br>  --display-name 'Platform Admin' \<br>  --password-stdin<br>``` | Yes | CLI JSON `ok`; Apex login succeeds later |
-| Platform-admin role | Active `platform_admin` assignment | `npm run blessboard:user:role:assign` | ```bash<br>npm run blessboard:user:role:assign -- \<br>  --email '<PA_EMAIL>' \<br>  --organization-key diagnostic-church \<br>  --role platform_admin<br>``` | Yes | CLI `assigned` or `already_assigned`; `/admin` **200** after login |
-| HQ-admin user | Active user | `blessboard:user:create` | Same pattern with `<HQ_EMAIL>` / display-name `HQ Admin` | Yes | CLI `ok` |
-| HQ-admin role | Active `church_hq_admin` on church | `blessboard:user:role:assign` | ```bash<br>npm run blessboard:user:role:assign -- \<br>  --email '<HQ_EMAIL>' \<br>  --organization-key diagnostic-church \<br>  --role church_hq_admin \<br>  --church-key diagnostic-church<br>``` | Yes | Transfer → `/hq` **200** |
-| Branch-admin user | Active user | `blessboard:user:create` | `<BA_EMAIL>` / `Branch Admin` | Yes | CLI `ok` |
-| Branch-admin role | Active `branch_admin` on `hq` | `blessboard:user:role:assign` | ```bash<br>npm run blessboard:user:role:assign -- \<br>  --email '<BA_EMAIL>' \<br>  --organization-key diagnostic-church \<br>  --role branch_admin \<br>  --church-key diagnostic-church \<br>  --branch-key hq<br>``` | Yes | Transfer → `/branch-admin` **200**; branch-scoped data only |
+| Platform-admin user | Active `blessboard.users` row usable for Apex `/admin` | `npm run blessboard:user:create` | ```bash<br># Preview<br>npm run blessboard:user:create -- --email '<PA_EMAIL>' --display-name 'Platform Admin'<br># Write<br>printf '%s' '<TEMP_PASSWORD>' \| npm run blessboard:user:create -- \<br>  --email '<PA_EMAIL>' \<br>  --display-name 'Platform Admin' \<br>  --password-stdin \<br>  --confirm<br>``` | Only with `--confirm` | CLI JSON `ok`; Apex login succeeds later |
+| Platform-admin role | Active `platform_admin` assignment | `npm run blessboard:user:role:assign` | ```bash<br>npm run blessboard:user:role:assign -- \<br>  --email '<PA_EMAIL>' \<br>  --organization-key diagnostic-church \<br>  --role platform_admin<br># then --confirm to write<br>``` | Only with `--confirm` | CLI `assigned` / `already_assigned` / dry-run equivalents; `/admin` **200** after login |
+| HQ-admin user | Active user | `blessboard:user:create` | Same pattern with `<HQ_EMAIL>` / display-name `HQ Admin` + `--confirm` | Only with `--confirm` | CLI `ok` |
+| HQ-admin role | Active `church_hq_admin` on church | `blessboard:user:role:assign` | ```bash<br>npm run blessboard:user:role:assign -- \<br>  --email '<HQ_EMAIL>' \<br>  --organization-key diagnostic-church \<br>  --role church_hq_admin \<br>  --church-key diagnostic-church \<br>  --confirm<br>``` | Only with `--confirm` | Transfer → `/hq` **200** |
+| Branch-admin user | Active user | `blessboard:user:create` | `<BA_EMAIL>` / `Branch Admin` + `--confirm` | Only with `--confirm` | CLI `ok` |
+| Branch-admin role | Active `branch_admin` on `hq` | `blessboard:user:role:assign` | ```bash<br>npm run blessboard:user:role:assign -- \<br>  --email '<BA_EMAIL>' \<br>  --organization-key diagnostic-church \<br>  --role branch_admin \<br>  --church-key diagnostic-church \<br>  --branch-key hq \<br>  --confirm<br>``` | Only with `--confirm` | Transfer → `/branch-admin` **200**; branch-scoped data only |
 | Member user + primary membership | Active member linked to user; primary `member_branch_memberships` on `hq` | **No member-create CLI** → UI registration + BA approval | 1. Authoritative (or reachable) tenant: `https://diagnostic.blessboard.org/register`<br>2. Submit disposable `<MEMBER_EMAIL>`<br>3. BA: `/branch-admin/registrations` approve/activate | Yes (UI) | Member login → `/member` **200**; primary membership on `hq` |
 
 **Hosted confirmation IDs:** `U-PA`, `R-PA`, `U-HQ`, `R-HQ`, `U-BA`, `R-BA`, `U-MEM` (registration), `U-MEM-APPROVE`.
@@ -238,6 +240,8 @@ Do **not** start this sequence from documentation alone — obtain an operator o
 | No catalogue teardown CLI | Undo bad provision | Idempotent re-run only; escalate conflicts |
 | No approved demo SQL pack | All of the above | **Do not invent SQL** |
 | Legacy `church:seed-demos` | Tempting but **INVALID** | Never use on V5 |
+
+**Closed by task 63:** dry-run default, `--confirm` writes, `DATABASE_IDENTITY_EXPECTED` match on platform provision, deployment verification, GETPRO refuse, legacy `public.tenants`/`public.session` refuse, dual machine/human reports on the four V5 demo CLIs.
 
 ---
 

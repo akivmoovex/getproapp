@@ -1,13 +1,28 @@
 "use strict";
 
-const { normalizeKey, ok, quarantine } = require("./helpers");
+const { normalizeKey, isUnsafeHostname, ok, quarantine } = require("./helpers");
+const { requireMappedParent } = require("./parents");
 
 function transform(row, ctx) {
   const id = row && row.id;
   if (id == null) return quarantine("missing_id", row);
   if (row.organization_id == null) return quarantine("missing_organization_id", row);
 
-  const hostSlug = normalizeKey(row.host_slug || row.slug);
+  const org = requireMappedParent(
+    ctx.idMap,
+    "church_organizations",
+    row.organization_id,
+    "orphan_organization",
+    row
+  );
+  if (!org.ok) return org.result;
+
+  const hostSlugRaw = row.host_slug != null ? String(row.host_slug).trim() : "";
+  if (!hostSlugRaw) {
+    return quarantine("missing_host_slug", row);
+  }
+
+  const hostSlug = normalizeKey(hostSlugRaw);
   if (!hostSlug) return quarantine("invalid_host_slug", row);
 
   const suffix = String(ctx.runConfig.canonicalDomainSuffix || "blessboard.org")
@@ -15,26 +30,21 @@ function transform(row, ctx) {
     .toLowerCase();
   const hostname = `${hostSlug}.${suffix}`;
 
-  const organizationId = ctx.idMap.resolve(
-    "church_organizations",
-    row.organization_id,
-    "platform.organizations"
-  );
-  const domainId = ctx.idMap.resolve("church_branches_domain", id, "platform.domains");
-
-  if (hostname.includes("..") || hostname.length > 253) {
-    return quarantine("invalid_hostname", row);
+  if (isUnsafeHostname(hostname)) {
+    return quarantine("unsafe_hostname", row);
   }
+
+  const domainId = ctx.idMap.resolve("church_branches_domain", id, "platform.domains");
 
   return ok({
     domain: {
       id: domainId,
-      organizationId,
+      organizationId: org.id,
       productKey: "blessboard",
       deploymentCode: ctx.runConfig.deploymentCode,
       hostname,
       domainType: "canonical",
-      isPrimary: row.is_primary === true || Boolean(row.host_slug),
+      isPrimary: row.is_primary === true || Boolean(hostSlugRaw),
       status: "active",
     },
   });

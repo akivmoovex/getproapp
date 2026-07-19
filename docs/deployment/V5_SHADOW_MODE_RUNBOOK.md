@@ -112,6 +112,7 @@ Notes:
 |--------------------|-----|
 | `GETPRO_DATABASE_URL` | Must not point V5 at legacy V4 DB |
 | `BLESSBOARD_TENANT_ROUTING_MODE=authoritative` | Out of scope — separate cutover after §15 |
+| `BLESSBOARD_AUTHORITATIVE_HOST_ALLOWLIST` | Not required for shadow; do **not** enable authoritative from this runbook even if allow-list exists |
 | Parent-domain cookie `Domain=.blessboard.org` | Host-only cookies only |
 | Fixture / seed flags that mutate live data | Not part of shadow enable |
 

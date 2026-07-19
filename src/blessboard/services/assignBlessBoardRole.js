@@ -10,6 +10,8 @@ const { normalizeEmail } = require("./createBlessBoardUser");
 const STATUS = Object.freeze({
   ASSIGNED: "assigned",
   ALREADY_ASSIGNED: "already_assigned",
+  DRY_RUN_WOULD_ASSIGN: "dry_run_would_assign",
+  DRY_RUN_ALREADY_ASSIGNED: "dry_run_already_assigned",
   INVALID_INPUT: "invalid_input",
   USER_NOT_FOUND: "user_not_found",
   ORGANIZATION_NOT_FOUND: "organization_not_found",
@@ -78,6 +80,7 @@ async function assignBlessBoardRole(db, input) {
     };
   }
   const req = validated.value;
+  const dryRun = Boolean(input && input.dryRun);
 
   if (!db || (typeof db.connect !== "function" && typeof db.query !== "function")) {
     return { ok: false, status: STATUS.TRANSACTION_ERROR, message: "database required", role: null };
@@ -176,11 +179,13 @@ async function assignBlessBoardRole(db, input) {
         await client.query("ROLLBACK");
         return { ok: false, status: STATUS.ROLE_CONFLICT, message: "role_conflict", role: null };
       }
-      await client.query("COMMIT");
+      await client.query(dryRun ? "ROLLBACK" : "COMMIT");
       return {
         ok: true,
-        status: STATUS.ALREADY_ASSIGNED,
-        message: "already_assigned",
+        status: dryRun ? STATUS.DRY_RUN_ALREADY_ASSIGNED : STATUS.ALREADY_ASSIGNED,
+        message: dryRun ? STATUS.DRY_RUN_ALREADY_ASSIGNED : "already_assigned",
+        planned: dryRun ? { role: false } : undefined,
+        dryRun,
         role: {
           id: existing.id,
           roleKey: existing.role_key,
@@ -188,6 +193,25 @@ async function assignBlessBoardRole(db, input) {
           churchId: existing.church_id,
           branchId: existing.branch_id,
           status: existing.status,
+        },
+      };
+    }
+
+    if (dryRun) {
+      await client.query("ROLLBACK");
+      return {
+        ok: true,
+        status: STATUS.DRY_RUN_WOULD_ASSIGN,
+        message: STATUS.DRY_RUN_WOULD_ASSIGN,
+        planned: { role: true },
+        dryRun: true,
+        role: {
+          id: null,
+          roleKey: req.roleKey,
+          organizationId: organization.id,
+          churchId,
+          branchId,
+          status: null,
         },
       };
     }

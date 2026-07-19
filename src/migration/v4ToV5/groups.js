@@ -63,6 +63,19 @@ const ENTITY_GROUPS = Object.freeze([
   },
 ]);
 
+/** Explicit unsupported V4 domains (no extract/mapper) — reported in plan for honesty. */
+const UNSUPPORTED_SOURCE_ENTITIES = Object.freeze([
+  { key: "tenants", reason: "bridge_only_not_migrated", v4Hint: "public.tenants" },
+  { key: "registrations", reason: "unsupported_phase_2", v4Hint: "member registration workflow" },
+  { key: "leaders", reason: "unsupported_phase_2", v4Hint: "leadership_json / church_ministry_leaders" },
+  { key: "sermons", reason: "unsupported_phase_2", v4Hint: "church_sermons" },
+  { key: "resources", reason: "unsupported_phase_2", v4Hint: "church_resources" },
+  { key: "forms", reason: "unsupported_schema_mismatch", v4Hint: "registration/survey forms" },
+  { key: "requests", reason: "unsupported_phase_2", v4Hint: "church_member_requests / prayer" },
+  { key: "public_pages", reason: "unsupported_phase_2", v4Hint: "church_branch_website_content" },
+  { key: "sessions", reason: "ephemeral_never_migrate", v4Hint: "public.session" },
+]);
+
 function listAllEntities() {
   const out = [];
   for (const g of ENTITY_GROUPS) {
@@ -73,5 +86,6 @@ function listAllEntities() {
 
 module.exports = {
   ENTITY_GROUPS,
+  UNSUPPORTED_SOURCE_ENTITIES,
   listAllEntities,
 };

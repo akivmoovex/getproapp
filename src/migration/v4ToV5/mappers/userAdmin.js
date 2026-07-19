@@ -5,11 +5,21 @@
  */
 
 const { normalizeEmail, ok, quarantine } = require("./helpers");
+const { requireMappedParent } = require("./parents");
 
 function transform(row, ctx, entity) {
   const id = row && row.id;
   if (id == null) return quarantine("missing_id", row);
   if (row.organization_id == null) return quarantine("missing_organization_id", row);
+
+  const org = requireMappedParent(
+    ctx.idMap,
+    "church_organizations",
+    row.organization_id,
+    "orphan_organization",
+    row
+  );
+  if (!org.ok) return org.result;
 
   const warnings = [];
   let email = normalizeEmail(row.email);
@@ -34,29 +44,40 @@ function transform(row, ctx, entity) {
   const legacyTable =
     entity === "user_branch_admin" ? "church_branch_admins" : "church_hq_admins";
   const userId = ctx.idMap.resolve(legacyTable, id, "blessboard.users");
-  const organizationId = ctx.idMap.resolve(
-    "church_organizations",
-    row.organization_id,
-    "platform.organizations"
-  );
 
   const roleKey = entity === "user_branch_admin" ? "branch_admin" : "church_hq_admin";
   let churchId = null;
   let branchId = null;
   if (roleKey === "church_hq_admin") {
-    churchId = ctx.idMap.resolve(
+    const church = requireMappedParent(
+      ctx.idMap,
       "church_organizations_church",
       row.organization_id,
-      "blessboard.churches"
+      "orphan_organization",
+      row
     );
+    if (!church.ok) return church.result;
+    churchId = church.id;
   } else {
     if (row.branch_id == null) return quarantine("missing_branch_id", row, warnings);
-    churchId = ctx.idMap.resolve(
+    const church = requireMappedParent(
+      ctx.idMap,
       "church_organizations_church",
       row.organization_id,
-      "blessboard.churches"
+      "orphan_organization",
+      row
     );
-    branchId = ctx.idMap.resolve("church_branches", row.branch_id, "blessboard.branches");
+    if (!church.ok) return church.result;
+    churchId = church.id;
+    const branch = requireMappedParent(
+      ctx.idMap,
+      "church_branches",
+      row.branch_id,
+      "orphan_branch",
+      row
+    );
+    if (!branch.ok) return branch.result;
+    branchId = branch.id;
   }
 
   const status = String(row.status || "active").toLowerCase() === "active" ? "active" : "inactive";
@@ -73,7 +94,7 @@ function transform(row, ctx, entity) {
       },
       role: {
         userId,
-        organizationId,
+        organizationId: org.id,
         churchId,
         branchId,
         roleKey,

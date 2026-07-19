@@ -1,11 +1,21 @@
 "use strict";
 
 const { ok, quarantine } = require("./helpers");
+const { requireMappedParent } = require("./parents");
 
 function transform(row, ctx) {
   const id = row && row.id;
   if (id == null) return quarantine("missing_id", row);
   if (row.organization_id == null) return quarantine("missing_organization_id", row);
+
+  const church = requireMappedParent(
+    ctx.idMap,
+    "church_organizations_church",
+    row.organization_id,
+    "orphan_organization",
+    row
+  );
+  if (!church.ok) return church.result;
 
   const title = String(row.title || row.name || "").trim();
   if (!title) return quarantine("missing_title", row);
@@ -19,15 +29,19 @@ function transform(row, ctx) {
     : null;
   if (!status) return quarantine("invalid_status", row);
 
-  const churchId = ctx.idMap.resolve(
-    "church_organizations_church",
-    row.organization_id,
-    "blessboard.churches"
-  );
-  const branchId =
-    row.branch_id != null
-      ? ctx.idMap.resolve("church_branches", row.branch_id, "blessboard.branches")
-      : null;
+  let branchId = null;
+  if (row.branch_id != null) {
+    const branch = requireMappedParent(
+      ctx.idMap,
+      "church_branches",
+      row.branch_id,
+      "orphan_branch",
+      row
+    );
+    if (!branch.ok) return branch.result;
+    branchId = branch.id;
+  }
+
   const eventId = ctx.idMap.resolve("church_events", id, "blessboard.events");
 
   const warnings = [];
@@ -37,7 +51,7 @@ function transform(row, ctx) {
     {
       event: {
         id: eventId,
-        churchId,
+        churchId: church.id,
         branchId,
         title: title.slice(0, 200),
         description: row.description ? String(row.description).slice(0, 1000) : null,

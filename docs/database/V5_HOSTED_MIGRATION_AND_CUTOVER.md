@@ -56,6 +56,7 @@ BACKUP_VERIFIED_AT=<ISO-8601>
 | Window end (UTC) | `<YYYY-MM-DDThh:mm:ssZ>` |
 | Max rollback window | **≤ 4 hours** after authoritative routing enable (see §6) |
 | V4 write freeze method | App maintenance flag / read-only DB role / deploy pause (pick one and document) |
+| V5 write freeze method | **`BLESSBOARD_WRITE_MAINTENANCE=1`** on V5 Hostinger (see [`V5_MAINTENANCE_MODE_DESIGN.md`](../operations/V5_MAINTENANCE_MODE_DESIGN.md)); restart all workers; confirm `/healthz` shows `"writeMaintenance":true` |
 | Stakeholder notice sent | ☐ |
 
 ### 2.3 Source / target fingerprints
@@ -146,6 +147,9 @@ PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5
 PLATFORM_HOST_CONTEXT_MODE=diagnostic
 BLESSBOARD_TENANT_ROUTING_MODE=off
 BLESSBOARD_JOBS_ENABLED=0
+BLESSBOARD_MEDIA_UPLOADS_ENABLED=0
+# Keep write maintenance OFF until Step 1b / migrate apply window:
+# BLESSBOARD_WRITE_MAINTENANCE=0
 
 SESSION_SECRET=<≥32 chars>
 SESSION_COOKIE_NAME=blessboard_org_v5_sid
@@ -203,6 +207,23 @@ Work from a clean checkout of the approved release tag: `<GIT_TAG_OR_SHA>`.
 
 - [ ] Confirm new member registrations / admin writes fail closed on V4.
 - [ ] Record freeze timestamp: `<ISO-8601>`
+
+### Step 1b — Freeze V5 writes (app write maintenance)
+
+Before migrate **apply** against the V5 database while the V5 app is live:
+
+```bash
+# Hostinger V5 app — approved window only — then restart ALL workers:
+BLESSBOARD_WRITE_MAINTENANCE=1
+BLESSBOARD_JOBS_ENABLED=0
+BLESSBOARD_MEDIA_UPLOADS_ENABLED=0
+```
+
+- [ ] `GET https://blessboard.org/healthz` → **200** with `"writeMaintenance":true` (no secrets in body).
+- [ ] Spot-check: `POST /login` → **503** maintenance page; `GET /` and `GET /login` still **200**.
+- [ ] Rollback (immediate): set `BLESSBOARD_WRITE_MAINTENANCE=0` (or unset), restart all workers; re-check healthz.
+
+Do **not** leave write maintenance enabled outside the signed window.
 
 ### Step 2 — Record source counts
 
@@ -372,6 +393,9 @@ For each pilot hostname in the DNS inventory:
 
 ```bash
 BLESSBOARD_TENANT_ROUTING_MODE=authoritative
+# Pilot: exact hosts only. Estate cutover: use explicit * after signed approval.
+# BLESSBOARD_AUTHORITATIVE_HOST_ALLOWLIST=diagnostic.blessboard.org
+# Empty allow-list fails closed (foundation only) — do not omit for estate traffic.
 ```
 
 ```bash

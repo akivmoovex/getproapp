@@ -5,6 +5,7 @@ const {
   mapOrgStatus,
   mapPlanKey,
   mapDataEnvironment,
+  isSampleOrganizationKey,
   ok,
   quarantine,
 } = require("./helpers");
@@ -15,6 +16,10 @@ function transform(row, ctx) {
 
   const organizationKey = normalizeKey(row.slug);
   if (!organizationKey) return quarantine("invalid_slug", row);
+
+  if (isSampleOrganizationKey(organizationKey, ctx.runConfig)) {
+    return quarantine("sample_organization_excluded", row);
+  }
 
   const statuses = mapOrgStatus(row.status);
   if (!statuses) return quarantine("invalid_status", row);

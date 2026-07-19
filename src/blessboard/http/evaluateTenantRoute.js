@@ -7,6 +7,10 @@
 
 const { buildBlessBoardTenantContext } = require("./buildBlessBoardTenantContext");
 const { isTenantPublicSurfacePath } = require("./tenantPublicPaths");
+const {
+  ALLOWLIST_DECISION,
+  decideAuthoritativeHostAllowlist,
+} = require("../config/authoritativeHostAllowlist");
 
 const OUTCOME = Object.freeze({
   RENDER_TENANT: "render_tenant",
@@ -59,6 +63,7 @@ const UNAVAILABLE_CATALOGUE_REASONS = new Set([
  *   path?: string,
  *   platformHostContext?: object | null,
  *   blessBoardCatalogueContext?: object | null,
+ *   authoritativeHostAllowlist?: object | null,
  * }} input
  */
 function evaluateTenantRoute(input) {
@@ -72,6 +77,7 @@ function evaluateTenantRoute(input) {
       httpStatus: 200,
       tenant: null,
       authoritative: false,
+      allowlistDecision: ALLOWLIST_DECISION.N_A,
     };
   }
 
@@ -82,6 +88,7 @@ function evaluateTenantRoute(input) {
       httpStatus: 200,
       tenant: null,
       authoritative: false,
+      allowlistDecision: ALLOWLIST_DECISION.N_A,
     };
   }
 
@@ -166,6 +173,7 @@ function evaluateTenantRoute(input) {
       httpStatus: 200,
       tenant,
       authoritative: false,
+      allowlistDecision: ALLOWLIST_DECISION.N_A,
     };
   }
 
@@ -176,6 +184,34 @@ function evaluateTenantRoute(input) {
       httpStatus: 200,
       tenant,
       authoritative: false,
+      allowlistDecision: ALLOWLIST_DECISION.N_A,
+    };
+  }
+
+  // Authoritative: require pilot allow-list (empty → fail closed; * → estate).
+  const hostname =
+    (platform && platform.hostname) ||
+    (resolution && resolution.domain && resolution.domain.hostname) ||
+    null;
+  const allowlistDecision = decideAuthoritativeHostAllowlist(
+    input.authoritativeHostAllowlist,
+    hostname
+  );
+
+  if (
+    allowlistDecision === ALLOWLIST_DECISION.DENY_EMPTY ||
+    allowlistDecision === ALLOWLIST_DECISION.DENY
+  ) {
+    return {
+      outcome: OUTCOME.FOUNDATION,
+      reason:
+        allowlistDecision === ALLOWLIST_DECISION.DENY_EMPTY
+          ? "authoritative_allowlist_empty"
+          : "authoritative_host_not_allowlisted",
+      httpStatus: 200,
+      tenant,
+      authoritative: false,
+      allowlistDecision,
     };
   }
 
@@ -185,6 +221,7 @@ function evaluateTenantRoute(input) {
     httpStatus: 200,
     tenant,
     authoritative: true,
+    allowlistDecision: ALLOWLIST_DECISION.ALLOW,
   };
 }
 
@@ -203,6 +240,7 @@ function fail(mode, reason, outcome, isPublicPath) {
       httpStatus: 200,
       tenant: null,
       authoritative: false,
+      allowlistDecision: ALLOWLIST_DECISION.N_A,
     };
   }
   if (mode === "shadow" || mode === "off") {
@@ -213,6 +251,7 @@ function fail(mode, reason, outcome, isPublicPath) {
       httpStatus: 200,
       tenant: null,
       authoritative: false,
+      allowlistDecision: ALLOWLIST_DECISION.N_A,
     };
   }
   return {
@@ -221,6 +260,7 @@ function fail(mode, reason, outcome, isPublicPath) {
     httpStatus: HTTP_STATUS[outcome] || 503,
     tenant: null,
     authoritative: false,
+    allowlistDecision: ALLOWLIST_DECISION.N_A,
   };
 }
 

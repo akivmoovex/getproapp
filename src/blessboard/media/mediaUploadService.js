@@ -15,6 +15,7 @@ const {
 const { validateMediaFile } = require("./validateMediaFile");
 const { generateStorageKey } = require("./generateStorageKey");
 const { createMediaStorage } = require("./storage/createMediaStorage");
+const { areMediaUploadsEnabled } = require("../config/mediaUploadsEnabled");
 const repo = require("./mediaAssetsRepository");
 
 const UUID_RE =
@@ -78,6 +79,15 @@ function createMediaUploadService(env, storageOverrides) {
    * }} input
    */
   async function uploadMediaAsset(db, input) {
+    if (!areMediaUploadsEnabled(e)) {
+      return {
+        ok: false,
+        status: STATUS.FORBIDDEN,
+        reason: "media_uploads_disabled",
+        asset: null,
+      };
+    }
+
     const raw = input && typeof input === "object" ? input : {};
     const churchId = String(raw.churchId || "").trim();
     const uploadedByUserId = String(raw.uploadedByUserId || "").trim();

@@ -2,21 +2,26 @@
 "use strict";
 
 /**
- * Create a BlessBoard V5 user. DATABASE_URL + identity required. Password via --password-stdin.
- *
- * Usage:
- *   printf '%s' 'TEMP_PASSWORD' | npm run blessboard:user:create -- \
- *     --email admin@example.org --display-name 'Administrator' --password-stdin
+ * Create a BlessBoard V5 user. DATABASE_URL + identity required.
+ * Dry-run is the default. Writes require --confirm.
+ * Password required only for --confirm (prefer --password-stdin).
  */
 
 const { Pool } = require("pg");
-const { requireDatabaseUrl, parseDatabaseName } = require("./lib/databaseUrl");
-const { sanitizeHostFingerprint } = require("./lib/hostFingerprint");
-const { checkDatabaseIdentity } = require("./lib/databaseIdentity");
+const {
+  parseWriteMode,
+  resolveDatabaseUrlSafe,
+  requireMatchedIdentity,
+  assertNoLegacyPublicTables,
+  buildProvisionReport,
+  emitProvisionReport,
+  assertNoSecretsInText,
+} = require("./lib/provisionCliSafety");
 const {
   createBlessBoardUser,
   STATUS,
 } = require("../../src/blessboard/services/createBlessBoardUser");
+const authRepo = require("../../src/blessboard/repositories/blessBoardAuthRepository");
 
 function parseArgs(argv) {
   const out = {
@@ -50,81 +55,152 @@ function readStdinPassword() {
   });
 }
 
+function normalizeEmail(raw) {
+  return String(raw || "")
+    .trim()
+    .toLowerCase();
+}
+
+async function planUserCreate(pool, email, displayName) {
+  const emailNormalized = normalizeEmail(email);
+  const existing = await authRepo.findUserByEmail(pool, emailNormalized);
+  if (!existing) {
+    return {
+      ok: true,
+      status: "dry_run_would_create",
+      planned: { user: true },
+    };
+  }
+  if (String(existing.display_name) === String(displayName).trim() && String(existing.status) === "active") {
+    return {
+      ok: true,
+      status: "dry_run_already_exists",
+      planned: { user: false },
+    };
+  }
+  return {
+    ok: false,
+    status: STATUS.IDENTITY_CONFLICT,
+    message: "identity_conflict",
+    planned: null,
+  };
+}
+
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const mode = parseWriteMode(process.argv.slice(2));
+  const args = parseArgs(mode.rest);
+  let exitCode = 0;
+
+  const finish = (payload) => {
+    const report = buildProvisionReport({
+      tool: "blessboard:user:create",
+      dryRun: mode.dryRun,
+      ok: payload.ok,
+      status: payload.status,
+      message: payload.message,
+      planned: payload.planned,
+      created: payload.created,
+      identityKey: payload.identityKey,
+      environmentCode: payload.environmentCode,
+      databaseName: payload.databaseName,
+      hostFingerprint: payload.hostFingerprint,
+      keys: {
+        email: normalizeEmail(args.email) || null,
+        display_name: String(args.displayName || "").trim() || null,
+      },
+      error: payload.error,
+    });
+    assertNoSecretsInText(report.human, payload.connectionString);
+    assertNoSecretsInText(JSON.stringify(report.machine), payload.connectionString);
+    emitProvisionReport(report);
+    if (payload.ok === true) {
+      exitCode = 0;
+    } else {
+      exitCode = payload.exitCode != null ? Number(payload.exitCode) : 2;
+    }
+  };
+
   if (!String(args.email || "").trim() || !String(args.displayName || "").trim()) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
-        ok: false,
-        status: STATUS.INVALID_INPUT,
-        message: "missing_required_arguments",
-        missing: [
-          !String(args.email || "").trim() ? "email" : null,
-          !String(args.displayName || "").trim() ? "displayName" : null,
-        ].filter(Boolean),
-      })
-    );
-    process.exit(2);
+    finish({
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      message: "missing_required_arguments",
+      error: "email,displayName",
+    });
+    process.exit(exitCode);
   }
 
   let password = args.password;
-  if (args.passwordStdin) {
-    password = await readStdinPassword();
-  }
-  if (!password) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
+  if (!mode.dryRun) {
+    if (args.passwordStdin) {
+      password = await readStdinPassword();
+    }
+    if (!password) {
+      finish({
         ok: false,
         status: STATUS.INVALID_INPUT,
         message: "password_required_via_stdin_or_flag",
-      })
-    );
-    process.exit(2);
+      });
+      process.exit(exitCode);
+    }
   }
 
-  const expectedIdentity = String(process.env.DATABASE_IDENTITY_EXPECTED || "").trim();
-  if (!expectedIdentity) {
-    // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({
+  const dbResolved = resolveDatabaseUrlSafe();
+  if (!dbResolved.ok) {
+    finish({
+      ok: false,
+      status: STATUS.TRANSACTION_ERROR,
+      message: dbResolved.message,
+      error: dbResolved.detail,
+    });
+    process.exit(exitCode);
+  }
+
+  const pool = new Pool({ connectionString: dbResolved.connectionString, max: 2 });
+  try {
+    const identity = await requireMatchedIdentity(pool);
+    if (!identity.ok) {
+      finish({
         ok: false,
         status: STATUS.TRANSACTION_ERROR,
-        message: "DATABASE_IDENTITY_EXPECTED is required",
-      })
-    );
-    process.exit(2);
-  }
+        message: identity.message,
+        error: identity.code,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
+    }
 
-  let connectionString;
-  try {
-    connectionString = requireDatabaseUrl();
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(JSON.stringify({ ok: false, status: STATUS.TRANSACTION_ERROR, message: err.message }));
-    process.exit(1);
-  }
+    const legacy = await assertNoLegacyPublicTables(pool);
+    if (!legacy.ok) {
+      finish({
+        ok: false,
+        status: STATUS.TRANSACTION_ERROR,
+        message: legacy.message,
+        error: (legacy.tables || []).join(","),
+        identityKey: identity.identityKey,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
+    }
 
-  const databaseName = parseDatabaseName(connectionString);
-  const hostFingerprint = sanitizeHostFingerprint(connectionString);
-  const pool = new Pool({ connectionString, max: 2 });
-
-  try {
-    const identity = await checkDatabaseIdentity(pool, { identityKey: expectedIdentity });
-    if (!identity.ok) {
-      // eslint-disable-next-line no-console
-      console.error(
-        JSON.stringify({
-          ok: false,
-          status: STATUS.TRANSACTION_ERROR,
-          message: "database_identity_required",
-          identity_code: identity.code,
-          current_database: databaseName || null,
-          host_fingerprint: hostFingerprint,
-        })
-      );
-      process.exit(2);
+    if (mode.dryRun) {
+      const plan = await planUserCreate(pool, args.email, args.displayName);
+      finish({
+        ok: plan.ok,
+        status: plan.status,
+        message: plan.message,
+        planned: plan.planned,
+        identityKey: identity.identityKey,
+        environmentCode: identity.environmentCode,
+        databaseName: dbResolved.databaseName,
+        hostFingerprint: dbResolved.hostFingerprint,
+        connectionString: dbResolved.connectionString,
+      });
+      return;
     }
 
     const result = await createBlessBoardUser(pool, {
@@ -132,33 +208,31 @@ async function main() {
       displayName: args.displayName,
       password,
     });
-
-    const safe = {
+    finish({
       ok: result.ok,
       status: result.status,
       message: result.message,
-      email: result.user ? result.user.email : null,
-      displayName: result.user ? result.user.displayName : null,
-      userId: result.user ? result.user.id : null,
-      identity_key: identity.row && identity.row.identity_key,
-      current_database: databaseName || null,
-      host_fingerprint: hostFingerprint,
-    };
-
-    if (result.ok) {
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify(safe, null, 2));
-      process.exit(0);
-    }
-    // eslint-disable-next-line no-console
-    console.error(JSON.stringify(safe, null, 2));
-    process.exit(2);
+      created: result.ok ? { user: result.status === STATUS.CREATED } : null,
+      planned: null,
+      identityKey: identity.identityKey,
+      environmentCode: identity.environmentCode,
+      databaseName: dbResolved.databaseName,
+      hostFingerprint: dbResolved.hostFingerprint,
+      connectionString: dbResolved.connectionString,
+    });
   } catch {
-    // eslint-disable-next-line no-console
-    console.error(JSON.stringify({ ok: false, status: STATUS.TRANSACTION_ERROR, message: "cli_failure" }));
-    process.exit(1);
+    finish({
+      ok: false,
+      status: STATUS.TRANSACTION_ERROR,
+      message: "cli_failure",
+      exitCode: 1,
+      databaseName: dbResolved.databaseName,
+      hostFingerprint: dbResolved.hostFingerprint,
+      connectionString: dbResolved.connectionString,
+    });
   } finally {
     await pool.end();
+    process.exit(exitCode);
   }
 }
 
