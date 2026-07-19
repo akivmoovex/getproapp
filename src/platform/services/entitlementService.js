@@ -301,7 +301,13 @@ async function evaluateBranchCreateLimit(client, input) {
       entitlements: ent,
     };
   }
-  const current = await repo.countActiveBranchesForOrganization(client, organizationId);
+  const excludeBranchId =
+    input && input.excludeBranchId != null ? String(input.excludeBranchId).trim() : "";
+  const current = await repo.countActiveBranchesForOrganization(
+    client,
+    organizationId,
+    excludeBranchId ? { excludeBranchId } : undefined
+  );
   if (!isWithinLimit(ent, FEATURE_KEYS.MAX_BRANCHES, current, 1)) {
     return {
       ok: false,
@@ -319,6 +325,38 @@ async function evaluateBranchCreateLimit(client, input) {
     limit: getLimit(ent, FEATURE_KEYS.MAX_BRANCHES),
     entitlements: ent,
   };
+}
+
+/**
+ * Whether assigning `plan` would leave active branch count within that plan's
+ * effective max_branches (plan features + active overrides). Never auto-deactivates.
+ */
+async function evaluateTargetPlanBranchCapacity(client, input) {
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const productKey = String((input && input.productKey) || PRODUCT_KEY_DEFAULT)
+    .trim()
+    .toLowerCase();
+  const plan = input && input.plan;
+  if (!UUID_RE.test(organizationId) || !plan || !plan.id) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "scope" };
+  }
+  const at = clockAt(input);
+  const planFeatures = await repo.listPlanFeatures(client, plan.id);
+  const overrides = await repo.listActiveOverrides(client, organizationId, productKey, at);
+  const features = mergeFeatures(planFeatures, overrides);
+  const synthetic = { subscriptionActive: true, features };
+  const limit = getLimit(synthetic, FEATURE_KEYS.MAX_BRANCHES);
+  const current = await repo.countActiveBranchesForOrganization(client, organizationId);
+  if (limit != null && current > Number(limit)) {
+    return {
+      ok: false,
+      status: STATUS.LIMIT_EXCEEDED,
+      reason: "max_branches",
+      current,
+      limit,
+    };
+  }
+  return { ok: true, status: STATUS.OK, current, limit };
 }
 
 /**
@@ -456,6 +494,36 @@ async function assignOrganizationPlan(db, input) {
       const at = clockAt(input);
       const current = await repo.findCurrentSubscription(client, organizationId, productKey, at);
       if (current) {
+        await client.query(
+          `SELECT id FROM platform.organization_subscriptions WHERE id = $1 FOR UPDATE`,
+          [current.id]
+        );
+      } else {
+        await client.query(
+          `SELECT id FROM platform.organization_subscriptions
+            WHERE organization_id = $1 AND product_key = $2
+            FOR UPDATE`,
+          [organizationId, productKey]
+        );
+      }
+      const capacity = await evaluateTargetPlanBranchCapacity(client, {
+        organizationId,
+        productKey,
+        plan,
+        at: input && input.at,
+      });
+      if (!capacity.ok) {
+        return {
+          ok: false,
+          status: capacity.status,
+          subscription: null,
+          reason: capacity.reason,
+          current: capacity.current,
+          limit: capacity.limit,
+          plan,
+        };
+      }
+      if (current) {
         // Plan change: update plan_id only — never delete branches/users.
         const updated = await repo.updateSubscription(client, current.id, {
           planId: plan.id,
@@ -538,6 +606,7 @@ module.exports = {
   assertFeature,
   evaluateBranchCreateLimit,
   assertCanCreateBranch,
+  evaluateTargetPlanBranchCapacity,
   evaluateStaffAccountLimit,
   assertCanCreateStaffAccount,
   assignOrganizationPlan,

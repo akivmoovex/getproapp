@@ -56,7 +56,7 @@ function sendControlled(req, res, status, message) {
   }
   return res.status(status).type("html").send(`<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"/><title>HQ</title>
-<link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=46"/></head>
+<link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=50"/></head>
 <body class="bb-hq-body"><main class="bb-hq-login-unavailable">
 <h1>Unavailable</h1><p>${safe}</p><p><a href="/hq">Church HQ</a></p>
 </main></body></html>`);

@@ -303,7 +303,7 @@ describe("blessboard branch-admin shell", () => {
     assert.match(res.text, new RegExp(CHURCH_A));
     assert.match(res.text, /HQ A/);
     assert.match(res.text, /Branch admin/);
-    assert.match(res.text, /Not enabled/);
+    assert.match(res.text, /Monthly reports not available yet|Not enabled/);
     assert.match(res.text, /data-bb-empty="dashboard"/);
     assert.match(res.text, /Daily Pulse/);
     assert.match(res.text, /Quick actions/i);

@@ -62,7 +62,7 @@ function sendControlled(req, res, status, message) {
   }
   return res.status(status).type("html").send(`<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"/><title>Reports</title>
-<link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=46"/></head>
+<link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=50"/></head>
 <body class="bb-hq-body"><main><h1>Unavailable</h1><p>${safe}</p></main></body></html>`);
 }
 
@@ -329,6 +329,29 @@ function createHqReportsRouter(deps) {
     const branch = await resolveOptionalBranch(req, res, tenant.church.id);
     if (!branch.ok) return;
 
+    const tierResult = await resolveChurchReportTier(getPool(), tenant.church.id);
+    const reportTier =
+      tierResult.ok && tierResult.reportTier ? tierResult.reportTier : "basic";
+    const advancedEntitled = reportTier === "advanced";
+
+    if (!advancedEntitled) {
+      const branches = await listBlessBoardBranches(getPool(), tenant.church.id);
+      const html = renderView(
+        "hq/giving-report.ejs",
+        shellLocals(req, res, "giving", {
+          pageTitle: "Giving report",
+          summary: null,
+          reportTier,
+          advancedEntitled: false,
+          yearMonth,
+          branchFilter: branch.branchKey,
+          branchDisplayName: branch.branchDisplayName,
+          branches: branches.ok ? branches.branches : [],
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+
     const [summary, branches] = await Promise.all([
       getMonthlyGivingSummary(getPool(), {
         churchId: tenant.church.id,
@@ -352,6 +375,8 @@ function createHqReportsRouter(deps) {
       shellLocals(req, res, "giving", {
         pageTitle: "Giving report",
         summary: summary.summary,
+        reportTier,
+        advancedEntitled: true,
         yearMonth,
         branchFilter: branch.branchKey,
         branchDisplayName: branch.branchDisplayName,

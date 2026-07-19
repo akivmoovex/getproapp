@@ -132,7 +132,13 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(features.text, /Operational Excellence/);
     assert.match(features.text, /Enterprise Scaling/);
     assert.match(features.text, /no payment gateway in V5/i);
-    assert.match(features.text, /apex\.css\?v=7/);
+    assert.match(features.text, /apex\.css\?v=8/);
+    assert.match(features.text, /data-bb-apex-page="features"/);
+    assert.match(features.text, /bb-apex-features-page/);
+    assert.match(features.text, /Advanced attendance/);
+    assert.match(features.text, /SSO/);
+    assert.doesNotMatch(features.text, /Advanced analytics &amp; SSO|Advanced analytics & SSO/i);
+    assert.doesNotMatch(features.text, /volunteer scheduling|scheduled broadcast|surveys|appointments/i);
     assert.doesNotMatch(features.text, /\$42,?850|\+12%\s*vs/i);
   });
 
@@ -175,6 +181,9 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(res.text, /id="faq"/);
     assert.match(res.text, /Church members are not billed individually/);
     assert.match(res.text, /href="\/register-church"/);
+    assert.match(res.text, /Advanced attendance and giving reports/i);
+    assert.match(res.text, /Cross-branch HQ administration/i);
+    assert.doesNotMatch(res.text, /Advanced workflows, scheduling/i);
     assert.doesNotMatch(res.text, /href="\/contact"/);
     assert.doesNotMatch(res.text, /USD 4\.90|USD 8\.90|USD 14\.90/);
     assert.doesNotMatch(res.text, /\bProfessional\b|\bPartner\b/);

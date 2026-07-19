@@ -232,15 +232,25 @@ async function insertOverride(client, fields) {
   return mapOverride(rows[0]);
 }
 
-async function countActiveBranchesForOrganization(client, organizationId) {
+async function countActiveBranchesForOrganization(client, organizationId, options) {
+  const excludeBranchId =
+    options && options.excludeBranchId != null
+      ? String(options.excludeBranchId).trim()
+      : "";
+  const params = [organizationId];
+  let excludeClause = "";
+  if (excludeBranchId) {
+    params.push(excludeBranchId);
+    excludeClause = ` AND b.id <> $${params.length}`;
+  }
   const { rows } = await client.query(
     `SELECT COUNT(b.id)::int AS n
        FROM blessboard.branches b
        INNER JOIN blessboard.churches c ON c.id = b.church_id
       WHERE c.organization_id = $1
         AND b.status = 'active'
-        AND c.status = 'active'`,
-    [organizationId]
+        AND c.status = 'active'${excludeClause}`,
+    params
   );
   return Number(rows[0].n) || 0;
 }

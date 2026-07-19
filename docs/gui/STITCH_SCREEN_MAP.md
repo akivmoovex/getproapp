@@ -1,10 +1,11 @@
 # BlessBoard V5 — permanent Stitch screen map
 
 **Created:** 2026-07-18  
+**Last reconciled:** 2026-07-19 — Foundation/Growth final Stitch audit ([`FOUNDATION_GROWTH_FINAL_STITCH_AUDIT.md`](./FOUNDATION_GROWTH_FINAL_STITCH_AUDIT.md))
 **Stitch project:** `projects/17124191473876947591` — **GetPro Church Platform**  
 **Live MCP inventory:** `list_screens` → **196** screens; project `screenInstances` → **217** (layout instances may exceed unique screens)  
 **Project updateTime (Stitch):** `2026-07-18T12:21:54.870095Z`  
-**Constraint:** Documentation only. No application code changed in this pass.
+**Constraint:** Map is documentation SoT for Stitch IDs ↔ V5 routes. Application fixes only when cited in linked audits.
 
 ## Sources of truth
 
@@ -44,13 +45,15 @@ Related prior audits (do not replace this map): `docs/ui/V5_STITCH_SCREEN_MAP.md
 | Unique Stitch screens (`list_screens`) | 196 |
 | Primary product rows in master table (logical screens) | 99 |
 | Rows status **MATCHED** | 0 |
-| Rows status **PARTIAL** | 62 |
-| Rows status **PLACEHOLDER** | 2 |
-| Rows status **MISSING** | 28 |
+| Rows status **PARTIAL** | 70 |
+| Rows status **PLACEHOLDER** | 0 |
+| Rows status **MISSING** | 21 |
 | Rows status **STITCH_MISSING** | 9 |
-| Rows status **NEEDS_VERIFICATION** | 2 |
+| Rows status **NEEDS_VERIFICATION** | 3 |
 | Obsolete / duplicate Stitch screens (appendix; not primary targets) | 44 |
 | Design / asset / spec boards (appendix) | 9 |
+
+Counts reconciled 2026-07-19: apex marketing routes + ministry profile + HQ performance-as-hub moved MISSING/PLACEHOLDER → PARTIAL.
 
 ---
 
@@ -62,13 +65,13 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 |------:|------|--------|-------------------|------------------|----------------|---------------|----------------------------|--------|--------|-------|
 | 1 | Shared design system | Visual System Specification | `c8d8352b1b95400cb25e32a79c2f0b2e` | — | — (tokens) | — | `public/blessboard/v5/design-tokens.css`, `design-system.css` | design | NEEDS_VERIFICATION | Markdown/spec board; Sacred Modernity tokens partially applied (Hanken, `#6C5CE7`). |
 | 2 | Shared design system | Shared UI States Board | `b61a1ea8176648408211b681e942e0a6` | — | — (states) | — | `partials/empty-state.ejs`, `error-state.ejs`, `loading-state.ejs`, `success-state.ejs`, `flash-message.ejs`, `form-errors.ejs` | design | PARTIAL | Spec board for empty/error/loading/form states; not a product route. |
-| 3 | Apex marketing | Home | `46081ff8f3d04090b9de33020bdf1530` | `9f9927a608024e4ebaae11f13e68bdc5` | `/` (apex) | `/` (apex) | `apex/page.ejs` via `renderFoundationHome`; `public/blessboard/v5/apex.css` | anon | PARTIAL | Exact titles: *BlessBoard - One digital home…*. Nav/CTAs intentional vs Stitch (no Features/Pricing routes yet). |
-| 4 | Apex marketing | Features | `7ef3518f23a0400098d810f617dd0cc0` | `5ac1e1b0600b4bc78f945e36b56aaece` | `/features` | — | — | anon | MISSING | Stitch titles: *BlessBoard - Features (Desktop/Mobile)*. No V5 route. |
-| 5 | Apex marketing | For Churches | `fc4bf5aab5bb4737a56d72030bae8803` | `55af3450069944598d9f0ce17df12da6` | `/for-churches` | — | — | anon | MISSING | No V5 route. |
-| 6 | Apex marketing | Register Your Church | `8640e8531e7144c3a048617592979cb7` | `515da582d2504feaaa00c03b7a2e77e1` | `/register-church` | — | — | anon | MISSING | No V5 route; provisioning remains CLI/platform today. |
-| 7 | Apex marketing | Church Directory | `2b9df962f4ff4b4e8a45be51f99a5497` | `ab5d47e2d6c54065a4eb66c906d3c39c` | `/directory` | — | — | anon | MISSING | Prefer BlessBoard Directory titles over obsolete `01-platform-church-finder-*`. Hostname catalogue partial in platform DB. |
-| 8 | Apex marketing | Pricing | `1c50e8987d9043ec941b07fb0f67cef5` | `181ec1f8076c4ae7ad6be92d5a4861f3` | `/pricing` | — | — | anon | MISSING | No V5 route. |
-| 9 | Apex marketing | Pricing Details & FAQ | `c47840e7030c449a94c4ce4a03fa932f` | `65067eb3ebfe45b2a810531334c54684` | `/pricing#faq` | — | — | anon | MISSING | Same missing `/pricing` surface. |
+| 3 | Apex marketing | Home | `46081ff8f3d04090b9de33020bdf1530` | `9f9927a608024e4ebaae11f13e68bdc5` | `/` (apex) | `/` (apex) | `apex/home.ejs` (or `page.ejs` via `renderFoundationHome`); `public/blessboard/v5/apex.css` | anon | PARTIAL | Exact titles: *BlessBoard - One digital home…*. FG queue + final audit: CLOSE within intentional CTA limits. |
+| 4 | Apex marketing | Features | `7ef3518f23a0400098d810f617dd0cc0` | `5ac1e1b0600b4bc78f945e36b56aaece` | `/features` | `/features` | `apex/features.ejs` | anon | PARTIAL | FG-01 + commercial honesty. Wrapper `bb-apex-features-page` (grid scoped to `ul.bb-apex-features`). `apex.css?v=8`. |
+| 5 | Apex marketing | For Churches | `fc4bf5aab5bb4737a56d72030bae8803` | `55af3450069944598d9f0ce17df12da6` | `/for-churches` | `/for-churches` | `apex/for-churches.ejs` | anon | PARTIAL | FG-Q04; MATCHED not claimed. |
+| 6 | Apex marketing | Register Your Church | `8640e8531e7144c3a048617592979cb7` | `515da582d2504feaaa00c03b7a2e77e1` | `/register-church` | `/register-church` | `apex/register-church.ejs` | anon | PARTIAL | Enquiry only — no self-serve provision. |
+| 7 | Apex marketing | Church Directory | `2b9df962f4ff4b4e8a45be51f99a5497` | `ab5d47e2d6c54065a4eb66c906d3c39c` | `/directory` | `/directory` | `apex/directory.ejs` | anon | PARTIAL | Live catalogue; no fake listings. Prefer BlessBoard Directory titles over obsolete `01-platform-church-finder-*`. |
+| 8 | Apex marketing | Pricing | `1c50e8987d9043ec941b07fb0f67cef5` | `181ec1f8076c4ae7ad6be92d5a4861f3` | `/pricing` | `/pricing` | `apex/pricing.ejs` | anon | PARTIAL | Foundation/Growth/Network SoT; active-branch billing; no checkout. |
+| 9 | Apex marketing | Pricing Details & FAQ | `c47840e7030c449a94c4ce4a03fa932f` | `65067eb3ebfe45b2a810531334c54684` | `/pricing#faq` | `/pricing#faq` | `apex/pricing.ejs` FAQ section | anon | PARTIAL | Same `/pricing` surface. |
 | 10 | Apex login & account | Login | `9b264ef3081f4b5aab493d9b9710b00b` | `68a84bcc8dff4f4ca5836216c22a2e6a` | `/login` (apex) | `/login` | `apex/login.ejs`, `apex-auth.css` | anon | PARTIAL | Batch 07 chrome. Stitch titles: `09-auth-member-login-*`. Apex dual-pane; no forgot-password. Tenant hosts redirect to apex transfer. |
 | 11 | Apex login & account | Auth error | — | — | auth error presentation | auth error render | `apex/auth-error.ejs` | anon | STITCH_MISSING | Batch 07 dual-pane error chrome. Expired/throttled/generic only; no tokens. |
 | 12 | Apex login & account | Account | — | — | `/account` | `/account` | `apex/account.ejs` | authenticated | STITCH_MISSING | Session-safe account card + logout; no dedicated Stitch screen. |
@@ -101,13 +104,13 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 | 39 | Branch admin | Member directory | `3dae337c97e242049670749c2b1ab09d` | `e90963b00bcf41368d089053a3a5db07` | `/branch-admin/members` | `/branch-admin/members` | `branch-admin/members.ejs` | branch_admin | PARTIAL | Batch 12C. Titles: `28-branch-member-directory-*`. Real branch-scoped total only; no Export/Add Member/tag filters. Desktop table + mobile cards. Member detail not started. |
 | 40 | Branch admin | Member profile | `5e5985a087d049109c49006f99095884` | `b3fbd9e2eda64a2b998ec0e2a4311229` | `/branch-admin/members/:id` | `/branch-admin/members/:id` | `branch-admin/member-detail.ejs` | branch_admin | PARTIAL | Batch 12D. Titles: `27-branch-member-profile-*`. Read-only identity/contact/membership/account from route DTO. No update/status POST routes. Stitch notes/attendance/giving/ministries omitted. |
 | 41 | Branch admin | Ministries directory | `58c96b4c5b554e6991fc080c63783b6c` | `526c14042cb045fd8c2cfcb568e2c8ae` | `/branch-admin/content/ministries` | `/branch-admin/content/ministries` | `content-admin/entities.ejs` | branch_admin | PARTIAL | Batch 14A ministries admin. Titles: `29-branch-ministries-directory-*`. Search + status chips, desktop table + mobile cards, inline create/edit with publish confirm. Real name/summary/meeting/contact/status/sort/media only — no leader/member KPIs, departments, chat, duty roster, or export. |
-| 42 | Branch admin | Ministry profile | `064769bb18ab455fb2a39adf2f3c080a` | `17509b0d718346daaf4ac3b6c6f29d42` | `/branch-admin/content/ministries` (entity) | content entity fields | `content-admin/entity-fields.ejs` | branch_admin | PLACEHOLDER | |
+| 42 | Branch admin | Ministry profile | `064769bb18ab455fb2a39adf2f3c080a` | `17509b0d718346daaf4ac3b6c6f29d42` | `/branch-admin/content/ministries` (entity) | content entity fields | `content-admin/entity-fields.ejs` | branch_admin | PARTIAL | Inline CMS editor ≠ dedicated Stitch profile canvas (intentional). FG-Q08 COMPLETE. |
 | 43 | Branch admin | Departments | `7ee4d401f26d45b8ae18f26fe9b391ec` | `3794bd0c398b42cbb3987964807b27c3` | — | — | — | branch_admin | MISSING | No departments schema/routes in V5. |
 | 44 | Branch admin | Events management | `ad136a0e8f0f41aa8c88c59c77df5455` | `112d23ce9441492cb5edc1c6ef1d5250` | `/branch-admin/content/events` | `/branch-admin/content/events` | `content-admin/entities.ejs` | branch_admin | PARTIAL | Batch 14B. Titles: `32-branch-events-management-*`. Search + upcoming/past + status filters; card grid; inline create/edit with schedule/registration/media/publish confirm. Real title/summary/starts/ends/timezone/location/registration_url/image/status only — no roster, registration totals, ticketing, payments, recurring, or calendar sync. |
 | 45 | Branch admin | Sermons management | — | — | `/branch-admin/content/sermons` | `/branch-admin/content/sermons` | `content-admin/entities.ejs` (+ `entity-fields.ejs`) | branch_admin | STITCH_MISSING | Batch 14C. No dedicated branch Stitch pair. Chrome adapted from Shared UI States + public sermons card metadata (`06-public-sermons-*` `4f4995dc…` / `96b380d4…`). Search + status chips; card grid; inline create/edit with media/resource HTTPS links + publish confirm. Ordered by `preached_at`. No hosting, transcoding, livestream, analytics, series, or fabricated views. |
 | 46 | Branch admin | Duty roster | `37bdc9ea66db4ca2b4375d37605bdbb2` | `51d3e5bfce8641f0837a1556d659b6b7` | — | — | — | branch_admin | MISSING | No V5 route/schema. |
 | 47 | Branch admin | Website editor | `3f3160664d91423d80cb4ba81e2af6c4` | `f2bb5e794f074a1aa3d248a2fe54ddeb` | `/branch-admin/content` | `/branch-admin/content` | `content-admin/index.ejs` (+ `page.ejs`, `section.ejs`, `preview.ejs`) | branch_admin | PARTIAL | Batch 13C overview + 13D page/section editors. Ministries/events/sermons entity editors polished in 14A–14C. HQ mount polished in Batch 18A (`BATCH_18A_HQ_CONTENT.md`). |
-| 48 | Branch admin | Announcements | `65941542c13048edb2c62bccd01ddcea` | `daa416025c704a5693b295ef3139af89` | `/branch-admin/announcements` | `/branch-admin/announcements` | `announcements/admin-list.ejs` (+ form/detail/preview/publish) | branch_admin | PARTIAL | Batch 13A list + Batch 13B create/edit form (adapted from 35-* + Shared UI States). Preview polish not started. |
+| 48 | Branch admin | Announcements | `65941542c13048edb2c62bccd01ddcea` | `daa416025c704a5693b295ef3139af89` | `/branch-admin/announcements` | `/branch-admin/announcements` | `announcements/admin-list.ejs` (+ form/detail/preview/publish) | branch_admin | PARTIAL | Batch 13A list + Batch 13B create/edit + preview route (FG-Q09). Adapted from 35-* + Shared UI States. |
 | 49 | Branch admin | Attendance tracker | `d351ae0e154f44cd827314e415c0633e` | `5ea15ec1eb9f4fceac664903c1778091` | `/branch-admin/attendance` | `/branch-admin/attendance` | `attendance/admin-list.ejs` (+ `admin-form.ejs`) | branch_admin | PARTIAL | Batch 15A. Titles: `36-branch-attendance-tracker-*`. Monthly summary cards from submitted aggregates only; status/type chips; desktop table + mobile cards; designed empty states. No trend %, 30-day avg, pending-draft KPI, QR/individual check-in, biometric, or offline sync. |
 | 50 | Branch admin | Attendance detail | `12e5e7d87c894b059c437a4b38753514` | `18a7d7a77b724653a42882743fb8a736` | `/branch-admin/attendance/:id` | `/branch-admin/attendance/:id` | `attendance/admin-detail.ejs` | branch_admin | PARTIAL | Batch 15A. Titles: `37-branch-attendance-record-detail-*`. Lifecycle + category totals/entry form; submit modal CSRF preserved. Aggregate counts only. |
 | 51 | Branch admin | Giving settings (omit banking) | `858c66cf5d654fffb90c5a264653f27a` | `0769a7e1813d490d921a72a8bc8c3334` | — | — | — | branch_admin | OMITTED | Titles: `38-branch-giving-settings-*`. Banking / QR / mobile-money setup UI intentionally not built. |
@@ -123,13 +126,13 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 | 60 | Branch admin | Settings | — | — | `/branch-admin/settings` | `/branch-admin/settings` | `branch-admin/settings.ejs` | branch_admin | STITCH_MISSING | Batch 11D section nav + editable contact/location cards; HQ-controlled and product-unavailable states. No branding/domain/billing. |
 | 61 | HQ admin | Dashboard | `538c8f4f1a844930ac058428bf390a76` | `c67eda7682de428d985416074f606fcf` | `/hq` | `/hq` | `hq/dashboard.ejs`, `hq-shell-*` | hq_admin | PARTIAL | Batch 16B dashboard (`BATCH_16B_HQ_DASHBOARD.md`). Live active-branch count only; unavailable cards for members/reporting/giving/attendance; branch selector + empty notices/activity. No fabricated charts/broadcast widgets. |
 | 62 | HQ admin | Branch registry | `1a1aaecd09d34357886aa0b1028e539a` | `2f154dfcd0e045938a60ae3c147b240a` | `/hq/branches` | `/hq/branches` | `hq/branches.ejs` | hq_admin | PARTIAL | Batch 16C (`BATCH_16C_HQ_BRANCH_DIRECTORY.md`). Active church-scoped list; search + type chips; desktop table + mobile cards + selector. No create/export/member KPIs. |
-| 63 | HQ admin | Branch performance | `f6b636977d7d40b89bd4048b696a4095` | `922867aec8474f11baff555043b86eea` | `/hq/reports` (approx) | `/hq/reports` | `hq/reports.ejs` | hq_admin | PLACEHOLDER | Aggregates only vs Stitch performance UI. |
+| 63 | HQ admin | Branch performance | `f6b636977d7d40b89bd4048b696a4095` | `922867aec8474f11baff555043b86eea` | `/hq/reports` (approx) | `/hq/reports` | `hq/reports.ejs` | hq_admin | PARTIAL | No separate performance route; hub + honest unavailable cards (FG-Q13). No fabricated scores. |
 | 64 | HQ admin | Consolidated analytics | `2a577dc15d4342acb152f16aed21c267` | `06489c79d0d04a429e57eba5c717ba47` | `/hq/reports`, `/hq/reports/attendance`, `/hq/reports/giving` | same | `hq/reports.ejs`, `hq/attendance-report.ejs`, `hq/giving-report.ejs` | hq_admin | PARTIAL | Batch 18B attendance + Batch 18C giving + Batch 18F hub (`BATCH_18F_HQ_AUDIT_REPORTS.md`). Real monthly aggregates + accessible bar tables; hub report-link cards; no donor PII, trends, forecasts, canvas, or new generators. |
 | 65 | HQ admin | Audit review queue | `80d249f8fda84958a8a42e458075b19e` | `097ab7191cb645f7b3f135d278ba580f` | `/hq/audit` | `/hq/audit` | `hq/audit.ejs` | hq_admin | PARTIAL | Shares `/hq/audit` with global trail. Batch 18F uses **58-hq-global-audit-trail** as canonical pair. |
 | 66 | HQ admin | Global audit trail | `bce1e8ec4078407c8d6179251b8765c2` | `d7fcb1b3a796434a8fefc7e806c2c0b6` | `/hq/audit` | `/hq/audit` | `hq/audit.ejs` | hq_admin | PARTIAL | Batch 18F (`BATCH_18F_HQ_AUDIT_REPORTS.md`). Append-only church-scoped events; truncated refs; filters + empty/no-results; no metadata/secrets/CSV/compliance scores. |
 | 67 | HQ admin | Monthly reports review | `4404007361f54173a1a9e37ab6285aa5` | `b53425f344804e4681eefb59f3d6cfdd` | — | — | — | hq_admin | MISSING | V4 monthly review workflow not in V5. |
 | 68 | HQ admin | Report review detail | `aa7cdf0f1bf349aeaf531dbcccba2eea` | `d03fc656f0ce4c969c7e6fbc6c0a8041` | — | — | — | hq_admin | MISSING | |
-| 69 | HQ admin | Permission / roles | `12f5be535eeb49f1a1c5822ae7586504` | `de3e82ef3ad54065a516b042459fdc19` | — | — | — | hq_admin | MISSING | No V5 HQ role-management UI. |
+| 69 | HQ admin | Permission / roles | `12f5be535eeb49f1a1c5822ae7586504` | `de3e82ef3ad54065a516b042459fdc19` | `/hq/roles` | `/hq/roles` | `hq/roles.ejs` | hq_admin | PARTIAL | Batch FG HQ role management (BB-02). Fixed `church_hq_admin` / `branch_admin` only; no platform_admin grant, no leader/custom matrix. |
 | 70 | HQ admin | Org templates / standards | `df111bee19304663b356561a114c78bc` | `801584edfae5462c829f232ff5c99a4b` | — | — | — | hq_admin | MISSING | Not implemented; HQ Public Content (Batch 18A) reuses website-editor 34 instead of this pair. |
 | 71 | HQ admin | Broadcast center | `ffa76443af8c4aa4ab97086fc8922b73` | `b4184b738eca442d8ca9ff3dbd445bec` | `/hq/announcements` | `/hq/announcements` | `announcements/admin-list.ejs`, `admin-form.ejs`, `admin-publish.ejs` (HQ mount) | hq_admin | PARTIAL | Batch 17C list + Batch 17D editor (`BATCH_17D_HQ_ANNOUNCEMENT_EDITOR.md`). Real eligible estimate on publish; no scheduling/SMS/templates. |
 | 71a | HQ admin | Public content | `3f3160664d91423d80cb4ba81e2af6c4` | `f2bb5e794f074a1aa3d248a2fe54ddeb` | `/hq/content` (+ `/b/:branchKey`) | `/hq/content` | `content-admin/index.ejs` (HQ mount) | hq_admin | PARTIAL | Batch 18A (`BATCH_18A_HQ_CONTENT.md`). Reuses branch website-editor 34. Scope panel + status/search filters; real page summaries only; unavailable theme/domain/SEO/builder/templates. |
@@ -158,12 +161,12 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 | 87 | Leader portal (out of V5 scope) | Ministry requests | `e18298edd9c742aa82c2c776daaf4272` | `29895b648447493da4f57dce7813b2e1` | — | — | — | leader | MISSING | |
 | 88 | Obsolete Stitch (do not build) | Platform branch selector | `297099588171448ab29d1c5c12428103` | `4e0a399dbdf347c4bf69ede48a86e05b` | — | — | — | anon | MISSING | V5 uses hostname tenant resolution, not picker UI. |
 | 89 | Obsolete Stitch (superseded) | Platform home (old) | `b025e58ace364a85b3953e669f281b41` | `86682c1ca97c4451858a4cae15940cde` | `/` (apex) | `/` | apex home | anon | NEEDS_VERIFICATION | Superseded by BlessBoard marketing home (order 3). Keep for history only. |
-| 90 | Obsolete Stitch (superseded) | Platform church finder (old) | `02a9c170e0314cc8991d4dd9673adef5` | `a1b782aedab445fe98d4634bd698aeab` | `/directory` | — | — | anon | MISSING | Prefer BlessBoard Directory (order 7). |
+| 90 | Obsolete Stitch (superseded) | Platform church finder (old) | `02a9c170e0314cc8991d4dd9673adef5` | `a1b782aedab445fe98d4634bd698aeab` | `/directory` | `/directory` | apex directory | anon | NEEDS_VERIFICATION | Prefer BlessBoard Directory (order 7). |
 | 91 | Obsolete Stitch (calendar) | Events calendar UI | `84b919385cfe4ca29a727cf108c887b0` / `25677650abeb4edea23c6a400013dd85` | `0a38bd5bf20a4926865e4d511e0ae2b3` / `26db8f19e5dd467995aa7ead9c8ee87e` | `/events` (calendar) | `/events` (list) | `public/events.ejs` | public | MISSING | Intentional product model: list only. Multiple desktop/mobile calendar IDs. |
 | 92 | Shared shells | Tenant public shell | (see orders 13–20) | (see orders 13–20) | tenant public pages | tenant public pages | `partials/tenant-public-shell-start.ejs` / `-end.ejs`, `tenant-public.js`, `shell-nav.js` | public | PARTIAL | |
 | 93 | Shared shells | Member shell | (see orders 26–36) | (see orders 26–36) | `/member/*` | `/member/*` | `partials/member-shell-*`, `member-portal.js` | member | PARTIAL | Desktop sidebar + mobile drawer/bottom tabs. |
 | 94 | Shared shells | Branch admin shell | `001d1a0235a14f47b456bb092a012f7c` | `615f1f4eabd645c4a6840349edb17cd1` | `/branch-admin/*` | `/branch-admin/*` | `partials/branch-admin-shell-*`, `branch-admin.css` | branch_admin | PARTIAL | Shell chrome from 25-branch-admin-dashboard-* (Batch 11A). No Reports/Support nav. Dashboard content Batch 11B. |
-| 95 | Shared shells | HQ shell | `538c8f4f1a844930ac058428bf390a76` | `c67eda7682de428d985416074f606fcf` | `/hq/*` | `/hq/*` | `partials/hq-shell-*`, `branch-selector.ejs`, `hq-admin.css` | hq_admin | PARTIAL | Shell chrome from 51-hq-dashboard-* (Batch 16A / `BATCH_16A_HQ_SHELL.md`). Light Sacred Modernity; branch-selector stays page-scoped. No Broadcast/Roles/Templates nav. Dashboard content not started. |
+| 95 | Shared shells | HQ shell | `538c8f4f1a844930ac058428bf390a76` | `c67eda7682de428d985416074f606fcf` | `/hq/*` | `/hq/*` | `partials/hq-shell-*`, `branch-selector.ejs`, `hq-admin.css` | hq_admin | PARTIAL | Shell chrome from 51-hq-dashboard-* (Batch 16A). Nav includes Permissions (`/hq/roles`); branch-selector page-scoped. Dashboard Batch 16B. No Templates nav (MISSING_BACKEND). |
 | 96 | Shared shells | Platform admin shell | (see orders 74–80) | (see orders 74–80) | `/admin/*` | `/admin/*` | `partials/platform-admin-shell-*`, `platform-admin.css` | platform_admin | PARTIAL | Shell chrome from 62-platform-admin-dashboard-* (Batch 19A / `BATCH_19A_PLATFORM_ADMIN_SHELL.md`). Dark ops sidebar; enabled V5 nav only. Dashboard content not started. |
 | 97 | Shared shells | Apex shell | (see orders 3–12) | (see orders 3–12) | apex routes | apex routes | `partials/apex-shell-*`, `apex.js`, `apex.css` | anon / auth | PARTIAL | |
 
@@ -240,7 +243,9 @@ Paths under `views/` are relative to `views/blessboard/v5/`. Access values: `ano
 
 ### Missing V5 routes (Stitch exists)
 
-`/features`, `/for-churches`, `/register-church`, `/directory`, `/pricing`, waiting-verification, forgot-password, `/member/prayer-request`, departments, duty roster, branch monthly reports (40–43), HQ monthly review (54–55), HQ roles/templates (59–60), `/admin/organizations/new`, leader portal (46–50), branch-selector UI.
+waiting-verification, forgot-password, `/member/prayer-request` (use requests category), departments, duty roster, branch monthly reports (40–43), HQ monthly review (54–55), HQ org templates (60), `/admin/organizations/new`, leader portal (46–50), branch-selector picker UI (hostname model).
+
+Apex `/features`, `/for-churches`, `/register-church`, `/directory`, `/pricing`, and HQ `/hq/roles` are **implemented** (PARTIAL) — removed from this gap list 2026-07-19.
 
 ### V5 routes without Stitch designs (STITCH_MISSING)
 

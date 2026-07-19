@@ -521,7 +521,7 @@ body.bb-apex-body {
   font-size: 0.98rem;
 }
 
-.bb-apex-features {
+ul.bb-apex-features {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -683,7 +683,7 @@ body.bb-apex-body {
     grid-template-columns: 1fr 1fr;
   }
 
-  .bb-apex-features {
+  ul.bb-apex-features {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -710,7 +710,7 @@ body.bb-apex-body {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  .bb-apex-features {
+  ul.bb-apex-features {
     grid-template-columns: repeat(4, 1fr);
   }
 }
@@ -774,7 +774,7 @@ body.bb-apex-body {
 }
 
 /* —— FG-01 Features page (Stitch 7ef3518f… / 5ac1e1b0…) —— */
-.bb-apex-features {
+.bb-apex-features-page {
   min-width: 0;
 }
 

@@ -271,18 +271,22 @@ describe("blessboard hq shell", () => {
     assert.match(res.text, /href="\/hq\/branches"/);
     assert.match(res.text, /href="\/hq\/registrations"/);
     assert.match(res.text, /href="\/hq\/reports"/);
-    assert.match(res.text, /href="\/hq\/audit"/);
+    assert.match(res.text, /href="\/hq\/roles"/);
     assert.match(res.text, /href="\/hq\/members"/);
     assert.match(res.text, /href="\/hq\/announcements"/);
     assert.match(res.text, /href="\/hq\/giving"/);
     assert.match(res.text, /href="\/hq\/attendance"/);
+    assert.match(res.text, /data-bb-quick-action="roles"/);
     assert.match(res.text, /action="\/hq\/logout"/);
     assert.match(res.text, /name="_csrf"/);
     assert.doesNotMatch(res.text, /Campus Old/);
     assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(res.text, new RegExp(campusA.id, "i"));
     assert.doesNotMatch(res.text, /href="\/hq\/broadcast"/i);
-    assert.doesNotMatch(res.text, /Broadcast|Permission|Role management|Organization templates|Quick Export|New Branch Registry/i);
+    assert.doesNotMatch(
+      res.text,
+      /Broadcast|Role management|Organization templates|Quick Export|New Branch Registry/i
+    );
     assert.doesNotMatch(
       res.text,
       /\bfake\b|4,?250|8\.4k|\+12%|\+4%|18\.2%|SUBMITTED THIS MONTH|Report Overdue|Data Discrepancy|Growth rate sustained|Year-to-Date Growth/i

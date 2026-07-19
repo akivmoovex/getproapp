@@ -28,6 +28,7 @@ const STATUS = Object.freeze({
   LOOKUP_ERROR: "lookup_error",
   CONFIRMATION_REQUIRED: "confirmation_required",
   FORBIDDEN: "forbidden",
+  LIMIT_EXCEEDED: "limit_exceeded",
 });
 
 const ORG_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
@@ -264,6 +265,15 @@ async function assignOrganizationPlanByKey(db, input) {
       }
       if (result.status === ENTITLEMENT_STATUS.INVALID_INPUT) {
         return { ok: false, status: STATUS.INVALID_INPUT, reason: result.reason || "scope" };
+      }
+      if (result.status === ENTITLEMENT_STATUS.LIMIT_EXCEEDED) {
+        return {
+          ok: false,
+          status: STATUS.LIMIT_EXCEEDED,
+          reason: result.reason || "max_branches",
+          current: result.current,
+          limit: result.limit,
+        };
       }
       return { ok: false, status: STATUS.LOOKUP_ERROR, reason: result.reason || "error" };
     }

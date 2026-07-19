@@ -83,6 +83,16 @@ test("pricing FAQ uses approved onboarding wording", () => {
   assert.doesNotMatch(pricing.answer, /\bfree plan\b/i);
 });
 
+test("FAQ does not advertise deferred login reset or public contact POST", () => {
+  const loginHelp = PLATFORM_FAQ_ITEMS.find((item) => item.id === "login-help");
+  const memberForms = PLATFORM_FAQ_ITEMS.find((item) => item.id === "member-forms");
+  assert.ok(loginHelp);
+  assert.doesNotMatch(loginHelp.answer, /forgot[- ]password|reset link|password reset/i);
+  assert.ok(memberForms);
+  assert.match(memberForms.answer, /contact message form is not available/i);
+  assert.doesNotMatch(memberForms.answer, /submit (a |an )?contact (form|message)/i);
+});
+
 test("apex /faq renders accordion items with native details elements", async () => {
   const app = makeApexApp();
   const res = await request(app).get("/faq");
@@ -140,6 +150,6 @@ test("FAQ and demo pages use mobile-friendly layout classes", async () => {
     const res = await request(app).get(routePath);
     assert.match(res.text, /home-desktop-design/);
     assert.match(res.text, /bb-platform-page/);
-    assert.match(res.text, /church\.css\?v=75/);
+    assert.match(res.text, /church\.css\?v=76/);
   }
 });

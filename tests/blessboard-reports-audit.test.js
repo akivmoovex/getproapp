@@ -58,6 +58,7 @@ const {
 
 const PASSWORD = "correct-horse-battery-staple";
 const HOST_A = "ra-a.blessboard.org";
+const HOST_B = "ra-b.blessboard.org";
 const ROOT = path.join(__dirname, "..");
 
 function baseEnv(overrides) {
@@ -115,6 +116,29 @@ describe("blessboard reports-audit", () => {
       churchA = chA.records.church;
       branchA = chA.records.hqBranch;
       tenant = makeTenant(churchA, orgA.records.organization, branchA);
+
+      const orgB = await provisionPlatformTenant(pool, {
+        organizationKey: "ra-b",
+        displayName: "RA B",
+        legalName: null,
+        dataEnvironment: "testing",
+        productKey: "blessboard",
+        productTenantKey: "ra-b",
+        hostname: HOST_B,
+        domainType: "canonical",
+        deploymentCode: DEPLOYMENT,
+        isPrimary: true,
+      });
+      assert.equal(orgB.ok, true, orgB.message);
+      const chB = await provisionBlessBoardChurch(pool, {
+        organizationKey: "ra-b",
+        churchKey: "ra-b",
+        displayName: "RA Church B",
+        dataEnvironment: "testing",
+        hqBranchKey: "hq",
+        hqBranchDisplayName: "HQ B",
+      });
+      assert.equal(chB.ok, true, chB.message);
 
       async function makeUser(email, role) {
         const created = await createBlessBoardUser(pool, {
@@ -441,8 +465,13 @@ describe("blessboard reports-audit", () => {
     assert.match(consolidated.text, /data-bb-report-link="attendance"/);
     assert.match(consolidated.text, /data-bb-report-link-tier="growth-required"/);
     assert.match(consolidated.text, /data-bb-report-link="giving"/);
-    assert.match(consolidated.text, /href="\/hq\/reports\/attendance/);
-    assert.match(consolidated.text, /href="\/hq\/reports\/giving/);
+    assert.match(
+      consolidated.text,
+      /data-bb-report-link="giving"[^>]*data-bb-report-link-tier="growth-required"|data-bb-report-link-tier="growth-required"[^>]*data-bb-report-link="giving"/
+    );
+    assert.doesNotMatch(consolidated.text, /href="\/hq\/reports\/attendance/);
+    assert.doesNotMatch(consolidated.text, /href="\/hq\/reports\/giving/);
+    assert.match(consolidated.text, /Requires Growth — not linked on Foundation/);
     assert.match(consolidated.text, /data-bb-reports-summary="1"/);
     assert.match(consolidated.text, /data-bb-hq-report-filter="1"/);
     assert.match(consolidated.text, /data-bb-report="giving-totals"|data-bb-report="giving-empty"/);
@@ -472,6 +501,24 @@ describe("blessboard reports-audit", () => {
     assert.doesNotMatch(attFoundation.text, /chart\.js|<canvas|projectedGrowth|\+12%|YoY/i);
     assert.doesNotMatch(attFoundation.text, new RegExp(churchA.id, "i"));
 
+    const givFoundation = await request(app)
+      .get(`/hq/reports/giving?month=${yearMonth}&branch=hq`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(givFoundation.status, 200);
+    assert.match(givFoundation.text, /data-bb-hq-giving-report="1"/);
+    assert.match(givFoundation.text, /data-bb-batch="fg-q12"/);
+    assert.match(givFoundation.text, /data-bb-giv-report-entitlement="denied"/);
+    assert.match(givFoundation.text, /data-bb-report-tier="basic"/);
+    assert.match(givFoundation.text, /data-bb-giv-report-denied="1"/);
+    assert.match(givFoundation.text, /data-bb-giv-report-unavailable="1"/);
+    assert.match(givFoundation.text, /data-bb-giv-unavailable="donor"/);
+    assert.doesNotMatch(givFoundation.text, /data-bb-hq-giv-report-filter="1"/);
+    assert.doesNotMatch(givFoundation.text, /data-bb-giv-report-summary="1"/);
+    assert.doesNotMatch(givFoundation.text, /25\.50/);
+    assert.doesNotMatch(givFoundation.text, /chart\.js|<canvas|projectedGrowth|\+12%|YoY/i);
+    assert.doesNotMatch(givFoundation.text, new RegExp(churchA.id, "i"));
+
     const assigned = await assignOrganizationPlan(pool, {
       organizationId: orgA.records.organization.id,
       planKey: "growth",
@@ -487,6 +534,8 @@ describe("blessboard reports-audit", () => {
     assert.equal(hubGrowth.status, 200);
     assert.match(hubGrowth.text, /data-bb-report-tier="advanced"/);
     assert.match(hubGrowth.text, /data-bb-report-link-tier="advanced"/);
+    assert.match(hubGrowth.text, /href="\/hq\/reports\/attendance/);
+    assert.match(hubGrowth.text, /href="\/hq\/reports\/giving/);
 
     const att = await request(app)
       .get(`/hq/reports/attendance?month=${yearMonth}&branch=hq`)
@@ -530,6 +579,7 @@ describe("blessboard reports-audit", () => {
     assert.equal(giv.status, 200);
     assert.match(giv.text, /data-bb-hq-giving-report="1"/);
     assert.match(giv.text, /data-bb-stitch-giving-report="57-hq-consolidated-analytics"/);
+    assert.match(giv.text, /data-bb-giv-report-entitlement="advanced"/);
     assert.match(giv.text, /data-bb-giv-report-scope="branch"/);
     assert.match(giv.text, /data-bb-hq-giv-report-filter="1"/);
     assert.match(giv.text, /name="month"/);
@@ -538,6 +588,7 @@ describe("blessboard reports-audit", () => {
     assert.match(giv.text, /data-bb-giv-report-summary="1"|data-bb-giv-report-empty="1"/);
     assert.match(giv.text, /data-bb-giv-report-unavailable="1"/);
     assert.match(giv.text, /data-bb-giv-unavailable="donor"/);
+    assert.doesNotMatch(giv.text, /data-bb-giv-report-denied="1"/);
     assert.doesNotMatch(giv.text, /donor@|card number|iban[\s:]|payer_name|account_number/i);
     assert.doesNotMatch(giv.text, /chart\.js|<canvas|projectedGrowth|\+12%|YoY/i);
     assert.doesNotMatch(giv.text, new RegExp(churchA.id, "i"));
@@ -548,6 +599,7 @@ describe("blessboard reports-audit", () => {
       .set("Cookie", cookie);
     assert.equal(givAll.status, 200);
     assert.match(givAll.text, /data-bb-giv-report-scope="church"/);
+    assert.match(givAll.text, /data-bb-giv-report-entitlement="advanced"/);
     assert.match(givAll.text, /data-bb-giv-report-summary="1"|data-bb-giv-report-empty="1"/);
     if (/data-bb-giv-report-summary="1"/.test(givAll.text)) {
       assert.match(givAll.text, /data-bb-giving-summary-table="1"|data-bb-giving-summary-cards="1"/);
@@ -569,6 +621,41 @@ describe("blessboard reports-audit", () => {
     const usdFiltered = filtered.report.giving.byCurrency.find((g) => g.currency === "USD");
     assert.ok(usdFiltered);
     assert.equal(usdFiltered.totalAmount, "25.50");
+
+    const unknownBranch = await request(app)
+      .get(`/hq/reports/giving?month=${yearMonth}&branch=does-not-exist`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(unknownBranch.status, 404);
+    assert.match(unknownBranch.text, /not available/i);
+    assert.doesNotMatch(unknownBranch.text, /data-bb-giv-report-summary="1"/);
+    assert.doesNotMatch(unknownBranch.text, /25\.50/);
+
+    const wrongChurch = await request(app)
+      .get(`/hq/reports/giving?month=${yearMonth}`)
+      .set("Host", HOST_B)
+      .set("Cookie", cookie);
+    assert.equal(wrongChurch.status, 403);
+    assert.doesNotMatch(wrongChurch.text, /data-bb-giv-report-summary="1"/);
+    assert.doesNotMatch(wrongChurch.text, /25\.50/);
+
+    const networkAssigned = await assignOrganizationPlan(pool, {
+      organizationId: orgA.records.organization.id,
+      planKey: "professional",
+      productKey: "blessboard",
+      status: "active",
+    });
+    assert.equal(networkAssigned.ok, true, networkAssigned.reason);
+
+    const givNetwork = await request(app)
+      .get(`/hq/reports/giving?month=${yearMonth}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(givNetwork.status, 200);
+    assert.match(givNetwork.text, /data-bb-giv-report-entitlement="advanced"/);
+    assert.match(givNetwork.text, /data-bb-report-tier="advanced"/);
+    assert.doesNotMatch(givNetwork.text, /data-bb-giv-report-denied="1"/);
+    assert.match(givNetwork.text, /data-bb-giv-report-summary="1"|data-bb-giv-report-empty="1"/);
 
     const denied = await request(app)
       .get("/hq/reports/giving")

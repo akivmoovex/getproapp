@@ -73,15 +73,31 @@ test("public pricing content exposes Foundation, Growth, and Network", () => {
 test("pricing comparison tracks reporting and Network-only domain/email", () => {
   const rows = buildPublicPricingComparisonRows();
   const reporting = rows.find((row) => row.key === "reporting");
+  const crossBranch = rows.find((row) => row.key === "cross_branch_hq");
   const customDomain = rows.find((row) => row.key === "custom_domain");
   assert.ok(reporting);
-  assert.equal(reporting.values.foundation, "Basic");
-  assert.equal(reporting.values.growth, "Advanced + cross-branch");
-  assert.equal(reporting.values.network, "Executive + API exports");
+  assert.equal(reporting.values.foundation, "Basic HQ aggregates");
+  assert.equal(reporting.values.growth, "Advanced attendance & giving + cross-branch");
+  assert.equal(reporting.values.network, "Growth reporting + executive exports (by arrangement)");
+  assert.ok(crossBranch);
+  assert.equal(crossBranch.values.foundation, false);
+  assert.equal(crossBranch.values.growth, true);
+  assert.equal(crossBranch.values.network, true);
   assert.ok(customDomain);
   assert.equal(customDomain.values.foundation, false);
   assert.equal(customDomain.values.growth, false);
   assert.equal(customDomain.values.network, true);
+});
+
+test("Growth public features claim only implemented differentiators", () => {
+  const tiers = buildPublicPricingPlans();
+  const growth = tiers.find((plan) => plan.code === "growth");
+  assert.ok(growth);
+  assert.ok(growth.features.some((f) => /advanced attendance and giving reports/i.test(f)));
+  assert.ok(growth.features.some((f) => /cross-branch HQ administration/i.test(f)));
+  assert.ok(!growth.features.some((f) => /scheduling/i.test(f)));
+  assert.ok(!growth.features.some((f) => /workflow/i.test(f)));
+  assert.doesNotMatch(growth.description, /scheduling/i);
 });
 
 test("pricing SEO config and sitemap entry exist", () => {

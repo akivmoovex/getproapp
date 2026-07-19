@@ -23,6 +23,9 @@ const {
   createBlessBoardBranch,
 } = require("../src/blessboard/services/createBlessBoardBranch");
 const {
+  activateBlessBoardBranch,
+} = require("../src/blessboard/services/activateBlessBoardBranch");
+const {
   STATUS,
   FEATURE_KEYS,
   resolveOrganizationEntitlements,
@@ -233,14 +236,14 @@ describe("platform entitlements", () => {
     assert.match(String(result.message), /custom_domain_not_entitled/);
   });
 
-  it("plan upgrade grants features; downgrade does not delete branches", async () => {
+  it("plan upgrade grants features; over-limit Foundation downgrade is blocked without deleting branches", async () => {
     requireDb();
     const before = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.branches WHERE church_id = $1 AND status = 'active'`,
+      `SELECT id, branch_key, status FROM blessboard.branches WHERE church_id = $1 ORDER BY branch_key`,
       [churchId]
     );
-    const branchCountBefore = before.rows[0].n;
-    assert.ok(branchCountBefore >= 3);
+    const activeBefore = before.rows.filter((r) => r.status === "active");
+    assert.ok(activeBefore.length >= 3);
 
     const up = await assignOrganizationPlan(pool, {
       organizationId,
@@ -264,11 +267,40 @@ describe("platform entitlements", () => {
     assert.equal(hasFeature(pro.entitlements, FEATURE_KEYS.ADVANCED_REPORTS), true);
     assert.equal(getLimit(pro.entitlements, FEATURE_KEYS.MAX_BRANCHES), null);
 
+    const blockedDown = await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "free",
+    });
+    assert.equal(blockedDown.ok, false);
+    assert.equal(blockedDown.status, STATUS.LIMIT_EXCEEDED);
+    assert.equal(blockedDown.reason, "max_branches");
+
+    const stillPro = await resolveOrganizationEntitlements(pool, { organizationId });
+    assert.equal(stillPro.entitlements.planKey, "professional");
+
+    const afterBlocked = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM blessboard.branches WHERE church_id = $1 AND status = 'active'`,
+      [churchId]
+    );
+    assert.equal(
+      afterBlocked.rows[0].n,
+      activeBefore.length,
+      "blocked downgrade must not delete or deactivate branches"
+    );
+
+    const nonHq = before.rows.filter((r) => r.branch_key !== "hq");
+    for (const row of nonHq) {
+      await pool.query(
+        `UPDATE blessboard.branches SET status = 'inactive', updated_at = now() WHERE id = $1`,
+        [row.id]
+      );
+    }
+
     const down = await assignOrganizationPlan(pool, {
       organizationId,
       planKey: "free",
     });
-    assert.equal(down.ok, true);
+    assert.equal(down.ok, true, down.reason);
 
     const free = await resolveOrganizationEntitlements(pool, { organizationId });
     assert.equal(free.entitlements.planKey, "free");
@@ -278,11 +310,168 @@ describe("platform entitlements", () => {
       `SELECT COUNT(*)::int AS n FROM blessboard.branches WHERE church_id = $1 AND status = 'active'`,
       [churchId]
     );
-    assert.equal(after.rows[0].n, branchCountBefore, "downgrade must not delete branches");
+    assert.equal(after.rows[0].n, 1);
 
     const blocked = await assertCanCreateBranch(pool, { organizationId });
     assert.equal(blocked.ok, false);
     assert.equal(blocked.status, STATUS.LIMIT_EXCEEDED);
+  });
+
+  it("Growth and Network plans allow additional active campuses", async () => {
+    requireDb();
+    const growth = await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "growth",
+    });
+    assert.equal(growth.ok, true, growth.reason);
+
+    const growthCampus = await createBlessBoardBranch(pool, {
+      churchId,
+      organizationId,
+      branchKey: "growth-campus",
+      displayName: "Growth Campus",
+    });
+    assert.equal(growthCampus.ok, true, growthCampus.reason);
+
+    const network = await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "professional",
+    });
+    assert.equal(network.ok, true, network.reason);
+
+    const networkCampus = await createBlessBoardBranch(pool, {
+      churchId,
+      organizationId,
+      branchKey: "network-campus",
+      displayName: "Network Campus",
+    });
+    assert.equal(networkCampus.ok, true, networkCampus.reason);
+
+    // Return to Foundation with a single active HQ for later suite cases.
+    await pool.query(
+      `UPDATE blessboard.branches
+          SET status = 'inactive', updated_at = now()
+        WHERE church_id = $1 AND branch_key <> 'hq'`,
+      [churchId]
+    );
+    await pool.query(
+      `UPDATE blessboard.branches
+          SET status = 'active', updated_at = now()
+        WHERE church_id = $1 AND branch_key = 'hq'`,
+      [churchId]
+    );
+    const backToFree = await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "free",
+    });
+    assert.equal(backToFree.ok, true, backToFree.reason);
+  });
+
+  it("activation respects max_branches; swap inactive campus after deactivating HQ slot", async () => {
+    requireDb();
+    const hq = await pool.query(
+      `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'hq'`,
+      [churchId]
+    );
+    const campus = await pool.query(
+      `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'campus-a'`,
+      [churchId]
+    );
+    assert.ok(hq.rows[0]);
+    assert.ok(campus.rows[0]);
+
+    const denied = await activateBlessBoardBranch(pool, {
+      churchId,
+      organizationId,
+      branchId: campus.rows[0].id,
+    });
+    assert.equal(denied.ok, false);
+    assert.equal(denied.status, "limit_exceeded");
+    assert.equal(denied.reason, "max_branches");
+
+    await pool.query(
+      `UPDATE blessboard.branches SET status = 'inactive', updated_at = now() WHERE id = $1`,
+      [hq.rows[0].id]
+    );
+
+    const allowed = await activateBlessBoardBranch(pool, {
+      churchId,
+      organizationId,
+      branchId: campus.rows[0].id,
+    });
+    assert.equal(allowed.ok, true, allowed.reason);
+    assert.equal(allowed.branch.status, "active");
+
+    const idempotent = await activateBlessBoardBranch(pool, {
+      churchId,
+      organizationId,
+      branchId: campus.rows[0].id,
+    });
+    assert.equal(idempotent.ok, true);
+    assert.equal(idempotent.alreadyActive, true);
+
+    // Restore HQ-only Foundation capacity for later tests.
+    await pool.query(
+      `UPDATE blessboard.branches SET status = 'inactive', updated_at = now() WHERE id = $1`,
+      [campus.rows[0].id]
+    );
+    const restoreHq = await activateBlessBoardBranch(pool, {
+      churchId,
+      organizationId,
+      branchId: hq.rows[0].id,
+    });
+    assert.equal(restoreHq.ok, true, restoreHq.reason);
+  });
+
+  it("concurrent Foundation creates leave at most one new active campus", async () => {
+    requireDb();
+    await pool.query(
+      `UPDATE blessboard.branches
+          SET status = 'inactive', updated_at = now()
+        WHERE church_id = $1`,
+      [churchId]
+    );
+
+    const [a, b] = await Promise.all([
+      createBlessBoardBranch(pool, {
+        churchId,
+        organizationId,
+        branchKey: "race-a",
+        displayName: "Race A",
+      }),
+      createBlessBoardBranch(pool, {
+        churchId,
+        organizationId,
+        branchKey: "race-b",
+        displayName: "Race B",
+      }),
+    ]);
+
+    const successes = [a, b].filter((r) => r.ok);
+    const failures = [a, b].filter((r) => !r.ok);
+    assert.equal(successes.length, 1);
+    assert.equal(failures.length, 1);
+    assert.equal(failures[0].status, "limit_exceeded");
+
+    const count = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM blessboard.branches WHERE church_id = $1 AND status = 'active'`,
+      [churchId]
+    );
+    assert.equal(count.rows[0].n, 1);
+
+    // Leave HQ active for remaining suite safety.
+    await pool.query(
+      `UPDATE blessboard.branches
+          SET status = 'inactive', updated_at = now()
+        WHERE church_id = $1 AND status = 'active'`,
+      [churchId]
+    );
+    await pool.query(
+      `UPDATE blessboard.branches
+          SET status = 'active', updated_at = now()
+        WHERE church_id = $1 AND branch_key = 'hq'`,
+      [churchId]
+    );
   });
 
   it("expired subscription fails closed for writes; safe resolve softens reads", async () => {

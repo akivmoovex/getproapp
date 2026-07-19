@@ -152,7 +152,7 @@ function sendControlled(req, res, status, message, shellKind) {
   }
   const css =
     shellKind === "hq"
-      ? "/blessboard/v5/hq-admin.css?v=46"
+      ? "/blessboard/v5/hq-admin.css?v=50"
       : "/blessboard/v5/branch-admin.css?v=36";
   const bodyClass = shellKind === "hq" ? "bb-hq-body" : "bb-ba-body";
   return res.status(status).type("html").send(`<!DOCTYPE html>

@@ -64,40 +64,71 @@
   <section class="bb-hq-report-links" data-bb-report-links="1" aria-labelledby="bb-hq-report-links-heading">
     <h2 id="bb-hq-report-links-heading" class="bb-hq-section-title">Report destinations</h2>
     <p class="bb-hq-hint">
-      Foundation includes this hub snapshot. The detailed attendance report requires Growth
-      (<code>advanced_reports</code>). Giving detail remains available on its existing route.
+      Foundation includes this hub snapshot. Detailed attendance and giving reports require Growth
+      (or Network). Links appear only when advanced reports are entitled.
     </p>
     <ul class="bb-hq-report-cards">
       <li>
+        <% if (advancedOk) { %>
         <a
-          class="bb-hq-report-card<%= advancedOk ? '' : ' bb-hq-report-card--gated' %>"
+          class="bb-hq-report-card"
           href="<%= attHref %>"
           data-bb-report-link="attendance"
-          data-bb-report-link-tier="<%= advancedOk ? 'advanced' : 'growth-required' %>"
+          data-bb-report-link-tier="advanced"
         >
           <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
           <span class="bb-hq-report-card__body">
             <span class="bb-hq-report-card__title">Attendance report</span>
-            <span class="bb-hq-report-card__meta">
-              <%= advancedOk
-                ? 'Monthly headcount by category and branch'
-                : 'Growth advanced reports — open for entitlement status' %>
-            </span>
+            <span class="bb-hq-report-card__meta">Monthly headcount by category and branch</span>
           </span>
-          <span class="bb-hq-chip<%= advancedOk ? '' : ' bb-hq-chip--muted' %>">
-            <%= advancedOk ? 'Growth' : 'Growth required' %>
-          </span>
+          <span class="bb-hq-chip">Growth</span>
         </a>
+        <% } else { %>
+        <div
+          class="bb-hq-report-card bb-hq-report-card--gated"
+          data-bb-report-link="attendance"
+          data-bb-report-link-tier="growth-required"
+          aria-disabled="true"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
+          <span class="bb-hq-report-card__body">
+            <span class="bb-hq-report-card__title">Attendance report</span>
+            <span class="bb-hq-report-card__meta">Requires Growth — not linked on Foundation</span>
+          </span>
+          <span class="bb-hq-chip bb-hq-chip--muted">Growth required</span>
+        </div>
+        <% } %>
       </li>
       <li>
-        <a class="bb-hq-report-card" href="<%= givHref %>" data-bb-report-link="giving">
+        <% if (advancedOk) { %>
+        <a
+          class="bb-hq-report-card"
+          href="<%= givHref %>"
+          data-bb-report-link="giving"
+          data-bb-report-link-tier="advanced"
+        >
           <span class="material-symbols-outlined" aria-hidden="true">payments</span>
           <span class="bb-hq-report-card__body">
             <span class="bb-hq-report-card__title">Giving report</span>
             <span class="bb-hq-report-card__meta">Category and currency totals only</span>
           </span>
-          <span class="bb-hq-chip">Live</span>
+          <span class="bb-hq-chip">Growth</span>
         </a>
+        <% } else { %>
+        <div
+          class="bb-hq-report-card bb-hq-report-card--gated"
+          data-bb-report-link="giving"
+          data-bb-report-link-tier="growth-required"
+          aria-disabled="true"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+          <span class="bb-hq-report-card__body">
+            <span class="bb-hq-report-card__title">Giving report</span>
+            <span class="bb-hq-report-card__meta">Requires Growth — not linked on Foundation</span>
+          </span>
+          <span class="bb-hq-chip bb-hq-chip--muted">Growth required</span>
+        </div>
+        <% } %>
       </li>
     </ul>
   </section>
@@ -233,7 +264,13 @@
     </ul>
     <% } %>
     <% } %>
+    <% if (advancedOk) { %>
     <p class="bb-hq-hint"><a href="<%= attHref %>" data-bb-report-link="attendance-inline">Open attendance report</a></p>
+    <% } else { %>
+    <p class="bb-hq-hint" data-bb-report-link="attendance-inline" data-bb-report-link-tier="growth-required">
+      Detailed attendance report requires Growth.
+    </p>
+    <% } %>
   </section>
 
   <section class="bb-hq-panel" data-bb-report-section="giving">
@@ -282,7 +319,13 @@
       <% }) %>
     </ul>
     <% } %>
+    <% if (advancedOk) { %>
     <p class="bb-hq-hint"><a href="<%= givHref %>" data-bb-report-link="giving-inline">Open giving report</a></p>
+    <% } else { %>
+    <p class="bb-hq-hint" data-bb-report-link="giving-inline" data-bb-report-link-tier="growth-required">
+      Detailed giving report requires Growth.
+    </p>
+    <% } %>
   </section>
 
   <section class="bb-hq-panel">

@@ -97,7 +97,7 @@
       </div>
       <p class="bb-hq-lede">
         <% if (!entitled) { %>
-        Detailed attendance analytics require the Growth package (<code>advanced_reports</code>).
+        Detailed attendance analytics require the Growth package.
         Foundation churches keep monthly headcount totals on the HQ reports hub.
         <% } else { %>
         Aggregate headcounts for <strong><%= scopeLabel %></strong><% if (!branchFilter) { %> (all branches)<% } %>.
@@ -120,10 +120,10 @@
   </header>
 
   <% if (!entitled) { %>
-  <div class="bb-hq-att-report-denied" data-bb-att-report-denied="1" role="status">
+  <div class="bb-hq-att-report-denied" data-bb-att-report-denied="1">
     <%- include('../partials/empty-state', {
       title: 'Growth advanced reports required',
-      body: 'Your Foundation plan includes the HQ reports hub with live attendance totals. Upgrade to Growth for the detailed category and branch attendance report.',
+      body: 'Your Foundation plan includes the HQ reports hub with live attendance totals. The detailed category and branch attendance report is available on Growth. Ask your BlessBoard operator to enable Growth — self-serve checkout is not available here.',
       icon: 'lock',
       actionHref: '/hq/reports?month=' + encodeURIComponent(yearMonth),
       actionLabel: 'Back to HQ reports'
@@ -171,7 +171,7 @@
   </form>
 
   <% if (!hasData) { %>
-  <div class="bb-hq-att-report-empty" data-bb-att-report-empty="1" role="status">
+  <div class="bb-hq-att-report-empty" data-bb-att-report-empty="1">
     <%- include('../partials/empty-state', {
       title: 'No attendance for this month',
       body: 'Submitted, approved, or archived headcounts for ' + yearMonth + ' will appear here when branches record attendance.',

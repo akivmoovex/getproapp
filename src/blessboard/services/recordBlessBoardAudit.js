@@ -30,7 +30,10 @@ async function recordBlessBoardAudit(db, input) {
   let client = null;
   let owned = false;
   try {
-    if (db && typeof db.connect === "function") {
+    // Prefer an already-checked-out pool client so nested writers stay on the caller's transaction.
+    if (db && typeof db.query === "function" && typeof db.release === "function") {
+      client = db;
+    } else if (db && typeof db.connect === "function") {
       client = await db.connect();
       owned = true;
     } else {

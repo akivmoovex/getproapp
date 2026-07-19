@@ -201,7 +201,7 @@ const BRANCH_ADMIN_MODULES = Object.freeze([
     href: null,
     icon: "analytics",
     enabled: false,
-    blurb: "Not enabled yet",
+    blurb: "Monthly reports not available yet",
   },
 ]);
 

@@ -1,0 +1,249 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = roles || [];
+  var branchOptions = branches || [];
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var activeRole = typeof roleFilter !== 'undefined' && roleFilter ? String(roleFilter) : '';
+  var countsSafe = counts || { hqAdmins: 0, branchAdmins: 0 };
+  var formState = form || {};
+  function roleLabel(key) {
+    if (key === 'church_hq_admin') return 'HQ admin';
+    if (key === 'branch_admin') return 'Branch admin';
+    return key || '—';
+  }
+  function roleChip(key) {
+    if (key === 'church_hq_admin') return 'bb-hq-chip--ok';
+    if (key === 'branch_admin') return 'bb-hq-chip--pending';
+    return 'bb-hq-chip--muted';
+  }
+  function filterHref(roleKey) {
+    var params = [];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    if (roleKey) params.push('role=' + encodeURIComponent(roleKey));
+    return '/hq/roles' + (params.length ? '?' + params.join('&') : '');
+  }
+  function scopeLabel(item) {
+    if (item.roleKey === 'church_hq_admin') return 'Church-wide';
+    if (item.branchDisplayName) return item.branchDisplayName;
+    if (item.branchKey) return item.branchKey;
+    return '—';
+  }
+%>
+
+<section
+  class="bb-hq-roles"
+  data-bb-hq-roles="1"
+  data-bb-stitch-roles="59-hq-permission-role-management"
+  aria-label="Staff permissions"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <span>Staff permissions</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Staff permissions</h1>
+      <p class="bb-hq-lede">
+        Assign fixed HQ and branch admin roles for <strong><%= churchDisplayName %></strong>.
+        Platform admin and custom permission matrices are not available here.
+      </p>
+    </div>
+  </header>
+
+  <% if (notice) { %>
+  <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (error) { %>
+  <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-hq-roles__summary" aria-label="Active staff counts">
+    <article class="bb-hq-roles__stat">
+      <p class="bb-hq-roles__stat-label">Active HQ admins</p>
+      <p class="bb-hq-roles__stat-value" data-bb-hq-admin-count="<%= countsSafe.hqAdmins %>"><%= countsSafe.hqAdmins %></p>
+    </article>
+    <article class="bb-hq-roles__stat">
+      <p class="bb-hq-roles__stat-label">Active branch admins</p>
+      <p class="bb-hq-roles__stat-value" data-bb-branch-admin-count="<%= countsSafe.branchAdmins %>"><%= countsSafe.branchAdmins %></p>
+    </article>
+  </section>
+
+  <section class="bb-hq-roles__hierarchy" aria-label="Approved roles">
+    <h2 class="bb-hq-section-title">Approved roles</h2>
+    <div class="bb-hq-roles__cards">
+      <article class="bb-hq-roles__card bb-hq-roles__card--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">security</span>
+        <h3>HQ admin</h3>
+        <p>Church-wide governance for this organization. Cannot grant platform admin.</p>
+      </article>
+      <article class="bb-hq-roles__card">
+        <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
+        <h3>Branch admin</h3>
+        <p>Authority limited to one active branch within this church.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="bb-hq-roles__assign" aria-labelledby="bb-hq-roles-assign-heading">
+    <h2 id="bb-hq-roles-assign-heading" class="bb-hq-section-title">Assign role</h2>
+    <form
+      method="post"
+      action="/hq/roles/assign"
+      class="bb-hq-roles__form"
+      data-bb-hq-role-assign="1"
+    >
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <div class="bb-hq-field">
+        <label for="role-email">User email</label>
+        <input
+          id="role-email"
+          name="email"
+          type="email"
+          required
+          maxlength="254"
+          autocomplete="off"
+          value="<%= formState.email || '' %>"
+        />
+      </div>
+      <div class="bb-hq-field">
+        <label for="role-key">Role</label>
+        <select id="role-key" name="role_key" required>
+          <option value="">Select role</option>
+          <option value="church_hq_admin" <%= formState.roleKey === 'church_hq_admin' ? 'selected' : '' %>>HQ admin</option>
+          <option value="branch_admin" <%= formState.roleKey === 'branch_admin' ? 'selected' : '' %>>Branch admin</option>
+        </select>
+      </div>
+      <div class="bb-hq-field">
+        <label for="role-branch">Branch (required for branch admin)</label>
+        <select id="role-branch" name="branch_key">
+          <option value="">Select branch</option>
+          <% branchOptions.forEach(function (b) { %>
+          <option value="<%= b.key %>" <%= formState.branchKey === b.key ? 'selected' : '' %>>
+            <%= b.displayName %> (<%= b.key %>)
+          </option>
+          <% }) %>
+        </select>
+      </div>
+      <label class="bb-hq-roles__confirm">
+        <input type="checkbox" name="confirm_assign" value="1" required />
+        I confirm this role assignment for the selected user and scope.
+      </label>
+      <p class="bb-hq-roles__form-actions">
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+          <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+          Assign role
+        </button>
+      </p>
+    </form>
+  </section>
+
+  <form method="get" action="/hq/roles" class="bb-hq-filter bb-hq-roles-filter" role="search">
+    <div class="bb-hq-field">
+      <label for="q">Search</label>
+      <input id="q" name="q" type="search" maxlength="100" value="<%= searchQ %>" placeholder="Name, email, or branch" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="role">Role</label>
+      <select id="role" name="role">
+        <option value="">All</option>
+        <option value="church_hq_admin" <%= activeRole === 'church_hq_admin' ? 'selected' : '' %>>HQ admin</option>
+        <option value="branch_admin" <%= activeRole === 'branch_admin' ? 'selected' : '' %>>Branch admin</option>
+      </select>
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Filter</button>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/roles">Clear</a>
+    </div>
+  </form>
+
+  <div class="bb-hq-chips" role="navigation" aria-label="Role filters">
+    <a
+      class="bb-hq-chip <%= !activeRole ? 'bb-hq-chip--ok' : 'bb-hq-chip--muted' %>"
+      href="<%= filterHref('') %>"
+      <%= !activeRole ? 'aria-current="page"' : '' %>
+    >All</a>
+    <a
+      class="bb-hq-chip <%= activeRole === 'church_hq_admin' ? 'bb-hq-chip--ok' : 'bb-hq-chip--muted' %>"
+      href="<%= filterHref('church_hq_admin') %>"
+      <%= activeRole === 'church_hq_admin' ? 'aria-current="page"' : '' %>
+    >HQ admin</a>
+    <a
+      class="bb-hq-chip <%= activeRole === 'branch_admin' ? 'bb-hq-chip--ok' : 'bb-hq-chip--muted' %>"
+      href="<%= filterHref('branch_admin') %>"
+      <%= activeRole === 'branch_admin' ? 'aria-current="page"' : '' %>
+    >Branch admin</a>
+  </div>
+
+  <% if (!rows.length) { %>
+  <p class="bb-hq-empty" data-bb-hq-roles-empty="1">No active staff roles match this view.</p>
+  <% } else { %>
+  <div class="bb-hq-table-wrap bb-hq-roles__table-wrap" data-bb-hq-roles-table="1">
+    <table class="bb-hq-table">
+      <thead>
+        <tr>
+          <th scope="col">Person</th>
+          <th scope="col">Role</th>
+          <th scope="col">Scope</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (item) { %>
+        <tr data-bb-role-id="<%= item.id %>" data-bb-role-key="<%= item.roleKey %>">
+          <td>
+            <strong><%= item.displayName || item.emailDisplay || '—' %></strong>
+            <% if (item.emailDisplay) { %>
+            <div class="bb-hq-roles__email"><%= item.emailDisplay %></div>
+            <% } %>
+          </td>
+          <td><span class="bb-hq-chip <%= roleChip(item.roleKey) %>"><%= roleLabel(item.roleKey) %></span></td>
+          <td><%= scopeLabel(item) %></td>
+          <td class="bb-hq-table__actions">
+            <form
+              method="post"
+              action="/hq/roles/<%= item.id %>/revoke"
+              class="bb-hq-roles__revoke"
+              data-bb-hq-role-revoke="1"
+              onsubmit="return confirm('Revoke this role? The person will lose access on the next authorization check.');"
+            >
+              <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+              <input type="hidden" name="confirm_revoke" value="1" />
+              <button type="submit" class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--danger">Revoke</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="bb-hq-roles__cards-mobile" data-bb-hq-roles-cards="1">
+    <% rows.forEach(function (item) { %>
+    <li class="bb-hq-roles__mobile-card" data-bb-role-id="<%= item.id %>">
+      <div>
+        <strong><%= item.displayName || item.emailDisplay || '—' %></strong>
+        <p class="bb-hq-roles__email"><%= item.emailDisplay || '' %></p>
+        <p>
+          <span class="bb-hq-chip <%= roleChip(item.roleKey) %>"><%= roleLabel(item.roleKey) %></span>
+          <span class="bb-hq-roles__scope"><%= scopeLabel(item) %></span>
+        </p>
+      </div>
+      <form
+        method="post"
+        action="/hq/roles/<%= item.id %>/revoke"
+        class="bb-hq-roles__revoke"
+        data-bb-hq-role-revoke="1"
+        onsubmit="return confirm('Revoke this role? The person will lose access on the next authorization check.');"
+      >
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <input type="hidden" name="confirm_revoke" value="1" />
+        <button type="submit" class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--danger">Revoke</button>
+      </form>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

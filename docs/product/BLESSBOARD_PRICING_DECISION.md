@@ -10,8 +10,8 @@
 | Package | Price | HQ | Active branches | Members | Admin / leadership | Notes |
 |---------|-------|----|-----------------|---------|--------------------|-------|
 | **Foundation** | USD 0 / month | 1 | Maximum **1** | Up to **250** active | Up to **10** | Entry package |
-| **Growth** | **USD 14.99** per active branch / month | 1 | **Unlimited** | Unlimited (fair use) | Fair use | Advanced workflows, scheduling, reporting, cross-branch administration |
-| **Network** | **USD 29.99** per active branch / month | 1 | **Unlimited** | Unlimited (fair use) | Fair use + advanced roles | Custom domain, hosted mailboxes, integrations, executive reports, priority support, assisted onboarding |
+| **Growth** | **USD 14.99** per active branch / month | 1 | **Unlimited** | Unlimited (fair use) | Fair use | Advanced attendance & giving reports, cross-branch HQ administration |
+| **Network** | **USD 29.99** per active branch / month | 1 | **Unlimited** | Unlimited (fair use) | Fair use + advanced roles (assisted / by arrangement) | Custom domain, hosted mailboxes, integrations, executive exports (by arrangement), priority support, assisted onboarding |
 
 ### Terminology
 
@@ -30,9 +30,9 @@
 | Active branches | Max 1 | Unlimited | Unlimited |
 | Active members | Up to 250 | Fair use | Fair use |
 | Admin / leadership accounts | Up to 10 | Fair use | Fair use + advanced roles |
-| Reporting | Basic | Advanced + cross-branch | Executive + API exports |
-| Advanced workflows / scheduling | — | Yes | Yes |
-| Cross-branch administration | — | Yes | Yes |
+| Reporting | Basic HQ aggregates | Advanced attendance & giving + cross-branch | Growth reporting + executive exports (by arrangement) |
+| Cross-branch HQ administration | — | Yes | Yes |
+| Scheduled broadcasts / report email / surveys / appointments / volunteer scheduling | — | — (not in current product) | — (not in current product) |
 | Custom organization domain | — | — | Yes (assisted onboarding; **not** self-service DNS today) |
 | Hosted mailboxes per active branch | None | None | Up to **5** |
 | API / webhooks / integrations | — | — | By arrangement |
@@ -171,3 +171,4 @@ Operators must resolve blockers before downgrade; the product does **not** auto-
 ---
 
 See also: [`docs/gui/BATCH_02B_APEX_MARKETING.md`](../gui/BATCH_02B_APEX_MARKETING.md) §9.
+Public marketing honesty pass after Foundation/Growth readiness: [`COMMERCIAL_FEATURE_MATRIX_RECONCILIATION.md`](./COMMERCIAL_FEATURE_MATRIX_RECONCILIATION.md).

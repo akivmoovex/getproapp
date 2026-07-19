@@ -60,6 +60,7 @@ function buildHqAdminShellLocals(req, res, opts) {
     branches: "Branches",
     registrations: "Registration oversight",
     members: "Member directory",
+    roles: "Staff permissions",
     settings: "Church settings",
     account: "Account",
     content: "Website",
@@ -71,6 +72,7 @@ function buildHqAdminShellLocals(req, res, opts) {
     forms: "Forms",
     requests: "Requests",
     reports: "Reports",
+    roles: "Permissions",
     audit: "Audit",
   };
 

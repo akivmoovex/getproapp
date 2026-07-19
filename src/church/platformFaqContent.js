@@ -9,13 +9,13 @@ const PLATFORM_FAQ_ITEMS = [
     id: "what-is-blessboard",
     question: "What is BlessBoard?",
     answer:
-      "BlessBoard is a church engagement platform. Each participating congregation can have a public branch website, a member portal, and administration tools for branch leaders — connected on one platform.",
+      "BlessBoard is a church engagement platform. Each participating congregation can have a public branch website, a member portal, and administration tools for branch and HQ leaders — connected on one platform.",
   },
   {
     id: "who-can-use",
     question: "Who can use BlessBoard?",
     answer:
-      "BlessBoard serves congregations and their branches, registered members, ministry leaders, branch and HQ administrators, and BlessBoard platform administrators who provision organizations. Visitors can browse public church pages without signing in.",
+      "BlessBoard serves congregations and their branches, registered members, branch and HQ administrators, and BlessBoard platform administrators who provision organizations. Visitors can browse public church pages without signing in.",
   },
   {
     id: "own-website",
@@ -27,7 +27,7 @@ const PLATFORM_FAQ_ITEMS = [
     id: "multiple-branches",
     question: "Can a church manage multiple branches?",
     answer:
-      "Yes. Organizations with more than one branch can use BlessBoard HQ tools for branch registry, reporting, and organization-level oversight while each branch keeps its own subdomain and admin team. Available capacity depends on your organization’s plan and setup.",
+      "Yes on Growth and Network. Foundation includes one HQ and a maximum of one active branch. Growth and Network allow unlimited active branches with HQ tools for branch registry, cross-branch oversight, and advanced attendance and giving reports. Available capacity depends on your organization’s assigned plan.",
   },
   {
     id: "mobile-members",
@@ -57,7 +57,7 @@ const PLATFORM_FAQ_ITEMS = [
     id: "member-forms",
     question: "Can members submit forms and requests?",
     answer:
-      "Yes. Visitors can send messages through a branch public contact form. Signed-in members can submit requests available in their portal — such as prayer requests and ministry join requests — according to what that church has enabled.",
+      "Yes. Signed-in members can submit forms and requests available in their portal — including prayer and care categories when enabled — according to what that church has configured. Public contact pages show published phone, email, and address details; an online contact message form is not available in the current product.",
   },
   {
     id: "custom-domain",
@@ -69,19 +69,19 @@ const PLATFORM_FAQ_ITEMS = [
     id: "request-access",
     question: "How can a church request access?",
     answer:
-      "Submit the Register Your Church form on blessboard.com. BlessBoard platform administrators review requests and coordinate onboarding.",
+      "Submit the Register Your Church form on blessboard.com. BlessBoard platform administrators review requests and coordinate onboarding. Checkout is not available on the public site.",
   },
   {
     id: "login-help",
     question: "How can members get login help?",
     answer:
-      "Start at Find a Church on blessboard.com, open your congregation’s site, and use Member Login or Register as a Member. For password help, use the forgot-password link on your church site’s login page. See Support on blessboard.com for step-by-step paths for members and administrators.",
+      "Start at Find a Church on blessboard.com, open your congregation’s site, and use Member Login or Register as a Member. For password help, contact your church administrators or see Support on blessboard.com for step-by-step paths for members and administrators.",
   },
   {
     id: "pricing",
     question: "How does BlessBoard pricing work?",
     answer:
-      "BlessBoard offers Foundation (USD 0), Growth (USD 14.99 per active branch/month), and Network (USD 29.99 per active branch/month). HQ is not billed as a branch. Church members are not billed individually. Checkout is not available on the public site — onboarding is contact-led.",
+      "BlessBoard offers Foundation (USD 0), Growth (USD 14.99 per active branch/month), and Network (USD 29.99 per active branch/month). HQ is not billed as a branch. Church members are not billed individually. Checkout is not available on the public site — currently onboarding selected churches; contact the BlessBoard team to discuss access.",
   },
   {
     id: "who-can-view",

@@ -81,12 +81,21 @@
     if (!maxByCurrency[cur] || n > maxByCurrency[cur]) maxByCurrency[cur] = n;
   });
   var showBranchComparison = !branchFilter && branchRollup.length > 0;
+  var tier = typeof reportTier !== 'undefined' && reportTier ? reportTier : 'basic';
+  var entitled = typeof advancedEntitled === 'boolean'
+    ? advancedEntitled
+    : (tier === 'advanced');
 %>
 
 <section
   class="bb-hq-giv-report"
   data-bb-hq-giving-report="1"
+  data-bb-batch="fg-q12"
   data-bb-stitch-giving-report="57-hq-consolidated-analytics"
+  data-bb-stitch-desktop="2a577dc15d4342acb152f16aed21c267"
+  data-bb-stitch-mobile="06489c79d0d04a429e57eba5c717ba47"
+  data-bb-report-tier="<%= tier %>"
+  data-bb-giv-report-entitlement="<%= entitled ? 'advanced' : 'denied' %>"
   data-bb-giv-report-scope="<%= branchFilter ? 'branch' : 'church' %>"
 >
   <header class="bb-hq-page-head bb-hq-page-head--split">
@@ -101,21 +110,49 @@
         <span class="bb-hq-giv-report__month" data-bb-giv-report-month="<%= yearMonth %>"><%= yearMonth %></span>
       </div>
       <p class="bb-hq-lede">
+        <% if (!entitled) { %>
+        Detailed giving analytics require the Growth package.
+        Foundation churches keep currency totals on the HQ reports hub.
+        <% } else { %>
         Aggregate category totals for <strong><%= scopeLabel %></strong><% if (!branchFilter) { %> (all branches)<% } %>.
         Amounts are exact NUMERIC strings from <%= sourceStatuses.join(', ') %> entries — no donor records, bank reconciliation, exports, or forecasts.
+        <% } %>
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
+      <% if (entitled) { %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/giving" data-bb-giv-report-action="manage">
         <span class="material-symbols-outlined" aria-hidden="true">payments</span>
         Manage giving
       </a>
+      <% } %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports" data-bb-giv-report-action="reports">
         <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
         All reports
       </a>
     </p>
   </header>
+
+  <% if (!entitled) { %>
+  <div class="bb-hq-giv-report-denied" data-bb-giv-report-denied="1">
+    <%- include('../partials/empty-state', {
+      title: 'Growth advanced reports required',
+      body: 'Your Foundation plan includes the HQ reports hub with live giving totals. The detailed category and currency giving report is available on Growth. Ask your BlessBoard operator to enable Growth — self-serve checkout is not available here.',
+      icon: 'lock',
+      actionHref: '/hq/reports?month=' + encodeURIComponent(yearMonth),
+      actionLabel: 'Back to HQ reports'
+    }) %>
+  </div>
+  <aside class="bb-hq-giv-report-unavailable" data-bb-giv-report-unavailable="1" aria-labelledby="bb-giv-unavailable-heading">
+    <h2 id="bb-giv-unavailable-heading" class="bb-hq-section-title">Not available</h2>
+    <ul class="bb-hq-giv-report-unavailable__list">
+      <li data-bb-giv-unavailable="donor">Donor-level records and contact details</li>
+      <li data-bb-giv-unavailable="bank">Bank reconciliation and payment gateway data</li>
+      <li data-bb-giv-unavailable="forecast">Forecasts, trend percentages, and projections</li>
+      <li data-bb-giv-unavailable="export">Accounting CSV / PDF exports</li>
+    </ul>
+  </aside>
+  <% } else { %>
 
   <form
     method="get"
@@ -149,7 +186,7 @@
   </form>
 
   <% if (!hasData) { %>
-  <div class="bb-hq-giv-report-empty" data-bb-giv-report-empty="1" data-bb-report="giving-empty" role="status">
+  <div class="bb-hq-giv-report-empty" data-bb-giv-report-empty="1" data-bb-report="giving-empty">
     <%- include('../partials/empty-state', {
       title: 'No giving for this month',
       body: 'Submitted, approved, or archived category totals for ' + yearMonth + ' will appear here when branches record giving.',
@@ -413,6 +450,7 @@
       <li data-bb-giv-unavailable="export">Accounting CSV / PDF exports</li>
     </ul>
   </aside>
+  <% } %>
   <% } %>
 </section>
 

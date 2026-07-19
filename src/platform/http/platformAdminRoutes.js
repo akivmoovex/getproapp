@@ -637,6 +637,8 @@ function createPlatformAdminRouter(deps) {
           error = "not_found";
         } else if (result.status === ENTITLEMENTS_ADMIN_STATUS.INVALID_INPUT) {
           error = "invalid";
+        } else if (result.status === ENTITLEMENTS_ADMIN_STATUS.LIMIT_EXCEEDED) {
+          error = "branch_limit";
         }
         return res.redirect(
           303,

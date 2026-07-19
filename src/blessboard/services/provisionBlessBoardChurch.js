@@ -7,6 +7,10 @@
  */
 
 const repo = require("../repositories/blessBoardCatalogueRepository");
+const {
+  evaluateBranchCreateLimit,
+  STATUS: ENTITLEMENT_STATUS,
+} = require("../../platform/services/entitlementService");
 
 const STATUS = Object.freeze({
   PROVISIONED: "provisioned",
@@ -19,6 +23,7 @@ const STATUS = Object.freeze({
   ENVIRONMENT_MISMATCH: "environment_mismatch",
   CHURCH_CONFLICT: "church_conflict",
   BRANCH_CONFLICT: "branch_conflict",
+  LIMIT_EXCEEDED: "limit_exceeded",
   TRANSACTION_ERROR: "transaction_error",
 });
 
@@ -298,6 +303,19 @@ async function provisionBlessBoardChurch(db, input) {
       }
     } else {
       try {
+        const capacity = await evaluateBranchCreateLimit(client, {
+          organizationId: organization.id,
+        });
+        if (!capacity.ok) {
+          await client.query("ROLLBACK");
+          if (capacity.status === ENTITLEMENT_STATUS.LIMIT_EXCEEDED) {
+            return fail(STATUS.LIMIT_EXCEEDED, "max_branches", {
+              current: capacity.current,
+              limit: capacity.limit,
+            });
+          }
+          return fail(STATUS.TRANSACTION_ERROR, "branch_capacity_check_failed");
+        }
         hqBranch = await repo.insertHqBranch(client, {
           churchId: church.id,
           branchKey: req.hqBranchKey,

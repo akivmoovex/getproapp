@@ -14,7 +14,7 @@ const PLATFORM_PUBLIC_SEO = {
     path: "/",
     pageTitle: "Find and connect with your church",
     metaDescription:
-      "BlessBoard is a church management platform for members, leaders, and administrators — church websites, member portals, and multi-branch church management in one place.",
+      "BlessBoard is a church management platform for members and administrators — public church websites, member portals, branch admin, and HQ tools for multi-branch churches.",
     changefreq: "weekly",
     priority: "1.0",
   },
@@ -22,7 +22,7 @@ const PLATFORM_PUBLIC_SEO = {
     path: "/features",
     pageTitle: "Features",
     metaDescription:
-      "BlessBoard features for church websites, member portals, branch administration, and HQ multi-branch tools — practical church administration tools in one connected platform.",
+      "BlessBoard features for church websites, member portals, attendance, giving summaries, forms and requests, branch administration, and HQ multi-branch oversight — including advanced attendance and giving reports on Growth.",
     changefreq: "monthly",
     priority: "0.9",
     breadcrumbLabel: "Features",
@@ -40,7 +40,7 @@ const PLATFORM_PUBLIC_SEO = {
     path: "/for-churches",
     pageTitle: "For Churches",
     metaDescription:
-      "BlessBoard for pastors and church administrators — publish a church website, engage members, and manage branch operations with church software designed for real ministry teams.",
+      "BlessBoard for church administrators — publish a church website, engage verified members, and manage branch and HQ operations with contact-led onboarding.",
     changefreq: "monthly",
     priority: "0.9",
     breadcrumbLabel: "For Churches",

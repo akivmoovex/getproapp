@@ -84,6 +84,10 @@ async function withClient(db, fn) {
   let client = null;
   let owned = false;
   try {
+    // Prefer an already-checked-out pool client (has release) so nested callers stay on one connection.
+    if (db && typeof db.query === "function" && typeof db.release === "function") {
+      return await fn(db);
+    }
     if (db && typeof db.connect === "function") {
       client = await db.connect();
       owned = true;

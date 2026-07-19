@@ -34,6 +34,7 @@ const {
 const { createBranchAdminRouter } = require("../../blessboard/http/branchAdminRoutes");
 const { createBranchRegistrationAdminRouter } = require("../../blessboard/http/branchRegistrationAdminRoutes");
 const { createHqMembersAdminRouter } = require("../../blessboard/http/hqMembersAdminRoutes");
+const { createHqRoleAdminRouter } = require("../../blessboard/http/hqRoleAdminRoutes");
 const { createHqAdminRouter } = require("../../blessboard/http/hqAdminRoutes");
 const { createContentAdminRouter } = require("../../blessboard/http/contentAdminRoutes");
 const { createPublicMediaRouter } = require("../../blessboard/http/publicMediaRoutes");
@@ -603,6 +604,14 @@ function createV5FoundationApp(options) {
   );
   app.use(
     createHqMembersAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+    })
+  );
+  app.use(
+    createHqRoleAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       env,

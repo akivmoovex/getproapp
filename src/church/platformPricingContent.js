@@ -26,7 +26,7 @@ const STAFF_BILLING_NOTE =
   "Church members are not billed individually. Paid packages are billed per active branch; HQ is not billed as a branch.";
 
 const THIRD_PARTY_COSTS_NOTE =
-  "Third-party costs such as custom domain registrar fees and payment processing remain separately quoted where applicable. Hosted mailbox capacity is included on Network; registrar and DNS work are assisted during onboarding.";
+  "Third-party costs such as custom domain registrar fees and payment processing remain separately quoted where applicable. Hosted mailbox capacity is included on Network; registrar and DNS work are assisted during onboarding. Scheduled message delivery, automated report email, surveys, appointments, and volunteer scheduling are not available in the current product.";
 
 function formatUsdFromCents(cents) {
   const n = Number(cents) || 0;
@@ -61,7 +61,8 @@ function buildTierPlans() {
       eyebrow: null,
       priceAmount: formatUsdFromCents(GROWTH_MONTHLY_PER_BRANCH_CENTS),
       priceSuffix: "/active branch/mo",
-      description: "Scale operations across unlimited branches with advanced workflows and cross-branch administration.",
+      description:
+        "Scale across unlimited branches with cross-branch HQ administration and advanced attendance and giving reports.",
       featured: true,
       badge: "Most Popular",
       ctaLabel: "Register Your Church",
@@ -71,8 +72,8 @@ function buildTierPlans() {
         "Everything in Foundation",
         "1 HQ and unlimited active branches",
         "Unlimited members subject to fair use",
-        "Advanced workflows, scheduling, and reporting",
-        "Cross-branch administration",
+        "Advanced attendance and giving reports",
+        "Cross-branch HQ administration",
         "HQ is not billed as a branch",
       ],
     },
@@ -83,7 +84,7 @@ function buildTierPlans() {
       priceAmount: formatUsdFromCents(NETWORK_MONTHLY_PER_BRANCH_CENTS),
       priceSuffix: "/active branch/mo",
       description:
-        "Custom organization domain, hosted mailboxes, integrations, executive reporting, and priority support for multi-site networks.",
+        "Custom organization domain, hosted mailboxes, integrations, and priority support for multi-site networks (assisted onboarding).",
       featured: false,
       badge: null,
       ctaLabel: "Register Your Church",
@@ -93,7 +94,7 @@ function buildTierPlans() {
         "Everything in Growth",
         "Custom organization domain (assisted onboarding — not self-service DNS today)",
         `Up to ${NETWORK_MAILBOXES_PER_BRANCH} hosted mailboxes per active branch`,
-        "Advanced roles and executive reports",
+        "Advanced roles (assisted / by arrangement)",
         "API, webhooks, and integrations (availability by arrangement)",
         "Priority support and assisted onboarding",
       ],
@@ -159,9 +160,19 @@ function buildPublicPricingComparisonRows() {
       label: "Reporting",
       type: "text",
       values: {
-        foundation: "Basic",
-        growth: "Advanced + cross-branch",
-        network: "Executive + API exports",
+        foundation: "Basic HQ aggregates",
+        growth: "Advanced attendance & giving + cross-branch",
+        network: "Growth reporting + executive exports (by arrangement)",
+      },
+    },
+    {
+      key: "cross_branch_hq",
+      label: "Cross-branch HQ administration",
+      type: "bool",
+      values: {
+        foundation: false,
+        growth: true,
+        network: true,
       },
     },
     {

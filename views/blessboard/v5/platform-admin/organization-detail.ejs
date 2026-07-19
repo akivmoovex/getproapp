@@ -63,6 +63,9 @@
     if (code === 'confirm_required') return 'Confirmation is required before this change can be applied.';
     if (code === 'invalid') return 'The submitted values were invalid.';
     if (code === 'not_found') return 'Organization or plan could not be found.';
+    if (code === 'branch_limit') {
+      return 'Plan change blocked: active branches exceed the target plan limit. Deactivate excess campuses first. Existing branches were not deleted.';
+    }
     if (code === 'plan_failed' || code === 'override_failed') return 'The change could not be saved. Try again.';
     return code ? 'Something went wrong.' : null;
   }

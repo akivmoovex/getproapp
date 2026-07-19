@@ -32,6 +32,14 @@ const HQ_ADMIN_NAV = Object.freeze([
     nav: true,
   },
   {
+    key: "roles",
+    label: "Permissions",
+    href: "/hq/roles",
+    icon: "admin_panel_settings",
+    enabled: true,
+    nav: true,
+  },
+  {
     key: "settings",
     label: "Settings",
     href: "/hq/settings",

@@ -279,7 +279,7 @@
             <span class="material-symbols-outlined"><%= mod.icon || 'block' %></span>
           </span>
           <h3 class="bb-ba-card__title"><%= mod.label %></h3>
-          <p class="bb-ba-card__meta">Not enabled</p>
+          <p class="bb-ba-card__meta"><%= mod.blurb || 'Not enabled' %></p>
         </article>
         <% } %>
       <% }) %>
