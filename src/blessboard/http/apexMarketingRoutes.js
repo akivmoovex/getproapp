@@ -1,11 +1,12 @@
 "use strict";
 
 /**
- * Apex marketing GET routes (Batch 2b).
- * No schema, auth, billing, or provisioning side effects.
+ * Apex marketing routes (Batch 2b + BB-MT-001 register-church POST).
+ * Registration creates a pending application only — no provisioning.
  */
 
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const directoryRepo = require("../../db/pg/church/publicChurchDirectoryRepo");
 const {
   renderFeaturesPage,
@@ -14,6 +15,18 @@ const {
   renderDirectoryPage,
   renderRegisterChurchPage,
 } = require("./renderApexMarketing");
+const { CSRF_FIELD, issueCsrfToken, setCsrfCookie, validateCsrf } = require("../../platform/http/v5Csrf");
+const {
+  normalizeSelectedPlan,
+  validatePlatformChurchRegistration,
+  formFromBody,
+} = require("../services/platformChurchRegistrationValidation");
+const {
+  submitPlatformChurchRegistration,
+} = require("../services/platformChurchRegistrationService");
+
+const REGISTER_PATH = "/register-church";
+const GENERIC_SAVE_ERROR = "We could not save your request right now. Please try again shortly.";
 
 /**
  * @param {{
@@ -29,22 +42,47 @@ function createApexMarketingRouter(deps) {
   const router = express.Router();
   const getPool = deps.getPool;
   const isApexHost = deps.isApexHost;
-  const issueCsrfToken = deps.issueCsrfToken;
-  const setCsrfCookie = deps.setCsrfCookie;
+  const issueToken = deps.issueCsrfToken || issueCsrfToken;
+  const setCookie = deps.setCsrfCookie || setCsrfCookie;
   const env = deps.env || {};
   const isProduction = Boolean(deps.isProduction);
+
+  const registerFormLimiter = rateLimit({
+    windowMs: Number(env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS) || 15 * 60 * 1000,
+    limit: Number(env.GETPRO_PLATFORM_FORM_RATE_MAX) || 12,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      const csrfToken = issueToken(env);
+      setCookie(res, csrfToken, { secure: isProduction });
+      return res.status(429).type("html").send(
+        renderRegisterChurchPage({
+          authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
+          csrfToken,
+          csrfField: CSRF_FIELD,
+          submitted: false,
+          formError: "Too many submissions from this network. Please wait a few minutes and try again.",
+          form: formFromBody(req.body || {}),
+          fieldError: null,
+          selectedPlan: normalizeSelectedPlan(req.body && req.body.selected_plan),
+        })
+      );
+    },
+  });
 
   function withShell(req, res, renderFn, extra = {}) {
     if (!isApexHost(req)) {
       return res.status(404).type("text").send("Not found");
     }
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    const csrfToken = issueToken(env);
+    setCookie(res, csrfToken, { secure: isProduction });
+    const alwaysPassCsrf = Boolean(extra.alwaysPassCsrf);
     return res.status(200).type("html").send(
       renderFn({
         authenticated,
-        csrfToken: authenticated ? csrfToken : null,
+        csrfToken: authenticated || alwaysPassCsrf ? csrfToken : null,
+        csrfField: CSRF_FIELD,
         ...extra,
       })
     );
@@ -53,15 +91,85 @@ function createApexMarketingRouter(deps) {
   router.get("/features", (req, res) => withShell(req, res, renderFeaturesPage));
   router.get("/for-churches", (req, res) => withShell(req, res, renderForChurchesPage));
   router.get("/pricing", (req, res) => withShell(req, res, renderPricingPage));
-  router.get("/register-church", (req, res) => withShell(req, res, renderRegisterChurchPage));
+
+  router.get(REGISTER_PATH, (req, res) => {
+    const selectedPlan = normalizeSelectedPlan(req.query && req.query.plan);
+    const submitted = String((req.query && req.query.submitted) || "") === "1";
+    return withShell(req, res, renderRegisterChurchPage, {
+      alwaysPassCsrf: true,
+      submitted,
+      formError: null,
+      form: formFromBody({}, { selectedPlanHint: selectedPlan }),
+      fieldError: null,
+      selectedPlan,
+    });
+  });
+
+  router.post(REGISTER_PATH, registerFormLimiter, async (req, res, next) => {
+    try {
+      if (!isApexHost(req)) {
+        return res.status(404).type("text").send("Not found");
+      }
+
+      const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
+      const selectedPlanHint = normalizeSelectedPlan(req.query && req.query.plan);
+      const body = req.body || {};
+      const csrfToken = issueToken(env);
+      setCookie(res, csrfToken, { secure: isProduction });
+
+      function renderForm(status, extras) {
+        return res.status(status).type("html").send(
+          renderRegisterChurchPage({
+            authenticated,
+            csrfToken,
+            csrfField: CSRF_FIELD,
+            submitted: false,
+            form: formFromBody(body, { selectedPlanHint }),
+            selectedPlan:
+              normalizeSelectedPlan(body.selected_plan) || selectedPlanHint || null,
+            ...extras,
+          })
+        );
+      }
+
+      if (!validateCsrf(req, body[CSRF_FIELD], env)) {
+        return renderForm(403, {
+          formError: "Invalid or missing CSRF token. Please try again.",
+          fieldError: null,
+        });
+      }
+
+      const validation = validatePlatformChurchRegistration(body, {
+        selectedPlanHint,
+      });
+      if (!validation.ok) {
+        return renderForm(400, {
+          formError: validation.error,
+          fieldError: validation.field || null,
+        });
+      }
+
+      const result = await submitPlatformChurchRegistration(getPool(), req, validation);
+      if (!result.ok) {
+        return renderForm(503, {
+          formError: result.error || GENERIC_SAVE_ERROR,
+          fieldError: null,
+        });
+      }
+
+      return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
+    } catch (err) {
+      return next(err);
+    }
+  });
 
   router.get("/directory", async (req, res) => {
     if (!isApexHost(req)) {
       return res.status(404).type("text").send("Not found");
     }
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    const csrfToken = issueToken(env);
+    setCookie(res, csrfToken, { secure: isProduction });
 
     const q = directoryRepo.normalizeSearchQuery(req.query && req.query.q);
     const page = Number(req.query && req.query.page) || 1;
@@ -95,4 +203,5 @@ function createApexMarketingRouter(deps) {
 
 module.exports = {
   createApexMarketingRouter,
+  REGISTER_PATH,
 };

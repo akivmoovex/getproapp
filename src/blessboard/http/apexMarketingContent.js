@@ -34,7 +34,7 @@ function buildApexPricingPlans() {
   return buildPublicPricingPlans().map((plan) => ({
     ...plan,
     ctaLabel: "Register Your Church",
-    ctaHref: "/register-church",
+    ctaHref: `/register-church?plan=${encodeURIComponent(plan.code)}`,
     ctaVariant: plan.featured ? "primary" : "outline",
   }));
 }

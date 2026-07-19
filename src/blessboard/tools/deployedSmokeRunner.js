@@ -581,7 +581,7 @@ async function runDeployedSmoke(options) {
   });
   await doCheck("apex_register_church", "/register-church", {
     expectStatus: 200,
-    markers: [/BlessBoard|church|register|enquir/i],
+    markers: [/BlessBoard|church|register|application|pending/i],
     checkHeaders: true,
   });
   await doCheck("apex_login", "/login", {

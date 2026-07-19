@@ -89,7 +89,7 @@ describe("blessboard apex marketing batch 2b", () => {
     const plans = buildApexPricingPlans();
     assert.ok(plans.length >= 3);
     for (const plan of plans) {
-      assert.equal(plan.ctaHref, "/register-church");
+      assert.equal(plan.ctaHref, `/register-church?plan=${plan.code}`);
       assert.match(plan.ctaLabel, /Register Your Church/);
     }
     assert.equal(buildApexPartnerPlan(), null);
@@ -104,7 +104,7 @@ describe("blessboard apex marketing batch 2b", () => {
       ["/for-churches", /Sacred Clarity/, /data-bb-apex-page="for-churches"/, null],
       ["/pricing", /Transparent Pricing/, /data-bb-plan="growth"/, null],
       ["/directory", /Find a church/, /data-bb-apex-page="directory"/, null],
-      ["/register-church", /Register Your Church/, /data-bb-register-mode="enquiry"/, null],
+      ["/register-church", /Register Your Church/, /data-bb-register-mode="application"/, null],
     ];
 
     for (const [pathName, bodyRe, markerRe, batchRe] of paths) {
@@ -122,8 +122,10 @@ describe("blessboard apex marketing batch 2b", () => {
       assert.match(res.text, /href="\/login"/);
       assert.doesNotMatch(res.text, /href="\/contact"|Start Free Trial|Watch Product Tour|Schedule a Demo/i);
       assert.doesNotMatch(res.text, /Join over \d+|hundreds of (forward-thinking )?congregation/i);
-      assert.doesNotMatch(res.text, /Request Sent!|confirmation email has been sent/i);
-      assert.doesNotMatch(res.text, /method="post"[^>]*action="\/register-church"/i);
+      assert.doesNotMatch(res.text, /confirmation email has been sent/i);
+      if (pathName !== "/register-church") {
+        assert.doesNotMatch(res.text, /method="post"[^>]*action="\/register-church"/i);
+      }
     }
 
     const features = await request(app).get("/features").set("Host", "blessboard.org");
@@ -132,7 +134,7 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(features.text, /Operational Excellence/);
     assert.match(features.text, /Enterprise Scaling/);
     assert.match(features.text, /no payment gateway in V5/i);
-    assert.match(features.text, /apex\.css\?v=8/);
+    assert.match(features.text, /apex\.css\?v=9/);
     assert.match(features.text, /data-bb-apex-page="features"/);
     assert.match(features.text, /bb-apex-features-page/);
     assert.match(features.text, /Advanced attendance/);
@@ -160,14 +162,17 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.doesNotMatch(res.text, /Grace Community|St\. Jude|Covenant Life/);
   });
 
-  it("register-church is enquiry-only (no provisioning form POST)", async () => {
+  it("register-church is a public pending-application form (no live provisioning)", async () => {
     requireDb();
     const app = makeApp();
     const res = await request(app).get("/register-church").set("Host", "blessboard.org");
     assert.equal(res.status, 200);
-    assert.match(res.text, /does not create accounts|does not submit or confirm/i);
-    assert.doesNotMatch(res.text, /<form[^>]*method="post"/i);
-    assert.doesNotMatch(res.text, /name="password"|Create church|Submit Registration Request/i);
+    assert.match(res.text, /method="post"/i);
+    assert.match(res.text, /action="\/register-church"/i);
+    assert.match(res.text, /name="church_name"/);
+    assert.match(res.text, /name="_csrf"/);
+    assert.match(res.text, /pending review|pending application/i);
+    assert.doesNotMatch(res.text, /name="password"|Create church|activated immediately/i);
   });
 
   it("pricing page uses approved catalogue amounts and FAQ anchor", async () => {
@@ -184,7 +189,7 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(res.text, /active branch/i);
     assert.match(res.text, /id="faq"/);
     assert.match(res.text, /Church members are not billed individually/);
-    assert.match(res.text, /href="\/register-church"/);
+    assert.match(res.text, /href="\/register-church\?plan=growth"/);
     assert.match(res.text, /Advanced attendance and giving reports/i);
     assert.match(res.text, /Cross-branch HQ administration/i);
     assert.doesNotMatch(res.text, /Advanced workflows, scheduling/i);

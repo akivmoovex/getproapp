@@ -1395,6 +1395,158 @@ ul.bb-apex-features {
   margin-top: 1rem;
 }
 
+.bb-apex-register-form {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.bb-apex-register-form__section {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.bb-apex-register-form__section-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--bb-color-ink, #1a1c1e);
+}
+
+.bb-apex-register-form__section-head .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-apex-register-form__grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.bb-apex-register-form__grid--two {
+  grid-template-columns: 1fr;
+}
+
+.bb-apex-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.bb-apex-register-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.bb-apex-register-label__meta {
+  font-weight: 500;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-register-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  color: var(--bb-color-ink, #1a1c1e);
+  font: inherit;
+}
+
+.bb-apex-register-input:focus {
+  outline: 2px solid var(--bb-color-primary, #6c5ce7);
+  outline-offset: 1px;
+}
+
+.bb-apex-register-input.is-error,
+.bb-apex-field.is-error .bb-apex-register-checkbox {
+  border-color: #ba1a1a;
+}
+
+.bb-apex-register-input--textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.bb-apex-register-field-error,
+.bb-apex-register-alert {
+  margin: 0;
+  color: #ba1a1a;
+  font-size: 0.875rem;
+}
+
+.bb-apex-register-alert {
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #ffdad6;
+}
+
+.bb-apex-register-checkbox {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.bb-apex-register-checkbox input {
+  margin-top: 0.2rem;
+  flex: 0 0 auto;
+}
+
+.bb-apex-register-form__footer {
+  display: grid;
+  gap: 1rem;
+}
+
+.bb-apex-register-success {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #e8f5e9;
+  color: var(--bb-color-ink, #1a1c1e);
+}
+
+.bb-apex-register-success .material-symbols-outlined {
+  color: #2e7d32;
+  font-size: 1.75rem;
+}
+
+.bb-apex-register-success__title {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+}
+
+.bb-apex-register-success__body {
+  margin: 0 0 0.5rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-register-success__body:last-child {
+  margin-bottom: 0;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @media (min-width: 768px) {
   .bb-apex-mkt-split__grid {
     grid-template-columns: 1fr 1fr;
@@ -1422,6 +1574,10 @@ ul.bb-apex-features {
 
   .bb-apex-register__grid {
     grid-template-columns: 1fr 1.05fr;
+  }
+
+  .bb-apex-register-form__grid--two {
+    grid-template-columns: 1fr 1fr;
   }
 
   .bb-apex-partner-card {

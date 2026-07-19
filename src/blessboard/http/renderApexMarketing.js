@@ -86,6 +86,12 @@ function renderRegisterChurchPage(opts) {
     ...shellLocals(opts),
     pageTitle: "Register Your Church",
     activeNav: "register-church",
+    csrfField: (opts && opts.csrfField) || "_csrf",
+    submitted: Boolean(opts && opts.submitted),
+    formError: (opts && opts.formError) || null,
+    fieldError: (opts && opts.fieldError) || null,
+    form: (opts && opts.form) || {},
+    selectedPlan: (opts && opts.selectedPlan) || null,
   });
 }
 
