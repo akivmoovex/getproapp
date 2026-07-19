@@ -15,6 +15,7 @@ const {
   renderDirectoryPage,
   renderRegisterChurchPage,
 } = require("./renderApexMarketing");
+const { renderTermsPage, renderPrivacyPage } = require("./renderApexLegal");
 const { CSRF_FIELD, issueCsrfToken, setCsrfCookie, validateCsrf } = require("../../platform/http/v5Csrf");
 const {
   normalizeSelectedPlan,
@@ -91,6 +92,8 @@ function createApexMarketingRouter(deps) {
   router.get("/features", (req, res) => withShell(req, res, renderFeaturesPage));
   router.get("/for-churches", (req, res) => withShell(req, res, renderForChurchesPage));
   router.get("/pricing", (req, res) => withShell(req, res, renderPricingPage));
+  router.get("/terms", (req, res) => withShell(req, res, renderTermsPage));
+  router.get("/privacy", (req, res) => withShell(req, res, renderPrivacyPage));
 
   router.get(REGISTER_PATH, (req, res) => {
     const selectedPlan = normalizeSelectedPlan(req.query && req.query.plan);

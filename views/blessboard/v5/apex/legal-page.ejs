@@ -1,0 +1,57 @@
+<%#
+  Shared apex legal document layout (Terms / Privacy).
+  Locals: legalDoc { title, intro, draftBanner, effectiveDateDisplay, effectiveDateIso, sections[] }
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<article class="bb-apex-legal" data-bb-apex-page="<%= activeNav %>" aria-labelledby="bb-legal-title">
+  <div class="bb-apex-container bb-apex-legal__inner">
+    <header class="bb-apex-legal__header">
+      <p class="bb-apex-mkt-hero__eyebrow">Legal</p>
+      <h1 class="bb-apex-legal__title" id="bb-legal-title"><%= legalDoc.title %></h1>
+      <p class="bb-apex-legal__meta">
+        <time datetime="<%= legalDoc.effectiveDateIso %>">Effective date: <%= legalDoc.effectiveDateDisplay %></time>
+      </p>
+      <p class="bb-apex-legal__intro"><%= legalDoc.intro %></p>
+      <% if (legalDoc.draftBanner) { %>
+      <p class="bb-apex-legal__draft" role="note"><%= legalDoc.draftBanner %></p>
+      <% } %>
+    </header>
+
+    <nav class="bb-apex-legal__toc" aria-label="Table of contents">
+      <h2 class="bb-apex-legal__toc-title">Contents</h2>
+      <ol class="bb-apex-legal__toc-list">
+        <% legalDoc.sections.forEach(function (section) { %>
+        <li><a href="#<%= section.id %>"><span class="bb-apex-legal__toc-num"><%= section.number %>.</span> <%= section.title %></a></li>
+        <% }) %>
+      </ol>
+    </nav>
+
+    <div class="bb-apex-legal__body">
+      <% legalDoc.sections.forEach(function (section) { %>
+      <section class="bb-apex-legal__section" id="<%= section.id %>" aria-labelledby="<%= section.id %>-heading">
+        <h2 class="bb-apex-legal__section-title" id="<%= section.id %>-heading">
+          <span class="bb-apex-legal__section-num"><%= section.number %>.</span>
+          <%= section.title %>
+        </h2>
+        <div class="bb-apex-legal__prose">
+          <%- section.html %>
+        </div>
+      </section>
+      <% }) %>
+    </div>
+
+    <footer class="bb-apex-legal__footer">
+      <p class="bb-apex-legal__updated">Last updated: <time datetime="<%= legalDoc.effectiveDateIso %>"><%= legalDoc.effectiveDateDisplay %></time></p>
+      <p class="bb-apex-mkt-footnote">
+        Related:
+        <a href="/terms">Terms of Service</a> ·
+        <a href="/privacy">Privacy Policy</a> ·
+        <a href="/register-church">Register Your Church</a> ·
+        <a href="/directory">Directory</a>
+      </p>
+    </footer>
+  </div>
+</article>
+
+<%- include('../partials/apex-shell-end') %>
