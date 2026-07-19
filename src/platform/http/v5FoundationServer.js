@@ -1143,6 +1143,22 @@ async function verifyFoundationPool(pool) {
       "[blessboard] V5 foundation mode: platform schema not found — continue serving health/apex; run db:migrate against DATABASE_URL"
     );
   }
+
+  try {
+    const {
+      registrationTableExists,
+      TARGET_RELATION,
+    } = require("../../blessboard/repositories/platformChurchRegistrationRepository");
+    const present = await registrationTableExists(pool);
+    if (!present) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[blessboard] V5 foundation: missing ${TARGET_RELATION} — POST /register-church will fail until npm run db:migrate`
+      );
+    }
+  } catch {
+    /* startup must not fail on optional catalogue checks */
+  }
 }
 
 /**

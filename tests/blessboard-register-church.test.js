@@ -1,7 +1,8 @@
 "use strict";
 
 /**
- * BB-MT-001 — public apex church-registration journey on BlessBoard.org.
+ * BB-MT-001 / BB-MT-002 — public apex church-registration on BlessBoard.org.
+ * Pending V5 application only; schema-qualified blessboard table; no legacy public tables.
  */
 
 const assert = require("node:assert/strict");
@@ -296,5 +297,153 @@ describe("blessboard public church registration (BB-MT-001)", () => {
     const refresh = await request(app).get("/register-church").set("Host", "blessboard.org");
     assert.equal(refresh.status, 200);
     assert.match(refresh.text, /Register Your Church/);
+  });
+
+  it("repository SQL targets schema-qualified V5 table and never legacy public relations", () => {
+    const source = fs.readFileSync(
+      path.join(ROOT, "src/blessboard/repositories/platformChurchRegistrationRepository.js"),
+      "utf8"
+    );
+    assert.equal(repo.TARGET_RELATION, "blessboard.platform_church_registration_applications");
+    assert.match(source, /INSERT INTO \$\{TARGET_RELATION\}/);
+    assert.match(source, /FROM \$\{TARGET_RELATION\}/);
+    // Strip the forbidden-list constant so the guard values themselves are not false positives.
+    const withoutGuardList = source.replace(
+      /FORBIDDEN_RELATION_FRAGMENTS[\s\S]*?\];/,
+      "FORBIDDEN_RELATION_FRAGMENTS = [];"
+    );
+    for (const fragment of repo.FORBIDDEN_RELATION_FRAGMENTS) {
+      assert.equal(
+        withoutGuardList.includes(fragment),
+        false,
+        `must not reference legacy relation fragment: ${fragment}`
+      );
+    }
+    assert.doesNotMatch(withoutGuardList, /INTO\s+public\./i);
+    assert.doesNotMatch(withoutGuardList, /FROM\s+public\./i);
+  });
+
+  it("migration 026 creates the V5 registration table and is in the ordered catalogue", () => {
+    const migrationPath = path.join(
+      ROOT,
+      "db/migrations/blessboard/026_create_platform_church_registration_applications.sql"
+    );
+    assert.equal(fs.existsSync(migrationPath), true);
+    const sql = fs.readFileSync(migrationPath, "utf8");
+    assert.match(sql, /CREATE TABLE IF NOT EXISTS blessboard\.platform_church_registration_applications/);
+    assert.doesNotMatch(sql, /public\.church_|CREATE TABLE IF NOT EXISTS public\./i);
+    assert.match(sql, /status TEXT NOT NULL DEFAULT 'pending'/);
+  });
+
+  it("database insert failure returns a safe user-facing response and surfaces 42P01 in service result", async () => {
+    requireDb();
+    const app = makeApp();
+    const { csrf, cookie } = await getRegistrationPage(app);
+
+    const brokenPool = {
+      query: async () => {
+        const err = new Error('relation "blessboard.platform_church_registration_applications" does not exist');
+        err.code = "42P01";
+        err.schema = "blessboard";
+        err.table = "platform_church_registration_applications";
+        throw err;
+      },
+    };
+
+    const brokenApp = createV5FoundationApp({
+      env: {
+        NODE_ENV: "test",
+        BLESSBOARD_TENANT_ROUTING_MODE: "off",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
+        SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
+      },
+      getPool: () => brokenPool,
+    });
+
+    const page = await request(brokenApp).get("/register-church").set("Host", "blessboard.org");
+    const brokenCsrf = extractCsrfToken(page.text);
+    const brokenCookie = extractCookie(page, CSRF_COOKIE);
+
+    const res = await request(brokenApp)
+      .post("/register-church")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${CSRF_COOKIE}=${brokenCookie}`)
+      .type("form")
+      .send({
+        ...validBody,
+        email: `missing-table-${Date.now()}@example.org`,
+        [CSRF_FIELD]: brokenCsrf,
+      });
+
+    assert.equal(res.status, 503);
+    assert.match(res.text, /could not save your request|try again/i);
+    assert.doesNotMatch(res.text, /42P01|platform_church_registration|stack|DATABASE_URL|password/i);
+
+    // Direct service call must not swallow the PG code (operators need it in logs/result).
+    const {
+      submitPlatformChurchRegistration,
+    } = require("../src/blessboard/services/platformChurchRegistrationService");
+    const serviceResult = await submitPlatformChurchRegistration(
+      brokenPool,
+      { requestId: "test-req-42p01", ip: "127.0.0.1", get: () => "test-agent" },
+      {
+        ok: true,
+        data: {
+          church_name: "X",
+          country: "Zambia",
+          city: "Lusaka",
+          contact_name: "Y",
+          contact_email: "y@example.org",
+          contact_phone: "+260971234567",
+          role_in_church: "Pastor",
+          consent_terms: true,
+        },
+      }
+    );
+    assert.equal(serviceResult.ok, false);
+    assert.equal(serviceResult.pgCode, "42P01");
+    assert.match(serviceResult.error, /try again/i);
+
+    // Control: healthy pool still works with original CSRF from good app (sanity).
+    assert.ok(csrf && cookie);
+  });
+
+  it("valid insert lands only in blessboard.platform_church_registration_applications", async () => {
+    requireDb();
+    const app = makeApp();
+    const { csrf, cookie } = await getRegistrationPage(app);
+    const email = `schema-check-${Date.now()}@example.org`;
+    const res = await request(app)
+      .post("/register-church")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
+      .type("form")
+      .send({ ...validBody, email, [CSRF_FIELD]: csrf });
+    assert.equal(res.status, 303);
+
+    const inV5 = await pool.query(
+      `SELECT COUNT(*)::int AS n
+         FROM blessboard.platform_church_registration_applications
+        WHERE lower(contact_email) = lower($1)`,
+      [email]
+    );
+    assert.equal(inV5.rows[0].n, 1);
+
+    const legacyGone = await pool.query(
+      `SELECT to_regclass('public.church_platform_inquiries') AS a,
+              to_regclass('public.church_applications') AS b,
+              to_regclass('public.tenants') AS c`
+    );
+    assert.equal(legacyGone.rows[0].a, null);
+    assert.equal(legacyGone.rows[0].b, null);
+    assert.equal(legacyGone.rows[0].c, null);
+
+    const churches = await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.churches`);
+    const branches = await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.branches`);
+    const users = await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.users`);
+    assert.equal(churches.rows[0].n, 0);
+    assert.equal(branches.rows[0].n, 0);
+    assert.equal(users.rows[0].n, 0);
   });
 });

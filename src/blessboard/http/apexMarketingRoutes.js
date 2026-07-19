@@ -23,10 +23,10 @@ const {
 } = require("../services/platformChurchRegistrationValidation");
 const {
   submitPlatformChurchRegistration,
+  GENERIC_SAVE_ERROR,
 } = require("../services/platformChurchRegistrationService");
 
 const REGISTER_PATH = "/register-church";
-const GENERIC_SAVE_ERROR = "We could not save your request right now. Please try again shortly.";
 
 /**
  * @param {{
