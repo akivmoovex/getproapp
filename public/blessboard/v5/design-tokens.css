@@ -135,7 +135,8 @@
   --bb-z-toast: 90;
 
   /* —— Breakpoints (documented; media queries use literals) —— */
-  /* mobile: 0–767 · tablet+/desktop: 768+ · shell drawer/nav: 900 */
+  /* Public/marketing: 0–767 / 768+ · shell drawer/nav: 899/900 · portal grids often 699/700 */
+  /* Satellite: 800 (filters), 960 (editors), 1100+ (wide cards), 1200/1440 (marketing) */
   --bb-bp-md: 768px;
   --bb-bp-lg: 900px;
 }

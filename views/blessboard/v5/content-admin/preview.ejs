@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Preview: <%= pageTitle %> · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css" />
-  <link rel="stylesheet" href="<%= shellKind === 'hq' ? '/blessboard/v5/hq-admin.css' : '/blessboard/v5/branch-admin.css' %>" />
+  <%- include('../partials/head-design-system') %>
+  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css?v=27" />
+  <link rel="stylesheet" href="<%= shellKind === 'hq' ? '/blessboard/v5/hq-admin.css?v=46' : '/blessboard/v5/branch-admin.css?v=36' %>" />
 </head>
 <body class="bb-tp-body bb-ca-preview-body">
   <div class="bb-ca-preview-banner" role="status">
@@ -37,7 +38,7 @@
           <% if (section.heading) { %><h2><%= section.heading %></h2><% } %>
           <% if (section.bodyText) { %><p><%= section.bodyText %></p><% } %>
           <% if (section.mediaUrl) { %>
-          <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" />
+          <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
           <% } %>
         </section>
         <% }) %>

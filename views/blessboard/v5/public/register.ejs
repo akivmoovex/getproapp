@@ -6,7 +6,7 @@
   <title>Register · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=12" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=13" />
 </head>
 <body
   class="bb-auth-body"
@@ -46,7 +46,7 @@
       </div>
     </aside>
 
-    <div class="bb-auth-main">
+    <main class="bb-auth-main">
       <header class="bb-auth-main__header">
         <a class="bb-auth-brand" href="/">
           <img
@@ -108,6 +108,7 @@
               action="/register"
               class="bb-auth-form bb-auth-form--register"
               id="bb-auth-form"
+              tabindex="-1"
               novalidate
               aria-describedby="<%= hasErrors ? 'bb-auth-error-summary bb-auth-contact-hint bb-auth-privacy-note' : 'bb-auth-contact-hint bb-auth-privacy-note' %>"
             >
@@ -260,7 +261,7 @@
         </div>
         <%- include('../partials/powered-by-getpro') %>
       </footer>
-    </div>
+    </main>
   </div>
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>

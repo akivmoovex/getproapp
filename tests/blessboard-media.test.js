@@ -15,6 +15,7 @@ const request = require("supertest");
 
 const {
   resetFoundationDatabase,
+  foundationDbUnavailableSkipReason,
   createFoundationPool,
 } = require("./helpers/foundationDb");
 const { migrate } = require("../db/scripts/lib/migrator");
@@ -94,6 +95,24 @@ describe("blessboard media validation (unit)", () => {
     assert.equal(bad.reason, "signature_unrecognized");
   });
 
+  it("rejects MIME/extension mismatches", () => {
+    const mimeMismatch = validateMediaFile({
+      buffer: PNG_1X1,
+      originalFilename: "photo.png",
+      claimedMime: "application/pdf",
+    });
+    assert.equal(mimeMismatch.ok, false);
+    assert.equal(mimeMismatch.reason, "mime_mismatch");
+
+    const extMismatch = validateMediaFile({
+      buffer: PNG_1X1,
+      originalFilename: "photo.pdf",
+      claimedMime: "image/png",
+    });
+    assert.equal(extMismatch.ok, false);
+    assert.equal(extMismatch.reason, "extension_mismatch");
+  });
+
   it("rejects SVG and executable-looking content", () => {
     const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>', "utf8");
     const r = validateMediaFile({ buffer: svg, originalFilename: "x.svg", claimedMime: "image/svg+xml" });
@@ -124,6 +143,29 @@ describe("blessboard media validation (unit)", () => {
     });
     assert.equal(r.ok, true);
     assert.equal(r.originalFilename, "passwd.pdf");
+  });
+
+  it("Content-Disposition sanitizes CRLF and quotes from filenames", () => {
+    const { sendPrivateMediaDownload } = require("../src/blessboard/http/sendPrivateMediaDownload");
+    const headers = {};
+    const res = {
+      setHeader(name, value) {
+        headers[String(name).toLowerCase()] = value;
+      },
+      status() {
+        return this;
+      },
+      send() {
+        return this;
+      },
+    };
+    sendPrivateMediaDownload(res, {
+      asset: { originalFilename: 'evil\r\n"file.pdf', mimeType: "application/pdf" },
+      buffer: PDF_MIN,
+    });
+    assert.equal(headers["content-disposition"], 'attachment; filename="evilfile.pdf"');
+    assert.equal(headers["x-content-type-options"], "nosniff");
+    assert.match(String(headers["cache-control"] || ""), /private/);
   });
 
   it("generates randomized storage keys without traversal", () => {
@@ -273,7 +315,7 @@ describe("blessboard media service + http", () => {
 
   function skipIfNeeded(t) {
     if (skipSuite) {
-      t.skip(`setup failed: ${skipReason}`);
+      t.skip(foundationDbUnavailableSkipReason(skipReason));
       return true;
     }
     return false;

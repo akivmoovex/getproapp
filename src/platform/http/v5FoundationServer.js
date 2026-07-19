@@ -13,6 +13,10 @@ const rateLimit = require("express-rate-limit");
 
 const { getPgPool } = require("../../db/pg");
 const { resolveHostname } = require("../host");
+const {
+  assignV5RequestId,
+  createV5ErrorHandler,
+} = require("./v5SafeLogging");
 const { createLoadPlatformHostContext } = require("./loadPlatformHostContext");
 const {
   createLoadBlessBoardCatalogueContext,
@@ -243,15 +247,19 @@ function createV5FoundationApp(options) {
     app.set("trust proxy", 1);
   }
 
+  app.use(assignV5RequestId);
+
   morgan.token("url-redacted", (req) => redactAuthTransferQuery(req.originalUrl || req.url || ""));
+  morgan.token("req-id", (req) => (req && req.requestId) || "-");
+  const accessFormat = ":method :url-redacted :status :res[content-length] - :response-time ms req_id=:req-id";
   if (isProduction) {
     app.use(
-      morgan(":method :url-redacted :status :res[content-length] - :response-time ms", {
+      morgan(accessFormat, {
         skip: (req) => req.path === "/healthz",
       })
     );
   } else {
-    app.use(morgan(":method :url-redacted :status :res[content-length] - :response-time ms"));
+    app.use(morgan(accessFormat));
   }
 
   app.use(express.urlencoded({ extended: false }));
@@ -366,7 +374,7 @@ function createV5FoundationApp(options) {
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=1"/></head>
+<link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=13"/></head>
 <body class="bb-auth-body" data-bb-page="register-rate-limited">
 <main class="bb-auth-main__body">
 <div class="bb-auth-card" role="alert">
@@ -465,6 +473,7 @@ function createV5FoundationApp(options) {
       isApexHost: (req) => isApexHost(req, opts),
       env,
       sendUnavailable,
+      mediaService,
     })
   );
   app.use(
@@ -490,6 +499,7 @@ function createV5FoundationApp(options) {
       isApexHost: (req) => isApexHost(req, opts),
       env,
       sendUnavailable,
+      mediaService,
       variant: "hq",
     })
   );
@@ -499,6 +509,7 @@ function createV5FoundationApp(options) {
       isApexHost: (req) => isApexHost(req, opts),
       env,
       sendUnavailable,
+      mediaService,
       variant: "branch",
     })
   );
@@ -1073,6 +1084,8 @@ function createV5FoundationApp(options) {
     return sendUnavailable(req, res);
   });
 
+  app.use(createV5ErrorHandler({ env, log: opts.errorLog }));
+
   return app;
 }
 
@@ -1100,7 +1113,25 @@ async function verifyFoundationPool(pool) {
  */
 async function startV5FoundationServer(opts) {
   void opts;
+  const {
+    assertV5SessionSecretPolicyOrExit,
+    summarizeV5DatabaseEnv,
+  } = require("../config/v5EnvValidation");
+  assertV5SessionSecretPolicyOrExit();
+
   logV5FoundationModeActive();
+
+  const dbEnv = summarizeV5DatabaseEnv();
+  // eslint-disable-next-line no-console
+  console.log(
+    `[blessboard] V5 foundation DB env: DATABASE_URL=${dbEnv.DATABASE_URL} GETPRO_DATABASE_URL=${dbEnv.GETPRO_DATABASE_URL} (fallback disabled; values never logged)`
+  );
+  if (dbEnv.GETPRO_DATABASE_URL === "yes") {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[blessboard] V5 foundation: GETPRO_DATABASE_URL is set but unused — leave it unset on V5 Hostinger"
+    );
+  }
 
   // eslint-disable-next-line no-console
   console.log(
@@ -1143,4 +1174,6 @@ module.exports = {
   createV5FoundationApp,
   verifyFoundationPool,
   startV5FoundationServer,
+  assignV5RequestId,
+  createV5ErrorHandler,
 };

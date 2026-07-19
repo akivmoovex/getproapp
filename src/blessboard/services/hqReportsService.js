@@ -66,6 +66,68 @@ function currentYearMonth() {
 }
 
 /**
+ * Soft entitlement resolve for HQ reporting tier.
+ * Never throws — missing subscription data falls back to basic.
+ * @param {{ query: Function }} client
+ * @param {string} churchId
+ * @returns {Promise<"advanced"|"basic"|"none">}
+ */
+async function resolveReportTierOnClient(client, churchId) {
+  let reportTier = "basic";
+  try {
+    const {
+      resolveOrganizationEntitlementsSafe,
+      hasFeature,
+      FEATURE_KEYS,
+    } = require("../../platform/services/entitlementService");
+    const orgRow = await client.query(
+      `SELECT organization_id FROM blessboard.churches WHERE id = $1`,
+      [churchId]
+    );
+    const organizationId = orgRow.rows[0] && orgRow.rows[0].organization_id;
+    if (!organizationId) return reportTier;
+    const soft = await resolveOrganizationEntitlementsSafe(client, {
+      organizationId,
+    });
+    if (hasFeature(soft.entitlements, FEATURE_KEYS.ADVANCED_REPORTS)) {
+      reportTier = "advanced";
+    } else if (hasFeature(soft.entitlements, FEATURE_KEYS.BASIC_REPORTS)) {
+      reportTier = "basic";
+    } else {
+      reportTier = "none";
+    }
+  } catch {
+    reportTier = "basic";
+  }
+  return reportTier;
+}
+
+/**
+ * Resolve reporting tier for a church (soft-safe).
+ * @param {{ query: Function, connect?: Function }} db
+ * @param {string} churchId
+ */
+async function resolveChurchReportTier(db, churchId) {
+  const id = String(churchId || "").trim();
+  if (!UUID_RE.test(id)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reportTier: "none", reason: "church_id" };
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const reportTier = await resolveReportTierOnClient(client, id);
+      return { ok: true, status: STATUS.OK, reportTier };
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reportTier: "basic",
+      reason: err && err.message ? String(err.message) : "error",
+    };
+  }
+}
+
+/**
  * @param {{ query: Function, connect?: Function }} db
  * @param {{
  *   churchId: string,
@@ -99,39 +161,14 @@ async function getHqOperationalReport(db, input) {
         return { ok: false, status: STATUS.FORBIDDEN, report: null, reason: hq.reason };
       }
 
-      // Soft entitlement resolve for reporting tier — never crash public/admin reads on missing sub data.
-      let reportTier = "basic";
-      try {
-        const {
-          resolveOrganizationEntitlementsSafe,
-          hasFeature,
-          FEATURE_KEYS,
-        } = require("../../platform/services/entitlementService");
-        const orgRow = await client.query(
-          `SELECT organization_id FROM blessboard.churches WHERE id = $1`,
-          [churchId]
-        );
-        const organizationId = orgRow.rows[0] && orgRow.rows[0].organization_id;
-        if (organizationId) {
-          const soft = await resolveOrganizationEntitlementsSafe(client, {
-            organizationId,
-          });
-          if (hasFeature(soft.entitlements, FEATURE_KEYS.ADVANCED_REPORTS)) {
-            reportTier = "advanced";
-          } else if (hasFeature(soft.entitlements, FEATURE_KEYS.BASIC_REPORTS)) {
-            reportTier = "basic";
-          }
-          if (input.requireAdvanced === true && reportTier !== "advanced") {
-            return {
-              ok: false,
-              status: STATUS.FORBIDDEN,
-              report: null,
-              reason: "advanced_reports_not_entitled",
-            };
-          }
-        }
-      } catch {
-        reportTier = "basic";
+      const reportTier = await resolveReportTierOnClient(client, churchId);
+      if (input.requireAdvanced === true && reportTier !== "advanced") {
+        return {
+          ok: false,
+          status: STATUS.FORBIDDEN,
+          report: null,
+          reason: "advanced_reports_not_entitled",
+        };
       }
 
       const activeMembers = await client.query(
@@ -356,4 +393,5 @@ async function getHqOperationalReport(db, input) {
 module.exports = {
   STATUS,
   getHqOperationalReport,
+  resolveChurchReportTier,
 };

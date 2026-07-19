@@ -1,9 +1,11 @@
 # BlessBoard plan_key migration plan (Phase B)
 
-**Status:** Analysis only — **not approved for execution**  
-**Date:** 2026-07-18  
+**Status:** Analysis / implementation-readiness — **NOT READY TO IMPLEMENT**  
+**Date:** 2026-07-19 (readiness pass) · original analysis 2026-07-18  
 **Authority:** [`docs/product/BLESSBOARD_PRICING_DECISION.md`](../product/BLESSBOARD_PRICING_DECISION.md) §7–§8  
-**Constraint:** This document does **not** implement schema, seed, runtime, or hosted-data changes. No destructive migration SQL is shipped while product ambiguities remain.
+**Constraint:** This document does **not** implement schema, seed, runtime, or hosted-data changes. **No migration SQL files are created** while mapping ambiguities and approval gates remain open.
+
+**Implementation readiness (this pass):** **NOT READY** — see §27.
 
 ---
 
@@ -333,23 +335,330 @@ Do **not** weaken limit-enforcement tests.
 
 ---
 
-## Readiness verdict
+## 17. Exact preflight checks (must all PASS before writing SQL)
+
+Run against the **intended target** (staging clone first; hosted only under §25). Capture outputs (keys/counts only — no secrets).
+
+| # | Check | Pass criteria |
+|---|-------|---------------|
+| PF1 | Identity | `platform.database_identity.identity_key` matches expected (e.g. `blessboard-platform-v5`); env code known |
+| PF2 | Backup | Snapshot/backup of `platform.plans`, `plan_features`, `organization_subscriptions`, `organization_entitlements` ≤24h and restorable |
+| PF3 | Seed catalogue shape | `blessboard` plans include exactly the expected legacy set **or** documented deltas: `free`, `growth`, `professional`, `partner` (see conflict if extra/missing) |
+| PF4 | Immutability trigger | `plans_plan_key_immutable` present; prove `UPDATE plan_key` fails in staging |
+| PF5 | Feature parity free↔Foundation intent | Diff of `(feature_key, feature_kind, boolean_value, limit_value)` for `free` vs proposed Foundation feature set is empty **or** signed waiver |
+| PF6 | Feature parity professional↔Network intent | Same for `professional` vs Network |
+| PF7 | Subscription inventory | Counts by `plan_key` × `status` archived (§18 queries) |
+| PF8 | Partner inventory | Full org list for `plan_key=partner` archived; §16 review complete or explicit “leave untouched” sign-off |
+| PF9 | Orphan / broken FKs | Zero subscriptions with missing `plan_id`; zero plans without `product_key=blessboard` incorrectly referenced by BlessBoard subs |
+| PF10 | Current-sub uniqueness | No org has >1 current (`active`/`trialing`/`past_due`) BlessBoard subscription (index already enforces; still report) |
+| PF11 | App hardcodes inventory | Known writers still on `free` / `professional` listed (Appendix B) — cutover PR scoped |
+| PF12 | Assignment freeze | Platform-admin plan assignment freeze window scheduled |
+| PF13 | Manual approval gate | §26 signed |
+
+**Stop if any PF fails.** Do not author production migration SQL until PF1–PF13 pass on staging.
+
+---
+
+## 18. Conflict queries (inventory / blockers)
+
+```sql
+-- PF3 catalogue
+SELECT plan_key, display_name, status, sort_order, id
+  FROM platform.plans
+ WHERE product_key = 'blessboard'
+ ORDER BY sort_order, plan_key;
+
+-- Unexpected plan keys (anything outside known set)
+SELECT plan_key, status, COUNT(*) OVER () AS catalogue_rows
+  FROM platform.plans
+ WHERE product_key = 'blessboard'
+   AND plan_key NOT IN ('free', 'growth', 'professional', 'partner', 'foundation', 'network');
+
+-- Target keys already present (duplicate-key scenario precursor)
+SELECT plan_key, id, status, display_name
+  FROM platform.plans
+ WHERE plan_key IN ('foundation', 'network');
+
+-- Feature parity: free vs foundation (after foundation exists; pre-insert compare free to seed intent)
+SELECT f.feature_key, f.feature_kind, f.boolean_value, f.limit_value
+  FROM platform.plan_features f
+  JOIN platform.plans p ON p.id = f.plan_id
+ WHERE p.plan_key = 'free'
+ ORDER BY f.feature_key;
+
+-- Subscriptions by plan + status
+SELECT p.plan_key, s.status, COUNT(*) AS n
+  FROM platform.organization_subscriptions s
+  JOIN platform.plans p ON p.id = s.plan_id
+ WHERE s.product_key = 'blessboard'
+ GROUP BY p.plan_key, s.status
+ ORDER BY p.plan_key, s.status;
+
+-- Current legacy keys (active-like)
+SELECT p.plan_key, o.organization_key, s.status, s.id AS subscription_id
+  FROM platform.organization_subscriptions s
+  JOIN platform.plans p ON p.id = s.plan_id
+  JOIN platform.organizations o ON o.id = s.organization_id
+ WHERE p.plan_key IN ('free', 'professional', 'partner')
+   AND s.status IN ('active', 'trialing', 'past_due')
+ ORDER BY p.plan_key, o.organization_key;
+
+-- Partner all statuses (review list)
+SELECT o.organization_key, o.status AS org_status, s.status AS sub_status,
+       s.starts_at, s.ends_at, left(coalesce(s.notes, ''), 80) AS notes_prefix
+  FROM platform.organization_subscriptions s
+  JOIN platform.plans p ON p.id = s.plan_id
+  JOIN platform.organizations o ON o.id = s.organization_id
+ WHERE p.plan_key = 'partner'
+ ORDER BY s.status, o.organization_key;
+
+-- Orphan plan_id (should be 0)
+SELECT s.id, s.organization_id, s.plan_id
+  FROM platform.organization_subscriptions s
+  LEFT JOIN platform.plans p ON p.id = s.plan_id
+ WHERE p.id IS NULL;
+
+-- Orgs with entitlement overrides (spot-check list)
+SELECT o.organization_key, e.feature_key, e.boolean_value, e.limit_value, e.status
+  FROM platform.organization_entitlements e
+  JOIN platform.organizations o ON o.id = e.organization_id
+ WHERE e.status = 'active'
+ ORDER BY o.organization_key, e.feature_key;
+```
+
+---
+
+## 19. Duplicate-key scenarios
+
+| Scenario | Detection | Required action |
+|----------|-----------|-----------------|
+| `foundation` already exists | PF3 / conflict query | **Stop.** Diff features vs `free`. If identical → remount-only path. If different → human fix before any remount |
+| `network` already exists | Same | Same vs `professional` |
+| Insert `foundation` while legacy `free` remains | Expected during migration | Allowed — `plan_key` UNIQUE is global; both rows coexist until legacy inactivated |
+| Accidental second insert of `foundation` | UNIQUE (`plan_key`) | Migration must be idempotent (`IF NOT EXISTS` / ON CONFLICT do nothing on plan row) |
+| Seed re-run after cutover still upserts `free` | Seed `ON CONFLICT (plan_key)` | Cutover PR must **change seeds** in same release so new environments get `foundation`/`network` as SoT |
+| Church package code `network` vs platform sub still `free` | Separate inventory | Do **not** auto-fix church `plan_code` in Phase B |
+
+---
+
+## 20. Subscription mapping rules
+
+| Source `plan_key` | Target `plan_key` | Which rows | Automatic? |
+|-------------------|-------------------|------------|------------|
+| `free` | `foundation` | All statuses (`active`/`trialing`/`past_due`/`canceled`/`expired`/`inactive`) | **Yes** after PF5 |
+| `growth` | `growth` | All | **No-op** (same UUID) |
+| `professional` | `network` | All statuses | **Yes** after PF6 + §15 rules |
+| `partner` | `network` | Only orgs on **signed review list** | **Gated** — default leave on inactive `partner` |
+| Unknown / orphan | — | Quarantine | **Never invent** |
+
+Additional rules:
+
+1. Remount updates **`plan_id` only** — preserve `status`, `starts_at`, `ends_at`, `notes`, `organization_id`, `product_key`.  
+2. Do not create a second current subscription; remount in place.  
+3. Historical rows remount for reporting consistency even when not current.  
+4. After remount, zero current subs may remain on `free` / `professional`.  
+5. `partner` current subs left on inactive plan remain **fail-closed** for entitlements until remounted (known behavior).
+
+---
+
+## 21. Professional → Network review rules
+
+| Rule | Detail |
+|------|--------|
+| Commercial meaning | Treat as **key rename**, not a new Network sale or self-serve unlock |
+| Feature gate | PF6 must PASS (seed/live features match Network intent: unlimited branches, custom_domain/email true, etc.) |
+| Assignment policy | Remount does **not** add `network` to church `ASSIGNABLE_PACKAGE_CODES` |
+| Bulk remount | Allowed for all `professional` subscriptions after PF6 |
+| Stop conditions | Feature mismatch; `network` row exists with divergent features; app still cannot resolve `network` |
+
+---
+
+## 22. Partner treatment
+
+| Decision | Status |
+|----------|--------|
+| Keep `partner` row | **Required** for first pass (no delete) |
+| Mark status | Prefer `inactive` (already seed default) or later `retired` — **product chooses**; both allowed by CHECK |
+| Auto-remount all → `network` | **Not approved** while ambiguity remains |
+| Remount subset | Only signed org list (§16 Option A) |
+| Leave untouched | Explicit product waiver allowed; document ongoing fail-closed entitlements |
+
+**Ambiguity remaining:** whether any live `partner` subscription encodes a commercial deal that must **not** become Network. Until inventory + sign-off, partner remount SQL must not ship.
+
+---
+
+## 23. Inactive-plan treatment
+
+| Plan after cutover | Recommended status | Resolver behavior |
+|--------------------|--------------------|-------------------|
+| `free` | `inactive` or `retired` | Must not be selected for **new** provision; keep row for alias/audit |
+| `professional` | `inactive` or `retired` | Same |
+| `partner` | remain `inactive` (or `retired` later) | Fail-closed if any sub still points here |
+| `foundation` / `growth` / `network` | `active` | Normal |
+
+`entitlementService` fail-closes when `plan.status !== 'active'`. Therefore **never** inactivate a plan while current subscriptions still reference it.
+
+Order: **remount subscriptions first**, then mark legacy plans inactive/retired in the same transaction (or immediately after with verification).
+
+---
+
+## 24. Transaction boundaries, checkpointing, idempotent rerun
+
+### Migration framework conventions
+
+- Foundation migrator (`db/scripts/lib/migrator.js`): each SQL file runs in **its own BEGIN/COMMIT**; checksum-locked; re-run skips applied versions.  
+- Phase B should be **one** (or few) numbered `db/migrations/platform/NNN_*.sql` file(s) plus **same-release** app/seed changes — not ad-hoc hosted SQL pads.  
+- Do **not** use V4→V5 `migrate:v4-to-v5` tooling for this rename.
+
+### Proposed transaction boundaries (design — not shipped SQL)
+
+| Step | Boundary | Contents |
+|------|----------|----------|
+| T1 | Single transaction | Insert `foundation`/`network` if missing; copy features; write mapping audit rows |
+| T2 | Single transaction | Remount `free`→`foundation`, `professional`→`network` subscription `plan_id`s; optional gated partner list |
+| T3 | Single transaction | Set legacy `free`/`professional` (and optionally reviewed partner) to `inactive`/`retired` |
+| T4 | App deploy | Outside DB txn — provision default, `mapPlanKey`, seeds, tests |
+
+Prefer **T1+T2+T3 in one migrator file / one transaction** if the file stays short enough for ops review; if split, checkpoint between files via `schema_migrations` and verify §18 after each.
+
+### Checkpointing
+
+| Checkpoint | Evidence |
+|------------|----------|
+| C0 | Preflight PF1–PF13 archive |
+| C1 | After plan insert: both targets exist; feature parity query empty |
+| C2 | After remount: zero current subs on `free`/`professional`; partner per policy |
+| C3 | After legacy inactive: no current sub references inactive plan |
+| C4 | After app deploy: new provision → `foundation`; smoke PA plans |
+
+### Idempotent rerun behavior
+
+| Operation | Idempotent behavior |
+|-----------|---------------------|
+| Insert plans | Skip if `plan_key` exists |
+| Copy features | `ON CONFLICT (plan_id, feature_key) DO UPDATE` to match source snapshot |
+| Remount subs | `UPDATE … WHERE plan_id = <legacy>` — second run updates 0 rows |
+| Inactivate legacy | `UPDATE … WHERE status = 'active' AND plan_key IN (…)`` — second run no-op |
+| Mapping audit table | Upsert by `old_plan_id` |
+
+---
+
+## 25. Rollback limitations & hosted dry-run
+
+### Rollback limitations
+
+| Situation | Possible? |
+|-----------|-----------|
+| Abort before COMMIT of remount | **Yes** — DB rollback |
+| After COMMIT, before app deploy | Remount back to legacy UUIDs via mapping table **if legacy rows still active** |
+| After legacy marked inactive + app expects new keys | Requires coordinated app rollback **and** remount to legacy; high risk |
+| After legacy plan **deleted** | **Not recoverable** without backup — deletion forbidden in Phase B |
+| Seed/app already on `foundation` only | Rolling back data without rolling back app breaks provision |
+
+**Limitation:** There is no automatic reverse migrator. Rollback is restore-from-backup or scripted remount using the mapping table under incident command.
+
+### Hosted dry-run procedure (no production apply)
+
+1. Clone/restore hosted V5 **testing** DB to a disposable staging database (or use approved staging project).  
+2. Set `DATABASE_URL` + `DATABASE_IDENTITY_EXPECTED` to the **clone** only.  
+3. Run PF1–PF12 queries; archive.  
+4. Apply candidate migration SQL **only on the clone**.  
+5. Re-run §18 verification; run platform entitlement + PA shell tests against clone if feasible.  
+6. Practice rollback once on clone.  
+7. Destroy clone or mark non-production.  
+8. **Do not** run apply against live Hostinger/Supabase until §26 approval.
+
+Note: `migrate:v4-to-v5:dry-run` is **unrelated** (V4 church → V5 loader). Do not confuse toolchains.
+
+---
+
+## 26. Manual approval gate
+
+Phase B implementation and hosted apply require **written** approval covering:
+
+| Gate | Approver type | Must affirm |
+|------|---------------|-------------|
+| G1 Product vocabulary | Product | `foundation`/`growth`/`network` remain SoT; Network stays assisted-only for new assign |
+| G2 Partner disposition | Product + Ops | Option A/B/C from §14 with org list or “leave untouched” |
+| G3 Feature parity | Engineering | PF5/PF6 evidence attached |
+| G4 Cutover window | Ops | Freeze assignment; backup; rollback owner named |
+| G5 App coordination | Engineering | Same-release provision/`mapPlanKey`/seeds/tests PR linked |
+| G6 Hosted apply | Leadership/Ops | Explicit “apply to \<project\>” — not implied by merging docs |
+
+**No signed G1–G6 ⇒ NOT READY TO IMPLEMENT.**
+
+---
+
+## 27. Test fixture requirements (when implementation is approved)
+
+| Fixture need | Requirement |
+|--------------|-------------|
+| Plans | Tests must create/expect `foundation`/`network` after cutover; keep immutability test |
+| Subscriptions | Org with `free` remounts to `foundation`; `professional` → `network` |
+| Partner | Fixture for fail-closed inactive; optional reviewed remount case |
+| Idempotency | Re-apply migration / second remount → stable counts |
+| Provision | New org subscription `plan_key=foundation` |
+| Aliases | Church catalogue still maps `free`/`professional`/`partner` during alias period |
+| V4→V5 | `mapPlanKey` emits approved keys post-cutover; update fixtures warnings |
+| Negative | Attempt `UPDATE plan_key` still fails |
+
+Do not weaken branch/user limit tests.
+
+---
+
+## 28. Readiness verdict
 
 | Question | Answer |
 |----------|--------|
-| Documentation ready? | **Yes** — this plan |
-| Implementation ready to run in production? | **No** |
-| Blockers | (1) Immutable `plan_key` requires insert/repoint design; (2) partner disposition (§14) + review list (§16) unresolved for automated partner remount; (3) live inventory of `partner` / `professional` counts not captured here; (4) coordinated app cutover for hardcoded `free` / `mapPlanKey`; (5) dual church vs platform entitlement models; (6) separate billing cents drift (1490 vs 1499) must not be conflated |
-| Safe next step | Staging inventory + dry-run insert/repoint on a copy; product sign-off on §14–§16; then implement under a dated change request |
+| Mapping confidence `free`→`foundation` | **HIGH** (seed display + features align; provision still hardcodes `free`) |
+| Mapping confidence `growth` | **HIGH** (identity) |
+| Mapping confidence `professional`→`network` | **HIGH** for rename after feature parity proof; **policy** must keep Network assisted |
+| Mapping confidence `partner`→`network` | **LOW–MEDIUM** — commercially ambiguous; gated |
+| Documentation for implementers | **Strong** (this plan) |
+| **READY TO IMPLEMENT?** | **NOT READY** |
 
-**Do not invent a destructive migration when ambiguity remains.**
+### Remaining ambiguity
+
+1. Partner disposition (remap list vs leave fail-closed) unsigned.  
+2. Live/staging subscription inventories not attached to this doc.  
+3. Live feature parity not yet evidenced beyond seed file review.  
+4. Choice of legacy status `inactive` vs `retired` for `free`/`professional`.  
+5. Exact migrator packaging (one txn vs split files) not signed by Ops.  
+6. Dual church `plan_code` vs platform `plan_key` drift handling deferred (aliases only).
+
+### Required manual decisions
+
+- G1–G6 approval gate (§26).  
+- Partner Option A/B/C (§14).  
+- Legacy plan terminal status (`inactive` vs `retired`).  
+- Whether historical-only `partner` rows remount or stay.
+
+### Data conflicts that could block migration
+
+- Pre-existing divergent `foundation`/`network` rows.  
+- Feature parity mismatch free/professional vs targets.  
+- Orphan `plan_id`s.  
+- Unexpected plan keys in catalogue.  
+- Current subscriptions still on plans about to be inactivated (ordering bug).  
+- App still provisioning `free` after data remount.
+
+### Safe next steps (still no SQL ship)
+
+1. Run §18 inventory on staging/hosted **read-only**.  
+2. Complete partner review / waiver.  
+3. Sign G1–G6.  
+4. Only then author migration SQL + app PR under a dated CR.
+
+**Do not invent a destructive migration while ambiguity remains.**
 
 ---
 
 ## Suggested documentation commit message
 
 ```
-Document BlessBoard plan_key Phase B migration plan without executing data changes.
+docs(migrations): deepen plan-key Phase B implementation readiness
+
+Add preflight, conflict queries, mapping rules, transaction/rollback limits, and hosted dry-run gates; verdict remains NOT READY.
 ```
 
 ---

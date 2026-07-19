@@ -78,6 +78,11 @@ console.log(
 );
 
 const { isV5FoundationMode } = require("./src/platform/config/v5FoundationMode");
+const {
+  assertV5FoundationDeploymentPairingOrExit,
+} = require("./src/platform/config/v5EnvValidation");
+// Refuse silent fall-through to legacy when PLATFORM_DEPLOYMENT_CODE is V5 but DEPLOYMENT_ENV is wrong.
+assertV5FoundationDeploymentPairingOrExit();
 
 if (isV5FoundationMode()) {
   // V5 blessboard.org: platform foundation DB only — no legacy public.tenants / session / ensure*Schema.

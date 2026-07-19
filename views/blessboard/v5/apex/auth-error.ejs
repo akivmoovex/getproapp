@@ -13,7 +13,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <title><%= pageTitle || 'Sign in' %> · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=12" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=13" />
   <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=6" />
 </head>
 <body
@@ -46,7 +46,7 @@
       </div>
     </aside>
 
-    <div class="bb-auth-main" id="bb-auth-error-main">
+    <main class="bb-auth-main" id="bb-auth-error-main" tabindex="-1">
       <header class="bb-auth-main__header">
         <a class="bb-auth-brand" href="/">
           <img
@@ -106,7 +106,7 @@
       <footer class="bb-auth-footer">
         <%- include('../partials/powered-by-getpro') %>
       </footer>
-    </div>
+    </main>
   </div>
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
 </body>

@@ -44,6 +44,7 @@ const UNAVAILABLE_PLATFORM_REASONS = new Set([
 const UNAVAILABLE_CATALOGUE_REASONS = new Set([
   "church_missing",
   "church_inactive",
+  "environment_mismatch",
   "hq_branch_missing",
   "hq_branch_inactive",
   "primary_branch_missing",

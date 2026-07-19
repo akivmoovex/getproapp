@@ -114,9 +114,11 @@
           : (card.visibility === 'mobile' ? ' bb-hq-dash-stat--mobile-only' : '');
         var className = 'bb-hq-dash-stat bb-hq-dash-stat--' + card.tone + visClass;
         var availAttr = card.available ? '1' : '0';
+        /* KPI may be deferred (available=false) while href still targets a live module. */
       %>
+      <% if (card.href) { %>
       <a
-        class="<%= className %> bb-hq-dash-stat--link<%= card.available ? '' : ' is-unavailable' %>"
+        class="<%= className %> bb-hq-dash-stat--link"
         href="<%= card.href %>"
         data-bb-dash-stat="<%= card.key %>"
         data-bb-dash-stat-available="<%= availAttr %>"
@@ -132,6 +134,21 @@
         <% } %>
         <span class="bb-hq-dash-stat__hint"><%= card.hint %></span>
       </a>
+      <% } else { %>
+      <article
+        class="<%= className %> is-unavailable"
+        data-bb-dash-stat="<%= card.key %>"
+        data-bb-dash-stat-available="<%= availAttr %>"
+        aria-disabled="true"
+      >
+        <span class="bb-hq-dash-stat__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= card.icon %></span>
+        </span>
+        <span class="bb-hq-dash-stat__label"><%= card.label %></span>
+        <strong class="bb-hq-dash-stat__value" aria-hidden="true"><%= card.value %></strong>
+        <span class="bb-hq-dash-stat__hint"><%= card.hint %></span>
+      </article>
+      <% } %>
       <% }) %>
     </div>
   </section>

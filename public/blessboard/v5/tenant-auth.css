@@ -123,6 +123,11 @@
   text-decoration: none;
   color: var(--bb-auth-ink);
   min-width: 0;
+  max-width: 100%;
+}
+
+.bb-auth-brand > span {
+  min-width: 0;
 }
 
 .bb-auth-brand__mark {
@@ -133,6 +138,8 @@
 }
 
 .bb-auth-brand__name {
+  display: block;
+  min-width: 0;
   font-weight: 700;
   letter-spacing: -0.02em;
   white-space: nowrap;
@@ -142,6 +149,7 @@
 
 .bb-auth-brand__branch {
   display: block;
+  min-width: 0;
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--bb-auth-muted);

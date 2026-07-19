@@ -300,6 +300,7 @@ body.bb-pa-drawer-open { overflow: hidden; }
   width: 100%;
   margin: 0 auto;
   padding: 1.25rem 1.15rem 5.5rem;
+  scroll-margin-top: 5rem;
 }
 .bb-pa-page {
   min-width: 0;
@@ -386,9 +387,11 @@ body.bb-pa-drawer-open { overflow: hidden; }
 }
 .bb-pa-page-head__title {
   margin: 0 0 0.35rem;
+  min-width: 0;
   font-size: clamp(1.5rem, 3vw, 1.85rem);
   letter-spacing: -0.02em;
   color: var(--bb-ink);
+  overflow-wrap: anywhere;
 }
 .bb-pa-page-head__actions {
   display: flex;

@@ -6,10 +6,8 @@
  * No fabricated summary metrics. Active branches only.
  */
 
-const fs = require("fs");
-const path = require("path");
-const ejs = require("ejs");
 const express = require("express");
+const { renderV5Ejs } = require("./v5EjsTemplateCache");
 
 const {
   createRequireBlessBoardTenantRole,
@@ -41,16 +39,12 @@ const {
 const { revokeV5Session } = require("../../platform/session/revokeV5Session");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
-const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
-
 /**
  * @param {string} relativePath
  * @param {object} data
  */
 function renderHqView(relativePath, data) {
-  const filename = path.join(VIEWS_ROOT, relativePath);
-  const source = fs.readFileSync(filename, "utf8");
-  return ejs.render(source, data, { filename });
+  return renderV5Ejs(relativePath, data);
 }
 
 /**
@@ -84,7 +78,7 @@ function sendControlled(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>HQ · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css" />
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=46" />
 </head>
 <body class="bb-hq-body">
   <main class="bb-hq-login-unavailable">

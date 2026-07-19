@@ -71,10 +71,19 @@ describe("auth transfer helpers", () => {
     assert.doesNotMatch(redactAuthTransferQuery("/login?tr=SECRET"), /SECRET/);
   });
 
-  it("safeTenantNextPath rejects open redirects", () => {
+  it("safeTenantNextPath rejects open redirects and path traversal", () => {
     assert.equal(safeTenantNextPath("/hq"), "/hq");
+    assert.equal(safeTenantNextPath("/branch-admin"), "/branch-admin");
+    assert.equal(safeTenantNextPath("/account"), "/account");
+    assert.equal(safeTenantNextPath("/member"), "/member");
+    assert.equal(safeTenantNextPath("/hq/settings"), "/hq/settings");
     assert.equal(safeTenantNextPath("//evil"), null);
     assert.equal(safeTenantNextPath("https://evil/hq"), null);
+    assert.equal(safeTenantNextPath("/hq/../evil"), null);
+    assert.equal(safeTenantNextPath("/hq/%2e%2e/evil"), null);
+    assert.equal(safeTenantNextPath("/admin"), null);
+    assert.equal(safeTenantNextPath("/hq?x=1"), null);
+    assert.equal(safeTenantNextPath("hq"), null);
   });
 
   it("TRANSFER_TTL_MS is at most five minutes", () => {

@@ -115,6 +115,68 @@ describe("blessboard catalogue lookup", () => {
     await pool.query(`UPDATE blessboard.churches SET status = 'active' WHERE id = $1`, [churchId]);
   });
 
+  it("suspended church is treated as inactive for resolution", async () => {
+    requireDb();
+    await pool.query(`UPDATE blessboard.churches SET status = 'suspended' WHERE id = $1`, [churchId]);
+    const result = await getBlessBoardCatalogueContext(pool, organizationId);
+    assert.equal(result.ok, false);
+    assert.equal(result.status, STATUS.CHURCH_INACTIVE);
+    await pool.query(`UPDATE blessboard.churches SET status = 'active' WHERE id = $1`, [churchId]);
+  });
+
+  it("organization/church environment mismatch fails closed", async () => {
+    requireDb();
+    // Org UPDATE is outside the church trigger; runtime must still reject divergence.
+    await pool.query(
+      `UPDATE platform.organizations SET data_environment = 'production' WHERE id = $1`,
+      [organizationId]
+    );
+    try {
+      const result = await getBlessBoardCatalogueContext(pool, organizationId);
+      assert.equal(result.ok, false);
+      assert.equal(result.status, STATUS.ENVIRONMENT_MISMATCH);
+    } finally {
+      await pool.query(
+        `UPDATE platform.organizations SET data_environment = 'testing' WHERE id = $1`,
+        [organizationId]
+      );
+    }
+  });
+
+  it("inactive primary branch returns typed inactive result", async () => {
+    requireDb();
+    // HQ stays active; a separate campus is the primary so HQ and primary diverge.
+    await pool.query(
+      `UPDATE blessboard.branches
+          SET is_primary = false
+        WHERE church_id = $1 AND branch_type = 'hq'`,
+      [churchId]
+    );
+    const campus = await pool.query(
+      `INSERT INTO blessboard.branches
+         (church_id, branch_key, display_name, branch_type, status, is_primary, timezone, country_code)
+       VALUES ($1, 'campus-primary', 'Campus Primary', 'branch', 'active', true, 'UTC', 'US')
+       RETURNING id`,
+      [churchId]
+    );
+    await pool.query(`UPDATE blessboard.branches SET status = 'inactive' WHERE id = $1`, [
+      campus.rows[0].id,
+    ]);
+    try {
+      const result = await getBlessBoardCatalogueContext(pool, organizationId);
+      assert.equal(result.ok, false);
+      assert.equal(result.status, STATUS.PRIMARY_BRANCH_INACTIVE);
+    } finally {
+      await pool.query(`DELETE FROM blessboard.branches WHERE id = $1`, [campus.rows[0].id]);
+      await pool.query(
+        `UPDATE blessboard.branches
+            SET is_primary = true, status = 'active'
+          WHERE church_id = $1 AND branch_type = 'hq'`,
+        [churchId]
+      );
+    }
+  });
+
   it("missing HQ branch is handled explicitly", async () => {
     requireDb();
     const platform = await provisionPlatformTenant(pool, {

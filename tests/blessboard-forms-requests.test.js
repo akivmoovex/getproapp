@@ -15,8 +15,17 @@ const request = require("supertest");
 
 const {
   resetFoundationDatabase,
+  foundationDbUnavailableSkipReason,
   createFoundationPool,
 } = require("./helpers/foundationDb");
+const {
+  V5_IDENTITY_KEY: IDENTITY_KEY,
+  DEFAULT_V5_COOKIE,
+  baseV5TestEnv,
+  makeTenant,
+  extractSetCookie: extractCookie,
+  joinCookieHeader: cookieHeader,
+} = require("./helpers/blessboardV5Fixtures");
 const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
@@ -25,7 +34,6 @@ const { createBlessBoardUser } = require("../src/blessboard/services/createBless
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
-const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
   submitMemberRegistration,
@@ -53,47 +61,15 @@ const {
   listMemberRequests,
 } = require("../src/blessboard/services/formsRequestsService");
 
-const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
 const HOST_A = "fr-a.blessboard.org";
 const ROOT = path.join(__dirname, "..");
 
-function extractCookie(res, name) {
-  const raw = res.headers["set-cookie"];
-  if (!raw) return null;
-  const list = Array.isArray(raw) ? raw : [raw];
-  for (const line of list) {
-    if (String(line).startsWith(`${name}=`)) {
-      return String(line).split(";")[0].slice(name.length + 1);
-    }
-  }
-  return null;
-}
-
-function cookieHeader(...parts) {
-  return parts.filter(Boolean).join("; ");
-}
-
 function baseEnv(overrides) {
-  return {
-    NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
-    SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
-    SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
-    BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
+  return baseV5TestEnv({
     BLESSBOARD_MEDIA_FORCE_LOCAL: "1",
     ...overrides,
-  };
-}
-
-function makeTenant(church, org, primaryBranch) {
-  return {
-    resolved: true,
-    organization: { id: org.id },
-    church: { id: church.id, displayName: church.display_name || church.displayName },
-    primaryBranch: { id: primaryBranch.id },
-    hqBranch: { id: primaryBranch.id },
-  };
+  });
 }
 
 describe("blessboard forms-requests", () => {
@@ -297,7 +273,7 @@ describe("blessboard forms-requests", () => {
 
   function skipIfNeeded(t) {
     if (skipSuite) {
-      t.skip(`setup failed: ${skipReason}`);
+      t.skip(foundationDbUnavailableSkipReason(skipReason));
       return true;
     }
     return false;
@@ -404,12 +380,83 @@ describe("blessboard forms-requests", () => {
       branchId: branchA.id,
       scopeBranchId: campusBranch.id,
       actorUserId: campusAdmin.user.id,
-      tenant: makeTenant(churchA, orgA.records.organization, campusBranch),
+      tenant: makeTenant(churchA, orgA.records.organization, campusBranch, branchA),
       title: "Wrong",
       audience: "members",
     });
     assert.equal(wrongBranch.ok, false);
     assert.equal(wrongBranch.status, STATUS.FORBIDDEN);
+  });
+
+  it("denies branch admin publish/update of church-wide resources and forms", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const hqTenant = makeTenant(churchA, orgA.records.organization, branchA);
+    const campusTenant = makeTenant(churchA, orgA.records.organization, campusBranch, branchA);
+
+    const churchWideResource = await createResource(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      actorUserId: hqAdmin.user.id,
+      tenant: hqTenant,
+      title: "Church-wide welcome pack",
+      description: "HQ owned",
+      audience: "members",
+      mediaAssetId: privateMediaId,
+    });
+    assert.equal(churchWideResource.ok, true, churchWideResource.reason);
+    assert.equal(churchWideResource.resource.branchId, null);
+
+    const baPublish = await publishResource(pool, {
+      id: churchWideResource.resource.id,
+      churchId: churchA.id,
+      actorUserId: campusAdmin.user.id,
+      tenant: campusTenant,
+      scopeBranchId: campusBranch.id,
+    });
+    assert.equal(baPublish.ok, false);
+    assert.equal(baPublish.status, STATUS.FORBIDDEN);
+    assert.equal(baPublish.reason, "church_wide_denied");
+
+    const stillDraft = await getResource(pool, {
+      id: churchWideResource.resource.id,
+      churchId: churchA.id,
+    });
+    assert.equal(stillDraft.ok, true);
+    assert.equal(stillDraft.resource.status, "draft");
+
+    const churchWideForm = await createForm(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      actorUserId: hqAdmin.user.id,
+      tenant: hqTenant,
+      title: "Church-wide connect card",
+      schema: {
+        version: 1,
+        fields: [{ key: "full_name", type: "text", label: "Full name", required: true, maxLength: 100 }],
+      },
+    });
+    assert.equal(churchWideForm.ok, true, churchWideForm.reason);
+    assert.equal(churchWideForm.form.branchId, null);
+
+    const baFormPublish = await publishForm(pool, {
+      id: churchWideForm.form.id,
+      churchId: churchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant: hqTenant,
+      scopeBranchId: branchA.id,
+    });
+    assert.equal(baFormPublish.ok, false);
+    assert.equal(baFormPublish.status, STATUS.FORBIDDEN);
+    assert.equal(baFormPublish.reason, "church_wide_denied");
+
+    const hqPublish = await publishResource(pool, {
+      id: churchWideResource.resource.id,
+      churchId: churchA.id,
+      actorUserId: hqAdmin.user.id,
+      tenant: hqTenant,
+    });
+    assert.equal(hqPublish.ok, true, hqPublish.reason);
+    assert.equal(hqPublish.resource.status, "published");
   });
 
   it("accepts member form submissions and enforces submission privacy", async (t) => {
@@ -589,7 +636,7 @@ describe("blessboard forms-requests", () => {
       churchId: churchA.id,
       branchId: campusBranch.id,
       actorUserId: campusAdmin.user.id,
-      tenant: makeTenant(churchA, orgA.records.organization, campusBranch),
+      tenant: makeTenant(churchA, orgA.records.organization, campusBranch, branchA),
       scopeBranchId: campusBranch.id,
     });
     assert.equal(campusCannotSee.ok, true);

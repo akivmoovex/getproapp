@@ -13,8 +13,16 @@ const request = require("supertest");
 
 const {
   resetFoundationDatabase,
+  foundationDbUnavailableSkipReason,
   createFoundationPool,
 } = require("./helpers/foundationDb");
+const {
+  V5_IDENTITY_KEY: IDENTITY_KEY,
+  V5_DEPLOYMENT_CODE: DEPLOYMENT,
+  DEFAULT_V5_COOKIE,
+  baseV5TestEnv,
+  makeTenant,
+} = require("./helpers/blessboardV5Fixtures");
 const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
@@ -23,7 +31,6 @@ const { createBlessBoardUser } = require("../src/blessboard/services/createBless
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
-const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const {
   submitMemberRegistration,
   approveMemberRegistration,
@@ -37,6 +44,9 @@ const {
 } = require("../src/platform/services/auditEventService");
 const { getHqOperationalReport } = require("../src/blessboard/services/hqReportsService");
 const {
+  assignOrganizationPlan,
+} = require("../src/platform/services/entitlementService");
+const {
   createGivingEntry,
   submitGivingEntry,
   approveGivingEntry,
@@ -46,31 +56,12 @@ const {
   updateMemberRequestStatus,
 } = require("../src/blessboard/services/formsRequestsService");
 
-const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
 const HOST_A = "ra-a.blessboard.org";
 const ROOT = path.join(__dirname, "..");
-const DEPLOYMENT = "blessboard-org-v5";
 
 function baseEnv(overrides) {
-  return {
-    NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: DEPLOYMENT,
-    SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
-    SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
-    BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
-    ...overrides,
-  };
-}
-
-function makeTenant(church, org, primaryBranch) {
-  return {
-    resolved: true,
-    organization: { id: org.id },
-    church: { id: church.id, displayName: church.display_name || church.displayName },
-    primaryBranch: { id: primaryBranch.id },
-    hqBranch: { id: primaryBranch.id },
-  };
+  return baseV5TestEnv(overrides);
 }
 
 describe("blessboard reports-audit", () => {
@@ -204,7 +195,7 @@ describe("blessboard reports-audit", () => {
 
   function skipIfNeeded(t) {
     if (skipSuite) {
-      t.skip(`setup failed: ${skipReason}`);
+      t.skip(foundationDbUnavailableSkipReason(skipReason));
       return true;
     }
     return false;
@@ -442,9 +433,13 @@ describe("blessboard reports-audit", () => {
       .set("Cookie", cookie);
     assert.equal(consolidated.status, 200);
     assert.match(consolidated.text, /data-bb-hq-reports="1"/);
+    assert.match(consolidated.text, /data-bb-batch="fg-08a"/);
     assert.match(consolidated.text, /data-bb-stitch-reports="57-hq-consolidated-analytics"/);
+    assert.match(consolidated.text, /data-bb-stitch-desktop="2a577dc15d4342acb152f16aed21c267"/);
+    assert.match(consolidated.text, /data-bb-report-tier="basic"/);
     assert.match(consolidated.text, /data-bb-report-links="1"/);
     assert.match(consolidated.text, /data-bb-report-link="attendance"/);
+    assert.match(consolidated.text, /data-bb-report-link-tier="growth-required"/);
     assert.match(consolidated.text, /data-bb-report-link="giving"/);
     assert.match(consolidated.text, /href="\/hq\/reports\/attendance/);
     assert.match(consolidated.text, /href="\/hq\/reports\/giving/);
@@ -460,6 +455,39 @@ describe("blessboard reports-audit", () => {
     assert.doesNotMatch(consolidated.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(consolidated.text, /donor@|payer name|card number|iban[\s:]/i);
 
+    const attFoundation = await request(app)
+      .get(`/hq/reports/attendance?month=${yearMonth}&branch=hq`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(attFoundation.status, 200);
+    assert.match(attFoundation.text, /data-bb-hq-attendance-report="1"/);
+    assert.match(attFoundation.text, /data-bb-batch="fg-08a"/);
+    assert.match(attFoundation.text, /data-bb-att-report-entitlement="denied"/);
+    assert.match(attFoundation.text, /data-bb-report-tier="basic"/);
+    assert.match(attFoundation.text, /data-bb-att-report-denied="1"/);
+    assert.match(attFoundation.text, /data-bb-att-report-unavailable="1"/);
+    assert.match(attFoundation.text, /data-bb-att-unavailable="trend"/);
+    assert.doesNotMatch(attFoundation.text, /data-bb-hq-att-report-filter="1"/);
+    assert.doesNotMatch(attFoundation.text, /data-bb-att-report-summary="1"/);
+    assert.doesNotMatch(attFoundation.text, /chart\.js|<canvas|projectedGrowth|\+12%|YoY/i);
+    assert.doesNotMatch(attFoundation.text, new RegExp(churchA.id, "i"));
+
+    const assigned = await assignOrganizationPlan(pool, {
+      organizationId: orgA.records.organization.id,
+      planKey: "growth",
+      productKey: "blessboard",
+      status: "active",
+    });
+    assert.equal(assigned.ok, true, assigned.reason);
+
+    const hubGrowth = await request(app)
+      .get(`/hq/reports?month=${yearMonth}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(hubGrowth.status, 200);
+    assert.match(hubGrowth.text, /data-bb-report-tier="advanced"/);
+    assert.match(hubGrowth.text, /data-bb-report-link-tier="advanced"/);
+
     const att = await request(app)
       .get(`/hq/reports/attendance?month=${yearMonth}&branch=hq`)
       .set("Host", HOST_A)
@@ -467,6 +495,7 @@ describe("blessboard reports-audit", () => {
     assert.equal(att.status, 200);
     assert.match(att.text, /data-bb-hq-attendance-report="1"/);
     assert.match(att.text, /data-bb-stitch-attendance-report="57-hq-consolidated-analytics"/);
+    assert.match(att.text, /data-bb-att-report-entitlement="advanced"/);
     assert.match(att.text, /data-bb-att-report-scope="branch"/);
     assert.match(att.text, /data-bb-hq-att-report-filter="1"/);
     assert.match(att.text, /name="month"/);
@@ -475,6 +504,7 @@ describe("blessboard reports-audit", () => {
     assert.match(att.text, /data-bb-att-report-summary="1"|data-bb-att-report-empty="1"/);
     assert.match(att.text, /data-bb-att-report-unavailable="1"/);
     assert.match(att.text, /data-bb-att-unavailable="trend"/);
+    assert.doesNotMatch(att.text, /data-bb-att-report-denied="1"/);
     assert.doesNotMatch(att.text, /chart\.js|<canvas|projectedGrowth|\+12%|YoY/i);
     assert.doesNotMatch(att.text, new RegExp(churchA.id, "i"));
 
@@ -484,6 +514,7 @@ describe("blessboard reports-audit", () => {
       .set("Cookie", cookie);
     assert.equal(attAll.status, 200);
     assert.match(attAll.text, /data-bb-att-report-scope="church"/);
+    assert.match(attAll.text, /data-bb-att-report-entitlement="advanced"/);
     assert.match(attAll.text, /data-bb-att-report-summary="1"|data-bb-att-report-empty="1"/);
     if (/data-bb-att-report-summary="1"/.test(attAll.text)) {
       assert.match(attAll.text, /data-bb-attendance-grand-total=/);
@@ -534,6 +565,7 @@ describe("blessboard reports-audit", () => {
     });
     assert.equal(filtered.ok, true, filtered.reason);
     assert.equal(filtered.report.branchFilter.branchKey, "hq");
+    assert.equal(filtered.report.reportTier, "advanced");
     const usdFiltered = filtered.report.giving.byCurrency.find((g) => g.currency === "USD");
     assert.ok(usdFiltered);
     assert.equal(usdFiltered.totalAmount, "25.50");
@@ -543,6 +575,15 @@ describe("blessboard reports-audit", () => {
       .set("Host", HOST_A)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
     assert.ok(denied.status === 403 || denied.status === 303, `status=${denied.status}`);
+
+    const attBranchDenied = await request(app)
+      .get("/hq/reports/attendance")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
+    assert.ok(
+      attBranchDenied.status === 403 || attBranchDenied.status === 303,
+      `status=${attBranchDenied.status}`
+    );
   });
 
   it("serves HQ audit trail with filters, pagination, and privacy-safe HTML", async (t) => {

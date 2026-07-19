@@ -7,6 +7,7 @@
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
+const { renderV5Ejs } = require("./v5EjsTemplateCache");
 
 const TENANT_LANDING_TEMPLATE = path.join(
   __dirname,
@@ -18,8 +19,6 @@ const TENANT_LANDING_TEMPLATE = path.join(
   "v5",
   "tenant-landing.ejs"
 );
-
-const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
 let tenantLandingSource = null;
 function loadTenantLandingSource() {
@@ -34,9 +33,7 @@ function loadTenantLandingSource() {
  * @param {object} data
  */
 function renderApexView(relativePath, data) {
-  const filename = path.join(VIEWS_ROOT, relativePath);
-  const source = fs.readFileSync(filename, "utf8");
-  return ejs.render(source, data, { filename });
+  return renderV5Ejs(relativePath, data);
 }
 
 function escapeHtml(value) {

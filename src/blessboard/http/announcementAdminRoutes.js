@@ -26,7 +26,10 @@ const {
   updateAnnouncement,
   listAdminAnnouncements,
   getAdminAnnouncement,
+  presentAnnouncementForRender,
 } = require("../services/announcementsService");
+const { createMediaUploadService } = require("../media/mediaUploadService");
+const { sendPrivateMediaDownload } = require("./sendPrivateMediaDownload");
 const {
   listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
@@ -41,6 +44,7 @@ const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard",
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PAGE_SIZE = 20;
+const MAX_LIST_PAGE = 10000;
 
 /**
  * @param {string} relativePath
@@ -144,6 +148,7 @@ function createAnnouncementAdminRouter(deps) {
   const variant = deps.variant === "branch" ? "branch" : "hq";
   const isProduction = String(env.NODE_ENV || "") === "production";
   const shellKind = variant === "hq" ? "hq" : "branch";
+  const mediaService = deps.mediaService || createMediaUploadService(env);
   const loginNextDefault =
     variant === "hq" ? "/hq/announcements" : "/branch-admin/announcements";
   const productPolicy = {
@@ -343,7 +348,7 @@ function createAnnouncementAdminRouter(deps) {
       );
       return null;
     }
-    return loaded.item;
+    return presentAnnouncementForRender(loaded.item);
   }
 
   function registerRoutes(mountPrefix, isBranchScoped) {
@@ -353,7 +358,8 @@ function createAnnouncementAdminRouter(deps) {
       const q = String((req.query && req.query.q) || "").slice(0, 100);
       const status = String((req.query && req.query.status) || "").trim().toLowerCase();
       const audience = String((req.query && req.query.audience) || "").trim().toLowerCase();
-      const page = Math.max(Number((req.query && req.query.page) || 1) || 1, 1);
+      let page = Math.max(Number((req.query && req.query.page) || 1) || 1, 1);
+      if (page > MAX_LIST_PAGE) page = MAX_LIST_PAGE;
       const limit = PAGE_SIZE;
       const offset = (page - 1) * limit;
       const listed = await listAdminAnnouncements(getPool(), {
@@ -494,6 +500,46 @@ function createAnnouncementAdminRouter(deps) {
       );
       return res.status(200).type("html").send(html);
     });
+
+    router.get(
+      `${mountPrefix}/:id/attachments/:attachmentId/file`,
+      rejectApex,
+      gate,
+      async (req, res) => {
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        const id = String(req.params.id || "");
+        const attachmentId = String(req.params.attachmentId || "");
+        if (!UUID_RE.test(id) || !UUID_RE.test(attachmentId)) {
+          return res.status(404).type("text").send("Not found");
+        }
+        const item = await loadScopedAnnouncement(req, res, scope, id);
+        if (!item) return;
+        const att = (item.attachments || []).find(
+          (row) => row && String(row.id) === attachmentId
+        );
+        if (!att || !att.mediaAssetId) {
+          return res.status(404).type("text").send("Not found");
+        }
+        const delivered = await mediaService.loadMediaBytes(getPool(), {
+          assetId: att.mediaAssetId,
+          churchId: scope.churchId,
+          allowPrivate: true,
+          viewerChurchId: scope.churchId,
+        });
+        if (!delivered.ok) {
+          return res.status(404).type("text").send("Not found");
+        }
+        if (delivered.redirectUrl) {
+          res.setHeader("Cache-Control", "private, no-store");
+          return res.redirect(302, delivered.redirectUrl);
+        }
+        if (!delivered.buffer) {
+          return res.status(404).type("text").send("Not found");
+        }
+        return sendPrivateMediaDownload(res, delivered);
+      }
+    );
 
     router.get(`${mountPrefix}/:id/edit`, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res);

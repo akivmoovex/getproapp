@@ -221,9 +221,9 @@ async function recordAuditEvent(db, input) {
         redactedKeys: sanitized.redactedKeys,
       };
     });
-  } catch (err) {
-    const msg = err && err.message ? String(err.message) : "error";
-    return { ok: false, status: STATUS.LOOKUP_ERROR, event: null, reason: msg };
+  } catch {
+    // Never surface SQL / driver payloads to callers (may be logged or rendered).
+    return { ok: false, status: STATUS.LOOKUP_ERROR, event: null, reason: "db_error" };
   }
 }
 
@@ -287,12 +287,12 @@ async function listOrganizationAuditEvents(db, input) {
         nextBefore: page.nextBefore,
       };
     });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
       status: STATUS.LOOKUP_ERROR,
       events: [],
-      reason: err && err.message ? String(err.message) : "error",
+      reason: "db_error",
     };
   }
 }

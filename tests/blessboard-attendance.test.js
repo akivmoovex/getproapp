@@ -12,8 +12,17 @@ const request = require("supertest");
 
 const {
   resetFoundationDatabase,
+  foundationDbUnavailableSkipReason,
   createFoundationPool,
 } = require("./helpers/foundationDb");
+const {
+  V5_IDENTITY_KEY: IDENTITY_KEY,
+  DEFAULT_V5_COOKIE,
+  baseV5TestEnv,
+  makeTenant,
+  extractSetCookie: extractCookie,
+  joinCookieHeader: cookieHeader,
+} = require("./helpers/blessboardV5Fixtures");
 const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
@@ -22,7 +31,6 @@ const { createBlessBoardUser } = require("../src/blessboard/services/createBless
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
-const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
   STATUS,
@@ -37,47 +45,13 @@ const {
   getMonthlyAttendanceSummary,
 } = require("../src/blessboard/services/attendanceService");
 
-const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
 const HOST_A = "att-a.blessboard.org";
 const HOST_B = "att-b.blessboard.org";
 const ROOT = path.join(__dirname, "..");
 
-function extractCookie(res, name) {
-  const raw = res.headers["set-cookie"];
-  if (!raw) return null;
-  const list = Array.isArray(raw) ? raw : [raw];
-  for (const line of list) {
-    if (String(line).startsWith(`${name}=`)) {
-      return String(line).split(";")[0].slice(name.length + 1);
-    }
-  }
-  return null;
-}
-
-function cookieHeader(...pairs) {
-  return pairs.filter(Boolean).join("; ");
-}
-
 function baseEnv(overrides) {
-  return {
-    NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
-    SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
-    SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
-    BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
-    ...overrides,
-  };
-}
-
-function makeTenant(church, org, primaryBranch) {
-  return {
-    resolved: true,
-    organization: { id: org.id },
-    church: { id: church.id, displayName: church.display_name || church.displayName },
-    primaryBranch: { id: primaryBranch.id },
-    hqBranch: { id: primaryBranch.id },
-  };
+  return baseV5TestEnv(overrides);
 }
 
 describe("blessboard attendance", () => {
@@ -220,7 +194,7 @@ describe("blessboard attendance", () => {
 
   function skipIfNeeded(t) {
     if (skipSuite) {
-      t.skip(`setup failed: ${skipReason}`);
+      t.skip(foundationDbUnavailableSkipReason(skipReason));
       return true;
     }
     return false;
@@ -436,7 +410,7 @@ describe("blessboard attendance", () => {
 
   it("scopes branch admin to assigned branch only", async (t) => {
     if (skipIfNeeded(t)) return;
-    const campusTenant = makeTenant(churchA, orgA.records.organization, campusBranch);
+    const campusTenant = makeTenant(churchA, orgA.records.organization, campusBranch, branchA);
     const hqTenant = makeTenant(churchA, orgA.records.organization, branchA);
 
     const created = await createAttendanceEvent(pool, {

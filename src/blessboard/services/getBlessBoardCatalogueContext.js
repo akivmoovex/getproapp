@@ -12,6 +12,7 @@ const STATUS = Object.freeze({
   ORGANIZATION_NOT_FOUND: "organization_not_found",
   CHURCH_MISSING: "church_missing",
   CHURCH_INACTIVE: "church_inactive",
+  ENVIRONMENT_MISMATCH: "environment_mismatch",
   HQ_BRANCH_MISSING: "hq_branch_missing",
   HQ_BRANCH_INACTIVE: "hq_branch_inactive",
   PRIMARY_BRANCH_MISSING: "primary_branch_missing",
@@ -105,6 +106,17 @@ async function getBlessBoardCatalogueContext(db, organizationId) {
         ok: false,
         status: STATUS.CHURCH_INACTIVE,
         message: "church_inactive",
+        context,
+      };
+    }
+
+    const orgEnv = String(context.organization.dataEnvironment || "");
+    const churchEnv = String(context.church.dataEnvironment || "");
+    if (!orgEnv || !churchEnv || orgEnv !== churchEnv) {
+      return {
+        ok: false,
+        status: STATUS.ENVIRONMENT_MISMATCH,
+        message: "environment_mismatch",
         context,
       };
     }

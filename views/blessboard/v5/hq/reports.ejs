@@ -21,12 +21,20 @@
         return found || branchFilter;
       })()
     : (churchDisplayName || 'All branches');
+  var tier = typeof reportTier !== 'undefined' && reportTier
+    ? reportTier
+    : (report.reportTier || 'basic');
+  var advancedOk = tier === 'advanced';
 %>
 
 <section
   class="bb-hq-reports"
   data-bb-hq-reports="1"
+  data-bb-batch="fg-08a"
   data-bb-stitch-reports="57-hq-consolidated-analytics"
+  data-bb-stitch-desktop="2a577dc15d4342acb152f16aed21c267"
+  data-bb-stitch-mobile="06489c79d0d04a429e57eba5c717ba47"
+  data-bb-report-tier="<%= tier %>"
   data-bb-reports-scope="<%= branchFilter ? 'branch' : 'church' %>"
   aria-label="HQ reports"
 >
@@ -55,16 +63,30 @@
 
   <section class="bb-hq-report-links" data-bb-report-links="1" aria-labelledby="bb-hq-report-links-heading">
     <h2 id="bb-hq-report-links-heading" class="bb-hq-section-title">Report destinations</h2>
-    <p class="bb-hq-hint">Open detailed monthly reports that already exist for this church. No new generators are added here.</p>
+    <p class="bb-hq-hint">
+      Foundation includes this hub snapshot. The detailed attendance report requires Growth
+      (<code>advanced_reports</code>). Giving detail remains available on its existing route.
+    </p>
     <ul class="bb-hq-report-cards">
       <li>
-        <a class="bb-hq-report-card" href="<%= attHref %>" data-bb-report-link="attendance">
+        <a
+          class="bb-hq-report-card<%= advancedOk ? '' : ' bb-hq-report-card--gated' %>"
+          href="<%= attHref %>"
+          data-bb-report-link="attendance"
+          data-bb-report-link-tier="<%= advancedOk ? 'advanced' : 'growth-required' %>"
+        >
           <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
           <span class="bb-hq-report-card__body">
             <span class="bb-hq-report-card__title">Attendance report</span>
-            <span class="bb-hq-report-card__meta">Monthly headcount by category and branch</span>
+            <span class="bb-hq-report-card__meta">
+              <%= advancedOk
+                ? 'Monthly headcount by category and branch'
+                : 'Growth advanced reports — open for entitlement status' %>
+            </span>
           </span>
-          <span class="bb-hq-chip">Live</span>
+          <span class="bb-hq-chip<%= advancedOk ? '' : ' bb-hq-chip--muted' %>">
+            <%= advancedOk ? 'Growth' : 'Growth required' %>
+          </span>
         </a>
       </li>
       <li>

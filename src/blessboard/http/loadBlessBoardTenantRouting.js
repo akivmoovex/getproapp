@@ -50,6 +50,7 @@ function logShadow(req, decision, logFn) {
           : "n/a"
       : "unavailable",
     path: String((req && (req.path || req.url)) || "").split("?")[0] || null,
+    requestId: (req && req.requestId) || null,
   });
   const out = typeof logFn === "function" ? logFn : (msg) => console.log(msg);
   out(`[blessboard-tenant-routing] ${line}`);
@@ -72,6 +73,7 @@ function logAuthoritative(req, decision, logFn) {
     httpStatus: decision.httpStatus || null,
     churchKey: decision.tenant && decision.tenant.church ? decision.tenant.church.key : null,
     path: String((req && (req.path || req.url)) || "").split("?")[0] || null,
+    requestId: (req && req.requestId) || null,
   });
   const out = typeof logFn === "function" ? logFn : (msg) => console.log(msg);
   out(`[blessboard-tenant-routing] ${line}`);

@@ -18,7 +18,10 @@ const {
   listMemberAnnouncements,
   getMemberAnnouncement,
   markAnnouncementRead,
+  presentAnnouncementForRender,
 } = require("../services/announcementsService");
+const { createMediaUploadService } = require("../media/mediaUploadService");
+const { sendPrivateMediaDownload } = require("./sendPrivateMediaDownload");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -48,6 +51,7 @@ function createAnnouncementMemberRouter(deps) {
   const env = deps.env || process.env;
   const sendUnavailable = deps.sendUnavailable;
   const isProduction = String(env.NODE_ENV || "") === "production";
+  const mediaService = deps.mediaService || createMediaUploadService(env);
 
   const router = express.Router();
   const requireMember = createRequireActiveMember({ getPool });
@@ -169,12 +173,62 @@ function createAnnouncementMemberRouter(deps) {
     const html = renderMemberView(
       "announcements/member-detail.ejs",
       shellLocals(req, res, "announcements", {
-        item: loaded.item,
+        item: presentAnnouncementForRender(loaded.item),
         marked: String((req.query && req.query.read) || "") === "1",
       })
     );
     return res.status(200).type("html").send(html);
   });
+
+  router.get(
+    "/member/announcements/:id/attachments/:attachmentId/file",
+    rejectApex,
+    requireMember,
+    async (req, res) => {
+      const scope = memberScope(req);
+      if (!scope) {
+        return res.status(403).type("text").send("You do not have member access to this site.");
+      }
+      const id = String(req.params.id || "");
+      const attachmentId = String(req.params.attachmentId || "");
+      if (!UUID_RE.test(id) || !UUID_RE.test(attachmentId)) {
+        return res.status(404).type("text").send("Not found");
+      }
+      const loaded = await getMemberAnnouncement(getPool(), {
+        ...scope,
+        id,
+        recordSeen: false,
+      });
+      if (!loaded.ok || !loaded.item) {
+        const code =
+          loaded.status === STATUS.FORBIDDEN ? 403 : loaded.status === STATUS.NOT_FOUND ? 404 : 503;
+        return res.status(code).type("text").send("Not found");
+      }
+      const att = (loaded.item.attachments || []).find(
+        (row) => row && String(row.id) === attachmentId
+      );
+      if (!att || !att.mediaAssetId) {
+        return res.status(404).type("text").send("Not found");
+      }
+      const delivered = await mediaService.loadMediaBytes(getPool(), {
+        assetId: att.mediaAssetId,
+        churchId: scope.churchId,
+        allowPrivate: true,
+        viewerChurchId: scope.churchId,
+      });
+      if (!delivered.ok) {
+        return res.status(404).type("text").send("Not found");
+      }
+      if (delivered.redirectUrl) {
+        res.setHeader("Cache-Control", "private, no-store");
+        return res.redirect(302, delivered.redirectUrl);
+      }
+      if (!delivered.buffer) {
+        return res.status(404).type("text").send("Not found");
+      }
+      return sendPrivateMediaDownload(res, delivered);
+    }
+  );
 
   router.post("/member/announcements/:id/read", rejectApex, requireMember, async (req, res) => {
     const submitted = req.body && req.body[CSRF_FIELD];

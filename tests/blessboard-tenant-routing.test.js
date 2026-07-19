@@ -332,6 +332,95 @@ describe("blessboard tenant routing http", () => {
     }
   });
 
+  it("suspended church does not render tenant", async () => {
+    requireDb();
+    await pool.query(
+      `UPDATE blessboard.churches SET status = 'suspended' WHERE church_key = 'route-tenant'`
+    );
+    try {
+      const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "authoritative" });
+      const res = await request(app).get("/").set("Host", TENANT_HOST);
+      assert.equal(res.status, 503);
+      assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
+    } finally {
+      await pool.query(
+        `UPDATE blessboard.churches SET status = 'active' WHERE church_key = 'route-tenant'`
+      );
+    }
+  });
+
+  it("organization/church environment mismatch does not render tenant", async () => {
+    requireDb();
+    await pool.query(
+      `UPDATE platform.organizations
+          SET data_environment = 'production'
+        WHERE organization_key = 'route-tenant'`
+    );
+    try {
+      const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "authoritative" });
+      const res = await request(app).get("/").set("Host", TENANT_HOST);
+      assert.equal(res.status, 503);
+      assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
+    } finally {
+      await pool.query(
+        `UPDATE platform.organizations
+            SET data_environment = 'testing'
+          WHERE organization_key = 'route-tenant'`
+      );
+    }
+  });
+
+  it("inactive primary branch does not render tenant", async () => {
+    requireDb();
+    await pool.query(
+      `UPDATE blessboard.branches b
+          SET status = 'inactive'
+         FROM blessboard.churches c
+        WHERE b.church_id = c.id
+          AND c.church_key = 'route-tenant'
+          AND b.is_primary = true`
+    );
+    try {
+      const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "authoritative" });
+      const res = await request(app).get("/").set("Host", TENANT_HOST);
+      assert.equal(res.status, 503);
+      assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
+    } finally {
+      await pool.query(
+        `UPDATE blessboard.branches b
+            SET status = 'active'
+           FROM blessboard.churches c
+          WHERE b.church_id = c.id
+            AND c.church_key = 'route-tenant'
+            AND b.is_primary = true`
+      );
+    }
+  });
+
+  it("Host header case, trailing dot, and port still resolve the same tenant", async () => {
+    requireDb();
+    const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "authoritative" });
+    for (const host of [
+      TENANT_HOST.toUpperCase(),
+      `${TENANT_HOST}.`,
+      `${TENANT_HOST}:443`,
+      `${TENANT_HOST.toUpperCase()}:8080`,
+    ]) {
+      const res = await request(app).get("/").set("Host", host);
+      assert.equal(res.status, 200, `host=${host}`);
+      assert.match(res.text, new RegExp(CHURCH_NAME));
+    }
+  });
+
+  it("unknown host does not fall back to another tenant", async () => {
+    requireDb();
+    const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "authoritative" });
+    const res = await request(app).get("/").set("Host", "unknown.blessboard.org");
+    assert.equal(res.status, 404);
+    assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
+    assert.doesNotMatch(res.text, new RegExp(BRANCH_NAME));
+  });
+
   it("missing church does not render tenant", async () => {
     requireDb();
     // Soft-delete by renaming organization link: create orphan domain org without church

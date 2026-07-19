@@ -359,6 +359,7 @@ body.bb-mp-drawer-open {
   max-width: 56rem;
   margin: 0 auto;
   padding: 1.35rem 1.15rem 6.5rem;
+  scroll-margin-top: 5rem;
 }
 
 .bb-mp-main:focus {
@@ -1008,9 +1009,11 @@ a.bb-mp-dash-ann__card:hover {
 
 .bb-mp-page-head__title {
   margin: 0 0 0.4rem;
+  min-width: 0;
   font-size: clamp(1.55rem, 3vw, 1.9rem);
   letter-spacing: -0.02em;
   color: var(--bb-violet);
+  overflow-wrap: anywhere;
 }
 
 .bb-mp-lede--tight {

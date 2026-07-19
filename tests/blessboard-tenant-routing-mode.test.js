@@ -257,6 +257,23 @@ describe("evaluateTenantRoute policy", () => {
     assert.equal(d.outcome, OUTCOME.UNAVAILABLE);
   });
 
+  it("environment_mismatch → 503", () => {
+    const d = evaluateTenantRoute({
+      routingMode: "authoritative",
+      isApex: false,
+      path: "/",
+      platformHostContext: basePlatform,
+      blessBoardCatalogueContext: {
+        enabled: true,
+        applicable: true,
+        resultType: "environment_mismatch",
+      },
+    });
+    assert.equal(d.outcome, OUTCOME.UNAVAILABLE);
+    assert.equal(d.httpStatus, 503);
+    assert.equal(d.reason, "environment_mismatch");
+  });
+
   it("hq_branch_missing → 503", () => {
     const d = evaluateTenantRoute({
       routingMode: "authoritative",

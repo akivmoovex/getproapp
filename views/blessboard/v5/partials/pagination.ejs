@@ -9,7 +9,7 @@
 <%
   var _page = Math.max(1, parseInt(typeof page !== 'undefined' ? page : 1, 10) || 1);
   var _total = Math.max(1, parseInt(typeof totalPages !== 'undefined' ? totalPages : 1, 10) || 1);
-  var _base = typeof baseHref !== 'undefined' && baseHref ? String(baseHref) : '#';
+  var _base = typeof baseHref !== 'undefined' && baseHref ? String(baseHref).trim() : '';
   var _label = typeof label !== 'undefined' && label ? label : 'Pagination';
   function buildHref(p) {
     var parts = [];
@@ -24,7 +24,7 @@
     return _base.indexOf('?') >= 0 ? (_base + '&' + q) : (_base + '?' + q);
   }
 %>
-<% if (_total > 1) { %>
+<% if (_total > 1 && _base && _base !== '#') { %>
 <nav class="bb-ds-pagination" aria-label="<%= _label %>" data-bb-ds="pagination">
   <p class="bb-ds-pagination__status">Page <%= _page %> of <%= _total %></p>
   <ul class="bb-ds-pagination__list">

@@ -381,8 +381,9 @@ function getPgPool() {
       `[getpro] PostgreSQL pool: max=${runtime.max} idleTimeoutMs=${runtime.idleTimeoutMillis} connectionTimeoutMs=${runtime.connectionTimeoutMillis}`
     );
     pool.on("error", (err) => {
+      const { formatSafePoolErrorMessage } = require("../../platform/http/v5SafeLogging");
       // eslint-disable-next-line no-console
-      console.error("[getpro] PostgreSQL pool error:", err.message);
+      console.error("[getpro] PostgreSQL pool error:", formatSafePoolErrorMessage(err));
     });
   }
   return pool;

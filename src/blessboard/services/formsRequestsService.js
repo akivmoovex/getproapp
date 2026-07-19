@@ -111,7 +111,14 @@ async function authorizeActor(client, input) {
 function assertAdminScope(authz, input, entityBranchId) {
   if (!authz.ok) return { ok: false, status: STATUS.FORBIDDEN, reason: authz.reason };
   if (authz.mode === "branch") {
-    if (input.scopeBranchId && entityBranchId && String(input.scopeBranchId) !== String(entityBranchId)) {
+    // Match announcements/participation: branch admins cannot manage church-wide rows.
+    if (entityBranchId == null || entityBranchId === "") {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "church_wide_denied" };
+    }
+    if (
+      input.scopeBranchId &&
+      String(input.scopeBranchId) !== String(entityBranchId)
+    ) {
       return { ok: false, status: STATUS.FORBIDDEN, reason: "branch_scope" };
     }
   }

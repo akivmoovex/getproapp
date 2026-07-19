@@ -45,13 +45,13 @@
   }
   function featureLabel(key) {
     var k = String(key || '');
-    if (k === 'max_branches') return 'Branches';
-    if (k === 'max_users') return 'Users';
-    if (k === 'max_staff_accounts') return 'Staff accounts';
+    if (k === 'max_branches') return 'Active branches';
+    if (k === 'max_users') return 'Members';
+    if (k === 'max_staff_accounts') return 'Admin / leadership accounts';
     if (k === 'basic_reports') return 'Basic reports';
     if (k === 'advanced_reports') return 'Advanced reports';
-    if (k === 'custom_domain') return 'Custom domain';
-    if (k === 'custom_email') return 'Custom email';
+    if (k === 'custom_domain') return 'Custom organization domain';
+    if (k === 'custom_email') return 'Hosted mailboxes';
     return k;
   }
   function noticeText(code) {
@@ -429,11 +429,11 @@
         <div class="bb-pa-entitlements-usage" data-bb-pa-usage="1">
           <h3 class="bb-pa-subsection-title">Usage vs limits</h3>
           <ul class="bb-pa-usage">
-            <li data-bb-usage="branches">Branches · <strong><%= use.branches %></strong> / <%= formatLimit(use.branchLimit) %></li>
-            <li data-bb-usage="staff">Staff accounts · <strong><%= use.staffAccounts %></strong> / <%= formatLimit(use.staffLimit) %></li>
-            <li data-bb-usage="users">Users · <strong><%= use.users %></strong> / <%= formatLimit(use.userLimit) %></li>
-            <li data-bb-usage="custom_domain">Custom domain · <%= use.customDomain ? 'Entitled' : 'Not entitled' %></li>
-            <li data-bb-usage="custom_email">Custom email · <%= use.customEmail ? 'Entitled' : 'Not entitled' %></li>
+            <li data-bb-usage="branches">Active branches · <strong><%= use.branches %></strong> / <%= formatLimit(use.branchLimit) %></li>
+            <li data-bb-usage="staff">Admin / leadership accounts · <strong><%= use.staffAccounts %></strong> / <%= formatLimit(use.staffLimit) %></li>
+            <li data-bb-usage="users">Members · <strong><%= use.users %></strong> / <%= formatLimit(use.userLimit) %></li>
+            <li data-bb-usage="custom_domain">Custom organization domain · <%= use.customDomain ? 'Entitled' : 'Not entitled' %></li>
+            <li data-bb-usage="custom_email">Hosted mailboxes · <%= use.customEmail ? 'Entitled' : 'Not entitled' %></li>
             <li data-bb-usage="advanced_reports">Advanced reports · <%= use.advancedReports ? 'Entitled' : 'Not entitled' %></li>
           </ul>
         </div>

@@ -789,6 +789,11 @@ html.bb-ds-modal-open body {
   margin: 0 0 var(--bb-space-4);
 }
 
+.bb-ds-page-header__copy {
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
 .bb-ds-page-header__eyebrow {
   margin: 0 0 var(--bb-space-1);
   font-size: var(--bb-text-label);
@@ -800,10 +805,12 @@ html.bb-ds-modal-open body {
 
 .bb-ds-page-header__title {
   margin: 0;
+  min-width: 0;
   font-size: var(--bb-text-h2);
   line-height: var(--bb-leading-snug);
   font-weight: var(--bb-font-weight-bold);
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
 }
 
 .bb-ds-page-header__subtitle {
@@ -811,6 +818,7 @@ html.bb-ds-modal-open body {
   max-width: 40rem;
   color: var(--bb-color-muted);
   font-size: var(--bb-text-body);
+  overflow-wrap: anywhere;
 }
 
 .bb-ds-page-header__actions {

@@ -76,8 +76,9 @@ function createSupabaseStorage(opts) {
         }
       }
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        const err = new Error(`supabase_upload_failed:${res.status}:${text.slice(0, 200)}`);
+        // Do not embed API response bodies (may include object keys/paths).
+        await res.text().catch(() => "");
+        const err = new Error(`supabase_upload_failed:${res.status}`);
         err.code = "UPLOAD_FAILED";
         throw err;
       }
@@ -97,8 +98,8 @@ function createSupabaseStorage(opts) {
         body: JSON.stringify({ prefixes: [storageKey] }),
       });
       if (!res.ok && res.status !== 404) {
-        const text = await res.text().catch(() => "");
-        const err = new Error(`supabase_delete_failed:${res.status}:${text.slice(0, 200)}`);
+        await res.text().catch(() => "");
+        const err = new Error(`supabase_delete_failed:${res.status}`);
         err.code = "DELETE_FAILED";
         throw err;
       }

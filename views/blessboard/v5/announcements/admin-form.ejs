@@ -1,7 +1,7 @@
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-start') %>
+<%- include('../partials/hq-shell-start', { loadMediaPicker: true }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-start') %>
+<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true }) %>
 <% } %>
 <%
   var isHq = shellKind === 'hq';
@@ -258,7 +258,7 @@
             <li class="bb-ann-attachments__item">
               <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
               <% if (att.mediaAssetId) { %>
-              <a href="/_bb/media/<%= att.mediaAssetId %>" data-bb-ann-attachment-download="1">
+              <a href="<%= basePath %>/<%= item.id %>/attachments/<%= att.id %>/file" data-bb-ann-attachment-download="1">
                 <%= att.originalFilename || att.mediaAssetId %>
               </a>
               <% } else { %>
@@ -410,7 +410,7 @@
 </script>
 
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-end') %>
+<%- include('../partials/hq-shell-end', { loadMediaPicker: true }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-end') %>
+<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true }) %>
 <% } %>

@@ -367,6 +367,7 @@ body.bb-tp-body {
   min-width: 0;
   min-height: 50vh;
   outline: none;
+  scroll-margin-top: var(--bb-header-h, 5rem);
 }
 
 .bb-tp-container {

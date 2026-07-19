@@ -44,6 +44,9 @@ async function recreateDatabase(dbName) {
 
 /**
  * Minimal V4-shaped tables for fixture migration tests.
+ * Intentionally includes public.tenants / public.church_* — V4 source shape only.
+ * Do not reuse this schema as a BlessBoard V5 app fixture (V5 uses platform.* + blessboard.*).
+ * plan_code DEFAULT 'free' mirrors legacy V4 columns; seed rows may use other codes (e.g. growth).
  * @param {import('pg').Pool} pool
  */
 async function installMinimalV4Schema(pool) {

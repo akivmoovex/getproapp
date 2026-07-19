@@ -12,6 +12,7 @@ const request = require("supertest");
 
 const {
   resetFoundationDatabase,
+  foundationDbUnavailableSkipReason,
   createFoundationPool,
 } = require("./helpers/foundationDb");
 const { migrate } = require("../db/scripts/lib/migrator");
@@ -276,7 +277,7 @@ describe("blessboard member portal", () => {
 
   function skipIfNeeded(t) {
     if (skipSuite) {
-      t.skip(`setup failed: ${skipReason}`);
+      t.skip(foundationDbUnavailableSkipReason(skipReason));
       return true;
     }
     return false;

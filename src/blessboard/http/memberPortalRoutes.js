@@ -5,9 +5,6 @@
  * Access is membership-gated — admin roles alone never grant entry.
  */
 
-const fs = require("fs");
-const path = require("path");
-const ejs = require("ejs");
 const express = require("express");
 
 const { createRequireActiveMember } = require("./requireActiveMember");
@@ -35,6 +32,7 @@ const {
   listMemberEvents,
   listMemberMinistries,
 } = require("../services/participationService");
+const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const { safeExternalUrl } = require("./tenantPublicSafe");
 const {
   buildMemberShellLocals,
@@ -43,7 +41,6 @@ const {
   PORTAL_MOBILE_TABS,
 } = require("./memberShellLocals");
 
-const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const DASHBOARD_PREVIEW_LIMIT = 3;
 
 /**
@@ -119,12 +116,21 @@ function formatDashDateParts(value) {
  */
 async function loadMemberDashboardPreviews(pool, scope) {
   const [announcementsListed, eventsListed, ministriesListed] = await Promise.all([
-    listMemberAnnouncements(pool, { ...scope, limit: DASHBOARD_PREVIEW_LIMIT, offset: 0 }),
-    listMemberEvents(pool, scope),
+    listMemberAnnouncements(pool, {
+      ...scope,
+      limit: DASHBOARD_PREVIEW_LIMIT,
+      offset: 0,
+      includeAttachments: false,
+    }),
+    listMemberEvents(pool, {
+      ...scope,
+      includeRegistrationStats: false,
+      upcomingOnly: true,
+      limit: DASHBOARD_PREVIEW_LIMIT,
+    }),
     listMemberMinistries(pool, scope),
   ]);
 
-  const now = Date.now();
   const announcements = (announcementsListed.ok ? announcementsListed.items || [] : [])
     .slice(0, DASHBOARD_PREVIEW_LIMIT)
     .map((item) => ({
@@ -136,11 +142,6 @@ async function loadMemberDashboardPreviews(pool, scope) {
     }));
 
   const events = (eventsListed.ok ? eventsListed.items || [] : [])
-    .filter((item) => {
-      if (!item || !item.startsAt) return false;
-      const t = new Date(item.startsAt).getTime();
-      return !Number.isNaN(t) && t >= now;
-    })
     .slice(0, DASHBOARD_PREVIEW_LIMIT)
     .map((item) => {
       const when = formatDashDateParts(item.startsAt);
@@ -265,9 +266,7 @@ function mapMemberProfileFieldErrors(reason) {
  * @param {object} data
  */
 function renderMemberView(relativePath, data) {
-  const filename = path.join(VIEWS_ROOT, relativePath);
-  const source = fs.readFileSync(filename, "utf8");
-  return ejs.render(source, data, { filename });
+  return renderV5Ejs(relativePath, data);
 }
 
 /**

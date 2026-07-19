@@ -5,10 +5,8 @@
  * Attendance/giving report screens use live aggregates only — no charts, no donor PII.
  */
 
-const fs = require("fs");
-const path = require("path");
-const ejs = require("ejs");
 const express = require("express");
+const { renderV5Ejs } = require("./v5EjsTemplateCache");
 
 const {
   createRequireBlessBoardTenantRole,
@@ -18,6 +16,7 @@ const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   STATUS,
   getHqOperationalReport,
+  resolveChurchReportTier,
 } = require("../services/hqReportsService");
 const {
   getMonthlyAttendanceSummary,
@@ -38,15 +37,12 @@ const {
   STATUS: AUDIT_STATUS,
 } = require("../../platform/services/auditEventService");
 
-const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const AUDIT_PAGE_SIZE = 50;
 const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;
 const ENTITY_TYPE_RE = /^[a-z][a-z0-9_]{1,63}$/;
 
 function renderView(relativePath, data) {
-  const filename = path.join(VIEWS_ROOT, relativePath);
-  const source = fs.readFileSync(filename, "utf8");
-  return ejs.render(source, data, { filename });
+  return renderV5Ejs(relativePath, data);
 }
 
 function escapeHtml(value) {
@@ -66,7 +62,7 @@ function sendControlled(req, res, status, message) {
   }
   return res.status(status).type("html").send(`<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"/><title>Reports</title>
-<link rel="stylesheet" href="/blessboard/v5/hq-admin.css"/></head>
+<link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=46"/></head>
 <body class="bb-hq-body"><main><h1>Unavailable</h1><p>${safe}</p></main></body></html>`);
 }
 
@@ -223,13 +219,16 @@ function createHqReportsRouter(deps) {
     const branch = await resolveOptionalBranch(req, res, tenant.church.id);
     if (!branch.ok) return;
 
-    const result = await getHqOperationalReport(getPool(), {
-      churchId: tenant.church.id,
-      actorUserId: session.userId,
-      tenant,
-      yearMonth,
-      branchId: branch.branchId,
-    });
+    const [result, branches] = await Promise.all([
+      getHqOperationalReport(getPool(), {
+        churchId: tenant.church.id,
+        actorUserId: session.userId,
+        tenant,
+        yearMonth,
+        branchId: branch.branchId,
+      }),
+      listBlessBoardBranches(getPool(), tenant.church.id),
+    ]);
     if (!result.ok) {
       return sendControlled(
         req,
@@ -238,12 +237,13 @@ function createHqReportsRouter(deps) {
         "Reports are temporarily unavailable."
       );
     }
-    const branches = await listBlessBoardBranches(getPool(), tenant.church.id);
+    const reportTier = result.report.reportTier || "basic";
     const html = renderView(
       "hq/reports.ejs",
       shellLocals(req, res, "reports", {
         pageTitle: "HQ reports",
         report: result.report,
+        reportTier,
         yearMonth: result.report.yearMonth,
         branchFilter: branch.branchKey,
         branches: branches.ok ? branches.branches : [],
@@ -262,13 +262,39 @@ function createHqReportsRouter(deps) {
     const branch = await resolveOptionalBranch(req, res, tenant.church.id);
     if (!branch.ok) return;
 
-    const summary = await getMonthlyAttendanceSummary(getPool(), {
-      churchId: tenant.church.id,
-      branchId: branch.branchId,
-      yearMonth,
-      actorUserId: session.userId,
-      tenant,
-    });
+    const tierResult = await resolveChurchReportTier(getPool(), tenant.church.id);
+    const reportTier =
+      tierResult.ok && tierResult.reportTier ? tierResult.reportTier : "basic";
+    const advancedEntitled = reportTier === "advanced";
+
+    if (!advancedEntitled) {
+      const branches = await listBlessBoardBranches(getPool(), tenant.church.id);
+      const html = renderView(
+        "hq/attendance-report.ejs",
+        shellLocals(req, res, "attendance", {
+          pageTitle: "Attendance report",
+          summary: null,
+          reportTier,
+          advancedEntitled: false,
+          yearMonth,
+          branchFilter: branch.branchKey,
+          branchDisplayName: branch.branchDisplayName,
+          branches: branches.ok ? branches.branches : [],
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+
+    const [summary, branches] = await Promise.all([
+      getMonthlyAttendanceSummary(getPool(), {
+        churchId: tenant.church.id,
+        branchId: branch.branchId,
+        yearMonth,
+        actorUserId: session.userId,
+        tenant,
+      }),
+      listBlessBoardBranches(getPool(), tenant.church.id),
+    ]);
     if (!summary.ok) {
       return sendControlled(
         req,
@@ -277,12 +303,13 @@ function createHqReportsRouter(deps) {
         "Attendance report is temporarily unavailable."
       );
     }
-    const branches = await listBlessBoardBranches(getPool(), tenant.church.id);
     const html = renderView(
       "hq/attendance-report.ejs",
       shellLocals(req, res, "attendance", {
         pageTitle: "Attendance report",
         summary: summary.summary,
+        reportTier,
+        advancedEntitled: true,
         yearMonth,
         branchFilter: branch.branchKey,
         branchDisplayName: branch.branchDisplayName,
@@ -302,13 +329,16 @@ function createHqReportsRouter(deps) {
     const branch = await resolveOptionalBranch(req, res, tenant.church.id);
     if (!branch.ok) return;
 
-    const summary = await getMonthlyGivingSummary(getPool(), {
-      churchId: tenant.church.id,
-      branchId: branch.branchId,
-      yearMonth,
-      actorUserId: session.userId,
-      tenant,
-    });
+    const [summary, branches] = await Promise.all([
+      getMonthlyGivingSummary(getPool(), {
+        churchId: tenant.church.id,
+        branchId: branch.branchId,
+        yearMonth,
+        actorUserId: session.userId,
+        tenant,
+      }),
+      listBlessBoardBranches(getPool(), tenant.church.id),
+    ]);
     if (!summary.ok) {
       return sendControlled(
         req,
@@ -317,7 +347,6 @@ function createHqReportsRouter(deps) {
         "Giving report is temporarily unavailable."
       );
     }
-    const branches = await listBlessBoardBranches(getPool(), tenant.church.id);
     const html = renderView(
       "hq/giving-report.ejs",
       shellLocals(req, res, "giving", {

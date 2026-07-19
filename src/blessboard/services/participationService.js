@@ -262,9 +262,30 @@ async function listMemberEvents(db, input) {
   if (!churchId || !branchId || !memberId) {
     return { ok: false, status: STATUS.INVALID_INPUT, items: [], reason: "scope" };
   }
+  const includeRegistrationStats = input && input.includeRegistrationStats === false ? false : true;
+  const upcomingOnly = Boolean(input && input.upcomingOnly);
+  const limit =
+    input && input.limit != null ? Math.min(Math.max(Number(input.limit) || 0, 1), 100) : null;
   try {
     return await withClient(db, async (client) => {
-      const events = await repo.listPublishedEventsForBranch(client, { churchId, branchId });
+      const events = await repo.listPublishedEventsForBranch(client, {
+        churchId,
+        branchId,
+        upcomingOnly,
+        limit,
+      });
+      if (!includeRegistrationStats) {
+        return {
+          ok: true,
+          status: STATUS.OK,
+          items: events.map((event) => ({
+            ...event,
+            registration: null,
+            registeredCount: null,
+            spotsRemaining: null,
+          })),
+        };
+      }
       const items = [];
       for (const event of events) {
         const registration = await repo.findEventRegistration(client, memberId, event.id);

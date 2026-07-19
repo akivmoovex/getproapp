@@ -5,10 +5,8 @@
  * Branch identity comes from authoritative hostname tenant context — never query strings.
  */
 
-const fs = require("fs");
-const path = require("path");
-const ejs = require("ejs");
 const express = require("express");
+const { renderV5Ejs, VIEWS_ROOT } = require("./v5EjsTemplateCache");
 
 const {
   createRequireBlessBoardTenantRole,
@@ -33,16 +31,12 @@ const {
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 
-const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
-
 /**
  * @param {string} relativePath
  * @param {object} data
  */
 function renderBranchAdminView(relativePath, data) {
-  const filename = path.join(VIEWS_ROOT, relativePath);
-  const source = fs.readFileSync(filename, "utf8");
-  return ejs.render(source, data, { filename });
+  return renderV5Ejs(relativePath, data);
 }
 
 /**
@@ -76,7 +70,7 @@ function sendLoginUnavailable(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sign-in unavailable · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css" />
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=36" />
 </head>
 <body class="bb-ba-body">
   <main class="bb-ba-login-unavailable">

@@ -9,8 +9,10 @@
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="description" content="BlessBoard — one digital home for your church." />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=5" />
+  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=7" />
+  <% if (typeof activeNav !== 'undefined' && activeNav === 'account') { %>
   <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=6" />
+  <% } %>
 </head>
 <body class="bb-apex-body" data-bb-shell="apex" data-bb-product="blessboard-v5" data-bb-page="<%= activeNav %>">
   <a class="bb-apex-skip" href="#bb-apex-main">Skip to content</a>
@@ -57,7 +59,7 @@
     </div>
   </header>
 
-  <div class="bb-apex-drawer" id="bb-apex-drawer" hidden data-bb-apex-drawer="1">
+  <div class="bb-apex-drawer" id="bb-apex-drawer" hidden inert data-bb-apex-drawer="1">
     <button type="button" class="bb-apex-drawer__backdrop" data-bb-apex-drawer-close aria-label="Close menu"></button>
     <div class="bb-apex-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
       <button type="button" class="bb-apex-menu-btn bb-apex-drawer__close" data-bb-apex-drawer-close aria-label="Close menu">
@@ -70,4 +72,4 @@
     </div>
   </div>
 
-  <main class="bb-apex-main" id="bb-apex-main">
+  <main class="bb-apex-main" id="bb-apex-main" tabindex="-1">

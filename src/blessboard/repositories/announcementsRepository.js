@@ -490,7 +490,7 @@ async function findBranchScope(client, branchId) {
  */
 async function findMediaAssetMeta(client, mediaAssetId) {
   const { rows } = await client.query(
-    `SELECT id, church_id, status
+    `SELECT id, church_id, status, visibility
        FROM blessboard.media_assets
       WHERE id = $1`,
     [mediaAssetId]

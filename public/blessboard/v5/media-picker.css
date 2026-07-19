@@ -45,7 +45,9 @@
   border: 0;
   padding: 0;
   border-radius: var(--bb-radius, 1rem);
-  width: min(42rem, calc(100vw - 1.5rem));
+  box-sizing: border-box;
+  width: min(42rem, calc(100% - 1.5rem));
+  max-width: calc(100vw - 1.5rem);
   max-height: min(90vh, 40rem);
   background: var(--bb-color-surface, #fff);
   color: var(--bb-color-ink, #1a1c1e);
@@ -746,7 +748,9 @@
   border: 0;
   padding: 0;
   border-radius: var(--bb-radius, 1rem);
-  width: min(26rem, calc(100vw - 1.5rem));
+  box-sizing: border-box;
+  width: min(26rem, calc(100% - 1.5rem));
+  max-width: calc(100vw - 1.5rem);
   background: var(--bb-color-surface, #fff);
   box-shadow: var(--bb-shadow-md, 0 16px 40px rgba(26, 28, 30, 0.3));
   font-family: var(--bb-font-sans, "Hanken Grotesk", system-ui, sans-serif);

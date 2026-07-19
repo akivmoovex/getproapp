@@ -100,19 +100,20 @@ describe("blessboard apex marketing batch 2b", () => {
     requireDb();
     const app = makeApp();
     const paths = [
-      ["/features", /Built for the/, /data-bb-apex-page="features"/],
-      ["/for-churches", /Sacred Clarity/, /data-bb-apex-page="for-churches"/],
-      ["/pricing", /Transparent Pricing/, /data-bb-plan="growth"/],
-      ["/directory", /Find a church/, /data-bb-apex-page="directory"/],
-      ["/register-church", /Register Your Church/, /data-bb-register-mode="enquiry"/],
+      ["/features", /Built for the/, /data-bb-apex-page="features"/, /data-bb-batch="fg-01"/],
+      ["/for-churches", /Sacred Clarity/, /data-bb-apex-page="for-churches"/, null],
+      ["/pricing", /Transparent Pricing/, /data-bb-plan="growth"/, null],
+      ["/directory", /Find a church/, /data-bb-apex-page="directory"/, null],
+      ["/register-church", /Register Your Church/, /data-bb-register-mode="enquiry"/, null],
     ];
 
-    for (const [pathName, bodyRe, markerRe] of paths) {
+    for (const [pathName, bodyRe, markerRe, batchRe] of paths) {
       const res = await request(app).get(pathName).set("Host", "blessboard.org");
       assert.equal(res.status, 200, pathName);
       assert.match(res.text, /data-bb-shell="apex"/);
       assert.match(res.text, bodyRe);
       assert.match(res.text, markerRe);
+      if (batchRe) assert.match(res.text, batchRe);
       assert.match(res.text, /href="\/features"/);
       assert.match(res.text, /href="\/for-churches"/);
       assert.match(res.text, /href="\/pricing"/);
@@ -124,6 +125,15 @@ describe("blessboard apex marketing batch 2b", () => {
       assert.doesNotMatch(res.text, /Request Sent!|confirmation email has been sent/i);
       assert.doesNotMatch(res.text, /method="post"[^>]*action="\/register-church"/i);
     }
+
+    const features = await request(app).get("/features").set("Host", "blessboard.org");
+    assert.match(features.text, /Website &amp; Public Presence|Website & Public Presence/);
+    assert.match(features.text, /Member Engagement/);
+    assert.match(features.text, /Operational Excellence/);
+    assert.match(features.text, /Enterprise Scaling/);
+    assert.match(features.text, /no payment gateway in V5/i);
+    assert.match(features.text, /apex\.css\?v=7/);
+    assert.doesNotMatch(features.text, /\$42,?850|\+12%\s*vs/i);
   });
 
   it("directory empty state and search form are present without fake listings", async () => {
@@ -168,6 +178,7 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.doesNotMatch(res.text, /href="\/contact"/);
     assert.doesNotMatch(res.text, /USD 4\.90|USD 8\.90|USD 14\.90/);
     assert.doesNotMatch(res.text, /\bProfessional\b|\bPartner\b/);
+    assert.doesNotMatch(res.text, /\bFree\b/);
   });
 
   it("marketing routes are apex-only (404 on non-apex host text)", async () => {

@@ -346,6 +346,7 @@ function comparePlatformAndLegacy(platformHostContext, legacy, blessBoardCatalog
 function logPlatformHostComparison(req, comparison, logFn) {
   if (shouldSkipDiagnosticLog(req)) return;
   const catalogue = req.blessBoardCatalogueContext || null;
+  // Keys / codes only — omit UUIDs from console diagnostics.
   const line = JSON.stringify({
     event: "platform_host_comparison",
     hostname: (req.platformHostContext && req.platformHostContext.hostname) || null,
@@ -356,15 +357,10 @@ function logPlatformHostComparison(req, comparison, logFn) {
     resolvedDeploymentCode: comparison.resolvedDeploymentCode || null,
     platformProductKey: comparison.platformProductKey || null,
     platformOrganizationKey: comparison.platformOrganizationKey || null,
-    platformOrganizationId: comparison.platformOrganizationId || null,
-    platformChurchId: comparison.platformChurchId || null,
     legacyTenantKey: comparison.legacyTenantKey || null,
     blessBoardCatalogueResultType: catalogue && catalogue.resultType ? catalogue.resultType : null,
-    churchId: catalogue && catalogue.church ? catalogue.church.id : null,
     churchKey: catalogue && catalogue.church ? catalogue.church.churchKey : null,
-    hqBranchId: catalogue && catalogue.hqBranch ? catalogue.hqBranch.id : null,
     hqBranchKey: catalogue && catalogue.hqBranch ? catalogue.hqBranch.branchKey : null,
-    primaryBranchId: catalogue && catalogue.primaryBranch ? catalogue.primaryBranch.id : null,
     primaryBranchKey:
       catalogue && catalogue.primaryBranch ? catalogue.primaryBranch.branchKey : null,
     dataEnvironment:
@@ -375,6 +371,7 @@ function logPlatformHostComparison(req, comparison, logFn) {
         ? req.platformHostContext.resolution.organization.dataEnvironment
         : null),
     path: String((req && (req.path || req.url)) || "").split("?")[0] || null,
+    requestId: (req && req.requestId) || null,
   });
   const out = typeof logFn === "function" ? logFn : (msg) => console.log(msg);
   out(`[platform-host-comparison] ${line}`);

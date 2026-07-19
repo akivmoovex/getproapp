@@ -4,6 +4,7 @@
  * BlessBoard V5 tenant login transfer services (hash-only; single-use; ≤5 minutes).
  */
 
+const pathPosix = require("path").posix;
 const {
   generateSessionToken,
   hashSessionToken,
@@ -58,15 +59,32 @@ function sanitizeReturnPath(path) {
   if (!s) return null;
   if (!s.startsWith("/") || s.startsWith("//")) return null;
   if (/[\s\\?]/.test(s)) return null;
-  const pathOnly = s.split("#")[0];
+
+  let decoded = s;
+  try {
+    decoded = decodeURIComponent(s);
+  } catch {
+    return null;
+  }
+  if (decoded.includes("\\") || decoded.includes("\0")) return null;
+
+  const pathOnly = decoded.split("#")[0].split("?")[0];
+  if (!pathOnly.startsWith("/") || pathOnly.startsWith("//")) return null;
+
+  // Collapse . / .. safely; reject escapes outside a single rooted path.
+  const normalized = pathPosix.normalize(pathOnly);
+  if (!normalized.startsWith("/") || normalized.startsWith("//")) return null;
+  if (normalized.includes("..")) return null;
+
+  // Align with platform.auth_transfers return_path CHECK + member portal next.
   if (
-    !/^\/(hq|branch-admin|member|account)(\/|$)/.test(pathOnly) &&
-    pathOnly !== "/account"
+    !/^\/(hq|branch-admin|member|account)(\/|$)/.test(normalized) &&
+    normalized !== "/account"
   ) {
     return null;
   }
-  if (pathOnly.length > 200) return null;
-  return pathOnly;
+  if (normalized.length > 200) return null;
+  return normalized;
 }
 
 /**

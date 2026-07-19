@@ -145,7 +145,7 @@
         <% if (collageMedia.length) { %>
         <div class="bb-tp-about-story__media<%= collageMedia.length > 1 ? ' bb-tp-about-story__media--collage' : '' %>">
           <% collageMedia.forEach(function (url) { %>
-          <img class="bb-tp-media" src="<%= url %>" alt="" loading="lazy" decoding="async" />
+          <img class="bb-tp-media" src="<%= url %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
           <% }) %>
         </div>
         <% } %>
@@ -167,7 +167,7 @@
           <% if (missionSection.heading) { %><h3 class="bb-tp-purpose-card__title"><%= missionSection.heading %></h3><% } %>
           <% if (missionSection.bodyText) { %><p class="bb-tp-body"><%= missionSection.bodyText %></p><% } %>
           <% if (missionSection.mediaUrl) { %>
-          <img class="bb-tp-media" src="<%= missionSection.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+          <img class="bb-tp-media" src="<%= missionSection.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
           <% } %>
         </article>
         <% } %>
@@ -177,7 +177,7 @@
           <% if (visionSection.heading) { %><h3 class="bb-tp-purpose-card__title"><%= visionSection.heading %></h3><% } %>
           <% if (visionSection.bodyText) { %><p class="bb-tp-body"><%= visionSection.bodyText %></p><% } %>
           <% if (visionSection.mediaUrl) { %>
-          <img class="bb-tp-media" src="<%= visionSection.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+          <img class="bb-tp-media" src="<%= visionSection.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
           <% } %>
         </article>
         <% } %>
@@ -211,7 +211,7 @@
     <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %> bb-tp-about__block" data-section="<%= section.sectionKey %>">
       <% if (section.mediaUrl) { %>
       <div class="bb-tp-content-block__media">
-        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" loading="lazy" decoding="async" />
+        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
       </div>
       <% } %>
       <div class="bb-tp-content-block__copy">

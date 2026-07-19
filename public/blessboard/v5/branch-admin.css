@@ -333,6 +333,7 @@ body.bb-ba-drawer-open {
   max-width: 64rem;
   margin: 0 auto;
   padding: 1.35rem 1.15rem 5.5rem;
+  scroll-margin-top: 5rem;
 }
 
 .bb-ba-page {
@@ -396,9 +397,11 @@ body.bb-ba-drawer-open {
 .bb-ba-page-head__title,
 .bb-ba-main > h1 {
   margin: 0 0 0.5rem;
+  min-width: 0;
   font-size: clamp(1.5rem, 3vw, 1.85rem);
   letter-spacing: -0.02em;
   color: var(--bb-ink);
+  overflow-wrap: anywhere;
 }
 
 .bb-ba-lede {
@@ -3127,6 +3130,12 @@ body.bb-ba-drawer-open {
   gap: 0.5rem;
 }
 
+@media (max-width: 899px) {
+  .bb-ann-dl div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .bb-ann-dl dt {
   margin: 0;
   color: var(--bb-muted);
@@ -3135,6 +3144,8 @@ body.bb-ba-drawer-open {
 
 .bb-ann-dl dd {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .bb-ann-detail .bb-ds-modal__actions {

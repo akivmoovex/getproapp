@@ -10,6 +10,7 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("./authorizeBlessBoardTenantAccess");
+const { safeExternalUrl } = require("../http/tenantPublicSafe");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -102,6 +103,19 @@ function httpsOrMediaUrl(value, field) {
   } catch {
     return { ok: false, reason: `${field}_url` };
   }
+}
+
+/**
+ * Defense-in-depth for announcement templates: never emit unsafe href protocols
+ * even if a row bypassed write-time httpsOrMediaUrl.
+ * @param {object|null|undefined} item
+ */
+function presentAnnouncementForRender(item) {
+  if (!item || typeof item !== "object") return item;
+  return {
+    ...item,
+    actionUrl: safeExternalUrl(item.actionUrl),
+  };
 }
 
 function requirePublishConfirm(existingStatus, nextStatus, confirmPublish, enforce) {
@@ -417,7 +431,12 @@ async function createAnnouncement(db, input) {
           return { ok: false, status: STATUS.INVALID_INPUT, item: null, reason: "media_asset_id" };
         }
         const asset = await repo.findMediaAssetMeta(client, mediaId);
-        if (!asset || String(asset.church_id) !== churchId || asset.status !== "active") {
+        if (
+          !asset ||
+          String(asset.church_id) !== churchId ||
+          asset.status !== "active" ||
+          String(asset.visibility || "") !== "private"
+        ) {
           return { ok: false, status: STATUS.INVALID_INPUT, item: null, reason: "media_asset" };
         }
         await repo.insertAttachment(client, {
@@ -549,7 +568,8 @@ async function updateAnnouncement(db, id, patch) {
           if (
             !asset ||
             String(asset.church_id) !== String(result.item.churchId) ||
-            asset.status !== "active"
+            asset.status !== "active" ||
+            String(asset.visibility || "") !== "private"
           ) {
             return { ok: false, status: STATUS.INVALID_INPUT, item: null, reason: "media_asset" };
           }
@@ -691,6 +711,7 @@ async function listMemberAnnouncements(db, input) {
   if (!churchId || !branchId || !memberId) {
     return { ok: false, status: STATUS.INVALID_INPUT, items: [], reason: "scope" };
   }
+  const includeAttachments = input && input.includeAttachments === false ? false : true;
   try {
     return await withClient(db, async (client) => {
       const items = await repo.listMemberAnnouncements(client, {
@@ -700,6 +721,13 @@ async function listMemberAnnouncements(db, input) {
         limit: input.limit,
         offset: input.offset,
       });
+      if (!includeAttachments) {
+        return {
+          ok: true,
+          status: STATUS.OK,
+          items: items.map((item) => ({ ...item, attachments: [] })),
+        };
+      }
       const out = [];
       for (const item of items) {
         const attachments = await repo.listAttachments(client, item.id);
@@ -807,14 +835,18 @@ async function markAnnouncementRead(db, input) {
 async function removeAnnouncementAttachment(db, input) {
   const announcementId = String((input && input.announcementId) || "").trim();
   const attachmentId = String((input && input.attachmentId) || "").trim();
+  const churchId = String((input && input.churchId) || "").trim();
   if (!UUID_RE.test(announcementId) || !UUID_RE.test(attachmentId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "id" };
+  }
+  if (!UUID_RE.test(churchId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "church" };
   }
   try {
     return await withClient(db, async (client) => {
       const existing = await repo.findAnnouncementById(client, announcementId);
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND };
-      if (input.churchId && String(input.churchId) !== String(existing.churchId)) {
+      if (String(churchId) !== String(existing.churchId)) {
         return { ok: false, status: STATUS.FORBIDDEN, reason: "church" };
       }
       const removed = await repo.deleteAttachment(client, { announcementId, attachmentId });
@@ -832,6 +864,8 @@ module.exports = {
   DEFAULT_PRODUCT_POLICY,
   evaluateAnnouncementCapability,
   requirePublishConfirm,
+  httpsOrMediaUrl,
+  presentAnnouncementForRender,
   createAnnouncement,
   updateAnnouncement,
   listAdminAnnouncements,

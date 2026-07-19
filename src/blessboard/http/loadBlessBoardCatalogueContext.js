@@ -18,6 +18,7 @@ const RESULT_TYPES = Object.freeze({
   PLATFORM_NOT_RESOLVED: "platform_not_resolved",
   CHURCH_MISSING: "church_missing",
   CHURCH_INACTIVE: "church_inactive",
+  ENVIRONMENT_MISMATCH: "environment_mismatch",
   HQ_BRANCH_MISSING: "hq_branch_missing",
   HQ_BRANCH_INACTIVE: "hq_branch_inactive",
   PRIMARY_BRANCH_MISSING: "primary_branch_missing",
@@ -29,6 +30,7 @@ const SERVICE_STATUS_TO_RESULT = Object.freeze({
   [CATALOGUE_STATUS.OK]: RESULT_TYPES.RESOLVED,
   [CATALOGUE_STATUS.CHURCH_MISSING]: RESULT_TYPES.CHURCH_MISSING,
   [CATALOGUE_STATUS.CHURCH_INACTIVE]: RESULT_TYPES.CHURCH_INACTIVE,
+  [CATALOGUE_STATUS.ENVIRONMENT_MISMATCH]: RESULT_TYPES.ENVIRONMENT_MISMATCH,
   [CATALOGUE_STATUS.HQ_BRANCH_MISSING]: RESULT_TYPES.HQ_BRANCH_MISSING,
   [CATALOGUE_STATUS.HQ_BRANCH_INACTIVE]: RESULT_TYPES.HQ_BRANCH_INACTIVE,
   [CATALOGUE_STATUS.PRIMARY_BRANCH_MISSING]: RESULT_TYPES.PRIMARY_BRANCH_MISSING,
@@ -122,23 +124,21 @@ function logBlessBoardCatalogueContextDiagnostic(req, context, logFn) {
   if (shouldSkipDiagnosticLog(req)) return;
   if (!context || context.resultType !== RESULT_TYPES.CATALOGUE_LOOKUP_ERROR) return;
   const platform = req.platformHostContext && req.platformHostContext.resolution;
+  // Keys only — omit UUIDs from console diagnostics (IDs remain on req context).
   const line = JSON.stringify({
     event: "blessboard_catalogue_context",
     hostname: (req.platformHostContext && req.platformHostContext.hostname) || null,
-    organizationId: context.organizationId || null,
     organizationKey:
       platform && platform.organization && platform.organization.key
         ? platform.organization.key
         : null,
-    churchId: context.church ? context.church.id : null,
     churchKey: context.church ? context.church.churchKey : null,
-    hqBranchId: context.hqBranch ? context.hqBranch.id : null,
     hqBranchKey: context.hqBranch ? context.hqBranch.branchKey : null,
-    primaryBranchId: context.primaryBranch ? context.primaryBranch.id : null,
     primaryBranchKey: context.primaryBranch ? context.primaryBranch.branchKey : null,
     resultType: context.resultType,
     dataEnvironment: context.church ? context.church.dataEnvironment : null,
     path: String((req && (req.path || req.url)) || "").split("?")[0] || null,
+    requestId: (req && req.requestId) || null,
   });
   const out = typeof logFn === "function" ? logFn : (msg) => console.log(msg);
   out(`[blessboard-catalogue-context] ${line}`);

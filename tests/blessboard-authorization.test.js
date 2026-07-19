@@ -30,6 +30,8 @@ const {
 const {
   buildBlessBoardTenantContext,
 } = require("../src/blessboard/http/buildBlessBoardTenantContext");
+const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
+const { revokeV5Session } = require("../src/platform/session/revokeV5Session");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
@@ -254,6 +256,7 @@ describe("blessboard tenant authorization http", () => {
       users.campus = await makeUser("campus@example.org", "Campus Admin");
       users.inactive = await makeUser("inactive@example.org", "Inactive User");
       users.suspendedRole = await makeUser("suspended-role@example.org", "Suspended Role User");
+      users.member = await makeUser("member@example.org", "Active Member");
 
       assert.equal(
         (
@@ -330,6 +333,23 @@ describe("blessboard tenant authorization http", () => {
         `UPDATE blessboard.user_roles SET status = 'suspended'
            WHERE user_id = $1`,
         [users.suspendedRole.id]
+      );
+
+      const memberRow = await pool.query(
+        `INSERT INTO blessboard.members
+           (church_id, user_id, first_name, last_name, preferred_name,
+            email_normalized, email_display, phone_normalized, phone_display, status)
+         VALUES
+           ($1, $2, 'Active', 'Member', 'Mem',
+            'member@example.org', 'member@example.org', '+15550001111', '+1 555 000 1111', 'active')
+         RETURNING id`,
+        [churchA.id, users.member.id]
+      );
+      await pool.query(
+        `INSERT INTO blessboard.member_branch_memberships
+           (member_id, branch_id, membership_status, is_primary, joined_at)
+         VALUES ($1, $2, 'active', true, now())`,
+        [memberRow.rows[0].id, hqBranchA.id]
       );
 
       app = createV5FoundationApp({
@@ -607,5 +627,170 @@ describe("blessboard tenant authorization http", () => {
     assert.ok(Array.isArray(result.context.effectiveRoles));
     assert.equal(result.context.effectiveRoles[0].roleKey, "church_hq_admin");
     assert.equal(Object.prototype.hasOwnProperty.call(result.context, "password_hash"), false);
+  });
+
+  it("matrix: member cannot open branch-admin, HQ, or platform admin by direct URL", async () => {
+    requireDb();
+    const cookie = await sessionCookieFor(users.member);
+    const ba = await request(app)
+      .get("/branch-admin")
+      .set("Host", TENANT_A_HOST)
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(ba.status, 403);
+
+    const hq = await request(app)
+      .get("/hq")
+      .set("Host", TENANT_A_HOST)
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(hq.status, 403);
+
+    const pa = await request(app)
+      .get("/admin")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(pa.status, 403);
+  });
+
+  it("matrix: admin roles alone never grant member portal; member can open /member", async () => {
+    requireDb();
+    const memberCookie = await sessionCookieFor(users.member);
+    const memberOk = await request(app)
+      .get("/member")
+      .set("Host", TENANT_A_HOST)
+      .set("Cookie", memberCookie)
+      .set("Accept", "text/html");
+    assert.equal(memberOk.status, 200);
+
+    for (const user of [users.platform, users.hq, users.branch]) {
+      const cookie = await sessionCookieFor(user);
+      const denied = await request(app)
+        .get("/member")
+        .set("Host", TENANT_A_HOST)
+        .set("Cookie", cookie)
+        .set("Accept", "text/html");
+      assert.equal(denied.status, 403, `${user.email_normalized || user.id} must not access /member`);
+    }
+  });
+
+  it("matrix: branch_admin GET and POST HQ settings are denied independently", async () => {
+    requireDb();
+    const cookie = await sessionCookieFor(users.branch);
+    const getDenied = await request(app)
+      .get("/hq/settings")
+      .set("Host", TENANT_A_HOST)
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(getDenied.status, 403);
+
+    // Obtain a valid CSRF pair from a branch-admin page the role may open.
+    const baPage = await request(app)
+      .get("/branch-admin/settings")
+      .set("Host", TENANT_A_HOST)
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(baPage.status, 200);
+    const raw = baPage.headers["set-cookie"];
+    const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    const csrfLine = list.find((l) => String(l).startsWith(`${CSRF_COOKIE}=`));
+    assert.ok(csrfLine, "expected CSRF cookie on branch-admin settings");
+    const csrfVal = String(csrfLine).split(";")[0].slice(CSRF_COOKIE.length + 1);
+    const csrfMatch = baPage.text.match(/name="_csrf"\s+value="([^"]+)"/);
+    assert.ok(csrfMatch, "expected CSRF field on branch-admin settings");
+
+    const postDenied = await request(app)
+      .post("/hq/settings")
+      .set("Host", TENANT_A_HOST)
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfVal}`)
+      .set("Accept", "text/html")
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrfMatch[1],
+        public_display_name: "Should Not Save",
+      });
+    assert.equal(postDenied.status, 403);
+  });
+
+  it("matrix: platform_admin cannot bypass inactive domain gate", async () => {
+    requireDb();
+    await pool.query(`UPDATE platform.domains SET status = 'inactive' WHERE hostname = $1`, [
+      TENANT_A_HOST,
+    ]);
+    try {
+      const cookie = await sessionCookieFor(users.platform);
+      const access = await request(app)
+        .get("/tenant-access-check")
+        .set("Host", TENANT_A_HOST)
+        .set("Cookie", cookie)
+        .set("Accept", "text/html");
+      assert.equal(access.status, 403);
+
+      const hq = await request(app)
+        .get("/hq")
+        .set("Host", TENANT_A_HOST)
+        .set("Cookie", cookie)
+        .set("Accept", "text/html");
+      assert.equal(hq.status, 403);
+    } finally {
+      await pool.query(`UPDATE platform.domains SET status = 'active' WHERE hostname = $1`, [
+        TENANT_A_HOST,
+      ]);
+    }
+  });
+
+  it("matrix: revoked session cannot access protected tenant routes", async () => {
+    requireDb();
+    const created = await createV5Session(pool, {
+      deploymentCode: "blessboard-org-v5",
+      userId: users.hq.id,
+      organizationId: orgA.id,
+      churchId: churchA.id,
+      branchId: hqBranchA.id,
+    });
+    assert.equal(created.ok, true, created.code);
+    const revoked = await revokeV5Session(pool, {
+      deploymentCode: "blessboard-org-v5",
+      rawToken: created.rawToken,
+    });
+    assert.equal(revoked.ok, true);
+
+    const res = await request(app)
+      .get("/hq")
+      .set("Host", TENANT_A_HOST)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${created.rawToken}`)
+      .set("Accept", "text/html");
+    assert.ok(res.status === 401 || res.status === 303);
+    if (res.status === 303) {
+      assert.match(String(res.headers.location || ""), /\/login/);
+    }
+  });
+
+  it("matrix: HQ admin cannot open apex platform admin; PA can on apex only", async () => {
+    requireDb();
+    const hqCookie = await sessionCookieFor(users.hq);
+    const hqOnApex = await request(app)
+      .get("/admin")
+      .set("Host", "blessboard.org")
+      .set("Cookie", hqCookie)
+      .set("Accept", "text/html");
+    assert.equal(hqOnApex.status, 403);
+
+    const paCookie = await sessionCookieFor(users.platform);
+    const paOk = await request(app)
+      .get("/admin")
+      .set("Host", "blessboard.org")
+      .set("Cookie", paCookie)
+      .set("Accept", "text/html");
+    assert.equal(paOk.status, 200);
+
+    const paOnTenant = await request(app)
+      .get("/admin")
+      .set("Host", TENANT_A_HOST)
+      .set("Cookie", paCookie)
+      .set("Accept", "text/html");
+    assert.ok(paOnTenant.status === 503 || paOnTenant.status === 404 || paOnTenant.status >= 400);
+    assert.notEqual(paOnTenant.status, 200);
   });
 });

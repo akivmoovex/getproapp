@@ -7,10 +7,8 @@
  * No billing, payments, DNS automation, or destructive controls.
  */
 
-const fs = require("fs");
-const path = require("path");
-const ejs = require("ejs");
 const express = require("express");
+const { renderV5Ejs } = require("../../blessboard/http/v5EjsTemplateCache");
 
 const {
   listActiveAuthorizationRoles,
@@ -87,16 +85,12 @@ const {
   BRANCH_HOST_RESERVED_SLUGS,
 } = require("../../church/platformProvisioningValidation");
 
-const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
-
 /**
  * @param {string} relativePath
  * @param {object} data
  */
 function renderPlatformAdminView(relativePath, data) {
-  const filename = path.join(VIEWS_ROOT, relativePath);
-  const source = fs.readFileSync(filename, "utf8");
-  return ejs.render(source, data, { filename });
+  return renderV5Ejs(relativePath, data);
 }
 
 /**
@@ -130,7 +124,7 @@ function sendControlled(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Platform admin · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=25" />
 </head>
 <body class="bb-pa-body">
   <main class="bb-pa-notice">

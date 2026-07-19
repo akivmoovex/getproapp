@@ -99,7 +99,15 @@
     <h2 class="bb-ba-section-title">Attachments</h2>
     <ul>
       <% item.attachments.forEach(function (att) { %>
-      <li><%= att.originalFilename || att.mediaAssetId %></li>
+      <li>
+        <% if (att.id && att.mediaAssetId) { %>
+        <a href="<%= basePath %>/<%= item.id %>/attachments/<%= att.id %>/file" data-bb-ann-attachment-download="1">
+          <%= att.originalFilename || att.mediaAssetId %>
+        </a>
+        <% } else { %>
+        <%= att.originalFilename || att.mediaAssetId %>
+        <% } %>
+      </li>
       <% }) %>
     </ul>
   </section>

@@ -272,9 +272,12 @@ function getUploadRootLogLabel() {
 /**
  * Master switch for BlessBoard scheduled/cron jobs.
  * Default true (V4-compatible). Set BLESSBOARD_JOBS_ENABLED=0|false|no|off to disable.
+ * V5 foundation mode always disables jobs (no silent cron against platform DB).
  * Manual web workflows are unaffected — only cron/ops entrypoints should check this.
  */
 function areBlessBoardJobsEnabled() {
+  const { isV5FoundationMode } = require("../platform/config/v5FoundationMode");
+  if (isV5FoundationMode()) return false;
   if (!envTrim("BLESSBOARD_JOBS_ENABLED")) return true;
   return !isEnvFlagDisabled("BLESSBOARD_JOBS_ENABLED");
 }

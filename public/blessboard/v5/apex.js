@@ -28,6 +28,7 @@
     function setOpen(open) {
       if (open) {
         drawer.removeAttribute("hidden");
+        drawer.removeAttribute("inert");
         btn.setAttribute("aria-expanded", "true");
         document.documentElement.classList.add("bb-apex-drawer-open");
         if (panelClose) {
@@ -39,6 +40,7 @@
         }
       } else {
         drawer.setAttribute("hidden", "");
+        drawer.setAttribute("inert", "");
         btn.setAttribute("aria-expanded", "false");
         document.documentElement.classList.remove("bb-apex-drawer-open");
         try {

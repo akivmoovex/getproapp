@@ -279,6 +279,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
   width: 100%;
   margin: 0 auto;
   padding: 1.25rem 1.15rem 5.5rem;
+  scroll-margin-top: 5rem;
 }
 .bb-hq-page {
   min-width: 0;
@@ -732,9 +733,11 @@ body.bb-hq-drawer-open { overflow: hidden; }
 }
 .bb-hq-page-head__title {
   margin: 0 0 0.35rem;
+  min-width: 0;
   font-size: clamp(1.5rem, 3vw, 1.85rem);
   letter-spacing: -0.02em;
   color: var(--bb-ink);
+  overflow-wrap: anywhere;
 }
 .bb-hq-page-head__actions {
   display: flex;
@@ -1417,7 +1420,10 @@ body.bb-hq-drawer-open { overflow: hidden; }
 .bb-ann-dl { display:grid; gap:0.65rem; margin:1rem 0 0; }
 .bb-ann-dl div { display:grid; grid-template-columns:10rem minmax(0,1fr); gap:0.5rem; }
 .bb-ann-dl dt { margin:0; color:var(--bb-muted); font-size:0.9rem; }
-.bb-ann-dl dd { margin:0; }
+.bb-ann-dl dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+@media (max-width:899px){
+  .bb-ann-dl div { grid-template-columns:minmax(0,1fr); }
+}
 .bb-ann-detail .bb-ds-modal__actions { display:flex; flex-wrap:wrap; gap:0.65rem; justify-content:flex-end; margin:0; }
 
 /* Attendance admin (Stitch 36/37) */
@@ -2519,6 +2525,21 @@ body.bb-hq-drawer-open { overflow: hidden; }
 .bb-hq-report-card__meta {
   color: var(--bb-muted);
   font-size: 0.9rem;
+}
+.bb-hq-report-card--gated {
+  background: var(--bb-color-surface-dim, var(--bb-surface-dim, #f2f0ed));
+  border-style: dashed;
+}
+.bb-hq-report-card--gated .material-symbols-outlined {
+  color: var(--bb-muted);
+}
+.bb-hq-chip--muted {
+  background: var(--bb-color-surface-dim, #f2f0ed);
+  color: var(--bb-muted);
+  border: 1px solid var(--bb-line);
+}
+.bb-hq-att-report-denied {
+  margin: 1rem 0 1.25rem;
 }
 .bb-hq-reports-cards {
   list-style: none;

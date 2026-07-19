@@ -16,7 +16,16 @@ const { createBlessBoardUser } = require("../src/blessboard/services/createBless
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { readV5Session } = require("../src/platform/session/readV5Session");
 const { revokeV5Session } = require("../src/platform/session/revokeV5Session");
-const { hashSessionToken } = require("../src/platform/session/sessionToken");
+const {
+  hashSessionToken,
+  generateSessionToken,
+  SESSION_TTL_MS,
+} = require("../src/platform/session/sessionToken");
+const {
+  setV5SessionCookie,
+  clearV5SessionCookie,
+  DEFAULT_V5_COOKIE,
+} = require("../src/platform/session/v5SessionCookie");
 
 describe("platform v5 sessions", () => {
   let databaseUrl;
@@ -132,5 +141,59 @@ describe("platform v5 sessions", () => {
     await pool.query(
       `UPDATE platform.deployments SET status = 'active' WHERE deployment_code = 'blessboard-org-v5'`
     );
+  });
+
+  it("session tokens have intended entropy and SHA-256 hex hashes", () => {
+    const a = generateSessionToken();
+    const b = generateSessionToken();
+    assert.notEqual(a.rawToken, b.rawToken);
+    assert.equal(a.tokenHash, hashSessionToken(a.rawToken));
+    assert.match(a.tokenHash, /^[a-f0-9]{64}$/);
+    assert.notEqual(a.rawToken, a.tokenHash);
+    // 32 bytes → base64url is typically 43 chars without padding
+    assert.ok(a.rawToken.length >= 40, `expected ≥40 char token, got ${a.rawToken.length}`);
+    assert.equal(SESSION_TTL_MS, 12 * 60 * 60 * 1000);
+  });
+
+  it("session cookie helpers are host-only with HttpOnly, SameSite=Lax, Path=/, Secure in production", () => {
+    const cookies = [];
+    const res = {
+      cookie(name, value, opts) {
+        cookies.push({ name, value, opts });
+      },
+      clearCookie(name, opts) {
+        cookies.push({ name, value: null, opts, clear: true });
+      },
+    };
+
+    setV5SessionCookie(res, "raw-token-value", {
+      env: { NODE_ENV: "production", SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE },
+    });
+    assert.equal(cookies.length, 1);
+    assert.equal(cookies[0].name, DEFAULT_V5_COOKIE);
+    assert.equal(cookies[0].opts.httpOnly, true);
+    assert.equal(cookies[0].opts.secure, true);
+    assert.equal(cookies[0].opts.sameSite, "lax");
+    assert.equal(cookies[0].opts.path, "/");
+    assert.equal(cookies[0].opts.maxAge, SESSION_TTL_MS);
+    assert.equal(Object.prototype.hasOwnProperty.call(cookies[0].opts, "domain"), false);
+
+    cookies.length = 0;
+    setV5SessionCookie(res, "raw-token-value", {
+      env: { NODE_ENV: "test", SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE },
+    });
+    assert.equal(cookies[0].opts.secure, false);
+    assert.equal(Object.prototype.hasOwnProperty.call(cookies[0].opts, "domain"), false);
+
+    cookies.length = 0;
+    clearV5SessionCookie(res, {
+      env: { NODE_ENV: "production", SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE },
+    });
+    assert.equal(cookies[0].clear, true);
+    assert.equal(cookies[0].opts.httpOnly, true);
+    assert.equal(cookies[0].opts.secure, true);
+    assert.equal(cookies[0].opts.sameSite, "lax");
+    assert.equal(cookies[0].opts.path, "/");
+    assert.equal(Object.prototype.hasOwnProperty.call(cookies[0].opts, "domain"), false);
   });
 });

@@ -4,9 +4,7 @@
  * Apex marketing page renderers (Batch 2b). Presentation only.
  */
 
-const path = require("path");
-const fs = require("fs");
-const ejs = require("ejs");
+const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
   BLESSBOARD_PRICING_ONBOARDING_NOTE,
   STAFF_BILLING_NOTE,
@@ -18,12 +16,8 @@ const {
   mapDirectoryItems,
 } = require("./apexMarketingContent");
 
-const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
-
 function renderApexView(relativePath, data) {
-  const filename = path.join(VIEWS_ROOT, relativePath);
-  const source = fs.readFileSync(filename, "utf8");
-  return ejs.render(source, data, { filename });
+  return renderV5Ejs(relativePath, data);
 }
 
 function shellLocals(opts) {

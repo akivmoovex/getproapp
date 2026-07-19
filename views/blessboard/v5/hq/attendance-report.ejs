@@ -67,12 +67,21 @@
     if (b.totalCount > maxBranchTotal) maxBranchTotal = b.totalCount;
   });
   var showBranchComparison = !branchFilter && branchRollup.length > 0;
+  var tier = typeof reportTier !== 'undefined' && reportTier ? reportTier : 'basic';
+  var entitled = typeof advancedEntitled === 'boolean'
+    ? advancedEntitled
+    : (tier === 'advanced');
 %>
 
 <section
   class="bb-hq-att-report"
   data-bb-hq-attendance-report="1"
+  data-bb-batch="fg-08a"
   data-bb-stitch-attendance-report="57-hq-consolidated-analytics"
+  data-bb-stitch-desktop="2a577dc15d4342acb152f16aed21c267"
+  data-bb-stitch-mobile="06489c79d0d04a429e57eba5c717ba47"
+  data-bb-report-tier="<%= tier %>"
+  data-bb-att-report-entitlement="<%= entitled ? 'advanced' : 'denied' %>"
   data-bb-att-report-scope="<%= branchFilter ? 'branch' : 'church' %>"
 >
   <header class="bb-hq-page-head bb-hq-page-head--split">
@@ -87,21 +96,48 @@
         <span class="bb-hq-att-report__month" data-bb-att-report-month="<%= yearMonth %>"><%= yearMonth %></span>
       </div>
       <p class="bb-hq-lede">
+        <% if (!entitled) { %>
+        Detailed attendance analytics require the Growth package (<code>advanced_reports</code>).
+        Foundation churches keep monthly headcount totals on the HQ reports hub.
+        <% } else { %>
         Aggregate headcounts for <strong><%= scopeLabel %></strong><% if (!branchFilter) { %> (all branches)<% } %>.
         Totals include <%= sourceStatuses.join(', ') %> events only — no individual check-in, trend percentages, or forecasts.
+        <% } %>
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
+      <% if (entitled) { %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/attendance" data-bb-att-report-action="manage">
         <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
         Manage attendance
       </a>
+      <% } %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports" data-bb-att-report-action="reports">
         <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
         All reports
       </a>
     </p>
   </header>
+
+  <% if (!entitled) { %>
+  <div class="bb-hq-att-report-denied" data-bb-att-report-denied="1" role="status">
+    <%- include('../partials/empty-state', {
+      title: 'Growth advanced reports required',
+      body: 'Your Foundation plan includes the HQ reports hub with live attendance totals. Upgrade to Growth for the detailed category and branch attendance report.',
+      icon: 'lock',
+      actionHref: '/hq/reports?month=' + encodeURIComponent(yearMonth),
+      actionLabel: 'Back to HQ reports'
+    }) %>
+  </div>
+  <aside class="bb-hq-att-report-unavailable" data-bb-att-report-unavailable="1" aria-labelledby="bb-att-unavailable-heading">
+    <h2 id="bb-att-unavailable-heading" class="bb-hq-section-title">Not available</h2>
+    <ul class="bb-hq-att-report-unavailable__list">
+      <li data-bb-att-unavailable="trend">Trend % / month-over-month deltas — not calculated in V5</li>
+      <li data-bb-att-unavailable="forecast">Forecasts and projections — not supported</li>
+      <li data-bb-att-unavailable="checkin">Individual / QR check-in analytics — not supported</li>
+    </ul>
+  </aside>
+  <% } else { %>
 
   <form
     method="get"
@@ -378,6 +414,7 @@
       <li data-bb-att-unavailable="export">CSV / PDF export</li>
     </ul>
   </aside>
+  <% } %>
   <% } %>
 </section>
 

@@ -276,6 +276,7 @@ body.bb-apex-body {
 .bb-apex-main {
   flex: 1 0 auto;
   min-width: 0;
+  scroll-margin-top: var(--bb-header-h, 5rem);
 }
 
 .bb-apex-container {
@@ -770,6 +771,69 @@ body.bb-apex-body {
 .bb-apex-btn--on-dark-outline:hover,
 .bb-apex-btn--on-dark-outline:focus-visible {
   background: rgba(255, 255, 255, 0.12);
+}
+
+/* —— FG-01 Features page (Stitch 7ef3518f… / 5ac1e1b0…) —— */
+.bb-apex-features {
+  min-width: 0;
+}
+
+.bb-apex-features__hero {
+  padding: clamp(2.5rem, 6vw, 4.5rem) 0 clamp(2rem, 4vw, 3rem);
+  background:
+    radial-gradient(120% 80% at 10% -10%, rgba(108, 92, 231, 0.12), transparent 55%),
+    radial-gradient(90% 60% at 100% 0%, rgba(251, 146, 60, 0.08), transparent 50%),
+    var(--bb-color-page, #fbf9f6);
+}
+
+.bb-apex-features__hero-inner {
+  max-width: 44rem;
+}
+
+.bb-apex-features__title {
+  margin: 0 0 1rem;
+  font-size: clamp(2.15rem, 5vw, 3.35rem);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  color: var(--bb-color-ink, #1a1c1e);
+}
+
+.bb-apex-features__lead {
+  margin: 0 0 1.5rem;
+  font-size: clamp(1.05rem, 2.2vw, 1.2rem);
+  color: var(--bb-color-muted, #44474e);
+  max-width: 38rem;
+  line-height: 1.65;
+}
+
+.bb-apex-features__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bb-apex-features__media {
+  border-radius: calc(var(--bb-radius, 1rem) + 0.25rem);
+  box-shadow: var(--bb-shadow-lg, 0 16px 40px rgba(26, 28, 30, 0.1));
+}
+
+.bb-apex-features__media img {
+  aspect-ratio: 5 / 4;
+}
+
+.bb-apex-features__cards li {
+  box-shadow: var(--bb-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
+  min-width: 0;
+}
+
+.bb-apex-features__cards h3 {
+  word-break: break-word;
+}
+
+.bb-apex-features__cta-band .bb-apex-cta-band {
+  border-radius: calc(var(--bb-radius, 1rem) + 0.35rem);
+  padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 3vw, 2.5rem);
 }
 
 .bb-apex-mkt-hero {
@@ -1372,8 +1436,22 @@ body.bb-apex-body {
   }
 }
 
+@media (max-width: 767px) {
+  .bb-apex-features__cta .bb-apex-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .bb-apex-features__cta-band .bb-apex-cta-band__actions .bb-apex-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 374px) {
   .bb-apex-mkt-hero__cta .bb-apex-btn,
+  .bb-apex-features__cta .bb-apex-btn,
   .bb-apex-register__actions .bb-apex-btn,
   .bb-apex-directory-search__row .bb-apex-btn {
     width: 100%;

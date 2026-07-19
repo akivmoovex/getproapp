@@ -140,15 +140,26 @@ async function listPublishedMinistriesForBranch(client, opts) {
 }
 
 async function listPublishedEventsForBranch(client, opts) {
+  const params = [opts.churchId, opts.branchId];
+  let upcomingSql = "";
+  let limitSql = "";
+  if (opts.upcomingOnly) {
+    upcomingSql = " AND starts_at >= NOW()";
+  }
+  if (opts.limit != null) {
+    const limit = Math.min(Math.max(Number(opts.limit) || 0, 1), 100);
+    params.push(limit);
+    limitSql = ` LIMIT $${params.length}`;
+  }
   const { rows } = await client.query(
     `SELECT id, church_id, branch_id, title, summary, starts_at, ends_at, timezone,
             location, capacity, status, created_at, updated_at
        FROM blessboard.events
       WHERE church_id = $1
         AND status = 'published'
-        AND (branch_id IS NULL OR branch_id = $2)
-      ORDER BY starts_at ASC`,
-    [opts.churchId, opts.branchId]
+        AND (branch_id IS NULL OR branch_id = $2)${upcomingSql}
+      ORDER BY starts_at ASC${limitSql}`,
+    params
   );
   return rows.map((row) => ({
     id: row.id,

@@ -424,6 +424,14 @@ describe("blessboard platform-admin shell", () => {
     assert.match(detail.text, /Subscription configuration/);
     assert.match(detail.text, /data-bb-pa-org-entitlements="1"/);
     assert.match(detail.text, /data-bb-stitch-entitlements="66-platform-plans-limits"/);
+    assert.match(detail.text, /data-bb-pa-usage="1"/);
+    assert.match(detail.text, /data-bb-usage="branches">Active branches/);
+    assert.match(detail.text, /data-bb-usage="staff">Admin \/ leadership accounts/);
+    assert.match(detail.text, /data-bb-usage="users">Members/);
+    assert.match(detail.text, /data-bb-usage="custom_domain">Custom organization domain/);
+    assert.match(detail.text, /data-bb-usage="custom_email">Hosted mailboxes/);
+    assert.doesNotMatch(detail.text, /data-bb-usage="staff">Staff accounts/);
+    assert.doesNotMatch(detail.text, /data-bb-usage="users">Users ·/);
     assert.match(detail.text, /data-bb-pa-entitlement-groups="1"/);
     assert.match(detail.text, /data-bb-entitlement-group="limits"/);
     assert.match(detail.text, /data-bb-entitlement-group="capabilities"/);

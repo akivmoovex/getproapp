@@ -8,14 +8,24 @@
 const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const request = require("supertest");
 
 const {
   resetFoundationDatabase,
+  foundationDbUnavailableSkipReason,
   createFoundationPool,
 } = require("./helpers/foundationDb");
+const {
+  V5_IDENTITY_KEY: IDENTITY_KEY,
+  DEFAULT_V5_COOKIE,
+  baseV5TestEnv,
+  makeTenant,
+  extractSetCookie: extractCookie,
+  joinCookieHeader: cookieHeader,
+} = require("./helpers/blessboardV5Fixtures");
 const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
@@ -24,7 +34,6 @@ const { createBlessBoardUser } = require("../src/blessboard/services/createBless
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
-const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
   submitMemberRegistration,
@@ -41,48 +50,21 @@ const {
   evaluateAnnouncementCapability,
 } = require("../src/blessboard/services/announcementsService");
 const { insertMediaAsset } = require("../src/blessboard/media/mediaAssetsRepository");
+const { createMediaUploadService } = require("../src/blessboard/media/mediaUploadService");
+const { VISIBILITY } = require("../src/blessboard/media/mediaConstants");
 
-const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
 const HOST_A = "ann-a.blessboard.org";
 const HOST_B = "ann-b.blessboard.org";
 const ROOT = path.join(__dirname, "..");
 
-function extractCookie(res, name) {
-  const raw = res.headers["set-cookie"];
-  if (!raw) return null;
-  const list = Array.isArray(raw) ? raw : [raw];
-  for (const line of list) {
-    if (String(line).startsWith(`${name}=`)) {
-      return String(line).split(";")[0].slice(name.length + 1);
-    }
-  }
-  return null;
-}
-
-function cookieHeader(...pairs) {
-  return pairs.filter(Boolean).join("; ");
-}
+const PDF_MIN = Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n", "utf8");
 
 function baseEnv(overrides) {
-  return {
-    NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
-    SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
-    SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
-    BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
+  return baseV5TestEnv({
+    BLESSBOARD_MEDIA_FORCE_LOCAL: "1",
     ...overrides,
-  };
-}
-
-function makeTenant(church, org, primaryBranch) {
-  return {
-    resolved: true,
-    organization: { id: org.id },
-    church: { id: church.id, displayName: church.display_name || church.displayName },
-    primaryBranch: { id: primaryBranch.id },
-    hqBranch: { id: primaryBranch.id },
-  };
+  });
 }
 
 describe("blessboard announcements", () => {
@@ -90,6 +72,8 @@ describe("blessboard announcements", () => {
   let skipSuite = false;
   let skipReason = "";
   let app;
+  let mediaRoot;
+  let mediaService;
   let orgA;
   let orgB;
   let churchA;
@@ -109,6 +93,7 @@ describe("blessboard announcements", () => {
 
   before(async () => {
     try {
+      mediaRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bb-ann-media-"));
       const databaseUrl = await resetFoundationDatabase();
       pool = createFoundationPool(databaseUrl);
       await migrate({ connectionString: databaseUrl });
@@ -310,9 +295,11 @@ describe("blessboard announcements", () => {
         userId: memberB.user.id,
       });
 
+      mediaService = createMediaUploadService(baseEnv(), { rootDir: mediaRoot });
       app = createV5FoundationApp({
         getPool: () => pool,
-        env: baseEnv(),
+        env: baseEnv({ BLESSBOARD_MEDIA_ROOT: mediaRoot }),
+        mediaService,
       });
     } catch (err) {
       skipSuite = true;
@@ -324,11 +311,12 @@ describe("blessboard announcements", () => {
 
   after(async () => {
     if (pool) await pool.end().catch(() => {});
+    if (mediaRoot) fs.rmSync(mediaRoot, { recursive: true, force: true });
   });
 
   function skipIfNeeded(t) {
     if (skipSuite) {
-      t.skip(`setup failed: ${skipReason}`);
+      t.skip(foundationDbUnavailableSkipReason(skipReason));
       return true;
     }
     return false;
@@ -466,7 +454,7 @@ describe("blessboard announcements", () => {
 
   it("campus branch admin cannot manage HQ branch announcements", async (t) => {
     if (skipIfNeeded(t)) return;
-    const tenant = makeTenant(churchA, orgA.records.organization, campusBranch);
+    const tenant = makeTenant(churchA, orgA.records.organization, campusBranch, branchA);
     const created = await createAnnouncement(pool, {
       churchId: churchA.id,
       branchId: branchA.id,
@@ -560,7 +548,7 @@ describe("blessboard announcements", () => {
       churchId: churchA.id,
       branchId: campusBranch.id,
       actorUserId: hqAdmin.user.id,
-      tenant: makeTenant(churchA, orgA.records.organization, campusBranch),
+      tenant: makeTenant(churchA, orgA.records.organization, campusBranch, branchA),
       title: "Campus members",
       body: "Campus",
       status: "published",
@@ -681,7 +669,7 @@ describe("blessboard announcements", () => {
       mimeType: "application/pdf",
       sizeBytes: 128,
       sha256: sha,
-      visibility: "public",
+      visibility: "private",
     });
     const foreignSha = crypto.createHash("sha256").update("foreign-attach").digest("hex");
     const foreign = await insertMediaAsset(pool, {
@@ -694,7 +682,7 @@ describe("blessboard announcements", () => {
       mimeType: "application/pdf",
       sizeBytes: 64,
       sha256: foreignSha,
-      visibility: "public",
+      visibility: "private",
     });
 
     const tenant = makeTenant(churchA, orgA.records.organization, branchA);
@@ -713,6 +701,32 @@ describe("blessboard announcements", () => {
     assert.equal(withAtt.item.attachments.length, 1);
     assert.equal(withAtt.item.attachments[0].mediaAssetId, asset.id);
 
+    const publicOnly = await insertMediaAsset(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      uploadedByUserId: hqAdmin.user.id,
+      storageBucket: "local",
+      storageKey: `ann/${crypto.createHash("sha256").update("public-attach").digest("hex")}`,
+      originalFilename: "public.pdf",
+      mimeType: "application/pdf",
+      sizeBytes: 32,
+      sha256: crypto.createHash("sha256").update("public-attach").digest("hex"),
+      visibility: "public",
+    });
+    const rejectPublic = await createAnnouncement(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      actorUserId: hqAdmin.user.id,
+      tenant,
+      title: "Public attachment rejected",
+      body: "Nope",
+      status: "draft",
+      audiences: ["members"],
+      mediaAssetIds: [publicOnly.id],
+    });
+    assert.equal(rejectPublic.ok, false);
+    assert.equal(rejectPublic.reason, "media_asset");
+
     const bad = await createAnnouncement(pool, {
       churchId: churchA.id,
       branchId: null,
@@ -726,6 +740,92 @@ describe("blessboard announcements", () => {
     });
     assert.equal(bad.ok, false);
     assert.equal(bad.reason, "media_asset");
+  });
+
+  it("serves announcement attachments via authz download; blocks public media path and cross-tenant", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const tenant = makeTenant(churchA, orgA.records.organization, branchA);
+    const uploaded = await mediaService.uploadMediaAsset(pool, {
+      churchId: churchA.id,
+      uploadedByUserId: branchAdmin.user.id,
+      buffer: PDF_MIN,
+      originalFilename: 'flyer\r\n"evil.pdf',
+      claimedMime: "application/pdf",
+      visibility: VISIBILITY.PRIVATE,
+    });
+    assert.equal(uploaded.ok, true, uploaded.reason);
+
+    const created = await createAnnouncement(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      audiences: ["members"],
+      title: "Attachment download",
+      body: "See attached flyer",
+      status: "published",
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+      mediaAssetIds: [uploaded.asset.id],
+    });
+    assert.equal(created.ok, true, created.reason);
+    const att = created.item.attachments[0];
+    assert.ok(att && att.id);
+
+    const memberDetail = await request(app)
+      .get(`/member/announcements/${created.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`);
+    assert.equal(memberDetail.status, 200);
+    assert.match(
+      memberDetail.text,
+      new RegExp(`/member/announcements/${created.item.id}/attachments/${att.id}/file`)
+    );
+    assert.doesNotMatch(memberDetail.text, /\/_bb\/media\//);
+    assert.doesNotMatch(memberDetail.text, /storage_key|storageKey|BLESSBOARD_MEDIA_ROOT|\/tmp\//i);
+
+    const memberFile = await request(app)
+      .get(`/member/announcements/${created.item.id}/attachments/${att.id}/file`)
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks = [];
+        res.on("data", (c) => chunks.push(c));
+        res.on("end", () => cb(null, Buffer.concat(chunks)));
+      });
+    assert.equal(memberFile.status, 200);
+    assert.match(String(memberFile.headers["content-type"] || ""), /application\/pdf/);
+    assert.match(String(memberFile.headers["content-disposition"] || ""), /attachment/);
+    assert.doesNotMatch(String(memberFile.headers["content-disposition"] || ""), /\r|\n/);
+    assert.match(String(memberFile.headers["cache-control"] || ""), /private/i);
+    assert.equal(String(memberFile.headers["x-content-type-options"] || ""), "nosniff");
+    assert.deepEqual(Buffer.from(memberFile.body), PDF_MIN);
+
+    const publicPath = await request(app)
+      .get(`/_bb/media/${uploaded.asset.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`);
+    assert.equal(publicPath.status, 403);
+
+    const foreign = await request(app)
+      .get(`/member/announcements/${created.item.id}/attachments/${att.id}/file`)
+      .set("Host", HOST_B)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${memberB.rawToken}`);
+    assert.ok(foreign.status === 403 || foreign.status === 404);
+
+    const adminFile = await request(app)
+      .get(`/branch-admin/announcements/${created.item.id}/attachments/${att.id}/file`)
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks = [];
+        res.on("data", (c) => chunks.push(c));
+        res.on("end", () => cb(null, Buffer.concat(chunks)));
+      });
+    assert.equal(adminFile.status, 200);
+    assert.deepEqual(Buffer.from(adminFile.body), PDF_MIN);
   });
 
   it("HQ admin HTML CRUD and member list/detail/read endpoints", async (t) => {
@@ -1070,7 +1170,7 @@ describe("blessboard announcements", () => {
 
   it("branch admin cannot open another campus announcement on host HQ scope", async (t) => {
     if (skipIfNeeded(t)) return;
-    const tenant = makeTenant(churchA, orgA.records.organization, campusBranch);
+    const tenant = makeTenant(churchA, orgA.records.organization, campusBranch, branchA);
     const created = await createAnnouncement(pool, {
       churchId: churchA.id,
       branchId: campusBranch.id,
@@ -1322,6 +1422,92 @@ describe("blessboard announcements", () => {
       .set("Host", HOST_A)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
     assert.ok(baDenied.status === 403 || baDenied.status === 303, `status=${baDenied.status}`);
+  });
+
+  it("rejects unsafe action URLs, overlong titles, invalid UUIDs; strips unsafe href at render", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const tenant = makeTenant(churchA, orgA.records.organization, branchA);
+
+    const jsUrl = await createAnnouncement(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      audiences: ["members"],
+      title: "Bad link",
+      body: "Body text for validation",
+      actionUrl: "javascript:alert(1)",
+      actionLabel: "Open",
+    });
+    assert.equal(jsUrl.ok, false);
+    assert.match(String(jsUrl.reason || ""), /action_url/);
+
+    const overlong = await createAnnouncement(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      audiences: ["members"],
+      title: "T".repeat(201),
+      body: "Body text for validation",
+    });
+    assert.equal(overlong.ok, false);
+    assert.match(String(overlong.reason || ""), /title/);
+
+    const badId = await request(app)
+      .get("/member/announcements/not-a-uuid")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`);
+    assert.equal(badId.status, 404);
+
+    const created = await createAnnouncement(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      actorUserId: branchAdmin.user.id,
+      tenant,
+      audiences: ["members"],
+      title: "Safe title for xss render",
+      body: "Safe body for xss render",
+      status: "published",
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+      actionUrl: "https://example.org/safe",
+      actionLabel: "Open link",
+    });
+    assert.equal(created.ok, true, created.reason);
+
+    // Bypass write validation to prove render escapes markup and strips unsafe hrefs.
+    await pool.query(
+      `UPDATE blessboard.announcements
+          SET title = $1, body = $2, action_url = $3, action_label = $4
+        WHERE id = $5`,
+      [
+        "<script>alert(1)</script>",
+        "Hello <b>world</b>",
+        "javascript:alert(1)",
+        "Click me",
+        created.item.id,
+      ]
+    );
+
+    const memberDetail = await request(app)
+      .get(`/member/announcements/${created.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${memberUser.rawToken}`);
+    assert.equal(memberDetail.status, 200);
+    assert.doesNotMatch(memberDetail.text, /javascript:alert/);
+    assert.doesNotMatch(memberDetail.text, /<script>alert\(1\)<\/script>/);
+    assert.match(memberDetail.text, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+    assert.match(memberDetail.text, /Hello &lt;b&gt;world&lt;\/b&gt;/);
+    assert.doesNotMatch(memberDetail.text, /href="javascript:/i);
+
+    const adminDetail = await request(app)
+      .get(`/branch-admin/announcements/${created.item.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${branchAdmin.rawToken}`);
+    assert.equal(adminDetail.status, 200);
+    assert.doesNotMatch(adminDetail.text, /javascript:alert/);
+    assert.match(adminDetail.text, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
   });
 
   it("leaves V4 announcement wiring untouched", () => {

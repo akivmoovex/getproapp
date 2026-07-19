@@ -1,7 +1,7 @@
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-start') %>
+<%- include('../partials/hq-shell-start', { loadMediaPicker: true }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-start') %>
+<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true }) %>
 <% } %>
 <%
   var rows = resources || [];
@@ -401,7 +401,7 @@
 </section>
 
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-end') %>
+<%- include('../partials/hq-shell-end', { loadMediaPicker: true }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-end') %>
+<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true }) %>
 <% } %>

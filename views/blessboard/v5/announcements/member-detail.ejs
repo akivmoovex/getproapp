@@ -101,8 +101,9 @@
         <li>
           <a
             class="bb-mp-ann-attachment"
-            href="/_bb/media/<%= att.mediaAssetId %>"
+            href="/member/announcements/<%= item.id %>/attachments/<%= att.id %>/file"
             data-bb-ann-attachment="<%= att.mediaAssetId %>"
+            data-bb-ann-attachment-download="1"
           >
             <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
             <span class="bb-mp-ann-attachment__name"><%= att.originalFilename || 'Attachment' %></span>
