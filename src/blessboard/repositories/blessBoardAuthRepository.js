@@ -302,6 +302,117 @@ async function touchLastLogin(client, userId) {
   );
 }
 
+/**
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ * @param {string} passwordHash
+ */
+async function updateUserPasswordHash(client, userId, passwordHash) {
+  const r = await client.query(
+    `UPDATE blessboard.users
+        SET password_hash = $2,
+            password_changed_at = now(),
+            updated_at = now()
+      WHERE id = $1
+      RETURNING id, email_normalized, status, display_name, password_changed_at`,
+    [userId, passwordHash]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Active (non-revoked, non-expired) deployment sessions for a user.
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ */
+async function countActiveSessionsForUser(client, userId) {
+  const r = await client.query(
+    `SELECT COUNT(*)::int AS count
+       FROM platform.deployment_sessions
+      WHERE user_id = $1
+        AND revoked_at IS NULL
+        AND expires_at > now()`,
+    [userId]
+  );
+  return Number(r.rows[0]?.count) || 0;
+}
+
+/**
+ * Revoke all non-revoked sessions for a user (including not-yet-expired).
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ */
+async function revokeAllSessionsForUser(client, userId) {
+  const r = await client.query(
+    `UPDATE platform.deployment_sessions
+        SET revoked_at = now()
+      WHERE user_id = $1
+        AND revoked_at IS NULL
+      RETURNING id`,
+    [userId]
+  );
+  return r.rowCount || 0;
+}
+
+/**
+ * Read-only platform_admin role inventory (no secrets).
+ * @param {{ query: Function }} client
+ */
+async function listPlatformAdministrators(client) {
+  const r = await client.query(
+    `SELECT DISTINCT
+        u.id,
+        u.display_name,
+        u.email_normalized,
+        u.status AS account_status,
+        ur.role_key AS role_code,
+        ur.status AS role_status,
+        u.created_at,
+        u.last_login_at
+       FROM blessboard.users u
+       INNER JOIN blessboard.user_roles ur ON ur.user_id = u.id
+      WHERE ur.role_key = 'platform_admin'
+      ORDER BY u.created_at ASC`
+  );
+  return r.rows;
+}
+
+/**
+ * Prefer an active platform_admin org scope for audit; else any active role org.
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ */
+async function findAuditOrganizationIdForUser(client, userId) {
+  const r = await client.query(
+    `SELECT organization_id
+       FROM blessboard.user_roles
+      WHERE user_id = $1
+        AND status = 'active'
+      ORDER BY CASE WHEN role_key = 'platform_admin' THEN 0 ELSE 1 END,
+               created_at ASC
+      LIMIT 1`,
+    [userId]
+  );
+  return r.rows[0] ? String(r.rows[0].organization_id) : null;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ */
+async function userHasActivePlatformAdminRole(client, userId) {
+  const r = await client.query(
+    `SELECT 1
+       FROM blessboard.user_roles
+      WHERE user_id = $1
+        AND role_key = 'platform_admin'
+        AND status = 'active'
+      LIMIT 1`,
+    [userId]
+  );
+  return Boolean(r.rows[0]);
+}
+
 function isUniqueViolation(err) {
   return Boolean(err && (err.code === "23505" || /unique|duplicate/i.test(String(err.message || ""))));
 }
@@ -321,5 +432,11 @@ module.exports = {
   listChurchStaffRoles,
   countActiveChurchStaffRoles,
   touchLastLogin,
+  updateUserPasswordHash,
+  countActiveSessionsForUser,
+  revokeAllSessionsForUser,
+  listPlatformAdministrators,
+  findAuditOrganizationIdForUser,
+  userHasActivePlatformAdminRole,
   isUniqueViolation,
 };

@@ -142,6 +142,21 @@
       </div>
       <div><dt>Last activity</dt><dd><%= fmtDate(app.lastActivityAt) %></dd></div>
     </dl>
+    <% var obSum = typeof onboardingSummary !== 'undefined' ? onboardingSummary : null; %>
+    <% if (obSum) { %>
+    <p class="bb-pa-lede" data-bb-pa-onboarding-progress="1">
+      Onboarding progress · <%= obSum.completedCount %>/<%= obSum.totalCount %> (<%= obSum.percentage %>%)
+      · <span class="bb-pa-chip"><%= labelStatus(obSum.publicationStatus) %></span>
+      · <a class="bb-pa-link" href="/admin/organizations/<%= encodeURIComponent(app.organizationKey) %>#pa-org-onboarding">Full checklist on organization</a>
+    </p>
+    <ul class="bb-pa-entitlement-source-list" data-bb-pa-onboarding-checklist="1">
+      <% (obSum.checklist || []).forEach(function (item) { %>
+      <li data-bb-pa-checklist-item="<%= item.key %>" data-bb-pa-checklist-complete="<%= item.completed ? '1' : '0' %>">
+        <%= item.label %> · <%= item.completed ? 'complete' : 'incomplete' %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
     <% } else { %>
     <p class="bb-pa-lede">No organization is linked yet. Follow-up assignment and contact history become available after provisioning.</p>
     <% } %>

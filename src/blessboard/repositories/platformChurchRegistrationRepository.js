@@ -555,6 +555,11 @@ async function updateOrganizationOnboarding(client, organizationId, patch) {
   }
   const clearAssignee = Boolean(patch.clearAssignedSupport);
   const setAssignee = Object.prototype.hasOwnProperty.call(patch, "assignedSupportUserId");
+  const setSupportRequested = Object.prototype.hasOwnProperty.call(patch, "supportRequested");
+  const setOnboardingStatus = Object.prototype.hasOwnProperty.call(patch, "onboardingStatus");
+  const setCompletedAt = Object.prototype.hasOwnProperty.call(patch, "onboardingCompletedAt");
+  const clearCompletedAt = Boolean(patch.clearOnboardingCompletedAt);
+  const setStartedAt = Object.prototype.hasOwnProperty.call(patch, "onboardingStartedAt");
   const r = await client.query(
     `UPDATE blessboard.organization_onboarding
         SET follow_up_status = COALESCE($2, follow_up_status),
@@ -570,6 +575,23 @@ async function updateOrganizationOnboarding(client, organizationId, patch) {
               ELSE next_follow_up_at
             END,
             last_activity_at = COALESCE($10, last_activity_at, now()),
+            support_requested = CASE
+              WHEN $11::boolean THEN $12::boolean
+              ELSE support_requested
+            END,
+            onboarding_status = CASE
+              WHEN $13::boolean THEN $14::text
+              ELSE onboarding_status
+            END,
+            onboarding_started_at = CASE
+              WHEN $15::boolean THEN COALESCE(onboarding_started_at, $16::timestamptz)
+              ELSE onboarding_started_at
+            END,
+            onboarding_completed_at = CASE
+              WHEN $17::boolean THEN NULL
+              WHEN $18::boolean THEN $19::timestamptz
+              ELSE onboarding_completed_at
+            END,
             updated_at = now()
       WHERE organization_id = $1
       RETURNING *`,
@@ -584,6 +606,15 @@ async function updateOrganizationOnboarding(client, organizationId, patch) {
       Object.prototype.hasOwnProperty.call(patch, "nextFollowUpAt"),
       Object.prototype.hasOwnProperty.call(patch, "nextFollowUpAt") ? patch.nextFollowUpAt : null,
       patch.lastActivityAt != null ? patch.lastActivityAt : null,
+      setSupportRequested,
+      setSupportRequested ? Boolean(patch.supportRequested) : false,
+      setOnboardingStatus,
+      setOnboardingStatus ? patch.onboardingStatus : null,
+      setStartedAt,
+      setStartedAt ? patch.onboardingStartedAt : null,
+      clearCompletedAt,
+      setCompletedAt && !clearCompletedAt,
+      setCompletedAt && !clearCompletedAt ? patch.onboardingCompletedAt : null,
     ]
   );
   return r.rows[0] || null;
@@ -788,6 +819,197 @@ async function findApplicationIdForOrganizationKey(client, organizationKey) {
   return appId ? String(appId) : null;
 }
 
+/**
+ * Resolve organization id from immutable organization_key (never trust client UUIDs alone).
+ * @param {{ query: Function }} client
+ * @param {string} organizationKey
+ */
+async function findOrganizationIdByKey(client, organizationKey) {
+  const key = String(organizationKey || "")
+    .trim()
+    .toLowerCase();
+  if (!key) return null;
+  const r = await client.query(
+    `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
+    [key]
+  );
+  return r.rows[0] ? String(r.rows[0].id) : null;
+}
+
+/**
+ * Single-query onboarding facts for checklist + summary (avoids N+1).
+ * @param {{ query: Function }} client
+ * @param {{ organizationId?: string|null, organizationKey?: string|null }} input
+ */
+async function loadOrganizationOnboardingFacts(client, input = {}) {
+  const organizationId =
+    input.organizationId && UUID_RE.test(String(input.organizationId))
+      ? String(input.organizationId)
+      : null;
+  const organizationKey = input.organizationKey
+    ? String(input.organizationKey).trim().toLowerCase()
+    : null;
+  if (!organizationId && !organizationKey) return null;
+
+  const r = await client.query(
+    `SELECT
+        o.id AS organization_id,
+        o.organization_key,
+        o.display_name AS org_display_name,
+        o.status AS organization_status,
+        c.id AS church_id,
+        c.display_name AS church_display_name,
+        c.legal_name AS church_legal_name,
+        c.status AS church_status,
+        oo.organization_id IS NOT NULL AS onboarding_row_present,
+        oo.onboarding_status,
+        oo.follow_up_status,
+        oo.assigned_support_user_id,
+        oo.first_contacted_at,
+        oo.last_contacted_at,
+        oo.next_follow_up_at,
+        oo.onboarding_started_at,
+        oo.onboarding_completed_at,
+        oo.last_activity_at,
+        oo.preview_acknowledged,
+        oo.support_requested,
+        oo.registration_application_id,
+        su.display_name AS support_display_name,
+        su.email_normalized AS support_email,
+        cs.primary_email,
+        cs.primary_phone,
+        COALESCE(bc.active_branch_count, 0)::int AS active_branch_count,
+        COALESCE(bc.has_branch_contact, false) AS has_branch_contact,
+        COALESCE(pub.draft_pages, 0)::int AS draft_pages,
+        COALESCE(pub.published_pages, 0)::int AS published_pages,
+        COALESCE(svc.has_service_times, false) AS has_service_times,
+        false AS has_logo,
+        login_stats.church_admin_last_login_at,
+        plan_row.plan_key,
+        COALESCE(
+          oo.registration_application_id,
+          (
+            SELECT a.id
+              FROM ${TARGET_RELATION} a
+             WHERE a.organization_id = o.id
+             ORDER BY a.created_at DESC
+             LIMIT 1
+          )
+        ) AS linked_application_id
+       FROM platform.organizations o
+       LEFT JOIN blessboard.churches c ON c.organization_id = o.id
+       LEFT JOIN blessboard.organization_onboarding oo ON oo.organization_id = o.id
+       LEFT JOIN blessboard.users su ON su.id = oo.assigned_support_user_id
+       LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+       LEFT JOIN LATERAL (
+         SELECT
+           COUNT(*) FILTER (WHERE b.status = 'active')::int AS active_branch_count,
+           EXISTS (
+             SELECT 1
+               FROM blessboard.branch_settings bs
+               INNER JOIN blessboard.branches b2 ON b2.id = bs.branch_id
+              WHERE b2.church_id = c.id
+                AND (
+                  NULLIF(TRIM(COALESCE(bs.email, '')), '') IS NOT NULL
+                  OR NULLIF(TRIM(COALESCE(bs.phone, '')), '') IS NOT NULL
+                  OR NULLIF(TRIM(COALESCE(bs.address_line_1, '')), '') IS NOT NULL
+                )
+           ) AS has_branch_contact
+           FROM blessboard.branches b
+          WHERE b.church_id = c.id
+       ) bc ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT
+           COUNT(*) FILTER (WHERE pp.status = 'draft')::int AS draft_pages,
+           COUNT(*) FILTER (WHERE pp.status = 'published')::int AS published_pages
+           FROM blessboard.public_pages pp
+          WHERE pp.church_id = c.id
+       ) pub ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT EXISTS (
+           SELECT 1
+             FROM blessboard.page_sections ps
+             INNER JOIN blessboard.public_pages pp2 ON pp2.id = ps.page_id
+            WHERE pp2.church_id = c.id
+              AND (
+                ps.section_key IN ('service_times', 'services', 'worship_times')
+                OR ps.section_type IN ('service_times', 'services', 'worship_times')
+              )
+              AND (
+                NULLIF(TRIM(COALESCE(ps.body_text, '')), '') IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(ps.heading, '')), '') IS NOT NULL
+              )
+         ) AS has_service_times
+       ) svc ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT MAX(u.last_login_at) AS church_admin_last_login_at
+           FROM blessboard.user_roles ur
+           INNER JOIN blessboard.users u ON u.id = ur.user_id
+          WHERE ur.organization_id = o.id
+            AND ur.status = 'active'
+            AND ur.role_key IN ('church_hq_admin', 'branch_admin')
+            AND u.status = 'active'
+       ) login_stats ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT p.plan_key
+           FROM platform.organization_subscriptions os
+           INNER JOIN platform.plans p ON p.id = os.plan_id
+          WHERE os.organization_id = o.id
+            AND os.status IN ('active', 'trialing')
+          ORDER BY os.created_at DESC
+          LIMIT 1
+       ) plan_row ON TRUE
+      WHERE ($1::uuid IS NOT NULL AND o.id = $1)
+         OR ($1::uuid IS NULL AND o.organization_key = $2)
+      LIMIT 1`,
+    [organizationId, organizationKey]
+  );
+  const row = r.rows[0];
+  if (!row) return null;
+
+  return {
+    organizationId: String(row.organization_id),
+    organizationKey: String(row.organization_key || ""),
+    orgDisplayName: row.org_display_name != null ? String(row.org_display_name) : "",
+    organizationStatus: row.organization_status != null ? String(row.organization_status) : null,
+    churchId: row.church_id ? String(row.church_id) : null,
+    churchDisplayName: row.church_display_name != null ? String(row.church_display_name) : "",
+    churchLegalName: row.church_legal_name != null ? String(row.church_legal_name) : null,
+    churchStatus: row.church_status != null ? String(row.church_status) : null,
+    onboardingRowPresent: Boolean(row.onboarding_row_present),
+    onboardingStatus: row.onboarding_status != null ? String(row.onboarding_status) : null,
+    followUpStatus: row.follow_up_status != null ? String(row.follow_up_status) : null,
+    assignedSupportUserId: row.assigned_support_user_id
+      ? String(row.assigned_support_user_id)
+      : null,
+    supportDisplayName: row.support_display_name != null ? String(row.support_display_name) : null,
+    supportEmail: row.support_email != null ? String(row.support_email) : null,
+    firstContactedAt: row.first_contacted_at || null,
+    lastContactedAt: row.last_contacted_at || null,
+    nextFollowUpAt: row.next_follow_up_at || null,
+    onboardingStartedAt: row.onboarding_started_at || null,
+    onboardingCompletedAt: row.onboarding_completed_at || null,
+    lastActivityAt: row.last_activity_at || null,
+    previewAcknowledged: Boolean(row.preview_acknowledged),
+    supportRequested: Boolean(row.support_requested),
+    registrationApplicationId: row.linked_application_id
+      ? String(row.linked_application_id)
+      : row.registration_application_id
+        ? String(row.registration_application_id)
+        : null,
+    primaryEmail: row.primary_email != null ? String(row.primary_email) : null,
+    primaryPhone: row.primary_phone != null ? String(row.primary_phone) : null,
+    activeBranchCount: Number(row.active_branch_count) || 0,
+    hasBranchContact: Boolean(row.has_branch_contact),
+    draftPages: Number(row.draft_pages) || 0,
+    publishedPages: Number(row.published_pages) || 0,
+    hasServiceTimesContent: Boolean(row.has_service_times),
+    hasLogo: Boolean(row.has_logo),
+    churchAdminLastLoginAt: row.church_admin_last_login_at || null,
+    planKey: row.plan_key != null ? String(row.plan_key) : null,
+  };
+}
+
 module.exports = {
   TARGET_SCHEMA,
   TARGET_TABLE,
@@ -824,5 +1046,7 @@ module.exports = {
   getOrganizationCurrentPlanKey,
   findApplicationIdForOrganization,
   findApplicationIdForOrganizationKey,
+  findOrganizationIdByKey,
+  loadOrganizationOnboardingFacts,
   escapeLikePattern,
 };

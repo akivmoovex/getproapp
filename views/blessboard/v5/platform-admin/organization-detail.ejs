@@ -65,20 +65,67 @@
   function noticeText(code) {
     if (code === 'plan_saved') return 'Plan assignment saved. Existing branches and users were not deleted.';
     if (code === 'override_saved') return 'Entitlement override saved.';
+    if (code === 'follow_up_saved') return 'Follow-up status updated.';
+    if (code === 'support_assigned') return 'Support assignment saved.';
+    if (code === 'support_request_saved') return 'Support requested flag updated.';
+    if (code === 'next_follow_up_saved') return 'Next follow-up saved.';
+    if (code === 'onboarding_status_saved') return 'Onboarding status override saved.';
     return null;
   }
   function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
     if (code === 'confirm_required') return 'Confirmation is required before this change can be applied.';
     if (code === 'invalid') return 'The submitted values were invalid.';
     if (code === 'not_found') return 'Organization or plan could not be found.';
+    if (code === 'not_blessboard') return 'BlessBoard onboarding is only available for organizations with a church profile.';
+    if (code === 'not_platform_admin') return 'Only active platform administrators can be assigned.';
+    if (code === 'next_follow_up_past') return 'Next follow-up must be a future date and time.';
+    if (code === 'reason_required') return 'A short reason is required for this onboarding override.';
     if (code === 'branch_limit') {
       return 'Plan change blocked: active branches exceed the target plan limit. Deactivate excess campuses first. Existing branches were not deleted.';
     }
     if (code === 'plan_failed' || code === 'override_failed') return 'The change could not be saved. Try again.';
+    if (
+      code === 'follow_up_failed' ||
+      code === 'assign_failed' ||
+      code === 'support_request_failed' ||
+      code === 'follow_up_schedule_failed' ||
+      code === 'onboarding_status_failed'
+    ) {
+      return 'The change could not be saved. Try again.';
+    }
     return code ? 'Something went wrong.' : null;
   }
   var noticeMsg = noticeText(flashNotice);
   var errorMsg = errorText(flashError);
+  var ob = typeof onboardingSummary !== 'undefined' ? onboardingSummary : null;
+  var contactRows = typeof supportContacts !== 'undefined' ? supportContacts : [];
+  var admins = typeof platformAdmins !== 'undefined' ? platformAdmins : [];
+  var followOpts = typeof followUpStatuses !== 'undefined' ? followUpStatuses : [];
+  var onboardOpts = typeof onboardingStatuses !== 'undefined' ? onboardingStatuses : [];
+  function labelStatus(s) {
+    return String(s || '').replace(/_/g, ' ') || '—';
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    try {
+      return new Date(d).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    } catch (e) {
+      return '—';
+    }
+  }
+  function toDatetimeLocalValue(d) {
+    if (!d) return '';
+    try {
+      var dt = new Date(d);
+      if (Number.isNaN(dt.getTime())) return '';
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) +
+        'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+    } catch (e) {
+      return '';
+    }
+  }
 %>
 
 <section
@@ -144,6 +191,252 @@
       <p class="bb-pa-org-detail-stat__hint">Live BlessBoard count</p>
     </article>
   </section>
+
+  <% if (ob) { %>
+  <section
+    class="bb-pa-panel bb-pa-org-detail-panel"
+    id="pa-org-onboarding"
+    aria-labelledby="pa-org-onboarding-heading"
+    data-bb-pa-org-onboarding="1"
+  >
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-org-onboarding-heading" class="bb-pa-section-title">BlessBoard onboarding</h2>
+      <span class="bb-pa-chip <%= statusChip(ob.onboardingStatus) %>" data-bb-pa-onboarding-status="<%= ob.onboardingStatus %>">
+        <%= labelStatus(ob.onboardingStatus) %>
+      </span>
+    </div>
+    <p class="bb-pa-hint">
+      Progress is derived at read time from live church data.
+      Follow-up status never blocks portal access. Organization operational status is unchanged by these controls.
+    </p>
+
+    <dl class="bb-pa-dl bb-pa-dl--grid" data-bb-pa-onboarding-summary="1">
+      <div>
+        <dt>Progress</dt>
+        <dd data-bb-pa-onboarding-progress="1">
+          <%= ob.completedCount %> / <%= ob.totalCount %>
+          (<%= ob.percentage %>%)
+        </dd>
+      </div>
+      <div>
+        <dt>Publication</dt>
+        <dd>
+          <span class="bb-pa-chip <%= statusChip(ob.publicationStatus) %>" data-bb-pa-publication="<%= ob.publicationStatus %>">
+            <%= labelStatus(ob.publicationStatus) %>
+          </span>
+          <% if (ob.operationallySuspended) { %>
+          <span class="bb-pa-chip bb-pa-chip--danger">Operationally suspended</span>
+          <% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Support requested</dt>
+        <dd data-bb-pa-support-requested="<%= ob.supportRequested ? '1' : '0' %>">
+          <%= ob.supportRequested ? 'Yes' : 'No' %>
+        </dd>
+      </div>
+      <div>
+        <dt>Assigned support</dt>
+        <dd>
+          <% if (ob.assignedSupportUser) { %>
+          <%= ob.assignedSupportUser.displayName || ob.assignedSupportUser.email %>
+          <% } else { %>—<% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Follow-up</dt>
+        <dd>
+          <% if (ob.followUpStatus) { %>
+          <span class="bb-pa-chip"><%= labelStatus(ob.followUpStatus) %></span>
+          <% } else { %>—<% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>First contacted</dt>
+        <dd><%= fmtDate(ob.firstContactedAt) %></dd>
+      </div>
+      <div>
+        <dt>Last contacted</dt>
+        <dd><%= fmtDate(ob.lastContactedAt) %></dd>
+      </div>
+      <div>
+        <dt>Next follow-up</dt>
+        <dd data-bb-pa-next-follow-up="1"<%= ob.nextFollowUpOverdue ? ' class="bb-pa-chip bb-pa-chip--danger"' : '' %>>
+          <%= fmtDate(ob.nextFollowUpAt) %>
+          <% if (ob.nextFollowUpOverdue) { %> · overdue<% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Last activity</dt>
+        <dd data-bb-pa-last-activity="1">
+          <%= fmtDate(ob.lastActivityAt) %>
+          <% if (ob.lastActivitySource) { %>
+          <span class="bb-pa-hint"> · <%= labelStatus(ob.lastActivitySource) %></span>
+          <% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Registration application</dt>
+        <dd>
+          <% if (ob.registrationApplicationId || registrationApplicationId) { %>
+          <a class="bb-pa-link" href="/admin/registration-applications/<%= ob.registrationApplicationId || registrationApplicationId %>">
+            Open application
+          </a>
+          <% } else { %>—<% } %>
+        </dd>
+      </div>
+    </dl>
+
+    <h3 class="bb-pa-subsection-title">Foundation checklist</h3>
+    <ul class="bb-pa-entitlement-source-list" data-bb-pa-onboarding-checklist="1">
+      <% (ob.checklist || []).forEach(function (item) { %>
+      <li data-bb-pa-checklist-item="<%= item.key %>" data-bb-pa-checklist-complete="<%= item.completed ? '1' : '0' %>">
+        <strong><%= item.label %></strong>
+        · <span class="bb-pa-chip <%= item.completed ? 'bb-pa-chip--ok' : 'bb-pa-chip--muted' %>">
+          <%= item.completed ? 'Complete' : 'Incomplete' %>
+        </span>
+        <span class="bb-pa-hint"> · <%= item.explanation %></span>
+        <% if (item.actionUrl) { %>
+        · <a class="bb-pa-link" href="<%= item.actionUrl %>"><%= item.actionLabel || 'Open' %></a>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+
+    <div class="bb-pa-org-detail__ro-block" data-bb-pa-onboarding-actions="1">
+      <h3 class="bb-pa-subsection-title">Support controls</h3>
+
+      <form
+        class="bb-pa-form bb-pa-org-detail-form"
+        method="post"
+        action="/admin/organizations/<%= org.organizationKey %>/follow-up-status"
+        data-bb-pa-org-follow-up-form="1"
+      >
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+        <label class="bb-pa-field">
+          <span class="bb-pa-field__label">Follow-up status</span>
+          <select name="follow_up_status" required>
+            <% followOpts.forEach(function (s) { %>
+            <option value="<%= s %>"<%= ob.followUpStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
+            <% }) %>
+          </select>
+        </label>
+        <button type="submit" class="bb-pa-btn">Save follow-up</button>
+      </form>
+
+      <form
+        class="bb-pa-form bb-pa-org-detail-form"
+        method="post"
+        action="/admin/organizations/<%= org.organizationKey %>/assign-support"
+        data-bb-pa-org-assign-form="1"
+      >
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+        <label class="bb-pa-field">
+          <span class="bb-pa-field__label">Assigned support</span>
+          <select name="support_user_id">
+            <option value="">Unassigned</option>
+            <% admins.forEach(function (u) { %>
+            <option value="<%= u.id %>"<%= ob.assignedSupportUser && ob.assignedSupportUser.id === u.id ? ' selected' : '' %>>
+              <%= u.displayName || u.email %> (<%= u.email %>)
+            </option>
+            <% }) %>
+          </select>
+        </label>
+        <button type="submit" class="bb-pa-btn">Save assignment</button>
+      </form>
+
+      <form
+        class="bb-pa-form bb-pa-org-detail-form"
+        method="post"
+        action="/admin/organizations/<%= org.organizationKey %>/support-requested"
+        data-bb-pa-org-support-requested-form="1"
+      >
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+        <label class="bb-pa-field">
+          <span class="bb-pa-field__label">Support requested</span>
+          <select name="support_requested">
+            <option value="false"<%= !ob.supportRequested ? ' selected' : '' %>>Clear / not requested</option>
+            <option value="true"<%= ob.supportRequested ? ' selected' : '' %>>Mark requested</option>
+          </select>
+        </label>
+        <button type="submit" class="bb-pa-btn">Save support flag</button>
+      </form>
+
+      <form
+        class="bb-pa-form bb-pa-org-detail-form"
+        method="post"
+        action="/admin/organizations/<%= org.organizationKey %>/next-follow-up"
+        data-bb-pa-org-next-follow-up-form="1"
+      >
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+        <label class="bb-pa-field">
+          <span class="bb-pa-field__label">Next follow-up</span>
+          <input
+            type="datetime-local"
+            name="next_follow_up_at"
+            value="<%= toDatetimeLocalValue(ob.nextFollowUpAt) %>"
+          />
+        </label>
+        <label class="bb-pa-confirm">
+          <input type="checkbox" name="clear_next_follow_up" value="1" />
+          <span>Clear next follow-up</span>
+        </label>
+        <button type="submit" class="bb-pa-btn">Save schedule</button>
+      </form>
+
+      <form
+        class="bb-pa-form bb-pa-org-detail-form"
+        method="post"
+        action="/admin/organizations/<%= org.organizationKey %>/onboarding-status"
+        data-bb-pa-org-onboarding-status-form="1"
+      >
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+        <label class="bb-pa-field">
+          <span class="bb-pa-field__label">Onboarding status override</span>
+          <select name="onboarding_status" required>
+            <% onboardOpts.forEach(function (s) { %>
+            <option value="<%= s %>"<%= ob.onboardingStatusStored === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label class="bb-pa-field">
+          <span class="bb-pa-field__label">Reason (required for completed / skipped)</span>
+          <input type="text" name="reason" maxlength="500" placeholder="Why this override is justified" />
+        </label>
+        <button type="submit" class="bb-pa-btn">Save onboarding status</button>
+      </form>
+    </div>
+
+    <h3 class="bb-pa-subsection-title">Recent support contacts</h3>
+    <% if (!contactRows.length) { %>
+    <p class="bb-pa-empty" role="status" data-bb-pa-empty="support-contacts">No support contacts recorded yet.</p>
+    <% } else { %>
+    <ul class="bb-pa-entitlement-source-list" data-bb-pa-support-contacts="1">
+      <% contactRows.forEach(function (c) { %>
+      <li data-bb-pa-support-contact="<%= c.id %>">
+        <strong><%= fmtDate(c.contactedAt) %></strong>
+        · <%= labelStatus(c.contactMethod) %>
+        · <%= labelStatus(c.outcome) %>
+        · <%= c.createdByDisplayName || '—' %>
+        <p class="bb-pa-hint"><%= c.note %></p>
+        <% if (c.nextFollowUpAt) { %>
+        <p class="bb-pa-hint">Next follow-up · <%= fmtDate(c.nextFollowUpAt) %></p>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% if (ob.registrationApplicationId || registrationApplicationId) { %>
+    <p class="bb-pa-hint">
+      Append new notes from the
+      <a class="bb-pa-link" href="/admin/registration-applications/<%= ob.registrationApplicationId || registrationApplicationId %>">
+        registration application
+      </a>
+      (same append-only store).
+    </p>
+    <% } %>
+    <% } %>
+  </section>
+  <% } %>
 
   <div class="bb-pa-org-detail__layout">
     <div class="bb-pa-org-detail__main">

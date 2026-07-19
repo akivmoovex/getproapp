@@ -2,7 +2,16 @@
 <%
   var rows = organizations || [];
   var limits = allowedLimits || [10, 25, 50, 100];
-  var hasFilter = Boolean(keyPrefix);
+  var f = filters || {};
+  var hasFilter = Boolean(
+    keyPrefix ||
+    f.product ||
+    f.onboarding ||
+    f.follow_up ||
+    f.support_requested ||
+    f.publication ||
+    f.plan
+  );
   var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
@@ -11,14 +20,14 @@
     if (key === 'suspended') return 'Suspended';
     if (key === 'pending') return 'Pending';
     if (key === 'archived') return 'Archived';
-    return s || '—';
+    return String(s || '—').replace(/_/g, ' ');
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
-    if (key === 'active') return 'bb-pa-chip--ok';
-    if (key === 'suspended') return 'bb-pa-chip--danger';
-    if (key === 'pending') return 'bb-pa-chip--warn';
-    if (key === 'inactive' || key === 'archived') return 'bb-pa-chip--muted';
+    if (key === 'active' || key === 'published' || key === 'completed') return 'bb-pa-chip--ok';
+    if (key === 'suspended' || key === 'needs_help') return 'bb-pa-chip--danger';
+    if (key === 'pending' || key === 'in_progress' || key === 'partially_published' || key === 'new') return 'bb-pa-chip--warn';
+    if (key === 'inactive' || key === 'archived' || key === 'unpublished' || key === 'not_started') return 'bb-pa-chip--muted';
     return 'bb-pa-chip--muted';
   }
   function statusTone(s) {
@@ -28,10 +37,19 @@
     if (key === 'pending') return 'warn';
     return 'muted';
   }
-  function queryPage(p) {
-    var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
+  function filterQueryParts() {
+    var parts = ['limit=' + encodeURIComponent(limit)];
     if (keyPrefix) parts.push('q=' + encodeURIComponent(keyPrefix));
-    return '/admin/organizations?' + parts.join('&');
+    if (f.product) parts.push('product=' + encodeURIComponent(f.product));
+    if (f.onboarding) parts.push('onboarding=' + encodeURIComponent(f.onboarding));
+    if (f.follow_up) parts.push('follow_up=' + encodeURIComponent(f.follow_up));
+    if (f.support_requested) parts.push('support_requested=' + encodeURIComponent(f.support_requested));
+    if (f.publication) parts.push('publication=' + encodeURIComponent(f.publication));
+    if (f.plan) parts.push('plan=' + encodeURIComponent(f.plan));
+    return parts;
+  }
+  function queryPage(p) {
+    return '/admin/organizations?' + filterQueryParts().concat(['page=' + encodeURIComponent(p)]).join('&');
   }
   function clearHref() {
     return '/admin/organizations?limit=' + encodeURIComponent(limit);
@@ -49,8 +67,10 @@
       <p class="bb-pa-orgs__eyebrow">Platform catalogue</p>
       <h1 class="bb-pa-page-head__title">Organization Governance</h1>
       <p class="bb-pa-lede">
-        Read-only BlessBoard organization directory. Keys, hostnames, statuses, and live active-branch counts only —
-        no create/edit actions and no fabricated revenue, usage, or subscription metrics.
+        Canonical list of <strong>provisioned</strong> organizations only.
+        Registration applications live under
+        <a class="bb-pa-link" href="/admin/registration-applications">Registration Applications</a>
+        and are never counted here as organizations.
       </p>
     </div>
     <p class="bb-pa-page-head__actions">
@@ -60,8 +80,8 @@
   </header>
 
   <p class="bb-pa-orgs__notice" role="note" data-bb-pa-org-notice="1">
-    Plan, country, HQ-admin, and premium filters from design comps are not available here.
-    Search uses organization key prefix only. Provisioning remains CLI-only.
+    Optional filters narrow this same list (product, onboarding, follow-up, support, publication, plan).
+    Search uses organization key prefix only. No second onboarding or support queue.
   </p>
 
   <form
@@ -83,6 +103,52 @@
         autocomplete="off"
         spellcheck="false"
       />
+    </div>
+    <div class="bb-pa-field">
+      <label for="product">Product</label>
+      <select id="product" name="product" data-bb-pa-filter="product">
+        <option value="">All products</option>
+        <option value="blessboard" <%= f.product === 'blessboard' ? 'selected' : '' %>>BlessBoard</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="onboarding">Onboarding</label>
+      <select id="onboarding" name="onboarding" data-bb-pa-filter="onboarding">
+        <option value="">Any</option>
+        <option value="incomplete" <%= f.onboarding === 'incomplete' ? 'selected' : '' %>>Incomplete</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="follow_up">Follow-up</label>
+      <select id="follow_up" name="follow_up" data-bb-pa-filter="follow_up">
+        <option value="">Any</option>
+        <% (allowedFollowUp || []).forEach(function (s) { %>
+        <option value="<%= s %>" <%= f.follow_up === s ? 'selected' : '' %>><%= statusLabel(s) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="support_requested">Support requested</label>
+      <select id="support_requested" name="support_requested" data-bb-pa-filter="support_requested">
+        <option value="">Any</option>
+        <option value="true" <%= f.support_requested === 'true' ? 'selected' : '' %>>Yes</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="publication">Publication</label>
+      <select id="publication" name="publication" data-bb-pa-filter="publication">
+        <option value="">Any</option>
+        <option value="unpublished" <%= f.publication === 'unpublished' ? 'selected' : '' %>>Unpublished</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="plan">Plan</label>
+      <select id="plan" name="plan" data-bb-pa-filter="plan">
+        <option value="">Any</option>
+        <% (allowedPlans || ['free']).forEach(function (p) { %>
+        <option value="<%= p %>" <%= f.plan === p ? 'selected' : '' %>><%= p %></option>
+        <% }) %>
+      </select>
     </div>
     <div class="bb-pa-field">
       <label for="limit">Rows per page</label>
@@ -117,7 +183,7 @@
   <div class="bb-pa-orgs-empty" data-bb-empty="organizations" data-bb-pa-empty="no-results" role="status">
     <%- include('../partials/empty-state', {
       title: 'No matching organizations',
-      body: 'Try a different organization key prefix, or clear the filter to see the full directory.',
+      body: 'Try different filters, or clear to see the full directory. Applications are not listed here.',
       icon: 'search_off',
       actionHref: clearHref(),
       actionLabel: 'Clear filter'
@@ -136,13 +202,13 @@
       <thead>
         <tr>
           <th scope="col">Organization</th>
-          <th scope="col">Environment</th>
           <th scope="col">Status</th>
           <th scope="col">Enrolment</th>
-          <th scope="col">Hostname</th>
-          <th scope="col">Church</th>
-          <th scope="col">Active branches</th>
-          <th scope="col">Deployment</th>
+          <th scope="col">Plan</th>
+          <th scope="col">Onboarding</th>
+          <th scope="col">Follow-up</th>
+          <th scope="col">Publication</th>
+          <th scope="col">Branches</th>
         </tr>
       </thead>
       <tbody>
@@ -153,8 +219,10 @@
               <strong><%= org.displayName %></strong>
               <code class="bb-pa-key">key · <%= org.organizationKey %></code>
             </a>
+            <% if (org.supportRequested) { %>
+            <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="1">Support requested</span>
+            <% } %>
           </td>
-          <td><code class="bb-pa-key"><%= org.dataEnvironment %></code></td>
           <td>
             <span class="bb-pa-chip <%= statusChip(org.organizationStatus) %>"><%= statusLabel(org.organizationStatus) %></span>
           </td>
@@ -163,15 +231,23 @@
             <span class="bb-pa-chip <%= statusChip(org.enrolmentStatus) %>"><%= statusLabel(org.enrolmentStatus) %></span>
             <% } else { %>—<% } %>
           </td>
-          <td><%= org.canonicalHostname || '—' %></td>
+          <td><%= org.planKey || '—' %></td>
           <td>
-            <% if (org.churchKey) { %>
-            <code class="bb-pa-key"><%= org.churchKey %></code>
-            <span class="bb-pa-chip <%= statusChip(org.churchStatus) %>"><%= statusLabel(org.churchStatus) %></span>
+            <% if (org.onboardingStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.onboardingStatus) %>"><%= statusLabel(org.onboardingStatus) %></span>
+            <% } else { %>—<% } %>
+          </td>
+          <td>
+            <% if (org.followUpStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.followUpStatus) %>"><%= statusLabel(org.followUpStatus) %></span>
+            <% } else { %>—<% } %>
+          </td>
+          <td>
+            <% if (org.publicationStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.publicationStatus) %>" data-bb-pa-publication="<%= org.publicationStatus %>"><%= statusLabel(org.publicationStatus) %></span>
             <% } else { %>—<% } %>
           </td>
           <td data-bb-count="active-branches"><%= org.activeBranchCount %></td>
-          <td><code class="bb-pa-key"><%= org.deploymentCode || '—' %></code></td>
         </tr>
         <% }) %>
       </tbody>
@@ -196,25 +272,14 @@
           <code class="bb-pa-key"><%= org.organizationKey %></code>
           <span class="bb-pa-orgs-card__meta">
             <span>Branches · <strong data-bb-count="active-branches"><%= org.activeBranchCount %></strong></span>
-            <% if (org.dataEnvironment) { %>
-            <span><code class="bb-pa-key"><%= org.dataEnvironment %></code></span>
+            <% if (org.planKey) { %><span>Plan · <%= org.planKey %></span><% } %>
+            <% if (org.onboardingStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.onboardingStatus) %>"><%= statusLabel(org.onboardingStatus) %></span>
             <% } %>
-            <% if (org.enrolmentStatus) { %>
-            <span class="bb-pa-chip <%= statusChip(org.enrolmentStatus) %>"><%= statusLabel(org.enrolmentStatus) %></span>
-            <% } %>
-            <% if (org.canonicalHostname) { %>
-            <span><%= org.canonicalHostname %></span>
-            <% } %>
-            <% if (org.deploymentCode) { %>
-            <span><%= org.deploymentCode %></span>
+            <% if (org.publicationStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.publicationStatus) %>"><%= statusLabel(org.publicationStatus) %></span>
             <% } %>
           </span>
-          <% if (org.churchKey) { %>
-          <span class="bb-pa-orgs-card__church">
-            Church · <code class="bb-pa-key"><%= org.churchKey %></code>
-            <span class="bb-pa-chip <%= statusChip(org.churchStatus) %>"><%= statusLabel(org.churchStatus) %></span>
-          </span>
-          <% } %>
         </span>
       </a>
     </li>

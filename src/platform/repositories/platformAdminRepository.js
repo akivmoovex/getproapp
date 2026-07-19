@@ -5,17 +5,120 @@
  */
 
 /**
+ * Build allowlisted WHERE for organization directory filters.
+ * @param {{
+ *   keyPrefix?: string | null,
+ *   product?: string | null,
+ *   onboarding?: string | null,
+ *   followUp?: string | null,
+ *   supportRequested?: boolean | null,
+ *   publication?: string | null,
+ *   plan?: string | null,
+ * }} filters
+ * @returns {{ whereSql: string, params: unknown[], joins: string }}
+ */
+function buildOrganizationDirectoryFilters(filters = {}) {
+  const params = [];
+  const clauses = [];
+  const joins = [];
+
+  const keyPrefix = filters.keyPrefix || null;
+  if (keyPrefix) {
+    params.push(keyPrefix);
+    clauses.push(`o.organization_key LIKE $${params.length} || '%'`);
+  }
+
+  const product = filters.product ? String(filters.product).toLowerCase() : null;
+  if (product === "blessboard") {
+    joins.push(`INNER JOIN platform.products p_filt
+         ON p_filt.product_key = 'blessboard'
+       INNER JOIN platform.organization_products op_filt
+         ON op_filt.organization_id = o.id
+        AND op_filt.product_id = p_filt.id
+        AND op_filt.status = 'active'`);
+  }
+
+  const onboarding = filters.onboarding ? String(filters.onboarding).toLowerCase() : null;
+  if (onboarding === "incomplete") {
+    joins.push(
+      `LEFT JOIN blessboard.organization_onboarding oo_filt ON oo_filt.organization_id = o.id`
+    );
+    joins.push(`INNER JOIN blessboard.churches c_onb ON c_onb.organization_id = o.id`);
+    clauses.push(
+      `(oo_filt.organization_id IS NULL OR oo_filt.onboarding_status NOT IN ('completed', 'skipped'))`
+    );
+  }
+
+  const followUp = filters.followUp ? String(filters.followUp).toLowerCase() : null;
+  if (followUp) {
+    if (!joins.some((j) => j.includes("oo_filt"))) {
+      joins.push(
+        `LEFT JOIN blessboard.organization_onboarding oo_filt ON oo_filt.organization_id = o.id`
+      );
+    }
+    params.push(followUp);
+    clauses.push(`oo_filt.follow_up_status = $${params.length}`);
+  }
+
+  if (filters.supportRequested === true) {
+    if (!joins.some((j) => j.includes("oo_filt"))) {
+      joins.push(
+        `LEFT JOIN blessboard.organization_onboarding oo_filt ON oo_filt.organization_id = o.id`
+      );
+    }
+    clauses.push(`oo_filt.support_requested = TRUE`);
+  }
+
+  const publication = filters.publication ? String(filters.publication).toLowerCase() : null;
+  if (publication === "unpublished") {
+    joins.push(`INNER JOIN blessboard.churches c_pub ON c_pub.organization_id = o.id`);
+    clauses.push(`NOT EXISTS (
+      SELECT 1 FROM blessboard.public_pages pp
+       WHERE pp.church_id = c_pub.id AND pp.status = 'published'
+    )`);
+  }
+
+  const plan = filters.plan ? String(filters.plan).toLowerCase() : null;
+  if (plan) {
+    params.push(plan);
+    clauses.push(`EXISTS (
+      SELECT 1
+        FROM platform.organization_subscriptions os
+        INNER JOIN platform.plans pl ON pl.id = os.plan_id
+       WHERE os.organization_id = o.id
+         AND os.status IN ('active', 'trialing')
+         AND pl.plan_key = $${params.length}
+    )`);
+  }
+
+  return {
+    whereSql: clauses.length ? `WHERE ${clauses.join(" AND ")}` : "",
+    params,
+    joinsSql: joins.length ? joins.join("\n       ") : "",
+  };
+}
+
+/**
  * @param {{ query: Function }} client
  * @param {{
  *   limit: number,
  *   offset: number,
  *   keyPrefix?: string | null,
+ *   product?: string | null,
+ *   onboarding?: string | null,
+ *   followUp?: string | null,
+ *   supportRequested?: boolean | null,
+ *   publication?: string | null,
+ *   plan?: string | null,
  * }} opts
  */
 async function listOrganizationDirectoryPage(client, opts) {
   const limit = opts.limit;
   const offset = opts.offset;
-  const keyPrefix = opts.keyPrefix || null;
+  const built = buildOrganizationDirectoryFilters(opts);
+  const params = [...built.params, limit, offset];
+  const limitIdx = built.params.length + 1;
+  const offsetIdx = built.params.length + 2;
 
   const r = await client.query(
     `SELECT
@@ -28,8 +131,16 @@ async function listOrganizationDirectoryPage(client, opts) {
         d.deployment_id AS deployment_code,
         c.church_key,
         c.status AS church_status,
-        COALESCE(bc.active_branch_count, 0)::int AS active_branch_count
+        COALESCE(bc.active_branch_count, 0)::int AS active_branch_count,
+        oo.onboarding_status,
+        oo.follow_up_status,
+        oo.support_requested,
+        oo.next_follow_up_at,
+        plan_row.plan_key,
+        COALESCE(pub.published_pages, 0)::int AS published_pages,
+        COALESCE(pub.draft_pages, 0)::int AS draft_pages
        FROM platform.organizations o
+       ${built.joinsSql}
        LEFT JOIN platform.products p
          ON p.product_key = 'blessboard'
        LEFT JOIN platform.organization_products op
@@ -49,31 +160,58 @@ async function listOrganizationDirectoryPage(client, opts) {
        ) d ON TRUE
        LEFT JOIN blessboard.churches c
          ON c.organization_id = o.id
+       LEFT JOIN blessboard.organization_onboarding oo
+         ON oo.organization_id = o.id
        LEFT JOIN LATERAL (
          SELECT COUNT(*)::int AS active_branch_count
            FROM blessboard.branches b
           WHERE b.church_id = c.id
             AND b.status = 'active'
        ) bc ON TRUE
-      WHERE ($1::text IS NULL OR o.organization_key LIKE $1 || '%')
+       LEFT JOIN LATERAL (
+         SELECT
+           COUNT(*) FILTER (WHERE pp.status = 'draft')::int AS draft_pages,
+           COUNT(*) FILTER (WHERE pp.status = 'published')::int AS published_pages
+           FROM blessboard.public_pages pp
+          WHERE pp.church_id = c.id
+       ) pub ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT pl.plan_key
+           FROM platform.organization_subscriptions os
+           INNER JOIN platform.plans pl ON pl.id = os.plan_id
+          WHERE os.organization_id = o.id
+            AND os.status IN ('active', 'trialing')
+          ORDER BY os.created_at DESC
+          LIMIT 1
+       ) plan_row ON TRUE
+      ${built.whereSql}
       ORDER BY o.organization_key ASC
-      LIMIT $2 OFFSET $3`,
-    [keyPrefix, limit, offset]
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    params
   );
   return r.rows;
 }
 
 /**
  * @param {{ query: Function }} client
- * @param {{ keyPrefix?: string | null }} opts
+ * @param {{
+ *   keyPrefix?: string | null,
+ *   product?: string | null,
+ *   onboarding?: string | null,
+ *   followUp?: string | null,
+ *   supportRequested?: boolean | null,
+ *   publication?: string | null,
+ *   plan?: string | null,
+ * }} opts
  */
 async function countOrganizationDirectory(client, opts) {
-  const keyPrefix = opts.keyPrefix || null;
+  const built = buildOrganizationDirectoryFilters(opts);
   const r = await client.query(
-    `SELECT COUNT(*)::int AS total
+    `SELECT COUNT(DISTINCT o.id)::int AS total
        FROM platform.organizations o
-      WHERE ($1::text IS NULL OR o.organization_key LIKE $1 || '%')`,
-    [keyPrefix]
+       ${built.joinsSql}
+      ${built.whereSql}`,
+    built.params
   );
   return r.rows[0] ? Number(r.rows[0].total) : 0;
 }
@@ -476,6 +614,7 @@ async function countDomainsDirectory(client, opts) {
 }
 
 module.exports = {
+  buildOrganizationDirectoryFilters,
   listOrganizationDirectoryPage,
   countOrganizationDirectory,
   countOrganizationDirectoryStats,

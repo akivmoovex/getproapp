@@ -2,10 +2,14 @@
 
 /**
  * Read-only platform organization directory listing with bounded pagination.
+ * Optional allowlisted filters for BlessBoard onboarding ops (same canonical route).
  * No process.env. No writes.
  */
 
 const repo = require("../repositories/platformAdminRepository");
+const {
+  derivePublicationStatus,
+} = require("../../blessboard/services/organizationOnboardingSummaryService");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -18,12 +22,30 @@ const MAX_LIMIT = 100;
 const ALLOWED_LIMITS = Object.freeze([10, 25, 50, 100]);
 const ORG_KEY_PREFIX_RE = /^[a-z][a-z0-9_-]{0,63}$/;
 
+const ALLOWED_PRODUCTS = Object.freeze(["blessboard"]);
+const ALLOWED_ONBOARDING = Object.freeze(["incomplete"]);
+const ALLOWED_FOLLOW_UP = Object.freeze([
+  "new",
+  "call_pending",
+  "contacted",
+  "needs_help",
+  "self_onboarding",
+  "completed",
+  "unreachable",
+  "not_interested",
+]);
+const ALLOWED_PUBLICATION = Object.freeze(["unpublished"]);
+const ALLOWED_PLANS = Object.freeze(["free", "growth", "network"]);
+
 /**
  * Compact DTO for platform-admin HTML — keys and labels only.
  * @param {object} row
  */
 function mapRow(row) {
   if (!row) return null;
+  const publishedPages = Number(row.published_pages) || 0;
+  const draftPages = Number(row.draft_pages) || 0;
+  const hasChurch = row.church_key != null;
   return {
     organizationKey: String(row.organization_key || ""),
     displayName: String(row.display_name || ""),
@@ -35,6 +57,14 @@ function mapRow(row) {
     churchKey: row.church_key != null ? String(row.church_key) : null,
     churchStatus: row.church_status != null ? String(row.church_status) : null,
     activeBranchCount: Number(row.active_branch_count) || 0,
+    onboardingStatus: row.onboarding_status != null ? String(row.onboarding_status) : null,
+    followUpStatus: row.follow_up_status != null ? String(row.follow_up_status) : null,
+    supportRequested: Boolean(row.support_requested),
+    nextFollowUpAt: row.next_follow_up_at || null,
+    planKey: row.plan_key != null ? String(row.plan_key) : null,
+    publicationStatus: hasChurch
+      ? derivePublicationStatus({ draftPages, publishedPages })
+      : null,
   };
 }
 
@@ -74,6 +104,71 @@ function normalizeListInput(input) {
     keyPrefix = q;
   }
 
+  let product = null;
+  const productRaw = String(raw.product || "")
+    .trim()
+    .toLowerCase();
+  if (productRaw) {
+    if (!ALLOWED_PRODUCTS.includes(productRaw)) {
+      return { ok: false, reason: "product" };
+    }
+    product = productRaw;
+  }
+
+  let onboarding = null;
+  const onboardingRaw = String(raw.onboarding || "")
+    .trim()
+    .toLowerCase();
+  if (onboardingRaw) {
+    if (!ALLOWED_ONBOARDING.includes(onboardingRaw)) {
+      return { ok: false, reason: "onboarding" };
+    }
+    onboarding = onboardingRaw;
+  }
+
+  let followUp = null;
+  const followRaw = String(raw.follow_up || raw.followUp || "")
+    .trim()
+    .toLowerCase();
+  if (followRaw) {
+    if (!ALLOWED_FOLLOW_UP.includes(followRaw)) {
+      return { ok: false, reason: "follow_up" };
+    }
+    followUp = followRaw;
+  }
+
+  let supportRequested = null;
+  const supportRaw = String(raw.support_requested || raw.supportRequested || "")
+    .trim()
+    .toLowerCase();
+  if (supportRaw) {
+    if (supportRaw === "true" || supportRaw === "1") supportRequested = true;
+    else if (supportRaw === "false" || supportRaw === "0") supportRequested = false;
+    else return { ok: false, reason: "support_requested" };
+  }
+
+  let publication = null;
+  const pubRaw = String(raw.publication || "")
+    .trim()
+    .toLowerCase();
+  if (pubRaw) {
+    if (!ALLOWED_PUBLICATION.includes(pubRaw)) {
+      return { ok: false, reason: "publication" };
+    }
+    publication = pubRaw;
+  }
+
+  let plan = null;
+  const planRaw = String(raw.plan || "")
+    .trim()
+    .toLowerCase();
+  if (planRaw) {
+    if (!ALLOWED_PLANS.includes(planRaw)) {
+      return { ok: false, reason: "plan" };
+    }
+    plan = planRaw;
+  }
+
   return {
     ok: true,
     value: {
@@ -81,6 +176,12 @@ function normalizeListInput(input) {
       limit,
       offset: (page - 1) * limit,
       keyPrefix,
+      product,
+      onboarding,
+      followUp,
+      supportRequested,
+      publication,
+      plan,
     },
   };
 }
@@ -101,6 +202,7 @@ async function listPlatformOrganizations(db, input) {
       limit: DEFAULT_LIMIT,
       total: 0,
       totalPages: 0,
+      filters: {},
     };
   }
   if (!db || typeof db.query !== "function") {
@@ -113,14 +215,37 @@ async function listPlatformOrganizations(db, input) {
       limit: normalized.value.limit,
       total: 0,
       totalPages: 0,
+      filters: {},
     };
   }
 
   try {
-    const { page, limit, offset, keyPrefix } = normalized.value;
+    const {
+      page,
+      limit,
+      offset,
+      keyPrefix,
+      product,
+      onboarding,
+      followUp,
+      supportRequested,
+      publication,
+      plan,
+    } = normalized.value;
+    const listOpts = {
+      limit,
+      offset,
+      keyPrefix,
+      product,
+      onboarding,
+      followUp,
+      supportRequested: supportRequested === true ? true : null,
+      publication,
+      plan,
+    };
     const [rows, total] = await Promise.all([
-      repo.listOrganizationDirectoryPage(db, { limit, offset, keyPrefix }),
-      repo.countOrganizationDirectory(db, { keyPrefix }),
+      repo.listOrganizationDirectoryPage(db, listOpts),
+      repo.countOrganizationDirectory(db, listOpts),
     ]);
     const organizations = rows.map(mapRow).filter(Boolean);
     const totalPages = total > 0 ? Math.ceil(total / limit) : 0;
@@ -134,6 +259,15 @@ async function listPlatformOrganizations(db, input) {
       total,
       totalPages,
       keyPrefix,
+      filters: {
+        product: product || "",
+        onboarding: onboarding || "",
+        follow_up: followUp || "",
+        support_requested: supportRequested === true ? "true" : "",
+        publication: publication || "",
+        plan: plan || "",
+        q: keyPrefix || "",
+      },
     };
   } catch {
     return {
@@ -145,6 +279,7 @@ async function listPlatformOrganizations(db, input) {
       limit: normalized.value.limit,
       total: 0,
       totalPages: 0,
+      filters: {},
     };
   }
 }
@@ -180,6 +315,11 @@ module.exports = {
   DEFAULT_LIMIT,
   MAX_LIMIT,
   ALLOWED_LIMITS,
+  ALLOWED_PRODUCTS,
+  ALLOWED_ONBOARDING,
+  ALLOWED_FOLLOW_UP,
+  ALLOWED_PUBLICATION,
+  ALLOWED_PLANS,
   normalizeListInput,
   mapRow,
   listPlatformOrganizations,

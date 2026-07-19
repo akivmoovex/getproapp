@@ -58,6 +58,8 @@
     "blessboard:church:provision": "node db/scripts/blessboard-church-provision.js",
     "blessboard:user:create": "node db/scripts/blessboard-user-create.js",
     "blessboard:user:role:assign": "node db/scripts/blessboard-user-role-assign.js",
+    "blessboard:user:password-reset": "node db/scripts/blessboard-user-password-reset.js",
+    "blessboard:user:list-platform-admins": "node db/scripts/blessboard-user-list-platform-admins.js",
     "demo:v5:plan": "node db/scripts/demo-v5-dataset.js",
     "demo:v5:apply": "node db/scripts/demo-v5-dataset.js",
     "test:blessboard:demo-v5-dataset": "node --test --test-concurrency=1 tests/blessboard-demo-v5-dataset.test.js",

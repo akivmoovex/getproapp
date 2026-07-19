@@ -21,6 +21,11 @@ const {
   DEFAULT_LIMIT,
   MAX_LIMIT,
   ALLOWED_LIMITS,
+  ALLOWED_PRODUCTS,
+  ALLOWED_ONBOARDING,
+  ALLOWED_FOLLOW_UP: ORG_FOLLOW_UP_FILTERS,
+  ALLOWED_PUBLICATION,
+  ALLOWED_PLANS,
 } = require("../services/listPlatformOrganizations");
 const {
   getPlatformOrganizationSummary,
@@ -79,6 +84,18 @@ const {
   MAX_LIMIT: REG_MAX_LIMIT,
   ALLOWED_LIMITS: REG_ALLOWED_LIMITS,
 } = require("../../blessboard/services/registrationApplicationsAdminService");
+const {
+  getOrganizationOnboardingSummary,
+  ONBOARDING_STATUSES,
+} = require("../../blessboard/services/organizationOnboardingSummaryService");
+const {
+  setOrganizationSupportRequested,
+  setOrganizationNextFollowUp,
+  overrideOrganizationOnboardingStatus,
+  updateOrganizationFollowUpStatus,
+  assignOrganizationSupport,
+  STATUS: ONBOARDING_ADMIN_STATUS,
+} = require("../../blessboard/services/organizationOnboardingAdminService");
 const registrationAppRepo = require("../../blessboard/repositories/platformChurchRegistrationRepository");
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
 const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
@@ -307,10 +324,17 @@ function createPlatformAdminRouter(deps) {
   });
 
   router.get("/admin/organizations", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
     const list = await listPlatformOrganizations(getPool(), {
       page: req.query.page,
       limit: req.query.limit,
       q: req.query.q,
+      product: req.query.product,
+      onboarding: req.query.onboarding,
+      follow_up: req.query.follow_up,
+      support_requested: req.query.support_requested,
+      publication: req.query.publication,
+      plan: req.query.plan,
     });
     if (!list.ok) {
       if (list.status === LIST_STATUS.INVALID_INPUT) {
@@ -328,9 +352,15 @@ function createPlatformAdminRouter(deps) {
         total: list.total,
         totalPages: list.totalPages,
         keyPrefix: list.keyPrefix || "",
+        filters: list.filters || {},
         defaultLimit: DEFAULT_LIMIT,
         maxLimit: MAX_LIMIT,
         allowedLimits: ALLOWED_LIMITS,
+        allowedProducts: ALLOWED_PRODUCTS,
+        allowedOnboarding: ALLOWED_ONBOARDING,
+        allowedFollowUp: ORG_FOLLOW_UP_FILTERS,
+        allowedPublication: ALLOWED_PUBLICATION,
+        allowedPlans: ALLOWED_PLANS,
         rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
         rangeTo: Math.min(list.page * list.limit, list.total),
       })
@@ -412,6 +442,13 @@ function createPlatformAdminRouter(deps) {
         );
       }
       const flash = readFlash(req);
+      let onboardingSummary = null;
+      if (detail.application && detail.application.organizationId) {
+        const onboard = await getOrganizationOnboardingSummary(getPool(), {
+          organizationId: detail.application.organizationId,
+        });
+        if (onboard.ok && onboard.summary) onboardingSummary = onboard.summary;
+      }
       const html = renderPlatformAdminView(
         "platform-admin/registration-application-detail.ejs",
         shellLocals(req, res, "registration-applications", {
@@ -423,6 +460,7 @@ function createPlatformAdminRouter(deps) {
           followUpStatuses: detail.followUpStatuses || registrationAppRepo.FOLLOW_UP_STATUSES,
           contactMethods: detail.contactMethods || registrationAppRepo.CONTACT_METHODS,
           contactOutcomes: detail.contactOutcomes || registrationAppRepo.CONTACT_OUTCOMES,
+          onboardingSummary,
           notice: flash.notice,
           error: flash.error,
         })
@@ -783,6 +821,7 @@ function createPlatformAdminRouter(deps) {
     requireApex,
     requirePlatformAdmin,
     async (req, res) => {
+      setAdminNoStore(res);
       const detail = await getPlatformOrganizationSummary(getPool(), req.params.organizationKey);
       if (!detail.ok) {
         if (detail.status === DETAIL_STATUS.LOOKUP_ERROR) {
@@ -802,13 +841,48 @@ function createPlatformAdminRouter(deps) {
       }
       const flash = readFlash(req);
       let registrationApplicationId = null;
+      let onboardingSummary = null;
+      let supportContacts = [];
+      let platformAdmins = [];
       try {
-        registrationApplicationId = await registrationAppRepo.findApplicationIdForOrganizationKey(
-          getPool(),
-          detail.organization.organizationKey
-        );
+        const onboard = await getOrganizationOnboardingSummary(getPool(), {
+          organizationKey: detail.organization.organizationKey,
+        });
+        if (onboard.ok && onboard.summary) {
+          onboardingSummary = onboard.summary;
+          registrationApplicationId = onboard.summary.registrationApplicationId;
+          const [contacts, admins] = await Promise.all([
+            registrationAppRepo.listOrganizationSupportContacts(
+              getPool(),
+              onboard.summary.organizationId,
+              { limit: 20 }
+            ),
+            registrationAppRepo.listActivePlatformAdministrators(getPool()),
+          ]);
+          supportContacts = (contacts || []).map((c) => ({
+            id: String(c.id),
+            contactMethod: String(c.contact_method),
+            outcome: String(c.outcome),
+            note: String(c.note || ""),
+            contactedAt: c.contacted_at,
+            nextFollowUpAt: c.next_follow_up_at,
+            createdByDisplayName:
+              c.created_by_display_name != null ? String(c.created_by_display_name) : "",
+          }));
+          platformAdmins = (admins || []).map((u) => ({
+            id: String(u.id),
+            displayName: String(u.display_name || ""),
+            email: String(u.email_normalized || ""),
+          }));
+        } else if (!registrationApplicationId) {
+          registrationApplicationId = await registrationAppRepo.findApplicationIdForOrganizationKey(
+            getPool(),
+            detail.organization.organizationKey
+          );
+        }
       } catch {
         registrationApplicationId = null;
+        onboardingSummary = null;
       }
       const html = renderPlatformAdminView(
         "platform-admin/organization-detail.ejs",
@@ -822,11 +896,191 @@ function createPlatformAdminRouter(deps) {
           plans: entitlementsView.plans || [],
           featureKeys: entitlementsView.featureKeys || [],
           registrationApplicationId,
+          onboardingSummary,
+          supportContacts,
+          platformAdmins,
+          followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
+          onboardingStatuses: ONBOARDING_STATUSES,
           notice: flash.notice,
           error: flash.error,
         })
       );
       return res.status(200).type("html").send(html);
+    }
+  );
+
+  function orgDetailPath(organizationKey) {
+    return `/admin/organizations/${encodeURIComponent(String(organizationKey || "").trim().toLowerCase())}`;
+  }
+
+  router.post(
+    "/admin/organizations/:organizationKey/support-requested",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-onboarding`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const raw = String((req.body && req.body.support_requested) || "").toLowerCase();
+      const result = await setOrganizationSupportRequested(getPool(), {
+        organizationKey,
+        supportRequested: raw === "1" || raw === "true",
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "support_request_failed";
+        if (result.status === ONBOARDING_ADMIN_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_BLESSBOARD) error = "not_blessboard";
+        return res.redirect(303, `${detailPath}?error=${error}#pa-org-onboarding`);
+      }
+      return res.redirect(303, `${detailPath}?notice=support_request_saved#pa-org-onboarding`);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/next-follow-up",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-onboarding`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const clear = String((req.body && req.body.clear_next_follow_up) || "") === "1";
+      const result = await setOrganizationNextFollowUp(getPool(), {
+        organizationKey,
+        nextFollowUpAt: clear ? null : req.body && req.body.next_follow_up_at,
+        clear,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "follow_up_schedule_failed";
+        if (result.status === ONBOARDING_ADMIN_STATUS.INVALID_INPUT) {
+          error =
+            result.message === "next_follow_up_must_be_future"
+              ? "next_follow_up_past"
+              : "invalid";
+        } else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_BLESSBOARD) error = "not_blessboard";
+        return res.redirect(303, `${detailPath}?error=${error}#pa-org-onboarding`);
+      }
+      return res.redirect(303, `${detailPath}?notice=next_follow_up_saved#pa-org-onboarding`);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/follow-up-status",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-onboarding`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await updateOrganizationFollowUpStatus(getPool(), {
+        organizationKey,
+        followUpStatus: req.body && req.body.follow_up_status,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "follow_up_failed";
+        if (result.status === ONBOARDING_ADMIN_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_BLESSBOARD) error = "not_blessboard";
+        return res.redirect(303, `${detailPath}?error=${error}#pa-org-onboarding`);
+      }
+      return res.redirect(303, `${detailPath}?notice=follow_up_saved#pa-org-onboarding`);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/assign-support",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-onboarding`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const rawSupport = req.body && req.body.support_user_id;
+      const result = await assignOrganizationSupport(getPool(), {
+        organizationKey,
+        supportUserId: rawSupport === "" || rawSupport == null ? null : rawSupport,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "assign_failed";
+        if (result.status === ONBOARDING_ADMIN_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_BLESSBOARD) error = "not_blessboard";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.FORBIDDEN) error = "not_platform_admin";
+        return res.redirect(303, `${detailPath}?error=${error}#pa-org-onboarding`);
+      }
+      return res.redirect(303, `${detailPath}?notice=support_assigned#pa-org-onboarding`);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/onboarding-status",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-onboarding`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await overrideOrganizationOnboardingStatus(getPool(), {
+        organizationKey,
+        onboardingStatus: req.body && req.body.onboarding_status,
+        reason: req.body && req.body.reason,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "onboarding_status_failed";
+        if (result.status === ONBOARDING_ADMIN_STATUS.INVALID_INPUT) {
+          error = result.message === "reason_required" ? "reason_required" : "invalid";
+        } else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === ONBOARDING_ADMIN_STATUS.NOT_BLESSBOARD) error = "not_blessboard";
+        return res.redirect(303, `${detailPath}?error=${error}#pa-org-onboarding`);
+      }
+      return res.redirect(303, `${detailPath}?notice=onboarding_status_saved#pa-org-onboarding`);
     }
   );
 

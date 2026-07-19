@@ -493,7 +493,8 @@ describe("blessboard platform-admin shell", () => {
     assert.doesNotMatch(list.text, /Create New Organization|Monthly Revenue|Pending Verifications|\$142k|Export CSV/i);
     assert.doesNotMatch(list.text, new RegExp(org.id, "i"));
     assert.doesNotMatch(list.text, /password|session_token|DATABASE_URL/i);
-    assert.match(list.text, /premium filters from design comps are not available/i);
+    assert.match(list.text, /No second onboarding or support queue/i);
+    assert.match(list.text, /data-bb-pa-filter="product"/);
 
     const noResults = await request(app)
       .get("/admin/organizations?q=zzznomatch")
