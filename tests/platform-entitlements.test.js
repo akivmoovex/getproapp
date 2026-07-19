@@ -25,9 +25,10 @@ const {
 const {
   activateBlessBoardBranch,
 } = require("../src/blessboard/services/activateBlessBoardBranch");
-const {
+  const {
   STATUS,
   FEATURE_KEYS,
+  NETWORK_ONLY_FEATURE_KEYS,
   resolveOrganizationEntitlements,
   resolveOrganizationEntitlementsSafe,
   hasFeature,
@@ -236,6 +237,83 @@ describe("platform entitlements", () => {
     assert.match(String(result.message), /custom_domain_not_entitled/);
   });
 
+  it("PA custom-domain organization assignment requires custom_domain entitlement", async () => {
+    requireDb();
+    const {
+      assignPlatformDomainOrganization,
+      STATUS: DOMAIN_STATUS,
+    } = require("../src/platform/services/platformAdminDomains");
+
+    const networkProv = await provisionPlatformTenant(pool, {
+      organizationKey: "ent-pa-custom-net",
+      displayName: "PA Custom Network Org",
+      legalName: null,
+      dataEnvironment: "testing",
+      productKey: "blessboard",
+      productTenantKey: "ent-pa-custom-net",
+      hostname: "ent-pa-custom-net.blessboard.org",
+      domainType: "canonical",
+      deploymentCode: DEPLOYMENT,
+      isPrimary: true,
+    });
+    assert.equal(networkProv.ok, true, networkProv.message);
+
+    const up = await assignOrganizationPlan(pool, {
+      organizationId: networkProv.records.organization.id,
+      planKey: "professional",
+      status: "active",
+    });
+    assert.equal(up.ok, true, up.reason);
+
+    const product = await pool.query(
+      `SELECT id FROM platform.products WHERE product_key = 'blessboard' LIMIT 1`
+    );
+    const customHostname = "ent-pa-brand.example.com";
+    await pool.query(
+      `INSERT INTO platform.domains (
+         hostname, product_id, organization_id, domain_type, status, is_primary, deployment_id
+       ) VALUES ($1, $2, $3, 'custom', 'active', false, $4)`,
+      [
+        customHostname,
+        product.rows[0].id,
+        networkProv.records.organization.id,
+        DEPLOYMENT,
+      ]
+    );
+
+    const freeProv = await provisionPlatformTenant(pool, {
+      organizationKey: "ent-pa-custom-free",
+      displayName: "PA Custom Free Org",
+      legalName: null,
+      dataEnvironment: "testing",
+      productKey: "blessboard",
+      productTenantKey: "ent-pa-custom-free",
+      hostname: "ent-pa-custom-free.blessboard.org",
+      domainType: "canonical",
+      deploymentCode: DEPLOYMENT,
+      isPrimary: true,
+    });
+    assert.equal(freeProv.ok, true, freeProv.message);
+
+    const denied = await assignPlatformDomainOrganization(pool, {
+      hostname: customHostname,
+      organizationKey: "ent-pa-custom-free",
+      confirmed: true,
+      env: { PLATFORM_DEPLOYMENT_CODE: DEPLOYMENT },
+    });
+    assert.equal(denied.ok, false);
+    assert.equal(denied.status, DOMAIN_STATUS.FORBIDDEN);
+    assert.equal(denied.reason, "custom_domain_not_entitled");
+
+    const allowed = await assignPlatformDomainOrganization(pool, {
+      hostname: customHostname,
+      organizationKey: "ent-pa-custom-net",
+      confirmed: true,
+      env: { PLATFORM_DEPLOYMENT_CODE: DEPLOYMENT },
+    });
+    assert.equal(allowed.ok, true, allowed.reason || allowed.status);
+  });
+
   it("plan upgrade grants features; over-limit Foundation downgrade is blocked without deleting branches", async () => {
     requireDb();
     const before = await pool.query(
@@ -265,7 +343,10 @@ describe("platform entitlements", () => {
     assert.equal(pro.entitlements.planKey, "professional");
     assert.equal(hasFeature(pro.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), true);
     assert.equal(hasFeature(pro.entitlements, FEATURE_KEYS.ADVANCED_REPORTS), true);
+    assert.equal(hasFeature(pro.entitlements, FEATURE_KEYS.BASIC_REPORTS), true);
+    assert.equal(hasFeature(pro.entitlements, FEATURE_KEYS.CUSTOM_EMAIL), false);
     assert.equal(getLimit(pro.entitlements, FEATURE_KEYS.MAX_BRANCHES), null);
+    assert.equal(getLimit(pro.entitlements, FEATURE_KEYS.MAX_MAILBOXES_PER_BRANCH), 0);
 
     const blockedDown = await assignOrganizationPlan(pool, {
       organizationId,
@@ -511,6 +592,249 @@ describe("platform entitlements", () => {
     assert.equal(softBad.entitlements.reason, "unavailable");
 
     // Restore active free for further suite safety
+    await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "free",
+      status: "active",
+      clearEndsAt: true,
+    });
+  });
+
+  it("Network inherits Growth; Foundation and Growth cannot access Network-only gates", async () => {
+    requireDb();
+    await pool.query(
+      `UPDATE blessboard.branches
+          SET status = 'inactive', updated_at = now()
+        WHERE church_id = $1 AND branch_key <> 'hq'`,
+      [churchId]
+    );
+    await pool.query(
+      `UPDATE blessboard.branches
+          SET status = 'active', updated_at = now()
+        WHERE church_id = $1 AND branch_key = 'hq'`,
+      [churchId]
+    );
+
+    const toFree = await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "free",
+      status: "active",
+      clearEndsAt: true,
+    });
+    assert.equal(toFree.ok, true, toFree.reason);
+
+    const foundation = await resolveOrganizationEntitlements(pool, { organizationId });
+    assert.equal(foundation.entitlements.planKey, "free");
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.BASIC_REPORTS), true);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.ADVANCED_REPORTS), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.CUSTOM_EMAIL), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.API_ACCESS), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.WEBHOOKS), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.INTEGRATIONS), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.ADVANCED_ROLES), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.EXECUTIVE_REPORTS), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.REPORT_TEMPLATES), false);
+    assert.equal(hasFeature(foundation.entitlements, FEATURE_KEYS.ADVANCED_AUDIT), false);
+    assert.equal(getLimit(foundation.entitlements, FEATURE_KEYS.MAX_MAILBOXES_PER_BRANCH), 0);
+
+    const toGrowth = await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "growth",
+    });
+    assert.equal(toGrowth.ok, true, toGrowth.reason);
+
+    const growth = await resolveOrganizationEntitlements(pool, { organizationId });
+    assert.equal(growth.entitlements.planKey, "growth");
+    assert.equal(hasFeature(growth.entitlements, FEATURE_KEYS.BASIC_REPORTS), true);
+    assert.equal(hasFeature(growth.entitlements, FEATURE_KEYS.ADVANCED_REPORTS), true);
+    assert.equal(getLimit(growth.entitlements, FEATURE_KEYS.MAX_BRANCHES), null);
+    assert.equal(hasFeature(growth.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), false);
+    assert.equal(hasFeature(growth.entitlements, FEATURE_KEYS.CUSTOM_EMAIL), false);
+    assert.equal(hasFeature(growth.entitlements, FEATURE_KEYS.API_ACCESS), false);
+    assert.equal(hasFeature(growth.entitlements, FEATURE_KEYS.WEBHOOKS), false);
+    assert.equal(getLimit(growth.entitlements, FEATURE_KEYS.MAX_MAILBOXES_PER_BRANCH), 0);
+
+    const growthDomain = await assertFeature(pool, {
+      organizationId,
+      featureKey: FEATURE_KEYS.CUSTOM_DOMAIN,
+    });
+    assert.equal(growthDomain.ok, false);
+    assert.equal(growthDomain.status, STATUS.FORBIDDEN);
+
+    const toNetwork = await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "professional",
+    });
+    assert.equal(toNetwork.ok, true, toNetwork.reason);
+
+    const network = await resolveOrganizationEntitlements(pool, { organizationId });
+    assert.equal(network.entitlements.planKey, "professional");
+    // Growth inheritance
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.BASIC_REPORTS), true);
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.ADVANCED_REPORTS), true);
+    assert.equal(getLimit(network.entitlements, FEATURE_KEYS.MAX_BRANCHES), null);
+    assert.equal(getLimit(network.entitlements, FEATURE_KEYS.MAX_USERS), null);
+    assert.equal(getLimit(network.entitlements, FEATURE_KEYS.MAX_STAFF_ACCOUNTS), null);
+    // Implementable Network gate
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), true);
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.EXECUTIVE_REPORTS), true);
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.ADVANCED_AUDIT), true);
+    // Declared Network keys remain inactive without supporting backend
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.CUSTOM_EMAIL), false);
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.ADVANCED_ROLES), false);
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.REPORT_TEMPLATES), false);
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.API_ACCESS), false);
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.WEBHOOKS), false);
+    assert.equal(hasFeature(network.entitlements, FEATURE_KEYS.INTEGRATIONS), false);
+    assert.equal(getLimit(network.entitlements, FEATURE_KEYS.MAX_MAILBOXES_PER_BRANCH), 0);
+
+    const networkDomain = await assertFeature(pool, {
+      organizationId,
+      featureKey: FEATURE_KEYS.CUSTOM_DOMAIN,
+    });
+    assert.equal(networkDomain.ok, true);
+
+    const networkApi = await assertFeature(pool, {
+      organizationId,
+      featureKey: FEATURE_KEYS.API_ACCESS,
+    });
+    assert.equal(networkApi.ok, false);
+    assert.equal(networkApi.status, STATUS.FORBIDDEN);
+
+    assert.ok(NETWORK_ONLY_FEATURE_KEYS.includes(FEATURE_KEYS.CUSTOM_DOMAIN));
+    assert.ok(NETWORK_ONLY_FEATURE_KEYS.includes(FEATURE_KEYS.API_ACCESS));
+  });
+
+  it("legacy partner plan features match Network posture; inactive subscription grants no Network access", async () => {
+    requireDb();
+    const partnerFeatures = await pool.query(
+      `SELECT pf.feature_key, pf.feature_kind, pf.boolean_value, pf.limit_value
+         FROM platform.plan_features pf
+         INNER JOIN platform.plans p ON p.id = pf.plan_id
+        WHERE p.plan_key = 'partner'
+        ORDER BY pf.feature_key`
+    );
+    const professionalFeatures = await pool.query(
+      `SELECT pf.feature_key, pf.feature_kind, pf.boolean_value, pf.limit_value
+         FROM platform.plan_features pf
+         INNER JOIN platform.plans p ON p.id = pf.plan_id
+        WHERE p.plan_key = 'professional'
+        ORDER BY pf.feature_key`
+    );
+    assert.deepEqual(
+      partnerFeatures.rows.map((r) => ({
+        k: r.feature_key,
+        kind: r.feature_kind,
+        b: r.boolean_value,
+        l: r.limit_value,
+      })),
+      professionalFeatures.rows.map((r) => ({
+        k: r.feature_key,
+        kind: r.feature_kind,
+        b: r.boolean_value,
+        l: r.limit_value,
+      }))
+    );
+
+    const partnerPlan = await pool.query(
+      `SELECT status FROM platform.plans WHERE plan_key = 'partner'`
+    );
+    assert.equal(partnerPlan.rows[0].status, "inactive");
+
+    await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "professional",
+      status: "active",
+      clearEndsAt: true,
+    });
+
+    await pool.query(
+      `UPDATE platform.organization_subscriptions
+          SET starts_at = now() - interval '2 days',
+              ends_at = now() - interval '1 day',
+              status = 'expired',
+              updated_at = now()
+        WHERE organization_id = $1 AND product_key = 'blessboard'
+          AND status IN ('active', 'trialing', 'past_due')`,
+      [organizationId]
+    );
+
+    const inactive = await resolveOrganizationEntitlements(pool, { organizationId });
+    assert.equal(inactive.entitlements.subscriptionActive, false);
+    assert.equal(hasFeature(inactive.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), false);
+    assert.equal(hasFeature(inactive.entitlements, FEATURE_KEYS.ADVANCED_REPORTS), false);
+
+    const domainAssert = await assertFeature(pool, {
+      organizationId,
+      featureKey: FEATURE_KEYS.CUSTOM_DOMAIN,
+    });
+    assert.equal(domainAssert.ok, false);
+    assert.equal(domainAssert.status, STATUS.SUBSCRIPTION_INACTIVE);
+
+    await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "free",
+      status: "active",
+      clearEndsAt: true,
+    });
+  });
+
+  it("Network-only entitlement overrides remain organization-scoped", async () => {
+    requireDb();
+    await assignOrganizationPlan(pool, {
+      organizationId,
+      planKey: "growth",
+      status: "active",
+      clearEndsAt: true,
+    });
+
+    const before = await resolveOrganizationEntitlements(pool, { organizationId });
+    assert.equal(hasFeature(before.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), false);
+
+    const override = await setOrganizationEntitlementOverride(pool, {
+      organizationId,
+      featureKey: FEATURE_KEYS.CUSTOM_DOMAIN,
+      featureKind: "boolean",
+      booleanValue: true,
+      reason: "assisted network domain pilot",
+    });
+    assert.equal(override.ok, true, override.reason);
+
+    const after = await resolveOrganizationEntitlements(pool, { organizationId });
+    assert.equal(hasFeature(after.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), true);
+    assert.equal(after.entitlements.features[FEATURE_KEYS.CUSTOM_DOMAIN].source, "override");
+    assert.equal(hasFeature(after.entitlements, FEATURE_KEYS.API_ACCESS), false);
+
+    const otherOrg = await provisionPlatformTenant(pool, {
+      organizationKey: "ent-other-org",
+      displayName: "Other Ent Org",
+      legalName: null,
+      dataEnvironment: "testing",
+      productKey: "blessboard",
+      productTenantKey: "ent-other-org",
+      hostname: "ent-other.blessboard.org",
+      domainType: "canonical",
+      deploymentCode: DEPLOYMENT,
+      isPrimary: true,
+    });
+    assert.equal(otherOrg.ok, true, otherOrg.message);
+    const otherId = otherOrg.records.organization.id;
+    const otherResolved = await resolveOrganizationEntitlements(pool, {
+      organizationId: otherId,
+    });
+    assert.equal(hasFeature(otherResolved.entitlements, FEATURE_KEYS.CUSTOM_DOMAIN), false);
+
+    // Expire override so later suite cases stay on plan features.
+    await pool.query(
+      `UPDATE platform.organization_entitlements
+          SET starts_at = now() - interval '2 days',
+              ends_at = now() - interval '1 day',
+              updated_at = now()
+        WHERE organization_id = $1 AND feature_key = $2`,
+      [organizationId, FEATURE_KEYS.CUSTOM_DOMAIN]
+    );
+
     await assignOrganizationPlan(pool, {
       organizationId,
       planKey: "free",

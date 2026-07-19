@@ -110,10 +110,11 @@ function createHqRoleAdminRouter(deps) {
     return requireHqAccess(req, res, next);
   }
 
-  function shellLocals(req, res, extra) {
+  async function shellLocals(req, res, extra) {
     return buildHqAdminShellLocals(req, res, {
       env,
       isProduction,
+      getPool,
       activeNav: "roles",
       pageTitle: "Staff permissions",
       extra,
@@ -186,7 +187,7 @@ function createHqRoleAdminRouter(deps) {
 
     const html = renderHqView(
       "hq/roles.ejs",
-      shellLocals(req, res, {
+      await shellLocals(req, res, {
         churchDisplayName: scope.tenant.church.displayName,
         roles: (listed.roles || []).map(presentRole),
         total: listed.total,

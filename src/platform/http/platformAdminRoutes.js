@@ -491,6 +491,7 @@ function createPlatformAdminRouter(deps) {
         if (result.status === DOMAIN_DETAIL_STATUS.CONFIRMATION_REQUIRED) error = "confirm_required";
         else if (result.status === DOMAIN_DETAIL_STATUS.INVALID_INPUT) error = "invalid";
         else if (result.status === DOMAIN_DETAIL_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === DOMAIN_DETAIL_STATUS.FORBIDDEN) error = "not_entitled";
         else if (result.status === DOMAIN_DETAIL_STATUS.DEPLOYMENT_MISMATCH) {
           error = "deployment_mismatch";
         }

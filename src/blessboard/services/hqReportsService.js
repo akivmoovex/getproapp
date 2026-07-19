@@ -128,6 +128,120 @@ async function resolveChurchReportTier(db, churchId) {
 }
 
 /**
+ * Soft check for Network advanced audit / governance dashboard.
+ * Fail-closed to false on lookup errors.
+ * @param {{ query: Function }} client
+ * @param {string} churchId
+ */
+async function resolveAdvancedAuditOnClient(client, churchId) {
+  try {
+    const {
+      resolveOrganizationEntitlementsSafe,
+      hasFeature,
+      FEATURE_KEYS,
+    } = require("../../platform/services/entitlementService");
+    const orgRow = await client.query(
+      `SELECT organization_id FROM blessboard.churches WHERE id = $1`,
+      [churchId]
+    );
+    const organizationId = orgRow.rows[0] && orgRow.rows[0].organization_id;
+    if (!organizationId) return false;
+    const soft = await resolveOrganizationEntitlementsSafe(client, {
+      organizationId,
+    });
+    return hasFeature(soft.entitlements, FEATURE_KEYS.ADVANCED_AUDIT);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @param {{ query: Function, connect?: Function }} db
+ * @param {string} churchId
+ */
+async function resolveChurchAdvancedAudit(db, churchId) {
+  const id = String(churchId || "").trim();
+  if (!UUID_RE.test(id)) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      advancedAuditEntitled: false,
+      reason: "church_id",
+    };
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const advancedAuditEntitled = await resolveAdvancedAuditOnClient(client, id);
+      return { ok: true, status: STATUS.OK, advancedAuditEntitled };
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      advancedAuditEntitled: false,
+      reason: err && err.message ? String(err.message) : "error",
+    };
+  }
+}
+
+/**
+ * Soft check for Network executive dashboard (`executive_reports`).
+ * Fail-closed to false on lookup errors.
+ * @param {{ query: Function }} client
+ * @param {string} churchId
+ */
+async function resolveExecutiveReportsOnClient(client, churchId) {
+  try {
+    const {
+      resolveOrganizationEntitlementsSafe,
+      hasFeature,
+      FEATURE_KEYS,
+    } = require("../../platform/services/entitlementService");
+    const orgRow = await client.query(
+      `SELECT organization_id FROM blessboard.churches WHERE id = $1`,
+      [churchId]
+    );
+    const organizationId = orgRow.rows[0] && orgRow.rows[0].organization_id;
+    if (!organizationId) return false;
+    const soft = await resolveOrganizationEntitlementsSafe(client, {
+      organizationId,
+    });
+    return hasFeature(soft.entitlements, FEATURE_KEYS.EXECUTIVE_REPORTS);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @param {{ query: Function, connect?: Function }} db
+ * @param {string} churchId
+ */
+async function resolveChurchExecutiveReports(db, churchId) {
+  const id = String(churchId || "").trim();
+  if (!UUID_RE.test(id)) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      executiveEntitled: false,
+      reason: "church_id",
+    };
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const executiveEntitled = await resolveExecutiveReportsOnClient(client, id);
+      return { ok: true, status: STATUS.OK, executiveEntitled };
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      executiveEntitled: false,
+      reason: err && err.message ? String(err.message) : "error",
+    };
+  }
+}
+
+/**
  * @param {{ query: Function, connect?: Function }} db
  * @param {{
  *   churchId: string,
@@ -394,4 +508,6 @@ module.exports = {
   STATUS,
   getHqOperationalReport,
   resolveChurchReportTier,
+  resolveChurchExecutiveReports,
+  resolveChurchAdvancedAudit,
 };

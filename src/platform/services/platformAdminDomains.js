@@ -241,6 +241,23 @@ async function assignPlatformDomainOrganization(db, input) {
         return { ok: false, status: STATUS.INVALID_INPUT, reason: "enrolment" };
       }
       organizationId = org.id;
+
+      // Custom domains require Network custom_domain — same gate as provision insert.
+      if (domainType === "custom") {
+        const { assertFeature, FEATURE_KEYS } = require("./entitlementService");
+        const domainGate = await assertFeature(db, {
+          organizationId,
+          productKey: PRODUCT_KEY_DEFAULT,
+          featureKey: FEATURE_KEYS.CUSTOM_DOMAIN,
+        });
+        if (!domainGate.ok) {
+          return {
+            ok: false,
+            status: STATUS.FORBIDDEN,
+            reason: "custom_domain_not_entitled",
+          };
+        }
+      }
     }
 
     const updated = await db.query(

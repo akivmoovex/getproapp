@@ -75,6 +75,11 @@
       </p>
     </div>
     <p class="bb-hq-page-head__actions">
+      <% var governanceOk = typeof entitledFeatures !== 'undefined' && entitledFeatures
+        && entitledFeatures.advanced_audit === true; %>
+      <% if (governanceOk) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/audit/governance" data-bb-audit-action="governance">Governance</a>
+      <% } %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports" data-bb-audit-action="reports">HQ reports</a>
     </p>
   </header>

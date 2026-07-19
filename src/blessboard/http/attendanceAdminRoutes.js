@@ -144,7 +144,7 @@ function createAttendanceAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function shellLocals(req, res, extra) {
+  async function shellLocals(req, res, extra) {
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
         env,
@@ -162,6 +162,7 @@ function createAttendanceAdminRouter(deps) {
     return buildHqAdminShellLocals(req, res, {
       env,
       isProduction,
+      getPool,
       activeNav: "attendance",
       pageTitle: (extra && extra.pageTitle) || "Attendance",
       extra: {
@@ -329,7 +330,7 @@ function createAttendanceAdminRouter(deps) {
       }
       const html = renderView(
         "attendance/admin-list.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           basePath: scope.basePath,
           events: listed.events,
           summary: summary.ok ? summary.summary : null,
@@ -357,7 +358,7 @@ function createAttendanceAdminRouter(deps) {
         }
         const html = renderView(
           "attendance/admin-form.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             pageTitle: "New attendance event",
             basePath: scope.basePath,
             event: null,
@@ -389,7 +390,7 @@ function createAttendanceAdminRouter(deps) {
         if (!created.ok) {
           const html = renderView(
             "attendance/admin-form.ejs",
-            shellLocals(req, res, {
+            await shellLocals(req, res, {
               pageTitle: "New attendance event",
               basePath: scope.basePath,
               event: {
@@ -418,7 +419,7 @@ function createAttendanceAdminRouter(deps) {
       }
       const html = renderView(
         "attendance/admin-form.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: "Edit attendance event",
           basePath: scope.basePath,
           event,
@@ -451,7 +452,7 @@ function createAttendanceAdminRouter(deps) {
       if (!updated.ok) {
         const html = renderView(
           "attendance/admin-form.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             pageTitle: "Edit attendance event",
             basePath: scope.basePath,
             event: {
@@ -479,7 +480,7 @@ function createAttendanceAdminRouter(deps) {
       if (!event) return;
       const html = renderView(
         "attendance/admin-detail.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: event.title || "Attendance",
           basePath: scope.basePath,
           event,
@@ -547,7 +548,7 @@ function createAttendanceAdminRouter(deps) {
         if (!event) return;
         const html = renderView(
           "attendance/admin-detail.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             pageTitle: event.title || "Attendance",
             basePath: scope.basePath,
             event,

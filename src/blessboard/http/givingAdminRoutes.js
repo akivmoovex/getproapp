@@ -146,7 +146,7 @@ function createGivingAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function shellLocals(req, res, extra) {
+  async function shellLocals(req, res, extra) {
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
         env,
@@ -162,6 +162,7 @@ function createGivingAdminRouter(deps) {
     return buildHqAdminShellLocals(req, res, {
       env,
       isProduction,
+      getPool,
       activeNav: "giving",
       pageTitle: (extra && extra.pageTitle) || "Giving",
       extra: {
@@ -326,7 +327,7 @@ function createGivingAdminRouter(deps) {
       }
       const html = renderView(
         "giving/admin-list.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           basePath: scope.basePath,
           entries: listed.entries,
           categories: cats.ok ? cats.categories : [],
@@ -355,7 +356,7 @@ function createGivingAdminRouter(deps) {
         const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
         const html = renderView(
           "giving/admin-form.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             pageTitle: "Record giving",
             basePath: scope.basePath,
             entry: null,
@@ -391,7 +392,7 @@ function createGivingAdminRouter(deps) {
           const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
           const html = renderView(
             "giving/admin-form.ejs",
-            shellLocals(req, res, {
+            await shellLocals(req, res, {
               pageTitle: "Record giving",
               basePath: scope.basePath,
               entry: {
@@ -422,7 +423,7 @@ function createGivingAdminRouter(deps) {
       const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
       const html = renderView(
         "giving/admin-detail.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: entry.categoryLabel || "Giving entry",
           basePath: scope.basePath,
           entry,
@@ -451,7 +452,7 @@ function createGivingAdminRouter(deps) {
       const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
       const html = renderView(
         "giving/admin-form.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: "Edit giving entry",
           basePath: scope.basePath,
           entry,
@@ -488,7 +489,7 @@ function createGivingAdminRouter(deps) {
         const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
         const html = renderView(
           "giving/admin-form.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             pageTitle: "Edit giving entry",
             basePath: scope.basePath,
             entry: {

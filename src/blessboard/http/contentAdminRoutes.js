@@ -276,11 +276,12 @@ function createContentAdminRouter(deps) {
    * @param {import('express').Response} res
    * @param {object} [extra]
    */
-  function shellLocals(req, res, extra) {
+  async function shellLocals(req, res, extra) {
     if (variant === "hq") {
       return buildHqAdminShellLocals(req, res, {
         env,
         isProduction,
+      getPool,
         activeNav: "content",
         pageTitle: (extra && extra.pageTitle) || "Website content",
         extra: {
@@ -578,7 +579,7 @@ function createContentAdminRouter(deps) {
           : "";
       const html = renderContentAdminView(
         "content-admin/index.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           scope,
           pages: (listed && listed.pages) || [],
           pageTitles: PAGE_KEY_TITLES,
@@ -607,7 +608,7 @@ function createContentAdminRouter(deps) {
       }
       const html = renderContentAdminView(
         "content-admin/page.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           scope,
           page: bundle.page,
           sections: bundle.sections || [],
@@ -646,7 +647,7 @@ function createContentAdminRouter(deps) {
         const statusCode = isConflict ? 409 : isConfirm || updated.status === ADMIN_STATUS.INVALID_INPUT ? 400 : 503;
         const html = renderContentAdminView(
           "content-admin/page.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             scope,
             page: isConflict ? updated.page || bundle.page : bundle.page,
             sections: bundle.sections || [],
@@ -682,7 +683,7 @@ function createContentAdminRouter(deps) {
       }
       const html = renderContentAdminView(
         "content-admin/section.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           scope,
           page: bundle.page,
           section,
@@ -725,7 +726,7 @@ function createContentAdminRouter(deps) {
       if (!created.ok) {
         const html = renderContentAdminView(
           "content-admin/page.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             scope,
             page: bundle.page,
             sections: bundle.sections || [],
@@ -782,7 +783,7 @@ function createContentAdminRouter(deps) {
         const statusCode = isConflict ? 409 : isConfirm || updated.status === ADMIN_STATUS.INVALID_INPUT ? 400 : 503;
         const html = renderContentAdminView(
           "content-admin/section.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             scope,
             page: bundle.page,
             section: isConflict ? updated.section || section : section,
@@ -829,7 +830,7 @@ function createContentAdminRouter(deps) {
           routeKey === "events" && (rawWhen === "upcoming" || rawWhen === "past") ? rawWhen : "";
         const html = renderContentAdminView(
           "content-admin/entities.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             scope,
             entityKind: routeKey,
             entityTitle: cfg.title,
@@ -876,7 +877,7 @@ function createContentAdminRouter(deps) {
           const statusCode = isConflict ? 409 : isConfirm || result.status === ADMIN_STATUS.INVALID_INPUT ? 400 : 503;
           const html = renderContentAdminView(
             "content-admin/entities.ejs",
-            shellLocals(req, res, {
+            await shellLocals(req, res, {
               scope,
               entityKind: routeKey,
               entityTitle: cfg.title,
@@ -925,7 +926,7 @@ function createContentAdminRouter(deps) {
       }
       const html = renderContentAdminView(
         "content-admin/preview.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           scope,
           page: bundle.page,
           pageKey,

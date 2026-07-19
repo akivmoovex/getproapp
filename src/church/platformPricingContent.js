@@ -26,7 +26,7 @@ const STAFF_BILLING_NOTE =
   "Church members are not billed individually. Paid packages are billed per active branch; HQ is not billed as a branch.";
 
 const THIRD_PARTY_COSTS_NOTE =
-  "Third-party costs such as custom domain registrar fees and payment processing remain separately quoted where applicable. Hosted mailbox capacity is included on Network; registrar and DNS work are assisted during onboarding. Scheduled message delivery, automated report email, surveys, appointments, and volunteer scheduling are not available in the current product.";
+  "Third-party costs such as custom domain registrar fees and payment processing remain separately quoted where applicable. Custom organization domains on Network use assisted onboarding with manual DNS and TLS — BlessBoard does not automate DNS or certificate issuance today. Hosted mailboxes are Network-only positioning and require an approved external email hosting provider; they are not self-serve provisioned in the product today. API, webhooks, and third-party integrations are by arrangement only until implemented and enabled. Priority support is an ops arrangement with no published response-time SLA on this site. Scheduled message delivery, automated report email, surveys, appointments, and volunteer scheduling are not available in the current product.";
 
 function formatUsdFromCents(cents) {
   const n = Number(cents) || 0;
@@ -84,7 +84,7 @@ function buildTierPlans() {
       priceAmount: formatUsdFromCents(NETWORK_MONTHLY_PER_BRANCH_CENTS),
       priceSuffix: "/active branch/mo",
       description:
-        "Custom organization domain, hosted mailboxes, integrations, and priority support for multi-site networks (assisted onboarding).",
+        "Network adds multi-site infrastructure and governance on top of Growth — custom domain (assisted), executive dashboard and governance audit (live), plus by-arrangement capabilities such as hosted mailboxes and integrations.",
       featured: false,
       badge: null,
       ctaLabel: "Register Your Church",
@@ -92,11 +92,12 @@ function buildTierPlans() {
       ctaVariant: "outline",
       features: [
         "Everything in Growth",
-        "Custom organization domain (assisted onboarding — not self-service DNS today)",
-        `Up to ${NETWORK_MAILBOXES_PER_BRANCH} hosted mailboxes per active branch`,
-        "Advanced roles (assisted / by arrangement)",
-        "API, webhooks, and integrations (availability by arrangement)",
-        "Priority support and assisted onboarding",
+        "Custom organization domain (assisted onboarding — manual DNS/TLS; not automated)",
+        "Executive dashboard and governance audit (implemented on Network)",
+        `Hosted mailboxes — Network-only; up to ${NETWORK_MAILBOXES_PER_BRANCH} per active branch by arrangement when an external provider is approved (not self-serve today)`,
+        "Fixed HQ and branch admin roles today; advanced custom roles by arrangement",
+        "API, webhooks, and integrations — not live self-serve; availability by arrangement",
+        "Assisted onboarding and priority support (ops arrangement — no published SLA)",
       ],
     },
   ];
@@ -162,7 +163,7 @@ function buildPublicPricingComparisonRows() {
       values: {
         foundation: "Basic HQ aggregates",
         growth: "Advanced attendance & giving + cross-branch",
-        network: "Growth reporting + executive exports (by arrangement)",
+        network: "Growth reporting + executive dashboard; file exports by arrangement",
       },
     },
     {
@@ -192,7 +193,7 @@ function buildPublicPricingComparisonRows() {
       values: {
         foundation: "None",
         growth: "None",
-        network: `Up to ${NETWORK_MAILBOXES_PER_BRANCH}`,
+        network: `By arrangement (up to ${NETWORK_MAILBOXES_PER_BRANCH} when hosting enabled; external provider required)`,
       },
     },
   ];

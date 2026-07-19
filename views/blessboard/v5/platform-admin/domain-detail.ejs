@@ -58,6 +58,9 @@
     if (code === 'csrf') return 'Invalid or missing CSRF token.';
     if (code === 'status_failed') return 'Status update failed.';
     if (code === 'organization_failed') return 'Organization assignment failed.';
+    if (code === 'not_entitled') {
+      return 'That organization is not entitled to a custom domain (Network custom_domain required).';
+    }
     return code || 'Something went wrong.';
   }
   var detailPath = d ? '/admin/domains/' + encodeURIComponent(d.hostname) : '/admin/domains';

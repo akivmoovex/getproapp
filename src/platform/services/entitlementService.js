@@ -23,15 +23,42 @@ const STATUS = Object.freeze({
 const PRODUCT_KEY_DEFAULT = "blessboard";
 const ACTIVE_SUB_STATUSES = Object.freeze(["active", "trialing", "past_due"]);
 
+/**
+ * Runtime platform.plan_features keys (snake_case).
+ * Network-only booleans stay false until a V5 backend can enforce them —
+ * commercial catalogue capacity is not a substitute for FEATURE_KEYS=true.
+ */
 const FEATURE_KEYS = Object.freeze({
   MAX_BRANCHES: "max_branches",
   MAX_USERS: "max_users",
   MAX_STAFF_ACCOUNTS: "max_staff_accounts",
+  MAX_MAILBOXES_PER_BRANCH: "max_mailboxes_per_branch",
   BASIC_REPORTS: "basic_reports",
   ADVANCED_REPORTS: "advanced_reports",
   CUSTOM_DOMAIN: "custom_domain",
   CUSTOM_EMAIL: "custom_email",
+  ADVANCED_ROLES: "advanced_roles",
+  EXECUTIVE_REPORTS: "executive_reports",
+  REPORT_TEMPLATES: "report_templates",
+  API_ACCESS: "api_access",
+  WEBHOOKS: "webhooks",
+  INTEGRATIONS: "integrations",
+  ADVANCED_AUDIT: "advanced_audit",
 });
+
+/** Network-only capability keys (boolean or mailbox limit). Growth must stay false/0. */
+const NETWORK_ONLY_FEATURE_KEYS = Object.freeze([
+  FEATURE_KEYS.CUSTOM_DOMAIN,
+  FEATURE_KEYS.CUSTOM_EMAIL,
+  FEATURE_KEYS.MAX_MAILBOXES_PER_BRANCH,
+  FEATURE_KEYS.ADVANCED_ROLES,
+  FEATURE_KEYS.EXECUTIVE_REPORTS,
+  FEATURE_KEYS.REPORT_TEMPLATES,
+  FEATURE_KEYS.API_ACCESS,
+  FEATURE_KEYS.WEBHOOKS,
+  FEATURE_KEYS.INTEGRATIONS,
+  FEATURE_KEYS.ADVANCED_AUDIT,
+]);
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -597,6 +624,7 @@ async function setOrganizationEntitlementOverride(db, input) {
 module.exports = {
   STATUS,
   FEATURE_KEYS,
+  NETWORK_ONLY_FEATURE_KEYS,
   PRODUCT_KEY_DEFAULT,
   resolveOrganizationEntitlements,
   resolveOrganizationEntitlementsSafe,

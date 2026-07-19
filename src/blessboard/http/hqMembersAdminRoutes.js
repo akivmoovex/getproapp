@@ -123,10 +123,11 @@ function createHqMembersAdminRouter(deps) {
     return requireHqAccess(req, res, next);
   }
 
-  function shellLocals(req, res, activeNav, extra) {
+  async function shellLocals(req, res, activeNav, extra) {
     return buildHqAdminShellLocals(req, res, {
       env,
       isProduction,
+      getPool,
       activeNav,
       extra,
     });
@@ -210,7 +211,7 @@ function createHqMembersAdminRouter(deps) {
     const totalPages = Math.max(1, Math.ceil(listed.total / PAGE_LIMIT));
     const html = renderHqView(
       "hq/registrations.ejs",
-      shellLocals(req, res, "registrations", {
+      await shellLocals(req, res, "registrations", {
         pageTitle: "Registration oversight",
         items: listed.items,
         total: listed.total,
@@ -253,7 +254,7 @@ function createHqMembersAdminRouter(deps) {
 
     const html = renderHqView(
       "hq/registration-detail.ejs",
-      shellLocals(req, res, "registrations", {
+      await shellLocals(req, res, "registrations", {
         pageTitle: "Registration review",
         registration: presentRegistration(loaded.registration),
       })
@@ -302,7 +303,7 @@ function createHqMembersAdminRouter(deps) {
     const totalPages = Math.max(1, Math.ceil(listed.total / PAGE_LIMIT));
     const html = renderHqView(
       "hq/members.ejs",
-      shellLocals(req, res, "members", {
+      await shellLocals(req, res, "members", {
         pageTitle: "Member directory",
         items: listed.items,
         total: listed.total,
@@ -348,7 +349,7 @@ function createHqMembersAdminRouter(deps) {
 
     const html = renderHqView(
       "hq/member-detail.ejs",
-      shellLocals(req, res, "members", {
+      await shellLocals(req, res, "members", {
         pageTitle: "Member profile",
         member: loaded.member,
       })

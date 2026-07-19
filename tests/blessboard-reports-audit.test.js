@@ -471,7 +471,12 @@ describe("blessboard reports-audit", () => {
     );
     assert.doesNotMatch(consolidated.text, /href="\/hq\/reports\/attendance/);
     assert.doesNotMatch(consolidated.text, /href="\/hq\/reports\/giving/);
+    assert.doesNotMatch(consolidated.text, /href="\/hq\/reports\/executive/);
+    assert.match(consolidated.text, /data-bb-report-link="executive"/);
+    assert.match(consolidated.text, /data-bb-report-link-tier="network-required"/);
     assert.match(consolidated.text, /Requires Growth — not linked on Foundation/);
+    assert.match(consolidated.text, /Requires Network — not linked on Foundation or Growth/);
+    assert.doesNotMatch(consolidated.text, /href="\/hq\/audit\/governance"/);
     assert.match(consolidated.text, /data-bb-reports-summary="1"/);
     assert.match(consolidated.text, /data-bb-hq-report-filter="1"/);
     assert.match(consolidated.text, /data-bb-report="giving-totals"|data-bb-report="giving-empty"/);
@@ -536,6 +541,9 @@ describe("blessboard reports-audit", () => {
     assert.match(hubGrowth.text, /data-bb-report-link-tier="advanced"/);
     assert.match(hubGrowth.text, /href="\/hq\/reports\/attendance/);
     assert.match(hubGrowth.text, /href="\/hq\/reports\/giving/);
+    assert.match(hubGrowth.text, /data-bb-report-link-tier="network-required"/);
+    assert.doesNotMatch(hubGrowth.text, /href="\/hq\/reports\/executive/);
+    assert.doesNotMatch(hubGrowth.text, /href="\/hq\/audit\/governance"/);
 
     const att = await request(app)
       .get(`/hq/reports/attendance?month=${yearMonth}&branch=hq`)

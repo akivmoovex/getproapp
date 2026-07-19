@@ -4098,3 +4098,182 @@ body.bb-hq-drawer-open { overflow: hidden; }
   background: var(--bb-color-error-bg, #fef3f2);
   color: var(--bb-color-error, #b3261e);
 }
+
+/* Network executive dashboard (NW-EX-01) */
+.bb-hq-exec__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem 1rem;
+}
+.bb-hq-exec__title-row .bb-hq-page-head__title {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.bb-hq-exec__month {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--bb-hq-muted, #5c6570);
+}
+.bb-hq-exec-denied,
+.bb-hq-exec-empty {
+  margin: 1rem 0 1.5rem;
+}
+.bb-hq-exec-unavailable {
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--bb-hq-muted, #5c6570);
+}
+.bb-hq-exec .bb-hq-reports-summary {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr));
+}
+.bb-hq-exec-dl {
+  display: grid;
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+}
+.bb-hq-exec-dl div {
+  margin: 0;
+  min-width: 0;
+}
+.bb-hq-exec-dl dt {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--bb-hq-muted, #5c6570);
+}
+.bb-hq-exec-dl dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.bb-hq-exec-cards {
+  display: none;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  gap: 0.75rem;
+}
+.bb-hq-exec-card {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--bb-hq-border, #d9e4e9);
+  border-radius: var(--bb-radius-sm, 0.5rem);
+  background: var(--bb-hq-surface, #fff);
+  min-width: 0;
+}
+.bb-hq-exec-card__title {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.bb-hq-exec-card__value {
+  margin: 0.25rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bb-hq-exec-card__meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--bb-hq-muted, #5c6570);
+  overflow-wrap: anywhere;
+}
+.bb-hq-exec .bb-hq-key {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bb-hq-subsection-title {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.bb-hq-exec .bb-hq-filter__actions .bb-hq-btn,
+.bb-hq-gov-audit .bb-hq-filter__actions .bb-hq-btn,
+.bb-hq-exec .bb-hq-page-head__actions .bb-hq-btn,
+.bb-hq-gov-audit .bb-hq-page-head__actions .bb-hq-btn {
+  min-height: var(--bb-touch-min, 2.75rem);
+}
+@media (max-width: 899px) {
+  .bb-hq-exec-table-wrap--desktop {
+    display: none;
+  }
+  .bb-hq-exec-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .bb-hq-exec .bb-hq-filter__actions,
+  .bb-hq-gov-audit .bb-hq-filter__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bb-hq-exec .bb-hq-filter__actions .bb-hq-btn,
+  .bb-hq-gov-audit .bb-hq-filter__actions .bb-hq-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .bb-hq-exec .bb-hq-page-head__actions,
+  .bb-hq-gov-audit .bb-hq-page-head__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bb-hq-exec .bb-hq-page-head__actions .bb-hq-btn,
+  .bb-hq-gov-audit .bb-hq-page-head__actions .bb-hq-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media (min-width: 900px) {
+  .bb-hq-exec-cards {
+    display: none;
+  }
+}
+@media (max-width: 320px) {
+  .bb-hq-exec .bb-hq-reports-summary,
+  .bb-hq-gov-audit .bb-hq-audit-summary {
+    grid-template-columns: 1fr;
+  }
+  .bb-hq-exec-dl {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Network governance audit (NW-GOV-01) */
+.bb-hq-gov-denied { margin: 1rem 0 1.5rem; }
+.bb-hq-gov-filter {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .bb-hq-gov-filter {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+  .bb-hq-gov-filter .bb-hq-filter__actions {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1024px) {
+  .bb-hq-gov-filter {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.bb-hq-gov-audit .bb-hq-key {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bb-hq-gov-audit .bb-hq-audit-card__action,
+.bb-hq-gov-audit .bb-hq-audit-card__meta {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+@media (max-width: 899px) {
+  .bb-hq-gov-table-wrap--desktop { display: none; }
+  .bb-hq-gov-audit .bb-hq-audit-cards { display: grid; gap: 0.75rem; list-style: none; margin: 0.75rem 0 0; padding: 0; }
+}
+@media (min-width: 900px) {
+  .bb-hq-gov-audit .bb-hq-audit-cards { display: none; }
+}

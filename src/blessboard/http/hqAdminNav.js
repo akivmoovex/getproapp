@@ -120,12 +120,32 @@ const HQ_ADMIN_NAV = Object.freeze([
     nav: true,
   },
   {
+    key: "executive",
+    label: "Executive",
+    href: "/hq/reports/executive",
+    icon: "monitoring",
+    enabled: true,
+    nav: true,
+    /** Network-only — omitted from shell when executive_reports is false. */
+    requiresFeature: "executive_reports",
+  },
+  {
     key: "audit",
     label: "Audit",
     href: "/hq/audit",
     icon: "history",
     enabled: true,
     nav: true,
+  },
+  {
+    key: "governance",
+    label: "Governance",
+    href: "/hq/audit/governance",
+    icon: "policy",
+    enabled: true,
+    nav: true,
+    /** Network-only — omitted from shell when advanced_audit is false. */
+    requiresFeature: "advanced_audit",
   },
   {
     key: "account",

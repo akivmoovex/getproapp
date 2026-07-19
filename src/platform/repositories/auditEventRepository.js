@@ -53,9 +53,14 @@ async function insertAuditEvent(client, fields) {
  * @param {{
  *   organizationId: string,
  *   churchId?: string|null,
+ *   branchId?: string|null,
+ *   actorUserId?: string|null,
  *   actionKey?: string|null,
+ *   actionCategory?: string|null,
  *   entityType?: string|null,
  *   outcome?: string|null,
+ *   createdOnOrAfter?: string|null,
+ *   createdBeforeExclusive?: string|null,
  *   before?: string|null,
  *   limit?: number,
  * }} opts
@@ -67,9 +72,22 @@ async function listAuditEvents(client, opts) {
     params.push(opts.churchId);
     where += ` AND church_id = $${params.length}`;
   }
+  if (opts.branchId) {
+    params.push(opts.branchId);
+    where += ` AND branch_id = $${params.length}`;
+  }
+  if (opts.actorUserId) {
+    params.push(opts.actorUserId);
+    where += ` AND actor_user_id = $${params.length}`;
+  }
   if (opts.actionKey) {
     params.push(opts.actionKey);
     where += ` AND action_key = $${params.length}`;
+  } else if (opts.actionCategory) {
+    params.push(opts.actionCategory);
+    const catIdx = params.length;
+    params.push(`${opts.actionCategory}.%`);
+    where += ` AND (action_key = $${catIdx} OR action_key LIKE $${params.length})`;
   }
   if (opts.entityType) {
     params.push(opts.entityType);
@@ -78,6 +96,14 @@ async function listAuditEvents(client, opts) {
   if (opts.outcome) {
     params.push(opts.outcome);
     where += ` AND outcome = $${params.length}`;
+  }
+  if (opts.createdOnOrAfter) {
+    params.push(opts.createdOnOrAfter);
+    where += ` AND created_at >= $${params.length}::timestamptz`;
+  }
+  if (opts.createdBeforeExclusive) {
+    params.push(opts.createdBeforeExclusive);
+    where += ` AND created_at < $${params.length}::timestamptz`;
   }
   if (opts.before) {
     params.push(opts.before);

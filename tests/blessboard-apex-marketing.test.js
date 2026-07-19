@@ -136,9 +136,13 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(features.text, /data-bb-apex-page="features"/);
     assert.match(features.text, /bb-apex-features-page/);
     assert.match(features.text, /Advanced attendance/);
+    assert.match(features.text, /Executive dashboard/);
+    assert.match(features.text, /manual DNS\/TLS/);
+    assert.match(features.text, /not self-serve live features today/i);
     assert.match(features.text, /SSO/);
     assert.doesNotMatch(features.text, /Advanced analytics &amp; SSO|Advanced analytics & SSO/i);
     assert.doesNotMatch(features.text, /volunteer scheduling|scheduled broadcast|surveys|appointments/i);
+    assert.doesNotMatch(features.text, /automated DNS|Hosted mailbox capacity is included/i);
     assert.doesNotMatch(features.text, /\$42,?850|\+12%\s*vs/i);
   });
 

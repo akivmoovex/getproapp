@@ -51,12 +51,13 @@ Also preserved:
 
 ### Network (beyond Growth)
 
-- Custom organization domain (assisted onboarding — not self-service DNS)
-- Hosted mailboxes (capacity per catalogue)
-- Integrations / API / webhooks **by arrangement**
-- Advanced roles **assisted / by arrangement**
-- Executive exports **by arrangement**
-- Priority support and assisted onboarding
+- Custom organization domain (assisted onboarding — **manual DNS/TLS**, not automated)
+- Executive dashboard and governance audit (**implemented** when entitled)
+- Hosted mailboxes — Network-only; up to catalogue capacity **by arrangement** when an external provider is approved (not self-serve today)
+- Integrations / API / webhooks **by arrangement** (not live self-serve)
+- Advanced custom roles **assisted / by arrangement** (fixed HQ/branch roles live)
+- File exports **by arrangement**
+- Priority support and assisted onboarding (ops; **no published SLA**)
 
 ## 4. Deferred — must not be sold as available
 

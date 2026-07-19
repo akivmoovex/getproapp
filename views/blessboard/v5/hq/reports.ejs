@@ -14,6 +14,8 @@
     (branchFilter ? '&branch=' + encodeURIComponent(branchFilter) : '');
   var givHref = '/hq/reports/giving?month=' + encodeURIComponent(yearMonth) +
     (branchFilter ? '&branch=' + encodeURIComponent(branchFilter) : '');
+  var execHref = '/hq/reports/executive?month=' + encodeURIComponent(yearMonth) +
+    (branchFilter ? '&branch=' + encodeURIComponent(branchFilter) : '');
   var scopeLabel = branchFilter
     ? (function () {
         var found = null;
@@ -25,6 +27,8 @@
     ? reportTier
     : (report.reportTier || 'basic');
   var advancedOk = tier === 'advanced';
+  var executiveOk = typeof entitledFeatures !== 'undefined' && entitledFeatures
+    && entitledFeatures.executive_reports === true;
 %>
 
 <section
@@ -65,7 +69,7 @@
     <h2 id="bb-hq-report-links-heading" class="bb-hq-section-title">Report destinations</h2>
     <p class="bb-hq-hint">
       Foundation includes this hub snapshot. Detailed attendance and giving reports require Growth
-      (or Network). Links appear only when advanced reports are entitled.
+      (or Network). The executive dashboard requires Network. Links appear only when entitled.
     </p>
     <ul class="bb-hq-report-cards">
       <li>
@@ -127,6 +131,37 @@
             <span class="bb-hq-report-card__meta">Requires Growth — not linked on Foundation</span>
           </span>
           <span class="bb-hq-chip bb-hq-chip--muted">Growth required</span>
+        </div>
+        <% } %>
+      </li>
+      <li>
+        <% if (executiveOk) { %>
+        <a
+          class="bb-hq-report-card"
+          href="<%= execHref %>"
+          data-bb-report-link="executive"
+          data-bb-report-link-tier="network"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
+          <span class="bb-hq-report-card__body">
+            <span class="bb-hq-report-card__title">Executive dashboard</span>
+            <span class="bb-hq-report-card__meta">Network church-wide snapshot</span>
+          </span>
+          <span class="bb-hq-chip">Network</span>
+        </a>
+        <% } else { %>
+        <div
+          class="bb-hq-report-card bb-hq-report-card--gated"
+          data-bb-report-link="executive"
+          data-bb-report-link-tier="network-required"
+          aria-disabled="true"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
+          <span class="bb-hq-report-card__body">
+            <span class="bb-hq-report-card__title">Executive dashboard</span>
+            <span class="bb-hq-report-card__meta">Requires Network — not linked on Foundation or Growth</span>
+          </span>
+          <span class="bb-hq-chip bb-hq-chip--muted">Network required</span>
         </div>
         <% } %>
       </li>

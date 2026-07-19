@@ -11,7 +11,7 @@
 |---------|-------|----|-----------------|---------|--------------------|-------|
 | **Foundation** | USD 0 / month | 1 | Maximum **1** | Up to **250** active | Up to **10** | Entry package |
 | **Growth** | **USD 14.99** per active branch / month | 1 | **Unlimited** | Unlimited (fair use) | Fair use | Advanced attendance & giving reports, cross-branch HQ administration |
-| **Network** | **USD 29.99** per active branch / month | 1 | **Unlimited** | Unlimited (fair use) | Fair use + advanced roles (assisted / by arrangement) | Custom domain, hosted mailboxes, integrations, executive exports (by arrangement), priority support, assisted onboarding |
+| **Network** | **USD 29.99** per active branch / month | 1 | **Unlimited** | Unlimited (fair use) | Fair use + advanced roles (assisted / by arrangement) | Custom domain (assisted), executive dashboard & governance audit (live), hosted mailboxes / API / webhooks / integrations (by arrangement), priority support (ops; no published SLA), assisted onboarding |
 
 ### Terminology
 
@@ -30,15 +30,15 @@
 | Active branches | Max 1 | Unlimited | Unlimited |
 | Active members | Up to 250 | Fair use | Fair use |
 | Admin / leadership accounts | Up to 10 | Fair use | Fair use + advanced roles |
-| Reporting | Basic HQ aggregates | Advanced attendance & giving + cross-branch | Growth reporting + executive exports (by arrangement) |
+| Reporting | Basic HQ aggregates | Advanced attendance & giving + cross-branch | Growth reporting + **executive dashboard** (live); file exports by arrangement |
 | Cross-branch HQ administration | — | Yes | Yes |
 | Scheduled broadcasts / report email / surveys / appointments / volunteer scheduling | — | — (not in current product) | — (not in current product) |
-| Custom organization domain | — | — | Yes (assisted onboarding; **not** self-service DNS today) |
-| Hosted mailboxes per active branch | None | None | Up to **5** |
-| API / webhooks / integrations | — | — | By arrangement |
-| Priority support & assisted onboarding | — | — | Yes |
+| Custom organization domain | — | — | Yes (assisted onboarding; **manual DNS/TLS** — not automated) |
+| Hosted mailboxes per active branch | None | None | Network-only; up to **5** **by arrangement** when an external hosting provider is approved (not self-serve provisioned today) |
+| API / webhooks / integrations | — | — | By arrangement (not live self-serve until implemented and enabled) |
+| Priority support & assisted onboarding | — | — | Ops arrangement — **no published response-time SLA** on the public site |
 
-Capabilities labeled “by arrangement” or “assisted onboarding” must not be presented as self-serve product features until implemented.
+Capabilities labeled “by arrangement,” “assisted onboarding,” or “external provider required” must not be presented as automated or self-serve product features until implemented and enabled.
 
 ## 3. Active-branch definition
 
@@ -85,8 +85,8 @@ Operators must resolve blockers before downgrade; the product does **not** auto-
 | Item | Rule |
 |------|------|
 | Default hostname | BlessBoard subdomain (e.g. `yourchurch.blessboard.com`) on all packages |
-| Custom organization domain | **Network only**; assisted onboarding; not self-service DNS |
-| Hosted mailboxes | **Network only**; up to **5** per active branch |
+| Custom organization domain | **Network only**; assisted onboarding; manual DNS/TLS; not automated |
+| Hosted mailboxes | **Network only**; up to **5** per active branch **by arrangement** when an external provider is approved; not self-serve in product today |
 | Registrar / DNS third-party fees | Separately quoted; not included in package list price |
 | Payment processing (giving) | Third-party; separately quoted when applicable |
 

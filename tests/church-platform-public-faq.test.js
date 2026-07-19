@@ -80,7 +80,19 @@ test("pricing FAQ uses approved onboarding wording", () => {
   assert.ok(pricing);
   assert.match(pricing.answer, /currently onboarding selected churches/i);
   assert.match(pricing.answer, /Contact the BlessBoard team to discuss access/i);
+  assert.match(pricing.answer, /USD 29\.99/);
+  assert.match(pricing.answer, /by arrangement/i);
   assert.doesNotMatch(pricing.answer, /\bfree plan\b/i);
+  assert.doesNotMatch(pricing.answer, /published (response-time )?SLA|guaranteed response/i);
+});
+
+test("custom-domain FAQ does not claim automated DNS", () => {
+  const domain = PLATFORM_FAQ_ITEMS.find((item) => item.id === "custom-domain");
+  assert.ok(domain);
+  assert.match(domain.answer, /Network package/i);
+  assert.match(domain.answer, /manual DNS and TLS/i);
+  assert.match(domain.answer, /does not automate DNS/i);
+  assert.doesNotMatch(domain.answer, /automatic(ally)? (issue|provision) (SSL|certificates)|self-service DNS automation/i);
 });
 
 test("FAQ does not advertise deferred login reset or public contact POST", () => {

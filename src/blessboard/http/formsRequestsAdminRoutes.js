@@ -224,7 +224,7 @@ function createFormsRequestsAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function shellLocals(req, res, activeNav, extra) {
+  async function shellLocals(req, res, activeNav, extra) {
     const pageTitle =
       (extra && extra.pageTitle) ||
       (activeNav === "requests" ? "Requests" : activeNav === "resources" ? "Resources" : "Forms");
@@ -249,6 +249,7 @@ function createFormsRequestsAdminRouter(deps) {
     return buildHqAdminShellLocals(req, res, {
       env,
       isProduction,
+      getPool,
       activeNav,
       pageTitle,
       extra: {
@@ -422,7 +423,7 @@ function createFormsRequestsAdminRouter(deps) {
           .send(
             renderView(
               "forms-requests/admin-resources.ejs",
-              shellLocals(req, res, "resources", {
+              await shellLocals(req, res, "resources", {
                 basePath: scope.basePath,
                 resources,
                 statusFilter,
@@ -482,7 +483,7 @@ function createFormsRequestsAdminRouter(deps) {
           .send(
             renderView(
               "forms-requests/admin-requests.ejs",
-              shellLocals(req, res, "requests", {
+              await shellLocals(req, res, "requests", {
                 basePath: scope.basePath,
                 requests,
                 statusFilter,
@@ -526,7 +527,7 @@ function createFormsRequestsAdminRouter(deps) {
         .send(
           renderView(
             "forms-requests/admin-forms.ejs",
-            shellLocals(req, res, "forms", {
+            await shellLocals(req, res, "forms", {
               basePath: scope.basePath,
               forms,
               statusFilter,
@@ -645,7 +646,7 @@ function createFormsRequestsAdminRouter(deps) {
           .send(
             renderView(
               "forms-requests/admin-form-detail.ejs",
-              shellLocals(req, res, "forms", {
+              await shellLocals(req, res, "forms", {
                 pageTitle: loaded.form.title || "Form",
                 basePath: scope.basePath,
                 form: loaded.form,
@@ -713,7 +714,7 @@ function createFormsRequestsAdminRouter(deps) {
           .send(
             renderView(
               "forms-requests/admin-request-detail.ejs",
-              shellLocals(req, res, "requests", {
+              await shellLocals(req, res, "requests", {
                 pageTitle: loaded.request.subject || "Request",
                 basePath: scope.basePath,
                 request: presentAdminRequest(loaded.request, attachmentMeta),

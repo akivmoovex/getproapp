@@ -31,7 +31,7 @@ const PLATFORM_PUBLIC_SEO = {
     path: "/pricing",
     pageTitle: "Pricing",
     metaDescription:
-      "BlessBoard pricing — Foundation, Growth, and Network packages for churches. Active-branch billing on Growth and Network with contact-led onboarding.",
+      "BlessBoard pricing — Foundation, Growth, and Network packages for churches. Active-branch billing on Growth and Network; Network custom domains use assisted manual DNS. Contact-led onboarding — no self-serve payment on this site.",
     changefreq: "monthly",
     priority: "0.85",
     breadcrumbLabel: "Pricing",

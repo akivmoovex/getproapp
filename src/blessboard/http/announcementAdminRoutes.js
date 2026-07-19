@@ -184,7 +184,7 @@ function createAnnouncementAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function shellLocals(req, res, extra) {
+  async function shellLocals(req, res, extra) {
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
         env,
@@ -200,6 +200,7 @@ function createAnnouncementAdminRouter(deps) {
     return buildHqAdminShellLocals(req, res, {
       env,
       isProduction,
+      getPool,
       activeNav: "announcements",
       pageTitle: (extra && extra.pageTitle) || "Announcements",
       extra: {
@@ -392,7 +393,7 @@ function createAnnouncementAdminRouter(deps) {
       }
       const html = renderView(
         "announcements/admin-list.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           items: listed.items,
           basePath: scope.basePath,
           scopeLabel: isBranchScoped
@@ -423,7 +424,7 @@ function createAnnouncementAdminRouter(deps) {
       if (!scope) return;
       const html = renderView(
         "announcements/admin-form.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: "New announcement",
           basePath: scope.basePath,
           item: null,
@@ -463,7 +464,7 @@ function createAnnouncementAdminRouter(deps) {
       if (!created.ok) {
         const html = renderView(
           "announcements/admin-form.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             pageTitle: "New announcement",
             basePath: scope.basePath,
             item: formItemFromBody(body),
@@ -490,7 +491,7 @@ function createAnnouncementAdminRouter(deps) {
       if (!item) return;
       const html = renderView(
         "announcements/admin-detail.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: item.title || "Announcement",
           basePath: scope.basePath,
           item,
@@ -552,7 +553,7 @@ function createAnnouncementAdminRouter(deps) {
       }
       const html = renderView(
         "announcements/admin-form.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: "Edit announcement",
           basePath: scope.basePath,
           item,
@@ -575,7 +576,7 @@ function createAnnouncementAdminRouter(deps) {
       if (!item) return;
       const html = renderView(
         "announcements/admin-preview.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: "Preview announcement",
           basePath: scope.basePath,
           item,
@@ -598,7 +599,7 @@ function createAnnouncementAdminRouter(deps) {
       }
       const html = renderView(
         "announcements/admin-publish.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: "Confirm publish",
           basePath: scope.basePath,
           item,
@@ -637,7 +638,7 @@ function createAnnouncementAdminRouter(deps) {
       if (!updated.ok) {
         const html = renderView(
           "announcements/admin-publish.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             pageTitle: "Confirm publish",
             basePath: scope.basePath,
             item,
@@ -741,7 +742,7 @@ function createAnnouncementAdminRouter(deps) {
         });
         const html = renderView(
           "announcements/admin-form.ejs",
-          shellLocals(req, res, {
+          await shellLocals(req, res, {
             pageTitle: "Edit announcement",
             basePath: scope.basePath,
             item: loaded.item || formItemFromBody(body, id),

@@ -75,9 +75,11 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
 ]);
 
 const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;
+const ACTION_CATEGORY_RE = /^[a-z][a-z0-9_]{0,31}$/;
 const ENTITY_TYPE_RE = /^[a-z][a-z0-9_]{1,63}$/;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_METADATA_BYTES = 8192;
 
 async function withClient(db, fn) {
@@ -251,12 +253,31 @@ async function listOrganizationAuditEvents(db, input) {
   if (churchId && !UUID_RE.test(churchId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "church_id" };
   }
+  let branchId = input.branchId == null || input.branchId === "" ? null : String(input.branchId);
+  if (branchId && !UUID_RE.test(branchId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "branch_id" };
+  }
+  let actorUserId =
+    input.actorUserId == null || input.actorUserId === "" ? null : String(input.actorUserId);
+  if (actorUserId && !UUID_RE.test(actorUserId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "actor_user_id" };
+  }
   let actionKey =
     input.actionKey == null || input.actionKey === ""
       ? null
       : String(input.actionKey).trim().toLowerCase();
   if (actionKey && !ACTION_KEY_RE.test(actionKey)) {
     return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "action_key" };
+  }
+  let actionCategory =
+    input.actionCategory == null || input.actionCategory === ""
+      ? null
+      : String(input.actionCategory).trim().toLowerCase();
+  if (actionCategory && !ACTION_CATEGORY_RE.test(actionCategory)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "action_category" };
+  }
+  if (actionKey && actionCategory) {
+    actionCategory = null;
   }
   let entityType =
     input.entityType == null || input.entityType === ""
@@ -272,14 +293,45 @@ async function listOrganizationAuditEvents(db, input) {
   if (outcome && !OUTCOMES.includes(outcome)) {
     return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "outcome" };
   }
+  let createdOnOrAfter =
+    input.createdOnOrAfter == null || input.createdOnOrAfter === ""
+      ? null
+      : String(input.createdOnOrAfter).trim();
+  if (createdOnOrAfter && !DATE_RE.test(createdOnOrAfter)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "created_on_or_after" };
+  }
+  let createdToDate =
+    input.createdToDate == null || input.createdToDate === ""
+      ? null
+      : String(input.createdToDate).trim();
+  if (createdToDate && !DATE_RE.test(createdToDate)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "created_to_date" };
+  }
+  let createdBeforeExclusive = null;
+  if (createdOnOrAfter) {
+    createdOnOrAfter = `${createdOnOrAfter}T00:00:00.000Z`;
+  }
+  if (createdToDate) {
+    const d = new Date(`${createdToDate}T00:00:00.000Z`);
+    if (Number.isNaN(d.getTime())) {
+      return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "created_to_date" };
+    }
+    d.setUTCDate(d.getUTCDate() + 1);
+    createdBeforeExclusive = d.toISOString();
+  }
   try {
     return await withClient(db, async (client) => {
       const page = await repo.listAuditEvents(client, {
         organizationId,
         churchId,
+        branchId,
+        actorUserId,
         actionKey,
+        actionCategory,
         entityType,
         outcome,
+        createdOnOrAfter,
+        createdBeforeExclusive,
         before: input.before || null,
         limit: input.limit,
       });

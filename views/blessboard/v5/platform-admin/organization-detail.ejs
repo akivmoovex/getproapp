@@ -48,10 +48,18 @@
     if (k === 'max_branches') return 'Active branches';
     if (k === 'max_users') return 'Members';
     if (k === 'max_staff_accounts') return 'Admin / leadership accounts';
+    if (k === 'max_mailboxes_per_branch') return 'Mailboxes per active branch';
     if (k === 'basic_reports') return 'Basic reports';
     if (k === 'advanced_reports') return 'Advanced reports';
     if (k === 'custom_domain') return 'Custom organization domain';
     if (k === 'custom_email') return 'Hosted mailboxes';
+    if (k === 'advanced_roles') return 'Advanced roles';
+    if (k === 'executive_reports') return 'Executive reports';
+    if (k === 'report_templates') return 'Report templates';
+    if (k === 'api_access') return 'API access';
+    if (k === 'webhooks') return 'Webhooks';
+    if (k === 'integrations') return 'Integrations';
+    if (k === 'advanced_audit') return 'Advanced audit';
     return k;
   }
   function noticeText(code) {
@@ -392,8 +400,20 @@
         var overrideRows = (ent && ent.overrides) ? ent.overrides : featureRows.filter(function (f) { return f.source === 'override'; });
         var limitRows = featureRows.filter(function (f) { return f.featureKind === 'limit'; });
         var flagRows = featureRows.filter(function (f) { return f.featureKind === 'boolean'; });
-        var limitKeys = { max_branches: 1, max_users: 1, max_staff_accounts: 1 };
-        var flagKeys = { basic_reports: 1, advanced_reports: 1, custom_domain: 1, custom_email: 1 };
+        var limitKeys = { max_branches: 1, max_users: 1, max_staff_accounts: 1, max_mailboxes_per_branch: 1 };
+        var flagKeys = {
+          basic_reports: 1,
+          advanced_reports: 1,
+          custom_domain: 1,
+          custom_email: 1,
+          advanced_roles: 1,
+          executive_reports: 1,
+          report_templates: 1,
+          api_access: 1,
+          webhooks: 1,
+          integrations: 1,
+          advanced_audit: 1
+        };
         var capacityOptions = featureKeyOptions.filter(function (fk) { return limitKeys[fk]; });
         var capabilityOptions = featureKeyOptions.filter(function (fk) { return flagKeys[fk]; });
         function sourceLabel(src) {
@@ -421,7 +441,8 @@
         </div>
         <p class="bb-pa-hint" data-bb-pa-entitlements-notice="1">
           Effective entitlements come from the assigned plan, with organization overrides applied where present.
-          Only defined V5 feature keys are shown — marketing capabilities are not invented here.
+          Only defined V5 feature keys are shown. Network-only flags stay disabled until a supporting backend exists —
+          commercial catalogue claims are not treated as live entitlements.
         </p>
 
         <% if (!ent) { %>
@@ -435,6 +456,7 @@
             <li data-bb-usage="branches">Active branches · <strong><%= use.branches %></strong> / <%= formatLimit(use.branchLimit) %></li>
             <li data-bb-usage="staff">Admin / leadership accounts · <strong><%= use.staffAccounts %></strong> / <%= formatLimit(use.staffLimit) %></li>
             <li data-bb-usage="users">Members · <strong><%= use.users %></strong> / <%= formatLimit(use.userLimit) %></li>
+            <li data-bb-usage="max_mailboxes_per_branch">Mailboxes per active branch · <%= formatLimit(use.mailboxLimit) %></li>
             <li data-bb-usage="custom_domain">Custom organization domain · <%= use.customDomain ? 'Entitled' : 'Not entitled' %></li>
             <li data-bb-usage="custom_email">Hosted mailboxes · <%= use.customEmail ? 'Entitled' : 'Not entitled' %></li>
             <li data-bb-usage="advanced_reports">Advanced reports · <%= use.advancedReports ? 'Entitled' : 'Not entitled' %></li>

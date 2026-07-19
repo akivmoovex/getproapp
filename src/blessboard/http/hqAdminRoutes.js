@@ -139,11 +139,12 @@ function createHqAdminRouter(deps) {
    * @param {string} activeNav
    * @param {object} [extra]
    */
-  function shellLocals(req, res, activeNav, extra) {
+  async function shellLocals(req, res, activeNav, extra) {
     return buildHqAdminShellLocals(req, res, {
       env,
       isProduction,
       activeNav,
+      getPool,
       extra,
     });
   }
@@ -167,7 +168,7 @@ function createHqAdminRouter(deps) {
     if (!listResult) return;
     const html = renderHqView(
       "hq/dashboard.ejs",
-      shellLocals(req, res, "home", {
+      await shellLocals(req, res, "home", {
         branches: listResult.branches,
         activeBranchCount: listResult.activeCount || 0,
       })
@@ -185,7 +186,7 @@ function createHqAdminRouter(deps) {
     const typeFilter = typeRaw === "hq" || typeRaw === "branch" ? typeRaw : "";
     const html = renderHqView(
       "hq/branches.ejs",
-      shellLocals(req, res, "branches", {
+      await shellLocals(req, res, "branches", {
         branches: listResult.branches,
         activeBranchCount: listResult.activeCount || 0,
         q,
@@ -195,8 +196,8 @@ function createHqAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/hq/account", rejectApex, gateHq, (req, res) => {
-    const html = renderHqView("hq/account.ejs", shellLocals(req, res, "account"));
+  router.get("/hq/account", rejectApex, gateHq, async (req, res) => {
+    const html = renderHqView("hq/account.ejs", await shellLocals(req, res, "account"));
     return res.status(200).type("html").send(html);
   });
 
@@ -238,7 +239,7 @@ function createHqAdminRouter(deps) {
     }
     const html = renderHqView(
       "hq/settings.ejs",
-      shellLocals(req, res, "settings", {
+      await shellLocals(req, res, "settings", {
         settings: loaded.settings,
         error: null,
         saved: String((req.query && req.query.saved) || "") === "1",
@@ -271,7 +272,7 @@ function createHqAdminRouter(deps) {
         const loaded = await getChurchSettings(getPool(), tenant.church.id);
         const html = renderHqView(
           "hq/settings.ejs",
-          shellLocals(req, res, "settings", {
+          await shellLocals(req, res, "settings", {
             settings: loaded.settings || {
               publicName: String(body.publicName || ""),
               denomination: body.denomination || null,

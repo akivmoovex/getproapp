@@ -78,7 +78,7 @@ test("pricing comparison tracks reporting and Network-only domain/email", () => 
   assert.ok(reporting);
   assert.equal(reporting.values.foundation, "Basic HQ aggregates");
   assert.equal(reporting.values.growth, "Advanced attendance & giving + cross-branch");
-  assert.equal(reporting.values.network, "Growth reporting + executive exports (by arrangement)");
+  assert.equal(reporting.values.network, "Growth reporting + executive dashboard; file exports by arrangement");
   assert.ok(crossBranch);
   assert.equal(crossBranch.values.foundation, false);
   assert.equal(crossBranch.values.growth, true);
@@ -87,6 +87,28 @@ test("pricing comparison tracks reporting and Network-only domain/email", () => 
   assert.equal(customDomain.values.foundation, false);
   assert.equal(customDomain.values.growth, false);
   assert.equal(customDomain.values.network, true);
+  const mailboxes = rows.find((row) => row.key === "hosted_mailboxes");
+  assert.ok(mailboxes);
+  assert.match(mailboxes.values.network, /by arrangement/i);
+  assert.match(mailboxes.values.network, /provider required/i);
+});
+
+test("Network public features distinguish live vs assisted vs by-arrangement", () => {
+  const tiers = buildPublicPricingPlans();
+  const network = tiers.find((plan) => plan.code === "network");
+  assert.ok(network);
+  assert.match(network.priceAmount, /29\.99/);
+  assert.ok(network.features.some((f) => /executive dashboard and governance audit/i.test(f)));
+  assert.ok(network.features.some((f) => /manual DNS\/TLS/i.test(f)));
+  assert.ok(network.features.some((f) => /external provider/i.test(f) && /mailbox/i.test(f)));
+  assert.ok(network.features.some((f) => /API, webhooks/i.test(f) && /not live self-serve/i.test(f)));
+  assert.ok(network.features.some((f) => /no published SLA/i.test(f)));
+  assert.ok(!network.features.some((f) => /^Up to \d+ hosted mailboxes per active branch$/i.test(f)));
+  assert.doesNotMatch(network.description, /automated DNS/i);
+  const { THIRD_PARTY_COSTS_NOTE } = require("../src/church/platformPricingContent");
+  assert.match(THIRD_PARTY_COSTS_NOTE, /does not automate DNS/i);
+  assert.match(THIRD_PARTY_COSTS_NOTE, /external email hosting provider/i);
+  assert.doesNotMatch(THIRD_PARTY_COSTS_NOTE, /Hosted mailbox capacity is included/i);
 });
 
 test("Growth public features claim only implemented differentiators", () => {

@@ -1,0 +1,298 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var entitled = typeof governanceEntitled === 'boolean' ? governanceEntitled : false;
+  var rows = events || [];
+  var branchOptions = branches || [];
+  var actorOptions = actors || [];
+  var categoryOptions = actionCategories || [];
+  var outcomeOptions = outcomes || ['success', 'failure', 'denied'];
+  var hasFilter = Boolean(
+    actionCategoryFilter || outcomeFilter || dateFromFilter || dateToFilter ||
+    actorFilter || branchFilter
+  );
+  var successCount = 0;
+  var failureCount = 0;
+  var deniedCount = 0;
+  rows.forEach(function (ev) {
+    var o = String(ev.outcome || '').toLowerCase();
+    if (o === 'success') successCount += 1;
+    else if (o === 'failure') failureCount += 1;
+    else if (o === 'denied') deniedCount += 1;
+  });
+  function outcomeLabel(o) {
+    var key = String(o || '').toLowerCase();
+    if (key === 'success') return 'Success';
+    if (key === 'failure') return 'Failure';
+    if (key === 'denied') return 'Denied';
+    return o || '—';
+  }
+  function outcomeChip(o) {
+    var key = String(o || '').toLowerCase();
+    if (key === 'success') return 'bb-hq-chip--ok';
+    if (key === 'failure') return 'bb-hq-chip--danger';
+    if (key === 'denied') return 'bb-hq-chip--warn';
+    return '';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 19);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+  function queryWith(extra) {
+    var parts = [];
+    if (actionCategoryFilter) parts.push('category=' + encodeURIComponent(actionCategoryFilter));
+    if (outcomeFilter) parts.push('outcome=' + encodeURIComponent(outcomeFilter));
+    if (dateFromFilter) parts.push('from=' + encodeURIComponent(dateFromFilter));
+    if (dateToFilter) parts.push('to=' + encodeURIComponent(dateToFilter));
+    if (actorFilter) parts.push('actor=' + encodeURIComponent(actorFilter));
+    if (branchFilter) parts.push('branch=' + encodeURIComponent(branchFilter));
+    if (extra && extra.before) parts.push('before=' + encodeURIComponent(extra.before));
+    return parts.length ? ('?' + parts.join('&')) : '';
+  }
+%>
+
+<section
+  class="bb-hq-gov-audit"
+  data-bb-hq-governance-audit="1"
+  data-bb-batch="nw-gov-01"
+  data-bb-stitch-governance="58-hq-global-audit-trail"
+  data-bb-stitch-desktop="bce1e8ec4078407c8d6179251b8765c2"
+  data-bb-stitch-mobile="d7fcb1b3a796434a8fefc7e806c2c0b6"
+  data-bb-gov-entitlement="<%= entitled ? 'network' : 'denied' %>"
+  aria-label="Governance audit"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq/audit">Audit</a>
+        <span aria-hidden="true">›</span>
+        <span>Governance</span>
+      </p>
+      <div class="bb-hq-audit__title-row">
+        <h1 class="bb-hq-page-head__title">Governance audit</h1>
+        <% if (entitled) { %>
+        <span class="bb-hq-audit__count" data-bb-gov-total="<%= rows.length %>"><%= rows.length %></span>
+        <% } %>
+      </div>
+      <p class="bb-hq-lede">
+        <% if (!entitled) { %>
+        Network package required. Growth and Foundation keep the standard
+        <a href="/hq/audit">audit trail</a> — this governance filter surface is Network-only.
+        <% } else { %>
+        Append-only church events for <strong><%= churchDisplayName %></strong>
+        with date, branch, actor, action category, and outcome filters.
+        Secrets, passwords, tokens, cookies, CSRF values, and prayer/pastoral message text are never shown.
+        <% } %>
+      </p>
+      <% if (entitled) { %>
+      <p class="bb-hq-hint" data-bb-gov-privacy="1" role="note">
+        Actor, entity, and branch refs are truncated. Metadata JSON is not loaded. No compliance scores or risk ratings.
+      </p>
+      <% } %>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/audit" data-bb-gov-action="audit">Audit trail</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/reports" data-bb-gov-action="reports">Reports</a>
+    </p>
+  </header>
+
+  <% if (!entitled) { %>
+  <div class="bb-hq-gov-denied" data-bb-gov-denied="1">
+    <%- include('../partials/empty-state', {
+      title: 'Network package required',
+      body: 'Governance audit adds Network filters over the same append-only audit store. Assign Network (advanced_audit) to unlock. The standard audit trail remains available on all packages.',
+      icon: 'lock'
+    }) %>
+    <ul class="bb-hq-exec-unavailable" data-bb-gov-unavailable="denied" aria-label="Unavailable without Network">
+      <li>Date, branch, actor, and action-category filters</li>
+      <li>Network governance presentation chrome</li>
+    </ul>
+    <p class="bb-hq-hint"><a href="/hq/audit">Open audit trail</a></p>
+  </div>
+  <% } else { %>
+
+  <% if (rows.length || hasFilter) { %>
+  <section class="bb-hq-audit-summary" data-bb-gov-summary="1" aria-label="Outcome summary for this page">
+    <div class="bb-hq-audit-summary__card" data-bb-gov-stat="listed">
+      <p class="bb-hq-audit-summary__label">Listed</p>
+      <p class="bb-hq-audit-summary__value"><%= rows.length %></p>
+    </div>
+    <div class="bb-hq-audit-summary__card" data-bb-gov-stat="success">
+      <p class="bb-hq-audit-summary__label">Success</p>
+      <p class="bb-hq-audit-summary__value"><%= successCount %></p>
+    </div>
+    <div class="bb-hq-audit-summary__card" data-bb-gov-stat="failure">
+      <p class="bb-hq-audit-summary__label">Failure</p>
+      <p class="bb-hq-audit-summary__value"><%= failureCount %></p>
+    </div>
+    <div class="bb-hq-audit-summary__card" data-bb-gov-stat="denied">
+      <p class="bb-hq-audit-summary__label">Denied</p>
+      <p class="bb-hq-audit-summary__value"><%= deniedCount %></p>
+    </div>
+  </section>
+  <% } %>
+
+  <form
+    method="get"
+    action="/hq/audit/governance"
+    class="bb-hq-filter bb-hq-gov-filter"
+    data-bb-gov-filter="1"
+    role="search"
+  >
+    <div class="bb-hq-field">
+      <label for="gov-from">From date</label>
+      <input id="gov-from" type="date" name="from" value="<%= dateFromFilter || '' %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="gov-to">To date</label>
+      <input id="gov-to" type="date" name="to" value="<%= dateToFilter || '' %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="gov-branch">Branch</label>
+      <select id="gov-branch" name="branch">
+        <option value="">All branches</option>
+        <% branchOptions.forEach(function (b) { %>
+        <option value="<%= b.key %>" <%= branchFilter === b.key ? 'selected' : '' %>><%= b.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="gov-actor">Actor</label>
+      <select id="gov-actor" name="actor">
+        <option value="">All actors</option>
+        <% actorOptions.forEach(function (a) { %>
+        <option value="<%= a.userId %>" <%= actorFilter === a.userId ? 'selected' : '' %>><%= a.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="gov-category">Action category</label>
+      <select id="gov-category" name="category">
+        <option value="">All categories</option>
+        <% categoryOptions.forEach(function (c) { %>
+        <option value="<%= c %>" <%= actionCategoryFilter === c ? 'selected' : '' %>><%= c %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="gov-outcome">Outcome</label>
+      <select id="gov-outcome" name="outcome">
+        <option value="">All outcomes</option>
+        <% outcomeOptions.forEach(function (o) { %>
+        <option value="<%= o %>" <%= outcomeFilter === o ? 'selected' : '' %>><%= outcomeLabel(o) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Filter
+      </button>
+      <% if (hasFilter) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/audit/governance">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (!rows.length && !hasFilter) { %>
+  <div class="bb-hq-audit-empty" data-bb-gov-empty="catalog">
+    <%- include('../partials/empty-state', {
+      title: 'No audit events yet',
+      body: 'Events appear after HQ and branch staff take audited actions in this church.',
+      icon: 'history'
+    }) %>
+  </div>
+  <% } else if (!rows.length && hasFilter) { %>
+  <div class="bb-hq-audit-empty" data-bb-gov-empty="no-results">
+    <%- include('../partials/empty-state', {
+      title: 'No matching events',
+      body: 'Try different date, branch, actor, category, or outcome filters.',
+      icon: 'search_off',
+      actionHref: '/hq/audit/governance',
+      actionLabel: 'Clear filters'
+    }) %>
+  </div>
+  <% } else { %>
+
+  <section class="bb-hq-panel bb-hq-audit-panel" data-bb-gov-catalog="1" aria-labelledby="bb-hq-gov-heading">
+    <div class="bb-hq-audit-panel__head">
+      <h2 id="bb-hq-gov-heading" class="bb-hq-section-title">Events</h2>
+      <p class="bb-hq-hint">Church-scoped append-only log. Page outcome counts reflect this page only.</p>
+    </div>
+
+    <div class="bb-hq-table-wrap bb-hq-gov-table-wrap--desktop">
+      <table class="bb-hq-table" data-bb-gov-table="1">
+        <thead>
+          <tr>
+            <th scope="col">When</th>
+            <th scope="col">Action</th>
+            <th scope="col">Entity</th>
+            <th scope="col">Outcome</th>
+            <th scope="col">Actor</th>
+            <th scope="col">Branch</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (ev) { %>
+          <tr>
+            <td><time datetime="<%= ev.when %>"><%= formatWhen(ev.when) %></time></td>
+            <td><code class="bb-hq-key"><%= ev.actionKey %></code></td>
+            <td>
+              <%= ev.entityType || '—' %>
+              <% if (ev.entityRef) { %><code class="bb-hq-key">·<%= ev.entityRef %></code><% } %>
+            </td>
+            <td><span class="bb-hq-chip <%= outcomeChip(ev.outcome) %>"><%= outcomeLabel(ev.outcome) %></span></td>
+            <td><% if (ev.actorRef) { %><code class="bb-hq-key">·<%= ev.actorRef %></code><% } else { %>—<% } %></td>
+            <td><% if (ev.branchRef) { %><code class="bb-hq-key">·<%= ev.branchRef %></code><% } else { %>—<% } %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="bb-hq-audit-cards" data-bb-gov-cards="1" aria-label="Audit events">
+      <% rows.forEach(function (ev) { %>
+      <li class="bb-hq-audit-card">
+        <p class="bb-hq-audit-card__when"><time datetime="<%= ev.when %>"><%= formatWhen(ev.when) %></time></p>
+        <p class="bb-hq-audit-card__action"><code class="bb-hq-key"><%= ev.actionKey %></code></p>
+        <p class="bb-hq-audit-card__meta">
+          <span class="bb-hq-chip <%= outcomeChip(ev.outcome) %>"><%= outcomeLabel(ev.outcome) %></span>
+          <%= ev.entityType || '' %>
+          <% if (ev.actorRef) { %> · actor ·<%= ev.actorRef %><% } %>
+          <% if (ev.branchRef) { %> · branch ·<%= ev.branchRef %><% } %>
+        </p>
+      </li>
+      <% }) %>
+    </ul>
+
+    <% if (hasMore && nextBefore) { %>
+    <p class="bb-hq-audit-more">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/audit/governance<%= queryWith({ before: nextBefore }) %>" data-bb-gov-more="1">
+        Older events
+      </a>
+    </p>
+    <% } %>
+  </section>
+  <% } %>
+
+  <section class="bb-hq-panel" data-bb-gov-unavailable="product" aria-labelledby="bb-hq-gov-unavail-heading">
+    <h2 id="bb-hq-gov-unavail-heading" class="bb-hq-section-title">Unavailable</h2>
+    <ul class="bb-hq-exec-unavailable">
+      <li>CSV / bulk export (no approved export infrastructure)</li>
+      <li>Compliance scores and fabricated risk ratings</li>
+      <li>Password, token, cookie, CSRF, or secret values</li>
+      <li>Prayer or pastoral message bodies</li>
+    </ul>
+  </section>
+
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>
