@@ -1,0 +1,231 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = applications || [];
+  var limits = allowedLimits || [10, 25, 50, 100];
+  var f = filters || {};
+  var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
+  var appStatuses = applicationStatuses || [];
+  var provStatuses = provisioningStatuses || [];
+  var followStatuses = followUpStatuses || [];
+
+  function labelStatus(s) {
+    return String(s || '').replace(/_/g, ' ') || '—';
+  }
+  function chipForApp(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'closed') return 'bb-pa-chip--ok';
+    if (key === 'duplicate_review') return 'bb-pa-chip--warn';
+    if (key === 'rejected' || key === 'cancelled') return 'bb-pa-chip--muted';
+    return 'bb-pa-chip--warn';
+  }
+  function chipForProv(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'provisioned') return 'bb-pa-chip--ok';
+    if (key === 'provisioning_failed') return 'bb-pa-chip--danger';
+    if (key === 'provisioning') return 'bb-pa-chip--warn';
+    return 'bb-pa-chip--muted';
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    try {
+      return new Date(d).toISOString().slice(0, 10);
+    } catch (e) {
+      return '—';
+    }
+  }
+  function queryPage(p) {
+    var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
+    if (f.q) parts.push('q=' + encodeURIComponent(f.q));
+    if (f.applicationStatus) parts.push('application_status=' + encodeURIComponent(f.applicationStatus));
+    if (f.provisioningStatus) parts.push('provisioning_status=' + encodeURIComponent(f.provisioningStatus));
+    if (f.followUpStatus) parts.push('follow_up_status=' + encodeURIComponent(f.followUpStatus));
+    if (f.linked && f.linked !== 'all') parts.push('linked=' + encodeURIComponent(f.linked));
+    if (f.from) parts.push('from=' + encodeURIComponent(f.from));
+    if (f.to) parts.push('to=' + encodeURIComponent(f.to));
+    return '/admin/registration-applications?' + parts.join('&');
+  }
+  function clearHref() {
+    return '/admin/registration-applications?limit=' + encodeURIComponent(limit);
+  }
+%>
+
+<section
+  class="bb-pa-orgs"
+  data-bb-pa-registration-applications="1"
+  aria-label="Registration applications"
+>
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-orgs__eyebrow">Church registration queue</p>
+      <h1 class="bb-pa-page-head__title">Registration Applications</h1>
+      <p class="bb-pa-lede">
+        Review church registration applications, contact people for optional onboarding help, and open linked organizations.
+        Successfully provisioned Free churches are not gated here — use follow-up to offer assistance.
+      </p>
+    </div>
+    <p class="bb-pa-page-head__actions">
+      <span class="bb-pa-orgs__total" data-bb-count="registration-total"><%= totalCount %></span>
+      <span class="bb-pa-orgs__total-label">applications</span>
+    </p>
+  </header>
+
+  <form
+    class="bb-pa-org-filter"
+    method="get"
+    action="/admin/registration-applications"
+    role="search"
+    data-bb-pa-reg-filter="1"
+  >
+    <div class="bb-pa-field">
+      <label for="q">Search</label>
+      <input
+        id="q"
+        name="q"
+        type="search"
+        value="<%= f.q || '' %>"
+        placeholder="Church, contact, email, phone, org key"
+        autocomplete="off"
+      />
+    </div>
+    <div class="bb-pa-field">
+      <label for="application_status">Application status</label>
+      <select id="application_status" name="application_status">
+        <option value="">All</option>
+        <% appStatuses.forEach(function (s) { %>
+        <option value="<%= s %>"<%= f.applicationStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="provisioning_status">Provisioning</label>
+      <select id="provisioning_status" name="provisioning_status">
+        <option value="">All</option>
+        <% provStatuses.forEach(function (s) { %>
+        <option value="<%= s %>"<%= f.provisioningStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="follow_up_status">Follow-up</label>
+      <select id="follow_up_status" name="follow_up_status">
+        <option value="">All</option>
+        <% followStatuses.forEach(function (s) { %>
+        <option value="<%= s %>"<%= f.followUpStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="linked">Linked organization</label>
+      <select id="linked" name="linked">
+        <option value="all"<%= !f.linked || f.linked === 'all' ? ' selected' : '' %>>All</option>
+        <option value="linked"<%= f.linked === 'linked' ? ' selected' : '' %>>Linked</option>
+        <option value="unlinked"<%= f.linked === 'unlinked' ? ' selected' : '' %>>Not linked</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="from">From</label>
+      <input id="from" name="from" type="date" value="<%= f.from || '' %>" />
+    </div>
+    <div class="bb-pa-field">
+      <label for="to">To</label>
+      <input id="to" name="to" type="date" value="<%= f.to || '' %>" />
+    </div>
+    <div class="bb-pa-field">
+      <label for="limit">Per page</label>
+      <select id="limit" name="limit">
+        <% limits.forEach(function (n) { %>
+        <option value="<%= n %>"<%= Number(limit) === Number(n) ? ' selected' : '' %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-org-filter__actions">
+      <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Apply</button>
+      <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= clearHref() %>">Clear</a>
+    </div>
+  </form>
+
+  <% if (!rows.length) { %>
+  <%- include('../partials/empty-state', {
+    title: 'No registration applications',
+    body: 'No applications match these filters. Try clearing search or status filters.'
+  }) %>
+  <% } else { %>
+  <div class="bb-pa-table-wrap bb-pa-table-wrap--desktop" data-bb-pa-reg-table="1">
+    <table class="bb-pa-table">
+      <thead>
+        <tr>
+          <th scope="col">Church</th>
+          <th scope="col">Contact</th>
+          <th scope="col">Plan</th>
+          <th scope="col">Submitted</th>
+          <th scope="col">Application</th>
+          <th scope="col">Provisioning</th>
+          <th scope="col">Organization</th>
+          <th scope="col">Follow-up</th>
+          <th scope="col">Support</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr<%= row.attention ? ' class="bb-pa-table__row--attention" data-bb-attention="1"' : '' %>>
+          <td>
+            <a class="bb-pa-link" href="/admin/registration-applications/<%= row.id %>"><%= row.churchName %></a>
+            <div class="bb-pa-muted"><%= row.city %><%= row.city && row.country ? ', ' : '' %><%= row.country %></div>
+          </td>
+          <td>
+            <div><%= row.contactName %></div>
+            <div class="bb-pa-muted"><%= row.contactEmail %></div>
+            <div class="bb-pa-muted"><%= row.contactPhone || '—' %></div>
+          </td>
+          <td><%= row.selectedPlan || '—' %></td>
+          <td><%= fmtDate(row.createdAt) %></td>
+          <td><span class="bb-pa-chip <%= chipForApp(row.applicationStatus) %>"><%= labelStatus(row.applicationStatus) %></span></td>
+          <td><span class="bb-pa-chip <%= chipForProv(row.provisioningStatus) %>"><%= labelStatus(row.provisioningStatus) %></span></td>
+          <td>
+            <% if (row.organizationKey) { %>
+            <a class="bb-pa-link" href="/admin/organizations/<%= encodeURIComponent(row.organizationKey) %>"><%= row.organizationKey %></a>
+            <% } else { %>
+            <span class="bb-pa-muted">Not linked</span>
+            <% } %>
+          </td>
+          <td><%= labelStatus(row.followUpStatus) %></td>
+          <td>
+            <%= row.assignedSupportDisplayName || row.assignedSupportEmail || '—' %>
+            <div class="bb-pa-muted"><%= row.lastContactedAt ? ('Last: ' + fmtDate(row.lastContactedAt)) : '' %></div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="bb-pa-orgs-cards" data-bb-pa-reg-cards="1">
+    <% rows.forEach(function (row) { %>
+    <li class="bb-pa-org-card<%= row.attention ? ' bb-pa-org-card--attention' : '' %>"<%= row.attention ? ' data-bb-attention="1"' : '' %>>
+      <a class="bb-pa-org-card__link" href="/admin/registration-applications/<%= row.id %>">
+        <span class="bb-pa-org-card__title"><%= row.churchName %></span>
+        <span class="bb-pa-org-card__meta"><%= row.contactName %> · <%= row.contactEmail %></span>
+        <span class="bb-pa-org-card__meta"><%= labelStatus(row.applicationStatus) %> · <%= labelStatus(row.provisioningStatus) %></span>
+        <span class="bb-pa-org-card__meta"><%= row.organizationKey ? row.organizationKey : 'Not linked' %> · <%= labelStatus(row.followUpStatus) %></span>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+
+  <% if (totalPages > 1) { %>
+  <nav class="bb-pa-pager" aria-label="Pagination">
+    <p class="bb-pa-pager__summary">Showing <%= rangeFrom %>–<%= rangeTo %> of <%= totalCount %></p>
+    <div class="bb-pa-pager__actions">
+      <% if (page > 1) { %>
+      <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= queryPage(page - 1) %>">Previous</a>
+      <% } %>
+      <% if (page < totalPages) { %>
+      <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= queryPage(page + 1) %>">Next</a>
+      <% } %>
+    </div>
+  </nav>
+  <% } %>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

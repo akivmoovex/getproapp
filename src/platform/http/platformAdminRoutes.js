@@ -68,6 +68,18 @@ const {
   getPlatformDeploymentDetail,
   STATUS: DEPLOY_DETAIL_STATUS,
 } = require("../services/getPlatformDeploymentDetail");
+const {
+  listRegistrationApplicationsAdmin,
+  getRegistrationApplicationDetail,
+  updateRegistrationFollowUpStatus,
+  assignRegistrationSupport,
+  addRegistrationSupportContact,
+  STATUS: REG_APP_STATUS,
+  DEFAULT_LIMIT: REG_DEFAULT_LIMIT,
+  MAX_LIMIT: REG_MAX_LIMIT,
+  ALLOWED_LIMITS: REG_ALLOWED_LIMITS,
+} = require("../../blessboard/services/registrationApplicationsAdminService");
+const registrationAppRepo = require("../../blessboard/repositories/platformChurchRegistrationRepository");
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
 const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
 const {
@@ -91,6 +103,14 @@ const {
  */
 function renderPlatformAdminView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
+}
+
+/**
+ * @param {import('express').Response} res
+ */
+function setAdminNoStore(res) {
+  res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
 }
 
 /**
@@ -317,6 +337,195 @@ function createPlatformAdminRouter(deps) {
     );
     return res.status(200).type("html").send(html);
   });
+
+  router.get(
+    "/admin/registration-applications",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const list = await listRegistrationApplicationsAdmin(getPool(), {
+        page: req.query.page,
+        limit: req.query.limit,
+        q: req.query.q,
+        application_status: req.query.application_status,
+        provisioning_status: req.query.provisioning_status,
+        follow_up_status: req.query.follow_up_status,
+        linked: req.query.linked,
+        from: req.query.from,
+        to: req.query.to,
+      });
+      if (!list.ok) {
+        if (list.status === REG_APP_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid registration application filters.");
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Registration applications are temporarily unavailable."
+        );
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-applications.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: "Registration Applications",
+          applications: list.applications,
+          page: list.page,
+          limit: list.limit,
+          total: list.total,
+          totalPages: list.totalPages,
+          filters: list.filters || {},
+          defaultLimit: REG_DEFAULT_LIMIT,
+          maxLimit: REG_MAX_LIMIT,
+          allowedLimits: REG_ALLOWED_LIMITS,
+          applicationStatuses: registrationAppRepo.APPLICATION_STATUSES,
+          provisioningStatuses: registrationAppRepo.PROVISIONING_STATUSES,
+          followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
+          rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
+          rangeTo: Math.min(list.page * list.limit, list.total),
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/registration-applications/:id",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const detail = await getRegistrationApplicationDetail(getPool(), req.params.id, env);
+      if (!detail.ok) {
+        if (detail.status === REG_APP_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid application id.");
+        }
+        if (detail.status === REG_APP_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This registration application could not be found.");
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Registration application detail is temporarily unavailable."
+        );
+      }
+      const flash = readFlash(req);
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-application-detail.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: detail.application.churchName || "Registration application",
+          application: detail.application,
+          contacts: detail.contacts || [],
+          auditEvents: detail.auditEvents || [],
+          platformAdmins: detail.platformAdmins || [],
+          followUpStatuses: detail.followUpStatuses || registrationAppRepo.FOLLOW_UP_STATUSES,
+          contactMethods: detail.contactMethods || registrationAppRepo.CONTACT_METHODS,
+          contactOutcomes: detail.contactOutcomes || registrationAppRepo.CONTACT_OUTCOMES,
+          notice: flash.notice,
+          error: flash.error,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/follow-up-status",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await updateRegistrationFollowUpStatus(getPool(), {
+        applicationId: id,
+        followUpStatus: req.body && req.body.follow_up_status,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "follow_up_failed";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === REG_APP_STATUS.NOT_PROVISIONED) error = "not_provisioned";
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      return res.redirect(303, `${detailPath}?notice=follow_up_saved`);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/assign-support",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const rawSupport = req.body && req.body.support_user_id;
+      const result = await assignRegistrationSupport(getPool(), {
+        applicationId: id,
+        supportUserId: rawSupport === "" || rawSupport == null ? null : rawSupport,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "assign_failed";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === REG_APP_STATUS.NOT_PROVISIONED) error = "not_provisioned";
+        else if (result.status === REG_APP_STATUS.FORBIDDEN) error = "not_platform_admin";
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      return res.redirect(303, `${detailPath}?notice=support_assigned`);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/contact",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await addRegistrationSupportContact(getPool(), {
+        applicationId: id,
+        actorUserId: req.platformAdminContext.userId,
+        contactMethod: req.body && req.body.contact_method,
+        outcome: req.body && req.body.outcome,
+        note: req.body && req.body.note,
+        followUpStatus: req.body && req.body.follow_up_status,
+        nextFollowUpAt: req.body && req.body.next_follow_up_at,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "contact_failed";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === REG_APP_STATUS.NOT_PROVISIONED) error = "not_provisioned";
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      return res.redirect(303, `${detailPath}?notice=contact_saved`);
+    }
+  );
 
   router.get("/admin/plans", requireApex, requirePlatformAdmin, async (req, res) => {
     const catalogue = await listPlatformPlansCatalogue(getPool(), { includeInactive: true });
@@ -592,6 +801,15 @@ function createPlatformAdminRouter(deps) {
         return sendControlled(req, res, 503, "Entitlements lookup is temporarily unavailable.");
       }
       const flash = readFlash(req);
+      let registrationApplicationId = null;
+      try {
+        registrationApplicationId = await registrationAppRepo.findApplicationIdForOrganizationKey(
+          getPool(),
+          detail.organization.organizationKey
+        );
+      } catch {
+        registrationApplicationId = null;
+      }
       const html = renderPlatformAdminView(
         "platform-admin/organization-detail.ejs",
         shellLocals(req, res, "organizations", {
@@ -603,6 +821,7 @@ function createPlatformAdminRouter(deps) {
           domains: entitlementsView.domains || [],
           plans: entitlementsView.plans || [],
           featureKeys: entitlementsView.featureKeys || [],
+          registrationApplicationId,
           notice: flash.notice,
           error: flash.error,
         })

@@ -11,6 +11,11 @@ const {
   evaluateBranchCreateLimit,
   STATUS: ENTITLEMENT_STATUS,
 } = require("../../platform/services/entitlementService");
+const {
+  resolveManageTransactionOption,
+  openProvisioningSession,
+  runInsertWithUniqueRecovery,
+} = require("../../platform/db/provisioningTransaction");
 
 const STATUS = Object.freeze({
   PROVISIONED: "provisioned",
@@ -192,8 +197,9 @@ function mapRecords(organization, church, hqBranch) {
 /**
  * @param {{ connect?: Function, query?: Function }} db — Pool (preferred) or Client
  * @param {object} input
+ * @param {{ manageTransaction?: boolean }} [options]
  */
-async function provisionBlessBoardChurch(db, input) {
+async function provisionBlessBoardChurch(db, input, options) {
   const validated = validateAndNormalizeInput(input);
   if (!validated.ok) {
     return fail(STATUS.INVALID_INPUT, `invalid_input:${validated.reason}`);
@@ -201,44 +207,37 @@ async function provisionBlessBoardChurch(db, input) {
   const req = validated.value;
   const dryRun = Boolean(input && input.dryRun);
 
-  if (!db || (typeof db.connect !== "function" && typeof db.query !== "function")) {
-    return fail(STATUS.TRANSACTION_ERROR, "database client or pool required");
+  const resolved = resolveManageTransactionOption(db, options);
+  if (!resolved.ok) {
+    return fail(STATUS.TRANSACTION_ERROR, resolved.message);
   }
 
-  let client = null;
-  let owned = false;
+  let session = null;
   try {
-    if (typeof db.connect === "function") {
-      client = await db.connect();
-      owned = true;
-    } else {
-      client = db;
-    }
-
-    await client.query("BEGIN");
+    session = await openProvisioningSession(resolved);
+    const client = session.client;
+    const abort = async (result) => {
+      await session.rollbackIfManaged();
+      return result;
+    };
 
     const organization = await repo.findOrganizationByKey(client, req.organizationKey);
     if (!organization) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.ORGANIZATION_NOT_FOUND, "organization_not_found");
+      return abort(fail(STATUS.ORGANIZATION_NOT_FOUND, "organization_not_found"));
     }
     if (organization.status !== "active") {
-      await client.query("ROLLBACK");
-      return fail(STATUS.INACTIVE_ORGANIZATION, "inactive_organization");
+      return abort(fail(STATUS.INACTIVE_ORGANIZATION, "inactive_organization"));
     }
     if (String(organization.data_environment) !== req.dataEnvironment) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.ENVIRONMENT_MISMATCH, "environment_mismatch");
+      return abort(fail(STATUS.ENVIRONMENT_MISMATCH, "environment_mismatch"));
     }
 
     const enrolment = await repo.findBlessBoardEnrolment(client, organization.id);
     if (!enrolment) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.MISSING_BLESSBOARD_ENROLMENT, "missing_blessboard_enrolment");
+      return abort(fail(STATUS.MISSING_BLESSBOARD_ENROLMENT, "missing_blessboard_enrolment"));
     }
     if (enrolment.status !== "active") {
-      await client.query("ROLLBACK");
-      return fail(STATUS.INACTIVE_BLESSBOARD_ENROLMENT, "inactive_blessboard_enrolment");
+      return abort(fail(STATUS.INACTIVE_BLESSBOARD_ENROLMENT, "inactive_blessboard_enrolment"));
     }
 
     const created = { church: false, hqBranch: false };
@@ -247,46 +246,53 @@ async function provisionBlessBoardChurch(db, input) {
     const byKey = await repo.findChurchByKey(client, req.churchKey);
 
     if (byOrg && byKey && String(byOrg.id) !== String(byKey.id)) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.CHURCH_CONFLICT, "church_conflict");
+      return abort(fail(STATUS.CHURCH_CONFLICT, "church_conflict"));
     }
     if (byKey && String(byKey.organization_id) !== String(organization.id)) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.CHURCH_CONFLICT, "church_conflict");
+      return abort(fail(STATUS.CHURCH_CONFLICT, "church_conflict"));
     }
     if (byOrg && byOrg.church_key !== req.churchKey) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.CHURCH_CONFLICT, "church_conflict");
+      return abort(fail(STATUS.CHURCH_CONFLICT, "church_conflict"));
     }
 
     let church = byOrg || byKey;
     if (church) {
       if (!churchMatches(church, req, organization.id)) {
-        await client.query("ROLLBACK");
-        return fail(STATUS.CHURCH_CONFLICT, "church_conflict");
+        return abort(fail(STATUS.CHURCH_CONFLICT, "church_conflict"));
       }
     } else if (!dryRun) {
       try {
-        church = await repo.insertChurch(client, {
-          organizationId: organization.id,
-          churchKey: req.churchKey,
-          displayName: req.displayName,
-          legalName: req.legalName,
-          dataEnvironment: req.dataEnvironment,
-        });
-        created.church = true;
+        const inserted = await runInsertWithUniqueRecovery(client, "prov_church_insert", () =>
+          repo.insertChurch(client, {
+            organizationId: organization.id,
+            churchKey: req.churchKey,
+            displayName: req.displayName,
+            legalName: req.legalName,
+            dataEnvironment: req.dataEnvironment,
+          })
+        );
+        if (inserted.ok) {
+          church = inserted.value;
+          created.church = true;
+        } else {
+          church = await repo.findChurchByOrganizationId(client, organization.id);
+          if (!church) {
+            church = await repo.findChurchByKey(client, req.churchKey);
+          }
+          if (!churchMatches(church, req, organization.id)) {
+            return abort(fail(STATUS.CHURCH_CONFLICT, "church_conflict"));
+          }
+        }
       } catch (err) {
-        if (!repo.isUniqueViolation(err) && !repo.isCheckOrTriggerViolation(err)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.TRANSACTION_ERROR, "church_insert_failed");
+        if (!repo.isCheckOrTriggerViolation(err)) {
+          return abort(fail(STATUS.TRANSACTION_ERROR, "church_insert_failed"));
         }
         church = await repo.findChurchByOrganizationId(client, organization.id);
         if (!church) {
           church = await repo.findChurchByKey(client, req.churchKey);
         }
         if (!churchMatches(church, req, organization.id)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.CHURCH_CONFLICT, "church_conflict");
+          return abort(fail(STATUS.CHURCH_CONFLICT, "church_conflict"));
         }
       }
     }
@@ -297,19 +303,16 @@ async function provisionBlessBoardChurch(db, input) {
       const byBranchKey = await repo.findBranchByChurchAndKey(client, church.id, req.hqBranchKey);
 
       if (existingHq && byBranchKey && String(existingHq.id) !== String(byBranchKey.id)) {
-        await client.query("ROLLBACK");
-        return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
+        return abort(fail(STATUS.BRANCH_CONFLICT, "branch_conflict"));
       }
       if (byBranchKey && String(byBranchKey.branch_type) !== "hq") {
-        await client.query("ROLLBACK");
-        return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
+        return abort(fail(STATUS.BRANCH_CONFLICT, "branch_conflict"));
       }
 
       hqBranch = existingHq || byBranchKey;
       if (hqBranch) {
         if (!hqBranchMatches(hqBranch, req, church.id)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
+          return abort(fail(STATUS.BRANCH_CONFLICT, "branch_conflict"));
         }
       } else if (!dryRun) {
         try {
@@ -317,35 +320,47 @@ async function provisionBlessBoardChurch(db, input) {
             organizationId: organization.id,
           });
           if (!capacity.ok) {
-            await client.query("ROLLBACK");
             if (capacity.status === ENTITLEMENT_STATUS.LIMIT_EXCEEDED) {
-              return fail(STATUS.LIMIT_EXCEEDED, "max_branches", {
-                current: capacity.current,
-                limit: capacity.limit,
-              });
+              return abort(
+                fail(STATUS.LIMIT_EXCEEDED, "max_branches", {
+                  current: capacity.current,
+                  limit: capacity.limit,
+                })
+              );
             }
-            return fail(STATUS.TRANSACTION_ERROR, "branch_capacity_check_failed");
+            return abort(fail(STATUS.TRANSACTION_ERROR, "branch_capacity_check_failed"));
           }
-          hqBranch = await repo.insertHqBranch(client, {
-            churchId: church.id,
-            branchKey: req.hqBranchKey,
-            displayName: req.hqBranchDisplayName,
-            timezone: req.timezone,
-            countryCode: req.countryCode,
-          });
-          created.hqBranch = true;
+          const inserted = await runInsertWithUniqueRecovery(client, "prov_hq_insert", () =>
+            repo.insertHqBranch(client, {
+              churchId: church.id,
+              branchKey: req.hqBranchKey,
+              displayName: req.hqBranchDisplayName,
+              timezone: req.timezone,
+              countryCode: req.countryCode,
+            })
+          );
+          if (inserted.ok) {
+            hqBranch = inserted.value;
+            created.hqBranch = true;
+          } else {
+            hqBranch = await repo.findHqBranch(client, church.id);
+            if (!hqBranch) {
+              hqBranch = await repo.findBranchByChurchAndKey(client, church.id, req.hqBranchKey);
+            }
+            if (!hqBranchMatches(hqBranch, req, church.id)) {
+              return abort(fail(STATUS.BRANCH_CONFLICT, "branch_conflict"));
+            }
+          }
         } catch (err) {
-          if (!repo.isUniqueViolation(err) && !repo.isCheckOrTriggerViolation(err)) {
-            await client.query("ROLLBACK");
-            return fail(STATUS.TRANSACTION_ERROR, "branch_insert_failed");
+          if (!repo.isCheckOrTriggerViolation(err)) {
+            return abort(fail(STATUS.TRANSACTION_ERROR, "branch_insert_failed"));
           }
           hqBranch = await repo.findHqBranch(client, church.id);
           if (!hqBranch) {
             hqBranch = await repo.findBranchByChurchAndKey(client, church.id, req.hqBranchKey);
           }
           if (!hqBranchMatches(hqBranch, req, church.id)) {
-            await client.query("ROLLBACK");
-            return fail(STATUS.BRANCH_CONFLICT, "branch_conflict");
+            return abort(fail(STATUS.BRANCH_CONFLICT, "branch_conflict"));
           }
         }
       }
@@ -361,17 +376,18 @@ async function provisionBlessBoardChurch(db, input) {
           organizationId: organization.id,
         });
         if (!capacity.ok) {
-          await client.query("ROLLBACK");
           if (capacity.status === ENTITLEMENT_STATUS.LIMIT_EXCEEDED) {
-            return fail(STATUS.LIMIT_EXCEEDED, "max_branches", {
-              current: capacity.current,
-              limit: capacity.limit,
-            });
+            return abort(
+              fail(STATUS.LIMIT_EXCEEDED, "max_branches", {
+                current: capacity.current,
+                limit: capacity.limit,
+              })
+            );
           }
-          return fail(STATUS.TRANSACTION_ERROR, "branch_capacity_check_failed");
+          return abort(fail(STATUS.TRANSACTION_ERROR, "branch_capacity_check_failed"));
         }
       }
-      await client.query("ROLLBACK");
+      await session.rollbackIfManaged();
       const anyPlanned = planned.church || planned.hqBranch;
       return success(
         anyPlanned ? STATUS.DRY_RUN_WOULD_PROVISION : STATUS.DRY_RUN_ALREADY_PROVISIONED,
@@ -387,7 +403,7 @@ async function provisionBlessBoardChurch(db, input) {
       );
     }
 
-    await client.query("COMMIT");
+    await session.commitIfManaged();
 
     const anyCreated = created.church || created.hqBranch;
     return success(
@@ -396,16 +412,10 @@ async function provisionBlessBoardChurch(db, input) {
       mapRecords(organization, church, hqBranch)
     );
   } catch (err) {
-    try {
-      if (client) await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
-    }
+    if (session) await session.safeRollbackOnError();
     return fail(STATUS.TRANSACTION_ERROR, "transaction_error");
   } finally {
-    if (owned && client && typeof client.release === "function") {
-      client.release();
-    }
+    if (session) session.releaseIfOwned();
   }
 }
 

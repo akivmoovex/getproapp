@@ -1,431 +1,457 @@
 # Foundation Provisioning & Basic/Free Plan Architecture (Prompt 2C)
 
-**Status:** Architecture decision — analysis only  
+**Status:** Architecture decision — analysis only (expanded)  
 **Date:** 2026-07-19  
+
 **Inputs:**
 - [`docs/ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md`](./ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md)
 - [`docs/FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md`](./FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md)
 - [`docs/FOUNDATION_ONBOARDING_STATUS_ARCHITECTURE.md`](./FOUNDATION_ONBOARDING_STATUS_ARCHITECTURE.md)
+- Live V5 testing DB (SELECT only)
 
-**Constraints:** No code, migrations, routes, data, or V4 changes in this prompt.  
-**Hard rule:** Do **not** copy or call V4 `provisionChurchOrganization` / `public.church_*`.
+**Constraints:** No code, migrations, DB writes, routes, controllers, registration implementation, path tenancy, admin UI, dashboards, or V4 changes. **Do not copy** V4 `provisionChurchOrganization`.
 
 ---
 
 ## 1. Executive recommendation
 
-Create one HTTP-safe orchestrator:
+Create one shared orchestrator:
 
-**`provisionRegisteredBlessBoardChurch(db, input, actorContext)`**
+**`provisionRegisteredBlessBoardChurch(db, input, actorContext)`**  
+(module suggestion: `src/blessboard/services/provisionRegisteredBlessBoardChurch.js`)
 
-It must **reuse** (not reimplement):
+It reuses (does not reimplement) the V5 CLI services after a **small transaction-composability refactor**, and is callable from:
 
-| Step | Existing service |
-|------|------------------|
-| Platform tenant | `provisionPlatformTenant` |
-| BlessBoard church + HQ | `provisionBlessBoardChurch` |
-| Admin user | `createBlessBoardUser` |
-| Roles | `assignBlessBoardRole` |
-| Plan | `assignOrganizationPlan` (already invoked inside tenant provision for BlessBoard / `free`) |
-| Audit | `recordAuditEvent` / `recordAuditEventSafe` |
+- public Basic/Free self-registration,
+- future PA Create Organization,
+- CLI,
+- failed-application retry,
+- assisted onboarding.
 
-**Canonical Basic/Free catalogue key today:** `platform.plans.plan_key = **free**` (product `blessboard`).  
-Public registration vocabulary **`foundation`** remains the marketing/application code and must **map to** `free` at provision time until a plan_key migration lands.
-
-**Transaction-readiness:** Each CLI service is **internally** transactional (`BEGIN`/`COMMIT` on its client) but **not safely composable** inside an outer HTTP transaction (nested `COMMIT` would finalize early). **Required refactor before production HTTP use:** add a caller-owned transaction mode (`client` + `manageTransaction: false`) to all four services (and plan assign if called separately).
-
----
-
-## 2. Existing reusable services
-
-| Service | File | Creates / updates | Own TX? | Idempotent? |
-|---------|------|-------------------|---------|-------------|
-| `provisionPlatformTenant` | `src/platform/services/provisionPlatformTenant.js` | `platform.organizations`, enrolment, domain, default BlessBoard subscription via `assignOrganizationPlan(..., planKey: "free")` | Yes (`BEGIN`/`COMMIT`) | Yes — `already_provisioned` if matches |
-| `provisionBlessBoardChurch` | `src/blessboard/services/provisionBlessBoardChurch.js` | `blessboard.churches`, HQ `branches` | Yes | Yes — match existing |
-| `createBlessBoardUser` | `src/blessboard/services/createBlessBoardUser.js` | `blessboard.users` | Yes | Partial — same email+name+password → `already_exists`; else `identity_conflict` |
-| `assignBlessBoardRole` | `src/blessboard/services/assignBlessBoardRole.js` | `blessboard.user_roles` | Yes | Yes — `already_assigned` |
-| `assignOrganizationPlan` | `src/platform/services/entitlementService.js` | `organization_subscriptions` (+ entitlement resolution) | Called inside tenant TX today | Current-sub aware |
-| `recordAuditEvent` | `src/platform/services/auditEventService.js` | `platform.audit_events` | Own client handling | Append-only |
-
-**Entitlement source:** `platform.plan_features` for the org’s current subscription plan, plus optional `platform.organization_entitlements` overrides. Enforcement via `entitlementService` (`assertFeature`, capacity checks in church provision / role assign).
-
-**Payment:** Zero-cost Free/Foundation needs **no payment record**. Subscription row only.
-
----
-
-## 3. Transaction-readiness verdict
-
-| Verdict | Detail |
-|---------|--------|
-| **Per-service** | Transaction-aware and production-used via CLI |
-| **Composable under one outer TX** | **NOT READY** — each service issues its own `BEGIN`/`COMMIT` when given a pool **or** a client |
-| **Risk if orchestrator wraps them naively** | Inner `COMMIT` commits outer work; failure later leaves committed orphans; inner `ROLLBACK` can abort unexpected state |
-
-### Required consolidation approach (before HTTP self-serve)
-
-**REQUIRED refactor (all four provision/user/role services):**
-
-```text
-options = { manageTransaction: true | false }
-```
-
-- `manageTransaction: true` (default) — current CLI behavior.  
-- `manageTransaction: false` — caller already in `BEGIN`; service must **not** `BEGIN`/`COMMIT`/`ROLLBACK` (only throw or return fail; caller rolls back).
-
-Until that lands, HTTP orchestrator must **not** claim atomicity; at best a **saga** with `provisioning_status=provisioning_failed` and manual/ops cleanup — **unacceptable for Foundation launch**.
-
-**Optional later:** extract pure `*InTransaction(client, input)` cores shared by CLI and orchestrator.
-
----
-
-## 4. Orchestrator contract
-
-### 4.1 Responsibility
-
-`provisionRegisteredBlessBoardChurch` is the **only** self-serve path that turns a validated registration application into a live Foundation tenant. It:
-
-1. Loads/locks the application row.  
-2. Normalizes keys/slug/plan.  
-3. Runs the V5 chain in one caller-owned transaction (after refactor).  
-4. Creates onboarding sidecar defaults (per 2B).  
-5. Updates application provisioning fields.  
-6. Writes audit events.  
-7. Returns portal destination metadata (does not create sessions).
-
-It does **not** render HTTP, send email, or implement path routing.
-
-### 4.2 Conceptual signature
-
-```js
-/**
- * @param {import('pg').Pool | import('pg').PoolClient} db
- * @param {object} input
- * @param {{ actorType: 'system'|'platform_admin', actorUserId?: string, requestId?: string }} actorContext
- * @returns {Promise<ProvisionRegisteredResult>}
- */
-async function provisionRegisteredBlessBoardChurch(db, input, actorContext)
-```
-
-### 4.3 Required input
-
-| Field | Source | Notes |
-|-------|--------|-------|
-| `applicationId` | Registration row | Primary idempotency key |
-| `organizationKey` | Normalized from church name / explicit slug | Must pass `organization_key` format |
-| `displayName` | `church_name` | Org + church display |
-| `adminEmail` | `contact_email` | Normalized lower-case |
-| `adminDisplayName` | `contact_name` | |
-| `adminPassword` | Form (new field) or generated one-time | Min length per `createBlessBoardUser` (≥10) |
-| `churchKey` | Default = `organizationKey` or derived | Unique church key |
-| `hqBranchKey` | Default `hq` or `main` | Single HQ |
-| `hqBranchDisplayName` | Default from church/branch_name | |
-| `dataEnvironment` | Deployment policy | e.g. `testing` / `production` |
-| `deploymentCode` | Env / platform deployment | Required by tenant provision today |
-| `productKey` | Constant `blessboard` | |
-| `productTenantKey` | Usually = `organizationKey` | Enrolment tenant key |
-| `planKey` | Always map Free → **`free`** | Ignore paid plans for this orchestrator’s Foundation path |
-| `countryCode` / `timezone` | Optional from form | |
-| `hostname` / `skipDomain` | See §7 | Path-first Foundation |
-
-### 4.4 Validation and normalization
-
-| Layer | Responsibility |
-|-------|----------------|
-| HTTP / registration validation | Form shape, consent, plan alias → `foundation` on application |
-| Orchestrator | Application exists; `provisioning_status` allows run; slug format; reserved slug check; map `foundation`→`free`; password policy; email normalize |
-| Child services | Keep their existing `validateAndNormalizeInput` — orchestrator passes already-normalized values |
-
-Reject Growth/Network in this orchestrator (separate paid flows later).
-
-### 4.5 Transaction boundary
-
-**Target (after refactor):**
-
-```text
-BEGIN
-  lock application FOR UPDATE
-  set provisioning_status = provisioning
-  provisionPlatformTenant(..., manageTransaction: false)
-  provisionBlessBoardChurch(..., manageTransaction: false)
-  createBlessBoardUser(..., manageTransaction: false)
-  assignBlessBoardRole × N (..., manageTransaction: false)
-  insert organization_onboarding defaults
-  update application: organization_id, provisioning_status=provisioned
-  insert audit events
-COMMIT
-```
-
-On any fail → `ROLLBACK` → set `provisioning_status=provisioning_failed` in a **new** short transaction (status update must survive rollback).
-
-### 4.6 Idempotency strategy
-
-| Key | Rule |
-|-----|------|
-| Primary | `applicationId` |
-| If `provisioning_status=provisioned` and `organization_id` set | Return success `already_provisioned` with existing records (no duplicate org) |
-| If `provisioning_status=provisioning` | Return `provisioning_in_progress` or wait/lock — do not start a second chain |
-| If `provisioning_failed` | Allow retry with same keys; child services’ idempotent match paths reuse created rows |
-| Secondary | `organizationKey` uniqueness — conflict → fail `organization_conflict` (may mark `duplicate_review` on application) |
-
-Do **not** use email alone as provision idempotency (one person may admin multiple orgs later).
-
-### 4.7 Records created
-
-| Record | Table |
-|--------|-------|
-| Organization | `platform.organizations` (`status=active`) |
-| Enrolment | `platform.organization_products` |
-| Subscription | `platform.organization_subscriptions` → plan `free` |
-| Domain | Optional — see §7 |
-| Church | `blessboard.churches` (`status=active`) |
-| HQ branch | `blessboard.branches` (`branch_type=hq`, primary) |
-| Admin user | `blessboard.users` |
-| Roles | `church_hq_admin` + `branch_admin` on HQ (see §4.17) |
-| Onboarding sidecar | `organization_onboarding` (when table exists) |
-| Support notes | None at provision |
-
-### 4.8 Records updated
-
-| Record | Update |
-|--------|--------|
-| Application | `provisioning_status`, `organization_id`, `updated_at`; optionally `application_status` |
-| Entitlements cache/resolution | As side effect of plan assign |
-
-### 4.9 Rollback behavior
-
-- **In-TX failure:** full `ROLLBACK` of catalogue/user/role/onboarding inserts.  
-- **Then:** persist `provisioning_status=provisioning_failed` + error code on application (separate TX).  
-- **No** partial “leave org without user” for Foundation HTTP path after refactor.  
-- Compensating deletes are **not** preferred if outer TX works.
-
-### 4.10 Retry behavior
-
-Safe when:
-
-- Same `applicationId`, same normalized keys, prior status `provisioning_failed` or interrupted.  
-- Child services return `already_provisioned` / `already_exists` / `already_assigned` for matching rows.
-
-Unsafe when:
-
-- Changing `organizationKey` after a partial success without cleanup.  
-- Different password on existing email → `identity_conflict` (see duplicates).
-
-### 4.11 Error classification
-
-| Class | Examples | HTTP hint (later) |
-|-------|----------|-------------------|
-| `invalid_input` | Bad slug, password, missing fields | 400 |
-| `application_state` | Wrong provisioning status | 409 |
-| `organization_conflict` | Key taken / mismatch | 409 |
-| `hostname_conflict` | Domain taken | 409 |
-| `identity_conflict` | Email exists with different identity | 409 |
-| `limit_exceeded` | Entitlement (should not fire on empty org) | 409 |
-| `duplicate_review` | Suspected duplicate church/email policy | 409 |
-| `transaction_error` / dependency | DB/deploy/product missing | 503 |
-| `provisioning_failed` | Stored on application after rollback | 503 + retry |
-
-Never return stack traces or connection strings.
-
-### 4.12 Duplicate email handling
-
-| Case | Behavior |
-|------|----------|
-| Email unused | Create user |
-| Same email, same display name, same password | Treat as idempotent user (`already_exists`); continue roles |
-| Same email, different password or display name | **Fail** `identity_conflict` — do not overwrite password; support resolves manually |
-| Email already admin of another org | **Owner decision** — Foundation recommendation: **allow** second org via additional role assign if product policy permits; otherwise reject. Default for Foundation: **reject** multi-org auto-provision (`identity_conflict` / `duplicate_review`) to keep support simple |
-
-### 4.13 Duplicate organization-name handling
-
-- Display names are **not** unique in schema.  
-- Uniqueness is **`organization_key`**.  
-- Orchestrator generates key from name (slugify); on collision append short suffix or fail to `duplicate_review` if same contact email recently registered similar name (align with 15‑minute application idempotency).
-
-### 4.14 Duplicate slug / key handling
-
-- `organization_key` / `church_key` must match platform CHECK format.  
-- Reserved slugs: reuse platform reserved lists from settings (`ORGANIZATION_RESERVED_SLUGS` / branch host reserved).  
-- Conflict → fail; do not steal existing tenant.
-
-### 4.15 Initial organization status
-
-**`active`** on `platform.organizations`.  
-Church **`active`**.  
-Callback/follow-up is **not** an approval gate (per product flow).
-
-### 4.16 Initial publication status
-
-- No published public pages at provision (or only `draft` seeds if any).  
-- Onboarding aggregate **`unpublished`**.  
-- Public site must not be world-readable as a published church until checklist / explicit publish (path routing may still resolve a “coming soon” later — out of scope here).
-
-### 4.17 Admin role assignment
-
-| Role | Scope | Required? |
-|------|-------|-----------|
-| `branch_admin` | HQ branch | **Yes** — matches first portal `/branch-admin` |
-| `church_hq_admin` | Church | **Yes** for Foundation single-campus (HQ tools) |
-| `platform_admin` | — | **Never** via self-serve |
-
-Both roles on one user count toward **`max_staff_accounts`** as one staff user (existing enforcement counts staff users, not duplicate people).
-
-### 4.18 Portal destination
+**After success (approved 2B):**
 
 | Field | Value |
-|-------|-------|
-| Post-login tenant destination | **`/branch-admin`** (existing) |
-| Apex login | `/login` then session / future path context |
-| Orchestrator returns | `{ portalPath: "/branch-admin", organizationKey, churchKey, loginPath: "/login" }` |
+|-------|--------|
+| `provisioning_status` | `provisioned` |
+| `application_status` | `closed` |
+| `organization_id` | new org UUID |
+| org / church status | `active` |
+| admin user status | `active` |
+| site | **unpublished** (neutral setup page publicly, not 404) |
+| follow-up | `new` on `organization_onboarding` — **never blocks portal** |
 
-Does not create `deployment_sessions` itself — HTTP login flow does.
+**Catalogue plan for assignment:** `platform.plans.plan_key = **free**` (`product_key = blessboard`).  
+Public form code `foundation` **maps to** `free`.
 
-### 4.19 Audit events
+**Transaction verdict today:** each step is TX-safe alone but **NOT composable** under one outer TX until `manageTransaction: false` (or equivalent) lands.
 
-Use `recordAuditEvent` / Safe variant with codes such as:
+---
 
-- `blessboard.registration.provision.started`  
-- `blessboard.registration.provision.succeeded`  
-- `blessboard.registration.provision.failed`  
-- Include `applicationId`, `organizationKey`, `actor`, `requestId`, error code — **no passwords**.
+## 2. Existing provisioning call graph
 
-### 4.20 Return object (conceptual)
+```text
+CLI npm run platform:tenant:provision
+  └─ provisionPlatformTenant(pool|client)
+       BEGIN
+       ├─ insert/find platform.organizations
+       ├─ assignOrganizationPlan(..., planKey: "free")  → organization_subscriptions + entitlement resolve
+       ├─ insert/find platform.organization_products (enrolment)
+       └─ insert/find platform.domains (hostname required today)
+       COMMIT
 
-```js
+CLI npm run blessboard:church:provision
+  └─ provisionBlessBoardChurch(pool|client)
+       BEGIN
+       ├─ assert org + enrolment
+       ├─ insert/find blessboard.churches
+       └─ insert/find HQ blessboard.branches (entitlement max_branches)
+       COMMIT
+
+CLI npm run blessboard:user:create
+  └─ createBlessBoardUser(pool|client)
+       BEGIN → bcrypt hash → insert blessboard.users → COMMIT
+
+CLI npm run blessboard:user:role:assign
+  └─ assignBlessBoardRole(pool|client)
+       BEGIN → insert blessboard.user_roles (staff capacity) → COMMIT
+
+(optional later) content seed / public_pages — not in current Free CLI chain by default
+audit: recordAuditEvent — separate; often after success
+```
+
+**No single HTTP orchestrator exists.** Partial CLI runs can leave org without church/user.
+
+---
+
+## 3. Function inventory (summary)
+
+| Function | File | Writes | Accepts client? | Own BEGIN/COMMIT? | Idempotent? | Side effects | Tests | Prod |
+|----------|------|--------|-----------------|-------------------|-------------|--------------|-------|------|
+| `provisionPlatformTenant` | `src/platform/services/provisionPlatformTenant.js` | orgs, enrolment, domains, sub via plan assign | Pool or Client | **Yes always** | Yes if match | none external | platform provision tests | CLI |
+| `assignOrganizationPlan` | `entitlementService.js` | `organization_subscriptions` | Client | No (caller TX) when called inside tenant | Current-sub aware | none | entitlements tests | CLI+PA |
+| `provisionBlessBoardChurch` | `provisionBlessBoardChurch.js` | churches, HQ branch | Pool or Client | **Yes always** | Yes if match | none | church provision tests | CLI |
+| `createBlessBoardUser` | `createBlessBoardUser.js` | users | Pool or Client | **Yes always** | Partial (same email+name+password) | bcrypt CPU | user tests | CLI |
+| `assignBlessBoardRole` | `assignBlessBoardRole.js` | user_roles | Pool or Client | **Yes always** | Yes | none | role tests | CLI |
+| `recordAuditEvent` | `auditEventService.js` | audit_events | Pool/client | Own handling | append | none | audit tests | various |
+| CLI wrappers | `db/scripts/*-provision.js` etc. | via services | Pool | N/A | dry-run default | stdout report | CLI safety | ops |
+
+**Public-page seeding:** not part of the core four-step CLI chain; content/onboarding may create drafts later. Prefer **structured empty/draft placeholders**, never published demo leaders/events.
+
+---
+
+## 4. Transaction-readiness matrix
+
+| Function | Class | Notes |
+|----------|-------|-------|
+| `provisionPlatformTenant` | **PARTIALLY** | Accepts client but always BEGIN/COMMIT |
+| `provisionBlessBoardChurch` | **PARTIALLY** | Same |
+| `createBlessBoardUser` | **PARTIALLY** | Same; bcrypt inside TX (acceptable if short) |
+| `assignBlessBoardRole` | **PARTIALLY** | Same |
+| `assignOrganizationPlan` | **TRANSACTION-READY** | Uses passed client |
+| `recordAuditEvent` | **PARTIALLY** | Prefer after commit or same TX with care |
+
+### Explicit answers
+
+1. **Not safely today** — nested COMMIT would finalize early.  
+2. Services prefer passed db; CLIs open Pool.  
+3. **Yes** — each of the four owns COMMIT.  
+4. Bcrypt only (CPU); no email/DNS in chain.  
+5. Domain row insert only (no live DNS); **skipDomain** needed for path-first.  
+6. After refactor yes; today CLI partials possible across steps.  
+7. UUIDs safe to retry; unique keys drive conflicts.  
+8. **Yes** — CLI can leave org without church/user.  
+9. Smallest refactor: `manageTransaction: false` + optional `skipDomain` on tenant provision.  
+10. **Yes** — CLI should later call the shared orchestrator (or same cores).
+
+---
+
+## 5. Shared orchestrator contract
+
+### Name & responsibility
+
+`provisionRegisteredBlessBoardChurch` — sole writer that turns a validated application (or admin/CLI equivalent input) into a Free BlessBoard tenant + admin + onboarding row, then closes the application.
+
+### Conceptual input
+
+```text
 {
-  ok: true | false,
-  status: "provisioned" | "already_provisioned" | "provisioning_failed" | "...",
-  applicationId,
-  organization: { id, key, status },
-  church: { id, key, status },
-  hqBranch: { id, key },
-  user: { id, email, status },
-  roles: [{ roleKey, churchKey?, branchKey? }],
-  planKey: "free",
-  publication: { websitePublicationStatus: "unpublished" },
-  portal: { loginPath: "/login", destinationPath: "/branch-admin" },
-  created: { /* booleans per step */ },
-  message: "..."
+  applicationId,              // required for self-serve / retry
+  organizationKey,            // normalized slug
+  displayName,                // church/org name
+  country, city,
+  contactName, contactEmail, contactPhone,
+  passwordHash,               // preferred: hash OUTSIDE or at security boundary before DB writes
+  // OR passwordPlaintext only inside a single documented hasher step — never log
+  productKey: "blessboard",
+  planKey: "free",            // after foundation→free map
+  hqBranchKey, hqBranchDisplayName,
+  dataEnvironment, deploymentCode,
+  skipDomain: true,           // Foundation path-first
+  actorContext: { type, userId?, requestId? }
 }
 ```
 
----
+**Password:** Prefer controller/service boundary hashes with bcrypt **before** orchestrator DB phase, passing `passwordHash` only. If plaintext accepted, hash once at the top of the orchestrator and never log it.
 
-## 5. Domain / hostname vs path-based Foundation
+### Contract bullets
 
-Today `provisionPlatformTenant` **requires** a hostname and inserts `platform.domains`.
-
-| Option | Notes |
-|--------|-------|
-| A. Always insert a synthetic hostname | Keeps current API; DNS may not exist; host routing stays off |
-| B. Add `skipDomain: true` | **Recommended** for path-first Foundation; domain added later for custom/subdomain |
-| C. Call tenant provision then delete domain | Wasteful; avoid |
-
-**Recommendation:** extend tenant provision to allow skipping domain when `routingMode: "path"` (future). Until then, architecture marks **hostname requirement as a blocking refactor** for pure path-based onboard.
-
----
-
-## 6. Basic/Free plan audit
-
-### 6.1 Canonical codes
-
-| Layer | Value | Notes |
-|-------|-------|-------|
-| **Catalogue `plan_key` (authoritative for assign)** | **`free`** | Used by `provisionPlatformTenant` → `assignOrganizationPlan` |
-| Product | **`blessboard`** (`platform.products.product_key`) | Not a UUID in assign APIs — key-based |
-| Public / application `selected_plan` | **`foundation`** (aliases: free, basic, basic_free) | Must map → `free` at provision |
-| Display | Seed: “Foundation”; live testing DB currently shows display_name **“Free”** for `free` | Drift — align display via seed/ops, not a new plan_key |
-| Future rename to `foundation` | Blocked by immutable `plan_key` migration plan | Do not block Foundation on rename |
-
-### 6.2 Live testing DB entitlements (`plan_key=free`) vs repo seed
-
-| Feature | Seed `003_blessboard_plans.sql` | Live testing DB (2026-07-19) | Foundation product intent |
-|---------|----------------------------------|------------------------------|---------------------------|
-| `max_branches` | 1 | **2** | **1** (HQ only) |
-| `max_users` | 250 | **10** | **10** |
-| `max_staff_accounts` | 10 | **10** | **10** |
-| `custom_domain` | false | false | false |
-| `custom_email` | false | false | false |
-| `basic_reports` | true | true | true |
-| `advanced_reports` / executive | false | false | false |
-| Mailboxes | 0 in seed | (not in live snippet) | none |
-
-**Recommendation:** Treat **entitlement tables** as source of truth at runtime. Before launch, **reconcile live Free limits to Foundation intent** (`max_branches=1`, `max_users=10`, `max_staff_accounts=10`) via controlled plan_feature update — not hardcoded in the registration controller.
-
-### 6.3 Subscription behavior (zero-cost)
-
-- Insert/assign current subscription to `free` — **no invoice, no payment row**.  
-- Entitlements resolve from plan features + overrides.  
-- PA may later change plan via existing `/admin/organizations/:key/plan`.
-
-### 6.4 Foundation policy (confirm)
-
-| Rule | Policy | Enforced by |
-|------|--------|-------------|
-| 1 organization | Per registration | Orchestrator creates one |
-| 1 HQ | Yes | `provisionBlessBoardChurch` HQ insert |
-| 1 branch | Yes (= HQ only) | `max_branches=1` |
-| Up to 10 users | Yes | `max_users=10` (members) + staff cap |
-| Up to 10 staff | Yes | `max_staff_accounts=10` |
-| No custom domain | Yes | `custom_domain=false` |
-| No custom email | Yes | `custom_email=false` |
-| Immediate portal access | Yes | User+roles; login → `/branch-admin` |
-| Unpublished website | Yes | No published pages; onboarding `unpublished` |
-| Path-based public URL | Product intent | Routing architecture (Prompt 2D) — not provision tables |
-| No approval gate | Yes | Org `active` immediately |
+1. **Required:** applicationId (self-serve), org key, display name, admin email, password hash, product/plan, deployment/env, HQ branch keys.  
+2. **Optional:** legal name, timezone, country code, phone, message (already on app).  
+3. **Normalize:** email lower, slug lower, plan alias→`free`.  
+4. **Validation:** application state machine + child validators.  
+5. **Authorization:** public path only Free/foundation; PA/CLI may pass actor.  
+6. **Hashing:** security boundary as above.  
+7. **TX:** one outer BEGIN…COMMIT after refactor.  
+8. **Idempotency key:** `applicationId`.  
+9. **Lock:** `SELECT … FOR UPDATE` on application row.  
+10–11. **Create/update:** see §6–7.  
+12. **Audit:** after successful commit (or in-TX if fail-safe).  
+13. **Return:** org/church/branch/user/roles/portal paths/status.  
+14. **Retry:** see §8.  
+15. **Errors:** see §14.  
+16. **Logs:** requestId, applicationId, org key, status codes — no secrets.  
+17. **Rollback:** full TX; then persist `provisioning_failed` in new short TX.  
+18–20. CLI / PA create / self-register all call this service with different actors.
 
 ---
 
-## 7. Required future refactors
+## 6. Atomic creation sequence (recommended)
 
-| Priority | Refactor |
-|----------|----------|
-| **REQUIRED** | `manageTransaction: false` (or equivalent) on tenant, church, user, role services |
-| **REQUIRED** | Optional skip-domain / path routing mode on `provisionPlatformTenant` |
-| **REQUIRED** | Orchestrator module + application lock + failed-status persistence |
-| **REQUIRED** | Map `foundation` → `free` in one shared helper (registration + orchestrator) |
-| **REQUIRED** | Create onboarding row defaults (depends on 2B migration) |
-| **OPTIONAL** | Align live/seed Free limits (`max_branches`) |
-| **OPTIONAL** | plan_key rename `free`→`foundation` (separate migration program) |
-| **DEFER** | Email invite instead of password-at-register |
-| **FORBIDDEN** | V4 `provisionChurchOrganization` |
+```text
+BEGIN
+  1. Lock application FOR UPDATE
+  2. If provisioning_status=provisioned → return already_provisioned (COMMIT noop)
+  3. If provisioning → return in_progress
+  4. Validate plan free + map foundation
+  5. Reserve/check organization_key uniqueness (+ reserved slugs)
+  6. Set provisioning_status=provisioning, provisioning_started_at
+  7. provisionPlatformTenant(..., manageTransaction:false, skipDomain:true)
+  8. (subscription already via plan assign inside tenant step)
+  9. provisionBlessBoardChurch(..., manageTransaction:false)
+ 10. createBlessBoardUser(..., status:active, manageTransaction:false)
+ 11. assignBlessBoardRole church_hq_admin + branch_admin on HQ
+ 12. Insert draft public_pages stubs OR defer to onboarding (see §11) — prefer minimal drafts unpublished
+ 13. Insert organization_onboarding (follow_up=new, checklist defaults)
+ 14. Link application.organization_id; provisioning_status=provisioned; timestamps
+ 15. application_status=closed
+COMMIT
+ 16. Audit events (post-commit preferred)
+ 17. Optional session create (HTTP only, after commit)
+```
 
----
-
-## 8. Highest provisioning risk
-
-1. **Nested transactions / partial commits** if HTTP orchestration ships before `manageTransaction` refactor.  
-2. **Plan vocabulary drift** (`foundation` vs `free`) causing wrong or missing subscription.  
-3. **Hostname required** while product wants path-only — forcing fake domains or blocked provision.  
-4. **Email identity_conflict** locking real churches out without support tools.  
-5. Copying **V4** provision into V5 (explicitly rejected).
-
----
-
-## 9. Duplicate-prevention rules (provisioning)
-
-- One orchestrator only for self-serve.  
-- CLI remains for ops; should call the same cores, not a second business path.  
-- No parallel “create org” HTTP that bypasses applications for Free self-serve (Stitch 64 stays ops/CLI unless later unified).  
-- No second subscription writer besides `assignOrganizationPlan`.
+**First record:** application lock.  
+**Uniqueness locks:** organization_key, email_normalized, (optional) church_key.  
+**After commit only:** session cookie, emails, CDN purges.  
+**Not inside long TX:** external DNS, mail, payment.
 
 ---
 
-## 10. Open owner decisions
+## 7. Records created / updated
 
-1. Allow one email to administer multiple orgs via self-serve? (Default: no.)  
-2. Password-at-register vs invited/`invited` status?  
-3. Synthetic hostname vs `skipDomain` for path-first?  
-4. Assign both `church_hq_admin` and `branch_admin`, or branch only? (Default: both.)  
-5. Reconcile live `max_branches=2` → `1` before launch?
+**Created:** `platform.organizations`, enrolment, `organization_subscriptions` (free), `blessboard.churches`, HQ `branches`, `users`, `user_roles` (hq + branch_admin), `organization_onboarding`, optional draft `public_pages`.  
+**Not created (Foundation path):** custom domain (skip), payment customer, invoices.  
+**Updated:** application (`provisioning_*`, `organization_id`, `application_status=closed`).
 
 ---
 
-## 11. Confirmation
+## 8. Idempotency strategy
+
+| Item | Rule |
+|------|------|
+| Key | `applicationId` |
+| Constraints | org key unique; email unique; application organization_id unique when set |
+| Lock | FOR UPDATE on application |
+| Already provisioned | Return existing org + `already_provisioned` |
+| In progress | `PROVISIONING_IN_PROGRESS` — do not start second chain |
+| Failed | Allow retry with same keys |
+| Org exists, app unlinked | `duplicate_review` / ops repair — do not auto-link mismatched |
+| Slug taken | fail `SLUG_UNAVAILABLE` (or suggest suffix — owner) |
+| Email taken | see §9 |
+| Lost response after commit | Retry returns already_provisioned |
+
+Do **not** use 15‑minute form idempotency as provisioning primary key (that remains intake-only).
+
+---
+
+## 9. Duplicate policies
+
+### Name
+Allowed globally. Not a uniqueness key.
+
+### Slug (`organization_key`)
+- Normalize: lowercase, `^[a-z][a-z0-9_-]{0,63}$`  
+- Reserved: existing org reserved set + path prefixes (`c`, `admin`, `login`, …)  
+- Collision: **reject** with suggestion optional; **no silent auto-suffix** for self-serve without user confirm (owner may allow `-2` later)  
+- Same as routing slug for `/c/:slug`
+
+### Email (global unique on `blessboard.users.email_normalized`)
+
+| Q | A |
+|---|---|
+| Scope | **Global** users table |
+| Multi-org | Roles can attach one user to many orgs **in principle**; self-serve Foundation should not auto-attach |
+| Unique? | **Yes** globally |
+| Existing user | **Do not** password-overwrite |
+| Self-register | If email exists → **`duplicate_review`** (or block with “sign in / contact support”) — **safest Foundation default: `duplicate_review`**, no auto role grant |
+| Takeover | Never set password on existing user from public form |
+| Multi-church person | Supported later via PA/CLI role assign; not auto from Free form |
+
+### Phone
+**Allowed** duplicate (shared office lines). Informational only; do not block.
+
+---
+
+## 10. Basic/Free plan audit (live testing DB)
+
+| Item | Value |
+|------|--------|
+| Product code | **`blessboard`** (`id` `2119a16a-…`) |
+| Plan key (catalogue) | **`free`** (`id` `fe0511d8-…`) |
+| Display name (live) | `Free` (seed text often “Foundation”) |
+| Status | `active` |
+| Price / interval | **None in platform.plans** — catalogue not a price book |
+| Billing | No payment provider required for Free |
+| `max_branches` | **2** live / **1** in seed `003` — **mismatch** |
+| `max_users` | **10** live |
+| `max_staff_accounts` | **10** live |
+| `custom_domain` | false |
+| `custom_email` | false |
+| `basic_reports` | true |
+| `advanced_reports` | false |
+| Registration form code | `foundation` (+ aliases) → must map to **`free`** |
+| Provision default | already `planKey: "free"` |
+
+**Recommend:** reconcile live `max_branches` → **1** (HQ only) before launch; enforce via `plan_features` only.
+
+---
+
+## 11. Zero-cost subscription model
+
+**Choose:** normal `organization_subscriptions` row via `assignOrganizationPlan` to `free` — **price zero / no payment objects**.
+
+| Aspect | Policy |
+|--------|--------|
+| Status | Active current subscription |
+| Start | provision time |
+| Renewal / end | none / open-ended for Free |
+| Payment provider | **none** |
+| Invoice / webhook | **none** |
+| Cancel | PA plan change / org retire |
+| Upgrade | Existing PA plan assign to growth/network when entitled |
+
+Reject: entitlement-only without subscription (breaks PA subscription list), permanent trial flags, special org booleans.
+
+---
+
+## 12. Foundation entitlements (confirmed policy)
+
+| Limit | Policy | Source of truth |
+|-------|--------|-----------------|
+| 1 organization | per registration | orchestrator |
+| 1 church | UNIQUE organization_id | schema |
+| 1 HQ / 1 branch | HQ only | `max_branches=1` plan_features |
+| ≤10 users | members | `max_users` |
+| ≤10 staff | admins | `max_staff_accounts` |
+| Path URL/portal | product routing | 2D helper; not a plan boolean today |
+| No custom domain/email | | plan booleans |
+| Basic reports only | | plan booleans |
+| Immediate portal | | user active + roles |
+| Unpublished site | | public_pages + aggregate |
+| Callback optional | | follow-up statuses |
+
+**Canonical enforcement:** `entitlementService` / plan_features — **not** duplicated hardcoded in controller + UI + service independently (UI may display; service must assert).
+
+---
+
+## 13. Initial record values (success)
+
+| Entity | Initial |
+|--------|---------|
+| Application | `application_status=closed`, `provisioning_status=provisioned`, `organization_id` set, timestamps set, error fields null |
+| Organization | `status=active`, BlessBoard enrolment active, subscription `free` |
+| Church | `status=active`, key/name/country as provided |
+| Branch | HQ, `active`, primary |
+| Admin user | `status=active`, password set |
+| Roles | `church_hq_admin` + `branch_admin` on HQ |
+| Onboarding | `follow_up_status=new`, assignee null, checklist mostly false, `onboarding_status=not_started` |
+| Public pages | draft/unpublished only; **no fabricated content** |
+| Publication aggregate | `unpublished` |
+
+---
+
+## 14. Starter content policy
+
+**Recommend:** create **minimal draft page shells** (home/about placeholders) **or** create pages on first editor visit — either way **never published** and **never** seeded with fake leaders, sermons, events, giving, or contact details.
+
+Public `/c/:slug` while unpublished → **neutral setup page** (approved), not 404.
+
+---
+
+## 15. Administrator access after provisioning
+
+| # | Recommendation |
+|---|----------------|
+| 1 | POST may create account in TX; **session only after COMMIT** |
+| 2 | **Prefer auto-login after commit** for Free UX (regenerate session) |
+| 3 | Fallback: success page + link to `/login` if session fails |
+| 4–5 | New session id after privilege grant; do not reuse pre-login anon CSRF session as auth session carelessly |
+| 6 | Store org/church/branch context per existing V5 session model |
+| 7 | First view: **`/c/:slug/branch-admin`** (2D) or interim `/branch-admin` until path phase |
+| 8 | Show success + “Sign in” if auto-login fails; account already exists |
+| 9 | Password reset deferred; support via PA if locked out |
+| 10 | Success: application received + church ready + CTA to portal |
+
+**Safest low-friction:** commit → create session → 303 to portal; on session error → 303 success page with login CTA.
+
+---
+
+## 16. Error taxonomy
+
+| Code | Retryable | App status | Prov status | User message | Severity | Admin |
+|------|-----------|------------|-------------|--------------|----------|-------|
+| INVALID_INPUT | no | unchanged | unchanged | fix fields | info | no |
+| INVALID_PLAN | no | unchanged | unchanged | invalid plan | warn | no |
+| APPLICATION_NOT_FOUND | no | — | — | generic | warn | yes |
+| APPLICATION_ALREADY_PROVISIONED | soft yes | closed | provisioned | already set up / sign in | info | no |
+| PROVISIONING_IN_PROGRESS | yes wait | submitted | provisioning | try shortly | info | yes |
+| DUPLICATE_EMAIL_REVIEW | no | duplicate_review | not_started/failed | under review | warn | yes |
+| SLUG_UNAVAILABLE | no | submitted | not_started | choose another URL | info | no |
+| DATABASE_CONFLICT | maybe | varies | failed | try again | error | yes |
+| DATABASE_UNAVAILABLE | yes | unchanged | failed | try again | error | yes |
+| PROVISIONING_FAILED | yes | submitted | failed | try again / support | error | yes |
+| INTERNAL_ERROR | maybe | unchanged | failed | try again | error | yes |
+
+No SQL/internal IDs in public messages.
+
+---
+
+## 17. Audit events (minimum)
+
+Post-commit (preferred):  
+`registration.provisioning.started` (or in-TX), `organization.created`, `blessboard.church_created`, `branch.created`, `administrator.created`, `role.assigned`, `subscription.assigned`, `onboarding.created`, `provisioning.completed` / `provisioning.failed`.
+
+Actor, subject, organizationId, applicationId, requestId, safe metadata only.
+
+---
+
+## 18. Security controls
+
+**Launch-required:** CSRF, rate limit, parameterized SQL, bcrypt, plan tamper check (server-side free only), slug reserved list, no password logs, TX rollback, no role→platform_admin, entitlement asserts, suspend overrides access.  
+
+**Defer:** full email verify, advanced bot scores, phone fraud scoring.
+
+---
+
+## 19. Required refactors (before HTTP)
+
+| Item | Reason | CLI impact | Risk |
+|------|--------|------------|------|
+| `manageTransaction` on 4 services | Outer TX | default true preserves CLI | low if tested |
+| `skipDomain` on tenant provision | Path-first | CLI still passes hostname | low |
+| Shared `mapPlanCodeToCatalogueKey` | foundation→free | one helper | low |
+| Shared slug normalizer + reserved | collision | CLI | low |
+| New orchestrator module | single path | CLI later wraps it | med |
+| Application lock + status updates | 2B model | needs Phase 1 schema | depends on migrations |
+
+Avoid repo-wide rewrite.
+
+---
+
+## 20. Future test matrix
+
+**Unit:** normalize, slug, plan map, error classes, idempotency decisions.  
+**Integration:** success path; retry; rollback at each stage; slug/email conflicts; sub+entitlements; roles; onboarding; app link+closed.  
+**Security:** plan tamper; no platform_admin; CSRF still on HTTP; no password in logs; no partial tenant.  
+**Compatibility:** CLI still works; V4 untouched; PA can call same service later.
+
+---
+
+## 21. Duplicate-prevention rules
+
+1. One orchestrator for Free self-serve.  
+2. No V4 provision copy.  
+3. No second subscription writer.  
+4. No parallel “create org” that skips applications for public Free.  
+5. Plan key `free` only at assign time (not invent `foundation` plan row until migration).  
+6. Do not hardcode limits in four places.
+
+---
+
+## 22. Open owner decisions
+
+1. Auto-suffix slugs vs hard reject?  
+2. Existing email: `duplicate_review` vs “sign in to add church”?  
+3. Auto-login vs login redirect only?  
+4. Create draft pages at provision vs lazy?  
+5. Reconcile `max_branches` 2→1 when?  
+6. Temporary synthetic hostname vs skipDomain only?
+
+---
+
+## 23. Confirmation
 
 - No application code changed  
 - No migrations created or executed  
 - No database records changed  
-- No routes added  
+- No routes / admin screens / dashboard items added  
 - No V4 code changed  
-
-**Companions:** 2A entity/admin · 2B status/onboarding · audit registration flow

@@ -2,10 +2,18 @@
 
 /**
  * Create a BlessBoard V5 user (hashed password). Caller supplies pool/client.
+ *
+ * Password hashing runs before BEGIN so bcrypt CPU work does not hold a transaction open.
+ * Idempotent password verification (bcrypt.compare) still runs after the email lookup.
  */
 
 const bcrypt = require("bcryptjs");
 const repo = require("../repositories/blessBoardAuthRepository");
+const {
+  resolveManageTransactionOption,
+  openProvisioningSession,
+  runInsertWithUniqueRecovery,
+} = require("../../platform/db/provisioningTransaction");
 
 const STATUS = Object.freeze({
   CREATED: "created",
@@ -33,6 +41,7 @@ function validateInput(input) {
   const emailDisplay = String(raw.email != null ? raw.email : "").trim();
   const displayName = String(raw.displayName != null ? raw.displayName : "").trim();
   const password = raw.password != null ? String(raw.password) : "";
+  const passwordHash = raw.passwordHash != null ? String(raw.passwordHash) : "";
 
   if (!emailNormalized || !EMAIL_RE.test(emailNormalized) || emailNormalized.length > 254) {
     return { ok: false, reason: "email" };
@@ -40,52 +49,77 @@ function validateInput(input) {
   if (!displayName || displayName.length > 200) {
     return { ok: false, reason: "displayName" };
   }
+  if (passwordHash) {
+    if (passwordHash.length < 20 || passwordHash.length > 200) {
+      return { ok: false, reason: "passwordHash" };
+    }
+    return {
+      ok: true,
+      value: {
+        emailNormalized,
+        emailDisplay: emailDisplay || emailNormalized,
+        displayName,
+        password: null,
+        passwordHash,
+      },
+    };
+  }
   if (!password || password.length < 10 || password.length > 200) {
     return { ok: false, reason: "password" };
   }
   return {
     ok: true,
-    value: { emailNormalized, emailDisplay: emailDisplay || emailNormalized, displayName, password },
+    value: {
+      emailNormalized,
+      emailDisplay: emailDisplay || emailNormalized,
+      displayName,
+      password,
+      passwordHash: null,
+    },
   };
 }
 
 /**
  * @param {{ connect?: Function, query?: Function }} db
  * @param {object} input
+ * @param {{ manageTransaction?: boolean }} [options]
  */
-async function createBlessBoardUser(db, input) {
+async function createBlessBoardUser(db, input, options) {
   const validated = validateInput(input);
   if (!validated.ok) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: `invalid_input:${validated.reason}`, user: null };
   }
   const req = validated.value;
 
-  if (!db || (typeof db.connect !== "function" && typeof db.query !== "function")) {
-    return { ok: false, status: STATUS.TRANSACTION_ERROR, message: "database required", user: null };
+  const resolved = resolveManageTransactionOption(db, options);
+  if (!resolved.ok) {
+    return { ok: false, status: STATUS.TRANSACTION_ERROR, message: resolved.message, user: null };
   }
 
-  let client = null;
-  let owned = false;
-  try {
-    if (typeof db.connect === "function") {
-      client = await db.connect();
-      owned = true;
-    } else {
-      client = db;
-    }
+  // Hash before opening a transaction so bcrypt does not hold locks/TX open.
+  // Orchestrator may pass a precomputed passwordHash (never log it).
+  const passwordHash =
+    req.passwordHash || (await bcrypt.hash(req.password, BCRYPT_ROUNDS));
 
-    await client.query("BEGIN");
+  let session = null;
+  try {
+    session = await openProvisioningSession(resolved);
+    const client = session.client;
+    const abort = async (result) => {
+      await session.rollbackIfManaged();
+      return result;
+    };
 
     const existing = await repo.findUserByEmail(client, req.emailNormalized);
     if (existing) {
       if (
         String(existing.display_name) === req.displayName &&
-        String(existing.status) === "active"
+        String(existing.status) === "active" &&
+        req.password
       ) {
-        // Idempotent only when password also matches (verify hash).
         const matches = await bcrypt.compare(req.password, existing.password_hash);
-        await client.query(matches ? "COMMIT" : "ROLLBACK");
         if (matches) {
+          await session.commitIfManaged();
           return {
             ok: true,
             status: STATUS.ALREADY_EXISTS,
@@ -98,45 +132,39 @@ async function createBlessBoardUser(db, input) {
             },
           };
         }
-        return {
-          ok: false,
-          status: STATUS.IDENTITY_CONFLICT,
-          message: "identity_conflict",
-          user: null,
-        };
       }
-      await client.query("ROLLBACK");
-      return {
+      return abort({
         ok: false,
         status: STATUS.IDENTITY_CONFLICT,
         message: "identity_conflict",
         user: null,
-      };
+      });
     }
 
-    const passwordHash = await bcrypt.hash(req.password, BCRYPT_ROUNDS);
     let user;
     try {
-      user = await repo.insertUser(client, {
-        emailNormalized: req.emailNormalized,
-        emailDisplay: req.emailDisplay,
-        passwordHash,
-        displayName: req.displayName,
-      });
-    } catch (err) {
-      if (repo.isUniqueViolation(err)) {
-        await client.query("ROLLBACK");
-        return {
+      const inserted = await runInsertWithUniqueRecovery(client, "prov_user_insert", () =>
+        repo.insertUser(client, {
+          emailNormalized: req.emailNormalized,
+          emailDisplay: req.emailDisplay,
+          passwordHash,
+          displayName: req.displayName,
+        })
+      );
+      if (!inserted.ok) {
+        return abort({
           ok: false,
           status: STATUS.IDENTITY_CONFLICT,
           message: "identity_conflict",
           user: null,
-        };
+        });
       }
+      user = inserted.value;
+    } catch (err) {
       throw err;
     }
 
-    await client.query("COMMIT");
+    await session.commitIfManaged();
     return {
       ok: true,
       status: STATUS.CREATED,
@@ -149,14 +177,10 @@ async function createBlessBoardUser(db, input) {
       },
     };
   } catch {
-    try {
-      if (client) await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
-    }
+    if (session) await session.safeRollbackOnError();
     return { ok: false, status: STATUS.TRANSACTION_ERROR, message: "transaction_error", user: null };
   } finally {
-    if (owned && client && typeof client.release === "function") client.release();
+    if (session) session.releaseIfOwned();
   }
 }
 

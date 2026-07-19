@@ -350,6 +350,7 @@ describe("blessboard v5 auth http", () => {
       process.execPath,
       [
         path.join(ROOT, "db/scripts/blessboard-user-create.js"),
+        "--confirm",
         "--email",
         "cliuser@example.org",
         "--display-name",

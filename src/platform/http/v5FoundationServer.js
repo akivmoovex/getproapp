@@ -209,6 +209,25 @@ function isApexHost(req, opts) {
 }
 
 /**
+ * Foundation-only: www.blessboard.org → https://blessboard.org (path+query preserved).
+ * Runs before Set-Cookie so host-only CSRF cookies are never issued on www.
+ * Does not apply V4 defaults that remap .org → blessboard.com.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+function foundationWwwToApexRedirect(req, res, next) {
+  const host = String(resolveHostname(req) || "")
+    .trim()
+    .toLowerCase()
+    .split(":")[0];
+  if (host !== "www.blessboard.org") {
+    return next();
+  }
+  return res.redirect(301, `https://blessboard.org${req.originalUrl || "/"}`);
+}
+
+/**
  * @param {import('express').Request} req
  */
 function clientIp(req) {
@@ -254,6 +273,9 @@ function createV5FoundationApp(options) {
   }
 
   app.use(assignV5RequestId);
+
+  // www → apex before any Set-Cookie (host-only CSRF / session cookies).
+  app.use(foundationWwwToApexRedirect);
 
   // Global write freeze (migrate/cutover). Host-agnostic; GET/HEAD/OPTIONS + logout POSTs pass.
   app.use(
@@ -684,7 +706,7 @@ function createV5FoundationApp(options) {
     })
   );
 
-  // 8e. Apex marketing pages (Batch 2b — GET only; no provisioning/billing)
+  // 8e. Apex marketing pages (Batch 2b — GET + register-church POST)
   app.use(
     createApexMarketingRouter({
       getPool,
@@ -693,6 +715,9 @@ function createV5FoundationApp(options) {
       setCsrfCookie,
       env,
       isProduction,
+      ...(opts.apexMarketingDeps && typeof opts.apexMarketingDeps === "object"
+        ? opts.apexMarketingDeps
+        : {}),
     })
   );
 
@@ -1172,6 +1197,9 @@ async function startV5FoundationServer(opts) {
     parseBlessBoardJobsEnabled,
   } = require("../config/v5EnvValidation");
   const { formatMediaUploadsEnabledLog } = require("../../blessboard/config/mediaUploadsEnabled");
+  const {
+    formatInstantFreeProvisioningEnabledLog,
+  } = require("../../blessboard/config/instantFreeProvisioningEnabled");
   assertV5SessionSecretPolicyOrExit();
 
   logV5FoundationModeActive();
@@ -1195,6 +1223,8 @@ async function startV5FoundationServer(opts) {
   );
   // eslint-disable-next-line no-console
   console.log(`[blessboard] ${formatMediaUploadsEnabledLog()}`);
+  // eslint-disable-next-line no-console
+  console.log(`[blessboard] ${formatInstantFreeProvisioningEnabledLog()}`);
   // eslint-disable-next-line no-console
   console.log(`[blessboard] ${formatWriteMaintenanceLog()}`);
 
@@ -1231,6 +1261,7 @@ module.exports = {
   APEX_HOSTS,
   isUnavailableAppPath,
   isApexHost,
+  foundationWwwToApexRedirect,
   createV5FoundationApp,
   verifyFoundationPool,
   startV5FoundationServer,

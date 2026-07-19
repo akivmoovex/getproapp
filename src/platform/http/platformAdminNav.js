@@ -22,6 +22,14 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
     enabled: true,
   },
   {
+    key: "registration-applications",
+    label: "Registration Applications",
+    href: "/admin/registration-applications",
+    icon: "app_registration",
+    nav: true,
+    enabled: true,
+  },
+  {
     key: "plans",
     label: "Plans",
     href: "/admin/plans",

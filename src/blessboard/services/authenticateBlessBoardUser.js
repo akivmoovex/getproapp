@@ -7,8 +7,12 @@
 
 const bcrypt = require("bcryptjs");
 const repo = require("../repositories/blessBoardAuthRepository");
-const { createV5Session } = require("../../platform/session/createV5Session");
 const { normalizeEmail } = require("./createBlessBoardUser");
+const {
+  establishBlessBoardSession,
+  rolesApplicableToOrganization,
+  preferSessionRole,
+} = require("./establishBlessBoardSession");
 
 const STATUS = Object.freeze({
   AUTHENTICATED: "authenticated",
@@ -21,43 +25,6 @@ const STATUS = Object.freeze({
 const GENERIC_FAILURE = "invalid_credentials";
 
 /**
- * @param {Array<{ role_key: string, organization_id: string, church_id: string | null, branch_id: string | null }>} roles
- * @param {string | null} requireOrganizationId
- */
-function rolesApplicableToOrganization(roles, requireOrganizationId) {
-  if (!requireOrganizationId) return roles;
-  const orgId = String(requireOrganizationId);
-  return (roles || []).filter((r) => {
-    if (String(r.role_key) === "platform_admin") return true;
-    return String(r.organization_id || "") === orgId;
-  });
-}
-
-/**
- * Prefer HQ / branch / platform roles scoped to the required organization when present.
- * @param {Array<{ role_key: string, organization_id: string, church_id: string | null, branch_id: string | null }>} roles
- * @param {string | null} requireOrganizationId
- */
-function preferSessionRole(roles, requireOrganizationId) {
-  const list = rolesApplicableToOrganization(roles, requireOrganizationId);
-  if (!list.length) return null;
-  if (requireOrganizationId) {
-    const orgId = String(requireOrganizationId);
-    const scoped =
-      list.find((r) => r.role_key === "church_hq_admin" && String(r.organization_id) === orgId) ||
-      list.find((r) => r.role_key === "branch_admin" && String(r.organization_id) === orgId) ||
-      list.find((r) => r.role_key === "platform_admin") ||
-      list[0];
-    return scoped;
-  }
-  return (
-    list.find((r) => r.role_key === "church_hq_admin") ||
-    list.find((r) => r.role_key === "branch_admin") ||
-    list[0]
-  );
-}
-
-/**
  * @param {{ connect?: Function, query?: Function }} db
  * @param {{
  *   email: string,
@@ -65,7 +32,8 @@ function preferSessionRole(roles, requireOrganizationId) {
  *   deploymentCode: string,
  *   requireOrganizationId?: string | null,
  *   ip?: string | null,
- *   userAgent?: string | null
+ *   userAgent?: string | null,
+ *   createSession?: Function,
  * }} input
  */
 async function authenticateBlessBoardUser(db, input) {
@@ -103,11 +71,8 @@ async function authenticateBlessBoardUser(db, input) {
       client = db;
     }
 
-    await client.query("BEGIN");
-
     const user = await repo.findUserByEmail(client, email);
     if (!user || String(user.status) !== "active") {
-      await client.query("ROLLBACK");
       try {
         // Burn comparable CPU without revealing existence; ignore invalid-hash errors.
         await bcrypt.compare(
@@ -128,7 +93,6 @@ async function authenticateBlessBoardUser(db, input) {
 
     const passwordOk = await bcrypt.compare(password, user.password_hash);
     if (!passwordOk) {
-      await client.query("ROLLBACK");
       return {
         ok: false,
         status: STATUS.INVALID_CREDENTIALS,
@@ -138,79 +102,22 @@ async function authenticateBlessBoardUser(db, input) {
       };
     }
 
-    const roles = await repo.listActiveRolesForUser(client, user.id);
-    const applicable = rolesApplicableToOrganization(roles, requireOrganizationId);
-    if (!applicable.length) {
-      await client.query("ROLLBACK");
-      return {
-        ok: false,
-        status: STATUS.NO_ACTIVE_ROLE,
-        message: "no_active_role",
-        session: null,
-        user: null,
-      };
+    // Release owned client before nested establishBlessBoardSession opens its own.
+    if (owned && client && typeof client.release === "function") {
+      client.release();
+      owned = false;
+      client = null;
     }
 
-    const preferred = preferSessionRole(roles, requireOrganizationId);
-    if (!preferred) {
-      await client.query("ROLLBACK");
-      return {
-        ok: false,
-        status: STATUS.NO_ACTIVE_ROLE,
-        message: "no_active_role",
-        session: null,
-        user: null,
-      };
-    }
-
-    const created = await createV5Session(client, {
-      deploymentCode,
+    return establishBlessBoardSession(db, {
       userId: user.id,
-      organizationId: preferred.organization_id,
-      churchId: preferred.church_id,
-      branchId: preferred.branch_id,
+      deploymentCode,
+      requireOrganizationId,
       ip: input.ip || null,
       userAgent: input.userAgent || null,
+      createSession: input.createSession,
     });
-    if (!created.ok) {
-      await client.query("ROLLBACK");
-      return {
-        ok: false,
-        status: STATUS.TRANSACTION_ERROR,
-        message: created.code || "session_create_failed",
-        session: null,
-        user: null,
-      };
-    }
-
-    await repo.touchLastLogin(client, user.id);
-    await client.query("COMMIT");
-
-    return {
-      ok: true,
-      status: STATUS.AUTHENTICATED,
-      message: "authenticated",
-      rawToken: created.rawToken,
-      session: created.session,
-      user: {
-        id: user.id,
-        email: user.email_normalized,
-        displayName: user.display_name,
-        status: user.status,
-      },
-      roles: applicable.map((r) => ({
-        roleKey: r.role_key,
-        organizationId: r.organization_id,
-        churchId: r.church_id,
-        branchId: r.branch_id,
-      })),
-    };
   } catch {
-    try {
-      if (client) await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
-    }
     return {
       ok: false,
       status: STATUS.TRANSACTION_ERROR,

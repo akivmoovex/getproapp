@@ -1,336 +1,492 @@
 # Foundation Onboarding & Status Architecture (Prompt 2B)
 
-**Status:** Architecture decision — analysis only  
+**Status:** Architecture decision — analysis only (expanded)  
 **Date:** 2026-07-19  
 **Inputs:**
 - [`docs/ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md`](./ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md)
 - [`docs/FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md`](./FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md)
+- Live V5 testing DB (`DATABASE_URL`, identity `blessboard-platform-v5`) — SELECT only
 
-**Constraints:** No code, migrations, routes, database records, or V4 changes in this prompt.
+**Constraints:** No application code, migrations, DB writes, routes, admin screens, dashboards, provisioning, or V4 changes in this prompt.
+
+**Approved 2A decisions used here:** org = canonical tenant; church = 1:1 BlessBoard profile; `/admin/organizations` = provisioned list; applications at `/admin/registration-applications`; app may exist before org; FK after provision; no parallel “All Churches”; no V4 inquiries; follow-up helps, never blocks Free portal access.
 
 ---
 
 ## 1. Executive recommendation
 
-Do **not** overload one `status` column with registration, provisioning, verification, follow-up, onboarding, and publication.
+Keep **seven separate state families**. Do not overload one `status` column.
 
-**Smallest durable Foundation model:**
+| Concern | Foundation home |
+|---------|-----------------|
+| Application lifecycle | `platform_church_registration_applications.application_status` (replace overloaded `status`) |
+| Provisioning | Same table: `provisioning_status` + `organization_id` |
+| Admin verification | `blessboard.users.status` (`invited` → `active`); email-verify subsystem **deferred** |
+| Onboarding | New 1:1 `blessboard.organization_onboarding` → `platform.organizations` |
+| Follow-up / callbacks | Same onboarding row + append-only contact notes |
+| Publication | Derive site state from `public_pages` (+ optional cached aggregate on onboarding) |
+| Org operational | Existing `platform.organizations.status` (`active` / `inactive` / `retired`) |
 
-| Concern | Location |
-|---------|----------|
-| Application intake lifecycle | Extend `blessboard.platform_church_registration_applications` |
-| Provisioning outcome | Same application row (`provisioning_status` + `organization_id`) |
-| Long-term onboarding + follow-up + support assignment | **One** new 1:1 table: `blessboard.organization_onboarding` (name TBD; linked to `platform.organizations`) |
-| Support call history | **Append-only** `blessboard.organization_support_notes` |
-| Admin verification | `blessboard.users` (existing `status`; optional `email_verified_at` later) |
-| Publication | Existing `blessboard.public_pages.status` + derived “site published” readiness on onboarding row |
-| Organization operational | Existing `platform.organizations.status` |
-| Church operational | Existing `blessboard.churches.status` |
-
-**Rejected:** storing everything forever on the application; separate onboarding **and** follow-up tables; inventing a second tenant; V4 support-notes tables.
+**Chosen models:** Onboarding **MODEL E** (summary table + derived checklist facts). Follow-up on **organization_onboarding**. Notes **MODEL 4** (append-only contacts + audit for status changes). New Free churches: org **`active`** immediately (not “provisional” org status).
 
 ---
 
-## 2. Model evaluation
+## 2. Current-field inventory
 
-| Model | Summary | Pros | Cons | Verdict |
-|-------|---------|------|------|---------|
-| **A** — Everything on application | All statuses/notes on `platform_church_registration_applications` | Few tables | Orgs provisioned without apps (CLI); lifecycle after provision awkward; mixes intake with ops | **Reject** for long-term state |
-| **B** — Long-term on org/church; intake on application | Split by lifetime | Matches 2A entity model | Org/church tables grow many support columns; church vs org which owner? | **Partial** — use for operational/publication; not for support notes |
-| **C** — One onboarding/support table per org | 1:1 org sidecar | Clean; works for CLI-provisioned orgs too; one place for PA follow-up | One new table | **Adopt** |
-| **D** — Separate onboarding + follow-up tables | Two sidecars | Strict separation | Overkill for Foundation; double joins | **Defer** |
+### 2.1 Live / migration fields (relevant)
 
-**Chosen:** **C + B hybrid** — application holds intake + provisioning; `organization_onboarding` holds follow-up + onboarding progress; existing org/church/pages/users hold operational and publication primitives.
+| Schema.table | Column | Type | Default | Null | CHECK (migration) | Indexes | Code refs | UI today | Tests | Live |
+|--------------|--------|------|---------|------|-------------------|---------|-----------|----------|-------|------|
+| `blessboard.platform_church_registration_applications` | `status` | text | `pending` | NO | `pending\|contacted\|closed` | `(status, created_at DESC)` | insert only; **no admin writer** | none | register-church | yes |
+| same | `review_notes` | text | null | YES | length | — | selected, never written | none | schema tests | yes |
+| same | `created_at` / `updated_at` | timestamptz | now() | NO | updated≥created | email/status indexes | service | none | yes | yes |
+| `platform.organizations` | `status` | text | `active` | NO | `active\|inactive\|retired` | status idx | PA directory | org status | PA shell | yes |
+| `blessboard.churches` | `status` | text | `active` | NO | `active\|inactive\|suspended\|archived` | status idx | provision / routing | church status on org detail | yes | yes |
+| `blessboard.branches` | `status` | text | `active` | NO | same family as church | — | provision | branch catalogue | yes | yes |
+| `blessboard.users` | `status` | text | `active` | NO | `active\|inactive\|suspended\|invited` | status idx | create/auth | — | auth tests | yes |
+| same | `last_login_at` | timestamptz | null | YES | — | — | auth on login | — | partial | yes |
+| `blessboard.public_pages` | `status` | text | `draft` | NO | `draft\|published\|archived` | status idx | content admin | content UI | content tests | yes |
+| same | `published_at` | timestamptz | null | YES | published ⇒ not null | — | content | — | yes | yes |
+| `platform.domains` | `verified_at` | timestamptz | — | YES | — | — | domain admin | domain detail | PA | yes |
+| `platform.audit_events` | — | — | — | — | — | — | audit service | no PA browser | yes | yes |
+
+**Absent today (searched):** `application_status`, `provisioning_status`, `onboarding_*`, `follow_up_*`, `callback_*`, `assigned_support*`, `first_contacted_at`, `website_publication_status`, `organization_id` on applications, email verification tokens, dedicated support-notes tables on V5.
+
+### 2.2 Ambiguous generic `status`
+
+| Table | Meaning today | Risk if overloaded |
+|-------|---------------|-------------------|
+| applications.`status` | Lead disposition (`pending/contacted/closed`) — **conflates** follow-up | High — replace with split columns |
+| organizations.`status` | Platform operational | Do not store onboarding/publication here |
+| churches.`status` | Product lifecycle / suspend | Prefer for suspend; not publication |
+| users.`status` | Account lifecycle incl. `invited` | Closest to verification proxy |
+| public_pages.`status` | Per-page publish | Site aggregate must be derived |
 
 ---
 
-## 3. Status families (seven concepts)
+## 3. Seven state families
 
-### 3.1 Application status
+### 3.1 Application lifecycle
 
-| Field | Detail |
-|-------|--------|
-| **Owns** | `blessboard.platform_church_registration_applications` |
-| **Column** | Replace overloaded `status` with **`application_status`** (migration later; backfill from current `status`) |
+| | |
+|--|--|
+| **Owning table** | `blessboard.platform_church_registration_applications` |
+| **Column** | `application_status` |
 | **Allowed** | `submitted` · `duplicate_review` · `rejected` · `cancelled` · `closed` |
 | **Initial** | `submitted` |
-| **Meaning** | Intake / disposition of the **form record**, not ops health of the church |
-| **Transitions** | `submitted` → `duplicate_review` \| `rejected` \| `cancelled` \| `closed`; `duplicate_review` → `submitted` \| `rejected` \| `cancelled` \| `closed`; terminal: `rejected`, `cancelled`, `closed`. Provision success does **not** require leaving `submitted`—prefer leaving application_status as `submitted` or moving to `closed` only when support closes the case. **Recommended after provision:** keep `submitted` until support closes → `closed`, or auto-`closed` when onboarding marked complete (product choice). |
-| **Actors** | System (submit); `platform_admin` (reject/cancel/duplicate/close); never church admin |
-| **Audit** | Yes — significant disposition changes → `platform.audit_events` |
-| **Belongs on** | Application only |
+| **Terminal** | `rejected`, `cancelled`, `closed` |
+| **Actors** | System (submit); `platform_admin` (disposition) |
+| **Timestamps** | Prefer `created_at` as submitted; add `closed_at` / `rejected_at` only if ops needs them — optional |
+| **Audit** | Yes on disposition |
+| **Admin list** | Yes |
+| **Church admin** | No |
 
-**Do not reuse** current `pending` / `contacted` / `closed` as mixed follow-up meanings. Backfill map (later): `pending`→`submitted`; `contacted`→`submitted` + create follow-up `contacted` when org exists; `closed`→`closed`.
+**Not in this column:** provisioning, follow-up, verification, publication.
 
-**Out of application_status:** provisioning, follow-up, publication.
+### 3.2 Provisioning lifecycle
 
----
-
-### 3.2 Provisioning status
-
-| Field | Detail |
-|-------|--------|
-| **Owns** | `blessboard.platform_church_registration_applications` |
-| **Column** | New **`provisioning_status`** |
+| | |
+|--|--|
+| **Owning table** | applications |
+| **Column** | `provisioning_status` + nullable `organization_id` |
 | **Allowed** | `not_started` · `provisioning` · `provisioned` · `provisioning_failed` |
 | **Initial** | `not_started` |
-| **Transitions** | `not_started` → `provisioning` → `provisioned` \| `provisioning_failed`; `provisioning_failed` → `provisioning` (retry); `provisioned` terminal for this column |
-| **Actors** | System orchestrator only (HTTP/CLI registration provision). Admins do not hand-edit except via controlled retry action |
-| **Audit** | **Required** (start, success, failure reason code) |
-| **Belongs on** | Application (+ `organization_id` set on success). Optionally mirror last result on `organization_onboarding.provisioned_at` |
+| **Terminal** | `provisioned` (success); failed is **retryable** until cancelled/rejected |
+| **Actors** | Orchestrator only |
+| **Timestamps** | `provisioning_started_at`, `provisioned_at`, `provisioning_failed_at` (**required** for ops) |
+| **Audit** | Required |
+| **Authority after success** | Organization exists; `organization_id` + `provisioned` prove commit |
+| **Admin list** | Yes |
+| **Church admin** | No |
 
-Also set nullable **`organization_id`** FK on success (per 2A).
+### 3.3 Administrator verification
 
----
+| | |
+|--|--|
+| **Owning table** | `blessboard.users` |
+| **Column** | `status` (`invited` / `active` / …); optional later `email_verified_at` |
+| **Foundation meaning** | `invited` ≈ unverified setup; `active` ≈ may use portal fully |
+| **Actors** | System / first login; PA later for lock |
+| **Audit** | On forced changes |
+| **Admin** | Yes (summary) |
+| **Church admin** | Own account only |
 
-### 3.3 Administrator verification status
+**No V5 email-verify tokens today** — do not invent `verification_sent` until invite email exists.
 
-| Field | Detail |
-|-------|--------|
-| **Owns** | `blessboard.users` (first admin user) |
-| **Column** | Prefer existing **`users.status`**: Foundation uses `invited` → `active`. Optional later: `email_verified_at TIMESTAMPTZ` |
-| **Allowed (Foundation)** | Derived: `unverified` if `status = 'invited'` (or no successful login yet); `verified` if `status = 'active'` after first login or explicit verify. Do **not** invent a parallel enum on the application |
-| **Initial** | `invited` user (or `active` if Foundation ships password-at-register without email verify — **owner decision**) |
-| **Transitions** | Invite/create → first login or verify → `active`; suspend → `suspended` |
-| **Actors** | System; user (complete verify); `platform_admin` (resend / force — later) |
-| **Audit** | Yes for admin-forced changes; login can be session audit |
-| **Belongs on** | **User**, not application |
+### 3.4 Onboarding progress
 
-If email verification is deferred, document verification status as **`not_applicable` / deferred** in admin UI rather than inventing fake verified state.
+| | |
+|--|--|
+| **Owning table** | `blessboard.organization_onboarding` (new, 1:1 org) |
+| **Column** | `onboarding_status` + `checklist_state` JSONB |
+| **Allowed status** | `not_started` · `in_progress` · `completed` · `skipped` |
+| **Initial** | `not_started` at provision |
+| **Actors** | Church admin (checklist); PA (complete/skip/reopen) |
+| **Percent** | **Derived** from checklist keys at query time (optional cache on row only if measured slow) |
+| **Audit** | complete / skip / reopen |
+| **Admin + church** | Yes (church sees checklist; PA sees summary) |
 
----
+### 3.5 Support follow-up
 
-### 3.4 Onboarding status
-
-| Field | Detail |
-|-------|--------|
-| **Owns** | New **`blessboard.organization_onboarding`** (1:1 `organization_id`) |
-| **Column** | **`onboarding_status`** |
-| **Allowed** | `not_started` · `in_progress` · `completed` · `skipped` |
-| **Initial** | `not_started` (row created when org is provisioned) |
-| **Transitions** | `not_started` → `in_progress` → `completed`; `in_progress` → `skipped` (admin); `completed` / `skipped` terminal unless admin reopens → `in_progress` |
-| **Actors** | Church admin (checklist progress); `platform_admin` (mark complete/skip/reopen) |
-| **Audit** | Yes for complete / skip / reopen |
-| **Belongs on** | Organization sidecar (not application) |
-
-**Progress:** store **`checklist_state JSONB`** (keys for required Foundation steps) and/or **`onboarding_percent INT`** (0–100, derived or maintained). Also **`onboarding_completed_at`**.
-
-CLI-provisioned orgs without an application still get an onboarding row.
-
----
-
-### 3.5 Follow-up status
-
-| Field | Detail |
-|-------|--------|
-| **Owns** | Same **`blessboard.organization_onboarding`** |
-| **Column** | **`follow_up_status`** |
+| | |
+|--|--|
+| **Owning table** | `organization_onboarding` |
+| **Column** | `follow_up_status` + assignment + contact timestamps |
 | **Allowed** | `new` · `call_pending` · `contacted` · `needs_help` · `self_onboarding` · `completed` · `unreachable` · `not_interested` |
 | **Initial** | `new` |
-| **Transitions** | `new` → `call_pending` \| `self_onboarding` \| `contacted`; `call_pending` → `contacted` \| `unreachable` \| `not_interested`; `contacted` → `needs_help` \| `self_onboarding` \| `completed`; `needs_help` → `contacted` \| `completed`; `self_onboarding` → `completed` \| `needs_help`; terminal-ish: `completed`, `not_interested` (reopen allowed by admin → `call_pending` / `needs_help`) |
-| **Actors** | `platform_admin` only (church admins do not set follow-up) |
-| **Audit** | Yes for status changes |
-| **Belongs on** | Organization sidecar |
+| **Actors** | `platform_admin` **only** |
+| **Blocks access?** | **Never** |
+| **Audit** | Status changes yes |
+| **Admin** | Yes |
+| **Church** | No |
 
-**Also on same row:** `assigned_support_user_id` (nullable FK → `blessboard.users` with `platform_admin` role), `first_contacted_at`, `last_contacted_at`, `last_activity_at`.
+### 3.6 Public website publication
 
-Applications **without** an org: show follow-up only after provision, **or** allow a minimal pre-provision follow-up on the application (`application_follow_up_status`) — **Foundation recommendation:** do **not** duplicate; support contacts pre-provision via application detail using notes + application_status only until org exists. Optional: keep temporary use of application `review_notes` until first provision.
-
----
-
-### 3.6 Public website publication status
-
-| Field | Detail |
-|-------|--------|
-| **Owns (authoritative pages)** | `blessboard.public_pages.status` per page: `draft` · `published` · `archived` |
-| **Owns (aggregate readiness)** | `organization_onboarding.website_publication_status` **or** derive at read time |
-| **Allowed (aggregate)** | `unpublished` · `ready_to_publish` · `published` |
-| **Initial** | `unpublished` (Foundation: no public pages published at provision) |
-| **Transitions** | `unpublished` → `ready_to_publish` (checklist) → `published` (when policy says site is live); `published` → `unpublished` if all pages unpublished / kill switch |
-| **Actors** | Church admin (publish pages within entitlements); system derives aggregate; `platform_admin` may force unpublished |
-| **Audit** | Page publish/unpublish should already be auditable; aggregate changes optional |
-| **Belongs on** | Pages = church/branch content; aggregate = onboarding sidecar |
-
-**Do not** invent a fourth publication enum on `platform.organizations`.
-
-**Publication readiness** = checklist flag / aggregate `ready_to_publish`, not the same as org `active`.
-
----
+| | |
+|--|--|
+| **Authoritative pages** | `public_pages.status` |
+| **Site aggregate** | Derived: any published home/about? → `published`; else if checklist ready → `ready_to_publish`; else `unpublished` |
+| **Optional cache** | `organization_onboarding.website_publication_status` |
+| **Initial after Free provision** | `unpublished` |
+| **Actors** | Church admin publish; PA may force unpublish / suspend override |
+| **Admin + church** | Yes |
 
 ### 3.7 Organization operational status
 
-| Field | Detail |
-|-------|--------|
-| **Owns** | `platform.organizations.status` |
-| **Allowed (existing)** | `active` · `inactive` · `retired` |
-| **Initial** | `active` on successful Foundation provision |
-| **Transitions** | Per existing platform rules; PA suspend/reactivate may map to `inactive` / `active` (note: org has **no** `suspended` value today — church has `suspended`) |
-| **Actors** | Platform provisioner; `platform_admin` (when UI exists) |
-| **Audit** | **Required** for admin-driven changes |
-| **Belongs on** | Organization |
-
-**Church product operational status:** keep using `blessboard.churches.status` (`active` · `inactive` · `suspended` · `archived`). Foundation “suspend church” should update **church** (and possibly org) consistently — **owner decision** on whether suspend means org `inactive`, church `suspended`, or both. Architecture rule: **do not invent a new org status value** without a platform migration; prefer church `suspended` + org `inactive` as a paired action in the orchestrator/admin service.
+| | |
+|--|--|
+| **Owning table** | `platform.organizations` |
+| **Column** | existing `status` |
+| **Allowed** | `active` · `inactive` · `retired` |
+| **Initial for Free** | **`active`** |
+| **Suspend** | Prefer church `suspended` + org `inactive` as paired admin action (no new org enum) |
+| **Actors** | PA / provisioner |
+| **Audit** | Yes |
 
 ---
 
-## 4. Status ownership matrix (summary)
+## 4. Application lifecycle (answers)
 
-| Concept | Owning table | Column / source | Initial | Audit |
-|---------|--------------|-----------------|---------|-------|
-| Application status | `platform_church_registration_applications` | `application_status` | `submitted` | Yes (disposition) |
-| Provisioning status | applications | `provisioning_status` | `not_started` | Yes |
-| Org link | applications | `organization_id` | NULL | Yes on set |
-| Admin verification | `blessboard.users` | `status` (+ optional `email_verified_at`) | `invited` or `active` | Yes if forced |
-| Onboarding status | `organization_onboarding` | `onboarding_status` | `not_started` | Yes (complete/skip) |
-| Onboarding progress | `organization_onboarding` | `checklist_state` / percent / `onboarding_completed_at` | empty / 0 | Optional per step |
-| Follow-up status | `organization_onboarding` | `follow_up_status` | `new` | Yes |
-| Support assignment | `organization_onboarding` | `assigned_support_user_id` | NULL | Yes |
-| Contact timestamps | `organization_onboarding` | `first_contacted_at`, `last_contacted_at` | NULL | Via notes/status |
-| Last activity | `organization_onboarding` | `last_activity_at` | provision time | Optional |
-| Publication (pages) | `public_pages` | `status` | `draft` | Yes |
-| Publication (site) | onboarding aggregate or derived | `website_publication_status` | `unpublished` | Optional |
-| Org operational | `platform.organizations` | `status` | `active` | Yes |
-| Church operational | `blessboard.churches` | `status` | `active` | Yes |
+Minimal set: **`submitted` · `duplicate_review` · `rejected` · `cancelled` · `closed`**  
+(Provisioning is **separate** column — do not put `provisioning` / `provisioned` inside `application_status`.)
 
----
+| # | Answer |
+|---|--------|
+| 1 | Synchronous Free: leave `application_status=submitted`; set `provisioning_status` `not_started`→`provisioning`→`provisioned`\|`failed` in same request |
+| 2 | Success ends with `provisioning_status=provisioned` + `organization_id`; application may stay `submitted` until support `closed` |
+| 3 | `duplicate_review` when email/org-key collision or suspected duplicate church — human review |
+| 4 | `provisioning_failed` is **retryable** (same keys / idempotent orchestrator) |
+| 5 | Callback/follow-up **must not** change `application_status` |
+| 6 | Verification **must not** change `application_status` |
+| 7 | Soft-close only; **no hard delete** in Foundation (retain PII for dispute/ops; retention policy later) |
+| 8 | Yes — failed/rejected keep full intake snapshot |
+| 9 | Idempotent retry via `applicationId` + provisioning status (2C orchestrator) |
+| 10 | Proof of commit: `organization_id IS NOT NULL` AND `provisioning_status='provisioned'` AND org row exists |
 
-## 5. Support-note storage
+**Timestamps (material):** `provisioning_started_at`, `provisioned_at`, `provisioning_failed_at`.  
+`created_at` = submitted. Optional later: `rejected_at`, `closed_at`.
 
-| Option | Verdict |
-|--------|---------|
-| Overwritten single `review_notes` on application | **Insufficient** for multiple calls; keep only as legacy intake scratch |
-| Append-only notes table | **Adopt** |
-| `platform.audit_events` only | Too coarse for agent-facing call notes; use audit **in addition** for status changes |
-| V4 `public.church_platform_support_notes` | **Reject** — absent on V5 DB |
-
-### Recommended: append-only notes + summary fields
-
-**Table (future):** `blessboard.organization_support_notes`
-
-| Column | Purpose |
-|--------|---------|
-| `id` | UUID PK |
-| `organization_id` | FK required |
-| `application_id` | Nullable FK (when note originated from application detail) |
-| `author_user_id` | Platform admin user |
-| `body` | Short note text |
-| `created_at` | Immutable |
-
-**On `organization_onboarding`:** optional `latest_note_preview` (denormalized) **or** read latest note by `created_at DESC` — prefer query latest to avoid dual-write; denormalize only if list performance requires it.
-
-**Application `review_notes`:** deprecate for new writes after notes table exists; migrate last value into first support note when org is linked (optional backfill).
+**Backfill:** `pending`→`submitted` + `provisioning_status=not_started`; `contacted`→`submitted` (follow-up applied only after onboarding row exists); `closed`→`closed`.
 
 ---
 
-## 6. Proposed `organization_onboarding` shape (conceptual — not a migration)
+## 5. Provisioning status ownership
 
-One row per organization, created at provision time:
+**Store on the application** (`provisioning_status` + `organization_id`), not as a contradictory org field.
 
-- `organization_id` UUID PK/FK  
-- `application_id` UUID NULL UNIQUE (when self-serve)  
-- `onboarding_status`, `checklist_state`, `onboarding_percent`, `onboarding_completed_at`  
-- `follow_up_status`, `assigned_support_user_id`  
-- `first_contacted_at`, `last_contacted_at`, `last_activity_at`  
-- `website_publication_status` (or derive)  
-- `created_at`, `updated_at`  
+| Situation | Representation |
+|-----------|----------------|
+| Not started | `not_started`, `organization_id` NULL |
+| In progress | `provisioning` (row locked) |
+| Completed | `provisioned` + FK |
+| Failed retryable | `provisioning_failed` + error code; org **not** committed (outer TX rollback) |
+| Failed permanent | same + `application_status=rejected` or `cancelled` after PA decision |
+| Duplicate blocked | `application_status=duplicate_review`; provisioning stays `not_started` or failed |
+| Partial create | **Must not persist** after 2C TX refactor; if seen, ops cleanup + failed |
 
-Satisfies: assigned support person, contact timestamps, follow-up status, onboarding progress, publication readiness, onboarding completed, last activity — **without** seven tables.
-
----
-
-## 7. Requirements coverage
-
-| Requirement | Where |
-|-------------|--------|
-| Assigned support person | `organization_onboarding.assigned_support_user_id` |
-| First contacted | `first_contacted_at` (set on first transition into `contacted` or first note) |
-| Last contacted | `last_contacted_at` (each contact note / status touch) |
-| Follow-up status | `follow_up_status` |
-| Onboarding progress | `checklist_state` / `onboarding_percent` |
-| Publication readiness | aggregate `website_publication_status` + `public_pages` |
-| Onboarding completed timestamp | `onboarding_completed_at` |
-| Last activity | `last_activity_at` (portal login, checklist, publish — updated by services) |
+**Authoritative after org exists:** organization/church rows + application FK. Do not invent a second provisioning flag on the org.
 
 ---
 
-## 8. Required future schema changes
+## 6. Administrator verification model
 
-*(Do not implement in this prompt.)*
+### Current V5 capability
+- Users: `active|inactive|suspended|invited`; password hash; `last_login_at`
+- **No** email verification tokens, invite emails, or phone verify in V5 blessboard auth
+- Login works with password for `active` users; `invited` available in schema but create path typically inserts `active`
+
+### Foundation recommendation (smallest)
+
+| Item | Decision |
+|------|----------|
+| Owner | `blessboard.users` |
+| Scope | **Per user** (first admin) |
+| States | Use `invited` → `active` if password-setup/invite ships; else **`active` at create** and treat verification as **deferred / N/A** |
+| Portal before verify | If `active` with password: **yes**. If future `invited` without password: login blocked until setup |
+| Restrict before verify | Defer publish-gated actions only if product requires; default Free: portal OK |
+| Publish require verify? | **No** for Foundation (publication separate) |
+| Visible on applications / org detail? | Yes as summary (“Admin: active / invited”) |
+| Tokens | Defer email verify tables |
+| Without subsystem | Document “verification deferred”; do not fake `verified` |
+
+**Answers:** (1) users (2) per user (3) if `active`+password yes; if invited-only no (4) optional publish later (5) no (6) yes summary (7) yes (8) `last_login_at`; email_verified_at deferred (9) password path yes; email verify no (10) full email verify deferred.
+
+---
+
+## 7. Onboarding model options
+
+| Model | Verdict |
+|-------|---------|
+| A — all on application | Reject long-term |
+| B — fields on churches only | Weak for CLI orgs without app; church vs org |
+| **C — `organization_onboarding` 1:1 org** | Adopt as summary home |
+| D — derive only | Good for %; weak for follow-up assignment |
+| **E — hybrid C + derived checklist** | **Choose** |
+
+**Owning table:** `blessboard.organization_onboarding`  
+**FK:** `organization_id` PK/FK → `platform.organizations`  
+**Optional:** `application_id` UNIQUE NULL  
+
+**Checklist keys (boolean/facts, derived where possible):**
+
+| Key | Preferred source |
+|-----|------------------|
+| organization_details | org display_name/legal |
+| church_profile | church row |
+| first_branch | HQ branch exists |
+| public_contact | settings / public contact page content |
+| service_times | content/settings when present |
+| logo | media/settings |
+| first_leader | user_roles count ≥ 1 beyond creator |
+| website_previewed | onboarding flag or first GET `/c/:slug` log (defer) |
+| website_published | derived from `public_pages` |
+| first_member_invited | member exists (defer if no invite) |
+
+**Percentage:** compute from checklist weights at read time.
+
+---
+
+## 8. Follow-up and callback model
+
+**Location:** `organization_onboarding` (not application long-term).  
+Pre-provision contacts: application detail + temporary `review_notes` or wait until provision creates onboarding row.
+
+### Follow-up statuses
+
+| Status | Meaning | Terminal? | Access impact |
+|--------|---------|-----------|---------------|
+| `new` | Not yet queued for call | No | None |
+| `call_pending` | In call queue | No | None |
+| `contacted` | At least one successful contact | No | None |
+| `needs_help` | Stuck; priority support | No | None |
+| `self_onboarding` | Declined help / progressing alone | No | None |
+| `completed` | Support closed | Soft terminal | None |
+| `unreachable` | No response after attempts | Soft terminal | None |
+| `not_interested` | Declined product | Soft terminal | None |
+
+**Transitions (summary):** `new`→`call_pending`|`self_onboarding`|`contacted`; `call_pending`→`contacted`|`unreachable`|`not_interested`; `contacted`↔`needs_help`|`self_onboarding`|`completed`; PA may reopen soft terminals.
+
+**Confirm:** Follow-up **never** auto-suspends or blocks Free portal/login.
+
+Also store: `assigned_support_user_id`, `first_contacted_at`, `last_contacted_at`, optional `next_follow_up_at`.
+
+---
+
+## 9. Support notes and contact history
+
+| Model | Verdict |
+|-------|---------|
+| 1 Overwrite text | Insufficient |
+| 2 Append-only notes only | Good |
+| 3 Audit only | Poor UX for agents |
+| **4 Append-only contacts + audit on status** | **Choose** |
+
+**Table:** `blessboard.organization_support_contacts` (name aligned to repo style)
+
+Suggested columns: `id`, `organization_id` (required), `application_id` (nullable), `created_by_user_id`, `contact_method` (`phone`|`email`|`other`), `outcome` (short enum or text), `note` (1–2000 chars), `contacted_at`, `next_follow_up_at` nullable, `created_at`.
+
+**Rules:** Product-onboarding notes only — no pastoral/member PII. Status changes also → `platform.audit_events`. Deprecate new writes to application `review_notes` after this table exists.
+
+---
+
+## 10. Publication status
+
+**Smallest aggregate set:** `unpublished` · `ready_to_publish` · `published`  
+(Do not add `setup_incomplete` / `suspended` as publication enums — suspend is operational override.)
+
+| # | Answer |
+|---|--------|
+| 1 | Initial: **unpublished** |
+| 2 | Minimum: org/church/HQ exist + church admin chooses publish; optional checklist gate later |
+| 3 | Church admin (entitled) |
+| 4 | PA may unpublish / force draft |
+| 5 | Org/church inactive/suspended → public routes deny regardless of page status |
+| 6 | Suspension **overrides access**; does not necessarily rewrite page rows |
+| 7 | Page-level `published_at` already; site-level optional |
+| 8 | `ready_to_publish` **derived** from checklist |
+| 9 | Path `/c/:slug`: unpublished → coming-soon/404 policy (owner); never full public content |
+
+**Owner of page truth:** `public_pages`. Aggregate may cache on onboarding.
+
+---
+
+## 11. Organization operational status
+
+Use existing **`active` | `inactive` | `retired`**.  
+New Free churches: **`active`**.
+
+| Case | Representation |
+|------|----------------|
+| Newly provisioned usable | org `active`, church `active`, provisioning `provisioned` |
+| Active onboarding | org `active` + onboarding_status `in_progress` |
+| Active published | org `active` + site `published` |
+| Suspended | church `suspended` and/or org `inactive` |
+| Archived | org `retired` / church `archived` |
+| Provision failed | **no org**; application `provisioning_failed` |
+
+| Capability | active | inactive/retired | no org |
+|------------|--------|------------------|--------|
+| Login (user active) | yes | deny tenant | n/a |
+| Portal | yes | no | n/a |
+| Public site | if published & not overridden | no | n/a |
+| Plan changes | yes | limited | n/a |
+| Support actions | yes | yes | via application |
+
+**Reject** new org status values `provisional` / `onboarding` / `pending`.
+
+---
+
+## 12. Last activity
+
+**Canonical meaning (Foundation):** **last church-admin portal login** for users with roles on that org (`users.last_login_at` max among scoped roles).
+
+Fallback display: `organization_onboarding.last_activity_at` updated on checklist/publish writes if no login yet.
+
+**Do not** invent a free-text manually edited “last activity”.
+
+---
+
+## 13. Admin field placement
+
+### `/admin/registration-applications` list
+Show: application_status, church/contact, plan, submitted (`created_at`), provisioning_status, linked org key, verification summary, follow_up_status, assignee, last_contacted.  
+Hide: full message body, IP/UA, raw password (never stored).
+
+### Application detail
+Intake payload, provisioning history/timestamps/error, linked org, contacts, retry affordance, follow-up controls (if org linked), audit.
+
+### `/admin/organizations` list
+Org status, product, plan, onboarding_status/%, publication aggregate, verification summary, follow_up (optional badge), last activity.
+
+### Organization detail
+Linked application, checklist, contacts, publication, support assignment, branches/plan (existing).
+
+---
+
+## 14. Dashboard metric sources (future)
+
+| Metric | Counts | Filter | Click target | Double-count risk |
+|--------|--------|--------|--------------|-------------------|
+| New registrations today | **Applications** | `created_at::date = today` | `/admin/registration-applications?…` | Do not mix with orgs |
+| New provisioned churches this week | **Organizations** with BlessBoard | `created_at` week + enrolment | `/admin/organizations?…` | Not applications |
+| Awaiting first call | Orgs/onboarding | `follow_up_status in (new, call_pending)` | applications or orgs filter | Prefer orgs with onboarding |
+| Provisioning failures | Applications | `provisioning_status=provisioning_failed` | applications | — |
+| Unverified administrators | Users | `status=invited` (if used) else defer metric | org detail | Defer if all active |
+| Onboarding incomplete | Orgs | onboarding not completed/skipped | organizations | — |
+| Unpublished websites | Orgs | aggregate ≠ published | organizations | — |
+| Published churches | Orgs | aggregate = published | organizations | — |
+| Suspended organizations | Orgs/churches | org inactive or church suspended | organizations | Define one rule |
+
+---
+
+## 15. Status ownership matrix
+
+| Concept | Owning table | Column | Initial | Allowed | Changed by | Trigger | PA visible | Church visible | Audit | Stored/derived |
+|---------|--------------|--------|---------|---------|------------|---------|------------|----------------|-------|----------------|
+| Application lifecycle | applications | application_status | submitted | submitted, duplicate_review, rejected, cancelled, closed | system/PA | submit/disposition | Y | N | Y | stored |
+| Provisioning | applications | provisioning_status + organization_id | not_started | not_started, provisioning, provisioned, provisioning_failed | orchestrator | register/retry | Y | N | Y | stored |
+| Verification | users | status (+ email_verified_at later) | invited or active | invited, active, inactive, suspended | system/PA | create/login | Y | self | Y forced | stored |
+| Onboarding | organization_onboarding | onboarding_status + checklist | not_started | not_started, in_progress, completed, skipped | church/PA | checklist | Y | Y | Y terminal | hybrid |
+| Follow-up | organization_onboarding | follow_up_status | new | (see §8) | PA | calls | Y | N | Y | stored |
+| Publication | public_pages + aggregate | status / derived | unpublished | unpublished, ready_to_publish, published | church/PA | publish | Y | Y | page Y | hybrid |
+| Org operational | organizations | status | active | active, inactive, retired | PA | suspend | Y | limited | Y | stored |
+| Last activity | users / onboarding | last_login_at / last_activity_at | null | timestamps | system | login/write | Y | N | N | hybrid |
+
+---
+
+## 16. Required schema changes
 
 ### REQUIRED FOR FOUNDATION
 
-| Change | Table | Notes |
-|--------|-------|-------|
-| Add `organization_id` UUID NULL FK → `platform.organizations` | applications | Index; set on provision |
-| Split status: add `application_status`, `provisioning_status` | applications | Backfill; retire old CHECK; drop or stop writing old `status` |
-| Create `blessboard.organization_onboarding` | new | 1:1 org; indexes on follow_up_status, assigned_support |
-| Create `blessboard.organization_support_notes` | new | Append-only; FK org; index `(organization_id, created_at DESC)` |
+| Change | Details |
+|--------|---------|
+| applications.`organization_id` | UUID NULL FK → organizations; index; set on provision |
+| Split status | Add `application_status`, `provisioning_status`; backfill; drop old CHECK/`status` after cutover |
+| Provisioning timestamps | `provisioning_started_at`, `provisioned_at`, `provisioning_failed_at`, `provisioning_error_code` nullable |
+| `blessboard.organization_onboarding` | 1:1 org; follow-up + onboarding + assignment + contact timestamps + checklist JSONB |
+| `blessboard.organization_support_contacts` | Append-only; FK org; optional application_id |
 
 ### OPTIONAL FOR FOUNDATION
 
-| Change | Notes |
-|--------|-------|
-| `users.email_verified_at` | If email verification ships |
-| Denormalized `latest_note_preview` | Performance only |
-| `website_publication_status` stored vs derived | Prefer derived if cheap |
+| Change | Details |
+|--------|---------|
+| `users.email_verified_at` | If email verify ships |
+| Cached `website_publication_status` | If derive is expensive |
+| `rejected_at` / `closed_at` | Ops reporting |
 
 ### DEFERRED
 
-| Change | Notes |
-|--------|-------|
-| Separate follow-up table | Model D |
-| Pre-provision follow-up columns on application | Until volume requires it |
-| New `suspended` value on `platform.organizations` | Prefer church `suspended` + org `inactive` pairing |
-| Full audit history table per status field | Use `platform.audit_events` |
+| Change | Details |
+|--------|---------|
+| Email verification token tables | |
+| Separate follow-up table | |
+| New org status values | |
+| Pre-provision follow-up columns on application | |
+| V4 inquiry restore | Forbidden |
 
-**Rollback risk:** status CHECK replacement needs careful backfill of existing `pending`/`contacted`/`closed` rows (testing DB currently has pending applications).
-
----
-
-## 9. Transition rules — compact diagram
-
-```text
-Application:  submitted ──► duplicate_review / rejected / cancelled / closed
-                 │
-Provisioning: not_started ──► provisioning ──► provisioned
-                                   │              │
-                                   └── failed ◄───┘ (retry)
-                                              │
-                                              ▼
-                         organization_onboarding created
-                         follow_up=new, onboarding=not_started
-                         website=unpublished
-                         users.status=invited|active
-```
+**Rollback:** additive columns first; dual-read old `status` during backfill; no destructive drop until verified.
 
 ---
 
-## 10. Duplicate-prevention rules (status layer)
+## 17. Duplicate-prevention rules
 
-1. Never store follow-up **and** application disposition in one column.  
-2. Never store publication only on the application.  
-3. Never create V4 inquiry statuses on V5 tables.  
-4. Never create a second onboarding table for “church” vs “organization” — org sidecar only (church is 1:1).  
-5. Member `member_registrations.review_notes` remains unrelated.
-
----
-
-## 11. Open owner decisions
-
-1. After provision, auto-`closed` application or leave `submitted` until support closes?  
-2. First admin: `invited` + verify vs `active` + password at register?  
-3. Suspend action: church `suspended` only, org `inactive` only, or both?  
-4. Pre-provision support calls: notes on application only until org exists — acceptable?  
-5. Checklist keys for Foundation (minimum set)?
+1. No second tenant-status system.  
+2. Onboarding truth not only on the application.  
+3. Follow-up ≠ application_status.  
+4. Publication ≠ organization.status.  
+5. One overwrite note field **or** history table with clear deprecation — not both as truth.  
+6. Do not duplicate full audit payloads into notes.  
+7. One checklist (organization_onboarding), not admin vs church copies.  
+8. “New churches” metrics: applications **or** orgs — never summed.  
+9. No V4 inquiry statuses.  
+10. Prefer Organization / Church / Application vocabulary (2A).
 
 ---
 
-## 12. Confirmation
+## 18. Deferred capabilities
+
+Email verification flow; phone verify; multi-agent CRM; pastoral notes; SLA timers; auto-suspend on unreachable; path public “previewed” telemetry; paid onboarding packages.
+
+---
+
+## 19. Open owner decisions
+
+1. Auto-`closed` application after provision vs leave `submitted`?  
+2. First admin `invited` vs `active` at create?  
+3. Suspend = church only, org only, or both?  
+4. Unpublished public URL: soft page vs 404?  
+5. Pre-provision support calls allowed before onboarding row exists?  
+6. Exact checklist keys for Foundation MVP?  
+7. Allow one email across multiple orgs?
+
+---
+
+## 20. Confirmation
 
 - No application code changed  
 - No migrations created or executed  
 - No database records changed  
-- No routes added  
+- No routes / admin screens / dashboard items added  
 - No V4 code changed  
 
-**Companions:** [`FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md`](./FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md) · [`ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md`](./ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md)
+**Companions:** 2A entity/admin · 2C provisioning · 2D path routing

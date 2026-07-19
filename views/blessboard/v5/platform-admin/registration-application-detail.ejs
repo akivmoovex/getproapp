@@ -1,0 +1,296 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var app = application || {};
+  var contactRows = contacts || [];
+  var audits = auditEvents || [];
+  var admins = platformAdmins || [];
+  var followOpts = followUpStatuses || [];
+  var methodOpts = contactMethods || [];
+  var outcomeOpts = contactOutcomes || [];
+  var flashNotice = typeof notice !== 'undefined' ? notice : null;
+  var flashError = typeof error !== 'undefined' ? error : null;
+
+  function labelStatus(s) {
+    return String(s || '').replace(/_/g, ' ') || '—';
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    try {
+      return new Date(d).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    } catch (e) {
+      return '—';
+    }
+  }
+  function noticeText(code) {
+    if (code === 'follow_up_saved') return 'Follow-up status updated.';
+    if (code === 'support_assigned') return 'Support assignment saved.';
+    if (code === 'contact_saved') return 'Contact note added.';
+    return null;
+  }
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    if (code === 'confirm_required') return 'Confirmation is required.';
+    if (code === 'invalid') return 'The submitted values were invalid.';
+    if (code === 'not_found') return 'This registration application could not be found.';
+    if (code === 'not_provisioned') {
+      return 'This action is available after the organization is provisioned.';
+    }
+    if (code === 'not_platform_admin') return 'Only active platform administrators can be assigned.';
+    if (code === 'follow_up_failed' || code === 'assign_failed' || code === 'contact_failed') {
+      return 'The change could not be saved. Try again.';
+    }
+    return code ? 'Something went wrong.' : null;
+  }
+  var noticeMsg = noticeText(flashNotice);
+  var errorMsg = errorText(flashError);
+%>
+
+<section
+  class="bb-pa-org-detail"
+  data-bb-pa-registration-application-detail="1"
+  aria-label="Registration application detail"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin/registration-applications">Registration Applications</a>
+    <span aria-hidden="true">/</span>
+    <span><%= app.churchName || 'Application' %></span>
+  </nav>
+
+  <% if (noticeMsg) { %>
+  <div class="bb-pa-flash bb-pa-flash--ok" role="status"><%= noticeMsg %></div>
+  <% } %>
+  <% if (errorMsg) { %>
+  <div class="bb-pa-flash bb-pa-flash--error" role="alert"><%= errorMsg %></div>
+  <% } %>
+
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-org-detail__eyebrow">Registration application</p>
+      <h1 class="bb-pa-page-head__title"><%= app.churchName %></h1>
+      <p class="bb-pa-lede">
+        <%= app.city %><%= app.city && app.country ? ', ' : '' %><%= app.country %>
+        · submitted <%= fmtDate(app.createdAt) %>
+      </p>
+      <p>
+        <span class="bb-pa-chip"><%= labelStatus(app.applicationStatus) %></span>
+        <span class="bb-pa-chip"><%= labelStatus(app.provisioningStatus) %></span>
+        <% if (app.followUpStatus) { %>
+        <span class="bb-pa-chip"><%= labelStatus(app.followUpStatus) %></span>
+        <% } %>
+      </p>
+    </div>
+  </header>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-info-title">
+    <h2 id="reg-info-title" class="bb-pa-panel__title">Registration information</h2>
+    <dl class="bb-pa-dl">
+      <div><dt>Contact</dt><dd><%= app.contactName %></dd></div>
+      <div><dt>Email</dt><dd><%= app.contactEmail %></dd></div>
+      <div><dt>Telephone</dt><dd><%= app.contactPhone || '—' %></dd></div>
+      <div><dt>Role in church</dt><dd><%= app.roleInChurch || '—' %></dd></div>
+      <div><dt>Selected plan</dt><dd><%= app.selectedPlan || '—' %></dd></div>
+      <div><dt>Terms / privacy accepted</dt><dd><%= app.consentTerms ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Branch name</dt><dd><%= app.branchName || '—' %></dd></div>
+      <div><dt>Branch count (stated)</dt><dd><%= app.branchCount || '—' %></dd></div>
+      <div><dt>Message</dt><dd><%= app.message || '—' %></dd></div>
+    </dl>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-lifecycle-title">
+    <h2 id="reg-lifecycle-title" class="bb-pa-panel__title">Lifecycle</h2>
+    <dl class="bb-pa-dl">
+      <div><dt>Application status</dt><dd><%= labelStatus(app.applicationStatus) %></dd></div>
+      <div><dt>Provisioning status</dt><dd><%= labelStatus(app.provisioningStatus) %></dd></div>
+      <div><dt>Provisioning started</dt><dd><%= fmtDate(app.provisioningStartedAt) %></dd></div>
+      <div><dt>Provisioned at</dt><dd><%= fmtDate(app.provisionedAt) %></dd></div>
+      <div><dt>Failed at</dt><dd><%= fmtDate(app.provisioningFailedAt) %></dd></div>
+      <div><dt>Error code</dt><dd><%= app.provisioningErrorCode || '—' %></dd></div>
+      <div><dt>Error summary</dt><dd><%= app.provisioningErrorSummary || '—' %></dd></div>
+      <% if (app.legacyStatus && app.legacyStatus !== app.applicationStatus) { %>
+      <div><dt>Legacy status (compat)</dt><dd><%= app.legacyStatus %></dd></div>
+      <% } %>
+    </dl>
+    <% if (app.provisioningStatus === 'provisioning_failed') { %>
+    <p class="bb-pa-lede" role="note" data-bb-pa-provisioning-failed="1">
+      <%= app.retryAllowedNote || 'Automatic retry is not available from this screen yet.' %>
+      Use technical follow-up outside this queue if needed. Do not retry from this screen.
+    </p>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-org-title">
+    <h2 id="reg-org-title" class="bb-pa-panel__title">Linked organization</h2>
+    <% if (app.organizationKey) { %>
+    <dl class="bb-pa-dl">
+      <div><dt>Name</dt><dd><%= app.organizationDisplayName || '—' %></dd></div>
+      <div>
+        <dt>Organization key</dt>
+        <dd>
+          <a class="bb-pa-link" href="/admin/organizations/<%= encodeURIComponent(app.organizationKey) %>"><%= app.organizationKey %></a>
+        </dd>
+      </div>
+      <div><dt>Organization status</dt><dd><%= labelStatus(app.organizationStatus) %></dd></div>
+      <div><dt>Current plan</dt><dd><%= app.planKey || '—' %></dd></div>
+      <div><dt>Created</dt><dd><%= fmtDate(app.organizationCreatedAt) %></dd></div>
+      <div><dt>Onboarding status</dt><dd><%= labelStatus(app.onboardingStatus) %></dd></div>
+      <div>
+        <dt>Publication</dt>
+        <dd>
+          <%= (app.publication && app.publication.publishedPages) || 0 %> published /
+          <%= (app.publication && app.publication.draftPages) || 0 %> draft
+        </dd>
+      </div>
+      <div><dt>Last activity</dt><dd><%= fmtDate(app.lastActivityAt) %></dd></div>
+    </dl>
+    <% } else { %>
+    <p class="bb-pa-lede">No organization is linked yet. Follow-up assignment and contact history become available after provisioning.</p>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-follow-title">
+    <h2 id="reg-follow-title" class="bb-pa-panel__title">Follow-up</h2>
+    <% if (!app.followUpAvailable) { %>
+    <p class="bb-pa-lede">Support assignment and follow-up become available after the organization is provisioned.</p>
+    <% } else { %>
+    <dl class="bb-pa-dl">
+      <div><dt>Follow-up status</dt><dd><%= labelStatus(app.followUpStatus) %></dd></div>
+      <div>
+        <dt>Assigned support</dt>
+        <dd><%= app.assignedSupportDisplayName || app.assignedSupportEmail || 'Unassigned' %></dd>
+      </div>
+      <div><dt>First contacted</dt><dd><%= fmtDate(app.firstContactedAt) %></dd></div>
+      <div><dt>Last contacted</dt><dd><%= fmtDate(app.lastContactedAt) %></dd></div>
+      <div><dt>Next follow-up</dt><dd><%= fmtDate(app.nextFollowUpAt) %></dd></div>
+      <div><dt>Support requested</dt><dd><%= app.supportRequested ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Onboarding completed</dt><dd><%= fmtDate(app.onboardingCompletedAt) %></dd></div>
+    </dl>
+
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/follow-up-status"
+      data-bb-pa-follow-up-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <div class="bb-pa-field">
+        <label for="follow_up_status">Update follow-up status</label>
+        <select id="follow_up_status" name="follow_up_status" required>
+          <% followOpts.forEach(function (s) { %>
+          <option value="<%= s %>"<%= app.followUpStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Save follow-up status</button>
+    </form>
+
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/assign-support"
+      data-bb-pa-assign-support-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <div class="bb-pa-field">
+        <label for="support_user_id">Assign support administrator</label>
+        <select id="support_user_id" name="support_user_id">
+          <option value="">Unassigned</option>
+          <% admins.forEach(function (u) { %>
+          <option value="<%= u.id %>"<%= app.assignedSupportUserId === u.id ? ' selected' : '' %>>
+            <%= u.displayName || u.email %> (<%= u.email %>)
+          </option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--secondary" type="submit">Save assignment</button>
+    </form>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-contact-title">
+    <h2 id="reg-contact-title" class="bb-pa-panel__title">Contact history</h2>
+    <p class="bb-pa-lede" role="note">
+      Use these notes only for BlessBoard setup and onboarding. Do not record member, pastoral, prayer, health, or confidential church matters.
+    </p>
+    <% if (!app.contactHistoryAvailable) { %>
+    <p class="bb-pa-lede">Contact history is available after the organization is provisioned.</p>
+    <% } else { %>
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/contact"
+      data-bb-pa-contact-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <div class="bb-pa-field">
+        <label for="contact_method">Contact method</label>
+        <select id="contact_method" name="contact_method" required>
+          <% methodOpts.forEach(function (s) { %>
+          <option value="<%= s %>"><%= labelStatus(s) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-pa-field">
+        <label for="outcome">Outcome</label>
+        <select id="outcome" name="outcome" required>
+          <% outcomeOpts.forEach(function (s) { %>
+          <option value="<%= s %>"><%= labelStatus(s) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-pa-field">
+        <label for="note">Note</label>
+        <textarea id="note" name="note" rows="4" maxlength="2000" required></textarea>
+      </div>
+      <div class="bb-pa-field">
+        <label for="contact_follow_up_status">Also set follow-up status <span class="bb-pa-muted">(optional)</span></label>
+        <select id="contact_follow_up_status" name="follow_up_status">
+          <option value="">Leave unchanged</option>
+          <% followOpts.forEach(function (s) { %>
+          <option value="<%= s %>"><%= labelStatus(s) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-pa-field">
+        <label for="next_follow_up_at">Next follow-up <span class="bb-pa-muted">(optional)</span></label>
+        <input id="next_follow_up_at" name="next_follow_up_at" type="datetime-local" />
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Add contact note</button>
+    </form>
+
+    <% if (!contactRows.length) { %>
+    <p class="bb-pa-muted">No contact notes yet.</p>
+    <% } else { %>
+    <ul class="bb-pa-list" data-bb-pa-contact-history="1">
+      <% contactRows.forEach(function (c) { %>
+      <li class="bb-pa-list__item">
+        <strong><%= labelStatus(c.contactMethod) %></strong>
+        · <%= labelStatus(c.outcome) %>
+        · <%= fmtDate(c.contactedAt) %>
+        <div class="bb-pa-muted">by <%= c.createdByDisplayName || c.createdByEmail || 'admin' %></div>
+        <p><%= c.note %></p>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-audit-title">
+    <h2 id="reg-audit-title" class="bb-pa-panel__title">Recent registration audit</h2>
+    <% if (!audits.length) { %>
+    <p class="bb-pa-muted">No registration audit events for this organization yet.</p>
+    <% } else { %>
+    <ul class="bb-pa-list" data-bb-pa-reg-audit="1">
+      <% audits.forEach(function (e) { %>
+      <li class="bb-pa-list__item">
+        <strong><%= e.actionKey %></strong>
+        · <%= e.outcome %>
+        · <%= fmtDate(e.createdAt) %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

@@ -1,17 +1,26 @@
 <%#
   Apex Register Your Church — Stitch 8640e853… / 515da582…
-  Pending application form only. No self-serve provisioning.
-  Locals: authenticated, csrfToken, csrfField, submitted, form, formError, fieldError, selectedPlan
+  Application enquiry (flag off / paid plans) or instant Free provisioning (flag on).
+  Locals: authenticated, csrfToken, csrfField, submitted, workspaceReady, loginFallback,
+          review, organizationKeyPreview, form, formError, fieldError, selectedPlan,
+          instantFreeEnabled
 %>
 <%
   var formData = typeof form !== 'undefined' && form ? form : {};
   var activeFieldError = typeof fieldError !== 'undefined' ? fieldError : null;
   var planValue = formData.selected_plan || (typeof selectedPlan !== 'undefined' && selectedPlan ? selectedPlan : '');
+  var instantOn = typeof instantFreeEnabled !== 'undefined' && instantFreeEnabled;
+  var orgKeyPreview = typeof organizationKeyPreview !== 'undefined' && organizationKeyPreview
+    ? String(organizationKeyPreview) : (formData.organization_key || '');
   function fieldHasError(name) { return activeFieldError === name; }
+  var showSuccessEnquiry = typeof submitted !== 'undefined' && submitted;
+  var showSuccessWorkspace = typeof workspaceReady !== 'undefined' && workspaceReady;
+  var showReview = typeof review !== 'undefined' && review;
+  var showLoginFallback = typeof loginFallback !== 'undefined' && loginFallback;
 %>
 <%- include('../partials/apex-shell-start') %>
 
-<section class="bb-apex-register" data-bb-apex-page="register-church" data-bb-register-mode="application">
+<section class="bb-apex-register" data-bb-apex-page="register-church" data-bb-register-mode="<%= instantOn ? 'instant-free' : 'application' %>">
   <div class="bb-apex-container bb-apex-register__grid">
     <aside class="bb-apex-register__aside" aria-labelledby="bb-register-aside-title">
       <p class="bb-apex-mkt-hero__eyebrow">Join BlessBoard</p>
@@ -33,16 +42,73 @@
           <span><strong>Multi-branch ready</strong> — capacity depends on your approved plan and setup.</span>
         </li>
       </ul>
+      <% if (instantOn) { %>
+      <p class="bb-apex-register__aside-note">
+        Choosing <strong>Foundation — Free</strong> creates your church workspace and administrator account immediately.
+        Your public church website stays unpublished until you choose to publish. BlessBoard may contact you to offer optional onboarding help — a callback is not required to keep portal access.
+      </p>
+      <% } else { %>
       <p class="bb-apex-register__aside-note">
         Submitting this form creates a pending application for platform-admin review. It does not create a live church, branch, administrator account, or paid subscription.
       </p>
+      <% } %>
     </aside>
 
     <div class="bb-apex-register__panel">
       <div class="bb-apex-register__card">
         <h2 class="bb-apex-register__card-title">Register Your Church</h2>
 
-        <% if (submitted) { %>
+        <% if (showReview) { %>
+        <div class="bb-apex-register-success" role="status" data-bb-register-review="1">
+          <span class="material-symbols-outlined" aria-hidden="true">support_agent</span>
+          <div>
+            <p class="bb-apex-register-success__title">We received your registration.</p>
+            <p class="bb-apex-register-success__body">
+              Your request needs a short review before we can continue. BlessBoard will assist you —
+              no further action is required right now.
+            </p>
+          </div>
+        </div>
+        <div class="bb-apex-register__actions">
+          <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
+        </div>
+
+        <% } else if (showSuccessWorkspace) { %>
+        <div class="bb-apex-register-success" role="status" data-bb-register-workspace="1">
+          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+          <div>
+            <p class="bb-apex-register-success__title">Your church workspace has been created.</p>
+            <p class="bb-apex-register-success__body">
+              The <strong>Free</strong> plan is active. Your public church website is <strong>not published yet</strong>.
+              Your administrator account is ready so you can begin setup.
+            </p>
+            <% if (orgKeyPreview) { %>
+            <p class="bb-apex-register-success__body">
+              Organization key: <code><%= orgKeyPreview %></code>
+              — future public path preview: <code>/c/<%= orgKeyPreview %></code>
+              (the public site stays unpublished until you publish it).
+            </p>
+            <% } %>
+            <p class="bb-apex-register-success__body">
+              BlessBoard may contact you to offer optional onboarding assistance. A callback is not required to keep portal access.
+            </p>
+            <% if (showLoginFallback) { %>
+            <p class="bb-apex-register-success__body">
+              Sign in with the email and password you just created to continue.
+            </p>
+            <% } %>
+          </div>
+        </div>
+        <div class="bb-apex-register__actions">
+          <% if (showLoginFallback) { %>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="/login?next=%2Faccount">Sign in</a>
+          <% } else { %>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="/account">Go to your account</a>
+          <% } %>
+          <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
+        </div>
+
+        <% } else if (showSuccessEnquiry) { %>
         <div class="bb-apex-register-success" role="status" data-bb-register-success="1">
           <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
           <div>
@@ -59,13 +125,26 @@
           <a class="bb-apex-btn bb-apex-btn--primary" href="/pricing">Review plans</a>
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
+
         <% } else { %>
         <p class="bb-apex-register__card-lead">
+          <% if (instantOn) { %>
+          Choose <strong>Foundation — Free</strong> to create your workspace now, or select Growth/Network to request a conversation with BlessBoard.
+          <% } else { %>
           Provide your church details to request an invitation. Platform administrators review applications before any church is provisioned.
+          <% } %>
         </p>
 
         <% if (formError && !activeFieldError) { %>
-        <div class="bb-apex-register-alert" role="alert"><%= formError %></div>
+        <div class="bb-apex-register-alert" role="alert">
+          <p><%= formError %></p>
+          <% if (typeof showCsrfRetry !== 'undefined' && showCsrfRetry) { %>
+          <p class="bb-apex-register-alert__retry">
+            <a href="/register-church<%= planValue ? ('?plan=' + encodeURIComponent(planValue)) : '' %>">Reload the registration form</a>
+            to continue with a fresh security token.
+          </p>
+          <% } %>
+        </div>
         <% } %>
 
         <form
@@ -74,7 +153,13 @@
           method="post"
           novalidate
           data-bb-register-form="1"
+          autocomplete="on"
         >
+          <% if (!csrfToken) { %>
+          <div class="bb-apex-register-alert" role="alert">
+            Security token missing. <a href="/register-church">Reload this page</a> before submitting.
+          </div>
+          <% } %>
           <input type="hidden" name="<%= typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf' %>" value="<%= csrfToken || '' %>" />
 
           <div class="visually-hidden" aria-hidden="true">
@@ -239,18 +324,24 @@
           <fieldset class="bb-apex-register-form__section">
             <legend class="bb-apex-register-form__section-head">
               <span class="material-symbols-outlined" aria-hidden="true">payments</span>
-              Plan interest
+              Plan
             </legend>
             <div class="bb-apex-field">
-              <label class="bb-apex-register-label" for="register_selected_plan">Interested plan <span class="bb-apex-register-label__meta">(optional)</span></label>
+              <label class="bb-apex-register-label" for="register_selected_plan">
+                <%= instantOn ? 'Selected plan' : 'Interested plan' %>
+                <% if (!instantOn) { %><span class="bb-apex-register-label__meta">(optional)</span><% } %>
+              </label>
               <select
                 class="bb-apex-register-input<%= fieldHasError('selected_plan') ? ' is-error' : '' %>"
                 id="register_selected_plan"
                 name="selected_plan"
                 <%= fieldHasError('selected_plan') ? 'aria-invalid="true"' : '' %>
+                data-bb-register-plan="1"
               >
+                <% if (!instantOn) { %>
                 <option value=""<%= !planValue ? ' selected' : '' %>>Not sure yet</option>
-                <option value="foundation"<%= planValue === 'foundation' ? ' selected' : '' %>>Foundation — Free</option>
+                <% } %>
+                <option value="foundation"<%= planValue === 'foundation' || (instantOn && !planValue) ? ' selected' : '' %>>Foundation — Free</option>
                 <option value="growth"<%= planValue === 'growth' ? ' selected' : '' %>>Growth</option>
                 <option value="network"<%= planValue === 'network' ? ' selected' : '' %>>Network</option>
               </select>
@@ -269,6 +360,72 @@
               ><%= formData.message || '' %></textarea>
             </div>
           </fieldset>
+
+          <% if (instantOn) { %>
+          <fieldset class="bb-apex-register-form__section" data-bb-instant-free-fields="1">
+            <legend class="bb-apex-register-form__section-head">
+              <span class="material-symbols-outlined" aria-hidden="true">vpn_key</span>
+              Free workspace setup
+            </legend>
+            <p class="bb-apex-register__card-lead">
+              Required for <strong>Foundation — Free</strong>. Your administrator portal is available immediately after creation.
+              The public path below is a preview only — the website is not published automatically.
+            </p>
+            <div class="bb-apex-field">
+              <label class="bb-apex-register-label" for="register_organization_key">Organization key</label>
+              <input
+                class="bb-apex-register-input<%= fieldHasError('organization_key') ? ' is-error' : '' %>"
+                id="register_organization_key"
+                name="organization_key"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                maxlength="64"
+                pattern="[a-zA-Z][a-zA-Z0-9_-]{0,63}"
+                value="<%= formData.organization_key || '' %>"
+                aria-describedby="register_organization_key_hint"
+                <%= fieldHasError('organization_key') ? 'aria-invalid="true"' : '' %>
+              />
+              <p class="bb-apex-mkt-footnote" id="register_organization_key_hint">
+                Future public path preview: <code>/c/<span data-bb-org-key-preview><%= formData.organization_key || 'your-key' %></span></code>
+                (unpublished until you publish).
+              </p>
+              <% if (fieldHasError('organization_key') && formError) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+              <% } %>
+            </div>
+            <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
+              <div class="bb-apex-field">
+                <label class="bb-apex-register-label" for="register_password">Administrator password</label>
+                <input
+                  class="bb-apex-register-input<%= fieldHasError('password') ? ' is-error' : '' %>"
+                  id="register_password"
+                  name="password"
+                  type="password"
+                  autocomplete="new-password"
+                  <%= fieldHasError('password') ? 'aria-invalid="true"' : '' %>
+                />
+                <% if (fieldHasError('password') && formError) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% } %>
+              </div>
+              <div class="bb-apex-field">
+                <label class="bb-apex-register-label" for="register_password_confirm">Confirm password</label>
+                <input
+                  class="bb-apex-register-input<%= fieldHasError('password_confirm') ? ' is-error' : '' %>"
+                  id="register_password_confirm"
+                  name="password_confirm"
+                  type="password"
+                  autocomplete="new-password"
+                  <%= fieldHasError('password_confirm') ? 'aria-invalid="true"' : '' %>
+                />
+                <% if (fieldHasError('password_confirm') && formError) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% } %>
+              </div>
+            </div>
+          </fieldset>
+          <% } %>
 
           <div class="bb-apex-register-form__footer">
             <div class="bb-apex-field<%= fieldHasError('consent_contact') ? ' is-error' : '' %>">
@@ -293,12 +450,17 @@
 
             <div class="bb-apex-register__actions">
               <button class="bb-apex-btn bb-apex-btn--primary bb-apex-register-submit" type="submit">
-                Submit registration request
+                <%= instantOn ? 'Create church workspace' : 'Submit registration request' %>
               </button>
               <a class="bb-apex-btn bb-apex-btn--secondary" href="/pricing">Review plans</a>
             </div>
             <p class="bb-apex-mkt-footnote">
+              <% if (instantOn) { %>
+              Free workspaces activate immediately. Growth and Network requests remain pending until BlessBoard follows up.
+              Callbacks are optional assistance — not required for Free portal access.
+              <% } else { %>
               Applications remain pending until a platform administrator reviews them. No live church is created automatically.
+              <% } %>
             </p>
           </div>
         </form>
@@ -319,6 +481,14 @@
     btn.setAttribute("aria-busy", "true");
     btn.textContent = "Submitting…";
   });
+  var keyInput = document.getElementById("register_organization_key");
+  var preview = document.querySelector("[data-bb-org-key-preview]");
+  if (keyInput && preview) {
+    keyInput.addEventListener("input", function () {
+      var v = (keyInput.value || "").trim().toLowerCase() || "your-key";
+      preview.textContent = v;
+    });
+  }
 })();
 </script>
 

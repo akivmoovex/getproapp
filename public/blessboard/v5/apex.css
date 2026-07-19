@@ -1487,6 +1487,20 @@ ul.bb-apex-features {
   background: #ffdad6;
 }
 
+.bb-apex-register-alert p {
+  margin: 0;
+}
+
+.bb-apex-register-alert__retry {
+  margin-top: 0.45rem;
+}
+
+.bb-apex-register-alert a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 .bb-apex-register-checkbox {
   display: flex;
   gap: 0.65rem;

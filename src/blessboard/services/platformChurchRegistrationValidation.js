@@ -1,15 +1,19 @@
 "use strict";
 
 /**
- * Apex /register-church application validation (pending inquiry only).
+ * Apex /register-church application validation.
  * Plan codes come from the public pricing catalogue (foundation / growth / network).
  * Customer "Free/Basic" maps to canonical stored code: foundation.
+ * Instant Free (flag on) additionally validates organization key + password.
  */
 
 const { TIER_PLAN_CODES } = require("../../church/platformPricingContent");
+const { normalizeOrganizationKey } = require("./organizationKey");
 
 const ALLOWED_PLANS = Object.freeze([...TIER_PLAN_CODES]);
 const FREE_PLAN_CODE = "foundation";
+/** Catalogue plan key used by the shared orchestrator. */
+const ORCHESTRATOR_FREE_PLAN_KEY = "free";
 
 /** Inbound aliases accepted from CTAs/query/body; always stored as FREE_PLAN_CODE. */
 const PLAN_ALIASES = Object.freeze({
@@ -28,6 +32,8 @@ const PLAN_DISPLAY_LABELS = Object.freeze({
 });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_MIN = 10;
+const PASSWORD_MAX = 200;
 
 function trim(value, max) {
   return String(value == null ? "" : value)
@@ -55,6 +61,22 @@ function normalizeSelectedPlan(raw) {
   const mapped = PLAN_ALIASES[value];
   if (!mapped) return null;
   return ALLOWED_PLANS.includes(mapped) ? mapped : null;
+}
+
+/**
+ * Map public / stored plan label to orchestrator catalogue key.
+ * Only foundation (and aliases) map to free; others return null.
+ * @param {unknown} raw
+ * @returns {string | null}
+ */
+function mapPublicPlanToOrchestratorPlanKey(raw) {
+  const canonical = normalizeSelectedPlan(raw);
+  if (canonical === FREE_PLAN_CODE) return ORCHESTRATOR_FREE_PLAN_KEY;
+  return null;
+}
+
+function isFreePlanSelection(raw) {
+  return normalizeSelectedPlan(raw) === FREE_PLAN_CODE;
 }
 
 function planDisplayLabel(code) {
@@ -87,14 +109,89 @@ function validatePhone(phone) {
 }
 
 /**
+ * Same length policy as createBlessBoardUser / orchestrator (10–200).
+ * Never logs or returns the password value.
+ * @param {unknown} password
+ * @param {unknown} passwordConfirm
+ */
+function validateAdministratorPassword(password, passwordConfirm) {
+  const value = password != null ? String(password) : "";
+  const confirm = passwordConfirm != null ? String(passwordConfirm) : "";
+  if (!value) {
+    return {
+      ok: false,
+      error: "Please choose a password for your administrator account.",
+      field: "password",
+    };
+  }
+  if (value.length < PASSWORD_MIN) {
+    return {
+      ok: false,
+      error: `Password must be at least ${PASSWORD_MIN} characters.`,
+      field: "password",
+    };
+  }
+  if (value.length > PASSWORD_MAX) {
+    return {
+      ok: false,
+      error: "Password is too long.",
+      field: "password",
+    };
+  }
+  if (value !== confirm) {
+    return {
+      ok: false,
+      error: "Password confirmation does not match.",
+      field: "password_confirm",
+    };
+  }
+  return { ok: true, value };
+}
+
+/**
+ * @param {unknown} raw
+ */
+function validateRequestedOrganizationKey(raw) {
+  const rawTrim = trim(raw, 80);
+  if (!rawTrim) {
+    return {
+      ok: false,
+      error: "Please choose an organization key for your church workspace.",
+      field: "organization_key",
+    };
+  }
+  const norm = normalizeOrganizationKey(rawTrim);
+  if (!norm.ok) {
+    if (norm.reason === "reserved_key") {
+      return {
+        ok: false,
+        error: "That organization key is reserved. Please choose another.",
+        field: "organization_key",
+      };
+    }
+    return {
+      ok: false,
+      error:
+        "Use a lowercase letter first, then letters, numbers, hyphens, or underscores (up to 64 characters).",
+      field: "organization_key",
+    };
+  }
+  return { ok: true, value: norm.key };
+}
+
+/**
  * @param {object} body
- * @param {{ selectedPlanHint?: string | null }} [opts]
+ * @param {{
+ *   selectedPlanHint?: string | null,
+ *   instantFreeEnabled?: boolean,
+ * }} [opts]
  */
 function validatePlatformChurchRegistration(body, opts = {}) {
   if (isHoneypotTriggered(body)) {
     return { ok: true, honeypot: true, data: null };
   }
 
+  const instantFreeEnabled = Boolean(opts.instantFreeEnabled);
   const churchName = trim(body && body.church_name, 200);
   const country = trim(body && body.country, 120);
   const city = trim(body && body.city, 120);
@@ -149,7 +246,7 @@ function validatePlatformChurchRegistration(body, opts = {}) {
   if (!consent) {
     return {
       ok: false,
-      error: "Please confirm that BlessBoard may contact you about this request.",
+      error: "Please confirm that you agree to the Terms and Privacy Policy.",
       field: "consent_contact",
     };
   }
@@ -158,6 +255,27 @@ function validatePlatformChurchRegistration(body, opts = {}) {
   const rawPlan = trim(body && body.selected_plan, 40);
   if (rawPlan && !normalizeSelectedPlan(rawPlan)) {
     return { ok: false, error: "Please select a valid plan interest.", field: "selected_plan" };
+  }
+
+  const wantsInstantFree =
+    instantFreeEnabled && selectedPlan === FREE_PLAN_CODE;
+
+  /** @type {string | null} */
+  let organizationKey = null;
+  /** @type {string | null} */
+  let administratorPassword = null;
+
+  if (wantsInstantFree) {
+    const keyResult = validateRequestedOrganizationKey(body && body.organization_key);
+    if (!keyResult.ok) return keyResult;
+    organizationKey = keyResult.value;
+
+    const passwordResult = validateAdministratorPassword(
+      body && body.password,
+      body && (body.password_confirm || body.password_confirmation)
+    );
+    if (!passwordResult.ok) return passwordResult;
+    administratorPassword = passwordResult.value;
   }
 
   return {
@@ -175,6 +293,11 @@ function validatePlatformChurchRegistration(body, opts = {}) {
       selected_plan: selectedPlan,
       message,
       consent_terms: true,
+      organization_key: organizationKey,
+      // Password stays on the validation result only for the orchestrator call —
+      // never persisted on the application row.
+      administrator_password: administratorPassword,
+      wants_instant_free: wantsInstantFree,
     },
   };
 }
@@ -190,6 +313,7 @@ function formFromBody(body, opts = {}) {
     branch_count: trim(body && body.branch_count, 20),
     email: trim(body && body.email, 254),
     phone: trim(body && body.phone, 50),
+    organization_key: trim(body && body.organization_key, 80),
     selected_plan:
       normalizeSelectedPlan(body && body.selected_plan) ||
       normalizeSelectedPlan(opts.selectedPlanHint) ||
@@ -203,17 +327,25 @@ function formFromBody(body, opts = {}) {
         body.consent_terms === "on" ||
         body.consent_terms === "1" ||
         body.consent_terms === true),
+    // Never echo passwords into form locals.
   };
 }
 
 module.exports = {
   ALLOWED_PLANS,
   FREE_PLAN_CODE,
+  ORCHESTRATOR_FREE_PLAN_KEY,
   PLAN_ALIASES,
   PLAN_DISPLAY_LABELS,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
   normalizeSelectedPlan,
+  mapPublicPlanToOrchestratorPlanKey,
+  isFreePlanSelection,
   planDisplayLabel,
   validatePlatformChurchRegistration,
+  validateAdministratorPassword,
+  validateRequestedOrganizationKey,
   formFromBody,
   isHoneypotTriggered,
 };

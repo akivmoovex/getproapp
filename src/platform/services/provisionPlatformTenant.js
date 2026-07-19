@@ -8,6 +8,11 @@
 
 const { normalizeHostname } = require("../hostname");
 const repo = require("../repositories/platformProvisioningRepository");
+const {
+  resolveManageTransactionOption,
+  openProvisioningSession,
+  runInsertWithUniqueRecovery,
+} = require("../db/provisioningTransaction");
 
 const STATUS = Object.freeze({
   PROVISIONED: "provisioned",
@@ -79,7 +84,8 @@ function validateAndNormalizeInput(input) {
   const deploymentCode = String(raw.deploymentCode || "")
     .trim()
     .toLowerCase();
-  const domainType = String(raw.domainType || "")
+  const skipDomain = Boolean(raw.skipDomain);
+  const domainType = String(raw.domainType || (skipDomain ? "canonical" : ""))
     .trim()
     .toLowerCase();
   const isPrimary = raw.isPrimary === undefined ? true : Boolean(raw.isPrimary);
@@ -105,16 +111,22 @@ function validateAndNormalizeInput(input) {
   if (!deploymentCode || !DEPLOYMENT_CODE_RE.test(deploymentCode)) {
     return { ok: false, reason: "deploymentCode" };
   }
-  if (!DOMAIN_TYPES.has(domainType)) {
-    return { ok: false, reason: "domainType" };
-  }
-  if (domainType === "apex") {
-    return { ok: false, reason: "domainType_apex_not_for_tenant_provision" };
-  }
 
-  const host = normalizeHostname(raw.hostname);
-  if (!host.ok) {
-    return { ok: false, reason: "hostname" };
+  let hostname = null;
+  if (skipDomain) {
+    // Foundation path tenants: no platform.domains row.
+  } else {
+    if (!DOMAIN_TYPES.has(domainType)) {
+      return { ok: false, reason: "domainType" };
+    }
+    if (domainType === "apex") {
+      return { ok: false, reason: "domainType_apex_not_for_tenant_provision" };
+    }
+    const host = normalizeHostname(raw.hostname);
+    if (!host.ok) {
+      return { ok: false, reason: "hostname" };
+    }
+    hostname = host.hostname;
   }
 
   return {
@@ -127,9 +139,10 @@ function validateAndNormalizeInput(input) {
       productKey,
       productTenantKey,
       deploymentCode,
-      hostname: host.hostname,
-      domainType,
+      hostname,
+      domainType: skipDomain ? null : domainType,
       isPrimary,
+      skipDomain,
     },
   };
 }
@@ -181,14 +194,16 @@ function mapRecords(org, enrolment, domain, product, deployment) {
       status: enrolment.status,
       productTenantKey: enrolment.product_tenant_key,
     },
-    domain: {
-      id: domain.id,
-      hostname: domain.hostname,
-      domainType: domain.domain_type,
-      status: domain.status,
-      isPrimary: Boolean(domain.is_primary),
-      deploymentCode: domain.deployment_id,
-    },
+    domain: domain
+      ? {
+          id: domain.id,
+          hostname: domain.hostname,
+          domainType: domain.domain_type,
+          status: domain.status,
+          isPrimary: Boolean(domain.is_primary),
+          deploymentCode: domain.deployment_id,
+        }
+      : null,
     product: {
       id: product.id,
       key: product.product_key,
@@ -204,8 +219,11 @@ function mapRecords(org, enrolment, domain, product, deployment) {
 /**
  * @param {{ connect?: Function, query?: Function }} db — Pool (preferred) or Client
  * @param {object} input
+ * @param {{ manageTransaction?: boolean }} [options]
+ *   Standalone (default): manageTransaction true — own BEGIN/COMMIT/ROLLBACK/release.
+ *   Composed: manageTransaction false — use supplied Client; never begin/commit/rollback/release.
  */
-async function provisionPlatformTenant(db, input) {
+async function provisionPlatformTenant(db, input, options) {
   const validated = validateAndNormalizeInput(input);
   if (!validated.ok) {
     return fail(STATUS.INVALID_INPUT, `invalid_input:${validated.reason}`);
@@ -213,40 +231,35 @@ async function provisionPlatformTenant(db, input) {
   const req = validated.value;
   const dryRun = Boolean(input && input.dryRun);
 
-  if (!db || (typeof db.connect !== "function" && typeof db.query !== "function")) {
-    return fail(STATUS.TRANSACTION_ERROR, "database client or pool required");
+  const resolved = resolveManageTransactionOption(db, options);
+  if (!resolved.ok) {
+    return fail(STATUS.TRANSACTION_ERROR, resolved.message);
   }
 
-  let client = null;
-  let owned = false;
+  let session = null;
   try {
-    if (typeof db.connect === "function") {
-      client = await db.connect();
-      owned = true;
-    } else {
-      client = db;
-    }
+    session = await openProvisioningSession(resolved);
+    const client = session.client;
 
-    await client.query("BEGIN");
+    const abort = async (result) => {
+      await session.rollbackIfManaged();
+      return result;
+    };
 
     const product = await repo.findProductByKey(client, req.productKey);
     if (!product) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.PRODUCT_NOT_FOUND, "product_not_found");
+      return abort(fail(STATUS.PRODUCT_NOT_FOUND, "product_not_found"));
     }
     if (product.status !== "active") {
-      await client.query("ROLLBACK");
-      return fail(STATUS.INACTIVE_PRODUCT, "inactive_product");
+      return abort(fail(STATUS.INACTIVE_PRODUCT, "inactive_product"));
     }
 
     const deployment = await repo.findDeploymentByCode(client, req.deploymentCode);
     if (!deployment) {
-      await client.query("ROLLBACK");
-      return fail(STATUS.DEPLOYMENT_NOT_FOUND, "deployment_not_found");
+      return abort(fail(STATUS.DEPLOYMENT_NOT_FOUND, "deployment_not_found"));
     }
     if (deployment.status !== "active") {
-      await client.query("ROLLBACK");
-      return fail(STATUS.INACTIVE_DEPLOYMENT, "inactive_deployment");
+      return abort(fail(STATUS.INACTIVE_DEPLOYMENT, "inactive_deployment"));
     }
 
     const created = { organization: false, enrolment: false, domain: false };
@@ -254,23 +267,24 @@ async function provisionPlatformTenant(db, input) {
     let organization = await repo.findOrganizationByKey(client, req.organizationKey);
     if (organization) {
       if (!organizationMatches(organization, req)) {
-        await client.query("ROLLBACK");
-        return fail(STATUS.ORGANIZATION_CONFLICT, "organization_conflict");
+        return abort(fail(STATUS.ORGANIZATION_CONFLICT, "organization_conflict"));
       }
     } else if (!dryRun) {
       try {
-        organization = await repo.insertOrganization(client, req);
-        created.organization = true;
+        const inserted = await runInsertWithUniqueRecovery(client, "prov_org_insert", () =>
+          repo.insertOrganization(client, req)
+        );
+        if (inserted.ok) {
+          organization = inserted.value;
+          created.organization = true;
+        } else {
+          organization = await repo.findOrganizationByKey(client, req.organizationKey);
+          if (!organizationMatches(organization, req)) {
+            return abort(fail(STATUS.ORGANIZATION_CONFLICT, "organization_conflict"));
+          }
+        }
       } catch (err) {
-        if (!repo.isUniqueViolation(err)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.TRANSACTION_ERROR, "organization_insert_failed");
-        }
-        organization = await repo.findOrganizationByKey(client, req.organizationKey);
-        if (!organizationMatches(organization, req)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.ORGANIZATION_CONFLICT, "organization_conflict");
-        }
+        return abort(fail(STATUS.TRANSACTION_ERROR, "organization_insert_failed"));
       }
     }
 
@@ -287,11 +301,31 @@ async function provisionPlatformTenant(db, input) {
         plannedSubscription = true;
         if (!dryRun) {
           const { assignOrganizationPlan } = require("./entitlementService");
-          await assignOrganizationPlan(client, {
-            organizationId: organization.id,
-            productKey: "blessboard",
-            planKey: "free",
+          const planAttempt = await runInsertWithUniqueRecovery(client, "prov_plan_assign", async () => {
+            const result = await assignOrganizationPlan(client, {
+              organizationId: organization.id,
+              productKey: "blessboard",
+              planKey: "free",
+            });
+            if (!result.ok) {
+              const err = new Error(String(result.reason || result.status || "plan_assign_failed"));
+              // Non-unique soft failure — propagate out of savepoint helper.
+              err.code = "P0001";
+              throw err;
+            }
+            return result;
           });
+          if (!planAttempt.ok) {
+            const afterRace = await entitlementRepo.findCurrentSubscription(
+              client,
+              organization.id,
+              "blessboard",
+              new Date().toISOString()
+            );
+            if (!afterRace) {
+              return abort(fail(STATUS.TRANSACTION_ERROR, "subscription_assign_failed"));
+            }
+          }
         }
       }
     } else if (!organization && req.productKey === "blessboard") {
@@ -308,91 +342,94 @@ async function provisionPlatformTenant(db, input) {
         req.productTenantKey
       );
       if (byTenantKey && String(byTenantKey.organization_id) !== String(organization.id)) {
-        await client.query("ROLLBACK");
-        return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
+        return abort(fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict"));
       }
 
       enrolment = await repo.findEnrolmentByOrgProduct(client, organization.id, product.id);
       if (enrolment) {
         if (!enrolmentMatches(enrolment, req, organization.id, product.id)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
+          return abort(fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict"));
         }
       } else if (!dryRun) {
         try {
-          enrolment = await repo.insertEnrolment(client, {
-            organizationId: organization.id,
-            productId: product.id,
-            productTenantKey: req.productTenantKey,
-          });
-          created.enrolment = true;
+          const inserted = await runInsertWithUniqueRecovery(client, "prov_enrol_insert", () =>
+            repo.insertEnrolment(client, {
+              organizationId: organization.id,
+              productId: product.id,
+              productTenantKey: req.productTenantKey,
+            })
+          );
+          if (inserted.ok) {
+            enrolment = inserted.value;
+            created.enrolment = true;
+          } else {
+            enrolment = await repo.findEnrolmentByOrgProduct(client, organization.id, product.id);
+            if (!enrolment) {
+              enrolment = await repo.findEnrolmentByProductTenantKey(
+                client,
+                product.id,
+                req.productTenantKey
+              );
+            }
+            if (!enrolmentMatches(enrolment, req, organization.id, product.id)) {
+              return abort(fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict"));
+            }
+          }
         } catch (err) {
-          if (!repo.isUniqueViolation(err)) {
-            await client.query("ROLLBACK");
-            return fail(STATUS.TRANSACTION_ERROR, "enrolment_insert_failed");
-          }
-          enrolment = await repo.findEnrolmentByOrgProduct(client, organization.id, product.id);
-          if (!enrolment) {
-            enrolment = await repo.findEnrolmentByProductTenantKey(
-              client,
-              product.id,
-              req.productTenantKey
-            );
-          }
-          if (!enrolmentMatches(enrolment, req, organization.id, product.id)) {
-            await client.query("ROLLBACK");
-            return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
-          }
+          return abort(fail(STATUS.TRANSACTION_ERROR, "enrolment_insert_failed"));
         }
       }
 
-      domain = await repo.findDomainByHostname(client, req.hostname);
-      if (domain) {
-        if (!domainMatches(domain, req, organization.id, product.id)) {
-          await client.query("ROLLBACK");
-          return fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict");
-        }
-      } else if (!dryRun) {
-        if (req.domainType === "custom" && req.productKey === "blessboard") {
-          const { assertFeature } = require("./entitlementService");
-          const domainGate = await assertFeature(client, {
-            organizationId: organization.id,
-            productKey: "blessboard",
-            featureKey: "custom_domain",
-          });
-          if (!domainGate.ok) {
-            await client.query("ROLLBACK");
-            return fail(STATUS.INVALID_INPUT, "custom_domain_not_entitled");
-          }
-        }
-        try {
-          domain = await repo.insertDomain(client, {
-            organizationId: organization.id,
-            productId: product.id,
-            deploymentCode: req.deploymentCode,
-            hostname: req.hostname,
-            domainType: req.domainType,
-            isPrimary: req.isPrimary,
-          });
-          created.domain = true;
-        } catch (err) {
-          if (!repo.isUniqueViolation(err)) {
-            await client.query("ROLLBACK");
-            return fail(STATUS.TRANSACTION_ERROR, "domain_insert_failed");
-          }
-          domain = await repo.findDomainByHostname(client, req.hostname);
+      if (!req.skipDomain) {
+        domain = await repo.findDomainByHostname(client, req.hostname);
+        if (domain) {
           if (!domainMatches(domain, req, organization.id, product.id)) {
-            await client.query("ROLLBACK");
-            return fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict");
+            return abort(fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict"));
+          }
+        } else if (!dryRun) {
+          if (req.domainType === "custom" && req.productKey === "blessboard") {
+            const { assertFeature } = require("./entitlementService");
+            const domainGate = await assertFeature(client, {
+              organizationId: organization.id,
+              productKey: "blessboard",
+              featureKey: "custom_domain",
+            });
+            if (!domainGate.ok) {
+              return abort(fail(STATUS.INVALID_INPUT, "custom_domain_not_entitled"));
+            }
+          }
+          try {
+            const inserted = await runInsertWithUniqueRecovery(client, "prov_domain_insert", () =>
+              repo.insertDomain(client, {
+                organizationId: organization.id,
+                productId: product.id,
+                deploymentCode: req.deploymentCode,
+                hostname: req.hostname,
+                domainType: req.domainType,
+                isPrimary: req.isPrimary,
+              })
+            );
+            if (inserted.ok) {
+              domain = inserted.value;
+              created.domain = true;
+            } else {
+              domain = await repo.findDomainByHostname(client, req.hostname);
+              if (!domainMatches(domain, req, organization.id, product.id)) {
+                return abort(fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict"));
+              }
+            }
+          } catch (err) {
+            return abort(fail(STATUS.TRANSACTION_ERROR, "domain_insert_failed"));
           }
         }
       }
     } else {
       // Dry-run with no organization yet: still detect hostname ownership conflicts.
-      domain = await repo.findDomainByHostname(client, req.hostname);
-      if (domain) {
-        await client.query("ROLLBACK");
-        return fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict");
+      if (!req.skipDomain) {
+        domain = await repo.findDomainByHostname(client, req.hostname);
+        if (domain) {
+          return abort(fail(STATUS.HOSTNAME_CONFLICT, "hostname_conflict"));
+        }
       }
       const byTenantKey = await repo.findEnrolmentByProductTenantKey(
         client,
@@ -400,8 +437,7 @@ async function provisionPlatformTenant(db, input) {
         req.productTenantKey
       );
       if (byTenantKey) {
-        await client.query("ROLLBACK");
-        return fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict");
+        return abort(fail(STATUS.ENROLMENT_CONFLICT, "enrolment_conflict"));
       }
     }
 
@@ -409,30 +445,36 @@ async function provisionPlatformTenant(db, input) {
       const planned = {
         organization: !organization,
         enrolment: !organization || !enrolment,
-        domain: !organization || !domain,
+        domain: req.skipDomain ? false : !organization || !domain,
         default_subscription: plannedSubscription,
       };
-      await client.query("ROLLBACK");
+      await session.rollbackIfManaged();
       const anyPlanned =
         planned.organization || planned.enrolment || planned.domain || planned.default_subscription;
-      return success(
-        anyPlanned ? STATUS.DRY_RUN_WOULD_PROVISION : STATUS.DRY_RUN_ALREADY_PROVISIONED,
-        { organization: false, enrolment: false, domain: false },
-        organization && enrolment && domain
+      const recordsReady =
+        organization && enrolment && (req.skipDomain || domain)
           ? mapRecords(organization, enrolment, domain, product, deployment)
           : {
               organization: organization
                 ? { key: organization.organization_key }
                 : { key: req.organizationKey },
-              domain: domain ? { hostname: domain.hostname } : { hostname: req.hostname },
+              domain: domain
+                ? { hostname: domain.hostname }
+                : req.skipDomain
+                  ? null
+                  : { hostname: req.hostname },
               product: { key: product.product_key },
               deployment: { code: deployment.deployment_code },
-            },
+            };
+      return success(
+        anyPlanned ? STATUS.DRY_RUN_WOULD_PROVISION : STATUS.DRY_RUN_ALREADY_PROVISIONED,
+        { organization: false, enrolment: false, domain: false },
+        recordsReady,
         { dryRun: true, planned }
       );
     }
 
-    await client.query("COMMIT");
+    await session.commitIfManaged();
 
     const anyCreated = created.organization || created.enrolment || created.domain;
     return success(
@@ -441,16 +483,10 @@ async function provisionPlatformTenant(db, input) {
       mapRecords(organization, enrolment, domain, product, deployment)
     );
   } catch (err) {
-    try {
-      if (client) await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
-    }
+    if (session) await session.safeRollbackOnError();
     return fail(STATUS.TRANSACTION_ERROR, "transaction_error");
   } finally {
-    if (owned && client && typeof client.release === "function") {
-      client.release();
-    }
+    if (session) session.releaseIfOwned();
   }
 }
 

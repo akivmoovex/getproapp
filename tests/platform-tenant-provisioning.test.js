@@ -423,7 +423,7 @@ describe("platform tenant provisioning", () => {
     );
     assert.deepEqual(
       blessboard.rows.map((r) => r.table_name),
-      ["announcement_attachments", "announcement_audiences", "announcement_reads", "announcements", "attendance_entries", "attendance_events", "branch_settings", "branches", "church_settings", "churches", "contact_channels", "event_registrations", "events", "form_submissions", "forms", "giving_categories", "giving_entries", "giving_methods", "leaders", "media_assets", "member_branch_memberships", "member_registrations", "member_request_status_history", "member_requests", "members", "ministries", "ministry_memberships", "page_sections", "public_pages", "resources", "sermons", "user_roles", "users"]
+      ["announcement_attachments", "announcement_audiences", "announcement_reads", "announcements", "attendance_entries", "attendance_events", "branch_settings", "branches", "church_settings", "churches", "contact_channels", "event_registrations", "events", "form_submissions", "forms", "giving_categories", "giving_entries", "giving_methods", "leaders", "media_assets", "member_branch_memberships", "member_registrations", "member_request_status_history", "member_requests", "members", "ministries", "ministry_memberships", "organization_onboarding", "organization_support_contacts", "page_sections", "platform_church_registration_applications", "public_pages", "resources", "sermons", "user_roles", "users"]
     );
     for (const schema of ["getpro", "ngo"]) {
       const tables = await pool.query(

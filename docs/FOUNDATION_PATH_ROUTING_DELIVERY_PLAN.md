@@ -1,378 +1,356 @@
 # Foundation Path Routing & Delivery Plan (Prompt 2D)
 
-**Status:** Architecture decision — analysis only  
+**Status:** Architecture decision — analysis only (expanded)  
 **Date:** 2026-07-19  
-**Inputs:**
-- [`docs/ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md`](./ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md)
-- [`docs/FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md`](./FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md)
-- [`docs/FOUNDATION_ONBOARDING_STATUS_ARCHITECTURE.md`](./FOUNDATION_ONBOARDING_STATUS_ARCHITECTURE.md)
-- [`docs/FOUNDATION_PROVISIONING_ARCHITECTURE.md`](./FOUNDATION_PROVISIONING_ARCHITECTURE.md)
 
-**Constraints:** No code, routes, migrations, data, dashboards, or V4 changes in this prompt.  
-**Context:** Wildcard DNS unavailable; host-based tenant routing exists but is off/partial; path-based access is required for Foundation.
+**Inputs:** Audit + 2A/2B/2C architecture docs; Hostinger has **no wildcard DNS**.
+
+**Constraints:** No code, routes, migrations, DB writes, provisioning/registration implementation, admin UI, dashboards, host-routing enablement, custom-domain behavior, or V4 changes.
 
 ---
 
 ## 1. Executive recommendation
 
-| Surface | Chosen pattern |
-|---------|----------------|
-| **Public church website** | **`/c/:slug`** (+ nested page paths) |
-| **Church admin portal** | **`/c/:slug/branch-admin`** (nest existing portal under slug) |
-| **Central login** | Existing apex **`/login`** with `next=` return to path portal |
-| **First screen after provision** | Existing **branch-admin dashboard** at `/c/:slug/branch-admin` |
-| **URL building** | One **`churchUrlHelper`** abstraction (path / subdomain / custom) |
-| **First implementation prompt** | **Phase 1 — Schema/status consolidation** |
+| Surface | Choice |
+|---------|--------|
+| **Public church** | **`/c/:organizationKey`** (+ existing page suffixes) |
+| **Portal** | **`/portal/:organizationKey`** (+ nested existing admin paths) |
+| **Login** | Apex **`/login`** (`next=` safe path only) |
+| **Canonical identifier** | **`platform.organizations.organization_key`** (same as Free slug; church_key aligns) |
+| **Resolver** | One core `resolveOrganizationContext` with `mode: public \| portal` |
+| **URL helpers** | One `churchUrlHelper` supporting `path` → future `subdomain` → `custom_domain` |
+| **First portal screen** | Minimal onboarding/home at portal entry; reuse **branch-admin shell** for depth |
+| **First build phase** | **Phase 1 — Schema and status migration** |
 
-Do **not** introduce a second login system, a second portal shell, or scatter hardcoded `/c/` strings across EJS.
-
----
-
-## 2. Route pattern evaluation
-
-### 2.1 Public website
-
-| Pattern | Pros | Cons | Verdict |
-|---------|------|------|---------|
-| **`/c/:slug`** | Short; clear namespace; low collision with marketing routes; “c” = church | Slightly cryptic | **Choose** |
-| `/church/:slug` | Readable | Longer; `church` already in reserved org slugs (confusion); looks like marketing | Reject as primary |
-| `/churches/:slug` | Plural catalogue feel | Collides semantically with future directory; longer | Reject |
-
-**Public tree (target):**
-
-```text
-/c/:slug                  → home (or unpublished gate)
-/c/:slug/about
-/c/:slug/events
-…                         → same page keys as tenant public paths today
-```
-
-Reuse `tenantPublicPaths` / public page renderer under path context instead of duplicating templates.
-
-### 2.2 Portal
-
-| Pattern | Pros | Cons | Verdict |
-|---------|------|------|---------|
-| `/portal` (session-only org) | Short | Multi-org ambiguous; weak bookmarks | Reject as sole entry |
-| `/churches/:slug/portal` | Explicit | New shell name; duplicates “portal” vs existing `/branch-admin` | Reject |
-| `/organizations/:slug/portal` | Matches PA term | Public says “Church”; long | Reject |
-| **`/c/:slug/branch-admin`** | Reuses existing portal routes/screens; slug in URL; multi-org safe | Requires allowing portal on **apex** with path context (today: apex rejected) | **Choose** |
-| `/c/:slug/hq`, `/c/:slug/member` | Same pattern later | Out of Foundation minimum | Defer mount |
-
-**Portal entry convenience:** `GET /c/:slug/portal` → **303** to `/c/:slug/branch-admin` (bookmark-friendly alias only).
-
-### 2.3 Collision prevention
-
-Apex marketing and platform routes that must remain **outside** `/c/:slug`:
-
-`/`, `/features`, `/for-churches`, `/pricing`, `/directory`, `/register-church`, `/terms`, `/privacy`, `/login`, `/logout`, `/account`, `/admin/*`, `/healthz`, `/auth/*`, static `/blessboard/*`
-
-**Reserved path prefixes** (never usable as `:slug`, and reserved as org keys where applicable):
-
-- Existing `ORGANIZATION_RESERVED_SLUGS` (`admin`, `login`, `register`, `www`, `church`, `hq`, `branch`, `member`, …)
-- **Add for path mode:** `c`, `portal`, `account`, `auth`, `healthz`, `assets`, `blessboard`, `api`, `organizations`, `registration-applications` (and other PA segments)
-
-Slug = canonical **`organization_key`** (same key used in provision). Church key may equal org key on Foundation.
+Public and portal prefixes stay **separate** (avoid mounting private admin under `/c/…` for cache/auth clarity).
 
 ---
 
-## 3. Resolution, middleware, and auth
+## 2. Current route inventory (V5 foundation)
 
-### 3.1 Slug resolution
+### 2.1 Apex public / marketing
+`/`, `/features`, `/for-churches`, `/pricing`, `/directory`, `/register-church`, `/terms`, `/privacy`, `/login`, `/logout`, `/account`, `/healthz`, `/auth/callback`
 
+### 2.2 Platform admin
+`/admin`, `/admin/account`, `/admin/organizations`, `/admin/organizations/:organizationKey`, plan/entitlement POSTs, `/admin/plans`, `/admin/subscriptions`, `/admin/domains*`, `/admin/deployments*`, `/admin/settings`, `POST /admin/logout`  
+(**Not yet:** `/admin/registration-applications`)
+
+### 2.3 Tenant shells (today: **non-apex / host-gated**)
+`/hq/*`, `/branch-admin/*`, `/member/*`, content/attendance/giving/forms admin & member routers, tenant public pages on **tenant host** via `tenantPublicRoutes` + `tenantPublicPaths`
+
+### 2.4 Host / domain resolution
+`resolveHostname`, `evaluateTenantRoute`, `platform.domains`, authoritative allowlist — **modes off/shadow/authoritative**; Foundation currently path-first, host routing **not enabled** for Free.
+
+### 2.5 Canonical host
+`foundationWwwToApexRedirect`: `www.blessboard.org` → `https://blessboard.org…` (before Set-Cookie).
+
+### 2.6 Hardcoded / helper URLs
+Marketing and PA use relative paths; V4 helpers still build `*.blessboard.*` hosts — **do not reuse in new Foundation EJS**. Introduce central helper.
+
+### 2.7 Prefix classification
+
+| Prefix | Class | Notes |
+|--------|-------|-------|
+| `/c` | **AVAILABLE** | No current mounts |
+| `/church` | **RESERVED / UNSAFE** | Unavailable-path / reserved slug noise |
+| `/churches` | **AVAILABLE** but weaker (directory confusion) | |
+| `/org` | **AVAILABLE** | Prefer not (public says Church) |
+| `/organizations` | **PARTIALLY** via `/admin/organizations` | Keep under admin |
+| `/portal` | **AVAILABLE** | Choose for private entry |
+| `/account` | **RESERVED** | Apex account page |
+| `/admin` | **RESERVED** | Platform admin |
+| `/api` | **AVAILABLE** (unused V5) | Keep free for future API |
+| `/login` `/register-church` `/directory` | **RESERVED** | Marketing/auth |
+| `/hq` `/branch-admin` `/member` | **PARTIALLY USED** | Host tenant; nest under portal for path mode |
+
+---
+
+## 3. Public church route
+
+### Evaluation
+
+| Family | Verdict |
+|--------|---------|
+| **`/c/:organizationKey`** | **Choose** — short, free prefix, clear namespace, easy subdomain redirect later |
+| `/church/:slug` | Reject — reserved word / marketing confusion |
+| `/churches/:slug` | Reject — clashes with directory mental model |
+
+### Canonical identifier
+**`platform.organizations.organization_key`** only.  
+Align `church_key` / HQ `branch_key` at provision; do **not** maintain a second public slug.
+
+### Child routes (reuse `tenantPublicPaths` keys)
+`/c/:organizationKey` (home), `/about`, `/leadership`, `/ministries`, `/events`, `/sermons`, `/contact`, `/giving` (and any mapped keys already in `tenantPublicPaths.js`).
+
+---
+
+## 4. Portal route
+
+### Evaluation
+
+| Pattern | Verdict |
+|---------|---------|
+| `/portal` alone | Weak bookmarks / multi-org |
+| **`/portal/:organizationKey`** | **Choose** — explicit org, separate from public `/c` |
+| `/c/…/portal` | Mixes public+private prefixes |
+| `/organizations/…/portal` | Admin-flavored; longer |
+| Nest only under `/c/…/branch-admin` | Prior draft; superseded for separation |
+
+### Canonical portal tree
 ```text
-slug → platform.organizations.organization_key
-    → require active org + active BlessBoard enrolment
-    → blessboard.churches (1:1)
-    → primary HQ branch
-    → attach req.blessBoardPathContext { organization, church, branch, slug, routingMode: 'path' }
+/portal/:organizationKey                 → first screen (onboarding/home)
+/portal/:organizationKey/branch-admin/*  → existing BA routes (adapted)
+/portal/:organizationKey/hq/*            → later / Growth
+/portal/:organizationKey/member/*        → later
 ```
 
-Inactive / missing / unpublished policy:
+Login remains **`/login`**. After auth, redirect to `/portal/:organizationKey`.
 
-- **Portal:** 404 or 403 if no role; suspended church blocked.  
-- **Public:** if site `unpublished`, show minimal “not published” page (not full site) unless preview entitlement later.
+---
 
-### 3.2 Organization context middleware
+## 5. Organization-context resolver
 
-| Middleware | Role |
-|------------|------|
-| `resolvePathChurchContext` | Parse `/c/:slug…`; load catalogue; 404 if invalid |
-| `requirePathChurchAccess` | Portal: session user must have role on that org/church/branch |
-| Host resolver (existing) | Remains for subdomain/custom; **single** downstream tenant context shape |
-
-**Unify context shape** so public/portal code consumes one object whether resolved via path, subdomain, or custom domain.
-
-### 3.3 Login approach
+**Core:** `resolveOrganizationContext({ slug, mode, user? })`
 
 | Step | Behavior |
 |------|----------|
-| Unauthenticated portal hit | `303 /login?next=/c/{slug}/branch-admin` |
-| Apex `/login` POST success | Honor safe `next` (same-origin path only; must start with `/c/` or allowlisted portal paths) |
-| No `next` | Existing apex `/account` |
-| Multi-org user | After login, if `next` present go there if authorized; else **`/account`** (or future org chooser) listing orgs with links to `/c/:slug/branch-admin` |
-| Tenant-host transfer | Keep existing `/auth/callback` for subdomain/custom; path mode does not require transfer |
+| 1–3 | Read/normalize slug; reject reserved |
+| 4–6 | Load org by `organization_key`; load church 1:1; require active BlessBoard enrolment |
+| 7 | Org status gate |
+| 8 | Mode policy: public publication vs portal authz |
+| 9 | Attach `req.blessBoardOrgContext` |
+| 10 | Never trust client-supplied UUIDs without re-resolve |
 
-**Do not** create a second password store or cookie name.
+**Context (minimal public):** `organizationKey`, `organizationId`, `churchId`, `churchDisplayName`, `orgStatus`, `publicationAggregate`, `routingMode: 'path'`.
 
-### 3.4 Authorization
+**Portal adds:** roles, branchId, entitlements summary — not full member PII.
 
-Reuse `authorizeBlessBoardTenantAccess` / role lists with **path context org ids** instead of host-derived tenant only.
+**Structure:** one core service + `requirePublicChurch` / `requirePortalChurch` wrappers.
 
-Platform admin (`/admin`) stays apex-global — **not** under `/c/:slug`.
+---
 
-### 3.5 Canonical URL helper
+## 6. Publication behavior
 
-New module (conceptual): `src/blessboard/urls/churchUrlHelper.js`
+| Case | Response |
+|------|----------|
+| **Published** | Render requested public page (200) |
+| **Unpublished** | Neutral **setup/preparation** page, **200**, `noindex`, no fake ministries/leaders; optional “Sign in to manage” if preview policy allows; PA/church admin preview via portal, not public HTML |
+| **Suspended / inactive org or church** | Generic **unavailable** page (403 or 404 — prefer **404** to avoid enumeration), **no reason detail** |
+| **Unknown slug** | Genuine **404** |
+| **Org without BlessBoard enrolment** | **404** (same as unknown to public) |
 
-```js
-buildChurchPublicUrl({ slug, pagePath, routing })
-buildChurchPortalUrl({ slug, portal: 'branch-admin'|'hq'|'member', pathSuffix, routing })
-```
+Unpublished ≠ nonexistent: unpublished is known org with setup page; unknown has no org row.
 
-`routing` resolution order:
+---
 
-1. If org has **active custom domain** and entitled → `https://{custom}/…`  
-2. Else if **subdomain** mode enabled and DNS present → `https://{slug}.{base}/…`  
-3. Else **path** → `https://blessboard.org/c/{slug}/…`
+## 7. Portal authorization
 
-EJS and emails call **only** the helper (or locals injected from it).
+Must verify: authenticated session, user `active`, role on **that** org/church/branch, org/church not suspended, branch scope where needed.
 
-### 3.6 Future path → subdomain / custom-domain
-
-| Phase | Behavior |
+| Actor | Behavior |
 |-------|----------|
-| Foundation | Path canonical |
-| Later subdomain | Helper emits subdomain; optional **301** from `/c/:slug` → subdomain when flag on |
-| Custom domain | Helper prefers custom; path URL may 301 to custom primary |
+| Unauthenticated | 303 `/login?next=/portal/{key}…` |
+| Other org’s user | 403 or chooser |
+| Suspended user/org | 403 / unavailable |
+| `branch_admin` / `church_hq_admin` | Allow portal |
+| Member / leader | Only member routes when mounted |
+| `platform_admin` | Use `/admin`; do not imply church portal by slug alone |
 
-Host-based `evaluateTenantRoute` and path resolver must share “active church” rules so enabling authoritative host mode does not fork product logic.
-
-### 3.7 Custom-domain compatibility
-
-- Provision may **skip** domain insert (per 2C).  
-- When a domain is later assigned in PA, helper switches mode without changing slug.  
-- Path routes remain as fallback bookmarks during migration.
+**Never** authorize on slug existence alone.
 
 ---
 
-## 4. First portal experience
-
-| Item | Choice |
-|------|--------|
-| Smallest existing screen | **`/branch-admin` dashboard** (existing EJS/shell) |
-| Path URL | `/c/:slug/branch-admin` |
-| After provision | Login → that URL |
-| Setup checklist | **Phase 6** — banner/partial on same dashboard or minimal `/c/:slug/branch-admin/setup` — not a new product shell |
-| Website preview | Link via helper to `/c/:slug` (unpublished gate until publish) |
-| Leave and return | Bookmark path URL; session cookie on apex host |
-
-**Required for Foundation:** path context on apex + auth gate + existing dashboard.  
-**Deferred:** full onboarding wizard, HQ/member path mounts, impersonation.
-
----
-
-## 5. Admin / dashboard (routing-adjacent)
-
-Per 2A/2B: applications at `/admin/registration-applications`; orgs remain `/admin/organizations`.  
-Dashboard metric cards wait until Phase 8; prefer filters/links to applications and orgs over inventing ticket KPIs.
-
----
-
-## 6. Highest routing risk
-
-1. **Apex vs tenant split:** Today HQ/BA/public **reject apex**; path mode requires carefully opening apex **only** under `/c/:slug…` without exposing tenant portals at bare `/branch-admin` on apex (or define bare paths as 404 on apex).  
-2. **Session host-only cookie** on `blessboard.org` is correct for path mode; do not weaken cookie to parent domain casually.  
-3. **Dual resolution** (path + host) without one context builder → inconsistent auth.  
-4. Enabling `BLESSBOARD_TENANT_ROUTING_MODE=authoritative` while path is primary without a compatibility matrix.
-
----
-
-## 7. Implementation sequence (future prompts)
-
-Each phase is a separate Cursor prompt. Do not combine Phase 1–3 into one mega-change.
-
----
-
-### Phase 1 — Schema / status consolidation
-
-| | |
-|--|--|
-| **Objective** | Land 2B data model: application status split, `organization_id`, `organization_onboarding`, support notes |
-| **Dependencies** | 2A/2B architecture approved |
-| **Likely files** | New migrations under `db/migrations/blessboard/`; `platformChurchRegistrationRepository.js`; backfill script/tests |
-| **Migrations** | **Yes** — applications columns; onboarding table; support_notes table; CHECKs/indexes |
-| **Tests** | Migration/bootstrap; repo list/count; status constraint tests |
-| **Rollback** | Revert migration (down or restore); no HTTP behavior change yet |
-| **Exclusions** | No routes, orchestrator, path routing, dashboard cards, V4 |
-
----
-
-### Phase 2 — Provisioning orchestrator
-
-| | |
-|--|--|
-| **Objective** | `manageTransaction: false` on child services + `provisionRegisteredBlessBoardChurch` |
-| **Dependencies** | Phase 1 (application provisioning fields + onboarding row) |
-| **Likely files** | `provisionPlatformTenant.js`, `provisionBlessBoardChurch.js`, `createBlessBoardUser.js`, `assignBlessBoardRole.js`; new orchestrator service; optional `skipDomain` |
-| **Migrations** | None (or tiny if idempotency columns needed) |
-| **Tests** | Unit/integration: atomic success, failure rollback, idempotent retry, foundation→`free` map |
-| **Rollback** | Feature flag / do not wire HTTP yet; CLI default TX mode unchanged |
-| **Exclusions** | No public register auto-provision; no path routes; no PA UI; no V4 |
-
----
-
-### Phase 3 — Instant Basic/Free registration
-
-| | |
-|--|--|
-| **Objective** | `/register-church` POST validates → orchestrator → success with login CTA |
-| **Dependencies** | Phase 2 |
-| **Likely files** | `apexMarketingRoutes.js`, `platformChurchRegistrationService.js`, `register-church.ejs`, password field UX |
-| **Migrations** | None expected |
-| **Tests** | End-to-end register→org+user; duplicate email; plan alias; CSRF/rate limit preserved |
-| **Rollback** | Flag `INSTANT_PROVISION_ENABLED=false` → enquiry-only insert |
-| **Exclusions** | Path portal mount (may still login to `/account` until Phase 5); PA follow-up UI; dashboard |
-
----
-
-### Phase 4 — Admin application and follow-up visibility
-
-| | |
-|--|--|
-| **Objective** | `/admin/registration-applications` list/detail; org detail shows onboarding/follow-up; note + status actions |
-| **Dependencies** | Phase 1; Phase 3 useful but apps can exist without instant provision |
-| **Likely files** | `platformAdminRoutes.js`, `platformAdminNav.js`, new EJS under `platform-admin/`, services for follow-up updates |
-| **Migrations** | None if Phase 1 complete |
-| **Tests** | PA shell tests; CSRF actions; apex-only; role gate |
-| **Rollback** | Remove nav link; routes 404 behind flag |
-| **Exclusions** | Impersonation; Stitch create-org GUI; dashboard metric flood; V4 inquiries |
-
----
-
-### Phase 5 — Path-based portal entry
-
-| | |
-|--|--|
-| **Objective** | Resolve `/c/:slug/branch-admin*`; apex login `next=`; session auth against path context |
-| **Dependencies** | Phase 2–3 (users exist); helper stub |
-| **Likely files** | `v5FoundationServer.js`, `branchAdminRoutes.js` (apex path allow), new `resolvePathChurchContext.js`, `churchUrlHelper.js`, login next validation |
-| **Migrations** | None |
-| **Tests** | Path portal 200/403/404; apex bare `/branch-admin` stays closed; login next open-redirect negative tests |
-| **Rollback** | Disable path router mount; login next ignore `/c/` |
-| **Exclusions** | Public website pages; onboarding checklist UI; authoritative host mode changes; custom domain automation |
-
----
-
-### Phase 6 — Minimal church onboarding experience
-
-| | |
-|--|--|
-| **Objective** | Checklist banner or `/c/:slug/branch-admin/setup` updating `organization_onboarding` |
-| **Dependencies** | Phase 1 + 5 |
-| **Likely files** | Branch-admin views/partials; onboarding service |
-| **Migrations** | None (checklist JSON only) |
-| **Tests** | Progress transitions; permission; unpublished remains |
-| **Rollback** | Hide partial via flag |
-| **Exclusions** | Full marketing redesign; path public site polish; PA redesign |
-
----
-
-### Phase 7 — Path-based public church website
-
-| | |
-|--|--|
-| **Objective** | `/c/:slug` (+ pages) using existing public renderers; unpublished gate |
-| **Dependencies** | Phase 5 helper; publication status from 2B |
-| **Likely files** | `tenantPublicRoutes.js` or path wrapper; `tenantPublicPaths.js`; unpublished view |
-| **Migrations** | None |
-| **Tests** | Published vs unpublished; reserved slug; no leak of admin routes |
-| **Rollback** | Unmount public path router |
-| **Exclusions** | Wildcard DNS; forcing authoritative host mode; SEO mega-project |
-
----
-
-### Phase 8 — Dashboard metrics and polish
-
-| | |
-|--|--|
-| **Objective** | Real cards/filters: new orgs, awaiting follow-up, unpublished, suspended — sourced from onboarding/apps/orgs |
-| **Dependencies** | Phases 1, 4, 7 data |
-| **Likely files** | `dashboard.ejs`, `platformAdminRepository.js`, org list filters |
-| **Migrations** | None |
-| **Tests** | Metric accuracy; no placeholder ticket reuse |
-| **Rollback** | Revert dashboard query only |
-| **Exclusions** | Billing MRR; fake health; V4 |
-
----
-
-## 8. Dependency graph
+## 8. Login and post-provision redirect
 
 ```text
-Phase 1 schema
-    ├── Phase 2 orchestrator
-    │       └── Phase 3 instant registration
-    ├── Phase 4 admin applications / follow-up
-    └── Phase 5 path portal ──┬── Phase 6 onboarding UI
-                              └── Phase 7 path public site
-                                      └── Phase 8 dashboard polish
+POST /register-church (CSRF OK)
+  → outer TX provisionRegisteredBlessBoardChurch
+  → COMMIT
+  → regenerate session
+  → store user + org context
+  → 303 /portal/:organizationKey
 ```
 
-**First implementation prompt recommended:** **Phase 1 (Schema/status changes).**
+| Failure | Fallback |
+|---------|----------|
+| Session regen / auto-login fails | Success page + CTA `/login?next=/portal/{key}` |
+| Refresh | Session cookie keeps portal access |
+| Second browser | Must login |
+| Logout | Clear session → `/login` |
+| Back button | Idempotent provision; portal or login |
 
-Rationale: unlocks orchestrator, admin follow-up, and onboarding without routing complexity; matches 2B REQUIRED migrations; lowest product-visible risk if rolled back.
-
----
-
-## 9. Decision log (2D)
-
-| Decision | Chosen | Rejected | Reason |
-|----------|--------|----------|--------|
-| Public path | `/c/:slug` | `/church`, `/churches` | Namespace + brevity |
-| Portal path | `/c/:slug/branch-admin` | bare `/portal`, new portal shell | Reuse existing portal |
-| Login | Apex `/login` + safe `next` | Second auth system | Existing session |
-| First screen | Branch-admin dashboard | New dashboard / account-only | Already exists |
-| URL helper | Central `churchUrlHelper` | Hardcoded EJS paths | Subdomain/custom migration |
-| Multi-org | Slug in URL + `/account` chooser | Session-only org | Bookmark + clarity |
-| First build prompt | Phase 1 schema | Jump to path routing | Dependencies |
+**Do not** redirect new admins to `/c/:key` public site after provision.
 
 ---
 
-## 10. Explicit duplicate-prevention (routing)
+## 9. Multi-organization compatibility
 
-- No second public site implementation beside path-wrapped tenant public.  
-- No apex bare `/branch-admin` for Foundation (path-prefixed only) unless explicitly productized later.  
-- No parallel `/organizations/:slug/portal`.  
-- No V4 subdomain URL helpers in new EJS — use `churchUrlHelper` only.
+Foundation: duplicate email → `duplicate_review` (no auto multi-org).
 
----
-
-## 11. Open owner decisions
-
-1. Unpublished public URL: soft “coming soon” vs hard 404?  
-2. Mount HQ/member under `/c/:slug` in Foundation or defer?  
-3. When subdomain DNS appears: auto-301 from `/c/:slug` or wait for flag?  
-4. Allow bare `/branch-admin` on apex if session has exactly one org? (Default: **no**)
+Future-ready:
+- Explicit `/portal/:organizationKey` (no reliance on single session org forever)
+- Optional `/portal` chooser listing memberships
+- Switch = navigate to other key + re-eval roles
+- Session may cache “last org” but URL remains source of truth for portal
 
 ---
 
-## 12. Companion architecture index
+## 10. URL-helper architecture
 
-| Doc | Topic |
-|-----|-------|
-| `ADMIN_CONSOLE_REGISTRATION_FLOW_AUDIT.md` | Current state |
-| `FOUNDATION_ENTITY_ADMIN_ARCHITECTURE.md` | Org vs church vs applications |
-| `FOUNDATION_ONBOARDING_STATUS_ARCHITECTURE.md` | Status families |
-| `FOUNDATION_PROVISIONING_ARCHITECTURE.md` | Orchestrator + Free plan |
-| **This file** | Path routing + delivery phases |
+Module (conceptual): `src/blessboard/urls/churchUrlHelper.js`
+
+```text
+buildChurchPublicUrl({ organizationKey, pagePath?, absolute? })
+buildChurchPortalUrl({ organizationKey, portalPath?, absolute? })
+buildAdminOrganizationUrl({ organizationKey })
+buildAdminRegistrationApplicationUrl({ applicationId })
+```
+
+**Routing mode order (future):** custom domain → subdomain → **path** (Foundation default).
+
+Sources: env canonical host; later `platform.domains`; never scatter `blessboard.org` in EJS.
+
+Absolute URLs for email; relative OK in same-apex HTML.
 
 ---
 
-## 13. Confirmation
+## 11. Future subdomain migration
+
+Keep `organization_key` stable. Flip helper mode to subdomain; add host resolver sharing **same** core context loader; **301** `/c/{key}` → `https://{key}.blessboard.org/`; portal similarly.  
+
+**Do not** bake path-only assumptions into DB identity or dual slug columns.
+
+---
+
+## 12. Custom-domain precedence (future only)
+
+1. Approved active custom domain (entitled)  
+2. BlessBoard subdomain (when DNS exists)  
+3. Path URL  
+
+Free Foundation provision: **no domain row**. Helper/resolver later consult `platform.domains` once.
+
+---
+
+## 13. First portal screen
+
+**Choose:** dedicated minimal **portal home / onboarding entry** at `/portal/:organizationKey` (new thin view), not a huge dashboard. Deeper tools via nested `branch-admin`.
+
+| Element | Class |
+|---------|--------|
+| Church name | REQUIRED |
+| Basic/Free plan label | REQUIRED |
+| Onboarding checklist (MVP keys) | REQUIRED |
+| Public website status | REQUIRED |
+| Preview link (`/c/{key}` setup or preview) | REQUIRED |
+| Setup actions | REQUIRED |
+| Support/help indicator | OPTIONAL |
+| Logout / account | REQUIRED |
+| Full HQ analytics | DEFERRED |
+
+---
+
+## 14. Security controls
+
+Exact-match normalized slug; reject `..`, encoded slashes, mixed-case variants via normalize-to-lower; reserved list; no open redirects (`next` allowlist `/portal/`, `/c/` carefully); portal `no-store`; CSRF on writes; rate limits; unpublished ≠ leak existence beyond setup page; no SQL in errors; slug enumeration mitigated via generic 404 for unknown/suspended.
+
+---
+
+## 15. Caching and SEO
+
+| Surface | Cache | SEO |
+|---------|-------|-----|
+| Portal / auth / register | `no-store` | noindex |
+| Unpublished setup | conservative / no-store; **noindex** | |
+| Published public | public cache only if **Vary** includes tenant key/host and no cross-slug leak | canonical `/c/{key}/…` |
+| Login | no-store | noindex |
+
+---
+
+## 16. Implementation phases
+
+### Phase 1 — Schema and status migration
+**Objective:** 2B columns/tables; app→org FK; onboarding; support contacts; Free `max_branches=1`.  
+**Deps:** 2A/2B approved. **Migrations:** yes. **Routes:** none. **Tests:** migrate/backfill/constraints. **Rollback:** reverse migration. **Exclude:** HTTP provision, path routes. **Prompt size:** medium.
+
+### Phase 2 — Transaction composability
+**Objective:** `manageTransaction: false` (+ `skipDomain`). **Deps:** none hard. **Migrations:** no. **Tests:** nested TX rollback. **Rollback:** flag off / revert. **Exclude:** orchestrator HTTP. **Size:** small–medium.
+
+### Phase 3 — Shared orchestrator
+**Objective:** `provisionRegisteredBlessBoardChurch`, locks, idempotency, failed status. **Deps:** 1–2. **Migrations:** no. **Tests:** integration matrix 2C. **Exclude:** public register wire-up. **Size:** medium.
+
+### Phase 4 — Instant Basic/Free registration
+**Objective:** password, map `foundation`→`free`, provision, session regen, auto-login, redirect portal (or interim `/account` until Phase 7). **Deps:** 3. **Flag:** `INSTANT_PROVISION_ENABLED`. **Exclude:** path public site. **Size:** medium.
+
+### Phase 5 — Admin registration applications
+**Objective:** `/admin/registration-applications` list/detail. **Deps:** 1. **Flag:** `ADMIN_APPLICATIONS_ENABLED`. **Exclude:** full follow-up actions. **Size:** medium.
+
+### Phase 6 — Admin onboarding/support actions
+**Objective:** assign, follow-up statuses, append contacts, org detail summary. **Deps:** 1, 5. **Exclude:** impersonation. **Size:** medium.
+
+### Phase 7 — Path-based portal resolver
+**Objective:** `/portal/:organizationKey`, authz, first screen shell. **Deps:** 3–4. **Flag:** `PATH_PORTAL_ENABLED`. **Exclude:** full BA nest if needed follow-on. **Size:** medium–large (split if needed).
+
+### Phase 8 — Minimal onboarding screen
+**Objective:** derived checklist, publication status, preview/publish entry. **Deps:** 1, 7. **Exclude:** fancy wizard. **Size:** small–medium.
+
+### Phase 9 — Path-based public website
+**Objective:** `/c/:organizationKey/*`, published pages, unpublished setup, 404 unknown. **Deps:** 7–8 helpers. **Flag:** `PATH_PUBLIC_ENABLED`. **Exclude:** enable authoritative host mode. **Size:** medium.
+
+### Phase 10 — Dashboard metrics and polish
+**Objective:** non-duplicative cards → filtered orgs/apps; docs/stitch maps. **Deps:** 5–9 data. **Exclude:** fake tickets/MRR. **Size:** small–medium.
+
+---
+
+## 17. Failure / rollback / flags
+
+| Flag (conceptual) | Off behavior |
+|-------------------|--------------|
+| Instant provision | Enquiry-only insert (current) |
+| Path portal | No `/portal` mount; login → `/account` |
+| Path public | No `/c` mount |
+| Admin applications | No nav item |
+
+Each phase deployable alone behind flags; data migrations forward-compatible; old enquiry path remains until Phase 4 flag on.
+
+---
+
+## 18. Duplicate-prevention rules
+
+1. One org resolver.  
+2. One `organization_key`.  
+3. One URL helper.  
+4. One provisioning orchestrator.  
+5. One orgs list (`/admin/organizations`).  
+6. One applications queue.  
+7. One onboarding row per org.  
+8. One support-contact history.  
+9. No extra church-tenant table.  
+10. No V4 routing/provision.  
+11. Shared resolver for path/subdomain/custom.  
+12. No Free custom-domain rows.  
+13. Every dashboard metric has a filtered destination.  
+14. No portal auth from slug alone.  
+15. Publication not inferred from org `active` alone.
+
+---
+
+## 19. Open owner decisions
+
+1. Portal nest full `/branch-admin` in Phase 7 or thin home first?  
+2. Suspended public: 404 vs dedicated unavailable?  
+3. Admin preview of unpublished without login cookie?  
+4. Exact feature-flag env names in repo convention?  
+5. Interim Phase 4 redirect if portal flag off: `/account` vs success-only?
+
+---
+
+## 20. Confirmation
 
 - No application code changed  
 - No migrations created or executed  
 - No database records changed  
-- No routes added  
-- No dashboard items added  
+- No routes / admin screens / dashboard items added  
 - No V4 code changed  
+- Host-based tenant routing not enabled  
+- Custom-domain behavior not implemented  

@@ -93,6 +93,11 @@
     <span aria-hidden="true">/</span>
     <span><%= org.organizationKey %></span>
   </nav>
+  <% if (typeof registrationApplicationId !== 'undefined' && registrationApplicationId) { %>
+  <p class="bb-pa-lede" data-bb-pa-registration-backlink="1">
+    <a class="bb-pa-link" href="/admin/registration-applications/<%= registrationApplicationId %>">Registration application</a>
+  </p>
+  <% } %>
 
   <header class="bb-pa-page-head bb-pa-page-head--split">
     <div>

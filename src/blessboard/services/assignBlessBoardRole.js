@@ -6,6 +6,11 @@
 
 const repo = require("../repositories/blessBoardAuthRepository");
 const { normalizeEmail } = require("./createBlessBoardUser");
+const {
+  resolveManageTransactionOption,
+  openProvisioningSession,
+  runInsertWithUniqueRecovery,
+} = require("../../platform/db/provisioningTransaction");
 
 const STATUS = Object.freeze({
   ASSIGNED: "assigned",
@@ -68,8 +73,9 @@ function validateInput(input) {
 /**
  * @param {{ connect?: Function, query?: Function }} db
  * @param {object} input
+ * @param {{ manageTransaction?: boolean }} [options]
  */
-async function assignBlessBoardRole(db, input) {
+async function assignBlessBoardRole(db, input, options) {
   const validated = validateInput(input);
   if (!validated.ok) {
     return {
@@ -82,37 +88,33 @@ async function assignBlessBoardRole(db, input) {
   const req = validated.value;
   const dryRun = Boolean(input && input.dryRun);
 
-  if (!db || (typeof db.connect !== "function" && typeof db.query !== "function")) {
-    return { ok: false, status: STATUS.TRANSACTION_ERROR, message: "database required", role: null };
+  const resolved = resolveManageTransactionOption(db, options);
+  if (!resolved.ok) {
+    return { ok: false, status: STATUS.TRANSACTION_ERROR, message: resolved.message, role: null };
   }
 
-  let client = null;
-  let owned = false;
+  let session = null;
   try {
-    if (typeof db.connect === "function") {
-      client = await db.connect();
-      owned = true;
-    } else {
-      client = db;
-    }
-
-    await client.query("BEGIN");
+    session = await openProvisioningSession(resolved);
+    const client = session.client;
+    const abort = async (result) => {
+      await session.rollbackIfManaged();
+      return result;
+    };
 
     const user = await repo.findUserByEmail(client, req.email);
     if (!user) {
-      await client.query("ROLLBACK");
-      return { ok: false, status: STATUS.USER_NOT_FOUND, message: "user_not_found", role: null };
+      return abort({ ok: false, status: STATUS.USER_NOT_FOUND, message: "user_not_found", role: null });
     }
 
     const organization = await repo.findOrganizationByKey(client, req.organizationKey);
     if (!organization) {
-      await client.query("ROLLBACK");
-      return {
+      return abort({
         ok: false,
         status: STATUS.ORGANIZATION_NOT_FOUND,
         message: "organization_not_found",
         role: null,
-      };
+      });
     }
 
     const existingStaff = await client.query(
@@ -129,19 +131,18 @@ async function assignBlessBoardRole(db, input) {
       countsAsNewUser: existingStaff.rows.length === 0,
     });
     if (!staffGate.ok) {
-      await client.query("ROLLBACK");
       const message =
         staffGate.status === ENT_STATUS.LIMIT_EXCEEDED
           ? `limit_exceeded:${staffGate.reason}`
           : staffGate.status === ENT_STATUS.SUBSCRIPTION_INACTIVE
             ? "subscription_inactive"
             : "entitlement_denied";
-      return {
+      return abort({
         ok: false,
         status: STATUS.ROLE_CONFLICT,
         message,
         role: null,
-      };
+      });
     }
 
     let churchId = null;
@@ -149,20 +150,27 @@ async function assignBlessBoardRole(db, input) {
     if (req.churchKey) {
       const church = await repo.findChurchByKey(client, req.churchKey);
       if (!church) {
-        await client.query("ROLLBACK");
-        return { ok: false, status: STATUS.CHURCH_NOT_FOUND, message: "church_not_found", role: null };
+        return abort({
+          ok: false,
+          status: STATUS.CHURCH_NOT_FOUND,
+          message: "church_not_found",
+          role: null,
+        });
       }
       if (String(church.organization_id) !== String(organization.id)) {
-        await client.query("ROLLBACK");
-        return { ok: false, status: STATUS.INVALID_SCOPE, message: "invalid_scope", role: null };
+        return abort({ ok: false, status: STATUS.INVALID_SCOPE, message: "invalid_scope", role: null });
       }
       churchId = church.id;
     }
     if (req.branchKey) {
       const branch = await repo.findBranchByChurchAndKey(client, churchId, req.branchKey);
       if (!branch) {
-        await client.query("ROLLBACK");
-        return { ok: false, status: STATUS.BRANCH_NOT_FOUND, message: "branch_not_found", role: null };
+        return abort({
+          ok: false,
+          status: STATUS.BRANCH_NOT_FOUND,
+          message: "branch_not_found",
+          role: null,
+        });
       }
       branchId = branch.id;
     }
@@ -176,10 +184,13 @@ async function assignBlessBoardRole(db, input) {
     });
     if (existing) {
       if (String(existing.status) !== "active") {
-        await client.query("ROLLBACK");
-        return { ok: false, status: STATUS.ROLE_CONFLICT, message: "role_conflict", role: null };
+        return abort({ ok: false, status: STATUS.ROLE_CONFLICT, message: "role_conflict", role: null });
       }
-      await client.query(dryRun ? "ROLLBACK" : "COMMIT");
+      if (dryRun) {
+        await session.rollbackIfManaged();
+      } else {
+        await session.commitIfManaged();
+      }
       return {
         ok: true,
         status: dryRun ? STATUS.DRY_RUN_ALREADY_ASSIGNED : STATUS.ALREADY_ASSIGNED,
@@ -198,7 +209,7 @@ async function assignBlessBoardRole(db, input) {
     }
 
     if (dryRun) {
-      await client.query("ROLLBACK");
+      await session.rollbackIfManaged();
       return {
         ok: true,
         status: STATUS.DRY_RUN_WOULD_ASSIGN,
@@ -218,22 +229,32 @@ async function assignBlessBoardRole(db, input) {
 
     let role;
     try {
-      role = await repo.insertRole(client, {
-        userId: user.id,
-        organizationId: organization.id,
-        churchId,
-        branchId,
-        roleKey: req.roleKey,
-      });
-    } catch (err) {
-      await client.query("ROLLBACK");
-      if (repo.isUniqueViolation(err) || /integrity|scope|belong/i.test(String(err.message || ""))) {
-        return { ok: false, status: STATUS.INVALID_SCOPE, message: "invalid_scope", role: null };
+      const inserted = await runInsertWithUniqueRecovery(client, "prov_role_insert", () =>
+        repo.insertRole(client, {
+          userId: user.id,
+          organizationId: organization.id,
+          churchId,
+          branchId,
+          roleKey: req.roleKey,
+        })
+      );
+      if (!inserted.ok) {
+        return abort({ ok: false, status: STATUS.INVALID_SCOPE, message: "invalid_scope", role: null });
       }
-      return { ok: false, status: STATUS.TRANSACTION_ERROR, message: "transaction_error", role: null };
+      role = inserted.value;
+    } catch (err) {
+      if (/integrity|scope|belong/i.test(String(err.message || ""))) {
+        return abort({ ok: false, status: STATUS.INVALID_SCOPE, message: "invalid_scope", role: null });
+      }
+      return abort({
+        ok: false,
+        status: STATUS.TRANSACTION_ERROR,
+        message: "transaction_error",
+        role: null,
+      });
     }
 
-    await client.query("COMMIT");
+    await session.commitIfManaged();
     return {
       ok: true,
       status: STATUS.ASSIGNED,
@@ -248,14 +269,10 @@ async function assignBlessBoardRole(db, input) {
       },
     };
   } catch {
-    try {
-      if (client) await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
-    }
+    if (session) await session.safeRollbackOnError();
     return { ok: false, status: STATUS.TRANSACTION_ERROR, message: "transaction_error", role: null };
   } finally {
-    if (owned && client && typeof client.release === "function") client.release();
+    if (session) session.releaseIfOwned();
   }
 }
 

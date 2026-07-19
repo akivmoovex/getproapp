@@ -255,7 +255,9 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .type("form")
       .send(validBody);
     assert.equal(res.status, 403);
-    assert.match(res.text, /CSRF/i);
+    assert.match(res.text, /security token|CSRF/i);
+    assert.match(res.text, /Reload the registration form/i);
+    assert.match(res.text, /name="_csrf"[^>]*value="v5c1\./);
     const pending = await repo.listApplications(pool, {
       status: "pending",
       limit: 50,
@@ -264,6 +266,94 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       pending.filter((row) => row.contact_email === validBody.email).length,
       0
     );
+  });
+
+  it("GET /register-church sets no-store cache headers and a non-empty CSRF field", async () => {
+    requireDb();
+    const app = makeApp();
+    const res = await request(app).get("/register-church").set("Host", "blessboard.org");
+    assert.equal(res.status, 200);
+    assert.match(String(res.headers["cache-control"] || ""), /no-store/i);
+    assert.match(String(res.headers.vary || ""), /Cookie/i);
+    const setCookie = res.headers["set-cookie"];
+    const cookieLine = Array.isArray(setCookie) ? setCookie.join(";") : String(setCookie || "");
+    assert.match(cookieLine, new RegExp(`${CSRF_COOKIE}=v5c1\\.`));
+    assert.match(cookieLine, /Path=\//i);
+    assert.match(cookieLine, /SameSite=Lax/i);
+    assert.match(res.text, /name="_csrf"\s+value="v5c1\.[^"]+"/);
+    assert.match(res.text, /action="\/register-church"/);
+    assert.match(res.text, /method="post"/i);
+    assert.doesNotMatch(res.text, /action="https?:\/\//i);
+  });
+
+  it("body token without matching CSRF cookie is rejected", async () => {
+    requireDb();
+    const app = makeApp();
+    const { csrf } = await getRegistrationPage(app);
+    const res = await request(app)
+      .post("/register-church")
+      .set("Host", "blessboard.org")
+      .type("form")
+      .send({ ...validBody, email: `no-cookie-${Date.now()}@example.org`, [CSRF_FIELD]: csrf });
+    assert.equal(res.status, 403);
+    assert.match(res.text, /security token|Reload the registration form/i);
+  });
+
+  it("token from one CSRF cookie is rejected with a different cookie", async () => {
+    requireDb();
+    const app = makeApp();
+    const first = await getRegistrationPage(app);
+    const second = await getRegistrationPage(app);
+    const res = await request(app)
+      .post("/register-church")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${CSRF_COOKIE}=${second.cookie}`)
+      .type("form")
+      .send({
+        ...validBody,
+        email: `mismatch-${Date.now()}@example.org`,
+        [CSRF_FIELD]: first.csrf,
+      });
+    assert.equal(res.status, 403);
+  });
+
+  it("validation failure rerenders with a fresh usable CSRF pair", async () => {
+    requireDb();
+    const app = makeApp();
+    const { csrf, cookie } = await getRegistrationPage(app);
+    const bad = await request(app)
+      .post("/register-church")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, consent_contact: "on" });
+    assert.equal(bad.status, 400);
+    const freshCsrf = extractCsrfToken(bad.text);
+    const freshCookie = extractCookie(bad, CSRF_COOKIE);
+    assert.ok(freshCsrf);
+    assert.ok(freshCookie);
+    assert.notEqual(freshCsrf, csrf);
+
+    const email = `retry-after-validation-${Date.now()}@example.org`;
+    const ok = await request(app)
+      .post("/register-church")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${CSRF_COOKIE}=${freshCookie}`)
+      .type("form")
+      .send({ ...validBody, email, [CSRF_FIELD]: freshCsrf });
+    assert.equal(ok.status, 303);
+  });
+
+  it("www.blessboard.org canonicalizes to blessboard.org before the form is issued", async () => {
+    requireDb();
+    const app = makeApp();
+    const res = await request(app)
+      .get("/register-church?plan=foundation")
+      .set("Host", "www.blessboard.org")
+      .set("X-Forwarded-Proto", "https");
+    assert.equal(res.status, 301);
+    assert.equal(res.headers.location, "https://blessboard.org/register-church?plan=foundation");
+    assert.equal(res.headers["set-cookie"], undefined);
   });
 
   it("missing required fields are rejected", async () => {

@@ -62,6 +62,8 @@ const APPROVED_PRODUCT_TABLES = Object.freeze({
     "members",
     "ministries",
     "ministry_memberships",
+    "organization_onboarding",
+    "organization_support_contacts",
     "page_sections",
     "platform_church_registration_applications",
     "public_pages",

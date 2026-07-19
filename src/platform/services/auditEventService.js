@@ -72,6 +72,11 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
   "schema_field_count",
   "visibility",
   "title_len",
+  "product_key",
+  "plan_key",
+  "request_id",
+  "actor_type",
+  "source",
 ]);
 
 const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;

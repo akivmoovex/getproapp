@@ -88,10 +88,16 @@ function renderRegisterChurchPage(opts) {
     activeNav: "register-church",
     csrfField: (opts && opts.csrfField) || "_csrf",
     submitted: Boolean(opts && opts.submitted),
+    workspaceReady: Boolean(opts && opts.workspaceReady),
+    loginFallback: Boolean(opts && opts.loginFallback),
+    review: Boolean(opts && opts.review),
+    organizationKeyPreview: (opts && opts.organizationKeyPreview) || "",
     formError: (opts && opts.formError) || null,
     fieldError: (opts && opts.fieldError) || null,
     form: (opts && opts.form) || {},
     selectedPlan: (opts && opts.selectedPlan) || null,
+    showCsrfRetry: Boolean(opts && opts.showCsrfRetry),
+    instantFreeEnabled: Boolean(opts && opts.instantFreeEnabled),
   });
 }
 
