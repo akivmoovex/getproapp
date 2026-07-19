@@ -132,7 +132,11 @@ describe("blessboard public church registration (BB-MT-001)", () => {
   it("normalizes allowlisted plans and rejects unknown plan codes safely", () => {
     assert.equal(normalizeSelectedPlan("growth"), "growth");
     assert.equal(normalizeSelectedPlan("FOUNDATION"), "foundation");
+    assert.equal(normalizeSelectedPlan("free"), "foundation");
+    assert.equal(normalizeSelectedPlan("basic"), "foundation");
+    assert.equal(normalizeSelectedPlan("basic_free"), "foundation");
     assert.equal(normalizeSelectedPlan("enterprise"), null);
+    assert.equal(normalizeSelectedPlan("professional"), null);
     assert.equal(normalizeSelectedPlan(""), null);
   });
 
@@ -164,6 +168,69 @@ describe("blessboard public church registration (BB-MT-001)", () => {
     assert.match(pricing.text, /href="\/register-church\?plan=foundation"/);
     assert.match(pricing.text, /href="\/register-church\?plan=growth"/);
     assert.match(pricing.text, /href="\/register-church\?plan=network"/);
+    assert.match(pricing.text, /Foundation — Free|Foundation &mdash; Free/);
+  });
+
+  it("Free/Basic plan query aliases select canonical foundation and submit as foundation", async () => {
+    requireDb();
+    const app = makeApp();
+    for (const alias of ["free", "basic", "foundation"]) {
+      const page = await request(app)
+        .get(`/register-church?plan=${alias}`)
+        .set("Host", "blessboard.org");
+      assert.equal(page.status, 200, alias);
+      assert.match(page.text, /<option value="foundation"[^>]*selected/);
+      assert.match(page.text, /Foundation — Free|Foundation &mdash; Free/);
+    }
+
+    const { csrf, cookie } = await getRegistrationPage(app, "/register-church?plan=free");
+    const email = `free-plan-${Date.now()}@example.org`;
+    const churchesBefore = (await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.churches`)).rows[0].n;
+    const branchesBefore = (await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.branches`)).rows[0].n;
+    const usersBefore = (await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.users`)).rows[0].n;
+    const orgsBefore = await repo.countOrganizationsCreatedSince(pool, new Date(0));
+
+    const res = await request(app)
+      .post("/register-church")
+      .set("Host", "blessboard.org")
+      .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
+      .type("form")
+      .send({
+        ...validBody,
+        church_name: "MANUAL TEST FREE CHURCH",
+        contact_name: "MANUAL TEST USER",
+        email,
+        selected_plan: "free",
+        [CSRF_FIELD]: csrf,
+      });
+    assert.equal(res.status, 303);
+    assert.equal(res.headers.location, "/register-church?submitted=1");
+    assert.doesNotMatch(res.headers.location || "", /checkout|payment|stripe/i);
+
+    const rows = await pool.query(
+      `SELECT status, selected_plan, church_name, contact_name
+         FROM blessboard.platform_church_registration_applications
+        WHERE lower(contact_email) = lower($1)`,
+      [email]
+    );
+    assert.equal(rows.rowCount, 1);
+    assert.equal(rows.rows[0].status, "pending");
+    assert.equal(rows.rows[0].selected_plan, "foundation");
+    assert.equal(rows.rows[0].church_name, "MANUAL TEST FREE CHURCH");
+
+    assert.equal(
+      (await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.churches`)).rows[0].n,
+      churchesBefore
+    );
+    assert.equal(
+      (await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.branches`)).rows[0].n,
+      branchesBefore
+    );
+    assert.equal(
+      (await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.users`)).rows[0].n,
+      usersBefore
+    );
+    assert.equal(await repo.countOrganizationsCreatedSince(pool, new Date(0)), orgsBefore);
   });
 
   it("selected plan query is carried safely; invalid plan falls back", async () => {

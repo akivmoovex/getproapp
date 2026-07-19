@@ -180,7 +180,7 @@ describe("blessboard apex marketing batch 2b", () => {
     const app = makeApp();
     const res = await request(app).get("/pricing").set("Host", "blessboard.org");
     assert.equal(res.status, 200);
-    assert.match(res.text, /Foundation/);
+    assert.match(res.text, /Foundation — Free|Foundation &mdash; Free/);
     assert.match(res.text, /Growth/);
     assert.match(res.text, /Network/);
     assert.match(res.text, /USD 0/);
@@ -189,6 +189,7 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(res.text, /active branch/i);
     assert.match(res.text, /id="faq"/);
     assert.match(res.text, /Church members are not billed individually/);
+    assert.match(res.text, /href="\/register-church\?plan=foundation"/);
     assert.match(res.text, /href="\/register-church\?plan=growth"/);
     assert.match(res.text, /Advanced attendance and giving reports/i);
     assert.match(res.text, /Cross-branch HQ administration/i);
@@ -196,7 +197,8 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.doesNotMatch(res.text, /href="\/contact"/);
     assert.doesNotMatch(res.text, /USD 4\.90|USD 8\.90|USD 14\.90/);
     assert.doesNotMatch(res.text, /\bProfessional\b|\bPartner\b/);
-    assert.doesNotMatch(res.text, /\bFree\b/);
+    // Canonical free tier remains plan code foundation (no legacy plan_key "free" CTA).
+    assert.doesNotMatch(res.text, /href="\/register-church\?plan=free"/);
   });
 
   it("marketing routes are apex-only (404 on non-apex host text)", async () => {

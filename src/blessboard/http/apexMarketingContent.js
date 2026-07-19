@@ -33,6 +33,8 @@ const SAFE_FAQ_IDS = new Set([
 function buildApexPricingPlans() {
   return buildPublicPricingPlans().map((plan) => ({
     ...plan,
+    label: plan.code === "foundation" ? "Foundation — Free" : plan.label,
+    eyebrow: plan.code === "foundation" ? "Free" : plan.eyebrow,
     ctaLabel: "Register Your Church",
     ctaHref: `/register-church?plan=${encodeURIComponent(plan.code)}`,
     ctaVariant: plan.featured ? "primary" : "outline",

@@ -250,7 +250,7 @@
                 <%= fieldHasError('selected_plan') ? 'aria-invalid="true"' : '' %>
               >
                 <option value=""<%= !planValue ? ' selected' : '' %>>Not sure yet</option>
-                <option value="foundation"<%= planValue === 'foundation' ? ' selected' : '' %>>Foundation</option>
+                <option value="foundation"<%= planValue === 'foundation' ? ' selected' : '' %>>Foundation — Free</option>
                 <option value="growth"<%= planValue === 'growth' ? ' selected' : '' %>>Growth</option>
                 <option value="network"<%= planValue === 'network' ? ' selected' : '' %>>Network</option>
               </select>

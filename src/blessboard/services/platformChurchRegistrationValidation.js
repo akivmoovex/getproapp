@@ -2,10 +2,31 @@
 
 /**
  * Apex /register-church application validation (pending inquiry only).
- * Plan codes are allowlisted; invalid query/body values normalize to null.
+ * Plan codes come from the public pricing catalogue (foundation / growth / network).
+ * Customer "Free/Basic" maps to canonical stored code: foundation.
  */
 
-const ALLOWED_PLANS = Object.freeze(["foundation", "growth", "network"]);
+const { TIER_PLAN_CODES } = require("../../church/platformPricingContent");
+
+const ALLOWED_PLANS = Object.freeze([...TIER_PLAN_CODES]);
+const FREE_PLAN_CODE = "foundation";
+
+/** Inbound aliases accepted from CTAs/query/body; always stored as FREE_PLAN_CODE. */
+const PLAN_ALIASES = Object.freeze({
+  foundation: FREE_PLAN_CODE,
+  free: FREE_PLAN_CODE,
+  basic: FREE_PLAN_CODE,
+  basic_free: FREE_PLAN_CODE,
+  growth: "growth",
+  network: "network",
+});
+
+const PLAN_DISPLAY_LABELS = Object.freeze({
+  foundation: "Foundation — Free",
+  growth: "Growth",
+  network: "Network",
+});
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function trim(value, max) {
@@ -23,13 +44,23 @@ function isHoneypotTriggered(body) {
 }
 
 /**
+ * Normalize to a canonical catalogue plan code, or null.
+ * Unknown values → null (never stored). Empty → null.
  * @param {unknown} raw
  * @returns {string | null}
  */
 function normalizeSelectedPlan(raw) {
   const value = trim(raw, 40).toLowerCase();
   if (!value) return null;
-  return ALLOWED_PLANS.includes(value) ? value : null;
+  const mapped = PLAN_ALIASES[value];
+  if (!mapped) return null;
+  return ALLOWED_PLANS.includes(mapped) ? mapped : null;
+}
+
+function planDisplayLabel(code) {
+  const canonical = normalizeSelectedPlan(code);
+  if (!canonical) return "";
+  return PLAN_DISPLAY_LABELS[canonical] || canonical;
 }
 
 function validateEmail(email) {
@@ -123,7 +154,7 @@ function validatePlatformChurchRegistration(body, opts = {}) {
     };
   }
 
-  // Body may include an invalid plan string — reject only when present and not allowlisted.
+  // Reject unknown plan strings when the client sent a non-empty value.
   const rawPlan = trim(body && body.selected_plan, 40);
   if (rawPlan && !normalizeSelectedPlan(rawPlan)) {
     return { ok: false, error: "Please select a valid plan interest.", field: "selected_plan" };
@@ -177,7 +208,11 @@ function formFromBody(body, opts = {}) {
 
 module.exports = {
   ALLOWED_PLANS,
+  FREE_PLAN_CODE,
+  PLAN_ALIASES,
+  PLAN_DISPLAY_LABELS,
   normalizeSelectedPlan,
+  planDisplayLabel,
   validatePlatformChurchRegistration,
   formFromBody,
   isHoneypotTriggered,
