@@ -60,6 +60,8 @@
     "blessboard:user:role:assign": "node db/scripts/blessboard-user-role-assign.js",
     "blessboard:user:password-reset": "node db/scripts/blessboard-user-password-reset.js",
     "blessboard:user:list-platform-admins": "node db/scripts/blessboard-user-list-platform-admins.js",
+    "blessboard:test-users:seed": "node db/scripts/blessboard-test-users-seed.js",
+    "test:blessboard:test-users-seed": "node --test --test-concurrency=1 tests/blessboard-test-users-seed.test.js",
     "demo:v5:plan": "node db/scripts/demo-v5-dataset.js",
     "demo:v5:apply": "node db/scripts/demo-v5-dataset.js",
     "test:blessboard:demo-v5-dataset": "node --test --test-concurrency=1 tests/blessboard-demo-v5-dataset.test.js",
