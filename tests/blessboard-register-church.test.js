@@ -354,8 +354,15 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${freshCookie}`)
       .type("form")
-      .send(regBody({ email, [CSRF_FIELD]: freshCsrf }));
+      .send(
+        regBody({
+          email,
+          church_name: `Retry Church ${Date.now()}`,
+          [CSRF_FIELD]: freshCsrf,
+        })
+      );
     assert.equal(ok.status, 303);
+    assert.equal(ok.headers.location, "/register-church?submitted=1");
   });
 
   it("www.blessboard.org canonicalizes to blessboard.org before the form is issued", async () => {
@@ -404,12 +411,14 @@ describe("blessboard public church registration (BB-MT-001)", () => {
     const orgBefore = await repo.countOrganizationsCreatedSince(pool, new Date(0));
     const { csrf, cookie } = await getRegistrationPage(app);
     const email = `valid-submit-${Date.now()}@example.org`;
+    // Unique church name: risk review flags same name+city+country as similar_organization.
+    const churchName = `Valid Submit Church ${Date.now()}`;
     const res = await request(app)
       .post("/register-church")
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
       .type("form")
-      .send(regBody({ email, [CSRF_FIELD]: csrf }));
+      .send(regBody({ email, church_name: churchName, [CSRF_FIELD]: csrf }));
     assert.equal(res.status, 303);
     assert.equal(res.headers.location, "/register-church?submitted=1");
 
@@ -417,8 +426,9 @@ describe("blessboard public church registration (BB-MT-001)", () => {
     const mine = rows.filter((row) => row.contact_email === email);
     assert.equal(mine.length, 1);
     assert.equal(mine[0].status, "pending");
-    assert.equal(mine[0].church_name, validBody.church_name);
+    assert.equal(mine[0].church_name, churchName);
     assert.equal(mine[0].selected_plan, "growth");
+    assert.equal(mine[0].risk_decision, "allow");
 
     const orgAfter = await repo.countOrganizationsCreatedSince(pool, new Date(0));
     assert.equal(orgAfter, orgBefore);
@@ -437,13 +447,14 @@ describe("blessboard public church registration (BB-MT-001)", () => {
     requireDb();
     const app = makeApp();
     const email = `dup-submit-${Date.now()}@example.org`;
+    const churchName = `Dup Submit Church ${Date.now()}`;
     const firstPage = await getRegistrationPage(app);
     const first = await request(app)
       .post("/register-church")
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${firstPage.cookie}`)
       .type("form")
-      .send(regBody({ email, [CSRF_FIELD]: firstPage.csrf }));
+      .send(regBody({ email, church_name: churchName, [CSRF_FIELD]: firstPage.csrf }));
     assert.equal(first.status, 303);
 
     const secondPage = await getRegistrationPage(app);
@@ -452,7 +463,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${secondPage.cookie}`)
       .type("form")
-      .send(regBody({ email, [CSRF_FIELD]: secondPage.csrf }));
+      .send(regBody({ email, church_name: churchName, [CSRF_FIELD]: secondPage.csrf }));
     assert.equal(second.status, 303);
 
     const rows = await repo.listApplications(pool, { status: "pending", limit: 50 });

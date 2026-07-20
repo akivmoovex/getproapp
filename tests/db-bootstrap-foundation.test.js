@@ -14,7 +14,10 @@ const {
   createFoundationPool,
 } = require("./helpers/foundationDb");
 const { bootstrapFoundation, resolveBootstrapInputs } = require("../db/scripts/lib/foundationBootstrap");
-const { verifyFoundation } = require("../db/scripts/lib/foundationVerify");
+const {
+  verifyFoundation,
+  APPROVED_PRODUCT_TABLES,
+} = require("../db/scripts/lib/foundationVerify");
 const { sha256Hex, MIGRATIONS_ROOT } = require("../db/scripts/lib/migrator");
 const fs = require("fs");
 
@@ -214,8 +217,29 @@ describe("db bootstrap foundation", () => {
     );
     assert.deepEqual(
       blessboard.rows.map((r) => r.table_name),
-      ["announcement_attachments", "announcement_audiences", "announcement_reads", "announcements", "attendance_entries", "attendance_events", "branch_settings", "branches", "church_settings", "churches", "contact_channels", "event_registrations", "events", "form_submissions", "forms", "giving_categories", "giving_entries", "giving_methods", "leaders", "media_assets", "member_branch_memberships", "member_registrations", "member_request_status_history", "member_requests", "members", "ministries", "ministry_memberships", "organization_onboarding", "organization_support_contacts", "page_sections", "platform_church_registration_applications", "public_pages", "resources", "sermons", "user_roles", "users"]
+      APPROVED_PRODUCT_TABLES.blessboard.slice()
     );
+  });
+
+  it("verify rejects a deliberately unexpected blessboard product table", async () => {
+    requireDb();
+    await pool.query(
+      `CREATE TABLE blessboard.__unexpected_verify_probe (id integer PRIMARY KEY)`
+    );
+    try {
+      const report = await verifyFoundation(pool, { identityKey: IDENTITY_KEY });
+      assert.equal(report.ok, false);
+      assert.ok(
+        report.failures.includes(
+          "unexpected_product_table:blessboard.__unexpected_verify_probe"
+        ),
+        JSON.stringify(report.failures)
+      );
+    } finally {
+      await pool.query(`DROP TABLE IF EXISTS blessboard.__unexpected_verify_probe`);
+    }
+    const clean = await verifyFoundation(pool, { identityKey: IDENTITY_KEY });
+    assert.equal(clean.ok, true, JSON.stringify(clean.failures));
   });
 
   it("checksum drift is detected by verify", async () => {

@@ -141,6 +141,7 @@ function collectRegisteredPathPatterns() {
   const literalFiles = [
     "src/platform/http/platformAdminRoutes.js",
     "src/blessboard/http/apexMarketingRoutes.js",
+    "src/blessboard/http/inviteAcceptRoutes.js",
     "src/blessboard/http/tenantRegistrationRoutes.js",
     "src/blessboard/http/publicMediaRoutes.js",
     "src/blessboard/http/hqAdminRoutes.js",
@@ -429,6 +430,13 @@ describe("blessboard v5 route + link audit", () => {
     assert.ok(pathRegistered(patterns, "post", "/register-church"));
     assert.ok(patterns.has("GET /register-church"));
     assert.ok(patterns.has("POST /register-church"));
+  });
+
+  it("inventories GET and POST /invite/accept from inviteAcceptRoutes literals", () => {
+    assert.ok(pathRegistered(patterns, "get", "/invite/accept"));
+    assert.ok(pathRegistered(patterns, "post", "/invite/accept"));
+    assert.ok(patterns.has("GET /invite/accept"));
+    assert.ok(patterns.has("POST /invite/accept"));
   });
 
   it("primary navigation hrefs resolve to registered GET routes", () => {

@@ -26,6 +26,7 @@
 | `blessboard.churches` | 1:1 profile via `organization_id` |
 | `blessboard.branches` | Product-owned; `branch_type` includes **`hq`** (HQ is a branch row) |
 | `blessboard.users` / `user_roles` | V5 identity; `platform_admin` roles live here |
+| `blessboard.user_invitations` | Canonical V5 staff invite table (migration 032); hash-only tokens; password set on accept — included in foundation product-table allowlist |
 | `blessboard.public_pages` | Page publication truth (`draft\|published\|archived`) |
 | Plans | Product `blessboard`; Free plan key **`free`**; features in `platform.plan_features` |
 | Free `max_branches` | Live **2**; seed `003` already specifies **1** (seed not re-applied after first ledger entry) |

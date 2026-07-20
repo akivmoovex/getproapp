@@ -31,7 +31,10 @@ const PRODUCT_SCHEMAS = Object.freeze(["blessboard", "getpro", "ngo"]);
 
 /**
  * Approved base tables per product schema.
- * BlessBoard catalogue + auth tables; getpro/ngo must stay empty.
+ * BlessBoard catalogue + identity/auth tables; getpro/ngo must stay empty.
+ *
+ * `user_invitations` is canonical V5 auth/identity foundation (migration 032):
+ * hash-only staff invites, password set on accept — not a product CMS table.
  */
 const APPROVED_PRODUCT_TABLES = Object.freeze({
   blessboard: Object.freeze([
@@ -69,6 +72,7 @@ const APPROVED_PRODUCT_TABLES = Object.freeze({
     "public_pages",
     "resources",
     "sermons",
+    "user_invitations",
     "user_roles",
     "users",
   ]),
