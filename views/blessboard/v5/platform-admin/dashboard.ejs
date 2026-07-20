@@ -3,18 +3,42 @@
   var sample = directorySample || [];
   var orgTotal = typeof totalOrganizations !== 'undefined' ? Number(totalOrganizations) || 0 : 0;
   var withChurch = typeof organizationsWithChurch !== 'undefined' ? Number(organizationsWithChurch) || 0 : 0;
+  var recentFoundation = typeof recentFoundationRegistrations !== 'undefined' ? Number(recentFoundationRegistrations) || 0 : 0;
+  var activeTrials = typeof activeGrowthTrials !== 'undefined' ? Number(activeGrowthTrials) || 0 : 0;
+  var trialsEnding = typeof growthTrialsEndingSoon !== 'undefined' ? Number(growthTrialsEndingSoon) || 0 : 0;
+  var inGrace = typeof growthSubscriptionsInGrace !== 'undefined' ? Number(growthSubscriptionsInGrace) || 0 : 0;
+  var needsReview = typeof registrationsRequiringReview !== 'undefined' ? Number(registrationsRequiringReview) || 0 : 0;
+  var networkPending = typeof pendingNetworkSupportRequests !== 'undefined' ? Number(pendingNetworkSupportRequests) || 0 : 0;
+  var alerts = typeof opsAlerts !== 'undefined' && Array.isArray(opsAlerts) ? opsAlerts : [];
+  var alertsPage = typeof opsAlertsPage !== 'undefined' ? Number(opsAlertsPage) || 1 : 1;
+  var alertsLimit = typeof opsAlertsLimit !== 'undefined' ? Number(opsAlertsLimit) || 20 : 20;
+  var alertsTotal = typeof opsAlertsTotal !== 'undefined' ? Number(opsAlertsTotal) || 0 : 0;
+  var alertsTotalPages = typeof opsAlertsTotalPages !== 'undefined' ? Number(opsAlertsTotalPages) || 0 : 0;
   var greetingName = displayName ? String(displayName).split(/\s+/)[0] : '';
+  function fmtAlertWhen(d) {
+    if (!d) return '';
+    try {
+      return new Date(d).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    } catch (e) {
+      return '';
+    }
+  }
+  function severityLabel(s) {
+    if (s === 'critical') return 'Critical';
+    if (s === 'warn') return 'Attention';
+    return 'Info';
+  }
   var deployLabel = typeof deploymentCode !== 'undefined' && deploymentCode ? String(deploymentCode) : '';
   var desktopQuickActions = [
     { key: 'organizations', label: 'Organizations', href: '/admin/organizations', icon: 'corporate_fare' },
-    { key: 'plans', label: 'Plans & limits', href: '/admin/plans', icon: 'workspace_premium' },
-    { key: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'dns' },
-    { key: 'settings', label: 'Settings', href: '/admin/settings', icon: 'settings' }
+    { key: 'registrations', label: 'Registrations', href: '/admin/registration-applications', icon: 'app_registration' },
+    { key: 'subscriptions', label: 'Subscriptions', href: '/admin/subscriptions', icon: 'card_membership' },
+    { key: 'plans', label: 'Plans & limits', href: '/admin/plans', icon: 'workspace_premium' }
   ];
   var mobileQuickActions = [
     { key: 'organizations', label: 'Orgs', href: '/admin/organizations', icon: 'corporate_fare' },
-    { key: 'plans', label: 'Plans', href: '/admin/plans', icon: 'workspace_premium' },
-    { key: 'deployments', label: 'Deploy', href: '/admin/deployments', icon: 'dns' },
+    { key: 'registrations', label: 'Apps', href: '/admin/registration-applications', icon: 'app_registration' },
+    { key: 'subscriptions', label: 'Subs', href: '/admin/subscriptions', icon: 'card_membership' },
     { key: 'account', label: 'Account', href: '/admin/account', icon: 'person' }
   ];
   var summaryCards = [
@@ -43,48 +67,76 @@
       visibility: 'both'
     },
     {
-      key: 'tenants',
-      label: 'Branch tenants',
-      icon: 'hub',
-      href: '/admin/organizations',
-      tone: 'neutral',
-      available: false,
-      value: '—',
-      hint: 'Open an organization for live branches',
+      key: 'foundation-recent',
+      label: 'Foundation (7 days)',
+      icon: 'verified',
+      href: '/admin/registration-applications?selected_plan=foundation&linked=linked',
+      tone: 'ok',
+      available: true,
+      value: String(recentFoundation),
+      countAttr: 'recent-foundation-registrations',
+      hint: 'Recently provisioned Foundation applications',
       visibility: 'both'
     },
     {
-      key: 'plans',
-      label: 'Paid plans',
-      icon: 'payments',
-      href: '/admin/plans',
-      tone: 'neutral',
-      available: false,
-      value: '—',
-      hint: 'Catalogue only — no billing totals',
-      visibility: 'desktop'
+      key: 'growth-trials',
+      label: 'Active Growth trials',
+      icon: 'timelapse',
+      href: '/admin/subscriptions?status=trialing&plan=growth',
+      tone: 'accent',
+      available: true,
+      value: String(activeTrials),
+      countAttr: 'active-growth-trials',
+      hint: 'Live trialing Growth subscriptions',
+      visibility: 'both'
     },
     {
-      key: 'tickets',
-      label: 'Open tickets',
-      icon: 'contact_support',
-      href: '/admin/deployments',
+      key: 'trials-ending',
+      label: 'Trials ending soon',
+      icon: 'event_upcoming',
+      href: '/admin/subscriptions?status=trialing&plan=growth&ending_soon=true',
       tone: 'warn',
-      available: false,
-      value: '—',
-      hint: 'Support tickets are not tracked here',
-      visibility: 'desktop'
+      available: true,
+      value: String(trialsEnding),
+      countAttr: 'growth-trials-ending-soon',
+      hint: 'Trial ends_at within seven days',
+      visibility: 'both'
     },
     {
-      key: 'health',
-      label: 'System health',
-      icon: 'monitor_heart',
-      href: '/admin/deployments',
+      key: 'growth-grace',
+      label: 'Growth in grace',
+      icon: 'hourglass_top',
+      href: '/admin/subscriptions?status=past_due&plan=growth',
       tone: 'warn',
-      available: false,
-      value: '—',
-      hint: 'Health scores are not fabricated here',
-      visibility: 'mobile'
+      available: true,
+      value: String(inGrace),
+      countAttr: 'growth-in-grace',
+      hint: 'past_due Growth with open grace window',
+      visibility: 'both'
+    },
+    {
+      key: 'needs-review',
+      label: 'Needs review',
+      icon: 'fact_check',
+      href: '/admin/registration-applications?requires_review=true',
+      tone: 'warn',
+      available: true,
+      value: String(needsReview),
+      countAttr: 'registrations-requiring-review',
+      hint: 'Applications needing operator attention',
+      visibility: 'both'
+    },
+    {
+      key: 'network-support',
+      label: 'Network support queue',
+      icon: 'support_agent',
+      href: '/admin/registration-applications?selected_plan=network&support_requested=true',
+      tone: 'warn',
+      available: true,
+      value: String(networkPending),
+      countAttr: 'pending-network-support',
+      hint: 'Unlinked Network contact requests',
+      visibility: 'both'
     }
   ];
 %>
@@ -102,8 +154,8 @@
       <p class="bb-pa-dash__lede">
         Welcome<% if (greetingName) { %>, <%= greetingName %><% } %>.
         Apex command center for BlessBoard V5.
-        Only live provisioned organization counts are shown here —
-        subscription revenue, system health, domain counts, and usage metrics are not invented on this page.
+        Only live organization and registration-operations counts are shown here —
+        subscription revenue, system health scores, and invented ticket queues are not.
       </p>
       <p class="bb-pa-dash__role">
         Signed in as <span class="bb-pa-role" data-bb-pa-role="1"><%= roleLabel || 'Platform admin' %></span>
@@ -121,15 +173,65 @@
     class="bb-pa-dash__notices"
     aria-labelledby="bb-pa-dash-notices-heading"
     data-bb-dash-notices="1"
+    data-bb-pa-ops-alerts="1"
   >
-    <h2 id="bb-pa-dash-notices-heading" class="bb-pa-sr-only">Deployment notices</h2>
-    <p class="bb-pa-dash__notice" role="status" data-bb-dash-empty="notices">
-      No deployment alerts on this dashboard.
-      <% if (deployLabel) { %>
-      Current deployment: <strong><%= deployLabel %></strong>.
+    <div class="bb-pa-dash-panel__head">
+      <h2 id="bb-pa-dash-notices-heading" class="bb-pa-dash-panel__title">Registration operations alerts</h2>
+      <% if (alertsTotal > 0) { %>
+      <span class="bb-pa-chip" data-bb-pa-ops-alerts-total="<%= alertsTotal %>"><%= alertsTotal %> open</span>
       <% } %>
-      Open Deployments for the live registry — health scores and ticket queues are not fabricated here.
+    </div>
+    <p class="bb-pa-hint">
+      Derived from live registration, subscription, and audit records — not an email or ticket inbox.
+      Sensitive fields are omitted. Open an alert to continue in the existing admin screens.
     </p>
+    <% if (!alerts.length) { %>
+    <div class="bb-pa-dash-empty" role="status" data-bb-dash-empty="notices" data-bb-pa-ops-alerts-empty="1">
+      <span class="material-symbols-outlined" aria-hidden="true">notifications_none</span>
+      <p>
+        No registration operations alerts right now.
+        <% if (deployLabel) { %>
+        Current deployment: <strong><%= deployLabel %></strong>.
+        <% } %>
+      </p>
+    </div>
+    <% } else { %>
+    <ul class="bb-pa-ops-alerts" data-bb-pa-ops-alerts-list="1">
+      <% alerts.forEach(function (alert) { %>
+      <li
+        class="bb-pa-ops-alert bb-pa-ops-alert--<%= alert.severity || 'info' %>"
+        data-bb-pa-ops-alert="1"
+        data-bb-pa-ops-alert-key="<%= alert.alertKey %>"
+        data-bb-pa-ops-alert-type="<%= alert.eventType %>"
+      >
+        <a class="bb-pa-ops-alert__link" href="<%= alert.href %>">
+          <span class="bb-pa-ops-alert__meta">
+            <span class="bb-pa-chip"><%= severityLabel(alert.severity) %></span>
+            <% if (alert.occurredAt) { %>
+            <time datetime="<%= new Date(alert.occurredAt).toISOString() %>"><%= fmtAlertWhen(alert.occurredAt) %></time>
+            <% } %>
+          </span>
+          <strong class="bb-pa-ops-alert__title"><%= alert.title %></strong>
+          <span class="bb-pa-ops-alert__summary"><%= alert.summary %></span>
+          <% if (alert.entityLabel) { %>
+          <span class="bb-pa-ops-alert__entity"><%= alert.entityLabel %></span>
+          <% } %>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+    <% if (alertsTotalPages > 1) { %>
+    <nav class="bb-pa-ops-alerts__pager" aria-label="Operations alerts pages" data-bb-pa-ops-alerts-pager="1">
+      <% if (alertsPage > 1) { %>
+      <a class="bb-pa-link" href="/admin?alerts_page=<%= alertsPage - 1 %>&alerts_limit=<%= alertsLimit %>">Previous</a>
+      <% } %>
+      <span>Page <%= alertsPage %> of <%= alertsTotalPages %></span>
+      <% if (alertsPage < alertsTotalPages) { %>
+      <a class="bb-pa-link" href="/admin?alerts_page=<%= alertsPage + 1 %>&alerts_limit=<%= alertsLimit %>">Next</a>
+      <% } %>
+    </nav>
+    <% } %>
+    <% } %>
   </section>
 
   <section
@@ -182,6 +284,133 @@
       <% } %>
       <% }) %>
     </div>
+  </section>
+
+  <%
+    var analytics = typeof registrationAnalytics !== 'undefined' ? registrationAnalytics : null;
+    var analyticsRanges = typeof analyticsAllowedRanges !== 'undefined' ? analyticsAllowedRanges : [7, 30, 90];
+    var analyticsDays = analytics && analytics.window ? analytics.window.rangeDays : (typeof analyticsDefaultRange !== 'undefined' ? analyticsDefaultRange : 7);
+    var m = analytics && analytics.metrics ? analytics.metrics : null;
+    function fmtWindowDay(iso) {
+      if (!iso) return '';
+      try { return new Date(iso).toISOString().slice(0, 10); } catch (e) { return ''; }
+    }
+  %>
+  <section
+    class="bb-pa-dash-panel"
+    aria-labelledby="bb-pa-dash-analytics-heading"
+    data-bb-pa-registration-analytics="1"
+    data-bb-analytics-timezone="UTC"
+  >
+    <div class="bb-pa-dash-panel__head">
+      <h2 id="bb-pa-dash-analytics-heading" class="bb-pa-dash-panel__title">Registration &amp; onboarding analytics</h2>
+      <form class="bb-pa-inline-form" method="get" action="/admin" data-bb-pa-analytics-range-form="1">
+        <label for="analytics_range">Window</label>
+        <select id="analytics_range" name="analytics_range" data-bb-pa-analytics-range="1">
+          <% analyticsRanges.forEach(function (d) { %>
+          <option value="<%= d %>"<%= Number(analyticsDays) === Number(d) ? ' selected' : '' %>><%= d %> days</option>
+          <% }) %>
+        </select>
+        <button class="bb-pa-btn bb-pa-btn--secondary" type="submit">Apply</button>
+      </form>
+    </div>
+    <p class="bb-pa-hint">
+      Aggregate operational counts only (UTC). No contact names, emails, phones, notes, cookies, or third-party trackers.
+      <% if (analytics && analytics.window) { %>
+      Window: <%= fmtWindowDay(analytics.window.rangeStart) %> → <%= fmtWindowDay(analytics.window.rangeEndExclusive) %> (exclusive end) · <%= analytics.window.timezone %>.
+      <% } %>
+    </p>
+    <% if (!analytics || !m) { %>
+    <div class="bb-pa-dash-empty" role="status" data-bb-pa-analytics-empty="unavailable">
+      <p>Analytics are temporarily unavailable.</p>
+    </div>
+    <% } else if (analytics.empty) { %>
+    <div class="bb-pa-dash-empty" role="status" data-bb-pa-analytics-empty="1">
+      <span class="material-symbols-outlined" aria-hidden="true">insights</span>
+      <p>No registration or onboarding activity in this window yet.</p>
+    </div>
+    <% } else { %>
+    <dl class="bb-pa-dl bb-pa-analytics-grid" data-bb-pa-analytics-metrics="1">
+      <div data-bb-pa-metric="submissions_by_plan">
+        <dt><%= m.submissionsByPlan.label %></dt>
+        <dd>
+          <% m.submissionsByPlan.values.forEach(function (row, idx) { %>
+          <span data-bb-pa-plan="<%= row.plan %>" data-bb-count="analytics-submissions-<%= row.plan %>"><%= row.planLabel %>: <%= row.count %></span><% if (idx < m.submissionsByPlan.values.length - 1) { %> · <% } %>
+          <% }) %>
+          <div class="bb-pa-muted">Total: <span data-bb-count="analytics-submissions-total"><%= m.submissionsByPlan.total %></span></div>
+        </dd>
+      </div>
+      <div data-bb-pa-metric="registration_completion_rate">
+        <dt><%= m.registrationCompletionRate.label %></dt>
+        <dd>
+          <% if (m.registrationCompletionRate.valuePercent == null) { %>
+          <span data-bb-count="analytics-completion-rate">—</span>
+          <div class="bb-pa-muted">No Foundation/Growth submissions in window</div>
+          <% } else { %>
+          <span data-bb-count="analytics-completion-rate"><%= m.registrationCompletionRate.valuePercent %>%</span>
+          <div class="bb-pa-muted"><%= m.registrationCompletionRate.numerator %> / <%= m.registrationCompletionRate.denominator %> provisioned</div>
+          <% } %>
+        </dd>
+      </div>
+      <div data-bb-pa-metric="auto_provision_outcomes">
+        <dt><%= m.autoProvisionOutcomes.label %></dt>
+        <dd>
+          Success: <span data-bb-count="analytics-provision-success"><%= m.autoProvisionOutcomes.success %></span>
+          · Failed: <span data-bb-count="analytics-provision-failed"><%= m.autoProvisionOutcomes.failed %></span>
+        </dd>
+      </div>
+      <div data-bb-pa-metric="review_required">
+        <dt><%= m.reviewRequired.label %></dt>
+        <dd><span data-bb-count="analytics-review-required"><%= m.reviewRequired.value %></span></dd>
+      </div>
+      <div data-bb-pa-metric="network_contact_requests">
+        <dt><%= m.networkContactRequests.label %></dt>
+        <dd><span data-bb-count="analytics-network-contact"><%= m.networkContactRequests.value %></span></dd>
+      </div>
+      <div data-bb-pa-metric="growth_trial_starts">
+        <dt><%= m.growthTrialStarts.label %></dt>
+        <dd><span data-bb-count="analytics-growth-trial-starts"><%= m.growthTrialStarts.value %></span></dd>
+      </div>
+      <div data-bb-pa-metric="growth_trial_conversions" data-bb-pa-metric-available="1">
+        <dt><%= m.growthTrialConversions.label %></dt>
+        <dd>
+          <span data-bb-count="analytics-growth-trial-conversions"><%= m.growthTrialConversions.value %></span>
+          <div class="bb-pa-muted"><%= m.growthTrialConversions.note %></div>
+        </dd>
+      </div>
+      <div data-bb-pa-metric="provider_billing_conversions" data-bb-pa-metric-available="0">
+        <dt><%= m.providerBillingConversions.label %></dt>
+        <dd>
+          <span class="bb-pa-chip bb-pa-chip--muted">Unavailable</span>
+          <div class="bb-pa-muted"><%= m.providerBillingConversions.unavailableReason %></div>
+        </dd>
+      </div>
+      <div data-bb-pa-metric="growth_downgrades">
+        <dt><%= m.growthDowngrades.label %></dt>
+        <dd><span data-bb-count="analytics-growth-downgrades"><%= m.growthDowngrades.value %></span></dd>
+      </div>
+      <div data-bb-pa-metric="onboarding_started">
+        <dt><%= m.onboardingStarted.label %></dt>
+        <dd><span data-bb-count="analytics-onboarding-started"><%= m.onboardingStarted.value %></span></dd>
+      </div>
+      <div data-bb-pa-metric="onboarding_completed">
+        <dt><%= m.onboardingCompleted.label %></dt>
+        <dd><span data-bb-count="analytics-onboarding-completed"><%= m.onboardingCompleted.value %></span></dd>
+      </div>
+      <div data-bb-pa-metric="median_registration_to_onboarding_complete">
+        <dt><%= m.medianRegistrationToOnboardingComplete.label %></dt>
+        <dd>
+          <span data-bb-count="analytics-median-reg-onboard"><%= m.medianRegistrationToOnboardingComplete.durationLabel || '—' %></span>
+        </dd>
+      </div>
+      <div data-bb-pa-metric="median_network_request_to_first_contact">
+        <dt><%= m.medianNetworkRequestToFirstContact.label %></dt>
+        <dd>
+          <span data-bb-count="analytics-median-network-contact"><%= m.medianNetworkRequestToFirstContact.durationLabel || '—' %></span>
+        </dd>
+      </div>
+    </dl>
+    <% } %>
   </section>
 
   <div class="bb-pa-dash__layout">

@@ -77,6 +77,7 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
   "request_id",
   "actor_type",
   "source",
+  "reason_codes",
 ]);
 
 const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;
@@ -147,7 +148,7 @@ function sanitizeAuditMetadata(raw) {
       metadata[k] = value;
     } else if (typeof value === "boolean") {
       metadata[k] = value;
-    } else if (Array.isArray(value) && k === "field_keys") {
+    } else if (Array.isArray(value) && (k === "field_keys" || k === "reason_codes")) {
       metadata[k] = value
         .filter((x) => typeof x === "string")
         .map((x) => String(x).slice(0, 40))

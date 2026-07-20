@@ -1,7 +1,7 @@
 <%#
   Apex account — STITCH_MISSING; Sacred Modernity shell + auth-card chrome.
   Locals: displayName, rolesLabel, roleBadges[], hostKind, churchDisplayName,
-          branchDisplayName, csrfToken (+ apex-shell locals)
+          branchDisplayName, csrfToken, showPlatformAdminLink (+ apex-shell locals)
   No UUIDs, session tokens, billing, editing, or password change.
 %>
 <%- include('../partials/apex-shell-start') %>
@@ -54,6 +54,11 @@
     <p class="bb-apex-account__note">
       Tenant administration requires signing in on the church hostname.
     </p>
+    <% if (typeof showPlatformAdminLink !== 'undefined' && showPlatformAdminLink) { %>
+    <p class="bb-apex-account__note">
+      <a href="/admin" data-bb-platform-admin-link="1">Open Platform Admin</a>
+    </p>
+    <% } %>
     <% } else { %>
     <p class="bb-apex-account__note">
       <a href="/hq">Church HQ</a> · <a href="/branch-admin">Branch admin</a>

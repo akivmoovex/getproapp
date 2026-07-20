@@ -1,0 +1,137 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var cap = typeof capacity !== 'undefined' && capacity ? capacity : {};
+  var formVals = typeof form !== 'undefined' && form ? form : {};
+  var errors = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
+  function fval(key) {
+    var v = formVals[key];
+    return v == null ? '' : String(v);
+  }
+  function ferr(key) {
+    return errors[key] ? String(errors[key]) : '';
+  }
+  var limitLabel = cap.limit == null ? 'Unlimited' : String(cap.limit);
+  var currentLabel = cap.current == null ? '—' : String(cap.current);
+%>
+
+<section class="bb-hq-branch-new" data-bb-hq-branch-new="1" aria-label="Add branch">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/branches">Branches</a>
+      <span aria-hidden="true">›</span>
+      <span>Add branch</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Add a branch</h1>
+    <p class="bb-hq-lede">
+      Create an additional campus under this church. Contact details are stored on branch settings.
+      Custom domains and billing changes are not created here.
+    </p>
+  </header>
+
+  <div class="bb-hq-panel" data-bb-branch-capacity="1">
+    <h2 class="bb-hq-panel__title">Plan capacity</h2>
+    <dl class="bb-hq-settings-readonly">
+      <div><dt>Plan</dt><dd><%= cap.planDisplayName || cap.planKey || '—' %></dd></div>
+      <div><dt>Active branches</dt><dd data-bb-capacity-current="<%= currentLabel %>"><%= currentLabel %> / <%= limitLabel %></dd></div>
+    </dl>
+    <% if (cap.limitExceeded) { %>
+    <p class="bb-hq-error" role="alert" data-bb-capacity-blocked="1">
+      Your plan’s active branch limit has been reached.
+      <% if (cap.pricingUrl) { %>
+      <a class="bb-hq-link" href="<%= cap.pricingUrl %>">View plans &amp; upgrade options</a>
+      <% } %>
+    </p>
+    <% } %>
+  </div>
+
+  <% if (error) { %>
+  <p class="bb-hq-error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (cap.canCreate) { %>
+  <form method="post" action="/hq/branches" class="bb-hq-form bb-hq-panel" data-bb-hq-branch-create-form="1">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <h2 class="bb-hq-panel__title">Branch details</h2>
+
+    <div class="bb-hq-field<%= ferr('displayName') ? ' is-invalid' : '' %>">
+      <label for="displayName">Branch display name</label>
+      <input id="displayName" name="displayName" type="text" required maxlength="200" value="<%= fval('displayName') %>" autocomplete="organization" />
+      <% if (ferr('displayName')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('displayName') %></p><% } %>
+    </div>
+
+    <div class="bb-hq-field<%= ferr('branchKey') || ferr('reserved_key') ? ' is-invalid' : '' %>">
+      <label for="branchKey">Branch key</label>
+      <input id="branchKey" name="branchKey" type="text" required maxlength="64" pattern="[a-z][a-z0-9_-]{0,63}" value="<%= fval('branchKey') %>" autocomplete="off" spellcheck="false" />
+      <p class="bb-hq-hint">Lowercase letters, numbers, hyphens, or underscores. Cannot be changed later.</p>
+      <% if (ferr('branchKey')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('branchKey') %></p><% } %>
+      <% if (ferr('reserved_key')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('reserved_key') %></p><% } %>
+    </div>
+
+    <div class="bb-hq-field<%= ferr('email') ? ' is-invalid' : '' %>">
+      <label for="email">Contact email</label>
+      <input id="email" name="email" type="email" maxlength="254" value="<%= fval('email') %>" autocomplete="email" />
+      <% if (ferr('email')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('email') %></p><% } %>
+    </div>
+
+    <div class="bb-hq-field<%= ferr('phone') ? ' is-invalid' : '' %>">
+      <label for="phone">Contact phone</label>
+      <input id="phone" name="phone" type="tel" maxlength="32" value="<%= fval('phone') %>" placeholder="+260 97…" autocomplete="tel" />
+      <% if (ferr('phone')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('phone') %></p><% } %>
+    </div>
+
+    <div class="bb-hq-field<%= ferr('timezone') ? ' is-invalid' : '' %>">
+      <label for="timezone">Timezone</label>
+      <input id="timezone" name="timezone" type="text" maxlength="64" value="<%= fval('timezone') %>" placeholder="Africa/Lusaka" />
+      <p class="bb-hq-hint">Optional IANA timezone override for this campus.</p>
+      <% if (ferr('timezone')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('timezone') %></p><% } %>
+    </div>
+
+    <div class="bb-hq-field<%= ferr('country_code') ? ' is-invalid' : '' %>">
+      <label for="countryCode">Country</label>
+      <input id="countryCode" name="countryCode" type="text" maxlength="2" value="<%= fval('countryCode') %>" placeholder="ZM" autocomplete="country" />
+      <% if (ferr('country_code')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('country_code') %></p><% } %>
+    </div>
+
+    <h2 class="bb-hq-panel__title">Address</h2>
+    <div class="bb-hq-field<%= ferr('address_line_1') ? ' is-invalid' : '' %>">
+      <label for="addressLine1">Address line 1</label>
+      <input id="addressLine1" name="addressLine1" type="text" maxlength="200" value="<%= fval('addressLine1') %>" autocomplete="address-line1" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="addressLine2">Address line 2</label>
+      <input id="addressLine2" name="addressLine2" type="text" maxlength="200" value="<%= fval('addressLine2') %>" autocomplete="address-line2" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="city">City</label>
+      <input id="city" name="city" type="text" maxlength="120" value="<%= fval('city') %>" autocomplete="address-level2" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="provinceState">Province / state</label>
+      <input id="provinceState" name="provinceState" type="text" maxlength="120" value="<%= fval('provinceState') %>" autocomplete="address-level1" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="postalCode">Postal code</label>
+      <input id="postalCode" name="postalCode" type="text" maxlength="32" value="<%= fval('postalCode') %>" autocomplete="postal-code" />
+    </div>
+
+    <div class="bb-hq-form__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create branch</button>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/branches">Cancel</a>
+    </div>
+  </form>
+  <% } else { %>
+  <div class="bb-hq-panel" data-bb-branch-create-blocked="1">
+    <p class="bb-hq-lede">
+      Existing branches remain available to manage. Adding a campus requires available plan capacity.
+      <% if (cap.pricingUrl) { %>
+      <a class="bb-hq-link" href="<%= cap.pricingUrl %>">Compare plans</a>
+      <% } %>
+    </p>
+    <p><a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/branches">Back to branches</a></p>
+  </div>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

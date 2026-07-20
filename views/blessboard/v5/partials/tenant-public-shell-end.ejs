@@ -84,7 +84,7 @@
             </li>
             <% } %>
             <% if (!footerEmail && !footerPhone) { %>
-            <li><a href="/contact">Contact details</a></li>
+            <li><a href="<%= typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact' %>">Contact details</a></li>
             <% } %>
           </ul>
         </div>
@@ -102,7 +102,7 @@
       <div class="bb-tp-footer__bar">
         <p class="bb-tp-footer__copy">&copy; <%= publicName %>. <%- include('./powered-by-getpro') %></p>
         <p class="bb-tp-footer__bar-links">
-          <a href="/contact">Contact Us</a>
+          <a href="<%= typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact' %>">Contact Us</a>
         </p>
       </div>
     </div>

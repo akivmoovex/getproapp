@@ -1,0 +1,99 @@
+<%- include('../partials/hq-shell-start') %>
+
+<section class="bb-hq-settings" data-bb-hq-website="1" aria-label="Website publish">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">HQ</a>
+      <span aria-hidden="true">›</span>
+      <span>Website</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Website preview &amp; publish</h1>
+    <p class="bb-hq-lede">
+      Preview draft pages privately, then publish when readiness checks pass.
+      Optional content (leadership, sermons, events, giving) is not required.
+    </p>
+  </header>
+
+  <% if (error) { %>
+  <p class="bb-hq-error" role="alert"><%= error %></p>
+  <% } %>
+  <% if (notice === 'published') { %>
+  <p class="bb-hq-ok" role="status">Website published.</p>
+  <% } else if (notice === 'unpublished') { %>
+  <p class="bb-hq-ok" role="status">Website unpublished. Content is preserved.</p>
+  <% } else if (notice === 'preview_ack') { %>
+  <p class="bb-hq-ok" role="status">Preview acknowledged.</p>
+  <% } %>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Status</h2>
+    <p>Website status: <strong><%= readiness.websiteStatus || 'draft' %></strong></p>
+    <% if (readiness.planKey) { %>
+    <p>Plan: <strong><%= readiness.planKey %></strong></p>
+    <% } %>
+    <% if (publicPath) { %>
+    <p>Public path: <code><%= publicPath %></code></p>
+    <% } %>
+    <p>
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= previewPath %>">Open authenticated preview</a>
+      <% if (publicPath) { %>
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= publicPath %>" rel="noopener">View public path</a>
+      <% } %>
+    </p>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Publish readiness</h2>
+    <% if (readiness.ready) { %>
+    <p class="bb-hq-ok" role="status">Ready to publish.</p>
+    <% } else { %>
+    <ul>
+      <% (readiness.gaps || []).forEach(function (gap) { %>
+      <li><%= gapLabels[gap] || gap %></li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Actions</h2>
+
+    <form method="post" action="/hq/website/preview-ack" class="bb-hq-form" style="margin-bottom:1.25rem;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Acknowledge preview</button>
+    </form>
+
+    <form method="post" action="/hq/website/publish" class="bb-hq-form" style="margin-bottom:1.25rem;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="defer_service_times" value="1" <%= deferServiceTimes ? 'checked' : '' %> />
+          Publish without service times (explicit decision)
+        </label>
+      </div>
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="confirm_publish" value="1" required />
+          I confirm publishing this church website
+        </label>
+      </div>
+      <div class="bb-hq-form__actions">
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Publish website</button>
+      </div>
+    </form>
+
+    <form method="post" action="/hq/website/unpublish" class="bb-hq-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Unpublish website</button>
+    </form>
+  </div>
+
+  <p class="bb-hq-lede">
+    Per-page content editing remains under
+    <a href="/hq/content">Content admin</a>.
+    Contact details live in
+    <a href="/hq/settings">Church settings</a>.
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

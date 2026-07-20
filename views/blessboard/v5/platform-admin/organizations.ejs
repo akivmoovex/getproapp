@@ -20,15 +20,38 @@
     if (key === 'suspended') return 'Suspended';
     if (key === 'pending') return 'Pending';
     if (key === 'archived') return 'Archived';
+    if (key === 'trialing') return 'Trialing';
+    if (key === 'past_due') return 'Past due';
+    if (key === 'grace') return 'Grace';
     return String(s || '—').replace(/_/g, ' ');
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
-    if (key === 'active' || key === 'published' || key === 'completed') return 'bb-pa-chip--ok';
+    if (key === 'active' || key === 'published' || key === 'completed' || key === 'trialing') return 'bb-pa-chip--ok';
     if (key === 'suspended' || key === 'needs_help') return 'bb-pa-chip--danger';
-    if (key === 'pending' || key === 'in_progress' || key === 'partially_published' || key === 'new') return 'bb-pa-chip--warn';
+    if (key === 'pending' || key === 'in_progress' || key === 'partially_published' || key === 'new' || key === 'past_due' || key === 'grace') return 'bb-pa-chip--warn';
     if (key === 'inactive' || key === 'archived' || key === 'unpublished' || key === 'not_started') return 'bb-pa-chip--muted';
     return 'bb-pa-chip--muted';
+  }
+  function formatTs(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toISOString().slice(0, 10);
+    } catch (e) {
+      return '—';
+    }
+  }
+  function subStatusLabel(org) {
+    if (org.subscriptionStatusLabel) return org.subscriptionStatusLabel;
+    return statusLabel(org.subscriptionStatus);
+  }
+  function timingEnd(org) {
+    if (org.subscriptionTimingKind === 'grace' || org.subscriptionTimingKind === 'trial') {
+      return org.subscriptionEndsAt;
+    }
+    return org.subscriptionEndsAt;
   }
   function statusTone(s) {
     var key = String(s || '').toLowerCase();
@@ -146,7 +169,9 @@
       <select id="plan" name="plan" data-bb-pa-filter="plan">
         <option value="">Any</option>
         <% (allowedPlans || ['free']).forEach(function (p) { %>
-        <option value="<%= p %>" <%= f.plan === p ? 'selected' : '' %>><%= p %></option>
+        <option value="<%= p %>" <%= f.plan === p ? 'selected' : '' %>>
+          <%= p === 'network' ? 'Network' : (p === 'free' ? 'Foundation' : (p === 'growth' ? 'Growth' : p)) %>
+        </option>
         <% }) %>
       </select>
     </div>
@@ -202,18 +227,18 @@
       <thead>
         <tr>
           <th scope="col">Organization</th>
-          <th scope="col">Status</th>
-          <th scope="col">Enrolment</th>
+          <th scope="col">First branch</th>
           <th scope="col">Plan</th>
+          <th scope="col">Subscription</th>
+          <th scope="col">Trial / grace end</th>
           <th scope="col">Onboarding</th>
-          <th scope="col">Follow-up</th>
-          <th scope="col">Publication</th>
-          <th scope="col">Branches</th>
+          <th scope="col">Registered</th>
+          <th scope="col">Registration</th>
         </tr>
       </thead>
       <tbody>
         <% rows.forEach(function (org) { %>
-        <tr data-bb-org-key="<%= org.organizationKey %>">
+        <tr data-bb-org-key="<%= org.organizationKey %>" data-bb-org-plan="<%= org.planKey || '' %>" data-bb-org-sub-status="<%= org.subscriptionStatus || '' %>">
           <td>
             <a class="bb-pa-orgs__name-link" href="/admin/organizations/<%= org.organizationKey %>">
               <strong><%= org.displayName %></strong>
@@ -223,31 +248,37 @@
             <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="1">Support requested</span>
             <% } %>
           </td>
+          <td data-bb-first-branch="1"><%= org.firstBranchName || '—' %></td>
           <td>
-            <span class="bb-pa-chip <%= statusChip(org.organizationStatus) %>"><%= statusLabel(org.organizationStatus) %></span>
+            <span data-bb-plan-label="1"><%= org.planLabel || '—' %></span>
+            <% if (org.planKey) { %><div><code class="bb-pa-key"><%= org.planKey %></code></div><% } %>
           </td>
           <td>
-            <% if (org.enrolmentStatus) { %>
-            <span class="bb-pa-chip <%= statusChip(org.enrolmentStatus) %>"><%= statusLabel(org.enrolmentStatus) %></span>
+            <% if (org.subscriptionStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.subscriptionStatusLabel === 'Grace' ? 'grace' : org.subscriptionStatus) %>" data-bb-sub-status="<%= org.subscriptionStatus %>"><%= subStatusLabel(org) %></span>
             <% } else { %>—<% } %>
           </td>
-          <td><%= org.planKey || '—' %></td>
+          <td data-bb-timing-end="1">
+            <% if (org.subscriptionTimingLabel && timingEnd(org)) { %>
+            <span class="bb-pa-muted"><%= org.subscriptionTimingLabel %></span>
+            <div><time datetime="<%= timingEnd(org) %>"><%= formatTs(timingEnd(org)) %></time></div>
+            <% } else { %>—<% } %>
+          </td>
           <td>
             <% if (org.onboardingStatus) { %>
             <span class="bb-pa-chip <%= statusChip(org.onboardingStatus) %>"><%= statusLabel(org.onboardingStatus) %></span>
             <% } else { %>—<% } %>
           </td>
           <td>
-            <% if (org.followUpStatus) { %>
-            <span class="bb-pa-chip <%= statusChip(org.followUpStatus) %>"><%= statusLabel(org.followUpStatus) %></span>
+            <% if (org.organizationCreatedAt) { %>
+            <time datetime="<%= org.organizationCreatedAt %>" data-bb-org-registered="1"><%= formatTs(org.organizationCreatedAt) %></time>
             <% } else { %>—<% } %>
           </td>
           <td>
-            <% if (org.publicationStatus) { %>
-            <span class="bb-pa-chip <%= statusChip(org.publicationStatus) %>" data-bb-pa-publication="<%= org.publicationStatus %>"><%= statusLabel(org.publicationStatus) %></span>
+            <% if (org.registrationApplicationId) { %>
+            <a class="bb-pa-link" href="/admin/registration-applications/<%= org.registrationApplicationId %>" data-bb-linked-registration="1">View application</a>
             <% } else { %>—<% } %>
           </td>
-          <td data-bb-count="active-branches"><%= org.activeBranchCount %></td>
         </tr>
         <% }) %>
       </tbody>
@@ -271,13 +302,16 @@
           </span>
           <code class="bb-pa-key"><%= org.organizationKey %></code>
           <span class="bb-pa-orgs-card__meta">
-            <span>Branches · <strong data-bb-count="active-branches"><%= org.activeBranchCount %></strong></span>
-            <% if (org.planKey) { %><span>Plan · <%= org.planKey %></span><% } %>
+            <% if (org.firstBranchName) { %><span>Branch · <%= org.firstBranchName %></span><% } %>
+            <% if (org.planLabel || org.planKey) { %><span>Plan · <%= org.planLabel || org.planKey %></span><% } %>
+            <% if (org.subscriptionStatus) { %>
+            <span class="bb-pa-chip <%= statusChip(org.subscriptionStatusLabel === 'Grace' ? 'grace' : org.subscriptionStatus) %>"><%= subStatusLabel(org) %></span>
+            <% } %>
             <% if (org.onboardingStatus) { %>
             <span class="bb-pa-chip <%= statusChip(org.onboardingStatus) %>"><%= statusLabel(org.onboardingStatus) %></span>
             <% } %>
-            <% if (org.publicationStatus) { %>
-            <span class="bb-pa-chip <%= statusChip(org.publicationStatus) %>"><%= statusLabel(org.publicationStatus) %></span>
+            <% if (org.registrationApplicationId) { %>
+            <span>Linked registration</span>
             <% } %>
           </span>
         </span>

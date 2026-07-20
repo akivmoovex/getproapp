@@ -23,6 +23,7 @@ const { safeExternalUrl, plainMetaText } = require("./tenantPublicSafe");
 
 const KIND = Object.freeze({
   OK: "ok",
+  SETUP: "setup",
   UNAVAILABLE: "unavailable",
   LOOKUP_ERROR: "lookup_error",
 });
@@ -110,13 +111,13 @@ function mapMinistry(row) {
   };
 }
 
-function mapEvent(row) {
+function mapEvent(row, fallbackTimezone) {
   return {
     title: row.title,
     summary: row.summary,
     startsAt: row.startsAt,
     endsAt: row.endsAt,
-    timezone: row.timezone,
+    timezone: row.timezone || fallbackTimezone || null,
     location: row.location,
     registrationUrl: safeExternalUrl(row.registrationUrl),
     imageUrl: safeExternalUrl(row.imageUrl),
@@ -375,7 +376,33 @@ async function loadTenantPublicPageModel(db, input) {
     return { kind: KIND.UNAVAILABLE, reason: "website_suspended" };
   }
 
+  // Site-level draft/unpublished: do not expose CMS content on public surfaces.
+  if (websiteStatus !== "published") {
+    return {
+      kind: KIND.SETUP,
+      reason: "website_unpublished",
+      pageKey,
+      publicName,
+      websiteStatus,
+      organizationKey: tenant.organization ? tenant.organization.key : null,
+      seo: buildTenantPublicSeo({
+        hostname,
+        pageKey,
+        publicName,
+        pageTitle: "Website coming soon",
+        description: `${publicName} website is being prepared.`,
+        dataEnvironment: tenant.church.dataEnvironment || null,
+        websiteStatus: "draft",
+        pathPrefix: input.pathPrefix || "",
+      }),
+    };
+  }
+
   const publicContact = buildPublicContact(settings, branchSettings);
+  const canonicalTimezone =
+    (settings && settings.defaultTimezone) ||
+    (branchSettings && branchSettings.timezone) ||
+    null;
 
   const pageResult = await resolvePublishedPage(db, {
     churchId,
@@ -403,7 +430,9 @@ async function loadTenantPublicPageModel(db, input) {
     entitiesEmptyMessage = "Ministries will appear here when published.";
   } else if (pageKey === "events") {
     const list = await resolvePublishedList(db, listPublishedEvents, churchId, primaryBranchId);
-    entities = preparePublicEvents((list.items || []).map(mapEvent));
+    entities = preparePublicEvents(
+      (list.items || []).map((row) => mapEvent(row, canonicalTimezone))
+    );
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Upcoming events will appear here when published.";
   } else if (pageKey === "sermons") {
@@ -439,6 +468,7 @@ async function loadTenantPublicPageModel(db, input) {
   const primaryEmail = settings && settings.primaryEmail ? String(settings.primaryEmail) : "";
   const primaryPhone = settings && settings.primaryPhone ? String(settings.primaryPhone) : "";
   const footerTagline = firstSectionDescription(sections);
+  const pathPrefix = String(input.pathPrefix || "").replace(/\/$/, "");
 
   const seo = buildTenantPublicSeo({
     hostname,
@@ -448,6 +478,7 @@ async function loadTenantPublicPageModel(db, input) {
     description: firstSectionDescription(sections),
     dataEnvironment,
     websiteStatus,
+    pathPrefix,
   });
 
   const hasPage = Boolean(pageResult.page);
@@ -465,10 +496,24 @@ async function loadTenantPublicPageModel(db, input) {
     showEmptyState = !hasSections;
   }
 
+  const navItems = pathPrefix
+    ? NAV_ITEMS.map((item) =>
+        Object.freeze({
+          key: item.key,
+          href: item.href === "/" ? pathPrefix || "/" : `${pathPrefix}${item.href}`,
+          label: item.label,
+        })
+      )
+    : NAV_ITEMS;
+
   return {
     kind: KIND.OK,
     pageKey,
-    path: PAGE_KEY_TO_PATH[pageKey] || "/",
+    path: pathPrefix
+      ? pageKey === "home"
+        ? pathPrefix || "/"
+        : `${pathPrefix}${PAGE_KEY_TO_PATH[pageKey] || ""}`
+      : PAGE_KEY_TO_PATH[pageKey] || "/",
     publicName,
     pageTitle,
     websiteStatus,
@@ -478,12 +523,21 @@ async function loadTenantPublicPageModel(db, input) {
     primaryPhone,
     footerTagline,
     publicContact,
+    canonicalTimezone,
     primaryBranchDisplayName: tenant.primaryBranch.displayName,
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
     loginHref: "/login",
     apexHref: "https://blessboard.org/",
     cssHref: "/blessboard/v5/tenant-public.css?v=27",
-    navItems: NAV_ITEMS,
+    pathPrefix,
+    homeHref: pathPrefix || "/",
+    hrefFor(pagePath) {
+      const raw = String(pagePath || "/");
+      if (!pathPrefix) return raw;
+      if (raw === "/") return pathPrefix;
+      return `${pathPrefix}${raw.startsWith("/") ? raw : `/${raw}`}`;
+    },
+    navItems,
     activeNav: pageKey,
     page: pageResult.page
       ? {

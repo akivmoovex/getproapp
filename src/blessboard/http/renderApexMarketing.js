@@ -88,6 +88,8 @@ function renderRegisterChurchPage(opts) {
     activeNav: "register-church",
     csrfField: (opts && opts.csrfField) || "_csrf",
     submitted: Boolean(opts && opts.submitted),
+    submittedPlan: (opts && opts.submittedPlan) || null,
+    networkSupportSuccess: Boolean(opts && opts.networkSupportSuccess),
     workspaceReady: Boolean(opts && opts.workspaceReady),
     loginFallback: Boolean(opts && opts.loginFallback),
     review: Boolean(opts && opts.review),

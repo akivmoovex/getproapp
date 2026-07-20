@@ -225,6 +225,168 @@ async function findBranchDisplayName(client, branchId) {
   return r.rows[0] ? String(r.rows[0].display_name) : null;
 }
 
+/**
+ * @param {{ query: Function }} client
+ * @param {string} churchId
+ */
+async function findChurchCatalogueSnapshot(client, churchId) {
+  const r = await client.query(
+    `SELECT c.id AS church_id,
+            c.church_key,
+            c.display_name AS church_display_name,
+            c.legal_name AS church_legal_name,
+            c.status AS church_status,
+            o.id AS organization_id,
+            o.organization_key,
+            o.display_name AS organization_display_name,
+            o.legal_name AS organization_legal_name,
+            o.status AS organization_status,
+            cs.website_status,
+            b.id AS primary_branch_id,
+            b.branch_key AS primary_branch_key,
+            b.display_name AS primary_branch_display_name,
+            b.status AS primary_branch_status,
+            b.timezone AS primary_branch_timezone
+       FROM blessboard.churches c
+       JOIN platform.organizations o ON o.id = c.organization_id
+       LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+       LEFT JOIN LATERAL (
+         SELECT br.id, br.branch_key, br.display_name, br.status, br.timezone
+           FROM blessboard.branches br
+          WHERE br.church_id = c.id AND br.status = 'active'
+          ORDER BY CASE WHEN br.is_primary THEN 0 WHEN br.branch_type = 'hq' THEN 1 ELSE 2 END,
+                   br.created_at ASC
+          LIMIT 1
+       ) b ON true
+      WHERE c.id = $1
+      LIMIT 1`,
+    [churchId]
+  );
+  const row = r.rows[0];
+  if (!row) return null;
+  return {
+    churchId: row.church_id,
+    churchKey: row.church_key,
+    churchDisplayName: row.church_display_name,
+    churchLegalName: row.church_legal_name,
+    churchStatus: row.church_status,
+    organizationId: row.organization_id,
+    organizationKey: row.organization_key,
+    organizationDisplayName: row.organization_display_name,
+    organizationLegalName: row.organization_legal_name,
+    organizationStatus: row.organization_status,
+    websiteStatus: row.website_status || "draft",
+    primaryBranchId: row.primary_branch_id || null,
+    primaryBranchKey: row.primary_branch_key || null,
+    primaryBranchDisplayName: row.primary_branch_display_name || null,
+    primaryBranchStatus: row.primary_branch_status || null,
+    primaryBranchTimezone: row.primary_branch_timezone || null,
+  };
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} branchId
+ */
+async function findBranchCatalogueSnapshot(client, branchId) {
+  const r = await client.query(
+    `SELECT b.id AS branch_id,
+            b.branch_key,
+            b.display_name,
+            b.status,
+            b.branch_type,
+            b.timezone,
+            b.country_code,
+            b.church_id,
+            c.display_name AS church_display_name,
+            c.organization_id
+       FROM blessboard.branches b
+       JOIN blessboard.churches c ON c.id = b.church_id
+      WHERE b.id = $1
+      LIMIT 1`,
+    [branchId]
+  );
+  const row = r.rows[0];
+  if (!row) return null;
+  return {
+    branchId: row.branch_id,
+    branchKey: row.branch_key,
+    displayName: row.display_name,
+    status: row.status,
+    branchType: row.branch_type,
+    timezone: row.timezone,
+    countryCode: row.country_code,
+    churchId: row.church_id,
+    churchDisplayName: row.church_display_name,
+    organizationId: row.organization_id,
+  };
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} churchId
+ * @param {{ displayName?: string, legalName?: string|null }} fields
+ */
+async function updateChurchCatalogueNames(client, churchId, fields) {
+  const setLegal = Object.prototype.hasOwnProperty.call(fields, "legalName");
+  await client.query(
+    `UPDATE blessboard.churches
+        SET display_name = COALESCE($2, display_name),
+            legal_name = CASE WHEN $3::boolean THEN $4 ELSE legal_name END,
+            updated_at = now()
+      WHERE id = $1`,
+    [churchId, fields.displayName || null, setLegal, setLegal ? fields.legalName : null]
+  );
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} organizationId
+ * @param {{ displayName?: string, legalName?: string|null }} fields
+ */
+async function updateOrganizationCatalogueNames(client, organizationId, fields) {
+  const setLegal = Object.prototype.hasOwnProperty.call(fields, "legalName");
+  await client.query(
+    `UPDATE platform.organizations
+        SET display_name = COALESCE($2, display_name),
+            legal_name = CASE WHEN $3::boolean THEN $4 ELSE legal_name END,
+            updated_at = now()
+      WHERE id = $1`,
+    [organizationId, fields.displayName || null, setLegal, setLegal ? fields.legalName : null]
+  );
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} branchId
+ * @param {string} displayName
+ */
+async function updateBranchCatalogueDisplayName(client, branchId, displayName) {
+  await client.query(
+    `UPDATE blessboard.branches
+        SET display_name = $2,
+            updated_at = now()
+      WHERE id = $1`,
+    [branchId, displayName]
+  );
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} branchId
+ * @param {{ timezone?: string|null, countryCode?: string|null }} fields
+ */
+async function updateBranchCatalogueMeta(client, branchId, fields) {
+  await client.query(
+    `UPDATE blessboard.branches
+        SET timezone = COALESCE($2, timezone),
+            country_code = COALESCE($3, country_code),
+            updated_at = now()
+      WHERE id = $1`,
+    [branchId, fields.timezone != null ? fields.timezone : null, fields.countryCode != null ? fields.countryCode : null]
+  );
+}
+
 module.exports = {
   mapChurchSettings,
   mapBranchSettings,
@@ -236,4 +398,10 @@ module.exports = {
   upsertBranchSettings,
   findChurchDisplayName,
   findBranchDisplayName,
+  findChurchCatalogueSnapshot,
+  findBranchCatalogueSnapshot,
+  updateChurchCatalogueNames,
+  updateOrganizationCatalogueNames,
+  updateBranchCatalogueDisplayName,
+  updateBranchCatalogueMeta,
 };

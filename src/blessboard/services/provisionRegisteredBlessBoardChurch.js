@@ -20,7 +20,9 @@ const churchProvision = require("./provisionBlessBoardChurch");
 const userCreate = require("./createBlessBoardUser");
 const roleAssign = require("./assignBlessBoardRole");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
+const { logRegistrationTrace } = require("./registrationTraceLog");
 const { normalizeOrganizationKey } = require("./organizationKey");
+const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const { PUBLIC_PAGE_KEYS, PAGE_KEY_TITLES } = require("./publicContentConstants");
 const { BCRYPT_ROUNDS, normalizeEmail } = userCreate;
 const STATUS = Object.freeze({
@@ -119,9 +121,17 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const PRODUCT_KEY = "blessboard";
-const PLAN_KEY = "free";
+const PLAN_KEY_FREE = "free";
+const PLAN_KEY_GROWTH = "growth";
+/** Plans the registration orchestrator may assign. Network is enquiry-only. */
+const PROVISIONABLE_PLAN_KEYS = Object.freeze([PLAN_KEY_FREE, PLAN_KEY_GROWTH]);
+/** @deprecated Use PLAN_KEY_FREE — retained for callers that imported PLAN_KEY historically via mapPlanLabel. */
+const PLAN_KEY = PLAN_KEY_FREE;
 const DEFAULT_DEPLOYMENT = "blessboard-org-v5";
 const HQ_BRANCH_KEY = "hq";
+
+const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
+const { addOneCalendarMonthUtc } = require("../../platform/time/addOneCalendarMonth");
 
 class OrchestratorError extends Error {
   /**
@@ -165,16 +175,37 @@ function mapPlanLabelToCanonical(selectedPlan) {
     .trim()
     .toLowerCase();
   if (!raw || raw === "foundation" || raw === "free" || raw === "basic") {
-    return PLAN_KEY;
+    return PLAN_KEY_FREE;
+  }
+  if (raw === "growth") {
+    return PLAN_KEY_GROWTH;
   }
   return raw;
+}
+
+function isProvisionablePlanKey(planKey) {
+  return PROVISIONABLE_PLAN_KEYS.includes(String(planKey || ""));
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} planKey
+ */
+async function validatePlanCatalogueForProvision(client, planKey) {
+  if (planKey === PLAN_KEY_FREE) {
+    return validateFreePlanCatalogue(client);
+  }
+  if (planKey === PLAN_KEY_GROWTH) {
+    return validateGrowthPlanCatalogue(client);
+  }
+  throw new OrchestratorError(STATUS.INVALID_PLAN, "invalid_plan");
 }
 
 /**
  * @param {{ query: Function }} client
  */
 async function validateFreePlanCatalogue(client) {
-  const plan = await entitlementRepo.findPlanByKey(client, PLAN_KEY);
+  const plan = await entitlementRepo.findPlanByKey(client, PLAN_KEY_FREE);
   if (!plan || plan.productKey !== PRODUCT_KEY || plan.status !== "active") {
     throw new OrchestratorError(STATUS.INVALID_PLAN, "invalid_plan");
   }
@@ -207,6 +238,48 @@ async function validateFreePlanCatalogue(client) {
 }
 
 /**
+ * Growth catalogue must exist and be active. Feature limits stay data-driven
+ * (entitlementService); do not hardcode Growth feature rules here.
+ * @param {{ query: Function }} client
+ */
+async function validateGrowthPlanCatalogue(client) {
+  const plan = await entitlementRepo.findPlanByKey(client, PLAN_KEY_GROWTH);
+  if (!plan || plan.productKey !== PRODUCT_KEY || plan.status !== "active") {
+    throw new OrchestratorError(STATUS.INVALID_PLAN, "invalid_plan");
+  }
+  return plan;
+}
+
+/**
+ * Build subscription fields for platform tenant provision.
+ * Foundation: active free, open-ended (no trial ends_at).
+ * Growth: trialing growth, ends_at = starts_at + one calendar month (UTC).
+ * Fallback to free on expiry is product policy for a later command — not stored in notes.
+ *
+ * @param {string} planKey
+ * @param {Date} provisionedAt
+ */
+function buildSubscriptionAssignment(planKey, provisionedAt) {
+  const startsAt = provisionedAt.toISOString();
+  if (planKey === PLAN_KEY_GROWTH) {
+    return {
+      subscriptionPlanKey: PLAN_KEY_GROWTH,
+      subscriptionStatus: "trialing",
+      subscriptionStartsAt: startsAt,
+      subscriptionEndsAt: addOneCalendarMonthUtc(provisionedAt).toISOString(),
+      subscriptionNotes: null,
+    };
+  }
+  return {
+    subscriptionPlanKey: PLAN_KEY_FREE,
+    subscriptionStatus: "active",
+    subscriptionStartsAt: startsAt,
+    subscriptionEndsAt: null,
+    subscriptionNotes: null,
+  };
+}
+
+/**
  * @param {{ query: Function }} client
  * @param {string} organizationKey
  */
@@ -233,6 +306,49 @@ async function ensureMinimalDraftPages(client, churchId) {
       title: PAGE_KEY_TITLES[pageKey] || pageKey,
     });
   }
+}
+
+/**
+ * Idempotent church_settings draft shell; seed contact from registration when present.
+ * @param {{ query: Function }} client
+ * @param {{
+ *   churchId: string,
+ *   publicName: string,
+ *   primaryEmail?: string|null,
+ *   primaryPhone?: string|null,
+ * }} fields
+ */
+async function ensureDraftChurchSettings(client, fields) {
+  await settingsRepo.ensureChurchSettingsRow(client, {
+    churchId: fields.churchId,
+    publicName: fields.publicName,
+  });
+  const existing = await settingsRepo.findChurchSettings(client, fields.churchId);
+  if (!existing) return;
+  const email =
+    (existing.primaryEmail && String(existing.primaryEmail).trim()) ||
+    (fields.primaryEmail ? String(fields.primaryEmail).trim() : "") ||
+    null;
+  const phone =
+    (existing.primaryPhone && String(existing.primaryPhone).trim()) ||
+    (fields.primaryPhone ? String(fields.primaryPhone).trim() : "") ||
+    null;
+  if (
+    email === existing.primaryEmail &&
+    phone === existing.primaryPhone &&
+    existing.publicName
+  ) {
+    return;
+  }
+  await settingsRepo.upsertChurchSettings(client, fields.churchId, {
+    publicName: existing.publicName || fields.publicName,
+    denomination: existing.denomination,
+    primaryEmail: email,
+    primaryPhone: phone,
+    defaultTimezone: existing.defaultTimezone,
+    defaultCountryCode: existing.defaultCountryCode,
+    websiteStatus: existing.websiteStatus || "draft",
+  });
 }
 
 /**
@@ -309,7 +425,7 @@ async function writeSuccessAudits(client, opts) {
       category: "registration",
       entity_key: opts.organizationKey,
       product_key: PRODUCT_KEY,
-      plan_key: PLAN_KEY,
+      plan_key: opts.planKey || PLAN_KEY_FREE,
       request_id: opts.requestId ? String(opts.requestId).slice(0, 120) : undefined,
       actor_type: opts.actorType ? String(opts.actorType).slice(0, 64) : "system",
       source: opts.source ? String(opts.source).slice(0, 64) : "orchestrator",
@@ -415,6 +531,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
   let failureDetail = "provisioning_failed";
   let duplicateReview = false;
   let outcomeRecords = null;
+  let planKey = null;
 
   try {
     outcomeRecords = await withProvisioningTransaction(db, async (client) => {
@@ -467,11 +584,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         }
       }
 
-      const planLabel = mapPlanLabelToCanonical(application.selected_plan);
-      if (planLabel !== PLAN_KEY) {
+      planKey = mapPlanLabelToCanonical(application.selected_plan);
+      if (!isProvisionablePlanKey(planKey)) {
         throw new OrchestratorError(STATUS.INVALID_PLAN, "invalid_plan");
       }
-      await validateFreePlanCatalogue(client);
+      await validatePlanCatalogueForProvision(client, planKey);
 
       const keySource = requestedOrganizationKey || application.church_name;
       const keyNorm = normalizeOrganizationKey(keySource);
@@ -491,10 +608,17 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
       }
 
+      const provisionedAt =
+        input.provisionedAt != null ? new Date(input.provisionedAt) : new Date();
+      if (Number.isNaN(provisionedAt.getTime())) {
+        throw new OrchestratorError(STATUS.INVALID_INPUT, "invalid_input:provisionedAt");
+      }
+      const subscriptionAssignment = buildSubscriptionAssignment(planKey, provisionedAt);
+
       await appRepo.updateApplicationProvisioningState(client, applicationId, {
         applicationStatus: "submitted",
         provisioningStatus: "provisioning",
-        provisioningStartedAt: new Date().toISOString(),
+        provisioningStartedAt: provisionedAt.toISOString(),
         clearFailureMetadata: true,
       });
 
@@ -512,6 +636,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           productTenantKey: organizationKey,
           deploymentCode,
           skipDomain: true,
+          ...subscriptionAssignment,
         },
         { manageTransaction: false }
       );
@@ -527,6 +652,14 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         .toUpperCase();
       const countryCode = /^[A-Z]{2}$/.test(countryRaw) ? countryRaw : null;
 
+      const hqNamePrepared = prepareBranchDisplayName(
+        application.branch_name || "Headquarters",
+        { field: "branch_name", required: true, emptyMessage: "Please enter a branch name." }
+      );
+      const hqBranchDisplayName = hqNamePrepared.ok
+        ? hqNamePrepared.display
+        : "Headquarters";
+
       const church = await churchProvision.provisionBlessBoardChurch(
         client,
         {
@@ -536,7 +669,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           legalName: null,
           dataEnvironment,
           hqBranchKey: HQ_BRANCH_KEY,
-          hqBranchDisplayName: String(application.branch_name || "Headquarters").trim() || "Headquarters",
+          hqBranchDisplayName,
           timezone: null,
           countryCode,
         },
@@ -601,6 +734,12 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       const organizationId = tenant.records.organization.id;
 
       await ensureMinimalDraftPages(client, churchId);
+      await ensureDraftChurchSettings(client, {
+        churchId,
+        publicName: displayName,
+        primaryEmail: application.contact_email,
+        primaryPhone: application.contact_phone,
+      });
       await ensureOrganizationOnboarding(client, {
         organizationId,
         applicationId,
@@ -610,7 +749,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         applicationStatus: "closed",
         provisioningStatus: "provisioned",
         organizationId,
-        provisionedAt: new Date().toISOString(),
+        provisionedAt: provisionedAt.toISOString(),
         clearFailureMetadata: true,
         // Compatibility: keep dormant list/count helpers coherent until legacy status is dropped.
         legacyStatus: "closed",
@@ -626,6 +765,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         requestId,
         actorType: actorContext.type || "system",
         source: actorContext.source || "orchestrator",
+        planKey,
       });
 
       return {
@@ -639,8 +779,34 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           administratorUserId: user.user.id,
           applicationStatus: closed.application_status,
           provisioningStatus: closed.provisioning_status,
+          planKey,
+          subscriptionStatus: subscriptionAssignment.subscriptionStatus,
+          subscriptionStartsAt: subscriptionAssignment.subscriptionStartsAt,
+          subscriptionEndsAt: subscriptionAssignment.subscriptionEndsAt,
         },
       };
+    });
+
+    logRegistrationTrace(null, {
+      event: "church_registration_transaction",
+      operation: "provision_transaction",
+      requestId: requestId || null,
+      applicationId,
+      organizationKey: outcomeRecords.records && outcomeRecords.records.organizationKey,
+      outcome: "committed",
+      transactionRolledBack: false,
+      alreadyProvisioned: Boolean(outcomeRecords.alreadyProvisioned),
+      canonicalPlanKey:
+        (outcomeRecords.records && outcomeRecords.records.planKey) || planKey || null,
+      subscriptionStatus:
+        (outcomeRecords.records && outcomeRecords.records.subscriptionStatus) || null,
+      subscriptionStartsAt:
+        (outcomeRecords.records && outcomeRecords.records.subscriptionStartsAt) || null,
+      subscriptionEndsAt:
+        (outcomeRecords.records && outcomeRecords.records.subscriptionEndsAt) || null,
+      hasTrialEndsAt: Boolean(
+        outcomeRecords.records && outcomeRecords.records.subscriptionEndsAt
+      ),
     });
 
     return success(
@@ -652,6 +818,20 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
     if (err && err.status === STATUS.DUPLICATE_EMAIL_REVIEW && duplicateReview) {
       // Duplicate review was committed inside the outer TX before throw — TX rolls back!
       // Must persist duplicate_review AFTER rollback.
+      logRegistrationTrace(
+        null,
+        {
+          event: "church_registration_transaction",
+          operation: "provision_transaction",
+          requestId: requestId || null,
+          applicationId,
+          outcome: "rollback",
+          failureCategory: STATUS.DUPLICATE_EMAIL_REVIEW,
+          transactionRolledBack: true,
+          canonicalPlanKey: planKey || null,
+        },
+        { force: true }
+      );
       try {
         await persistApplicationOutcome(db, applicationId, {
           applicationStatus: "duplicate_review",
@@ -679,8 +859,37 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         err.status === STATUS.INVALID_INPUT
       ) {
         // No tenant writes expected; do not mark provisioning_failed for eligibility/slug/plan.
+        logRegistrationTrace(
+          null,
+          {
+            event: "church_registration_transaction",
+            operation: "provision_transaction",
+            requestId: requestId || null,
+            applicationId,
+            outcome: "fail",
+            failureCategory: err.status,
+            transactionRolledBack: true,
+            canonicalPlanKey: planKey || null,
+          },
+          { force: true }
+        );
         return fail(err.status, err.message);
       }
+
+      logRegistrationTrace(
+        null,
+        {
+          event: "church_registration_transaction",
+          operation: "provision_transaction",
+          requestId: requestId || null,
+          applicationId,
+          outcome: "rollback",
+          failureCategory: failureCode,
+          transactionRolledBack: true,
+          canonicalPlanKey: planKey || null,
+        },
+        { force: true, level: "error" }
+      );
 
       try {
         await persistApplicationOutcome(db, applicationId, {
@@ -691,15 +900,20 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           provisioningErrorDetail: failureDetail.slice(0, 2000),
         });
       } catch (persistErr) {
-        // eslint-disable-next-line no-console
-        console.error(
-          "[provision-registered-blessboard-church]",
-          JSON.stringify({
+        logRegistrationTrace(
+          null,
+          {
             event: "failure_state_persist_failed",
+            operation: "persist_provisioning_failure",
+            requestId: requestId || null,
             applicationId,
+            outcome: "fail",
+            failureCategory: "persist_failed",
             rootStatus: failureCode,
-            persistError: persistErr && persistErr.message ? String(persistErr.message).slice(0, 120) : "error",
-          })
+            persistError:
+              persistErr && persistErr.message ? String(persistErr.message).slice(0, 120) : "error",
+          },
+          { force: true, level: "error" }
         );
       }
       return fail(failureCode === STATUS.DUPLICATE_EMAIL_REVIEW ? failureCode : STATUS.PROVISIONING_FAILED, failureDetail, {
@@ -708,6 +922,20 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
     }
 
     failureDetail = sanitizeErrorDetail(err && err.message);
+    logRegistrationTrace(
+      null,
+      {
+        event: "church_registration_transaction",
+        operation: "provision_transaction",
+        requestId: requestId || null,
+        applicationId,
+        outcome: "rollback",
+        failureCategory: STATUS.INTERNAL_ERROR,
+        transactionRolledBack: true,
+        canonicalPlanKey: planKey || null,
+      },
+      { force: true, level: "error" }
+    );
     try {
       await persistApplicationOutcome(db, applicationId, {
         applicationStatus: "submitted",
@@ -717,25 +945,57 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         provisioningErrorDetail: failureDetail.slice(0, 2000),
       });
     } catch (persistErr) {
-      // eslint-disable-next-line no-console
-      console.error(
-        "[provision-registered-blessboard-church]",
-        JSON.stringify({
+      logRegistrationTrace(
+        null,
+        {
           event: "failure_state_persist_failed",
+          operation: "persist_provisioning_failure",
+          requestId: requestId || null,
           applicationId,
+          outcome: "fail",
+          failureCategory: "persist_failed",
           rootStatus: STATUS.INTERNAL_ERROR,
-          persistError: persistErr && persistErr.message ? String(persistErr.message).slice(0, 120) : "error",
-        })
+          persistError:
+            persistErr && persistErr.message ? String(persistErr.message).slice(0, 120) : "error",
+        },
+        { force: true, level: "error" }
       );
     }
     return fail(STATUS.PROVISIONING_FAILED, failureDetail);
   }
 }
 
+/**
+ * Whether a stored provisioning_error_code may be retried from admin support ops.
+ * Permanent validation conflicts (invalid plan, not eligible, etc.) are not retryable.
+ * @param {string|null|undefined} errorCode
+ */
+function isProvisioningFailureRetryable(errorCode) {
+  const code = String(errorCode || "").trim().toLowerCase();
+  if (!code) {
+    // Unknown stored failure — allow one idempotent retry (orchestrator re-evaluates).
+    return true;
+  }
+  const meta = ERROR_META[code];
+  if (meta) return Boolean(meta.retryable);
+  // Generic stored failure category from orchestrator.
+  if (code === "provisioning_failed") return true;
+  return false;
+}
+
 module.exports = {
   STATUS,
   ERROR_META,
+  PLAN_KEY_FREE,
+  PLAN_KEY_GROWTH,
+  PLAN_KEY,
+  PROVISIONABLE_PLAN_KEYS,
   provisionRegisteredBlessBoardChurch,
   mapPlanLabelToCanonical,
+  isProvisionablePlanKey,
+  isProvisioningFailureRetryable,
   validateFreePlanCatalogue,
+  validateGrowthPlanCatalogue,
+  validatePlanCatalogueForProvision,
+  buildSubscriptionAssignment,
 };

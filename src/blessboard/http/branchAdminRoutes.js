@@ -24,12 +24,17 @@ const {
 } = require("../../platform/session/v5SessionCookie");
 const { revokeV5Session } = require("../../platform/session/revokeV5Session");
 const {
-  getBranchSettings,
+  getBranchSettingsPageModel,
   updateBranchSettings,
   STATUS: SETTINGS_STATUS,
 } = require("../services/blessBoardSettingsService");
+const {
+  inviteBlessBoardStaff,
+  STATUS: INVITE_STATUS,
+} = require("../services/inviteBlessBoardStaff");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
+const { tenantAbsoluteUrl } = require("./tenantLoginHelpers");
 
 /**
  * @param {string} relativePath
@@ -158,8 +163,8 @@ function createBranchAdminRouter(deps) {
     if (!branchId) {
       return sendLoginUnavailable(req, res, 403, "You do not have access to this site.");
     }
-    const loaded = await getBranchSettings(getPool(), branchId);
-    if (!loaded.ok) {
+    const loaded = await getBranchSettingsPageModel(getPool(), branchId);
+    if (!loaded.ok || !loaded.model) {
       return sendLoginUnavailable(
         req,
         res,
@@ -170,8 +175,10 @@ function createBranchAdminRouter(deps) {
     const html = renderBranchAdminView(
       "branch-admin/settings.ejs",
       shellLocals(req, res, "settings", {
-        settings: loaded.settings,
+        settings: loaded.model.settings,
+        catalogue: loaded.model.catalogue,
         error: null,
+        fieldError: null,
         saved: String((req.query && req.query.saved) || "") === "1",
       })
     );
@@ -189,6 +196,7 @@ function createBranchAdminRouter(deps) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
     const body = req.body || {};
+    const session = req.v5Session && req.v5Session.session;
     const updated = await updateBranchSettings(getPool(), branchId, {
       publicName: body.publicName,
       email: body.email,
@@ -202,14 +210,19 @@ function createBranchAdminRouter(deps) {
       postalCode: body.postalCode,
       latitude: body.latitude,
       longitude: body.longitude,
+      expectedChurchId: tenant.church && tenant.church.id,
+      actorUserId: session && session.userId,
     });
     if (!updated.ok) {
-      if (updated.status === SETTINGS_STATUS.INVALID_INPUT) {
-        const loaded = await getBranchSettings(getPool(), branchId);
+      if (
+        updated.status === SETTINGS_STATUS.INVALID_INPUT ||
+        updated.status === SETTINGS_STATUS.CONFLICT
+      ) {
+        const loaded = await getBranchSettingsPageModel(getPool(), branchId);
         const html = renderBranchAdminView(
           "branch-admin/settings.ejs",
           shellLocals(req, res, "settings", {
-            settings: loaded.settings || {
+            settings: (loaded.model && loaded.model.settings) || {
               publicName: String(body.publicName || ""),
               email: body.email || null,
               phone: body.phone || null,
@@ -223,15 +236,71 @@ function createBranchAdminRouter(deps) {
               latitude: body.latitude || null,
               longitude: body.longitude || null,
             },
-            error: "Please check the settings and try again.",
+            catalogue: loaded.model ? loaded.model.catalogue : null,
+            error: updated.message || "Please check the settings and try again.",
+            fieldError: updated.reason || null,
             saved: false,
           })
         );
-        return res.status(400).type("html").send(html);
+        return res
+          .status(updated.status === SETTINGS_STATUS.CONFLICT ? 409 : 400)
+          .type("html")
+          .send(html);
       }
       return sendLoginUnavailable(req, res, 503, "Settings could not be saved.");
     }
     return res.redirect(303, "/branch-admin/settings?saved=1");
+  });
+
+  /**
+   * Branch admins may invite only branch_admin for their assigned branch.
+   * Copy-once link returned once (no email delivery).
+   */
+  router.post("/branch-admin/invitations", rejectApex, gateAccess, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    const session = req.v5Session && req.v5Session.session;
+    if (!tenant || !tenant.church || !tenant.organization || !tenant.primaryBranch || !session) {
+      return sendLoginUnavailable(req, res, 403, "You do not have access to this site.");
+    }
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return res.status(403).type("text").send("Invalid or missing CSRF token.");
+    }
+    const body = req.body || {};
+    const result = await inviteBlessBoardStaff(getPool(), {
+      actorUserId: session.userId,
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      branchId: tenant.primaryBranch.id,
+      email: body.email,
+      displayName: body.display_name || body.email,
+      roleKey: "branch_admin",
+    });
+    if (!result.ok) {
+      const status =
+        result.status === INVITE_STATUS.LIMIT_EXCEEDED
+          ? 403
+          : result.status === INVITE_STATUS.FORBIDDEN
+            ? 403
+            : 400;
+      return res
+        .status(status)
+        .type("text")
+        .send(result.message || "Invitation could not be created.");
+    }
+    const host = String(req.hostname || req.get("host") || "")
+      .split(":")[0]
+      .toLowerCase();
+    const inviteLink =
+      tenantAbsoluteUrl(host, `/invite/accept?token=${encodeURIComponent(result.rawToken)}`, env) ||
+      `/invite/accept?token=${encodeURIComponent(result.rawToken)}`;
+    return res.status(201).type("html").send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><title>Invitation</title></head>
+<body>
+  <p data-bb-invite-copy-once="1">Copy this invitation link once — it will not be shown again.</p>
+  <p><code data-bb-invite-link="1">${inviteLink.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</code></p>
+  <p><a href="/branch-admin">Back</a></p>
+</body></html>`);
   });
 
   router.post("/branch-admin/logout", rejectApex, async (req, res) => {

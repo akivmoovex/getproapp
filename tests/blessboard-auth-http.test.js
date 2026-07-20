@@ -100,6 +100,19 @@ describe("blessboard v5 auth http", () => {
       });
       assert.equal(role.ok, true, role.message);
 
+      const paCreated = await createBlessBoardUser(pool, {
+        email: "platform-admin@example.org",
+        displayName: "Platform Administrator",
+        password: PASSWORD,
+      });
+      assert.equal(paCreated.ok, true, paCreated.message);
+      const paRole = await assignBlessBoardRole(pool, {
+        email: "platform-admin@example.org",
+        organizationKey: "auth-http-org",
+        roleKey: "platform_admin",
+      });
+      assert.equal(paRole.ok, true, paRole.message);
+
       app = createV5FoundationApp({
         getPool: () => pool,
         enableDiagnosticHostContext: false,
@@ -124,14 +137,17 @@ describe("blessboard v5 auth http", () => {
     if (skipSuite) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
 
-  async function loginFlow(email, password) {
-    const getLogin = await request(app).get("/login").set("Host", "blessboard.org");
+  async function loginFlow(email, password, nextPath) {
+    const loginPath = nextPath
+      ? `/login?next=${encodeURIComponent(nextPath)}`
+      : "/login";
+    const getLogin = await request(app).get(loginPath).set("Host", "blessboard.org");
     const csrf = extractCookie(getLogin, CSRF_COOKIE);
     assert.ok(csrf);
     const match = getLogin.text.match(/name="_csrf" value="([^"]+)"/);
     assert.ok(match);
     const post = await request(app)
-      .post("/login")
+      .post(loginPath)
       .set("Host", "blessboard.org")
       .set("Cookie", cookieHeader(`${CSRF_COOKIE}=${csrf}`))
       .type("form")
@@ -183,6 +199,52 @@ describe("blessboard v5 auth http", () => {
     assert.equal(account.status, 200);
     assert.match(account.text, /Administrator/);
     assert.doesNotMatch(account.text, /password_hash|\$2a\$/i);
+    assert.doesNotMatch(account.text, /data-bb-platform-admin-link|href="\/admin"/);
+  });
+
+  it("platform_admin login redirects to /admin and honors safe next paths", async () => {
+    requireDb();
+    const plain = await loginFlow("platform-admin@example.org", PASSWORD);
+    assert.equal(plain.post.status, 303);
+    assert.equal(plain.post.headers.location, "/admin");
+
+    const nextAdmin = await loginFlow("platform-admin@example.org", PASSWORD, "/admin");
+    assert.equal(nextAdmin.post.status, 303);
+    assert.equal(nextAdmin.post.headers.location, "/admin");
+
+    const nextOrgs = await loginFlow(
+      "platform-admin@example.org",
+      PASSWORD,
+      "/admin/organizations"
+    );
+    assert.equal(nextOrgs.post.status, 303);
+    assert.equal(nextOrgs.post.headers.location, "/admin/organizations");
+
+    const unsafe = await loginFlow(
+      "platform-admin@example.org",
+      PASSWORD,
+      "https://evil.example/admin"
+    );
+    assert.equal(unsafe.post.status, 303);
+    assert.equal(unsafe.post.headers.location, "/admin");
+    assert.doesNotMatch(String(unsafe.post.headers.location), /^https?:/i);
+
+    const sid = extractCookie(plain.post, DEFAULT_V5_COOKIE);
+    const account = await request(app)
+      .get("/account")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${sid}`));
+    assert.equal(account.status, 200);
+    assert.match(account.text, /data-bb-platform-admin-link="1"/);
+    assert.match(account.text, /href="\/admin"/);
+    assert.match(account.text, /Open Platform Admin/);
+  });
+
+  it("ordinary apex user ignores next=/admin and stays on /account", async () => {
+    requireDb();
+    const { post } = await loginFlow("admin@example.org", PASSWORD, "/admin");
+    assert.equal(post.status, 303);
+    assert.equal(post.headers.location, "/account");
   });
 
   it("invalid email and password return the same generic error", async () => {

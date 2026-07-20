@@ -22,9 +22,17 @@ const {
   HQ_ASSIGNABLE_ROLES,
 } = require("../services/hqRoleManagementService");
 const {
+  inviteBlessBoardStaff,
+  listPendingInvitations,
+  revokeInvitation,
+  STATUS: INVITE_STATUS,
+  INVITE_ROLES,
+} = require("../services/inviteBlessBoardStaff");
+const {
   CSRF_FIELD,
   validateCsrf,
 } = require("../../platform/http/v5Csrf");
+const { getApexOrigin, tenantAbsoluteUrl } = require("./tenantLoginHelpers");
 
 const PAGE_LIMIT = 50;
 
@@ -175,6 +183,12 @@ function createHqRoleAdminRouter(deps) {
       return sendControlled(req, res, 503, "Staff roles are temporarily unavailable.");
     }
 
+    const pending = await listPendingInvitations(getPool(), {
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      limit: PAGE_LIMIT,
+    });
+
     const branches = await listBlessBoardBranches(getPool(), scope.churchId);
     const branchOptions =
       branches.ok && branches.branches
@@ -185,6 +199,13 @@ function createHqRoleAdminRouter(deps) {
           }))
         : [];
 
+    const host = String(req.hostname || req.get("host") || "")
+      .split(":")[0]
+      .toLowerCase();
+    const inviteAcceptBase =
+      tenantAbsoluteUrl(host, "/invite/accept", env) ||
+      `${getApexOrigin(env)}/invite/accept`;
+
     const html = renderHqView(
       "hq/roles.ejs",
       await shellLocals(req, res, {
@@ -193,6 +214,11 @@ function createHqRoleAdminRouter(deps) {
         total: listed.total,
         counts: listed.counts || { hqAdmins: 0, branchAdmins: 0 },
         branches: branchOptions,
+        pendingInvitations: pending.ok ? pending.invitations : [],
+        inviteRoles: INVITE_ROLES,
+        inviteAcceptBase,
+        inviteToken: flash && flash.inviteToken ? flash.inviteToken : null,
+        inviteLink: flash && flash.inviteLink ? flash.inviteLink : null,
         q,
         roleFilter: HQ_ASSIGNABLE_ROLES.includes(roleFilter) ? roleFilter : "",
         notice: flash && flash.notice ? flash.notice : null,
@@ -212,6 +238,7 @@ function createHqRoleAdminRouter(deps) {
     let error = null;
     if (noticeCode === "assigned") notice = "Role assignment saved.";
     if (noticeCode === "revoked") notice = "Role revoked. Access ends on the next authorization check.";
+    if (noticeCode === "invite_revoked") notice = "Invitation revoked.";
     if (errorCode === "csrf") error = "Invalid or missing CSRF token.";
     if (errorCode === "confirm") error = "Confirm the change before submitting.";
     if (errorCode === "forbidden") error = "That role change is not allowed.";
@@ -219,9 +246,84 @@ function createHqRoleAdminRouter(deps) {
     if (errorCode === "platform") error = "Platform admin cannot be assigned from Church HQ.";
     if (errorCode === "self") error = "You cannot change your own role assignments here.";
     if (errorCode === "inactive") error = "That user account is inactive or suspended.";
-    if (errorCode === "limit") error = "Staff account limit reached for this organization.";
+    if (errorCode === "limit") error = "Staff account limit reached for this organization. Upgrade to invite another administrator.";
     if (errorCode === "invalid") error = "Check the email, role, and branch selections.";
+    if (errorCode === "already") error = "That user already has this role.";
     return renderRolesPage(req, res, scope, { notice, error });
+  });
+
+  router.post("/hq/roles/invite", rejectApex, gateHq, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope) return;
+    if (!validateCsrfPost(req, res)) return;
+
+    const body = req.body || {};
+    const form = {
+      email: String(body.email || "").trim(),
+      displayName: String(body.display_name || "").trim(),
+      roleKey: String(body.role_key || "").trim().toLowerCase(),
+      branchKey: String(body.branch_key || "").trim().toLowerCase(),
+    };
+
+    const result = await inviteBlessBoardStaff(getPool(), {
+      actorUserId: scope.actorUserId,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      email: form.email,
+      displayName: form.displayName || form.email,
+      roleKey: form.roleKey,
+      branchKey: form.roleKey === "branch_admin" ? form.branchKey : null,
+    });
+
+    if (!result.ok) {
+      let error = "Check the invitation details and try again.";
+      if (result.status === INVITE_STATUS.LIMIT_EXCEEDED) {
+        error =
+          result.message ||
+          "Staff account limit reached for this organization. Upgrade to invite another administrator.";
+      } else if (result.reason === "already_assigned") {
+        error = "That user already has this role.";
+      } else if (result.reason === "role_escalation" || result.status === INVITE_STATUS.FORBIDDEN) {
+        error = "That role cannot be invited from your account.";
+      } else if (result.status === INVITE_STATUS.NOT_FOUND) {
+        error = "Branch was not found or is inactive.";
+      }
+      return renderRolesPage(req, res, scope, { error, form });
+    }
+
+    const host = String(req.hostname || req.get("host") || "")
+      .split(":")[0]
+      .toLowerCase();
+    const inviteLink =
+      tenantAbsoluteUrl(host, `/invite/accept?token=${encodeURIComponent(result.rawToken)}`, env) ||
+      `${getApexOrigin(env)}/invite/accept?token=${encodeURIComponent(result.rawToken)}`;
+
+    return renderRolesPage(req, res, scope, {
+      notice: result.invitation.resent
+        ? "Previous invite link was invalidated. Copy the new invitation link once — it will not be shown again."
+        : "Invitation created. Copy the link once and share it out of band — it will not be shown again.",
+      inviteToken: result.rawToken,
+      inviteLink,
+      form: null,
+    });
+  });
+
+  router.post("/hq/roles/invitations/:invitationId/revoke", rejectApex, gateHq, async (req, res) => {
+    const scope = hqScope(req, res);
+    if (!scope) return;
+    if (!validateCsrfPost(req, res)) return;
+
+    const invitationId = String(req.params.invitationId || "").trim();
+    const result = await revokeInvitation(getPool(), {
+      invitationId,
+      actorUserId: scope.actorUserId,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+    });
+    if (!result.ok) {
+      return res.redirect(303, "/hq/roles?error=forbidden");
+    }
+    return res.redirect(303, "/hq/roles?notice=invite_revoked");
   });
 
   router.post("/hq/roles/assign", rejectApex, gateHq, async (req, res) => {

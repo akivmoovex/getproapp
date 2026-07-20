@@ -170,8 +170,22 @@ function initials(name) {
  * @param {object} model - from loadTenantPublicPageModel
  */
 function renderTenantPublicPage(model) {
+  const pathPrefix = String((model && model.pathPrefix) || "").replace(/\/$/, "");
+  const homeHref = (model && model.homeHref) || pathPrefix || "/";
+  const hrefFor =
+    (model && typeof model.hrefFor === "function" && model.hrefFor.bind(model)) ||
+    function hrefForDefault(pagePath) {
+      const raw = String(pagePath || "/");
+      if (!pathPrefix) return raw;
+      if (raw === "/") return pathPrefix;
+      return `${pathPrefix}${raw.startsWith("/") ? raw : `/${raw}`}`;
+    };
+
   return renderView("public/page.ejs", {
     ...model,
+    pathPrefix,
+    homeHref,
+    hrefFor,
     formatWhen,
     formatDate,
     formatEventParts,

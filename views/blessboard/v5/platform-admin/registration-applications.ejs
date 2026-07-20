@@ -39,6 +39,10 @@
     if (f.applicationStatus) parts.push('application_status=' + encodeURIComponent(f.applicationStatus));
     if (f.provisioningStatus) parts.push('provisioning_status=' + encodeURIComponent(f.provisioningStatus));
     if (f.followUpStatus) parts.push('follow_up_status=' + encodeURIComponent(f.followUpStatus));
+    if (f.selectedPlan) parts.push('selected_plan=' + encodeURIComponent(f.selectedPlan));
+    if (f.supportRequested) parts.push('support_requested=' + encodeURIComponent(f.supportRequested));
+    if (f.requiresReview) parts.push('requires_review=' + encodeURIComponent(f.requiresReview));
+    if (f.overdueFollowUp) parts.push('overdue_follow_up=' + encodeURIComponent(f.overdueFollowUp));
     if (f.linked && f.linked !== 'all') parts.push('linked=' + encodeURIComponent(f.linked));
     if (f.from) parts.push('from=' + encodeURIComponent(f.from));
     if (f.to) parts.push('to=' + encodeURIComponent(f.to));
@@ -115,6 +119,39 @@
       </select>
     </div>
     <div class="bb-pa-field">
+      <label for="selected_plan">Plan</label>
+      <select id="selected_plan" name="selected_plan" data-bb-pa-reg-plan-filter="1">
+        <option value="">All</option>
+        <% (allowedPlans || ['foundation', 'growth', 'network']).forEach(function (p) { %>
+        <option value="<%= p %>"<%= f.selectedPlan === p ? ' selected' : '' %>>
+          <%= p === 'network' ? 'Network' : (p === 'foundation' ? 'Foundation' : (p === 'growth' ? 'Growth' : p)) %>
+        </option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="support_requested">Support requested</label>
+      <select id="support_requested" name="support_requested">
+        <option value="">All</option>
+        <option value="true"<%= f.supportRequested === 'true' ? ' selected' : '' %>>Yes</option>
+        <option value="false"<%= f.supportRequested === 'false' ? ' selected' : '' %>>No</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="requires_review">Requires review</label>
+      <select id="requires_review" name="requires_review" data-bb-pa-reg-requires-review="1">
+        <option value="">All</option>
+        <option value="true"<%= f.requiresReview === 'true' ? ' selected' : '' %>>Needs attention</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="overdue_follow_up">Follow-up due</label>
+      <select id="overdue_follow_up" name="overdue_follow_up" data-bb-pa-reg-overdue="1">
+        <option value="">All</option>
+        <option value="true"<%= f.overdueFollowUp === 'true' ? ' selected' : '' %>>Overdue</option>
+      </select>
+    </div>
+    <div class="bb-pa-field">
       <label for="linked">Linked organization</label>
       <select id="linked" name="linked">
         <option value="all"<%= !f.linked || f.linked === 'all' ? ' selected' : '' %>>All</option>
@@ -157,17 +194,20 @@
           <th scope="col">Church</th>
           <th scope="col">Contact</th>
           <th scope="col">Plan</th>
-          <th scope="col">Submitted</th>
-          <th scope="col">Application</th>
-          <th scope="col">Provisioning</th>
+          <th scope="col">Priority</th>
+          <th scope="col">Status</th>
+          <th scope="col">Owner</th>
+          <th scope="col">Next follow-up</th>
+          <th scope="col">Last contact</th>
+          <th scope="col">Review reason</th>
           <th scope="col">Organization</th>
-          <th scope="col">Follow-up</th>
-          <th scope="col">Support</th>
         </tr>
       </thead>
       <tbody>
         <% rows.forEach(function (row) { %>
-        <tr<%= row.attention ? ' class="bb-pa-table__row--attention" data-bb-attention="1"' : '' %>>
+        <tr<%= row.attention ? ' class="bb-pa-table__row--attention" data-bb-attention="1"' : '' %>
+            data-bb-priority="<%= row.priorityKey || 'normal' %>"
+            data-bb-workflow-status="<%= row.workflowStatus || '' %>">
           <td>
             <a class="bb-pa-link" href="/admin/registration-applications/<%= row.id %>"><%= row.churchName %></a>
             <div class="bb-pa-muted"><%= row.city %><%= row.city && row.country ? ', ' : '' %><%= row.country %></div>
@@ -175,23 +215,41 @@
           <td>
             <div><%= row.contactName %></div>
             <div class="bb-pa-muted"><%= row.contactEmail %></div>
-            <div class="bb-pa-muted"><%= row.contactPhone || '—' %></div>
+            <div class="bb-pa-muted"><%= row.contactPhoneNormalized || row.contactPhone || '—' %></div>
           </td>
-          <td><%= row.selectedPlan || '—' %></td>
-          <td><%= fmtDate(row.createdAt) %></td>
-          <td><span class="bb-pa-chip <%= chipForApp(row.applicationStatus) %>"><%= labelStatus(row.applicationStatus) %></span></td>
-          <td><span class="bb-pa-chip <%= chipForProv(row.provisioningStatus) %>"><%= labelStatus(row.provisioningStatus) %></span></td>
+          <td>
+            <% if (row.isNetworkPlan) { %>
+            <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-plan-badge="network">Network</span>
+            <% } else { %>
+            <%= row.selectedPlanLabel || row.selectedPlan || '—' %>
+            <% } %>
+            <% if (row.supportRequested) { %>
+            <div><span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="1">Support requested</span></div>
+            <% } %>
+          </td>
+          <td><span class="bb-pa-chip" data-bb-pa-priority="<%= row.priorityKey || 'normal' %>"><%= row.priorityLabel || 'Normal' %></span></td>
+          <td>
+            <span class="bb-pa-chip"><%= labelStatus(row.workflowStatus) %></span>
+            <div class="bb-pa-muted"><%= labelStatus(row.applicationStatus) %> · <%= labelStatus(row.provisioningStatus) %></div>
+          </td>
+          <td><%= row.assignedSupportDisplayName || row.assignedSupportEmail || '—' %></td>
+          <td><%= fmtDate(row.nextFollowUpAt) %></td>
+          <td><%= fmtDate(row.lastContactedAt) %></td>
+          <td>
+            <% if (row.riskReasonLabels && row.riskReasonLabels.length) { %>
+            <%= row.riskReasonLabels.map(function (r) { return r.label; }).join(', ') %>
+            <% } else if (row.rejectionReason) { %>
+            <%= row.rejectionReason %>
+            <% } else { %>
+            —
+            <% } %>
+          </td>
           <td>
             <% if (row.organizationKey) { %>
             <a class="bb-pa-link" href="/admin/organizations/<%= encodeURIComponent(row.organizationKey) %>"><%= row.organizationKey %></a>
             <% } else { %>
             <span class="bb-pa-muted">Not linked</span>
             <% } %>
-          </td>
-          <td><%= labelStatus(row.followUpStatus) %></td>
-          <td>
-            <%= row.assignedSupportDisplayName || row.assignedSupportEmail || '—' %>
-            <div class="bb-pa-muted"><%= row.lastContactedAt ? ('Last: ' + fmtDate(row.lastContactedAt)) : '' %></div>
           </td>
         </tr>
         <% }) %>
@@ -205,8 +263,13 @@
       <a class="bb-pa-org-card__link" href="/admin/registration-applications/<%= row.id %>">
         <span class="bb-pa-org-card__title"><%= row.churchName %></span>
         <span class="bb-pa-org-card__meta"><%= row.contactName %> · <%= row.contactEmail %></span>
-        <span class="bb-pa-org-card__meta"><%= labelStatus(row.applicationStatus) %> · <%= labelStatus(row.provisioningStatus) %></span>
-        <span class="bb-pa-org-card__meta"><%= row.organizationKey ? row.organizationKey : 'Not linked' %> · <%= labelStatus(row.followUpStatus) %></span>
+        <span class="bb-pa-org-card__meta">
+          <% if (row.isNetworkPlan) { %>Network<% } else { %><%= row.selectedPlanLabel || row.selectedPlan || '—' %><% } %>
+          · <%= row.priorityLabel || 'Normal' %>
+          <% if (row.supportRequested) { %> · Support requested<% } %>
+        </span>
+        <span class="bb-pa-org-card__meta"><%= labelStatus(row.workflowStatus) %> · <%= labelStatus(row.applicationStatus) %></span>
+        <span class="bb-pa-org-card__meta"><%= row.organizationKey ? row.organizationKey : 'Not linked' %> · next <%= fmtDate(row.nextFollowUpAt) %></span>
       </a>
     </li>
     <% }) %>

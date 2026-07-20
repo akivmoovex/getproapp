@@ -11,6 +11,8 @@ const FEATURE_COLS = `id, plan_id, feature_key, feature_kind, boolean_value, lim
   created_at, updated_at`;
 
 const SUB_COLS = `id, organization_id, product_key, plan_id, status, starts_at, ends_at, notes,
+  billing_provider, billing_customer_ref, billing_subscription_ref, billing_payment_status,
+  billing_current_period_end, billing_cancel_at_period_end, billing_synced_at,
   created_at, updated_at`;
 
 const OVERRIDE_COLS = `id, organization_id, product_key, feature_key, feature_kind, boolean_value,
@@ -56,6 +58,13 @@ function mapSubscription(row) {
     startsAt: row.starts_at,
     endsAt: row.ends_at || null,
     notes: row.notes || null,
+    billingProvider: row.billing_provider || null,
+    billingCustomerRef: row.billing_customer_ref || null,
+    billingSubscriptionRef: row.billing_subscription_ref || null,
+    billingPaymentStatus: row.billing_payment_status || null,
+    billingCurrentPeriodEnd: row.billing_current_period_end || null,
+    billingCancelAtPeriodEnd: Boolean(row.billing_cancel_at_period_end),
+    billingSyncedAt: row.billing_synced_at || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -150,6 +159,24 @@ async function findCurrentSubscription(client, organizationId, productKey, at) {
   return mapSubscription(rows[0] || null);
 }
 
+/**
+ * Current-status subscription row regardless of ends_at (for paid conversion of expired trials).
+ */
+async function findOpenStatusSubscription(client, organizationId, productKey) {
+  const { rows } = await client.query(
+    `SELECT ${SUB_COLS}
+       FROM platform.organization_subscriptions
+      WHERE organization_id = $1
+        AND product_key = $2
+        AND status IN ('active', 'trialing', 'past_due')
+      ORDER BY starts_at DESC
+      LIMIT 1
+      FOR UPDATE`,
+    [organizationId, productKey]
+  );
+  return mapSubscription(rows[0] || null);
+}
+
 async function insertSubscription(client, fields) {
   const { rows } = await client.query(
     `INSERT INTO platform.organization_subscriptions
@@ -190,6 +217,56 @@ async function updateSubscription(client, id, patch) {
       patch.clearEndsAt === true,
       patch.endsAt || null,
       patch.notes != null ? patch.notes : null,
+    ]
+  );
+  return mapSubscription(rows[0] || null);
+}
+
+/**
+ * Update provider-neutral billing metadata only (no plan/entitlement mutation).
+ * @param {{ query: Function }} client
+ * @param {string} id
+ * @param {object} patch
+ */
+async function updateSubscriptionBilling(client, id, patch) {
+  const { rows } = await client.query(
+    `UPDATE platform.organization_subscriptions
+        SET billing_provider = CASE WHEN $2::boolean THEN $3 ELSE billing_provider END,
+            billing_customer_ref = CASE WHEN $4::boolean THEN $5 ELSE billing_customer_ref END,
+            billing_subscription_ref = CASE WHEN $6::boolean THEN $7 ELSE billing_subscription_ref END,
+            billing_payment_status = CASE WHEN $8::boolean THEN $9 ELSE billing_payment_status END,
+            billing_current_period_end = CASE
+              WHEN $10::boolean AND $11::boolean THEN NULL
+              WHEN $10::boolean THEN $12::timestamptz
+              ELSE billing_current_period_end
+            END,
+            billing_cancel_at_period_end = CASE
+              WHEN $13::boolean THEN $14::boolean
+              ELSE billing_cancel_at_period_end
+            END,
+            billing_synced_at = CASE WHEN $15::boolean THEN $16::timestamptz ELSE billing_synced_at END,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${SUB_COLS}`,
+    [
+      id,
+      patch.setProvider === true,
+      patch.billingProvider != null ? String(patch.billingProvider).slice(0, 64) : null,
+      patch.setCustomerRef === true,
+      patch.billingCustomerRef != null ? String(patch.billingCustomerRef).slice(0, 200) : null,
+      patch.setSubscriptionRef === true,
+      patch.billingSubscriptionRef != null
+        ? String(patch.billingSubscriptionRef).slice(0, 200)
+        : null,
+      patch.setPaymentStatus === true,
+      patch.billingPaymentStatus != null ? String(patch.billingPaymentStatus) : null,
+      patch.setPeriodEnd === true,
+      patch.clearPeriodEnd === true,
+      patch.billingCurrentPeriodEnd || null,
+      patch.setCancelAtPeriodEnd === true,
+      patch.billingCancelAtPeriodEnd === true,
+      patch.setSyncedAt === true,
+      patch.billingSyncedAt || new Date().toISOString(),
     ]
   );
   return mapSubscription(rows[0] || null);
@@ -267,6 +344,32 @@ async function countStaffAccountsForOrganization(client, organizationId) {
   return Number(rows[0].n) || 0;
 }
 
+/**
+ * Active staff seats + pending invitations that would add a new staff seat.
+ * Pending invites for emails that already hold an active staff role do not add seats.
+ */
+async function countStaffSeatsIncludingPendingInvites(client, organizationId) {
+  const active = await countStaffAccountsForOrganization(client, organizationId);
+  const { rows } = await client.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.user_invitations i
+      WHERE i.organization_id = $1
+        AND i.status = 'pending'
+        AND i.expires_at > now()
+        AND NOT EXISTS (
+          SELECT 1
+            FROM blessboard.user_roles ur
+            INNER JOIN blessboard.users u ON u.id = ur.user_id
+           WHERE ur.organization_id = i.organization_id
+             AND ur.status = 'active'
+             AND ur.role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')
+             AND u.email_normalized = i.email_normalized
+        )`,
+    [organizationId]
+  );
+  return active + (Number(rows[0].n) || 0);
+}
+
 async function countUsersForOrganization(client, organizationId) {
   const { rows } = await client.query(
     `SELECT COUNT(DISTINCT ur.user_id)::int AS n
@@ -276,6 +379,30 @@ async function countUsersForOrganization(client, organizationId) {
     [organizationId]
   );
   return Number(rows[0].n) || 0;
+}
+
+/**
+ * Active role users + pending invites that would introduce a new user identity seat.
+ */
+async function countUserSeatsIncludingPendingInvites(client, organizationId) {
+  const active = await countUsersForOrganization(client, organizationId);
+  const { rows } = await client.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.user_invitations i
+      WHERE i.organization_id = $1
+        AND i.status = 'pending'
+        AND i.expires_at > now()
+        AND NOT EXISTS (
+          SELECT 1
+            FROM blessboard.user_roles ur
+            INNER JOIN blessboard.users u ON u.id = ur.user_id
+           WHERE ur.organization_id = i.organization_id
+             AND ur.status = 'active'
+             AND u.email_normalized = i.email_normalized
+        )`,
+    [organizationId]
+  );
+  return active + (Number(rows[0].n) || 0);
 }
 
 module.exports = {
@@ -289,11 +416,15 @@ module.exports = {
   findPlanById,
   listPlanFeatures,
   findCurrentSubscription,
+  findOpenStatusSubscription,
   insertSubscription,
   updateSubscription,
+  updateSubscriptionBilling,
   listActiveOverrides,
   insertOverride,
   countActiveBranchesForOrganization,
   countStaffAccountsForOrganization,
+  countStaffSeatsIncludingPendingInvites,
   countUsersForOrganization,
+  countUserSeatsIncludingPendingInvites,
 };

@@ -87,6 +87,12 @@ function clockAt(input) {
   if (input && input.at instanceof Date && !Number.isNaN(input.at.getTime())) {
     return input.at.toISOString();
   }
+  if (input && input.at != null && input.at !== "") {
+    const parsed = new Date(input.at);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
   return new Date().toISOString();
 }
 
@@ -444,8 +450,8 @@ async function evaluateStaffAccountLimit(client, input) {
       entitlements: ent,
     };
   }
-  const staffCount = await repo.countStaffAccountsForOrganization(client, organizationId);
-  const userCount = await repo.countUsersForOrganization(client, organizationId);
+  const staffCount = await repo.countStaffSeatsIncludingPendingInvites(client, organizationId);
+  const userCount = await repo.countUserSeatsIncludingPendingInvites(client, organizationId);
   const additionalStaff = input.countsAsNewStaff === false ? 0 : 1;
   const additionalUser = input.countsAsNewUser === false ? 0 : 1;
   if (!isWithinLimit(ent, FEATURE_KEYS.MAX_STAFF_ACCOUNTS, staffCount, additionalStaff)) {
@@ -456,6 +462,8 @@ async function evaluateStaffAccountLimit(client, input) {
       current: staffCount,
       limit: getLimit(ent, FEATURE_KEYS.MAX_STAFF_ACCOUNTS),
       entitlements: ent,
+      message:
+        "Your plan’s staff account limit has been reached. Upgrade to invite another administrator.",
     };
   }
   if (!isWithinLimit(ent, FEATURE_KEYS.MAX_USERS, userCount, additionalUser)) {
@@ -466,6 +474,8 @@ async function evaluateStaffAccountLimit(client, input) {
       current: userCount,
       limit: getLimit(ent, FEATURE_KEYS.MAX_USERS),
       entitlements: ent,
+      message:
+        "Your plan’s user account limit has been reached. Upgrade to invite another user.",
     };
   }
   return {
@@ -596,6 +606,8 @@ async function setOrganizationEntitlementOverride(db, input) {
     return { ok: false, status: STATUS.INVALID_INPUT, override: null, reason: "feature_kind" };
   }
   try {
+    const { recordAuditEventSafe } = require("./auditEventService");
+    const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
     return await withClient(db, async (client) => {
       const override = await repo.insertOverride(client, {
         organizationId,
@@ -608,6 +620,27 @@ async function setOrganizationEntitlementOverride(db, input) {
         startsAt: input.startsAt,
         endsAt: input.endsAt,
         createdByUserId: input.createdByUserId,
+      });
+      const deployment = getPlatformDeploymentCode(input.env || process.env);
+      await recordAuditEventSafe(client, {
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        organizationId,
+        actorUserId: input.createdByUserId || null,
+        actionKey: "entitlement.override.set",
+        entityType: "organization_entitlement",
+        entityId: override && override.id ? override.id : null,
+        outcome: "success",
+        metadata: {
+          product_key: productKey,
+          entity_key: featureKey,
+          reason_code: "platform_override",
+          source: "override",
+          count:
+            featureKind === "limit" && input.limitValue != null
+              ? Number(input.limitValue)
+              : undefined,
+          status: featureKind === "boolean" ? (input.booleanValue ? "true" : "false") : "limit",
+        },
       });
       return { ok: true, status: STATUS.OK, override };
     });

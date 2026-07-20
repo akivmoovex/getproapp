@@ -35,7 +35,13 @@ const ALLOWED_FOLLOW_UP = Object.freeze([
   "not_interested",
 ]);
 const ALLOWED_PUBLICATION = Object.freeze(["unpublished"]);
+/** UI filter values: free | growth | network (maps to DB professional via registrationPlanMapping). */
 const ALLOWED_PLANS = Object.freeze(["free", "growth", "network"]);
+const {
+  mapDirectoryPlanFilterToDbPlanKey,
+  dbPlanDisplayLabel,
+} = require("../../blessboard/services/registrationPlanMapping");
+const { presentSubscriptionTiming } = require("./presentSubscriptionTiming");
 
 /**
  * Compact DTO for platform-admin HTML — keys and labels only.
@@ -46,6 +52,15 @@ function mapRow(row) {
   const publishedPages = Number(row.published_pages) || 0;
   const draftPages = Number(row.draft_pages) || 0;
   const hasChurch = row.church_key != null;
+  const planKey = row.plan_key != null ? String(row.plan_key) : null;
+  const subscriptionStatus =
+    row.subscription_status != null ? String(row.subscription_status) : null;
+  const timing = presentSubscriptionTiming({
+    status: subscriptionStatus,
+    planKey,
+    endsAt: row.subscription_ends_at,
+    startsAt: row.subscription_starts_at,
+  });
   return {
     organizationKey: String(row.organization_key || ""),
     displayName: String(row.display_name || ""),
@@ -57,11 +72,24 @@ function mapRow(row) {
     churchKey: row.church_key != null ? String(row.church_key) : null,
     churchStatus: row.church_status != null ? String(row.church_status) : null,
     activeBranchCount: Number(row.active_branch_count) || 0,
+    firstBranchName: row.first_branch_name != null ? String(row.first_branch_name) : null,
+    firstBranchKey: row.first_branch_key != null ? String(row.first_branch_key) : null,
     onboardingStatus: row.onboarding_status != null ? String(row.onboarding_status) : null,
     followUpStatus: row.follow_up_status != null ? String(row.follow_up_status) : null,
     supportRequested: Boolean(row.support_requested),
     nextFollowUpAt: row.next_follow_up_at || null,
-    planKey: row.plan_key != null ? String(row.plan_key) : null,
+    organizationCreatedAt: row.organization_created_at || null,
+    registrationApplicationId:
+      row.registration_application_id != null ? String(row.registration_application_id) : null,
+    planKey,
+    planLabel: planKey ? dbPlanDisplayLabel(planKey) || planKey : null,
+    subscriptionStatus,
+    subscriptionStatusLabel: timing.statusLabel,
+    subscriptionStartsAt: timing.startsAt,
+    subscriptionEndsAt: timing.endsAt,
+    subscriptionTimingKind: timing.timingKind,
+    subscriptionTimingLabel: timing.timingLabel,
+    entitlementState: timing.entitlementState,
     publicationStatus: hasChurch
       ? derivePublicationStatus({ draftPages, publishedPages })
       : null,
@@ -159,14 +187,23 @@ function normalizeListInput(input) {
   }
 
   let plan = null;
+  let planFilter = null;
   const planRaw = String(raw.plan || "")
     .trim()
     .toLowerCase();
   if (planRaw) {
-    if (!ALLOWED_PLANS.includes(planRaw)) {
+    if (!ALLOWED_PLANS.includes(planRaw) && planRaw !== "professional") {
       return { ok: false, reason: "plan" };
     }
-    plan = planRaw;
+    plan = mapDirectoryPlanFilterToDbPlanKey(planRaw);
+    if (!plan) {
+      return { ok: false, reason: "plan" };
+    }
+    // Preserve UI filter value (network) even though SQL uses professional.
+    planFilter = planRaw === "professional" ? "network" : planRaw === "foundation" ? "free" : planRaw;
+    if (!ALLOWED_PLANS.includes(planFilter)) {
+      planFilter = plan === "professional" ? "network" : plan;
+    }
   }
 
   return {
@@ -182,6 +219,7 @@ function normalizeListInput(input) {
       supportRequested,
       publication,
       plan,
+      planFilter,
     },
   };
 }
@@ -265,7 +303,7 @@ async function listPlatformOrganizations(db, input) {
         follow_up: followUp || "",
         support_requested: supportRequested === true ? "true" : "",
         publication: publication || "",
-        plan: plan || "",
+        plan: normalized.value.planFilter || "",
         q: keyPrefix || "",
       },
     };

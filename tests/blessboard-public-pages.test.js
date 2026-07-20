@@ -146,6 +146,11 @@ describe("blessboard public pages", () => {
         publicName: CHURCH_A,
         websiteStatus: "published",
       });
+      await ensureChurchSettingsInitialized(pool, churchB.id);
+      await updateChurchSettings(pool, churchB.id, {
+        publicName: "Public Beta Church",
+        websiteStatus: "published",
+      });
 
       app = createV5FoundationApp({
         getPool: () => pool,

@@ -65,10 +65,6 @@ function derivePublicationStatus(pub) {
  * @param {string} organizationKey
  */
 function buildChecklist(facts, organizationKey) {
-  const key = String(organizationKey || "");
-  const orgDetailHref = key ? `/admin/organizations/${encodeURIComponent(key)}` : null;
-  const branchHref = key ? `/admin/organizations/${encodeURIComponent(key)}#pa-org-branches` : null;
-
   const hasOrgName = Boolean(String(facts.orgDisplayName || "").trim());
   const hasChurch = Boolean(facts.churchId);
   const hasChurchName = Boolean(String(facts.churchDisplayName || "").trim());
@@ -96,8 +92,8 @@ function buildChecklist(facts, organizationKey) {
       explanation: organizationDetailsComplete
         ? "Organization and church display names are present."
         : "Requires organization and church display names.",
-      actionUrl: orgDetailHref,
-      actionLabel: "Organization catalogue",
+      actionUrl: "/hq/settings",
+      actionLabel: "Organization settings",
     },
     {
       key: "first_branch",
@@ -107,8 +103,8 @@ function buildChecklist(facts, organizationKey) {
       explanation: firstBranchComplete
         ? "At least one active BlessBoard branch exists."
         : "No active branch linked to this church yet.",
-      actionUrl: branchHref,
-      actionLabel: "Branch summary",
+      actionUrl: "/hq/settings#bb-hq-branch",
+      actionLabel: "First branch settings",
     },
     {
       key: "contact_details",
@@ -118,8 +114,8 @@ function buildChecklist(facts, organizationKey) {
       explanation: contactDetailsComplete
         ? "Phone or email is present on church or branch settings."
         : "No phone or email on church_settings or branch_settings.",
-      actionUrl: null,
-      actionLabel: null,
+      actionUrl: "/hq/settings",
+      actionLabel: "Contact settings",
     },
     {
       key: "service_times",
@@ -129,8 +125,8 @@ function buildChecklist(facts, organizationKey) {
       explanation: serviceTimesComplete
         ? "Service-time content found on a public page section."
         : "No structured service-time records; optional page sections not present.",
-      actionUrl: null,
-      actionLabel: null,
+      actionUrl: "/hq/content/pages/home",
+      actionLabel: "Edit home content",
     },
     {
       key: "logo",
@@ -151,8 +147,8 @@ function buildChecklist(facts, organizationKey) {
       explanation: previewComplete
         ? "Preview acknowledged on the onboarding record."
         : "Portal preview acknowledgement not recorded (deferred path routing).",
-      actionUrl: null,
-      actionLabel: null,
+      actionUrl: "/hq/website",
+      actionLabel: "Website preview",
     },
     {
       key: "publish",
@@ -162,8 +158,8 @@ function buildChecklist(facts, organizationKey) {
       explanation: publishComplete
         ? "At least one public page is published."
         : "No published public_pages rows for this church.",
-      actionUrl: null,
-      actionLabel: null,
+      actionUrl: "/hq/website",
+      actionLabel: "Publish website",
     },
   ];
 

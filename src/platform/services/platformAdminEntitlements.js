@@ -20,6 +20,8 @@ const {
   hasFeature,
 } = require("./entitlementService");
 const { listPlatformPlansCatalogue } = require("./listPlatformPlansCatalogue");
+const { dbPlanDisplayLabel } = require("../../blessboard/services/registrationPlanMapping");
+const { presentSubscriptionTiming } = require("./presentSubscriptionTiming");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -79,17 +81,29 @@ function presentEntitlements(entitlements) {
   }
   const overrides = featureRows.filter((f) => f.source === "override");
   const planInherited = featureRows.filter((f) => f.source !== "override");
+  const planKey = entitlements.planKey || (plan && plan.planKey) || null;
+  const subscriptionStatus = subscription && subscription.status ? String(subscription.status) : null;
+  const timing = presentSubscriptionTiming({
+    status: subscriptionStatus,
+    planKey,
+    endsAt: subscription && subscription.endsAt,
+    startsAt: subscription && subscription.startsAt,
+  });
   return {
-    planKey: entitlements.planKey || (plan && plan.planKey) || null,
-    planDisplayName: plan && plan.displayName ? String(plan.displayName) : null,
+    planKey,
+    planDisplayName:
+      (planKey && dbPlanDisplayLabel(planKey)) ||
+      (plan && plan.displayName ? String(plan.displayName) : null),
     subscriptionActive: Boolean(entitlements.subscriptionActive),
-    subscriptionStatus: subscription && subscription.status ? String(subscription.status) : null,
-    subscriptionStartsAt:
-      subscription && subscription.startsAt
-        ? new Date(subscription.startsAt).toISOString()
-        : null,
-    subscriptionEndsAt:
-      subscription && subscription.endsAt ? new Date(subscription.endsAt).toISOString() : null,
+    subscriptionStatus,
+    subscriptionStatusLabel: timing.statusLabel,
+    subscriptionStartsAt: timing.startsAt,
+    subscriptionEndsAt: timing.endsAt,
+    subscriptionTimingKind: timing.timingKind,
+    subscriptionTimingLabel: timing.timingLabel,
+    graceDeadline: timing.timingKind === "grace" ? timing.timingEndsAt : null,
+    trialEndsAt: timing.timingKind === "trial" ? timing.timingEndsAt : null,
+    entitlementState: timing.entitlementState,
     reason: entitlements.reason || null,
     features: featureRows,
     planInherited,

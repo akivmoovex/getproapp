@@ -264,6 +264,7 @@ function renderAccountPage(account) {
     rolesLabel,
     roleBadges,
     hostKind,
+    showPlatformAdminLink: Boolean(account.showPlatformAdminLink),
     churchDisplayName: account.churchDisplayName ? String(account.churchDisplayName) : "",
     branchDisplayName: account.branchDisplayName ? String(account.branchDisplayName) : "",
   });

@@ -5,16 +5,48 @@ const {
   provisionRegisteredBlessBoardChurch,
   STATUS: ORCH_STATUS,
 } = require("./provisionRegisteredBlessBoardChurch");
+const { DUPLICATE_PHONE_MESSAGE } = require("./normalizeRegistrationPhone");
+const {
+  isNetworkPlanSelection,
+  NETWORK_PLAN_CODE,
+} = require("./platformChurchRegistrationValidation");
+const {
+  RISK_DECISIONS,
+  RISK_REASON_CODES,
+  PUBLIC_REVIEW_MESSAGE,
+  PUBLIC_REJECT_MESSAGE,
+  evaluateRegistrationRisk,
+} = require("./registrationRiskDecision");
+const { logRegistrationTrace } = require("./registrationTraceLog");
+const {
+  mapPublicPlanToDbPlanKey,
+  normalizePublicPlanCode,
+} = require("./registrationPlanMapping");
 
 const GENERIC_SAVE_ERROR = "We could not save your request right now. Please try again shortly.";
 const GENERIC_PROVISION_ERROR =
   "We could not finish creating your church workspace right now. Please try again shortly.";
-const DUPLICATE_REVIEW_MESSAGE =
-  "Thank you. Your registration needs a short review before we can continue. BlessBoard will assist you — no further action is required right now.";
+const DUPLICATE_REVIEW_MESSAGE = PUBLIC_REVIEW_MESSAGE;
 const IN_PROGRESS_MESSAGE =
   "Your registration is already being completed. Please wait a moment, then sign in if your workspace is ready.";
 const PLAN_OPS_MESSAGE =
   "Church registration is temporarily unavailable. Please try again later or contact BlessBoard support.";
+
+/**
+ * Exact customer success copy for Network support-contact registration (POST-redirect-GET).
+ * Do not include application IDs or internal notes.
+ */
+const NETWORK_SUPPORT_SUCCESS_MESSAGE =
+  "Thank you for your interest in the BlessBoard Network plan. Your registration has been received successfully. Our customer support team will contact you shortly to understand your organization's structure, branch requirements, onboarding needs, and pricing options.";
+
+/**
+ * Registration acknowledgement email is not wired in V5 yet (no BlessBoard registration
+ * mail abstraction). Submission must succeed regardless; operators contact from the admin queue.
+ */
+function maybeSendRegistrationAcknowledgementEmail(/* _application */) {
+  // Gap: no functioning registration email abstraction exists. Do not throw.
+  return { sent: false, reason: "registration_email_not_configured" };
+}
 
 function clientMetaFromRequest(req) {
   const ip = String((req && (req.ip || (req.connection && req.connection.remoteAddress))) || "").slice(
@@ -25,22 +57,23 @@ function clientMetaFromRequest(req) {
   return { source_ip: ip || null, user_agent: userAgent || null };
 }
 
-function logReceived(application, { duplicate = false, mode = "enquiry" } = {}) {
+function logReceived(req, application, { duplicate = false, mode = "enquiry" } = {}) {
   if (!application || !application.id) return;
-  // eslint-disable-next-line no-console
-  console.log(
-    "[blessboard-church-registration]",
-    JSON.stringify({
-      op: "platform_church_registration_received",
-      applicationId: application.id,
-      status: application.status,
-      applicationStatus: application.application_status || null,
-      provisioningStatus: application.provisioning_status || null,
-      selectedPlan: application.selected_plan || null,
-      duplicate: Boolean(duplicate),
-      mode,
-    })
-  );
+  const publicPlanCode = normalizePublicPlanCode(application.selected_plan) || null;
+  logRegistrationTrace(req, {
+    event: "church_registration_application",
+    operation: "registration_application_persisted",
+    outcome: "ok",
+    applicationId: application.id,
+    applicationStatus: application.application_status || application.status || null,
+    provisioningStatus: application.provisioning_status || null,
+    publicPlanCode,
+    canonicalPlanKey: mapPublicPlanToDbPlanKey(application.selected_plan) || null,
+    riskDecision: application.risk_decision || null,
+    riskReasonCodes: application.risk_reason_codes || [],
+    duplicate: Boolean(duplicate),
+    mode,
+  });
 }
 
 /**
@@ -58,36 +91,85 @@ function logRegistrationDbError(req, err) {
     err && err.table != null
       ? String(err.table).slice(0, 128)
       : repo.TARGET_TABLE;
-  // eslint-disable-next-line no-console
-  console.error(
-    "[blessboard-church-registration]",
-    JSON.stringify({
-      event: "platform_church_registration_db_error",
-      requestId: (req && req.requestId) || null,
+  logRegistrationTrace(
+    req,
+    {
+      event: "church_registration_db_error",
+      operation: "registration_db",
+      outcome: "fail",
+      failureCategory: pgCode === "42P01" ? "undefined_table" : "database_error",
       pgCode,
       schema,
       table,
       targetRelation: repo.TARGET_RELATION,
-      // 42P01 must remain visible to operators (not swallowed).
       undefinedTable: pgCode === "42P01",
-    })
+    },
+    { level: "error", force: true }
   );
 }
 
 function logProvisionOutcome(req, result) {
-  // eslint-disable-next-line no-console
-  console.log(
-    "[blessboard-church-registration]",
-    JSON.stringify({
-      event: "platform_church_registration_provision",
-      requestId: (req && req.requestId) || null,
-      ok: Boolean(result && result.ok),
-      status: (result && result.status) || null,
-      alreadyProvisioned: Boolean(result && result.alreadyProvisioned),
-      applicationId: (result && result.records && result.records.applicationId) || null,
-      organizationKey: (result && result.records && result.records.organizationKey) || null,
-    })
-  );
+  const records = (result && result.records) || {};
+  const ok = Boolean(result && result.ok);
+  const status = (result && result.status) || null;
+  const endsAt = records.subscriptionEndsAt || null;
+  const rolledBack =
+    !ok &&
+    (status === ORCH_STATUS.PROVISIONING_FAILED ||
+      status === ORCH_STATUS.INTERNAL_ERROR ||
+      status === ORCH_STATUS.DATABASE_CONFLICT);
+  logRegistrationTrace(req, {
+    event: "church_registration_provision",
+    operation: "provision_registered_church",
+    outcome: ok ? "ok" : "fail",
+    failureCategory: ok ? null : status || "provisioning_failed",
+    status,
+    ok,
+    alreadyProvisioned: Boolean(result && result.alreadyProvisioned),
+    applicationId: records.applicationId || null,
+    organizationKey: records.organizationKey || null,
+    canonicalPlanKey: records.planKey || null,
+    publicPlanCode:
+      records.planKey === "free"
+        ? "foundation"
+        : records.planKey === "growth"
+          ? "growth"
+          : null,
+    subscriptionStatus: records.subscriptionStatus || null,
+    subscriptionStartsAt: records.subscriptionStartsAt || null,
+    subscriptionEndsAt: endsAt,
+    hasTrialEndsAt: Boolean(endsAt),
+    transactionRolledBack: ok ? false : rolledBack,
+  });
+}
+
+function logRiskDecision(req, risk, mode) {
+  try {
+    logRegistrationTrace(req, {
+      event: "church_registration_risk",
+      operation: "registration_risk_decision",
+      mode,
+      decision: risk && risk.decision,
+      reasonCodes: (risk && risk.reasonCodes) || [],
+      outcome: "ok",
+    });
+  } catch {
+    /* logging must not block */
+  }
+}
+
+/**
+ * @param {object} risk
+ * @returns {{ application_status: string, risk_decision: string, risk_reason_codes: string[], risk_decided_at: string }}
+ */
+function riskPersistFields(risk) {
+  const reviewRequired = risk.decision === RISK_DECISIONS.REVIEW_REQUIRED;
+  return {
+    application_status: reviewRequired ? "duplicate_review" : "submitted",
+    risk_decision: risk.decision,
+    risk_reason_codes: risk.reasonCodes || [],
+    risk_decided_at: risk.decidedAt || new Date().toISOString(),
+  };
 }
 
 /**
@@ -113,22 +195,134 @@ async function submitPlatformChurchRegistration(pool, req, validationResult) {
   }
 
   const data = validationResult.data;
+  const clientMeta = clientMetaFromRequest(req);
+
+  let risk;
+  try {
+    risk = await evaluateRegistrationRisk(pool, {
+      data,
+      sourceIp: clientMeta.source_ip,
+      honeypot: false,
+      organizationKey: data.organization_key || null,
+    });
+  } catch (err) {
+    logRegistrationDbError(req, err);
+    return {
+      ok: false,
+      error: GENERIC_SAVE_ERROR,
+      code: "risk_evaluation_failed",
+      pgCode: err && err.code ? String(err.code) : null,
+      httpStatus: 503,
+    };
+  }
+  logRiskDecision(req, risk, "enquiry");
+
+  if (risk.decision === RISK_DECISIONS.REJECT) {
+    if (risk.reasonCodes.includes(RISK_REASON_CODES.DUPLICATE_PHONE)) {
+      return {
+        ok: false,
+        error: risk.publicMessage || DUPLICATE_PHONE_MESSAGE,
+        field: "phone",
+        code: "duplicate_registration_phone",
+        httpStatus: 400,
+        riskDecision: risk.decision,
+        riskReasonCodes: risk.reasonCodes,
+      };
+    }
+    return {
+      ok: false,
+      error: PUBLIC_REJECT_MESSAGE,
+      code: "registration_rejected",
+      httpStatus: 400,
+      riskDecision: risk.decision,
+      riskReasonCodes: risk.reasonCodes,
+      field: risk.field || null,
+    };
+  }
+
   // Never persist administrator_password on the application row.
-  const { administrator_password: _dropPw, organization_key: _dropKey, wants_instant_free: _dropW, ...persistable } =
-    data;
+  const {
+    administrator_password: _dropPw,
+    organization_key: _dropKey,
+    wants_instant_free: _dropW,
+    ...persistable
+  } = data;
+
+  const networkSupport = isNetworkPlanSelection(persistable.selected_plan);
+  const supportFields = networkSupport
+    ? {
+        support_requested: true,
+        follow_up_status: "contact_pending",
+        selected_plan: NETWORK_PLAN_CODE,
+      }
+    : {};
 
   try {
     const { application, duplicate } = await repo.createApplicationIdempotent(pool, {
       ...persistable,
-      ...clientMetaFromRequest(req),
+      ...supportFields,
+      ...clientMeta,
+      ...riskPersistFields(risk),
     });
     try {
-      logReceived(application, { duplicate, mode: "enquiry" });
+      logReceived(req, application, {
+        duplicate,
+        mode: networkSupport ? "network_support_contact" : "enquiry",
+      });
     } catch {
       /* logging must not block */
     }
-    return { ok: true, application, duplicate };
+    try {
+      maybeSendRegistrationAcknowledgementEmail(application);
+    } catch {
+      /* email must never fail submission */
+    }
+    if (duplicate && application && String(application.application_status) === "duplicate_review") {
+      return {
+        ok: false,
+        review: true,
+        application,
+        duplicate,
+        networkSupportContact: networkSupport,
+        error: DUPLICATE_REVIEW_MESSAGE,
+        code: "review_required",
+        httpStatus: 200,
+        riskDecision: application.risk_decision || risk.decision,
+        riskReasonCodes: risk.reasonCodes,
+      };
+    }
+    if (!duplicate && risk.decision === RISK_DECISIONS.REVIEW_REQUIRED) {
+      return {
+        ok: false,
+        review: true,
+        application,
+        duplicate,
+        networkSupportContact: networkSupport,
+        error: DUPLICATE_REVIEW_MESSAGE,
+        code: "review_required",
+        httpStatus: 200,
+        riskDecision: risk.decision,
+        riskReasonCodes: risk.reasonCodes,
+      };
+    }
+    return {
+      ok: true,
+      application,
+      duplicate,
+      networkSupportContact: networkSupport,
+      riskDecision: application.risk_decision || risk.decision,
+      riskReasonCodes: risk.reasonCodes,
+    };
   } catch (err) {
+    if (err && (err.code === "duplicate_registration_phone" || err.name === "DuplicateRegistrationPhoneError")) {
+      return {
+        ok: false,
+        error: err.message || DUPLICATE_PHONE_MESSAGE,
+        field: "phone",
+        code: "duplicate_registration_phone",
+        httpStatus: 400,
+      };
+    }
     logRegistrationDbError(req, err);
     return {
       ok: false,
@@ -179,30 +373,133 @@ async function submitInstantFreeChurchRegistration(pool, req, validationResult, 
     };
   }
 
-  const { administrator_password: _pw, organization_key: _ok, wants_instant_free: _w, ...persistable } =
-    data;
+  const clientMeta = clientMetaFromRequest(req);
+  let risk;
+  try {
+    risk = await evaluateRegistrationRisk(pool, {
+      data,
+      sourceIp: clientMeta.source_ip,
+      honeypot: false,
+      organizationKey,
+    });
+  } catch (err) {
+    logRegistrationDbError(req, err);
+    return {
+      ok: false,
+      error: GENERIC_SAVE_ERROR,
+      code: "risk_evaluation_failed",
+      pgCode: err && err.code ? String(err.code) : null,
+      httpStatus: 503,
+    };
+  }
+  logRiskDecision(req, risk, "instant_free");
+
+  if (risk.decision === RISK_DECISIONS.REJECT) {
+    if (risk.reasonCodes.includes(RISK_REASON_CODES.DUPLICATE_PHONE)) {
+      return {
+        ok: false,
+        mode: "instant_free",
+        error: risk.publicMessage || DUPLICATE_PHONE_MESSAGE,
+        field: "phone",
+        code: "duplicate_registration_phone",
+        httpStatus: 400,
+        riskDecision: risk.decision,
+        riskReasonCodes: risk.reasonCodes,
+      };
+    }
+    return {
+      ok: false,
+      mode: "instant_free",
+      error: PUBLIC_REJECT_MESSAGE,
+      code: "registration_rejected",
+      httpStatus: 400,
+      riskDecision: risk.decision,
+      riskReasonCodes: risk.reasonCodes,
+      field: risk.field || null,
+    };
+  }
+
+  const {
+    administrator_password: _pw,
+    organization_key: _ok,
+    wants_instant_free: _w,
+    ...persistable
+  } = data;
 
   let application;
   let duplicate = false;
   try {
     const created = await repo.createApplicationIdempotent(pool, {
       ...persistable,
-      ...clientMetaFromRequest(req),
+      ...clientMeta,
+      ...riskPersistFields(risk),
     });
     application = created.application;
     duplicate = created.duplicate;
     try {
-      logReceived(application, { duplicate, mode: "instant_free" });
+      logReceived(req, application, { duplicate, mode: "instant_free" });
     } catch {
       /* ignore */
     }
   } catch (err) {
+    if (err && (err.code === "duplicate_registration_phone" || err.name === "DuplicateRegistrationPhoneError")) {
+      return {
+        ok: false,
+        error: err.message || DUPLICATE_PHONE_MESSAGE,
+        field: "phone",
+        code: "duplicate_registration_phone",
+        httpStatus: 400,
+      };
+    }
     logRegistrationDbError(req, err);
     return {
       ok: false,
       error: GENERIC_SAVE_ERROR,
       code: err && err.code ? String(err.code) : "db_error",
       pgCode: err && err.code ? String(err.code) : null,
+    };
+  }
+
+  // Soft idempotent twin: honor the existing row's state over a freshly computed hold.
+  if (duplicate && application) {
+    if (String(application.application_status) === "duplicate_review") {
+      return {
+        ok: false,
+        mode: "instant_free",
+        review: true,
+        application,
+        duplicate,
+        error: DUPLICATE_REVIEW_MESSAGE,
+        code: "review_required",
+        httpStatus: 200,
+      };
+    }
+  } else if (risk.decision === RISK_DECISIONS.REVIEW_REQUIRED) {
+    return {
+      ok: false,
+      mode: "instant_free",
+      review: true,
+      application,
+      duplicate,
+      error: DUPLICATE_REVIEW_MESSAGE,
+      code: "review_required",
+      httpStatus: 200,
+      riskDecision: risk.decision,
+      riskReasonCodes: risk.reasonCodes,
+    };
+  }
+
+  // Soft idempotent twin: if prior row is already held for review, do not provision.
+  if (application && String(application.application_status) === "duplicate_review") {
+    return {
+      ok: false,
+      mode: "instant_free",
+      review: true,
+      application,
+      duplicate,
+      error: DUPLICATE_REVIEW_MESSAGE,
+      code: "review_required",
+      httpStatus: 200,
     };
   }
 
@@ -252,6 +549,8 @@ async function submitInstantFreeChurchRegistration(pool, req, validationResult, 
       provision,
       records: provision.records,
       alreadyProvisioned: Boolean(provision.alreadyProvisioned),
+      riskDecision: risk.decision,
+      riskReasonCodes: risk.reasonCodes,
     };
   }
 
@@ -333,6 +632,8 @@ module.exports = {
   DUPLICATE_REVIEW_MESSAGE,
   IN_PROGRESS_MESSAGE,
   PLAN_OPS_MESSAGE,
+  NETWORK_SUPPORT_SUCCESS_MESSAGE,
+  PUBLIC_REJECT_MESSAGE,
   submitPlatformChurchRegistration,
   submitInstantFreeChurchRegistration,
   logRegistrationDbError,

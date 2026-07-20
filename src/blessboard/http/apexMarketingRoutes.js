@@ -2,7 +2,8 @@
 
 /**
  * Apex marketing routes (Batch 2b + BB-MT-001 register-church POST).
- * Flag-gated instant Free provisioning via provisionRegisteredBlessBoardChurch.
+ * Automatic Foundation + Growth trial provisioning (default on; emergency env switch)
+ * via provisionRegisteredBlessBoardChurch. Network is support-contact only (no auto tenant).
  */
 
 const express = require("express");
@@ -28,7 +29,8 @@ const {
   normalizeSelectedPlan,
   validatePlatformChurchRegistration,
   formFromBody,
-  FREE_PLAN_CODE,
+  isInstantProvisionPlan,
+  NETWORK_PLAN_CODE,
 } = require("../services/platformChurchRegistrationValidation");
 const {
   submitPlatformChurchRegistration,
@@ -44,6 +46,8 @@ const {
   setV5SessionCookie,
 } = require("../../platform/session/v5SessionCookie");
 const { resolveHostname } = require("../../platform/host");
+const { logRegistrationTrace } = require("../services/registrationTraceLog");
+const { mapPublicPlanToDbPlanKey } = require("../services/registrationPlanMapping");
 
 const REGISTER_PATH = "/register-church";
 const ACCOUNT_PATH = "/account";
@@ -96,15 +100,17 @@ function logCsrfDiag(req, env, outcome) {
   );
 }
 
-function logSessionEstablishFailure(req, errStatus) {
-  // eslint-disable-next-line no-console
-  console.error(
-    "[blessboard-church-registration]",
-    JSON.stringify({
-      event: "instant_free_session_establish_failed",
-      requestId: (req && req.requestId) || null,
-      status: errStatus || "session_failed",
-    })
+function logSessionEstablishFailure(req, errStatus, extra) {
+  logRegistrationTrace(
+    req,
+    {
+      event: "church_registration_session",
+      operation: "establish_session",
+      outcome: "fail",
+      failureCategory: errStatus || "session_failed",
+      ...(extra && typeof extra === "object" ? extra : {}),
+    },
+    { force: true, level: "error" }
   );
 }
 
@@ -228,10 +234,15 @@ function createApexMarketingRouter(deps) {
     const workspaceReady = String((req.query && req.query.ready) || "") === "1";
     const loginFallback = String((req.query && req.query.login) || "") === "1";
     const review = String((req.query && req.query.review) || "") === "1";
+    const submittedPlan = submitted
+      ? normalizeSelectedPlan(req.query && req.query.plan) || selectedPlan
+      : null;
     return withShell(req, res, renderRegisterChurchPage, {
       alwaysPassCsrf: true,
       noStore: true,
       submitted,
+      submittedPlan,
+      networkSupportSuccess: submitted && submittedPlan === NETWORK_PLAN_CODE,
       workspaceReady,
       loginFallback,
       review,
@@ -247,6 +258,7 @@ function createApexMarketingRouter(deps) {
   });
 
   router.post(REGISTER_PATH, registerFormLimiter, async (req, res, next) => {
+    const startedAt = Date.now();
     try {
       if (!isApexHost(req)) {
         return res.status(404).type("text").send("Not found");
@@ -258,6 +270,14 @@ function createApexMarketingRouter(deps) {
       const selectedPlanHint = normalizeSelectedPlan(req.query && req.query.plan);
       const body = req.body || {};
       const flagOn = instantEnabled();
+
+      logRegistrationTrace(req, {
+        event: "church_registration_post",
+        operation: "register_church_post",
+        outcome: "started",
+        publicPlanCode: normalizeSelectedPlan(body.selected_plan) || selectedPlanHint || null,
+        mode: flagOn ? "instant_enabled" : "enquiry_only",
+      });
 
       function renderForm(status, extras) {
         // Always issue a fresh cookie+field pair after failed attempts so Back/retry works.
@@ -281,6 +301,13 @@ function createApexMarketingRouter(deps) {
       // Validate against the request cookie BEFORE rotating the CSRF cookie.
       if (!validateCsrf(req, body[CSRF_FIELD], env)) {
         logCsrfDiag(req, env, "reject");
+        logRegistrationTrace(req, {
+          event: "church_registration_validation",
+          operation: "csrf_validate",
+          outcome: "fail",
+          failureCategory: "csrf_invalid",
+          durationMs: Date.now() - startedAt,
+        });
         return renderForm(403, {
           formError: CSRF_FORM_ERROR,
           fieldError: null,
@@ -294,28 +321,84 @@ function createApexMarketingRouter(deps) {
         instantFreeEnabled: flagOn,
       });
       if (!validation.ok) {
+        logRegistrationTrace(req, {
+          event: "church_registration_validation",
+          operation: "register_church_validate",
+          outcome: "fail",
+          failureCategory: "validation",
+          field: validation.field || null,
+          publicPlanCode: normalizeSelectedPlan(body.selected_plan) || selectedPlanHint || null,
+          durationMs: Date.now() - startedAt,
+        });
         return renderForm(400, {
           formError: validation.error,
           fieldError: validation.field || null,
         });
       }
 
+      const publicPlanCode = validation.data.selected_plan || null;
+      logRegistrationTrace(req, {
+        event: "church_registration_validation",
+        operation: "register_church_validate",
+        outcome: "ok",
+        publicPlanCode,
+        canonicalPlanKey: mapPublicPlanToDbPlanKey(publicPlanCode) || null,
+      });
+
       const wantsInstant =
         flagOn &&
         validation.data &&
         validation.data.wants_instant_free &&
-        validation.data.selected_plan === FREE_PLAN_CODE;
+        isInstantProvisionPlan(validation.data.selected_plan);
 
       if (!wantsInstant) {
         const result = await submitPlatformChurchRegistration(getPool(), req, validation);
+        if (result.honeypot) {
+          issueAndSetCsrf(res);
+          logRegistrationTrace(req, {
+            event: "church_registration_redirect",
+            operation: "register_church_redirect",
+            outcome: "ok",
+            redirectPath: `${REGISTER_PATH}?submitted=1`,
+            failureCategory: "honeypot",
+            durationMs: Date.now() - startedAt,
+          });
+          return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
+        }
         if (!result.ok) {
-          return renderForm(503, {
+          if (result.review) {
+            issueAndSetCsrf(res);
+            logRegistrationTrace(req, {
+              event: "church_registration_redirect",
+              operation: "register_church_redirect",
+              outcome: "ok",
+              redirectPath: `${REGISTER_PATH}?review=1`,
+              failureCategory: "review_required",
+              durationMs: Date.now() - startedAt,
+            });
+            return res.redirect(303, `${REGISTER_PATH}?review=1`);
+          }
+          return renderForm(result.httpStatus || 503, {
             formError: result.error || GENERIC_SAVE_ERROR,
-            fieldError: null,
+            fieldError: result.field || null,
           });
         }
         issueAndSetCsrf(res);
-        return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
+        const planQ =
+          result.networkSupportContact ||
+          (validation.data && validation.data.selected_plan === NETWORK_PLAN_CODE)
+            ? `&plan=${encodeURIComponent(NETWORK_PLAN_CODE)}`
+            : "";
+        const redirectPath = `${REGISTER_PATH}?submitted=1${planQ}`;
+        logRegistrationTrace(req, {
+          event: "church_registration_redirect",
+          operation: "register_church_redirect",
+          outcome: "ok",
+          publicPlanCode,
+          redirectPath,
+          durationMs: Date.now() - startedAt,
+        });
+        return res.redirect(303, redirectPath);
       }
 
       const result = await submitInstantFreeChurchRegistration(getPool(), req, validation, {
@@ -370,13 +453,29 @@ function createApexMarketingRouter(deps) {
         if (sessionResult.ok && sessionResult.rawToken) {
           setV5SessionCookie(res, sessionResult.rawToken, { secure: isProduction, env });
           sessionOk = true;
+          logRegistrationTrace(req, {
+            event: "church_registration_session",
+            operation: "establish_session",
+            outcome: "ok",
+            applicationId: records.applicationId || null,
+            organizationKey: orgKey || null,
+            publicPlanCode,
+            canonicalPlanKey: records.planKey || mapPublicPlanToDbPlanKey(publicPlanCode) || null,
+          });
         } else {
-          logSessionEstablishFailure(req, sessionResult && sessionResult.status);
+          logSessionEstablishFailure(req, sessionResult && sessionResult.status, {
+            applicationId: records.applicationId || null,
+            organizationKey: orgKey || null,
+          });
         }
       } catch (sessionErr) {
         logSessionEstablishFailure(
           req,
-          sessionErr && sessionErr.message ? String(sessionErr.message).slice(0, 80) : "exception"
+          sessionErr && sessionErr.message ? String(sessionErr.message).slice(0, 80) : "exception",
+          {
+            applicationId: records.applicationId || null,
+            organizationKey: orgKey || null,
+          }
         );
       }
 
@@ -384,14 +483,34 @@ function createApexMarketingRouter(deps) {
 
       if (sessionOk) {
         // Interim destination until Phase 7 /portal/:organizationKey resolver.
+        logRegistrationTrace(req, {
+          event: "church_registration_redirect",
+          operation: "register_church_redirect",
+          outcome: "ok",
+          redirectPath: ACCOUNT_PATH,
+          applicationId: records.applicationId || null,
+          organizationKey: orgKey || null,
+          publicPlanCode,
+          canonicalPlanKey: records.planKey || null,
+          durationMs: Date.now() - startedAt,
+        });
         return res.redirect(303, ACCOUNT_PATH);
       }
 
       const keyQ = orgKey ? `&key=${encodeURIComponent(orgKey)}` : "";
-      return res.redirect(
-        303,
-        `${REGISTER_PATH}?ready=1&login=1${keyQ}&next=${encodeURIComponent(ACCOUNT_PATH)}`
-      );
+      const loginRedirect = `${REGISTER_PATH}?ready=1&login=1${keyQ}&next=${encodeURIComponent(ACCOUNT_PATH)}`;
+      logRegistrationTrace(req, {
+        event: "church_registration_redirect",
+        operation: "register_church_redirect",
+        outcome: "ok",
+        failureCategory: "session_failed_post_commit",
+        redirectPath: `${REGISTER_PATH}?ready=1&login=1`,
+        applicationId: records.applicationId || null,
+        organizationKey: orgKey || null,
+        publicPlanCode,
+        durationMs: Date.now() - startedAt,
+      });
+      return res.redirect(303, loginRedirect);
     } catch (err) {
       return next(err);
     }

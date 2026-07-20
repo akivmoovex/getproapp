@@ -35,6 +35,7 @@ const { createBranchAdminRouter } = require("../../blessboard/http/branchAdminRo
 const { createBranchRegistrationAdminRouter } = require("../../blessboard/http/branchRegistrationAdminRoutes");
 const { createHqMembersAdminRouter } = require("../../blessboard/http/hqMembersAdminRoutes");
 const { createHqRoleAdminRouter } = require("../../blessboard/http/hqRoleAdminRoutes");
+const { createInviteAcceptRouter } = require("../../blessboard/http/inviteAcceptRoutes");
 const { createHqAdminRouter } = require("../../blessboard/http/hqAdminRoutes");
 const { createContentAdminRouter } = require("../../blessboard/http/contentAdminRoutes");
 const { createPublicMediaRouter } = require("../../blessboard/http/publicMediaRoutes");
@@ -51,6 +52,8 @@ const { createFormsRequestsAdminRouter } = require("../../blessboard/http/formsR
 const { createFormsRequestsMemberRouter } = require("../../blessboard/http/formsRequestsMemberRoutes");
 const { createHqReportsRouter } = require("../../blessboard/http/hqReportsRoutes");
 const { createTenantPublicRouter } = require("../../blessboard/http/tenantPublicRoutes");
+const { createPathPublicRouter } = require("../../blessboard/http/pathPublicRoutes");
+const { createChurchWebsiteAdminRouter } = require("../../blessboard/http/churchWebsiteAdminRoutes");
 const { createApexMarketingRouter } = require("../../blessboard/http/apexMarketingRoutes");
 const { createPlatformAdminRouter } = require("./platformAdminRoutes");
 const { createLoadV5Session } = require("./loadV5Session");
@@ -101,6 +104,8 @@ const {
 const {
   resolveTenantForLogin,
   safeTenantNextPath,
+  resolveApexPostLoginPath,
+  hasPlatformAdminRole,
   getApexOrigin,
   tenantAbsoluteUrl,
   redactAuthTransferQuery,
@@ -490,6 +495,13 @@ function createV5FoundationApp(options) {
     })
   );
   app.use(
+    createChurchWebsiteAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
     createBranchAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
@@ -656,6 +668,13 @@ function createV5FoundationApp(options) {
     })
   );
   app.use(
+    createInviteAcceptRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
     createContentAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
@@ -703,6 +722,13 @@ function createV5FoundationApp(options) {
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       getTenantRoutingMode: () => getBlessBoardTenantRoutingMode(env),
+    })
+  );
+
+  // 8d2. Path-based public website (/c/:organizationKey) — Foundation/Growth without domains
+  app.use(
+    createPathPublicRouter({
+      getPool,
     })
   );
 
@@ -907,7 +933,10 @@ function createV5FoundationApp(options) {
       setCsrfCookie(res, csrfToken, { secure: isProduction });
 
       if (!pendingTransfer) {
-        return res.redirect(303, "/account");
+        // Platform admins → /admin (or safe ?next=/admin…); others → /account.
+        // Tenant transfer path below is unchanged. Query-only next (form posts preserve URL).
+        const dest = resolveApexPostLoginPath(result.roles, req.query && req.query.next);
+        return res.redirect(303, dest);
       }
 
       const issued = await issueTenantLoginRedeemCode(getPool(), {
@@ -1057,6 +1086,7 @@ function createV5FoundationApp(options) {
         deploymentCode: session.deploymentCode,
         organizationId: session.organizationId,
         roles: roleKeys,
+        showPlatformAdminLink: apex && hasPlatformAdminRole(roleKeys),
         csrfToken,
         hostKind: apex ? "apex" : "tenant",
         churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",

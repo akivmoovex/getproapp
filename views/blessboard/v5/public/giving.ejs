@@ -80,7 +80,7 @@
         <a class="bb-tp-btn bb-tp-btn--primary" href="#ways-to-give">
           Explore Ways to Give
         </a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="/contact">
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/contact') %>">
           <span class="material-symbols-outlined" aria-hidden="true">mail</span>
           Contact Church
         </a>
@@ -101,8 +101,8 @@
         <p><%= emptyMessage %></p>
         <p class="bb-tp-empty__hint">Published giving methods will appear here when available. BlessBoard does not process payments on this page.</p>
         <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Church</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/">Home</a>
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Church</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>">Home</a>
         </div>
       </div>
     </div>
@@ -154,7 +154,7 @@
             </p>
             <% } else { %>
             <p class="bb-tp-giving-card__action">
-              <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="/contact">
+              <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="<%= hrefFor('/contact') %>">
                 Contact for details
               </a>
             </p>

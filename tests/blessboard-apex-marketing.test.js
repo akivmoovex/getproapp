@@ -56,7 +56,7 @@ describe("blessboard apex marketing batch 2b", () => {
     if (skipSuite) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
 
-  function makeApp() {
+  function makeApp(envExtra = {}) {
     return createV5FoundationApp({
       env: {
         NODE_ENV: "test",
@@ -64,6 +64,7 @@ describe("blessboard apex marketing batch 2b", () => {
         PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
+        ...envExtra,
       },
       getPool: () => pool,
     });
@@ -104,7 +105,7 @@ describe("blessboard apex marketing batch 2b", () => {
       ["/for-churches", /Sacred Clarity/, /data-bb-apex-page="for-churches"/, null],
       ["/pricing", /Transparent Pricing/, /data-bb-plan="growth"/, null],
       ["/directory", /Find a church/, /data-bb-apex-page="directory"/, null],
-      ["/register-church", /Register Your Church/, /data-bb-register-mode="application"/, null],
+      ["/register-church", /Register Your Church/, /data-bb-register-mode="instant-free"/, null],
     ];
 
     for (const [pathName, bodyRe, markerRe, batchRe] of paths) {
@@ -162,7 +163,7 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.doesNotMatch(res.text, /Grace Community|St\. Jude|Covenant Life/);
   });
 
-  it("register-church is a public pending-application form (no live provisioning)", async () => {
+  it("register-church defaults to automatic Foundation fields (password + org key)", async () => {
     requireDb();
     const app = makeApp();
     const res = await request(app).get("/register-church").set("Host", "blessboard.org");
@@ -171,6 +172,18 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(res.text, /action="\/register-church"/i);
     assert.match(res.text, /name="church_name"/);
     assert.match(res.text, /name="_csrf"/);
+    assert.match(res.text, /data-bb-register-mode="instant-free"/);
+    assert.match(res.text, /name="password"/);
+    assert.match(res.text, /name="organization_key"/);
+    assert.doesNotMatch(res.text, /activated immediately/i);
+  });
+
+  it("register-church enquiry mode when automatic Foundation is disabled", async () => {
+    requireDb();
+    const app = makeApp({ BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED: "0" });
+    const res = await request(app).get("/register-church").set("Host", "blessboard.org");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-register-mode="application"/);
     assert.match(res.text, /pending review|pending application/i);
     assert.doesNotMatch(res.text, /name="password"|Create church|activated immediately/i);
   });

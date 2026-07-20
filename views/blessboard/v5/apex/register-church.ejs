@@ -1,7 +1,8 @@
 <%#
   Apex Register Your Church — Stitch 8640e853… / 515da582…
-  Application enquiry (flag off / paid plans) or instant Free provisioning (flag on).
-  Locals: authenticated, csrfToken, csrfField, submitted, workspaceReady, loginFallback,
+  Automatic Foundation + Growth trial provisioning by default (emergency env disable → enquiry).
+  Network remains support-contact / enquiry only (no auto tenant).
+  Locals: authenticated, csrfToken, csrfField, submitted, networkSupportSuccess, workspaceReady, loginFallback,
           review, organizationKeyPreview, form, formError, fieldError, selectedPlan,
           instantFreeEnabled
 %>
@@ -14,6 +15,7 @@
     ? String(organizationKeyPreview) : (formData.organization_key || '');
   function fieldHasError(name) { return activeFieldError === name; }
   var showSuccessEnquiry = typeof submitted !== 'undefined' && submitted;
+  var showNetworkSupportSuccess = typeof networkSupportSuccess !== 'undefined' && networkSupportSuccess;
   var showSuccessWorkspace = typeof workspaceReady !== 'undefined' && workspaceReady;
   var showReview = typeof review !== 'undefined' && review;
   var showLoginFallback = typeof loginFallback !== 'undefined' && loginFallback;
@@ -44,8 +46,9 @@
       </ul>
       <% if (instantOn) { %>
       <p class="bb-apex-register__aside-note">
-        Choosing <strong>Foundation — Free</strong> creates your church workspace and administrator account immediately.
-        Your public church website stays unpublished until you choose to publish. BlessBoard may contact you to offer optional onboarding help — a callback is not required to keep portal access.
+        Choosing <strong>Foundation — Free</strong> or <strong>Growth</strong> creates your church workspace and administrator account immediately (Growth includes a one-month trial).
+        Your public church website stays unpublished until you choose to publish. Network requests stay pending until BlessBoard follows up.
+        BlessBoard may contact you to offer optional onboarding help — a callback is not required to keep portal access.
       </p>
       <% } else { %>
       <p class="bb-apex-register__aside-note">
@@ -108,6 +111,20 @@
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 
+        <% } else if (showNetworkSupportSuccess) { %>
+        <div class="bb-apex-register-success" role="status" data-bb-register-success="1" data-bb-register-network-support="1">
+          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+          <div>
+            <p class="bb-apex-register-success__body" data-bb-network-success-message="1">
+              Thank you for your interest in the BlessBoard Network plan. Your registration has been received successfully. Our customer support team will contact you shortly to understand your organization's structure, branch requirements, onboarding needs, and pricing options.
+            </p>
+          </div>
+        </div>
+        <div class="bb-apex-register__actions">
+          <a class="bb-apex-btn bb-apex-btn--primary" href="/pricing">Review plans</a>
+          <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
+        </div>
+
         <% } else if (showSuccessEnquiry) { %>
         <div class="bb-apex-register-success" role="status" data-bb-register-success="1">
           <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
@@ -129,7 +146,7 @@
         <% } else { %>
         <p class="bb-apex-register__card-lead">
           <% if (instantOn) { %>
-          Choose <strong>Foundation — Free</strong> to create your workspace now, or select Growth/Network to request a conversation with BlessBoard.
+          Choose <strong>Foundation — Free</strong> or <strong>Growth</strong> to create your workspace now (Growth includes a one-month trial), or select <strong>Network</strong> to request a conversation with BlessBoard.
           <% } else { %>
           Provide your church details to request an invitation. Platform administrators review applications before any church is provisioned.
           <% } %>
@@ -365,10 +382,11 @@
           <fieldset class="bb-apex-register-form__section" data-bb-instant-free-fields="1">
             <legend class="bb-apex-register-form__section-head">
               <span class="material-symbols-outlined" aria-hidden="true">vpn_key</span>
-              Free workspace setup
+              Workspace setup
             </legend>
             <p class="bb-apex-register__card-lead">
-              Required for <strong>Foundation — Free</strong>. Your administrator portal is available immediately after creation.
+              Required for <strong>Foundation — Free</strong> and <strong>Growth</strong> (one-month trial).
+              Your administrator portal is available immediately after creation.
               The public path below is a preview only — the website is not published automatically.
             </p>
             <div class="bb-apex-field">
@@ -456,8 +474,9 @@
             </div>
             <p class="bb-apex-mkt-footnote">
               <% if (instantOn) { %>
-              Free workspaces activate immediately. Growth and Network requests remain pending until BlessBoard follows up.
-              Callbacks are optional assistance — not required for Free portal access.
+              Foundation and Growth workspaces activate immediately (Growth includes a one-month trial).
+              Network requests remain pending until BlessBoard follows up.
+              Callbacks are optional assistance — not required for portal access.
               <% } else { %>
               Applications remain pending until a platform administrator reviews them. No live church is created automatically.
               <% } %>

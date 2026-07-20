@@ -50,7 +50,7 @@ const HQ_ADMIN_NAV = Object.freeze([
   {
     key: "content",
     label: "Website",
-    href: "/hq/content",
+    href: "/hq/website",
     icon: "language",
     enabled: true,
     nav: true,

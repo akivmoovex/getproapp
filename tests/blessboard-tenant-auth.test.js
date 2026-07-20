@@ -36,6 +36,9 @@ const {
   redactAuthTransferQuery,
   getApexOrigin,
   safeTenantNextPath,
+  safePlatformAdminNextPath,
+  resolveApexPostLoginPath,
+  hasPlatformAdminRole,
 } = require("../src/blessboard/http/tenantLoginHelpers");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
@@ -84,6 +87,37 @@ describe("auth transfer helpers", () => {
     assert.equal(safeTenantNextPath("/admin"), null);
     assert.equal(safeTenantNextPath("/hq?x=1"), null);
     assert.equal(safeTenantNextPath("hq"), null);
+  });
+
+  it("safePlatformAdminNextPath accepts only local /admin paths", () => {
+    assert.equal(safePlatformAdminNextPath("/admin"), "/admin");
+    assert.equal(safePlatformAdminNextPath("/admin/organizations"), "/admin/organizations");
+    assert.equal(safePlatformAdminNextPath("/admin/"), "/admin/");
+    assert.equal(safePlatformAdminNextPath("//evil.com/admin"), null);
+    assert.equal(safePlatformAdminNextPath("https://evil.com/admin"), null);
+    assert.equal(safePlatformAdminNextPath("/\\evil"), null);
+    assert.equal(safePlatformAdminNextPath("/admin/../account"), null);
+    assert.equal(safePlatformAdminNextPath("/admin/%2e%2e/account"), null);
+    assert.equal(safePlatformAdminNextPath("/account"), null);
+    assert.equal(safePlatformAdminNextPath("/hq"), null);
+    assert.equal(safePlatformAdminNextPath("/administrator"), null);
+    assert.equal(safePlatformAdminNextPath("admin"), null);
+  });
+
+  it("resolveApexPostLoginPath routes platform_admin to /admin and others to /account", () => {
+    assert.equal(resolveApexPostLoginPath([{ roleKey: "platform_admin" }], null), "/admin");
+    assert.equal(
+      resolveApexPostLoginPath([{ roleKey: "platform_admin" }], "/admin/organizations"),
+      "/admin/organizations"
+    );
+    assert.equal(
+      resolveApexPostLoginPath([{ roleKey: "platform_admin" }], "https://evil/admin"),
+      "/admin"
+    );
+    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], "/admin"), "/account");
+    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], null), "/account");
+    assert.equal(hasPlatformAdminRole(["platform_admin"]), true);
+    assert.equal(hasPlatformAdminRole(["church_hq_admin"]), false);
   });
 
   it("TRANSFER_TTL_MS is at most five minutes", () => {

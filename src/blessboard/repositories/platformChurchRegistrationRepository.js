@@ -26,32 +26,86 @@ const FORBIDDEN_RELATION_FRAGMENTS = Object.freeze([
 
 const SELECT_COLUMNS = `
   id, status, church_name, country, city, contact_name, contact_email, contact_phone,
+  contact_phone_normalized,
   role_in_church, branch_name, branch_count, selected_plan, message, consent_terms,
   review_notes, source_ip, user_agent, created_at, updated_at,
   organization_id, application_status, provisioning_status,
   provisioning_started_at, provisioned_at, provisioning_failed_at,
-  provisioning_error_code, provisioning_error_detail
+  provisioning_error_code, provisioning_error_detail,
+  support_requested, follow_up_status,
+  assigned_support_user_id, first_contacted_at, last_contacted_at, next_follow_up_at,
+  risk_decision, risk_reason_codes, risk_decided_at, rejection_reason, review_events
 `;
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const {
+  phoneUniquenessSqlPredicate,
+  DUPLICATE_PHONE_MESSAGE,
+} = require("../services/normalizeRegistrationPhone");
+
+class DuplicateRegistrationPhoneError extends Error {
+  constructor(message) {
+    super(message || DUPLICATE_PHONE_MESSAGE);
+    this.name = "DuplicateRegistrationPhoneError";
+    this.code = "duplicate_registration_phone";
+    this.field = "phone";
+    this.httpStatus = 400;
+  }
+}
+
+function isUniquePhoneViolation(err) {
+  if (!err) return false;
+  if (String(err.code) !== "23505") return false;
+  const constraint = String(err.constraint || err.constraint_name || "");
+  const detail = String(err.detail || err.message || "");
+  return (
+    constraint.includes("phone_normalized") ||
+    detail.includes("contact_phone_normalized") ||
+    detail.includes("platform_church_reg_apps_phone_normalized_active_uidx")
+  );
+}
 
 /**
  * @param {{ query: Function }} client
  * @param {object} fields
  */
 async function insertApplicationRow(client, fields) {
+  const supportRequested = Boolean(fields.support_requested);
+  const followUpStatus =
+    fields.follow_up_status != null && String(fields.follow_up_status).trim() !== ""
+      ? String(fields.follow_up_status).trim().toLowerCase()
+      : null;
+  const applicationStatus =
+    fields.application_status != null && String(fields.application_status).trim() !== ""
+      ? String(fields.application_status).trim().toLowerCase()
+      : "submitted";
+  const riskDecision =
+    fields.risk_decision != null && String(fields.risk_decision).trim() !== ""
+      ? String(fields.risk_decision).trim().toLowerCase()
+      : null;
+  const riskReasonCodes = Array.isArray(fields.risk_reason_codes)
+    ? fields.risk_reason_codes.map((c) => String(c).trim().toLowerCase()).filter(Boolean)
+    : [];
+  const riskDecidedAt = fields.risk_decided_at != null ? fields.risk_decided_at : null;
   const r = await client.query(
     `INSERT INTO ${TARGET_RELATION} (
        status, application_status, provisioning_status,
        church_name, country, city, contact_name, contact_email, contact_phone,
+       contact_phone_normalized,
        role_in_church, branch_name, branch_count, selected_plan, message, consent_terms,
-       source_ip, user_agent
+       source_ip, user_agent,
+       support_requested, follow_up_status,
+       risk_decision, risk_reason_codes, risk_decided_at
      ) VALUES (
-       'pending', 'submitted', 'not_started',
+       'pending', $18, 'not_started',
        $1, $2, $3, $4, $5, $6,
-       $7, $8, $9, $10, $11, $12,
-       $13, $14
+       $7,
+       $8, $9, $10, $11, $12, $13,
+       $14, $15,
+       $16, $17,
+       $19, $20::text[], $21
      )
      RETURNING ${SELECT_COLUMNS}`,
     [
@@ -61,6 +115,7 @@ async function insertApplicationRow(client, fields) {
       fields.contact_name,
       fields.contact_email,
       fields.contact_phone,
+      fields.contact_phone_normalized || null,
       fields.role_in_church || null,
       fields.branch_name || null,
       fields.branch_count || null,
@@ -69,6 +124,12 @@ async function insertApplicationRow(client, fields) {
       Boolean(fields.consent_terms),
       fields.source_ip || null,
       fields.user_agent || null,
+      supportRequested,
+      followUpStatus,
+      applicationStatus,
+      riskDecision,
+      riskReasonCodes,
+      riskDecidedAt,
     ]
   );
   return r.rows[0];
@@ -109,6 +170,49 @@ async function findRecentRegistrationDuplicate(client, opts) {
 }
 
 /**
+ * Same-email + same normalized phone within the soft window (browser retry).
+ * @param {{ query: Function }} client
+ * @param {{ contact_email: string, contact_phone_normalized: string, windowMinutes?: number }} opts
+ */
+async function findRecentPhoneIdempotentDuplicate(client, opts) {
+  const normalized = String(opts.contact_phone_normalized || "").trim();
+  if (!normalized) return null;
+  const windowMinutes = Math.min(Math.max(Number(opts.windowMinutes) || 15, 1), 60);
+  const r = await client.query(
+    `SELECT ${SELECT_COLUMNS}
+       FROM ${TARGET_RELATION}
+      WHERE lower(contact_email) = lower($1)
+        AND contact_phone_normalized = $2
+        AND created_at >= now() - ($3::int * interval '1 minute')
+        AND ${phoneUniquenessSqlPredicate()}
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [opts.contact_email, normalized, windowMinutes]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Occupying application for this normalized phone (blocks a new org registration).
+ * @param {{ query: Function }} client
+ * @param {string} contactPhoneNormalized
+ */
+async function findActiveRegistrationByPhone(client, contactPhoneNormalized) {
+  const normalized = String(contactPhoneNormalized || "").trim();
+  if (!normalized) return null;
+  const r = await client.query(
+    `SELECT ${SELECT_COLUMNS}
+       FROM ${TARGET_RELATION}
+      WHERE contact_phone_normalized = $1
+        AND ${phoneUniquenessSqlPredicate()}
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [normalized]
+  );
+  return r.rows[0] || null;
+}
+
+/**
  * Recent pending twin used for accidental double-submit idempotency.
  * @param {import('pg').Pool} pool
  * @param {{ contact_email: string, church_name: string, windowMinutes?: number }} opts
@@ -119,7 +223,7 @@ async function findRecentPendingDuplicate(pool, opts) {
 
 /**
  * Insert at most one application for the same email+church within the window.
- * Uses a transaction-scoped advisory lock (no migration / unique index required).
+ * Enforces normalized-phone uniqueness for occupying statuses (friendly pre-check + DB index).
  * Passwords must never be passed in fields.
  * @param {import('pg').Pool} pool
  * @param {object} fields
@@ -133,9 +237,8 @@ async function createApplicationIdempotent(pool, fields, opts = {}) {
     throw err;
   }
 
-  // Query-only mocks / clients: insert without advisory lock (tests + fallback).
-  if (typeof pool.connect !== "function") {
-    const existing = await findRecentRegistrationDuplicate(pool, {
+  async function resolveOrInsert(client) {
+    const existing = await findRecentRegistrationDuplicate(client, {
       contact_email: fields.contact_email,
       church_name: fields.church_name,
       windowMinutes: opts.windowMinutes,
@@ -143,8 +246,39 @@ async function createApplicationIdempotent(pool, fields, opts = {}) {
     if (existing) {
       return { application: existing, duplicate: true };
     }
-    const application = await insertApplicationRow(pool, fields);
-    return { application, duplicate: false };
+
+    const phoneNormalized = fields.contact_phone_normalized
+      ? String(fields.contact_phone_normalized).trim()
+      : "";
+    if (phoneNormalized) {
+      const phoneRetry = await findRecentPhoneIdempotentDuplicate(client, {
+        contact_email: fields.contact_email,
+        contact_phone_normalized: phoneNormalized,
+        windowMinutes: opts.windowMinutes,
+      });
+      if (phoneRetry) {
+        return { application: phoneRetry, duplicate: true };
+      }
+      const phoneConflict = await findActiveRegistrationByPhone(client, phoneNormalized);
+      if (phoneConflict) {
+        throw new DuplicateRegistrationPhoneError();
+      }
+    }
+
+    try {
+      const application = await insertApplicationRow(client, fields);
+      return { application, duplicate: false };
+    } catch (err) {
+      if (isUniquePhoneViolation(err)) {
+        throw new DuplicateRegistrationPhoneError();
+      }
+      throw err;
+    }
+  }
+
+  // Query-only mocks / clients: insert without advisory lock (tests + fallback).
+  if (typeof pool.connect !== "function") {
+    return resolveOrInsert(pool);
   }
 
   const client = await pool.connect();
@@ -156,23 +290,24 @@ async function createApplicationIdempotent(pool, fields, opts = {}) {
       .trim()
       .toLowerCase()}`;
     await client.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [lockKey.slice(0, 200)]);
-    const existing = await findRecentRegistrationDuplicate(client, {
-      contact_email: fields.contact_email,
-      church_name: fields.church_name,
-      windowMinutes: opts.windowMinutes,
-    });
-    if (existing) {
-      await client.query("COMMIT");
-      return { application: existing, duplicate: true };
+    if (fields.contact_phone_normalized) {
+      await client.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
+        `phone|${String(fields.contact_phone_normalized).trim()}`.slice(0, 200),
+      ]);
     }
-    const application = await insertApplicationRow(client, fields);
+    const result = await resolveOrInsert(client);
     await client.query("COMMIT");
-    return { application, duplicate: false };
+    return result;
   } catch (err) {
     try {
       await client.query("ROLLBACK");
     } catch {
       /* ignore */
+    }
+    if (err instanceof DuplicateRegistrationPhoneError || isUniquePhoneViolation(err)) {
+      throw err instanceof DuplicateRegistrationPhoneError
+        ? err
+        : new DuplicateRegistrationPhoneError();
     }
     throw err;
   } finally {
@@ -357,14 +492,213 @@ const PROVISIONING_STATUSES = Object.freeze([
 ]);
 const FOLLOW_UP_STATUSES = Object.freeze([
   "new",
+  "contact_pending",
   "call_pending",
   "contacted",
+  "awaiting_customer",
+  "qualified",
   "needs_help",
   "self_onboarding",
   "completed",
   "unreachable",
   "not_interested",
 ]);
+
+/** Prompt 26 workflow labels (derived / stored follow-up + application axes). */
+const WORKFLOW_STATUSES = Object.freeze([
+  "new",
+  "contact_pending",
+  "contacted",
+  "awaiting_customer",
+  "qualified",
+  "approved",
+  "closed",
+  "rejected",
+]);
+
+/**
+ * Normalize synonyms (legacy call_pending → contact_pending filter match).
+ * @param {string} status
+ */
+function normalizeFollowUpStatusInput(status) {
+  const s = String(status || "")
+    .trim()
+    .toLowerCase();
+  if (s === "call_pending") return "contact_pending";
+  if (s === "needs_help" || s === "self_onboarding") return s;
+  return s;
+}
+
+/**
+ * Update application-level support fields for unprovisioned registrations.
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{
+ *   followUpStatus?: string|null,
+ *   supportRequested?: boolean,
+ *   assignedSupportUserId?: string|null,
+ *   clearAssignedSupport?: boolean,
+ *   firstContactedAt?: Date|string|null,
+ *   lastContactedAt?: Date|string|null,
+ *   nextFollowUpAt?: Date|string|null,
+ *   reviewEvent?: object|null,
+ * }} patch
+ */
+async function updateApplicationSupportFollowUp(client, applicationId, patch) {
+  const id = String(applicationId || "").trim();
+  if (!UUID_RE.test(id)) {
+    throw new Error("invalid_application_id");
+  }
+  const setFollowUp = Object.prototype.hasOwnProperty.call(patch || {}, "followUpStatus");
+  let followUpStatus = null;
+  if (setFollowUp && patch.followUpStatus != null && String(patch.followUpStatus).trim() !== "") {
+    followUpStatus = String(patch.followUpStatus).trim().toLowerCase();
+    if (!FOLLOW_UP_STATUSES.includes(followUpStatus)) {
+      throw new Error("invalid_follow_up_status");
+    }
+  }
+  const setSupport = Object.prototype.hasOwnProperty.call(patch || {}, "supportRequested");
+  const clearAssignee = Boolean(patch && patch.clearAssignedSupport);
+  const setAssignee = Object.prototype.hasOwnProperty.call(patch || {}, "assignedSupportUserId");
+  const setFirst = Object.prototype.hasOwnProperty.call(patch || {}, "firstContactedAt");
+  const setLast = Object.prototype.hasOwnProperty.call(patch || {}, "lastContactedAt");
+  const setNext = Object.prototype.hasOwnProperty.call(patch || {}, "nextFollowUpAt");
+  const reviewEvent =
+    patch && patch.reviewEvent && typeof patch.reviewEvent === "object" ? patch.reviewEvent : null;
+
+  const r = await client.query(
+    `UPDATE ${TARGET_RELATION}
+        SET follow_up_status = CASE WHEN $2::boolean THEN $3::text ELSE follow_up_status END,
+            support_requested = CASE
+              WHEN $4::boolean THEN $5::boolean
+              ELSE support_requested
+            END,
+            assigned_support_user_id = CASE
+              WHEN $6::boolean THEN NULL
+              WHEN $7::boolean THEN $8::uuid
+              ELSE assigned_support_user_id
+            END,
+            first_contacted_at = CASE
+              WHEN $9::boolean THEN COALESCE(first_contacted_at, $10::timestamptz)
+              ELSE first_contacted_at
+            END,
+            last_contacted_at = CASE
+              WHEN $11::boolean THEN $12::timestamptz
+              ELSE last_contacted_at
+            END,
+            next_follow_up_at = CASE
+              WHEN $13::boolean THEN $14::timestamptz
+              ELSE next_follow_up_at
+            END,
+            review_events = CASE
+              WHEN $15::boolean THEN COALESCE(review_events, '[]'::jsonb) || jsonb_build_array($16::jsonb)
+              ELSE review_events
+            END,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${SELECT_COLUMNS}`,
+    [
+      id,
+      setFollowUp && followUpStatus != null,
+      followUpStatus,
+      setSupport,
+      setSupport ? Boolean(patch.supportRequested) : false,
+      clearAssignee,
+      setAssignee && !clearAssignee,
+      setAssignee && !clearAssignee ? patch.assignedSupportUserId : null,
+      setFirst,
+      setFirst ? patch.firstContactedAt : null,
+      setLast,
+      setLast ? patch.lastContactedAt : null,
+      setNext,
+      setNext ? patch.nextFollowUpAt : null,
+      Boolean(reviewEvent),
+      reviewEvent ? JSON.stringify(reviewEvent) : "{}",
+    ]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Persist risk decision fields and/or application status for review/reject flows.
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{
+ *   applicationStatus?: string|null,
+ *   riskDecision?: string|null,
+ *   riskReasonCodes?: string[]|null,
+ *   riskDecidedAt?: string|Date|null,
+ *   rejectionReason?: string|null,
+ *   reviewNotes?: string|null,
+ *   reviewEvent?: object|null,
+ *   clearRejectionReason?: boolean,
+ * }} patch
+ */
+async function updateApplicationRiskReviewState(client, applicationId, patch) {
+  const id = String(applicationId || "").trim();
+  if (!UUID_RE.test(id)) {
+    throw new Error("invalid_application_id");
+  }
+  const setStatus = Object.prototype.hasOwnProperty.call(patch || {}, "applicationStatus");
+  const setRiskDecision = Object.prototype.hasOwnProperty.call(patch || {}, "riskDecision");
+  const setRiskCodes = Object.prototype.hasOwnProperty.call(patch || {}, "riskReasonCodes");
+  const setRiskAt = Object.prototype.hasOwnProperty.call(patch || {}, "riskDecidedAt");
+  const setRejection = Object.prototype.hasOwnProperty.call(patch || {}, "rejectionReason");
+  const setNotes = Object.prototype.hasOwnProperty.call(patch || {}, "reviewNotes");
+  const clearRejection = Boolean(patch && patch.clearRejectionReason);
+  const reviewEvent = patch && patch.reviewEvent && typeof patch.reviewEvent === "object"
+    ? patch.reviewEvent
+    : null;
+
+  const reasonCodes = Array.isArray(patch && patch.riskReasonCodes)
+    ? patch.riskReasonCodes.map((c) => String(c).trim().toLowerCase()).filter(Boolean)
+    : [];
+
+  const r = await client.query(
+    `UPDATE ${TARGET_RELATION}
+        SET application_status = CASE WHEN $2::boolean THEN $3::text ELSE application_status END,
+            risk_decision = CASE WHEN $4::boolean THEN $5::text ELSE risk_decision END,
+            risk_reason_codes = CASE WHEN $6::boolean THEN $7::text[] ELSE risk_reason_codes END,
+            risk_decided_at = CASE WHEN $8::boolean THEN $9::timestamptz ELSE risk_decided_at END,
+            rejection_reason = CASE
+              WHEN $10::boolean THEN NULL
+              WHEN $11::boolean THEN $12::text
+              ELSE rejection_reason
+            END,
+            review_notes = CASE WHEN $13::boolean THEN $14::text ELSE review_notes END,
+            review_events = CASE
+              WHEN $15::boolean THEN COALESCE(review_events, '[]'::jsonb) || jsonb_build_array($16::jsonb)
+              ELSE review_events
+            END,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${SELECT_COLUMNS}`,
+    [
+      id,
+      setStatus,
+      setStatus ? String(patch.applicationStatus) : null,
+      setRiskDecision,
+      setRiskDecision ? (patch.riskDecision != null ? String(patch.riskDecision) : null) : null,
+      setRiskCodes,
+      reasonCodes,
+      setRiskAt,
+      setRiskAt ? patch.riskDecidedAt : null,
+      clearRejection,
+      setRejection && !clearRejection,
+      setRejection && !clearRejection
+        ? patch.rejectionReason != null
+          ? String(patch.rejectionReason).slice(0, 500)
+          : null
+        : null,
+      setNotes,
+      setNotes ? (patch.reviewNotes != null ? String(patch.reviewNotes).slice(0, 5000) : null) : null,
+      Boolean(reviewEvent),
+      reviewEvent ? JSON.stringify(reviewEvent) : "{}",
+    ]
+  );
+  return r.rows[0] || null;
+}
+
 const CONTACT_METHODS = Object.freeze(["phone", "email", "message", "meeting", "internal_note"]);
 const CONTACT_OUTCOMES = Object.freeze([
   "reached",
@@ -383,19 +717,64 @@ const SORT_OPTIONS = Object.freeze({
 
 const LIST_JOIN_SELECT = `
   a.id, a.status AS legacy_status, a.church_name, a.country, a.city,
-  a.contact_name, a.contact_email, a.contact_phone, a.role_in_church,
+  a.contact_name, a.contact_email, a.contact_phone, a.contact_phone_normalized, a.role_in_church,
   a.branch_name, a.branch_count, a.selected_plan, a.message, a.consent_terms,
   a.created_at, a.updated_at, a.organization_id, a.application_status, a.provisioning_status,
   a.provisioning_started_at, a.provisioned_at, a.provisioning_failed_at,
   a.provisioning_error_code, a.provisioning_error_detail,
+  a.risk_decision, a.risk_reason_codes, a.risk_decided_at, a.rejection_reason,
   o.organization_key, o.display_name AS organization_display_name, o.status AS organization_status,
   o.created_at AS organization_created_at,
-  oo.onboarding_status, oo.follow_up_status, oo.assigned_support_user_id,
-  oo.first_contacted_at, oo.last_contacted_at, oo.next_follow_up_at,
-  oo.onboarding_started_at, oo.onboarding_completed_at, oo.support_requested,
+  oo.onboarding_status,
+  CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.assigned_support_user_id
+    ELSE a.assigned_support_user_id
+  END AS assigned_support_user_id,
+  CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.first_contacted_at
+    ELSE a.first_contacted_at
+  END AS first_contacted_at,
+  CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.last_contacted_at
+    ELSE a.last_contacted_at
+  END AS last_contacted_at,
+  CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.next_follow_up_at
+    ELSE a.next_follow_up_at
+  END AS next_follow_up_at,
+  oo.onboarding_started_at, oo.onboarding_completed_at,
   oo.last_activity_at,
+  CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.follow_up_status
+    ELSE a.follow_up_status
+  END AS follow_up_status,
+  CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.support_requested
+    ELSE COALESCE(a.support_requested, false)
+  END AS support_requested,
   su.display_name AS support_display_name, su.email_normalized AS support_email
 `;
+
+/** Effective follow-up / support expressions shared by list filters (no N+1). */
+const EFFECTIVE_FOLLOW_UP_SQL = `CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.follow_up_status
+    ELSE a.follow_up_status
+  END`;
+const EFFECTIVE_SUPPORT_REQUESTED_SQL = `CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.support_requested
+    ELSE COALESCE(a.support_requested, false)
+  END`;
+const EFFECTIVE_NEXT_FOLLOW_UP_SQL = `CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.next_follow_up_at
+    ELSE a.next_follow_up_at
+  END`;
+const EFFECTIVE_ASSIGNED_SUPPORT_SQL = `CASE
+    WHEN oo.organization_id IS NOT NULL THEN oo.assigned_support_user_id
+    ELSE a.assigned_support_user_id
+  END`;
+const ACTIVE_FOLLOW_UP_SQL = `${EFFECTIVE_FOLLOW_UP_SQL} IS DISTINCT FROM 'completed'
+    AND ${EFFECTIVE_FOLLOW_UP_SQL} IS DISTINCT FROM 'not_interested'
+    AND ${EFFECTIVE_FOLLOW_UP_SQL} IS DISTINCT FROM 'unreachable'`;
 
 /**
  * Escape LIKE metacharacters for safe parameterized ILIKE.
@@ -425,8 +804,42 @@ function buildRegistrationListWhere(filters) {
     clauses.push(`a.provisioning_status = $${params.length}`);
   }
   if (filters.followUpStatus) {
-    params.push(filters.followUpStatus);
-    clauses.push(`oo.follow_up_status = $${params.length}`);
+    const follow = normalizeFollowUpStatusInput(filters.followUpStatus);
+    if (follow === "contact_pending") {
+      clauses.push(
+        `${EFFECTIVE_FOLLOW_UP_SQL} IN ('contact_pending', 'call_pending')`
+      );
+    } else {
+      params.push(filters.followUpStatus);
+      clauses.push(`${EFFECTIVE_FOLLOW_UP_SQL} = $${params.length}`);
+    }
+  }
+  if (filters.selectedPlan) {
+    params.push(filters.selectedPlan);
+    clauses.push(`a.selected_plan = $${params.length}`);
+  }
+  if (filters.supportRequested === true) {
+    clauses.push(`${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE`);
+  } else if (filters.supportRequested === false) {
+    clauses.push(`${EFFECTIVE_SUPPORT_REQUESTED_SQL} = FALSE`);
+  }
+  if (filters.requiresReview === true) {
+    clauses.push(`(
+      a.application_status IN ('submitted', 'duplicate_review')
+      OR a.provisioning_status = 'provisioning_failed'
+      OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
+      OR ${EFFECTIVE_FOLLOW_UP_SQL} IN (
+        'new', 'call_pending', 'contact_pending', 'needs_help', 'awaiting_customer'
+      )
+    )`);
+  }
+  if (filters.overdueFollowUp === true) {
+    clauses.push(`(
+      ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} IS NOT NULL
+      AND ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} < now()
+      AND a.application_status NOT IN ('rejected', 'cancelled', 'closed')
+      AND (${ACTIVE_FOLLOW_UP_SQL})
+    )`);
   }
   if (filters.linked === "linked") {
     clauses.push(`a.organization_id IS NOT NULL`);
@@ -486,7 +899,7 @@ async function listRegistrationApplications(pool, filters = {}) {
        FROM ${TARGET_RELATION} a
        LEFT JOIN platform.organizations o ON o.id = a.organization_id
        LEFT JOIN blessboard.organization_onboarding oo ON oo.organization_id = a.organization_id
-       LEFT JOIN blessboard.users su ON su.id = oo.assigned_support_user_id
+       LEFT JOIN blessboard.users su ON su.id = ${EFFECTIVE_ASSIGNED_SUPPORT_SQL}
        ${built.where}
       ORDER BY ${sortSql}
       LIMIT $${built.params.length + 1}
@@ -523,11 +936,12 @@ async function getRegistrationApplicationById(client, applicationId) {
   if (!UUID_RE.test(id)) return null;
   const r = await client.query(
     `SELECT ${LIST_JOIN_SELECT},
-            a.review_notes, a.source_ip, a.user_agent, a.message AS registration_message
+            a.review_notes, a.source_ip, a.user_agent, a.message AS registration_message,
+            a.review_events
        FROM ${TARGET_RELATION} a
        LEFT JOIN platform.organizations o ON o.id = a.organization_id
        LEFT JOIN blessboard.organization_onboarding oo ON oo.organization_id = a.organization_id
-       LEFT JOIN blessboard.users su ON su.id = oo.assigned_support_user_id
+       LEFT JOIN blessboard.users su ON su.id = ${EFFECTIVE_ASSIGNED_SUPPORT_SQL}
       WHERE a.id = $1
       LIMIT 1`,
     [id]
@@ -560,6 +974,7 @@ async function updateOrganizationOnboarding(client, organizationId, patch) {
   const setCompletedAt = Object.prototype.hasOwnProperty.call(patch, "onboardingCompletedAt");
   const clearCompletedAt = Boolean(patch.clearOnboardingCompletedAt);
   const setStartedAt = Object.prototype.hasOwnProperty.call(patch, "onboardingStartedAt");
+  const setPreviewAcknowledged = Object.prototype.hasOwnProperty.call(patch, "previewAcknowledged");
   const r = await client.query(
     `UPDATE blessboard.organization_onboarding
         SET follow_up_status = COALESCE($2, follow_up_status),
@@ -592,6 +1007,10 @@ async function updateOrganizationOnboarding(client, organizationId, patch) {
               WHEN $18::boolean THEN $19::timestamptz
               ELSE onboarding_completed_at
             END,
+            preview_acknowledged = CASE
+              WHEN $20::boolean THEN $21::boolean
+              ELSE preview_acknowledged
+            END,
             updated_at = now()
       WHERE organization_id = $1
       RETURNING *`,
@@ -615,6 +1034,8 @@ async function updateOrganizationOnboarding(client, organizationId, patch) {
       clearCompletedAt,
       setCompletedAt && !clearCompletedAt,
       setCompletedAt && !clearCompletedAt ? patch.onboardingCompletedAt : null,
+      setPreviewAcknowledged,
+      setPreviewAcknowledged ? Boolean(patch.previewAcknowledged) : false,
     ]
   );
   return r.rows[0] || null;
@@ -663,6 +1084,24 @@ async function ensureOrganizationOnboardingRow(client, fields) {
  * }} fields
  */
 async function createOrganizationSupportContact(client, fields) {
+  const organizationId =
+    fields.organizationId != null && String(fields.organizationId).trim() !== ""
+      ? String(fields.organizationId).trim()
+      : null;
+  const registrationApplicationId =
+    fields.registrationApplicationId != null &&
+    String(fields.registrationApplicationId).trim() !== ""
+      ? String(fields.registrationApplicationId).trim()
+      : null;
+  if (!organizationId && !registrationApplicationId) {
+    throw new Error("support_contact_scope_required");
+  }
+  if (organizationId && !UUID_RE.test(organizationId)) {
+    throw new Error("invalid_organization_id");
+  }
+  if (registrationApplicationId && !UUID_RE.test(registrationApplicationId)) {
+    throw new Error("invalid_application_id");
+  }
   const r = await client.query(
     `INSERT INTO blessboard.organization_support_contacts (
        organization_id, registration_application_id, created_by_user_id,
@@ -671,8 +1110,8 @@ async function createOrganizationSupportContact(client, fields) {
      RETURNING id, organization_id, registration_application_id, created_by_user_id,
                contact_method, outcome, note, contacted_at, next_follow_up_at, created_at`,
     [
-      fields.organizationId,
-      fields.registrationApplicationId || null,
+      organizationId,
+      registrationApplicationId,
       fields.createdByUserId,
       fields.contactMethod,
       fields.outcome,
@@ -705,6 +1144,56 @@ async function listOrganizationSupportContacts(client, organizationId, opts = {}
     [id, limit]
   );
   return r.rows;
+}
+
+/**
+ * Application-scoped contact history (Network / unprovisioned enquiries).
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{ limit?: number }} [opts]
+ */
+async function listApplicationSupportContacts(client, applicationId, opts = {}) {
+  const id = String(applicationId || "").trim();
+  if (!UUID_RE.test(id)) return [];
+  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
+  const r = await client.query(
+    `SELECT c.id, c.organization_id, c.registration_application_id, c.created_by_user_id,
+            c.contact_method, c.outcome, c.note, c.contacted_at, c.next_follow_up_at, c.created_at,
+            u.display_name AS created_by_display_name, u.email_normalized AS created_by_email
+       FROM blessboard.organization_support_contacts c
+       LEFT JOIN blessboard.users u ON u.id = c.created_by_user_id
+      WHERE c.registration_application_id = $1
+      ORDER BY c.contacted_at DESC, c.created_at DESC, c.id DESC
+      LIMIT $2`,
+    [id, limit]
+  );
+  return r.rows;
+}
+
+/**
+ * Soft-link an unprovisioned application to an existing organization (no provision / no paid activation).
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {string} organizationId
+ */
+async function linkApplicationToOrganization(client, applicationId, organizationId) {
+  const appId = String(applicationId || "").trim();
+  const orgId = String(organizationId || "").trim();
+  if (!UUID_RE.test(appId) || !UUID_RE.test(orgId)) {
+    throw new Error("invalid_link_ids");
+  }
+  const r = await client.query(
+    `UPDATE ${TARGET_RELATION}
+        SET organization_id = $2,
+            application_status = 'closed',
+            updated_at = now()
+      WHERE id = $1
+        AND organization_id IS NULL
+        AND provisioning_status <> 'provisioned'
+      RETURNING ${SELECT_COLUMNS}`,
+    [appId, orgId]
+  );
+  return r.rows[0] || null;
 }
 
 /**
@@ -755,19 +1244,41 @@ async function getOrganizationPublicationSummary(client, organizationId) {
  * @param {string} organizationId
  */
 async function getOrganizationCurrentPlanKey(client, organizationId) {
+  const summary = await getOrganizationCurrentSubscriptionSummary(client, organizationId);
+  return summary ? summary.planKey : null;
+}
+
+/**
+ * Current subscription summary for admin registration/organization detail.
+ * @param {{ query: Function }} client
+ * @param {string} organizationId
+ * @returns {Promise<{
+ *   planKey: string,
+ *   subscriptionStatus: string,
+ *   startsAt: Date | string | null,
+ *   endsAt: Date | string | null
+ * } | null>}
+ */
+async function getOrganizationCurrentSubscriptionSummary(client, organizationId) {
   const id = String(organizationId || "").trim();
   if (!UUID_RE.test(id)) return null;
   const r = await client.query(
-    `SELECT p.plan_key
+    `SELECT p.plan_key, os.status, os.starts_at, os.ends_at
        FROM platform.organization_subscriptions os
        INNER JOIN platform.plans p ON p.id = os.plan_id
       WHERE os.organization_id = $1
-        AND os.status IN ('active', 'trialing')
+        AND os.status IN ('active', 'trialing', 'past_due')
       ORDER BY os.created_at DESC
       LIMIT 1`,
     [id]
   );
-  return r.rows[0] ? String(r.rows[0].plan_key) : null;
+  if (!r.rows[0]) return null;
+  return {
+    planKey: String(r.rows[0].plan_key),
+    subscriptionStatus: String(r.rows[0].status),
+    startsAt: r.rows[0].starts_at || null,
+    endsAt: r.rows[0].ends_at || null,
+  };
 }
 
 /**
@@ -1019,14 +1530,20 @@ module.exports = {
   APPLICATION_STATUSES,
   PROVISIONING_STATUSES,
   FOLLOW_UP_STATUSES,
+  WORKFLOW_STATUSES,
   CONTACT_METHODS,
   CONTACT_OUTCOMES,
   LINKED_FILTERS,
   SORT_OPTIONS,
+  DuplicateRegistrationPhoneError,
+  isUniquePhoneViolation,
+  normalizeFollowUpStatusInput,
   createApplication,
   createApplicationIdempotent,
   findRecentPendingDuplicate,
   findRecentRegistrationDuplicate,
+  findRecentPhoneIdempotentDuplicate,
+  findActiveRegistrationByPhone,
   listApplications,
   countPending,
   countOrganizationsCreatedSince,
@@ -1034,6 +1551,8 @@ module.exports = {
   lockApplicationById,
   findApplicationById,
   updateApplicationProvisioningState,
+  updateApplicationSupportFollowUp,
+  updateApplicationRiskReviewState,
   listRegistrationApplications,
   countRegistrationApplications,
   getRegistrationApplicationById,
@@ -1041,9 +1560,12 @@ module.exports = {
   ensureOrganizationOnboardingRow,
   createOrganizationSupportContact,
   listOrganizationSupportContacts,
+  listApplicationSupportContacts,
+  linkApplicationToOrganization,
   listActivePlatformAdministrators,
   getOrganizationPublicationSummary,
   getOrganizationCurrentPlanKey,
+  getOrganizationCurrentSubscriptionSummary,
   findApplicationIdForOrganization,
   findApplicationIdForOrganizationKey,
   findOrganizationIdByKey,

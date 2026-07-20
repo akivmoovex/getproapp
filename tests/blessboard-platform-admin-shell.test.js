@@ -265,26 +265,26 @@ describe("blessboard platform-admin shell", () => {
       home.text,
       /data-bb-dash-stat="churches"[^>]*data-bb-dash-stat-available="1"|data-bb-dash-stat-available="1"[^>]*data-bb-dash-stat="churches"/
     );
-    assert.match(
-      home.text,
-      /data-bb-dash-stat="tenants"[^>]*data-bb-dash-stat-available="0"|data-bb-dash-stat-available="0"[^>]*data-bb-dash-stat="tenants"/
-    );
-    assert.match(
-      home.text,
-      /data-bb-dash-stat="plans"[^>]*data-bb-dash-stat-available="0"|data-bb-dash-stat-available="0"[^>]*data-bb-dash-stat="plans"/
-    );
+    assert.match(home.text, /data-bb-dash-stat="foundation-recent"/);
+    assert.match(home.text, /data-bb-dash-stat="growth-trials"/);
+    assert.match(home.text, /data-bb-dash-stat="growth-grace"/);
+    assert.match(home.text, /data-bb-dash-stat="network-support"/);
     assert.match(home.text, /data-bb-count="organizations-total"/);
     assert.match(home.text, /data-bb-count="organizations-with-church"/);
+    assert.match(home.text, /data-bb-count="recent-foundation-registrations"/);
+    assert.match(home.text, /data-bb-count="active-growth-trials"/);
     assert.match(home.text, /href="\/admin\/account"/);
     assert.match(home.text, /href="\/admin\/organizations"/);
     assert.match(home.text, /href="\/admin\/plans"/);
     assert.match(home.text, /href="\/admin\/subscriptions"/);
+    assert.match(home.text, /href="\/admin\/registration-applications"/);
     assert.match(home.text, /href="\/admin\/domains"/);
     assert.match(home.text, /href="\/admin\/deployments"/);
     assert.match(home.text, /href="\/admin\/settings"/);
     assert.match(home.text, /data-bb-quick-action="organizations"/);
+    assert.match(home.text, /data-bb-quick-action="registrations"/);
+    assert.match(home.text, /data-bb-quick-action="subscriptions"/);
     assert.match(home.text, /data-bb-quick-action="plans"/);
-    assert.match(home.text, /data-bb-quick-action="deployments"/);
     assert.match(home.text, /data-bb-pa-logout="1"/);
     assert.match(home.text, /Platform admin/);
     assert.match(home.text, /blessboard-org-v5/);
@@ -296,8 +296,8 @@ describe("blessboard platform-admin shell", () => {
     assert.doesNotMatch(home.text, />\s*Tenants\s*</);
     assert.doesNotMatch(home.text, />\s*Health\s*</);
     assert.doesNotMatch(home.text, new RegExp(org.id, "i"));
-    assert.match(home.text, /Support tickets are not tracked here/);
     assert.match(home.text, /Organization creation is not available/);
+    assert.match(home.text, /subscription revenue|invented ticket|health scores/i);
 
     const list = await request(app)
       .get("/admin/organizations")
@@ -447,7 +447,7 @@ describe("blessboard platform-admin shell", () => {
     assert.match(detail.text, /pa-demo/);
     assert.match(detail.text, /Platform Admin Demo/);
     assert.match(detail.text, /data-bb-sub-plan-key="free"/);
-    assert.match(detail.text, /data-bb-sub-plan-display="Foundation"/);
+    assert.match(detail.text, /data-bb-sub-plan-display="Foundation[^"]*"/);
     assert.match(detail.text, /data-bb-sub-status="active"/);
     assert.match(detail.text, /data-bb-count="active-branches">1</);
     assert.match(detail.text, /data-bb-branch-key="hq"/);
@@ -605,8 +605,10 @@ describe("blessboard platform-admin shell", () => {
     assert.match(subs.text, /data-bb-pa-subs-filter="1"/);
     assert.match(subs.text, /data-bb-sub-org="pa-demo"/);
     assert.match(subs.text, /data-bb-sub-plan-key="free"/);
-    assert.match(subs.text, /data-bb-sub-plan-display="Foundation"/);
+    assert.match(subs.text, /data-bb-sub-plan-display="Foundation[^"]*"/);
     assert.match(subs.text, /data-bb-sub-status="active"/);
+    assert.match(subs.text, /data-bb-pa-subs-plan-filter="1"/);
+    assert.match(subs.text, /data-bb-pa-subs-ending-soon="1"/);
     assert.match(subs.text, /href="\/admin\/organizations\/pa-demo#pa-org-subscription"/);
     assert.doesNotMatch(subs.text, /\$\d+|invoice|checkout|refund|MRR|balance due|stripe/i);
     assert.doesNotMatch(subs.text, new RegExp(org.id, "i"));

@@ -39,12 +39,38 @@ async function insertUser(client, fields) {
     [
       fields.emailNormalized,
       fields.emailDisplay,
-      fields.passwordHash,
+      fields.passwordHash == null ? null : fields.passwordHash,
       fields.status || "active",
       fields.displayName,
     ]
   );
   return r.rows[0];
+}
+
+/**
+ * Activate an invited user with a password hash (or refresh password for existing active users).
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ * @param {{ passwordHash: string, displayName?: string|null, status?: string }} fields
+ */
+async function activateUserWithPassword(client, userId, fields) {
+  const r = await client.query(
+    `UPDATE blessboard.users
+        SET password_hash = $2,
+            status = COALESCE($3, 'active'),
+            display_name = COALESCE($4, display_name),
+            password_changed_at = now(),
+            updated_at = now()
+      WHERE id = $1
+      RETURNING id, email_normalized, email_display, status, display_name`,
+    [
+      userId,
+      fields.passwordHash,
+      fields.status || "active",
+      fields.displayName != null ? fields.displayName : null,
+    ]
+  );
+  return r.rows[0] || null;
 }
 
 /**
@@ -421,6 +447,7 @@ module.exports = {
   findUserByEmail,
   findUserById,
   insertUser,
+  activateUserWithPassword,
   listActiveRolesForUser,
   findOrganizationByKey,
   findChurchByKey,

@@ -48,7 +48,7 @@ function extractCookie(res, name) {
 }
 
 describe("blessboard settings validation", () => {
-  it("rejects invalid coordinates and accepts valid phone/email", () => {
+  it("rejects invalid coordinates and preserves phone display formatting", () => {
     assert.equal(validateBranchSettingsInput({ publicName: "X", latitude: 91 }).ok, false);
     assert.equal(validateBranchSettingsInput({ publicName: "X", longitude: -181 }).ok, false);
     const ok = validateBranchSettingsInput({
@@ -58,10 +58,16 @@ describe("blessboard settings validation", () => {
       latitude: -15.4,
       longitude: 28.3,
       countryCode: "zm",
+      timezone: "Africa/Lusaka",
     });
     assert.equal(ok.ok, true);
-    assert.equal(ok.value.phone, "+260971234567");
+    assert.equal(ok.value.phone, "+260 97 123 4567");
     assert.equal(ok.value.countryCode, "ZM");
+    assert.equal(ok.value.timezone, "Africa/Lusaka");
+    assert.equal(
+      validateBranchSettingsInput({ publicName: "X", timezone: "Not/AZone" }).ok,
+      false
+    );
   });
 });
 
@@ -265,7 +271,10 @@ describe("blessboard settings http", () => {
       .set("Cookie", cookie)
       .set("Accept", "text/html");
     assert.equal(page.status, 200);
-    assert.match(page.text, /Church settings/);
+    assert.match(page.text, /Organization &amp; branch settings|Organization settings|Church settings|Organization & branch settings/i);
+    assert.match(page.text, /Organization status/i);
+    assert.match(page.text, /Legal \/ registered name|name="legalName"/);
+    assert.match(page.text, /First branch|data-bb-hq-branch-settings-form/);
     assert.doesNotMatch(page.text, new RegExp(churchA.id, "i"));
     const csrf = extractCookie(page, CSRF_COOKIE);
     const match = page.text.match(/name="_csrf" value="([^"]+)"/);
@@ -285,10 +294,12 @@ describe("blessboard settings http", () => {
       .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
       .type("form")
       .send({
+        action: "church",
         publicName: "Settings Church Public",
+        legalName: "Settings Church Legal Ltd",
         denomination: "Test",
         primaryEmail: "hq@example.org",
-        primaryPhone: "+260971000111",
+        primaryPhone: "+260 97 100 0111",
         defaultTimezone: "Africa/Lusaka",
         defaultCountryCode: "ZM",
         websiteStatus: "published",
@@ -298,12 +309,44 @@ describe("blessboard settings http", () => {
     assert.equal(save.headers.location, "/hq/settings?saved=1");
 
     const row = await pool.query(
-      `SELECT public_name, website_status, primary_phone FROM blessboard.church_settings WHERE church_id = $1`,
+      `SELECT public_name, website_status, primary_phone, default_timezone
+         FROM blessboard.church_settings WHERE church_id = $1`,
       [churchA.id]
     );
     assert.equal(row.rows[0].public_name, "Settings Church Public");
     assert.equal(row.rows[0].website_status, "published");
-    assert.equal(row.rows[0].primary_phone, "+260971000111");
+    assert.equal(row.rows[0].primary_phone, "+260 97 100 0111");
+    assert.equal(row.rows[0].default_timezone, "Africa/Lusaka");
+
+    const church = await pool.query(
+      `SELECT display_name, legal_name FROM blessboard.churches WHERE id = $1`,
+      [churchA.id]
+    );
+    assert.equal(church.rows[0].display_name, "Settings Church Public");
+    assert.equal(church.rows[0].legal_name, "Settings Church Legal Ltd");
+
+    const org = await pool.query(
+      `SELECT display_name, legal_name FROM platform.organizations WHERE id = $1`,
+      [orgA.id]
+    );
+    assert.equal(org.rows[0].display_name, "Settings Church Public");
+
+    const audit = await pool.query(
+      `SELECT action_key FROM platform.audit_events
+        WHERE organization_id = $1 AND action_key = 'settings.church.update'
+        ORDER BY created_at DESC LIMIT 1`,
+      [orgA.id]
+    );
+    assert.equal(audit.rows.length, 1);
+
+    const onboarding = await pool.query(
+      `SELECT onboarding_status, last_activity_at
+         FROM blessboard.organization_onboarding WHERE organization_id = $1`,
+      [orgA.id]
+    );
+    if (onboarding.rows[0]) {
+      assert.ok(onboarding.rows[0].last_activity_at);
+    }
 
     const plat = await cookieFor(users.platform);
     const platPage = await request(app)
@@ -311,6 +354,84 @@ describe("blessboard settings http", () => {
       .set("Host", HOST_A)
       .set("Cookie", plat);
     assert.equal(platPage.status, 200);
+  });
+
+  it("HQ admin can edit first-branch details from settings", async () => {
+    requireDb();
+    const cookie = await cookieFor(users.hq);
+    const page = await request(app)
+      .get("/hq/settings")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    const csrf = extractCookie(page, CSRF_COOKIE);
+    const match = page.text.match(/name="_csrf" value="([^"]+)"/);
+    assert.ok(csrf && match);
+
+    const save = await request(app)
+      .post("/hq/settings")
+      .set("Host", HOST_A)
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrf}`)
+      .type("form")
+      .send({
+        action: "branch",
+        publicName: "First Branch HQ",
+        email: "first-branch@example.org",
+        phone: "+260 96 111 2222",
+        timezone: "Africa/Lusaka",
+        countryCode: "ZM",
+        addressLine1: "1 Independence Ave",
+        city: "Lusaka",
+        [CSRF_FIELD]: match[1],
+      });
+    assert.equal(save.status, 303);
+    assert.equal(save.headers.location, "/hq/settings?branch_saved=1");
+
+    const settings = await pool.query(
+      `SELECT public_name, email, phone, address_line_1, city
+         FROM blessboard.branch_settings WHERE branch_id = $1`,
+      [hqA.id]
+    );
+    assert.equal(settings.rows[0].public_name, "First Branch HQ");
+    assert.equal(settings.rows[0].email, "first-branch@example.org");
+    assert.equal(settings.rows[0].phone, "+260 96 111 2222");
+    assert.equal(settings.rows[0].address_line_1, "1 Independence Ave");
+
+    const branch = await pool.query(
+      `SELECT display_name, timezone, country_code FROM blessboard.branches WHERE id = $1`,
+      [hqA.id]
+    );
+    assert.equal(branch.rows[0].display_name, "First Branch HQ");
+    assert.equal(branch.rows[0].timezone, "Africa/Lusaka");
+    assert.equal(branch.rows[0].country_code, "ZM");
+
+    const audit = await pool.query(
+      `SELECT action_key FROM platform.audit_events
+        WHERE organization_id = $1 AND action_key = 'settings.branch.update'
+        ORDER BY created_at DESC LIMIT 1`,
+      [orgA.id]
+    );
+    assert.equal(audit.rows.length, 1);
+  });
+
+  it("normalized branch display-name duplicates are blocked", async () => {
+    requireDb();
+    // Insert a second live branch directly to exercise uniqueness without plan capacity.
+    const inserted = await pool.query(
+      `INSERT INTO blessboard.branches
+         (church_id, branch_key, display_name, branch_type, status, is_primary, timezone, country_code)
+       VALUES ($1, 'east', 'East Campus', 'branch', 'active', false, 'Africa/Lusaka', 'ZM')
+       RETURNING id`,
+      [churchA.id]
+    );
+    assert.ok(inserted.rows[0].id);
+
+    const dup = await updateBranchSettings(pool, hqA.id, {
+      publicName: "east campus",
+      expectedChurchId: churchA.id,
+    });
+    assert.equal(dup.ok, false);
+    assert.equal(dup.status, "conflict");
+    assert.match(String(dup.message || ""), /already exists/i);
   });
 
   it("branch_admin cannot open church settings; can update branch settings", async () => {
@@ -348,7 +469,9 @@ describe("blessboard settings http", () => {
     assert.match(page.text, /name="_csrf"/);
     assert.match(page.text, /method="post"/);
     assert.match(page.text, /action="\/branch-admin\/settings"/);
-    assert.doesNotMatch(page.text, /name="denomination"|name="websiteStatus"|name="primaryEmail"/);
+    assert.match(page.text, /Branch status/i);
+    assert.match(page.text, /Website visibility/i);
+    assert.doesNotMatch(page.text, /name="denomination"|name="websiteStatus"|name="primaryEmail"|name="legalName"/);
     assert.doesNotMatch(page.text, /name="branding"|name="domain"|name="billing"|name="notification"|type="file"/);
     assert.doesNotMatch(page.text, new RegExp(hqA.id, "i"));
     const csrf = extractCookie(page, CSRF_COOKIE);

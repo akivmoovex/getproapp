@@ -4,16 +4,33 @@
  * Apex /register-church application validation.
  * Plan codes come from the public pricing catalogue (foundation / growth / network).
  * Customer "Free/Basic" maps to canonical stored code: foundation.
- * Instant Free (flag on) additionally validates organization key + password.
+ * Automatic provisioning (flag on) for Foundation and Growth validates organization
+ * key + password. Network remains enquiry-only.
  */
 
 const { TIER_PLAN_CODES } = require("../../church/platformPricingContent");
 const { normalizeOrganizationKey } = require("./organizationKey");
+const { normalizeRegistrationPhone } = require("./normalizeRegistrationPhone");
+const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
+const {
+  PUBLIC_PLAN_CODES,
+  DB_PLAN_KEYS,
+  ALLOWED_PUBLIC_PLAN_CODES,
+  PUBLIC_DISPLAY_LABELS,
+  normalizePublicPlanCode,
+  mapPublicPlanToDbPlanKey,
+  publicPlanDisplayLabel,
+} = require("./registrationPlanMapping");
 
 const ALLOWED_PLANS = Object.freeze([...TIER_PLAN_CODES]);
-const FREE_PLAN_CODE = "foundation";
-/** Catalogue plan key used by the shared orchestrator. */
-const ORCHESTRATOR_FREE_PLAN_KEY = "free";
+const FREE_PLAN_CODE = PUBLIC_PLAN_CODES.FOUNDATION;
+const GROWTH_PLAN_CODE = PUBLIC_PLAN_CODES.GROWTH;
+const NETWORK_PLAN_CODE = PUBLIC_PLAN_CODES.NETWORK;
+/** Catalogue plan key used by the shared orchestrator for Foundation. */
+const ORCHESTRATOR_FREE_PLAN_KEY = DB_PLAN_KEYS.FREE;
+const ORCHESTRATOR_GROWTH_PLAN_KEY = DB_PLAN_KEYS.GROWTH;
+/** Canonical DB key for Network (not used for automatic provisioning). */
+const ORCHESTRATOR_NETWORK_PLAN_KEY = DB_PLAN_KEYS.PROFESSIONAL;
 
 /** Inbound aliases accepted from CTAs/query/body; always stored as FREE_PLAN_CODE. */
 const PLAN_ALIASES = Object.freeze({
@@ -21,15 +38,11 @@ const PLAN_ALIASES = Object.freeze({
   free: FREE_PLAN_CODE,
   basic: FREE_PLAN_CODE,
   basic_free: FREE_PLAN_CODE,
-  growth: "growth",
-  network: "network",
+  growth: GROWTH_PLAN_CODE,
+  network: NETWORK_PLAN_CODE,
 });
 
-const PLAN_DISPLAY_LABELS = Object.freeze({
-  foundation: "Foundation — Free",
-  growth: "Growth",
-  network: "Network",
-});
+const PLAN_DISPLAY_LABELS = PUBLIC_DISPLAY_LABELS;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN = 10;
@@ -39,10 +52,6 @@ function trim(value, max) {
   return String(value == null ? "" : value)
     .trim()
     .slice(0, max);
-}
-
-function digitsOnly(value) {
-  return String(value || "").replace(/\D/g, "");
 }
 
 function isHoneypotTriggered(body) {
@@ -56,22 +65,24 @@ function isHoneypotTriggered(body) {
  * @returns {string | null}
  */
 function normalizeSelectedPlan(raw) {
-  const value = trim(raw, 40).toLowerCase();
-  if (!value) return null;
-  const mapped = PLAN_ALIASES[value];
+  const mapped = normalizePublicPlanCode(raw);
   if (!mapped) return null;
-  return ALLOWED_PLANS.includes(mapped) ? mapped : null;
+  return ALLOWED_PLANS.includes(mapped) || ALLOWED_PUBLIC_PLAN_CODES.includes(mapped)
+    ? mapped
+    : null;
 }
 
 /**
- * Map public / stored plan label to orchestrator catalogue key.
- * Only foundation (and aliases) map to free; others return null.
+ * Map public / stored plan label to orchestrator catalogue key for automatic provisioning.
+ * Foundation → free; Growth → growth; Network → null (support-contact only; DB key is professional).
  * @param {unknown} raw
  * @returns {string | null}
  */
 function mapPublicPlanToOrchestratorPlanKey(raw) {
-  const canonical = normalizeSelectedPlan(raw);
-  if (canonical === FREE_PLAN_CODE) return ORCHESTRATOR_FREE_PLAN_KEY;
+  const dbKey = mapPublicPlanToDbPlanKey(raw);
+  if (dbKey === ORCHESTRATOR_FREE_PLAN_KEY || dbKey === ORCHESTRATOR_GROWTH_PLAN_KEY) {
+    return dbKey;
+  }
   return null;
 }
 
@@ -79,10 +90,22 @@ function isFreePlanSelection(raw) {
   return normalizeSelectedPlan(raw) === FREE_PLAN_CODE;
 }
 
+function isGrowthPlanSelection(raw) {
+  return normalizeSelectedPlan(raw) === GROWTH_PLAN_CODE;
+}
+
+function isNetworkPlanSelection(raw) {
+  return normalizeSelectedPlan(raw) === NETWORK_PLAN_CODE;
+}
+
+/** Plans that auto-provision when the emergency switch is enabled. */
+function isInstantProvisionPlan(raw) {
+  const canonical = normalizeSelectedPlan(raw);
+  return canonical === FREE_PLAN_CODE || canonical === GROWTH_PLAN_CODE;
+}
+
 function planDisplayLabel(code) {
-  const canonical = normalizeSelectedPlan(code);
-  if (!canonical) return "";
-  return PLAN_DISPLAY_LABELS[canonical] || canonical;
+  return publicPlanDisplayLabel(code);
 }
 
 function validateEmail(email) {
@@ -96,16 +119,12 @@ function validateEmail(email) {
   return { ok: true, value };
 }
 
-function validatePhone(phone) {
-  const value = trim(phone, 50);
-  if (!value) {
-    return { ok: false, error: "Please enter a phone number.", field: "phone" };
-  }
-  const digits = digitsOnly(value);
-  if (digits.length < 7 || digits.length > 15) {
-    return { ok: false, error: "Please enter a valid phone number.", field: "phone" };
-  }
-  return { ok: true, value };
+/**
+ * @param {unknown} phone
+ * @param {unknown} country
+ */
+function validatePhone(phone, country) {
+  return normalizeRegistrationPhone(phone, country);
 }
 
 /**
@@ -197,7 +216,12 @@ function validatePlatformChurchRegistration(body, opts = {}) {
   const city = trim(body && body.city, 120);
   const contactName = trim((body && (body.contact_name || body.full_name)) || "", 200);
   const roleInChurch = trim(body && body.role_in_church, 120) || null;
-  const branchName = trim(body && body.branch_name, 200) || null;
+  const branchPrepared = prepareBranchDisplayName(body && body.branch_name, {
+    required: false,
+    field: "branch_name",
+  });
+  if (!branchPrepared.ok) return branchPrepared;
+  const branchName = branchPrepared.display || null;
   const branchCount = trim(body && body.branch_count, 20) || null;
   const message = trim(body && body.message, 5000) || null;
   const selectedPlan =
@@ -224,7 +248,7 @@ function validatePlatformChurchRegistration(body, opts = {}) {
   const emailResult = validateEmail(body && body.email);
   if (!emailResult.ok) return emailResult;
 
-  const phoneResult = validatePhone(body && body.phone);
+  const phoneResult = validatePhone(body && body.phone, country);
   if (!phoneResult.ok) return phoneResult;
 
   if (branchCount && !/^\d{1,3}$/.test(branchCount)) {
@@ -257,15 +281,15 @@ function validatePlatformChurchRegistration(body, opts = {}) {
     return { ok: false, error: "Please select a valid plan interest.", field: "selected_plan" };
   }
 
-  const wantsInstantFree =
-    instantFreeEnabled && selectedPlan === FREE_PLAN_CODE;
+  const wantsInstantProvision =
+    instantFreeEnabled && isInstantProvisionPlan(selectedPlan);
 
   /** @type {string | null} */
   let organizationKey = null;
   /** @type {string | null} */
   let administratorPassword = null;
 
-  if (wantsInstantFree) {
+  if (wantsInstantProvision) {
     const keyResult = validateRequestedOrganizationKey(body && body.organization_key);
     if (!keyResult.ok) return keyResult;
     organizationKey = keyResult.value;
@@ -286,7 +310,8 @@ function validatePlatformChurchRegistration(body, opts = {}) {
       city,
       contact_name: contactName,
       contact_email: emailResult.value,
-      contact_phone: phoneResult.value,
+      contact_phone: phoneResult.display,
+      contact_phone_normalized: phoneResult.normalized,
       role_in_church: roleInChurch,
       branch_name: branchName,
       branch_count: branchCount,
@@ -297,7 +322,8 @@ function validatePlatformChurchRegistration(body, opts = {}) {
       // Password stays on the validation result only for the orchestrator call —
       // never persisted on the application row.
       administrator_password: administratorPassword,
-      wants_instant_free: wantsInstantFree,
+      // Compatibility name: true for Foundation or Growth auto-provision.
+      wants_instant_free: wantsInstantProvision,
     },
   };
 }
@@ -334,14 +360,22 @@ function formFromBody(body, opts = {}) {
 module.exports = {
   ALLOWED_PLANS,
   FREE_PLAN_CODE,
+  GROWTH_PLAN_CODE,
+  NETWORK_PLAN_CODE,
   ORCHESTRATOR_FREE_PLAN_KEY,
+  ORCHESTRATOR_GROWTH_PLAN_KEY,
+  ORCHESTRATOR_NETWORK_PLAN_KEY,
   PLAN_ALIASES,
   PLAN_DISPLAY_LABELS,
   PASSWORD_MIN,
   PASSWORD_MAX,
   normalizeSelectedPlan,
   mapPublicPlanToOrchestratorPlanKey,
+  mapPublicPlanToDbPlanKey,
   isFreePlanSelection,
+  isGrowthPlanSelection,
+  isNetworkPlanSelection,
+  isInstantProvisionPlan,
   planDisplayLabel,
   validatePlatformChurchRegistration,
   validateAdministratorPassword,

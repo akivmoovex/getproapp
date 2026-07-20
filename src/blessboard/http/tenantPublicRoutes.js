@@ -126,6 +126,17 @@ function createTenantPublicRouter(deps) {
         );
     }
 
+    if (model.kind === KIND.SETUP) {
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
+      return res.status(200).type("html").send(
+        renderWebsiteSetupPage({
+          publicName: model.publicName,
+          message: "This website is being prepared and is not public yet.",
+        })
+      );
+    }
+
     if (model.seo && model.seo.noindex) {
       res.setHeader("X-Robots-Tag", "noindex, nofollow");
     }

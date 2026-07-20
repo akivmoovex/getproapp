@@ -3,8 +3,9 @@
 /**
  * Apex-only platform-admin shell.
  * Dashboard, org directory, plans/entitlements, deployments, settings.
- * Writes limited to plan assign + entitlement override (CSRF + confirmation).
- * No billing, payments, DNS automation, or destructive controls.
+ * Writes limited to plan assign, billing activation (manual external), and entitlement override
+ * (CSRF + confirmation). No payment-provider APIs, card collection, DNS automation, or
+ * destructive controls.
  */
 
 const express = require("express");
@@ -27,6 +28,19 @@ const {
   ALLOWED_PUBLICATION,
   ALLOWED_PLANS,
 } = require("../services/listPlatformOrganizations");
+const {
+  listPlatformAdminOpsAlerts,
+  STATUS: OPS_ALERTS_STATUS,
+  DEFAULT_LIMIT: OPS_ALERTS_DEFAULT_LIMIT,
+  MAX_LIMIT: OPS_ALERTS_MAX_LIMIT,
+  ALLOWED_LIMITS: OPS_ALERTS_ALLOWED_LIMITS,
+} = require("../services/platformAdminOpsAlerts");
+const {
+  getPlatformAdminRegistrationAnalytics,
+  STATUS: ANALYTICS_STATUS,
+  ALLOWED_ANALYTICS_RANGES,
+  DEFAULT_ANALYTICS_RANGE_DAYS,
+} = require("../services/platformAdminRegistrationAnalyticsService");
 const {
   getPlatformOrganizationSummary,
   STATUS: DETAIL_STATUS,
@@ -66,6 +80,10 @@ const {
   STATUS: ENTITLEMENTS_ADMIN_STATUS,
 } = require("../services/platformAdminEntitlements");
 const {
+  activatePaidSubscriptionByOrganizationKey,
+  STATUS: BILLING_STATUS,
+} = require("../services/billingSubscriptionService");
+const {
   listPlatformDeployments,
   STATUS: DEPLOY_STATUS,
 } = require("../services/listPlatformDeployments");
@@ -79,6 +97,9 @@ const {
   updateRegistrationFollowUpStatus,
   assignRegistrationSupport,
   addRegistrationSupportContact,
+  rejectRegistrationApplication,
+  approveAndProvisionRegistrationApplication,
+  linkRegistrationApplicationToOrganization,
   STATUS: REG_APP_STATUS,
   DEFAULT_LIMIT: REG_DEFAULT_LIMIT,
   MAX_LIMIT: REG_MAX_LIMIT,
@@ -161,7 +182,7 @@ function sendControlled(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Platform admin · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=25" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=27" />
 </head>
 <body class="bb-pa-body">
   <main class="bb-pa-notice">
@@ -250,7 +271,12 @@ function createPlatformAdminRouter(deps) {
         roleLabel: formatRoleLabel("platform_admin"),
       };
       return next();
-    } catch {
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[platform-admin] requirePlatformAdmin unexpected failure", {
+        path: String(req.originalUrl || req.path || "").slice(0, 200),
+        message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
+      });
       return sendControlled(req, res, 503, "Platform admin is temporarily unavailable.");
     }
   }
@@ -266,25 +292,52 @@ function createPlatformAdminRouter(deps) {
   }
 
   router.get("/admin", requireApex, requirePlatformAdmin, async (req, res) => {
-    const [statsResult, list] = await Promise.all([
+    const [statsResult, list, alertsResult, analyticsResult] = await Promise.all([
       getPlatformAdminDashboardStats(getPool()),
       listPlatformOrganizations(getPool(), { page: 1, limit: 5 }),
+      listPlatformAdminOpsAlerts(getPool(), {
+        page: req.query.alerts_page,
+        limit: req.query.alerts_limit,
+      }),
+      getPlatformAdminRegistrationAnalytics(getPool(), {
+        analyticsRange: req.query.analytics_range,
+      }),
     ]);
+    if (analyticsResult.status === ANALYTICS_STATUS.INVALID_INPUT) {
+      return sendControlled(req, res, 400, "Invalid analytics date range.");
+    }
     if (
       (!statsResult.ok && statsResult.status === LIST_STATUS.LOOKUP_ERROR) ||
-      (!list.ok && list.status === LIST_STATUS.LOOKUP_ERROR)
+      (!list.ok && list.status === LIST_STATUS.LOOKUP_ERROR) ||
+      (!alertsResult.ok && alertsResult.status === OPS_ALERTS_STATUS.LOOKUP_ERROR) ||
+      (!analyticsResult.ok && analyticsResult.status === ANALYTICS_STATUS.LOOKUP_ERROR)
     ) {
       return sendControlled(req, res, 503, "Organization directory is temporarily unavailable.");
     }
+    const stats = statsResult.stats || {};
     const html = renderPlatformAdminView(
       "platform-admin/dashboard.ejs",
       shellLocals(req, res, "home", {
         pageTitle: "Platform admin",
         directorySample: list.organizations || [],
-        totalOrganizations:
-          (statsResult.stats && statsResult.stats.totalOrganizations) || list.total || 0,
-        organizationsWithChurch:
-          (statsResult.stats && statsResult.stats.organizationsWithChurch) || 0,
+        totalOrganizations: stats.totalOrganizations || list.total || 0,
+        organizationsWithChurch: stats.organizationsWithChurch || 0,
+        recentFoundationRegistrations: stats.recentFoundationRegistrations || 0,
+        activeGrowthTrials: stats.activeGrowthTrials || 0,
+        growthTrialsEndingSoon: stats.growthTrialsEndingSoon || 0,
+        growthSubscriptionsInGrace: stats.growthSubscriptionsInGrace || 0,
+        registrationsRequiringReview: stats.registrationsRequiringReview || 0,
+        pendingNetworkSupportRequests: stats.pendingNetworkSupportRequests || 0,
+        opsAlerts: alertsResult.alerts || [],
+        opsAlertsPage: alertsResult.page || 1,
+        opsAlertsLimit: alertsResult.limit || OPS_ALERTS_DEFAULT_LIMIT,
+        opsAlertsTotal: alertsResult.total || 0,
+        opsAlertsTotalPages: alertsResult.totalPages || 0,
+        opsAlertsAllowedLimits: OPS_ALERTS_ALLOWED_LIMITS,
+        opsAlertsMaxLimit: OPS_ALERTS_MAX_LIMIT,
+        registrationAnalytics: analyticsResult.analytics || null,
+        analyticsAllowedRanges: ALLOWED_ANALYTICS_RANGES,
+        analyticsDefaultRange: DEFAULT_ANALYTICS_RANGE_DAYS,
       })
     );
     return res.status(200).type("html").send(html);
@@ -381,6 +434,10 @@ function createPlatformAdminRouter(deps) {
         application_status: req.query.application_status,
         provisioning_status: req.query.provisioning_status,
         follow_up_status: req.query.follow_up_status,
+        selected_plan: req.query.selected_plan || req.query.plan,
+        support_requested: req.query.support_requested,
+        requires_review: req.query.requires_review,
+        overdue_follow_up: req.query.overdue_follow_up,
         linked: req.query.linked,
         from: req.query.from,
         to: req.query.to,
@@ -409,6 +466,7 @@ function createPlatformAdminRouter(deps) {
           defaultLimit: REG_DEFAULT_LIMIT,
           maxLimit: REG_MAX_LIMIT,
           allowedLimits: REG_ALLOWED_LIMITS,
+          allowedPlans: ["foundation", "growth", "network"],
           applicationStatuses: registrationAppRepo.APPLICATION_STATUSES,
           provisioningStatuses: registrationAppRepo.PROVISIONING_STATUSES,
           followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
@@ -565,6 +623,144 @@ function createPlatformAdminRouter(deps) {
     }
   );
 
+  router.post(
+    "/admin/registration-applications/:id/reject",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const result = await rejectRegistrationApplication(getPool(), {
+        applicationId: id,
+        actorUserId: req.platformAdminContext.userId,
+        reason: req.body && req.body.rejection_reason,
+        deploymentCode: (() => {
+          const deployment = getPlatformDeploymentCode(env);
+          return deployment && deployment.ok ? deployment.code : "blessboard-org-v5";
+        })(),
+      });
+      if (!result.ok) {
+        let error = "reject_failed";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) error = "not_eligible";
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      return res.redirect(303, `${detailPath}?notice=rejected`);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/approve",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await approveAndProvisionRegistrationApplication(getPool(), {
+        applicationId: id,
+        actorUserId: req.platformAdminContext.userId,
+        administratorPassword: req.body && req.body.administrator_password,
+        administratorPasswordConfirm: req.body && req.body.administrator_password_confirm,
+        organizationKey: req.body && req.body.organization_key,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        dataEnvironment: "testing",
+      });
+      if (!result.ok) {
+        let error = "approve_failed";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) error = "not_eligible";
+        else if (result.status === REG_APP_STATUS.PROVISION_FAILED) error = "provision_failed";
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      if (result.alreadyProvisioned) {
+        return res.redirect(303, `${detailPath}?notice=already_provisioned`);
+      }
+      return res.redirect(303, `${detailPath}?notice=approved`);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/retry-provision",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await approveAndProvisionRegistrationApplication(getPool(), {
+        applicationId: id,
+        actorUserId: req.platformAdminContext.userId,
+        administratorPassword: req.body && req.body.administrator_password,
+        administratorPasswordConfirm: req.body && req.body.administrator_password_confirm,
+        organizationKey: req.body && req.body.organization_key,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        dataEnvironment: "testing",
+      });
+      if (!result.ok) {
+        let error = "retry_failed";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) error = "not_eligible";
+        else if (result.status === REG_APP_STATUS.PROVISION_FAILED) error = "provision_failed";
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      if (result.alreadyProvisioned) {
+        return res.redirect(303, `${detailPath}?notice=already_provisioned`);
+      }
+      return res.redirect(303, `${detailPath}?notice=retry_succeeded`);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/link-organization",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await linkRegistrationApplicationToOrganization(getPool(), {
+        applicationId: id,
+        actorUserId: req.platformAdminContext.userId,
+        organizationKey: req.body && req.body.organization_key,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "link_failed";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === REG_APP_STATUS.NOT_FOUND) {
+          error =
+            result.message === "organization_not_found" ? "organization_not_found" : "not_found";
+        } else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) error = "not_eligible";
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      return res.redirect(303, `${detailPath}?notice=organization_linked`);
+    }
+  );
+
   router.get("/admin/plans", requireApex, requirePlatformAdmin, async (req, res) => {
     const catalogue = await listPlatformPlansCatalogue(getPool(), { includeInactive: true });
     if (!catalogue.ok || catalogue.status === PLANS_STATUS.LOOKUP_ERROR) {
@@ -586,6 +782,8 @@ function createPlatformAdminRouter(deps) {
       limit: req.query.limit,
       q: req.query.q,
       status: req.query.status,
+      plan: req.query.plan,
+      ending_soon: req.query.ending_soon,
     });
     if (!list.ok && list.status === SUBSCRIPTIONS_STATUS.LOOKUP_ERROR) {
       return sendControlled(req, res, 503, "Subscription directory is temporarily unavailable.");
@@ -604,10 +802,13 @@ function createPlatformAdminRouter(deps) {
         totalPages: list.totalPages,
         keyPrefix: list.keyPrefix || "",
         statusFilter: list.statusFilter || "",
+        planFilter: list.planFilter || "",
+        endingSoon: Boolean(list.endingSoon),
         defaultLimit: SUB_DEFAULT_LIMIT,
         maxLimit: SUB_MAX_LIMIT,
         allowedLimits: SUB_ALLOWED_LIMITS,
         allowedStatuses: SUB_ALLOWED_STATUSES,
+        allowedPlans: ["free", "growth", "network"],
         rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
         rangeTo: Math.min(list.page * list.limit, list.total),
       })
@@ -1122,6 +1323,53 @@ function createPlatformAdminRouter(deps) {
       return res.redirect(
         303,
         `/admin/organizations/${encodeURIComponent(organizationKey)}?notice=plan_saved#pa-org-subscription`
+      );
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/billing/activate-paid",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.status(403).type("text").send("Invalid or missing CSRF token.");
+      }
+      const confirmed = String((req.body && req.body.confirm_billing_activation) || "") === "1";
+      const result = await activatePaidSubscriptionByOrganizationKey(getPool(), {
+        organizationKey,
+        planKey: req.body && req.body.plan_key,
+        reason: req.body && req.body.reason,
+        billingCustomerRef: req.body && req.body.billing_customer_ref,
+        billingSubscriptionRef: req.body && req.body.billing_subscription_ref,
+        billingProvider: (req.body && req.body.billing_provider) || "manual_external",
+        confirmed,
+        actorUserId: req.platformAdminContext && req.platformAdminContext.userId,
+        env,
+      });
+      if (!result.ok) {
+        let error = "billing_failed";
+        if (result.status === BILLING_STATUS.CONFIRMATION_REQUIRED) {
+          error = "confirm_required";
+        } else if (result.status === BILLING_STATUS.NOT_FOUND) {
+          error = "not_found";
+        } else if (result.status === BILLING_STATUS.INVALID_INPUT) {
+          error = "invalid";
+        } else if (result.status === BILLING_STATUS.CONFLICT) {
+          error = "branch_limit";
+        }
+        return res.redirect(
+          303,
+          `/admin/organizations/${encodeURIComponent(organizationKey)}?error=${error}#pa-org-billing`
+        );
+      }
+      return res.redirect(
+        303,
+        `/admin/organizations/${encodeURIComponent(organizationKey)}?notice=billing_activated#pa-org-billing`
       );
     }
   );

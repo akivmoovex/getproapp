@@ -242,21 +242,43 @@
       <span class="bb-ds-badge bb-ds-badge--neutral">Read-only here</span>
     </div>
     <p class="bb-ba-hint">
-      Denomination, website status, and church-wide contact defaults are managed in HQ — not on this branch form.
+      Organization profile, website visibility, and church-wide defaults are managed in HQ — not on this branch form.
     </p>
+    <% var cat = typeof catalogue !== 'undefined' && catalogue ? catalogue : {}; %>
     <ul class="bb-ba-settings-unavailable" data-bb-settings-unavailable="hq">
       <li>
         <span class="material-symbols-outlined" aria-hidden="true">lock</span>
         <span>
-          <strong>Church profile</strong>
-          <span class="bb-ba-muted">Denomination, primary church contact, website status</span>
+          <strong>Branch status</strong>
+          <span class="bb-ba-muted"><%= cat.branchStatus || '—' %> (operational; not editable here)</span>
         </span>
       </li>
       <li>
         <span class="material-symbols-outlined" aria-hidden="true">lock</span>
         <span>
-          <strong>Church defaults</strong>
-          <span class="bb-ba-muted">Default timezone and country for the organization</span>
+          <strong>Website visibility</strong>
+          <span class="bb-ba-muted"><%= cat.websiteStatus || 'draft' %> (church-level)</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <span>
+          <strong>Canonical timezone</strong>
+          <span class="bb-ba-muted"><%= cat.canonicalTimezone || 'Not set — managed in HQ settings' %></span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <span>
+          <strong>Service times</strong>
+          <span class="bb-ba-muted">Edit as page content under Content admin (no settings column)</span>
+        </span>
+      </li>
+      <li>
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        <span>
+          <strong>Plans &amp; subscriptions</strong>
+          <span class="bb-ba-muted">Platform-only; tenant users cannot change plan fields</span>
         </span>
       </li>
     </ul>

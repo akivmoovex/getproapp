@@ -3,7 +3,9 @@
   var rows = subscriptions || [];
   var limits = allowedLimits || [10, 25, 50, 100];
   var statuses = allowedStatuses || ['active', 'trialing', 'past_due', 'canceled', 'expired', 'inactive'];
-  var hasFilter = Boolean(keyPrefix) || Boolean(statusFilter);
+  var plans = allowedPlans || ['free', 'growth', 'network'];
+  var endingSoonFilter = Boolean(endingSoon);
+  var hasFilter = Boolean(keyPrefix) || Boolean(statusFilter) || Boolean(planFilter) || endingSoonFilter;
   var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
 
   function statusLabel(s) {
@@ -11,22 +13,32 @@
     if (key === 'active') return 'Active';
     if (key === 'trialing') return 'Trialing';
     if (key === 'past_due') return 'Past due';
+    if (key === 'grace') return 'Grace';
     if (key === 'canceled') return 'Canceled';
     if (key === 'expired') return 'Expired';
     if (key === 'inactive') return 'Inactive';
     return s || '—';
   }
+  function rowStatusLabel(row) {
+    if (row.subscriptionStatusLabel) return row.subscriptionStatusLabel;
+    return statusLabel(row.subscriptionStatus);
+  }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'active' || key === 'trialing') return 'bb-pa-chip--ok';
-    if (key === 'past_due') return 'bb-pa-chip--warn';
+    if (key === 'past_due' || key === 'grace') return 'bb-pa-chip--warn';
     if (key === 'canceled' || key === 'expired' || key === 'inactive') return 'bb-pa-chip--muted';
     return 'bb-pa-chip--muted';
   }
-  function productLabel(productKey) {
-    var k = String(productKey || '').toLowerCase();
-    if (k === 'blessboard') return 'BlessBoard';
-    return productKey || '—';
+  function planFilterLabel(p) {
+    var k = String(p || '').toLowerCase();
+    if (k === 'free' || k === 'foundation') return 'Foundation';
+    if (k === 'growth') return 'Growth';
+    if (k === 'network' || k === 'professional') return 'Network';
+    return p || '—';
+  }
+  function entitlementLabel(state) {
+    return state === 'entitled' ? 'Entitled' : 'Not entitled';
   }
   function formatTs(iso) {
     if (!iso) return '—';
@@ -45,6 +57,8 @@
     var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
     if (keyPrefix) parts.push('q=' + encodeURIComponent(keyPrefix));
     if (statusFilter) parts.push('status=' + encodeURIComponent(statusFilter));
+    if (planFilter) parts.push('plan=' + encodeURIComponent(planFilter));
+    if (endingSoonFilter) parts.push('ending_soon=true');
     return '/admin/subscriptions?' + parts.join('&');
   }
   function clearHref() {
@@ -105,8 +119,24 @@
       <select id="status" name="status">
         <option value="">All statuses</option>
         <% statuses.forEach(function (st) { %>
-        <option value="<%= st %>"<%= statusFilter === st ? ' selected' : '' %>><%= statusLabel(st) %></option>
+        <option value="<%= st %>"<%= statusFilter === st ? ' selected' : '' %>><%= st === 'past_due' ? 'Grace / past due' : statusLabel(st) %></option>
         <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="plan">Plan</label>
+      <select id="plan" name="plan" data-bb-pa-subs-plan-filter="1">
+        <option value="">All plans</option>
+        <% plans.forEach(function (p) { %>
+        <option value="<%= p %>"<%= planFilter === p ? ' selected' : '' %>><%= planFilterLabel(p) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="ending_soon">Ending soon</label>
+      <select id="ending_soon" name="ending_soon" data-bb-pa-subs-ending-soon="1">
+        <option value="">Any</option>
+        <option value="true"<%= endingSoonFilter ? ' selected' : '' %>>Within 7 days</option>
       </select>
     </div>
     <div class="bb-pa-field">
@@ -126,7 +156,7 @@
   </form>
 
   <% if (!rows.length && !hasFilter) { %>
-  <p class="bb-pa-empty" role="status" data-bb-pa-empty="subscriptions">No subscription records are configured.</p>
+  <p class="bb-pa-empty" role="status" data-bb-pa-empty="subscriptions">No subscription records are configured yet. Navigation remains available above.</p>
   <% } else if (!rows.length) { %>
   <div class="bb-pa-empty-wrap" role="status" data-bb-pa-empty="no-results">
     <p class="bb-pa-empty">No subscriptions match these filters.</p>
@@ -141,9 +171,10 @@
           <th scope="col">Organization</th>
           <th scope="col">Plan</th>
           <th scope="col">Status</th>
-          <th scope="col">Product</th>
           <th scope="col">Starts</th>
           <th scope="col">Ends</th>
+          <th scope="col">Grace deadline</th>
+          <th scope="col">Entitlement</th>
           <th scope="col"><span class="bb-pa-visually-hidden">Open</span></th>
         </tr>
       </thead>
@@ -152,8 +183,9 @@
         <tr
           data-bb-sub-org="<%= row.organizationKey %>"
           data-bb-sub-plan-key="<%= row.planKey %>"
-          data-bb-sub-plan-display="<%= row.planDisplayName %>"
+          data-bb-sub-plan-display="<%= row.planLabel || row.planDisplayName %>"
           data-bb-sub-status="<%= row.subscriptionStatus %>"
+          data-bb-sub-entitlement="<%= row.entitlementState || '' %>"
         >
           <td>
             <a class="bb-pa-link" href="<%= detailHref(row.organizationKey) %>">
@@ -162,13 +194,20 @@
             <div><code class="bb-pa-key"><%= row.organizationKey %></code></div>
           </td>
           <td>
-            <strong><%= row.planDisplayName || row.planKey %></strong>
-            <div><code class="bb-pa-key"><%= row.planKey %></code></div>
+            <strong data-bb-plan-label="1"><%= row.planLabel || row.planDisplayName || row.planKey %></strong>
+            <% if (row.planKey) { %><div><code class="bb-pa-key"><%= row.planKey %></code></div><% } %>
           </td>
-          <td><span class="bb-pa-chip <%= statusChip(row.subscriptionStatus) %>"><%= statusLabel(row.subscriptionStatus) %></span></td>
-          <td><%= productLabel(row.productKey) %></td>
-          <td><time datetime="<%= row.startsAt || '' %>"><%= formatTs(row.startsAt) %></time></td>
-          <td><% if (row.endsAt) { %><time datetime="<%= row.endsAt %>"><%= formatTs(row.endsAt) %></time><% } else { %>—<% } %></td>
+          <td>
+            <span class="bb-pa-chip <%= statusChip(row.subscriptionStatusLabel === 'Grace' ? 'grace' : row.subscriptionStatus) %>"><%= rowStatusLabel(row) %></span>
+          </td>
+          <td><time datetime="<%= row.startsAt || '' %>" data-bb-sub-starts="1"><%= formatTs(row.startsAt) %></time></td>
+          <td><% if (row.endsAt) { %><time datetime="<%= row.endsAt %>" data-bb-sub-ends="1"><%= formatTs(row.endsAt) %></time><% } else { %>—<% } %></td>
+          <td>
+            <% if (row.graceDeadline) { %>
+            <time datetime="<%= row.graceDeadline %>" data-bb-grace-deadline="1"><%= formatTs(row.graceDeadline) %></time>
+            <% } else { %>—<% } %>
+          </td>
+          <td data-bb-entitlement-state="<%= row.entitlementState || '' %>"><%= entitlementLabel(row.entitlementState) %></td>
           <td>
             <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-subs__open" href="<%= detailHref(row.organizationKey) %>">Configure</a>
           </td>
@@ -184,14 +223,14 @@
       class="bb-pa-subs-card"
       data-bb-sub-org="<%= row.organizationKey %>"
       data-bb-sub-plan-key="<%= row.planKey %>"
-      data-bb-sub-plan-display="<%= row.planDisplayName %>"
+      data-bb-sub-plan-display="<%= row.planLabel || row.planDisplayName %>"
       data-bb-sub-status="<%= row.subscriptionStatus %>"
     >
       <header class="bb-pa-subs-card__head">
         <h2 class="bb-pa-subs-card__title">
           <a class="bb-pa-link" href="<%= detailHref(row.organizationKey) %>"><%= row.organizationDisplayName || row.organizationKey %></a>
         </h2>
-        <span class="bb-pa-chip <%= statusChip(row.subscriptionStatus) %>"><%= statusLabel(row.subscriptionStatus) %></span>
+        <span class="bb-pa-chip <%= statusChip(row.subscriptionStatusLabel === 'Grace' ? 'grace' : row.subscriptionStatus) %>"><%= rowStatusLabel(row) %></span>
       </header>
       <dl class="bb-pa-subs-card__dl">
         <div>
@@ -201,13 +240,13 @@
         <div>
           <dt>Plan</dt>
           <dd>
-            <strong><%= row.planDisplayName || row.planKey %></strong>
+            <strong><%= row.planLabel || row.planDisplayName || row.planKey %></strong>
             · <code class="bb-pa-key"><%= row.planKey %></code>
           </dd>
         </div>
         <div>
-          <dt>Product</dt>
-          <dd><%= productLabel(row.productKey) %></dd>
+          <dt>Entitlement</dt>
+          <dd><%= entitlementLabel(row.entitlementState) %></dd>
         </div>
         <div>
           <dt>Configuration window</dt>
@@ -217,6 +256,12 @@
             <% if (row.endsAt) { %><time datetime="<%= row.endsAt %>"><%= formatTs(row.endsAt) %></time><% } else { %>Open-ended<% } %>
           </dd>
         </div>
+        <% if (row.graceDeadline) { %>
+        <div>
+          <dt>Grace deadline</dt>
+          <dd><time datetime="<%= row.graceDeadline %>"><%= formatTs(row.graceDeadline) %></time></dd>
+        </div>
+        <% } %>
       </dl>
       <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-subs-card__cta" href="<%= detailHref(row.organizationKey) %>">
         Open subscription configuration

@@ -90,6 +90,20 @@ function validateAndNormalizeInput(input) {
     .toLowerCase();
   const isPrimary = raw.isPrimary === undefined ? true : Boolean(raw.isPrimary);
 
+  const subscriptionPlanKey = String(raw.subscriptionPlanKey || "free")
+    .trim()
+    .toLowerCase();
+  const subscriptionStatus = String(raw.subscriptionStatus || "active")
+    .trim()
+    .toLowerCase();
+  const subscriptionStartsAt =
+    raw.subscriptionStartsAt != null ? String(raw.subscriptionStartsAt) : null;
+  const subscriptionEndsAt =
+    raw.subscriptionEndsAt != null ? String(raw.subscriptionEndsAt) : null;
+  const subscriptionNotes =
+    raw.subscriptionNotes != null ? String(raw.subscriptionNotes).slice(0, 1000) : null;
+  const skipDefaultSubscription = Boolean(raw.skipDefaultSubscription);
+
   if (!organizationKey || !ORG_KEY_RE.test(organizationKey)) {
     return { ok: false, reason: "organizationKey" };
   }
@@ -110,6 +124,22 @@ function validateAndNormalizeInput(input) {
   }
   if (!deploymentCode || !DEPLOYMENT_CODE_RE.test(deploymentCode)) {
     return { ok: false, reason: "deploymentCode" };
+  }
+  if (
+    !skipDefaultSubscription &&
+    productKey === "blessboard" &&
+    !/^[a-z][a-z0-9_]{0,63}$/.test(subscriptionPlanKey)
+  ) {
+    return { ok: false, reason: "subscriptionPlanKey" };
+  }
+  if (
+    !skipDefaultSubscription &&
+    productKey === "blessboard" &&
+    !["active", "trialing", "past_due", "canceled", "expired", "inactive"].includes(
+      subscriptionStatus
+    )
+  ) {
+    return { ok: false, reason: "subscriptionStatus" };
   }
 
   let hostname = null;
@@ -143,6 +173,12 @@ function validateAndNormalizeInput(input) {
       domainType: skipDomain ? null : domainType,
       isPrimary,
       skipDomain,
+      skipDefaultSubscription,
+      subscriptionPlanKey,
+      subscriptionStatus,
+      subscriptionStartsAt,
+      subscriptionEndsAt,
+      subscriptionNotes,
     },
   };
 }
@@ -289,7 +325,7 @@ async function provisionPlatformTenant(db, input, options) {
     }
 
     let plannedSubscription = false;
-    if (organization && req.productKey === "blessboard") {
+    if (organization && req.productKey === "blessboard" && !req.skipDefaultSubscription) {
       const entitlementRepo = require("../repositories/entitlementRepository");
       const existingSub = await entitlementRepo.findCurrentSubscription(
         client,
@@ -305,7 +341,11 @@ async function provisionPlatformTenant(db, input, options) {
             const result = await assignOrganizationPlan(client, {
               organizationId: organization.id,
               productKey: "blessboard",
-              planKey: "free",
+              planKey: req.subscriptionPlanKey || "free",
+              status: req.subscriptionStatus || "active",
+              startsAt: req.subscriptionStartsAt || undefined,
+              endsAt: req.subscriptionEndsAt || undefined,
+              notes: req.subscriptionNotes || undefined,
             });
             if (!result.ok) {
               const err = new Error(String(result.reason || result.status || "plan_assign_failed"));
@@ -328,7 +368,11 @@ async function provisionPlatformTenant(db, input, options) {
           }
         }
       }
-    } else if (!organization && req.productKey === "blessboard") {
+    } else if (
+      !organization &&
+      req.productKey === "blessboard" &&
+      !req.skipDefaultSubscription
+    ) {
       plannedSubscription = true;
     }
 

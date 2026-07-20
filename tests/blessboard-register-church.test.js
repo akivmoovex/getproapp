@@ -60,6 +60,20 @@ const validBody = {
   consent_contact: "on",
 };
 
+let phoneSeq = 0;
+function uniquePhone() {
+  phoneSeq += 1;
+  return `+26097${String(1000000 + phoneSeq).slice(1)}`;
+}
+
+function regBody(overrides = {}) {
+  return {
+    ...validBody,
+    phone: uniquePhone(),
+    ...overrides,
+  };
+}
+
 describe("blessboard public church registration (BB-MT-001)", () => {
   let pool;
   let databaseUrl;
@@ -98,6 +112,8 @@ describe("blessboard public church registration (BB-MT-001)", () => {
         PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
+        // Enquiry-only suite: disable automatic Foundation provisioning.
+        BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED: "0",
       },
       getPool: () => pool,
     });
@@ -195,14 +211,13 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
       .type("form")
-      .send({
-        ...validBody,
+      .send(regBody({
         church_name: "MANUAL TEST FREE CHURCH",
         contact_name: "MANUAL TEST USER",
         email,
         selected_plan: "free",
         [CSRF_FIELD]: csrf,
-      });
+      }));
     assert.equal(res.status, 303);
     assert.equal(res.headers.location, "/register-church?submitted=1");
     assert.doesNotMatch(res.headers.location || "", /checkout|payment|stripe/i);
@@ -294,7 +309,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .post("/register-church")
       .set("Host", "blessboard.org")
       .type("form")
-      .send({ ...validBody, email: `no-cookie-${Date.now()}@example.org`, [CSRF_FIELD]: csrf });
+      .send(regBody({ email: `no-cookie-${Date.now()}@example.org`, [CSRF_FIELD]: csrf }));
     assert.equal(res.status, 403);
     assert.match(res.text, /security token|Reload the registration form/i);
   });
@@ -309,11 +324,10 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${second.cookie}`)
       .type("form")
-      .send({
-        ...validBody,
+      .send(regBody({
         email: `mismatch-${Date.now()}@example.org`,
         [CSRF_FIELD]: first.csrf,
-      });
+      }));
     assert.equal(res.status, 403);
   });
 
@@ -340,7 +354,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${freshCookie}`)
       .type("form")
-      .send({ ...validBody, email, [CSRF_FIELD]: freshCsrf });
+      .send(regBody({ email, [CSRF_FIELD]: freshCsrf }));
     assert.equal(ok.status, 303);
   });
 
@@ -379,7 +393,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
       .type("form")
-      .send({ ...validBody, email: "plan-reject@example.org", selected_plan: "enterprise", [CSRF_FIELD]: csrf });
+      .send(regBody({ email: "plan-reject@example.org", selected_plan: "enterprise", [CSRF_FIELD]: csrf }));
     assert.equal(res.status, 400);
     assert.match(res.text, /valid plan/i);
   });
@@ -395,7 +409,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
       .type("form")
-      .send({ ...validBody, email, [CSRF_FIELD]: csrf });
+      .send(regBody({ email, [CSRF_FIELD]: csrf }));
     assert.equal(res.status, 303);
     assert.equal(res.headers.location, "/register-church?submitted=1");
 
@@ -429,7 +443,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${firstPage.cookie}`)
       .type("form")
-      .send({ ...validBody, email, [CSRF_FIELD]: firstPage.csrf });
+      .send(regBody({ email, [CSRF_FIELD]: firstPage.csrf }));
     assert.equal(first.status, 303);
 
     const secondPage = await getRegistrationPage(app);
@@ -438,7 +452,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${secondPage.cookie}`)
       .type("form")
-      .send({ ...validBody, email, [CSRF_FIELD]: secondPage.csrf });
+      .send(regBody({ email, [CSRF_FIELD]: secondPage.csrf }));
     assert.equal(second.status, 303);
 
     const rows = await repo.listApplications(pool, { status: "pending", limit: 50 });
@@ -514,6 +528,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
         PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
+        BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED: "0",
       },
       getPool: () => brokenPool,
     });
@@ -527,11 +542,10 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${brokenCookie}`)
       .type("form")
-      .send({
-        ...validBody,
+      .send(regBody({
         email: `missing-table-${Date.now()}@example.org`,
         [CSRF_FIELD]: brokenCsrf,
-      });
+      }));
 
     assert.equal(res.status, 503);
     assert.match(res.text, /could not save your request|try again/i);
@@ -576,7 +590,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
       .type("form")
-      .send({ ...validBody, email, [CSRF_FIELD]: csrf });
+      .send(regBody({ email, [CSRF_FIELD]: csrf }));
     assert.equal(res.status, 303);
 
     const inV5 = await pool.query(

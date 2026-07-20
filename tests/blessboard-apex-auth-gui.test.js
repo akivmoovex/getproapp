@@ -125,5 +125,29 @@ describe("blessboard apex auth gui states", () => {
     assert.doesNotMatch(html, /22222222-2222-4222-8222-222222222222/);
     assert.doesNotMatch(html, /blessboard-org-v5|session_token|password_hash/);
     assert.doesNotMatch(html, /Forgot password|Change password|Billing|Notification/i);
+    assert.doesNotMatch(html, /data-bb-platform-admin-link|Open Platform Admin/);
+  });
+
+  it("account page shows Open Platform Admin only when showPlatformAdminLink is set", () => {
+    const withLink = renderAccountPage({
+      displayName: "Platform Admin",
+      roles: ["platform_admin"],
+      csrfToken: "csrf-token",
+      hostKind: "apex",
+      showPlatformAdminLink: true,
+    });
+    assert.match(withLink, /data-bb-platform-admin-link="1"/);
+    assert.match(withLink, /href="\/admin"/);
+    assert.match(withLink, /Open Platform Admin/);
+    assert.match(withLink, /Tenant administration requires signing in on the church hostname/);
+
+    const withoutFlag = renderAccountPage({
+      displayName: "Platform Admin",
+      roles: ["platform_admin"],
+      csrfToken: "csrf-token",
+      hostKind: "apex",
+      showPlatformAdminLink: false,
+    });
+    assert.doesNotMatch(withoutFlag, /data-bb-platform-admin-link|Open Platform Admin/);
   });
 });

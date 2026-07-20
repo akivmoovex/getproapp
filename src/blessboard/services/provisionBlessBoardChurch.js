@@ -84,9 +84,12 @@ function validateAndNormalizeInput(input) {
   const hqBranchKey = String(raw.hqBranchKey || "")
     .trim()
     .toLowerCase();
-  const hqBranchDisplayName = String(
-    raw.hqBranchDisplayName != null ? raw.hqBranchDisplayName : ""
-  ).trim();
+  const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
+  const hqPrepared = prepareBranchDisplayName(raw.hqBranchDisplayName, {
+    field: "displayName",
+    required: true,
+  });
+  const hqBranchDisplayName = hqPrepared.ok ? hqPrepared.display : "";
   const timezoneRaw = raw.timezone != null ? String(raw.timezone).trim() : "";
   const timezone = timezoneRaw ? timezoneRaw : null;
   const countryRaw = raw.countryCode != null ? String(raw.countryCode).trim().toUpperCase() : "";
@@ -153,7 +156,13 @@ function hqBranchMatches(existing, requested, churchId) {
   if (String(existing.status) !== "active") return false;
   if (String(existing.church_id) !== String(churchId)) return false;
   if (existing.branch_key !== requested.hqBranchKey) return false;
-  if (String(existing.display_name) !== requested.hqBranchDisplayName) return false;
+  const { normalizeBranchDisplayName } = require("./normalizeBranchDisplayName");
+  if (
+    normalizeBranchDisplayName(existing.display_name) !==
+    normalizeBranchDisplayName(requested.hqBranchDisplayName)
+  ) {
+    return false;
+  }
   if (String(existing.branch_type) !== "hq") return false;
   if (!Boolean(existing.is_primary)) return false;
   const existingTz = existing.timezone == null ? null : String(existing.timezone);

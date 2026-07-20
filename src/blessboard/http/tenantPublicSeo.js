@@ -26,7 +26,14 @@ function buildTenantPublicSeo(input) {
     .toLowerCase()
     .replace(/:\d+$/, "");
   const pageKey = String(input.pageKey || "home");
-  const path = PAGE_KEY_TO_PATH[pageKey] || "/";
+  const pathPrefix = String(input.pathPrefix || "").replace(/\/$/, "");
+  const basePath = PAGE_KEY_TO_PATH[pageKey] || "/";
+  const path =
+    pathPrefix && pageKey === "home"
+      ? pathPrefix || "/"
+      : pathPrefix
+        ? `${pathPrefix}${basePath === "/" ? "" : basePath}`
+        : basePath;
   const publicName = plainMetaText(input.publicName || "Church", 80) || "Church";
   const pageLabel =
     plainMetaText(input.pageTitle, 80) || PAGE_KEY_TITLES[pageKey] || "Home";

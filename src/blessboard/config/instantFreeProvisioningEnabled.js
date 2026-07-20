@@ -1,11 +1,14 @@
 "use strict";
 
 /**
- * BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED — rollout switch for instant
- * Basic/Free self-service provisioning on /register-church.
+ * BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED — emergency switch for automatic
+ * Foundation (public `foundation` → DB `free`) and Growth (one-month trial)
+ * self-service provisioning on /register-church.
  *
- * Default: disabled (fail-closed). When off, registration remains application-only.
- * Invalid tokens → disabled. Does not enable Growth/Network instant provisioning.
+ * Default: **enabled** when unset. Explicit false/0/no/off disables and falls
+ * back to enquiry-only for Foundation and Growth. Network always remains
+ * support-contact only (never instant-provisioned).
+ * Query/body cannot override this server flag.
  */
 
 const ENV_KEY = "BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED";
@@ -27,7 +30,7 @@ function parseInstantFreeProvisioningEnabled(env) {
     .trim()
     .toLowerCase();
   if (!raw) {
-    return { ok: true, enabled: false, reason: "default_disabled", raw: "" };
+    return { ok: true, enabled: true, reason: "default_enabled", raw: "" };
   }
   if (DISABLE_VALUES.includes(raw)) {
     return { ok: true, enabled: false, reason: "explicit_disable", raw };
@@ -35,6 +38,7 @@ function parseInstantFreeProvisioningEnabled(env) {
   if (ENABLE_VALUES.includes(raw)) {
     return { ok: true, enabled: true, reason: "explicit_enable", raw };
   }
+  // Unsupported tokens fail closed to disabled (emergency-safe).
   return { ok: false, enabled: false, reason: "unsupported", raw };
 }
 

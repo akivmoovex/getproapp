@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accept invitation · BlessBoard</title>
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=50" />
+</head>
+<body class="bb-hq-body">
+  <main class="bb-hq-login-unavailable" data-bb-invite-accept="1">
+    <% if (saved) { %>
+    <h1>Invitation accepted</h1>
+    <p role="status">Your access is ready<% if (typeof displayName !== 'undefined' && displayName) { %> for <strong><%= displayName %></strong><% } %>.</p>
+    <p><a class="bb-hq-btn bb-hq-btn--primary" href="/login">Sign in</a></p>
+    <% } else if (!invitation) { %>
+    <h1>Invitation unavailable</h1>
+    <p role="alert"><%= error || 'This invitation is not valid.' %></p>
+    <p><a href="/login">Sign in</a></p>
+    <% } else { %>
+    <h1>Accept invitation</h1>
+    <p class="bb-hq-lede">
+      You have been invited as
+      <strong><%= invitation.roleKey === 'church_hq_admin' ? 'HQ admin' : 'Branch admin' %></strong>.
+      <% if (invitation.requiresPassword) { %>
+      Choose a password to activate your account.
+      <% } else { %>
+      Confirm to add this church to your existing BlessBoard account.
+      <% } %>
+    </p>
+    <% if (error) { %>
+    <p class="bb-hq-error" role="alert"><%= error %></p>
+    <% } %>
+    <form method="post" action="/invite/accept" class="bb-hq-form" data-bb-invite-accept-form="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <input type="hidden" name="token" value="<%= token %>" />
+      <% if (invitation.requiresPassword) { %>
+      <div class="bb-hq-field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
+      </div>
+      <% } %>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+        <%= invitation.requiresPassword ? 'Set password &amp; join' : 'Accept invitation' %>
+      </button>
+    </form>
+    <% } %>
+  </main>
+</body>
+</html>

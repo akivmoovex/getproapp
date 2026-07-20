@@ -1,61 +1,168 @@
 <%- include('../partials/hq-shell-start') %>
+<%
+  var cat = typeof catalogue !== 'undefined' && catalogue ? catalogue : {};
+  var branch = typeof primaryBranch !== 'undefined' && primaryBranch ? primaryBranch : null;
+  var bs = branch && branch.settings ? branch.settings : {};
+  function bval(key) {
+    var v = bs[key];
+    return v == null ? '' : String(v);
+  }
+%>
 
-<section class="bb-hq-settings" data-bb-hq-settings="1" aria-label="Church settings">
+<section class="bb-hq-settings" data-bb-hq-settings="1" aria-label="Organization and branch settings">
   <header class="bb-hq-page-head">
     <p class="bb-hq-breadcrumb">
       <a href="/hq">HQ</a>
       <span aria-hidden="true">›</span>
       <span>Settings</span>
     </p>
-    <h1 class="bb-hq-page-head__title">Church settings</h1>
-    <p class="bb-hq-lede">Public contact and website status for this church. No content publishing here.</p>
+    <h1 class="bb-hq-page-head__title">Organization &amp; branch settings</h1>
+    <p class="bb-hq-lede">
+      Maintain public contact details for your church and first branch.
+      Use <a href="/hq/website">Website preview &amp; publish</a> when ready to go live.
+      Service times are edited under <a href="/hq/content">Content</a>.
+    </p>
   </header>
 
   <% if (error) { %>
   <p class="bb-hq-error" role="alert"><%= error %></p>
   <% } %>
   <% if (saved) { %>
-  <p class="bb-hq-ok" role="status">Settings saved.</p>
+  <p class="bb-hq-ok" role="status">Organization settings saved.</p>
   <% } %>
+  <% if (branchSaved) { %>
+  <p class="bb-hq-ok" role="status">First branch settings saved.</p>
+  <% } %>
+
+  <div class="bb-hq-panel" data-bb-hq-settings-readonly="1">
+    <h2 class="bb-hq-panel__title">Organization status</h2>
+    <p class="bb-hq-lede">Read-only for church administrators. Plan and subscription changes stay with platform admin.</p>
+    <dl class="bb-hq-settings-readonly">
+      <div><dt>Organization key</dt><dd><code><%= cat.organizationKey || '—' %></code></dd></div>
+      <div><dt>Organization status</dt><dd><%= cat.organizationStatus || '—' %></dd></div>
+      <div><dt>Church status</dt><dd><%= cat.churchStatus || '—' %></dd></div>
+      <% if (cat.canonicalTimezone) { %>
+      <div><dt>Canonical timezone</dt><dd><%= cat.canonicalTimezone %></dd></div>
+      <% } %>
+    </dl>
+  </div>
 
   <form method="post" action="/hq/settings" class="bb-hq-form bb-hq-panel" data-bb-hq-settings-form="1">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="hidden" name="action" value="church" />
+    <h2 class="bb-hq-panel__title">Organization / church profile</h2>
     <div class="bb-hq-field">
-      <label for="publicName">Public name</label>
+      <label for="publicName">Public display name</label>
       <input id="publicName" name="publicName" type="text" required maxlength="200" value="<%= settings.publicName %>" autocomplete="organization" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="legalName">Legal / registered name</label>
+      <input id="legalName" name="legalName" type="text" maxlength="200" value="<%= cat.churchLegalName || cat.organizationLegalName || '' %>" autocomplete="organization" />
     </div>
     <div class="bb-hq-field">
       <label for="denomination">Denomination</label>
       <input id="denomination" name="denomination" type="text" maxlength="120" value="<%= settings.denomination || '' %>" />
     </div>
     <div class="bb-hq-field">
-      <label for="primaryEmail">Primary email</label>
+      <label for="primaryEmail">Contact email</label>
       <input id="primaryEmail" name="primaryEmail" type="email" maxlength="254" value="<%= settings.primaryEmail || '' %>" autocomplete="email" />
     </div>
     <div class="bb-hq-field">
-      <label for="primaryPhone">Primary phone</label>
-      <input id="primaryPhone" name="primaryPhone" type="tel" maxlength="32" value="<%= settings.primaryPhone || '' %>" placeholder="+260…" autocomplete="tel" />
+      <label for="primaryPhone">Contact phone</label>
+      <input id="primaryPhone" name="primaryPhone" type="tel" maxlength="32" value="<%= settings.primaryPhone || '' %>" placeholder="+260 97…" autocomplete="tel" />
     </div>
     <div class="bb-hq-field">
-      <label for="defaultTimezone">Default timezone</label>
+      <label for="defaultTimezone">Timezone</label>
       <input id="defaultTimezone" name="defaultTimezone" type="text" maxlength="64" value="<%= settings.defaultTimezone || '' %>" placeholder="Africa/Lusaka" />
+      <p class="bb-hq-hint">Used as the canonical timezone for tenant-facing dates.</p>
     </div>
     <div class="bb-hq-field">
-      <label for="defaultCountryCode">Default country</label>
+      <label for="defaultCountryCode">Country</label>
       <input id="defaultCountryCode" name="defaultCountryCode" type="text" maxlength="2" value="<%= settings.defaultCountryCode || '' %>" placeholder="ZM" />
     </div>
     <div class="bb-hq-field">
-      <label for="websiteStatus">Website status</label>
+      <label for="websiteStatus">Public website visibility</label>
       <select id="websiteStatus" name="websiteStatus">
-        <option value="draft" <%= settings.websiteStatus === 'draft' ? 'selected' : '' %>>Draft</option>
+        <option value="draft" <%= settings.websiteStatus === 'draft' ? 'selected' : '' %>>Draft (not public)</option>
         <option value="published" <%= settings.websiteStatus === 'published' ? 'selected' : '' %>>Published</option>
         <option value="suspended" <%= settings.websiteStatus === 'suspended' ? 'selected' : '' %>>Suspended</option>
       </select>
+      <p class="bb-hq-hint">Prefer <a href="/hq/website">Website publish</a> for readiness-checked publishing.</p>
     </div>
+    <p class="bb-hq-hint">Primary language is not available yet (no schema column).</p>
+    <p class="bb-hq-hint">Organization street address is maintained on the first branch below.</p>
     <div class="bb-hq-form__actions">
-      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Save church settings</button>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Save organization settings</button>
     </div>
   </form>
+
+  <% if (branch) { %>
+  <form method="post" action="/hq/settings" class="bb-hq-form bb-hq-panel" data-bb-hq-branch-settings-form="1" id="bb-hq-branch">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="hidden" name="action" value="branch" />
+    <h2 class="bb-hq-panel__title">First branch</h2>
+    <p class="bb-hq-lede">
+      Branch <strong><%= branch.displayName || 'Primary' %></strong>
+      · status <strong><%= branch.status || '—' %></strong> (read-only)
+      · key <code><%= branch.branchKey || '—' %></code>
+    </p>
+    <div class="bb-hq-field">
+      <label for="branchPublicName">Branch display name</label>
+      <input id="branchPublicName" name="publicName" type="text" required maxlength="200" value="<%= bval('publicName') || branch.displayName || '' %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="branchEmail">Branch email</label>
+      <input id="branchEmail" name="email" type="email" maxlength="254" value="<%= bval('email') %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="branchPhone">Branch phone</label>
+      <input id="branchPhone" name="phone" type="tel" maxlength="32" value="<%= bval('phone') %>" placeholder="+260 97…" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="branchTimezone">Branch timezone</label>
+      <input id="branchTimezone" name="timezone" type="text" maxlength="64" value="<%= bval('timezone') %>" placeholder="Africa/Lusaka" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="branchCountry">Branch country</label>
+      <input id="branchCountry" name="countryCode" type="text" maxlength="2" value="<%= bval('countryCode') %>" placeholder="ZM" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="addressLine1">Address line 1</label>
+      <input id="addressLine1" name="addressLine1" type="text" maxlength="200" value="<%= bval('addressLine1') %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="addressLine2">Address line 2</label>
+      <input id="addressLine2" name="addressLine2" type="text" maxlength="200" value="<%= bval('addressLine2') %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="city">City</label>
+      <input id="city" name="city" type="text" maxlength="120" value="<%= bval('city') %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="provinceState">Province / state</label>
+      <input id="provinceState" name="provinceState" type="text" maxlength="120" value="<%= bval('provinceState') %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="postalCode">Postal code</label>
+      <input id="postalCode" name="postalCode" type="text" maxlength="32" value="<%= bval('postalCode') %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="latitude">Latitude</label>
+      <input id="latitude" name="latitude" type="text" inputmode="decimal" value="<%= bs.latitude != null ? bs.latitude : '' %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="longitude">Longitude</label>
+      <input id="longitude" name="longitude" type="text" inputmode="decimal" value="<%= bs.longitude != null ? bs.longitude : '' %>" />
+    </div>
+    <p class="bb-hq-hint">
+      Service times: edit under <a href="/hq/content/pages/home">Content → Home</a> (section keys <code>service_times</code> / <code>services</code>).
+      Branch public visibility follows church website status above — there is no separate branch visibility column.
+    </p>
+    <div class="bb-hq-form__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Save first branch settings</button>
+    </div>
+  </form>
+  <% } %>
 </section>
 
 <%- include('../partials/hq-shell-end') %>

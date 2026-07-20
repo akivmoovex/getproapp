@@ -29,7 +29,7 @@
 
   <header class="bb-tp-header" data-bb-header="1" id="bb-tp-header">
     <div class="bb-tp-header__inner">
-      <a class="bb-tp-brand" href="/" aria-label="<%= publicName %> home">
+      <a class="bb-tp-brand" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>" aria-label="<%= publicName %> home">
         <img
           class="bb-tp-brand__mark"
           src="/church/images/brand/blessboard-small-church-logo.png"
@@ -88,7 +88,7 @@
     inert
   >
     <div class="bb-tp-drawer__head">
-      <a class="bb-tp-brand bb-tp-brand--drawer" href="/" aria-label="<%= publicName %> home">
+      <a class="bb-tp-brand bb-tp-brand--drawer" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>" aria-label="<%= publicName %> home">
         <img
           class="bb-tp-brand__mark"
           src="/church/images/brand/blessboard-small-church-logo.png"

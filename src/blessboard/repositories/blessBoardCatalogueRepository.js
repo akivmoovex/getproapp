@@ -155,16 +155,28 @@ async function findPrimaryBranch(client, churchId) {
  * }} fields
  */
 async function insertHqBranch(client, fields) {
+  const {
+    prepareBranchDisplayName,
+  } = require("../services/normalizeBranchDisplayName");
+  const prepared = prepareBranchDisplayName(fields.displayName, {
+    field: "displayName",
+    required: true,
+  });
+  if (!prepared.ok) {
+    const err = new Error(prepared.error || "invalid_branch_display_name");
+    err.code = "invalid_branch_display_name";
+    throw err;
+  }
   const r = await client.query(
     `INSERT INTO blessboard.branches
        (church_id, branch_key, display_name, branch_type, status, is_primary, timezone, country_code)
      VALUES ($1, $2, $3, 'hq', 'active', true, $4, $5)
-     RETURNING id, church_id, branch_key, display_name, short_name, branch_type, status,
+     RETURNING id, church_id, branch_key, display_name, display_name_normalized, short_name, branch_type, status,
                is_primary, timezone, country_code`,
     [
       fields.churchId,
       fields.branchKey,
-      fields.displayName,
+      prepared.display,
       fields.timezone,
       fields.countryCode,
     ]

@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * Platform-admin registration applications list/detail and follow-up actions.
- * Does not provision, retry, or change organization operational status.
+ * Platform-admin registration applications list/detail, follow-up, and risk review actions.
+ * Approve calls the canonical provision orchestrator; reject does not provision.
  */
 
 const repo = require("../repositories/platformChurchRegistrationRepository");
@@ -11,6 +11,26 @@ const {
   listOrganizationAuditEvents,
 } = require("../../platform/services/auditEventService");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const {
+  NETWORK_PLAN_CODE,
+  validateAdministratorPassword,
+  validateRequestedOrganizationKey,
+  isNetworkPlanSelection,
+} = require("./platformChurchRegistrationValidation");
+const {
+  ALLOWED_PUBLIC_PLAN_CODES,
+  planDisplayLabel,
+} = require("./registrationPlanMapping");
+const {
+  provisionRegisteredBlessBoardChurch,
+  isProvisioningFailureRetryable,
+} = require("./provisionRegisteredBlessBoardChurch");
+const {
+  RISK_DECISIONS,
+  RISK_REASON_CODES,
+  filterAllowlistedReasonCodes,
+  reasonLabelsForAdmin,
+} = require("./registrationRiskDecision");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -19,6 +39,9 @@ const STATUS = Object.freeze({
   FORBIDDEN: "forbidden",
   LOOKUP_ERROR: "lookup_error",
   NOT_PROVISIONED: "not_provisioned",
+  NOT_ELIGIBLE: "not_eligible",
+  ALREADY_PROVISIONED: "already_provisioned",
+  PROVISION_FAILED: "provision_failed",
 });
 
 const DEFAULT_LIMIT = 25;
@@ -27,6 +50,68 @@ const ALLOWED_LIMITS = Object.freeze([10, 25, 50, 100]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const TERMINAL_FOLLOW_UP = Object.freeze(["completed", "unreachable", "not_interested"]);
+
+/**
+ * Derive Prompt 26 workflow status from the three-axis model (no CRM column).
+ * @param {object} row
+ */
+function deriveWorkflowStatus(row) {
+  const app = String(row.application_status || "");
+  const prov = String(row.provisioning_status || "");
+  let follow = String(row.follow_up_status || "");
+  if (follow === "call_pending") follow = "contact_pending";
+  if (follow === "needs_help" || follow === "self_onboarding") follow = "awaiting_customer";
+
+  if (app === "rejected") return "rejected";
+  if (app === "cancelled") return "closed";
+  if (prov === "provisioned") return "approved";
+  if (app === "closed") return "closed";
+  if (TERMINAL_FOLLOW_UP.includes(String(row.follow_up_status || ""))) return "closed";
+  if (follow && repo.WORKFLOW_STATUSES.includes(follow)) return follow;
+  if (follow === "contacted") return "contacted";
+  if (follow === "qualified") return "qualified";
+  if (follow === "awaiting_customer") return "awaiting_customer";
+  if (follow === "contact_pending") return "contact_pending";
+  if (Boolean(row.support_requested) || String(row.selected_plan || "") === NETWORK_PLAN_CODE) {
+    return follow || "contact_pending";
+  }
+  return follow || "new";
+}
+
+/**
+ * Deterministic support-queue priority (lower rank = higher priority).
+ * @param {object} row
+ */
+function computeSupportPriority(row) {
+  const app = String(row.application_status || "");
+  const prov = String(row.provisioning_status || "");
+  const follow = String(row.follow_up_status || "");
+  const nextAt = row.next_follow_up_at ? new Date(row.next_follow_up_at) : null;
+  const overdue =
+    nextAt &&
+    !Number.isNaN(nextAt.getTime()) &&
+    nextAt.getTime() < Date.now() &&
+    !["rejected", "cancelled", "closed"].includes(app) &&
+    !TERMINAL_FOLLOW_UP.includes(follow);
+
+  if (prov === "provisioning_failed") {
+    return { rank: 0, key: "critical", label: "Critical" };
+  }
+  if (app === "duplicate_review" || overdue) {
+    return { rank: 1, key: "high", label: "High" };
+  }
+  if (
+    Boolean(row.support_requested) ||
+    ["new", "call_pending", "contact_pending", "needs_help", "awaiting_customer"].includes(
+      follow
+    )
+  ) {
+    return { rank: 2, key: "medium", label: "Medium" };
+  }
+  return { rank: 3, key: "normal", label: "Normal" };
+}
 
 function sanitizeProvisioningErrorDetail(raw) {
   const s = String(raw || "")
@@ -43,26 +128,47 @@ function needsAttention(row) {
   const app = String(row.application_status || "");
   const prov = String(row.provisioning_status || "");
   const follow = String(row.follow_up_status || "");
+  if (Boolean(row.support_requested)) return true;
   if (app === "submitted" || app === "duplicate_review") return true;
   if (prov === "provisioning_failed") return true;
-  if (follow === "new" || follow === "call_pending" || follow === "needs_help") return true;
+  if (
+    follow === "new" ||
+    follow === "call_pending" ||
+    follow === "contact_pending" ||
+    follow === "needs_help" ||
+    follow === "awaiting_customer"
+  ) {
+    return true;
+  }
   return false;
 }
 
 function mapListRow(row) {
   if (!row) return null;
+  const selectedPlan = row.selected_plan != null ? String(row.selected_plan) : null;
+  const priority = computeSupportPriority(row);
+  const workflowStatus = deriveWorkflowStatus(row);
   return {
     id: String(row.id),
     churchName: String(row.church_name || ""),
     contactName: String(row.contact_name || ""),
     contactEmail: String(row.contact_email || ""),
     contactPhone: row.contact_phone != null ? String(row.contact_phone) : "",
+    contactPhoneNormalized:
+      row.contact_phone_normalized != null ? String(row.contact_phone_normalized) : "",
     country: String(row.country || ""),
     city: String(row.city || ""),
-    selectedPlan: row.selected_plan != null ? String(row.selected_plan) : null,
+    selectedPlan,
+    selectedPlanLabel: planDisplayLabel(row.selected_plan) || null,
+    isNetworkPlan: selectedPlan === NETWORK_PLAN_CODE,
+    supportRequested: Boolean(row.support_requested),
     createdAt: row.created_at,
     applicationStatus: String(row.application_status || ""),
     provisioningStatus: String(row.provisioning_status || ""),
+    workflowStatus,
+    priorityRank: priority.rank,
+    priorityKey: priority.key,
+    priorityLabel: priority.label,
     legacyStatus: row.legacy_status != null ? String(row.legacy_status) : null,
     organizationId: row.organization_id != null ? String(row.organization_id) : null,
     organizationKey: row.organization_key != null ? String(row.organization_key) : null,
@@ -70,11 +176,21 @@ function mapListRow(row) {
       row.organization_display_name != null ? String(row.organization_display_name) : null,
     organizationStatus: row.organization_status != null ? String(row.organization_status) : null,
     followUpStatus: row.follow_up_status != null ? String(row.follow_up_status) : null,
+    assignedSupportUserId: row.assigned_support_user_id
+      ? String(row.assigned_support_user_id)
+      : null,
     assignedSupportDisplayName:
       row.support_display_name != null ? String(row.support_display_name) : null,
     assignedSupportEmail: row.support_email != null ? String(row.support_email) : null,
     lastContactedAt: row.last_contacted_at || null,
+    nextFollowUpAt: row.next_follow_up_at || null,
+    firstContactedAt: row.first_contacted_at || null,
     attention: needsAttention(row),
+    riskDecision: row.risk_decision != null ? String(row.risk_decision) : null,
+    riskReasonCodes: filterAllowlistedReasonCodes(row.risk_reason_codes || []),
+    riskReasonLabels: reasonLabelsForAdmin(row.risk_reason_codes || []),
+    riskDecidedAt: row.risk_decided_at || null,
+    rejectionReason: row.rejection_reason != null ? String(row.rejection_reason) : null,
   };
 }
 
@@ -118,6 +234,55 @@ function normalizeListFilters(input) {
     .toLowerCase();
   if (!repo.LINKED_FILTERS.includes(linked)) linked = "all";
 
+  const selectedPlanRaw = String(raw.selected_plan || raw.selectedPlan || raw.plan || "")
+    .trim()
+    .toLowerCase();
+  const selectedPlan = ALLOWED_PUBLIC_PLAN_CODES.includes(selectedPlanRaw)
+    ? selectedPlanRaw
+    : null;
+
+  let supportRequested = null;
+  const supportRaw = String(raw.support_requested || raw.supportRequested || "")
+    .trim()
+    .toLowerCase();
+  if (supportRaw) {
+    if (supportRaw === "true" || supportRaw === "1" || supportRaw === "yes") {
+      supportRequested = true;
+    } else if (supportRaw === "false" || supportRaw === "0" || supportRaw === "no") {
+      supportRequested = false;
+    } else {
+      return { ok: false, reason: "support_requested" };
+    }
+  }
+
+  let requiresReview = null;
+  const reviewRaw = String(raw.requires_review || raw.requiresReview || "")
+    .trim()
+    .toLowerCase();
+  if (reviewRaw) {
+    if (reviewRaw === "true" || reviewRaw === "1" || reviewRaw === "yes") {
+      requiresReview = true;
+    } else if (reviewRaw === "false" || reviewRaw === "0" || reviewRaw === "no") {
+      requiresReview = false;
+    } else {
+      return { ok: false, reason: "requires_review" };
+    }
+  }
+
+  let overdueFollowUp = null;
+  const overdueRaw = String(raw.overdue_follow_up || raw.overdueFollowUp || "")
+    .trim()
+    .toLowerCase();
+  if (overdueRaw) {
+    if (overdueRaw === "true" || overdueRaw === "1" || overdueRaw === "yes") {
+      overdueFollowUp = true;
+    } else if (overdueRaw === "false" || overdueRaw === "0" || overdueRaw === "no") {
+      overdueFollowUp = false;
+    } else {
+      return { ok: false, reason: "overdue_follow_up" };
+    }
+  }
+
   let search = null;
   if (raw.q != null && String(raw.q).trim() !== "") {
     search = String(raw.q).trim().slice(0, 120).toLowerCase();
@@ -155,7 +320,18 @@ function normalizeListFilters(input) {
       provisioningStatus: repo.PROVISIONING_STATUSES.includes(provisioningStatus)
         ? provisioningStatus
         : null,
-      followUpStatus: repo.FOLLOW_UP_STATUSES.includes(followUpStatus) ? followUpStatus : null,
+      followUpStatus: (() => {
+        const rawFollow = followUpStatus;
+        if (!rawFollow) return null;
+        if (rawFollow === "contact_pending" || rawFollow === "call_pending") {
+          return "contact_pending";
+        }
+        return repo.FOLLOW_UP_STATUSES.includes(rawFollow) ? rawFollow : null;
+      })(),
+      selectedPlan,
+      supportRequested,
+      requiresReview: requiresReview === true ? true : null,
+      overdueFollowUp: overdueFollowUp === true ? true : null,
       linked,
       search,
       createdFrom,
@@ -217,6 +393,15 @@ async function listRegistrationApplicationsAdmin(db, input) {
         applicationStatus: filters.applicationStatus || "",
         provisioningStatus: filters.provisioningStatus || "",
         followUpStatus: filters.followUpStatus || "",
+        selectedPlan: filters.selectedPlan || "",
+        supportRequested:
+          filters.supportRequested === true
+            ? "true"
+            : filters.supportRequested === false
+              ? "false"
+              : "",
+        requiresReview: filters.requiresReview === true ? "true" : "",
+        overdueFollowUp: filters.overdueFollowUp === true ? "true" : "",
         linked: filters.linked,
         q: filters.search || "",
         from: input && (input.from || input.created_from) ? String(input.from || input.created_from) : "",
@@ -261,19 +446,38 @@ async function getRegistrationApplicationDetail(db, applicationId, env) {
     const listMapped = mapListRow(row);
     const organizationId = row.organization_id ? String(row.organization_id) : null;
     let planKey = null;
+    let subscriptionStatus = null;
+    let subscriptionStartsAt = null;
+    let subscriptionEndsAt = null;
     let publication = { draftPages: 0, publishedPages: 0 };
     let contacts = [];
     let auditEvents = [];
     let platformAdmins = [];
 
+    const applicationSupportContact =
+      Boolean(row.support_requested) || String(row.selected_plan || "") === NETWORK_PLAN_CODE;
+    const supportOpsAvailable = Boolean(organizationId) || applicationSupportContact;
+
+    platformAdmins = (
+      (await repo.listActivePlatformAdministrators(db)) || []
+    ).map((u) => ({
+      id: String(u.id),
+      displayName: String(u.display_name || ""),
+      email: String(u.email_normalized || ""),
+    }));
+
     if (organizationId) {
-      const [plan, pub, contactRows, admins] = await Promise.all([
-        repo.getOrganizationCurrentPlanKey(db, organizationId),
+      const [subSummary, pub, contactRows] = await Promise.all([
+        repo.getOrganizationCurrentSubscriptionSummary(db, organizationId),
         repo.getOrganizationPublicationSummary(db, organizationId),
         repo.listOrganizationSupportContacts(db, organizationId, { limit: 50 }),
-        repo.listActivePlatformAdministrators(db),
       ]);
-      planKey = plan;
+      if (subSummary) {
+        planKey = subSummary.planKey;
+        subscriptionStatus = subSummary.subscriptionStatus;
+        subscriptionStartsAt = subSummary.startsAt;
+        subscriptionEndsAt = subSummary.endsAt;
+      }
       publication = pub;
       contacts = (contactRows || []).map((c) => ({
         id: String(c.id),
@@ -285,11 +489,6 @@ async function getRegistrationApplicationDetail(db, applicationId, env) {
         createdAt: c.created_at,
         createdByDisplayName: c.created_by_display_name != null ? String(c.created_by_display_name) : "",
         createdByEmail: c.created_by_email != null ? String(c.created_by_email) : "",
-      }));
-      platformAdmins = (admins || []).map((u) => ({
-        id: String(u.id),
-        displayName: String(u.display_name || ""),
-        email: String(u.email_normalized || ""),
       }));
 
       const audit = await listOrganizationAuditEvents(db, {
@@ -306,14 +505,55 @@ async function getRegistrationApplicationDetail(db, applicationId, env) {
           metadata: e.metadataJson || {},
         }));
       }
-    } else {
-      platformAdmins = [];
+    } else if (supportOpsAvailable) {
+      const contactRows = await repo.listApplicationSupportContacts(db, id, { limit: 50 });
+      contacts = (contactRows || []).map((c) => ({
+        id: String(c.id),
+        contactMethod: String(c.contact_method),
+        outcome: String(c.outcome),
+        note: String(c.note || ""),
+        contactedAt: c.contacted_at,
+        nextFollowUpAt: c.next_follow_up_at,
+        createdAt: c.created_at,
+        createdByDisplayName: c.created_by_display_name != null ? String(c.created_by_display_name) : "",
+        createdByEmail: c.created_by_email != null ? String(c.created_by_email) : "",
+      }));
     }
+
+    const reviewEvents = Array.isArray(row.review_events) ? row.review_events : [];
+    const reviewAudit = reviewEvents
+      .filter((e) => e && typeof e === "object")
+      .map((e) => ({
+        actionKey: `registration.${String(e.action || "event")}`,
+        outcome: "success",
+        createdAt: e.at || null,
+        entityType: "registration_application",
+        metadata: {
+          reason_codes: e.reason_codes || undefined,
+          note_len: e.note_len != null ? e.note_len : undefined,
+          from_status: e.from_status || undefined,
+          to_status: e.to_status || undefined,
+          status: e.status || undefined,
+        },
+      }));
+    // Application review_events are the durable trail for unprovisioned ops; merge when org audits exist.
+    auditEvents = [...reviewAudit, ...auditEvents]
+      .sort((a, b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tb - ta;
+      })
+      .slice(0, 40);
 
     const errorCode = row.provisioning_error_code
       ? String(row.provisioning_error_code).slice(0, 120)
       : null;
     const errorSummary = sanitizeProvisioningErrorDetail(row.provisioning_error_detail);
+    const provisioningFailed = String(row.provisioning_status) === "provisioning_failed";
+    const retryAllowed =
+      provisioningFailed &&
+      !isNetworkPlanSelection(row.selected_plan) &&
+      isProvisioningFailureRetryable(errorCode);
 
     return {
       ok: true,
@@ -330,25 +570,47 @@ async function getRegistrationApplicationDetail(db, applicationId, env) {
         provisioningFailedAt: row.provisioning_failed_at,
         provisioningErrorCode: errorCode,
         provisioningErrorSummary: errorSummary,
-        retryAllowedNote:
-          String(row.provisioning_status) === "provisioning_failed"
-            ? "Automatic retry is not available from this screen yet."
-            : null,
+        provisioningFailureCategory: errorCode || (provisioningFailed ? "provisioning_failed" : null),
+        retryAllowed,
+        retryAllowedNote: provisioningFailed
+          ? retryAllowed
+            ? "Retry uses the same idempotent provisioning orchestrator. Permanent validation conflicts require correction or rejection."
+            : "This failure is not retryable from this screen. Correct the underlying conflict or reject the application."
+          : null,
         onboardingStatus: row.onboarding_status != null ? String(row.onboarding_status) : null,
         supportRequested: Boolean(row.support_requested),
-        firstContactedAt: row.first_contacted_at,
-        nextFollowUpAt: row.next_follow_up_at,
+        firstContactedAt: listMapped.firstContactedAt,
+        nextFollowUpAt: listMapped.nextFollowUpAt,
+        lastContactedAt: listMapped.lastContactedAt,
         onboardingCompletedAt: row.onboarding_completed_at,
         lastActivityAt: row.last_activity_at,
         organizationCreatedAt: row.organization_created_at,
-        assignedSupportUserId: row.assigned_support_user_id
-          ? String(row.assigned_support_user_id)
-          : null,
+        assignedSupportUserId: listMapped.assignedSupportUserId,
         planKey,
+        planKeyLabel: planKey ? planDisplayLabel(planKey) : null,
+        subscriptionStatus,
+        subscriptionStartsAt,
+        subscriptionEndsAt,
         publication,
-        followUpAvailable: Boolean(organizationId),
-        supportAssignmentAvailable: Boolean(organizationId),
-        contactHistoryAvailable: Boolean(organizationId),
+        followUpAvailable: supportOpsAvailable,
+        supportAssignmentAvailable: supportOpsAvailable,
+        contactHistoryAvailable: supportOpsAvailable,
+        linkOrganizationAvailable:
+          !organizationId &&
+          String(row.provisioning_status || "") !== "provisioned" &&
+          !["rejected", "cancelled"].includes(String(row.application_status || "")),
+        riskReviewActionsAvailable:
+          !organizationId &&
+          String(row.provisioning_status || "") !== "provisioned" &&
+          String(row.provisioning_status || "") !== "provisioning_failed" &&
+          ["submitted", "duplicate_review"].includes(String(row.application_status || "")) &&
+          !isNetworkPlanSelection(row.selected_plan),
+        retryProvisionAvailable: retryAllowed,
+        rejectActionsAvailable:
+          !organizationId &&
+          String(row.provisioning_status || "") !== "provisioned" &&
+          ["submitted", "duplicate_review"].includes(String(row.application_status || "")),
+        reviewEvents,
       },
       contacts,
       auditEvents,
@@ -413,7 +675,30 @@ async function updateRegistrationFollowUpStatus(db, input) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.NOT_FOUND, message: "not_found" };
         }
-        if (!app.organization_id || String(app.provisioning_status) !== "provisioned") {
+
+        const provisioned =
+          Boolean(app.organization_id) && String(app.provisioning_status) === "provisioned";
+        const applicationSupportContact =
+          Boolean(app.support_requested) || String(app.selected_plan || "") === NETWORK_PLAN_CODE;
+
+        if (!provisioned && applicationSupportContact) {
+          const fromStatus = app.follow_up_status != null ? String(app.follow_up_status) : null;
+          await repo.updateApplicationSupportFollowUp(client, applicationId, {
+            followUpStatus,
+            supportRequested: true,
+            reviewEvent: {
+              at: new Date().toISOString(),
+              action: "follow_up_status_updated",
+              actor_user_id: actorUserId,
+              from_status: fromStatus || undefined,
+              to_status: followUpStatus,
+            },
+          });
+          await client.query("COMMIT");
+          return { ok: true, status: STATUS.OK, followUpStatus, fromStatus, scope: "application" };
+        }
+
+        if (!provisioned) {
           await client.query("ROLLBACK");
           return {
             ok: false,
@@ -448,7 +733,7 @@ async function updateRegistrationFollowUpStatus(db, input) {
           },
         });
         await client.query("COMMIT");
-        return { ok: true, status: STATUS.OK, followUpStatus, fromStatus };
+        return { ok: true, status: STATUS.OK, followUpStatus, fromStatus, scope: "organization" };
       } catch (err) {
         try {
           await client.query("ROLLBACK");
@@ -495,7 +780,38 @@ async function assignRegistrationSupport(db, input) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.NOT_FOUND, message: "not_found" };
         }
-        if (!app.organization_id || String(app.provisioning_status) !== "provisioned") {
+
+        const provisioned =
+          Boolean(app.organization_id) && String(app.provisioning_status) === "provisioned";
+        const applicationSupportContact =
+          Boolean(app.support_requested) || String(app.selected_plan || "") === NETWORK_PLAN_CODE;
+
+        if (rawSupport) {
+          const admins = await repo.listActivePlatformAdministrators(client);
+          const allowed = admins.some((u) => String(u.id) === rawSupport);
+          if (!allowed) {
+            await client.query("ROLLBACK");
+            return { ok: false, status: STATUS.FORBIDDEN, message: "not_platform_admin" };
+          }
+        }
+
+        if (!provisioned && applicationSupportContact) {
+          await repo.updateApplicationSupportFollowUp(client, applicationId, {
+            assignedSupportUserId: rawSupport,
+            clearAssignedSupport: !rawSupport,
+            supportRequested: true,
+            reviewEvent: {
+              at: new Date().toISOString(),
+              action: "support_assigned",
+              actor_user_id: actorUserId,
+              status: rawSupport ? "assigned" : "unassigned",
+            },
+          });
+          await client.query("COMMIT");
+          return { ok: true, status: STATUS.OK, supportUserId: rawSupport, scope: "application" };
+        }
+
+        if (!provisioned) {
           await client.query("ROLLBACK");
           return {
             ok: false,
@@ -508,15 +824,6 @@ async function assignRegistrationSupport(db, input) {
           organizationId,
           applicationId,
         });
-
-        if (rawSupport) {
-          const admins = await repo.listActivePlatformAdministrators(client);
-          const allowed = admins.some((u) => String(u.id) === rawSupport);
-          if (!allowed) {
-            await client.query("ROLLBACK");
-            return { ok: false, status: STATUS.FORBIDDEN, message: "not_platform_admin" };
-          }
-        }
 
         await repo.updateOrganizationOnboarding(client, organizationId, {
           assignedSupportUserId: rawSupport,
@@ -539,8 +846,16 @@ async function assignRegistrationSupport(db, input) {
             source: "admin_registration_applications",
           },
         });
+        await repo.updateApplicationSupportFollowUp(client, applicationId, {
+          reviewEvent: {
+            at: new Date().toISOString(),
+            action: "support_assigned",
+            actor_user_id: actorUserId,
+            status: rawSupport ? "assigned" : "unassigned",
+          },
+        });
         await client.query("COMMIT");
-        return { ok: true, status: STATUS.OK, supportUserId: rawSupport };
+        return { ok: true, status: STATUS.OK, supportUserId: rawSupport, scope: "organization" };
       } catch (err) {
         try {
           await client.query("ROLLBACK");
@@ -618,6 +933,51 @@ async function addRegistrationSupportContact(db, input) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.NOT_FOUND, message: "not_found" };
         }
+
+        const provisioned =
+          Boolean(app.organization_id) && String(app.provisioning_status) === "provisioned";
+        const applicationSupportContact =
+          Boolean(app.support_requested) || String(app.selected_plan || "") === NETWORK_PLAN_CODE;
+        const nowIso = new Date().toISOString();
+
+        if (!provisioned && applicationSupportContact) {
+          const contact = await repo.createOrganizationSupportContact(client, {
+            organizationId: null,
+            registrationApplicationId: applicationId,
+            createdByUserId: actorUserId,
+            contactMethod,
+            outcome,
+            note,
+            contactedAt: null,
+            nextFollowUpAt,
+          });
+          const appPatch = {
+            supportRequested: true,
+            lastContactedAt: nowIso,
+            reviewEvent: {
+              at: nowIso,
+              action: "support_contact_added",
+              actor_user_id: actorUserId,
+              status: outcome,
+              reason_codes: [contactMethod],
+              note_len: note.length,
+            },
+          };
+          if (followUpStatus) appPatch.followUpStatus = followUpStatus;
+          if (!app.first_contacted_at) appPatch.firstContactedAt = nowIso;
+          if (Object.prototype.hasOwnProperty.call(input || {}, "nextFollowUpAt")) {
+            appPatch.nextFollowUpAt = nextFollowUpAt;
+          }
+          await repo.updateApplicationSupportFollowUp(client, applicationId, appPatch);
+          await client.query("COMMIT");
+          return {
+            ok: true,
+            status: STATUS.OK,
+            contactId: String(contact.id),
+            scope: "application",
+          };
+        }
+
         if (!app.organization_id) {
           await client.query("ROLLBACK");
           return {
@@ -631,7 +991,6 @@ async function addRegistrationSupportContact(db, input) {
           organizationId,
           applicationId,
         });
-        const nowIso = new Date().toISOString();
         const contact = await repo.createOrganizationSupportContact(client, {
           organizationId,
           registrationApplicationId: applicationId,
@@ -670,8 +1029,403 @@ async function addRegistrationSupportContact(db, input) {
             // note intentionally omitted
           },
         });
+        await repo.updateApplicationSupportFollowUp(client, applicationId, {
+          reviewEvent: {
+            at: nowIso,
+            action: "support_contact_added",
+            actor_user_id: actorUserId,
+            status: outcome,
+            reason_codes: [contactMethod],
+            note_len: note.length,
+          },
+        });
         await client.query("COMMIT");
-        return { ok: true, status: STATUS.OK, contactId: String(contact.id) };
+        return { ok: true, status: STATUS.OK, contactId: String(contact.id), scope: "organization" };
+      } catch (err) {
+        try {
+          await client.query("ROLLBACK");
+        } catch {
+          /* ignore */
+        }
+        throw err;
+      }
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, message: "lookup_error" };
+  }
+}
+
+/**
+ * Reject an unprovisioned registration application (no tenant created).
+ * @param {{ query: Function, connect?: Function }} db
+ * @param {{
+ *   applicationId: string,
+ *   actorUserId: string,
+ *   reason: string,
+ *   deploymentCode?: string,
+ * }} input
+ */
+async function rejectRegistrationApplication(db, input) {
+  const applicationId = String((input && input.applicationId) || "").trim();
+  const actorUserId = String((input && input.actorUserId) || "").trim();
+  const reason = String((input && input.reason) || "")
+    .trim()
+    .slice(0, 500);
+  if (!UUID_RE.test(applicationId) || !UUID_RE.test(actorUserId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input" };
+  }
+  if (!reason || reason.length < 3) {
+    return { ok: false, status: STATUS.INVALID_INPUT, message: "rejection_reason_required" };
+  }
+
+  try {
+    return await withOwnedClient(db, async (client) => {
+      await client.query("BEGIN");
+      try {
+        const app = await repo.lockApplicationById(client, applicationId);
+        if (!app) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_FOUND, message: "not_found" };
+        }
+        if (app.organization_id || String(app.provisioning_status) === "provisioned") {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            status: STATUS.NOT_ELIGIBLE,
+            message: "already_provisioned",
+          };
+        }
+        const appStatus = String(app.application_status || "");
+        if (appStatus === "rejected") {
+          await client.query("COMMIT");
+          return { ok: true, status: STATUS.OK, alreadyRejected: true };
+        }
+        if (!["submitted", "duplicate_review"].includes(appStatus)) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+        }
+
+        const priorCodes = filterAllowlistedReasonCodes(app.risk_reason_codes || []);
+        const reasonCodes = filterAllowlistedReasonCodes([
+          ...priorCodes,
+          RISK_REASON_CODES.ADMIN_REJECTED,
+        ]);
+        const nowIso = new Date().toISOString();
+        await repo.updateApplicationRiskReviewState(client, applicationId, {
+          applicationStatus: "rejected",
+          riskDecision: RISK_DECISIONS.REJECT,
+          riskReasonCodes: reasonCodes,
+          riskDecidedAt: nowIso,
+          rejectionReason: reason,
+          reviewEvent: {
+            at: nowIso,
+            action: "reject",
+            actor_user_id: actorUserId,
+            reason_codes: reasonCodes,
+            note_len: reason.length,
+          },
+        });
+        await client.query("COMMIT");
+        return { ok: true, status: STATUS.OK, alreadyRejected: false };
+      } catch (err) {
+        try {
+          await client.query("ROLLBACK");
+        } catch {
+          /* ignore */
+        }
+        throw err;
+      }
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, message: "lookup_error" };
+  }
+}
+
+/**
+ * Approve a held Foundation/Growth application and provision via the canonical orchestrator.
+ * Password is required (never stored on the application). Idempotent when already provisioned.
+ * @param {{ query: Function, connect?: Function }} db
+ * @param {{
+ *   applicationId: string,
+ *   actorUserId: string,
+ *   administratorPassword: string,
+ *   administratorPasswordConfirm?: string,
+ *   organizationKey?: string|null,
+ *   deploymentCode?: string,
+ *   dataEnvironment?: string,
+ *   provisionFn?: Function,
+ * }} input
+ */
+async function approveAndProvisionRegistrationApplication(db, input) {
+  const applicationId = String((input && input.applicationId) || "").trim();
+  const actorUserId = String((input && input.actorUserId) || "").trim();
+  if (!UUID_RE.test(applicationId) || !UUID_RE.test(actorUserId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input" };
+  }
+
+  const pw = validateAdministratorPassword(
+    input && input.administratorPassword,
+    input && input.administratorPasswordConfirm != null
+      ? input.administratorPasswordConfirm
+      : input && input.administratorPassword
+  );
+  if (!pw.ok) {
+    return { ok: false, status: STATUS.INVALID_INPUT, message: pw.field || "invalid_password" };
+  }
+
+  let organizationKey = null;
+  if (input && input.organizationKey != null && String(input.organizationKey).trim() !== "") {
+    const keyResult = validateRequestedOrganizationKey(input.organizationKey);
+    if (!keyResult.ok) {
+      return {
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        message: keyResult.field || "invalid_organization_key",
+      };
+    }
+    organizationKey = keyResult.value;
+  }
+
+  const deploymentCode = (input && input.deploymentCode) || "blessboard-org-v5";
+  const dataEnvironment = (input && input.dataEnvironment) || "testing";
+  const provisionFn = (input && input.provisionFn) || provisionRegisteredBlessBoardChurch;
+
+  let appSnapshot = null;
+  try {
+    const prepared = await withOwnedClient(db, async (client) => {
+      await client.query("BEGIN");
+      try {
+        const app = await repo.lockApplicationById(client, applicationId);
+        if (!app) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_FOUND, message: "not_found" };
+        }
+        if (
+          String(app.provisioning_status) === "provisioned" &&
+          app.organization_id
+        ) {
+          await client.query("COMMIT");
+          return {
+            ok: true,
+            status: STATUS.ALREADY_PROVISIONED,
+            alreadyProvisioned: true,
+            organizationId: String(app.organization_id),
+          };
+        }
+        if (isNetworkPlanSelection(app.selected_plan)) {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            status: STATUS.NOT_ELIGIBLE,
+            message: "network_not_auto_provisioned",
+          };
+        }
+        const appStatus = String(app.application_status || "");
+        if (appStatus === "rejected" || appStatus === "cancelled" || appStatus === "closed") {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+        }
+        if (!["submitted", "duplicate_review"].includes(appStatus)) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+        }
+        const provStatus = String(app.provisioning_status || "");
+        if (provStatus === "provisioning_failed") {
+          if (!isProvisioningFailureRetryable(app.provisioning_error_code)) {
+            await client.query("ROLLBACK");
+            return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "retry_not_allowed" };
+          }
+        }
+
+        const nowIso = new Date().toISOString();
+        await repo.updateApplicationRiskReviewState(client, applicationId, {
+          applicationStatus: "submitted",
+          clearRejectionReason: true,
+          reviewEvent: {
+            at: nowIso,
+            action: provStatus === "provisioning_failed" ? "retry_provision" : "approve_provision",
+            actor_user_id: actorUserId,
+            reason_codes: filterAllowlistedReasonCodes(app.risk_reason_codes || []),
+          },
+        });
+        await client.query("COMMIT");
+        return { ok: true, status: STATUS.OK, application: app };
+      } catch (err) {
+        try {
+          await client.query("ROLLBACK");
+        } catch {
+          /* ignore */
+        }
+        throw err;
+      }
+    });
+
+    if (!prepared.ok) return prepared;
+    if (prepared.alreadyProvisioned) {
+      return {
+        ok: true,
+        status: STATUS.OK,
+        alreadyProvisioned: true,
+        organizationId: prepared.organizationId,
+      };
+    }
+    appSnapshot = prepared.application;
+
+    const provision = await provisionFn(
+      db,
+      {
+        applicationId,
+        administratorPassword: pw.value,
+        requestedOrganizationKey: organizationKey || undefined,
+        actorContext: {
+          type: "platform_admin",
+          source: "admin_registration_applications",
+          actorUserId,
+          dataEnvironment,
+          deploymentCode,
+        },
+      },
+      { allowRetry: true }
+    );
+
+    if (provision.ok) {
+      const organizationId =
+        (provision.records && provision.records.organizationId) ||
+        null;
+      if (organizationId) {
+        await recordAuditEventSafe(db, {
+          deploymentCode,
+          organizationId,
+          actorUserId,
+          outcome: "success",
+          actionKey: "registration.application_approved",
+          entityType: "registration_application",
+          entityId: applicationId,
+          metadata: {
+            category: "registration",
+            actor_type: "platform_admin",
+            source: "admin_registration_applications",
+            reason_codes: filterAllowlistedReasonCodes(
+              (appSnapshot && appSnapshot.risk_reason_codes) || []
+            ),
+            status: provision.alreadyProvisioned ? "already_provisioned" : "provisioned",
+          },
+        });
+      }
+      return {
+        ok: true,
+        status: STATUS.OK,
+        alreadyProvisioned: Boolean(provision.alreadyProvisioned),
+        records: provision.records || null,
+      };
+    }
+
+    // Re-hold for review if provision bounced to duplicate_review / eligibility.
+    if (provision.status === "duplicate_email_review") {
+      return {
+        ok: false,
+        status: STATUS.NOT_ELIGIBLE,
+        message: "duplicate_email_review",
+        provisionStatus: provision.status,
+      };
+    }
+    return {
+      ok: false,
+      status: STATUS.PROVISION_FAILED,
+      message: provision.status || "provision_failed",
+      provisionStatus: provision.status || null,
+    };
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, message: "lookup_error" };
+  }
+}
+
+/**
+ * Soft-link an unprovisioned application to an existing organization.
+ * Does not provision a tenant and does not activate a paid Network subscription.
+ */
+async function linkRegistrationApplicationToOrganization(db, input) {
+  const applicationId = String((input && input.applicationId) || "").trim();
+  const actorUserId = String((input && input.actorUserId) || "").trim();
+  const organizationKey = String((input && input.organizationKey) || "")
+    .trim()
+    .toLowerCase();
+  if (!UUID_RE.test(applicationId) || !UUID_RE.test(actorUserId) || !organizationKey) {
+    return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input" };
+  }
+
+  try {
+    return await withOwnedClient(db, async (client) => {
+      await client.query("BEGIN");
+      try {
+        const app = await repo.lockApplicationById(client, applicationId);
+        if (!app) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_FOUND, message: "not_found" };
+        }
+        if (app.organization_id || String(app.provisioning_status) === "provisioned") {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "already_linked" };
+        }
+        if (["rejected", "cancelled"].includes(String(app.application_status || ""))) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+        }
+
+        const organizationId = await repo.findOrganizationIdByKey(client, organizationKey);
+        if (!organizationId) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_FOUND, message: "organization_not_found" };
+        }
+
+        const linked = await repo.linkApplicationToOrganization(
+          client,
+          applicationId,
+          organizationId
+        );
+        if (!linked) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "link_failed" };
+        }
+
+        await repo.ensureOrganizationOnboardingRow(client, {
+          organizationId,
+          applicationId,
+        });
+
+        const nowIso = new Date().toISOString();
+        await repo.updateApplicationRiskReviewState(client, applicationId, {
+          reviewEvent: {
+            at: nowIso,
+            action: "linked_organization",
+            actor_user_id: actorUserId,
+            status: organizationKey,
+          },
+        });
+
+        await recordAuditEventSafe(client, {
+          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          organizationId,
+          actorUserId,
+          outcome: "success",
+          actionKey: "registration.application_linked",
+          entityType: "registration_application",
+          entityId: applicationId,
+          metadata: {
+            category: "registration",
+            actor_type: "platform_admin",
+            source: "admin_registration_applications",
+            status: organizationKey,
+          },
+        });
+
+        await client.query("COMMIT");
+        return {
+          ok: true,
+          status: STATUS.OK,
+          organizationId,
+          organizationKey,
+        };
       } catch (err) {
         try {
           await client.query("ROLLBACK");
@@ -697,6 +1451,11 @@ module.exports = {
   updateRegistrationFollowUpStatus,
   assignRegistrationSupport,
   addRegistrationSupportContact,
+  rejectRegistrationApplication,
+  approveAndProvisionRegistrationApplication,
+  linkRegistrationApplicationToOrganization,
   sanitizeProvisioningErrorDetail,
   needsAttention,
+  deriveWorkflowStatus,
+  computeSupportPriority,
 };

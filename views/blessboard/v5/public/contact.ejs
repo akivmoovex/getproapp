@@ -114,8 +114,8 @@
         <p><%= emptyMessage %></p>
         <p class="bb-tp-empty__hint">Published contact channels and branch address details will appear here when available.</p>
         <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/">Home</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/about">About</a>
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>">Home</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/about') %>">About</a>
         </div>
       </div>
     </div>
@@ -196,7 +196,7 @@
             Email Us
           </a>
           <% } %>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/events">View Events</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/events') %>">View Events</a>
         </div>
       </section>
 

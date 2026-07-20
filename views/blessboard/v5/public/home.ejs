@@ -53,18 +53,18 @@
         <p class="bb-tp-hero__lead"><%= heroBody %></p>
         <% } %>
         <div class="bb-tp-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-hero__cta-desktop" href="/events">
+          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-hero__cta-desktop" href="<%= hrefFor('/events') %>">
             Join a Service
             <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
           </a>
-          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-hero__cta-desktop" href="/giving">
+          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-hero__cta-desktop" href="<%= hrefFor('/giving') %>">
             <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
             Giving
           </a>
-          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-hero__cta-mobile" href="/events">
+          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-hero__cta-mobile" href="<%= hrefFor('/events') %>">
             Join Our Next Service
           </a>
-          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-hero__cta-mobile" href="/ministries">
+          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-hero__cta-mobile" href="<%= hrefFor('/ministries') %>">
             Explore Ministries
           </a>
         </div>
@@ -98,8 +98,8 @@
         <h2><%= emptyHeadline %></h2>
         <p><%= emptyMessage %></p>
         <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/about">About</a>
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/about') %>">About</a>
         </div>
       </div>
     </div>
@@ -129,22 +129,22 @@
         <p class="bb-tp-shortcuts__lead">Find gatherings, ministries, messages, and our story.</p>
       </header>
       <div class="bb-tp-shortcuts__grid">
-        <a class="bb-tp-shortcut" href="/events">
+        <a class="bb-tp-shortcut" href="<%= hrefFor('/events') %>">
           <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
           <span class="bb-tp-shortcut__label">Events</span>
           <span class="bb-tp-shortcut__hint">Upcoming gatherings</span>
         </a>
-        <a class="bb-tp-shortcut" href="/ministries">
+        <a class="bb-tp-shortcut" href="<%= hrefFor('/ministries') %>">
           <span class="material-symbols-outlined" aria-hidden="true">groups</span>
           <span class="bb-tp-shortcut__label">Ministries</span>
           <span class="bb-tp-shortcut__hint">Find your place</span>
         </a>
-        <a class="bb-tp-shortcut" href="/sermons">
+        <a class="bb-tp-shortcut" href="<%= hrefFor('/sermons') %>">
           <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
           <span class="bb-tp-shortcut__label">Sermons</span>
           <span class="bb-tp-shortcut__hint">Messages and resources</span>
         </a>
-        <a class="bb-tp-shortcut" href="/about">
+        <a class="bb-tp-shortcut" href="<%= hrefFor('/about') %>">
           <span class="material-symbols-outlined" aria-hidden="true">info</span>
           <span class="bb-tp-shortcut__label">About</span>
           <span class="bb-tp-shortcut__hint">Our story and purpose</span>

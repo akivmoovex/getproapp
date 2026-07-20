@@ -85,8 +85,82 @@
     </div>
   </section>
 
+  <section class="bb-hq-roles__assign" aria-labelledby="bb-hq-roles-invite-heading">
+    <h2 id="bb-hq-roles-invite-heading" class="bb-hq-section-title">Invite staff</h2>
+    <p class="bb-hq-lede">
+      Email delivery is not enabled yet. Create an invitation, copy the one-time link, and share it out of band.
+      Resending invalidates the previous link. Supported roles: HQ admin and branch admin.
+    </p>
+    <% if (typeof inviteLink !== 'undefined' && inviteLink) { %>
+    <div class="bb-hq-banner bb-hq-banner--ok" role="status" data-bb-invite-copy-once="1">
+      <p><strong>Copy this invitation link once</strong> — it will not be shown again.</p>
+      <p><code class="bb-hq-key" data-bb-invite-link="1"><%= inviteLink %></code></p>
+    </div>
+    <% } %>
+    <form
+      method="post"
+      action="/hq/roles/invite"
+      class="bb-hq-roles__form"
+      data-bb-hq-role-invite="1"
+    >
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <div class="bb-hq-field">
+        <label for="invite-email">Email</label>
+        <input id="invite-email" name="email" type="email" required maxlength="254" autocomplete="off" value="<%= formState.email || '' %>" />
+      </div>
+      <div class="bb-hq-field">
+        <label for="invite-display-name">Display name</label>
+        <input id="invite-display-name" name="display_name" type="text" maxlength="200" value="<%= formState.displayName || '' %>" />
+      </div>
+      <div class="bb-hq-field">
+        <label for="invite-role-key">Role</label>
+        <select id="invite-role-key" name="role_key" required>
+          <option value="">Select role</option>
+          <option value="church_hq_admin" <%= formState.roleKey === 'church_hq_admin' ? 'selected' : '' %>>HQ admin</option>
+          <option value="branch_admin" <%= formState.roleKey === 'branch_admin' ? 'selected' : '' %>>Branch admin</option>
+        </select>
+      </div>
+      <div class="bb-hq-field">
+        <label for="invite-branch">Branch (required for branch admin)</label>
+        <select id="invite-branch" name="branch_key">
+          <option value="">Select branch</option>
+          <% branchOptions.forEach(function (b) { %>
+          <option value="<%= b.key %>" <%= formState.branchKey === b.key ? 'selected' : '' %>>
+            <%= b.displayName %> (<%= b.key %>)
+          </option>
+          <% }) %>
+        </select>
+      </div>
+      <p class="bb-hq-roles__form-actions">
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create invitation</button>
+      </p>
+    </form>
+  </section>
+
+  <% var pending = typeof pendingInvitations !== 'undefined' && pendingInvitations ? pendingInvitations : []; %>
+  <% if (pending.length) { %>
+  <section class="bb-hq-roles__pending" aria-labelledby="bb-hq-roles-pending-heading" data-bb-pending-invites="1">
+    <h2 id="bb-hq-roles-pending-heading" class="bb-hq-section-title">Pending invitations</h2>
+    <ul class="bb-hq-roles__list">
+      <% pending.forEach(function (inv) { %>
+      <li data-bb-invite-id="<%= inv.id %>">
+        <strong><%= inv.emailDisplay %></strong>
+        — <%= inv.roleKey === 'church_hq_admin' ? 'HQ admin' : 'Branch admin' %>
+        <% if (inv.branchDisplayName || inv.branchKey) { %>
+        (<%= inv.branchDisplayName || inv.branchKey %>)
+        <% } %>
+        <form method="post" action="/hq/roles/invitations/<%= inv.id %>/revoke" class="bb-hq-inline-form">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <button type="submit" class="bb-hq-btn bb-hq-btn--ghost bb-hq-btn--sm">Revoke</button>
+        </form>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
   <section class="bb-hq-roles__assign" aria-labelledby="bb-hq-roles-assign-heading">
-    <h2 id="bb-hq-roles-assign-heading" class="bb-hq-section-title">Assign role</h2>
+    <h2 id="bb-hq-roles-assign-heading" class="bb-hq-section-title">Assign role to existing user</h2>
     <form
       method="post"
       action="/hq/roles/assign"

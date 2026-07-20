@@ -390,7 +390,7 @@ describe("blessboard foundation schema status (027)", () => {
       const client = await upgradePool.connect();
       try {
         const prior = discoverMigrations().filter(
-          (f) => !(f.module === "blessboard" && f.version === "027")
+          (f) => !(f.module === "blessboard" && Number(f.version) >= 27)
         );
         for (const file of prior) {
           await client.query("BEGIN");

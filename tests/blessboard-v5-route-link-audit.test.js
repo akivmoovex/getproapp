@@ -60,6 +60,69 @@ function primaryNavHrefs() {
 }
 
 /**
+ * Collect same-file string path constants for static route inventory.
+ *
+ * Supported only (intentionally narrow — no eval, no require, no AST):
+ *   const REGISTER_PATH = "/register-church";
+ *   let PATH = '/features';
+ * Used when the identifier appears as the first argument to router.get/post/….
+ *
+ * Rejected / ignored: template literals with ${}, concatenations, member access
+ * (cfg.path), require() exports, non-path strings, undefined identifiers.
+ *
+ * @param {string} source
+ * @returns {Map<string, string>}
+ */
+function collectSimpleStringPathConstants(source) {
+  const map = new Map();
+  const re =
+    /\b(?:const|let|var)\s+([A-Za-z_][\w]*)\s*=\s*(['"])(\/[^'"\\\n]*)\2\s*;/g;
+  let m;
+  while ((m = re.exec(String(source || "")))) {
+    const name = m[1];
+    const value = m[3];
+    if (!name || !value || !value.startsWith("/")) continue;
+    if (value.includes("${") || value.includes("\\")) continue;
+    map.set(name, value);
+  }
+  return map;
+}
+
+/**
+ * Resolve a router.(get|post|…) first-argument match to a path string, or null.
+ * @param {string | undefined} literal
+ * @param {string | undefined} ident
+ * @param {Map<string, string>} constants
+ * @returns {string | null}
+ */
+function resolveRouterPathArg(literal, ident, constants) {
+  if (literal) return literal;
+  if (!ident) return null;
+  // Member access / dotted names are not safe to resolve statically.
+  if (ident.includes(".")) return null;
+  const resolved = constants && constants.get(ident);
+  return resolved || null;
+}
+
+/**
+ * Scan one router source file for registered paths (literals + simple constants).
+ * @param {string} source
+ * @param {(method: string, routePath: string) => void} add
+ */
+function scanRouterSource(source, add) {
+  const constants = collectSimpleStringPathConstants(source);
+  const re =
+    /router\.(get|post|put|patch|delete)\(\s*(?:[`'"]([^`'"]+)[`'"]|([A-Za-z_][\w.]*))/g;
+  let m;
+  while ((m = re.exec(String(source || "")))) {
+    const method = m[1];
+    const pathArg = resolveRouterPathArg(m[2], m[3], constants);
+    // Skip unresolved idents and interpolated template fragments.
+    if (pathArg && !pathArg.includes("${")) add(method, pathArg);
+  }
+}
+
+/**
  * Collect registered Express path patterns from V5 routers + foundation.
  * Prefixed admin modules are expanded to concrete mount prefixes.
  */
@@ -72,14 +135,7 @@ function collectRegisteredPathPatterns() {
   }
 
   function scanRouterFile(rel) {
-    const text = read(rel);
-    const re = /router\.(get|post|put|patch|delete)\(\s*(?:[`'"]([^`'"]+)[`'"]|([A-Za-z_][\w.]*))/g;
-    let m;
-    while ((m = re.exec(text))) {
-      const method = m[1];
-      const literal = m[2];
-      if (literal) add(method, literal);
-    }
+    scanRouterSource(read(rel), add);
   }
 
   const literalFiles = [
@@ -88,6 +144,8 @@ function collectRegisteredPathPatterns() {
     "src/blessboard/http/tenantRegistrationRoutes.js",
     "src/blessboard/http/publicMediaRoutes.js",
     "src/blessboard/http/hqAdminRoutes.js",
+    "src/blessboard/http/churchWebsiteAdminRoutes.js",
+    "src/blessboard/http/pathPublicRoutes.js",
     "src/blessboard/http/hqMembersAdminRoutes.js",
     "src/blessboard/http/hqRoleAdminRoutes.js",
     "src/blessboard/http/hqReportsRoutes.js",
@@ -303,6 +361,60 @@ function extractPostForms(ejsText) {
   return forms;
 }
 
+describe("blessboard v5 route scanner constants", () => {
+  it("resolves same-file string path constants used in router calls", () => {
+    const source = `
+      const REGISTER_PATH = "/register-church";
+      const FEATURES = '/features';
+      router.get(REGISTER_PATH, handler);
+      router.post(REGISTER_PATH, limiter, handler);
+      router.get(FEATURES, handler);
+      router.get("/pricing", handler);
+    `;
+    const found = new Set();
+    scanRouterSource(source, (method, routePath) => {
+      found.add(`${method.toUpperCase()} ${routePath}`);
+    });
+    assert.ok(found.has("GET /register-church"));
+    assert.ok(found.has("POST /register-church"));
+    assert.ok(found.has("GET /features"));
+    assert.ok(found.has("GET /pricing"));
+  });
+
+  it("rejects dynamic expressions and does not invent routes", () => {
+    const source = `
+      const REGISTER_PATH = "/register-church";
+      const cfg = { path: "/invented" };
+      router.get(cfg.path, handler);
+      router.get(prefix + "/x", handler);
+      router.get(\`/tpl/\${id}\`, handler);
+      router.post(UNKNOWN_PATH, handler);
+      router.get(REGISTER_PATH, handler);
+    `;
+    const found = [];
+    scanRouterSource(source, (method, routePath) => {
+      found.push(`${method.toUpperCase()} ${routePath}`);
+    });
+    assert.deepEqual(found, ["GET /register-church"]);
+    assert.ok(!found.some((p) => p.includes("/invented")));
+    assert.ok(!found.some((p) => p.includes("/tpl/")));
+    assert.ok(!found.some((p) => /UNKNOWN|prefix/.test(p)));
+  });
+
+  it("collectSimpleStringPathConstants only keeps rooted path string literals", () => {
+    const map = collectSimpleStringPathConstants(`
+      const REGISTER_PATH = "/register-church";
+      const BAD = "register-church";
+      const JOINED = "/a" + "/b";
+      const TPL = \`/x/\${y}\`;
+    `);
+    assert.equal(map.get("REGISTER_PATH"), "/register-church");
+    assert.equal(map.has("BAD"), false);
+    assert.equal(map.has("JOINED"), false);
+    assert.equal(map.has("TPL"), false);
+  });
+});
+
 describe("blessboard v5 route + link audit", () => {
   const patterns = collectRegisteredPathPatterns();
   const nav = primaryNavHrefs();
@@ -310,6 +422,13 @@ describe("blessboard v5 route + link audit", () => {
   it("inventories a non-trivial set of registered V5 route patterns", () => {
     const methods = [...patterns].filter((k) => !k.startsWith("* "));
     assert.ok(methods.length >= 120, `expected ≥120 method+path patterns, got ${methods.length}`);
+  });
+
+  it("inventories GET and POST /register-church from REGISTER_PATH constant", () => {
+    assert.ok(pathRegistered(patterns, "get", "/register-church"));
+    assert.ok(pathRegistered(patterns, "post", "/register-church"));
+    assert.ok(patterns.has("GET /register-church"));
+    assert.ok(patterns.has("POST /register-church"));
   });
 
   it("primary navigation hrefs resolve to registered GET routes", () => {
@@ -322,6 +441,14 @@ describe("blessboard v5 route + link audit", () => {
         );
       }
     }
+  });
+
+  it("apex navigation and register-church form action resolve", () => {
+    assert.ok(nav.apex.includes("/register-church"));
+    assert.ok(pathRegistered(patterns, "get", "/register-church"));
+    const formSource = read("views/blessboard/v5/apex/register-church.ejs");
+    assert.match(formSource, /action="\/register-church"/);
+    assert.ok(pathRegistered(patterns, "post", "/register-church"));
   });
 
   it("enabled nav models do not use placeholders or V4 dashboard paths", () => {
@@ -446,6 +573,8 @@ describe("blessboard v5 route + link audit", () => {
     const account = read("views/blessboard/v5/apex/account.ejs");
     assert.match(account, /hostKind === 'apex'/);
     assert.match(account, /Tenant administration requires signing in on the church hostname/);
+    assert.match(account, /showPlatformAdminLink/);
+    assert.match(account, /href="\/admin"/);
     const apexOnly = account.match(
       /hostKind === 'apex'\)\s*\{\s*%>([\s\S]*?)<%\s*\}\s*else\s*\{/
     );

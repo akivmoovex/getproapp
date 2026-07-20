@@ -14,19 +14,23 @@ and redirected to `?submitted=1`. No tenant, user, subscription, or session was 
 
 ---
 
-## 2. Feature flag
+## 2. Configuration switch
 
 | Item | Value |
 |------|--------|
 | Env key | `BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED` |
 | Module | `src/blessboard/config/instantFreeProvisioningEnabled.js` |
-| Default | **off** (`default_disabled`) |
-| Enable tokens | `1` / `true` / `yes` / `on` |
+| Default | **on** when unset (`default_enabled`) |
+| Disable tokens | `0` / `false` / `no` / `off` (emergency enquiry-only) |
+| Enable tokens | unset / `1` / `true` / `yes` / `on` |
+| Unsupported | fail-closed **disabled** |
 | Startup log | Same pattern as media uploads |
 
 Query parameters and form fields **cannot** override the server flag.
 
-Only canonical Free (`foundation` / `free` / `basic`) uses instant provisioning when the flag is on. Growth and Network remain enquiry-only.
+Only canonical Foundation (`foundation` / `free` / `basic`) and Growth use automatic provisioning when enabled. Network remains enquiry / support-contact only (never auto-provisions a tenant or subscription).
+
+The env key retains the historical `INSTANT_FREE` name; it also gates Growth trial auto-provision.
 
 ---
 
@@ -39,7 +43,9 @@ When the flag is on, the form additionally collects:
 
 Copy clarifies:
 
-- administrator portal available immediately for Free
+- administrator portal available immediately for Foundation and Growth
+- Growth includes a one-month trial (`trialing`)
+- Network remains a support-contact request (no tenant)
 - public site stays unpublished
 - future public path preview `/c/<organization-key>`
 - BlessBoard may offer optional onboarding help (callback not required for access)

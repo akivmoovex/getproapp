@@ -17,6 +17,8 @@
   });
   var matchCount = rows.length;
   var totalActive = typeof activeBranchCount === 'number' ? activeBranchCount : allRows.length;
+  var cap = typeof capacity !== 'undefined' && capacity ? capacity : null;
+  var createdKey = typeof createdKey !== 'undefined' && createdKey ? String(createdKey) : '';
   var typeOptions = [
     { key: '', label: 'All' },
     { key: 'hq', label: 'HQ' },
@@ -62,7 +64,22 @@
         Member counts, leader names, locations, and performance scores are not shown here.
       </p>
     </div>
+    <div class="bb-hq-page-head__actions">
+      <% if (cap && cap.canCreate) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/branches/new" data-bb-add-branch="1">Add branch</a>
+      <% } else if (cap && cap.limitExceeded) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/branches/new" data-bb-add-branch-blocked="1">Branch limit reached</a>
+      <% } else { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/branches/new" data-bb-add-branch="1">Add branch</a>
+      <% } %>
+    </div>
   </header>
+
+  <% if (createdKey) { %>
+  <p class="bb-hq-ok" role="status" data-bb-branch-created="<%= createdKey %>">
+    Branch <strong><%= createdKey %></strong> was created.
+  </p>
+  <% } %>
 
   <% if (!allRows.length) { %>
   <div class="bb-hq-empty" data-bb-empty="branches" role="status">

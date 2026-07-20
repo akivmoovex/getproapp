@@ -634,9 +634,9 @@
               <dt>Subscription status</dt>
               <dd>
                 <% if (ent.subscriptionStatus) { %>
-                <span class="bb-pa-chip <%= statusChip(ent.subscriptionStatus) %>" data-bb-sub-status="<%= ent.subscriptionStatus %>"><%= statusLabel(ent.subscriptionStatus) %></span>
+                <span class="bb-pa-chip <%= statusChip(ent.subscriptionStatusLabel === 'Grace' ? 'past_due' : ent.subscriptionStatus) %>" data-bb-sub-status="<%= ent.subscriptionStatus %>"><%= ent.subscriptionStatusLabel || statusLabel(ent.subscriptionStatus) %></span>
                 <% } else { %>—<% } %>
-                · <%= ent.subscriptionActive ? 'Active for entitlement checks' : 'Inactive (fail closed)' %>
+                · <%= ent.entitlementState === 'entitled' || ent.subscriptionActive ? 'Entitled' : 'Not entitled' %>
               </dd>
             </div>
             <div>
@@ -648,9 +648,13 @@
               </dd>
             </div>
             <div>
-              <dt>Configuration ends</dt>
+              <dt><%= ent.subscriptionTimingLabel || 'Configuration ends' %></dt>
               <dd>
-                <% if (ent.subscriptionEndsAt) { %>
+                <% if (ent.graceDeadline) { %>
+                <time datetime="<%= ent.graceDeadline %>" data-bb-grace-deadline="1"><%= String(ent.graceDeadline).slice(0, 10) %></time>
+                <% } else if (ent.trialEndsAt) { %>
+                <time datetime="<%= ent.trialEndsAt %>" data-bb-trial-ends="1"><%= String(ent.trialEndsAt).slice(0, 10) %></time>
+                <% } else if (ent.subscriptionEndsAt) { %>
                 <time datetime="<%= ent.subscriptionEndsAt %>" data-bb-sub-ends="1"><%= String(ent.subscriptionEndsAt).slice(0, 10) %></time>
                 <% } else { %>Open-ended<% } %>
               </dd>
@@ -688,6 +692,48 @@
             <span>I confirm this plan change. Existing branches and users will not be deleted.</span>
           </label>
           <button type="submit" class="bb-pa-btn">Save plan assignment</button>
+        </form>
+
+        <form
+          class="bb-pa-form bb-pa-org-detail-form"
+          method="post"
+          action="/admin/organizations/<%= org.organizationKey %>/billing/activate-paid"
+          data-bb-pa-billing-activate="1"
+          id="pa-org-billing"
+        >
+          <h3 class="bb-pa-subsection-title">Mark externally paid / activate Network <span class="bb-pa-org-detail__edit">Editable</span></h3>
+          <p class="bb-pa-hint">
+            Use this only after contract approval or confirmed external payment.
+            Does not collect cards or call payment providers. Records an audited billing activation
+            and sets Growth or Network (<code>professional</code>) as the product plan.
+          </p>
+          <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Paid plan</span>
+            <select name="plan_key" required>
+              <option value="">Select…</option>
+              <option value="growth">Growth (paid)</option>
+              <option value="network">Network (professional)</option>
+              <option value="professional">Network — professional (DB key)</option>
+            </select>
+          </label>
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Reason (required)</span>
+            <textarea name="reason" rows="2" maxlength="2000" required placeholder="Contract ID / payment confirmation note"></textarea>
+          </label>
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">External customer reference (optional)</span>
+            <input type="text" name="billing_customer_ref" maxlength="200" autocomplete="off" />
+          </label>
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">External subscription reference (optional)</span>
+            <input type="text" name="billing_subscription_ref" maxlength="200" autocomplete="off" />
+          </label>
+          <label class="bb-pa-confirm">
+            <input type="checkbox" name="confirm_billing_activation" value="1" required />
+            <span>I confirm this organization is externally paid or contract-activated. This action is audited.</span>
+          </label>
+          <button type="submit" class="bb-pa-btn">Activate paid subscription</button>
         </form>
         <% } %>
       </section>

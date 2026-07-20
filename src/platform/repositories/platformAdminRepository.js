@@ -86,7 +86,9 @@ function buildOrganizationDirectoryFilters(filters = {}) {
         FROM platform.organization_subscriptions os
         INNER JOIN platform.plans pl ON pl.id = os.plan_id
        WHERE os.organization_id = o.id
-         AND os.status IN ('active', 'trialing')
+         AND os.status IN ('active', 'trialing', 'past_due')
+         AND os.starts_at <= now()
+         AND (os.ends_at IS NULL OR os.ends_at > now())
          AND pl.plan_key = $${params.length}
     )`);
   }
@@ -136,7 +138,14 @@ async function listOrganizationDirectoryPage(client, opts) {
         oo.follow_up_status,
         oo.support_requested,
         oo.next_follow_up_at,
+        o.created_at AS organization_created_at,
         plan_row.plan_key,
+        plan_row.subscription_status,
+        plan_row.subscription_starts_at,
+        plan_row.subscription_ends_at,
+        fb.first_branch_name,
+        fb.first_branch_key,
+        ra.registration_application_id,
         COALESCE(pub.published_pages, 0)::int AS published_pages,
         COALESCE(pub.draft_pages, 0)::int AS draft_pages
        FROM platform.organizations o
@@ -176,14 +185,46 @@ async function listOrganizationDirectoryPage(client, opts) {
           WHERE pp.church_id = c.id
        ) pub ON TRUE
        LEFT JOIN LATERAL (
-         SELECT pl.plan_key
+         SELECT
+           pl.plan_key,
+           os.status AS subscription_status,
+           os.starts_at AS subscription_starts_at,
+           os.ends_at AS subscription_ends_at
            FROM platform.organization_subscriptions os
            INNER JOIN platform.plans pl ON pl.id = os.plan_id
           WHERE os.organization_id = o.id
-            AND os.status IN ('active', 'trialing')
-          ORDER BY os.created_at DESC
+            AND os.status IN ('active', 'trialing', 'past_due')
+            AND os.starts_at <= now()
+            AND (os.ends_at IS NULL OR os.ends_at > now())
+          ORDER BY
+            CASE os.status
+              WHEN 'trialing' THEN 0
+              WHEN 'past_due' THEN 1
+              ELSE 2
+            END,
+            os.created_at DESC
           LIMIT 1
        ) plan_row ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT b.display_name AS first_branch_name, b.branch_key AS first_branch_key
+           FROM blessboard.branches b
+          WHERE b.church_id = c.id
+            AND b.status = 'active'
+          ORDER BY
+            CASE
+              WHEN b.branch_type = 'hq' OR b.branch_key = 'hq' THEN 0
+              ELSE 1
+            END,
+            b.created_at ASC
+          LIMIT 1
+       ) fb ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT a.id AS registration_application_id
+           FROM blessboard.platform_church_registration_applications a
+          WHERE a.organization_id = o.id
+          ORDER BY a.created_at DESC
+          LIMIT 1
+       ) ra ON TRUE
       ${built.whereSql}
       ORDER BY o.organization_key ASC
       LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
@@ -217,14 +258,75 @@ async function countOrganizationDirectory(client, opts) {
 }
 
 /**
- * Real directory totals for the platform-admin dashboard (no fabricated metrics).
+ * Real directory + registration-ops totals for the platform-admin dashboard.
+ * Bounded aggregate subqueries only — no N+1, no revenue, no invented health.
  * @param {{ query: Function }} client
  */
 async function countOrganizationDirectoryStats(client) {
   const r = await client.query(
     `SELECT
         COUNT(o.id)::int AS total_organizations,
-        COUNT(c.id)::int AS organizations_with_church
+        COUNT(c.id)::int AS organizations_with_church,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.selected_plan = 'foundation'
+             AND a.application_status = 'closed'
+             AND a.provisioning_status = 'provisioned'
+             AND COALESCE(a.provisioned_at, a.updated_at) >= now() - interval '7 days'
+        ) AS recent_foundation_registrations,
+        (
+          SELECT COUNT(*)::int
+            FROM platform.organization_subscriptions os
+            INNER JOIN platform.plans pl ON pl.id = os.plan_id
+           WHERE os.product_key = 'blessboard'
+             AND pl.plan_key = 'growth'
+             AND os.status = 'trialing'
+             AND os.starts_at <= now()
+             AND (os.ends_at IS NULL OR os.ends_at > now())
+        ) AS active_growth_trials,
+        (
+          SELECT COUNT(*)::int
+            FROM platform.organization_subscriptions os
+            INNER JOIN platform.plans pl ON pl.id = os.plan_id
+           WHERE os.product_key = 'blessboard'
+             AND pl.plan_key = 'growth'
+             AND os.status = 'trialing'
+             AND os.ends_at IS NOT NULL
+             AND os.ends_at > now()
+             AND os.ends_at <= now() + interval '7 days'
+        ) AS growth_trials_ending_soon,
+        (
+          SELECT COUNT(*)::int
+            FROM platform.organization_subscriptions os
+            INNER JOIN platform.plans pl ON pl.id = os.plan_id
+           WHERE os.product_key = 'blessboard'
+             AND pl.plan_key = 'growth'
+             AND os.status = 'past_due'
+             AND os.starts_at <= now()
+             AND os.ends_at IS NOT NULL
+             AND os.ends_at > now()
+        ) AS growth_subscriptions_in_grace,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+            LEFT JOIN blessboard.organization_onboarding oo
+              ON oo.organization_id = a.organization_id
+           WHERE a.application_status IN ('submitted', 'duplicate_review')
+              OR a.provisioning_status = 'provisioning_failed'
+              OR COALESCE(oo.support_requested, a.support_requested, false) = TRUE
+              OR COALESCE(oo.follow_up_status, a.follow_up_status) IN (
+                   'new', 'call_pending', 'needs_help'
+                 )
+        ) AS registrations_requiring_review,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.selected_plan = 'network'
+             AND COALESCE(a.support_requested, false) = TRUE
+             AND a.organization_id IS NULL
+             AND a.application_status IN ('submitted', 'duplicate_review')
+        ) AS pending_network_support_requests
        FROM platform.organizations o
        LEFT JOIN blessboard.churches c
          ON c.organization_id = o.id`
@@ -233,6 +335,170 @@ async function countOrganizationDirectoryStats(client) {
   return {
     totalOrganizations: Number(row.total_organizations) || 0,
     organizationsWithChurch: Number(row.organizations_with_church) || 0,
+    recentFoundationRegistrations: Number(row.recent_foundation_registrations) || 0,
+    activeGrowthTrials: Number(row.active_growth_trials) || 0,
+    growthTrialsEndingSoon: Number(row.growth_trials_ending_soon) || 0,
+    growthSubscriptionsInGrace: Number(row.growth_subscriptions_in_grace) || 0,
+    registrationsRequiringReview: Number(row.registrations_requiring_review) || 0,
+    pendingNetworkSupportRequests: Number(row.pending_network_support_requests) || 0,
+  };
+}
+
+/**
+ * Bounded registration + onboarding aggregates for the platform-admin dashboard.
+ * Integers / medians only — no PII columns selected.
+ * Window is [rangeStart, rangeEndExclusive) in UTC.
+ * @param {{ query: Function }} client
+ * @param {{ rangeStart: string|Date, rangeEndExclusive: string|Date }} opts
+ */
+async function countRegistrationOnboardingAnalytics(client, opts) {
+  const rangeStart = opts && opts.rangeStart;
+  const rangeEndExclusive = opts && opts.rangeEndExclusive;
+  const [
+    r,
+    trials,
+    conversions,
+    downgrades,
+    onboarding,
+    medianRegToOnboard,
+    medianNetworkContact,
+  ] = await Promise.all([
+    client.query(
+      `SELECT
+          COUNT(*) FILTER (WHERE a.selected_plan = 'foundation')::int AS submissions_foundation,
+          COUNT(*) FILTER (WHERE a.selected_plan = 'growth')::int AS submissions_growth,
+          COUNT(*) FILTER (WHERE a.selected_plan = 'network')::int AS submissions_network,
+          COUNT(*)::int AS submissions_total,
+          COUNT(*) FILTER (
+            WHERE a.selected_plan IN ('foundation', 'growth')
+          )::int AS auto_plan_submissions,
+          COUNT(*) FILTER (
+            WHERE a.selected_plan IN ('foundation', 'growth')
+              AND a.provisioning_status = 'provisioned'
+          )::int AS auto_provision_success,
+          COUNT(*) FILTER (
+            WHERE a.selected_plan IN ('foundation', 'growth')
+              AND a.provisioning_status = 'provisioning_failed'
+          )::int AS auto_provision_failed,
+          COUNT(*) FILTER (
+            WHERE a.application_status = 'duplicate_review'
+               OR a.risk_decision = 'review_required'
+          )::int AS review_required,
+          COUNT(*) FILTER (
+            WHERE a.selected_plan = 'network'
+              AND COALESCE(a.support_requested, false) = TRUE
+          )::int AS network_contact_requests
+         FROM blessboard.platform_church_registration_applications a
+        WHERE a.created_at >= $1::timestamptz
+          AND a.created_at < $2::timestamptz`,
+      [rangeStart, rangeEndExclusive]
+    ),
+    client.query(
+      `SELECT COUNT(*)::int AS growth_trial_starts
+         FROM platform.organization_subscriptions os
+         INNER JOIN platform.plans pl ON pl.id = os.plan_id
+        WHERE os.product_key = 'blessboard'
+          AND pl.plan_key = 'growth'
+          AND os.starts_at >= $1::timestamptz
+          AND os.starts_at < $2::timestamptz`,
+      [rangeStart, rangeEndExclusive]
+    ),
+    client.query(
+      `SELECT COUNT(*)::int AS growth_trial_conversions
+         FROM platform.audit_events ae
+        WHERE ae.action_key = 'billing.paid_activated'
+          AND ae.created_at >= $1::timestamptz
+          AND ae.created_at < $2::timestamptz
+          AND (
+            ae.metadata_json->>'source' = 'trial_conversion'
+            OR ae.metadata_json->>'reason_code' = 'trial_conversion'
+          )`,
+      [rangeStart, rangeEndExclusive]
+    ),
+    client.query(
+      `SELECT COUNT(*)::int AS growth_downgrades
+         FROM platform.audit_events ae
+        WHERE ae.action_key = 'subscription.trial_downgraded_to_foundation'
+          AND ae.created_at >= $1::timestamptz
+          AND ae.created_at < $2::timestamptz`,
+      [rangeStart, rangeEndExclusive]
+    ),
+    client.query(
+      `SELECT
+          COUNT(*) FILTER (
+            WHERE oo.onboarding_started_at >= $1::timestamptz
+              AND oo.onboarding_started_at < $2::timestamptz
+          )::int AS onboarding_started,
+          COUNT(*) FILTER (
+            WHERE oo.onboarding_completed_at >= $1::timestamptz
+              AND oo.onboarding_completed_at < $2::timestamptz
+          )::int AS onboarding_completed
+         FROM blessboard.organization_onboarding oo`,
+      [rangeStart, rangeEndExclusive]
+    ),
+    client.query(
+      `SELECT
+          percentile_cont(0.5) WITHIN GROUP (
+            ORDER BY EXTRACT(EPOCH FROM (oo.onboarding_completed_at - a.created_at))
+          ) AS median_seconds
+         FROM blessboard.organization_onboarding oo
+         INNER JOIN blessboard.platform_church_registration_applications a
+           ON a.id = oo.registration_application_id
+        WHERE oo.onboarding_completed_at IS NOT NULL
+          AND oo.onboarding_completed_at >= $1::timestamptz
+          AND oo.onboarding_completed_at < $2::timestamptz
+          AND a.created_at IS NOT NULL
+          AND oo.onboarding_completed_at >= a.created_at`,
+      [rangeStart, rangeEndExclusive]
+    ),
+    client.query(
+      `SELECT
+          percentile_cont(0.5) WITHIN GROUP (
+            ORDER BY EXTRACT(EPOCH FROM (a.first_contacted_at - a.created_at))
+          ) AS median_seconds
+         FROM blessboard.platform_church_registration_applications a
+        WHERE a.selected_plan = 'network'
+          AND COALESCE(a.support_requested, false) = TRUE
+          AND a.first_contacted_at IS NOT NULL
+          AND a.first_contacted_at >= $1::timestamptz
+          AND a.first_contacted_at < $2::timestamptz
+          AND a.first_contacted_at >= a.created_at`,
+      [rangeStart, rangeEndExclusive]
+    ),
+  ]);
+
+  const row = r.rows[0] || {};
+  const autoSubmissions = Number(row.auto_plan_submissions) || 0;
+  const autoSuccess = Number(row.auto_provision_success) || 0;
+
+  return {
+    submissionsByPlan: {
+      foundation: Number(row.submissions_foundation) || 0,
+      growth: Number(row.submissions_growth) || 0,
+      network: Number(row.submissions_network) || 0,
+    },
+    submissionsTotal: Number(row.submissions_total) || 0,
+    autoPlanSubmissions: autoSubmissions,
+    autoProvisionSuccess: autoSuccess,
+    autoProvisionFailed: Number(row.auto_provision_failed) || 0,
+    registrationCompletionRate:
+      autoSubmissions > 0 ? autoSuccess / autoSubmissions : null,
+    reviewRequired: Number(row.review_required) || 0,
+    networkContactRequests: Number(row.network_contact_requests) || 0,
+    growthTrialStarts: Number(trials.rows[0]?.growth_trial_starts) || 0,
+    growthTrialConversionsRecorded:
+      Number(conversions.rows[0]?.growth_trial_conversions) || 0,
+    growthDowngrades: Number(downgrades.rows[0]?.growth_downgrades) || 0,
+    onboardingStarted: Number(onboarding.rows[0]?.onboarding_started) || 0,
+    onboardingCompleted: Number(onboarding.rows[0]?.onboarding_completed) || 0,
+    medianSecondsRegistrationToOnboardingComplete:
+      medianRegToOnboard.rows[0]?.median_seconds != null
+        ? Number(medianRegToOnboard.rows[0].median_seconds)
+        : null,
+    medianSecondsNetworkRequestToFirstContact:
+      medianNetworkContact.rows[0]?.median_seconds != null
+        ? Number(medianNetworkContact.rows[0].median_seconds)
+        : null,
   };
 }
 
@@ -462,6 +728,8 @@ async function listSubscriptionsDirectoryPage(client, opts) {
   const keyPrefix = opts.keyPrefix || null;
   const status = opts.status || null;
   const productKey = opts.productKey || "blessboard";
+  const planKey = opts.planKey || null;
+  const endingSoon = opts.endingSoon === true;
 
   const r = await client.query(
     `SELECT
@@ -484,30 +752,60 @@ async function listSubscriptionsDirectoryPage(client, opts) {
       WHERE s.product_key = $1
         AND ($2::text IS NULL OR o.organization_key LIKE $2 || '%')
         AND ($3::text IS NULL OR s.status = $3)
+        AND ($4::text IS NULL OR p.plan_key = $4)
+        AND (
+          $5::boolean IS NOT TRUE
+          OR (
+            s.ends_at IS NOT NULL
+            AND s.ends_at > now()
+            AND s.ends_at <= now() + interval '7 days'
+            AND s.status IN ('active', 'trialing', 'past_due')
+          )
+        )
       ORDER BY o.organization_key ASC, s.starts_at DESC
-      LIMIT $4 OFFSET $5`,
-    [productKey, keyPrefix, status, limit, offset]
+      LIMIT $6 OFFSET $7`,
+    [productKey, keyPrefix, status, planKey, endingSoon, limit, offset]
   );
   return r.rows;
 }
 
 /**
  * @param {{ query: Function }} client
- * @param {{ keyPrefix?: string | null, status?: string | null, productKey?: string }} opts
+ * @param {{
+ *   keyPrefix?: string | null,
+ *   status?: string | null,
+ *   productKey?: string,
+ *   planKey?: string | null,
+ *   endingSoon?: boolean,
+ * }} opts
  */
 async function countSubscriptionsDirectory(client, opts) {
   const keyPrefix = opts.keyPrefix || null;
   const status = opts.status || null;
   const productKey = opts.productKey || "blessboard";
+  const planKey = opts.planKey || null;
+  const endingSoon = opts.endingSoon === true;
   const r = await client.query(
     `SELECT COUNT(*)::int AS total
        FROM platform.organization_subscriptions s
        INNER JOIN platform.organizations o
          ON o.id = s.organization_id
+       INNER JOIN platform.plans p
+         ON p.id = s.plan_id
       WHERE s.product_key = $1
         AND ($2::text IS NULL OR o.organization_key LIKE $2 || '%')
-        AND ($3::text IS NULL OR s.status = $3)`,
-    [productKey, keyPrefix, status]
+        AND ($3::text IS NULL OR s.status = $3)
+        AND ($4::text IS NULL OR p.plan_key = $4)
+        AND (
+          $5::boolean IS NOT TRUE
+          OR (
+            s.ends_at IS NOT NULL
+            AND s.ends_at > now()
+            AND s.ends_at <= now() + interval '7 days'
+            AND s.status IN ('active', 'trialing', 'past_due')
+          )
+        )`,
+    [productKey, keyPrefix, status, planKey, endingSoon]
   );
   return r.rows[0] ? Number(r.rows[0].total) : 0;
 }
@@ -618,6 +916,7 @@ module.exports = {
   listOrganizationDirectoryPage,
   countOrganizationDirectory,
   countOrganizationDirectoryStats,
+  countRegistrationOnboardingAnalytics,
   findOrganizationDirectoryByKey,
   listBranchesForOrganizationKey,
   listDomainsForOrganizationKey,
