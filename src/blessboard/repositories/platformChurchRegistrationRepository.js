@@ -1496,7 +1496,6 @@ async function loadOrganizationOnboardingFacts(client, input = {}) {
               )
               AND (
                 NULLIF(TRIM(COALESCE(ps.body_text, '')), '') IS NOT NULL
-                OR NULLIF(TRIM(COALESCE(ps.heading, '')), '') IS NOT NULL
               )
          ) AS has_service_times
        ) svc ON TRUE

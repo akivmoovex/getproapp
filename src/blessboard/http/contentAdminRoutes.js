@@ -61,6 +61,15 @@ const {
 } = require("../services/publicContentAdminService");
 const { PAGE_KEY_TITLES } = require("../services/publicContentConstants");
 const repo = require("../repositories/publicContentRepository");
+const {
+  SERVICE_TIMES_SECTION_KEY,
+  DAYS: SERVICE_TIME_DAYS,
+  entriesFromSection,
+  ensureCanonicalServiceTimesSection,
+  saveHomeServiceTimes,
+  repairHomeContentFoundation,
+  STATUS: SERVICE_TIMES_STATUS,
+} = require("../services/homeServiceTimesService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -211,6 +220,18 @@ function errorMessage(reason, conflict) {
   }
   if (reason === "confirm_publish") {
     return "You must check the box to confirm before publishing.";
+  }
+  if (reason === "name" || reason === "day" || reason === "start_time" || reason === "end_time") {
+    return "Please check each service time entry and try again.";
+  }
+  if (reason === "end_time_order") {
+    return "End time must be later than start time.";
+  }
+  if (reason === "duplicate") {
+    return "Remove duplicate service times.";
+  }
+  if (reason === "entries_limit") {
+    return "Too many service times. Remove some and try again.";
   }
   return "Please check the form and try again.";
 }
@@ -609,9 +630,17 @@ function createContentAdminRouter(deps) {
     router.get(`${p}/pages/:pageKey`, rejectApex, gateContent, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;
+      const pageKey = String(req.params.pageKey || "").trim();
+      const isChurchWideHome = pageKey === "home" && !scope.branchId;
+      if (isChurchWideHome) {
+        await ensureCanonicalServiceTimesSection(getPool(), {
+          churchId: scope.churchId,
+          branchId: null,
+        });
+      }
       const bundle = await getAdminPageBundle(getPool(), {
         ...scopeInput(scope),
-        pageKey: req.params.pageKey,
+        pageKey,
       });
       if (!bundle.ok || !bundle.page) {
         return sendControlled(req, res, 404, "Page not found.", shellKind);
@@ -619,6 +648,12 @@ function createContentAdminRouter(deps) {
       if (!verifyPageScope(bundle.page, scope)) {
         return sendControlled(req, res, 403, "You do not have access to this page.", shellKind);
       }
+      const serviceTimesSection = isChurchWideHome
+        ? (bundle.sections || []).find((s) => s.sectionKey === SERVICE_TIMES_SECTION_KEY) || null
+        : null;
+      const serviceTimesEntries = serviceTimesSection
+        ? entriesFromSection(serviceTimesSection)
+        : [];
       const html = renderContentAdminView(
         "content-admin/page.ejs",
         await shellLocals(req, res, {
@@ -629,9 +664,115 @@ function createContentAdminRouter(deps) {
           conflict: false,
           submitted: null,
           saved: String((req.query && req.query.saved) || "") === "1",
+          serviceTimesSaved: String((req.query && req.query.service_times) || "") === "1",
+          showServiceTimesEditor: isChurchWideHome,
+          serviceTimesSection,
+          serviceTimesEntries,
+          serviceTimeDays: SERVICE_TIME_DAYS,
+          serviceTimesError: null,
         })
       );
       return res.status(200).type("html").send(html);
+    });
+
+    router.post(`${p}/pages/home/service-times`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!validateCsrfPost(req, res)) return;
+      if (scope.branchId) {
+        return sendControlled(
+          req,
+          res,
+          403,
+          "Service times are managed on the church-wide home page.",
+          shellKind
+        );
+      }
+      const body = req.body || {};
+      const tenant = resolveTenantForAuthorization(req);
+      const organizationId =
+        tenant && tenant.organization && tenant.organization.id
+          ? tenant.organization.id
+          : null;
+      const actorUserId =
+        req.v5Session && req.v5Session.session && req.v5Session.session.userId
+          ? req.v5Session.session.userId
+          : null;
+      const saved = await saveHomeServiceTimes(getPool(), {
+        churchId: scope.churchId,
+        branchId: null,
+        organizationId,
+        actorUserId,
+        formBody: body,
+        confirmPublish: body.confirm_publish,
+      });
+      if (!saved.ok) {
+        const bundle = await getAdminPageBundle(getPool(), {
+          churchId: scope.churchId,
+          branchId: null,
+          pageKey: "home",
+        });
+        const serviceTimesSection =
+          (bundle.sections || []).find((s) => s.sectionKey === SERVICE_TIMES_SECTION_KEY) || null;
+        const html = renderContentAdminView(
+          "content-admin/page.ejs",
+          await shellLocals(req, res, {
+            scope,
+            page: bundle.page || { pageKey: "home", title: "Home", status: "draft", updatedAt: new Date() },
+            sections: (bundle && bundle.sections) || [],
+            error: saved.message || errorMessage(saved.reason, false),
+            conflict: false,
+            submitted: null,
+            saved: false,
+            serviceTimesSaved: false,
+            showServiceTimesEditor: true,
+            serviceTimesSection,
+            serviceTimesEntries: [],
+            serviceTimeDays: SERVICE_TIME_DAYS,
+            serviceTimesError: saved.message || errorMessage(saved.reason, false),
+            serviceTimesDraft: body,
+          })
+        );
+        const statusCode =
+          saved.status === SERVICE_TIMES_STATUS.INVALID_INPUT
+            ? 400
+            : saved.status === SERVICE_TIMES_STATUS.NOT_FOUND
+              ? 404
+              : 503;
+        return res.status(statusCode).type("html").send(html);
+      }
+      return res.redirect(303, `${scope.basePath}/pages/home?saved=1&service_times=1`);
+    });
+
+    router.post(`${p}/pages/home/repair-service-times`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!validateCsrfPost(req, res)) return;
+      if (scope.branchId) {
+        return sendControlled(
+          req,
+          res,
+          403,
+          "Service times are managed on the church-wide home page.",
+          shellKind
+        );
+      }
+      const tenant = resolveTenantForAuthorization(req);
+      const repaired = await repairHomeContentFoundation(getPool(), {
+        churchId: scope.churchId,
+        organizationId:
+          tenant && tenant.organization && tenant.organization.id
+            ? tenant.organization.id
+            : null,
+        actorUserId:
+          req.v5Session && req.v5Session.session && req.v5Session.session.userId
+            ? req.v5Session.session.userId
+            : null,
+      });
+      if (!repaired.ok) {
+        return sendControlled(req, res, 503, "Could not repair home content foundation.", shellKind);
+      }
+      return res.redirect(303, `${scope.basePath}/pages/home?saved=1&service_times=1`);
     });
 
     router.post(`${p}/pages/:pageKey`, rejectApex, gateContent, async (req, res) => {

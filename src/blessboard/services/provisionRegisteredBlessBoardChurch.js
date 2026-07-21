@@ -317,6 +317,10 @@ async function ensureMinimalDraftPages(client, churchId) {
       title: PAGE_KEY_TITLES[pageKey] || pageKey,
     });
   }
+  const {
+    ensureCanonicalServiceTimesSection,
+  } = require("./homeServiceTimesService");
+  await ensureCanonicalServiceTimesSection(client, { churchId, branchId: null });
 }
 
 /**

@@ -8,7 +8,28 @@
 <%
   var hero = null;
   var rest = [];
+  var serviceTimesSection = null;
+  var serviceTimesEntries = [];
   (sections || []).forEach(function (s) {
+    var key = String(s.sectionKey || '');
+    var type = String(s.sectionType || '');
+    var isServiceTimes =
+      key === 'service_times' || key === 'services' || key === 'worship_times' ||
+      type === 'service_times' || type === 'services' || type === 'worship_times';
+    if (isServiceTimes && !serviceTimesSection) {
+      serviceTimesSection = s;
+      var meta = s.layoutMetadata && typeof s.layoutMetadata === 'object' ? s.layoutMetadata : null;
+      if (meta && Array.isArray(meta.entries)) {
+        serviceTimesEntries = meta.entries.filter(function (e) {
+          return e && e.enabled !== false;
+        }).slice().sort(function (a, b) {
+          var ao = a.sortOrder != null ? Number(a.sortOrder) : 0;
+          var bo = b.sortOrder != null ? Number(b.sortOrder) : 0;
+          return ao - bo;
+        });
+      }
+      return;
+    }
     var isHero = !hero && (s.sectionType === 'hero' || String(s.sectionKey || '').indexOf('hero') >= 0);
     if (isHero) hero = s;
     else rest.push(s);
@@ -28,6 +49,22 @@
   if (headingWords.length >= 4) {
     accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
     accentPhrase = headingWords.slice(-2).join(' ');
+  }
+
+  function dayLabel(day) {
+    var d = String(day || '');
+    if (!d) return '';
+    return d.charAt(0).toUpperCase() + d.slice(1);
+  }
+  function formatTimeLabel(hhmm) {
+    var m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(hhmm || ''));
+    if (!m) return String(hhmm || '');
+    var h = Number(m[1]);
+    var min = m[2];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return h + ':' + min + ' ' + ampm;
   }
 %>
 
@@ -86,6 +123,34 @@
       </div>
     </div>
   </section>
+
+  <% if (serviceTimesEntries.length) { %>
+  <section class="bb-tp-container bb-tp-home__service-times" data-bb-home-service-times="1" aria-labelledby="bb-tp-service-times-heading">
+    <h2 id="bb-tp-service-times-heading" class="bb-tp-section-title">
+      <%= (serviceTimesSection && serviceTimesSection.heading) || 'Service Times' %>
+    </h2>
+    <ul class="bb-tp-service-times-list">
+      <% serviceTimesEntries.forEach(function (entry) { %>
+      <li class="bb-tp-service-times-item">
+        <span class="bb-tp-service-times-item__day"><%= dayLabel(entry.day) %></span>
+        <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
+        <span class="bb-tp-service-times-item__time">
+          <%= formatTimeLabel(entry.startTime) %><% if (entry.endTime) { %>–<%= formatTimeLabel(entry.endTime) %><% } %>
+        </span>
+        <% if (entry.location) { %><span class="bb-tp-service-times-item__location"><%= entry.location %></span><% } %>
+        <% if (entry.note) { %><span class="bb-tp-service-times-item__note"><%= entry.note %></span><% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } else if (serviceTimesSection && serviceTimesSection.bodyText) { %>
+  <section class="bb-tp-container bb-tp-home__service-times" data-bb-home-service-times="1" aria-labelledby="bb-tp-service-times-heading">
+    <h2 id="bb-tp-service-times-heading" class="bb-tp-section-title">
+      <%= serviceTimesSection.heading || 'Service Times' %>
+    </h2>
+    <p class="bb-tp-body"><%= serviceTimesSection.bodyText %></p>
+  </section>
+  <% } %>
 
   <% if (showEmptyState) { %>
   <div class="bb-tp-container">

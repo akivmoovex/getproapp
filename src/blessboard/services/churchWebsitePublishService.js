@@ -154,6 +154,7 @@ async function hasServiceTimesContent(client, churchId) {
             ps.section_key IN ('service_times', 'services', 'worship_times')
             OR ps.section_type IN ('service_times', 'services', 'worship_times')
           )
+          AND NULLIF(TRIM(COALESCE(ps.body_text, '')), '') IS NOT NULL
      ) AS has_service_times`,
     [churchId]
   );

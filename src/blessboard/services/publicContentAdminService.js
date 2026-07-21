@@ -190,6 +190,11 @@ async function provisionEmptyPublicPages(db, input) {
         if (result.created) createdCount += 1;
         if (result.page) pages.push(result.page);
       }
+      // Canonical service times live on the church-wide home page only.
+      const {
+        ensureCanonicalServiceTimesSection,
+      } = require("./homeServiceTimesService");
+      await ensureCanonicalServiceTimesSection(client, { churchId, branchId: null });
       return { ok: true, status: STATUS.OK, pages, createdCount };
     });
   } catch (err) {

@@ -147,7 +147,7 @@ describe("blessboard public content schema", () => {
     assert.equal(legacy.rowCount, 0);
   });
 
-  it("provisions empty draft pages without demo sections", async () => {
+  it("provisions empty draft pages with canonical empty service_times section", async () => {
     requireDb();
     const churchId = fixture.church.id;
     const first = await provisionEmptyPublicPages(pool, { churchId });
@@ -165,13 +165,18 @@ describe("blessboard public content schema", () => {
     assert.equal(second.createdCount, 0);
 
     const sectionCount = await pool.query(
-      `SELECT COUNT(*)::int AS n
+      `SELECT COUNT(*)::int AS n,
+              COUNT(*) FILTER (
+                WHERE s.section_key = 'service_times'
+                  AND NULLIF(TRIM(COALESCE(s.body_text, '')), '') IS NULL
+              )::int AS empty_service_times
          FROM blessboard.page_sections s
          JOIN blessboard.public_pages p ON p.id = s.page_id
         WHERE p.church_id = $1`,
       [churchId]
     );
-    assert.equal(sectionCount.rows[0].n, 0);
+    assert.equal(sectionCount.rows[0].n, 1);
+    assert.equal(sectionCount.rows[0].empty_service_times, 1);
 
     const readDraft = await getPublishedPage(pool, { churchId, pageKey: "home" });
     assert.equal(readDraft.ok, false);
