@@ -244,7 +244,7 @@ describe("automatic Foundation registration", () => {
     assert.doesNotMatch(JSON.stringify(form), /TestPassword/);
   });
 
-  it("Foundation provisions automatically with unset env: org, church, HQ branch name, free sub, roles, onboarding, /account", async () => {
+  it("Foundation provisions automatically with unset env: org, church, HQ branch name, free sub, roles, onboarding, /hq", async () => {
     requireDb();
     const app = makeApp({}); // default enabled — no env var
     const { csrf, cookie } = await getRegisterPage(app);
@@ -258,7 +258,7 @@ describe("automatic Foundation registration", () => {
       .send({ ...body, [CSRF_FIELD]: csrf });
 
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/account");
+    assert.equal(res.headers.location, "/hq");
     const sid = extractCookie(res, DEFAULT_V5_COOKIE);
     assert.ok(sid, "session cookie set");
 
@@ -371,7 +371,7 @@ describe("automatic Foundation registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: csrf });
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/account");
+    assert.equal(res.headers.location, "/hq");
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
       [body.organization_key]
@@ -397,7 +397,7 @@ describe("automatic Foundation registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: csrf });
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/account");
+    assert.equal(res.headers.location, "/hq");
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
       [body.organization_key]
@@ -606,7 +606,7 @@ describe("automatic Foundation registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: page2.csrf });
     assert.equal(res2.status, 303);
-    assert.ok(res2.headers.location === "/account" || /ready=1/.test(res2.headers.location || ""));
+    assert.ok(res2.headers.location === "/hq" || /ready=1/.test(res2.headers.location || ""));
 
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
@@ -665,7 +665,7 @@ describe("automatic Foundation registration", () => {
         [CSRF_FIELD]: loginCsrf,
       });
     assert.equal(loginPost.status, 303);
-    assert.equal(loginPost.headers.location, "/account");
+    assert.equal(loginPost.headers.location, "/hq");
     assert.ok(extractCookie(loginPost, DEFAULT_V5_COOKIE));
   });
 

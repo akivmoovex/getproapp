@@ -94,14 +94,54 @@ function createRequireBlessBoardTenantRole(deps) {
           return sendControlled(403, "You do not have access to this site.", req, res);
         }
       } else {
-        if (ctx.reason === STATUS.LOOKUP_ERROR) {
-          return sendControlled(503, "Access check is temporarily unavailable.", req, res);
-        }
-        if (!ctx.authenticated || ctx.reason === STATUS.INACTIVE_USER) {
-          return sendControlled(401, "Sign-in is required.", req, res);
-        }
-        if (!ctx.authorized) {
-          return sendControlled(403, "You do not have access to this site.", req, res);
+        // Re-authorize when global middleware ran without a tenant (apex before session scope)
+        // but a tenant is now attached.
+        if (
+          !ctx.authorized &&
+          (ctx.reason === STATUS.TENANT_UNRESOLVED || ctx.reason === "tenant_unresolved") &&
+          getTenant(req)
+        ) {
+          const session =
+            req.v5Session && req.v5Session.authenticated && req.v5Session.session
+              ? req.v5Session.session
+              : null;
+          if (!session) {
+            return sendControlled(401, "Sign-in is required.", req, res);
+          }
+          if (typeof getPool !== "function") {
+            return sendControlled(503, "Access check is temporarily unavailable.", req, res);
+          }
+          const pool = getPool();
+          if (!pool || typeof pool.query !== "function") {
+            return sendControlled(503, "Access check is temporarily unavailable.", req, res);
+          }
+          const tenant = getTenant(req);
+          const result = await authorize(pool, {
+            userId: session.userId,
+            tenant,
+            branchId: getBranchId(req, tenant),
+          });
+          ctx = { ...result.context, reason: result.status };
+          req.blessBoardAuthorizationContext = ctx;
+          if (result.status === STATUS.LOOKUP_ERROR) {
+            return sendControlled(503, "Access check is temporarily unavailable.", req, res);
+          }
+          if (result.status === STATUS.UNAUTHENTICATED || result.status === STATUS.INACTIVE_USER) {
+            return sendControlled(401, "Sign-in is required.", req, res);
+          }
+          if (!result.ok) {
+            return sendControlled(403, "You do not have access to this site.", req, res);
+          }
+        } else {
+          if (ctx.reason === STATUS.LOOKUP_ERROR) {
+            return sendControlled(503, "Access check is temporarily unavailable.", req, res);
+          }
+          if (!ctx.authenticated || ctx.reason === STATUS.INACTIVE_USER) {
+            return sendControlled(401, "Sign-in is required.", req, res);
+          }
+          if (!ctx.authorized) {
+            return sendControlled(403, "You do not have access to this site.", req, res);
+          }
         }
       }
 

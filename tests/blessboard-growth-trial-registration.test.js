@@ -178,7 +178,7 @@ describe("automatic Growth trial registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: csrf });
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/account");
+    assert.equal(res.headers.location, "/hq");
     assert.ok(extractCookie(res, DEFAULT_V5_COOKIE));
 
     const orgKey = body.organization_key;

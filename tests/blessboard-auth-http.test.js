@@ -172,7 +172,7 @@ describe("blessboard v5 auth http", () => {
     requireDb();
     const { post } = await loginFlow("admin@example.org", PASSWORD);
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/account");
+    assert.equal(post.headers.location, "/hq");
     const sid = extractCookie(post, DEFAULT_V5_COOKIE);
     assert.ok(sid);
     const setCookie = String(post.headers["set-cookie"] || "");
@@ -240,11 +240,11 @@ describe("blessboard v5 auth http", () => {
     assert.match(account.text, /Open Platform Admin/);
   });
 
-  it("ordinary apex user ignores next=/admin and stays on /account", async () => {
+  it("ordinary apex HQ user ignores next=/admin and lands on /hq", async () => {
     requireDb();
     const { post } = await loginFlow("admin@example.org", PASSWORD, "/admin");
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/account");
+    assert.equal(post.headers.location, "/hq");
   });
 
   it("invalid email and password return the same generic error", async () => {

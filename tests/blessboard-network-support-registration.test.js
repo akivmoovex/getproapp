@@ -451,7 +451,7 @@ describe("Network support-contact registration", () => {
       .type("form")
       .send({ ...freeBody, [CSRF_FIELD]: freePage.csrf });
     assert.equal(freeRes.status, 303);
-    assert.equal(freeRes.headers.location, "/account");
+    assert.equal(freeRes.headers.location, "/hq");
 
     const growthKey = uniq("growth");
     const gPhone = String(1000000 + Math.floor(Math.random() * 9000000)).slice(-7);
@@ -478,7 +478,7 @@ describe("Network support-contact registration", () => {
       .type("form")
       .send({ ...growthBody, [CSRF_FIELD]: growthPage.csrf });
     assert.equal(growthRes.status, 303);
-    assert.equal(growthRes.headers.location, "/account");
+    assert.equal(growthRes.headers.location, "/hq");
   });
 
   it("Network still enquiry-only when instant flag is on", async () => {

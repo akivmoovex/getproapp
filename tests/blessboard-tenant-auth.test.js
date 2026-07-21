@@ -114,8 +114,10 @@ describe("auth transfer helpers", () => {
       resolveApexPostLoginPath([{ roleKey: "platform_admin" }], "https://evil/admin"),
       "/admin"
     );
-    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], "/admin"), "/account");
-    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], null), "/account");
+    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], "/admin"), "/hq");
+    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], null), "/hq");
+    assert.equal(resolveApexPostLoginPath([{ roleKey: "church_hq_admin" }], "/hq/content"), "/hq/content");
+    assert.equal(resolveApexPostLoginPath([{ roleKey: "member" }], null), "/account");
     assert.equal(hasPlatformAdminRole(["platform_admin"]), true);
     assert.equal(hasPlatformAdminRole(["church_hq_admin"]), false);
   });

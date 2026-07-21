@@ -59,6 +59,9 @@ const { createApexMarketingRouter } = require("../../blessboard/http/apexMarketi
 const { createPlatformAdminRouter } = require("./platformAdminRoutes");
 const { createLoadV5Session } = require("./loadV5Session");
 const {
+  createLoadSessionScopedTenantContext,
+} = require("../../blessboard/http/loadSessionScopedTenantContext");
+const {
   getPlatformHostContextMode,
   MODE_DIAGNOSTIC,
 } = require("../config/platformHostContextMode");
@@ -122,8 +125,7 @@ const {
 const { sha256Hex } = require("../session/sessionToken");
 
 const UNAVAILABLE_STATUS = 503;
-const UNAVAILABLE_MESSAGE =
-  "BlessBoard V5 foundation mode: this surface is not available yet. Tenant portals and legacy routes have not been migrated.";
+const UNAVAILABLE_MESSAGE = "This page is not yet available in BlessBoard V5.";
 
 const APEX_HOSTS = new Set(["blessboard.org", "www.blessboard.org"]);
 
@@ -351,6 +353,14 @@ function createV5FoundationApp(options) {
       getPool,
       getDeploymentCode: () => getPlatformDeploymentCode(env),
       log: typeof opts.log === "function" ? opts.log : undefined,
+    })
+  );
+
+  // 4b. Apex session-scoped tenant (HQ website lifecycle without wildcard hosts)
+  app.use(
+    createLoadSessionScopedTenantContext({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
     })
   );
 
@@ -982,7 +992,7 @@ function createV5FoundationApp(options) {
       });
 
       if (!pendingTransfer) {
-        // Platform admins → /admin (or safe ?next=/admin…); others → /account.
+        // Platform admins → /admin; HQ admins → /hq (session-scoped on apex); others → /account.
         // Tenant transfer path below is unchanged. Query-only next (form posts preserve URL).
         const dest = resolveApexPostLoginPath(result.roles, req.query && req.query.next);
         authLog.logAuthEvent(req, "apex_login_redirect", {
@@ -1224,6 +1234,28 @@ function createV5FoundationApp(options) {
   app.use((req, res, next) => {
     if (req.method === "GET" || req.method === "HEAD" || req.method === "POST") {
       if (isUnavailableAppPath(req.path)) {
+        if (typeof opts.log === "function") {
+          try {
+            opts.log(
+              JSON.stringify({
+                event: "v5_foundation_unavailable",
+                requestId: req.v5RequestId || null,
+                path: String(req.path || "").slice(0, 200),
+                host: String(req.headers && req.headers.host ? req.headers.host : "").slice(0, 120),
+                rolePresent: Boolean(
+                  req.blessBoardAuthorizationContext &&
+                    req.blessBoardAuthorizationContext.authenticated
+                ),
+                tenantContextPresent: Boolean(
+                  req.blessBoardTenantContext && req.blessBoardTenantContext.resolved
+                ),
+                reason: "legacy_or_unmigrated_path",
+              })
+            );
+          } catch {
+            /* ignore */
+          }
+        }
         return sendUnavailable(req, res);
       }
     }
@@ -1233,6 +1265,28 @@ function createV5FoundationApp(options) {
   app.use((req, res) => {
     if (/\.(?:css|js|mjs|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot)$/i.test(req.path)) {
       return res.status(404).type("text").send("Not found");
+    }
+    if (typeof opts.log === "function") {
+      try {
+        opts.log(
+          JSON.stringify({
+            event: "v5_foundation_unavailable",
+            requestId: req.v5RequestId || null,
+            path: String(req.path || "").slice(0, 200),
+            host: String(req.headers && req.headers.host ? req.headers.host : "").slice(0, 120),
+            rolePresent: Boolean(
+              req.blessBoardAuthorizationContext &&
+                req.blessBoardAuthorizationContext.authenticated
+            ),
+            tenantContextPresent: Boolean(
+              req.blessBoardTenantContext && req.blessBoardTenantContext.resolved
+            ),
+            reason: "unmatched_route",
+          })
+        );
+      } catch {
+        /* ignore */
+      }
     }
     return sendUnavailable(req, res);
   });

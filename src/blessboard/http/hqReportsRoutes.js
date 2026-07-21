@@ -12,6 +12,7 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
+const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   STATUS,
@@ -204,13 +205,11 @@ function createHqReportsRouter(deps) {
     allowedRoles: ["church_hq_admin", "platform_admin"],
   });
 
-  function rejectApex(req, res, next) {
-    if (isApexHost(req)) {
-      if (typeof sendUnavailable === "function") return sendUnavailable(req, res);
-      return res.status(503).type("text").send("Unavailable");
-    }
-    return next();
-  }
+  const rejectApex = createRejectApex({
+    isApexHost,
+    sendUnavailable,
+    mode: "unlessTenant",
+  });
 
   function gate(req, res, next) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);

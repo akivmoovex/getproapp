@@ -23,6 +23,29 @@
   <p class="bb-hq-ok" role="status">Website unpublished. Content is preserved.</p>
   <% } else if (notice === 'preview_ack') { %>
   <p class="bb-hq-ok" role="status">Preview acknowledged.</p>
+  <% } else if (notice === 'foundation_repaired') { %>
+  <p class="bb-hq-ok" role="status">Website foundation repaired. Existing content was not overwritten.</p>
+  <% } %>
+
+  <% if (typeof needsFoundationRepair !== 'undefined' && needsFoundationRepair) { %>
+  <div class="bb-hq-panel" data-bb-hq-website-repair="1">
+    <h2 class="bb-hq-panel__title">Repair website foundation</h2>
+    <p>
+      Required page shells or settings are missing. Repair inserts only missing structures
+      and does not publish or overwrite existing content.
+    </p>
+    <form method="post" action="/hq/website/repair-foundation" class="bb-hq-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="audit_reason" value="hq_repair_website_foundation" />
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="confirm_repair" value="1" required />
+          I confirm repairing missing website foundation records only
+        </label>
+      </div>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Repair website foundation</button>
+    </form>
+  </div>
   <% } %>
 
   <div class="bb-hq-panel">

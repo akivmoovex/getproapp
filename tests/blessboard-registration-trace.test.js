@@ -21,6 +21,7 @@ const {
   createApexMarketingRouter,
   REGISTER_PATH,
   ACCOUNT_PATH,
+  HQ_PATH,
 } = require("../src/blessboard/http/apexMarketingRoutes");
 const {
   CSRF_FIELD,
@@ -257,14 +258,14 @@ describe("registrationTraceLog provision/session shapes", () => {
           event: "church_registration_redirect",
           operation: "register_church_redirect",
           outcome: "ok",
-          redirectPath: ACCOUNT_PATH,
+          redirectPath: HQ_PATH,
         }
       );
       const joined = lines.join("\n");
       assert.match(joined, /"canonicalPlanKey":"free"/);
       assert.match(joined, /"hasTrialEndsAt":false/);
       assert.match(joined, /"transactionRolledBack":false/);
-      assert.match(joined, /"redirectPath":"\/account"/);
+      assert.match(joined, /"redirectPath":"\/hq"/);
       assert.doesNotMatch(joined, PROHIBITED);
     } finally {
       console.log = orig;

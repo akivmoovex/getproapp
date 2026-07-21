@@ -14,6 +14,7 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
+const { createRejectApex } = require("./rejectApex");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
@@ -203,13 +204,11 @@ function createFormsRequestsAdminRouter(deps) {
   const router = express.Router();
   const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
 
-  function rejectApex(req, res, next) {
-    if (isApexHost(req)) {
-      if (typeof sendUnavailable === "function") return sendUnavailable(req, res);
-      return res.status(503).type("text").send("Unavailable");
-    }
-    return next();
-  }
+  const rejectApex = createRejectApex({
+    isApexHost,
+    sendUnavailable,
+    mode: variant === "hq" ? "unlessTenant" : "hard",
+  });
 
   function gate(req, res, next) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);

@@ -51,6 +51,7 @@ const { mapPublicPlanToDbPlanKey } = require("../services/registrationPlanMappin
 
 const REGISTER_PATH = "/register-church";
 const ACCOUNT_PATH = "/account";
+const HQ_PATH = "/hq";
 const LOGIN_PATH = "/login";
 
 const CSRF_FORM_ERROR =
@@ -482,23 +483,23 @@ function createApexMarketingRouter(deps) {
       issueAndSetCsrf(res);
 
       if (sessionOk) {
-        // Interim destination until Phase 7 /portal/:organizationKey resolver.
+        // Session-scoped HQ on apex (path public /c/:key; no wildcard tenant host required).
         logRegistrationTrace(req, {
           event: "church_registration_redirect",
           operation: "register_church_redirect",
           outcome: "ok",
-          redirectPath: ACCOUNT_PATH,
+          redirectPath: HQ_PATH,
           applicationId: records.applicationId || null,
           organizationKey: orgKey || null,
           publicPlanCode,
           canonicalPlanKey: records.planKey || null,
           durationMs: Date.now() - startedAt,
         });
-        return res.redirect(303, ACCOUNT_PATH);
+        return res.redirect(303, HQ_PATH);
       }
 
       const keyQ = orgKey ? `&key=${encodeURIComponent(orgKey)}` : "";
-      const loginRedirect = `${REGISTER_PATH}?ready=1&login=1${keyQ}&next=${encodeURIComponent(ACCOUNT_PATH)}`;
+      const loginRedirect = `${REGISTER_PATH}?ready=1&login=1${keyQ}&next=${encodeURIComponent(HQ_PATH)}`;
       logRegistrationTrace(req, {
         event: "church_registration_redirect",
         operation: "register_church_redirect",
@@ -560,6 +561,7 @@ module.exports = {
   createApexMarketingRouter,
   REGISTER_PATH,
   ACCOUNT_PATH,
+  HQ_PATH,
   LOGIN_PATH,
   DUPLICATE_REVIEW_MESSAGE,
 };

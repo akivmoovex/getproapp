@@ -11,6 +11,7 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
+const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   CSRF_FIELD,
@@ -24,6 +25,14 @@ const {
   STATUS: PUBLISH_STATUS,
   GAP,
 } = require("../services/churchWebsitePublishService");
+const {
+  repairWebsiteFoundation,
+  inspectWebsiteFoundationGaps,
+} = require("../services/websiteFoundationRepairService");
+const {
+  publicChurchHomePath,
+  hqPreviewPagePath,
+} = require("../urls/churchUrlHelper");
 
 /**
  * @param {string} relativePath
@@ -106,12 +115,11 @@ function createChurchWebsiteAdminRouter(deps) {
     allowedRoles: ["church_hq_admin", "platform_admin"],
   });
 
-  function rejectApex(req, res, next) {
-    if (isApexHost(req)) {
-      return sendControlled(req, res, 404, "Not found on this host.");
-    }
-    return next();
-  }
+  const rejectApex = createRejectApex({
+    isApexHost,
+    mode: "unlessTenant",
+    sendUnavailable: (req, res) => sendControlled(req, res, 404, "Not found on this host."),
+  });
 
   function gateHq(req, res, next) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
@@ -155,6 +163,11 @@ function createChurchWebsiteAdminRouter(deps) {
     if (!readiness.ok && readiness.status === PUBLISH_STATUS.LOOKUP_ERROR) {
       return sendControlled(req, res, 503, "Website status is temporarily unavailable.");
     }
+    const foundation = await inspectWebsiteFoundationGaps(getPool(), {
+      churchId: tenant.church.id,
+    });
+    const orgKey =
+      readiness.organizationKey || (tenant.organization && tenant.organization.key) || null;
     const html = renderHqView(
       "hq/website.ejs",
       await shellLocals(req, res, {
@@ -163,12 +176,43 @@ function createChurchWebsiteAdminRouter(deps) {
         error: null,
         notice: String((req.query && req.query.notice) || "") || null,
         deferServiceTimes: defer,
-        previewPath: "/hq/content/preview/home",
-        publicPath: readiness.publicPath || null,
-        organizationKey: readiness.organizationKey || (tenant.organization && tenant.organization.key),
+        previewPath: hqPreviewPagePath("home"),
+        publicPath: readiness.publicPath || publicChurchHomePath(orgKey),
+        organizationKey: orgKey,
+        needsFoundationRepair: Boolean(foundation && foundation.needsRepair),
+        foundationGaps: (foundation && foundation.gaps) || [],
       })
     );
     return res.status(200).type("html").send(html);
+  });
+
+  router.post("/hq/website/repair-foundation", rejectApex, gateHq, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.church || !tenant.church.id) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    const confirm =
+      req.body &&
+      (req.body.confirm_repair === "1" ||
+        req.body.confirm_repair === "on" ||
+        req.body.confirm_repair === true);
+    if (!confirm) {
+      return sendControlled(req, res, 400, "Confirm repair before continuing.");
+    }
+    const result = await repairWebsiteFoundation(getPool(), {
+      churchId: tenant.church.id,
+      publicName: tenant.church.displayName || null,
+      actorUserId: await actorUserId(req),
+      auditReason: String((req.body && req.body.audit_reason) || "hq_repair_website_foundation"),
+    });
+    if (!result.ok) {
+      return sendControlled(req, res, 503, "Website foundation could not be repaired.");
+    }
+    return res.redirect(303, "/hq/website?notice=foundation_repaired");
   });
 
   router.post("/hq/website/preview-ack", rejectApex, gateHq, async (req, res) => {
@@ -219,6 +263,8 @@ function createChurchWebsiteAdminRouter(deps) {
           deferServiceTimes,
           env,
         });
+        const orgKey =
+          readiness.organizationKey || (tenant.organization && tenant.organization.key) || null;
         const html = renderHqView(
           "hq/website.ejs",
           await shellLocals(req, res, {
@@ -230,17 +276,24 @@ function createChurchWebsiteAdminRouter(deps) {
                 : "Publish readiness checks failed. Resolve the gaps below.",
             notice: null,
             deferServiceTimes,
-            previewPath: "/hq/content/preview/home",
-            publicPath: readiness.publicPath || null,
-            organizationKey:
-              readiness.organizationKey || (tenant.organization && tenant.organization.key),
+            previewPath: hqPreviewPagePath("home"),
+            publicPath: readiness.publicPath || publicChurchHomePath(orgKey),
+            organizationKey: orgKey,
+            needsFoundationRepair: false,
+            foundationGaps: [],
           })
         );
         return res.status(400).type("html").send(html);
       }
       return sendControlled(req, res, 503, "Website could not be published.");
     }
-    return res.redirect(303, "/hq/website?notice=published");
+    const publicPath =
+      result.publicPath ||
+      publicChurchHomePath(
+        result.organizationKey || (tenant.organization && tenant.organization.key)
+      ) ||
+      "/hq/website?notice=published";
+    return res.redirect(303, publicPath);
   });
 
   router.post("/hq/website/unpublish", rejectApex, gateHq, async (req, res) => {

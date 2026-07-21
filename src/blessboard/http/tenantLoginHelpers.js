@@ -67,17 +67,64 @@ function hasPlatformAdminRole(roles) {
 }
 
 /**
- * Apex post-login destination (no tenant transfer). Platform admins land on `/admin`
- * (or a validated `/admin…` next); everyone else stays on `/account`.
+ * Apex-only safe return path for HQ post-login redirects.
+ * Accepts only local `/hq` or `/hq/...` paths (no open redirects).
+ * @param {unknown} raw
+ * @returns {string | null}
+ */
+function safeHqNextPath(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s) return null;
+  if (!s.startsWith("/") || s.startsWith("//")) return null;
+  if (/[\s\\?]/.test(s)) return null;
+
+  let decoded = s;
+  try {
+    decoded = decodeURIComponent(s);
+  } catch {
+    return null;
+  }
+  if (decoded.includes("\\") || decoded.includes("\0")) return null;
+
+  const pathOnly = decoded.split("#")[0].split("?")[0];
+  if (!pathOnly.startsWith("/") || pathOnly.startsWith("//")) return null;
+
+  const normalized = pathPosix.normalize(pathOnly);
+  if (!normalized.startsWith("/") || normalized.startsWith("//")) return null;
+  if (normalized.includes("..")) return null;
+  if (normalized !== "/hq" && !normalized.startsWith("/hq/")) return null;
+  if (normalized.startsWith("/hq-admin")) return null;
+  if (normalized.length > 200) return null;
+  return normalized;
+}
+
+/**
+ * @param {Array<{ roleKey?: string, role_key?: string } | string>} roles
+ * @returns {boolean}
+ */
+function hasChurchHqAdminRole(roles) {
+  return (roles || []).some((r) => {
+    if (typeof r === "string") return r === "church_hq_admin";
+    return String(r.roleKey || r.role_key || "") === "church_hq_admin";
+  });
+}
+
+/**
+ * Apex post-login destination (no tenant transfer).
+ * Platform admins → `/admin`; HQ admins → `/hq` (session-scoped tenant on apex);
+ * everyone else → `/account`.
  * @param {Array<{ roleKey?: string, role_key?: string }>} roles
  * @param {unknown} nextRaw
  * @returns {string}
  */
 function resolveApexPostLoginPath(roles, nextRaw) {
-  if (!hasPlatformAdminRole(roles)) {
-    return "/account";
+  if (hasPlatformAdminRole(roles)) {
+    return safePlatformAdminNextPath(nextRaw) || "/admin";
   }
-  return safePlatformAdminNextPath(nextRaw) || "/admin";
+  if (hasChurchHqAdminRole(roles)) {
+    return safeHqNextPath(nextRaw) || "/hq";
+  }
+  return "/account";
 }
 
 /**
@@ -140,7 +187,9 @@ module.exports = {
   resolveTenantForLogin,
   safeTenantNextPath,
   safePlatformAdminNextPath,
+  safeHqNextPath,
   hasPlatformAdminRole,
+  hasChurchHqAdminRole,
   resolveApexPostLoginPath,
   defaultTenantPostLoginPath,
   getApexOrigin,

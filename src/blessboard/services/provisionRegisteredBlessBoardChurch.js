@@ -309,18 +309,10 @@ async function assertOrganizationKeyAvailable(client, organizationKey) {
  * @param {string} churchId
  */
 async function ensureMinimalDraftPages(client, churchId) {
-  for (const pageKey of PUBLIC_PAGE_KEYS) {
-    await publicContentRepo.ensureDraftPage(client, {
-      churchId,
-      branchId: null,
-      pageKey,
-      title: PAGE_KEY_TITLES[pageKey] || pageKey,
-    });
-  }
   const {
-    ensureCanonicalServiceTimesSection,
-  } = require("./homeServiceTimesService");
-  await ensureCanonicalServiceTimesSection(client, { churchId, branchId: null });
+    ensureMinimalDraftPages: ensurePages,
+  } = require("./websiteFoundationRepairService");
+  await ensurePages(client, churchId);
 }
 
 /**

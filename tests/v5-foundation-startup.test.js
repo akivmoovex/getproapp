@@ -215,7 +215,7 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
     for (const p of paths) {
       const res = await request(app).get(p).set("Accept", "text/plain");
       assert.equal(res.status, UNAVAILABLE_STATUS, `expected 503 for ${p}`);
-      assert.match(res.text, /foundation mode/i);
+      assert.match(res.text, /not yet available in BlessBoard V5/i);
     }
 
     // Member portal is mounted on tenant hosts; on apex it stays controlled unavailable.
