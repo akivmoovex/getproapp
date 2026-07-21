@@ -64,6 +64,18 @@ const ACTION_LABELS = Object.freeze({
   [ACTIONS.NONE]: "No action required",
 });
 
+/** Short labels for list-row navigation buttons (not the "next step" copy). */
+const OPEN_ACTION_LABELS_BY_DISPLAY = Object.freeze({
+  [DISPLAY.NEEDS_REVIEW]: "Review",
+  [DISPLAY.AWAITING_INFORMATION]: "Review",
+  [DISPLAY.PROVISIONING_FAILED]: "Retry",
+  [DISPLAY.NETWORK_VALIDATION]: "Continue",
+  [DISPLAY.READY_FOR_APPROVAL]: "Review",
+  [DISPLAY.PROVISIONED]: "View",
+  [DISPLAY.REJECTED]: "View",
+  [DISPLAY.CLOSED]: "View",
+});
+
 function isNetworkRow(row) {
   return (
     String(row.selected_plan || row.selectedPlan || "") === NETWORK_PLAN_CODE ||
@@ -81,6 +93,46 @@ function followUpOf(row) {
 function planLabelOf(row) {
   const plan = row.selected_plan || row.selectedPlan;
   return planDisplayLabel(plan) || String(plan || "Unknown plan");
+}
+
+/**
+ * List-row open control: human label + href for the primary navigation button.
+ * Distinct from recommendedActionLabel (which describes the next operational step).
+ * @param {{ displayStatus?: string, recommendedAction?: string, organizationHref?: string|null }} operator
+ * @param {{ id?: string|null }} [row]
+ */
+function presentOpenAction(operator, row) {
+  const view = operator && typeof operator === "object" ? operator : {};
+  const applicationId = row && row.id != null ? String(row.id) : "";
+  const detailHref = applicationId
+    ? `/admin/registration-applications/${encodeURIComponent(applicationId)}`
+    : null;
+
+  if (view.recommendedAction === ACTIONS.VIEW_ORGANIZATION && view.organizationHref) {
+    return {
+      openActionLabel: "View",
+      actionHref: String(view.organizationHref),
+    };
+  }
+
+  const displayKey = String(view.displayStatus || "").replace(/\s*\(.*\)$/, "").trim();
+  // Growth Trial display is "Provisioned (Growth Trial)" — normalize to Provisioned.
+  const normalizedDisplay = displayKey.startsWith(DISPLAY.PROVISIONED)
+    ? DISPLAY.PROVISIONED
+    : displayKey;
+
+  let openActionLabel = OPEN_ACTION_LABELS_BY_DISPLAY[normalizedDisplay];
+  if (!openActionLabel) {
+    if (view.recommendedAction === ACTIONS.RETRY_PROVISIONING) openActionLabel = "Retry";
+    else if (view.recommendedAction === ACTIONS.MARK_VALIDATION_COMPLETE) openActionLabel = "Continue";
+    else if (view.recommendedAction === ACTIONS.VIEW_ORGANIZATION) openActionLabel = "View";
+    else openActionLabel = "Review";
+  }
+
+  return {
+    openActionLabel,
+    actionHref: detailHref,
+  };
 }
 
 /**
@@ -320,7 +372,9 @@ module.exports = {
   DISPLAY,
   QUEUE_FILTERS,
   ACTION_LABELS,
+  OPEN_ACTION_LABELS_BY_DISPLAY,
   presentRegistrationOperatorView,
+  presentOpenAction,
   queueFilterSpec,
   isNetworkRow,
 };

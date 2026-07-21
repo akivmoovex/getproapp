@@ -32,12 +32,6 @@
   function clearHref() {
     return '/admin/registration-applications?limit=' + encodeURIComponent(limit);
   }
-  function primaryHref(row) {
-    if (row.recommendedAction === 'view_organization' && row.organizationHref) {
-      return row.organizationHref;
-    }
-    return '/admin/registration-applications/' + row.id;
-  }
 %>
 
 <section
@@ -144,7 +138,7 @@
           <th scope="col">Submitted</th>
           <th scope="col">Status</th>
           <th scope="col">Next action</th>
-          <th scope="col">Open</th>
+          <th scope="col">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -175,9 +169,12 @@
           </td>
           <td><%= row.recommendedActionLabel || '—' %></td>
           <td>
-            <a class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--sm" href="<%= primaryHref(row) %>" data-bb-pa-reg-primary="1">
-              <%= row.recommendedAction === 'view_organization' ? 'View organization' : 'Open' %>
-            </a>
+            <a
+              class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--sm"
+              href="<%= row.actionHref || ('/admin/registration-applications/' + row.id) %>"
+              data-bb-pa-reg-primary="1"
+              aria-label="<%= (row.openActionLabel || 'Review') + ' registration for ' + (row.churchName || 'application') %>"
+            ><%= row.openActionLabel || 'Review' %></a>
           </td>
         </tr>
         <% }) %>
@@ -204,7 +201,12 @@
         <span class="bb-pa-org-card__meta"><strong>Next:</strong> <%= row.recommendedActionLabel || '—' %></span>
       </a>
       <p class="bb-pa-reg-card__action">
-        <a class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--sm" href="<%= primaryHref(row) %>"><%= row.recommendedAction === 'view_organization' ? 'View organization' : 'Open application' %></a>
+        <a
+          class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--sm bb-pa-btn--block"
+          href="<%= row.actionHref || ('/admin/registration-applications/' + row.id) %>"
+          data-bb-pa-reg-primary="1"
+          aria-label="<%= (row.openActionLabel || 'Review') + ' registration for ' + (row.churchName || 'application') %>"
+        ><%= row.openActionLabel || 'Review' %></a>
       </p>
     </li>
     <% }) %>

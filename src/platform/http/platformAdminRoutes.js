@@ -210,7 +210,7 @@ function sendControlled(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Platform admin · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=32" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=33" />
 </head>
 <body class="bb-pa-body">
   <main class="bb-pa-notice">

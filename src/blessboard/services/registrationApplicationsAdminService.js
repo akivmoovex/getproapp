@@ -35,6 +35,7 @@ const {
   ACTIONS,
   QUEUE_FILTERS,
   presentRegistrationOperatorView,
+  presentOpenAction,
   queueFilterSpec,
 } = require("./registrationOperatorPresenter");
 
@@ -166,6 +167,7 @@ function mapListRow(row) {
   const priority = computeSupportPriority(row);
   const workflowStatus = deriveWorkflowStatus(row);
   const operator = presentRegistrationOperatorView(row);
+  const openAction = presentOpenAction(operator, row);
   return {
     id: String(row.id),
     churchName: String(row.church_name || ""),
@@ -188,6 +190,8 @@ function mapListRow(row) {
     statusExplanation: operator.explanation,
     recommendedAction: operator.recommendedAction,
     recommendedActionLabel: operator.recommendedActionLabel,
+    openActionLabel: openAction.openActionLabel,
+    actionHref: openAction.actionHref,
     operatorQueue: operator.queue,
     operatorTone: operator.tone,
     organizationHref: operator.organizationHref,
