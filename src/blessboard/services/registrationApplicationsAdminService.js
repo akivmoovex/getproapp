@@ -31,6 +31,13 @@ const {
   filterAllowlistedReasonCodes,
   reasonLabelsForAdmin,
 } = require("./registrationRiskDecision");
+const {
+  QUEUES,
+  ACTIONS,
+  QUEUE_FILTERS,
+  presentRegistrationOperatorView,
+  queueFilterSpec,
+} = require("./registrationOperatorPresenter");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -159,6 +166,7 @@ function mapListRow(row) {
   const selectedPlan = row.selected_plan != null ? String(row.selected_plan) : null;
   const priority = computeSupportPriority(row);
   const workflowStatus = deriveWorkflowStatus(row);
+  const operator = presentRegistrationOperatorView(row);
   return {
     id: String(row.id),
     churchName: String(row.church_name || ""),
@@ -177,6 +185,13 @@ function mapListRow(row) {
     applicationStatus: String(row.application_status || ""),
     provisioningStatus: String(row.provisioning_status || ""),
     workflowStatus,
+    displayStatus: operator.displayStatus,
+    statusExplanation: operator.explanation,
+    recommendedAction: operator.recommendedAction,
+    recommendedActionLabel: operator.recommendedActionLabel,
+    operatorQueue: operator.queue,
+    operatorTone: operator.tone,
+    organizationHref: operator.organizationHref,
     priorityRank: priority.rank,
     priorityKey: priority.key,
     priorityLabel: priority.label,
@@ -281,7 +296,9 @@ function normalizeListFilters(input) {
   }
 
   let overdueFollowUp = null;
-  const overdueRaw = String(raw.overdue_follow_up || raw.overdueFollowUp || "")
+  const overdueRaw = String(
+    raw.overdue_follow_up || raw.overdueFollowUp || raw.overdue || ""
+  )
     .trim()
     .toLowerCase();
   if (overdueRaw) {
@@ -292,6 +309,11 @@ function normalizeListFilters(input) {
     } else {
       return { ok: false, reason: "overdue_follow_up" };
     }
+  }
+
+  const queue = queueFilterSpec(raw.queue || raw.operator_queue || "");
+  if ((raw.queue || raw.operator_queue) && !queue) {
+    return { ok: false, reason: "queue" };
   }
 
   let search = null;
@@ -343,6 +365,7 @@ function normalizeListFilters(input) {
       supportRequested,
       requiresReview: requiresReview === true ? true : null,
       overdueFollowUp: overdueFollowUp === true ? true : null,
+      queue,
       linked,
       search,
       createdFrom,
@@ -413,11 +436,13 @@ async function listRegistrationApplicationsAdmin(db, input) {
               : "",
         requiresReview: filters.requiresReview === true ? "true" : "",
         overdueFollowUp: filters.overdueFollowUp === true ? "true" : "",
+        queue: filters.queue || "",
         linked: filters.linked,
         q: filters.search || "",
         from: input && (input.from || input.created_from) ? String(input.from || input.created_from) : "",
         to: input && (input.to || input.created_to) ? String(input.to || input.created_to) : "",
       },
+      queueFilters: QUEUE_FILTERS,
     };
   } catch {
     return {
@@ -616,12 +641,38 @@ async function getRegistrationApplicationDetail(db, applicationId, env) {
           String(row.provisioning_status || "") !== "provisioning_failed" &&
           ["submitted", "duplicate_review"].includes(String(row.application_status || "")) &&
           !isNetworkPlanSelection(row.selected_plan),
+        networkApproveAvailable:
+          !organizationId &&
+          isNetworkPlanSelection(row.selected_plan) &&
+          String(row.provisioning_status || "") !== "provisioned" &&
+          ["approved_for_provision", "qualified"].includes(
+            String(row.follow_up_status || "")
+          ) &&
+          !["rejected", "cancelled"].includes(String(row.application_status || "")),
+        markValidationCompleteAvailable:
+          !organizationId &&
+          isNetworkPlanSelection(row.selected_plan) &&
+          String(row.provisioning_status || "") !== "provisioned" &&
+          !["approved_for_provision", "qualified"].includes(
+            String(row.follow_up_status || "")
+          ) &&
+          !["rejected", "cancelled", "closed"].includes(String(row.application_status || "")),
         retryProvisionAvailable: retryAllowed,
         rejectActionsAvailable:
           !organizationId &&
           String(row.provisioning_status || "") !== "provisioned" &&
           ["submitted", "duplicate_review"].includes(String(row.application_status || "")),
         reviewEvents,
+        operatorView: presentRegistrationOperatorView({
+          ...row,
+          selectedPlan: row.selected_plan,
+          applicationStatus: row.application_status,
+          provisioningStatus: row.provisioning_status,
+          followUpStatus: row.follow_up_status,
+          organizationKey: row.organization_key,
+          supportRequested: row.support_requested,
+          subscriptionStatus,
+        }),
       },
       contacts,
       auditEvents,
@@ -1224,43 +1275,60 @@ async function approveAndProvisionRegistrationApplication(db, input) {
           };
         }
         if (isNetworkPlanSelection(app.selected_plan)) {
-          await client.query("ROLLBACK");
-          return {
-            ok: false,
-            status: STATUS.NOT_ELIGIBLE,
-            message: "network_not_auto_provisioned",
-          };
-        }
-        const appStatus = String(app.application_status || "");
-        if (appStatus === "rejected" || appStatus === "cancelled" || appStatus === "closed") {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
-        }
-        if (!["submitted", "duplicate_review"].includes(appStatus)) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+          const follow = String(app.follow_up_status || "");
+          if (follow !== "approved_for_provision" && follow !== "qualified") {
+            await client.query("ROLLBACK");
+            return {
+              ok: false,
+              status: STATUS.NOT_ELIGIBLE,
+              message: "network_validation_required",
+            };
+          }
+          const netAppStatus = String(app.application_status || "");
+          if (netAppStatus === "rejected" || netAppStatus === "cancelled") {
+            await client.query("ROLLBACK");
+            return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+          }
+        } else {
+          const appStatus = String(app.application_status || "");
+          if (appStatus === "rejected" || appStatus === "cancelled" || appStatus === "closed") {
+            await client.query("ROLLBACK");
+            return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+          }
+          if (!["submitted", "duplicate_review"].includes(appStatus)) {
+            await client.query("ROLLBACK");
+            return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+          }
         }
         const provStatus = String(app.provisioning_status || "");
         if (provStatus === "provisioning_failed") {
-          if (!isProvisioningFailureRetryable(app.provisioning_error_code)) {
+          if (
+            isNetworkPlanSelection(app.selected_plan) ||
+            !isProvisioningFailureRetryable(app.provisioning_error_code)
+          ) {
             await client.query("ROLLBACK");
             return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "retry_not_allowed" };
           }
         }
 
         const nowIso = new Date().toISOString();
+        const isNetwork = isNetworkPlanSelection(app.selected_plan);
         await repo.updateApplicationRiskReviewState(client, applicationId, {
           applicationStatus: "submitted",
           clearRejectionReason: true,
           reviewEvent: {
             at: nowIso,
-            action: provStatus === "provisioning_failed" ? "retry_provision" : "approve_provision",
+            action: isNetwork
+              ? "approve_network_organization"
+              : provStatus === "provisioning_failed"
+                ? "retry_provision"
+                : "approve_provision",
             actor_user_id: actorUserId,
             reason_codes: filterAllowlistedReasonCodes(app.risk_reason_codes || []),
           },
         });
         await client.query("COMMIT");
-        return { ok: true, status: STATUS.OK, application: app };
+        return { ok: true, status: STATUS.OK, application: app, networkShell: isNetwork };
       } catch (err) {
         try {
           await client.query("ROLLBACK");
@@ -1296,7 +1364,10 @@ async function approveAndProvisionRegistrationApplication(db, input) {
           deploymentCode,
         },
       },
-      { allowRetry: true }
+      {
+        allowRetry: true,
+        networkOrganizationShell: Boolean(prepared.networkShell),
+      }
     );
 
     if (provision.ok) {
@@ -1309,13 +1380,17 @@ async function approveAndProvisionRegistrationApplication(db, input) {
           organizationId,
           actorUserId,
           outcome: "success",
-          actionKey: "registration.application_approved",
+          actionKey: prepared.networkShell
+            ? "registration.network_organization_created"
+            : "registration.application_approved",
           entityType: "registration_application",
           entityId: applicationId,
           metadata: {
             category: "registration",
             actor_type: "platform_admin",
             source: "admin_registration_applications",
+            network_shell: Boolean(prepared.networkShell),
+            network_activation_required: Boolean(prepared.networkShell),
             reason_codes: filterAllowlistedReasonCodes(
               (appSnapshot && appSnapshot.risk_reason_codes) || []
             ),
@@ -1327,6 +1402,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
         ok: true,
         status: STATUS.OK,
         alreadyProvisioned: Boolean(provision.alreadyProvisioned),
+        networkOrganizationCreated: Boolean(prepared.networkShell),
         records: provision.records || null,
       };
     }
@@ -1451,6 +1527,20 @@ async function linkRegistrationApplicationToOrganization(db, input) {
   }
 }
 
+/**
+ * Mark Network validation complete (status-only). Does not provision or activate Network.
+ * @param {{ query: Function }} db
+ * @param {{ applicationId: string, actorUserId: string, deploymentCode?: string }} input
+ */
+async function markNetworkValidationComplete(db, input) {
+  return updateRegistrationFollowUpStatus(db, {
+    applicationId: input && input.applicationId,
+    actorUserId: input && input.actorUserId,
+    followUpStatus: "approved_for_provision",
+    deploymentCode: input && input.deploymentCode,
+  });
+}
+
 module.exports = {
   STATUS,
   DEFAULT_LIMIT,
@@ -1460,6 +1550,7 @@ module.exports = {
   listRegistrationApplicationsAdmin,
   getRegistrationApplicationDetail,
   updateRegistrationFollowUpStatus,
+  markNetworkValidationComplete,
   assignRegistrationSupport,
   addRegistrationSupportContact,
   rejectRegistrationApplication,
@@ -1469,4 +1560,8 @@ module.exports = {
   needsAttention,
   deriveWorkflowStatus,
   computeSupportPriority,
+  QUEUES,
+  ACTIONS,
+  QUEUE_FILTERS,
+  presentRegistrationOperatorView,
 };

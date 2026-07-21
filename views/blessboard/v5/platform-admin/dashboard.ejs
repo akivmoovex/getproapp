@@ -53,7 +53,69 @@
     { key: 'subscriptions', label: 'Subs', href: '/admin/subscriptions', icon: 'card_membership' },
     { key: 'account', label: 'Account', href: '/admin/account', icon: 'person' }
   ];
-  var summaryCards = [
+  var actionCards = [
+    {
+      key: 'needs-review',
+      label: 'Needs review',
+      icon: 'fact_check',
+      href: '/admin/registration-applications?queue=needs_review',
+      tone: 'warn',
+      available: true,
+      value: String(needsReview),
+      countAttr: 'registrations-requiring-review',
+      hint: 'Foundation/Growth applications waiting for approve and provision',
+      visibility: 'both'
+    },
+    {
+      key: 'provisioning-failures',
+      label: 'Provisioning failed',
+      icon: 'error',
+      href: '/admin/registration-applications?queue=provisioning_failed',
+      tone: 'warn',
+      available: true,
+      value: String(provFails),
+      countAttr: 'provisioning-failures',
+      hint: 'Retry provisioning or investigate failures',
+      visibility: 'both'
+    },
+    {
+      key: 'network-first-contact',
+      label: 'Network awaiting first contact',
+      icon: 'support_agent',
+      href: '/admin/registration-applications?queue=network_validation',
+      tone: 'warn',
+      available: true,
+      value: String(netValPending + networkPending),
+      countAttr: 'network-awaiting-first-contact',
+      hint: 'Network applications still in customer-support validation',
+      visibility: 'both'
+    },
+    {
+      key: 'network-ready',
+      label: 'Network ready for approval',
+      icon: 'verified',
+      href: '/admin/registration-applications?queue=network_ready',
+      tone: 'ok',
+      available: true,
+      value: String(netApproved),
+      countAttr: 'network-ready-for-approval',
+      hint: 'Validation complete — approve and create organization',
+      visibility: 'both'
+    },
+    {
+      key: 'recently-provisioned',
+      label: 'Recently provisioned',
+      icon: 'task_alt',
+      href: '/admin/registration-applications?queue=provisioned',
+      tone: 'ok',
+      available: true,
+      value: String(recentFoundation + newRegs),
+      countAttr: 'recently-provisioned',
+      hint: 'Open provisioned churches and organizations',
+      visibility: 'both'
+    }
+  ];
+  var summaryCards = actionCards.concat([
     {
       key: 'organizations',
       label: 'Organizations',
@@ -82,7 +144,7 @@
       key: 'foundation-recent',
       label: 'Foundation (7 days)',
       icon: 'verified',
-      href: '/admin/registration-applications?selected_plan=foundation&linked=linked',
+      href: '/admin/registration-applications?queue=provisioned&selected_plan=foundation',
       tone: 'ok',
       available: true,
       value: String(recentFoundation),
@@ -127,22 +189,10 @@
       visibility: 'both'
     },
     {
-      key: 'needs-review',
-      label: 'Needs review',
-      icon: 'fact_check',
-      href: '/admin/registration-applications?requires_review=true',
-      tone: 'warn',
-      available: true,
-      value: String(needsReview),
-      countAttr: 'registrations-requiring-review',
-      hint: 'Applications needing operator attention',
-      visibility: 'both'
-    },
-    {
       key: 'network-support',
       label: 'Network support queue',
       icon: 'support_agent',
-      href: '/admin/registration-applications?selected_plan=network&support_requested=true',
+      href: '/admin/registration-applications?queue=network_validation',
       tone: 'warn',
       available: true,
       value: String(networkPending),
@@ -160,18 +210,6 @@
       value: String(newRegs),
       countAttr: 'new-registrations-7d',
       hint: 'Applications submitted in the last 7 days',
-      visibility: 'both'
-    },
-    {
-      key: 'provisioning-failures',
-      label: 'Provisioning failures',
-      icon: 'error',
-      href: '/admin/registration-applications?provisioning_status=provisioning_failed',
-      tone: 'warn',
-      available: true,
-      value: String(provFails),
-      countAttr: 'provisioning-failures',
-      hint: 'Open these applications and retry or investigate',
       visibility: 'both'
     },
     {
@@ -238,7 +276,7 @@
       key: 'network-validation-pending',
       label: 'Network validation pending',
       icon: 'pending_actions',
-      href: '/admin/registration-applications?selected_plan=network&follow_up_status=validation_pending',
+      href: '/admin/registration-applications?queue=network_validation',
       tone: 'warn',
       available: true,
       value: String(netValPending),
@@ -250,7 +288,7 @@
       key: 'network-validation-progress',
       label: 'Network validation in progress',
       icon: 'manage_search',
-      href: '/admin/registration-applications?selected_plan=network&follow_up_status=validation_in_progress',
+      href: '/admin/registration-applications?queue=network_validation',
       tone: 'accent',
       available: true,
       value: String(netValProgress),
@@ -262,7 +300,7 @@
       key: 'network-awaiting',
       label: 'Network awaiting applicant',
       icon: 'hourglass_empty',
-      href: '/admin/registration-applications?selected_plan=network&follow_up_status=awaiting_customer',
+      href: '/admin/registration-applications?queue=network_validation',
       tone: 'warn',
       available: true,
       value: String(netAwaiting),
@@ -272,21 +310,21 @@
     },
     {
       key: 'network-approved',
-      label: 'Network approved (not provisioned)',
+      label: 'Network ready for approval',
       icon: 'how_to_reg',
-      href: '/admin/registration-applications?selected_plan=network&follow_up_status=approved_for_provision',
+      href: '/admin/registration-applications?queue=network_ready',
       tone: 'ok',
       available: true,
       value: String(netApproved),
       countAttr: 'network-approved-not-provisioned',
-      hint: 'Provision the organization, then activate Network separately',
+      hint: 'Approve and create organization, then activate Network separately',
       visibility: 'both'
     },
     {
       key: 'network-overdue',
       label: 'Network contact overdue',
       icon: 'schedule',
-      href: '/admin/registration-applications?selected_plan=network&overdue=true',
+      href: '/admin/registration-applications?queue=network_validation&overdue_follow_up=true',
       tone: 'warn',
       available: true,
       value: String(netOverdue),
@@ -294,7 +332,7 @@
       hint: 'Next follow-up date is in the past',
       visibility: 'both'
     }
-  ];
+  ]);
 %>
 
 <section

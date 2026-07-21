@@ -96,6 +96,7 @@
     "test:blessboard:register-church": "node --test --test-concurrency=1 tests/blessboard-register-church.test.js",
     "test:blessboard:registration-phone": "node --test --test-concurrency=1 tests/blessboard-registration-phone.test.js",
     "test:blessboard:registration-risk-review": "node --test --test-concurrency=1 tests/blessboard-registration-risk-review.test.js",
+    "test:blessboard:registration-operator-approval": "node --test --test-concurrency=1 tests/blessboard-registration-operator-approval.test.js tests/blessboard-registration-operator-presenter.test.js",
     "test:blessboard:branch-display-name": "node --test --test-concurrency=1 tests/blessboard-branch-display-name.test.js",
     "test:blessboard:additional-branch-provisioning": "node --test --test-concurrency=1 tests/blessboard-additional-branch-provisioning.test.js",
     "test:blessboard:staff-invitation": "node --test --test-concurrency=1 tests/blessboard-staff-invitation.test.js",

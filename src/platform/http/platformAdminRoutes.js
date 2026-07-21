@@ -96,6 +96,7 @@ const {
   listRegistrationApplicationsAdmin,
   getRegistrationApplicationDetail,
   updateRegistrationFollowUpStatus,
+  markNetworkValidationComplete,
   assignRegistrationSupport,
   addRegistrationSupportContact,
   rejectRegistrationApplication,
@@ -105,6 +106,7 @@ const {
   DEFAULT_LIMIT: REG_DEFAULT_LIMIT,
   MAX_LIMIT: REG_MAX_LIMIT,
   ALLOWED_LIMITS: REG_ALLOWED_LIMITS,
+  QUEUE_FILTERS,
 } = require("../../blessboard/services/registrationApplicationsAdminService");
 const {
   getOrganizationOnboardingSummary,
@@ -200,7 +202,7 @@ function sendControlled(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Platform admin · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=30" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=31" />
 </head>
 <body class="bb-pa-body">
   <main class="bb-pa-notice">
@@ -560,7 +562,8 @@ function createPlatformAdminRouter(deps) {
         selected_plan: req.query.selected_plan || req.query.plan,
         support_requested: req.query.support_requested,
         requires_review: req.query.requires_review,
-        overdue_follow_up: req.query.overdue_follow_up,
+        overdue_follow_up: req.query.overdue_follow_up || req.query.overdue,
+        queue: req.query.queue,
         linked: req.query.linked,
         from: req.query.from,
         to: req.query.to,
@@ -586,6 +589,7 @@ function createPlatformAdminRouter(deps) {
           total: list.total,
           totalPages: list.totalPages,
           filters: list.filters || {},
+          queueFilters: list.queueFilters || QUEUE_FILTERS,
           defaultLimit: REG_DEFAULT_LIMIT,
           maxLimit: REG_MAX_LIMIT,
           allowedLimits: REG_ALLOWED_LIMITS,
@@ -804,14 +808,51 @@ function createPlatformAdminRouter(deps) {
         let error = "approve_failed";
         if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
         else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
-        else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) error = "not_eligible";
-        else if (result.status === REG_APP_STATUS.PROVISION_FAILED) error = "provision_failed";
+        else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) {
+          error =
+            result.message === "network_validation_required"
+              ? "network_validation_required"
+              : "not_eligible";
+        } else if (result.status === REG_APP_STATUS.PROVISION_FAILED) error = "provision_failed";
         return res.redirect(303, `${detailPath}?error=${error}`);
       }
       if (result.alreadyProvisioned) {
         return res.redirect(303, `${detailPath}?notice=already_provisioned`);
       }
+      if (result.networkOrganizationCreated) {
+        return res.redirect(303, `${detailPath}?notice=network_organization_created`);
+      }
       return res.redirect(303, `${detailPath}?notice=approved`);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/mark-validation-complete",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await markNetworkValidationComplete(getPool(), {
+        applicationId: id,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        let error = "follow_up_failed";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
+        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
+        else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) error = "not_eligible";
+        else if (result.status === REG_APP_STATUS.NOT_PROVISIONED) error = "not_eligible";
+        return res.redirect(303, `${detailPath}?error=${error}`);
+      }
+      return res.redirect(303, `${detailPath}?notice=validation_complete`);
     }
   );
 

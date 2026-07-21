@@ -3,26 +3,13 @@
   var rows = applications || [];
   var limits = allowedLimits || [10, 25, 50, 100];
   var f = filters || {};
+  var queues = queueFilters || [];
   var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
-  var appStatuses = applicationStatuses || [];
-  var provStatuses = provisioningStatuses || [];
-  var followStatuses = followUpStatuses || [];
 
-  function labelStatus(s) {
-    return String(s || '').replace(/_/g, ' ') || '—';
-  }
-  function chipForApp(s) {
-    var key = String(s || '').toLowerCase();
-    if (key === 'closed') return 'bb-pa-chip--ok';
-    if (key === 'duplicate_review') return 'bb-pa-chip--warn';
-    if (key === 'rejected' || key === 'cancelled') return 'bb-pa-chip--muted';
-    return 'bb-pa-chip--warn';
-  }
-  function chipForProv(s) {
-    var key = String(s || '').toLowerCase();
-    if (key === 'provisioned') return 'bb-pa-chip--ok';
-    if (key === 'provisioning_failed') return 'bb-pa-chip--danger';
-    if (key === 'provisioning') return 'bb-pa-chip--warn';
+  function toneChip(tone) {
+    if (tone === 'success') return 'bb-pa-chip--ok';
+    if (tone === 'danger') return 'bb-pa-chip--danger';
+    if (tone === 'warn') return 'bb-pa-chip--warn';
     return 'bb-pa-chip--muted';
   }
   function fmtDate(d) {
@@ -36,14 +23,8 @@
   function queryPage(p) {
     var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
     if (f.q) parts.push('q=' + encodeURIComponent(f.q));
-    if (f.applicationStatus) parts.push('application_status=' + encodeURIComponent(f.applicationStatus));
-    if (f.provisioningStatus) parts.push('provisioning_status=' + encodeURIComponent(f.provisioningStatus));
-    if (f.followUpStatus) parts.push('follow_up_status=' + encodeURIComponent(f.followUpStatus));
+    if (f.queue) parts.push('queue=' + encodeURIComponent(f.queue));
     if (f.selectedPlan) parts.push('selected_plan=' + encodeURIComponent(f.selectedPlan));
-    if (f.supportRequested) parts.push('support_requested=' + encodeURIComponent(f.supportRequested));
-    if (f.requiresReview) parts.push('requires_review=' + encodeURIComponent(f.requiresReview));
-    if (f.overdueFollowUp) parts.push('overdue_follow_up=' + encodeURIComponent(f.overdueFollowUp));
-    if (f.linked && f.linked !== 'all') parts.push('linked=' + encodeURIComponent(f.linked));
     if (f.from) parts.push('from=' + encodeURIComponent(f.from));
     if (f.to) parts.push('to=' + encodeURIComponent(f.to));
     return '/admin/registration-applications?' + parts.join('&');
@@ -51,20 +32,26 @@
   function clearHref() {
     return '/admin/registration-applications?limit=' + encodeURIComponent(limit);
   }
+  function primaryHref(row) {
+    if (row.recommendedAction === 'view_organization' && row.organizationHref) {
+      return row.organizationHref;
+    }
+    return '/admin/registration-applications/' + row.id;
+  }
 %>
 
 <section
-  class="bb-pa-orgs"
+  class="bb-pa-orgs bb-pa-reg-ops"
   data-bb-pa-registration-applications="1"
   aria-label="Registration applications"
 >
   <header class="bb-pa-page-head bb-pa-page-head--split">
     <div>
-      <p class="bb-pa-orgs__eyebrow">Church registration queue</p>
+      <p class="bb-pa-orgs__eyebrow">Registration operations</p>
       <h1 class="bb-pa-page-head__title">Registration Applications</h1>
       <p class="bb-pa-lede">
-        Review church registration applications, contact people for optional onboarding help, and open linked organizations.
-        Successfully provisioned Free churches are not gated here — use follow-up to offer assistance.
+        Work from the queue that needs action. Foundation and Growth usually provision themselves;
+        Network needs support validation before an administrator creates the organization.
       </p>
     </div>
     <p class="bb-pa-page-head__actions">
@@ -73,8 +60,17 @@
     </p>
   </header>
 
+  <aside class="bb-pa-reg-guide" data-bb-pa-reg-guide="1" aria-label="How registration works">
+    <h2 class="bb-pa-reg-guide__title">How registration works</h2>
+    <ul class="bb-pa-reg-guide__list">
+      <li><strong>Foundation</strong> — automatically provisioned unless review is required.</li>
+      <li><strong>Growth</strong> — automatically provisioned with a 30-day trial unless review is required.</li>
+      <li><strong>Network</strong> — validated by customer support, then approved by platform admin. Plan activation is separate.</li>
+    </ul>
+  </aside>
+
   <form
-    class="bb-pa-org-filter"
+    class="bb-pa-org-filter bb-pa-reg-filter"
     method="get"
     action="/admin/registration-applications"
     role="search"
@@ -92,29 +88,10 @@
       />
     </div>
     <div class="bb-pa-field">
-      <label for="application_status">Application status</label>
-      <select id="application_status" name="application_status">
-        <option value="">All</option>
-        <% appStatuses.forEach(function (s) { %>
-        <option value="<%= s %>"<%= f.applicationStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
-        <% }) %>
-      </select>
-    </div>
-    <div class="bb-pa-field">
-      <label for="provisioning_status">Provisioning</label>
-      <select id="provisioning_status" name="provisioning_status">
-        <option value="">All</option>
-        <% provStatuses.forEach(function (s) { %>
-        <option value="<%= s %>"<%= f.provisioningStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
-        <% }) %>
-      </select>
-    </div>
-    <div class="bb-pa-field">
-      <label for="follow_up_status">Follow-up</label>
-      <select id="follow_up_status" name="follow_up_status">
-        <option value="">All</option>
-        <% followStatuses.forEach(function (s) { %>
-        <option value="<%= s %>"<%= f.followUpStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
+      <label for="queue">Queue</label>
+      <select id="queue" name="queue" data-bb-pa-reg-queue="1">
+        <% queues.forEach(function (q) { %>
+        <option value="<%= q.key %>"<%= (f.queue || '') === q.key ? ' selected' : '' %>><%= q.label %></option>
         <% }) %>
       </select>
     </div>
@@ -127,36 +104,6 @@
           <%= p === 'network' ? 'Network' : (p === 'foundation' ? 'Foundation' : (p === 'growth' ? 'Growth' : p)) %>
         </option>
         <% }) %>
-      </select>
-    </div>
-    <div class="bb-pa-field">
-      <label for="support_requested">Support requested</label>
-      <select id="support_requested" name="support_requested">
-        <option value="">All</option>
-        <option value="true"<%= f.supportRequested === 'true' ? ' selected' : '' %>>Yes</option>
-        <option value="false"<%= f.supportRequested === 'false' ? ' selected' : '' %>>No</option>
-      </select>
-    </div>
-    <div class="bb-pa-field">
-      <label for="requires_review">Requires review</label>
-      <select id="requires_review" name="requires_review" data-bb-pa-reg-requires-review="1">
-        <option value="">All</option>
-        <option value="true"<%= f.requiresReview === 'true' ? ' selected' : '' %>>Needs attention</option>
-      </select>
-    </div>
-    <div class="bb-pa-field">
-      <label for="overdue_follow_up">Follow-up due</label>
-      <select id="overdue_follow_up" name="overdue_follow_up" data-bb-pa-reg-overdue="1">
-        <option value="">All</option>
-        <option value="true"<%= f.overdueFollowUp === 'true' ? ' selected' : '' %>>Overdue</option>
-      </select>
-    </div>
-    <div class="bb-pa-field">
-      <label for="linked">Linked organization</label>
-      <select id="linked" name="linked">
-        <option value="all"<%= !f.linked || f.linked === 'all' ? ' selected' : '' %>>All</option>
-        <option value="linked"<%= f.linked === 'linked' ? ' selected' : '' %>>Linked</option>
-        <option value="unlinked"<%= f.linked === 'unlinked' ? ' selected' : '' %>>Not linked</option>
       </select>
     </div>
     <div class="bb-pa-field">
@@ -184,72 +131,53 @@
   <% if (!rows.length) { %>
   <%- include('../partials/empty-state', {
     title: 'No registration applications',
-    body: 'No applications match these filters. Try clearing search or status filters.'
+    body: 'No applications match this queue. Try another filter or clear search.'
   }) %>
   <% } else { %>
   <div class="bb-pa-table-wrap bb-pa-table-wrap--desktop" data-bb-pa-reg-table="1">
     <table class="bb-pa-table">
       <thead>
         <tr>
-          <th scope="col">Church</th>
-          <th scope="col">Contact</th>
+          <th scope="col">Church / organization</th>
           <th scope="col">Plan</th>
-          <th scope="col">Priority</th>
+          <th scope="col">Primary contact</th>
+          <th scope="col">Submitted</th>
           <th scope="col">Status</th>
-          <th scope="col">Owner</th>
-          <th scope="col">Next follow-up</th>
-          <th scope="col">Last contact</th>
-          <th scope="col">Review reason</th>
-          <th scope="col">Organization</th>
+          <th scope="col">Next action</th>
+          <th scope="col">Open</th>
         </tr>
       </thead>
       <tbody>
         <% rows.forEach(function (row) { %>
-        <tr<%= row.attention ? ' class="bb-pa-table__row--attention" data-bb-attention="1"' : '' %>
-            data-bb-priority="<%= row.priorityKey || 'normal' %>"
-            data-bb-workflow-status="<%= row.workflowStatus || '' %>">
+        <tr
+          data-bb-operator-queue="<%= row.operatorQueue || '' %>"
+          data-bb-display-status="<%= row.displayStatus || '' %>"
+          data-bb-recommended-action="<%= row.recommendedAction || '' %>"
+        >
           <td>
             <a class="bb-pa-link" href="/admin/registration-applications/<%= row.id %>"><%= row.churchName %></a>
             <div class="bb-pa-muted"><%= row.city %><%= row.city && row.country ? ', ' : '' %><%= row.country %></div>
+          </td>
+          <td>
+            <span data-bb-pa-plan-badge="<%= String(row.selectedPlan || '').toLowerCase() %>"><%= row.selectedPlanLabel || row.selectedPlan || '—' %></span>
+            <% if (row.isNetworkPlan || row.supportRequested) { %>
+            <div><span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="<%= row.supportRequested ? '1' : '0' %>"><%= row.isNetworkPlan ? 'Network' : 'Support requested' %></span></div>
+            <% } %>
           </td>
           <td>
             <div><%= row.contactName %></div>
             <div class="bb-pa-muted"><%= row.contactEmail %></div>
             <div class="bb-pa-muted"><%= row.contactPhoneNormalized || row.contactPhone || '—' %></div>
           </td>
+          <td><%= fmtDate(row.createdAt) %></td>
           <td>
-            <% if (row.isNetworkPlan) { %>
-            <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-plan-badge="network">Network</span>
-            <% } else { %>
-            <%= row.selectedPlanLabel || row.selectedPlan || '—' %>
-            <% } %>
-            <% if (row.supportRequested) { %>
-            <div><span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="1">Support requested</span></div>
-            <% } %>
+            <span class="bb-pa-chip <%= toneChip(row.operatorTone) %>" data-bb-pa-display-status="1"><%= row.displayStatus || '—' %></span>
           </td>
-          <td><span class="bb-pa-chip" data-bb-pa-priority="<%= row.priorityKey || 'normal' %>"><%= row.priorityLabel || 'Normal' %></span></td>
+          <td><%= row.recommendedActionLabel || '—' %></td>
           <td>
-            <span class="bb-pa-chip"><%= labelStatus(row.workflowStatus) %></span>
-            <div class="bb-pa-muted"><%= labelStatus(row.applicationStatus) %> · <%= labelStatus(row.provisioningStatus) %></div>
-          </td>
-          <td><%= row.assignedSupportDisplayName || row.assignedSupportEmail || '—' %></td>
-          <td><%= fmtDate(row.nextFollowUpAt) %></td>
-          <td><%= fmtDate(row.lastContactedAt) %></td>
-          <td>
-            <% if (row.riskReasonLabels && row.riskReasonLabels.length) { %>
-            <%= row.riskReasonLabels.map(function (r) { return r.label; }).join(', ') %>
-            <% } else if (row.rejectionReason) { %>
-            <%= row.rejectionReason %>
-            <% } else { %>
-            —
-            <% } %>
-          </td>
-          <td>
-            <% if (row.organizationKey) { %>
-            <a class="bb-pa-link" href="/admin/organizations/<%= encodeURIComponent(row.organizationKey) %>"><%= row.organizationKey %></a>
-            <% } else { %>
-            <span class="bb-pa-muted">Not linked</span>
-            <% } %>
+            <a class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--sm" href="<%= primaryHref(row) %>" data-bb-pa-reg-primary="1">
+              <%= row.recommendedAction === 'view_organization' ? 'View organization' : 'Open' %>
+            </a>
           </td>
         </tr>
         <% }) %>
@@ -257,20 +185,27 @@
     </table>
   </div>
 
-  <ul class="bb-pa-orgs-cards" data-bb-pa-reg-cards="1">
+  <ul class="bb-pa-orgs-cards bb-pa-reg-cards" data-bb-pa-reg-cards="1">
     <% rows.forEach(function (row) { %>
-    <li class="bb-pa-org-card<%= row.attention ? ' bb-pa-org-card--attention' : '' %>"<%= row.attention ? ' data-bb-attention="1"' : '' %>>
+    <li
+      class="bb-pa-org-card"
+      data-bb-operator-queue="<%= row.operatorQueue || '' %>"
+      data-bb-display-status="<%= row.displayStatus || '' %>"
+    >
       <a class="bb-pa-org-card__link" href="/admin/registration-applications/<%= row.id %>">
         <span class="bb-pa-org-card__title"><%= row.churchName %></span>
+        <span class="bb-pa-org-card__meta"><%= row.selectedPlanLabel || row.selectedPlan || '—' %> · <%= fmtDate(row.createdAt) %></span>
         <span class="bb-pa-org-card__meta"><%= row.contactName %> · <%= row.contactEmail %></span>
-        <span class="bb-pa-org-card__meta">
-          <% if (row.isNetworkPlan) { %>Network<% } else { %><%= row.selectedPlanLabel || row.selectedPlan || '—' %><% } %>
-          · <%= row.priorityLabel || 'Normal' %>
-          <% if (row.supportRequested) { %> · Support requested<% } %>
-        </span>
-        <span class="bb-pa-org-card__meta"><%= labelStatus(row.workflowStatus) %> · <%= labelStatus(row.applicationStatus) %></span>
-        <span class="bb-pa-org-card__meta"><%= row.organizationKey ? row.organizationKey : 'Not linked' %> · next <%= fmtDate(row.nextFollowUpAt) %></span>
+        <span class="bb-pa-org-card__meta"><%= row.contactPhoneNormalized || row.contactPhone || '' %></span>
+        <% if (row.supportRequested) { %>
+        <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="1">Support requested</span>
+        <% } %>
+        <span class="bb-pa-chip <%= toneChip(row.operatorTone) %>" data-bb-pa-display-status="1"><%= row.displayStatus || '—' %></span>
+        <span class="bb-pa-org-card__meta"><strong>Next:</strong> <%= row.recommendedActionLabel || '—' %></span>
       </a>
+      <p class="bb-pa-reg-card__action">
+        <a class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--sm" href="<%= primaryHref(row) %>"><%= row.recommendedAction === 'view_organization' ? 'View organization' : 'Open application' %></a>
+      </p>
     </li>
     <% }) %>
   </ul>

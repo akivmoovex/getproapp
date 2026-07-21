@@ -78,6 +78,8 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
   "actor_type",
   "source",
   "reason_codes",
+  "network_shell",
+  "network_activation_required",
 ]);
 
 const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;

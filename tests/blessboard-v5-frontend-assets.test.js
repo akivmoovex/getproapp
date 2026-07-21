@@ -21,7 +21,7 @@ const VERSIONS = {
   memberPortal: "22",
   branchAdmin: "37",
   hqAdmin: "54",
-  platformAdmin: "30",
+  platformAdmin: "31",
   mediaPickerCss: "8",
   mediaPickerJs: "6",
   designSystemJs: "3",

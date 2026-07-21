@@ -2886,6 +2886,76 @@ tr.is-disabled td {
   font-size: 0.95rem;
 }
 
+/* —— Registration operator queues (Prompt 48) —— */
+.bb-pa-reg-guide {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  background: #f7fbfd;
+}
+.bb-pa-reg-guide__title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+.bb-pa-reg-guide__list {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: var(--bb-muted, #5a6b73);
+  line-height: 1.5;
+}
+.bb-pa-reg-status {
+  margin: 0 0 1.15rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  background: #fff;
+}
+.bb-pa-reg-status__badge {
+  display: inline-flex;
+  font-size: 1.05rem;
+  font-weight: 700;
+  min-height: 2.5rem;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+}
+.bb-pa-reg-status__explain {
+  margin: 0.75rem 0 0;
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+.bb-pa-reg-next {
+  margin: 0 0 1.25rem;
+  padding: 1.25rem;
+  border-radius: 0.9rem;
+  border: 2px solid var(--bb-violet, #6c5ce7);
+  background: #faf8ff;
+}
+.bb-pa-reg-next__title {
+  margin: 0 0 0.65rem;
+  font-size: 1.1rem;
+}
+.bb-pa-reg-card__action {
+  margin: 0.65rem 0 0;
+  padding: 0 1rem 1rem;
+}
+.bb-pa-tech-details {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed #c9d6dc;
+  background: #f7fafc;
+}
+.bb-pa-tech-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: disclosure-closed;
+}
+.bb-pa-tech-details[open] > summary {
+  list-style: disclosure-open;
+  margin-bottom: 0.75rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bb-pa-body *,
   .bb-pa-body *::before,

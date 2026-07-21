@@ -839,6 +839,48 @@ function buildRegistrationListWhere(filters) {
       )
     )`);
   }
+  if (filters.queue === "needs_review") {
+    clauses.push(`(
+      a.organization_id IS NULL
+      AND a.provisioning_status IS DISTINCT FROM 'provisioned'
+      AND a.provisioning_status IS DISTINCT FROM 'provisioning_failed'
+      AND a.application_status IN ('submitted', 'duplicate_review')
+      AND COALESCE(a.selected_plan, '') IS DISTINCT FROM 'network'
+      AND ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = FALSE
+    )`);
+  } else if (filters.queue === "provisioning_failed") {
+    clauses.push(`a.provisioning_status = 'provisioning_failed'`);
+  } else if (filters.queue === "network_validation") {
+    clauses.push(`(
+      a.organization_id IS NULL
+      AND a.provisioning_status IS DISTINCT FROM 'provisioned'
+      AND a.application_status NOT IN ('rejected', 'cancelled')
+      AND (
+        a.selected_plan = 'network'
+        OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
+      )
+      AND ${EFFECTIVE_FOLLOW_UP_SQL} IS DISTINCT FROM 'approved_for_provision'
+      AND ${EFFECTIVE_FOLLOW_UP_SQL} IS DISTINCT FROM 'qualified'
+    )`);
+  } else if (filters.queue === "network_ready") {
+    clauses.push(`(
+      a.organization_id IS NULL
+      AND a.provisioning_status IS DISTINCT FROM 'provisioned'
+      AND a.application_status NOT IN ('rejected', 'cancelled')
+      AND (
+        a.selected_plan = 'network'
+        OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
+      )
+      AND ${EFFECTIVE_FOLLOW_UP_SQL} IN ('approved_for_provision', 'qualified')
+    )`);
+  } else if (filters.queue === "provisioned") {
+    clauses.push(`(
+      a.provisioning_status = 'provisioned'
+      OR (a.application_status = 'closed' AND a.organization_id IS NOT NULL)
+    )`);
+  } else if (filters.queue === "rejected") {
+    clauses.push(`a.application_status IN ('rejected', 'cancelled')`);
+  }
   if (filters.overdueFollowUp === true) {
     clauses.push(`(
       ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} IS NOT NULL

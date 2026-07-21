@@ -506,6 +506,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
   const actorContext =
     input && input.actorContext && typeof input.actorContext === "object" ? input.actorContext : {};
   const allowRetry = Boolean(options && options.allowRetry);
+  const networkOrganizationShell = Boolean(options && options.networkOrganizationShell);
   const dataEnvironment = String(actorContext.dataEnvironment || "testing")
     .trim()
     .toLowerCase();
@@ -589,6 +590,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
 
       planKey = mapPlanLabelToCanonical(application.selected_plan);
+      if (networkOrganizationShell && String(application.selected_plan || "").toLowerCase() === "network") {
+        // Network org creation uses a Foundation shell subscription; paid Network
+        // activation remains a separate organization-admin action.
+        planKey = PLAN_KEY_FREE;
+      }
       if (!isProvisionablePlanKey(planKey)) {
         throw new OrchestratorError(STATUS.INVALID_PLAN, "invalid_plan");
       }
