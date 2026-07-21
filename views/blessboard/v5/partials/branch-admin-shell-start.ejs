@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=37" />
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=38" />
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=8" />
   <% } %>
@@ -76,7 +76,7 @@
         <a
           href="<%= item.href %>"
           class="bb-ba-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
-          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+          <% if (activeNav === item.key) { %>aria-current="page"<% } %>
         >
           <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
           <span><%= item.label %></span>
@@ -170,16 +170,20 @@
           </p>
           <% } %>
           <div class="bb-ba-drawer__links" data-bb-nav="mobile-links">
-            <% baNav.forEach(function (item) { %>
-            <a
-              href="<%= item.href %>"
-              class="bb-ba-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
-              <%= activeNav === item.key ? 'aria-current="page"' : '' %>
-            >
-              <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
-              <span><%= item.label %></span>
-            </a>
-            <% }) %>
+            <ul class="bb-ba-drawer__list">
+              <% baNav.forEach(function (item) { %>
+              <li class="bb-ba-drawer__item">
+                <a
+                  href="<%= item.href %>"
+                  class="bb-ba-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+                  <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+                  <span><%= item.label %></span>
+                </a>
+              </li>
+              <% }) %>
+            </ul>
           </div>
           <div class="bb-ba-drawer__account">
             <form class="bb-ba-logout" method="post" action="/branch-admin/logout" data-bb-branch-logout="1">

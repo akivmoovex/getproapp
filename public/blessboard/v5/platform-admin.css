@@ -362,6 +362,19 @@ body.bb-pa-drawer-open { overflow: hidden; }
   flex: 1;
   min-height: 0;
 }
+.bb-pa-drawer__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bb-pa-drawer__item {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
 .bb-pa-drawer__account {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
@@ -376,6 +389,9 @@ body.bb-pa-drawer-open { overflow: hidden; }
   color: rgba(232, 236, 242, 0.78);
   min-height: var(--bb-touch-min, 2.75rem);
   padding: 0.7rem 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+  text-decoration: none;
 }
 .bb-pa-drawer .bb-pa-nav-link.is-active {
   color: #fff;

@@ -275,6 +275,19 @@ body.bb-hq-drawer-open { overflow: hidden; }
   flex: 1;
   min-height: 0;
 }
+.bb-hq-drawer__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bb-hq-drawer__item {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
 .bb-hq-drawer__account {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
@@ -282,6 +295,9 @@ body.bb-hq-drawer-open { overflow: hidden; }
 }
 .bb-hq-drawer .bb-hq-nav-link {
   min-height: var(--bb-touch-min, 2.75rem);
+  width: 100%;
+  box-sizing: border-box;
+  text-decoration: none;
 }
 .bb-hq-drawer__footer {
   margin-top: auto;

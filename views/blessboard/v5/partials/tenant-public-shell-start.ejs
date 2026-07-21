@@ -17,7 +17,7 @@
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=29' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=30' %>" />
 </head>
 <body
   class="bb-tp-body"
@@ -51,7 +51,7 @@
         <a
           href="<%= item.href %>"
           class="bb-tp-nav__link<%= activeNav === item.key ? ' is-active' : '' %>"
-          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+          <% if (activeNav === item.key) { %>aria-current="page"<% } %>
         ><%= item.label %></a>
         <% }) %>
       </nav>
@@ -109,13 +109,17 @@
       </button>
     </div>
     <nav class="bb-tp-drawer__nav" aria-label="Primary">
-      <% navItems.forEach(function (item) { %>
-      <a
-        href="<%= item.href %>"
-        class="bb-tp-drawer__link<%= activeNav === item.key ? ' is-active' : '' %>"
-        <%= activeNav === item.key ? 'aria-current="page"' : '' %>
-      ><%= item.label %></a>
-      <% }) %>
+      <ul class="bb-tp-drawer__list">
+        <% navItems.forEach(function (item) { %>
+        <li class="bb-tp-drawer__item">
+          <a
+            href="<%= item.href %>"
+            class="bb-tp-drawer__link<%= activeNav === item.key ? ' is-active' : '' %>"
+            <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+          ><%= item.label %></a>
+        </li>
+        <% }) %>
+      </ul>
     </nav>
     <div class="bb-tp-drawer__actions">
       <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block" href="/register">Register as a Member</a>

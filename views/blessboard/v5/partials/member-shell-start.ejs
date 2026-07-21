@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=22" />
+  <link rel="stylesheet" href="/blessboard/v5/member-portal.css?v=23" />
 </head>
 <%
   var mpDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
@@ -68,7 +68,7 @@
         <a
           href="<%= item.href %>"
           class="bb-mp-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
-          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+          <% if (activeNav === item.key) { %>aria-current="page"<% } %>
         >
           <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
           <span><%= item.label %></span>
@@ -162,16 +162,20 @@
           </p>
           <% } %>
           <div class="bb-mp-drawer__links" data-bb-nav="mobile-links">
-            <% mpNav.forEach(function (item) { %>
-            <a
-              href="<%= item.href %>"
-              class="bb-mp-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
-              <%= activeNav === item.key ? 'aria-current="page"' : '' %>
-            >
-              <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
-              <span><%= item.label %></span>
-            </a>
-            <% }) %>
+            <ul class="bb-mp-drawer__list">
+              <% mpNav.forEach(function (item) { %>
+              <li class="bb-mp-drawer__item">
+                <a
+                  href="<%= item.href %>"
+                  class="bb-mp-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+                  <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+                  <span><%= item.label %></span>
+                </a>
+              </li>
+              <% }) %>
+            </ul>
           </div>
           <div class="bb-mp-drawer__account">
             <form class="bb-mp-logout" method="post" action="/member/logout" data-bb-member-logout="1">

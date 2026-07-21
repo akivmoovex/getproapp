@@ -328,6 +328,19 @@ body.bb-ba-drawer-open {
   flex: 1;
   min-height: 0;
 }
+.bb-ba-drawer__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bb-ba-drawer__item {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
 .bb-ba-drawer__account {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
@@ -335,6 +348,9 @@ body.bb-ba-drawer-open {
 }
 .bb-ba-drawer .bb-ba-nav-link {
   min-height: var(--bb-touch-min, 2.75rem);
+  width: 100%;
+  box-sizing: border-box;
+  text-decoration: none;
 }
 .bb-ba-drawer__footer {
   margin-top: auto;

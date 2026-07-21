@@ -1,14 +1,11 @@
 <%#
-  Apex nav links. Locals: authenticated, activeNav, csrfToken, variant ('desktop'|'drawer')
+  Apex nav links. Locals: authenticated, activeNav, csrfToken, variant (desktop|drawer)
   Batch 2b activates marketing routes. Login stays header CTA on desktop; drawer includes Login.
+  Never build full attribute strings for class/aria via escaped output — that HTML-encodes quotes.
 %>
 <%
-  var linkClass = variant === 'drawer' ? 'bb-apex-drawer__link' : 'bb-apex-nav__link';
-  function cls(key) {
-    var base = linkClass;
-    if (activeNav === key) base += ' is-active';
-    return ' class="' + base + '"';
-  }
+  var isDrawer = variant === 'drawer';
+  var linkClass = isDrawer ? 'bb-apex-drawer__link' : 'bb-apex-nav__link';
   var marketing = [
     { key: 'home', href: '/', label: 'Home' },
     { key: 'features', href: '/features', label: 'Features' },
@@ -18,17 +15,50 @@
     { key: 'register-church', href: '/register-church', label: 'Register' }
   ];
 %>
+<% if (isDrawer) { %>
+<ul class="bb-apex-drawer__list">
+  <% marketing.forEach(function (item) { %>
+  <li class="bb-apex-drawer__item">
+    <a
+      href="<%= item.href %>"
+      class="<%= linkClass %><%= activeNav === item.key ? ' is-active' : '' %>"
+      <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+    ><%= item.label %></a>
+  </li>
+  <% }) %>
+</ul>
+<div class="bb-apex-drawer__account">
+  <% if (authenticated) { %>
+  <a
+    href="/account"
+    class="<%= linkClass %><%= activeNav === 'account' ? ' is-active' : '' %>"
+    <% if (activeNav === 'account') { %>aria-current="page"<% } %>
+  >Account</a>
+  <form class="bb-apex-drawer__logout" method="post" action="/logout">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+    <button type="submit">Logout</button>
+  </form>
+  <% } else { %>
+  <a
+    href="/login"
+    class="<%= linkClass %><%= activeNav === 'login' ? ' is-active' : '' %>"
+    <% if (activeNav === 'login') { %>aria-current="page"<% } %>
+  >Login</a>
+  <% } %>
+</div>
+<% } else { %>
 <% marketing.forEach(function (item) { %>
-<a href="<%= item.href %>"<%= cls(item.key) %><%= activeNav === item.key ? ' aria-current="page"' : '' %>><%= item.label %></a>
+<a
+  href="<%= item.href %>"
+  class="<%= linkClass %><%= activeNav === item.key ? ' is-active' : '' %>"
+  <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+><%= item.label %></a>
 <% }) %>
 <% if (authenticated) { %>
-<a href="/account"<%= cls('account') %><%= activeNav === 'account' ? ' aria-current="page"' : '' %>>Account</a>
-<% if (variant === 'drawer') { %>
-<form class="bb-apex-drawer__logout" method="post" action="/logout">
-  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
-  <button type="submit">Logout</button>
-</form>
+<a
+  href="/account"
+  class="<%= linkClass %><%= activeNav === 'account' ? ' is-active' : '' %>"
+  <% if (activeNav === 'account') { %>aria-current="page"<% } %>
+>Account</a>
 <% } %>
-<% } else if (variant === 'drawer') { %>
-<a href="/login"<%= cls('login') %><%= activeNav === 'login' ? ' aria-current="page"' : '' %>>Login</a>
 <% } %>

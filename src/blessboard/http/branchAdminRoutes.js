@@ -75,7 +75,7 @@ function sendLoginUnavailable(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sign-in unavailable · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=37" />
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=38" />
 </head>
 <body class="bb-ba-body">
   <main class="bb-ba-login-unavailable">

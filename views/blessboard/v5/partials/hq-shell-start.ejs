@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=55" />
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=56" />
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=8" />
   <% } %>
@@ -81,7 +81,7 @@
         <a
           href="<%= item.href %>"
           class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
-          <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+          <% if (activeNav === item.key) { %>aria-current="page"<% } %>
         >
           <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
           <span><%= item.label %></span>
@@ -175,16 +175,20 @@
           </p>
           <% } %>
           <div class="bb-hq-drawer__links" data-bb-nav="mobile-links">
-            <% hqNav.forEach(function (item) { %>
-            <a
-              href="<%= item.href %>"
-              class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
-              <%= activeNav === item.key ? 'aria-current="page"' : '' %>
-            >
-              <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
-              <span><%= item.label %></span>
-            </a>
-            <% }) %>
+            <ul class="bb-hq-drawer__list">
+              <% hqNav.forEach(function (item) { %>
+              <li class="bb-hq-drawer__item">
+                <a
+                  href="<%= item.href %>"
+                  class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+                  <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+                  <span><%= item.label %></span>
+                </a>
+              </li>
+              <% }) %>
+            </ul>
           </div>
           <div class="bb-hq-drawer__account">
             <form class="bb-hq-logout" method="post" action="/hq/logout" data-bb-hq-logout="1">
