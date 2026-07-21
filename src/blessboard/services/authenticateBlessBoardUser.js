@@ -72,7 +72,7 @@ async function authenticateBlessBoardUser(db, input) {
     }
 
     const user = await repo.findUserByEmail(client, email);
-    if (!user || String(user.status) !== "active") {
+    if (!user) {
       try {
         // Burn comparable CPU without revealing existence; ignore invalid-hash errors.
         await bcrypt.compare(
@@ -88,6 +88,26 @@ async function authenticateBlessBoardUser(db, input) {
         message: GENERIC_FAILURE,
         session: null,
         user: null,
+        // Observability only — HTTP layer must keep the same generic UI wording.
+        failureCategory: "account_not_found",
+      };
+    }
+    if (String(user.status) !== "active") {
+      try {
+        await bcrypt.compare(
+          password,
+          "$2a$12$C6UzMDM.H6dfI/f/IKxGhuR.Vo5.1qHqGhuR.Vo5.1qHqGhuR.Vo5."
+        );
+      } catch {
+        /* ignore */
+      }
+      return {
+        ok: false,
+        status: STATUS.INVALID_CREDENTIALS,
+        message: GENERIC_FAILURE,
+        session: null,
+        user: null,
+        failureCategory: "account_inactive",
       };
     }
 
@@ -99,6 +119,7 @@ async function authenticateBlessBoardUser(db, input) {
         message: GENERIC_FAILURE,
         session: null,
         user: null,
+        failureCategory: "password_rejected",
       };
     }
 

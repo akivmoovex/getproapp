@@ -333,17 +333,43 @@ async function getPlatformAdminDashboardStats(db) {
       status: STATUS.LOOKUP_ERROR,
       stats: null,
       reason: "database required",
+      pgCode: null,
+      schema: null,
+      relation: null,
+      column: null,
     };
   }
   try {
     const stats = await repo.countOrganizationDirectoryStats(db);
     return { ok: true, status: STATUS.OK, stats };
-  } catch {
+  } catch (err) {
+    const msg = err && err.message ? String(err.message) : "";
+    let schema = null;
+    let relation = null;
+    let column = null;
+    const missingRel = msg.match(
+      /relation ["']?([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)["']? does not exist/i
+    );
+    if (missingRel) {
+      schema = missingRel[1];
+      relation = missingRel[2];
+    }
+    const missingCol = msg.match(
+      /column ["']?([a-z_][a-z0-9_]*)["']? of relation ["']?([a-z_][a-z0-9_]*)["']? does not exist/i
+    );
+    if (missingCol) {
+      column = missingCol[1];
+      relation = missingCol[2];
+    }
     return {
       ok: false,
       status: STATUS.LOOKUP_ERROR,
       stats: null,
       reason: "lookup_error",
+      pgCode: err && err.code ? String(err.code).slice(0, 16) : null,
+      schema,
+      relation,
+      column,
     };
   }
 }

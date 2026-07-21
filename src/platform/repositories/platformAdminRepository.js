@@ -260,9 +260,58 @@ async function countOrganizationDirectory(client, opts) {
 /**
  * Real directory + registration-ops totals for the platform-admin dashboard.
  * Bounded aggregate subqueries only — no N+1, no revenue, no invented health.
+ * Growth-offer metrics soft-degrade to zero when the offers table is not yet migrated.
  * @param {{ query: Function }} client
  */
 async function countOrganizationDirectoryStats(client) {
+  const offersRel = await client.query(
+    `SELECT to_regclass('blessboard.organization_growth_trial_offers') IS NOT NULL AS ok`
+  );
+  const hasGrowthOffersTable = Boolean(offersRel.rows[0] && offersRel.rows[0].ok);
+
+  const growthOfferSelects = hasGrowthOffersTable
+    ? `
+        (
+          SELECT COUNT(*)::int
+            FROM platform.organizations o2
+            INNER JOIN platform.organization_subscriptions os
+              ON os.organization_id = o2.id AND os.product_key = 'blessboard'
+            INNER JOIN platform.plans pl ON pl.id = os.plan_id AND pl.plan_key = 'free'
+           WHERE os.status = 'active'
+             AND (os.ends_at IS NULL OR os.ends_at > now())
+             AND NOT EXISTS (
+               SELECT 1 FROM blessboard.organization_growth_trial_offers oft
+                WHERE oft.organization_id = o2.id
+                  AND oft.is_exception = false
+                  AND oft.status IN ('accepted', 'active', 'expired', 'consumed')
+             )
+             AND NOT EXISTS (
+               SELECT 1 FROM blessboard.organization_growth_trial_offers oft2
+                WHERE oft2.organization_id = o2.id AND oft2.status = 'offered'
+             )
+        ) AS foundation_eligible_for_growth_trial,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.organization_growth_trial_offers oft
+           WHERE oft.status = 'offered'
+        ) AS growth_trial_offers_pending,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.organization_growth_trial_offers oft
+           WHERE oft.status = 'active'
+        ) AS foundation_origin_active_trials,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.organization_growth_trial_offers oft
+           WHERE oft.is_exception = false
+             AND oft.status IN ('accepted', 'active', 'expired', 'consumed')
+        ) AS foundation_trial_offers_consumed,`
+    : `
+        0::int AS foundation_eligible_for_growth_trial,
+        0::int AS growth_trial_offers_pending,
+        0::int AS foundation_origin_active_trials,
+        0::int AS foundation_trial_offers_consumed,`;
+
   const r = await client.query(
     `SELECT
         COUNT(o.id)::int AS total_organizations,
@@ -338,41 +387,7 @@ async function countOrganizationDirectoryStats(client) {
             FROM blessboard.platform_church_registration_applications a
            WHERE a.provisioning_status = 'provisioning_failed'
         ) AS provisioning_failures,
-        (
-          SELECT COUNT(*)::int
-            FROM platform.organizations o2
-            INNER JOIN platform.organization_subscriptions os
-              ON os.organization_id = o2.id AND os.product_key = 'blessboard'
-            INNER JOIN platform.plans pl ON pl.id = os.plan_id AND pl.plan_key = 'free'
-           WHERE os.status = 'active'
-             AND (os.ends_at IS NULL OR os.ends_at > now())
-             AND NOT EXISTS (
-               SELECT 1 FROM blessboard.organization_growth_trial_offers oft
-                WHERE oft.organization_id = o2.id
-                  AND oft.is_exception = false
-                  AND oft.status IN ('accepted', 'active', 'expired', 'consumed')
-             )
-             AND NOT EXISTS (
-               SELECT 1 FROM blessboard.organization_growth_trial_offers oft2
-                WHERE oft2.organization_id = o2.id AND oft2.status = 'offered'
-             )
-        ) AS foundation_eligible_for_growth_trial,
-        (
-          SELECT COUNT(*)::int
-            FROM blessboard.organization_growth_trial_offers oft
-           WHERE oft.status = 'offered'
-        ) AS growth_trial_offers_pending,
-        (
-          SELECT COUNT(*)::int
-            FROM blessboard.organization_growth_trial_offers oft
-           WHERE oft.status = 'active'
-        ) AS foundation_origin_active_trials,
-        (
-          SELECT COUNT(*)::int
-            FROM blessboard.organization_growth_trial_offers oft
-           WHERE oft.is_exception = false
-             AND oft.status IN ('accepted', 'active', 'expired', 'consumed')
-        ) AS foundation_trial_offers_consumed,
+        ${growthOfferSelects}
         (
           SELECT COUNT(*)::int
             FROM platform.organization_subscriptions os
@@ -449,6 +464,7 @@ async function countOrganizationDirectoryStats(client) {
     networkAwaitingApplicant: Number(row.network_awaiting_applicant) || 0,
     networkApprovedNotProvisioned: Number(row.network_approved_not_provisioned) || 0,
     networkFirstContactOverdue: Number(row.network_first_contact_overdue) || 0,
+    growthOffersTablePresent: hasGrowthOffersTable,
   };
 }
 

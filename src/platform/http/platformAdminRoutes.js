@@ -10,6 +10,7 @@
 
 const express = require("express");
 const { renderV5Ejs } = require("../../blessboard/http/v5EjsTemplateCache");
+const { createV5AuthLogger } = require("./v5AuthObservability");
 
 const {
   listActiveAuthorizationRoles,
@@ -235,6 +236,9 @@ function createPlatformAdminRouter(deps) {
   const env = deps.env || process.env;
   const sendUnavailable = deps.sendUnavailable;
   const isProduction = String(env.NODE_ENV || "") === "production";
+  const authLog = createV5AuthLogger({
+    log: typeof deps.log === "function" ? deps.log : undefined,
+  });
   const router = express.Router();
 
   function requireApex(req, res, next) {
@@ -254,6 +258,12 @@ function createPlatformAdminRouter(deps) {
           ? req.v5Session.session
           : null;
       if (!session) {
+        authLog.logAuthEvent(req, "platform_admin_denied", {
+          outcome: "denied",
+          failureCategory: "unauthenticated",
+          cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
+          sessionFound: false,
+        });
         const wantsHtml = String(req.get("accept") || "").includes("text/html");
         if (wantsHtml) {
           return res.redirect(
@@ -266,17 +276,33 @@ function createPlatformAdminRouter(deps) {
 
       const pool = getPool();
       if (!pool || typeof pool.query !== "function") {
+        authLog.logAuthEvent(req, "platform_admin_unexpected_error", {
+          outcome: "error",
+          failureCategory: "pool_unavailable",
+          sessionFound: true,
+        });
         return sendControlled(req, res, 503, "Platform admin is temporarily unavailable.");
       }
 
       const user = await findUserStatusById(pool, session.userId);
       if (!user || String(user.status) !== "active") {
+        authLog.logAuthEvent(req, "platform_admin_denied", {
+          outcome: "denied",
+          failureCategory: "inactive_user",
+          sessionFound: true,
+        });
         return sendControlled(req, res, 401, "Sign-in is required.");
       }
 
       const roles = await listActiveAuthorizationRoles(pool, session.userId);
       const isPlatformAdmin = roles.some((r) => r.roleKey === "platform_admin");
       if (!isPlatformAdmin) {
+        authLog.logAuthEvent(req, "platform_admin_denied", {
+          outcome: "denied",
+          failureCategory: "missing_platform_admin_role",
+          sessionFound: true,
+          roleKeys: roles,
+        });
         return sendControlled(req, res, 403, "You do not have access to platform administration.");
       }
 
@@ -287,8 +313,18 @@ function createPlatformAdminRouter(deps) {
         displayName: session.user && session.user.displayName ? session.user.displayName : "",
         roleLabel: formatRoleLabel("platform_admin"),
       };
+      authLog.logAuthEvent(req, "platform_admin_authorized", {
+        outcome: "ok",
+        sessionFound: true,
+        roleKeys: ["platform_admin"],
+      });
       return next();
     } catch (err) {
+      authLog.logAuthEvent(req, "platform_admin_unexpected_error", {
+        outcome: "error",
+        failureCategory: "unexpected",
+        sessionFound: Boolean(req.v5Session && req.v5Session.authenticated),
+      });
       // eslint-disable-next-line no-console
       console.error("[platform-admin] requirePlatformAdmin unexpected failure", {
         path: String(req.originalUrl || req.path || "").slice(0, 200),
@@ -309,6 +345,7 @@ function createPlatformAdminRouter(deps) {
   }
 
   router.get("/admin", requireApex, requirePlatformAdmin, async (req, res) => {
+    const startedAt = Date.now();
     const [statsResult, list, alertsResult, analyticsResult] = await Promise.all([
       getPlatformAdminDashboardStats(getPool()),
       listPlatformOrganizations(getPool(), { page: 1, limit: 5 }),
@@ -323,20 +360,77 @@ function createPlatformAdminRouter(deps) {
     if (analyticsResult.status === ANALYTICS_STATUS.INVALID_INPUT) {
       return sendControlled(req, res, 400, "Invalid analytics date range.");
     }
-    if (
-      (!statsResult.ok && statsResult.status === LIST_STATUS.LOOKUP_ERROR) ||
-      (!list.ok && list.status === LIST_STATUS.LOOKUP_ERROR) ||
-      (!alertsResult.ok && alertsResult.status === OPS_ALERTS_STATUS.LOOKUP_ERROR) ||
-      (!analyticsResult.ok && analyticsResult.status === ANALYTICS_STATUS.LOOKUP_ERROR)
-    ) {
+
+    // Organization list is required for the dashboard shell. Stats/alerts/analytics
+    // soft-degrade so platform-admin authentication is never blocked by optional metrics.
+    if (!list.ok && list.status === LIST_STATUS.LOOKUP_ERROR) {
+      authLog.logAuthEvent(req, "apex_login_directory_lookup_failed", {
+        outcome: "failed",
+        failureCategory: "organization_list_lookup",
+        operation: "listPlatformOrganizations",
+        durationMs: Date.now() - startedAt,
+      });
       return sendControlled(req, res, 503, "Organization directory is temporarily unavailable.");
     }
+
+    let directoryWarning = null;
+    if (!statsResult.ok && statsResult.status === LIST_STATUS.LOOKUP_ERROR) {
+      authLog.logAuthEvent(req, "apex_login_directory_lookup_failed", {
+        outcome: "failed",
+        failureCategory: "dashboard_stats_lookup",
+        operation: "getPlatformAdminDashboardStats",
+        pgCode: statsResult.pgCode || null,
+        schema: statsResult.schema || null,
+        relation: statsResult.relation || null,
+        column: statsResult.column || null,
+        durationMs: Date.now() - startedAt,
+      });
+      directoryWarning =
+        "Some platform overview metrics are temporarily unavailable. Sign-in and organization management remain available.";
+    } else if (
+      !alertsResult.ok &&
+      alertsResult.status === OPS_ALERTS_STATUS.LOOKUP_ERROR
+    ) {
+      authLog.logAuthEvent(req, "apex_login_directory_lookup_failed", {
+        outcome: "failed",
+        failureCategory: "ops_alerts_lookup",
+        operation: "listPlatformAdminOpsAlerts",
+        durationMs: Date.now() - startedAt,
+      });
+      directoryWarning =
+        "Registration operations alerts are temporarily unavailable. Sign-in and organization management remain available.";
+    } else if (
+      !analyticsResult.ok &&
+      analyticsResult.status === ANALYTICS_STATUS.LOOKUP_ERROR
+    ) {
+      authLog.logAuthEvent(req, "apex_login_directory_lookup_failed", {
+        outcome: "failed",
+        failureCategory: "registration_analytics_lookup",
+        operation: "getPlatformAdminRegistrationAnalytics",
+        durationMs: Date.now() - startedAt,
+      });
+      directoryWarning =
+        "Registration analytics are temporarily unavailable. Sign-in and organization management remain available.";
+    }
+
+    const orgTotal =
+      (statsResult.stats && statsResult.stats.totalOrganizations) || list.total || 0;
+    if (list.ok && Number(orgTotal) === 0) {
+      authLog.logAuthEvent(req, "apex_login_directory_empty", {
+        outcome: "ok",
+        failureCategory: "empty_directory",
+        operation: "listPlatformOrganizations",
+        durationMs: Date.now() - startedAt,
+      });
+    }
+
     const stats = statsResult.stats || {};
     const html = renderPlatformAdminView(
       "platform-admin/dashboard.ejs",
       shellLocals(req, res, "home", {
         pageTitle: "Platform admin",
         directorySample: list.organizations || [],
+        directoryWarning,
         totalOrganizations: stats.totalOrganizations || list.total || 0,
         organizationsWithChurch: stats.organizationsWithChurch || 0,
         recentFoundationRegistrations: stats.recentFoundationRegistrations || 0,

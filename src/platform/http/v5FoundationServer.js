@@ -17,6 +17,7 @@ const {
   assignV5RequestId,
   createV5ErrorHandler,
 } = require("./v5SafeLogging");
+const { createV5AuthLogger } = require("./v5AuthObservability");
 const { createLoadPlatformHostContext } = require("./loadPlatformHostContext");
 const {
   createLoadBlessBoardCatalogueContext,
@@ -266,6 +267,9 @@ function createV5FoundationApp(options) {
 
   const app = express();
   const isProduction = String(env.NODE_ENV || "") === "production";
+  const authLog = createV5AuthLogger({
+    log: typeof opts.log === "function" ? opts.log : undefined,
+  });
 
   app.disable("x-powered-by");
   if (env.TRUST_PROXY === "0" || env.TRUST_PROXY === "false") {
@@ -346,6 +350,7 @@ function createV5FoundationApp(options) {
     createLoadV5Session({
       getPool,
       getDeploymentCode: () => getPlatformDeploymentCode(env),
+      log: typeof opts.log === "function" ? opts.log : undefined,
     })
   );
 
@@ -482,6 +487,7 @@ function createV5FoundationApp(options) {
       isApexHost: (req) => isApexHost(req, opts),
       env,
       sendUnavailable,
+      log: typeof opts.log === "function" ? opts.log : undefined,
     })
   );
 
@@ -759,6 +765,7 @@ function createV5FoundationApp(options) {
   app.get("/login", async (req, res) => {
     const apex = isApexHost(req, opts);
     if (apex) {
+      authLog.logAuthEvent(req, "apex_login_get", { outcome: "ok" });
       const rawTr = String((req.query && req.query.tr) || "").trim();
       let transferHostname = null;
       if (rawTr) {
@@ -794,6 +801,10 @@ function createV5FoundationApp(options) {
       }
       const csrfToken = issueCsrfToken(env);
       setCsrfCookie(res, csrfToken, { secure: isProduction });
+      authLog.logAuthEvent(req, "apex_login_rendered", {
+        outcome: "ok",
+        cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
+      });
       return res.status(200).type("html").send(
         renderLoginPage({
           csrfToken,
@@ -845,6 +856,10 @@ function createV5FoundationApp(options) {
       // Credentials are never accepted on tenant hosts.
       return sendAuthError(req, res, 400, "Sign-in must continue on the BlessBoard home site.");
     }
+    authLog.logAuthEvent(req, "apex_login_post_started", {
+      outcome: "started",
+      cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
+    });
     const csrfToken = issueCsrfToken(env);
     const submitted = req.body && req.body[CSRF_FIELD];
     const rawTr = String((req.body && req.body.tr) || (req.query && req.query.tr) || "").trim();
@@ -855,6 +870,11 @@ function createV5FoundationApp(options) {
       transferHostname,
     };
     if (!validateCsrf(req, submitted, env)) {
+      authLog.logAuthEvent(req, "apex_login_csrf_rejected", {
+        outcome: "rejected",
+        failureCategory: "csrf",
+        cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
+      });
       setCsrfCookie(res, csrfToken, { secure: isProduction });
       return res
         .status(403)
@@ -922,6 +942,26 @@ function createV5FoundationApp(options) {
 
       if (!result.ok) {
         setCsrfCookie(res, csrfToken, { secure: isProduction });
+        const failureCategory =
+          result.status === "no_active_role"
+            ? "no_active_role"
+            : result.failureCategory ||
+              (result.status === "invalid_input" ? "invalid_input" : "invalid_credentials");
+        let event = "apex_login_password_rejected";
+        if (failureCategory === "account_not_found" || failureCategory === "invalid_input") {
+          event = "apex_login_account_not_found";
+        } else if (failureCategory === "account_inactive") {
+          event = "apex_login_account_inactive";
+        } else if (failureCategory === "no_active_role") {
+          event = "apex_login_roles_loaded";
+        } else if (failureCategory === "password_rejected") {
+          event = "apex_login_password_rejected";
+        }
+        authLog.logAuthEvent(req, event, {
+          outcome: "rejected",
+          failureCategory,
+          roleKeys: failureCategory === "no_active_role" ? [] : undefined,
+        });
         const message =
           result.status === "no_active_role"
             ? "Sign-in is not available for this account."
@@ -929,13 +969,28 @@ function createV5FoundationApp(options) {
         return res.status(401).type("html").send(renderLoginPage({ ...loginPageOpts, error: message }));
       }
 
+      authLog.logAuthEvent(req, "apex_login_roles_loaded", {
+        outcome: "ok",
+        roleKeys: result.roles,
+      });
       setV5SessionCookie(res, result.rawToken, { secure: isProduction, env });
       setCsrfCookie(res, csrfToken, { secure: isProduction });
+      authLog.logAuthEvent(req, "apex_login_session_created", {
+        outcome: "ok",
+        setCookieIssued: true,
+        roleKeys: result.roles,
+      });
 
       if (!pendingTransfer) {
         // Platform admins → /admin (or safe ?next=/admin…); others → /account.
         // Tenant transfer path below is unchanged. Query-only next (form posts preserve URL).
         const dest = resolveApexPostLoginPath(result.roles, req.query && req.query.next);
+        authLog.logAuthEvent(req, "apex_login_redirect", {
+          outcome: "ok",
+          redirectTo: dest,
+          setCookieIssued: true,
+          roleKeys: result.roles,
+        });
         return res.redirect(303, dest);
       }
 
@@ -970,6 +1025,12 @@ function createV5FoundationApp(options) {
         return sendAuthError(req, res, 400, "This sign-in link is invalid or has expired.");
       }
       res.setHeader("Referrer-Policy", "no-referrer");
+      authLog.logAuthEvent(req, "apex_login_redirect", {
+        outcome: "ok",
+        redirectTo: "/auth/callback",
+        setCookieIssued: true,
+        roleKeys: result.roles,
+      });
       return res.redirect(303, callbackUrl);
     } catch {
       setCsrfCookie(res, csrfToken, { secure: isProduction });

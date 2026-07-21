@@ -307,6 +307,19 @@
     <div class="bb-pa-dash__welcome" data-bb-dash-welcome="1">
       <p class="bb-pa-dash__eyebrow">Platform overview</p>
       <h1 class="bb-pa-dash__title">System Overview</h1>
+<%
+  var directoryWarningText =
+    typeof directoryWarning !== 'undefined' && directoryWarning
+      ? String(directoryWarning)
+      : '';
+%>
+      <% if (directoryWarningText) { %>
+      <p
+        class="bb-pa-hint"
+        role="status"
+        data-bb-pa-directory-warning="1"
+      ><%= directoryWarningText %></p>
+      <% } %>
       <p class="bb-pa-dash__lede">
         Welcome<% if (greetingName) { %>, <%= greetingName %><% } %>.
         Apex command center for BlessBoard V5.
