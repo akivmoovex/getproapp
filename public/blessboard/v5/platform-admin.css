@@ -832,6 +832,10 @@ body.bb-pa-drawer-open { overflow: hidden; }
   border-radius: 0.5rem;
   padding: 1.1rem 1.15rem;
 }
+.bb-pa-panel--danger {
+  border-color: #f0c2c2;
+  background: #fff8f8;
+}
 .bb-pa-panel__head {
   display: flex;
   flex-wrap: wrap;
@@ -1419,6 +1423,50 @@ body.bb-pa-drawer-open { overflow: hidden; }
   background: #fff;
   color: var(--bb-ink);
   border: 1px solid var(--bb-line, #d9e4e9);
+}
+.bb-pa-btn--danger {
+  background: #b42318;
+  color: #fff;
+}
+.bb-pa-btn--danger:disabled,
+.bb-pa-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bb-pa-maintenance {
+  display: grid;
+  gap: 1rem;
+}
+.bb-pa-stat-list {
+  margin: 0 0 1rem;
+  padding-left: 1.15rem;
+  color: var(--bb-ink);
+}
+.bb-pa-stat-list li {
+  margin: 0.25rem 0;
+}
+.bb-pa-pre {
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  overflow: auto;
+  max-height: 16rem;
+  background: #0f172a0a;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.35rem;
+  font-size: 0.82rem;
+}
+.bb-pa-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.95rem;
+}
+.bb-pa-banner--warn {
+  background: #fff7ed;
+  color: #9a5b00;
+  border: 1px solid #fdba74;
 }
 
 /* —— Platform Plans catalogue (Stitch 66) —— */

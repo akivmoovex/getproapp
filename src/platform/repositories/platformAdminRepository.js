@@ -326,7 +326,103 @@ async function countOrganizationDirectoryStats(client) {
              AND COALESCE(a.support_requested, false) = TRUE
              AND a.organization_id IS NULL
              AND a.application_status IN ('submitted', 'duplicate_review')
-        ) AS pending_network_support_requests
+        ) AS pending_network_support_requests,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.application_status IN ('submitted', 'duplicate_review')
+             AND a.created_at >= now() - interval '7 days'
+        ) AS new_registrations_7d,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.provisioning_status = 'provisioning_failed'
+        ) AS provisioning_failures,
+        (
+          SELECT COUNT(*)::int
+            FROM platform.organizations o2
+            INNER JOIN platform.organization_subscriptions os
+              ON os.organization_id = o2.id AND os.product_key = 'blessboard'
+            INNER JOIN platform.plans pl ON pl.id = os.plan_id AND pl.plan_key = 'free'
+           WHERE os.status = 'active'
+             AND (os.ends_at IS NULL OR os.ends_at > now())
+             AND NOT EXISTS (
+               SELECT 1 FROM blessboard.organization_growth_trial_offers oft
+                WHERE oft.organization_id = o2.id
+                  AND oft.is_exception = false
+                  AND oft.status IN ('accepted', 'active', 'expired', 'consumed')
+             )
+             AND NOT EXISTS (
+               SELECT 1 FROM blessboard.organization_growth_trial_offers oft2
+                WHERE oft2.organization_id = o2.id AND oft2.status = 'offered'
+             )
+        ) AS foundation_eligible_for_growth_trial,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.organization_growth_trial_offers oft
+           WHERE oft.status = 'offered'
+        ) AS growth_trial_offers_pending,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.organization_growth_trial_offers oft
+           WHERE oft.status = 'active'
+        ) AS foundation_origin_active_trials,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.organization_growth_trial_offers oft
+           WHERE oft.is_exception = false
+             AND oft.status IN ('accepted', 'active', 'expired', 'consumed')
+        ) AS foundation_trial_offers_consumed,
+        (
+          SELECT COUNT(*)::int
+            FROM platform.organization_subscriptions os
+            INNER JOIN platform.plans pl ON pl.id = os.plan_id
+           WHERE os.product_key = 'blessboard'
+             AND pl.plan_key = 'growth'
+             AND os.status = 'active'
+             AND (os.ends_at IS NULL OR os.ends_at > now())
+             AND (
+               os.billing_payment_status IN ('externally_paid', 'succeeded')
+               OR os.ends_at IS NULL
+             )
+        ) AS paid_growth_subscriptions,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.selected_plan = 'network'
+             AND a.organization_id IS NULL
+             AND a.follow_up_status = 'validation_pending'
+        ) AS network_validation_pending,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.selected_plan = 'network'
+             AND a.organization_id IS NULL
+             AND a.follow_up_status = 'validation_in_progress'
+        ) AS network_validation_in_progress,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.selected_plan = 'network'
+             AND a.organization_id IS NULL
+             AND a.follow_up_status = 'awaiting_customer'
+        ) AS network_awaiting_applicant,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.selected_plan = 'network'
+             AND a.organization_id IS NULL
+             AND a.follow_up_status = 'approved_for_provision'
+        ) AS network_approved_not_provisioned,
+        (
+          SELECT COUNT(*)::int
+            FROM blessboard.platform_church_registration_applications a
+           WHERE a.selected_plan = 'network'
+             AND a.organization_id IS NULL
+             AND a.follow_up_status IN ('validation_pending', 'contact_pending')
+             AND a.next_follow_up_at IS NOT NULL
+             AND a.next_follow_up_at < now()
+        ) AS network_first_contact_overdue
        FROM platform.organizations o
        LEFT JOIN blessboard.churches c
          ON c.organization_id = o.id`
@@ -341,6 +437,18 @@ async function countOrganizationDirectoryStats(client) {
     growthSubscriptionsInGrace: Number(row.growth_subscriptions_in_grace) || 0,
     registrationsRequiringReview: Number(row.registrations_requiring_review) || 0,
     pendingNetworkSupportRequests: Number(row.pending_network_support_requests) || 0,
+    newRegistrations7d: Number(row.new_registrations_7d) || 0,
+    provisioningFailures: Number(row.provisioning_failures) || 0,
+    foundationEligibleForGrowthTrial: Number(row.foundation_eligible_for_growth_trial) || 0,
+    growthTrialOffersPending: Number(row.growth_trial_offers_pending) || 0,
+    foundationOriginActiveTrials: Number(row.foundation_origin_active_trials) || 0,
+    foundationTrialOffersConsumed: Number(row.foundation_trial_offers_consumed) || 0,
+    paidGrowthSubscriptions: Number(row.paid_growth_subscriptions) || 0,
+    networkValidationPending: Number(row.network_validation_pending) || 0,
+    networkValidationInProgress: Number(row.network_validation_in_progress) || 0,
+    networkAwaitingApplicant: Number(row.network_awaiting_applicant) || 0,
+    networkApprovedNotProvisioned: Number(row.network_approved_not_provisioned) || 0,
+    networkFirstContactOverdue: Number(row.network_first_contact_overdue) || 0,
   };
 }
 
@@ -741,6 +849,8 @@ async function listSubscriptionsDirectoryPage(client, opts) {
         s.starts_at,
         s.ends_at,
         s.notes,
+        s.trial_source,
+        s.billing_payment_status,
         p.plan_key,
         p.display_name AS plan_display_name,
         p.status AS plan_status
@@ -762,9 +872,19 @@ async function listSubscriptionsDirectoryPage(client, opts) {
             AND s.status IN ('active', 'trialing', 'past_due')
           )
         )
+        AND ($8::text IS NULL OR s.trial_source = $8)
       ORDER BY o.organization_key ASC, s.starts_at DESC
       LIMIT $6 OFFSET $7`,
-    [productKey, keyPrefix, status, planKey, endingSoon, limit, offset]
+    [
+      productKey,
+      keyPrefix,
+      status,
+      planKey,
+      endingSoon,
+      limit,
+      offset,
+      opts.trialSource || null,
+    ]
   );
   return r.rows;
 }
@@ -804,8 +924,9 @@ async function countSubscriptionsDirectory(client, opts) {
             AND s.ends_at <= now() + interval '7 days'
             AND s.status IN ('active', 'trialing', 'past_due')
           )
-        )`,
-    [productKey, keyPrefix, status, planKey, endingSoon]
+        )
+        AND ($6::text IS NULL OR s.trial_source = $6)`,
+    [productKey, keyPrefix, status, planKey, endingSoon, opts.trialSource || null]
   );
   return r.rows[0] ? Number(r.rows[0].total) : 0;
 }

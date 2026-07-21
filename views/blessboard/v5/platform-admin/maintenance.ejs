@@ -1,0 +1,221 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var m = maintenance || null;
+  var counts = (m && m.counts) || {};
+  var preserved = (counts && counts.preserved) || {};
+  var preview = typeof previewResult !== 'undefined' ? previewResult : null;
+  var reset = typeof resetResult !== 'undefined' ? resetResult : null;
+  var phraseFull = confirmPhraseFull || 'CLEAR BLESSBOARD TEST DATA';
+  var actions = categoryActions || [];
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+%>
+
+<section
+  class="bb-pa-maintenance"
+  data-bb-pa-maintenance="1"
+  data-bb-pa-testing-only="1"
+  aria-label="Testing data maintenance"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin">Dashboard</a>
+    <span aria-hidden="true">/</span>
+    <span>Maintenance</span>
+  </nav>
+
+  <header class="bb-pa-page-head">
+    <div>
+      <p class="bb-pa-settings__eyebrow">Testing Environment Only</p>
+      <h1 class="bb-pa-page-head__title">Data maintenance</h1>
+      <p class="bb-pa-lede">
+        Controlled reset of user-created BlessBoard testing data.
+        These actions are destructive and available only when
+        <code class="bb-pa-key">DEPLOYMENT_ENV=testing</code>.
+      </p>
+    </div>
+  </header>
+
+  <% if (notice === 'preview_ready') { %>
+    <p class="bb-pa-banner bb-pa-banner--ok" role="status">Dry-run preview ready. Review counts, then confirm a reset.</p>
+  <% } else if (notice === 'reset_complete') { %>
+    <p class="bb-pa-banner bb-pa-banner--ok" role="status">Reset completed. Platform-admin access was preserved.</p>
+  <% } %>
+  <% if (error === 'csrf') { %>
+    <p class="bb-pa-banner bb-pa-banner--err" role="alert">Invalid or missing CSRF token. Reload and try again.</p>
+  <% } else if (error === 'confirm_invalid') { %>
+    <p class="bb-pa-banner bb-pa-banner--err" role="alert">Confirmation phrase or checkbox was invalid.</p>
+  <% } else if (error === 'preview_required' || error === 'preview_stale') { %>
+    <p class="bb-pa-banner bb-pa-banner--err" role="alert">Run a fresh dry-run preview before resetting.</p>
+  <% } else if (error === 'identity_blocked') { %>
+    <p class="bb-pa-banner bb-pa-banner--err" role="alert">Database identity gate blocked this action.</p>
+  <% } else if (error === 'busy') { %>
+    <p class="bb-pa-banner bb-pa-banner--err" role="alert">Another reset is in progress. Try again shortly.</p>
+  <% } else if (error) { %>
+    <p class="bb-pa-banner bb-pa-banner--err" role="alert">The maintenance action could not be completed.</p>
+  <% } %>
+
+  <div class="bb-pa-panel" data-bb-pa-maintenance-context="1">
+    <div class="bb-pa-panel__head">
+      <h2 class="bb-pa-section-title">Environment context</h2>
+      <span class="bb-pa-chip bb-pa-chip--warn">Destructive</span>
+    </div>
+    <dl class="bb-pa-dl bb-pa-dl--grid">
+      <div>
+        <dt>Runtime DEPLOYMENT_ENV</dt>
+        <dd><code class="bb-pa-key"><%= esc(m && m.runtimeDeploymentEnv) %></code></dd>
+      </div>
+      <div>
+        <dt>Database identity</dt>
+        <dd><code class="bb-pa-key"><%= esc(m && m.identityKey) %></code></dd>
+      </div>
+      <div>
+        <dt>Database environment</dt>
+        <dd><code class="bb-pa-key"><%= esc(m && m.environmentCode) %></code></dd>
+      </div>
+      <div>
+        <dt>Host fingerprint</dt>
+        <dd><code class="bb-pa-key"><%= esc(m && m.hostFingerprint) %></code></dd>
+      </div>
+    </dl>
+    <p class="bb-pa-hint" role="note">
+      Platform-admin accounts, password hashes, plans, migration history, and database identity are never deleted.
+      Tenant memberships for deleted organizations are removed; shared user identity rows may remain as orphans (reported, not auto-deleted).
+    </p>
+  </div>
+
+  <div class="bb-pa-panel" data-bb-pa-maintenance-counts="1">
+    <div class="bb-pa-panel__head">
+      <h2 class="bb-pa-section-title">Resettable category counts</h2>
+    </div>
+    <ul class="bb-pa-stat-list">
+      <li>Registration applications: <strong><%= Number(counts.registrations || 0) %></strong></li>
+      <li>Resettable organizations: <strong><%= Number(counts.organizations || 0) %></strong></li>
+      <li>Churches (non-preserved orgs): <strong><%= Number(counts.churches || 0) %></strong></li>
+      <li>Invitations: <strong><%= Number(counts.invitations || 0) %></strong></li>
+      <li>Tenant role assignments: <strong><%= Number(counts.tenant_role_assignments || 0) %></strong></li>
+      <li>Media assets: <strong><%= Number(counts.media_assets || 0) %></strong></li>
+      <li>Tenant domains: <strong><%= Number(counts.tenant_domains || 0) %></strong></li>
+      <li>Subscriptions (resettable orgs): <strong><%= Number(counts.subscriptions || 0) %></strong></li>
+      <li>Orphan tenant identities (reported only): <strong><%= Number((m && m.orphanTenantIdentities) || 0) %></strong></li>
+    </ul>
+    <h3 class="bb-pa-section-title">Preserved foundation</h3>
+    <ul class="bb-pa-stat-list">
+      <li>Platform-admin users: <strong><%= Number(preserved.platform_admin_users || 0) %></strong></li>
+      <li>Platform-admin roles: <strong><%= Number(preserved.platform_admin_roles || 0) %></strong></li>
+      <li>Active plans: <strong><%= Number(preserved.plans || 0) %></strong></li>
+      <li>Migration ledger rows: <strong><%= Number(preserved.schema_migrations_rows || 0) %></strong></li>
+      <li>Database identity rows: <strong><%= Number(preserved.database_identity_rows || 0) %></strong></li>
+    </ul>
+  </div>
+
+  <% if (preview && preview.ok) { %>
+    <div class="bb-pa-panel" data-bb-pa-maintenance-preview="1">
+      <div class="bb-pa-panel__head">
+        <h2 class="bb-pa-section-title">Dry-run preview</h2>
+        <span class="bb-pa-chip bb-pa-chip--ok">No mutation</span>
+      </div>
+      <p>Action: <code class="bb-pa-key"><%= esc(preview.action) %></code></p>
+      <p>Organizations that would be deleted: <strong><%= Number(preview.targetOrganizationCount || 0) %></strong></p>
+      <pre class="bb-pa-pre" data-bb-pa-preview-json="1"><%= esc(JSON.stringify(preview.wouldDelete || {}, null, 2)) %></pre>
+      <p class="bb-pa-hint">Preview expires at <%= esc(preview.expiresAt) %>. Re-run preview if expired.</p>
+    </div>
+  <% } %>
+
+  <% if (reset && reset.ok) { %>
+    <div class="bb-pa-panel" data-bb-pa-maintenance-result="1">
+      <div class="bb-pa-panel__head">
+        <h2 class="bb-pa-section-title">Last reset result</h2>
+      </div>
+      <p>Action: <code class="bb-pa-key"><%= esc(reset.action) %></code></p>
+      <pre class="bb-pa-pre"><%= esc(JSON.stringify(reset.deleted || {}, null, 2)) %></pre>
+      <% if (reset.fileCleanup && reset.fileCleanup.failed) { %>
+        <p class="bb-pa-banner bb-pa-banner--warn" role="status">
+          Partial file cleanup: <%= Number(reset.fileCleanup.failed) %> file(s) could not be removed.
+        </p>
+      <% } %>
+      <p>Orphan tenant identities remaining: <strong><%= Number(reset.orphanTenantIdentities || 0) %></strong></p>
+    </div>
+  <% } %>
+
+  <div class="bb-pa-panel" data-bb-pa-maintenance-actions="1">
+    <div class="bb-pa-panel__head">
+      <h2 class="bb-pa-section-title">1. Dry-run preview</h2>
+    </div>
+    <form method="post" action="/admin/maintenance/preview" class="bb-pa-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <label class="bb-pa-label" for="preview-action">Category</label>
+      <select class="bb-pa-input" id="preview-action" name="action" required>
+        <option value="clear_all">Clear all user-created testing data</option>
+        <option value="clear_registrations">Clear registration applications</option>
+        <option value="clear_organizations">Clear tenant organizations (non-admin)</option>
+        <option value="clear_invitations">Clear invitations</option>
+      </select>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--ghost" data-bb-pa-preview-submit="1">Run dry-run preview</button>
+    </form>
+  </div>
+
+  <div class="bb-pa-panel bb-pa-panel--danger" data-bb-pa-maintenance-reset="1">
+    <div class="bb-pa-panel__head">
+      <h2 class="bb-pa-section-title">2. Execute reset</h2>
+      <span class="bb-pa-chip bb-pa-chip--warn">Requires preview</span>
+    </div>
+    <form method="post" action="/admin/maintenance/reset" class="bb-pa-form" data-bb-pa-reset-form="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <input type="hidden" name="preview_token" value="<%= preview && preview.previewToken ? esc(preview.previewToken) : '' %>" />
+
+      <label class="bb-pa-label" for="reset-action">Action</label>
+      <select class="bb-pa-input" id="reset-action" name="action" required <%= preview && preview.ok ? '' : 'disabled' %>>
+        <% if (preview && preview.ok) { %>
+          <option value="<%= esc(preview.action) %>" selected><%= esc(preview.action) %></option>
+        <% } else { %>
+          <option value="">Run a preview first</option>
+        <% } %>
+      </select>
+
+      <label class="bb-pa-label" for="confirm-phrase">
+        <% if (preview && preview.action === 'clear_all') { %>
+          Type exactly: <code class="bb-pa-key"><%= esc(phraseFull) %></code>
+        <% } else if (preview && preview.ok) { %>
+          Type exactly the action key: <code class="bb-pa-key"><%= esc(preview.action) %></code>
+        <% } else { %>
+          Confirmation phrase
+        <% } %>
+      </label>
+      <input
+        class="bb-pa-input"
+        id="confirm-phrase"
+        name="confirm_phrase"
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        <%= preview && preview.ok ? 'required' : 'disabled' %>
+      />
+
+      <label class="bb-pa-check">
+        <input
+          type="checkbox"
+          name="confirm_destructive"
+          value="1"
+          <%= preview && preview.ok ? 'required' : 'disabled' %>
+        />
+        I understand organizations and tenant content will be permanently deleted.
+      </label>
+
+      <button
+        type="submit"
+        class="bb-pa-btn bb-pa-btn--danger"
+        data-bb-pa-reset-submit="1"
+        <%= preview && preview.ok ? '' : 'disabled' %>
+      >
+        Execute reset
+      </button>
+    </form>
+  </div>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

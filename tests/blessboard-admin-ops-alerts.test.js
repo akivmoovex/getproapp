@@ -31,7 +31,7 @@ const {
   assertNoSensitiveLeak,
 } = require("../src/platform/services/platformAdminOpsAlerts");
 const { recordAuditEvent } = require("../src/platform/services/auditEventService");
-const { addOneCalendarMonthUtc } = require("../src/platform/time/addOneCalendarMonth");
+const { addGrowthTrialDurationUtc } = require("../src/platform/time/addGrowthTrialDurationUtc");
 const { addCalendarDaysUtc } = require("../src/platform/time/addCalendarDaysUtc");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
@@ -429,7 +429,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
 
   it("unused growth trial window helper remains available for fixtures", () => {
     const start = new Date("2026-01-15T00:00:00.000Z");
-    const end = addOneCalendarMonthUtc(start);
+    const end = addGrowthTrialDurationUtc(start);
     assert.equal(end.toISOString(), "2026-02-15T00:00:00.000Z");
   });
 });

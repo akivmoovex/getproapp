@@ -565,9 +565,12 @@ async function assignOrganizationPlan(db, input) {
         const updated = await repo.updateSubscription(client, current.id, {
           planId: plan.id,
           status: input.status || current.status,
+          startsAt: input.startsAt || null,
           endsAt: input.endsAt,
           clearEndsAt: input.clearEndsAt === true,
           notes: input.notes,
+          setTrialSource: input.trialSource !== undefined,
+          trialSource: input.trialSource != null ? input.trialSource : null,
         });
         return { ok: true, status: STATUS.OK, subscription: updated, plan, changed: true };
       }
@@ -579,6 +582,7 @@ async function assignOrganizationPlan(db, input) {
         startsAt: input.startsAt,
         endsAt: input.endsAt,
         notes: input.notes,
+        trialSource: input.trialSource || null,
       });
       return { ok: true, status: STATUS.OK, subscription: created, plan, changed: false };
     });

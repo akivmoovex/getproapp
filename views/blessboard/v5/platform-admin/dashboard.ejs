@@ -9,6 +9,18 @@
   var inGrace = typeof growthSubscriptionsInGrace !== 'undefined' ? Number(growthSubscriptionsInGrace) || 0 : 0;
   var needsReview = typeof registrationsRequiringReview !== 'undefined' ? Number(registrationsRequiringReview) || 0 : 0;
   var networkPending = typeof pendingNetworkSupportRequests !== 'undefined' ? Number(pendingNetworkSupportRequests) || 0 : 0;
+  var newRegs = typeof newRegistrations7d !== 'undefined' ? Number(newRegistrations7d) || 0 : 0;
+  var provFails = typeof provisioningFailures !== 'undefined' ? Number(provisioningFailures) || 0 : 0;
+  var eligibleTrial = typeof foundationEligibleForGrowthTrial !== 'undefined' ? Number(foundationEligibleForGrowthTrial) || 0 : 0;
+  var offersPending = typeof growthTrialOffersPending !== 'undefined' ? Number(growthTrialOffersPending) || 0 : 0;
+  var foundationTrials = typeof foundationOriginActiveTrials !== 'undefined' ? Number(foundationOriginActiveTrials) || 0 : 0;
+  var trialsConsumed = typeof foundationTrialOffersConsumed !== 'undefined' ? Number(foundationTrialOffersConsumed) || 0 : 0;
+  var paidGrowth = typeof paidGrowthSubscriptions !== 'undefined' ? Number(paidGrowthSubscriptions) || 0 : 0;
+  var netValPending = typeof networkValidationPending !== 'undefined' ? Number(networkValidationPending) || 0 : 0;
+  var netValProgress = typeof networkValidationInProgress !== 'undefined' ? Number(networkValidationInProgress) || 0 : 0;
+  var netAwaiting = typeof networkAwaitingApplicant !== 'undefined' ? Number(networkAwaitingApplicant) || 0 : 0;
+  var netApproved = typeof networkApprovedNotProvisioned !== 'undefined' ? Number(networkApprovedNotProvisioned) || 0 : 0;
+  var netOverdue = typeof networkFirstContactOverdue !== 'undefined' ? Number(networkFirstContactOverdue) || 0 : 0;
   var alerts = typeof opsAlerts !== 'undefined' && Array.isArray(opsAlerts) ? opsAlerts : [];
   var alertsPage = typeof opsAlertsPage !== 'undefined' ? Number(opsAlertsPage) || 1 : 1;
   var alertsLimit = typeof opsAlertsLimit !== 'undefined' ? Number(opsAlertsLimit) || 20 : 20;
@@ -136,6 +148,150 @@
       value: String(networkPending),
       countAttr: 'pending-network-support',
       hint: 'Unlinked Network contact requests',
+      visibility: 'both'
+    },
+    {
+      key: 'new-registrations',
+      label: 'New registrations (7d)',
+      icon: 'fiber_new',
+      href: '/admin/registration-applications',
+      tone: 'accent',
+      available: true,
+      value: String(newRegs),
+      countAttr: 'new-registrations-7d',
+      hint: 'Applications submitted in the last 7 days',
+      visibility: 'both'
+    },
+    {
+      key: 'provisioning-failures',
+      label: 'Provisioning failures',
+      icon: 'error',
+      href: '/admin/registration-applications?provisioning_status=provisioning_failed',
+      tone: 'warn',
+      available: true,
+      value: String(provFails),
+      countAttr: 'provisioning-failures',
+      hint: 'Open these applications and retry or investigate',
+      visibility: 'both'
+    },
+    {
+      key: 'eligible-growth-trial',
+      label: 'Eligible for Growth trial',
+      icon: 'redeem',
+      href: '/admin/organizations?plan=free',
+      tone: 'ok',
+      available: true,
+      value: String(eligibleTrial),
+      countAttr: 'foundation-eligible-growth-trial',
+      hint: 'Foundation orgs with no consumed introductory trial',
+      visibility: 'both'
+    },
+    {
+      key: 'offers-pending',
+      label: 'Offers pending accept',
+      icon: 'mark_email_unread',
+      href: '/admin/organizations',
+      tone: 'warn',
+      available: true,
+      value: String(offersPending),
+      countAttr: 'growth-trial-offers-pending',
+      hint: 'Create or cancel offers from organization detail',
+      visibility: 'both'
+    },
+    {
+      key: 'foundation-origin-trials',
+      label: 'Foundation-origin trials',
+      icon: 'upgrade',
+      href: '/admin/subscriptions?status=trialing&plan=growth&trial_source=foundation_trial_offer',
+      tone: 'accent',
+      available: true,
+      value: String(foundationTrials),
+      countAttr: 'foundation-origin-active-trials',
+      hint: 'Active trials started from a Foundation offer',
+      visibility: 'both'
+    },
+    {
+      key: 'trials-consumed',
+      label: 'Intro trials consumed',
+      icon: 'history',
+      href: '/admin/organizations',
+      tone: '',
+      available: true,
+      value: String(trialsConsumed),
+      countAttr: 'foundation-trial-consumed',
+      hint: 'Organizations that used their introductory trial',
+      visibility: 'both'
+    },
+    {
+      key: 'paid-growth',
+      label: 'Paid Growth',
+      icon: 'paid',
+      href: '/admin/subscriptions?status=active&plan=growth',
+      tone: 'ok',
+      available: true,
+      value: String(paidGrowth),
+      countAttr: 'paid-growth',
+      hint: 'Active Growth with paid marker or open-ended window',
+      visibility: 'both'
+    },
+    {
+      key: 'network-validation-pending',
+      label: 'Network validation pending',
+      icon: 'pending_actions',
+      href: '/admin/registration-applications?selected_plan=network&follow_up_status=validation_pending',
+      tone: 'warn',
+      available: true,
+      value: String(netValPending),
+      countAttr: 'network-validation-pending',
+      hint: 'Assign an owner and make first contact',
+      visibility: 'both'
+    },
+    {
+      key: 'network-validation-progress',
+      label: 'Network validation in progress',
+      icon: 'manage_search',
+      href: '/admin/registration-applications?selected_plan=network&follow_up_status=validation_in_progress',
+      tone: 'accent',
+      available: true,
+      value: String(netValProgress),
+      countAttr: 'network-validation-in-progress',
+      hint: 'Complete the checklist before approval',
+      visibility: 'both'
+    },
+    {
+      key: 'network-awaiting',
+      label: 'Network awaiting applicant',
+      icon: 'hourglass_empty',
+      href: '/admin/registration-applications?selected_plan=network&follow_up_status=awaiting_customer',
+      tone: 'warn',
+      available: true,
+      value: String(netAwaiting),
+      countAttr: 'network-awaiting-applicant',
+      hint: 'Waiting on applicant information',
+      visibility: 'both'
+    },
+    {
+      key: 'network-approved',
+      label: 'Network approved (not provisioned)',
+      icon: 'how_to_reg',
+      href: '/admin/registration-applications?selected_plan=network&follow_up_status=approved_for_provision',
+      tone: 'ok',
+      available: true,
+      value: String(netApproved),
+      countAttr: 'network-approved-not-provisioned',
+      hint: 'Provision the organization, then activate Network separately',
+      visibility: 'both'
+    },
+    {
+      key: 'network-overdue',
+      label: 'Network contact overdue',
+      icon: 'schedule',
+      href: '/admin/registration-applications?selected_plan=network&overdue=true',
+      tone: 'warn',
+      available: true,
+      value: String(netOverdue),
+      countAttr: 'network-first-contact-overdue',
+      hint: 'Next follow-up date is in the past',
       visibility: 'both'
     }
   ];

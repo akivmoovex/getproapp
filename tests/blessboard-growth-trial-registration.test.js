@@ -29,7 +29,7 @@ const {
   PLAN_KEY_GROWTH,
   PLAN_KEY_FREE,
 } = require("../src/blessboard/services/provisionRegisteredBlessBoardChurch");
-const { addOneCalendarMonthUtc } = require("../src/platform/time/addOneCalendarMonth");
+const { addGrowthTrialDurationUtc } = require("../src/platform/time/addGrowthTrialDurationUtc");
 const {
   resolveOrganizationEntitlements,
   hasFeature,
@@ -155,7 +155,7 @@ describe("automatic Growth trial registration", () => {
     assert.equal(assignment.subscriptionStartsAt, fixed.toISOString());
     assert.equal(
       assignment.subscriptionEndsAt,
-      addOneCalendarMonthUtc(fixed).toISOString()
+      addGrowthTrialDurationUtc(fixed).toISOString()
     );
     assert.equal(assignment.subscriptionNotes, null);
     const free = buildSubscriptionAssignment(PLAN_KEY_FREE, fixed);
@@ -218,7 +218,7 @@ describe("automatic Growth trial registration", () => {
     assert.equal(sub.rows[0].notes, null);
     const starts = new Date(sub.rows[0].starts_at);
     const ends = new Date(sub.rows[0].ends_at);
-    assert.equal(ends.toISOString(), addOneCalendarMonthUtc(starts).toISOString());
+    assert.equal(ends.toISOString(), addGrowthTrialDurationUtc(starts).toISOString());
 
     const apps = await pool.query(
       `SELECT application_status, provisioning_status, selected_plan
@@ -258,7 +258,7 @@ describe("automatic Growth trial registration", () => {
     assert.equal(provisioned.records.subscriptionStartsAt, clock.toISOString());
     assert.equal(
       provisioned.records.subscriptionEndsAt,
-      addOneCalendarMonthUtc(clock).toISOString()
+      addGrowthTrialDurationUtc(clock).toISOString()
     );
 
     const clockSub = await pool.query(
@@ -274,7 +274,7 @@ describe("automatic Growth trial registration", () => {
     assert.equal(new Date(clockSub.rows[0].starts_at).toISOString(), clock.toISOString());
     assert.equal(
       new Date(clockSub.rows[0].ends_at).toISOString(),
-      addOneCalendarMonthUtc(clock).toISOString()
+      addGrowthTrialDurationUtc(clock).toISOString()
     );
   });
 
@@ -471,7 +471,7 @@ describe("automatic Growth trial registration", () => {
       consent_terms: true,
     });
     const clock = new Date();
-    const expectedEnd = addOneCalendarMonthUtc(clock);
+    const expectedEnd = addGrowthTrialDurationUtc(clock);
     const provisioned = await provisionRegisteredBlessBoardChurch(pool, {
       applicationId: appRow.id,
       administratorPassword: PASSWORD,

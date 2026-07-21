@@ -36,7 +36,7 @@
 
   <div class="bb-hq-panel" data-bb-hq-settings-readonly="1">
     <h2 class="bb-hq-panel__title">Organization status</h2>
-    <p class="bb-hq-lede">Read-only for church administrators. Plan and subscription changes stay with platform admin.</p>
+    <p class="bb-hq-lede">Read-only for church administrators. Plan and subscription changes stay with platform admin unless a Growth trial offer is available below.</p>
     <dl class="bb-hq-settings-readonly">
       <div><dt>Organization key</dt><dd><code><%= cat.organizationKey || '—' %></code></dd></div>
       <div><dt>Organization status</dt><dd><%= cat.organizationStatus || '—' %></dd></div>
@@ -45,6 +45,62 @@
       <div><dt>Canonical timezone</dt><dd><%= cat.canonicalTimezone %></dd></div>
       <% } %>
     </dl>
+  </div>
+
+  <%
+    var gt = typeof growthTrial !== 'undefined' ? growthTrial : null;
+    var gtState = gt && gt.state ? String(gt.state) : '';
+  %>
+  <% if (typeof trialAccepted !== 'undefined' && trialAccepted) { %>
+  <p class="bb-hq-ok" role="status">Growth trial activated. Your Growth features are available for 30 days from acceptance.</p>
+  <% } %>
+  <% if (error === 'trial_confirm_required' || (typeof reqQueryError !== 'undefined' && reqQueryError)) { %>
+  <% } %>
+  <div class="bb-hq-panel" data-bb-hq-growth-trial="1">
+    <h2 class="bb-hq-panel__title">Plan &amp; Growth trial</h2>
+    <% if (gtState === 'offered') { %>
+      <p class="bb-hq-lede">
+        Your organization is on <strong>Foundation</strong>. You have been offered a free
+        <strong>Growth trial for exactly 30 days</strong>. No payment is required to start.
+        After the trial (and any grace period), unpaid Growth returns to Foundation without deleting your data.
+      </p>
+      <% if (gt.growthBenefits && gt.growthBenefits.length) { %>
+      <ul class="bb-hq-list">
+        <% gt.growthBenefits.slice(0, 8).forEach(function (f) { %>
+          <li><%= f.featureKey %><% if (f.featureKind === 'limit' && f.limitValue != null) { %>: <%= f.limitValue %><% } %></li>
+        <% }); %>
+      </ul>
+      <% } %>
+      <p>
+        Projected start: <code><%= gt.previewStartsAt || '—' %></code><br />
+        Projected end: <code><%= gt.previewEndsAt || '—' %></code>
+        (exact times are set when you accept)
+      </p>
+      <form method="post" action="/hq/settings" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <input type="hidden" name="action" value="accept_growth_trial" />
+        <label class="bb-hq-check">
+          <input type="checkbox" name="confirm_accept_trial" value="1" required />
+          I understand this starts a one-time 30-day Growth trial for this organization.
+        </label>
+        <button type="submit" class="bb-hq-btn" data-bb-hq-accept-growth-trial="1">Accept Growth trial</button>
+      </form>
+    <% } else if (gtState === 'active') { %>
+      <p class="bb-hq-lede">
+        <span class="bb-hq-chip">Growth Trial</span>
+        Active until <code><%= (gt.offer && gt.offer.endsAt) || '—' %></code>
+        <% if (gt.remainingDays != null) { %> (<%= gt.remainingDays %> day(s) remaining)<% } %>.
+      </p>
+    <% } else if (gtState === 'eligible') { %>
+      <p class="bb-hq-lede">
+        You are on Foundation and may receive a one-time Growth trial offer from BlessBoard support.
+        Viewing this page does not start a trial.
+      </p>
+    <% } else if (gtState === 'consumed') { %>
+      <p class="bb-hq-lede">Your introductory Growth trial has already been used for this organization.</p>
+    <% } else { %>
+      <p class="bb-hq-lede">No Growth trial offer is available for this organization right now.</p>
+    <% } %>
   </div>
 
   <form method="post" action="/hq/settings" class="bb-hq-form bb-hq-panel" data-bb-hq-settings-form="1">

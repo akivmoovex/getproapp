@@ -32,7 +32,7 @@ const {
   ACTION,
 } = require("../src/platform/services/growthTrialExpiryService");
 const { addCalendarDaysUtc } = require("../src/platform/time/addCalendarDaysUtc");
-const { addOneCalendarMonthUtc } = require("../src/platform/time/addOneCalendarMonth");
+const { addGrowthTrialDurationUtc } = require("../src/platform/time/addGrowthTrialDurationUtc");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 
@@ -83,7 +83,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       subscriptionPlanKey: "growth",
       subscriptionStatus: "trialing",
       subscriptionStartsAt: startsAt.toISOString(),
-      subscriptionEndsAt: addOneCalendarMonthUtc(startsAt).toISOString(),
+      subscriptionEndsAt: addGrowthTrialDurationUtc(startsAt).toISOString(),
       subscriptionNotes: null,
     });
     assert.equal(prov.ok, true, prov.message || prov.status || prov.reason);
@@ -191,7 +191,7 @@ describe("V5 Growth trial expiry maintenance", () => {
     requireDb();
     const key = uniq("grace");
     const startsAt = new Date(Date.UTC(2026, 0, 1, 9, 0, 0));
-    const trialEnds = addOneCalendarMonthUtc(startsAt);
+    const trialEnds = addGrowthTrialDurationUtc(startsAt);
     const records = await provisionGrowthTrial(key, startsAt);
     const orgId = records.organizationId;
     const at = new Date(trialEnds.getTime() + 1000);
@@ -242,7 +242,7 @@ describe("V5 Growth trial expiry maintenance", () => {
     requireDb();
     const key = uniq("down");
     const startsAt = new Date(Date.UTC(2026, 2, 1, 9, 0, 0));
-    const trialEnds = addOneCalendarMonthUtc(startsAt);
+    const trialEnds = addGrowthTrialDurationUtc(startsAt);
     const records = await provisionGrowthTrial(key, startsAt);
     const orgId = records.organizationId;
 
@@ -356,7 +356,7 @@ describe("V5 Growth trial expiry maintenance", () => {
   it("batch limit is respected", async () => {
     requireDb();
     const startsAt = new Date(Date.UTC(2025, 0, 1, 9, 0, 0));
-    const trialEnds = addOneCalendarMonthUtc(startsAt);
+    const trialEnds = addGrowthTrialDurationUtc(startsAt);
     const at = new Date(trialEnds.getTime() + 1000);
     const keys = [uniq("b1"), uniq("b2"), uniq("b3")];
     for (const key of keys) {
@@ -378,7 +378,7 @@ describe("V5 Growth trial expiry maintenance", () => {
     requireDb();
     const key = uniq("race");
     const startsAt = new Date(Date.UTC(2025, 5, 1, 9, 0, 0));
-    const trialEnds = addOneCalendarMonthUtc(startsAt);
+    const trialEnds = addGrowthTrialDurationUtc(startsAt);
     const records = await provisionGrowthTrial(key, startsAt);
     const orgId = records.organizationId;
     const at = new Date(trialEnds.getTime() + 5000);

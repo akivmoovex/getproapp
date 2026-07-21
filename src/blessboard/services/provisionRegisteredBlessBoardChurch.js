@@ -131,7 +131,9 @@ const DEFAULT_DEPLOYMENT = "blessboard-org-v5";
 const HQ_BRANCH_KEY = "hq";
 
 const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
-const { addOneCalendarMonthUtc } = require("../../platform/time/addOneCalendarMonth");
+const {
+  growthTrialEndsAtIso,
+} = require("../../platform/time/addGrowthTrialDurationUtc");
 
 class OrchestratorError extends Error {
   /**
@@ -253,7 +255,7 @@ async function validateGrowthPlanCatalogue(client) {
 /**
  * Build subscription fields for platform tenant provision.
  * Foundation: active free, open-ended (no trial ends_at).
- * Growth: trialing growth, ends_at = starts_at + one calendar month (UTC).
+ * Growth: trialing growth, ends_at = starts_at + exactly 30 days (UTC).
  * Fallback to free on expiry is product policy for a later command — not stored in notes.
  *
  * @param {string} planKey
@@ -266,8 +268,9 @@ function buildSubscriptionAssignment(planKey, provisionedAt) {
       subscriptionPlanKey: PLAN_KEY_GROWTH,
       subscriptionStatus: "trialing",
       subscriptionStartsAt: startsAt,
-      subscriptionEndsAt: addOneCalendarMonthUtc(provisionedAt).toISOString(),
+      subscriptionEndsAt: growthTrialEndsAtIso(provisionedAt),
       subscriptionNotes: null,
+      subscriptionTrialSource: "direct_growth_registration",
     };
   }
   return {
@@ -276,6 +279,7 @@ function buildSubscriptionAssignment(planKey, provisionedAt) {
     subscriptionStartsAt: startsAt,
     subscriptionEndsAt: null,
     subscriptionNotes: null,
+    subscriptionTrialSource: null,
   };
 }
 

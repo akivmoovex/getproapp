@@ -72,10 +72,12 @@ function deriveWorkflowStatus(row) {
   if (follow && repo.WORKFLOW_STATUSES.includes(follow)) return follow;
   if (follow === "contacted") return "contacted";
   if (follow === "qualified") return "qualified";
+  if (follow === "approved_for_provision") return "approved_for_provision";
+  if (follow === "validation_pending" || follow === "validation_in_progress") return follow;
   if (follow === "awaiting_customer") return "awaiting_customer";
   if (follow === "contact_pending") return "contact_pending";
   if (Boolean(row.support_requested) || String(row.selected_plan || "") === NETWORK_PLAN_CODE) {
-    return follow || "contact_pending";
+    return follow || "validation_pending";
   }
   return follow || "new";
 }
@@ -104,9 +106,15 @@ function computeSupportPriority(row) {
   }
   if (
     Boolean(row.support_requested) ||
-    ["new", "call_pending", "contact_pending", "needs_help", "awaiting_customer"].includes(
-      follow
-    )
+    [
+      "new",
+      "call_pending",
+      "contact_pending",
+      "validation_pending",
+      "validation_in_progress",
+      "needs_help",
+      "awaiting_customer",
+    ].includes(follow)
   ) {
     return { rank: 2, key: "medium", label: "Medium" };
   }
@@ -135,6 +143,9 @@ function needsAttention(row) {
     follow === "new" ||
     follow === "call_pending" ||
     follow === "contact_pending" ||
+    follow === "validation_pending" ||
+    follow === "validation_in_progress" ||
+    follow === "approved_for_provision" ||
     follow === "needs_help" ||
     follow === "awaiting_customer"
   ) {

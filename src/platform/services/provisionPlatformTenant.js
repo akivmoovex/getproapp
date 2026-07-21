@@ -102,6 +102,10 @@ function validateAndNormalizeInput(input) {
     raw.subscriptionEndsAt != null ? String(raw.subscriptionEndsAt) : null;
   const subscriptionNotes =
     raw.subscriptionNotes != null ? String(raw.subscriptionNotes).slice(0, 1000) : null;
+  const subscriptionTrialSource =
+    raw.subscriptionTrialSource != null
+      ? String(raw.subscriptionTrialSource).trim().toLowerCase()
+      : null;
   const skipDefaultSubscription = Boolean(raw.skipDefaultSubscription);
 
   if (!organizationKey || !ORG_KEY_RE.test(organizationKey)) {
@@ -179,6 +183,7 @@ function validateAndNormalizeInput(input) {
       subscriptionStartsAt,
       subscriptionEndsAt,
       subscriptionNotes,
+      subscriptionTrialSource,
     },
   };
 }
@@ -346,6 +351,7 @@ async function provisionPlatformTenant(db, input, options) {
               startsAt: req.subscriptionStartsAt || undefined,
               endsAt: req.subscriptionEndsAt || undefined,
               notes: req.subscriptionNotes || undefined,
+              trialSource: req.subscriptionTrialSource || undefined,
             });
             if (!result.ok) {
               const err = new Error(String(result.reason || result.status || "plan_assign_failed"));

@@ -11,6 +11,7 @@ const FEATURE_COLS = `id, plan_id, feature_key, feature_kind, boolean_value, lim
   created_at, updated_at`;
 
 const SUB_COLS = `id, organization_id, product_key, plan_id, status, starts_at, ends_at, notes,
+  trial_source,
   billing_provider, billing_customer_ref, billing_subscription_ref, billing_payment_status,
   billing_current_period_end, billing_cancel_at_period_end, billing_synced_at,
   created_at, updated_at`;
@@ -58,6 +59,7 @@ function mapSubscription(row) {
     startsAt: row.starts_at,
     endsAt: row.ends_at || null,
     notes: row.notes || null,
+    trialSource: row.trial_source || null,
     billingProvider: row.billing_provider || null,
     billingCustomerRef: row.billing_customer_ref || null,
     billingSubscriptionRef: row.billing_subscription_ref || null,
@@ -180,8 +182,8 @@ async function findOpenStatusSubscription(client, organizationId, productKey) {
 async function insertSubscription(client, fields) {
   const { rows } = await client.query(
     `INSERT INTO platform.organization_subscriptions
-       (organization_id, product_key, plan_id, status, starts_at, ends_at, notes)
-     VALUES ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7)
+       (organization_id, product_key, plan_id, status, starts_at, ends_at, notes, trial_source)
+     VALUES ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7, $8)
      RETURNING ${SUB_COLS}`,
     [
       fields.organizationId,
@@ -191,6 +193,7 @@ async function insertSubscription(client, fields) {
       fields.startsAt || new Date().toISOString(),
       fields.endsAt || null,
       fields.notes || null,
+      fields.trialSource || null,
     ]
   );
   return mapSubscription(rows[0]);
@@ -201,12 +204,20 @@ async function updateSubscription(client, id, patch) {
     `UPDATE platform.organization_subscriptions
         SET plan_id = COALESCE($2, plan_id),
             status = COALESCE($3, status),
+            starts_at = CASE
+              WHEN $7::timestamptz IS NOT NULL THEN $7::timestamptz
+              ELSE starts_at
+            END,
             ends_at = CASE
               WHEN $4::boolean THEN NULL
               WHEN $5::timestamptz IS NOT NULL THEN $5::timestamptz
               ELSE ends_at
             END,
             notes = COALESCE($6, notes),
+            trial_source = CASE
+              WHEN $8::boolean THEN $9
+              ELSE trial_source
+            END,
             updated_at = now()
       WHERE id = $1
       RETURNING ${SUB_COLS}`,
@@ -217,6 +228,9 @@ async function updateSubscription(client, id, patch) {
       patch.clearEndsAt === true,
       patch.endsAt || null,
       patch.notes != null ? patch.notes : null,
+      patch.startsAt || null,
+      patch.setTrialSource === true,
+      patch.trialSource != null ? patch.trialSource : null,
     ]
   );
   return mapSubscription(rows[0] || null);

@@ -57,11 +57,16 @@ function mapRow(row) {
     subscriptionStatusLabel: timing.statusLabel,
     startsAt: timing.startsAt,
     endsAt: timing.endsAt,
+    remainingDays: timing.remainingDays,
     graceDeadline: timing.timingKind === "grace" ? timing.timingEndsAt : null,
     trialEndsAt: timing.timingKind === "trial" ? timing.timingEndsAt : null,
     timingKind: timing.timingKind,
     timingLabel: timing.timingLabel,
     entitlementState: timing.entitlementState,
+    trialSource: row.trial_source ? String(row.trial_source) : null,
+    billingPaymentStatus: row.billing_payment_status
+      ? String(row.billing_payment_status)
+      : null,
     notes: null, // never surface free-form notes in directory HTML
     planKey,
     planLabel: dbPlanDisplayLabel(planKey) || String(row.plan_display_name || planKey || ""),
@@ -150,6 +155,20 @@ function normalizeListInput(input) {
     }
   }
 
+  let trialSource = null;
+  const trialSourceRaw = String(raw.trial_source || raw.trialSource || "")
+    .trim()
+    .toLowerCase();
+  if (trialSourceRaw) {
+    if (
+      trialSourceRaw !== "direct_growth_registration" &&
+      trialSourceRaw !== "foundation_trial_offer"
+    ) {
+      return { ok: false, reason: "trial_source" };
+    }
+    trialSource = trialSourceRaw;
+  }
+
   return {
     ok: true,
     value: {
@@ -160,6 +179,7 @@ function normalizeListInput(input) {
       planKey,
       planFilter,
       endingSoon,
+      trialSource,
       productKey: PRODUCT_KEY_DEFAULT,
     },
   };
@@ -203,8 +223,17 @@ async function listPlatformSubscriptions(db, input) {
     };
   }
 
-  const { page, limit, keyPrefix, status, planKey, planFilter, endingSoon, productKey } =
-    normalized.value;
+  const {
+    page,
+    limit,
+    keyPrefix,
+    status,
+    planKey,
+    planFilter,
+    endingSoon,
+    trialSource,
+    productKey,
+  } = normalized.value;
   const offset = (page - 1) * limit;
   try {
     const listOpts = {
@@ -215,6 +244,7 @@ async function listPlatformSubscriptions(db, input) {
       productKey,
       planKey,
       endingSoon,
+      trialSource,
     };
     const [rows, total] = await Promise.all([
       repo.listSubscriptionsDirectoryPage(db, listOpts),
@@ -233,6 +263,7 @@ async function listPlatformSubscriptions(db, input) {
       statusFilter: status || "",
       planFilter: planFilter || "",
       endingSoon: Boolean(endingSoon),
+      trialSourceFilter: trialSource || "",
     };
   } catch {
     return {
@@ -247,6 +278,7 @@ async function listPlatformSubscriptions(db, input) {
       statusFilter: status || "",
       planFilter: planFilter || "",
       endingSoon: Boolean(endingSoon),
+      trialSourceFilter: trialSource || "",
     };
   }
 }

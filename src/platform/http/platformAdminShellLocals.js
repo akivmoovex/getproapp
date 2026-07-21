@@ -14,6 +14,7 @@ const {
   PLATFORM_ADMIN_MOBILE_TABS,
 } = require("./platformAdminNav");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
+const { isTestingDataMaintenanceAllowed } = require("../config/testingDataMaintenance");
 
 /**
  * @param {import('express').Request} req
@@ -34,7 +35,10 @@ function buildPlatformAdminShellLocals(req, res, opts) {
   setCsrfCookie(res, csrfToken, { secure: isProduction });
 
   const ctx = req.platformAdminContext || {};
-  const navItems = PLATFORM_ADMIN_NAV.filter((item) => item.nav && item.enabled);
+  const testingMaintenance = isTestingDataMaintenanceAllowed(env);
+  const navItems = PLATFORM_ADMIN_NAV.filter(
+    (item) => item.nav && item.enabled && (testingMaintenance || !item.testingOnly)
+  );
   const mobileTabs = PLATFORM_ADMIN_MOBILE_TABS.map((key) =>
     navItems.find((item) => item.key === key)
   ).filter(Boolean);
@@ -53,6 +57,7 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     domains: "Domains",
     deployments: "Deployments",
     settings: "Settings",
+    maintenance: "Maintenance",
     account: "Account",
   };
 
@@ -67,6 +72,7 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     deploymentCode,
     navItems,
     mobileTabs,
+    testingMaintenanceEnabled: testingMaintenance,
     ...(opts.extra || {}),
   };
 }

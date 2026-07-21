@@ -66,6 +66,13 @@ function presentSubscriptionTiming(input) {
     statusLabel = "Active";
   }
 
+  let remainingDays = null;
+  if (endsAt && endsAt.getTime() > at.getTime()) {
+    remainingDays = Math.ceil((endsAt.getTime() - at.getTime()) / (24 * 60 * 60 * 1000));
+  } else if (endsAt) {
+    remainingDays = 0;
+  }
+
   return {
     status,
     statusLabel,
@@ -77,6 +84,7 @@ function presentSubscriptionTiming(input) {
     timingEndsAt,
     endsAt: timingEndsAt,
     startsAt: startsAt ? startsAt.toISOString() : null,
+    remainingDays,
   };
 }
 

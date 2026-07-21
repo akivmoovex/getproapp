@@ -44,7 +44,7 @@ When the flag is on, the form additionally collects:
 Copy clarifies:
 
 - administrator portal available immediately for Foundation and Growth
-- Growth includes a one-month trial (`trialing`)
+- Growth includes a 30-day trial (`trialing`)
 - Network remains a support-contact request (no tenant)
 - public site stays unpublished
 - future public path preview `/c/<organization-key>`

@@ -70,6 +70,16 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
     enabled: true,
   },
   {
+    key: "maintenance",
+    label: "Maintenance",
+    href: "/admin/maintenance",
+    icon: "build",
+    nav: true,
+    // Visibility is filtered by DEPLOYMENT_ENV=testing in shell locals.
+    enabled: true,
+    testingOnly: true,
+  },
+  {
     key: "account",
     label: "Account",
     href: "/admin/account",

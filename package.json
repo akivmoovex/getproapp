@@ -86,6 +86,7 @@
     "test:blessboard:hq-shell": "node --test --test-concurrency=1 tests/blessboard-hq-shell.test.js",
     "test:blessboard:branch-list": "node --test --test-concurrency=1 tests/blessboard-branch-list.test.js",
     "test:blessboard:platform-admin-shell": "node --test --test-concurrency=1 tests/blessboard-platform-admin-shell.test.js",
+    "test:blessboard:testing-maintenance": "node --test --test-concurrency=1 tests/blessboard-testing-maintenance.test.js",
     "test:blessboard:admin-registration-ops": "node --test --test-concurrency=1 tests/blessboard-admin-registration-ops.test.js",
     "test:blessboard:admin-ops-alerts": "node --test --test-concurrency=1 tests/blessboard-admin-ops-alerts.test.js",
     "test:blessboard:admin-registration-applications": "node --test --test-concurrency=1 tests/blessboard-admin-registration-applications.test.js",
@@ -167,7 +168,8 @@
     "check:ejs-partials": "node scripts/check-ejs-partials.js",
     "test": "NODE_ENV=test node --test \"tests/**/*.test.js\"",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build -o storybook-static"
+    "build-storybook": "storybook build -o storybook-static",
+    "test:blessboard:growth-trial-offer": "node --test --test-concurrency=1 tests/blessboard-growth-trial-offer.test.js"
   },
   "keywords": [],
   "author": "",

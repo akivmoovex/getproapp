@@ -2,7 +2,7 @@
 
 /**
  * BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED — emergency switch for automatic
- * Foundation (public `foundation` → DB `free`) and Growth (one-month trial)
+ * Foundation (public `foundation` → DB `free`) and Growth (30-day trial)
  * self-service provisioning on /register-church.
  *
  * Default: **enabled** when unset. Explicit false/0/no/off disables and falls

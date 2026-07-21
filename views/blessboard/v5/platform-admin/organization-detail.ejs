@@ -601,6 +601,74 @@
     </div>
 
     <aside class="bb-pa-org-detail__aside" aria-label="Subscription and entitlements">
+      <%
+        var gt = typeof growthTrial !== 'undefined' ? growthTrial : null;
+        var gtState = gt && gt.state ? String(gt.state) : '';
+      %>
+      <section
+        class="bb-pa-panel bb-pa-org-detail-panel"
+        id="pa-org-growth-trial"
+        aria-labelledby="pa-org-growth-trial-heading"
+        data-bb-pa-growth-trial="1"
+      >
+        <div class="bb-pa-panel__head">
+          <h2 id="pa-org-growth-trial-heading" class="bb-pa-section-title">Foundation Growth trial</h2>
+        </div>
+        <dl class="bb-pa-dl bb-pa-dl--grid">
+          <div>
+            <dt>Eligibility</dt>
+            <dd><code class="bb-pa-key"><%= gtState || '—' %></code></dd>
+          </div>
+          <div>
+            <dt>Intro trial consumed</dt>
+            <dd><%= gt && gt.consumed ? 'Yes' : 'No' %></dd>
+          </div>
+          <% if (gt && gt.offer) { %>
+          <div>
+            <dt>Offer status</dt>
+            <dd><%= gt.offer.status %></dd>
+          </div>
+          <% if (gt.offer.startsAt) { %>
+          <div>
+            <dt>Trial start</dt>
+            <dd><code><%= gt.offer.startsAt %></code></dd>
+          </div>
+          <% } %>
+          <% if (gt.offer.endsAt) { %>
+          <div>
+            <dt>Trial end</dt>
+            <dd><code><%= gt.offer.endsAt %></code><% if (gt.remainingDays != null) { %> (<%= gt.remainingDays %>d)<% } %></dd>
+          </div>
+          <% } %>
+          <% } %>
+        </dl>
+        <p class="bb-pa-hint">Trials start only when an HQ administrator accepts the offer. Do not start trials from this screen.</p>
+        <% if (gtState === 'eligible' || gtState === 'exception_granted' || gtState === 'declined' || gtState === 'canceled') { %>
+        <form method="post" action="/admin/organizations/<%= encodeURIComponent(org.organizationKey) %>/growth-trial/offer" class="bb-pa-form">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <button type="submit" class="bb-pa-btn bb-pa-btn--ghost" data-bb-pa-growth-trial-offer="1">Create Growth trial offer</button>
+        </form>
+        <% } %>
+        <% if (gtState === 'offered') { %>
+        <form method="post" action="/admin/organizations/<%= encodeURIComponent(org.organizationKey) %>/growth-trial/cancel" class="bb-pa-form">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <button type="submit" class="bb-pa-btn bb-pa-btn--ghost" data-bb-pa-growth-trial-cancel="1">Cancel unaccepted offer</button>
+        </form>
+        <% } %>
+        <% if (gtState === 'consumed') { %>
+        <form method="post" action="/admin/organizations/<%= encodeURIComponent(org.organizationKey) %>/growth-trial/exception" class="bb-pa-form">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <label class="bb-pa-label" for="exception-reason">Exception reason (required)</label>
+          <textarea class="bb-pa-input" id="exception-reason" name="exception_reason" rows="2" required maxlength="1000"></textarea>
+          <label class="bb-pa-check">
+            <input type="checkbox" name="confirm_exception" value="1" required />
+            Grant a one-time audited eligibility exception
+          </label>
+          <button type="submit" class="bb-pa-btn bb-pa-btn--ghost" data-bb-pa-growth-trial-exception="1">Grant exception</button>
+        </form>
+        <% } %>
+      </section>
+
       <section
         class="bb-pa-panel bb-pa-org-detail-panel"
         id="pa-org-subscription"

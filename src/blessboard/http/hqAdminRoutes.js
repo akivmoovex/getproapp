@@ -30,6 +30,11 @@ const {
   STATUS: SETTINGS_STATUS,
 } = require("../services/blessBoardSettingsService");
 const {
+  getGrowthTrialOfferState,
+  acceptGrowthTrialOffer,
+  STATUS: GROWTH_TRIAL_STATUS,
+} = require("../../platform/services/growthTrialOfferService");
+const {
   createBlessBoardBranch,
   STATUS: CREATE_BRANCH_STATUS,
 } = require("../services/createBlessBoardBranch");
@@ -424,16 +429,23 @@ function createHqAdminRouter(deps) {
         status === 503 ? "Settings are temporarily unavailable." : "You do not have access to this site."
       );
     }
+    let growthTrial = null;
+    if (tenant.organization && tenant.organization.id) {
+      const trialState = await getGrowthTrialOfferState(getPool(), tenant.organization.id);
+      if (trialState.ok) growthTrial = trialState;
+    }
     const html = renderHqView(
       "hq/settings.ejs",
       await shellLocals(req, res, "settings", {
         settings: loaded.model.settings,
         catalogue: loaded.model.catalogue,
         primaryBranch: loaded.model.primaryBranch,
+        growthTrial,
         error: null,
         fieldError: null,
         saved: String((req.query && req.query.saved) || "") === "1",
         branchSaved: String((req.query && req.query.branch_saved) || "") === "1",
+        trialAccepted: String((req.query && req.query.trial_accepted) || "") === "1",
       })
     );
     return res.status(200).type("html").send(html);
@@ -451,6 +463,31 @@ function createHqAdminRouter(deps) {
     const body = req.body || {};
     const session = req.v5Session && req.v5Session.session;
     const action = String(body.action || "church").trim().toLowerCase();
+
+    if (action === "accept_growth_trial") {
+      if (!tenant.organization || !tenant.organization.id || !session || !session.userId) {
+        return sendControlled(req, res, 403, "You do not have access to this site.");
+      }
+      const confirmed = String(body.confirm_accept_trial || "") === "1";
+      if (!confirmed) {
+        return res.redirect(303, "/hq/settings?error=trial_confirm_required");
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const accepted = await acceptGrowthTrialOffer(getPool(), {
+        organizationId: tenant.organization.id,
+        actorUserId: session.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        env,
+      });
+      if (!accepted.ok) {
+        let error = "trial_accept_failed";
+        if (accepted.status === GROWTH_TRIAL_STATUS.NOT_ELIGIBLE) error = "trial_not_eligible";
+        else if (accepted.status === GROWTH_TRIAL_STATUS.CONFLICT) error = "trial_conflict";
+        else if (accepted.status === GROWTH_TRIAL_STATUS.FORBIDDEN) error = "trial_forbidden";
+        return res.redirect(303, `/hq/settings?error=${error}`);
+      }
+      return res.redirect(303, "/hq/settings?trial_accepted=1");
+    }
 
     if (action === "branch") {
       const pageModel = await getChurchSettingsPageModel(getPool(), tenant.church.id);

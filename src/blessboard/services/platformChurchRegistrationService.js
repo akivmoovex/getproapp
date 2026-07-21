@@ -37,7 +37,7 @@ const PLAN_OPS_MESSAGE =
  * Do not include application IDs or internal notes.
  */
 const NETWORK_SUPPORT_SUCCESS_MESSAGE =
-  "Thank you for your interest in the BlessBoard Network plan. Your registration has been received successfully. Our customer support team will contact you shortly to understand your organization's structure, branch requirements, onboarding needs, and pricing options.";
+  "Thank you for your interest in the BlessBoard Network plan. Your registration has been received successfully. Our customer support team will contact you shortly to validate your organization's requirements and guide you through the next steps.";
 
 /**
  * Registration acknowledgement email is not wired in V5 yet (no BlessBoard registration
@@ -252,7 +252,7 @@ async function submitPlatformChurchRegistration(pool, req, validationResult) {
   const supportFields = networkSupport
     ? {
         support_requested: true,
-        follow_up_status: "contact_pending",
+        follow_up_status: "validation_pending",
         selected_plan: NETWORK_PLAN_CODE,
       }
     : {};

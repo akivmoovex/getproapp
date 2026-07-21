@@ -207,7 +207,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     return `${DEFAULT_V5_COOKIE}=${session.rawToken}`;
   }
 
-  it("1. Network enquiry enters contact queue as contact_pending", async () => {
+  it("1. Network enquiry enters contact queue as validation_pending", async () => {
     if (skipIfNeeded()) return;
     const key = uniq("p26net");
     const phone = randomPhone();

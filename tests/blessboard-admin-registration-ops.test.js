@@ -42,7 +42,7 @@ const {
   mapDirectoryPlanFilterToDbPlanKey,
   DB_PLAN_KEYS,
 } = require("../src/blessboard/services/registrationPlanMapping");
-const { addOneCalendarMonthUtc } = require("../src/platform/time/addOneCalendarMonth");
+const { addGrowthTrialDurationUtc } = require("../src/platform/time/addGrowthTrialDurationUtc");
 const { addCalendarDaysUtc } = require("../src/platform/time/addCalendarDaysUtc");
 const platformAdminRepo = require("../src/platform/repositories/platformAdminRepository");
 
@@ -148,7 +148,7 @@ describe("platform-admin registration operations (Prompt 11)", () => {
       // Growth trial org
       const growthKey = uniq("opsgrowth");
       const trialStart = new Date();
-      const trialEnd = addOneCalendarMonthUtc(trialStart);
+      const trialEnd = addGrowthTrialDurationUtc(trialStart);
       const growthProv = await provisionPlatformTenant(pool, {
         organizationKey: growthKey,
         displayName: `Growth Trial ${growthKey}`,

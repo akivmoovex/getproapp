@@ -131,6 +131,23 @@ const {
 const { revokeV5Session } = require("../session/revokeV5Session");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 const {
+  createGrowthTrialOffer,
+  cancelGrowthTrialOffer,
+  grantGrowthTrialException,
+  getGrowthTrialOfferState,
+  STATUS: GROWTH_TRIAL_OFFER_STATUS,
+} = require("../services/growthTrialOfferService");
+const { isTestingDataMaintenanceAllowed } = require("../config/testingDataMaintenance");
+const {
+  loadMaintenancePageModel,
+  previewTestingDataReset,
+  executeTestingDataReset,
+  FULL_RESET_CONFIRM_PHRASE,
+  CATEGORY_ACTIONS,
+  STATUS: MAINT_STATUS,
+} = require("../services/testingDataResetService");
+const { parseSessionSecret } = require("../config/v5EnvValidation");
+const {
   ORGANIZATION_RESERVED_SLUGS,
   BRANCH_HOST_RESERVED_SLUGS,
 } = require("../../church/platformProvisioningValidation");
@@ -328,6 +345,18 @@ function createPlatformAdminRouter(deps) {
         growthSubscriptionsInGrace: stats.growthSubscriptionsInGrace || 0,
         registrationsRequiringReview: stats.registrationsRequiringReview || 0,
         pendingNetworkSupportRequests: stats.pendingNetworkSupportRequests || 0,
+        newRegistrations7d: stats.newRegistrations7d || 0,
+        provisioningFailures: stats.provisioningFailures || 0,
+        foundationEligibleForGrowthTrial: stats.foundationEligibleForGrowthTrial || 0,
+        growthTrialOffersPending: stats.growthTrialOffersPending || 0,
+        foundationOriginActiveTrials: stats.foundationOriginActiveTrials || 0,
+        foundationTrialOffersConsumed: stats.foundationTrialOffersConsumed || 0,
+        paidGrowthSubscriptions: stats.paidGrowthSubscriptions || 0,
+        networkValidationPending: stats.networkValidationPending || 0,
+        networkValidationInProgress: stats.networkValidationInProgress || 0,
+        networkAwaitingApplicant: stats.networkAwaitingApplicant || 0,
+        networkApprovedNotProvisioned: stats.networkApprovedNotProvisioned || 0,
+        networkFirstContactOverdue: stats.networkFirstContactOverdue || 0,
         opsAlerts: alertsResult.alerts || [],
         opsAlertsPage: alertsResult.page || 1,
         opsAlertsLimit: alertsResult.limit || OPS_ALERTS_DEFAULT_LIMIT,
@@ -784,6 +813,7 @@ function createPlatformAdminRouter(deps) {
       status: req.query.status,
       plan: req.query.plan,
       ending_soon: req.query.ending_soon,
+      trial_source: req.query.trial_source,
     });
     if (!list.ok && list.status === SUBSCRIPTIONS_STATUS.LOOKUP_ERROR) {
       return sendControlled(req, res, 503, "Subscription directory is temporarily unavailable.");
@@ -804,6 +834,7 @@ function createPlatformAdminRouter(deps) {
         statusFilter: list.statusFilter || "",
         planFilter: list.planFilter || "",
         endingSoon: Boolean(list.endingSoon),
+        trialSourceFilter: list.trialSourceFilter || "",
         defaultLimit: SUB_DEFAULT_LIMIT,
         maxLimit: SUB_MAX_LIMIT,
         allowedLimits: SUB_ALLOWED_LIMITS,
@@ -1085,6 +1116,19 @@ function createPlatformAdminRouter(deps) {
         registrationApplicationId = null;
         onboardingSummary = null;
       }
+      let growthTrial = null;
+      try {
+        const organizationId = await resolveOrganizationIdByKey(
+          getPool(),
+          detail.organization.organizationKey
+        );
+        if (organizationId) {
+          const trialState = await getGrowthTrialOfferState(getPool(), organizationId);
+          if (trialState.ok) growthTrial = trialState;
+        }
+      } catch {
+        growthTrial = null;
+      }
       const html = renderPlatformAdminView(
         "platform-admin/organization-detail.ejs",
         shellLocals(req, res, "organizations", {
@@ -1100,6 +1144,7 @@ function createPlatformAdminRouter(deps) {
           onboardingSummary,
           supportContacts,
           platformAdmins,
+          growthTrial,
           followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
           onboardingStatuses: ONBOARDING_STATUSES,
           notice: flash.notice,
@@ -1112,6 +1157,14 @@ function createPlatformAdminRouter(deps) {
 
   function orgDetailPath(organizationKey) {
     return `/admin/organizations/${encodeURIComponent(String(organizationKey || "").trim().toLowerCase())}`;
+  }
+
+  async function resolveOrganizationIdByKey(pool, organizationKey) {
+    const r = await pool.query(
+      `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
+      [organizationKey]
+    );
+    return r.rows[0] ? String(r.rows[0].id) : null;
   }
 
   router.post(
@@ -1286,6 +1339,103 @@ function createPlatformAdminRouter(deps) {
   );
 
   router.post(
+    "/admin/organizations/:organizationKey/growth-trial/offer",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-growth-trial`);
+      }
+      const organizationId = await resolveOrganizationIdByKey(getPool(), organizationKey);
+      if (!organizationId) {
+        return res.redirect(303, `${detailPath}?error=not_found#pa-org-growth-trial`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await createGrowthTrialOffer(getPool(), {
+        organizationId,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        return res.redirect(303, `${detailPath}?error=growth_trial_offer_failed#pa-org-growth-trial`);
+      }
+      return res.redirect(303, `${detailPath}?notice=growth_trial_offered#pa-org-growth-trial`);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/growth-trial/cancel",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-growth-trial`);
+      }
+      const organizationId = await resolveOrganizationIdByKey(getPool(), organizationKey);
+      if (!organizationId) {
+        return res.redirect(303, `${detailPath}?error=not_found#pa-org-growth-trial`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await cancelGrowthTrialOffer(getPool(), {
+        organizationId,
+        actorUserId: req.platformAdminContext.userId,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        return res.redirect(303, `${detailPath}?error=growth_trial_cancel_failed#pa-org-growth-trial`);
+      }
+      return res.redirect(303, `${detailPath}?notice=growth_trial_canceled#pa-org-growth-trial`);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/growth-trial/exception",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-growth-trial`);
+      }
+      const confirmed = String((req.body && req.body.confirm_exception) || "") === "1";
+      if (!confirmed) {
+        return res.redirect(303, `${detailPath}?error=confirm_required#pa-org-growth-trial`);
+      }
+      const organizationId = await resolveOrganizationIdByKey(getPool(), organizationKey);
+      if (!organizationId) {
+        return res.redirect(303, `${detailPath}?error=not_found#pa-org-growth-trial`);
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await grantGrowthTrialException(getPool(), {
+        organizationId,
+        actorUserId: req.platformAdminContext.userId,
+        reason: req.body && req.body.exception_reason,
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+      });
+      if (!result.ok) {
+        const error =
+          result.reason === "exception_reason_required" ? "reason_required" : "growth_trial_exception_failed";
+        return res.redirect(303, `${detailPath}?error=${error}#pa-org-growth-trial`);
+      }
+      return res.redirect(303, `${detailPath}?notice=growth_trial_exception#pa-org-growth-trial`);
+    }
+  );
+
+  router.post(
     "/admin/organizations/:organizationKey/plan",
     requireApex,
     requirePlatformAdmin,
@@ -1416,6 +1566,168 @@ function createPlatformAdminRouter(deps) {
         303,
         `/admin/organizations/${encodeURIComponent(organizationKey)}?notice=override_saved#pa-org-overrides`
       );
+    }
+  );
+
+  function rejectMaintenanceUnlessTesting(req, res) {
+    if (!isTestingDataMaintenanceAllowed(env)) {
+      return sendControlled(req, res, 404, "This page could not be found.");
+    }
+    return null;
+  }
+
+  router.get("/admin/maintenance", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
+    const blocked = rejectMaintenanceUnlessTesting(req, res);
+    if (blocked) return blocked;
+
+    const model = await loadMaintenancePageModel(getPool(), { env });
+    if (!model.ok) {
+      if (model.status === MAINT_STATUS.FORBIDDEN || model.status === MAINT_STATUS.IDENTITY_BLOCKED) {
+        return sendControlled(req, res, 404, "This page could not be found.");
+      }
+      return sendControlled(req, res, 503, "Maintenance tools are temporarily unavailable.");
+    }
+
+    const flash = readFlash(req);
+    const html = renderPlatformAdminView(
+      "platform-admin/maintenance.ejs",
+      shellLocals(req, res, "maintenance", {
+        pageTitle: "Maintenance",
+        maintenance: model,
+        confirmPhraseFull: FULL_RESET_CONFIRM_PHRASE,
+        categoryActions: CATEGORY_ACTIONS,
+        notice: flash.notice,
+        error: flash.error,
+        previewJson: null,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post(
+    "/admin/maintenance/preview",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const blocked = rejectMaintenanceUnlessTesting(req, res);
+      if (blocked) return blocked;
+
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, "/admin/maintenance?error=csrf");
+      }
+
+      const secret = parseSessionSecret(env);
+      if (!secret.ok) {
+        return res.redirect(303, "/admin/maintenance?error=unavailable");
+      }
+      const sessionSecret = String(env.SESSION_SECRET || "").trim();
+
+      const action = String((req.body && req.body.action) || "clear_all").trim();
+      const preview = await previewTestingDataReset(getPool(), {
+        env,
+        actorUserId: req.platformAdminContext.userId,
+        action,
+        sessionSecret,
+      });
+      if (!preview.ok) {
+        return res.redirect(303, "/admin/maintenance?error=preview_failed");
+      }
+
+      const model = await loadMaintenancePageModel(getPool(), { env });
+      if (!model.ok) {
+        return sendControlled(req, res, 503, "Maintenance tools are temporarily unavailable.");
+      }
+
+      const html = renderPlatformAdminView(
+        "platform-admin/maintenance.ejs",
+        shellLocals(req, res, "maintenance", {
+          pageTitle: "Maintenance",
+          maintenance: model,
+          confirmPhraseFull: FULL_RESET_CONFIRM_PHRASE,
+          categoryActions: CATEGORY_ACTIONS,
+          notice: "preview_ready",
+          error: null,
+          previewResult: preview,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/admin/maintenance/reset",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      // Hard gate before any mutation / DB work beyond auth already done.
+      if (!isTestingDataMaintenanceAllowed(env)) {
+        return sendControlled(req, res, 404, "This page could not be found.");
+      }
+
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, "/admin/maintenance?error=csrf");
+      }
+
+      const secret = parseSessionSecret(env);
+      if (!secret.ok) {
+        return res.redirect(303, "/admin/maintenance?error=unavailable");
+      }
+      const sessionSecret = String(env.SESSION_SECRET || "").trim();
+
+      const deployment = getPlatformDeploymentCode(env);
+      const action = String((req.body && req.body.action) || "").trim();
+      const confirmPhrase = String((req.body && req.body.confirm_phrase) || "");
+      const confirmChecked = String((req.body && req.body.confirm_destructive) || "") === "1";
+      const previewToken = String((req.body && req.body.preview_token) || "");
+      const session =
+        req.v5Session && req.v5Session.authenticated && req.v5Session.session
+          ? req.v5Session.session
+          : null;
+
+      const result = await executeTestingDataReset(getPool(), {
+        env,
+        actorUserId: req.platformAdminContext.userId,
+        action,
+        confirmPhrase,
+        confirmChecked,
+        previewToken,
+        sessionSecret,
+        deploymentCode: deployment.ok ? deployment.code : "blessboard-org-v5",
+        keepSessionId: session && session.id ? session.id : null,
+        dryRun: false,
+      });
+
+      if (!result.ok) {
+        let error = "reset_failed";
+        if (result.status === MAINT_STATUS.INVALID_INPUT) error = "confirm_invalid";
+        else if (result.status === MAINT_STATUS.PREVIEW_REQUIRED) error = "preview_required";
+        else if (result.status === MAINT_STATUS.PREVIEW_STALE) error = "preview_stale";
+        else if (result.status === MAINT_STATUS.IDENTITY_BLOCKED) error = "identity_blocked";
+        else if (result.status === MAINT_STATUS.LOCK_BUSY) error = "busy";
+        else if (result.status === MAINT_STATUS.FORBIDDEN) error = "forbidden";
+        return res.redirect(303, `/admin/maintenance?error=${error}`);
+      }
+
+      const model = await loadMaintenancePageModel(getPool(), { env });
+      const html = renderPlatformAdminView(
+        "platform-admin/maintenance.ejs",
+        shellLocals(req, res, "maintenance", {
+          pageTitle: "Maintenance",
+          maintenance: model.ok ? model : null,
+          confirmPhraseFull: FULL_RESET_CONFIRM_PHRASE,
+          categoryActions: CATEGORY_ACTIONS,
+          notice: "reset_complete",
+          error: null,
+          resetResult: result,
+          previewResult: null,
+        })
+      );
+      return res.status(200).type("html").send(html);
     }
   );
 

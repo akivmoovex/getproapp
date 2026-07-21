@@ -252,7 +252,7 @@ describe("Network support-contact registration", () => {
     assert.equal(row.provisioning_status, "not_started");
     assert.equal(row.organization_id, null);
     assert.equal(row.support_requested, true);
-    assert.equal(row.follow_up_status, "contact_pending");
+    assert.equal(row.follow_up_status, "validation_pending");
 
     const orgCount = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations o
@@ -290,7 +290,13 @@ describe("Network support-contact registration", () => {
       .set("Host", "blessboard.org");
     assert.equal(success.status, 200);
     assert.match(success.text, /data-bb-register-network-support="1"/);
-    assert.ok(success.text.includes(NETWORK_SUPPORT_SUCCESS_MESSAGE));
+    const msg = NETWORK_SUPPORT_SUCCESS_MESSAGE;
+    assert.ok(
+      success.text.includes(msg) ||
+        success.text.includes(msg.replace(/'/g, "&#39;")) ||
+        success.text.includes(msg.replace(/'/g, "&#x27;")),
+      "success page should show the Network support message"
+    );
     assert.doesNotMatch(success.text, new RegExp(String(row.id).replace(/-/g, "\\-")));
     assert.doesNotMatch(success.text, /review_notes/i);
     // Escaped applicant content must not execute as HTML on success (form not shown).

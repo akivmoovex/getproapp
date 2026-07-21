@@ -16,6 +16,7 @@ const REQUIRED_PLATFORM_TABLES = Object.freeze([
   "deployments",
   "domains",
   "organization_entitlements",
+  
   "organization_products",
   "organization_subscriptions",
   "organizations",
@@ -66,6 +67,7 @@ const APPROVED_PRODUCT_TABLES = Object.freeze({
     "ministries",
     "ministry_memberships",
     "organization_onboarding",
+    "organization_growth_trial_offers",
     "organization_support_contacts",
     "page_sections",
     "platform_church_registration_applications",
