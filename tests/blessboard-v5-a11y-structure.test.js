@@ -453,10 +453,13 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
 
   it("HQ branch registry keeps searchable list without fabricated metrics", () => {
     const page = read("views/blessboard/v5/hq/branches.ejs");
+    const createPage = read("views/blessboard/v5/hq/branch-new.ejs");
     const selector = read("views/blessboard/v5/partials/branch-selector.ejs");
     const css = read("public/blessboard/v5/hq-admin.css");
     const hqShell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
     assert.match(hqShell, /hq-admin.css\?v=54/);
+    assert.match(hqShell, /aria-label="Open navigation"/);
+    assert.match(hqShell, /data-bb-nav="mobile-toggle"/);
     assert.match(page, /data-bb-hq-branches="1"/);
     assert.match(page, /data-bb-stitch-branches="52-hq-branch-registry"/);
     assert.match(page, /data-bb-branch-filter="1"/);
@@ -472,7 +475,10 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(page, /branch\.branchType/);
     assert.match(page, /branch\.isPrimary/);
     assert.doesNotMatch(page, /memberCount|lastReport|Needs Attention|Quick Export|New Branch Registry/i);
-    assert.doesNotMatch(page, /\/hq\/branches\/new/);
+    assert.match(page, /href="\/hq\/branches\/new"/);
+    assert.match(page, /data-bb-add-branch/);
+    assert.match(createPage, /include\('\.\.\/partials\/hq-shell-start'\)/);
+    assert.match(createPage, /data-bb-hq-branch-new="1"/);
     assert.match(selector, /data-bb-component="branch-selector"/);
     assert.match(selector, /\/hq\/branches\//);
     assert.doesNotMatch(selector, /branch\.id\b/);
@@ -622,7 +628,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const dash = read("views/blessboard/v5/platform-admin/dashboard.ejs");
     const css = read("public/blessboard/v5/platform-admin.css");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(dash, /data-bb-pa-dashboard="1"/);
     assert.match(dash, /data-bb-stitch-dashboard="62-platform-admin-dashboard"/);
     assert.match(dash, /System Overview/);
@@ -663,7 +669,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const page = read("views/blessboard/v5/platform-admin/organizations.ejs");
     const css = read("public/blessboard/v5/platform-admin.css");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(page, /data-bb-pa-organizations="1"/);
     assert.match(page, /data-bb-stitch-organizations="63-platform-church-organizations"/);
     assert.match(page, /Organization Governance/);
@@ -704,7 +710,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const page = read("views/blessboard/v5/platform-admin/plans.ejs");
     const css = read("public/blessboard/v5/platform-admin.css");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(page, /data-bb-pa-plans="1"/);
     assert.match(page, /data-bb-pa-plans-directory="1"/);
     assert.match(page, /data-bb-stitch-plans="66-platform-plans-limits"/);
@@ -747,7 +753,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const page = read("views/blessboard/v5/platform-admin/subscriptions.ejs");
     const css = read("public/blessboard/v5/platform-admin.css");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(page, /data-bb-pa-subscriptions="1"/);
     assert.match(page, /data-bb-stitch-subscriptions="66-platform-plans-limits"/);
     assert.match(page, /Subscription configuration/);
@@ -782,7 +788,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const page = read("views/blessboard/v5/platform-admin/organization-detail.ejs");
     const css = read("public/blessboard/v5/platform-admin.css");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(page, /data-bb-pa-organization-detail="1"/);
     assert.match(page, /data-bb-stitch-organization-detail="65-platform-branch-tenants"/);
     assert.match(page, /data-bb-pa-org-summary="1"/);
@@ -833,7 +839,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const page = read("views/blessboard/v5/platform-admin/settings.ejs");
     const css = read("public/blessboard/v5/platform-admin.css");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(page, /aria-label="Breadcrumb"/);
     assert.match(page, /href="\/admin"/);
     assert.match(page, /data-bb-pa-settings="1"/);
@@ -867,7 +873,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const repo = read("src/platform/repositories/platformAdminRepository.js");
     const service = read("src/platform/services/listPlatformDeployments.js");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(page, /data-bb-pa-deployments="1"/);
     assert.match(page, /data-bb-pa-deployments-directory="1"/);
     assert.match(page, /data-bb-stitch-deployments="68-platform-support-monitoring"/);
@@ -920,7 +926,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const service = read("src/platform/services/getPlatformDeploymentDetail.js");
     const routes = read("src/platform/http/platformAdminRoutes.js");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(page, /data-bb-pa-deployment-detail="1"/);
     assert.match(page, /aria-label="Breadcrumb"/);
     assert.match(page, /data-bb-stitch-deployment-detail="68-platform-support-monitoring"/);
@@ -959,7 +965,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const css = read("public/blessboard/v5/platform-admin.css");
     const nav = read("src/platform/http/platformAdminNav.js");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(nav, /href:\s*"\/admin\/domains"/);
     assert.match(page, /data-bb-pa-domains="1"/);
     assert.match(page, /data-bb-pa-domains-directory="1"/);
@@ -995,7 +1001,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     const page = read("views/blessboard/v5/platform-admin/domain-detail.ejs");
     const css = read("public/blessboard/v5/platform-admin.css");
     const paShell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(paShell, /platform-admin.css\?v=29/);
+    assert.match(paShell, /platform-admin.css\?v=30/);
     assert.match(page, /data-bb-pa-domain-detail="1"/);
     assert.match(page, /aria-label="Breadcrumb"/);
     assert.match(page, /data-bb-stitch-domain-detail="67-platform-settings"/);

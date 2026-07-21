@@ -435,7 +435,20 @@ describe("blessboard hq shell", () => {
     assert.doesNotMatch(list.text, /[0-9a-f]{8}-[0-9a-f]{4}-/i);
     assert.doesNotMatch(list.text, /Campus Old/);
     assert.doesNotMatch(list.text, /1,?240|3,?500|42,?850|Pastor|Rev\.|Quick Export|New Branch Registry|Needs Attention|Pending Growth|Total Members/i);
-    assert.doesNotMatch(list.text, /href="\/hq\/branches\/new"/i);
+    assert.match(list.text, /href="\/hq\/branches\/new"/i);
+    assert.match(list.text, /data-bb-add-branch/);
+
+    const createPage = await request(app)
+      .get("/hq/branches/new")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(createPage.status, 200);
+    assert.match(createPage.text, /data-bb-shell="hq-admin"/);
+    assert.match(createPage.text, /data-bb-hq-branch-new="1"/);
+    assert.match(createPage.text, /aria-label="Open navigation"/);
+    assert.match(createPage.text, /aria-controls="bb-hq-drawer"/);
+    assert.match(createPage.text, /data-bb-nav="mobile-toggle"/);
+    assert.doesNotMatch(createPage.text, /data-bb-nav="mobile-tabs"/);
 
     const open = await request(app)
       .get("/hq/branches/campus-north")

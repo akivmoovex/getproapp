@@ -393,6 +393,7 @@ body.bb-pa-drawer-open { overflow: hidden; }
   flex: 1;
   max-width: 72rem;
   width: 100%;
+  min-width: 0;
   margin: 0 auto;
   padding: 1.25rem 1.15rem 2rem;
   scroll-margin-top: 5rem;
@@ -1419,6 +1420,9 @@ body.bb-pa-drawer-open { overflow: hidden; }
 
 .bb-pa-table-wrap {
   overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
+  contain: paint;
   background: #fff;
   border: 1px solid var(--bb-line, #d9e4e9);
   border-radius: 0.5rem;
@@ -1742,6 +1746,9 @@ body.bb-pa-drawer-open { overflow: hidden; }
 .bb-pa-plans-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  min-width: 0;
+  contain: paint;
   border: 1px solid var(--bb-line, #d9e4e9);
   border-radius: 0.85rem;
   background: #fff;
@@ -1877,13 +1884,16 @@ body.bb-pa-drawer-open { overflow: hidden; }
 }
 @media (min-width: 700px) {
   .bb-pa-subs-filter {
-    grid-template-columns: minmax(0, 1.4fr) minmax(8rem, 11rem) minmax(5rem, 7rem) auto;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 11rem) minmax(0, 7rem) auto;
     align-items: end;
   }
 }
 .bb-pa-subs-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  min-width: 0;
+  contain: paint;
   border: 1px solid var(--bb-line, #d9e4e9);
   border-radius: 0.85rem;
   background: #fff;

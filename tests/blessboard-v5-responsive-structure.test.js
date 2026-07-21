@@ -16,30 +16,30 @@ describe("blessboard v5 responsive structure — shell clearances", () => {
     {
       name: "member",
       css: "public/blessboard/v5/member-portal.css",
-      main: /\.bb-mp-main\s*\{[^}]*padding:[^}]*6\.5rem/,
+      main: /\.bb-mp-main\s*\{[^}]*padding:[^}]*2rem/,
       scroll: /\.bb-mp-main\s*\{[^}]*scroll-margin-top:\s*5rem/,
-      drawer: /\.bb-mp-drawer__panel\s*\{[^}]*min\(20rem,\s*88vw\)/,
+      drawer: /\.bb-mp-drawer__panel\s*\{[^}]*min\(18\.5rem,\s*calc\(100vw\s*-\s*3rem\)\)/,
     },
     {
       name: "branch",
       css: "public/blessboard/v5/branch-admin.css",
-      main: /\.bb-ba-main\s*\{[^}]*padding:[^}]*5\.5rem/,
+      main: /\.bb-ba-main\s*\{[^}]*padding:[^}]*2rem/,
       scroll: /\.bb-ba-main\s*\{[^}]*scroll-margin-top:\s*5rem/,
-      drawer: /\.bb-ba-drawer__panel\s*\{[^}]*min\(20rem,\s*88vw\)/,
+      drawer: /\.bb-ba-drawer__panel\s*\{[^}]*min\(18\.5rem,\s*calc\(100vw\s*-\s*3rem\)\)/,
     },
     {
       name: "hq",
       css: "public/blessboard/v5/hq-admin.css",
-      main: /\.bb-hq-main\s*\{[^}]*padding:[^}]*5\.5rem/,
+      main: /\.bb-hq-main\s*\{[^}]*padding:[^}]*2rem/,
       scroll: /\.bb-hq-main\s*\{[^}]*scroll-margin-top:\s*5rem/,
-      drawer: /\.bb-hq-drawer__panel\s*\{[^}]*min\(20rem,\s*88vw\)/,
+      drawer: /\.bb-hq-drawer__panel\s*\{[^}]*min\(18\.5rem,\s*calc\(100vw\s*-\s*3rem\)\)/,
     },
     {
       name: "platform",
       css: "public/blessboard/v5/platform-admin.css",
-      main: /\.bb-pa-main\s*\{[^}]*padding:[^}]*5\.5rem/,
+      main: /\.bb-pa-main\s*\{[^}]*padding:[^}]*2rem/,
       scroll: /\.bb-pa-main\s*\{[^}]*scroll-margin-top:\s*5rem/,
-      drawer: /\.bb-pa-drawer__panel\s*\{[^}]*min\(20rem,\s*88vw\)/,
+      drawer: /\.bb-pa-drawer__panel\s*\{[^}]*min\(18\.5rem,\s*calc\(100vw\s*-\s*3rem\)\)/,
     },
   ];
 
