@@ -133,6 +133,14 @@ const {
 } = require("../session/v5SessionCookie");
 const { revokeV5Session } = require("../session/revokeV5Session");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
+const { getApexOrigin } = require("../../blessboard/http/tenantLoginHelpers");
+const {
+  inviteBlessBoardStaff,
+  listPendingInvitations,
+} = require("../../blessboard/services/inviteBlessBoardStaff");
+
+const INVITE_ONCE_COOKIE = "bb_pa_invite_once";
+const INVITE_ONCE_MAX_AGE_MS = 5 * 60 * 1000;
 const {
   createGrowthTrialOffer,
   cancelGrowthTrialOffer,
@@ -222,6 +230,75 @@ function readFlash(req) {
   const notice = String((req.query && req.query.notice) || "").trim() || null;
   const error = String((req.query && req.query.error) || "").trim() || null;
   return { notice, error };
+}
+
+/**
+ * One-time copy invite link for platform admin (never put raw token in URL query).
+ * @param {import('express').Response} res
+ * @param {{ organizationKey: string, inviteLink: string }} payload
+ * @param {{ secure?: boolean }} opts
+ */
+function setInviteOnceCookie(res, payload, opts) {
+  const organizationKey = String((payload && payload.organizationKey) || "")
+    .trim()
+    .toLowerCase();
+  const inviteLink = String((payload && payload.inviteLink) || "").trim();
+  if (!organizationKey || !inviteLink || !inviteLink.startsWith("http")) return;
+  const value = Buffer.from(
+    JSON.stringify({ organizationKey, inviteLink }),
+    "utf8"
+  ).toString("base64url");
+  res.cookie(INVITE_ONCE_COOKIE, value, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: Boolean(opts && opts.secure),
+    path: "/admin",
+    maxAge: INVITE_ONCE_MAX_AGE_MS,
+  });
+}
+
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {string} organizationKey
+ */
+function consumeInviteOnceCookie(req, res, organizationKey) {
+  const raw = req.cookies && req.cookies[INVITE_ONCE_COOKIE];
+  res.clearCookie(INVITE_ONCE_COOKIE, { path: "/admin" });
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(String(raw), "base64url").toString("utf8"));
+    const key = String((parsed && parsed.organizationKey) || "")
+      .trim()
+      .toLowerCase();
+    const inviteLink = String((parsed && parsed.inviteLink) || "").trim();
+    if (key !== String(organizationKey || "").trim().toLowerCase()) return null;
+    if (!inviteLink || !inviteLink.startsWith("http")) return null;
+    return inviteLink;
+  } catch {
+    return null;
+  }
+}
+
+function buildAdministratorInviteLink(rawToken, env) {
+  const token = String(rawToken || "").trim();
+  if (!token) return null;
+  return `${getApexOrigin(env)}/invite/accept?token=${encodeURIComponent(token)}`;
+}
+
+function mapApproveError(result) {
+  if (!result || result.ok) return null;
+  if (result.status === REG_APP_STATUS.INVALID_INPUT) {
+    if (result.message === "administrator_email_required") return "administrator_email_required";
+    return "invalid";
+  }
+  if (result.status === REG_APP_STATUS.NOT_FOUND) return "not_found";
+  if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) {
+    if (result.message === "network_validation_required") return "network_validation_required";
+    return "not_eligible";
+  }
+  if (result.status === REG_APP_STATUS.PROVISION_FAILED) return "provision_failed";
+  return "approve_failed";
 }
 
 /**
@@ -798,31 +875,45 @@ function createPlatformAdminRouter(deps) {
       const result = await approveAndProvisionRegistrationApplication(getPool(), {
         applicationId: id,
         actorUserId: req.platformAdminContext.userId,
-        administratorPassword: req.body && req.body.administrator_password,
-        administratorPasswordConfirm: req.body && req.body.administrator_password_confirm,
         organizationKey: req.body && req.body.organization_key,
         deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
         dataEnvironment: "testing",
       });
       if (!result.ok) {
-        let error = "approve_failed";
-        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
-        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
-        else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) {
-          error =
-            result.message === "network_validation_required"
-              ? "network_validation_required"
-              : "not_eligible";
-        } else if (result.status === REG_APP_STATUS.PROVISION_FAILED) error = "provision_failed";
-        return res.redirect(303, `${detailPath}?error=${error}`);
+        return res.redirect(303, `${detailPath}?error=${mapApproveError(result)}`);
       }
       if (result.alreadyProvisioned) {
+        const key = result.organizationKey || (result.records && result.records.organizationKey);
+        if (key) {
+          return res.redirect(
+            303,
+            `/admin/organizations/${encodeURIComponent(key)}?notice=already_provisioned`
+          );
+        }
         return res.redirect(303, `${detailPath}?notice=already_provisioned`);
       }
-      if (result.networkOrganizationCreated) {
-        return res.redirect(303, `${detailPath}?notice=network_organization_created`);
+      const orgKey = result.organizationKey || (result.records && result.records.organizationKey);
+      if (!orgKey) {
+        return res.redirect(303, `${detailPath}?notice=approved`);
       }
-      return res.redirect(303, `${detailPath}?notice=approved`);
+      const inviteLink = buildAdministratorInviteLink(
+        result.invitation && result.invitation.rawToken,
+        env
+      );
+      if (inviteLink) {
+        setInviteOnceCookie(
+          res,
+          { organizationKey: orgKey, inviteLink },
+          { secure: isProduction }
+        );
+      }
+      const notice = result.networkOrganizationCreated
+        ? "network_organization_created"
+        : "organization_provisioned";
+      return res.redirect(
+        303,
+        `/admin/organizations/${encodeURIComponent(orgKey)}?notice=${notice}#pa-org-invitation`
+      );
     }
   );
 
@@ -872,22 +963,49 @@ function createPlatformAdminRouter(deps) {
       const result = await approveAndProvisionRegistrationApplication(getPool(), {
         applicationId: id,
         actorUserId: req.platformAdminContext.userId,
-        administratorPassword: req.body && req.body.administrator_password,
-        administratorPasswordConfirm: req.body && req.body.administrator_password_confirm,
         organizationKey: req.body && req.body.organization_key,
         deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
         dataEnvironment: "testing",
       });
       if (!result.ok) {
         let error = "retry_failed";
-        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
-        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
+        if (result.status === REG_APP_STATUS.INVALID_INPUT) {
+          error =
+            result.message === "administrator_email_required"
+              ? "administrator_email_required"
+              : "invalid";
+        } else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
         else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) error = "not_eligible";
         else if (result.status === REG_APP_STATUS.PROVISION_FAILED) error = "provision_failed";
         return res.redirect(303, `${detailPath}?error=${error}`);
       }
       if (result.alreadyProvisioned) {
+        const key = result.organizationKey || (result.records && result.records.organizationKey);
+        if (key) {
+          return res.redirect(
+            303,
+            `/admin/organizations/${encodeURIComponent(key)}?notice=already_provisioned`
+          );
+        }
         return res.redirect(303, `${detailPath}?notice=already_provisioned`);
+      }
+      const orgKey = result.organizationKey || (result.records && result.records.organizationKey);
+      if (orgKey) {
+        const inviteLink = buildAdministratorInviteLink(
+          result.invitation && result.invitation.rawToken,
+          env
+        );
+        if (inviteLink) {
+          setInviteOnceCookie(
+            res,
+            { organizationKey: orgKey, inviteLink },
+            { secure: isProduction }
+          );
+        }
+        return res.redirect(
+          303,
+          `/admin/organizations/${encodeURIComponent(orgKey)}?notice=retry_succeeded#pa-org-invitation`
+        );
       }
       return res.redirect(303, `${detailPath}?notice=retry_succeeded`);
     }
@@ -1207,6 +1325,39 @@ function createPlatformAdminRouter(deps) {
         return sendControlled(req, res, 503, "Entitlements lookup is temporarily unavailable.");
       }
       const flash = readFlash(req);
+      const inviteOnceLink = consumeInviteOnceCookie(
+        req,
+        res,
+        detail.organization.organizationKey
+      );
+      let pendingInvitations = [];
+      let churchScope = null;
+      try {
+        const scopeRow = await getPool().query(
+          `SELECT o.id AS organization_id, c.id AS church_id
+             FROM platform.organizations o
+             JOIN blessboard.churches c ON c.organization_id = o.id
+            WHERE o.organization_key = $1
+            ORDER BY c.id ASC
+            LIMIT 1`,
+          [detail.organization.organizationKey]
+        );
+        if (scopeRow.rows[0]) {
+          churchScope = {
+            organizationId: String(scopeRow.rows[0].organization_id),
+            churchId: String(scopeRow.rows[0].church_id),
+          };
+          const pending = await listPendingInvitations(getPool(), {
+            organizationId: churchScope.organizationId,
+            churchId: churchScope.churchId,
+            limit: 20,
+          });
+          if (pending.ok) pendingInvitations = pending.invitations || [];
+        }
+      } catch {
+        pendingInvitations = [];
+        churchScope = null;
+      }
       let registrationApplicationId = null;
       let onboardingSummary = null;
       let supportContacts = [];
@@ -1282,6 +1433,9 @@ function createPlatformAdminRouter(deps) {
           growthTrial,
           followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
           onboardingStatuses: ONBOARDING_STATUSES,
+          inviteOnceLink: inviteOnceLink || null,
+          pendingInvitations,
+          churchScope,
           notice: flash.notice,
           error: flash.error,
         })
@@ -1293,6 +1447,63 @@ function createPlatformAdminRouter(deps) {
   function orgDetailPath(organizationKey) {
     return `/admin/organizations/${encodeURIComponent(String(organizationKey || "").trim().toLowerCase())}`;
   }
+
+  router.post(
+    "/admin/organizations/:organizationKey/invitations/resend",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-invitation`);
+      }
+      const email = String((req.body && req.body.email) || "").trim();
+      const displayName = String((req.body && req.body.display_name) || "").trim() || email;
+      const roleKey = String((req.body && req.body.role_key) || "church_hq_admin")
+        .trim()
+        .toLowerCase();
+      const scopeRow = await getPool().query(
+        `SELECT o.id AS organization_id, c.id AS church_id
+           FROM platform.organizations o
+           JOIN blessboard.churches c ON c.organization_id = o.id
+          WHERE o.organization_key = $1
+          ORDER BY c.id ASC
+          LIMIT 1`,
+        [organizationKey]
+      );
+      if (!scopeRow.rows[0]) {
+        return res.redirect(303, `${detailPath}?error=not_found#pa-org-invitation`);
+      }
+      const result = await inviteBlessBoardStaff(getPool(), {
+        organizationId: String(scopeRow.rows[0].organization_id),
+        churchId: String(scopeRow.rows[0].church_id),
+        actorUserId: req.platformAdminContext.userId,
+        email,
+        displayName,
+        roleKey,
+      });
+      if (!result.ok) {
+        let error = "invite_failed";
+        if (result.reason === "already_assigned") error = "already_assigned";
+        else if (result.status === "limit_exceeded") error = "limit_exceeded";
+        return res.redirect(303, `${detailPath}?error=${error}#pa-org-invitation`);
+      }
+      const inviteLink = buildAdministratorInviteLink(result.rawToken, env);
+      if (inviteLink) {
+        setInviteOnceCookie(
+          res,
+          { organizationKey, inviteLink },
+          { secure: isProduction }
+        );
+      }
+      return res.redirect(303, `${detailPath}?notice=invitation_resent#pa-org-invitation`);
+    }
+  );
 
   async function resolveOrganizationIdByKey(pool, organizationKey) {
     const r = await pool.query(

@@ -314,8 +314,6 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     const first = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: fixtures.reviewAppId,
       actorUserId: users.platform.id,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: "blessboard-org-v5",
       dataEnvironment: "testing",
@@ -327,8 +325,6 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     const second = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: fixtures.reviewAppId,
       actorUserId: users.platform.id,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: "blessboard-org-v5",
       dataEnvironment: "testing",
@@ -408,8 +404,6 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     const retry = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.id,
       actorUserId: users.platform.id,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: "blessboard-org-v5",
       dataEnvironment: "testing",
@@ -421,8 +415,6 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     const again = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.id,
       actorUserId: users.platform.id,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: "blessboard-org-v5",
       dataEnvironment: "testing",

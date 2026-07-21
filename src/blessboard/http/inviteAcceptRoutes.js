@@ -1,8 +1,9 @@
 "use strict";
 
 /**
- * Public invitation acceptance (set password / confirm) — tenant hosts.
- * No user enumeration: invalid tokens get a generic failure.
+ * Public invitation acceptance (set password / confirm).
+ * Available on apex and tenant hosts so platform-admin invitation links work
+ * before a custom organization domain exists.
  */
 
 const express = require("express");
@@ -33,17 +34,9 @@ function renderView(relativePath, data) {
  */
 function createInviteAcceptRouter(deps) {
   const getPool = deps.getPool;
-  const isApexHost = deps.isApexHost;
   const env = deps.env || process.env;
   const isProduction = String(env.NODE_ENV || "") === "production";
   const router = express.Router();
-
-  function rejectApex(req, res, next) {
-    if (isApexHost(req)) {
-      return res.status(404).type("text").send("Not found");
-    }
-    return next();
-  }
 
   function ensureCsrf(res) {
     const token = issueCsrfToken(env);
@@ -51,7 +44,9 @@ function createInviteAcceptRouter(deps) {
     return token;
   }
 
-  router.get("/invite/accept", rejectApex, async (req, res) => {
+  // Accept on apex and tenant hosts so platform-admin invitation links work
+  // when the organization has no custom domain yet.
+  router.get("/invite/accept", async (req, res) => {
     const token = String((req.query && req.query.token) || "");
     const csrfToken = ensureCsrf(res);
     const peeked = await getInvitationForAccept(getPool(), token);
@@ -66,7 +61,7 @@ function createInviteAcceptRouter(deps) {
     return res.status(peeked.ok ? 200 : 400).type("html").send(html);
   });
 
-  router.post("/invite/accept", rejectApex, async (req, res) => {
+  router.post("/invite/accept", async (req, res) => {
     const submitted = req.body && req.body[CSRF_FIELD];
     if (!validateCsrf(req, submitted, env)) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");

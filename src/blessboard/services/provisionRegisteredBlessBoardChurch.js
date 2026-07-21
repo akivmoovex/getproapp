@@ -2,12 +2,18 @@
 
 /**
  * Shared Foundation registration provisioning orchestrator.
- * Does not wire HTTP routes. Caller supplies pool + applicationId + password.
+ * Does not wire HTTP routes. Caller supplies pool + applicationId.
+ *
+ * Modes:
+ * - Self-service / password: administratorPassword required; user activated immediately.
+ * - Platform-admin invitation: options.administratorViaInvitation — no password; creates
+ *   an invited identity + one church_hq_admin invitation (password set on /invite/accept).
  */
 
 const bcrypt = require("bcryptjs");
 const appRepo = require("../repositories/platformChurchRegistrationRepository");
 const authRepo = require("../repositories/blessBoardAuthRepository");
+const inviteRepo = require("../repositories/userInvitationRepository");
 const publicContentRepo = require("../repositories/publicContentRepository");
 const entitlementRepo = require("../../platform/repositories/entitlementRepository");
 const {
@@ -24,6 +30,7 @@ const { logRegistrationTrace } = require("./registrationTraceLog");
 const { normalizeOrganizationKey } = require("./organizationKey");
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const { PUBLIC_PAGE_KEYS, PAGE_KEY_TITLES } = require("./publicContentConstants");
+const { generateInviteToken, INVITE_TTL_MS } = require("./inviteBlessBoardStaff");
 const { BCRYPT_ROUNDS, normalizeEmail } = userCreate;
 const STATUS = Object.freeze({
   OK: "ok",
@@ -492,7 +499,12 @@ async function loadProvisionedRecords(client, application) {
 /**
  * @param {{ connect?: Function, query?: Function }} db
  * @param {object} input
- * @param {{ allowRetry?: boolean, manageTransaction?: boolean }} [options]
+ * @param {{
+ *   allowRetry?: boolean,
+ *   manageTransaction?: boolean,
+ *   networkOrganizationShell?: boolean,
+ *   administratorViaInvitation?: boolean,
+ * }} [options]
  */
 async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
   const applicationId = String((input && input.applicationId) || "").trim();
@@ -507,29 +519,43 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
     input && input.actorContext && typeof input.actorContext === "object" ? input.actorContext : {};
   const allowRetry = Boolean(options && options.allowRetry);
   const networkOrganizationShell = Boolean(options && options.networkOrganizationShell);
+  const administratorViaInvitation = Boolean(options && options.administratorViaInvitation);
   const dataEnvironment = String(actorContext.dataEnvironment || "testing")
     .trim()
     .toLowerCase();
   const deploymentCode = String(actorContext.deploymentCode || DEFAULT_DEPLOYMENT)
     .trim()
     .toLowerCase();
+  const invitingActorUserId =
+    actorContext.actorUserId != null ? String(actorContext.actorUserId).trim() : "";
 
   if (!UUID_RE.test(applicationId)) {
     return fail(STATUS.INVALID_INPUT, "invalid_input:applicationId");
   }
-  if (!administratorPassword || administratorPassword.length < 10 || administratorPassword.length > 200) {
+  if (administratorViaInvitation) {
+    if (!UUID_RE.test(invitingActorUserId)) {
+      return fail(STATUS.INVALID_INPUT, "invalid_input:actorUserId");
+    }
+  } else if (
+    !administratorPassword ||
+    administratorPassword.length < 10 ||
+    administratorPassword.length > 200
+  ) {
     return fail(STATUS.INVALID_INPUT, "invalid_input:administratorPassword");
   }
   if (!db || (typeof db.connect !== "function" && typeof db.query !== "function")) {
     return fail(STATUS.DATABASE_UNAVAILABLE, "database_unavailable");
   }
 
-  // Password boundary: validate + hash before any transaction.
-  let passwordHash;
-  try {
-    passwordHash = await bcrypt.hash(administratorPassword, BCRYPT_ROUNDS);
-  } catch {
-    return fail(STATUS.INTERNAL_ERROR, "password_hash_failed");
+  // Password boundary (self-service only): validate + hash before any transaction.
+  // Invitation mode never hashes or stores a platform-entered password.
+  let passwordHash = null;
+  if (!administratorViaInvitation) {
+    try {
+      passwordHash = await bcrypt.hash(administratorPassword, BCRYPT_ROUNDS);
+    } catch {
+      return fail(STATUS.INTERNAL_ERROR, "password_hash_failed");
+    }
   }
 
   let failureCode = STATUS.PROVISIONING_FAILED;
@@ -612,8 +638,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       await assertOrganizationKeyAvailable(client, organizationKey);
 
       const emailNormalized = normalizeEmail(application.contact_email);
+      if (!emailNormalized) {
+        throw new OrchestratorError(STATUS.INVALID_INPUT, "invalid_input:administratorEmail");
+      }
       const existingUser = await authRepo.findUserByEmail(client, emailNormalized);
-      if (existingUser) {
+      if (existingUser && !administratorViaInvitation) {
         duplicateReview = true;
         throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
       }
@@ -694,49 +723,125 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         );
       }
 
-      const user = await userCreate.createBlessBoardUser(
-        client,
-        {
-          email: application.contact_email,
-          displayName: adminDisplayName,
-          passwordHash,
-        },
-        { manageTransaction: false }
-      );
-      if (!user.ok) {
-        throw new OrchestratorError(
-          user.status === "identity_conflict" ? STATUS.DUPLICATE_EMAIL_REVIEW : STATUS.DATABASE_CONFLICT,
-          user.message || user.status
-        );
-      }
+      let administratorUserId = null;
+      let invitationId = null;
+      /** @type {string|null} raw invite token — returned once to caller; never logged */
+      let invitationRawToken = null;
+      let administratorLinkedExisting = false;
 
-      const hqRole = await roleAssign.assignBlessBoardRole(
-        client,
-        {
-          email: application.contact_email,
-          organizationKey,
+      if (administratorViaInvitation) {
+        let adminUser = existingUser;
+        if (!adminUser) {
+          adminUser = await authRepo.insertUser(client, {
+            emailNormalized,
+            emailDisplay: String(application.contact_email || emailNormalized).slice(0, 254),
+            passwordHash: null,
+            status: "invited",
+            displayName: adminDisplayName.slice(0, 200),
+          });
+        } else {
+          administratorLinkedExisting = true;
+          // Never reset or overwrite an existing password hash.
+        }
+        if (!adminUser || !adminUser.id) {
+          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, "administrator_prepare_failed");
+        }
+        administratorUserId = String(adminUser.id);
+
+        const orgId = tenant.records.organization.id;
+        const churchIdForInvite = church.records.church.id;
+        const pending = await inviteRepo.findPendingByScope(client, {
+          organizationId: orgId,
+          churchId: churchIdForInvite,
+          emailNormalized,
           roleKey: "church_hq_admin",
-          churchKey: organizationKey,
-        },
-        { manageTransaction: false }
-      );
-      if (!hqRole.ok) {
-        throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status);
-      }
+          branchId: null,
+        });
+        if (pending) {
+          await inviteRepo.markRevoked(client, pending.id, invitingActorUserId);
+        }
 
-      const branchRole = await roleAssign.assignBlessBoardRole(
-        client,
-        {
-          email: application.contact_email,
-          organizationKey,
-          roleKey: "branch_admin",
-          churchKey: organizationKey,
-          branchKey: HQ_BRANCH_KEY,
-        },
-        { manageTransaction: false }
-      );
-      if (!branchRole.ok) {
-        throw new OrchestratorError(STATUS.DATABASE_CONFLICT, branchRole.message || branchRole.status);
+        const { rawToken, tokenHash } = generateInviteToken();
+        const expiresAt = new Date(Date.now() + INVITE_TTL_MS).toISOString();
+        const invitation = await inviteRepo.insertInvitation(client, {
+          organizationId: orgId,
+          churchId: churchIdForInvite,
+          branchId: null,
+          emailNormalized,
+          emailDisplay: String(application.contact_email || emailNormalized).slice(0, 254),
+          displayName: adminDisplayName.slice(0, 200),
+          roleKey: "church_hq_admin",
+          tokenHash,
+          expiresAt,
+          invitedByUserId: invitingActorUserId,
+        });
+        invitationId = invitation.id;
+        invitationRawToken = rawToken;
+
+        await recordAuditEventSafe(client, {
+          deploymentCode,
+          organizationId: orgId,
+          churchId: churchIdForInvite,
+          actorUserId: invitingActorUserId,
+          outcome: "success",
+          actionKey: "invitation.created",
+          entityType: "user_invitation",
+          entityId: invitationId,
+          metadata: {
+            category: "registration",
+            status: pending ? "resent" : "created",
+            actor_type: "platform_admin",
+            source: actorContext.source || "admin_registration_applications",
+            entity_key: "church_hq_admin",
+            reason_code: administratorLinkedExisting ? "existing_user_linked" : "invited_user_created",
+          },
+        });
+      } else {
+        const user = await userCreate.createBlessBoardUser(
+          client,
+          {
+            email: application.contact_email,
+            displayName: adminDisplayName,
+            passwordHash,
+          },
+          { manageTransaction: false }
+        );
+        if (!user.ok) {
+          throw new OrchestratorError(
+            user.status === "identity_conflict" ? STATUS.DUPLICATE_EMAIL_REVIEW : STATUS.DATABASE_CONFLICT,
+            user.message || user.status
+          );
+        }
+        administratorUserId = String(user.user.id);
+
+        const hqRole = await roleAssign.assignBlessBoardRole(
+          client,
+          {
+            email: application.contact_email,
+            organizationKey,
+            roleKey: "church_hq_admin",
+            churchKey: organizationKey,
+          },
+          { manageTransaction: false }
+        );
+        if (!hqRole.ok) {
+          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status);
+        }
+
+        const branchRole = await roleAssign.assignBlessBoardRole(
+          client,
+          {
+            email: application.contact_email,
+            organizationKey,
+            roleKey: "branch_admin",
+            churchKey: organizationKey,
+            branchKey: HQ_BRANCH_KEY,
+          },
+          { manageTransaction: false }
+        );
+        if (!branchRole.ok) {
+          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, branchRole.message || branchRole.status);
+        }
       }
 
       const churchId = church.records.church.id;
@@ -771,7 +876,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         organizationKey,
         churchId,
         branchId,
-        actorUserId: user.user.id,
+        actorUserId: administratorViaInvitation ? invitingActorUserId : administratorUserId,
         requestId,
         actorType: actorContext.type || "system",
         source: actorContext.source || "orchestrator",
@@ -786,7 +891,12 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           organizationKey,
           churchId,
           branchId,
-          administratorUserId: user.user.id,
+          administratorUserId,
+          administratorViaInvitation,
+          administratorLinkedExisting,
+          invitationId,
+          // Copy-once: caller may surface once; never persist or log.
+          invitationRawToken,
           applicationStatus: closed.application_status,
           provisioningStatus: closed.provisioning_status,
           planKey,
@@ -817,6 +927,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       hasTrialEndsAt: Boolean(
         outcomeRecords.records && outcomeRecords.records.subscriptionEndsAt
       ),
+      administratorViaInvitation: Boolean(
+        outcomeRecords.records && outcomeRecords.records.administratorViaInvitation
+      ),
+      invitationCreated: Boolean(outcomeRecords.records && outcomeRecords.records.invitationId),
+      // Never log invitationRawToken or passwords.
     });
 
     return success(

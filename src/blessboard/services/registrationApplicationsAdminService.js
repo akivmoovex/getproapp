@@ -13,7 +13,6 @@ const {
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const {
   NETWORK_PLAN_CODE,
-  validateAdministratorPassword,
   validateRequestedOrganizationKey,
   isNetworkPlanSelection,
 } = require("./platformChurchRegistrationValidation");
@@ -1204,14 +1203,13 @@ async function rejectRegistrationApplication(db, input) {
 }
 
 /**
- * Approve a held Foundation/Growth application and provision via the canonical orchestrator.
- * Password is required (never stored on the application). Idempotent when already provisioned.
+ * Approve a held Foundation/Growth (or validated Network) application and provision
+ * via the canonical orchestrator using an administrator invitation (no password entry).
+ * Idempotent when already provisioned.
  * @param {{ query: Function, connect?: Function }} db
  * @param {{
  *   applicationId: string,
  *   actorUserId: string,
- *   administratorPassword: string,
- *   administratorPasswordConfirm?: string,
  *   organizationKey?: string|null,
  *   deploymentCode?: string,
  *   dataEnvironment?: string,
@@ -1223,16 +1221,6 @@ async function approveAndProvisionRegistrationApplication(db, input) {
   const actorUserId = String((input && input.actorUserId) || "").trim();
   if (!UUID_RE.test(applicationId) || !UUID_RE.test(actorUserId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input" };
-  }
-
-  const pw = validateAdministratorPassword(
-    input && input.administratorPassword,
-    input && input.administratorPasswordConfirm != null
-      ? input.administratorPasswordConfirm
-      : input && input.administratorPassword
-  );
-  if (!pw.ok) {
-    return { ok: false, status: STATUS.INVALID_INPUT, message: pw.field || "invalid_password" };
   }
 
   let organizationKey = null;
@@ -1272,6 +1260,15 @@ async function approveAndProvisionRegistrationApplication(db, input) {
             status: STATUS.ALREADY_PROVISIONED,
             alreadyProvisioned: true,
             organizationId: String(app.organization_id),
+            organizationKey: app.organization_key != null ? String(app.organization_key) : null,
+          };
+        }
+        if (!String(app.contact_email || "").trim()) {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            status: STATUS.INVALID_INPUT,
+            message: "administrator_email_required",
           };
         }
         if (isNetworkPlanSelection(app.selected_plan)) {
@@ -1346,6 +1343,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
         status: STATUS.OK,
         alreadyProvisioned: true,
         organizationId: prepared.organizationId,
+        organizationKey: prepared.organizationKey || null,
       };
     }
     appSnapshot = prepared.application;
@@ -1354,7 +1352,6 @@ async function approveAndProvisionRegistrationApplication(db, input) {
       db,
       {
         applicationId,
-        administratorPassword: pw.value,
         requestedOrganizationKey: organizationKey || undefined,
         actorContext: {
           type: "platform_admin",
@@ -1367,6 +1364,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
       {
         allowRetry: true,
         networkOrganizationShell: Boolean(prepared.networkShell),
+        administratorViaInvitation: true,
       }
     );
 
@@ -1374,6 +1372,8 @@ async function approveAndProvisionRegistrationApplication(db, input) {
       const organizationId =
         (provision.records && provision.records.organizationId) ||
         null;
+      const orgKey =
+        (provision.records && provision.records.organizationKey) || null;
       if (organizationId) {
         await recordAuditEventSafe(db, {
           deploymentCode,
@@ -1404,16 +1404,32 @@ async function approveAndProvisionRegistrationApplication(db, input) {
         alreadyProvisioned: Boolean(provision.alreadyProvisioned),
         networkOrganizationCreated: Boolean(prepared.networkShell),
         records: provision.records || null,
+        organizationId,
+        organizationKey: orgKey,
+        invitation:
+          provision.records && provision.records.invitationId
+            ? {
+                id: provision.records.invitationId,
+                rawToken: provision.records.invitationRawToken || null,
+                delivery: "copy_once",
+              }
+            : null,
       };
     }
 
-    // Re-hold for review if provision bounced to duplicate_review / eligibility.
     if (provision.status === "duplicate_email_review") {
       return {
         ok: false,
         status: STATUS.NOT_ELIGIBLE,
         message: "duplicate_email_review",
         provisionStatus: provision.status,
+      };
+    }
+    if (String(provision.message || "").includes("administratorEmail")) {
+      return {
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        message: "administrator_email_required",
       };
     }
     return {

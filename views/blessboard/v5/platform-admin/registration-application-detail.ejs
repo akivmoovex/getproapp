@@ -68,9 +68,12 @@
     if (code === 'network_validation_required') {
       return 'Network validation must be completed before creating the organization.';
     }
+    if (code === 'administrator_email_required') {
+      return 'Administrator email is required.';
+    }
     if (code === 'not_platform_admin') return 'Only active platform administrators can be assigned.';
     if (code === 'provision_failed') {
-      return 'Provisioning could not be completed. Review the failure category and retry if allowed.';
+      return 'Provisioning failed. No organization was created.';
     }
     if (code === 'follow_up_failed' || code === 'assign_failed' || code === 'contact_failed' ||
         code === 'reject_failed' || code === 'approve_failed' || code === 'retry_failed' ||
@@ -176,19 +179,11 @@
       <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
       <p class="bb-pa-lede">
         Approve provisions this Foundation/Growth application with the canonical orchestrator.
-        Set an administrator password to share with the church (passwords are never stored on the application).
+        An invitation will be created for the church administrator. Copy or resend the invitation from the organization page.
       </p>
       <div class="bb-pa-field">
         <label for="organization_key">Organization key (optional override)</label>
         <input id="organization_key" name="organization_key" type="text" maxlength="80" autocomplete="off" />
-      </div>
-      <div class="bb-pa-field">
-        <label for="administrator_password">Administrator password</label>
-        <input id="administrator_password" name="administrator_password" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
-      </div>
-      <div class="bb-pa-field">
-        <label for="administrator_password_confirm">Confirm password</label>
-        <input id="administrator_password_confirm" name="administrator_password_confirm" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
       </div>
       <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Approve and provision</button>
     </form>
@@ -206,18 +201,11 @@
       <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
       <p class="bb-pa-lede">
         Retry uses the same idempotent provisioning orchestrator. It will not create a duplicate tenant if one already exists.
+        An invitation will be created for the church administrator if provisioning succeeds.
       </p>
       <div class="bb-pa-field">
         <label for="retry_organization_key">Organization key (optional override)</label>
         <input id="retry_organization_key" name="organization_key" type="text" maxlength="80" autocomplete="off" />
-      </div>
-      <div class="bb-pa-field">
-        <label for="retry_administrator_password">Administrator password</label>
-        <input id="retry_administrator_password" name="administrator_password" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
-      </div>
-      <div class="bb-pa-field">
-        <label for="retry_administrator_password_confirm">Confirm password</label>
-        <input id="retry_administrator_password_confirm" name="administrator_password_confirm" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
       </div>
       <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Retry provisioning</button>
     </form>
@@ -231,19 +219,12 @@
     >
       <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
       <p class="bb-pa-lede">
-        Creates the organization for this Network application. Network plan activation remains a separate billing action on the organization page.
+        Creates the organization for this Network application. An invitation will be created for the church administrator.
+        Network plan activation remains a separate billing action on the organization page.
       </p>
       <div class="bb-pa-field">
         <label for="network_organization_key">Organization key (optional override)</label>
         <input id="network_organization_key" name="organization_key" type="text" maxlength="80" autocomplete="off" />
-      </div>
-      <div class="bb-pa-field">
-        <label for="network_administrator_password">Administrator password</label>
-        <input id="network_administrator_password" name="administrator_password" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
-      </div>
-      <div class="bb-pa-field">
-        <label for="network_administrator_password_confirm">Confirm password</label>
-        <input id="network_administrator_password_confirm" name="administrator_password_confirm" type="password" required minlength="10" maxlength="200" autocomplete="new-password" />
       </div>
       <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Approve and create organization</button>
     </form>

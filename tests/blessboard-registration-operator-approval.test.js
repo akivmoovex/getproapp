@@ -293,20 +293,34 @@ describe("registration operator approval (Prompt 48)", () => {
     const first = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: DEPLOYMENT,
       dataEnvironment: "testing",
     });
     assert.equal(first.ok, true, first.message || first.status);
     assert.equal(Boolean(first.alreadyProvisioned), false);
+    assert.ok(first.invitation && first.invitation.id);
+    assert.ok(first.invitation.rawToken);
+    assert.equal(first.records.administratorViaInvitation, true);
+
+    const invites = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM blessboard.user_invitations
+        WHERE organization_id = $1 AND status = 'pending'`,
+      [first.records.organizationId]
+    );
+    assert.equal(invites.rows[0].n, 1);
+
+    const adminUser = await pool.query(
+      `SELECT status, password_hash IS NULL AS no_password
+         FROM blessboard.users WHERE id = $1`,
+      [first.records.administratorUserId]
+    );
+    assert.equal(adminUser.rows[0].status, "invited");
+    assert.equal(adminUser.rows[0].no_password, true);
 
     const second = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: DEPLOYMENT,
     });
@@ -332,8 +346,6 @@ describe("registration operator approval (Prompt 48)", () => {
     const approved = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: DEPLOYMENT,
       dataEnvironment: "testing",
@@ -359,8 +371,6 @@ describe("registration operator approval (Prompt 48)", () => {
     const again = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
     });
     assert.equal(again.ok, true);
@@ -386,8 +396,6 @@ describe("registration operator approval (Prompt 48)", () => {
     const blocked = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: row.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: body.organization_key,
       deploymentCode: DEPLOYMENT,
     });
@@ -418,8 +426,6 @@ describe("registration operator approval (Prompt 48)", () => {
     const created = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: row.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: body.organization_key,
       deploymentCode: DEPLOYMENT,
       dataEnvironment: "testing",
@@ -456,8 +462,6 @@ describe("registration operator approval (Prompt 48)", () => {
     const again = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: row.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: body.organization_key,
     });
     assert.equal(again.ok, true);

@@ -70,6 +70,17 @@
     if (code === 'support_request_saved') return 'Support requested flag updated.';
     if (code === 'next_follow_up_saved') return 'Next follow-up saved.';
     if (code === 'onboarding_status_saved') return 'Onboarding status override saved.';
+    if (code === 'organization_provisioned') {
+      return 'Organization created. Administrator invitation prepared — copy the link once below.';
+    }
+    if (code === 'network_organization_created') {
+      return 'Network organization created (Foundation shell). Activate Network separately under billing. Copy the administrator invitation below.';
+    }
+    if (code === 'already_provisioned') return 'This registration was already provisioned.';
+    if (code === 'retry_succeeded') return 'Provisioning retry succeeded. Copy the administrator invitation below if shown.';
+    if (code === 'invitation_resent') {
+      return 'Previous invite link was invalidated. Copy the new invitation link once — it will not be shown again.';
+    }
     return null;
   }
   function errorText(code) {
@@ -78,6 +89,9 @@
     if (code === 'invalid') return 'The submitted values were invalid.';
     if (code === 'not_found') return 'Organization or plan could not be found.';
     if (code === 'not_blessboard') return 'BlessBoard onboarding is only available for organizations with a church profile.';
+    if (code === 'invite_failed') return 'The administrator invitation could not be prepared.';
+    if (code === 'already_assigned') return 'That user already has this role.';
+    if (code === 'limit_exceeded') return 'Staff account limit reached for this organization.';
     if (code === 'not_platform_admin') return 'Only active platform administrators can be assigned.';
     if (code === 'next_follow_up_past') return 'Next follow-up must be a future date and time.';
     if (code === 'reason_required') return 'A short reason is required for this onboarding override.';
@@ -144,6 +158,53 @@
   <p class="bb-pa-lede" data-bb-pa-registration-backlink="1">
     <a class="bb-pa-link" href="/admin/registration-applications/<%= registrationApplicationId %>">Registration application</a>
   </p>
+  <% } %>
+
+  <% if ((typeof inviteOnceLink !== 'undefined' && inviteOnceLink) || (typeof pendingInvitations !== 'undefined' && pendingInvitations && pendingInvitations.length)) { %>
+  <section class="bb-pa-panel" id="pa-org-invitation" data-bb-pa-org-invitation="1" aria-labelledby="pa-org-invitation-title">
+    <h2 id="pa-org-invitation-title" class="bb-pa-panel__title">Administrator invitation</h2>
+    <p class="bb-pa-lede">
+      An invitation is created for the church administrator to set up their account. Email delivery is not automatic — copy or resend the link from this page.
+    </p>
+    <% if (typeof inviteOnceLink !== 'undefined' && inviteOnceLink) { %>
+    <div class="bb-pa-field" data-bb-pa-invite-copy-once="1">
+      <label for="pa_invite_once_link">Copy invitation link once</label>
+      <input
+        id="pa_invite_once_link"
+        type="text"
+        readonly
+        value="<%= inviteOnceLink %>"
+        onclick="this.select()"
+      />
+      <p class="bb-pa-muted">This link will not be shown again after you leave this page. Share it out of band.</p>
+    </div>
+    <% } %>
+    <% if (typeof pendingInvitations !== 'undefined' && pendingInvitations && pendingInvitations.length) { %>
+    <ul class="bb-pa-list" data-bb-pa-pending-invitations="1">
+      <% pendingInvitations.forEach(function (inv) { %>
+      <li>
+        <strong><%= inv.emailDisplay || inv.emailNormalized || '—' %></strong>
+        · <%= String(inv.roleKey || '').replace(/_/g, ' ') %>
+        · expires <%= inv.expiresAt ? new Date(inv.expiresAt).toISOString().slice(0, 10) : '—' %>
+        <% if (typeof churchScope !== 'undefined' && churchScope) { %>
+        <form
+          class="bb-pa-form bb-pa-form--inline"
+          method="post"
+          action="/admin/organizations/<%= org.organizationKey %>/invitations/resend"
+          data-bb-pa-invite-resend-form="1"
+        >
+          <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+          <input type="hidden" name="email" value="<%= inv.emailDisplay || '' %>" />
+          <input type="hidden" name="display_name" value="<%= inv.displayName || '' %>" />
+          <input type="hidden" name="role_key" value="<%= inv.roleKey || 'church_hq_admin' %>" />
+          <button class="bb-pa-btn bb-pa-btn--secondary" type="submit">Create replacement invitation</button>
+        </form>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
   <% } %>
 
   <header class="bb-pa-page-head bb-pa-page-head--split">

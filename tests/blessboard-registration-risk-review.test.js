@@ -363,8 +363,6 @@ describe("registration risk review (Prompt 18)", () => {
     const approved = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: "blessboard-org-v5",
       dataEnvironment: "testing",
@@ -376,8 +374,6 @@ describe("registration risk review (Prompt 18)", () => {
     const again = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
       deploymentCode: "blessboard-org-v5",
     });
@@ -426,8 +422,6 @@ describe("registration risk review (Prompt 18)", () => {
     const approveAfter = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
-      administratorPassword: PASSWORD,
-      administratorPasswordConfirm: PASSWORD,
       organizationKey: key,
     });
     assert.equal(approveAfter.ok, false);
