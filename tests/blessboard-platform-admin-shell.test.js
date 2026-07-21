@@ -231,8 +231,9 @@ describe("blessboard platform-admin shell", () => {
     assert.match(home.text, /data-bb-nav="desktop-sidebar"/);
     assert.match(home.text, /data-bb-nav="desktop"/);
     assert.match(home.text, /data-bb-nav="mobile-drawer"/);
-    assert.match(home.text, /data-bb-nav="mobile-tabs"/);
+    assert.match(home.text, /data-bb-nav="mobile-toggle"/);
     assert.match(home.text, /data-bb-nav="mobile-header"/);
+    assert.doesNotMatch(home.text, /data-bb-nav="mobile-tabs"/);
     assert.match(home.text, /data-bb-page-area/);
     assert.match(home.text, /data-bb-pa-role/);
     assert.match(home.text, /role="dialog"/);
@@ -241,8 +242,11 @@ describe("blessboard platform-admin shell", () => {
     assert.match(home.text, /bb-pa-drawer__close/);
     assert.match(home.text, /data-bb-footer="drawer"/);
     assert.match(home.text, /powered-by-getpro|Powered by/i);
-    assert.match(home.text, /aria-label="Open menu"/);
-    assert.match(home.text, /aria-label="Account"/);
+    assert.match(home.text, /aria-label="Open navigation"/);
+    assert.match(home.text, /aria-label="Close navigation"/);
+    assert.match(home.text, /aria-controls="bb-pa-drawer"/);
+    assert.match(home.text, /bb-pa-nav-toggle__bar/);
+    assert.match(home.text, /id="bb-shell-nav-live"/);
     assert.match(home.text, /tabindex="-1"/);
     assert.match(home.text, /System Overview/);
     assert.match(home.text, /data-bb-dash-welcome="1"/);

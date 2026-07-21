@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=28" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=29" />
 </head>
 <%
   var paNav = (typeof navItems !== 'undefined' && navItems && navItems.length)
@@ -25,6 +25,7 @@
   var paDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
   var paDeploy = typeof deploymentCode !== 'undefined' && deploymentCode ? deploymentCode : '';
   var paCsrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  var paPageTitle = typeof pageTitle !== 'undefined' && pageTitle ? pageTitle : 'Platform Admin';
 %>
 <body
   class="bb-pa-body"
@@ -35,6 +36,7 @@
   data-bb-stitch-shell="62-platform-admin-dashboard"
 >
   <a class="bb-pa-skip" href="#bb-pa-main">Skip to content</a>
+  <div id="bb-shell-nav-live" class="bb-pa-visually-hidden" aria-live="polite" aria-atomic="true"></div>
 
   <div class="bb-pa-app">
     <aside class="bb-pa-sidebar" data-bb-nav="desktop-sidebar" aria-label="Platform admin navigation">
@@ -96,7 +98,7 @@
     <div class="bb-pa-frame">
       <header class="bb-pa-top" data-bb-nav="mobile-header">
         <div class="bb-pa-top__brand">
-          <a class="bb-pa-wordmark bb-pa-wordmark--compact" href="/admin">
+          <a class="bb-pa-wordmark bb-pa-wordmark--compact" href="/admin" aria-label="BlessBoard platform admin home">
             <img
               class="bb-pa-wordmark__mark"
               src="/church/images/brand/blessboard-small-church-logo.png"
@@ -107,14 +109,9 @@
             />
             <span>BlessBoard</span>
           </a>
-          <p class="bb-pa-context bb-pa-context--compact">
-            Platform admin<% if (paDeploy) { %> · <%= paDeploy %><% } %>
-          </p>
+          <p class="bb-pa-top__title"><%= paPageTitle %></p>
         </div>
         <div class="bb-pa-top__actions">
-          <a class="bb-pa-icon-link" href="/admin/account" aria-label="Account">
-            <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
-          </a>
           <button
             type="button"
             class="bb-pa-nav-toggle"
@@ -122,9 +119,13 @@
             data-bb-nav="mobile-toggle"
             aria-controls="bb-pa-drawer"
             aria-expanded="false"
-            aria-label="Open menu"
+            aria-label="Open navigation"
           >
-            <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+            <span class="bb-pa-nav-toggle__icon" aria-hidden="true">
+              <span class="bb-pa-nav-toggle__bar"></span>
+              <span class="bb-pa-nav-toggle__bar"></span>
+              <span class="bb-pa-nav-toggle__bar"></span>
+            </span>
             <span class="bb-pa-nav-toggle__label">Menu</span>
           </button>
         </div>
@@ -136,19 +137,29 @@
         data-bb-nav="mobile-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label="Platform admin menu"
+        aria-label="Platform admin navigation"
         inert
         hidden
       >
         <div class="bb-pa-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
-        <nav class="bb-pa-drawer__panel" aria-label="Platform admin mobile menu">
+        <nav class="bb-pa-drawer__panel" aria-label="Platform admin mobile">
           <div class="bb-pa-drawer__head">
-            <p class="bb-pa-drawer__title">Menu</p>
+            <div class="bb-pa-drawer__brand">
+              <img
+                class="bb-pa-wordmark__mark"
+                src="/church/images/brand/blessboard-small-church-logo.png"
+                alt=""
+                width="24"
+                height="24"
+                decoding="async"
+              />
+              <p class="bb-pa-drawer__title">Platform Admin</p>
+            </div>
             <button
               type="button"
               class="bb-pa-drawer__close"
               data-bb-nav="drawer-close"
-              aria-label="Close menu"
+              aria-label="Close navigation"
             >
               <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
@@ -159,23 +170,27 @@
             <span class="bb-pa-user__meta"><%= paRole %></span>
           </p>
           <% } %>
-          <% paNav.forEach(function (item) { %>
-          <a
-            href="<%= item.href %>"
-            class="bb-pa-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
-            <%= activeNav === item.key ? 'aria-current="page"' : '' %>
-          >
-            <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
-            <span><%= item.label %></span>
-          </a>
-          <% }) %>
-          <form class="bb-pa-logout" method="post" action="/admin/logout" data-bb-pa-logout="1">
-            <input type="hidden" name="_csrf" value="<%= paCsrf %>" />
-            <button type="submit">
-              <span class="material-symbols-outlined" aria-hidden="true">logout</span>
-              Sign out
-            </button>
-          </form>
+          <div class="bb-pa-drawer__links" data-bb-nav="mobile-links">
+            <% paNav.forEach(function (item) { %>
+            <a
+              href="<%= item.href %>"
+              class="bb-pa-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+              <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+              <span><%= item.label %></span>
+            </a>
+            <% }) %>
+          </div>
+          <div class="bb-pa-drawer__account">
+            <form class="bb-pa-logout" method="post" action="/admin/logout" data-bb-pa-logout="1">
+              <input type="hidden" name="_csrf" value="<%= paCsrf %>" />
+              <button type="submit">
+                <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+                Sign out
+              </button>
+            </form>
+          </div>
           <div class="bb-pa-drawer__footer" data-bb-footer="drawer">
             <%- include('./powered-by-getpro') %>
           </div>

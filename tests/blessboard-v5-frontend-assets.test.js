@@ -21,11 +21,11 @@ const VERSIONS = {
   memberPortal: "20",
   branchAdmin: "36",
   hqAdmin: "50",
-  platformAdmin: "26",
+  platformAdmin: "29",
   mediaPickerCss: "8",
   mediaPickerJs: "6",
   designSystemJs: "3",
-  shellNav: "1",
+  shellNav: "2",
 };
 
 describe("blessboard v5 frontend assets — includes and cache busting", () => {
