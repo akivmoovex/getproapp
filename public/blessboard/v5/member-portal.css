@@ -268,15 +268,8 @@ body.bb-mp-drawer-open {
 }
 
 .bb-mp-nav-toggle {
+  /* Prefer shared .bb-shell-burger; keep class for legacy selectors. */
   display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font: inherit;
-  border: 1px solid var(--bb-line);
-  background: var(--bb-surface);
-  border-radius: 0.5rem;
-  padding: 0.4rem 0.7rem;
-  cursor: pointer;
 }
 
 .bb-mp-nav-toggle__label {
@@ -303,16 +296,36 @@ body.bb-mp-drawer-open {
 .bb-mp-drawer__panel {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0;
   bottom: 0;
-  width: min(20rem, 88vw);
+  width: min(18.5rem, calc(100vw - 3rem));
+  max-width: 100%;
   background: var(--bb-surface);
   padding: 1rem 1rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  box-shadow: -12px 0 40px rgba(26, 28, 30, 0.12);
+  box-shadow: 8px 0 40px rgba(26, 28, 30, 0.12);
+  overflow-x: hidden;
   overflow-y: auto;
+}
+
+.bb-mp-drawer__links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.bb-mp-drawer__account {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--bb-line);
+}
+
+.bb-mp-drawer .bb-mp-nav-link {
+  min-height: var(--bb-touch-min, 2.75rem);
 }
 
 .bb-mp-drawer__head {
@@ -379,51 +392,19 @@ body.bb-mp-drawer-open {
 }
 
 .bb-mp-bottom {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 30;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.15rem;
-  padding: 0.45rem 0.35rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
-  background: rgba(255, 255, 255, 0.96);
-  border-top: 1px solid var(--bb-line);
-  backdrop-filter: blur(12px);
+  display: none !important;
 }
-
 .bb-mp-bottom__link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.15rem;
-  padding: 0.35rem 0.15rem;
-  min-height: var(--bb-touch-min, 2.75rem);
-  min-width: 0;
-  text-decoration: none;
-  color: var(--bb-muted);
-  font-size: 0.68rem;
-  font-weight: 600;
-  border-radius: 0.45rem;
+  display: none !important;
 }
-
-.bb-mp-bottom__link .material-symbols-outlined {
-  font-size: 1.35rem;
-}
-
 .bb-mp-bottom__link > span:last-child {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: 1.2;
 }
-
 .bb-mp-bottom__link.is-active {
   color: var(--bb-violet);
-  background: var(--bb-color-primary-soft, #efeaff);
 }
 
 /* —— Dashboard —— */

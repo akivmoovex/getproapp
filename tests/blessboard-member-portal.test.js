@@ -348,7 +348,8 @@ describe("blessboard member portal", () => {
     assert.match(res.text, /data-bb-shell="member"/);
     assert.match(res.text, /data-bb-stitch-shell="14-member-dashboard"/);
     assert.match(res.text, /data-bb-nav="desktop-sidebar"/);
-    assert.match(res.text, /data-bb-nav="mobile-tabs"/);
+    assert.doesNotMatch(res.text, /data-bb-nav="mobile-tabs"/);
+    assert.match(res.text, /aria-label="Open navigation"/);
     assert.match(res.text, /data-bb-nav="mobile-header"/);
     assert.match(res.text, /data-bb-nav="mobile-drawer"/);
     assert.match(res.text, /data-bb-member-dashboard="1"/);
@@ -362,7 +363,8 @@ describe("blessboard member portal", () => {
     assert.match(res.text, /\binert\b/);
     assert.match(res.text, /bb-mp-drawer__close/);
     assert.match(res.text, /href="\/member\/profile"/);
-    assert.match(res.text, /aria-label="Profile"/);
+    assert.match(res.text, /aria-label="Open navigation"/);
+    assert.match(res.text, />\s*Profile\s*</);
     assert.match(res.text, /href="\/member\/announcements"/);
     assert.match(res.text, /href="\/member\/events"/);
     assert.match(res.text, /href="\/member\/ministries"/);

@@ -36,7 +36,7 @@
   data-bb-stitch-shell="62-platform-admin-dashboard"
 >
   <a class="bb-pa-skip" href="#bb-pa-main">Skip to content</a>
-  <div id="bb-shell-nav-live" class="bb-pa-visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  <div id="bb-shell-nav-live" class="bb-shell-sr-only" aria-live="polite" aria-atomic="true"></div>
 
   <div class="bb-pa-app">
     <aside class="bb-pa-sidebar" data-bb-nav="desktop-sidebar" aria-label="Platform admin navigation">
@@ -114,19 +114,19 @@
         <div class="bb-pa-top__actions">
           <button
             type="button"
-            class="bb-pa-nav-toggle"
+            class="bb-pa-nav-toggle bb-shell-burger"
             id="bb-pa-menu-btn"
             data-bb-nav="mobile-toggle"
             aria-controls="bb-pa-drawer"
             aria-expanded="false"
             aria-label="Open navigation"
           >
-            <span class="bb-pa-nav-toggle__icon" aria-hidden="true">
-              <span class="bb-pa-nav-toggle__bar"></span>
-              <span class="bb-pa-nav-toggle__bar"></span>
-              <span class="bb-pa-nav-toggle__bar"></span>
+            <span class="bb-shell-burger__icon bb-pa-nav-toggle__icon" aria-hidden="true">
+              <span class="bb-shell-burger__bar bb-pa-nav-toggle__bar"></span>
+              <span class="bb-shell-burger__bar bb-pa-nav-toggle__bar"></span>
+              <span class="bb-shell-burger__bar bb-pa-nav-toggle__bar"></span>
             </span>
-            <span class="bb-pa-nav-toggle__label">Menu</span>
+            <span class="bb-shell-burger__label bb-pa-nav-toggle__label">Menu</span>
           </button>
         </div>
       </header>

@@ -17,7 +17,7 @@
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=27' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=28' %>" />
 </head>
 <body
   class="bb-tp-body"
@@ -64,14 +64,19 @@
         <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= loginHref %>">Member Login</a>
         <button
           type="button"
-          class="bb-tp-menu-btn"
+          class="bb-tp-menu-btn bb-shell-burger"
           id="bb-tp-menu-btn"
-          aria-label="Open menu"
+          aria-label="Open navigation"
           aria-expanded="false"
           aria-controls="bb-tp-drawer"
           aria-haspopup="dialog"
         >
-          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+          <span class="bb-shell-burger__icon" aria-hidden="true">
+            <span class="bb-shell-burger__bar"></span>
+            <span class="bb-shell-burger__bar"></span>
+            <span class="bb-shell-burger__bar"></span>
+          </span>
+          <span class="bb-shell-burger__label">Menu</span>
         </button>
       </div>
     </div>
@@ -83,7 +88,7 @@
     id="bb-tp-drawer"
     role="dialog"
     aria-modal="true"
-    aria-label="Mobile navigation"
+    aria-label="Church navigation"
     aria-hidden="true"
     inert
   >
@@ -99,7 +104,7 @@
         />
         <span class="bb-tp-brand__name"><%= publicName %></span>
       </a>
-      <button type="button" class="bb-tp-drawer__close" id="bb-tp-drawer-close" aria-label="Close menu">
+      <button type="button" class="bb-tp-drawer__close" id="bb-tp-drawer-close" aria-label="Close navigation">
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </button>
     </div>

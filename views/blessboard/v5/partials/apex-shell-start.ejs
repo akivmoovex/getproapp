@@ -9,7 +9,7 @@
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="description" content="BlessBoard — one digital home for your church." />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=11" />
+  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=12" />
   <% if (typeof activeNav !== 'undefined' && activeNav === 'account') { %>
   <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=6" />
   <% } %>
@@ -47,22 +47,27 @@
         <% } %>
         <button
           type="button"
-          class="bb-apex-menu-btn"
+          class="bb-apex-menu-btn bb-shell-burger"
           id="bb-apex-menu-btn"
-          aria-label="Open menu"
+          aria-label="Open navigation"
           aria-expanded="false"
           aria-controls="bb-apex-drawer"
         >
-          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+          <span class="bb-shell-burger__icon" aria-hidden="true">
+            <span class="bb-shell-burger__bar"></span>
+            <span class="bb-shell-burger__bar"></span>
+            <span class="bb-shell-burger__bar"></span>
+          </span>
+          <span class="bb-shell-burger__label">Menu</span>
         </button>
       </div>
     </div>
   </header>
 
   <div class="bb-apex-drawer" id="bb-apex-drawer" hidden inert data-bb-apex-drawer="1">
-    <button type="button" class="bb-apex-drawer__backdrop" data-bb-apex-drawer-close aria-label="Close menu"></button>
-    <div class="bb-apex-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
-      <button type="button" class="bb-apex-menu-btn bb-apex-drawer__close" data-bb-apex-drawer-close aria-label="Close menu">
+    <button type="button" class="bb-apex-drawer__backdrop" data-bb-apex-drawer-close aria-label="Close navigation"></button>
+    <div class="bb-apex-drawer__panel" role="dialog" aria-modal="true" aria-label="BlessBoard navigation">
+      <button type="button" class="bb-apex-menu-btn bb-apex-drawer__close" data-bb-apex-drawer-close aria-label="Close navigation">
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </button>
       <nav aria-label="Mobile">

@@ -274,9 +274,9 @@ body.bb-ba-drawer-open {
 .bb-ba-drawer__panel {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0;
   bottom: 0;
-  width: min(20rem, 88vw);
+  width: min(18.5rem, calc(100vw - 3rem));
   background: var(--bb-surface);
   padding: 1rem 1rem 1.5rem;
   display: flex;
@@ -321,6 +321,21 @@ body.bb-ba-drawer-open {
   background: var(--bb-color-primary-soft, #efeaff);
 }
 
+.bb-ba-drawer__links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-height: 0;
+}
+.bb-ba-drawer__account {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--bb-line);
+}
+.bb-ba-drawer .bb-ba-nav-link {
+  min-height: var(--bb-touch-min, 2.75rem);
+}
 .bb-ba-drawer__footer {
   margin-top: auto;
   padding-top: 1rem;
@@ -332,7 +347,7 @@ body.bb-ba-drawer-open {
   width: 100%;
   max-width: 64rem;
   margin: 0 auto;
-  padding: 1.35rem 1.15rem 5.5rem;
+  padding: 1.35rem 1.15rem 2rem;
   scroll-margin-top: 5rem;
 }
 
@@ -341,49 +356,19 @@ body.bb-ba-drawer-open {
 }
 
 .bb-ba-bottom {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 15;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.15rem;
-  padding: 0.35rem 0.4rem calc(0.35rem + env(safe-area-inset-bottom, 0));
-  background: var(--bb-surface);
-  border-top: 1px solid var(--bb-line);
+  display: none !important;
 }
-
 .bb-ba-bottom__link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.1rem;
-  padding: 0.35rem 0.2rem;
-  min-height: var(--bb-touch-min, 2.75rem);
-  min-width: 0;
-  text-decoration: none;
-  color: var(--bb-muted);
-  font-size: 0.65rem;
-  border-radius: 0.55rem;
+  display: none !important;
 }
-
-.bb-ba-bottom__link .material-symbols-outlined {
-  font-size: 1.35rem;
-}
-
 .bb-ba-bottom__link > span:last-child {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .bb-ba-bottom__link.is-active {
   color: var(--bb-violet);
-  background: var(--bb-color-primary-soft, #efeaff);
-  font-weight: 600;
 }
 
 .bb-ba-footer {

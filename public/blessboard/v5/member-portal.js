@@ -9,6 +9,10 @@
     window.BlessBoardShellNav.bindShellDrawer({
       drawerId: "bb-mp-drawer",
       bodyOpenClass: "bb-mp-drawer-open",
+      desktopMediaQuery: "(min-width: 900px)",
+      openLabel: "Open navigation",
+      closeLabel: "Close navigation",
+      closeOnNavigate: true,
     });
   }
 

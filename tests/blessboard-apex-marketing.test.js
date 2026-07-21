@@ -135,7 +135,7 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(features.text, /Operational Excellence/);
     assert.match(features.text, /Enterprise Scaling/);
     assert.match(features.text, /no payment gateway in V5/i);
-    assert.match(features.text, /apex\.css\?v=11/);
+    assert.match(features.text, /apex\.css\?v=12/);
     assert.match(features.text, /data-bb-apex-page="features"/);
     assert.match(features.text, /bb-apex-features-page/);
     assert.match(features.text, /Advanced attendance/);

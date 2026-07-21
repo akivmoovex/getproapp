@@ -1222,3 +1222,55 @@ html.bb-ds-modal-open body {
     transition: none !important;
   }
 }
+
+
+/* —— Shared V5 mobile burger (shell chrome) —— */
+.bb-shell-burger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: var(--bb-touch-min, 2.75rem);
+  min-height: var(--bb-touch-min, 2.75rem);
+  padding: 0.55rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--bb-ink, #131d21);
+  font: inherit;
+  cursor: pointer;
+}
+.bb-shell-burger:hover,
+.bb-shell-burger:focus-visible {
+  background: var(--bb-color-primary-soft, #efeaff);
+  color: var(--bb-violet, #6c5ce7);
+  outline: none;
+}
+.bb-shell-burger:focus-visible {
+  box-shadow: 0 0 0 3px var(--bb-color-focus-ring, rgba(108, 92, 231, 0.45));
+}
+.bb-shell-burger__icon {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.28rem;
+  width: 1.15rem;
+}
+.bb-shell-burger__bar {
+  display: block;
+  height: 2px;
+  width: 100%;
+  border-radius: 999px;
+  background: currentColor;
+}
+.bb-shell-sr-only,
+.bb-shell-burger__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}

@@ -715,6 +715,20 @@ ul.bb-apex-features {
   }
 }
 
+@media (max-width: 899px) {
+  .bb-apex-header__actions .bb-apex-btn--header,
+  .bb-apex-nav__logout--header {
+    display: none;
+  }
+
+  .bb-apex-brand__name {
+    max-width: min(12rem, 48vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 @media (max-width: 374px) {
   .bb-apex-hero__cta .bb-apex-btn {
     width: 100%;

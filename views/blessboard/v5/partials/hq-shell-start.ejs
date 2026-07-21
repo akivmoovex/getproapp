@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=53" />
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=54" />
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=8" />
   <% } %>
@@ -48,6 +48,7 @@
   data-bb-stitch-shell="51-hq-dashboard"
 >
   <a class="bb-hq-skip" href="#bb-hq-main">Skip to content</a>
+  <div id="bb-shell-nav-live" class="bb-shell-sr-only" aria-live="polite" aria-atomic="true"></div>
 
   <div class="bb-hq-app">
     <aside class="bb-hq-sidebar" data-bb-nav="desktop-sidebar" aria-label="HQ navigation">
@@ -125,20 +126,21 @@
           </p>
         </div>
         <div class="bb-hq-top__actions">
-          <a class="bb-hq-icon-link" href="/hq/account" aria-label="Account">
-            <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
-          </a>
           <button
             type="button"
-            class="bb-hq-nav-toggle"
+            class="bb-hq-nav-toggle bb-shell-burger"
             id="bb-hq-menu-btn"
             data-bb-nav="mobile-toggle"
             aria-controls="bb-hq-drawer"
             aria-expanded="false"
-            aria-label="Open menu"
+            aria-label="Open navigation"
           >
-            <span class="material-symbols-outlined" aria-hidden="true">menu</span>
-            <span class="bb-hq-nav-toggle__label">Menu</span>
+            <span class="bb-shell-burger__icon" aria-hidden="true">
+              <span class="bb-shell-burger__bar"></span>
+              <span class="bb-shell-burger__bar"></span>
+              <span class="bb-shell-burger__bar"></span>
+            </span>
+            <span class="bb-shell-burger__label">Menu</span>
           </button>
         </div>
       </header>
@@ -149,19 +151,19 @@
         data-bb-nav="mobile-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label="HQ menu"
+        aria-label="HQ navigation"
         inert
         hidden
       >
         <div class="bb-hq-drawer__scrim" data-bb-nav="drawer-close" tabindex="-1"></div>
-        <nav class="bb-hq-drawer__panel" aria-label="HQ mobile menu">
+        <nav class="bb-hq-drawer__panel" aria-label="HQ mobile">
           <div class="bb-hq-drawer__head">
-            <p class="bb-hq-drawer__title">Menu</p>
+            <p class="bb-hq-drawer__title">HQ Admin</p>
             <button
               type="button"
               class="bb-hq-drawer__close"
               data-bb-nav="drawer-close"
-              aria-label="Close menu"
+              aria-label="Close navigation"
             >
               <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
@@ -172,23 +174,27 @@
             <span class="bb-hq-user__meta"><%= hqRole %></span>
           </p>
           <% } %>
-          <% hqNav.forEach(function (item) { %>
-          <a
-            href="<%= item.href %>"
-            class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
-            <%= activeNav === item.key ? 'aria-current="page"' : '' %>
-          >
-            <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
-            <span><%= item.label %></span>
-          </a>
-          <% }) %>
-          <form class="bb-hq-logout" method="post" action="/hq/logout" data-bb-hq-logout="1">
-            <input type="hidden" name="_csrf" value="<%= hqCsrf %>" />
-            <button type="submit">
-              <span class="material-symbols-outlined" aria-hidden="true">logout</span>
-              Sign out
-            </button>
-          </form>
+          <div class="bb-hq-drawer__links" data-bb-nav="mobile-links">
+            <% hqNav.forEach(function (item) { %>
+            <a
+              href="<%= item.href %>"
+              class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
+              <%= activeNav === item.key ? 'aria-current="page"' : '' %>
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+              <span><%= item.label %></span>
+            </a>
+            <% }) %>
+          </div>
+          <div class="bb-hq-drawer__account">
+            <form class="bb-hq-logout" method="post" action="/hq/logout" data-bb-hq-logout="1">
+              <input type="hidden" name="_csrf" value="<%= hqCsrf %>" />
+              <button type="submit">
+                <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+                Sign out
+              </button>
+            </form>
+          </div>
           <div class="bb-hq-drawer__footer" data-bb-footer="drawer">
             <%- include('./powered-by-getpro') %>
           </div>

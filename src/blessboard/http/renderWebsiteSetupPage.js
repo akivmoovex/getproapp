@@ -28,7 +28,7 @@ function renderWebsiteSetupPage(input) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>${safeName} · Coming soon</title>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css?v=27" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-public.css?v=28" />
 </head>
 <body class="bb-tp-body" data-bb-product="blessboard-v5" data-bb-shell="tenant-public-setup">
   <main class="bb-tp-main" style="max-width:40rem;margin:4rem auto;padding:1.5rem;">

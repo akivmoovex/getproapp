@@ -276,7 +276,7 @@ describe("blessboard branch-admin shell", () => {
     assert.match(res.text, /data-bb-nav="desktop-sidebar"/);
     assert.match(res.text, /data-bb-nav="desktop"/);
     assert.match(res.text, /data-bb-nav="mobile-drawer"/);
-    assert.match(res.text, /data-bb-nav="mobile-tabs"/);
+    assert.doesNotMatch(res.text, /data-bb-nav="mobile-tabs"/);
     assert.match(res.text, /data-bb-nav="mobile-header"/);
     assert.match(res.text, /data-bb-stitch-shell="25-branch-admin-dashboard"/);
     assert.match(res.text, /data-bb-page-area/);
@@ -287,8 +287,9 @@ describe("blessboard branch-admin shell", () => {
     assert.match(res.text, /bb-ba-drawer__close/);
     assert.match(res.text, /data-bb-footer="drawer"/);
     assert.match(res.text, /powered-by-getpro|Powered by/i);
-    assert.match(res.text, /aria-label="Open menu"/);
-    assert.match(res.text, /aria-label="Account"/);
+    assert.match(res.text, /aria-label="Open navigation"/);
+    assert.match(res.text, /aria-label="Open navigation"/);
+    assert.match(res.text, />\s*Account\s*</);
     assert.match(res.text, /tabindex="-1"/);
     assert.match(res.text, /data-bb-branch-dashboard="1"/);
     assert.match(res.text, /data-bb-stitch-dashboard="25-branch-admin-dashboard"/);

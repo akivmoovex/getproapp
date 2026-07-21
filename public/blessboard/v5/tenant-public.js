@@ -41,7 +41,7 @@
     overlay.classList.add("is-open");
     setDrawerInert(false);
     btn.setAttribute("aria-expanded", "true");
-    btn.setAttribute("aria-label", "Close menu");
+    btn.setAttribute("aria-label", "Close navigation");
     document.documentElement.classList.add("bb-tp-drawer-open");
     var focusTarget = closeBtn || focusableInDrawer()[0];
     if (focusTarget) {
@@ -58,7 +58,7 @@
     overlay.classList.remove("is-open");
     setDrawerInert(true);
     btn.setAttribute("aria-expanded", "false");
-    btn.setAttribute("aria-label", "Open menu");
+    btn.setAttribute("aria-label", "Open navigation");
     document.documentElement.classList.remove("bb-tp-drawer-open");
     var hideDelay = prefersReducedMotion() ? 0 : 200;
     window.setTimeout(function () {

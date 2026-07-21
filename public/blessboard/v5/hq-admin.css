@@ -234,8 +234,8 @@ body.bb-hq-drawer-open { overflow: hidden; }
 .bb-hq-drawer__panel {
   position: absolute;
   top: 0;
-  right: 0;
-  width: min(20rem, 88vw);
+  left: 0;
+  width: min(18.5rem, calc(100vw - 3rem));
   height: 100%;
   background: var(--bb-surface);
   color: var(--bb-ink);
@@ -268,6 +268,21 @@ body.bb-hq-drawer-open { overflow: hidden; }
   color: var(--bb-ink);
   background: var(--bb-color-primary-soft, #efeaff);
 }
+.bb-hq-drawer__links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-height: 0;
+}
+.bb-hq-drawer__account {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--bb-line);
+}
+.bb-hq-drawer .bb-hq-nav-link {
+  min-height: var(--bb-touch-min, 2.75rem);
+}
 .bb-hq-drawer__footer {
   margin-top: auto;
   padding-top: 1rem;
@@ -278,39 +293,18 @@ body.bb-hq-drawer-open { overflow: hidden; }
   max-width: 64rem;
   width: 100%;
   margin: 0 auto;
-  padding: 1.25rem 1.15rem 5.5rem;
+  padding: 1.25rem 1.15rem 2rem;
   scroll-margin-top: 5rem;
 }
 .bb-hq-page {
   min-width: 0;
 }
 .bb-hq-bottom {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.15rem;
-  position: sticky;
-  bottom: 0;
-  z-index: 15;
-  padding: 0.35rem 0.4rem calc(0.35rem + env(safe-area-inset-bottom, 0));
-  border-top: 1px solid var(--bb-line);
-  background: var(--bb-surface);
+  display: none !important;
 }
 .bb-hq-bottom__link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.15rem;
-  padding: 0.4rem 0.2rem;
-  min-height: var(--bb-touch-min, 2.75rem);
-  border-radius: 0.5rem;
-  color: var(--bb-muted);
-  text-decoration: none;
-  font-size: 0.68rem;
-  font-weight: 600;
-  min-width: 0;
+  display: none !important;
 }
-.bb-hq-bottom__link .material-symbols-outlined { font-size: 1.25rem; }
 .bb-hq-bottom__link > span:last-child {
   max-width: 100%;
   overflow: hidden;
@@ -319,7 +313,6 @@ body.bb-hq-drawer-open { overflow: hidden; }
 }
 .bb-hq-bottom__link.is-active {
   color: var(--bb-violet);
-  background: var(--bb-color-primary-soft, #efeaff);
 }
 .bb-hq-footer {
   display: none;

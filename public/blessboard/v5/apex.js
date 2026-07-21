@@ -4,6 +4,10 @@
 (function () {
   "use strict";
 
+  var OPEN_LABEL = "Open navigation";
+  var CLOSE_LABEL = "Close navigation";
+  var DESKTOP_MQ = "(min-width: 900px)";
+
   function focusable(root) {
     if (!root) return [];
     return Array.prototype.slice
@@ -24,12 +28,20 @@
 
     var panel = drawer.querySelector(".bb-apex-drawer__panel");
     var panelClose = drawer.querySelector(".bb-apex-drawer__close");
+    var desktopMq =
+      typeof window.matchMedia === "function" ? window.matchMedia(DESKTOP_MQ) : null;
+
+    function isOpen() {
+      return !drawer.hasAttribute("hidden");
+    }
 
     function setOpen(open) {
       if (open) {
         drawer.removeAttribute("hidden");
         drawer.removeAttribute("inert");
+        drawer.classList.add("is-open");
         btn.setAttribute("aria-expanded", "true");
+        btn.setAttribute("aria-label", CLOSE_LABEL);
         document.documentElement.classList.add("bb-apex-drawer-open");
         if (panelClose) {
           try {
@@ -41,7 +53,9 @@
       } else {
         drawer.setAttribute("hidden", "");
         drawer.setAttribute("inert", "");
+        drawer.classList.remove("is-open");
         btn.setAttribute("aria-expanded", "false");
+        btn.setAttribute("aria-label", OPEN_LABEL);
         document.documentElement.classList.remove("bb-apex-drawer-open");
         try {
           btn.focus();
@@ -52,7 +66,7 @@
     }
 
     btn.addEventListener("click", function () {
-      setOpen(drawer.hasAttribute("hidden"));
+      setOpen(!isOpen());
     });
 
     drawer.querySelectorAll("[data-bb-apex-drawer-close]").forEach(function (el) {
@@ -61,8 +75,17 @@
       });
     });
 
+    drawer.addEventListener("click", function (ev) {
+      var target = ev.target;
+      if (!target || !target.closest) return;
+      var link = target.closest("a[href]");
+      if (!link || !drawer.contains(link)) return;
+      if (ev.defaultPrevented || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      setOpen(false);
+    });
+
     document.addEventListener("keydown", function (ev) {
-      if (drawer.hasAttribute("hidden")) return;
+      if (!isOpen()) return;
 
       if (ev.key === "Escape") {
         setOpen(false);
@@ -82,6 +105,18 @@
         first.focus();
       }
     });
+
+    function onDesktopChange(ev) {
+      if (ev && ev.matches && isOpen()) setOpen(false);
+    }
+
+    if (desktopMq) {
+      if (typeof desktopMq.addEventListener === "function") {
+        desktopMq.addEventListener("change", onDesktopChange);
+      } else if (typeof desktopMq.addListener === "function") {
+        desktopMq.addListener(onDesktopChange);
+      }
+    }
   }
 
   if (document.readyState === "loading") {
