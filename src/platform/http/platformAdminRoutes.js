@@ -121,6 +121,9 @@ const {
   STATUS: ONBOARDING_ADMIN_STATUS,
 } = require("../../blessboard/services/organizationOnboardingAdminService");
 const registrationAppRepo = require("../../blessboard/repositories/platformChurchRegistrationRepository");
+const {
+  recordPhoneVerificationAttempt,
+} = require("../../blessboard/services/registrationPhoneVerificationService");
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
 const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
 const {
@@ -301,12 +304,172 @@ function mapApproveError(result) {
   return "approve_failed";
 }
 
+const PHONE_VERIFY_ATTEMPT_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * HTTP-boundary parse for phone-verification attempt forms.
+ * Does not apply business rules (verified requires answered, etc.) — those stay in the service.
+ * @param {unknown} body
+ * @param {string} applicationIdFromRoute
+ * @returns {{ ok: true, input: object } | { ok: false, code: string }}
+ */
+function parsePhoneVerificationAttemptForm(body, applicationIdFromRoute) {
+  const applicationId = String(applicationIdFromRoute || "").trim();
+  if (!PHONE_VERIFY_ATTEMPT_UUID_RE.test(applicationId)) {
+    return { ok: false, code: "invalid_application_id" };
+  }
+
+  const src = body && typeof body === "object" ? body : {};
+
+  function asOptionalString(value, max) {
+    if (value == null) return { ok: true, value: null };
+    if (typeof value !== "string" && typeof value !== "number") {
+      return { ok: false, code: "invalid" };
+    }
+    const trimmed = String(value).trim();
+    if (!trimmed) return { ok: true, value: null };
+    if (trimmed.length > max) return { ok: false, code: "invalid" };
+    return { ok: true, value: trimmed };
+  }
+
+  function asRequiredString(value, max) {
+    if (value == null || (typeof value !== "string" && typeof value !== "number")) {
+      return { ok: false, code: "invalid" };
+    }
+    const trimmed = String(value).trim();
+    if (!trimmed) return { ok: false, code: "invalid" };
+    if (trimmed.length > max) return { ok: false, code: "invalid" };
+    return { ok: true, value: trimmed };
+  }
+
+  function asEnumString(value, { required }) {
+    if (value == null || value === "") {
+      return required ? { ok: false, code: "invalid" } : { ok: true, value: null };
+    }
+    if (typeof value !== "string") return { ok: false, code: "invalid" };
+    const trimmed = value.trim();
+    if (!trimmed) return required ? { ok: false, code: "invalid" } : { ok: true, value: null };
+    return { ok: true, value: trimmed };
+  }
+
+  function asDate(value, { required }) {
+    if (value == null || value === "") {
+      return required ? { ok: false, code: "invalid" } : { ok: true, value: null };
+    }
+    if (typeof value !== "string" && typeof value !== "number" && !(value instanceof Date)) {
+      return { ok: false, code: "invalid" };
+    }
+    const d = value instanceof Date ? value : new Date(String(value).trim());
+    if (Number.isNaN(d.getTime())) return { ok: false, code: "invalid" };
+    return { ok: true, value: d };
+  }
+
+  const phone = asRequiredString(src.phone_number_called, 64);
+  if (!phone.ok) {
+    return { ok: false, code: phone.code === "invalid" && !String(src.phone_number_called || "").trim()
+      ? "phone_required"
+      : "invalid" };
+  }
+
+  const country = asOptionalString(src.country, 120);
+  if (!country.ok) return country;
+
+  const contactPersonName = asOptionalString(src.contact_person_name, 200);
+  if (!contactPersonName.ok) return contactPersonName;
+
+  const contactPersonRole = asOptionalString(src.contact_person_role, 120);
+  if (!contactPersonRole.ok) return contactPersonRole;
+
+  const attemptedAt = asDate(src.attempted_at, { required: true });
+  if (!attemptedAt.ok) return attemptedAt;
+
+  const outcome = asEnumString(src.outcome, { required: true });
+  if (!outcome.ok) return outcome;
+
+  const applicantIdentityStatus = asEnumString(src.applicant_identity_status, { required: false });
+  if (!applicantIdentityStatus.ok) return applicantIdentityStatus;
+
+  const applicantAuthorityStatus = asEnumString(src.applicant_authority_status, { required: false });
+  if (!applicantAuthorityStatus.ok) return applicantAuthorityStatus;
+
+  const verificationResult = asEnumString(src.verification_result, { required: false });
+  if (!verificationResult.ok) return verificationResult;
+
+  const verificationReason = asOptionalString(src.verification_reason, 1000);
+  if (!verificationReason.ok) return verificationReason;
+
+  const notes = asOptionalString(src.notes, 5000);
+  if (!notes.ok) return notes;
+
+  const followUpAt = asDate(src.follow_up_at, { required: false });
+  if (!followUpAt.ok) return followUpAt;
+
+  return {
+    ok: true,
+    input: {
+      applicationId,
+      phoneNumberCalled: phone.value,
+      country: country.value,
+      contactPersonName: contactPersonName.value,
+      contactPersonRole: contactPersonRole.value,
+      attemptedAt: attemptedAt.value,
+      outcome: outcome.value,
+      applicantIdentityStatus: applicantIdentityStatus.value,
+      applicantAuthorityStatus: applicantAuthorityStatus.value,
+      verificationResult: verificationResult.value,
+      verificationReason: verificationReason.value,
+      notes: notes.value,
+      followUpAt: followUpAt.value,
+    },
+  };
+}
+
+/**
+ * Map service/parse failures to safe redirect error codes (no SQL/stack leakage).
+ * @param {unknown} err
+ */
+function mapPhoneVerificationAttemptError(err) {
+  const code = err && (err.code || err.message) ? String(err.code || err.message) : "";
+  if (
+    code === "invalid_application_id" ||
+    code === "application_id_required" ||
+    code === "not_found"
+  ) {
+    return "not_found";
+  }
+  if (
+    code === "phone_required" ||
+    code === "phone_number_called_required" ||
+    code === "attempted_at_required" ||
+    code === "invalid_phone_verification_outcome" ||
+    code === "invalid_applicant_identity_status" ||
+    code === "invalid_applicant_authority_status" ||
+    code === "invalid_verification_result" ||
+    code === "verification_reason_required" ||
+    code === "verified_requires_answered_outcome" ||
+    code === "verified_requires_identity_confirmed" ||
+    code === "authority_confirmed_requires_answered_outcome" ||
+    code === "invalid_phone_number" ||
+    code === "invalid" ||
+    code === "phone_number_invalid"
+  ) {
+    return "invalid";
+  }
+  return "phone_attempt_failed";
+}
+
 /**
  * @param {{
  *   getPool: () => { query: Function },
  *   isApexHost: (req: import('express').Request) => boolean,
  *   env?: NodeJS.ProcessEnv,
  *   sendUnavailable?: Function,
+ *   findUserStatusById?: Function,
+ *   listActiveAuthorizationRoles?: Function,
+ *   findRegistrationApplicationById?: Function,
+ *   recordPhoneVerificationAttempt?: Function,
+ *   log?: Function,
  * }} deps
  */
 function createPlatformAdminRouter(deps) {
@@ -318,6 +481,20 @@ function createPlatformAdminRouter(deps) {
   const authLog = createV5AuthLogger({
     log: typeof deps.log === "function" ? deps.log : undefined,
   });
+  const findUserStatusByIdFn =
+    typeof deps.findUserStatusById === "function" ? deps.findUserStatusById : findUserStatusById;
+  const listActiveAuthorizationRolesFn =
+    typeof deps.listActiveAuthorizationRoles === "function"
+      ? deps.listActiveAuthorizationRoles
+      : listActiveAuthorizationRoles;
+  const findRegistrationApplicationByIdFn =
+    typeof deps.findRegistrationApplicationById === "function"
+      ? deps.findRegistrationApplicationById
+      : (db, id) => registrationAppRepo.getRegistrationApplicationById(db, id);
+  const recordPhoneVerificationAttemptFn =
+    typeof deps.recordPhoneVerificationAttempt === "function"
+      ? deps.recordPhoneVerificationAttempt
+      : recordPhoneVerificationAttempt;
   const router = express.Router();
 
   function requireApex(req, res, next) {
@@ -363,7 +540,7 @@ function createPlatformAdminRouter(deps) {
         return sendControlled(req, res, 503, "Platform admin is temporarily unavailable.");
       }
 
-      const user = await findUserStatusById(pool, session.userId);
+      const user = await findUserStatusByIdFn(pool, session.userId);
       if (!user || String(user.status) !== "active") {
         authLog.logAuthEvent(req, "platform_admin_denied", {
           outcome: "denied",
@@ -373,7 +550,7 @@ function createPlatformAdminRouter(deps) {
         return sendControlled(req, res, 401, "Sign-in is required.");
       }
 
-      const roles = await listActiveAuthorizationRoles(pool, session.userId);
+      const roles = await listActiveAuthorizationRolesFn(pool, session.userId);
       const isPlatformAdmin = roles.some((r) => r.roleKey === "platform_admin");
       if (!isPlatformAdmin) {
         authLog.logAuthEvent(req, "platform_admin_denied", {
@@ -649,17 +826,37 @@ function createPlatformAdminRouter(deps) {
         if (list.status === REG_APP_STATUS.INVALID_INPUT) {
           return sendControlled(req, res, 400, "Invalid registration application filters.");
         }
-        return sendControlled(
-          req,
-          res,
-          503,
-          "Registration applications are temporarily unavailable."
+        const errorHtml = renderPlatformAdminView(
+          "platform-admin/registration-applications.ejs",
+          shellLocals(req, res, "registration-applications", {
+            pageTitle: "Registration Applications",
+            listError: true,
+            applications: [],
+            page: 1,
+            limit: REG_DEFAULT_LIMIT,
+            total: 0,
+            totalPages: 0,
+            filters: {},
+            queueFilters: QUEUE_FILTERS,
+            defaultLimit: REG_DEFAULT_LIMIT,
+            maxLimit: REG_MAX_LIMIT,
+            allowedLimits: REG_ALLOWED_LIMITS,
+            allowedPlans: ["foundation", "growth", "network"],
+            applicationStatuses: registrationAppRepo.APPLICATION_STATUSES,
+            provisioningStatuses: registrationAppRepo.PROVISIONING_STATUSES,
+            followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
+            linkedFilters: registrationAppRepo.LINKED_FILTERS,
+            rangeFrom: 0,
+            rangeTo: 0,
+          })
         );
+        return res.status(503).type("html").send(errorHtml);
       }
       const html = renderPlatformAdminView(
         "platform-admin/registration-applications.ejs",
         shellLocals(req, res, "registration-applications", {
           pageTitle: "Registration Applications",
+          listError: false,
           applications: list.applications,
           page: list.page,
           limit: list.limit,
@@ -674,6 +871,7 @@ function createPlatformAdminRouter(deps) {
           applicationStatuses: registrationAppRepo.APPLICATION_STATUSES,
           provisioningStatuses: registrationAppRepo.PROVISIONING_STATUSES,
           followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
+          linkedFilters: registrationAppRepo.LINKED_FILTERS,
           rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
           rangeTo: Math.min(list.page * list.limit, list.total),
         })
@@ -716,6 +914,10 @@ function createPlatformAdminRouter(deps) {
         shellLocals(req, res, "registration-applications", {
           pageTitle: detail.application.churchName || "Registration application",
           application: detail.application,
+          verification: detail.verification || null,
+          reviewRecommendation: detail.reviewRecommendation || null,
+          approvalChecklist: detail.approvalChecklist || null,
+          phoneVerification: detail.phoneVerification || null,
           contacts: detail.contacts || [],
           auditEvents: detail.auditEvents || [],
           platformAdmins: detail.platformAdmins || [],
@@ -824,6 +1026,54 @@ function createPlatformAdminRouter(deps) {
         return res.redirect(303, `${detailPath}?error=${error}`);
       }
       return res.redirect(303, `${detailPath}?notice=contact_saved`);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/phone-verification/attempts",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#reg-phone-verification`);
+      }
+
+      const parsed = parsePhoneVerificationAttemptForm(req.body, id);
+      if (!parsed.ok) {
+        const error =
+          parsed.code === "invalid_application_id" || parsed.code === "not_found"
+            ? "not_found"
+            : "invalid";
+        return res.redirect(303, `${detailPath}?error=${error}#reg-phone-verification`);
+      }
+
+      try {
+        const existing = await findRegistrationApplicationByIdFn(getPool(), id);
+        if (!existing) {
+          return res.redirect(303, `${detailPath}?error=not_found#reg-phone-verification`);
+        }
+
+        await recordPhoneVerificationAttemptFn(
+          parsed.input,
+          { platformAdminUserId: req.platformAdminContext.userId },
+          { client: getPool() }
+        );
+        return res.redirect(303, `${detailPath}?notice=phone_attempt_recorded#reg-phone-verification`);
+      } catch (err) {
+        const errorCode = mapPhoneVerificationAttemptError(err);
+        if (errorCode === "phone_attempt_failed") {
+          // eslint-disable-next-line no-console
+          console.error("[platform-admin] phone verification attempt failed", {
+            applicationId: id.slice(0, 36),
+            message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
+          });
+        }
+        return res.redirect(303, `${detailPath}?error=${errorCode}#reg-phone-verification`);
+      }
     }
   );
 
@@ -2083,4 +2333,6 @@ function createPlatformAdminRouter(deps) {
 module.exports = {
   createPlatformAdminRouter,
   renderPlatformAdminView,
+  parsePhoneVerificationAttemptForm,
+  mapPhoneVerificationAttemptError,
 };

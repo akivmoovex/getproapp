@@ -1,0 +1,43 @@
+<%
+  /**
+   * Shared Platform Admin registration status chip.
+   * Locals:
+   *   - statusKind: application | provisioning | verification | duplicate_risk
+   *   - statusValue: raw status key
+   *   - registrationStatus: optional API from registrationStatusPresentation
+   *   - regStatus: optional precomputed presentation object
+   */
+  var regStatusApi =
+    typeof registrationStatus !== 'undefined' && registrationStatus
+      ? registrationStatus
+      : null;
+  var st =
+    typeof regStatus !== 'undefined' && regStatus && typeof regStatus === 'object'
+      ? regStatus
+      : regStatusApi && typeof regStatusApi.presentRegistrationStatus === 'function'
+        ? regStatusApi.presentRegistrationStatus(
+            typeof statusKind !== 'undefined' ? statusKind : '',
+            typeof statusValue !== 'undefined' ? statusValue : null
+          )
+        : {
+            kind: typeof statusKind !== 'undefined' ? String(statusKind || '') : '',
+            value: '',
+            label: '—',
+            tone: 'muted',
+            chipClass: 'bb-pa-chip--muted',
+            known: false,
+            empty: true,
+          };
+  var chipClass = st.chipClass || 'bb-pa-chip--muted';
+  var label = st.label != null && String(st.label) !== '' ? String(st.label) : '—';
+  var kindAttr = st.kind != null ? String(st.kind) : '';
+  var valueAttr = st.value != null ? String(st.value) : '';
+  var knownAttr = st.known ? '1' : '0';
+%>
+<span
+  class="bb-pa-chip <%= chipClass %>"
+  data-bb-pa-reg-status="1"
+  data-bb-pa-reg-status-kind="<%= kindAttr %>"
+  data-bb-pa-reg-status-value="<%= valueAttr %>"
+  data-bb-pa-reg-status-known="<%= knownAttr %>"
+><%= label %></span>

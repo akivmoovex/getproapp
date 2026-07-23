@@ -92,6 +92,7 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
 const PLATFORM_ADMIN_MOBILE_TABS = Object.freeze([
   "home",
   "organizations",
+  "registration-applications",
   "plans",
   "account",
 ]);

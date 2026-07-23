@@ -3007,6 +3007,549 @@ tr.is-disabled td {
   margin-bottom: 0.75rem;
 }
 
+/* —— Registration queue filters (Phase2 Batch 3) —— */
+.bb-pa-reg-filter {
+  display: grid;
+  gap: 0.75rem;
+}
+@media (min-width: 800px) {
+  .bb-pa-reg-filter {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    align-items: end;
+  }
+  .bb-pa-reg-filter .bb-pa-field--search {
+    grid-column: span 2;
+  }
+}
+.bb-pa-reg-filter__more {
+  grid-column: 1 / -1;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: #fff;
+}
+.bb-pa-reg-filter__more > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.bb-pa-reg-filter__more-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+@media (min-width: 800px) {
+  .bb-pa-reg-filter__more-grid {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+}
+.bb-pa-reg-filter__actions {
+  grid-column: 1 / -1;
+}
+
+/* —— Registration detail overview / structured cards (Phase2 Batch 4–5) —— */
+.bb-pa-reg-overview {
+  margin-bottom: 0.75rem;
+  scroll-margin-top: 5rem;
+}
+.bb-pa-reg-overview__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+.bb-pa-reg-overview__meta {
+  margin-top: 0.85rem;
+}
+.bb-pa-reg-section-nav {
+  display: flex;
+  gap: 0.65rem;
+  margin: 0 0 1rem;
+  padding: 0.35rem 0 0.65rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--bb-line, #d9e4e9);
+  scrollbar-width: thin;
+}
+.bb-pa-reg-section-nav a {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--bb-violet, #6c5ce7);
+  text-decoration: none;
+  padding: 0.25rem 0.15rem;
+}
+.bb-pa-reg-section-nav a:hover,
+.bb-pa-reg-section-nav a:focus-visible {
+  text-decoration: underline;
+}
+.bb-pa-reg-detail-grid {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0 0 1rem;
+}
+@media (min-width: 900px) {
+  .bb-pa-reg-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.bb-pa-reg-card,
+.bb-pa-reg-actions,
+#reg-documents,
+#reg-recommendation,
+#reg-verification,
+#reg-approval-checklist,
+#reg-phone-verification,
+#reg-activity,
+#reg-actions,
+#reg-applicant,
+#reg-administration,
+#reg-website,
+#reg-details,
+#reg-overview {
+  scroll-margin-top: 5rem;
+}
+.bb-pa-reg-origin {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bb-muted, #5a6b73);
+}
+.bb-pa-reg-actions__reject {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--bb-line, #d9e4e9);
+}
+.bb-pa-reg-documents-empty {
+  margin-top: 0.5rem;
+}
+
+/* —— Registration verification (Phase2 read-only UI) —— */
+.bb-pa-reg-verification__summary {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.75rem;
+  background: #f8fafb;
+}
+.bb-pa-reg-verification__summary-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  font-size: 0.9rem;
+}
+.bb-pa-reg-verification__count-label {
+  color: var(--bb-muted, #5a6b73);
+  margin-right: 0.25rem;
+}
+.bb-pa-reg-verification__grid {
+  display: grid;
+  gap: 0.85rem;
+}
+@media (min-width: 900px) {
+  .bb-pa-reg-verification__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.bb-pa-reg-verification-fact {
+  margin: 0;
+  min-width: 0;
+}
+.bb-pa-reg-verification-fact--unsupported {
+  border-style: dashed;
+  background: #fafbfc;
+}
+.bb-pa-reg-verification-fact__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.bb-pa-reg-verification-fact__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.35;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+.bb-pa-reg-verification-fact__meta {
+  margin: 0;
+}
+.bb-pa-reg-verification-fact__explanation {
+  margin: 0.75rem 0 0;
+  color: var(--bb-muted, #5a6b73);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* —— Registration advisory recommendation (Phase2 read-only UI) —— */
+.bb-pa-reg-recommendation {
+  margin: 0 0 1rem;
+  border-left: 4px solid #9a5b00;
+}
+.bb-pa-reg-recommendation--ok {
+  border-left-color: #0f766e;
+  background: #f0fdf9;
+}
+.bb-pa-reg-recommendation--warn {
+  border-left-color: #9a5b00;
+  background: #fffbf5;
+}
+.bb-pa-reg-recommendation--danger {
+  border-left-color: var(--bb-color-error, #b3261e);
+  background: #fef8f7;
+}
+.bb-pa-reg-recommendation__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
+}
+.bb-pa-reg-recommendation__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+}
+.bb-pa-reg-recommendation__title-row .bb-pa-section-title {
+  margin: 0;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.bb-pa-reg-recommendation__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+}
+.bb-pa-reg-recommendation__explanation {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.bb-pa-reg-recommendation__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.25rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+}
+.bb-pa-reg-recommendation__count-label {
+  color: var(--bb-muted, #5a6b73);
+  margin-right: 0.35rem;
+}
+.bb-pa-reg-recommendation__verify-link {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+}
+.bb-pa-reg-recommendation__reasons {
+  margin: 0;
+  min-width: 0;
+}
+.bb-pa-reg-recommendation__reason-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+.bb-pa-reg-recommendation__reason {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.55rem;
+  background: #fff;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.bb-pa-reg-recommendation__reason--blocking {
+  border-color: #f0c7c2;
+  background: #fffafa;
+}
+.bb-pa-reg-recommendation__reason-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.65rem;
+}
+.bb-pa-reg-recommendation__reason-fact {
+  font-weight: 650;
+  font-size: 0.92rem;
+  min-width: 0;
+  flex: 1 1 10rem;
+}
+.bb-pa-reg-recommendation__reason-msg {
+  margin: 0.4rem 0 0;
+  color: var(--bb-muted, #5a6b73);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.bb-pa-reg-recommendation__more {
+  margin-top: 0.65rem;
+}
+.bb-pa-reg-recommendation__more > summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--bb-ink, #102a43);
+}
+.bb-pa-reg-recommendation__more[open] > summary {
+  margin-bottom: 0.55rem;
+}
+@media (max-width: 719px) {
+  .bb-pa-reg-recommendation__counts {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+}
+
+/* —— Registration approval checklist (Phase2 read-only UI) —— */
+.bb-pa-reg-checklist {
+  margin: 0 0 1rem;
+}
+.bb-pa-reg-checklist--fallback {
+  border-left: 4px solid #9a5b00;
+  background: #fffbf5;
+}
+.bb-pa-reg-checklist__head {
+  margin-bottom: 0.55rem;
+}
+.bb-pa-reg-checklist__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+}
+.bb-pa-reg-checklist__title-row .bb-pa-section-title {
+  margin: 0;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.bb-pa-reg-checklist__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.15rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  list-style: none;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.75rem;
+  background: #f8fafb;
+  font-size: 0.88rem;
+}
+.bb-pa-reg-checklist__count-label {
+  color: var(--bb-muted, #5a6b73);
+  margin-right: 0.35rem;
+}
+.bb-pa-reg-checklist__list {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+}
+.bb-pa-reg-checklist-item {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.65rem;
+  background: #fff;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.bb-pa-reg-checklist-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.35rem;
+}
+.bb-pa-reg-checklist-item__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.35;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+.bb-pa-reg-checklist-item__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.bb-pa-reg-checklist-item__explanation {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--bb-ink, #102a43);
+}
+.bb-pa-reg-checklist-item__sources {
+  margin: 0.4rem 0 0;
+  font-size: 0.82rem;
+}
+.bb-pa-reg-checklist-item__action {
+  margin: 0.55rem 0 0;
+  font-size: 0.9rem;
+}
+@media (max-width: 719px) {
+  .bb-pa-reg-checklist__summary {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .bb-pa-reg-checklist-item__head {
+    flex-direction: column;
+  }
+}
+
+/* —— Registration phone verification (Phase2 read-only UI) —— */
+.bb-pa-reg-phone {
+  margin: 0 0 1rem;
+  min-width: 0;
+}
+.bb-pa-reg-phone--unavailable {
+  border-left: 4px solid #9a5b00;
+  background: #fffbf5;
+}
+.bb-pa-reg-phone__summary {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.75rem;
+  background: #f8fafb;
+  min-width: 0;
+}
+.bb-pa-reg-phone__summary-dl {
+  margin: 0.35rem 0 0;
+}
+.bb-pa-reg-phone__history {
+  min-width: 0;
+}
+.bb-pa-reg-phone__attempt-list {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.bb-pa-reg-phone-attempt {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.65rem;
+  background: #fff;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.bb-pa-reg-phone-attempt__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.45rem;
+}
+.bb-pa-reg-phone-attempt__title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 650;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.bb-pa-reg-phone-attempt__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.bb-pa-reg-phone-attempt__meta {
+  margin: 0;
+}
+.bb-pa-reg-phone-attempt__notes {
+  margin: 0.55rem 0 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.45rem;
+  background: #f8fafb;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.bb-pa-reg-phone__record {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.65rem;
+  background: #fff;
+  min-width: 0;
+}
+.bb-pa-reg-phone__record > summary {
+  cursor: pointer;
+  font-weight: 650;
+  list-style-position: outside;
+}
+.bb-pa-reg-phone__record[open] > summary {
+  margin-bottom: 0.75rem;
+}
+.bb-pa-reg-phone__form {
+  margin: 0;
+  min-width: 0;
+}
+.bb-pa-reg-phone__fieldset {
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.55rem;
+  min-width: 0;
+}
+.bb-pa-reg-phone__fieldset legend {
+  padding: 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+.bb-pa-reg-phone__form .bb-pa-field textarea {
+  width: 100%;
+  max-width: 100%;
+  resize: vertical;
+}
+@media (min-width: 900px) {
+  .bb-pa-reg-phone__summary-dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 1rem;
+  }
+  .bb-pa-reg-phone__form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem 1rem;
+    align-items: start;
+  }
+  .bb-pa-reg-phone__form-span {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 719px) {
+  .bb-pa-reg-phone-attempt__head {
+    flex-direction: column;
+  }
+  .bb-pa-reg-phone-attempt__badges {
+    width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bb-pa-body *,
   .bb-pa-body *::before,

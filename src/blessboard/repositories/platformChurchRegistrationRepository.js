@@ -43,7 +43,30 @@ const UUID_RE =
 const {
   phoneUniquenessSqlPredicate,
   DUPLICATE_PHONE_MESSAGE,
+  normalizeRegistrationPhone,
 } = require("../services/normalizeRegistrationPhone");
+
+const PHONE_VERIFICATION_OUTCOMES = Object.freeze([
+  "answered",
+  "no_answer",
+  "unavailable",
+  "wrong_number",
+  "callback_requested",
+  "information_inconsistent",
+]);
+const PHONE_VERIFICATION_CHECK_STATUSES = Object.freeze([
+  "not_checked",
+  "confirmed",
+  "not_confirmed",
+]);
+const PHONE_VERIFICATION_RESULTS = Object.freeze(["pending", "verified", "failed"]);
+
+const PHONE_VERIFY_ATTEMPT_SELECT = `
+  id, application_id, phone_number_called, phone_number_normalized,
+  contact_person_name, contact_person_role, attempted_at, outcome,
+  applicant_identity_status, applicant_authority_status, verification_result,
+  verification_reason, notes, follow_up_at, created_by_user_id, created_at
+`;
 
 class DuplicateRegistrationPhoneError extends Error {
   constructor(message) {
@@ -1219,6 +1242,169 @@ async function listApplicationSupportContacts(client, applicationId, opts = {}) 
 }
 
 /**
+ * Insert one append-only phone verification attempt.
+ * Does not mutate the application, support contacts, or audit events.
+ * @param {{ query: Function }} client
+ * @param {{
+ *   applicationId: string,
+ *   phoneNumberCalled: string,
+ *   country?: string|null,
+ *   contactPersonName?: string|null,
+ *   contactPersonRole?: string|null,
+ *   attemptedAt: Date|string,
+ *   outcome: string,
+ *   applicantIdentityStatus?: string,
+ *   applicantAuthorityStatus?: string,
+ *   verificationResult?: string,
+ *   verificationReason?: string|null,
+ *   notes?: string|null,
+ *   followUpAt?: Date|string|null,
+ *   createdByUserId: string,
+ * }} fields
+ */
+async function createPhoneVerificationAttempt(client, fields) {
+  const applicationId = String(fields.applicationId || "").trim();
+  if (!applicationId) throw new Error("application_id_required");
+  if (!UUID_RE.test(applicationId)) throw new Error("invalid_application_id");
+
+  const createdByUserId = String(fields.createdByUserId || "").trim();
+  if (!createdByUserId) throw new Error("created_by_user_id_required");
+  if (!UUID_RE.test(createdByUserId)) throw new Error("invalid_created_by_user_id");
+
+  const phoneNumberCalled = String(fields.phoneNumberCalled || "").trim();
+  if (!phoneNumberCalled) throw new Error("phone_number_called_required");
+
+  const normalized = normalizeRegistrationPhone(
+    phoneNumberCalled,
+    fields.country != null ? fields.country : null
+  );
+  if (!normalized.ok) {
+    const err = new Error(normalized.error || "phone_number_invalid");
+    err.code = "invalid_phone_number";
+    err.field = normalized.field || "phone";
+    throw err;
+  }
+
+  if (fields.attemptedAt == null || String(fields.attemptedAt).trim() === "") {
+    throw new Error("attempted_at_required");
+  }
+
+  const outcome = String(fields.outcome || "").trim().toLowerCase();
+  if (!PHONE_VERIFICATION_OUTCOMES.includes(outcome)) {
+    throw new Error("invalid_phone_verification_outcome");
+  }
+
+  const applicantIdentityStatus = String(
+    fields.applicantIdentityStatus != null && String(fields.applicantIdentityStatus).trim() !== ""
+      ? fields.applicantIdentityStatus
+      : "not_checked"
+  )
+    .trim()
+    .toLowerCase();
+  if (!PHONE_VERIFICATION_CHECK_STATUSES.includes(applicantIdentityStatus)) {
+    throw new Error("invalid_applicant_identity_status");
+  }
+
+  const applicantAuthorityStatus = String(
+    fields.applicantAuthorityStatus != null &&
+      String(fields.applicantAuthorityStatus).trim() !== ""
+      ? fields.applicantAuthorityStatus
+      : "not_checked"
+  )
+    .trim()
+    .toLowerCase();
+  if (!PHONE_VERIFICATION_CHECK_STATUSES.includes(applicantAuthorityStatus)) {
+    throw new Error("invalid_applicant_authority_status");
+  }
+
+  const verificationResult = String(
+    fields.verificationResult != null && String(fields.verificationResult).trim() !== ""
+      ? fields.verificationResult
+      : "pending"
+  )
+    .trim()
+    .toLowerCase();
+  if (!PHONE_VERIFICATION_RESULTS.includes(verificationResult)) {
+    throw new Error("invalid_verification_result");
+  }
+
+  let verificationReason =
+    fields.verificationReason != null ? String(fields.verificationReason).trim() : "";
+  if (verificationReason === "") verificationReason = null;
+  if (
+    (verificationResult === "verified" || verificationResult === "failed") &&
+    !verificationReason
+  ) {
+    throw new Error("verification_reason_required");
+  }
+
+  let notes = fields.notes != null ? String(fields.notes) : null;
+  if (notes != null && notes.trim() === "") notes = null;
+
+  let contactPersonName =
+    fields.contactPersonName != null ? String(fields.contactPersonName).trim() : "";
+  if (contactPersonName === "") contactPersonName = null;
+
+  let contactPersonRole =
+    fields.contactPersonRole != null ? String(fields.contactPersonRole).trim() : "";
+  if (contactPersonRole === "") contactPersonRole = null;
+
+  const r = await client.query(
+    `INSERT INTO blessboard.registration_phone_verification_attempts (
+       application_id, phone_number_called, phone_number_normalized,
+       contact_person_name, contact_person_role, attempted_at, outcome,
+       applicant_identity_status, applicant_authority_status, verification_result,
+       verification_reason, notes, follow_up_at, created_by_user_id
+     ) VALUES (
+       $1, $2, $3, $4, $5, $6::timestamptz, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14
+     )
+     RETURNING ${PHONE_VERIFY_ATTEMPT_SELECT}`,
+    [
+      applicationId,
+      phoneNumberCalled.slice(0, 64),
+      normalized.normalized,
+      contactPersonName,
+      contactPersonRole,
+      fields.attemptedAt,
+      outcome,
+      applicantIdentityStatus,
+      applicantAuthorityStatus,
+      verificationResult,
+      verificationReason,
+      notes,
+      fields.followUpAt != null && String(fields.followUpAt).trim() !== ""
+        ? fields.followUpAt
+        : null,
+      createdByUserId,
+    ]
+  );
+  return r.rows[0];
+}
+
+/**
+ * List phone verification attempts for an application (newest first).
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{ limit?: number }} [opts]
+ * @returns {Promise<object[]>}
+ */
+async function listPhoneVerificationAttempts(client, applicationId, opts = {}) {
+  const id = String(applicationId || "").trim();
+  if (!id) throw new Error("application_id_required");
+  if (!UUID_RE.test(id)) throw new Error("invalid_application_id");
+  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
+  const r = await client.query(
+    `SELECT ${PHONE_VERIFY_ATTEMPT_SELECT}
+       FROM blessboard.registration_phone_verification_attempts
+      WHERE application_id = $1
+      ORDER BY attempted_at DESC, created_at DESC, id DESC
+      LIMIT $2`,
+    [id, limit]
+  );
+  return r.rows;
+}
+
+/**
  * Soft-link an unprovisioned application to an existing organization (no provision / no paid activation).
  * @param {{ query: Function }} client
  * @param {string} applicationId
@@ -1580,6 +1766,9 @@ module.exports = {
   WORKFLOW_STATUSES,
   CONTACT_METHODS,
   CONTACT_OUTCOMES,
+  PHONE_VERIFICATION_OUTCOMES,
+  PHONE_VERIFICATION_CHECK_STATUSES,
+  PHONE_VERIFICATION_RESULTS,
   LINKED_FILTERS,
   SORT_OPTIONS,
   DuplicateRegistrationPhoneError,
@@ -1608,6 +1797,8 @@ module.exports = {
   createOrganizationSupportContact,
   listOrganizationSupportContacts,
   listApplicationSupportContacts,
+  createPhoneVerificationAttempt,
+  listPhoneVerificationAttempts,
   linkApplicationToOrganization,
   listActivePlatformAdministrators,
   getOrganizationPublicationSummary,

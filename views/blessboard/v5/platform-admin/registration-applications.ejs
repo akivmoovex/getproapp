@@ -5,12 +5,29 @@
   var f = filters || {};
   var queues = queueFilters || [];
   var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
+  var listError = typeof listError !== 'undefined' && listError;
+  var appStatuses = applicationStatuses || ['submitted', 'duplicate_review', 'rejected', 'cancelled', 'closed'];
+  var provStatuses = provisioningStatuses || ['not_started', 'provisioning', 'provisioned', 'provisioning_failed'];
+  var followStatuses = followUpStatuses || [];
+  var linkedOpts = linkedFilters || ['all', 'linked', 'unlinked'];
 
   function toneChip(tone) {
+    if (typeof registrationStatus !== 'undefined' && registrationStatus && registrationStatus.chipClassForTone) {
+      return registrationStatus.chipClassForTone(tone);
+    }
     if (tone === 'success') return 'bb-pa-chip--ok';
     if (tone === 'danger') return 'bb-pa-chip--danger';
     if (tone === 'warn') return 'bb-pa-chip--warn';
     return 'bb-pa-chip--muted';
+  }
+  function statusLabel(kind, value) {
+    if (typeof registrationStatus !== 'undefined' && registrationStatus && registrationStatus.presentRegistrationStatus) {
+      return registrationStatus.presentRegistrationStatus(kind, value).label;
+    }
+    return String(value || '').replace(/_/g, ' ') || '—';
+  }
+  function followLabel(value) {
+    return String(value || '').replace(/_/g, ' ');
   }
   function fmtDate(d) {
     if (!d) return '—';
@@ -20,23 +37,62 @@
       return '—';
     }
   }
+  function pushFilter(parts, key, value) {
+    if (value != null && String(value) !== '') {
+      parts.push(key + '=' + encodeURIComponent(String(value)));
+    }
+  }
   function queryPage(p) {
     var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
-    if (f.q) parts.push('q=' + encodeURIComponent(f.q));
-    if (f.queue) parts.push('queue=' + encodeURIComponent(f.queue));
-    if (f.selectedPlan) parts.push('selected_plan=' + encodeURIComponent(f.selectedPlan));
-    if (f.from) parts.push('from=' + encodeURIComponent(f.from));
-    if (f.to) parts.push('to=' + encodeURIComponent(f.to));
+    pushFilter(parts, 'q', f.q);
+    pushFilter(parts, 'queue', f.queue);
+    pushFilter(parts, 'selected_plan', f.selectedPlan);
+    pushFilter(parts, 'application_status', f.applicationStatus);
+    pushFilter(parts, 'provisioning_status', f.provisioningStatus);
+    pushFilter(parts, 'follow_up_status', f.followUpStatus);
+    pushFilter(parts, 'from', f.from);
+    pushFilter(parts, 'to', f.to);
+    pushFilter(parts, 'support_requested', f.supportRequested);
+    pushFilter(parts, 'requires_review', f.requiresReview);
+    pushFilter(parts, 'overdue_follow_up', f.overdueFollowUp);
+    if (f.linked && f.linked !== 'all') pushFilter(parts, 'linked', f.linked);
     return '/admin/registration-applications?' + parts.join('&');
   }
   function clearHref() {
-    return '/admin/registration-applications?limit=' + encodeURIComponent(limit);
+    return '/admin/registration-applications';
   }
+  var hasActiveFilters = Boolean(
+    (f.q && String(f.q).trim()) ||
+    (f.queue && String(f.queue).trim()) ||
+    (f.selectedPlan && String(f.selectedPlan).trim()) ||
+    (f.applicationStatus && String(f.applicationStatus).trim()) ||
+    (f.provisioningStatus && String(f.provisioningStatus).trim()) ||
+    (f.followUpStatus && String(f.followUpStatus).trim()) ||
+    (f.from && String(f.from).trim()) ||
+    (f.to && String(f.to).trim()) ||
+    f.supportRequested === 'true' || f.supportRequested === 'false' ||
+    f.requiresReview === 'true' ||
+    f.overdueFollowUp === 'true' ||
+    (f.linked && f.linked !== 'all' && String(f.linked).trim())
+  );
+  var moreFiltersOpen = Boolean(
+    (f.applicationStatus && String(f.applicationStatus).trim()) ||
+    (f.provisioningStatus && String(f.provisioningStatus).trim()) ||
+    (f.followUpStatus && String(f.followUpStatus).trim()) ||
+    (f.from && String(f.from).trim()) ||
+    (f.to && String(f.to).trim()) ||
+    f.supportRequested === 'true' || f.supportRequested === 'false' ||
+    f.requiresReview === 'true' ||
+    f.overdueFollowUp === 'true' ||
+    (f.linked && f.linked !== 'all')
+  );
 %>
 
 <section
   class="bb-pa-orgs bb-pa-reg-ops"
   data-bb-pa-registration-applications="1"
+  data-bb-pa-reg-list-error="<%= listError ? '1' : '0' %>"
+  data-bb-pa-reg-has-filters="<%= hasActiveFilters ? '1' : '0' %>"
   aria-label="Registration applications"
 >
   <header class="bb-pa-page-head bb-pa-page-head--split">
@@ -48,11 +104,22 @@
         Network needs support validation before an administrator creates the organization.
       </p>
     </div>
+    <% if (!listError) { %>
     <p class="bb-pa-page-head__actions">
       <span class="bb-pa-orgs__total" data-bb-count="registration-total"><%= totalCount %></span>
       <span class="bb-pa-orgs__total-label">applications</span>
     </p>
+    <% } %>
   </header>
+
+  <% if (listError) { %>
+  <%- include('../partials/error-state', {
+    title: 'Unable to load applications',
+    body: 'Registration applications could not be loaded right now. Try again in a moment.',
+    actionHref: '/admin/registration-applications',
+    actionLabel: 'Retry'
+  }) %>
+  <% } else { %>
 
   <aside class="bb-pa-reg-guide" data-bb-pa-reg-guide="1" aria-label="How registration works">
     <h2 class="bb-pa-reg-guide__title">How registration works</h2>
@@ -70,7 +137,7 @@
     role="search"
     data-bb-pa-reg-filter="1"
   >
-    <div class="bb-pa-field">
+    <div class="bb-pa-field bb-pa-field--search">
       <label for="q">Search</label>
       <input
         id="q"
@@ -79,11 +146,12 @@
         value="<%= f.q || '' %>"
         placeholder="Church, contact, email, phone, org key"
         autocomplete="off"
+        data-bb-pa-reg-filter-field="q"
       />
     </div>
     <div class="bb-pa-field">
       <label for="queue">Queue</label>
-      <select id="queue" name="queue" data-bb-pa-reg-queue="1">
+      <select id="queue" name="queue" data-bb-pa-reg-queue="1" data-bb-pa-reg-filter-field="queue">
         <% queues.forEach(function (q) { %>
         <option value="<%= q.key %>"<%= (f.queue || '') === q.key ? ' selected' : '' %>><%= q.label %></option>
         <% }) %>
@@ -91,7 +159,7 @@
     </div>
     <div class="bb-pa-field">
       <label for="selected_plan">Plan</label>
-      <select id="selected_plan" name="selected_plan" data-bb-pa-reg-plan-filter="1">
+      <select id="selected_plan" name="selected_plan" data-bb-pa-reg-plan-filter="1" data-bb-pa-reg-filter-field="selected_plan">
         <option value="">All</option>
         <% (allowedPlans || ['foundation', 'growth', 'network']).forEach(function (p) { %>
         <option value="<%= p %>"<%= f.selectedPlan === p ? ' selected' : '' %>>
@@ -101,34 +169,145 @@
       </select>
     </div>
     <div class="bb-pa-field">
-      <label for="from">From</label>
-      <input id="from" name="from" type="date" value="<%= f.from || '' %>" />
-    </div>
-    <div class="bb-pa-field">
-      <label for="to">To</label>
-      <input id="to" name="to" type="date" value="<%= f.to || '' %>" />
-    </div>
-    <div class="bb-pa-field">
       <label for="limit">Per page</label>
-      <select id="limit" name="limit">
+      <select id="limit" name="limit" data-bb-pa-reg-filter-field="limit">
         <% limits.forEach(function (n) { %>
         <option value="<%= n %>"<%= Number(limit) === Number(n) ? ' selected' : '' %>><%= n %></option>
         <% }) %>
       </select>
     </div>
-    <div class="bb-pa-org-filter__actions">
+
+    <details class="bb-pa-reg-filter__more" data-bb-pa-reg-filter-more="1"<%= moreFiltersOpen ? ' open' : '' %>>
+      <summary>More filters</summary>
+      <div class="bb-pa-reg-filter__more-grid">
+        <div class="bb-pa-field">
+          <label for="application_status">Application status</label>
+          <select
+            id="application_status"
+            name="application_status"
+            data-bb-pa-reg-filter-field="application_status"
+          >
+            <option value="">All</option>
+            <% appStatuses.forEach(function (s) { %>
+            <option value="<%= s %>"<%= f.applicationStatus === s ? ' selected' : '' %>><%= statusLabel('application', s) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-pa-field">
+          <label for="provisioning_status">Provisioning status</label>
+          <select
+            id="provisioning_status"
+            name="provisioning_status"
+            data-bb-pa-reg-filter-field="provisioning_status"
+          >
+            <option value="">All</option>
+            <% provStatuses.forEach(function (s) { %>
+            <option value="<%= s %>"<%= f.provisioningStatus === s ? ' selected' : '' %>><%= statusLabel('provisioning', s) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-pa-field">
+          <label for="follow_up_status">Follow-up status</label>
+          <select
+            id="follow_up_status"
+            name="follow_up_status"
+            data-bb-pa-reg-filter-field="follow_up_status"
+          >
+            <option value="">All</option>
+            <% followStatuses.forEach(function (s) { %>
+            <option value="<%= s %>"<%= f.followUpStatus === s ? ' selected' : '' %>><%= followLabel(s) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="bb-pa-field">
+          <label for="from">Submitted from</label>
+          <input id="from" name="from" type="date" value="<%= f.from || '' %>" data-bb-pa-reg-filter-field="from" />
+        </div>
+        <div class="bb-pa-field">
+          <label for="to">Submitted to</label>
+          <input id="to" name="to" type="date" value="<%= f.to || '' %>" data-bb-pa-reg-filter-field="to" />
+        </div>
+        <div class="bb-pa-field">
+          <label for="support_requested">Support requested</label>
+          <select
+            id="support_requested"
+            name="support_requested"
+            data-bb-pa-reg-filter-field="support_requested"
+          >
+            <option value="">All</option>
+            <option value="true"<%= f.supportRequested === 'true' ? ' selected' : '' %>>Yes</option>
+            <option value="false"<%= f.supportRequested === 'false' ? ' selected' : '' %>>No</option>
+          </select>
+        </div>
+        <div class="bb-pa-field">
+          <label for="requires_review">Requires review</label>
+          <select
+            id="requires_review"
+            name="requires_review"
+            data-bb-pa-reg-filter-field="requires_review"
+          >
+            <option value="">All</option>
+            <option value="true"<%= f.requiresReview === 'true' ? ' selected' : '' %>>Yes</option>
+          </select>
+        </div>
+        <div class="bb-pa-field">
+          <label for="overdue_follow_up">Overdue follow-up</label>
+          <select
+            id="overdue_follow_up"
+            name="overdue_follow_up"
+            data-bb-pa-reg-filter-field="overdue_follow_up"
+          >
+            <option value="">All</option>
+            <option value="true"<%= f.overdueFollowUp === 'true' ? ' selected' : '' %>>Yes</option>
+          </select>
+        </div>
+        <div class="bb-pa-field">
+          <label for="linked">Linked status</label>
+          <select id="linked" name="linked" data-bb-pa-reg-filter-field="linked">
+            <% linkedOpts.forEach(function (opt) { %>
+            <option value="<%= opt %>"<%= (f.linked || 'all') === opt ? ' selected' : '' %>>
+              <%= opt === 'all' ? 'All' : (opt === 'linked' ? 'Linked' : 'Unlinked') %>
+            </option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <div class="bb-pa-org-filter__actions bb-pa-reg-filter__actions">
       <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Apply</button>
-      <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= clearHref() %>">Clear</a>
+      <% if (hasActiveFilters) { %>
+      <a
+        class="bb-pa-btn bb-pa-btn--secondary"
+        href="<%= clearHref() %>"
+        data-bb-pa-reg-clear-filters="1"
+      >Clear filters</a>
+      <% } %>
     </div>
   </form>
 
   <% if (!rows.length) { %>
-  <%- include('../partials/empty-state', {
-    title: 'No registration applications',
-    body: 'No applications match this queue. Try another filter or clear search.'
-  }) %>
+    <% if (hasActiveFilters) { %>
+    <%- include('../partials/empty-state', {
+      title: 'No matching applications',
+      body: 'No registration applications match the current search or filters. Clear filters to see the full queue.',
+      actionHref: clearHref(),
+      actionLabel: 'Clear filters',
+      className: 'bb-pa-reg-no-results',
+      icon: 'search'
+    }) %>
+    <div hidden data-bb-pa-reg-state="no-results"></div>
+    <% } else { %>
+    <%- include('../partials/empty-state', {
+      title: 'No registration applications yet',
+      body: 'When churches submit the public registration form, their applications will appear here for review.',
+      className: 'bb-pa-reg-empty',
+      icon: 'inbox'
+    }) %>
+    <div hidden data-bb-pa-reg-state="empty"></div>
+    <% } %>
   <% } else { %>
-  <div class="bb-pa-table-wrap bb-pa-table-wrap--desktop" data-bb-pa-reg-table="1">
+  <div class="bb-pa-table-wrap bb-pa-orgs-table-wrap" data-bb-pa-reg-table="1">
     <table class="bb-pa-table">
       <thead>
         <tr>
@@ -166,6 +345,10 @@
           <td><%= fmtDate(row.createdAt) %></td>
           <td>
             <span class="bb-pa-chip <%= toneChip(row.operatorTone) %>" data-bb-pa-display-status="1"><%= row.displayStatus || '—' %></span>
+            <div class="bb-pa-muted" data-bb-pa-reg-status-row="1">
+              <%- include('../partials/pa-registration-status-chip', { statusKind: 'application', statusValue: row.applicationStatus }) %>
+              <%- include('../partials/pa-registration-status-chip', { statusKind: 'provisioning', statusValue: row.provisioningStatus }) %>
+            </div>
           </td>
           <td><%= row.recommendedActionLabel || '—' %></td>
           <td>
@@ -198,6 +381,10 @@
         <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="1">Support requested</span>
         <% } %>
         <span class="bb-pa-chip <%= toneChip(row.operatorTone) %>" data-bb-pa-display-status="1"><%= row.displayStatus || '—' %></span>
+        <span class="bb-pa-org-card__meta" data-bb-pa-reg-status-row="1">
+          <%- include('../partials/pa-registration-status-chip', { statusKind: 'application', statusValue: row.applicationStatus }) %>
+          <%- include('../partials/pa-registration-status-chip', { statusKind: 'provisioning', statusValue: row.provisioningStatus }) %>
+        </span>
         <span class="bb-pa-org-card__meta"><strong>Next:</strong> <%= row.recommendedActionLabel || '—' %></span>
       </a>
       <p class="bb-pa-reg-card__action">
@@ -224,6 +411,7 @@
       <% } %>
     </div>
   </nav>
+  <% } %>
   <% } %>
   <% } %>
 </section>

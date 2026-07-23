@@ -38,6 +38,30 @@ const {
   presentOpenAction,
   queueFilterSpec,
 } = require("./registrationOperatorPresenter");
+const {
+  buildRegistrationVerificationFacts,
+} = require("./registrationVerificationFacts");
+const {
+  buildRegistrationReviewRecommendation,
+  CODES: RECOMMENDATION_CODES,
+  LABELS: RECOMMENDATION_LABELS,
+  TONES: RECOMMENDATION_TONES,
+} = require("./registrationReviewRecommendation");
+const {
+  buildRegistrationApprovalChecklist,
+  ITEM_DEFS: APPROVAL_CHECKLIST_ITEM_DEFS,
+  STATUSES: APPROVAL_CHECKLIST_STATUSES,
+} = require("./registrationApprovalChecklist");
+const {
+  getPhoneVerificationHistory,
+  derivePhoneVerificationSummary,
+  SUMMARY_STATUSES: PHONE_VERIFICATION_SUMMARY_STATUSES,
+} = require("./registrationPhoneVerificationService");
+const {
+  findOccupyingPhoneMatch,
+  findSimilarOrganizationMatch,
+} = require("./registrationRiskDecision");
+const authRepo = require("../repositories/blessBoardAuthRepository");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -59,6 +83,475 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const TERMINAL_FOLLOW_UP = Object.freeze(["completed", "unreachable", "not_interested"]);
+
+const EMPTY_VERIFICATION_SUMMARY = Object.freeze({
+  passed: 0,
+  warning: 0,
+  failed: 0,
+  notChecked: 0,
+  manuallyReviewed: 0,
+  supported: 0,
+  unsupported: 0,
+});
+
+/**
+ * Log verification-fact helper failures without exposing internals to clients.
+ * @param {string} message
+ * @param {unknown} [err]
+ * @param {Function} [logFn]
+ */
+function logVerificationFailure(message, err, logFn) {
+  const logger = typeof logFn === "function" ? logFn : console.error;
+  try {
+    logger("[registration-verification-facts]", message, err && err.message ? err.message : "");
+  } catch {
+    /* ignore logger failure */
+  }
+}
+
+/**
+ * Log recommendation helper failures without exposing internals to clients.
+ * @param {string} message
+ * @param {unknown} [err]
+ * @param {Function} [logFn]
+ */
+function logRecommendationFailure(message, err, logFn) {
+  const logger = typeof logFn === "function" ? logFn : console.error;
+  try {
+    logger(
+      "[registration-review-recommendation]",
+      message,
+      err && err.message ? err.message : ""
+    );
+  } catch {
+    /* ignore logger failure */
+  }
+}
+
+const SAFE_REVIEW_RECOMMENDATION_FALLBACK = Object.freeze({
+  code: RECOMMENDATION_CODES.MANUAL_REVIEW_REQUIRED,
+  label: RECOMMENDATION_LABELS[RECOMMENDATION_CODES.MANUAL_REVIEW_REQUIRED] || "Manual review required",
+  tone: RECOMMENDATION_TONES[RECOMMENDATION_CODES.MANUAL_REVIEW_REQUIRED] || "warn",
+  explanation:
+    "Advisory recommendation could not be calculated. Manual review is required. This is an advisory recommendation and does not change the current BlessBoard approval gate.",
+  reasons: Object.freeze([
+    Object.freeze({
+      factKey: "verification",
+      status: "not_checked",
+      message: "Recommendation calculation failed; defaulted to manual review.",
+    }),
+  ]),
+  blockingFacts: Object.freeze([]),
+  warningFacts: Object.freeze([]),
+  calculatedAt: null,
+  advisory: true,
+});
+
+/**
+ * Build a safe advisory recommendation object for the detail view model.
+ * Never throws; never mutates verification; never accepts client recommendation input.
+ *
+ * @param {{ facts?: object[], summary?: object, checkedAt?: string|null }|null|undefined} verification
+ * @param {{
+ *   buildRegistrationReviewRecommendation?: Function,
+ *   logRecommendationError?: Function,
+ *   now?: Date|string,
+ * }} [options]
+ */
+function loadRegistrationReviewRecommendationForDetail(verification, options = {}) {
+  const buildRecommendation =
+    typeof options.buildRegistrationReviewRecommendation === "function"
+      ? options.buildRegistrationReviewRecommendation
+      : buildRegistrationReviewRecommendation;
+  const logFn = options.logRecommendationError;
+
+  try {
+    const input = { verification };
+    if (options.now != null) input.now = options.now;
+    const raw = buildRecommendation(input);
+    if (!raw || typeof raw !== "object") {
+      throw new Error("recommendation_empty");
+    }
+    return {
+      code: String(raw.code || RECOMMENDATION_CODES.MANUAL_REVIEW_REQUIRED),
+      label: String(
+        raw.label ||
+          RECOMMENDATION_LABELS[RECOMMENDATION_CODES.MANUAL_REVIEW_REQUIRED] ||
+          "Manual review required"
+      ),
+      tone: String(raw.tone || "warn"),
+      explanation: String(raw.explanation || ""),
+      reasons: Array.isArray(raw.reasons) ? raw.reasons : [],
+      blockingFacts: Array.isArray(raw.blockingFacts) ? raw.blockingFacts : [],
+      warningFacts: Array.isArray(raw.warningFacts) ? raw.warningFacts : [],
+      calculatedAt: raw.calculatedAt != null ? String(raw.calculatedAt) : null,
+      advisory: true,
+    };
+  } catch (err) {
+    logRecommendationFailure("recommendation build failed; using safe fallback", err, logFn);
+    return {
+      ...SAFE_REVIEW_RECOMMENDATION_FALLBACK,
+      reasons: SAFE_REVIEW_RECOMMENDATION_FALLBACK.reasons.map((r) => ({ ...r })),
+      blockingFacts: [],
+      warningFacts: [],
+      calculatedAt:
+        options.now != null ? new Date(options.now).toISOString() : new Date().toISOString(),
+      advisory: true,
+    };
+  }
+}
+
+/**
+ * Log checklist helper failures without exposing internals to clients.
+ * @param {string} message
+ * @param {unknown} [err]
+ * @param {Function} [logFn]
+ */
+function logChecklistFailure(message, err, logFn) {
+  const logger = typeof logFn === "function" ? logFn : console.error;
+  try {
+    logger(
+      "[registration-approval-checklist]",
+      message,
+      err && err.message ? err.message : ""
+    );
+  } catch {
+    /* ignore logger failure */
+  }
+}
+
+/**
+ * Log phone-verification history helper failures without exposing internals to clients.
+ * @param {string} message
+ * @param {unknown} [err]
+ * @param {Function} [logFn]
+ */
+function logPhoneVerificationFailure(message, err, logFn) {
+  const logger = typeof logFn === "function" ? logFn : console.error;
+  try {
+    logger(
+      "[registration-phone-verification]",
+      message,
+      err && err.message ? err.message : ""
+    );
+  } catch {
+    /* ignore logger failure */
+  }
+}
+
+const SAFE_PHONE_VERIFICATION_SUMMARY = Object.freeze({
+  totalAttempts: 0,
+  latestAttempt: null,
+  lastAttemptedAt: null,
+  applicantContacted: false,
+  identityConfirmed: false,
+  authorityConfirmed: false,
+  latestIdentityStatus: "not_checked",
+  latestAuthorityStatus: "not_checked",
+  verificationStatus: PHONE_VERIFICATION_SUMMARY_STATUSES.NOT_CHECKED,
+  followUpRequired: false,
+  nextFollowUpAt: null,
+  failedAttempts: 0,
+  answeredAttempts: 0,
+});
+
+/**
+ * Conservative phone-verification payload when history load fails.
+ * Detail page stays available; raw DB errors are not exposed.
+ */
+function buildSafePhoneVerificationUnavailable() {
+  return {
+    attempts: [],
+    summary: { ...SAFE_PHONE_VERIFICATION_SUMMARY },
+    unavailable: true,
+  };
+}
+
+/**
+ * Load phone-verification history + derived summary for the detail view model.
+ * Never throws; never mutates the application; never accepts client phoneVerification input.
+ *
+ * @param {{ query: Function }} db
+ * @param {string} applicationId
+ * @param {{
+ *   getPhoneVerificationHistory?: Function,
+ *   derivePhoneVerificationSummary?: Function,
+ *   logPhoneVerificationError?: Function,
+ *   phoneVerificationRepository?: object,
+ *   now?: Date|string|Function,
+ * }} [options]
+ */
+async function loadRegistrationPhoneVerificationForDetail(db, applicationId, options = {}) {
+  const getHistory =
+    typeof options.getPhoneVerificationHistory === "function"
+      ? options.getPhoneVerificationHistory
+      : getPhoneVerificationHistory;
+  const deriveSummary =
+    typeof options.derivePhoneVerificationSummary === "function"
+      ? options.derivePhoneVerificationSummary
+      : derivePhoneVerificationSummary;
+  const logFn = options.logPhoneVerificationError;
+
+  try {
+    const historyDeps = {
+      client: db,
+    };
+    if (options.phoneVerificationRepository) {
+      historyDeps.repository = options.phoneVerificationRepository;
+    }
+    const attempts = await getHistory(applicationId, historyDeps);
+    const list = Array.isArray(attempts) ? attempts : [];
+    const summaryOpts = {};
+    if (options.now != null) summaryOpts.now = options.now;
+    const summary = deriveSummary(list, summaryOpts);
+    return {
+      attempts: list,
+      summary:
+        summary && typeof summary === "object"
+          ? summary
+          : { ...SAFE_PHONE_VERIFICATION_SUMMARY },
+    };
+  } catch (err) {
+    logPhoneVerificationFailure(
+      "phone verification history load failed; using safe unavailable fallback",
+      err,
+      logFn
+    );
+    return buildSafePhoneVerificationUnavailable();
+  }
+}
+
+/**
+ * Conservative advisory checklist when derivation fails.
+ * All ten items present; none complete; requiredOutstanding = total required.
+ * @param {string|null} calculatedAt
+ */
+function buildSafeApprovalChecklistFallback(calculatedAt) {
+  const items = APPROVAL_CHECKLIST_ITEM_DEFS.map((def) => {
+    const unsupported = def.key === "applicant_email_verified";
+    return {
+      key: def.key,
+      label: def.label,
+      status: unsupported
+        ? APPROVAL_CHECKLIST_STATUSES.NOT_AVAILABLE
+        : APPROVAL_CHECKLIST_STATUSES.MANUAL_REVIEW_REQUIRED,
+      explanation:
+        "Approval checklist could not be calculated. Manual review is required. This advisory checklist does not change the current BlessBoard approval gate.",
+      sourceFactKeys: Array.isArray(def.sourceFactKeys) ? [...def.sourceFactKeys] : [],
+      supported: !unsupported,
+      required: Boolean(def.required),
+      actionTarget: def.actionTarget == null ? null : String(def.actionTarget),
+    };
+  });
+  const requiredCount = items.filter((i) => i.required).length;
+  return {
+    items,
+    summary: {
+      total: items.length,
+      complete: 0,
+      incomplete: 0,
+      warning: 0,
+      notAvailable: items.filter(
+        (i) => i.status === APPROVAL_CHECKLIST_STATUSES.NOT_AVAILABLE
+      ).length,
+      manualReviewRequired: items.filter(
+        (i) => i.status === APPROVAL_CHECKLIST_STATUSES.MANUAL_REVIEW_REQUIRED
+      ).length,
+      requiredComplete: 0,
+      requiredOutstanding: requiredCount,
+    },
+    calculatedAt,
+    advisory: true,
+  };
+}
+
+/**
+ * Build a safe advisory approval checklist for the detail view model.
+ * Never throws; never mutates verification/recommendation; never accepts client checklist input.
+ *
+ * @param {{ facts?: object[], summary?: object, checkedAt?: string|null }|null|undefined} verification
+ * @param {object|null|undefined} reviewRecommendation
+ * @param {{
+ *   buildRegistrationApprovalChecklist?: Function,
+ *   logChecklistError?: Function,
+ *   now?: Date|string,
+ * }} [options]
+ */
+function loadRegistrationApprovalChecklistForDetail(
+  verification,
+  reviewRecommendation,
+  options = {}
+) {
+  const buildChecklist =
+    typeof options.buildRegistrationApprovalChecklist === "function"
+      ? options.buildRegistrationApprovalChecklist
+      : buildRegistrationApprovalChecklist;
+  const logFn = options.logChecklistError;
+
+  try {
+    const input = { verification, reviewRecommendation };
+    if (options.now != null) input.now = options.now;
+    const raw = buildChecklist(input);
+    if (!raw || typeof raw !== "object" || !Array.isArray(raw.items)) {
+      throw new Error("checklist_empty");
+    }
+    return {
+      items: raw.items,
+      summary: raw.summary && typeof raw.summary === "object" ? raw.summary : {
+        total: raw.items.length,
+        complete: 0,
+        incomplete: 0,
+        warning: 0,
+        notAvailable: 0,
+        manualReviewRequired: 0,
+        requiredComplete: 0,
+        requiredOutstanding: raw.items.filter((i) => i && i.required).length,
+      },
+      calculatedAt: raw.calculatedAt != null ? String(raw.calculatedAt) : null,
+      advisory: true,
+    };
+  } catch (err) {
+    logChecklistFailure("checklist build failed; using safe fallback", err, logFn);
+    const calculatedAt =
+      options.now != null ? new Date(options.now).toISOString() : new Date().toISOString();
+    return buildSafeApprovalChecklistFallback(calculatedAt);
+  }
+}
+
+/**
+ * Build read-only verification facts for a detail payload.
+ * Optional lookup failures degrade to not_checked (service behavior); total build
+ * failure returns an empty verification object so the detail page stays usable.
+ *
+ * @param {{ query: Function }} db
+ * @param {object} application
+ * @param {object[]} contacts
+ * @param {{
+ *   buildRegistrationVerificationFacts?: Function,
+ *   findOccupyingPhoneMatch?: Function,
+ *   findSimilarOrganizationMatch?: Function,
+ *   findUserByEmail?: Function,
+ *   logVerificationError?: Function,
+ *   phoneVerification?: object,
+ * }} [options]
+ */
+async function loadRegistrationVerificationForDetail(db, application, contacts, options = {}) {
+  const buildFacts =
+    typeof options.buildRegistrationVerificationFacts === "function"
+      ? options.buildRegistrationVerificationFacts
+      : buildRegistrationVerificationFacts;
+  const logFn = options.logVerificationError;
+  const phoneVerification =
+    options.phoneVerification && typeof options.phoneVerification === "object"
+      ? options.phoneVerification
+      : undefined;
+
+  const appId = application && application.id != null ? String(application.id) : "";
+  const phoneLookup =
+    typeof options.findOccupyingPhoneMatch === "function"
+      ? options.findOccupyingPhoneMatch
+      : async (phone) => {
+          try {
+            const hit = await findOccupyingPhoneMatch(db, phone);
+            if (hit && appId && String(hit.id) === appId) return null;
+            return hit || null;
+          } catch (err) {
+            logVerificationFailure("phone occupancy lookup failed", err, logFn);
+            return undefined;
+          }
+        };
+  const nameLookup =
+    typeof options.findSimilarOrganizationMatch === "function"
+      ? options.findSimilarOrganizationMatch
+      : async (opts) => {
+          try {
+            return await findSimilarOrganizationMatch(db, {
+              churchName: opts && opts.churchName,
+              city: opts && opts.city,
+              country: opts && opts.country,
+              excludeApplicationId: (opts && opts.excludeApplicationId) || appId || null,
+              excludeContactEmail: (opts && opts.excludeContactEmail) || null,
+            });
+          } catch (err) {
+            logVerificationFailure("similar organization lookup failed", err, logFn);
+            return undefined;
+          }
+        };
+  const emailLookup =
+    typeof options.findUserByEmail === "function"
+      ? options.findUserByEmail
+      : async (email) => {
+          try {
+            return await authRepo.findUserByEmail(db, email);
+          } catch (err) {
+            logVerificationFailure("platform user email lookup failed", err, logFn);
+            return undefined;
+          }
+        };
+
+  // Wrap lookups so thrown errors become "no live lookup" (undefined), not page failure.
+  const safePhone = async (...args) => {
+    try {
+      return await phoneLookup(...args);
+    } catch (err) {
+      logVerificationFailure("phone occupancy lookup failed", err, logFn);
+      return undefined;
+    }
+  };
+  const safeName = async (...args) => {
+    try {
+      return await nameLookup(...args);
+    } catch (err) {
+      logVerificationFailure("similar organization lookup failed", err, logFn);
+      return undefined;
+    }
+  };
+  const safeEmail = async (...args) => {
+    try {
+      return await emailLookup(...args);
+    } catch (err) {
+      logVerificationFailure("platform user email lookup failed", err, logFn);
+      return undefined;
+    }
+  };
+
+  try {
+    const verification = await buildFacts({
+      application,
+      contacts: contacts || [],
+      phoneVerification,
+      findOccupyingPhoneMatch: safePhone,
+      findSimilarOrganizationMatch: safeName,
+      findUserByEmail: safeEmail,
+    });
+    return {
+      facts: Array.isArray(verification.facts) ? verification.facts : [],
+      summary: verification.summary || { ...EMPTY_VERIFICATION_SUMMARY },
+      checkedAt: verification.checkedAt || null,
+    };
+  } catch (err) {
+    logVerificationFailure("verification facts build failed; retrying without live lookups", err, logFn);
+    try {
+      const fallback = await buildFacts({
+        application,
+        contacts: contacts || [],
+        phoneVerification,
+      });
+      return {
+        facts: Array.isArray(fallback.facts) ? fallback.facts : [],
+        summary: fallback.summary || { ...EMPTY_VERIFICATION_SUMMARY },
+        checkedAt: fallback.checkedAt || null,
+      };
+    } catch (err2) {
+      logVerificationFailure("verification facts fallback failed", err2, logFn);
+      return {
+        facts: [],
+        summary: { ...EMPTY_VERIFICATION_SUMMARY },
+        checkedAt: null,
+      };
+    }
+  }
+}
 
 /**
  * Derive Prompt 26 workflow status from the three-axis model (no CRM column).
@@ -467,7 +960,7 @@ async function listRegistrationApplicationsAdmin(db, input) {
  * @param {string} applicationId
  * @param {NodeJS.ProcessEnv} [env]
  */
-async function getRegistrationApplicationDetail(db, applicationId, env) {
+async function getRegistrationApplicationDetail(db, applicationId, env, options = {}) {
   const id = String(applicationId || "").trim();
   if (!UUID_RE.test(id)) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input" };
@@ -594,89 +1087,118 @@ async function getRegistrationApplicationDetail(db, applicationId, env) {
       !isNetworkPlanSelection(row.selected_plan) &&
       isProvisioningFailureRetryable(errorCode);
 
+    const application = {
+      ...listMapped,
+      roleInChurch: row.role_in_church != null ? String(row.role_in_church) : null,
+      branchName: row.branch_name != null ? String(row.branch_name) : null,
+      branchCount: row.branch_count != null ? String(row.branch_count) : null,
+      message: row.registration_message != null ? String(row.registration_message) : null,
+      consentTerms: Boolean(row.consent_terms),
+      reviewNotes: row.review_notes != null ? String(row.review_notes) : "",
+      provisioningStartedAt: row.provisioning_started_at,
+      provisionedAt: row.provisioned_at,
+      provisioningFailedAt: row.provisioning_failed_at,
+      provisioningErrorCode: errorCode,
+      provisioningErrorSummary: errorSummary,
+      provisioningFailureCategory: errorCode || (provisioningFailed ? "provisioning_failed" : null),
+      retryAllowed,
+      retryAllowedNote: provisioningFailed
+        ? retryAllowed
+          ? "Retry uses the same idempotent provisioning orchestrator. Permanent validation conflicts require correction or rejection."
+          : "This failure is not retryable from this screen. Correct the underlying conflict or reject the application."
+        : null,
+      onboardingStatus: row.onboarding_status != null ? String(row.onboarding_status) : null,
+      supportRequested: Boolean(row.support_requested),
+      firstContactedAt: listMapped.firstContactedAt,
+      nextFollowUpAt: listMapped.nextFollowUpAt,
+      lastContactedAt: listMapped.lastContactedAt,
+      onboardingCompletedAt: row.onboarding_completed_at,
+      lastActivityAt: row.last_activity_at,
+      organizationCreatedAt: row.organization_created_at,
+      assignedSupportUserId: listMapped.assignedSupportUserId,
+      planKey,
+      planKeyLabel: planKey ? planDisplayLabel(planKey) : null,
+      subscriptionStatus,
+      subscriptionStartsAt,
+      subscriptionEndsAt,
+      publication,
+      followUpAvailable: supportOpsAvailable,
+      supportAssignmentAvailable: supportOpsAvailable,
+      contactHistoryAvailable: supportOpsAvailable,
+      linkOrganizationAvailable:
+        !organizationId &&
+        String(row.provisioning_status || "") !== "provisioned" &&
+        !["rejected", "cancelled"].includes(String(row.application_status || "")),
+      riskReviewActionsAvailable:
+        !organizationId &&
+        String(row.provisioning_status || "") !== "provisioned" &&
+        String(row.provisioning_status || "") !== "provisioning_failed" &&
+        ["submitted", "duplicate_review"].includes(String(row.application_status || "")) &&
+        !isNetworkPlanSelection(row.selected_plan),
+      networkApproveAvailable:
+        !organizationId &&
+        isNetworkPlanSelection(row.selected_plan) &&
+        String(row.provisioning_status || "") !== "provisioned" &&
+        ["approved_for_provision", "qualified"].includes(
+          String(row.follow_up_status || "")
+        ) &&
+        !["rejected", "cancelled"].includes(String(row.application_status || "")),
+      markValidationCompleteAvailable:
+        !organizationId &&
+        isNetworkPlanSelection(row.selected_plan) &&
+        String(row.provisioning_status || "") !== "provisioned" &&
+        !["approved_for_provision", "qualified"].includes(
+          String(row.follow_up_status || "")
+        ) &&
+        !["rejected", "cancelled", "closed"].includes(String(row.application_status || "")),
+      retryProvisionAvailable: retryAllowed,
+      rejectActionsAvailable:
+        !organizationId &&
+        String(row.provisioning_status || "") !== "provisioned" &&
+        ["submitted", "duplicate_review"].includes(String(row.application_status || "")),
+      reviewEvents,
+      operatorView: presentRegistrationOperatorView({
+        ...row,
+        selectedPlan: row.selected_plan,
+        applicationStatus: row.application_status,
+        provisioningStatus: row.provisioning_status,
+        followUpStatus: row.follow_up_status,
+        organizationKey: row.organization_key,
+        supportRequested: row.support_requested,
+        subscriptionStatus,
+      }),
+    };
+
+    const detailOptions = options && typeof options === "object" ? options : {};
+    const phoneVerification = await loadRegistrationPhoneVerificationForDetail(
+      db,
+      id,
+      detailOptions
+    );
+    const verification = await loadRegistrationVerificationForDetail(
+      db,
+      application,
+      contacts,
+      { ...detailOptions, phoneVerification }
+    );
+    const reviewRecommendation = loadRegistrationReviewRecommendationForDetail(
+      verification,
+      detailOptions
+    );
+    const approvalChecklist = loadRegistrationApprovalChecklistForDetail(
+      verification,
+      reviewRecommendation,
+      detailOptions
+    );
+
     return {
       ok: true,
       status: STATUS.OK,
-      application: {
-        ...listMapped,
-        roleInChurch: row.role_in_church != null ? String(row.role_in_church) : null,
-        branchName: row.branch_name != null ? String(row.branch_name) : null,
-        branchCount: row.branch_count != null ? String(row.branch_count) : null,
-        message: row.registration_message != null ? String(row.registration_message) : null,
-        consentTerms: Boolean(row.consent_terms),
-        provisioningStartedAt: row.provisioning_started_at,
-        provisionedAt: row.provisioned_at,
-        provisioningFailedAt: row.provisioning_failed_at,
-        provisioningErrorCode: errorCode,
-        provisioningErrorSummary: errorSummary,
-        provisioningFailureCategory: errorCode || (provisioningFailed ? "provisioning_failed" : null),
-        retryAllowed,
-        retryAllowedNote: provisioningFailed
-          ? retryAllowed
-            ? "Retry uses the same idempotent provisioning orchestrator. Permanent validation conflicts require correction or rejection."
-            : "This failure is not retryable from this screen. Correct the underlying conflict or reject the application."
-          : null,
-        onboardingStatus: row.onboarding_status != null ? String(row.onboarding_status) : null,
-        supportRequested: Boolean(row.support_requested),
-        firstContactedAt: listMapped.firstContactedAt,
-        nextFollowUpAt: listMapped.nextFollowUpAt,
-        lastContactedAt: listMapped.lastContactedAt,
-        onboardingCompletedAt: row.onboarding_completed_at,
-        lastActivityAt: row.last_activity_at,
-        organizationCreatedAt: row.organization_created_at,
-        assignedSupportUserId: listMapped.assignedSupportUserId,
-        planKey,
-        planKeyLabel: planKey ? planDisplayLabel(planKey) : null,
-        subscriptionStatus,
-        subscriptionStartsAt,
-        subscriptionEndsAt,
-        publication,
-        followUpAvailable: supportOpsAvailable,
-        supportAssignmentAvailable: supportOpsAvailable,
-        contactHistoryAvailable: supportOpsAvailable,
-        linkOrganizationAvailable:
-          !organizationId &&
-          String(row.provisioning_status || "") !== "provisioned" &&
-          !["rejected", "cancelled"].includes(String(row.application_status || "")),
-        riskReviewActionsAvailable:
-          !organizationId &&
-          String(row.provisioning_status || "") !== "provisioned" &&
-          String(row.provisioning_status || "") !== "provisioning_failed" &&
-          ["submitted", "duplicate_review"].includes(String(row.application_status || "")) &&
-          !isNetworkPlanSelection(row.selected_plan),
-        networkApproveAvailable:
-          !organizationId &&
-          isNetworkPlanSelection(row.selected_plan) &&
-          String(row.provisioning_status || "") !== "provisioned" &&
-          ["approved_for_provision", "qualified"].includes(
-            String(row.follow_up_status || "")
-          ) &&
-          !["rejected", "cancelled"].includes(String(row.application_status || "")),
-        markValidationCompleteAvailable:
-          !organizationId &&
-          isNetworkPlanSelection(row.selected_plan) &&
-          String(row.provisioning_status || "") !== "provisioned" &&
-          !["approved_for_provision", "qualified"].includes(
-            String(row.follow_up_status || "")
-          ) &&
-          !["rejected", "cancelled", "closed"].includes(String(row.application_status || "")),
-        retryProvisionAvailable: retryAllowed,
-        rejectActionsAvailable:
-          !organizationId &&
-          String(row.provisioning_status || "") !== "provisioned" &&
-          ["submitted", "duplicate_review"].includes(String(row.application_status || "")),
-        reviewEvents,
-        operatorView: presentRegistrationOperatorView({
-          ...row,
-          selectedPlan: row.selected_plan,
-          applicationStatus: row.application_status,
-          provisioningStatus: row.provisioning_status,
-          followUpStatus: row.follow_up_status,
-          organizationKey: row.organization_key,
-          supportRequested: row.support_requested,
-          subscriptionStatus,
-        }),
-      },
+      application,
+      verification,
+      reviewRecommendation,
+      approvalChecklist,
+      phoneVerification,
       contacts,
       auditEvents,
       platformAdmins,
@@ -1569,6 +2091,10 @@ module.exports = {
   normalizeListFilters,
   listRegistrationApplicationsAdmin,
   getRegistrationApplicationDetail,
+  loadRegistrationVerificationForDetail,
+  loadRegistrationReviewRecommendationForDetail,
+  loadRegistrationApprovalChecklistForDetail,
+  loadRegistrationPhoneVerificationForDetail,
   updateRegistrationFollowUpStatus,
   markNetworkValidationComplete,
   assignRegistrationSupport,

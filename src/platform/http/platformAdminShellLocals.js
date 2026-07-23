@@ -15,6 +15,7 @@ const {
 } = require("./platformAdminNav");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 const { isTestingDataMaintenanceAllowed } = require("../config/testingDataMaintenance");
+const registrationStatus = require("../../blessboard/services/registrationStatusPresentation");
 
 /**
  * @param {import('express').Request} req
@@ -73,6 +74,7 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     navItems,
     mobileTabs,
     testingMaintenanceEnabled: testingMaintenance,
+    registrationStatus,
     ...(opts.extra || {}),
   };
 }

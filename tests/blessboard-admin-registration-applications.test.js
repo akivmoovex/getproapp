@@ -320,7 +320,9 @@ describe("platform-admin registration applications (Phase 5)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(empty.status, 200);
-    assert.match(empty.text, /No registration applications|Nothing here|No matching/i);
+    assert.match(empty.text, /No matching applications/i);
+    assert.match(empty.text, /data-bb-pa-reg-state="no-results"/);
+    assert.match(empty.text, /data-bb-pa-reg-clear-filters="1"/);
   });
 
   it("detail returns 200; missing id 404; failure sanitized", async () => {
