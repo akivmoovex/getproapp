@@ -319,6 +319,10 @@ function mapApproveError(result) {
     return "not_eligible";
   }
   if (result.status === REG_APP_STATUS.PROVISION_FAILED) return "provision_failed";
+  if (result.status === REG_APP_STATUS.LOOKUP_ERROR) {
+    if (result.message === "schema_mismatch") return "schema_mismatch";
+    return "approve_failed";
+  }
   return "approve_failed";
 }
 
@@ -1872,48 +1876,67 @@ function createPlatformAdminRouter(deps) {
         return res.redirect(303, `${detailPath}?error=csrf`);
       }
       const deployment = getPlatformDeploymentCode(env);
-      const result = await approveAndProvisionRegistrationApplication(getPool(), {
-        applicationId: id,
-        actorUserId: req.platformAdminContext.userId,
-        organizationKey: req.body && req.body.organization_key,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
-        dataEnvironment: "testing",
-      });
-      if (!result.ok) {
-        return res.redirect(303, `${detailPath}?error=${mapApproveError(result)}`);
-      }
-      if (result.alreadyProvisioned) {
-        const key = result.organizationKey || (result.records && result.records.organizationKey);
-        if (key) {
-          return res.redirect(
-            303,
-            `/admin/organizations/${encodeURIComponent(key)}?notice=already_provisioned`
+      const requestId =
+        (req && (req.requestId || req.id || (req.headers && req.headers["x-request-id"]))) || null;
+      try {
+        const result = await approveAndProvisionRegistrationApplication(getPool(), {
+          applicationId: id,
+          actorUserId: req.platformAdminContext.userId,
+          organizationKey: req.body && req.body.organization_key,
+          deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+          dataEnvironment: "testing",
+          requestId,
+        });
+        if (!result.ok) {
+          return res.redirect(303, `${detailPath}?error=${mapApproveError(result)}`);
+        }
+        if (result.alreadyProvisioned) {
+          const key = result.organizationKey || (result.records && result.records.organizationKey);
+          if (key) {
+            return res.redirect(
+              303,
+              `/admin/organizations/${encodeURIComponent(key)}?notice=already_provisioned`
+            );
+          }
+          return res.redirect(303, `${detailPath}?notice=already_provisioned`);
+        }
+        const orgKey = result.organizationKey || (result.records && result.records.organizationKey);
+        if (!orgKey) {
+          return res.redirect(303, `${detailPath}?notice=approved`);
+        }
+        const inviteLink = buildAdministratorInviteLink(
+          result.invitation && result.invitation.rawToken,
+          env
+        );
+        if (inviteLink) {
+          setInviteOnceCookie(
+            res,
+            { organizationKey: orgKey, inviteLink },
+            { secure: isProduction }
           );
         }
-        return res.redirect(303, `${detailPath}?notice=already_provisioned`);
-      }
-      const orgKey = result.organizationKey || (result.records && result.records.organizationKey);
-      if (!orgKey) {
-        return res.redirect(303, `${detailPath}?notice=approved`);
-      }
-      const inviteLink = buildAdministratorInviteLink(
-        result.invitation && result.invitation.rawToken,
-        env
-      );
-      if (inviteLink) {
-        setInviteOnceCookie(
-          res,
-          { organizationKey: orgKey, inviteLink },
-          { secure: isProduction }
+        const notice = result.networkOrganizationCreated
+          ? "network_organization_created"
+          : "organization_provisioned";
+        return res.redirect(
+          303,
+          `/admin/organizations/${encodeURIComponent(orgKey)}?notice=${notice}#pa-org-invitation`
         );
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[platform-admin] registration approve failed", {
+          event: "registration_approval_failed",
+          applicationId: id.slice(0, 36),
+          failureStage: "route_handler",
+          failureCategory:
+            err && (err.code === "42703" || err.code === "42P01")
+              ? "schema_mismatch"
+              : "internal_error",
+          pgCode: err && err.code != null ? String(err.code).slice(0, 32) : null,
+          requestId: requestId != null ? String(requestId).slice(0, 64) : null,
+        });
+        return res.redirect(303, `${detailPath}?error=approve_failed`);
       }
-      const notice = result.networkOrganizationCreated
-        ? "network_organization_created"
-        : "organization_provisioned";
-      return res.redirect(
-        303,
-        `/admin/organizations/${encodeURIComponent(orgKey)}?notice=${notice}#pa-org-invitation`
-      );
     }
   );
 

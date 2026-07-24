@@ -121,6 +121,59 @@ function logVerificationFailure(message, err, logFn) {
 }
 
 /**
+ * Safe structured log for registration approval/provision failures.
+ * Never logs applicant PII, passwords, or connection strings.
+ * @param {object} fields
+ * @param {unknown} [err]
+ */
+function logRegistrationApprovalFailure(fields, err) {
+  const pgCode = err && err.code != null ? String(err.code).slice(0, 32) : null;
+  const category =
+    pgCode === "42703" || pgCode === "42P01"
+      ? "schema_mismatch"
+      : pgCode
+        ? "database_error"
+        : "internal_error";
+  try {
+    // eslint-disable-next-line no-console
+    console.error(
+      "[platform-admin-registration-approve]",
+      JSON.stringify({
+        event: "registration_approval_failed",
+        applicationId:
+          fields && fields.applicationId != null
+            ? String(fields.applicationId).slice(0, 36)
+            : null,
+        failureStage:
+          fields && fields.failureStage != null
+            ? String(fields.failureStage).slice(0, 64)
+            : null,
+        failureCategory: category,
+        pgCode,
+        requestId:
+          fields && fields.requestId != null ? String(fields.requestId).slice(0, 64) : null,
+        safeMessage:
+          err && err.message
+            ? String(err.message)
+                .replace(/postgresql:\/\/[^\s]+/gi, "[redacted]")
+                .slice(0, 180)
+            : null,
+      })
+    );
+  } catch {
+    /* ignore logger failure */
+  }
+}
+
+function classifyApprovalCaughtError(err) {
+  const pgCode = err && err.code != null ? String(err.code) : "";
+  if (pgCode === "42703" || pgCode === "42P01") {
+    return { status: STATUS.LOOKUP_ERROR, message: "schema_mismatch" };
+  }
+  return { status: STATUS.LOOKUP_ERROR, message: "lookup_error" };
+}
+
+/**
  * Log recommendation helper failures without exposing internals to clients.
  * @param {string} message
  * @param {unknown} [err]
@@ -2398,6 +2451,8 @@ async function reopenRegistrationApplication(db, input) {
 async function approveAndProvisionRegistrationApplication(db, input) {
   const applicationId = String((input && input.applicationId) || "").trim();
   const actorUserId = String((input && input.actorUserId) || "").trim();
+  const requestId =
+    input && input.requestId != null ? String(input.requestId).slice(0, 64) : null;
   if (!UUID_RE.test(applicationId) || !UUID_RE.test(actorUserId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input" };
   }
@@ -2420,10 +2475,12 @@ async function approveAndProvisionRegistrationApplication(db, input) {
   const provisionFn = (input && input.provisionFn) || provisionRegisteredBlessBoardChurch;
 
   let appSnapshot = null;
+  let failureStage = "prepare_approval";
   try {
     const prepared = await withOwnedClient(db, async (client) => {
       await client.query("BEGIN");
       try {
+        failureStage = "lock_application";
         const app = await repo.lockApplicationById(client, applicationId);
         if (!app) {
           await client.query("ROLLBACK");
@@ -2489,6 +2546,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
 
         const nowIso = new Date().toISOString();
         const isNetwork = isNetworkPlanSelection(app.selected_plan);
+        failureStage = "record_approval_review_event";
         await repo.updateApplicationRiskReviewState(client, applicationId, {
           applicationStatus: "submitted",
           clearRejectionReason: true,
@@ -2527,6 +2585,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
     }
     appSnapshot = prepared.application;
 
+    failureStage = "provision_organization";
     const provision = await provisionFn(
       db,
       {
@@ -2554,6 +2613,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
       const orgKey =
         (provision.records && provision.records.organizationKey) || null;
       if (organizationId) {
+        failureStage = "record_audit_event";
         await recordAuditEventSafe(db, {
           deploymentCode,
           organizationId,
@@ -2617,8 +2677,18 @@ async function approveAndProvisionRegistrationApplication(db, input) {
       message: provision.status || "provision_failed",
       provisionStatus: provision.status || null,
     };
-  } catch {
-    return { ok: false, status: STATUS.LOOKUP_ERROR, message: "lookup_error" };
+  } catch (err) {
+    logRegistrationApprovalFailure(
+      { applicationId, failureStage, requestId },
+      err
+    );
+    const classified = classifyApprovalCaughtError(err);
+    return {
+      ok: false,
+      status: classified.status,
+      message: classified.message,
+      failureStage,
+    };
   }
 }
 

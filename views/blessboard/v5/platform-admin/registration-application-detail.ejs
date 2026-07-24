@@ -115,6 +115,9 @@
     if (code === 'provision_failed') {
       return 'Provisioning failed. No organization was created.';
     }
+    if (code === 'schema_mismatch') {
+      return 'Registration approval is temporarily unavailable because the database schema is incomplete. BlessBoard support has been notified via server logs — try again after pending migrations are applied.';
+    }
     if (code === 'follow_up_failed' || code === 'assign_failed' || code === 'contact_failed' ||
         code === 'reject_failed' || code === 'reopen_failed' || code === 'approve_failed' ||
         code === 'retry_failed' || code === 'link_failed') {
