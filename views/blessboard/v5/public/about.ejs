@@ -3,6 +3,7 @@
   Desktop: 44492f6abbe849d0a8a89303ce83129b
   Mobile:  3f0b8a5c30544d9495064df8d5f9e62e
   Published CMS fields only. No fabricated history, stats, mission, or quotations.
+  Testing/demo soft-fill only when canonical fields are empty (never invents KPIs).
 %>
 <%
   function classifyAboutSection(s) {
@@ -17,11 +18,28 @@
     return 'generic';
   }
 
+  function sectionHasContent(s) {
+    return Boolean(s && (s.heading || s.bodyText || s.mediaUrl));
+  }
+
+  function formatTimeLabel(hhmm) {
+    var m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(hhmm || ''));
+    if (!m) return String(hhmm || '');
+    var h = Number(m[1]);
+    var min = m[2];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return h + ':' + min + ' ' + ampm;
+  }
+
+  var demoFb = typeof aboutDemoFallback !== 'undefined' && aboutDemoFallback ? aboutDemoFallback : null;
   var VALUE_ICONS = ['auto_awesome', 'groups', 'menu_book', 'volunteer_activism', 'favorite'];
 
   var hero = null;
   var rest = [];
   (sections || []).forEach(function (s) {
+    if (!sectionHasContent(s)) return;
     var isHero = !hero && (s.sectionType === 'hero' || String(s.sectionKey || '').indexOf('hero') >= 0);
     if (isHero) hero = s;
     else rest.push(s);
@@ -29,9 +47,17 @@
   if (!hero && rest.length) {
     hero = rest.shift();
   }
-  var heroHeading = (hero && hero.heading) || pageTitle || ('About ' + publicName);
-  var heroBody = (hero && hero.bodyText) || '';
-  var heroMedia = hero && hero.mediaUrl ? hero.mediaUrl : null;
+
+  var heroHeading =
+    (hero && hero.heading) ||
+    (demoFb && demoFb.heroHeading) ||
+    pageTitle ||
+    ('About ' + publicName);
+  var heroBody = (hero && hero.bodyText) || (demoFb && demoFb.heroBody) || '';
+  var heroMedia =
+    (hero && hero.mediaUrl) ||
+    (demoFb && demoFb.heroMediaUrl) ||
+    null;
 
   // Stitch display titles accent the trailing phrase without inventing copy.
   var accentBefore = heroHeading;
@@ -48,6 +74,7 @@
   var valueSections = [];
   var genericSections = [];
   rest.forEach(function (s) {
+    if (!sectionHasContent(s)) return;
     var kind = classifyAboutSection(s);
     if (kind === 'story') storySections.push(s);
     else if (kind === 'mission' && !missionSection) missionSection = s;
@@ -56,19 +83,38 @@
     else genericSections.push(s);
   });
 
+  if (!storySections.length && demoFb && demoFb.story && sectionHasContent(demoFb.story)) {
+    storySections = [demoFb.story];
+  }
+  if (!missionSection && demoFb && demoFb.mission && sectionHasContent(demoFb.mission)) {
+    missionSection = demoFb.mission;
+  }
+  if (!visionSection && demoFb && demoFb.vision && sectionHasContent(demoFb.vision)) {
+    visionSection = demoFb.vision;
+  }
+  if (!valueSections.length && demoFb && demoFb.values && sectionHasContent(demoFb.values)) {
+    valueSections = [demoFb.values];
+  }
+
   var storyMedia = [];
   storySections.forEach(function (s) {
     if (s.mediaUrl && storyMedia.indexOf(s.mediaUrl) < 0) storyMedia.push(s.mediaUrl);
   });
+  if (!storyMedia.length && demoFb && demoFb.storyMediaUrl) {
+    storyMedia.push(demoFb.storyMediaUrl);
+  }
   var collageMedia = storyMedia.slice(0, 2);
 
-  var hasPurpose = missionSection || visionSection;
+  var hasPurpose = Boolean(
+    (missionSection && sectionHasContent(missionSection)) ||
+      (visionSection && sectionHasContent(visionSection))
+  );
   var hasBodyContent =
     storySections.length || hasPurpose || valueSections.length || genericSections.length;
 %>
 
 <section class="bb-tp-about" data-bb-about="1" data-bb-stitch-about="populated-v3">
-  <header class="bb-tp-page-hero bb-tp-about-hero" aria-label="About">
+  <header class="bb-tp-page-hero bb-tp-about-hero" aria-label="About" data-bb-about-hero="1">
     <div class="bb-tp-page-hero__inner">
       <div class="bb-tp-page-hero__copy">
         <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-about-hero__eyebrow-desktop">About Us</p>
@@ -84,14 +130,14 @@
         <p class="bb-tp-page-hero__lead"><%= heroBody %></p>
         <% } %>
         <div class="bb-tp-page-hero__cta bb-tp-about-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">
             Get Connected
             <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
           </a>
           <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register as a Member</a>
         </div>
       </div>
-      <div class="bb-tp-page-hero__visual<%= heroMedia ? ' has-media' : '' %>">
+      <div class="bb-tp-page-hero__visual<%= heroMedia ? ' has-media' : '' %>" data-bb-about-hero-media="1">
         <% if (heroMedia) { %>
         <img
           class="bb-tp-page-hero__img"
@@ -120,7 +166,7 @@
         <h2><%= emptyHeadline %></h2>
         <p><%= emptyMessage %></p>
         <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
           <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register</a>
         </div>
       </div>
@@ -129,12 +175,12 @@
   <% } else if (hasBodyContent) { %>
 
   <% if (storySections.length) { %>
-  <section class="bb-tp-about-story-band" aria-label="Our story">
+  <section class="bb-tp-about-story-band" aria-label="Our story" data-bb-about-story="1" id="bb-tp-about-story">
     <div class="bb-tp-container bb-tp-about__story-wrap">
       <div class="bb-tp-about-story<%= collageMedia.length ? ' bb-tp-about-story--with-media' : '' %>">
         <div class="bb-tp-about-story__copy">
           <% storySections.forEach(function (section, idx) { %>
-          <div class="bb-tp-about-story__block" data-section="<%= section.sectionKey %>">
+          <div class="bb-tp-about-story__block" data-section="<%= section.sectionKey || 'story' %>">
             <% if (section.heading) { %>
             <h2 class="bb-tp-section-title<%= idx === 0 ? ' bb-tp-about-story__title' : '' %>"><%= section.heading %></h2>
             <% } %>
@@ -145,9 +191,11 @@
         <% if (collageMedia.length) { %>
         <div class="bb-tp-about-story__media<%= collageMedia.length > 1 ? ' bb-tp-about-story__media--collage' : '' %>">
           <% collageMedia.forEach(function (url) { %>
-          <img class="bb-tp-media" src="<%= url %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
+          <img class="bb-tp-media" src="<%= url %>" alt="" width="960" height="720" loading="lazy" decoding="async" />
           <% }) %>
         </div>
+        <% } else { %>
+        <div class="bb-tp-about-story__media-fallback" aria-hidden="true"></div>
         <% } %>
       </div>
     </div>
@@ -155,14 +203,14 @@
   <% } %>
 
   <% if (hasPurpose) { %>
-  <section class="bb-tp-about-purpose" aria-label="Purpose">
+  <section class="bb-tp-about-purpose" aria-label="Purpose" data-bb-about-purpose="1">
     <div class="bb-tp-container">
       <header class="bb-tp-about-purpose__header">
         <h2 class="bb-tp-section-title">Our Purpose</h2>
       </header>
       <div class="bb-tp-about-purpose__grid<%= missionSection && visionSection ? ' bb-tp-about-purpose__grid--pair' : '' %>">
-        <% if (missionSection) { %>
-        <article class="bb-tp-purpose-card" data-section="<%= missionSection.sectionKey %>">
+        <% if (missionSection && sectionHasContent(missionSection)) { %>
+        <article class="bb-tp-purpose-card" data-section="<%= missionSection.sectionKey || 'mission' %>" data-bb-about-mission="1">
           <span class="bb-tp-purpose-card__icon material-symbols-outlined" aria-hidden="true">flag</span>
           <% if (missionSection.heading) { %><h3 class="bb-tp-purpose-card__title"><%= missionSection.heading %></h3><% } %>
           <% if (missionSection.bodyText) { %><p class="bb-tp-body"><%= missionSection.bodyText %></p><% } %>
@@ -171,8 +219,8 @@
           <% } %>
         </article>
         <% } %>
-        <% if (visionSection) { %>
-        <article class="bb-tp-purpose-card bb-tp-purpose-card--accent" data-section="<%= visionSection.sectionKey %>">
+        <% if (visionSection && sectionHasContent(visionSection)) { %>
+        <article class="bb-tp-purpose-card bb-tp-purpose-card--accent" data-section="<%= visionSection.sectionKey || 'vision' %>" data-bb-about-vision="1">
           <span class="bb-tp-purpose-card__icon material-symbols-outlined" aria-hidden="true">visibility</span>
           <% if (visionSection.heading) { %><h3 class="bb-tp-purpose-card__title"><%= visionSection.heading %></h3><% } %>
           <% if (visionSection.bodyText) { %><p class="bb-tp-body"><%= visionSection.bodyText %></p><% } %>
@@ -187,12 +235,13 @@
   <% } %>
 
   <% if (valueSections.length) { %>
-  <section class="bb-tp-about-values" aria-label="Values">
+  <section class="bb-tp-about-values" aria-label="Values" data-bb-about-values="1">
     <div class="bb-tp-container">
       <h2 class="bb-tp-section-title bb-tp-about-values__heading">Core Values</h2>
       <ul class="bb-tp-about-values__list">
         <% valueSections.forEach(function (section, idx) { %>
-        <li class="bb-tp-about-values__item" data-section="<%= section.sectionKey %>">
+        <% if (!sectionHasContent(section)) return; %>
+        <li class="bb-tp-about-values__item" data-section="<%= section.sectionKey || ('values-' + idx) %>">
           <span class="bb-tp-about-values__icon material-symbols-outlined" aria-hidden="true"><%= VALUE_ICONS[idx % VALUE_ICONS.length] %></span>
           <div>
             <% if (section.heading) { %><h3 class="bb-tp-about-values__title"><%= section.heading %></h3><% } %>
@@ -206,8 +255,9 @@
   <% } %>
 
   <% if (genericSections.length) { %>
-  <div class="bb-tp-container bb-tp-about__body">
+  <div class="bb-tp-container bb-tp-about__body" data-bb-about-generic="1">
     <% genericSections.forEach(function (section) { %>
+    <% if (!sectionHasContent(section)) return; %>
     <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %> bb-tp-about__block" data-section="<%= section.sectionKey %>">
       <% if (section.mediaUrl) { %>
       <div class="bb-tp-content-block__media">
@@ -239,7 +289,9 @@
       <li class="bb-tp-service-times-item">
         <span class="bb-tp-service-times-item__day"><%= String(entry.day || '').charAt(0).toUpperCase() + String(entry.day || '').slice(1) %></span>
         <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
-        <span class="bb-tp-service-times-item__time"><%= entry.startTime %><% if (entry.endTime) { %>–<%= entry.endTime %><% } %></span>
+        <span class="bb-tp-service-times-item__time">
+          <%= formatTimeLabel(entry.startTime) %><% if (entry.endTime) { %>–<%= formatTimeLabel(entry.endTime) %><% } %>
+        </span>
         <% if (entry.location) { %><span class="bb-tp-service-times-item__location"><%= entry.location %></span><% } %>
       </li>
       <% }) %>
@@ -250,19 +302,19 @@
       <% if (aboutContact.addressText) { %><p class="bb-tp-body"><%= aboutContact.addressText %></p><% } %>
       <% if (aboutContact.phone) { %><p class="bb-tp-meta"><%= aboutContact.phone %></p><% } %>
       <% if (aboutContact.email) { %><p class="bb-tp-meta"><%= aboutContact.email %></p><% } %>
-      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact' %>">Contact details</a>
+      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= hrefFor('/contact') %>">Contact details</a>
     </div>
     <% } %>
   </section>
   <% } %>
 
-  <section class="bb-tp-about__join" aria-label="Join">
+  <section class="bb-tp-about__join" aria-label="Join" data-bb-about-join="1">
     <div class="bb-tp-container">
       <div class="bb-tp-about__join-inner">
         <h2 class="bb-tp-section-title">Join Our Community</h2>
         <p class="bb-tp-body">Connect with <%= publicName %> — plan a visit or register as a member.</p>
         <div class="bb-tp-page-hero__cta bb-tp-about__join-cta">
-          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-about__join-cta-desktop" href="/contact">Plan Your Visit</a>
+          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-about__join-cta-desktop" href="<%= hrefFor('/contact') %>">Plan Your Visit</a>
           <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark bb-tp-about__join-cta-desktop" href="/register">Register</a>
           <a class="bb-tp-btn bb-tp-btn--primary bb-tp-about__join-cta-mobile" href="<%= loginHref %>">Member Login</a>
           <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark bb-tp-about__join-cta-mobile" href="/register">Register Now</a>

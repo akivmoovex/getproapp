@@ -6,14 +6,28 @@
   unsupported per-card actions, file guides, or sample ministries.
 %>
 <%
-  var pageSections = sections || [];
-  var ministries = entities || [];
+  var demoFb =
+    typeof ministriesDemoFallback !== 'undefined' && ministriesDemoFallback
+      ? ministriesDemoFallback
+      : null;
+  var pageSections = (sections || []).filter(function (s) {
+    return s && (s.heading || s.bodyText || s.mediaUrl);
+  });
+  var ministries = (entities || []).filter(function (m) {
+    return m && String(m.name || '').trim();
+  });
   var intro = pageSections.length ? pageSections[0] : null;
-  var introHeading = (intro && intro.heading) || pageTitle || 'Our Ministries';
-  var introBody = (intro && intro.bodyText) || '';
+  var introHeading =
+    (intro && intro.heading) ||
+    (demoFb && demoFb.introHeading) ||
+    pageTitle ||
+    'Our Ministries';
+  var introBody =
+    (intro && intro.bodyText) ||
+    (demoFb && demoFb.introBody) ||
+    '';
   var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
 
-  // Stitch display titles accent the trailing phrase without inventing copy.
   var accentBefore = introHeading;
   var accentPhrase = '';
   var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
@@ -28,7 +42,7 @@
   data-bb-ministries="1"
   data-bb-stitch-ministries="populated-v4"
 >
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-ministries-hero" aria-label="Ministries">
+  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-ministries-hero" aria-label="Ministries" data-bb-ministries-hero="1">
     <div class="bb-tp-container">
       <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-ministries-hero__eyebrow-desktop">
         Our Impact
@@ -47,11 +61,11 @@
       <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center"><%= introBody %></p>
       <% } %>
       <div class="bb-tp-page-hero__cta bb-tp-page-hero__cta--center bb-tp-ministries-hero__cta">
-        <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">
+        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">
           <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
           Join a Ministry
         </a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="/events">
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/events') %>">
           <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
           View Events
         </a>
@@ -83,15 +97,15 @@
         <h2><%= emptyHeadline %></h2>
         <p><%= emptyMessage %></p>
         <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
           <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register</a>
         </div>
       </div>
     </div>
     <% } else if (ministries.length) { %>
-    <ul class="bb-tp-ministry-grid" aria-label="Published ministries">
+    <ul class="bb-tp-ministry-grid" aria-label="Published ministries" data-bb-ministries-grid="1">
       <% ministries.forEach(function (ministry, index) { %>
-      <li class="bb-tp-ministry-card<%= index === 0 ? ' bb-tp-ministry-card--featured' : '' %>">
+      <li class="bb-tp-ministry-card<%= index === 0 ? ' bb-tp-ministry-card--featured' : '' %>" data-bb-ministry-card="1">
         <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
           <% if (ministry.imageUrl) { %>
           <img
@@ -123,6 +137,12 @@
             <span><%= ministry.meetingDay %></span>
           </p>
           <% } %>
+          <% if (ministry.contactEmail && ministry.contactHref) { %>
+          <p class="bb-tp-meta" data-bb-ministry-contact="1">
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            <a href="<%= ministry.contactHref %>" aria-label="Email <%= ministry.name %>"><%= ministry.contactEmail %></a>
+          </p>
+          <% } %>
         </div>
       </li>
       <% }) %>
@@ -130,7 +150,7 @@
     <% } %>
 
     <% if (!showEmptyState && pageSections.length > 1) { %>
-    <div class="bb-tp-directory__sections">
+    <div class="bb-tp-directory__sections" data-bb-ministries-sections="1">
       <% pageSections.slice(1).forEach(function (section) { %>
       <section
         class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>"
@@ -151,13 +171,13 @@
     <% } %>
   </div>
 
-  <section class="bb-tp-dir-cta bb-tp-dir-cta--soft bb-tp-ministries-cta" aria-label="Get involved">
+  <section class="bb-tp-dir-cta bb-tp-dir-cta--soft bb-tp-ministries-cta" aria-label="Get involved" data-bb-ministries-cta="1">
     <div class="bb-tp-container">
       <div class="bb-tp-dir-cta__inner bb-tp-ministries-cta__inner">
         <h2 class="bb-tp-section-title">Still looking for your place?</h2>
         <p class="bb-tp-body">Reach out — we will help you find a ministry fit at <%= publicName %>.</p>
         <div class="bb-tp-page-hero__cta bb-tp-ministries-cta__actions">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">
             <span class="material-symbols-outlined" aria-hidden="true">mail</span>
             Contact Us
           </a>

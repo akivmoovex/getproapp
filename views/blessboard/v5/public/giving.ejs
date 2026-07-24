@@ -7,13 +7,28 @@
   no fabricated bank or wallet details, impact stats, codes, or contribution history.
 %>
 <%
-  var pageSections = sections || [];
-  var methods = entities || [];
+  var demoFb =
+    typeof givingDemoFallback !== 'undefined' && givingDemoFallback ? givingDemoFallback : null;
+  var pageSections = (sections || []).filter(function (s) {
+    return s && (s.heading || s.bodyText || s.mediaUrl);
+  });
+  var methods = (entities || []).filter(function (m) {
+    return m && String(m.label || '').trim();
+  });
   var intro = pageSections.length ? pageSections[0] : null;
   var moreSections = pageSections.length > 1 ? pageSections.slice(1) : [];
-  var introHeading = (intro && intro.heading) || pageTitle || 'Ways to Give';
-  var introBody = (intro && intro.bodyText) || '';
+  var introHeading =
+    (intro && intro.heading) ||
+    (demoFb && demoFb.introHeading) ||
+    pageTitle ||
+    'Ways to Give';
+  var introBody =
+    (intro && intro.bodyText) ||
+    (demoFb && demoFb.introBody) ||
+    '';
   var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
+  var isTestingEnv =
+    typeof showEnvBadge !== 'undefined' && showEnvBadge;
 
   var accentBefore = introHeading;
   var accentPhrase = '';
@@ -43,7 +58,7 @@
   data-bb-giving="1"
   data-bb-stitch-giving="populated-v2"
 >
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-giving-hero" aria-label="Giving">
+  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-giving-hero" aria-label="Giving" data-bb-giving-hero="1">
     <div class="bb-tp-container">
       <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-giving-hero__eyebrow-desktop">
         <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
@@ -112,6 +127,9 @@
       <span class="material-symbols-outlined" aria-hidden="true">info</span>
       <p>
         This page shares published giving instructions only. BlessBoard does not process payments or collect card, bank, or mobile-money account details here.
+        <% if (isTestingEnv) { %>
+        <strong data-bb-giving-testing="1"> Testing / demo environment — do not send real money.</strong>
+        <% } %>
       </p>
     </aside>
 

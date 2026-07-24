@@ -102,14 +102,15 @@
   --bb-space-8: 6rem; /* 96 */
   --bb-space-9: 8rem; /* 128 */
 
-  /* —— Layout —— */
+  /* —— Layout (Stitch: container-max 1280 · header h-20 · section 64/120) —— */
   --bb-max: 80rem; /* 1280px */
   --bb-max-narrow: 40rem; /* forms / auth */
   --bb-gutter: 2rem; /* 32 desktop */
-  --bb-gutter-mobile: 1rem; /* 16 */
-  --bb-section: 4rem;
-  --bb-header-h: 5rem; /* 80px Stitch desktop header */
-  --bb-header-h-compact: 4rem;
+  --bb-gutter-mobile: 1rem; /* 16 — mobile header gutter */
+  --bb-section: 4rem; /* 64px mobile section rhythm */
+  --bb-section-desktop: 5rem; /* shared shell section pad; page heroes may exceed */
+  --bb-header-h: 5rem; /* 80px Stitch desktop/mobile header (h-20) */
+  --bb-header-h-compact: 4.5rem;
   --bb-sidebar-w: 16.5rem; /* portal desktop sidebar */
   --bb-drawer-w: 22rem;
 

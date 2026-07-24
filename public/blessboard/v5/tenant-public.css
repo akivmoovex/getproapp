@@ -51,7 +51,7 @@ body.bb-tp-body {
   vertical-align: middle;
 }
 
-/* —— Header (Stitch desktop/mobile header refs) —— */
+/* —— Header (Stitch Desktop/Mobile Header Reference · h-20 · max-w 1280) —— */
 .bb-tp-header {
   position: sticky;
   top: 0;
@@ -66,12 +66,17 @@ body.bb-tp-body {
 .bb-tp-header__inner {
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 0 var(--bb-gutter);
+  padding: 0 var(--bb-gutter-mobile, 1rem);
   min-height: var(--bb-header-h);
+  height: var(--bb-header-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .bb-tp-brand {
@@ -81,12 +86,14 @@ body.bb-tp-body {
   text-decoration: none;
   color: var(--bb-violet);
   min-width: 0;
+  flex: 0 1 auto;
+  max-width: min(16rem, 48vw);
 }
 
 .bb-tp-brand__mark {
   flex: 0 0 auto;
-  width: 30px; /* Stitch desktop logo height */
-  height: 30px;
+  width: 24px; /* Stitch mobile logo h-6 */
+  height: 24px;
   border-radius: var(--bb-radius-sm);
   object-fit: contain;
 }
@@ -101,13 +108,18 @@ body.bb-tp-body {
 .bb-tp-brand__name {
   font-weight: 700;
   letter-spacing: -0.02em;
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 14rem;
   color: var(--bb-violet);
+  /* Long names: up to 2 lines, then ellipsis — never overflow the header */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  max-width: 100%;
 }
 
 .bb-tp-brand__branch {
@@ -117,37 +129,39 @@ body.bb-tp-body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 14rem;
+  max-width: 100%;
 }
 
 .bb-tp-brand--drawer {
   gap: 0.55rem;
   flex: 1 1 auto;
   min-width: 0;
+  max-width: none;
 }
 
 .bb-tp-brand--drawer .bb-tp-brand__name {
-  max-width: none;
+  -webkit-line-clamp: 2;
 }
 
 .bb-tp-nav--desktop {
   display: none;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0.55rem;
   flex: 1 1 auto;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   min-width: 0;
 }
 
 .bb-tp-nav__link {
   color: var(--bb-muted);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  padding: 0.35rem 0;
+  padding: 0.25rem 0;
   border-bottom: 2px solid transparent;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .bb-tp-nav__link:hover {
@@ -165,6 +179,7 @@ body.bb-tp-body {
   align-items: center;
   gap: 0.5rem;
   flex: 0 0 auto;
+  min-width: 0;
 }
 
 .bb-tp-env {
@@ -205,6 +220,7 @@ body.bb-tp-body {
   min-height: var(--bb-control-h, 3rem);
   border-radius: var(--bb-radius);
   font: inherit;
+  font-family: var(--bb-font-sans, "Hanken Grotesk", system-ui, sans-serif);
   font-weight: 600;
   font-size: 0.95rem;
   text-decoration: none;
@@ -246,6 +262,15 @@ body.bb-tp-body {
 .bb-tp-header__actions .bb-tp-btn--ghost,
 .bb-tp-header__actions .bb-tp-btn--primary {
   display: none;
+}
+
+/* Shared card surface (Stitch radius 16 · warm border) */
+.bb-tp-card {
+  background: var(--bb-surface);
+  border: 1px solid var(--bb-line);
+  border-radius: var(--bb-radius);
+  box-shadow: var(--bb-shadow-sm, 0 1px 2px rgba(26, 22, 37, 0.06));
+  min-width: 0;
 }
 
 /* —— Drawer —— */
@@ -396,9 +421,10 @@ body.bb-tp-body {
 .bb-tp-container {
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 0 var(--bb-gutter);
+  padding: 0 var(--bb-gutter-mobile, 1rem);
   width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .bb-tp-eyebrow {
@@ -570,15 +596,15 @@ body.bb-tp-body {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 14rem;
-  aspect-ratio: 1 / 1;
+  min-height: 12rem;
+  aspect-ratio: 4 / 3; /* Stitch landscape hero — not square */
   object-fit: cover;
   object-position: center 35%;
 }
 
 .bb-tp-hero__fallback {
-  min-height: 14rem;
-  aspect-ratio: 1 / 1;
+  min-height: 12rem;
+  aspect-ratio: 4 / 3;
   height: 100%;
   background:
     radial-gradient(circle at 30% 30%, rgba(108, 92, 231, 0.35), transparent 55%),
@@ -591,24 +617,188 @@ body.bb-tp-body {
   padding-bottom: var(--bb-section);
 }
 
+/* Stitch desktop: announcements + ministries | service times + resources */
+.bb-tp-home__band {
+  display: grid;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: var(--bb-section);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bb-tp-home__primary {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.bb-tp-home__aside {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  order: -1; /* Mobile Stitch: service times before announcements */
+}
+
+@media (min-width: 768px) {
+  .bb-tp-home__band {
+    grid-template-columns: minmax(0, 1.4fr) minmax(15rem, 20rem);
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .bb-tp-home__aside {
+    order: 0; /* Desktop Stitch: announce + ministries | service sidebar */
+  }
+}
+
+.bb-tp-home-service-card {
+  padding: 1.35rem 1.4rem 1.5rem;
+  border-radius: var(--bb-radius);
+  background: var(--bb-violet);
+  color: #fff;
+  box-shadow: var(--bb-shadow-md, 0 12px 32px rgba(108, 92, 231, 0.28));
+  min-width: 0;
+}
+
+.bb-tp-home-service-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.bb-tp-home-service-card__title .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.bb-tp-home-service-card__body {
+  margin: 0 0 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.bb-tp-home-service-card__cta {
+  margin-top: 1rem;
+  width: 100%;
+  background: #fff;
+  color: var(--bb-violet);
+  border-color: #fff;
+}
+
+.bb-tp-home-service-card__cta:hover {
+  background: #f5f2ff;
+  color: var(--bb-violet-deep);
+}
+
+.bb-tp-btn--on-violet {
+  background: #fff;
+  color: var(--bb-violet);
+  border-color: #fff;
+}
+
+.bb-tp-service-times-list--on-card {
+  gap: 0.75rem;
+}
+
+.bb-tp-service-times-list--on-card .bb-tp-service-times-item {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.bb-tp-service-times-list--on-card .bb-tp-service-times-item__day,
+.bb-tp-service-times-list--on-card .bb-tp-service-times-item__name,
+.bb-tp-service-times-list--on-card .bb-tp-service-times-item__time {
+  color: #fff;
+}
+
+.bb-tp-service-times-list--on-card .bb-tp-service-times-item__location,
+.bb-tp-service-times-list--on-card .bb-tp-service-times-item__note {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.bb-tp-home-resources {
+  padding: 1.1rem 1.2rem;
+  border-radius: var(--bb-radius);
+  border: 1px solid var(--bb-line);
+  background: var(--bb-surface);
+  min-width: 0;
+}
+
+.bb-tp-home-resources__title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: var(--bb-ink);
+}
+
+.bb-tp-home-resources__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.bb-tp-home-resources__link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: var(--bb-touch-min, 2.75rem);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--bb-radius-sm);
+  background: var(--bb-surface-low);
+  color: var(--bb-ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.bb-tp-home-resources__link:hover {
+  color: var(--bb-violet);
+  background: var(--bb-color-primary-soft, #efeaff);
+}
+
+.bb-tp-home-resources__label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .bb-tp-home__service-times {
   padding-top: 1.5rem;
   padding-bottom: var(--bb-section);
 }
 
 .bb-tp-preview-banner {
-  position: sticky;
-  top: 0;
-  z-index: 60;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.75rem;
-  align-items: center;
-  padding: 0.65rem 1rem;
+  position: relative;
+  z-index: 50;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
   background: #1f1635;
   color: #f5f2ff;
   font-size: 0.875rem;
   line-height: 1.4;
+  /* Full-bleed chrome — does not alter page container max-width */
+}
+
+.bb-tp-preview-banner__inner {
+  max-width: var(--bb-max);
+  margin: 0 auto;
+  padding: 0.65rem var(--bb-gutter-mobile, 1rem);
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  min-width: 0;
 }
 
 .bb-tp-preview-banner a {
@@ -622,6 +812,15 @@ body.bb-tp-body {
 
 .bb-tp-body--preview {
   padding-top: 0;
+}
+
+/* Preview must keep the same page width as public */
+.bb-tp-body--preview .bb-tp-header__inner,
+.bb-tp-body--preview .bb-tp-container,
+.bb-tp-body--preview .bb-tp-footer__inner,
+.bb-tp-body--preview .bb-tp-hero__inner,
+.bb-tp-body--preview .bb-tp-page-hero__inner {
+  max-width: var(--bb-max);
 }
 
 .bb-tp-home__announce {
@@ -785,6 +984,19 @@ body.bb-tp-body {
 
 .bb-tp-contact-services {
   margin-bottom: 1.5rem;
+}
+
+.bb-tp-contact-hours {
+  margin-bottom: 1.5rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--bb-radius);
+  border: 1px solid var(--bb-line);
+  background: var(--bb-surface);
+  min-width: 0;
+}
+
+.bb-tp-contact-hours .bb-tp-section-title {
+  margin-bottom: 0.5rem;
 }
 
 @media (max-width: 767px) {
@@ -1255,6 +1467,15 @@ body.bb-tp-body {
   box-shadow: var(--bb-shadow-md, 0 12px 32px rgba(26, 22, 37, 0.12));
 }
 
+.bb-tp-about-story__media-fallback {
+  min-height: 12rem;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--bb-radius);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(108, 92, 231, 0.28), transparent 55%),
+    linear-gradient(145deg, #f3efe8, #efeaff);
+}
+
 .bb-tp-about-story__media--collage {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1550,14 +1771,15 @@ body.bb-tp-body {
 .bb-tp-footer__inner {
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 2.5rem var(--bb-gutter) 1.5rem;
+  padding: 2.5rem var(--bb-gutter-mobile, 1rem) 1.5rem;
   width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .bb-tp-footer__grid {
   display: grid;
-  gap: 2rem;
+  gap: 1.75rem;
   grid-template-columns: 1fr;
 }
 
@@ -1565,6 +1787,7 @@ body.bb-tp-body {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .bb-tp-footer__mark {
@@ -1584,6 +1807,8 @@ body.bb-tp-body {
   font-weight: 700;
   color: var(--bb-violet);
   font-size: 1.1rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .bb-tp-footer__tagline {
@@ -1609,7 +1834,7 @@ body.bb-tp-body {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .bb-tp-footer__list a {
@@ -1631,6 +1856,7 @@ body.bb-tp-body {
   gap: 0.4rem;
   color: var(--bb-muted);
   font-size: 0.95rem;
+  min-width: 0;
 }
 
 .bb-tp-footer__list--contact .material-symbols-outlined {
@@ -1639,8 +1865,8 @@ body.bb-tp-body {
 }
 
 .bb-tp-footer__bar {
-  margin-top: 2rem;
-  padding-top: 1.25rem;
+  margin-top: 1.75rem;
+  padding-top: 1.15rem;
   border-top: 1px solid var(--bb-line);
   display: flex;
   flex-wrap: wrap;
@@ -1652,6 +1878,8 @@ body.bb-tp-body {
 
 .bb-tp-footer__copy {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .bb-tp-footer__bar-links {
@@ -1806,13 +2034,32 @@ body.bb-tp-body {
 }
 
 @media (min-width: 900px) {
+  .bb-tp-header__inner {
+    padding: 0 var(--bb-gutter);
+    gap: 1rem;
+  }
+
+  .bb-tp-container {
+    padding: 0 var(--bb-gutter);
+  }
+
+  .bb-tp-footer__inner {
+    padding-left: var(--bb-gutter);
+    padding-right: var(--bb-gutter);
+  }
+
+  .bb-tp-preview-banner__inner {
+    padding-left: var(--bb-gutter);
+    padding-right: var(--bb-gutter);
+  }
+
   .bb-tp-nav--desktop {
     display: flex;
-    gap: 0.85rem; /* denser than Stitch 32px — V5 ships 8 live routes */
+    gap: 0.55rem; /* dense: V5 ships 8 live CMS routes vs Stitch mock 5 */
   }
 
   .bb-tp-nav__link {
-    font-size: 0.92rem;
+    font-size: 0.8125rem;
   }
 
   .bb-tp-menu-btn {
@@ -1820,7 +2067,7 @@ body.bb-tp-body {
   }
 
   .bb-tp-header__actions {
-    gap: 1.5rem; /* Stitch CTA gap 24px */
+    gap: 0.75rem;
   }
 
   .bb-tp-header__actions .bb-tp-btn--ghost,
@@ -1828,13 +2075,17 @@ body.bb-tp-body {
     display: inline-flex;
   }
 
-  .bb-tp-brand__name {
-    max-width: 18rem;
+  .bb-tp-brand {
+    max-width: min(18rem, 22vw);
   }
 
   .bb-tp-brand__mark {
-    width: 30px;
+    width: 30px; /* Stitch desktop logo h-[30px] */
     height: 30px;
+  }
+
+  .bb-tp-brand__name {
+    font-size: 1.05rem;
   }
 
   .bb-tp-hero {
@@ -1858,6 +2109,7 @@ body.bb-tp-body {
 
   .bb-tp-footer__grid {
     grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 2rem;
   }
 
   .bb-tp-footer__brand {
@@ -1867,11 +2119,19 @@ body.bb-tp-body {
 
 @media (min-width: 1200px) {
   .bb-tp-nav--desktop {
-    gap: 2rem; /* Stitch desktop nav spacing 32px when width allows */
+    gap: 1.15rem;
   }
 
   .bb-tp-nav__link {
-    font-size: 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .bb-tp-brand {
+    max-width: min(22rem, 26vw);
+  }
+
+  .bb-tp-header__actions {
+    gap: 1.5rem; /* Stitch CTA gap 24px when width allows */
   }
 }
 
@@ -1879,9 +2139,17 @@ body.bb-tp-body {
   :root {
     --bb-gutter: 2rem;
   }
+
+  .bb-tp-nav--desktop {
+    gap: 1.5rem;
+  }
+
+  .bb-tp-nav__link {
+    font-size: 1rem;
+  }
 }
 
-/* Mobile logo height per Stitch Mobile Header Reference */
+/* Mobile logo / header safeguards (Stitch Mobile Header Reference · 390) */
 @media (max-width: 899px) {
   .bb-tp-brand__mark {
     width: 24px;
@@ -1891,12 +2159,30 @@ body.bb-tp-body {
   .bb-tp-brand__name {
     font-size: 1rem;
   }
+
+  .bb-tp-header__inner,
+  .bb-tp-container,
+  .bb-tp-footer__inner,
+  .bb-tp-preview-banner__inner {
+    padding-left: var(--bb-gutter-mobile, 1rem);
+    padding-right: var(--bb-gutter-mobile, 1rem);
+  }
+}
+
+@media (max-width: 430px) {
+  .bb-tp-brand {
+    max-width: min(14rem, calc(100vw - 5.5rem));
+  }
 }
 
 @media (max-width: 360px) {
   .bb-tp-header__inner {
     padding: 0 0.75rem;
     gap: 0.5rem;
+  }
+
+  .bb-tp-brand {
+    max-width: calc(100vw - 5rem);
   }
 
   .bb-tp-brand__mark {
@@ -1906,11 +2192,6 @@ body.bb-tp-body {
 
   .bb-tp-brand__name {
     font-size: 0.9rem;
-    max-width: 8.5rem;
-  }
-
-  .bb-tp-brand__branch {
-    max-width: 8.5rem;
   }
 
   .bb-tp-hero__cta .bb-tp-btn,
@@ -1928,13 +2209,10 @@ body.bb-tp-body {
   .bb-tp-container,
   .bb-tp-hero__inner,
   .bb-tp-page-hero__inner,
-  .bb-tp-footer__inner {
+  .bb-tp-footer__inner,
+  .bb-tp-preview-banner__inner {
     padding-left: 0.65rem;
     padding-right: 0.65rem;
-  }
-
-  .bb-tp-brand__name {
-    max-width: 7rem;
   }
 }
 
@@ -2253,6 +2531,14 @@ body.bb-tp-body {
 
 .bb-tp-leader-grid-wrap {
   margin-bottom: 1.5rem;
+}
+
+.bb-tp-leadership-grid__title-desktop {
+  display: none;
+}
+
+.bb-tp-leadership-grid__title-mobile {
+  display: inline;
 }
 
 .bb-tp-leader-grid {
@@ -3105,6 +3391,14 @@ body.bb-tp-body {
 
   .bb-tp-leader-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .bb-tp-leadership-grid__title-desktop {
+    display: inline;
+  }
+
+  .bb-tp-leadership-grid__title-mobile {
+    display: none;
   }
 
   .bb-tp-leader-card {

@@ -7,13 +7,26 @@
   No series, scripture, duration, thumbnails, embeds, filters, or fabricated archive.
 %>
 <%
-  var pageSections = sections || [];
-  var sermons = entities || [];
+  var demoFb =
+    typeof sermonsDemoFallback !== 'undefined' && sermonsDemoFallback ? sermonsDemoFallback : null;
+  var pageSections = (sections || []).filter(function (s) {
+    return s && (s.heading || s.bodyText || s.mediaUrl);
+  });
+  var sermons = (entities || []).filter(function (s) {
+    return s && String(s.title || '').trim();
+  });
   var featured = sermons.length ? sermons[0] : null;
   var rest = sermons.length > 1 ? sermons.slice(1) : [];
   var intro = pageSections.length ? pageSections[0] : null;
-  var introHeading = (intro && intro.heading) || pageTitle || 'Sermons & Resources';
-  var introBody = (intro && intro.bodyText) || '';
+  var introHeading =
+    (intro && intro.heading) ||
+    (demoFb && demoFb.introHeading) ||
+    pageTitle ||
+    'Sermons & Resources';
+  var introBody =
+    (intro && intro.bodyText) ||
+    (demoFb && demoFb.introBody) ||
+    '';
   var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
 
   var accentBefore = introHeading;
@@ -49,7 +62,7 @@
   data-bb-sermons="1"
   data-bb-stitch-sermons="populated-v2"
 >
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-sermons-hero" aria-label="Sermons">
+  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-sermons-hero" aria-label="Sermons" data-bb-sermons-hero="1">
     <div class="bb-tp-container">
       <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-sermons-hero__eyebrow-desktop">
         Teaching Library
@@ -94,8 +107,8 @@
         <h2><%= emptyHeadline %></h2>
         <p><%= emptyMessage %></p>
         <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/events">View Events</a>
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/events') %>">View Events</a>
         </div>
       </div>
     </div>
@@ -189,7 +202,7 @@
     <% } %>
 
     <% if (rest.length) { %>
-    <section class="bb-tp-sermon-list-wrap" aria-label="Recent sermons">
+    <section class="bb-tp-sermon-list-wrap" aria-label="Recent sermons" data-bb-sermons-list="1">
       <div class="bb-tp-sermon-list-wrap__head">
         <h2 class="bb-tp-section-title bb-tp-section-title--ruled">Recent Sermons</h2>
       </div>

@@ -7,13 +7,51 @@
   No fabricated hours, mailing lists, or phone/email/address.
 %>
 <%
-  var pageSections = sections || [];
-  var channels = entities || [];
+  var demoFb =
+    typeof contactDemoFallback !== 'undefined' && contactDemoFallback ? contactDemoFallback : null;
+  var pageSections = (sections || []).filter(function (s) {
+    return s && (s.heading || s.bodyText || s.mediaUrl);
+  });
+  var channels = (entities || []).filter(function (ch) {
+    return ch && (ch.label || ch.value);
+  });
   var contact = typeof publicContact !== 'undefined' && publicContact ? publicContact : { hasAny: false };
-  var intro = pageSections.length ? pageSections[0] : null;
-  var moreSections = pageSections.length > 1 ? pageSections.slice(1) : [];
-  var introHeading = (intro && intro.heading) || pageTitle || 'Contact Us';
-  var introBody = (intro && intro.bodyText) || '';
+  var intro = null;
+  var officeHoursSection = null;
+  var moreSections = [];
+  pageSections.forEach(function (s) {
+    var blob = (String(s.sectionKey || '') + ' ' + String(s.sectionType || '') + ' ' + String(s.heading || '')).toLowerCase();
+    if (!officeHoursSection && (blob.indexOf('office_hours') >= 0 || blob.indexOf('office hours') >= 0 || (blob.indexOf('office') >= 0 && blob.indexOf('hour') >= 0))) {
+      officeHoursSection = s;
+      return;
+    }
+    if (!intro) {
+      intro = s;
+      return;
+    }
+    moreSections.push(s);
+  });
+
+  var introHeading =
+    (intro && intro.heading) ||
+    (demoFb && demoFb.introHeading) ||
+    pageTitle ||
+    'Contact Us';
+  var introBody =
+    (intro && intro.bodyText) ||
+    (demoFb && demoFb.introBody) ||
+    '';
+
+  function formatTimeLabel(hhmm) {
+    var m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(hhmm || ''));
+    if (!m) return String(hhmm || '');
+    var h = Number(m[1]);
+    var min = m[2];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return h + ':' + min + ' ' + ampm;
+  }
 
   var accentBefore = introHeading;
   var accentPhrase = '';
@@ -81,7 +119,7 @@
   data-bb-contact="1"
   data-bb-stitch-contact="populated-v2"
 >
-  <header class="bb-tp-dir-hero bb-tp-contact-hero" aria-label="Contact">
+  <header class="bb-tp-dir-hero bb-tp-contact-hero" aria-label="Contact" data-bb-contact-hero="1">
     <div class="bb-tp-container">
       <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-contact-hero__eyebrow-desktop">
         Connect With Us
@@ -133,11 +171,24 @@
         <li class="bb-tp-service-times-item">
           <span class="bb-tp-service-times-item__day"><%= String(entry.day || '').charAt(0).toUpperCase() + String(entry.day || '').slice(1) %></span>
           <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
-          <span class="bb-tp-service-times-item__time"><%= entry.startTime %><% if (entry.endTime) { %>–<%= entry.endTime %><% } %></span>
+          <span class="bb-tp-service-times-item__time">
+            <%= formatTimeLabel(entry.startTime) %><% if (entry.endTime) { %>–<%= formatTimeLabel(entry.endTime) %><% } %>
+          </span>
           <% if (entry.location) { %><span class="bb-tp-service-times-item__location"><%= entry.location %></span><% } %>
         </li>
         <% }) %>
       </ul>
+    </section>
+    <% } %>
+
+    <% if (officeHoursSection && (officeHoursSection.heading || officeHoursSection.bodyText)) { %>
+    <section class="bb-tp-contact-hours" data-bb-contact-hours="1" aria-labelledby="bb-tp-contact-hours-heading">
+      <h2 id="bb-tp-contact-hours-heading" class="bb-tp-section-title bb-tp-section-title--ruled">
+        <%= officeHoursSection.heading || 'Office hours' %>
+      </h2>
+      <% if (officeHoursSection.bodyText) { %>
+      <p class="bb-tp-body"><%= officeHoursSection.bodyText %></p>
+      <% } %>
     </section>
     <% } %>
 

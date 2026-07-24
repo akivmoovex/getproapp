@@ -17,7 +17,7 @@
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=31' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=35' %>" />
 </head>
 <body
   class="bb-tp-body<%= typeof isPreview !== 'undefined' && isPreview ? ' bb-tp-body--preview' : '' %>"
@@ -30,19 +30,21 @@
 
   <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta) { %>
   <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
-    <strong>Preview</strong>
-    <span>— Admin preview (includes drafts). Not visible to the public unless published.</span>
-    <span class="bb-tp-preview-banner__links">
-      <a href="<%= previewMeta.backHref %>">Back to content admin</a>
-      ·
-      <a href="<%= previewMeta.editHref %>">Edit page</a>
-    </span>
+    <div class="bb-tp-preview-banner__inner">
+      <strong>Preview</strong>
+      <span>— Admin preview (includes drafts). Not visible to the public unless published.</span>
+      <span class="bb-tp-preview-banner__links">
+        <a href="<%= previewMeta.backHref %>">Back to content admin</a>
+        ·
+        <a href="<%= previewMeta.editHref %>">Edit page</a>
+      </span>
+    </div>
   </div>
   <% } %>
 
   <header class="bb-tp-header" data-bb-header="1" id="bb-tp-header">
     <div class="bb-tp-header__inner">
-      <a class="bb-tp-brand" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>" aria-label="<%= publicName %> home">
+      <a class="bb-tp-brand" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>" aria-label="<%= publicName %> home" title="<%= publicName %>">
         <img
           class="bb-tp-brand__mark"
           src="/church/images/brand/blessboard-small-church-logo.png"
@@ -59,7 +61,7 @@
         </span>
       </a>
 
-      <nav class="bb-tp-nav bb-tp-nav--desktop" aria-label="Primary">
+      <nav class="bb-tp-nav bb-tp-nav--desktop" data-bb-nav="desktop" aria-label="Primary">
         <% navItems.forEach(function (item) { %>
         <a
           href="<%= item.href %>"
@@ -69,7 +71,7 @@
         <% }) %>
       </nav>
 
-      <div class="bb-tp-header__actions">
+      <div class="bb-tp-header__actions" data-bb-header-actions="1">
         <% if (showEnvBadge) { %>
         <span class="bb-tp-env"><%= dataEnvironment %></span>
         <% } %>
@@ -103,10 +105,11 @@
     aria-modal="true"
     aria-label="Church navigation"
     aria-hidden="true"
+    data-bb-nav="mobile-drawer"
     inert
   >
     <div class="bb-tp-drawer__head">
-      <a class="bb-tp-brand bb-tp-brand--drawer" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>" aria-label="<%= publicName %> home">
+      <a class="bb-tp-brand bb-tp-brand--drawer" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>" aria-label="<%= publicName %> home" title="<%= publicName %>">
         <img
           class="bb-tp-brand__mark"
           src="/church/images/brand/blessboard-small-church-logo.png"

@@ -7,13 +7,26 @@
   Registration only when safe registrationUrl exists.
 %>
 <%
-  var pageSections = sections || [];
-  var events = entities || [];
+  var demoFb =
+    typeof eventsDemoFallback !== 'undefined' && eventsDemoFallback ? eventsDemoFallback : null;
+  var pageSections = (sections || []).filter(function (s) {
+    return s && (s.heading || s.bodyText || s.mediaUrl);
+  });
+  var events = (entities || []).filter(function (e) {
+    return e && String(e.title || '').trim();
+  });
   var featured = events.length ? events[0] : null;
   var rest = events.length > 1 ? events.slice(1) : [];
   var intro = pageSections.length ? pageSections[0] : null;
-  var introHeading = (intro && intro.heading) || pageTitle || 'Gather with Us';
-  var introBody = (intro && intro.bodyText) || '';
+  var introHeading =
+    (intro && intro.heading) ||
+    (demoFb && demoFb.introHeading) ||
+    pageTitle ||
+    'Gather with Us';
+  var introBody =
+    (intro && intro.bodyText) ||
+    (demoFb && demoFb.introBody) ||
+    '';
   var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
   var featuredParts = featured
     ? formatEventParts(featured.startsAt, featured.timezone, featured.endsAt)
@@ -34,7 +47,7 @@
   data-bb-events="1"
   data-bb-stitch-events="populated-v2"
 >
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-events-hero" aria-label="Events">
+  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-events-hero" aria-label="Events" data-bb-events-hero="1">
     <div class="bb-tp-container">
       <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-events-hero__eyebrow-desktop">
         Community Calendar
@@ -79,8 +92,8 @@
         <h2><%= emptyHeadline %></h2>
         <p><%= emptyMessage %></p>
         <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="/contact">Contact Us</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/">Home</a>
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>">Home</a>
         </div>
       </div>
     </div>
@@ -150,7 +163,7 @@
             <% } %>
             <a
               class="bb-tp-btn<%= featured.registrationUrl ? ' bb-tp-btn--ghost' : ' bb-tp-btn--primary' %>"
-              href="/contact"
+              href="<%= hrefFor('/contact') %>"
             >
               Contact for Details
               <% if (!featured.registrationUrl) { %>
@@ -164,7 +177,7 @@
     <% } %>
 
     <% if (rest.length) { %>
-    <section class="bb-tp-event-list-wrap" aria-label="Upcoming events">
+    <section class="bb-tp-event-list-wrap" aria-label="Upcoming events" data-bb-events-list="1">
       <h2 class="bb-tp-section-title bb-tp-section-title--ruled">Upcoming Events</h2>
       <ul class="bb-tp-event-grid">
         <% rest.forEach(function (event) { %>
@@ -220,7 +233,7 @@
               aria-label="Register for <%= event.title %>"
             >Register</a>
             <% } else { %>
-            <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="/contact">Contact Church</a>
+            <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="<%= hrefFor('/contact') %>">Contact Church</a>
             <% } %>
           </div>
         </li>

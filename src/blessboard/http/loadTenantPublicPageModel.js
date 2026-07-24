@@ -22,6 +22,7 @@ const { PAGE_KEY_TITLES } = require("../services/publicContentConstants");
 const { NAV_ITEMS, PAGE_KEY_TO_PATH } = require("./tenantPublicPaths");
 const { buildTenantPublicSeo } = require("./tenantPublicSeo");
 const { safeExternalUrl, plainMetaText } = require("./tenantPublicSafe");
+const testingDemoSpec = require("../services/testingWebsiteDemoContentSpec");
 
 const KIND = Object.freeze({
   OK: "ok",
@@ -324,10 +325,28 @@ function mapContact(row) {
 }
 
 function mapGiving(row) {
+  let instructions = row.instructions != null ? String(row.instructions) : "";
+  const markedDemo =
+    /\[Demo\]/i.test(instructions) ||
+    /\bDEMO\b/.test(instructions) ||
+    /TEST ONLY/i.test(instructions) ||
+    /fictional/i.test(instructions);
+  // Never surface credential-like strings that are not clearly demo/test copy.
+  if (
+    instructions &&
+    !markedDemo &&
+    (/\bIBAN\b/i.test(instructions) ||
+      /\bSWIFT\b/i.test(instructions) ||
+      /\brouting\s*#?\s*\d{9}\b/i.test(instructions) ||
+      /\b\d{8,17}\b/.test(instructions.replace(/DEMO[-0-9]*/gi, "")))
+  ) {
+    instructions =
+      "Contact the church office for published giving instructions. Account details are not shown on this page.";
+  }
   return {
     methodType: row.methodType,
     label: row.label,
-    instructions: row.instructions,
+    instructions: instructions || null,
     externalUrl: safeExternalUrl(row.externalUrl),
     icon: methodIcon(row.methodType),
   };
@@ -797,6 +816,121 @@ async function loadTenantPublicPageModel(db, input) {
     showEmptyState = !hasSections;
   }
 
+  // Soft demo pack for testing/demo orgs only — templates use when CMS fields are empty.
+  // Do not soft-fill a fully empty home (preserve intentional empty state).
+  let homeDemoFallback = null;
+  if (pageKey === "home" && showEnvBadge && !showEmptyState) {
+    homeDemoFallback = Object.freeze({
+      heroHeading: testingDemoSpec.HERO.heading,
+      heroBody: testingDemoSpec.HERO.bodyText,
+      heroMediaUrl: testingDemoSpec.HERO.mediaUrl,
+      announcement: Object.freeze({
+        heading: testingDemoSpec.HOME_ANNOUNCEMENT.heading,
+        bodyText: testingDemoSpec.HOME_ANNOUNCEMENT.bodyText,
+      }),
+    });
+  }
+
+  let aboutDemoFallback = null;
+  if (pageKey === "about" && showEnvBadge && !showEmptyState) {
+    const aboutHero = testingDemoSpec.ABOUT_SECTIONS.find((s) => s.sectionType === "hero") ||
+      testingDemoSpec.ABOUT_SECTIONS[0];
+    const aboutStory = testingDemoSpec.ABOUT_SECTIONS.find((s) => s.sectionType === "story");
+    const aboutMission = testingDemoSpec.ABOUT_SECTIONS.find((s) => s.sectionType === "mission");
+    const aboutVision = testingDemoSpec.ABOUT_SECTIONS.find((s) => s.sectionType === "vision");
+    const aboutValues = testingDemoSpec.ABOUT_SECTIONS.find((s) => s.sectionType === "values");
+    aboutDemoFallback = Object.freeze({
+      heroHeading: aboutHero && aboutHero.heading,
+      heroBody: aboutHero && aboutHero.bodyText,
+      heroMediaUrl: aboutHero && aboutHero.mediaUrl,
+      story: aboutStory
+        ? Object.freeze({
+            sectionKey: aboutStory.sectionKey,
+            heading: aboutStory.heading,
+            bodyText: aboutStory.bodyText,
+            mediaUrl: aboutStory.mediaUrl,
+          })
+        : null,
+      storyMediaUrl: testingDemoSpec.MEDIA.aboutStory,
+      mission: aboutMission
+        ? Object.freeze({
+            sectionKey: aboutMission.sectionKey,
+            heading: aboutMission.heading,
+            bodyText: aboutMission.bodyText,
+          })
+        : null,
+      vision: aboutVision
+        ? Object.freeze({
+            sectionKey: aboutVision.sectionKey,
+            heading: aboutVision.heading,
+            bodyText: aboutVision.bodyText,
+          })
+        : null,
+      values: aboutValues
+        ? Object.freeze({
+            sectionKey: aboutValues.sectionKey,
+            heading: aboutValues.heading,
+            bodyText: aboutValues.bodyText,
+          })
+        : null,
+    });
+  }
+
+  let leadershipDemoFallback = null;
+  if (pageKey === "leadership" && showEnvBadge && !showEmptyState) {
+    leadershipDemoFallback = Object.freeze({
+      introHeading: "Meet Our Church Leadership",
+      introBody:
+        "Dedicated servants committed to shepherd, teach, and empower our congregation through spiritual guidance and practical grace. Demo intro for Stitch parity only.",
+      introMediaUrl: null,
+    });
+  }
+
+  let ministriesDemoFallback = null;
+  if (pageKey === "ministries" && showEnvBadge && !showEmptyState) {
+    ministriesDemoFallback = Object.freeze({
+      introHeading: "Growing Together in Faith and Community",
+      introBody:
+        "Explore ministries designed to serve every member of our spiritual family. Demo intro for Stitch parity only.",
+    });
+  }
+
+  let eventsDemoFallback = null;
+  if (pageKey === "events" && showEnvBadge && !showEmptyState) {
+    eventsDemoFallback = Object.freeze({
+      introHeading: "Gather with Us",
+      introBody:
+        "Upcoming gatherings published by this church. Demo intro for Stitch parity only.",
+    });
+  }
+
+  let sermonsDemoFallback = null;
+  if (pageKey === "sermons" && showEnvBadge && !showEmptyState) {
+    sermonsDemoFallback = Object.freeze({
+      introHeading: "Sermons & Resources",
+      introBody:
+        "Published messages and resources from this church. Demo intro for Stitch parity only.",
+    });
+  }
+
+  let contactDemoFallback = null;
+  if (pageKey === "contact" && showEnvBadge && !showEmptyState) {
+    contactDemoFallback = Object.freeze({
+      introHeading: testingDemoSpec.CONTACT.introHeading,
+      introBody: testingDemoSpec.CONTACT.introBody,
+      officeHoursHeading: testingDemoSpec.CONTACT.officeHoursHeading,
+      officeHoursBody: testingDemoSpec.CONTACT.officeHoursBody,
+    });
+  }
+
+  let givingDemoFallback = null;
+  if (pageKey === "giving" && showEnvBadge && !showEmptyState) {
+    givingDemoFallback = Object.freeze({
+      introHeading: testingDemoSpec.GIVING.introHeading,
+      introBody: testingDemoSpec.GIVING.introBody,
+    });
+  }
+
   const navItems = pathPrefix
     ? NAV_ITEMS.map((item) =>
         Object.freeze({
@@ -836,12 +970,20 @@ async function loadTenantPublicPageModel(db, input) {
     socialLinks,
     serviceTimesEntries,
     homeTeasers,
+    homeDemoFallback,
+    aboutDemoFallback,
+    leadershipDemoFallback,
+    ministriesDemoFallback,
+    eventsDemoFallback,
+    sermonsDemoFallback,
+    contactDemoFallback,
+    givingDemoFallback,
     canonicalTimezone,
     primaryBranchDisplayName: tenant.primaryBranch.displayName,
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
     loginHref: "/login",
     apexHref: "https://blessboard.org/",
-    cssHref: "/blessboard/v5/tenant-public.css?v=31",
+    cssHref: "/blessboard/v5/tenant-public.css?v=35",
     pathPrefix,
     homeHref: pathPrefix || "/",
     hrefFor(pagePath) {
@@ -890,4 +1032,5 @@ module.exports = {
   parseSermonSummary,
   mapSection,
   mapSermon,
+  mapGiving,
 };

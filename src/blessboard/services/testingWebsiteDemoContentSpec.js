@@ -44,9 +44,9 @@ const IDENTITY = Object.freeze({
 const HERO = Object.freeze({
   sectionKey: "hero",
   sectionType: "hero",
-  heading: "A Place for Growth & Community",
+  heading: "A Place for Spiritual Growth & Community",
   bodyText:
-    "Join us for worship, connection, and practical next steps. This hero copy is demo-only for visual testing.",
+    "Join us for worship, connection, and practical next steps in our digital sanctuary. This hero copy is demo-only for Stitch visual testing.",
   mediaUrl: MEDIA.homeHero,
   primaryCta: { label: "Join a Service", path: "/events" },
   secondaryCta: { label: "Giving", path: "/giving" },
@@ -113,7 +113,7 @@ const ABOUT_SECTIONS = Object.freeze([
   {
     sectionKey: "about_hero",
     sectionType: "hero",
-    heading: "Our Story of Faith & Service",
+    heading: "About Our Church",
     bodyText: IDENTITY.welcomeMessage,
     mediaUrl: MEDIA.aboutHero,
     sortOrder: 5,

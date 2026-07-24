@@ -2437,7 +2437,7 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     assert.match(leadership, /aria-label="Leadership"/);
     assert.match(leadership, /Faith &amp; Community/);
     assert.match(leadership, /Want to serve with us\?/);
-    assert.match(leadership, /Explore Ministries/);
+    assert.match(leadership, /Join a Ministry/);
     assert.match(leadership, /role="status"/);
     assert.match(leadership, /data-bb-empty="leadership"/);
     assert.match(leadership, /role="img"/);
