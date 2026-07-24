@@ -1,0 +1,242 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = items || [];
+  var branchOptions = branches || [];
+  var pageOptions = pageKeys || [];
+  var submitterOptions = submitters || [];
+  var f = filters || {};
+  var searchQ = f.q ? String(f.q) : '';
+  var activeStatus = f.status ? String(f.status) : '';
+  var activeBranch = f.branchId ? String(f.branchId) : '';
+  var activePage = f.pageKey ? String(f.pageKey) : '';
+  var activeSubmitter = f.submittedBy ? String(f.submittedBy) : '';
+  var fromDate = f.submittedFrom ? String(f.submittedFrom) : '';
+  var toDate = f.submittedTo ? String(f.submittedTo) : '';
+  var labels = statusLabels || {};
+  var sums = summary || {
+    pendingReview: 0,
+    changesRequested: 0,
+    approvedToday: 0,
+    recentlyPublished: 0
+  };
+  var statusChoices = [
+    { key: '', label: 'All statuses' },
+    { key: 'pending_review', label: labels.pending_review || 'Pending review' },
+    { key: 'changes_requested', label: labels.changes_requested || 'Changes requested' },
+    { key: 'approved', label: labels.approved || 'Approved' },
+    { key: 'rejected', label: labels.rejected || 'Rejected' },
+    { key: 'published', label: labels.published || 'Published' },
+    { key: 'withdrawn', label: labels.withdrawn || 'Withdrawn' }
+  ];
+  function statusLabel(s) {
+    return labels[s] || s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'pending_review') return 'bb-hq-chip--pending';
+    if (key === 'changes_requested') return 'bb-hq-chip--warn';
+    if (key === 'approved' || key === 'published') return 'bb-hq-chip--ok';
+    if (key === 'rejected') return 'bb-hq-chip--danger';
+    return 'bb-hq-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function pageTitleFromKey(key) {
+    if (!key) return '—';
+    return String(key).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+%>
+
+<section
+  class="bb-hq-phase3-wcs"
+  data-bb-phase3-website-change-submissions="1"
+  aria-label="Phase3 Website Change Submissions"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Change submissions</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Website Change Submissions</h1>
+      <p class="bb-hq-lede">
+        Review and approve website updates submitted by branch administrators
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= editorPath %>">
+        <span class="material-symbols-outlined" aria-hidden="true">web</span>
+        Open Website Editor
+      </a>
+    </p>
+  </header>
+
+  <% if (queryError) { %>
+  <p class="bb-hq-error" role="alert"><%= queryError %></p>
+  <% } %>
+  <% if (notice === 'approved') { %>
+  <p class="bb-hq-ok" role="status">Submission approved.</p>
+  <% } else if (notice === 'changes_requested') { %>
+  <p class="bb-hq-ok" role="status">Changes requested. The branch administrator can revise and resubmit.</p>
+  <% } else if (notice === 'rejected') { %>
+  <p class="bb-hq-ok" role="status">Submission rejected.</p>
+  <% } %>
+
+  <div class="bb-hq-summary bb-hq-phase3-wcs__summary" data-bb-phase3-wcs-summary="1">
+    <article class="bb-hq-card bb-hq-card--accent">
+      <p class="bb-hq-card__label">Pending review</p>
+      <p class="bb-hq-card__value"><%= sums.pendingReview %></p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Changes requested</p>
+      <p class="bb-hq-card__value"><%= sums.changesRequested %></p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Approved today</p>
+      <p class="bb-hq-card__value"><%= sums.approvedToday %></p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Recently published</p>
+      <p class="bb-hq-card__value"><%= sums.recentlyPublished %></p>
+    </article>
+  </div>
+
+  <form
+    method="get"
+    action="/hq/website/change-submissions"
+    class="bb-hq-filter bb-hq-phase3-wcs__filter"
+    data-bb-phase3-wcs-filter="1"
+    role="search"
+  >
+    <div class="bb-hq-field">
+      <label for="wcs-q">Search</label>
+      <input id="wcs-q" name="q" type="search" maxlength="100" value="<%= searchQ %>" placeholder="Title, branch, submitter…" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-branch">Branch</label>
+      <select id="wcs-branch" name="branch">
+        <option value="">All branches</option>
+        <% branchOptions.forEach(function (b) { %>
+        <option value="<%= b.id %>"<%= activeBranch === String(b.id) ? ' selected' : '' %>><%= b.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-status">Status</label>
+      <select id="wcs-status" name="status">
+        <% statusChoices.forEach(function (opt) { %>
+        <option value="<%= opt.key %>"<%= activeStatus === opt.key ? ' selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-page">Page</label>
+      <select id="wcs-page" name="page">
+        <option value="">All pages</option>
+        <% pageOptions.forEach(function (pk) { %>
+        <option value="<%= pk %>"<%= activePage === pk ? ' selected' : '' %>><%= pageTitleFromKey(pk) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-submitter">Submitted by</label>
+      <select id="wcs-submitter" name="submitted_by">
+        <option value="">All users</option>
+        <% submitterOptions.forEach(function (u) { %>
+        <option value="<%= u.id %>"<%= activeSubmitter === String(u.id) ? ' selected' : '' %>><%= u.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-from">From</label>
+      <input id="wcs-from" name="from" type="date" value="<%= fromDate %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-to">To</label>
+      <input id="wcs-to" name="to" type="date" value="<%= toDate %>" />
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Apply filters</button>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/change-submissions">Clear</a>
+    </div>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-hq-empty bb-hq-phase3-wcs__empty" data-bb-phase3-wcs-empty="1">
+    <p>No website changes are waiting for review.</p>
+    <p>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= editorPath %>">Open Website Editor</a>
+    </p>
+  </div>
+  <% } else { %>
+
+  <div class="bb-hq-table-wrap bb-hq-phase3-wcs__table-wrap" data-bb-phase3-wcs-desktop="1">
+    <table class="bb-hq-table">
+      <thead>
+        <tr>
+          <th scope="col">Submission title</th>
+          <th scope="col">Branch</th>
+          <th scope="col">Submitted by</th>
+          <th scope="col">Page affected</th>
+          <th scope="col">Change type</th>
+          <th scope="col">Submitted</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr>
+          <td>
+            <a href="/hq/website/change-submissions/<%= row.id %>"><%= row.title %></a>
+          </td>
+          <td><%= row.branchName || '—' %></td>
+          <td><%= row.submittedByName || '—' %></td>
+          <td><%= pageTitleFromKey(row.pageKey) %></td>
+          <td><%= row.changeType || '—' %></td>
+          <td><%= formatWhen(row.submittedAt) %></td>
+          <td>
+            <span class="bb-hq-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+          </td>
+          <td class="bb-hq-table__actions">
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--primary" href="/hq/website/change-submissions/<%= row.id %>">Review</a>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="<%= previewPathFor(row.pageKey) %>">Preview</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="bb-hq-phase3-wcs__cards" data-bb-phase3-wcs-mobile="1">
+    <% rows.forEach(function (row) { %>
+    <li class="bb-hq-card bb-hq-phase3-wcs__card">
+      <div class="bb-hq-phase3-wcs__card-head">
+        <h2 class="bb-hq-phase3-wcs__card-title"><%= row.title %></h2>
+        <span class="bb-hq-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+      </div>
+      <dl class="bb-hq-phase3-wcs__meta">
+        <div><dt>Branch</dt><dd><%= row.branchName || '—' %></dd></div>
+        <div><dt>Page affected</dt><dd><%= pageTitleFromKey(row.pageKey) %></dd></div>
+        <div><dt>Submitted by</dt><dd><%= row.submittedByName || '—' %></dd></div>
+        <div><dt>Submitted</dt><dd><%= formatWhen(row.submittedAt) %></dd></div>
+        <div><dt>Change type</dt><dd><%= row.changeType || '—' %></dd></div>
+      </dl>
+      <p class="bb-hq-phase3-wcs__card-actions">
+        <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/change-submissions/<%= row.id %>">Review</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= previewPathFor(row.pageKey) %>">Preview</a>
+      </p>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>
