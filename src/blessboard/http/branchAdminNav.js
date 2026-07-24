@@ -88,6 +88,14 @@ const BRANCH_ADMIN_NAV = Object.freeze([
     nav: true,
   },
   {
+    key: "website_submissions",
+    label: "Change requests",
+    href: "/branch-admin/website/submissions",
+    icon: "edit_note",
+    enabled: true,
+    nav: true,
+  },
+  {
     key: "settings",
     label: "Settings",
     href: "/branch-admin/settings",

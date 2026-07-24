@@ -545,6 +545,23 @@ async function publishChurchWebsite(db, input) {
         },
       });
 
+      let publicationVersion = null;
+      try {
+        const versionSvc = require("./websitePublicationVersionService");
+        publicationVersion = await versionSvc.recordPublishVersionInTransaction(client, {
+          organizationId: inner.organizationId,
+          churchId,
+          actorUserId: input.actorUserId || null,
+          publishedAt: publishedAt.toISOString(),
+          sourceType: (input && input.sourceType) || "hq_edit",
+          sourceSubmissionId: (input && input.sourceSubmissionId) || null,
+          alreadyPublished: inner.websiteStatus === "published",
+        });
+      } catch (versionErr) {
+        // Version history is required for Phase3 — fail the publish TX.
+        throw versionErr;
+      }
+
       return {
         ok: true,
         status: STATUS.OK,
@@ -553,6 +570,9 @@ async function publishChurchWebsite(db, input) {
         publicPath: inner.publicPath,
         organizationKey: inner.organizationKey,
         alreadyPublished: inner.websiteStatus === "published",
+        publicationVersionId: publicationVersion && publicationVersion.id,
+        publicationVersionNumber:
+          publicationVersion && publicationVersion.versionNumber,
       };
     });
   } catch (err) {

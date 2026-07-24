@@ -73,7 +73,7 @@ function sendControlled(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Website · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=57" />
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=58" />
 </head>
 <body class="bb-hq-body">
   <main class="bb-hq-login-unavailable">

@@ -58,6 +58,12 @@ const { createChurchWebsiteAdminRouter } = require("../../blessboard/http/church
 const {
   createWebsiteChangeSubmissionAdminRouter,
 } = require("../../blessboard/http/websiteChangeSubmissionAdminRoutes");
+const {
+  createWebsiteChangeSubmissionBranchRouter,
+} = require("../../blessboard/http/websiteChangeSubmissionBranchRoutes");
+const {
+  createWebsitePublicationVersionAdminRouter,
+} = require("../../blessboard/http/websitePublicationVersionAdminRoutes");
 const { createApexMarketingRouter } = require("../../blessboard/http/apexMarketingRoutes");
 const { createPlatformAdminRouter } = require("./platformAdminRoutes");
 const { createLoadV5Session } = require("./loadV5Session");
@@ -522,6 +528,20 @@ function createV5FoundationApp(options) {
   );
   app.use(
     createWebsiteChangeSubmissionAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
+    createWebsiteChangeSubmissionBranchRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
+    createWebsitePublicationVersionAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       env,

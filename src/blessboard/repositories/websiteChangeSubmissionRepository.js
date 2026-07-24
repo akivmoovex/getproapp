@@ -37,6 +37,9 @@ function mapSubmission(row) {
     reviewedAt: row.reviewed_at,
     reviewerComment: row.reviewer_comment,
     rejectionReason: row.rejection_reason,
+    priority: row.priority || "normal",
+    requestedPublicationDate: row.requested_publication_date || null,
+    checklist: row.checklist_json || {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -283,15 +286,24 @@ async function listSubmitters(db, organizationId) {
  * @param {object} input
  */
 async function insertSubmission(db, input) {
+  const status = input.status || "draft";
+  const submittedAt =
+    input.submittedAt != null
+      ? input.submittedAt
+      : status === "draft"
+        ? null
+        : new Date().toISOString();
   const res = await db.query(
     `INSERT INTO blessboard.website_change_submissions (
        organization_id, branch_id, title, page_key, section_key, change_type,
        current_content_json, proposed_content_json, reason, submitter_note,
-       status, submitted_by, submitted_at
+       status, submitted_by, submitted_at, priority, requested_publication_date,
+       checklist_json
      ) VALUES (
        $1, $2, $3, $4, $5, $6,
        $7::jsonb, $8::jsonb, $9, $10,
-       $11, $12, COALESCE($13::timestamptz, now())
+       $11, $12, $13::timestamptz, COALESCE($14, 'normal'), $15::date,
+       $16::jsonb
      )
      RETURNING *`,
     [
@@ -305,12 +317,206 @@ async function insertSubmission(db, input) {
       JSON.stringify(input.proposedContent || {}),
       input.reason || null,
       input.submitterNote || null,
-      input.status || "pending_review",
+      status,
       input.submittedBy,
-      input.submittedAt || null,
+      submittedAt,
+      input.priority || "normal",
+      input.requestedPublicationDate || null,
+      JSON.stringify(input.checklist || {}),
     ]
   );
   return mapSubmission(res.rows[0]);
+}
+
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ * @param {string} branchId
+ * @param {string} submissionId
+ */
+async function getSubmissionByOrgBranchAndId(db, organizationId, branchId, submissionId) {
+  if (!isUuid(organizationId) || !isUuid(branchId) || !isUuid(submissionId)) return null;
+  const res = await db.query(
+    `${LIST_SELECT}
+      WHERE s.organization_id = $1 AND s.branch_id = $2 AND s.id = $3
+      LIMIT 1`,
+    [organizationId, branchId, submissionId]
+  );
+  return mapSubmission(res.rows[0] || null);
+}
+
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ * @param {string} branchId
+ */
+async function countBranchStatusSummary(db, organizationId, branchId) {
+  const empty = {
+    draft: 0,
+    pendingReview: 0,
+    changesRequested: 0,
+    approved: 0,
+  };
+  if (!isUuid(organizationId) || !isUuid(branchId)) return empty;
+  const res = await db.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE status = 'draft')::int AS draft,
+       COUNT(*) FILTER (WHERE status = 'pending_review')::int AS pending_review,
+       COUNT(*) FILTER (WHERE status = 'changes_requested')::int AS changes_requested,
+       COUNT(*) FILTER (WHERE status = 'approved')::int AS approved
+     FROM blessboard.website_change_submissions
+     WHERE organization_id = $1 AND branch_id = $2`,
+    [organizationId, branchId]
+  );
+  const row = res.rows[0] || {};
+  return {
+    draft: Number(row.draft) || 0,
+    pendingReview: Number(row.pending_review) || 0,
+    changesRequested: Number(row.changes_requested) || 0,
+    approved: Number(row.approved) || 0,
+  };
+}
+
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {{
+ *   organizationId: string,
+ *   branchId: string,
+ *   submissionId: string,
+ *   expectedStatuses: string[],
+ *   title: string,
+ *   pageKey: string,
+ *   sectionKey?: string|null,
+ *   changeType: string,
+ *   currentContent?: object,
+ *   proposedContent?: object,
+ *   reason?: string|null,
+ *   submitterNote?: string|null,
+ *   priority?: string,
+ *   requestedPublicationDate?: string|null,
+ *   checklist?: object,
+ * }} input
+ */
+async function updateDraftSubmission(db, input) {
+  const statuses = Array.isArray(input.expectedStatuses)
+    ? input.expectedStatuses
+    : ["draft", "changes_requested"];
+  const res = await db.query(
+    `UPDATE blessboard.website_change_submissions
+        SET title = $4,
+            page_key = $5,
+            section_key = $6,
+            change_type = $7,
+            current_content_json = $8::jsonb,
+            proposed_content_json = $9::jsonb,
+            reason = $10,
+            submitter_note = $11,
+            priority = COALESCE($12, priority),
+            requested_publication_date = $13::date,
+            checklist_json = COALESCE($14::jsonb, checklist_json),
+            updated_at = now()
+      WHERE organization_id = $1
+        AND branch_id = $2
+        AND id = $3
+        AND status = ANY($15::text[])
+      RETURNING *`,
+    [
+      input.organizationId,
+      input.branchId,
+      input.submissionId,
+      input.title,
+      input.pageKey,
+      input.sectionKey || null,
+      input.changeType,
+      JSON.stringify(input.currentContent || {}),
+      JSON.stringify(input.proposedContent || {}),
+      input.reason || null,
+      input.submitterNote || null,
+      input.priority || null,
+      input.requestedPublicationDate || null,
+      input.checklist ? JSON.stringify(input.checklist) : null,
+      statuses,
+    ]
+  );
+  return mapSubmission(res.rows[0] || null);
+}
+
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {{
+ *   organizationId: string,
+ *   branchId: string,
+ *   submissionId: string,
+ *   expectedStatus: string,
+ *   nextStatus: string,
+ *   clearReviewFields?: boolean,
+ * }} input
+ */
+async function transitionBranchSubmission(db, input) {
+  const clear = Boolean(input.clearReviewFields);
+  const res = await db.query(
+    `UPDATE blessboard.website_change_submissions
+        SET status = $5,
+            submitted_at = CASE
+              WHEN $5 IN ('pending_review') THEN COALESCE(submitted_at, now())
+              ELSE submitted_at
+            END,
+            reviewer_comment = CASE WHEN $6::boolean THEN NULL ELSE reviewer_comment END,
+            rejection_reason = CASE WHEN $6::boolean THEN NULL ELSE rejection_reason END,
+            reviewed_by = CASE WHEN $6::boolean THEN NULL ELSE reviewed_by END,
+            reviewed_at = CASE WHEN $6::boolean THEN NULL ELSE reviewed_at END,
+            updated_at = now()
+      WHERE organization_id = $1
+        AND branch_id = $2
+        AND id = $3
+        AND status = $4
+      RETURNING *`,
+    [
+      input.organizationId,
+      input.branchId,
+      input.submissionId,
+      input.expectedStatus,
+      input.nextStatus,
+      clear,
+    ]
+  );
+  return mapSubmission(res.rows[0] || null);
+}
+
+/**
+ * Lightweight duplicate as draft (rejected → new draft).
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {{
+ *   organizationId: string,
+ *   branchId: string,
+ *   sourceId: string,
+ *   submittedBy: string,
+ * }} input
+ */
+async function duplicateAsDraft(db, input) {
+  const source = await getSubmissionByOrgBranchAndId(
+    db,
+    input.organizationId,
+    input.branchId,
+    input.sourceId
+  );
+  if (!source) return null;
+  return insertSubmission(db, {
+    organizationId: input.organizationId,
+    branchId: input.branchId,
+    title: source.title,
+    pageKey: source.pageKey,
+    sectionKey: source.sectionKey,
+    changeType: source.changeType,
+    currentContent: source.currentContent,
+    proposedContent: source.proposedContent,
+    reason: source.reason,
+    submitterNote: source.submitterNote,
+    priority: source.priority,
+    checklist: source.checklist,
+    status: "draft",
+    submittedBy: input.submittedBy,
+  });
 }
 
 /**
@@ -403,11 +609,16 @@ module.exports = {
   isUuid,
   listSubmissions,
   getSubmissionByOrgAndId,
+  getSubmissionByOrgBranchAndId,
   countStatusSummary,
+  countBranchStatusSummary,
   listBranchesForOrganization,
   listDistinctPageKeys,
   listSubmitters,
   insertSubmission,
+  updateDraftSubmission,
+  transitionBranchSubmission,
+  duplicateAsDraft,
   applyReviewDecision,
   appendEvent,
   listEvents,

@@ -1,0 +1,121 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var sub = submission || {};
+  var labels = statusLabels || {};
+  var evLabels = eventLabels || {};
+  var comps = (comparison && comparison.fields) || [];
+  var timeline = events || [];
+  var act = actions || {};
+  function statusLabel(s) { return labels[s] || s || '—'; }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'pending_review') return 'bb-ba-chip--pending';
+    if (key === 'changes_requested') return 'bb-ba-chip--warn';
+    if (key === 'approved' || key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'rejected') return 'bb-ba-chip--danger';
+    return 'bb-ba-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function pageTitleFromKey(key) {
+    if (!key) return '—';
+    return String(key).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+%>
+
+<section class="bb-ba-phase3-bws-detail" data-bb-phase3-branch-website-submission-detail="1">
+  <header class="bb-ba-page-head">
+    <p class="bb-ba-breadcrumb"><a href="<%= listPath %>">← My Website Submissions</a></p>
+    <div class="bb-ba-phase3-bws-detail__title-row">
+      <h1 class="bb-ba-page-head__title"><%= sub.title %></h1>
+      <span class="bb-ba-chip <%= statusChip(sub.status) %>"><%= statusLabel(sub.status) %></span>
+    </div>
+    <p class="bb-ba-lede"><%= pageTitleFromKey(sub.pageKey) %><% if (sub.sectionKey) { %> · <%= pageTitleFromKey(sub.sectionKey) %><% } %></p>
+  </header>
+
+  <% if (notice === 'submitted') { %><p class="bb-ba-ok" role="status">Status: Pending review. Your HQ administrator will review these changes. The live website will not change until approval and publication.</p><% } %>
+  <% if (notice === 'draft_saved') { %><p class="bb-ba-ok" role="status">Draft saved.</p><% } %>
+  <% if (formError === 'invalid_transition') { %><p class="bb-ba-error" role="alert">This action is not available for the current status.</p><% } %>
+
+  <% if (sub.status === 'changes_requested' && sub.reviewerComment) { %>
+  <div class="bb-ba-panel bb-ba-phase3-bws-detail__feedback" role="region" aria-label="Reviewer feedback">
+    <h2>Reviewer feedback</h2>
+    <p><%= sub.reviewerComment %></p>
+    <p class="bb-ba-hint"><%= sub.reviewedByName || 'HQ reviewer' %> · <%= formatWhen(sub.reviewedAt) %></p>
+    <% if (act.canEdit) { %>
+    <p><a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/website/submit?submission=<%= sub.id %>">Edit and Resubmit</a></p>
+    <% } %>
+  </div>
+  <% } %>
+
+  <div class="bb-ba-phase3-bws-detail__compare">
+    <article class="bb-ba-panel">
+      <h2>Current content</h2>
+      <% if (!comps.length) { %><p class="bb-ba-hint">No comparable fields.</p><% } else { %>
+      <dl class="bb-ba-phase3-compare">
+        <% comps.forEach(function (field) { %>
+        <div<%= field.changed ? ' class="is-changed"' : '' %>><dt><%= field.label %></dt><dd><%= field.unavailableCurrent ? 'Unavailable' : (field.current || '—') %></dd></div>
+        <% }) %>
+      </dl>
+      <% } %>
+    </article>
+    <article class="bb-ba-panel">
+      <h2>Proposed content</h2>
+      <% if (!comps.length) { %><p class="bb-ba-hint">No comparable fields.</p><% } else { %>
+      <dl class="bb-ba-phase3-compare">
+        <% comps.forEach(function (field) { %>
+        <div<%= field.changed ? ' class="is-changed"' : '' %>><dt><%= field.label %></dt><dd><%= field.unavailableProposed ? 'Unavailable' : (field.proposed || '—') %></dd></div>
+        <% }) %>
+      </dl>
+      <% } %>
+    </article>
+  </div>
+
+  <div class="bb-ba-panel">
+    <h2>Submission details</h2>
+    <dl class="bb-ba-phase3-compare">
+      <div><dt>Reason</dt><dd><%= sub.reason || '—' %></dd></div>
+      <div><dt>Message to HQ</dt><dd><%= sub.submitterNote || '—' %></dd></div>
+      <div><dt>Priority</dt><dd><%= sub.priority || 'normal' %></dd></div>
+      <% if (sub.rejectionReason) { %><div><dt>Rejection reason</dt><dd><%= sub.rejectionReason %></dd></div><% } %>
+    </dl>
+  </div>
+
+  <div class="bb-ba-panel">
+    <h2>Timeline</h2>
+    <% if (!timeline.length) { %><p class="bb-ba-hint">No events yet.</p><% } else { %>
+    <ol class="bb-ba-phase3-timeline">
+      <% timeline.forEach(function (ev) { %>
+      <li>
+        <strong><%= evLabels[ev.eventType] || ev.eventType %></strong>
+        <span><%= formatWhen(ev.createdAt) %></span>
+        <% if (ev.comment) { %><p><%= ev.comment %></p><% } %>
+      </li>
+      <% }) %>
+    </ol>
+    <% } %>
+  </div>
+
+  <p class="bb-ba-phase3-bws-detail__actions">
+    <% if (act.canEdit) { %><a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/website/submit?submission=<%= sub.id %>"><%= sub.status === 'changes_requested' ? 'Edit and Resubmit' : 'Edit' %></a><% } %>
+    <% if (act.canWithdraw) { %>
+    <form method="post" action="/branch-admin/website/submissions/<%= sub.id %>/withdraw" class="bb-ba-inline-form" onsubmit="return confirm('Withdraw this submission?');">
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--ghost">Withdraw</button>
+    </form>
+    <% } %>
+    <% if (act.canDuplicate) { %>
+    <form method="post" action="/branch-admin/website/submissions/<%= sub.id %>/duplicate" class="bb-ba-inline-form">
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-ba-btn bb-ba-btn--secondary">Duplicate as Draft</button>
+    </form>
+    <% } %>
+    <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= listPath %>">Back to list</a>
+  </p>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

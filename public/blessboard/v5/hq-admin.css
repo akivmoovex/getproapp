@@ -4514,3 +4514,22 @@ body.bb-hq-drawer-open { overflow: hidden; }
   font-size: 1.05rem;
   font-weight: 700;
 }
+
+/* Phase3 Website Version History */
+.bb-hq-phase3-wvh__filter {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  align-items: end;
+}
+.bb-hq-phase3-wvh__cards { display: none; list-style: none; margin: 0; padding: 0; gap: 0.85rem; }
+.bb-hq-phase3-wvh__card-head { display: flex; justify-content: space-between; gap: 0.5rem; align-items: flex-start; }
+.bb-hq-phase3-wvh__card-head h2 { margin: 0; font-size: 1.05rem; }
+.bb-hq-phase3-wvh__row--current,
+.bb-hq-phase3-wvh__card--current { box-shadow: inset 3px 0 0 #6c5ce7; }
+.bb-hq-phase3-wvh__detail td { background: #f8f6ff; }
+@media (max-width: 900px) {
+  .bb-hq-phase3-wvh__table { display: none; }
+  .bb-hq-phase3-wvh__cards { display: grid; }
+}

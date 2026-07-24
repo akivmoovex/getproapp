@@ -16,6 +16,7 @@ const STATUS = Object.freeze({
 });
 
 const SUBMISSION_STATUSES = Object.freeze([
+  "draft",
   "pending_review",
   "changes_requested",
   "approved",
@@ -25,6 +26,7 @@ const SUBMISSION_STATUSES = Object.freeze([
 ]);
 
 const STATUS_LABELS = Object.freeze({
+  draft: "Draft",
   pending_review: "Pending review",
   changes_requested: "Changes requested",
   approved: "Approved",
@@ -42,14 +44,20 @@ const EVENT_LABELS = Object.freeze({
   approved: "Approved",
   rejected: "Rejected",
   published: "Published",
+  withdrawn: "Withdrawn",
 });
 
-/** Minimum valid transitions for HQ review (+ publish marker). */
+/** Valid transitions for HQ review and branch submit/withdraw. */
 const TRANSITIONS = Object.freeze({
-  pending_review: new Set(["approved", "changes_requested", "rejected"]),
-  changes_requested: new Set(["pending_review"]),
+  draft: new Set(["pending_review", "withdrawn"]),
+  pending_review: new Set(["approved", "changes_requested", "rejected", "withdrawn"]),
+  changes_requested: new Set(["pending_review", "withdrawn"]),
   approved: new Set(["published"]),
 });
+
+const PRIORITIES = Object.freeze(["normal", "important", "urgent"]);
+const PAGE_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
+const SECTION_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
 
 const COMPARISON_FIELDS = Object.freeze([
   { key: "heading", label: "Heading" },
@@ -520,6 +528,7 @@ module.exports = {
   STATUS_LABELS,
   EVENT_LABELS,
   COMPARISON_FIELDS,
+  PRIORITIES,
   statusLabel,
   eventLabel,
   canTransition,
@@ -529,6 +538,616 @@ module.exports = {
   approveSubmission,
   requestChanges,
   rejectSubmission,
+  listBranchSubmissions,
+  loadBranchSubmission,
+  saveBranchSubmissionDraft,
+  submitBranchSubmission,
+  withdrawBranchSubmission,
+  duplicateBranchSubmissionDraft,
+  buildBranchSubmissionFormModel,
+  parseChecklist,
+  buildProposedFromBody,
   insertSubmission: repo.insertSubmission,
   appendEvent: repo.appendEvent,
 };
+
+/**
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   branchId: string,
+ *   q?: string,
+ *   status?: string,
+ *   pageKey?: string,
+ * }} opts
+ */
+async function listBranchSubmissions(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const branchId = opts && opts.branchId;
+  if (!repo.isUuid(organizationId) || !repo.isUuid(branchId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "tenant" };
+  }
+  const statusFilter =
+    opts.status && SUBMISSION_STATUSES.includes(String(opts.status))
+      ? String(opts.status)
+      : null;
+  try {
+    const [list, summary, pageKeys] = await Promise.all([
+      repo.listSubmissions(db, {
+        organizationId,
+        branchId,
+        q: opts.q,
+        status: statusFilter,
+        pageKey: opts.pageKey,
+      }),
+      repo.countBranchStatusSummary(db, organizationId, branchId),
+      repo.listDistinctPageKeys(db, organizationId),
+    ]);
+    return {
+      ok: true,
+      status: STATUS.OK,
+      items: list.items,
+      total: list.total,
+      summary,
+      pageKeys,
+      filters: {
+        q: opts.q ? String(opts.q).trim().slice(0, 100) : "",
+        status: statusFilter || "",
+        pageKey: opts.pageKey ? String(opts.pageKey).trim().slice(0, 64) : "",
+      },
+    };
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "list" };
+  }
+}
+
+/**
+ * @param {import('pg').Pool} db
+ * @param {{ organizationId: string, branchId: string, submissionId: string }} opts
+ */
+async function loadBranchSubmission(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const branchId = opts && opts.branchId;
+  const submissionId = opts && opts.submissionId;
+  if (!repo.isUuid(organizationId) || !repo.isUuid(branchId) || !repo.isUuid(submissionId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+  try {
+    const submission = await repo.getSubmissionByOrgBranchAndId(
+      db,
+      organizationId,
+      branchId,
+      submissionId
+    );
+    if (!submission) {
+      return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+    }
+    const events = await repo.listEvents(db, organizationId, submissionId);
+    const comparison = buildContentComparison(
+      submission.currentContent,
+      submission.proposedContent
+    );
+    const st = submission.status;
+    return {
+      ok: true,
+      status: STATUS.OK,
+      submission,
+      events,
+      comparison,
+      actions: {
+        canEdit: st === "draft" || st === "changes_requested",
+        canSubmit: st === "draft" || st === "changes_requested",
+        canWithdraw: st === "draft" || st === "pending_review" || st === "changes_requested",
+        canDuplicate: st === "rejected",
+        canViewOnly: st === "approved" || st === "published" || st === "withdrawn",
+      },
+    };
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "detail" };
+  }
+}
+
+function normalizePriority(value) {
+  const p = String(value || "normal").trim().toLowerCase();
+  return PRIORITIES.includes(p) ? p : null;
+}
+
+function parseChecklist(body) {
+  return {
+    contentReviewed: Boolean(body && (body.checklist_content === "1" || body.checklist_content === "on")),
+    contactConfirmed: Boolean(body && (body.checklist_contact === "1" || body.checklist_contact === "on")),
+    imagesApproved: Boolean(body && (body.checklist_images === "1" || body.checklist_images === "on")),
+    branchAccurate: Boolean(body && (body.checklist_branch === "1" || body.checklist_branch === "on")),
+  };
+}
+
+function checklistComplete(checklist) {
+  return Boolean(
+    checklist &&
+      checklist.contentReviewed &&
+      checklist.contactConfirmed &&
+      checklist.imagesApproved &&
+      checklist.branchAccurate
+  );
+}
+
+function buildProposedFromBody(body) {
+  const proposed = {};
+  const keys = [
+    "heading",
+    "bodyText",
+    "mediaUrl",
+    "buttonText",
+    "buttonUrl",
+    "serviceTimes",
+    "contactDetails",
+  ];
+  for (const key of keys) {
+    const formKey = key === "bodyText" ? "body_text" : key === "mediaUrl" ? "media_url" : key === "buttonText" ? "button_text" : key === "buttonUrl" ? "button_url" : key === "serviceTimes" ? "service_times" : key === "contactDetails" ? "contact_details" : key;
+    if (body && body[formKey] != null && String(body[formKey]).trim() !== "") {
+      proposed[key] = String(body[formKey]).trim().slice(0, key === "bodyText" ? 20000 : 2000);
+    }
+  }
+  if (body && (body.section_visible === "1" || body.section_visible === "0")) {
+    proposed.sectionVisible = body.section_visible === "1";
+  }
+  if (body && body.sort_order != null && String(body.sort_order).trim() !== "") {
+    const n = Number(body.sort_order);
+    if (Number.isFinite(n)) proposed.sortOrder = n;
+  }
+  return proposed;
+}
+
+/**
+ * Load editable current content from branch-scoped page sections when available.
+ * Falls back to empty object / church-wide page if branch page missing.
+ */
+async function loadCurrentContentSnapshot(db, churchId, branchId, pageKey, sectionKey) {
+  const publicContentRepo = require("../repositories/publicContentRepository");
+  const page =
+    (await publicContentRepo.findPageByScope(db, {
+      churchId,
+      branchId,
+      pageKey,
+    })) ||
+    (await publicContentRepo.findPageByScope(db, {
+      churchId,
+      branchId: null,
+      pageKey,
+    }));
+  if (!page) {
+    return { currentContent: {}, changeType: "Content Update", sectionLabel: null };
+  }
+  const sections = await publicContentRepo.listSectionsForPage(db, page.id, {});
+  let section = null;
+  if (sectionKey) {
+    section = (sections || []).find((s) => s.sectionKey === sectionKey) || null;
+  }
+  if (!section && sections && sections.length) {
+    section = sections[0];
+  }
+  if (!section) {
+    return {
+      currentContent: { heading: page.title || "" },
+      changeType: "Page update",
+      sectionLabel: null,
+      resolvedSectionKey: null,
+    };
+  }
+  return {
+    currentContent: {
+      heading: section.heading || "",
+      bodyText: section.bodyText || "",
+      mediaUrl: section.mediaUrl || "",
+      sortOrder: section.sortOrder,
+      sectionVisible: section.status !== "archived",
+    },
+    changeType: "Content Update",
+    sectionLabel: section.sectionKey,
+    resolvedSectionKey: section.sectionKey,
+  };
+}
+
+/**
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   churchId: string,
+ *   branchId: string,
+ *   submissionId?: string|null,
+ *   pageKey?: string,
+ *   sectionKey?: string,
+ * }} opts
+ */
+async function buildBranchSubmissionFormModel(db, opts) {
+  const organizationId = opts.organizationId;
+  const churchId = opts.churchId;
+  const branchId = opts.branchId;
+  if (!repo.isUuid(organizationId) || !repo.isUuid(churchId) || !repo.isUuid(branchId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "tenant" };
+  }
+
+  let submission = null;
+  if (opts.submissionId) {
+    if (!repo.isUuid(opts.submissionId)) {
+      return { ok: false, status: STATUS.INVALID_INPUT, reason: "submission_id" };
+    }
+    submission = await repo.getSubmissionByOrgBranchAndId(
+      db,
+      organizationId,
+      branchId,
+      opts.submissionId
+    );
+    if (!submission) {
+      return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+    }
+    if (submission.status !== "draft" && submission.status !== "changes_requested") {
+      return { ok: false, status: STATUS.CONFLICT, reason: "not_editable" };
+    }
+  }
+
+  const pageKey =
+    (submission && submission.pageKey) ||
+    (opts.pageKey && PAGE_KEY_RE.test(opts.pageKey) ? opts.pageKey : "home");
+  const sectionKey =
+    (submission && submission.sectionKey) ||
+    (opts.sectionKey && SECTION_KEY_RE.test(opts.sectionKey) ? opts.sectionKey : null);
+
+  const snap = await loadCurrentContentSnapshot(db, churchId, branchId, pageKey, sectionKey);
+  const currentContent = submission ? submission.currentContent : snap.currentContent;
+  const proposedContent = submission ? submission.proposedContent : { ...snap.currentContent };
+  const comparison = buildContentComparison(currentContent, proposedContent);
+
+  return {
+    ok: true,
+    status: STATUS.OK,
+    submission,
+    pageKey,
+    sectionKey: submission
+      ? submission.sectionKey
+      : snap.resolvedSectionKey || sectionKey,
+    currentContent,
+    proposedContent,
+    comparison,
+    changeSummary: {
+      pagesChanged: [pageKey],
+      sectionsChanged: submission && submission.sectionKey ? [submission.sectionKey] : snap.resolvedSectionKey ? [snap.resolvedSectionKey] : [],
+      imagesReplaced: comparison.fields.some(
+        (f) => f.key === "mediaUrl" && f.changed
+      )
+        ? 1
+        : 0,
+      serviceTimesUpdated: comparison.fields.some(
+        (f) => f.key === "serviceTimes" && f.changed
+      ),
+      contactDetailsUpdated: comparison.fields.some(
+        (f) => f.key === "contactDetails" && f.changed
+      ),
+    },
+  };
+}
+
+/**
+ * @param {import('pg').Pool} db
+ * @param {object} opts
+ */
+async function saveBranchSubmissionDraft(db, opts) {
+  const organizationId = opts.organizationId;
+  const churchId = opts.churchId;
+  const branchId = opts.branchId;
+  const actorUserId = opts.actorUserId;
+  if (
+    !repo.isUuid(organizationId) ||
+    !repo.isUuid(churchId) ||
+    !repo.isUuid(branchId) ||
+    !repo.isUuid(actorUserId)
+  ) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+
+  const title = requireText(opts.title, 200);
+  if (!title.ok) return { ok: false, status: STATUS.INVALID_INPUT, reason: "title_required" };
+  const pageKey = String(opts.pageKey || "").trim();
+  if (!PAGE_KEY_RE.test(pageKey)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "page_key" };
+  }
+  const sectionKeyRaw = opts.sectionKey != null ? String(opts.sectionKey).trim() : "";
+  const sectionKey =
+    sectionKeyRaw && SECTION_KEY_RE.test(sectionKeyRaw) ? sectionKeyRaw : null;
+  const reason = optionalText(opts.reason, 2000);
+  if (!reason.ok) return { ok: false, status: STATUS.INVALID_INPUT, reason: "reason" };
+  const submitterNote = optionalText(opts.submitterNote, 2000);
+  if (!submitterNote.ok) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "submitter_note" };
+  }
+  const priority = normalizePriority(opts.priority);
+  if (!priority) return { ok: false, status: STATUS.INVALID_INPUT, reason: "priority" };
+  const requestedPublicationDate = parseDateOnly(opts.requestedPublicationDate);
+  const checklist = opts.checklist && typeof opts.checklist === "object" ? opts.checklist : {};
+  const proposedContent =
+    opts.proposedContent && typeof opts.proposedContent === "object"
+      ? opts.proposedContent
+      : {};
+
+  try {
+    return await withTransaction(db, async (client) => {
+      const snap = await loadCurrentContentSnapshot(
+        client,
+        churchId,
+        branchId,
+        pageKey,
+        sectionKey
+      );
+      const currentContent =
+        opts.currentContent && typeof opts.currentContent === "object"
+          ? opts.currentContent
+          : snap.currentContent;
+      const changeType = String(opts.changeType || snap.changeType || "Content Update").slice(
+        0,
+        80
+      );
+
+      if (opts.submissionId) {
+        if (!repo.isUuid(opts.submissionId)) {
+          return { ok: false, status: STATUS.INVALID_INPUT, reason: "submission_id" };
+        }
+        const existing = await repo.getSubmissionByOrgBranchAndId(
+          client,
+          organizationId,
+          branchId,
+          opts.submissionId
+        );
+        if (!existing) return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+        if (existing.status !== "draft" && existing.status !== "changes_requested") {
+          return { ok: false, status: STATUS.CONFLICT, reason: "invalid_transition" };
+        }
+        const updated = await repo.updateDraftSubmission(client, {
+          organizationId,
+          branchId,
+          submissionId: opts.submissionId,
+          expectedStatuses: ["draft", "changes_requested"],
+          title: title.value,
+          pageKey,
+          sectionKey: sectionKey || snap.resolvedSectionKey,
+          changeType,
+          currentContent,
+          proposedContent,
+          reason: reason.value,
+          submitterNote: submitterNote.value,
+          priority,
+          requestedPublicationDate,
+          checklist,
+        });
+        if (!updated) return { ok: false, status: STATUS.CONFLICT, reason: "stale" };
+        return { ok: true, status: STATUS.OK, submission: updated, created: false };
+      }
+
+      const created = await repo.insertSubmission(client, {
+        organizationId,
+        branchId,
+        title: title.value,
+        pageKey,
+        sectionKey: sectionKey || snap.resolvedSectionKey,
+        changeType,
+        currentContent,
+        proposedContent,
+        reason: reason.value,
+        submitterNote: submitterNote.value,
+        priority,
+        requestedPublicationDate,
+        checklist,
+        status: "draft",
+        submittedBy: actorUserId,
+      });
+      await repo.appendEvent(client, {
+        submissionId: created.id,
+        organizationId,
+        actorUserId,
+        eventType: "created",
+        comment: "Draft saved",
+      });
+      return { ok: true, status: STATUS.OK, submission: created, created: true };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "save" };
+  }
+}
+
+/**
+ * Submit draft or resubmit changes_requested → pending_review.
+ * @param {import('pg').Pool} db
+ * @param {object} opts
+ */
+async function submitBranchSubmission(db, opts) {
+  const organizationId = opts.organizationId;
+  const churchId = opts.churchId;
+  const branchId = opts.branchId;
+  const actorUserId = opts.actorUserId;
+  let resolvedId = opts.submissionId || (opts.submission && opts.submission.id) || null;
+
+  if (opts.saveFirst) {
+    const saved = await saveBranchSubmissionDraft(db, {
+      ...opts,
+      submissionId: resolvedId,
+    });
+    if (!saved.ok) return saved;
+    resolvedId = saved.submission && saved.submission.id;
+  }
+
+  if (
+    !repo.isUuid(organizationId) ||
+    !repo.isUuid(branchId) ||
+    !repo.isUuid(actorUserId) ||
+    !repo.isUuid(resolvedId)
+  ) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+
+  const id = resolvedId;
+
+  try {
+    return await withTransaction(db, async (client) => {
+      const existing = await repo.getSubmissionByOrgBranchAndId(
+        client,
+        organizationId,
+        branchId,
+        id
+      );
+      if (!existing) return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+      if (!canTransition(existing.status, "pending_review")) {
+        return {
+          ok: false,
+          status: STATUS.CONFLICT,
+          reason: "invalid_transition",
+          from: existing.status,
+        };
+      }
+      if (!requireText(existing.title, 200).ok) {
+        return { ok: false, status: STATUS.INVALID_INPUT, reason: "title_required" };
+      }
+      if (!requireText(existing.reason, 2000).ok) {
+        return { ok: false, status: STATUS.INVALID_INPUT, reason: "reason_required" };
+      }
+      if (!checklistComplete(existing.checklist)) {
+        return { ok: false, status: STATUS.INVALID_INPUT, reason: "checklist_required" };
+      }
+
+      const wasResubmit = existing.status === "changes_requested";
+      const updated = await repo.transitionBranchSubmission(client, {
+        organizationId,
+        branchId,
+        submissionId: id,
+        expectedStatus: existing.status,
+        nextStatus: "pending_review",
+        clearReviewFields: wasResubmit,
+      });
+      if (!updated) return { ok: false, status: STATUS.CONFLICT, reason: "stale" };
+
+      await repo.appendEvent(client, {
+        submissionId: id,
+        organizationId,
+        actorUserId,
+        eventType: wasResubmit ? "resubmitted" : "submitted",
+        comment: existing.submitterNote || null,
+      });
+      return { ok: true, status: STATUS.OK, submission: updated, resubmitted: wasResubmit };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "submit" };
+  }
+}
+
+/**
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   branchId: string,
+ *   submissionId: string,
+ *   actorUserId: string,
+ * }} opts
+ */
+async function withdrawBranchSubmission(db, opts) {
+  const organizationId = opts.organizationId;
+  const branchId = opts.branchId;
+  const submissionId = opts.submissionId;
+  const actorUserId = opts.actorUserId;
+  if (
+    !repo.isUuid(organizationId) ||
+    !repo.isUuid(branchId) ||
+    !repo.isUuid(submissionId) ||
+    !repo.isUuid(actorUserId)
+  ) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+
+  try {
+    return await withTransaction(db, async (client) => {
+      const existing = await repo.getSubmissionByOrgBranchAndId(
+        client,
+        organizationId,
+        branchId,
+        submissionId
+      );
+      if (!existing) return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+      if (!canTransition(existing.status, "withdrawn")) {
+        return {
+          ok: false,
+          status: STATUS.CONFLICT,
+          reason: "invalid_transition",
+          from: existing.status,
+        };
+      }
+      const updated = await repo.transitionBranchSubmission(client, {
+        organizationId,
+        branchId,
+        submissionId,
+        expectedStatus: existing.status,
+        nextStatus: "withdrawn",
+        clearReviewFields: false,
+      });
+      if (!updated) return { ok: false, status: STATUS.CONFLICT, reason: "stale" };
+      await repo.appendEvent(client, {
+        submissionId,
+        organizationId,
+        actorUserId,
+        eventType: "withdrawn",
+        comment: "Withdrawn by branch administrator",
+      });
+      return { ok: true, status: STATUS.OK, submission: updated };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "withdraw" };
+  }
+}
+
+/**
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   branchId: string,
+ *   submissionId: string,
+ *   actorUserId: string,
+ * }} opts
+ */
+async function duplicateBranchSubmissionDraft(db, opts) {
+  if (
+    !repo.isUuid(opts.organizationId) ||
+    !repo.isUuid(opts.branchId) ||
+    !repo.isUuid(opts.submissionId) ||
+    !repo.isUuid(opts.actorUserId)
+  ) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+  try {
+    return await withTransaction(db, async (client) => {
+      const existing = await repo.getSubmissionByOrgBranchAndId(
+        client,
+        opts.organizationId,
+        opts.branchId,
+        opts.submissionId
+      );
+      if (!existing) return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+      if (existing.status !== "rejected") {
+        return { ok: false, status: STATUS.CONFLICT, reason: "invalid_transition" };
+      }
+      const created = await repo.duplicateAsDraft(client, {
+        organizationId: opts.organizationId,
+        branchId: opts.branchId,
+        sourceId: opts.submissionId,
+        submittedBy: opts.actorUserId,
+      });
+      if (!created) return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "duplicate" };
+      await repo.appendEvent(client, {
+        submissionId: created.id,
+        organizationId: opts.organizationId,
+        actorUserId: opts.actorUserId,
+        eventType: "created",
+        comment: "Duplicated from rejected submission",
+        metadata: { sourceSubmissionId: opts.submissionId },
+      });
+      return { ok: true, status: STATUS.OK, submission: created };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "duplicate" };
+  }
+}

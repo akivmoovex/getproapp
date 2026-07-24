@@ -1,0 +1,159 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = items || [];
+  var f = filters || {};
+  var labels = statusLabels || {};
+  var sources = sourceLabels || {};
+  var live = current || null;
+  var detailId = typeof detailId !== 'undefined' ? detailId : null;
+  function statusLabel(s) { return labels[s] || s || '—'; }
+  function sourceLabel(s) { return sources[s] || s || '—'; }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-hq-chip--ok';
+    if (key === 'superseded') return 'bb-hq-chip--muted';
+    if (key === 'draft') return 'bb-hq-chip--pending';
+    if (key === 'archived') return 'bb-hq-chip--muted';
+    return 'bb-hq-chip--warn';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function pagesChanged(row) {
+    var summary = row.changeSummary || {};
+    var pages = summary.pagesChanged || summary.pageKeys || [];
+    if (Array.isArray(pages) && pages.length) return pages.join(', ');
+    return '—';
+  }
+%>
+
+<section class="bb-hq-phase3-wvh" data-bb-phase3-website-version-history="1" aria-label="Phase3 Website Version History">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Version history</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Website Version History</h1>
+      <p class="bb-hq-lede">Review previous and current website versions</p>
+      <% if (live) { %>
+      <p><span class="bb-hq-chip bb-hq-chip--ok">Current live: v<%= live.versionNumber %></span></p>
+      <% } %>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <% if (livePreviewPath) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= livePreviewPath %>" target="_blank" rel="noopener">Preview live website</a>
+      <% } %>
+    </p>
+  </header>
+
+  <form method="get" action="/hq/website/version-history" class="bb-hq-filter bb-hq-phase3-wvh__filter" role="search">
+    <div class="bb-hq-field">
+      <label for="wvh-status">Status</label>
+      <select id="wvh-status" name="status">
+        <option value="">All statuses</option>
+        <% ['published','superseded','draft','restored','archived'].forEach(function (k) { %>
+        <option value="<%= k %>"<%= f.status === k ? ' selected' : '' %>><%= statusLabel(k) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wvh-publisher">Publisher</label>
+      <select id="wvh-publisher" name="publisher">
+        <option value="">All publishers</option>
+        <% (publishers || []).forEach(function (u) { %>
+        <option value="<%= u.id %>"<%= f.publishedBy === String(u.id) ? ' selected' : '' %>><%= u.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wvh-theme">Theme</label>
+      <select id="wvh-theme" name="theme">
+        <option value="">All themes</option>
+        <% (themeKeys || []).forEach(function (tk) { %>
+        <option value="<%= tk %>"<%= f.themeKey === tk ? ' selected' : '' %>><%= tk %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field"><label for="wvh-from">From</label><input id="wvh-from" name="from" type="date" value="<%= f.from || '' %>" /></div>
+    <div class="bb-hq-field"><label for="wvh-to">To</label><input id="wvh-to" name="to" type="date" value="<%= f.to || '' %>" /></div>
+    <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Apply filters</button>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-hq-empty" data-bb-phase3-wvh-empty="1">
+    <p>No publication versions are recorded yet. Publish the website to create the first version.</p>
+    <p><a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website">Open Website publish</a></p>
+  </div>
+  <% } else { %>
+
+  <div class="bb-hq-table-wrap bb-hq-phase3-wvh__table" data-bb-phase3-wvh-desktop="1">
+    <table class="bb-hq-table">
+      <thead>
+        <tr>
+          <th>Version</th><th>Status</th><th>Created</th><th>Published</th><th>Created by</th><th>Published by</th><th>Theme</th><th>Pages</th><th>Source</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr<%= live && live.id === row.id ? ' class="bb-hq-phase3-wvh__row--current"' : '' %>>
+          <td>
+            v<%= row.versionNumber %>
+            <% if (live && live.id === row.id) { %><span class="bb-hq-chip bb-hq-chip--tiny bb-hq-chip--ok">Current</span><% } %>
+          </td>
+          <td><span class="bb-hq-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span></td>
+          <td><%= formatWhen(row.createdAt) %></td>
+          <td><%= formatWhen(row.publishedAt) %></td>
+          <td><%= row.createdByName || '—' %></td>
+          <td><%= row.publishedByName || '—' %></td>
+          <td><%= row.themeKey || '—' %></td>
+          <td><%= pagesChanged(row) %></td>
+          <td><%= sourceLabel(row.sourceType) %></td>
+          <td class="bb-hq-table__actions">
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history?detail=<%= row.id %>">View details</a>
+            <% if (row.sourceSubmissionId) { %>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/change-submissions/<%= row.sourceSubmissionId %>">View source submission</a>
+            <% } %>
+          </td>
+        </tr>
+        <% if (detailId && detailId === String(row.id)) { %>
+        <tr class="bb-hq-phase3-wvh__detail">
+          <td colspan="10">
+            <div class="bb-hq-panel">
+              <h2>Version v<%= row.versionNumber %> details</h2>
+              <p><strong>Change summary:</strong> <%= (row.changeSummary && row.changeSummary.sectionCount != null) ? (row.changeSummary.sectionCount + ' sections across ' + (row.changeSummary.pageCount || 0) + ' pages') : '—' %></p>
+              <p><strong>Snapshot pages:</strong> <%= ((row.snapshot && row.snapshot.pageKeys) || []).join(', ') || '—' %></p>
+              <p class="bb-hq-hint">Compare, restore, and download actions are not available in this Phase3 batch.</p>
+            </div>
+          </td>
+        </tr>
+        <% } %>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="bb-hq-phase3-wvh__cards" data-bb-phase3-wvh-mobile="1">
+    <% rows.forEach(function (row) { %>
+    <li class="bb-hq-card<%= live && live.id === row.id ? ' bb-hq-phase3-wvh__card--current' : '' %>">
+      <div class="bb-hq-phase3-wvh__card-head">
+        <h2>Version <%= row.versionNumber %></h2>
+        <span class="bb-hq-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+      </div>
+      <p>Published <%= formatWhen(row.publishedAt) %></p>
+      <p>By <%= row.publishedByName || '—' %></p>
+      <p>Source: <%= sourceLabel(row.sourceType) %></p>
+      <p><a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/version-history?detail=<%= row.id %>">View details</a></p>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

@@ -1,0 +1,135 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var rows = items || [];
+  var f = filters || {};
+  var labels = statusLabels || {};
+  var sums = summary || { draft: 0, pendingReview: 0, changesRequested: 0, approved: 0 };
+  function statusLabel(s) { return labels[s] || s || '—'; }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'bb-ba-chip--muted';
+    if (key === 'pending_review') return 'bb-ba-chip--pending';
+    if (key === 'changes_requested') return 'bb-ba-chip--warn';
+    if (key === 'approved' || key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'rejected') return 'bb-ba-chip--danger';
+    return 'bb-ba-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function pageTitleFromKey(key) {
+    if (!key) return '—';
+    return String(key).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+%>
+
+<section class="bb-ba-phase3-bws" data-bb-phase3-branch-website-submissions="1" aria-label="Phase3 Branch Website Submissions">
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <h1 class="bb-ba-page-head__title">My Website Submissions</h1>
+      <p class="bb-ba-lede">Track website updates submitted for HQ approval</p>
+    </div>
+    <p class="bb-ba-page-head__actions">
+      <a class="bb-ba-btn bb-ba-btn--primary" href="<%= editorPath %>">Edit Branch Website</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/website/submit">New Submission</a>
+    </p>
+  </header>
+
+  <% if (notice === 'draft_saved') { %><p class="bb-ba-ok" role="status">Draft saved.</p><% } %>
+  <% if (notice === 'submitted') { %><p class="bb-ba-ok" role="status">Submitted for HQ review.</p><% } %>
+  <% if (notice === 'withdrawn') { %><p class="bb-ba-ok" role="status">Submission withdrawn.</p><% } %>
+
+  <div class="bb-ba-summary bb-ba-phase3-bws__summary" data-bb-phase3-bws-summary="1">
+    <article class="bb-ba-card"><p class="bb-ba-card__label">Draft</p><p class="bb-ba-card__value"><%= sums.draft %></p></article>
+    <article class="bb-ba-card bb-ba-card--accent"><p class="bb-ba-card__label">Pending review</p><p class="bb-ba-card__value"><%= sums.pendingReview %></p></article>
+    <article class="bb-ba-card"><p class="bb-ba-card__label">Changes requested</p><p class="bb-ba-card__value"><%= sums.changesRequested %></p></article>
+    <article class="bb-ba-card"><p class="bb-ba-card__label">Approved</p><p class="bb-ba-card__value"><%= sums.approved %></p></article>
+  </div>
+
+  <form method="get" action="/branch-admin/website/submissions" class="bb-ba-filter" role="search" data-bb-phase3-bws-filter="1">
+    <div class="bb-ba-field"><label for="bws-q">Search</label><input id="bws-q" name="q" type="search" maxlength="100" value="<%= f.q || '' %>" /></div>
+    <div class="bb-ba-field">
+      <label for="bws-status">Status</label>
+      <select id="bws-status" name="status">
+        <option value="">All statuses</option>
+        <% ['draft','pending_review','changes_requested','approved','rejected','published','withdrawn'].forEach(function (k) { %>
+        <option value="<%= k %>"<%= f.status === k ? ' selected' : '' %>><%= statusLabel(k) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-ba-field">
+      <label for="bws-page">Page</label>
+      <select id="bws-page" name="page">
+        <option value="">All pages</option>
+        <% (pageKeys || []).forEach(function (pk) { %>
+        <option value="<%= pk %>"<%= f.pageKey === pk ? ' selected' : '' %>><%= pageTitleFromKey(pk) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <button type="submit" class="bb-ba-btn bb-ba-btn--secondary">Apply</button>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-ba-empty" data-bb-phase3-bws-empty="1">
+    <p>You have not submitted any website changes.</p>
+    <p><a class="bb-ba-btn bb-ba-btn--primary" href="<%= editorPath %>">Edit Branch Website</a></p>
+  </div>
+  <% } else { %>
+  <div class="bb-ba-table-wrap bb-ba-phase3-bws__table" data-bb-phase3-bws-desktop="1">
+    <table class="bb-ba-table">
+      <thead>
+        <tr>
+          <th>Title</th><th>Page</th><th>Section</th><th>Submitted</th><th>Updated</th><th>Status</th><th>Reviewer</th><th>Comment</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr<%= row.status === 'changes_requested' ? ' class="bb-ba-phase3-bws__row--attention"' : '' %>>
+          <td><a href="/branch-admin/website/submissions/<%= row.id %>"><%= row.title %></a></td>
+          <td><%= pageTitleFromKey(row.pageKey) %></td>
+          <td><%= row.sectionKey ? pageTitleFromKey(row.sectionKey) : '—' %></td>
+          <td><%= formatWhen(row.submittedAt) %></td>
+          <td><%= formatWhen(row.updatedAt) %></td>
+          <td><span class="bb-ba-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span></td>
+          <td><%= row.reviewedByName || '—' %></td>
+          <td><%= row.reviewerComment || '—' %></td>
+          <td>
+            <a class="bb-ba-btn bb-ba-btn--sm bb-ba-btn--primary" href="/branch-admin/website/submissions/<%= row.id %>">View</a>
+            <% if (row.status === 'draft' || row.status === 'changes_requested') { %>
+            <a class="bb-ba-btn bb-ba-btn--sm bb-ba-btn--ghost" href="/branch-admin/website/submit?submission=<%= row.id %>"><%= row.status === 'changes_requested' ? 'Edit and Resubmit' : 'Edit' %></a>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="bb-ba-phase3-bws__cards" data-bb-phase3-bws-mobile="1">
+    <% rows.forEach(function (row) { %>
+    <li class="bb-ba-card<%= row.status === 'changes_requested' ? ' bb-ba-phase3-bws__card--attention' : '' %>">
+      <div class="bb-ba-phase3-bws__card-head">
+        <h2><%= row.title %></h2>
+        <span class="bb-ba-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+      </div>
+      <p><%= pageTitleFromKey(row.pageKey) %><% if (row.sectionKey) { %> · <%= pageTitleFromKey(row.sectionKey) %><% } %></p>
+      <% if (row.reviewerComment) { %>
+      <p class="bb-ba-phase3-bws__feedback" role="note"><strong>Reviewer:</strong> <%= row.reviewerComment %></p>
+      <% } %>
+      <p class="bb-ba-phase3-bws__card-actions">
+        <% if (row.status === 'changes_requested') { %>
+        <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/website/submit?submission=<%= row.id %>">Edit and Resubmit</a>
+        <% } else { %>
+        <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/website/submissions/<%= row.id %>">View</a>
+        <% } %>
+      </p>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>
