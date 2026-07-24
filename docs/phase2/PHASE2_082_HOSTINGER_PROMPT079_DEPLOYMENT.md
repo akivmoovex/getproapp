@@ -8,7 +8,7 @@
 
 **NOT_DEPLOYED**
 
-Prompt 079 code was **committed and pushed** to `origin/V5` (`5447559`), and local pre-deploy verification passed. Hostinger could **not** be updated from this environment:
+Prompt 079 code was **committed and pushed** to `origin/V5` (code commit `5447559`; tip including this report `bb9bf23`), and local pre-deploy verification passed. Hostinger could **not** be updated from this environment:
 
 - SSH to Hostinger (`blessboard.org` / CDN IPs `92.113.*`, ports 22 and 65002) is **unreachable** (`No route to host` / ports closed).
 - No SSH identities in the agent; no Hostinger CLI/API credentials in env.
@@ -63,8 +63,9 @@ Credentials were not printed or logged.
 |------|--------|
 | Pre-deploy tests (079/080 focused) | **81/81 pass** |
 | `db:status` on testing DB | **pending=0**, applied=59 — **no migrate** |
-| Commit on `V5` | `5447559ed11cadfc7b572d0c3563ad1ac4ab2d5a` |
-| `git push origin V5` | **Success** (`b88d8d1..5447559`) |
+| Commit on `V5` (079 code) | `5447559ed11cadfc7b572d0c3563ad1ac4ab2d5a` |
+| Commit on `V5` (tip / this report) | `bb9bf230d72a6ccb5b28b111c82e2ae3450a71e2` |
+| `git push origin V5` | **Success** (`b88d8d1..bb9bf23`) |
 | Hostinger `git pull` / restart | **Blocked** — SSH unreachable |
 | `npm install` on Hostinger | Not run (blocked); `package.json` scripts only — lockfile unchanged |
 | Demo seed rerun | **Not run** (explicitly avoided) |
@@ -77,7 +78,7 @@ cd /home/u549637099/domains/blessboard.org/nodejs
 git fetch origin
 git checkout V5
 git pull origin V5
-git rev-parse HEAD   # expect 5447559ed11cadfc7b572d0c3563ad1ac4ab2d5a
+git rev-parse HEAD   # expect bb9bf230d72a6ccb5b28b111c82e2ae3450a71e2 (includes 079 + this report)
 # package-lock unchanged — npm install optional; only if install fails at runtime
 npm run db:status    # expect pending=0; do NOT migrate unless pending
 # Then hPanel → Node.js → Restart
