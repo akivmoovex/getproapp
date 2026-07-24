@@ -68,6 +68,52 @@ const PHONE_VERIFY_ATTEMPT_SELECT = `
   verification_reason, notes, follow_up_at, created_by_user_id, created_at
 `;
 
+const EMAIL_VERIFY_TOKEN_STATUSES = Object.freeze([
+  "sent",
+  "verified",
+  "expired",
+  "replaced",
+]);
+
+const EMAIL_VERIFY_TOKEN_SELECT = `
+  id, application_id, email, email_normalized, token_hash, status,
+  sent_at, expires_at, verified_at, invalidated_at, invalidation_reason,
+  created_by_user_id, created_at
+`;
+
+const DUPLICATE_MATCH_RECORD_TYPES = Object.freeze([
+  "application",
+  "organization",
+  "user",
+  "church",
+  "branch",
+  "domain",
+]);
+
+const DUPLICATE_MATCH_RISK_LEVELS = Object.freeze([
+  "none",
+  "possible",
+  "strong",
+  "confirmed",
+]);
+
+const DUPLICATE_MATCH_REVIEW_DECISIONS = Object.freeze([
+  "different_church",
+  "link_existing_church",
+  "additional_branch_request",
+  "clarification_required",
+  "senior_review",
+  "impersonation_concern",
+  "confirmed_duplicate",
+]);
+
+const DUPLICATE_MATCH_SELECT = `
+  id, application_id, matched_record_type, matched_record_id,
+  score, risk_level, evidence_snapshot,
+  review_decision, review_reason, reviewed_by_user_id, reviewed_at,
+  created_at, updated_at
+`;
+
 class DuplicateRegistrationPhoneError extends Error {
   constructor(message) {
     super(message || DUPLICATE_PHONE_MESSAGE);
@@ -1405,6 +1451,745 @@ async function listPhoneVerificationAttempts(client, applicationId, opts = {}) {
 }
 
 /**
+ * Insert a registration email-verification token (hash only; never plaintext).
+ * @param {{ query: Function }} client
+ * @param {{
+ *   applicationId: string,
+ *   email: string,
+ *   emailNormalized: string,
+ *   tokenHash: string,
+ *   status?: string,
+ *   sentAt: Date|string,
+ *   expiresAt: Date|string,
+ *   createdByUserId?: string|null,
+ * }} fields
+ */
+async function createRegistrationEmailVerificationToken(client, fields) {
+  const applicationId = String(fields.applicationId || "").trim();
+  if (!applicationId) throw new Error("application_id_required");
+  if (!UUID_RE.test(applicationId)) throw new Error("invalid_application_id");
+
+  const email = String(fields.email || "").trim();
+  if (!email) throw new Error("email_required");
+
+  const emailNormalized = String(fields.emailNormalized || "").trim().toLowerCase();
+  if (!emailNormalized) throw new Error("email_normalized_required");
+
+  const tokenHash = String(fields.tokenHash || "").trim().toLowerCase();
+  if (!tokenHash || tokenHash.length !== 64 || !/^[a-f0-9]{64}$/.test(tokenHash)) {
+    throw new Error("token_hash_required");
+  }
+
+  const status = String(fields.status != null ? fields.status : "sent")
+    .trim()
+    .toLowerCase();
+  if (!EMAIL_VERIFY_TOKEN_STATUSES.includes(status)) {
+    throw new Error("invalid_email_verification_token_status");
+  }
+  if (status !== "sent") {
+    throw new Error("create_requires_sent_status");
+  }
+
+  if (fields.sentAt == null || String(fields.sentAt).trim() === "") {
+    throw new Error("sent_at_required");
+  }
+  if (fields.expiresAt == null || String(fields.expiresAt).trim() === "") {
+    throw new Error("expires_at_required");
+  }
+
+  let createdByUserId =
+    fields.createdByUserId != null ? String(fields.createdByUserId).trim() : "";
+  if (createdByUserId === "") createdByUserId = null;
+  if (createdByUserId && !UUID_RE.test(createdByUserId)) {
+    throw new Error("invalid_created_by_user_id");
+  }
+
+  const r = await client.query(
+    `INSERT INTO blessboard.registration_email_verification_tokens (
+       application_id, email, email_normalized, token_hash, status,
+       sent_at, expires_at, created_by_user_id
+     ) VALUES (
+       $1, $2, $3, $4, $5, $6::timestamptz, $7::timestamptz, $8
+     )
+     RETURNING ${EMAIL_VERIFY_TOKEN_SELECT}`,
+    [
+      applicationId,
+      email.slice(0, 254),
+      emailNormalized.slice(0, 254),
+      tokenHash,
+      status,
+      fields.sentAt,
+      fields.expiresAt,
+      createdByUserId,
+    ]
+  );
+  return r.rows[0];
+}
+
+/**
+ * Find a token by SHA-256 hex hash.
+ * @param {{ query: Function }} client
+ * @param {string} tokenHash
+ * @param {{ forUpdate?: boolean }} [opts]
+ */
+async function findRegistrationEmailVerificationTokenByHash(client, tokenHash, opts = {}) {
+  const hash = String(tokenHash || "").trim().toLowerCase();
+  if (!hash || hash.length !== 64 || !/^[a-f0-9]{64}$/.test(hash)) {
+    throw new Error("token_hash_required");
+  }
+  const lock = opts.forUpdate ? " FOR UPDATE" : "";
+  const r = await client.query(
+    `SELECT ${EMAIL_VERIFY_TOKEN_SELECT}
+       FROM blessboard.registration_email_verification_tokens
+      WHERE token_hash = $1
+      LIMIT 1${lock}`,
+    [hash]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Latest token for an application (newest created_at first).
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{ forUpdate?: boolean }} [opts]
+ */
+async function findLatestRegistrationEmailVerificationToken(client, applicationId, opts = {}) {
+  const id = String(applicationId || "").trim();
+  if (!id) throw new Error("application_id_required");
+  if (!UUID_RE.test(id)) throw new Error("invalid_application_id");
+  const lock = opts.forUpdate ? " FOR UPDATE" : "";
+  const r = await client.query(
+    `SELECT ${EMAIL_VERIFY_TOKEN_SELECT}
+       FROM blessboard.registration_email_verification_tokens
+      WHERE application_id = $1
+      ORDER BY created_at DESC, id DESC
+      LIMIT 1${lock}`,
+    [id]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Invalidate all active `sent` tokens for an application (status → replaced).
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{
+ *   reason?: string,
+ *   invalidatedAt?: Date|string,
+ * }} [opts]
+ */
+async function invalidateActiveRegistrationEmailVerificationTokens(
+  client,
+  applicationId,
+  opts = {}
+) {
+  const id = String(applicationId || "").trim();
+  if (!id) throw new Error("application_id_required");
+  if (!UUID_RE.test(id)) throw new Error("invalid_application_id");
+
+  let reason =
+    opts.reason != null && String(opts.reason).trim() !== ""
+      ? String(opts.reason).trim().slice(0, 120)
+      : "superseded";
+  const invalidatedAt =
+    opts.invalidatedAt != null && String(opts.invalidatedAt).trim() !== ""
+      ? opts.invalidatedAt
+      : new Date();
+
+  const r = await client.query(
+    `UPDATE blessboard.registration_email_verification_tokens
+        SET status = 'replaced',
+            invalidated_at = $2::timestamptz,
+            invalidation_reason = $3
+      WHERE application_id = $1
+        AND status = 'sent'
+      RETURNING ${EMAIL_VERIFY_TOKEN_SELECT}`,
+    [id, invalidatedAt, reason]
+  );
+  return r.rows;
+}
+
+/**
+ * Mark a sent, unexpired token verified exactly once (concurrent-safe).
+ * @param {{ query: Function }} client
+ * @param {string} tokenId
+ * @param {{ verifiedAt?: Date|string }} [opts]
+ */
+async function markRegistrationEmailVerificationTokenVerified(client, tokenId, opts = {}) {
+  const id = String(tokenId || "").trim();
+  if (!id) throw new Error("token_id_required");
+  if (!UUID_RE.test(id)) throw new Error("invalid_token_id");
+
+  const verifiedAt =
+    opts.verifiedAt != null && String(opts.verifiedAt).trim() !== ""
+      ? opts.verifiedAt
+      : new Date();
+
+  const r = await client.query(
+    `UPDATE blessboard.registration_email_verification_tokens
+        SET status = 'verified',
+            verified_at = $2::timestamptz
+      WHERE id = $1
+        AND status = 'sent'
+        AND expires_at > $2::timestamptz
+        AND verified_at IS NULL
+        AND invalidated_at IS NULL
+      RETURNING ${EMAIL_VERIFY_TOKEN_SELECT}`,
+    [id, verifiedAt]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {object}
+ */
+function normalizeEvidenceSnapshot(value) {
+  if (value == null) return {};
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+    } catch {
+      return {};
+    }
+    return {};
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  return {};
+}
+
+/**
+ * @param {object} fields
+ * @param {string} applicationId
+ */
+function validateDuplicateMatchInput(fields, applicationId) {
+  const matchedRecordType = String(fields.matchedRecordType || fields.matched_record_type || "")
+    .trim()
+    .toLowerCase();
+  if (!DUPLICATE_MATCH_RECORD_TYPES.includes(matchedRecordType)) {
+    throw new Error("invalid_matched_record_type");
+  }
+
+  const matchedRecordId = String(fields.matchedRecordId || fields.matched_record_id || "").trim();
+  if (!matchedRecordId || !UUID_RE.test(matchedRecordId)) {
+    throw new Error("invalid_matched_record_id");
+  }
+  if (matchedRecordType === "application" && matchedRecordId === applicationId) {
+    throw new Error("self_match_not_allowed");
+  }
+
+  const scoreRaw = fields.score != null ? fields.score : fields.totalWeight;
+  const score = Number(scoreRaw);
+  if (!Number.isFinite(score) || score < 0 || score > 10000 || Math.floor(score) !== score) {
+    throw new Error("invalid_score");
+  }
+
+  const riskLevel = String(fields.riskLevel || fields.risk_level || "")
+    .trim()
+    .toLowerCase();
+  if (!DUPLICATE_MATCH_RISK_LEVELS.includes(riskLevel)) {
+    throw new Error("invalid_risk_level");
+  }
+
+  const evidenceSnapshot = normalizeEvidenceSnapshot(
+    fields.evidenceSnapshot != null ? fields.evidenceSnapshot : fields.evidence_snapshot
+  );
+
+  return {
+    matchedRecordType,
+    matchedRecordId,
+    score,
+    riskLevel,
+    evidenceSnapshot,
+  };
+}
+
+/**
+ * Replace/recompute duplicate matches for an application.
+ * Upserts the provided set; deletes undecided rows not present in the new set.
+ * Preserves review decisions; refreshes score / risk / evidence on upsert.
+ *
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {object[]} matches
+ * @returns {Promise<object[]>}
+ */
+async function replaceRegistrationDuplicateMatches(client, applicationId, matches) {
+  const appId = String(applicationId || "").trim();
+  if (!appId || !UUID_RE.test(appId)) throw new Error("invalid_application_id");
+
+  const list = Array.isArray(matches) ? matches : [];
+  const normalized = [];
+  const seen = new Set();
+  for (const raw of list) {
+    const row = validateDuplicateMatchInput(raw && typeof raw === "object" ? raw : {}, appId);
+    const key = `${row.matchedRecordType}:${row.matchedRecordId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push(row);
+  }
+
+  if (normalized.length === 0) {
+    await client.query(
+      `DELETE FROM blessboard.registration_duplicate_matches
+        WHERE application_id = $1::uuid
+          AND review_decision IS NULL`,
+      [appId]
+    );
+  } else {
+    const types = normalized.map((m) => m.matchedRecordType);
+    const ids = normalized.map((m) => m.matchedRecordId);
+    await client.query(
+      `DELETE FROM blessboard.registration_duplicate_matches d
+        WHERE d.application_id = $1::uuid
+          AND d.review_decision IS NULL
+          AND NOT EXISTS (
+            SELECT 1
+              FROM unnest($2::text[], $3::uuid[]) AS keep(matched_record_type, matched_record_id)
+             WHERE keep.matched_record_type = d.matched_record_type
+               AND keep.matched_record_id = d.matched_record_id
+          )`,
+      [appId, types, ids]
+    );
+  }
+
+  for (const m of normalized) {
+    await client.query(
+      `INSERT INTO blessboard.registration_duplicate_matches (
+         application_id, matched_record_type, matched_record_id,
+         score, risk_level, evidence_snapshot
+       ) VALUES (
+         $1::uuid, $2, $3::uuid, $4, $5, $6::jsonb
+       )
+       ON CONFLICT (application_id, matched_record_type, matched_record_id)
+       DO UPDATE SET
+         score = EXCLUDED.score,
+         risk_level = EXCLUDED.risk_level,
+         evidence_snapshot = EXCLUDED.evidence_snapshot,
+         updated_at = now()`,
+      [
+        appId,
+        m.matchedRecordType,
+        m.matchedRecordId,
+        m.score,
+        m.riskLevel,
+        JSON.stringify(m.evidenceSnapshot),
+      ]
+    );
+  }
+
+  return listRegistrationDuplicateMatches(client, appId);
+}
+
+/**
+ * List duplicate matches for an application (highest score first).
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{ pendingOnly?: boolean }} [opts]
+ */
+async function listRegistrationDuplicateMatches(client, applicationId, opts = {}) {
+  const appId = String(applicationId || "").trim();
+  if (!appId || !UUID_RE.test(appId)) throw new Error("invalid_application_id");
+
+  const pendingOnly = opts.pendingOnly === true;
+  const r = await client.query(
+    `SELECT ${DUPLICATE_MATCH_SELECT}
+       FROM blessboard.registration_duplicate_matches
+      WHERE application_id = $1::uuid
+        ${pendingOnly ? "AND review_decision IS NULL" : ""}
+      ORDER BY score DESC, created_at DESC, id DESC`,
+    [appId]
+  );
+  return r.rows;
+}
+
+/**
+ * Load one duplicate match by id (optionally scoped to an application).
+ * @param {{ query: Function }} client
+ * @param {string} matchId
+ * @param {{ applicationId?: string|null }} [opts]
+ */
+async function getRegistrationDuplicateMatchById(client, matchId, opts = {}) {
+  const id = String(matchId || "").trim();
+  if (!id || !UUID_RE.test(id)) throw new Error("invalid_match_id");
+
+  const applicationId =
+    opts.applicationId != null && String(opts.applicationId).trim() !== ""
+      ? String(opts.applicationId).trim()
+      : null;
+  if (applicationId && !UUID_RE.test(applicationId)) {
+    throw new Error("invalid_application_id");
+  }
+
+  const params = [id];
+  let sql = `SELECT ${DUPLICATE_MATCH_SELECT}
+               FROM blessboard.registration_duplicate_matches
+              WHERE id = $1::uuid`;
+  if (applicationId) {
+    params.push(applicationId);
+    sql += ` AND application_id = $2::uuid`;
+  }
+  sql += ` LIMIT 1`;
+  const r = await client.query(sql, params);
+  return r.rows[0] || null;
+}
+
+/**
+ * Record a review decision on a stored match.
+ * Does not merge, reject, or change approval gates.
+ *
+ * @param {{ query: Function }} client
+ * @param {string} matchId
+ * @param {{
+ *   reviewDecision: string,
+ *   reviewReason: string,
+ *   reviewedByUserId: string,
+ *   reviewedAt?: Date|string,
+ *   applicationId?: string|null,
+ * }} fields
+ */
+async function recordRegistrationDuplicateMatchDecision(client, matchId, fields = {}) {
+  const id = String(matchId || "").trim();
+  if (!id || !UUID_RE.test(id)) throw new Error("invalid_match_id");
+
+  const reviewDecision = String(fields.reviewDecision || fields.review_decision || "")
+    .trim()
+    .toLowerCase();
+  if (!DUPLICATE_MATCH_REVIEW_DECISIONS.includes(reviewDecision)) {
+    throw new Error("invalid_review_decision");
+  }
+
+  const reviewReason = String(fields.reviewReason || fields.review_reason || "").trim();
+  if (!reviewReason || reviewReason.length > 2000) {
+    throw new Error("invalid_review_reason");
+  }
+
+  const reviewedByUserId = String(
+    fields.reviewedByUserId || fields.reviewed_by_user_id || ""
+  ).trim();
+  if (!reviewedByUserId || !UUID_RE.test(reviewedByUserId)) {
+    throw new Error("invalid_reviewed_by_user_id");
+  }
+
+  const reviewedAt =
+    fields.reviewedAt != null && String(fields.reviewedAt).trim() !== ""
+      ? fields.reviewedAt
+      : new Date().toISOString();
+
+  const applicationId =
+    fields.applicationId != null && String(fields.applicationId).trim() !== ""
+      ? String(fields.applicationId).trim()
+      : null;
+  if (applicationId && !UUID_RE.test(applicationId)) {
+    throw new Error("invalid_application_id");
+  }
+
+  const params = [id, reviewDecision, reviewReason, reviewedByUserId, reviewedAt];
+  let sql = `UPDATE blessboard.registration_duplicate_matches
+                SET review_decision = $2,
+                    review_reason = $3,
+                    reviewed_by_user_id = $4::uuid,
+                    reviewed_at = $5::timestamptz,
+                    updated_at = now()
+              WHERE id = $1::uuid`;
+  if (applicationId) {
+    params.push(applicationId);
+    sql += ` AND application_id = $6::uuid`;
+  }
+  sql += ` RETURNING ${DUPLICATE_MATCH_SELECT}`;
+
+  const r = await client.query(sql, params);
+  return r.rows[0] || null;
+}
+
+const DUPLICATE_CANDIDATE_APP_SELECT = `
+  id, church_name, city, country, contact_email, contact_phone, contact_phone_normalized,
+  application_status, provisioning_status, branch_name, selected_plan, created_at
+`;
+
+/**
+ * Batched pending/rejected application candidates for duplicate check (excludes subject).
+ * @param {{ query: Function }} client
+ * @param {{
+ *   excludeApplicationId: string,
+ *   phoneNormalized?: string|null,
+ *   churchName?: string|null,
+ *   city?: string|null,
+ *   country?: string|null,
+ *   emailNormalized?: string|null,
+ *   limit?: number,
+ * }} opts
+ */
+async function listDuplicateCandidateApplications(client, opts = {}) {
+  const excludeId = String(opts.excludeApplicationId || "").trim();
+  if (!excludeId || !UUID_RE.test(excludeId)) throw new Error("invalid_application_id");
+  const limit = Math.min(Math.max(Number(opts.limit) || 40, 1), 100);
+
+  const phone = opts.phoneNormalized != null ? String(opts.phoneNormalized).trim() : "";
+  const churchName = opts.churchName != null ? String(opts.churchName).trim().toLowerCase() : "";
+  const city = opts.city != null ? String(opts.city).trim().toLowerCase() : "";
+  const country = opts.country != null ? String(opts.country).trim().toLowerCase() : "";
+  const email = opts.emailNormalized != null ? String(opts.emailNormalized).trim().toLowerCase() : "";
+
+  const occupancy = phoneUniquenessSqlPredicate("a");
+  const r = await client.query(
+    `SELECT ${DUPLICATE_CANDIDATE_APP_SELECT}
+       FROM ${TARGET_RELATION} a
+      WHERE a.id <> $1::uuid
+        AND (
+          ($2::text <> '' AND a.contact_phone_normalized = $2 AND ${occupancy})
+          OR (
+            $3::text <> '' AND $4::text <> '' AND $5::text <> ''
+            AND lower(a.church_name) = $3
+            AND lower(a.city) = $4
+            AND lower(a.country) = $5
+            AND ${occupancy}
+          )
+          OR ($6::text <> '' AND lower(a.contact_email) = $6 AND ${occupancy})
+          OR (
+            a.application_status = 'rejected'
+            AND (
+              ($2::text <> '' AND a.contact_phone_normalized = $2)
+              OR ($6::text <> '' AND lower(a.contact_email) = $6)
+            )
+          )
+        )
+      ORDER BY a.created_at DESC, a.id ASC
+      LIMIT $7`,
+    [excludeId, phone, churchName, city, country, email, limit]
+  );
+  return r.rows;
+}
+
+/**
+ * Organizations with optional church settings email (one query; production/pilot only).
+ * @param {{ query: Function }} client
+ * @param {{ displayNameNormalized?: string|null, limit?: number }} opts
+ */
+async function listDuplicateCandidateOrganizations(client, opts = {}) {
+  const name = opts.displayNameNormalized != null ? String(opts.displayNameNormalized).trim() : "";
+  if (!name) return [];
+  const limit = Math.min(Math.max(Number(opts.limit) || 40, 1), 100);
+  const r = await client.query(
+    `SELECT o.id, o.organization_key, o.display_name, o.legal_name, o.status, o.data_environment,
+            cs.primary_email, cs.primary_phone
+       FROM platform.organizations o
+       LEFT JOIN blessboard.churches c ON c.organization_id = o.id
+       LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+      WHERE o.status IN ('active', 'inactive')
+        AND o.data_environment IN ('production', 'pilot')
+        AND (
+          lower(regexp_replace(btrim(o.display_name), '\\s+', ' ', 'g')) = $1
+          OR (
+            o.legal_name IS NOT NULL
+            AND lower(regexp_replace(btrim(o.legal_name), '\\s+', ' ', 'g')) = $1
+          )
+        )
+      ORDER BY o.created_at DESC, o.id ASC
+      LIMIT $2`,
+    [name, limit]
+  );
+  return r.rows;
+}
+
+/**
+ * Churches in production/pilot orgs by display/legal name.
+ * @param {{ query: Function }} client
+ * @param {{ displayNameNormalized?: string|null, limit?: number }} opts
+ */
+async function listDuplicateCandidateChurches(client, opts = {}) {
+  const name = opts.displayNameNormalized != null ? String(opts.displayNameNormalized).trim() : "";
+  if (!name) return [];
+  const limit = Math.min(Math.max(Number(opts.limit) || 40, 1), 100);
+  const r = await client.query(
+    `SELECT c.id, c.organization_id, c.church_key, c.display_name, c.legal_name, c.status,
+            c.data_environment, cs.primary_email, cs.primary_phone
+       FROM blessboard.churches c
+       JOIN platform.organizations o ON o.id = c.organization_id
+       LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+      WHERE c.status IN ('active', 'inactive', 'suspended')
+        AND c.data_environment IN ('production', 'pilot')
+        AND o.data_environment IN ('production', 'pilot')
+        AND (
+          lower(regexp_replace(btrim(c.display_name), '\\s+', ' ', 'g')) = $1
+          OR (
+            c.legal_name IS NOT NULL
+            AND lower(regexp_replace(btrim(c.legal_name), '\\s+', ' ', 'g')) = $1
+          )
+        )
+      ORDER BY c.created_at DESC, c.id ASC
+      LIMIT $2`,
+    [name, limit]
+  );
+  return r.rows;
+}
+
+/**
+ * Live branches by display_name_normalized (church-scoped uniqueness; listed as weak candidates).
+ * @param {{ query: Function }} client
+ * @param {{ displayNameNormalized?: string|null, limit?: number }} opts
+ */
+async function listDuplicateCandidateBranches(client, opts = {}) {
+  const name = opts.displayNameNormalized != null ? String(opts.displayNameNormalized).trim() : "";
+  if (!name) return [];
+  const limit = Math.min(Math.max(Number(opts.limit) || 40, 1), 100);
+  const r = await client.query(
+    `SELECT b.id, b.church_id, b.branch_key, b.display_name, b.display_name_normalized,
+            b.status, b.country_code, c.organization_id
+       FROM blessboard.branches b
+       JOIN blessboard.churches c ON c.id = b.church_id
+       JOIN platform.organizations o ON o.id = c.organization_id
+      WHERE b.status IN ('active', 'inactive', 'suspended')
+        AND o.data_environment IN ('production', 'pilot')
+        AND b.display_name_normalized = $1
+      ORDER BY b.created_at DESC, b.id ASC
+      LIMIT $2`,
+    [name, limit]
+  );
+  return r.rows;
+}
+
+/**
+ * Domains by normalized hostname.
+ * @param {{ query: Function }} client
+ * @param {{ hostname?: string|null, limit?: number }} opts
+ */
+async function listDuplicateCandidateDomains(client, opts = {}) {
+  const hostname = opts.hostname != null ? String(opts.hostname).trim().toLowerCase() : "";
+  if (!hostname) return [];
+  const limit = Math.min(Math.max(Number(opts.limit) || 40, 1), 100);
+  const r = await client.query(
+    `SELECT d.id, d.organization_id, d.hostname, d.domain_type, d.status, d.is_primary
+       FROM platform.domains d
+       LEFT JOIN platform.organizations o ON o.id = d.organization_id
+      WHERE d.status IN ('active', 'inactive')
+        AND d.hostname = $1
+        AND (o.id IS NULL OR o.data_environment IN ('production', 'pilot'))
+      ORDER BY d.created_at DESC, d.id ASC
+      LIMIT $2`,
+    [hostname, limit]
+  );
+  return r.rows;
+}
+
+/**
+ * Platform user by email — id only for privacy (no password/display dump).
+ * @param {{ query: Function }} client
+ * @param {string} emailNormalized
+ */
+async function findDuplicateCandidateUserByEmail(client, emailNormalized) {
+  const email = String(emailNormalized || "")
+    .trim()
+    .toLowerCase();
+  if (!email) return null;
+  const r = await client.query(
+    `SELECT id, email_normalized, status
+       FROM blessboard.users
+      WHERE email_normalized = $1
+      LIMIT 1`,
+    [email]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Batch-load safe candidate rows by type for list/comparison (no N+1).
+ * @param {{ query: Function }} client
+ * @param {{ type: string, ids: string[] }[]} groups
+ */
+async function loadDuplicateMatchRecordsByType(client, groups) {
+  const out = {
+    application: new Map(),
+    organization: new Map(),
+    church: new Map(),
+    branch: new Map(),
+    domain: new Map(),
+    user: new Map(),
+  };
+  const list = Array.isArray(groups) ? groups : [];
+  await Promise.all(
+    list.map(async (group) => {
+      const type = String(group.type || "").trim().toLowerCase();
+      const ids = Array.isArray(group.ids)
+        ? [...new Set(group.ids.map((id) => String(id)).filter((id) => UUID_RE.test(id)))]
+        : [];
+      if (!ids.length || !out[type]) return;
+
+      if (type === "application") {
+        const r = await client.query(
+          `SELECT ${DUPLICATE_CANDIDATE_APP_SELECT}
+             FROM ${TARGET_RELATION}
+            WHERE id = ANY($1::uuid[])`,
+          [ids]
+        );
+        for (const row of r.rows) out.application.set(String(row.id), row);
+        return;
+      }
+      if (type === "organization") {
+        const r = await client.query(
+          `SELECT o.id, o.organization_key, o.display_name, o.legal_name, o.status, o.data_environment,
+                  o.created_at, cs.primary_email, cs.primary_phone
+             FROM platform.organizations o
+             LEFT JOIN blessboard.churches c ON c.organization_id = o.id
+             LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+            WHERE o.id = ANY($1::uuid[])`,
+          [ids]
+        );
+        for (const row of r.rows) out.organization.set(String(row.id), row);
+        return;
+      }
+      if (type === "church") {
+        const r = await client.query(
+          `SELECT c.id, c.organization_id, c.church_key, c.display_name, c.legal_name, c.status,
+                  c.data_environment, c.created_at, cs.primary_email, cs.primary_phone
+             FROM blessboard.churches c
+             LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+            WHERE c.id = ANY($1::uuid[])`,
+          [ids]
+        );
+        for (const row of r.rows) out.church.set(String(row.id), row);
+        return;
+      }
+      if (type === "branch") {
+        const r = await client.query(
+          `SELECT b.id, b.church_id, b.branch_key, b.display_name, b.display_name_normalized,
+                  b.status, b.country_code
+             FROM blessboard.branches b
+            WHERE b.id = ANY($1::uuid[])`,
+          [ids]
+        );
+        for (const row of r.rows) out.branch.set(String(row.id), row);
+        return;
+      }
+      if (type === "domain") {
+        const r = await client.query(
+          `SELECT id, organization_id, hostname, domain_type, status, is_primary
+             FROM platform.domains
+            WHERE id = ANY($1::uuid[])`,
+          [ids]
+        );
+        for (const row of r.rows) out.domain.set(String(row.id), row);
+        return;
+      }
+      if (type === "user") {
+        const r = await client.query(
+          `SELECT id, status
+             FROM blessboard.users
+            WHERE id = ANY($1::uuid[])`,
+          [ids]
+        );
+        for (const row of r.rows) out.user.set(String(row.id), row);
+      }
+    })
+  );
+  return out;
+}
+
+/**
  * Soft-link an unprovisioned application to an existing organization (no provision / no paid activation).
  * @param {{ query: Function }} client
  * @param {string} applicationId
@@ -1799,6 +2584,15 @@ module.exports = {
   listApplicationSupportContacts,
   createPhoneVerificationAttempt,
   listPhoneVerificationAttempts,
+  createRegistrationEmailVerificationToken,
+  findRegistrationEmailVerificationTokenByHash,
+  findLatestRegistrationEmailVerificationToken,
+  invalidateActiveRegistrationEmailVerificationTokens,
+  markRegistrationEmailVerificationTokenVerified,
+  EMAIL_VERIFY_TOKEN_STATUSES,
+  DUPLICATE_MATCH_RECORD_TYPES,
+  DUPLICATE_MATCH_RISK_LEVELS,
+  DUPLICATE_MATCH_REVIEW_DECISIONS,
   linkApplicationToOrganization,
   listActivePlatformAdministrators,
   getOrganizationPublicationSummary,
@@ -1808,5 +2602,16 @@ module.exports = {
   findApplicationIdForOrganizationKey,
   findOrganizationIdByKey,
   loadOrganizationOnboardingFacts,
+  replaceRegistrationDuplicateMatches,
+  listRegistrationDuplicateMatches,
+  getRegistrationDuplicateMatchById,
+  recordRegistrationDuplicateMatchDecision,
+  listDuplicateCandidateApplications,
+  listDuplicateCandidateOrganizations,
+  listDuplicateCandidateChurches,
+  listDuplicateCandidateBranches,
+  listDuplicateCandidateDomains,
+  findDuplicateCandidateUserByEmail,
+  loadDuplicateMatchRecordsByType,
   escapeLikePattern,
 };

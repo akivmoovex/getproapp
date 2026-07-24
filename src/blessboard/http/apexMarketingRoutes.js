@@ -16,6 +16,7 @@ const {
   renderPricingPage,
   renderDirectoryPage,
   renderRegisterChurchPage,
+  renderEmailVerificationResultPage,
 } = require("./renderApexMarketing");
 const { renderTermsPage, renderPrivacyPage } = require("./renderApexLegal");
 const {
@@ -24,6 +25,7 @@ const {
   issueCsrfToken,
   setCsrfCookie,
   validateCsrf,
+  getCsrfSecret,
 } = require("../../platform/http/v5Csrf");
 const {
   normalizeSelectedPlan,
@@ -48,11 +50,118 @@ const {
 const { resolveHostname } = require("../../platform/host");
 const { logRegistrationTrace } = require("../services/registrationTraceLog");
 const { mapPublicPlanToDbPlanKey } = require("../services/registrationPlanMapping");
+const {
+  consumeVerificationToken,
+} = require("../services/registrationEmailVerificationService");
 
 const REGISTER_PATH = "/register-church";
 const ACCOUNT_PATH = "/account";
 const HQ_PATH = "/hq";
 const LOGIN_PATH = "/login";
+/** Approved public verify path from PHASE2_033 / message builder. */
+const EMAIL_VERIFY_PATH_PREFIX = "/register/email-verification";
+const EMAIL_VERIFY_RESULT_PATH = "/register/email-verification/result";
+/** Short-lived signed flash so `?outcome=verified` cannot be spoofed without a consume redirect. */
+const EMAIL_VERIFY_FLASH_COOKIE = "bb_email_verify_flash";
+const EMAIL_VERIFY_FLASH_PREFIX = "ev1";
+const EMAIL_VERIFY_FLASH_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string}
+ */
+function emailVerifyFlashSecret(env) {
+  return getCsrfSecret(env);
+}
+
+/**
+ * @param {"verified"|"invalid"|"rate_limited"} outcome
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string}
+ */
+function issueEmailVerifyOutcomeFlash(outcome, env) {
+  const safe =
+    outcome === "verified" || outcome === "rate_limited" ? outcome : "invalid";
+  const exp = String(Date.now() + EMAIL_VERIFY_FLASH_TTL_MS);
+  const body = `${safe}.${exp}`;
+  const secret = emailVerifyFlashSecret(env);
+  const mac = crypto
+    .createHmac("sha256", secret)
+    .update(`${EMAIL_VERIFY_FLASH_PREFIX}.${body}`)
+    .digest("base64url");
+  return `${EMAIL_VERIFY_FLASH_PREFIX}.${body}.${mac}`;
+}
+
+/**
+ * @param {string} token
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {"verified"|"invalid"|"rate_limited"|null}
+ */
+function verifyEmailVerifyOutcomeFlash(token, env) {
+  const parts = String(token || "").split(".");
+  if (parts.length !== 4 || parts[0] !== EMAIL_VERIFY_FLASH_PREFIX) return null;
+  const [, outcome, exp, mac] = parts;
+  if (!outcome || !exp || !mac) return null;
+  if (outcome !== "verified" && outcome !== "invalid" && outcome !== "rate_limited") {
+    return null;
+  }
+  const expMs = Number(exp);
+  if (!Number.isFinite(expMs) || expMs < Date.now()) return null;
+  const secret = emailVerifyFlashSecret(env);
+  const body = `${outcome}.${exp}`;
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(`${EMAIL_VERIFY_FLASH_PREFIX}.${body}`)
+    .digest("base64url");
+  const left = Buffer.from(mac, "utf8");
+  const right = Buffer.from(expected, "utf8");
+  if (left.length !== right.length) return null;
+  if (!crypto.timingSafeEqual(left, right)) return null;
+  return outcome;
+}
+
+/**
+ * @param {import('express').Response} res
+ * @param {"verified"|"invalid"|"rate_limited"} outcome
+ * @param {{ env?: NodeJS.ProcessEnv, secure?: boolean }} [opts]
+ */
+function setEmailVerifyOutcomeFlashCookie(res, outcome, opts = {}) {
+  const env = opts.env || process.env;
+  const secure =
+    opts.secure !== undefined
+      ? opts.secure
+      : String(env.NODE_ENV || "").toLowerCase() === "production";
+  res.cookie(EMAIL_VERIFY_FLASH_COOKIE, issueEmailVerifyOutcomeFlash(outcome, env), {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: EMAIL_VERIFY_RESULT_PATH,
+    maxAge: EMAIL_VERIFY_FLASH_TTL_MS,
+  });
+}
+
+/**
+ * Read + clear one-time flash. Query `outcome=verified` alone is ignored.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {"verified"|"invalid"|"rate_limited"}
+ */
+function resolveEmailVerifyResultOutcome(req, res, env) {
+  const cookieRaw =
+    (req.cookies && req.cookies[EMAIL_VERIFY_FLASH_COOKIE]) ||
+    (req.signedCookies && req.signedCookies[EMAIL_VERIFY_FLASH_COOKIE]) ||
+    null;
+  res.clearCookie(EMAIL_VERIFY_FLASH_COOKIE, { path: EMAIL_VERIFY_RESULT_PATH });
+  const fromFlash = verifyEmailVerifyOutcomeFlash(cookieRaw, env);
+  if (fromFlash === "verified" || fromFlash === "rate_limited") {
+    return fromFlash;
+  }
+  const raw = String((req.query && req.query.outcome) || "").trim().toLowerCase();
+  // `verified` requires the signed flash from a successful consume redirect.
+  if (raw === "rate_limited") return "rate_limited";
+  return "invalid";
+}
 
 const CSRF_FORM_ERROR =
   "Invalid or missing security token. Reload the registration form and try again.";
@@ -143,6 +252,8 @@ function rateLimitKey(req) {
  *   isProduction: boolean,
  *   establishSession?: typeof establishBlessBoardSession,
  *   provisionFn?: Function,
+ *   consumeVerificationToken?: typeof consumeVerificationToken,
+ *   emailVerificationLimiter?: import('express').RequestHandler,
  * }} deps
  */
 function createApexMarketingRouter(deps) {
@@ -155,6 +266,10 @@ function createApexMarketingRouter(deps) {
   const isProduction = Boolean(deps.isProduction);
   const establishSession = deps.establishSession || establishBlessBoardSession;
   const provisionFn = deps.provisionFn || null;
+  const consumeTokenFn =
+    typeof deps.consumeVerificationToken === "function"
+      ? deps.consumeVerificationToken
+      : consumeVerificationToken;
   const dataEnvironment = String(env.PLATFORM_DATA_ENVIRONMENT || env.DATA_ENVIRONMENT || "testing")
     .trim()
     .toLowerCase();
@@ -198,6 +313,52 @@ function createApexMarketingRouter(deps) {
       );
     },
   });
+
+  const emailVerifyWindowMs = Number(env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS) || 15 * 60 * 1000;
+  const emailVerifyLimitRaw = Number(env.BLESSBOARD_EMAIL_VERIFY_RATE_LIMIT);
+  const emailVerifyLimit =
+    Number.isFinite(emailVerifyLimitRaw) && emailVerifyLimitRaw > 0
+      ? emailVerifyLimitRaw
+      : String(env.NODE_ENV || "") === "test"
+        ? 1000
+        : 30;
+
+  function renderEmailVerifyRateLimited(req, res) {
+    setRegisterNoStoreHeaders(res);
+    const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
+    const csrfToken = issueAndSetCsrf(res);
+    return res.status(429).type("html").send(
+      renderEmailVerificationResultPage({
+        authenticated,
+        csrfToken: authenticated ? csrfToken : null,
+        outcome: "rate_limited",
+      })
+    );
+  }
+
+  const defaultEmailVerificationLimiter = rateLimit({
+    windowMs: emailVerifyWindowMs,
+    limit: emailVerifyLimit,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      const host = String(req.headers.host || "")
+        .toLowerCase()
+        .split(":")[0];
+      const digest = crypto
+        .createHash("sha256")
+        .update(`${clientIp(req) || "unknown"}|${host}|email-verify`)
+        .digest("hex")
+        .slice(0, 32);
+      return digest;
+    },
+    handler: renderEmailVerifyRateLimited,
+  });
+
+  const emailVerificationLimiter =
+    typeof deps.emailVerificationLimiter === "function"
+      ? deps.emailVerificationLimiter
+      : defaultEmailVerificationLimiter;
 
   function withShell(req, res, renderFn, extra = {}) {
     if (!isApexHost(req)) {
@@ -551,6 +712,74 @@ function createApexMarketingRouter(deps) {
     );
   });
 
+  /**
+   * Tokenless result page for public email verification (no auth).
+   * `verified` requires a short-lived signed flash cookie from the consume redirect
+   * so `?outcome=verified` cannot spoof a success UI.
+   */
+  router.get(EMAIL_VERIFY_RESULT_PATH, emailVerificationLimiter, (req, res) => {
+    if (!isApexHost(req)) {
+      return res.status(404).type("text").send("Not found");
+    }
+    setRegisterNoStoreHeaders(res);
+    const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
+    const csrfToken = issueAndSetCsrf(res);
+    const outcome = resolveEmailVerifyResultOutcome(req, res, env);
+    return res.status(200).type("html").send(
+      renderEmailVerificationResultPage({
+        authenticated,
+        csrfToken: authenticated ? csrfToken : null,
+        outcome,
+      })
+    );
+  });
+
+  /**
+   * Public one-time email verification consume (apex only, no auth).
+   * Always redirects to the tokenless result page — never keeps the token in links.
+   */
+  router.get(
+    `${EMAIL_VERIFY_PATH_PREFIX}/:token`,
+    emailVerificationLimiter,
+    async (req, res) => {
+      if (!isApexHost(req)) {
+        return res.status(404).type("text").send("Not found");
+      }
+      setRegisterNoStoreHeaders(res);
+
+      const rawToken = String((req.params && req.params.token) || "").trim();
+      let outcome = "invalid";
+
+      try {
+        const pool = getPool();
+        const result = await consumeTokenFn(rawToken, { client: pool });
+        if (result && result.ok === true && result.code === "verified") {
+          outcome = "verified";
+        }
+      } catch (err) {
+        // Never log the token or raw error details that may include it.
+        // eslint-disable-next-line no-console
+        console.error("[apex] email verification consume failed", {
+          outcome: "invalid",
+          message: err && err.message ? String(err.message).slice(0, 120) : "unknown",
+        });
+        outcome = "invalid";
+      }
+
+      if (outcome === "verified") {
+        setEmailVerifyOutcomeFlashCookie(res, "verified", {
+          env,
+          secure: isProduction,
+        });
+      }
+
+      return res.redirect(
+        303,
+        `${EMAIL_VERIFY_RESULT_PATH}?outcome=${encodeURIComponent(outcome)}`
+      );
+    }
+  );
+
   return router;
 }
 
@@ -563,5 +792,12 @@ module.exports = {
   ACCOUNT_PATH,
   HQ_PATH,
   LOGIN_PATH,
+  EMAIL_VERIFY_PATH_PREFIX,
+  EMAIL_VERIFY_RESULT_PATH,
+  EMAIL_VERIFY_FLASH_COOKIE,
+  issueEmailVerifyOutcomeFlash,
+  verifyEmailVerifyOutcomeFlash,
+  resolveEmailVerifyResultOutcome,
+  setEmailVerifyOutcomeFlashCookie,
   DUPLICATE_REVIEW_MESSAGE,
 };

@@ -1,0 +1,225 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var payload = typeof duplicates !== 'undefined' && duplicates ? duplicates : {};
+  var subject = payload.subject || {};
+  var matches = Array.isArray(payload.matches) ? payload.matches : [];
+  var unavailable = Boolean(payload.unavailable);
+  var empty = !unavailable && (Boolean(payload.empty) || matches.length === 0);
+  var detailHref = payload.detailHref || '/admin/registration-applications';
+  var churchLabel = subject.churchName || 'Registration application';
+  var subjectLocation = [subject.city, subject.country].filter(Boolean).join(', ') || 'Not provided';
+  var matchCount = matches.length;
+
+  function labelStatus(s) {
+    return String(s || '').replace(/_/g, ' ') || '—';
+  }
+  function riskChipClass(level) {
+    if (level === 'confirmed') return 'bb-pa-reg-dup-card__risk--confirmed';
+    if (level === 'strong') return 'bb-pa-reg-dup-card__risk--strong';
+    if (level === 'possible') return 'bb-pa-reg-dup-card__risk--possible';
+    return 'bb-pa-reg-dup-card__risk--none';
+  }
+%>
+<div
+  class="bb-pa-org-detail bb-pa-reg-duplicates"
+  data-bb-pa-reg-duplicates="1"
+  data-bb-pa-reg-duplicates-screen="1"
+  data-bb-pa-reg-duplicates-unavailable="<%= unavailable ? '1' : '0' %>"
+  data-bb-pa-reg-duplicates-empty="<%= empty ? '1' : '0' %>"
+  data-bb-pa-advisory="1"
+  data-bb-pa-auto-merge="0"
+  data-bb-pa-auto-reject="0"
+>
+  <header class="bb-pa-page-head bb-pa-reg-duplicates__head">
+    <p class="bb-pa-breadcrumb" data-bb-pa-reg-duplicates-back="1">
+      <a href="<%= detailHref %>">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to application
+      </a>
+    </p>
+    <h1 class="bb-pa-page-head__title" data-bb-pa-reg-duplicates-title="1">Duplicate Matches</h1>
+    <p class="bb-pa-lede" data-bb-pa-reg-duplicates-lede="1">
+      Review potential church and organization matches using name, location, contact overlap, and registration signals.
+      Scores are advisory. No records are merged or rejected from this page.
+    </p>
+  </header>
+
+  <% if (unavailable) { %>
+  <div data-bb-pa-reg-duplicates-error="1">
+    <%- include('../partials/error-state', {
+      title: 'Unable to load duplicate matches',
+      body: 'Duplicate matches could not be loaded right now. Return to the application and try again in a moment.',
+      actionHref: detailHref,
+      actionLabel: 'Back to application'
+    }) %>
+  </div>
+  <% } else { %>
+
+  <% if (subject && (subject.churchName || subject.id)) { %>
+  <div class="bb-pa-reg-duplicates__summary" data-bb-pa-reg-duplicates-summary="1">
+    <section
+      class="bb-pa-panel bb-pa-reg-duplicates__subject-card"
+      aria-labelledby="dup-subject-heading"
+      data-bb-pa-reg-duplicates-subject="1"
+    >
+      <p class="bb-pa-reg-duplicates__eyebrow">Active application</p>
+      <h2 id="dup-subject-heading" class="bb-pa-reg-duplicates__subject-name"><%= churchLabel %></h2>
+      <dl class="bb-pa-dl bb-pa-reg-duplicates__subject-meta">
+        <div>
+          <dt>Location</dt>
+          <dd data-bb-pa-reg-duplicates-subject-location="1"><%= subjectLocation %></dd>
+        </div>
+        <div>
+          <dt>Application status</dt>
+          <dd data-bb-pa-reg-duplicates-subject-status="1"><%= labelStatus(subject.applicationStatus) %></dd>
+        </div>
+      </dl>
+    </section>
+    <section
+      class="bb-pa-panel bb-pa-reg-duplicates__count-card"
+      aria-labelledby="dup-count-heading"
+      data-bb-pa-reg-duplicates-count="1"
+    >
+      <p class="bb-pa-reg-duplicates__eyebrow">
+        <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+        Review queue
+      </p>
+      <h2 id="dup-count-heading" class="bb-pa-reg-duplicates__count-value">
+        <span data-bb-pa-reg-duplicates-count-value="1"><%= matchCount %></span>
+        potential match<%= matchCount === 1 ? '' : 'es' %>
+      </h2>
+      <p class="bb-pa-hint">
+        <% if (matchCount > 0) { %>
+        Open Compare to review approved fields side by side.
+        <% } else { %>
+        No stored matches for this application yet.
+        <% } %>
+      </p>
+    </section>
+  </div>
+  <% } %>
+
+  <% if (empty) { %>
+  <div data-bb-pa-reg-duplicates-empty-state="1">
+    <%- include('../partials/empty-state', {
+      title: 'No duplicate matches',
+      body: 'No stored potential matches were found for this application. When a duplicate check stores scored matches, they will appear here as cards for review.',
+      actionHref: detailHref,
+      actionLabel: 'Back to application',
+      className: 'bb-pa-reg-duplicates-empty',
+      icon: 'search'
+    }) %>
+  </div>
+  <% } else { %>
+  <section
+    class="bb-pa-reg-duplicates__results"
+    aria-labelledby="dup-results-heading"
+    data-bb-pa-reg-duplicates-list="1"
+  >
+    <div class="bb-pa-reg-duplicates__results-head">
+      <h2 id="dup-results-heading" class="bb-pa-section-title">Potential matches</h2>
+      <p class="bb-pa-hint">Ordered by risk, then score, then record id. Mobile uses cards — not a compressed table.</p>
+    </div>
+
+    <ul class="bb-pa-reg-duplicates__cards" data-bb-pa-reg-duplicates-cards="1">
+      <% matches.forEach(function (m) {
+        var overlap = m.contactOverlap || { phone: false, email: false, labels: ['No contact overlap'] };
+        var tags = Array.isArray(m.reasonTags) && m.reasonTags.length
+          ? m.reasonTags
+          : (Array.isArray(m.reasons) ? m.reasons : []);
+      %>
+      <li
+        class="bb-pa-reg-dup-card"
+        data-bb-pa-reg-duplicate-match="1"
+        data-match-id="<%= m.id %>"
+        data-risk-level="<%= m.riskLevel || '' %>"
+      >
+        <div class="bb-pa-reg-dup-card__top">
+          <div class="bb-pa-reg-dup-card__identity">
+            <p class="bb-pa-reg-dup-card__type" data-bb-pa-reg-duplicate-type="1">
+              <%= m.matchedRecordTypeLabel || labelStatus(m.matchedRecordType) %>
+            </p>
+            <h3 class="bb-pa-reg-dup-card__name" data-bb-pa-reg-duplicate-name="1">
+              <%= m.candidateLabel || 'Matched record' %>
+            </h3>
+          </div>
+          <div class="bb-pa-reg-dup-card__badges">
+            <span
+              class="bb-pa-reg-dup-card__risk <%= riskChipClass(m.riskLevel) %>"
+              data-bb-pa-reg-duplicate-risk="1"
+            ><%= m.riskLabel || labelStatus(m.riskLevel) %></span>
+            <span class="bb-pa-reg-dup-card__score" data-bb-pa-reg-duplicate-score="1">
+              Score <%= m.score %>
+            </span>
+          </div>
+        </div>
+
+        <dl class="bb-pa-reg-dup-card__meta" data-bb-pa-reg-duplicate-meta="1">
+          <div>
+            <dt>Location</dt>
+            <dd data-bb-pa-reg-duplicate-location="1"><%= m.location || 'Not provided' %></dd>
+          </div>
+          <div>
+            <dt>Contact overlap</dt>
+            <dd data-bb-pa-reg-duplicate-contact-overlap="1">
+              <%= (overlap.labels || []).join(' · ') || 'No contact overlap' %>
+            </dd>
+          </div>
+          <div>
+            <dt>Organization status</dt>
+            <dd data-bb-pa-reg-duplicate-org-status="1"><%= labelStatus(m.organizationStatus) %></dd>
+          </div>
+          <div>
+            <dt>Review status</dt>
+            <dd data-bb-pa-reg-duplicate-review-status="1"><%= m.reviewStatus || 'Not reviewed' %></dd>
+          </div>
+        </dl>
+
+        <% if (tags.length) { %>
+        <ul class="bb-pa-reg-dup-card__reasons" data-bb-pa-reg-duplicate-reasons="1" aria-label="Match reasons">
+          <% tags.forEach(function (tag) { %>
+          <li class="bb-pa-reg-dup-card__reason" data-bb-pa-reg-duplicate-reason="1"><%= tag %></li>
+          <% }) %>
+        </ul>
+        <% } else { %>
+        <p class="bb-pa-hint" data-bb-pa-reg-duplicate-reasons-empty="1">No reason tags recorded for this match.</p>
+        <% } %>
+
+        <div class="bb-pa-reg-dup-card__actions">
+          <% if (m.compareHref) { %>
+          <a
+            class="bb-pa-btn bb-pa-btn--primary bb-pa-reg-dup-card__compare"
+            href="<%= m.compareHref %>"
+            data-bb-pa-reg-duplicate-compare-link="1"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">compare_arrows</span>
+            Compare
+          </a>
+          <% } %>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <% } %>
+
+  <section
+    class="bb-pa-panel bb-pa-reg-duplicates-unavailable"
+    aria-labelledby="pa-reg-dup-unavailable-heading"
+    data-bb-pa-reg-duplicates-deferred="1"
+  >
+    <h2 id="pa-reg-dup-unavailable-heading" class="bb-pa-section-title">Not available on this page</h2>
+    <ul class="bb-pa-domain-unavailable__list">
+      <li data-bb-pa-unavailable="auto-merge">Automatic merge is not available.</li>
+      <li data-bb-pa-unavailable="auto-reject">Automatic rejection is not available.</li>
+      <li data-bb-pa-unavailable="decision-controls">Approval and rejection controls are not on this screen.</li>
+      <li data-bb-pa-unavailable="decision-on-compare">
+        Record a review decision from the Compare screen for each match.
+      </li>
+      <li data-bb-pa-unavailable="user-identities">Unrelated user identities are not shown.</li>
+    </ul>
+  </section>
+</div>
+<%- include('../partials/platform-admin-shell-end') %>

@@ -124,6 +124,19 @@ const registrationAppRepo = require("../../blessboard/repositories/platformChurc
 const {
   recordPhoneVerificationAttempt,
 } = require("../../blessboard/services/registrationPhoneVerificationService");
+const {
+  resendRegistrationVerificationEmail,
+  RESEND_STATUS: EMAIL_RESEND_STATUS,
+} = require("../../blessboard/services/registrationEmailVerificationDelivery");
+const {
+  loadRegistrationDuplicateMatchesForAdmin,
+  loadRegistrationDuplicateComparisonForAdmin,
+  STATUS: DUPLICATE_MATCHES_STATUS,
+} = require("../../blessboard/services/registrationDuplicateMatchesAdminLoader");
+const {
+  recordDuplicateMatchReviewDecision,
+  STATUS: DUPLICATE_DECISION_STATUS,
+} = require("../../blessboard/services/registrationDuplicateReviewDecisionService");
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
 const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
 const {
@@ -460,6 +473,70 @@ function mapPhoneVerificationAttemptError(err) {
 }
 
 /**
+ * Map email-verification resend failures to safe redirect error codes (no token leakage).
+ * @param {unknown} resultOrErr
+ */
+function mapEmailVerificationResendError(resultOrErr) {
+  const code =
+    resultOrErr && resultOrErr.code != null
+      ? String(resultOrErr.code)
+      : resultOrErr && resultOrErr.message
+        ? String(resultOrErr.message)
+        : "";
+  if (code === EMAIL_RESEND_STATUS.COOLDOWN || code === "resend_cooldown" || code === "cooldown") {
+    return "cooldown";
+  }
+  if (
+    code === EMAIL_RESEND_STATUS.INVALID_EMAIL ||
+    code === "invalid_email" ||
+    code === "email_required"
+  ) {
+    return "invalid_email";
+  }
+  if (
+    code === EMAIL_RESEND_STATUS.SENDING_UNAVAILABLE ||
+    code === "email_sending_unavailable"
+  ) {
+    return "email_sending_unavailable";
+  }
+  if (code === EMAIL_RESEND_STATUS.NOT_FOUND || code === "not_found" || code === "invalid_application_id") {
+    return "not_found";
+  }
+  return "email_verification_failed";
+}
+
+/**
+ * Map duplicate decision service failures to safe redirect error codes.
+ * @param {{ status?: string, message?: string }|null|undefined} result
+ * @returns {string}
+ */
+function mapDuplicateDecisionError(result) {
+  const status = result && result.status != null ? String(result.status) : "";
+  const message = result && result.message != null ? String(result.message) : "";
+  if (status === DUPLICATE_DECISION_STATUS.REASON_REQUIRED || message === "reason_required") {
+    return "reason_required";
+  }
+  if (
+    status === DUPLICATE_DECISION_STATUS.INVALID_DECISION ||
+    message === "invalid_decision" ||
+    message === "invalid_review_decision"
+  ) {
+    return "invalid_decision";
+  }
+  if (status === DUPLICATE_DECISION_STATUS.NOT_FOUND || message === "match_not_found") {
+    return "not_found";
+  }
+  if (
+    status === DUPLICATE_DECISION_STATUS.INVALID_INPUT ||
+    message === "invalid_ids" ||
+    message === "invalid_reason"
+  ) {
+    return "invalid";
+  }
+  return "decision_failed";
+}
+
+/**
  * @param {{
  *   getPool: () => { query: Function },
  *   isApexHost: (req: import('express').Request) => boolean,
@@ -469,6 +546,10 @@ function mapPhoneVerificationAttemptError(err) {
  *   listActiveAuthorizationRoles?: Function,
  *   findRegistrationApplicationById?: Function,
  *   recordPhoneVerificationAttempt?: Function,
+ *   resendRegistrationVerificationEmail?: Function,
+ *   loadRegistrationDuplicateMatchesForAdmin?: Function,
+ *   loadRegistrationDuplicateComparisonForAdmin?: Function,
+ *   recordDuplicateMatchReviewDecision?: Function,
  *   log?: Function,
  * }} deps
  */
@@ -495,6 +576,22 @@ function createPlatformAdminRouter(deps) {
     typeof deps.recordPhoneVerificationAttempt === "function"
       ? deps.recordPhoneVerificationAttempt
       : recordPhoneVerificationAttempt;
+  const resendRegistrationVerificationEmailFn =
+    typeof deps.resendRegistrationVerificationEmail === "function"
+      ? deps.resendRegistrationVerificationEmail
+      : resendRegistrationVerificationEmail;
+  const loadRegistrationDuplicateMatchesForAdminFn =
+    typeof deps.loadRegistrationDuplicateMatchesForAdmin === "function"
+      ? deps.loadRegistrationDuplicateMatchesForAdmin
+      : loadRegistrationDuplicateMatchesForAdmin;
+  const loadRegistrationDuplicateComparisonForAdminFn =
+    typeof deps.loadRegistrationDuplicateComparisonForAdmin === "function"
+      ? deps.loadRegistrationDuplicateComparisonForAdmin
+      : loadRegistrationDuplicateComparisonForAdmin;
+  const recordDuplicateMatchReviewDecisionFn =
+    typeof deps.recordDuplicateMatchReviewDecision === "function"
+      ? deps.recordDuplicateMatchReviewDecision
+      : recordDuplicateMatchReviewDecision;
   const router = express.Router();
 
   function requireApex(req, res, next) {
@@ -918,6 +1015,7 @@ function createPlatformAdminRouter(deps) {
           reviewRecommendation: detail.reviewRecommendation || null,
           approvalChecklist: detail.approvalChecklist || null,
           phoneVerification: detail.phoneVerification || null,
+          emailVerification: detail.emailVerification || null,
           contacts: detail.contacts || [],
           auditEvents: detail.auditEvents || [],
           platformAdmins: detail.platformAdmins || [],
@@ -930,6 +1028,159 @@ function createPlatformAdminRouter(deps) {
         })
       );
       return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/registration-applications/:id/duplicates",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const loaded = await loadRegistrationDuplicateMatchesForAdminFn(getPool(), id);
+      if (!loaded.ok) {
+        if (loaded.status === DUPLICATE_MATCHES_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid application id.");
+        }
+        if (loaded.status === DUPLICATE_MATCHES_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This registration application could not be found.");
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Duplicate matches are temporarily unavailable."
+        );
+      }
+      const churchName =
+        loaded.subject && loaded.subject.churchName
+          ? String(loaded.subject.churchName)
+          : "Registration application";
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-application-duplicates.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: `Duplicates · ${churchName}`,
+          duplicates: loaded,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/registration-applications/:id/duplicates/:matchId",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const matchId = String(req.params.matchId || "");
+      const listPath = `/admin/registration-applications/${encodeURIComponent(id)}/duplicates`;
+      const loaded = await loadRegistrationDuplicateComparisonForAdminFn(
+        getPool(),
+        id,
+        matchId
+      );
+      if (!loaded.ok) {
+        if (loaded.status === DUPLICATE_MATCHES_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid application or match id.");
+        }
+        if (loaded.status === DUPLICATE_MATCHES_STATUS.NOT_FOUND) {
+          if (loaded.message === "match_not_found") {
+            return res.redirect(303, listPath);
+          }
+          return sendControlled(
+            req,
+            res,
+            404,
+            "This registration application could not be found."
+          );
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Duplicate comparison is temporarily unavailable."
+        );
+      }
+      const churchName =
+        loaded.comparison &&
+        loaded.comparison.subject &&
+        loaded.comparison.subject.churchName
+          ? String(loaded.comparison.subject.churchName)
+          : "Registration application";
+      const flash = readFlash(req);
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-application-duplicate-compare.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: `Compare · ${churchName}`,
+          comparison: loaded,
+          notice: flash.notice,
+          error: flash.error,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/duplicates/:matchId/decision",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const matchId = String(req.params.matchId || "");
+      const comparePath = `/admin/registration-applications/${encodeURIComponent(id)}/duplicates/${encodeURIComponent(matchId)}`;
+      const listPath = `/admin/registration-applications/${encodeURIComponent(id)}/duplicates`;
+      const returnTo = String((req.body && req.body.return_to) || "").trim().toLowerCase();
+      const redirectBase = returnTo === "list" || returnTo === "matches" ? listPath : comparePath;
+
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${redirectBase}?error=csrf`);
+      }
+
+      const decision = String(
+        (req.body && (req.body.decision || req.body.review_decision)) || ""
+      ).trim();
+      const reason = String(
+        (req.body && (req.body.reason || req.body.review_reason)) || ""
+      ).trim();
+
+      try {
+        const deployment = getPlatformDeploymentCode(env);
+        const result = await recordDuplicateMatchReviewDecisionFn(
+          getPool(),
+          {
+            applicationId: id,
+            matchId,
+            decision,
+            reason,
+            actorUserId: req.platformAdminContext.userId,
+            deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+          }
+        );
+
+        if (!result || !result.ok) {
+          const error = mapDuplicateDecisionError(result);
+          if (error === "not_found") {
+            return res.redirect(303, `${listPath}?error=not_found`);
+          }
+          return res.redirect(303, `${redirectBase}?error=${error}`);
+        }
+
+        return res.redirect(303, `${redirectBase}?notice=duplicate_decision_saved`);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[platform-admin] duplicate match decision failed", {
+          applicationId: id.slice(0, 36),
+          matchId: matchId.slice(0, 36),
+          message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
+        });
+        return res.redirect(303, `${redirectBase}?error=decision_failed`);
+      }
     }
   );
 
@@ -1073,6 +1324,62 @@ function createPlatformAdminRouter(deps) {
           });
         }
         return res.redirect(303, `${detailPath}?error=${errorCode}#reg-phone-verification`);
+      }
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/email-verification/resend",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const anchor = "#reg-email-verification";
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf${anchor}`);
+      }
+
+      try {
+        const result = await resendRegistrationVerificationEmailFn(
+          {
+            applicationId: id,
+            actorUserId: req.platformAdminContext.userId,
+            publicBaseUrl: getApexOrigin(env, req.hostname),
+          },
+          {
+            client: getPool(),
+            findRegistrationApplicationById: findRegistrationApplicationByIdFn,
+          }
+        );
+
+        if (result && result.ok && result.code === EMAIL_RESEND_STATUS.SENT) {
+          return res.redirect(
+            303,
+            `${detailPath}?notice=email_verification_sent${anchor}`
+          );
+        }
+
+        const error = mapEmailVerificationResendError(result || {});
+        if (error === "email_verification_failed") {
+          // eslint-disable-next-line no-console
+          console.error("[platform-admin] email verification resend failed", {
+            applicationId: id.slice(0, 36),
+            code: result && result.code ? String(result.code).slice(0, 64) : "unknown",
+          });
+        }
+        return res.redirect(303, `${detailPath}?error=${error}${anchor}`);
+      } catch (err) {
+        const error = mapEmailVerificationResendError(err);
+        // eslint-disable-next-line no-console
+        console.error("[platform-admin] email verification resend failed", {
+          applicationId: id.slice(0, 36),
+          code: error,
+          message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
+        });
+        return res.redirect(303, `${detailPath}?error=${error}${anchor}`);
       }
     }
   );
@@ -2335,4 +2642,6 @@ module.exports = {
   renderPlatformAdminView,
   parsePhoneVerificationAttemptForm,
   mapPhoneVerificationAttemptError,
+  mapEmailVerificationResendError,
+  mapDuplicateDecisionError,
 };

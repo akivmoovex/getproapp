@@ -8,8 +8,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="description" content="BlessBoard — one digital home for your church." />
+  <% if (typeof activeNav !== 'undefined' && activeNav === 'email-verification') { %>
+  <meta name="robots" content="noindex, nofollow" />
+  <% } %>
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=13" />
+  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=14" />
   <% if (typeof activeNav !== 'undefined' && activeNav === 'account') { %>
   <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=6" />
   <% } %>

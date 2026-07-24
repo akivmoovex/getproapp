@@ -80,7 +80,8 @@ function baseFacts(overrides = {}) {
     applicant_email_verified: fact({
       key: "applicant_email_verified",
       status: "not_checked",
-      supported: false,
+      result: "email_verification_not_sent",
+      supported: true,
     }),
     applicant_identity_confirmed: fact({
       key: "applicant_identity_confirmed",
@@ -135,12 +136,69 @@ describe("registrationApprovalChecklist (no Postgres)", () => {
   });
 
   it("marks applicant email verified as not_available when unsupported", () => {
-    const out = build(baseFacts());
+    const out = build(
+      baseFacts({
+        applicant_email_verified: fact({
+          key: "applicant_email_verified",
+          status: "not_checked",
+          supported: false,
+        }),
+      })
+    );
     const it = itemByKey(out, "applicant_email_verified");
     assert.equal(it.status, STATUSES.NOT_AVAILABLE);
     assert.equal(it.supported, false);
-    assert.match(it.explanation, /not stored|ownership/i);
+    assert.match(it.explanation, /not available|ownership/i);
     assert.doesNotMatch(it.explanation, /unique among platform/i);
+  });
+
+  it("completes applicant email verified when the ownership fact is passed", () => {
+    const out = build(
+      baseFacts({
+        applicant_email_verified: fact({
+          key: "applicant_email_verified",
+          status: "passed",
+          result: "email_ownership_verified",
+          supported: true,
+        }),
+      })
+    );
+    const it = itemByKey(out, "applicant_email_verified");
+    assert.equal(it.status, STATUSES.COMPLETE);
+    assert.equal(it.supported, true);
+    assert.match(it.explanation, /ownership/i);
+  });
+
+  it("keeps sent and expired ownership facts from completing the checklist item", () => {
+    const sent = itemByKey(
+      build(
+        baseFacts({
+          applicant_email_verified: fact({
+            key: "applicant_email_verified",
+            status: "not_checked",
+            result: "email_verification_sent",
+            supported: true,
+          }),
+        })
+      ),
+      "applicant_email_verified"
+    );
+    assert.equal(sent.status, STATUSES.INCOMPLETE);
+
+    const expired = itemByKey(
+      build(
+        baseFacts({
+          applicant_email_verified: fact({
+            key: "applicant_email_verified",
+            status: "warning",
+            result: "email_verification_expired",
+            supported: true,
+          }),
+        })
+      ),
+      "applicant_email_verified"
+    );
+    assert.equal(expired.status, STATUSES.WARNING);
   });
 
   it("derives phone uniqueness pass, warning, and failure", () => {
@@ -490,9 +548,12 @@ describe("registrationApprovalChecklist (no Postgres)", () => {
       if (it.actionTarget != null) {
         assert.match(it.actionTarget, /^#reg-/);
         assert.ok(
-          ["#reg-verification", "#reg-administration", "#reg-website"].includes(
-            it.actionTarget
-          ),
+          [
+            "#reg-verification",
+            "#reg-administration",
+            "#reg-website",
+            "#reg-email-verification",
+          ].includes(it.actionTarget),
           it.actionTarget
         );
       }

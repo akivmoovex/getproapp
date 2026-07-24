@@ -52,6 +52,7 @@ async function build(opts = {}) {
     application: baseApp(opts.application),
     contacts: opts.contacts,
     phoneVerification: opts.phoneVerification,
+    emailVerification: opts.emailVerification,
     findOccupyingPhoneMatch: opts.findOccupyingPhoneMatch,
     findSimilarOrganizationMatch: opts.findSimilarOrganizationMatch,
     findUserByEmail: opts.findUserByEmail,
@@ -101,10 +102,9 @@ describe("registrationVerificationFacts (no Postgres)", () => {
     }
   });
 
-  it("returns unsupported facts as not_checked and never passed", async () => {
+  it("returns remaining unsupported facts as not_checked and never passed", async () => {
     const result = await build({});
     for (const key of [
-      "applicant_email_verified",
       "registration_documents_complete",
       "distinct_website_key_available",
     ]) {
@@ -114,6 +114,98 @@ describe("registrationVerificationFacts (no Postgres)", () => {
       assert.match(f.explanation, /does not yet store/i);
       assert.notEqual(f.status, STATUSES.PASSED);
     }
+  });
+
+  it("maps canonical email-verification status without treating sent or expired as verified", async () => {
+    const sent = await build({
+      emailVerification: {
+        status: "sent",
+        email: "pat@example.com",
+        sentAt: "2026-07-22T12:00:00.000Z",
+        expiresAt: "2026-07-23T12:00:00.000Z",
+      },
+    });
+    const sentFact = factByKey(sent, "applicant_email_verified");
+    assert.equal(sentFact.supported, true);
+    assert.equal(sentFact.status, STATUSES.NOT_CHECKED);
+    assert.equal(sentFact.result, "email_verification_sent");
+    assert.notEqual(sentFact.status, STATUSES.PASSED);
+    assert.match(sentFact.explanation, /not treated as verified/i);
+
+    const expired = await build({
+      emailVerification: {
+        status: "expired",
+        email: "pat@example.com",
+        sentAt: "2026-07-20T12:00:00.000Z",
+        expiresAt: "2026-07-21T12:00:00.000Z",
+      },
+    });
+    const expiredFact = factByKey(expired, "applicant_email_verified");
+    assert.equal(expiredFact.supported, true);
+    assert.equal(expiredFact.status, STATUSES.WARNING);
+    assert.equal(expiredFact.result, "email_verification_expired");
+    assert.notEqual(expiredFact.status, STATUSES.PASSED);
+
+    const verified = await build({
+      emailVerification: {
+        status: "verified",
+        email: "pat@example.com",
+        verifiedAt: "2026-07-22T13:00:00.000Z",
+      },
+    });
+    const verifiedFact = factByKey(verified, "applicant_email_verified");
+    assert.equal(verifiedFact.status, STATUSES.PASSED);
+    assert.equal(verifiedFact.result, "email_ownership_verified");
+
+    const unavailable = await build({
+      emailVerification: {
+        status: "not_sent",
+        unavailable: true,
+        email: null,
+        sentAt: null,
+        expiresAt: null,
+        verifiedAt: null,
+        invalidatedAt: null,
+      },
+    });
+    assert.equal(factByKey(unavailable, "applicant_email_verified").status, STATUSES.WARNING);
+
+    const replaced = await build({
+      emailVerification: { status: "replaced", email: "pat@example.com" },
+    });
+    assert.equal(factByKey(replaced, "applicant_email_verified").status, STATUSES.NOT_CHECKED);
+
+    const notSent = await build({
+      emailVerification: { status: "not_sent", email: null },
+    });
+    assert.equal(factByKey(notSent, "applicant_email_verified").status, STATUSES.NOT_CHECKED);
+
+    // Email uniqueness stays separate even when ownership is verified.
+    const unique = factByKey(verified, "email_unique_platform_users_only");
+    assert.ok(unique);
+    assert.notEqual(unique.key, verifiedFact.key);
+    assert.match(unique.explanation, /does not confirm email ownership/i);
+  });
+
+  it("does not change approval eligibility when email ownership is unverified", async () => {
+    const eligible = await build({
+      application: baseApp({ riskReviewActionsAvailable: true }),
+      emailVerification: { status: "sent", email: "pat@example.com" },
+    });
+    const gate = factByKey(eligible, "approval_eligible_current_rules");
+    assert.equal(gate.status, STATUSES.PASSED);
+
+    const ineligible = await build({
+      application: baseApp({
+        riskReviewActionsAvailable: false,
+        networkApproveAvailable: false,
+        retryProvisionAvailable: false,
+      }),
+      emailVerification: { status: "verified", email: "pat@example.com" },
+    });
+    const gate2 = factByKey(ineligible, "approval_eligible_current_rules");
+    assert.equal(gate2.status, STATUSES.FAILED);
+    assert.equal(factByKey(ineligible, "applicant_email_verified").status, STATUSES.PASSED);
   });
 
   it("states partial scopes for phone and email uniqueness", async () => {
@@ -163,7 +255,7 @@ describe("registrationVerificationFacts (no Postgres)", () => {
     const name = factByKey(result, "church_name_exact_match");
     assert.equal(name.status, STATUSES.WARNING);
     assert.match(name.explanation, /exact match/i);
-    assert.match(name.explanation, /not a fuzzy similarity score/i);
+    assert.match(name.explanation, /never treated as a strong/i);
   });
 
   it("marks no exact church-name match as passed", async () => {
@@ -342,7 +434,7 @@ describe("registrationVerificationFacts (no Postgres)", () => {
       a.summary.manuallyReviewed;
     assert.equal(sum, a.facts.length);
     assert.equal(a.summary.supported + a.summary.unsupported, a.facts.length);
-    assert.equal(a.summary.unsupported, 3);
+    assert.equal(a.summary.unsupported, 2);
   });
 
   it("reports provisioning prerequisites under current rules", async () => {

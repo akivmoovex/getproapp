@@ -87,10 +87,14 @@ If checklist calculation throws:
 
 | Evidence | Status |
 |----------|--------|
-| Unsupported / missing ownership proof | `not_available` |
-| Canonical ownership proof passed (future) | `complete` |
+| Fact unsupported / missing | `not_available` |
+| Fact `passed` (canonical status `verified`) | `complete` |
+| Fact `warning` (`expired` / `unavailable`) | `warning` |
+| Fact `not_checked` (`sent` / `not_sent` / `replaced`) | `incomplete` |
 
-Email uniqueness and email delivery are **not** verification.
+Email uniqueness and email delivery are **not** ownership verification. Sent/expired are **not** complete.
+
+`actionTarget`: `#reg-email-verification` when the ownership item is supported.
 
 ### 2. `phone_uniqueness_reviewed`
 
@@ -113,10 +117,14 @@ Email uniqueness and email delivery are **not** verification.
 
 | Evidence | Status |
 |----------|--------|
-| `duplicate_review_evidence` manually reviewed / admin action recorded | `complete` |
-| Warning hold or risk duplicate signals | `manual_review_required` |
+| `duplicate_review_evidence` manually reviewed / `different_church_reviewed` / `matches_reviewed` / admin action recorded | `complete` (evidence preserved on ledger) |
+| `confirmed_duplicate` or `impersonation_concern` | `manual_review_required` (high-risk; no auto-reject) |
+| Warning hold, matches awaiting review, or risk duplicate signals | `manual_review_required` |
 | Church-name match alone without review evidence | `manual_review_required` (name alone insufficient) |
+| Strong identifier without completing review decision | `manual_review_required` |
 | No review evidence | `incomplete` |
+
+Source facts: `duplicate_review_evidence`, `church_name_exact_match`, `strong_duplicate_identifier` (Prompt 054).
 
 `reviewRecommendation` may only add context to the explanation (e.g. elevated duplicate risk). It must not become the checklist status.
 
@@ -186,11 +194,11 @@ A separate website-key result is **not** invented (`distinct_website_key_availab
 
 | Checklist item | Why |
 |----------------|-----|
-| `applicant_email_verified` | No ownership / verified-at storage on registration |
+| *(none for email ownership)* | `applicant_email_verified` is supported from canonical email-verification status (Prompt 042) |
 
-`applicant_identity_confirmed` is now supported from structured phone-verification attempts (Prompt 032).
+`applicant_identity_confirmed` is supported from structured phone-verification attempts (Prompt 032).
 
-These email-verification cases still derive to `not_available` today.
+Remaining unsupported facts (documents / distinct website key) are outside this checklist item set or remain `not_available` only when their source fact is unsupported.
 
 ---
 
@@ -213,6 +221,7 @@ Safe existing anchors used when applicable:
 - `#reg-verification`
 - `#reg-administration`
 - `#reg-website`
+- `#reg-email-verification`
 
 `null` when no valid on-page target exists (e.g. `#reg-contact` / `#reg-review-activity` are not present on the detail page today). Do not invent routes.
 

@@ -748,7 +748,7 @@ function createV5FoundationApp(options) {
     })
   );
 
-  // 8e. Apex marketing pages (Batch 2b — GET + register-church POST)
+  // 8e. Apex marketing pages (Batch 2b — GET + register-church POST + email verify)
   app.use(
     createApexMarketingRouter({
       getPool,

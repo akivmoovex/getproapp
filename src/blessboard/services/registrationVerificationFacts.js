@@ -15,6 +15,38 @@ const {
   filterAllowlistedReasonCodes,
 } = require("./registrationRiskDecision");
 
+/** High-weight exact identifier signals from duplicate scoring (046). Name alone is excluded. */
+const STRONG_IDENTIFIER_SIGNALS = Object.freeze([
+  "exact_registration_number",
+  "verified_phone_overlap",
+  "church_owned_email",
+  "exact_phone_overlap",
+  "exact_website_domain",
+]);
+
+/** Identifier signals that warrant failed (not merely warning) evidence. */
+const STRONG_IDENTIFIER_FAILED_SIGNALS = Object.freeze([
+  "exact_registration_number",
+  "verified_phone_overlap",
+  "exact_phone_overlap",
+]);
+
+const NAME_MATCH_SIGNALS = Object.freeze([
+  "exact_church_name",
+  "exact_name_city_country",
+]);
+
+const HIGH_RISK_REVIEW_DECISIONS = Object.freeze([
+  "confirmed_duplicate",
+  "impersonation_concern",
+]);
+
+const REVIEW_COMPLETION_DECISIONS = Object.freeze([
+  "different_church",
+  "link_existing_church",
+  "additional_branch_request",
+]);
+
 const STATUSES = Object.freeze({
   NOT_CHECKED: "not_checked",
   PASSED: "passed",
@@ -33,6 +65,10 @@ const FACT_DEFS = Object.freeze([
   {
     key: "church_name_exact_match",
     label: "Exact church name match at same city and country",
+  },
+  {
+    key: "strong_duplicate_identifier",
+    label: "Strong duplicate identifier",
   },
   {
     key: "required_fields_complete",
@@ -89,7 +125,6 @@ const FACT_DEFS = Object.freeze([
   {
     key: "applicant_email_verified",
     label: "Applicant email verified",
-    unsupported: true,
   },
   {
     key: "applicant_identity_confirmed",
@@ -364,14 +399,62 @@ async function buildSupportedFacts(app, deps, checkedAt) {
     );
   }
 
+  const duplicateEvidence = resolveDuplicateMatchEvidence(deps.duplicateMatches);
+
   // 2. church_name_exact_match
   {
     let status = STATUSES.NOT_CHECKED;
     let result = "not_checked";
     let source = "risk_snapshot";
     let requiresManualReview = false;
-    if (!app.churchName || !app.city || !app.country) {
+    let explanation =
+      "This check uses an exact match on church name (and when available, city and country). Similar or exact name alone is a warning for manual review — never treated as a strong duplicate identifier by itself.";
+
+    if (duplicateEvidence.available && !duplicateEvidence.unavailable) {
+      source = "registration_duplicate_matches";
+      const nameSignalHit = matchesHaveAnySignal(duplicateEvidence, NAME_MATCH_SIGNALS);
+      if (nameSignalHit) {
+        status = STATUSES.WARNING;
+        result = "exact_name_in_duplicate_matches";
+        requiresManualReview = true;
+        explanation +=
+          " Canonical duplicate matches include an exact church-name signal. Name alone does not produce a strong-duplicate failure.";
+      } else if (typeof deps.findSimilarOrganizationMatch === "function") {
+        source = "registration_name_lookup";
+        const hit = await deps.findSimilarOrganizationMatch({
+          churchName: app.churchName,
+          city: app.city,
+          country: app.country,
+          excludeApplicationId: app.id,
+          excludeContactEmail: app.contactEmail || null,
+        });
+        if (hit === undefined) {
+          status = STATUSES.NOT_CHECKED;
+          result = "lookup_unavailable";
+          explanation +=
+            " No name signal in the match ledger, and the live name lookup was unavailable.";
+        } else if (hit) {
+          status = STATUSES.WARNING;
+          result = "exact_name_city_country_match";
+          requiresManualReview = true;
+        } else if (!app.churchName || !app.city || !app.country) {
+          result = "identity_incomplete";
+        } else {
+          status = STATUSES.PASSED;
+          result = "no_exact_match";
+        }
+      } else if (!app.churchName || !app.city || !app.country) {
+        result = "identity_incomplete";
+      } else {
+        status = STATUSES.PASSED;
+        result = "no_name_signal_in_matches";
+      }
+    } else if (!app.churchName || !app.city || !app.country) {
       result = "identity_incomplete";
+      if (duplicateEvidence.unavailable) {
+        explanation +=
+          " Canonical duplicate-match ledger was unavailable; identity fields are also incomplete.";
+      }
     } else if (typeof deps.findSimilarOrganizationMatch === "function") {
       source = "registration_name_lookup";
       const hit = await deps.findSimilarOrganizationMatch({
@@ -392,25 +475,113 @@ async function buildSupportedFacts(app, deps, checkedAt) {
         status = STATUSES.PASSED;
         result = "no_exact_match";
       }
+      if (duplicateEvidence.unavailable) {
+        explanation +=
+          " Canonical duplicate-match ledger was unavailable; this result uses the live name lookup only.";
+      }
     } else if (hasCode(RISK_REASON_CODES.SIMILAR_ORGANIZATION)) {
       status = STATUSES.WARNING;
       result = "exact_match_in_risk_snapshot";
       requiresManualReview = true;
     } else {
       result = "no_live_lookup";
+      if (duplicateEvidence.unavailable) {
+        status = STATUSES.WARNING;
+        result = "duplicate_matches_unavailable";
+        requiresManualReview = true;
+        explanation +=
+          " Canonical duplicate-match ledger is temporarily unavailable, and no live name lookup was available.";
+      }
     }
+
+    if (
+      status === STATUSES.NOT_CHECKED &&
+      (result === "no_live_lookup" || result === "lookup_unavailable")
+    ) {
+      explanation +=
+        " No live lookup was available, so absence of a risk code does not prove there is no match.";
+    }
+
     out.push(
       fact({
         key: "church_name_exact_match",
         label: "Exact church name match at same city and country",
         status,
         result,
-        explanation:
-          "This check uses an exact match on church name, city, and country only. It is not a fuzzy similarity score." +
-          (status === STATUSES.NOT_CHECKED &&
-          (result === "no_live_lookup" || result === "lookup_unavailable")
-            ? " No live lookup was available, so absence of a risk code does not prove there is no match."
-            : ""),
+        explanation,
+        source,
+        checkedAt: status === STATUSES.NOT_CHECKED ? null : checkedAt,
+        supported: true,
+        requiresManualReview,
+      })
+    );
+  }
+
+  // 2b. strong_duplicate_identifier — canonical match ledger only for strong exact signals
+  {
+    let status = STATUSES.NOT_CHECKED;
+    let result = "not_checked";
+    let explanation =
+      "Strong duplicate identifiers come from high-weight exact signals on the canonical match ledger (registration number, phone overlap, church-owned email, website domain). Similar church name alone is never a strong identifier.";
+    let requiresManualReview = false;
+    let source = "registration_duplicate_matches";
+
+    if (duplicateEvidence.unavailable) {
+      status = STATUSES.WARNING;
+      result = "duplicate_matches_unavailable";
+      requiresManualReview = true;
+      explanation +=
+        " Canonical duplicate-match ledger is temporarily unavailable, so strong identifiers are not confirmed.";
+    } else if (!duplicateEvidence.available) {
+      result = "no_duplicate_matches_payload";
+      explanation +=
+        " No canonical duplicate-match payload was supplied for this review. Do not invent a strong-identifier pass.";
+    } else {
+      const active = duplicateEvidence.matches.filter((m) => m.riskLevel !== "none");
+      const failedHit = active.find(
+        (m) =>
+          m.riskLevel === "confirmed" ||
+          m.signals.some((s) => STRONG_IDENTIFIER_FAILED_SIGNALS.includes(s))
+      );
+      const warningHit = active.find(
+        (m) =>
+          m.riskLevel === "strong" ||
+          m.signals.some((s) => STRONG_IDENTIFIER_SIGNALS.includes(s))
+      );
+      if (failedHit) {
+        status = STATUSES.FAILED;
+        result =
+          failedHit.riskLevel === "confirmed"
+            ? "confirmed_match_identifier"
+            : "strong_exact_identifier_failed";
+        requiresManualReview = true;
+        explanation +=
+          " A confirmed match level or high-weight exact identifier (registration number or phone) is present. This does not automatically reject or approve the application.";
+      } else if (warningHit) {
+        status = STATUSES.WARNING;
+        result = "strong_exact_identifier_warning";
+        requiresManualReview = true;
+        explanation +=
+          " A strong-risk match or exact identifier (church-owned email / website domain / strong band) is present. This does not automatically reject or approve the application.";
+      } else if (matchesHaveAnySignal(duplicateEvidence, NAME_MATCH_SIGNALS)) {
+        status = STATUSES.PASSED;
+        result = "name_only_not_strong_identifier";
+        explanation +=
+          " Name overlap exists on the ledger but is not treated as a strong duplicate identifier.";
+      } else {
+        status = STATUSES.PASSED;
+        result = "no_strong_identifier";
+        explanation += " No strong exact identifier signals were found on stored matches.";
+      }
+    }
+
+    out.push(
+      fact({
+        key: "strong_duplicate_identifier",
+        label: "Strong duplicate identifier",
+        status,
+        result,
+        explanation,
         source,
         checkedAt: status === STATUSES.NOT_CHECKED ? null : checkedAt,
         supported: true,
@@ -497,19 +668,57 @@ async function buildSupportedFacts(app, deps, checkedAt) {
   // 6. risk_decision_present
   {
     const present = Boolean(app.riskDecision);
+    const highRiskDecisions = duplicateEvidence.available
+      ? duplicateEvidence.matches.filter(
+          (m) => m.reviewDecision && HIGH_RISK_REVIEW_DECISIONS.includes(m.reviewDecision)
+        )
+      : [];
+    let status = present ? STATUSES.PASSED : STATUSES.NOT_CHECKED;
+    let result = present ? app.riskDecision : "absent";
+    let requiresManualReview = !present || app.riskDecision === "review_required";
+    let explanation = present
+      ? `A stored risk decision is present (${app.riskDecision}). This reports presence only and does not mean low risk.`
+      : "No stored risk decision is present. A missing risk decision does not mean low risk.";
+    let source = "risk_snapshot";
+
+    if (highRiskDecisions.length) {
+      source = "risk_snapshot_and_duplicate_matches";
+      requiresManualReview = true;
+      if (present && app.riskDecision === "allow") {
+        status = STATUSES.WARNING;
+        result = "allow_with_high_risk_duplicate_decision";
+      } else if (present && app.riskDecision === "reject") {
+        status = STATUSES.FAILED;
+        result = "reject";
+      } else if (present) {
+        status = STATUSES.WARNING;
+        result = String(app.riskDecision);
+      } else {
+        status = STATUSES.WARNING;
+        result = "high_risk_duplicate_decision_without_risk_snapshot";
+      }
+      explanation +=
+        " Canonical duplicate-match review includes confirmed_duplicate or impersonation_concern. That high-risk evidence is preserved and does not automatically reject or approve.";
+    } else if (
+      duplicateEvidence.available &&
+      duplicateEvidence.matches.some((m) => m.reviewDecision === "different_church")
+    ) {
+      source = "risk_snapshot_and_duplicate_matches";
+      explanation +=
+        " At least one match was reviewed as different_church. Evidence from the match ledger remains available for operators.";
+    }
+
     out.push(
       fact({
         key: "risk_decision_present",
         label: "Existing risk decision",
-        status: present ? STATUSES.PASSED : STATUSES.NOT_CHECKED,
-        result: present ? app.riskDecision : "absent",
-        explanation: present
-          ? `A stored risk decision is present (${app.riskDecision}). This reports presence only and does not mean low risk.`
-          : "No stored risk decision is present. A missing risk decision does not mean low risk.",
-        source: "risk_snapshot",
-        checkedAt: present ? app.riskDecidedAt || checkedAt : null,
+        status,
+        result,
+        explanation,
+        source,
+        checkedAt: present || highRiskDecisions.length ? app.riskDecidedAt || checkedAt : null,
         supported: true,
-        requiresManualReview: !present || app.riskDecision === "review_required",
+        requiresManualReview,
       })
     );
   }
@@ -603,6 +812,72 @@ async function buildSupportedFacts(app, deps, checkedAt) {
     );
   }
 
+  // 9b. applicant_email_verified — canonical email-verification status only (uniqueness stays separate)
+  {
+    const emailEvidence = resolveEmailVerificationEvidence(deps.emailVerification);
+    let status = STATUSES.NOT_CHECKED;
+    let result = "email_verification_not_checked";
+    let explanation =
+      "Canonical email-verification status was not supplied for this review. Email uniqueness remains a separate check and does not confirm ownership.";
+    let requiresManualReview = true;
+    let checked = null;
+
+    if (emailEvidence.unavailable) {
+      status = STATUSES.WARNING;
+      result = "email_verification_unavailable";
+      explanation =
+        "Canonical email-verification status is temporarily unavailable. Email uniqueness remains a separate check and is not treated as ownership proof.";
+      requiresManualReview = true;
+    } else if (emailEvidence.available) {
+      if (emailEvidence.status === "verified") {
+        status = STATUSES.PASSED;
+        result = "email_ownership_verified";
+        explanation =
+          "Canonical email-verification status is verified. This confirms applicant email ownership and is separate from email uniqueness.";
+        requiresManualReview = false;
+        checked = checkedAt;
+      } else if (emailEvidence.status === "expired") {
+        status = STATUSES.WARNING;
+        result = "email_verification_expired";
+        explanation =
+          "The latest email-verification token expired without successful ownership confirmation. Sent or expired status is not treated as verified. Email uniqueness remains separate.";
+        requiresManualReview = true;
+      } else if (emailEvidence.status === "sent") {
+        status = STATUSES.NOT_CHECKED;
+        result = "email_verification_sent";
+        explanation =
+          "A verification email was recorded as sent, but ownership has not been confirmed yet. Sent is not treated as verified. Email uniqueness remains separate.";
+        requiresManualReview = true;
+      } else if (emailEvidence.status === "replaced") {
+        status = STATUSES.NOT_CHECKED;
+        result = "email_verification_replaced";
+        explanation =
+          "A previous verification token was replaced. Ownership is not confirmed from the superseded token. Email uniqueness remains separate.";
+        requiresManualReview = true;
+      } else {
+        status = STATUSES.NOT_CHECKED;
+        result = "email_verification_not_sent";
+        explanation =
+          "No email verification has been completed for this application. Not sent is not treated as verified. Email uniqueness remains a separate check.";
+        requiresManualReview = true;
+      }
+    }
+
+    out.push(
+      fact({
+        key: "applicant_email_verified",
+        label: "Applicant email verified",
+        status,
+        result,
+        explanation,
+        source: "registration_email_verification_tokens",
+        checkedAt: checked,
+        supported: true,
+        requiresManualReview,
+      })
+    );
+  }
+
   // 10. duplicate_review_evidence
   {
     const inDuplicateReview = app.applicationStatus === "duplicate_review";
@@ -617,7 +892,79 @@ async function buildSupportedFacts(app, deps, checkedAt) {
     let status = STATUSES.NOT_CHECKED;
     let result = "none";
     let requiresManualReview = true;
-    if (reviewActions.length) {
+    let source = "application_status_and_review_events";
+    let explanation =
+      "Evidence prefers the canonical duplicate-match ledger (risk levels, signals, and allowlisted review decisions). Application status and legacy review events are supporting context only. Decisions never auto-merge, approve, or reject.";
+
+    if (duplicateEvidence.unavailable) {
+      status = STATUSES.WARNING;
+      result = "duplicate_matches_unavailable";
+      source = "registration_duplicate_matches";
+      explanation +=
+        " Canonical duplicate-match ledger is temporarily unavailable.";
+    } else if (duplicateEvidence.available) {
+      source = "registration_duplicate_matches";
+      const matches = duplicateEvidence.matches;
+      const highRisk = matches.filter(
+        (m) => m.reviewDecision && HIGH_RISK_REVIEW_DECISIONS.includes(m.reviewDecision)
+      );
+      const actionable = matches.filter(
+        (m) => m.riskLevel === "possible" || m.riskLevel === "strong" || m.riskLevel === "confirmed"
+      );
+      const unreviewed = actionable.filter((m) => !m.reviewDecision);
+      const differentChurch = matches.filter((m) => m.reviewDecision === "different_church");
+      const completed = matches.filter(
+        (m) => m.reviewDecision && REVIEW_COMPLETION_DECISIONS.includes(m.reviewDecision)
+      );
+
+      if (highRisk.length) {
+        status = STATUSES.FAILED;
+        result =
+          highRisk[0].reviewDecision === "impersonation_concern"
+            ? "impersonation_concern"
+            : "confirmed_duplicate";
+        requiresManualReview = true;
+        explanation +=
+          " High-risk review decision recorded (confirmed_duplicate or impersonation_concern). Prior match evidence is preserved. This does not automatically reject or approve.";
+      } else if (unreviewed.length) {
+        status = STATUSES.WARNING;
+        result =
+          inDuplicateReview || actionable.some((m) => m.riskLevel === "strong" || m.riskLevel === "confirmed")
+            ? "held_for_duplicate_review"
+            : "matches_awaiting_review";
+        explanation +=
+          " Canonical matches with possible/strong/confirmed risk still lack a review decision.";
+      } else if (differentChurch.length && unreviewed.length === 0) {
+        status = STATUSES.MANUALLY_REVIEWED;
+        result = "different_church_reviewed";
+        requiresManualReview = false;
+        explanation +=
+          " Match(es) reviewed as different_church — review completion is satisfied while name/identifier evidence remains preserved on the ledger.";
+      } else if (completed.length && unreviewed.length === 0 && actionable.length) {
+        status = STATUSES.MANUALLY_REVIEWED;
+        result = "matches_reviewed";
+        requiresManualReview = false;
+        explanation +=
+          " Allowlisted review decisions are recorded for actionable matches. Evidence on the ledger is preserved.";
+      } else if (reviewActions.length) {
+        status = STATUSES.MANUALLY_REVIEWED;
+        result = "admin_action_recorded";
+        requiresManualReview = false;
+        source = "application_status_and_review_events";
+      } else if (inDuplicateReview) {
+        status = STATUSES.WARNING;
+        result = "held_for_duplicate_review";
+      } else if (!matches.length) {
+        status = STATUSES.NOT_CHECKED;
+        result = "no_stored_matches";
+        requiresManualReview = false;
+        explanation += " No stored duplicate matches are present for this application.";
+      } else {
+        status = STATUSES.NOT_CHECKED;
+        result = "none";
+        requiresManualReview = false;
+      }
+    } else if (reviewActions.length) {
       status = STATUSES.MANUALLY_REVIEWED;
       result = "admin_action_recorded";
       requiresManualReview = false;
@@ -632,15 +979,15 @@ async function buildSupportedFacts(app, deps, checkedAt) {
       status = STATUSES.WARNING;
       result = "risk_duplicate_signals";
     }
+
     out.push(
       fact({
         key: "duplicate_review_evidence",
         label: "Duplicate review evidence",
         status,
         result,
-        explanation:
-          "Evidence is limited to application status, stored risk reason codes, and review events. This is not a structured per-match duplicate decision log.",
-        source: "application_status_and_review_events",
+        explanation,
+        source,
         checkedAt: status === STATUSES.NOT_CHECKED ? null : checkedAt,
         supported: true,
         requiresManualReview,
@@ -895,6 +1242,107 @@ async function buildSupportedFacts(app, deps, checkedAt) {
 }
 
 /**
+ * Normalize optional duplicateMatches payload from the detail loader (canonical ledger).
+ * Does not run scoring or write decisions; does not invent matches.
+ * @param {unknown} duplicateMatches
+ */
+function resolveDuplicateMatchEvidence(duplicateMatches) {
+  const empty = {
+    available: false,
+    unavailable: false,
+    matches: [],
+  };
+  if (!duplicateMatches || typeof duplicateMatches !== "object") {
+    return empty;
+  }
+  if (duplicateMatches.unavailable) {
+    return {
+      available: true,
+      unavailable: true,
+      matches: [],
+    };
+  }
+  const raw = Array.isArray(duplicateMatches.matches)
+    ? duplicateMatches.matches
+    : Array.isArray(duplicateMatches)
+      ? duplicateMatches
+      : [];
+  const matches = raw
+    .filter((m) => m && typeof m === "object")
+    .map((m) => {
+      const snapshot =
+        m.evidenceSnapshot && typeof m.evidenceSnapshot === "object"
+          ? m.evidenceSnapshot
+          : m.evidence_snapshot && typeof m.evidence_snapshot === "object"
+            ? m.evidence_snapshot
+            : {};
+      const signals = Array.isArray(snapshot.signals)
+        ? snapshot.signals.map((s) => String(s || "").trim()).filter(Boolean)
+        : Array.isArray(m.signals)
+          ? m.signals.map((s) => String(s || "").trim()).filter(Boolean)
+          : Array.isArray(m.reasons)
+            ? m.reasons
+                .map((r) => (r && typeof r === "object" ? r.code : r))
+                .map((s) => String(s || "").trim())
+                .filter(Boolean)
+            : [];
+      return {
+        id: m.id != null ? String(m.id) : null,
+        riskLevel: trimStr(m.riskLevel || m.risk_level).toLowerCase() || "none",
+        score: Number(m.score) || 0,
+        reviewDecision: trimStr(m.reviewDecision || m.review_decision).toLowerCase() || null,
+        reviewReason: trimStr(m.reviewReason || m.review_reason) || null,
+        reviewedAt: m.reviewedAt || m.reviewed_at || null,
+        signals,
+      };
+    });
+  return {
+    available: true,
+    unavailable: false,
+    matches,
+  };
+}
+
+/**
+ * @param {ReturnType<typeof resolveDuplicateMatchEvidence>} evidence
+ * @param {string[]} codes
+ */
+function matchesHaveAnySignal(evidence, codes) {
+  const set = new Set(codes);
+  return evidence.matches.some((m) => m.signals.some((s) => set.has(s)));
+}
+
+/**
+ * Normalize optional emailVerification payload from the detail loader.
+ * Does not reload tokens; does not trust client-submitted verification values.
+ * @param {unknown} emailVerification
+ */
+function resolveEmailVerificationEvidence(emailVerification) {
+  const empty = {
+    available: false,
+    unavailable: false,
+    status: "not_sent",
+  };
+  if (!emailVerification || typeof emailVerification !== "object") {
+    return empty;
+  }
+  if (emailVerification.unavailable) {
+    return {
+      available: true,
+      unavailable: true,
+      status: "not_sent",
+    };
+  }
+  const status = trimStr(emailVerification.status).toLowerCase();
+  const allowed = new Set(["not_sent", "sent", "verified", "expired", "replaced"]);
+  return {
+    available: true,
+    unavailable: false,
+    status: allowed.has(status) ? status : "not_sent",
+  };
+}
+
+/**
  * Normalize optional phoneVerification payload from the detail loader.
  * Does not reload attempts; does not trust client-submitted verification values.
  * @param {unknown} phoneVerification
@@ -968,6 +1416,8 @@ function resolvePhoneVerificationEvidence(phoneVerification) {
  *   findOccupyingPhoneMatch?: Function,
  *   findSimilarOrganizationMatch?: Function,
  *   findUserByEmail?: Function,
+ *   phoneVerification?: object,
+ *   emailVerification?: object,
  * }} [input]
  */
 async function buildRegistrationVerificationFacts(input = {}) {
@@ -985,6 +1435,8 @@ async function buildRegistrationVerificationFacts(input = {}) {
     findSimilarOrganizationMatch: input.findSimilarOrganizationMatch,
     findUserByEmail: input.findUserByEmail,
     phoneVerification: input.phoneVerification,
+    emailVerification: input.emailVerification,
+    duplicateMatches: input.duplicateMatches,
   };
 
   const supported = await buildSupportedFacts(app, deps, checkedAt);
@@ -1027,8 +1479,15 @@ async function buildRegistrationVerificationFacts(input = {}) {
 module.exports = {
   STATUSES,
   FACT_DEFS,
+  STRONG_IDENTIFIER_SIGNALS,
+  STRONG_IDENTIFIER_FAILED_SIGNALS,
+  NAME_MATCH_SIGNALS,
+  HIGH_RISK_REVIEW_DECISIONS,
+  REVIEW_COMPLETION_DECISIONS,
   buildRegistrationVerificationFacts,
   computeApprovalEligible,
   computeProvisioningPrerequisites,
   resolvePhoneVerificationEvidence,
+  resolveEmailVerificationEvidence,
+  resolveDuplicateMatchEvidence,
 };

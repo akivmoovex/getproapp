@@ -18,7 +18,7 @@ const ITEM_DEFS = Object.freeze([
     key: "applicant_email_verified",
     label: "Applicant email verified",
     required: true,
-    actionTarget: "#reg-verification",
+    actionTarget: "#reg-email-verification",
     sourceFactKeys: ["applicant_email_verified"],
   },
   {
@@ -164,7 +164,7 @@ function deriveItems(facts, reviewRecommendation) {
         status: STATUSES.NOT_AVAILABLE,
         supported: false,
         explanation:
-          "Applicant email ownership is not stored by BlessBoard registration today. Email uniqueness or delivery is not treated as verification.",
+          "Applicant email ownership evidence is not available. Email uniqueness or delivery is not treated as verification.",
         sourceFactKeys: ["applicant_email_verified"],
       });
     }
@@ -172,13 +172,23 @@ function deriveItems(facts, reviewRecommendation) {
       return item(ITEM_DEFS[0], {
         status: STATUSES.COMPLETE,
         supported: true,
-        explanation: "Canonical evidence confirms applicant email ownership.",
+        explanation: "Canonical email-verification status confirms applicant email ownership.",
+      });
+    }
+    if (emailVerified.status === "warning") {
+      return item(ITEM_DEFS[0], {
+        status: STATUSES.WARNING,
+        supported: true,
+        explanation:
+          emailVerified.explanation ||
+          "Applicant email ownership needs review. Expired or unavailable verification status is not treated as verified.",
       });
     }
     return item(ITEM_DEFS[0], {
       status: STATUSES.INCOMPLETE,
       supported: true,
-      explanation: "Applicant email ownership has not been confirmed.",
+      explanation:
+        "Applicant email ownership has not been confirmed. Sent or not-sent status is not treated as verified.",
     });
   })();
 
@@ -260,9 +270,11 @@ function deriveItems(facts, reviewRecommendation) {
   // 4. duplicate_results_reviewed
   const duplicate = getFact(facts, "duplicate_review_evidence");
   const churchName = getFact(facts, "church_name_exact_match");
+  const strongIdentifier = getFact(facts, "strong_duplicate_identifier");
   const duplicateItem = (() => {
     const sourceFactKeys = ["duplicate_review_evidence"];
     if (churchName) sourceFactKeys.push("church_name_exact_match");
+    if (strongIdentifier) sourceFactKeys.push("strong_duplicate_identifier");
 
     if (!duplicate || duplicate.supported === false) {
       return item(ITEM_DEFS[3], {
@@ -274,18 +286,45 @@ function deriveItems(facts, reviewRecommendation) {
       });
     }
     if (
+      duplicate.result === "confirmed_duplicate" ||
+      duplicate.result === "impersonation_concern"
+    ) {
+      return item(ITEM_DEFS[3], {
+        status: STATUSES.MANUAL_REVIEW_REQUIRED,
+        explanation:
+          "Canonical match review recorded confirmed_duplicate or impersonation_concern. High-risk evidence is preserved and does not auto-reject. Similar name alone is not the driver.",
+        sourceFactKeys,
+      });
+    }
+    if (
       duplicate.status === "manually_reviewed" ||
-      duplicate.result === "admin_action_recorded"
+      duplicate.result === "admin_action_recorded" ||
+      duplicate.result === "different_church_reviewed" ||
+      duplicate.result === "matches_reviewed"
     ) {
       let explanation =
-        "Canonical duplicate-review evidence exists (administrator review action recorded).";
+        duplicate.result === "different_church_reviewed"
+          ? "Canonical match(es) reviewed as different_church. Review completion is satisfied while prior match evidence remains preserved."
+          : "Canonical duplicate-review evidence exists (administrator review decision recorded).";
       if (recCode === "high_duplicate_risk") {
         explanation +=
           " Advisory recommendation context indicates elevated duplicate risk; confirm the recorded review still applies.";
       }
+      if (strongIdentifier && strongIdentifier.status === "failed") {
+        explanation +=
+          " Strong identifier evidence remains on the ledger and must stay visible to operators.";
+      }
       return item(ITEM_DEFS[3], {
         status: STATUSES.COMPLETE,
         explanation,
+        sourceFactKeys,
+      });
+    }
+    if (duplicate.status === "failed") {
+      return item(ITEM_DEFS[3], {
+        status: STATUSES.MANUAL_REVIEW_REQUIRED,
+        explanation:
+          "Canonical duplicate-review evidence indicates a high-risk decision. No automatic rejection is applied.",
         sourceFactKeys,
       });
     }
@@ -303,6 +342,17 @@ function deriveItems(facts, reviewRecommendation) {
         status: STATUSES.MANUAL_REVIEW_REQUIRED,
         explanation:
           "An exact church-name match exists, but structured duplicate-review evidence is incomplete. Similar name alone does not complete this item.",
+        sourceFactKeys,
+      });
+    }
+    if (
+      strongIdentifier &&
+      (strongIdentifier.status === "failed" || strongIdentifier.status === "warning")
+    ) {
+      return item(ITEM_DEFS[3], {
+        status: STATUSES.MANUAL_REVIEW_REQUIRED,
+        explanation:
+          "Strong exact identifier evidence is present on the match ledger without a completing review decision.",
         sourceFactKeys,
       });
     }

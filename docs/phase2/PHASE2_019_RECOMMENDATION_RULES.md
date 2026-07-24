@@ -86,15 +86,19 @@ Return only when **supported** canonical facts clearly show ineligibility:
 Return when supported evidence shows a **strong** duplicate concern:
 
 - `phone_unique_registration_scope` status `failed`
-- `risk_decision_present` result `reject`
-- `duplicate_review_evidence` warning with result `held_for_duplicate_review`
-- Organization already linked (`organization_linked` passed) while duplicate-review evidence remains active (`held_for_duplicate_review` or `risk_duplicate_signals`)
+- `strong_duplicate_identifier` status `failed` or `warning` (exact identifiers / strong band — **not** name alone)
+- `risk_decision_present` result `reject`, or high-risk duplicate decision conflict (`allow_with_high_risk_duplicate_decision`, `high_risk_duplicate_decision_without_risk_snapshot`)
+- `duplicate_review_evidence` with `confirmed_duplicate` or `impersonation_concern`, or warning with result `held_for_duplicate_review`
+- Organization already linked (`organization_linked` passed) while duplicate-review evidence remains active (`held_for_duplicate_review`, `risk_duplicate_signals`, or `matches_awaiting_review`)
 
 **Do not:**
 
 - Use similar / exact church name alone (`church_name_exact_match` warning → manual review)
 - Invent a duplicate score
 - Treat platform-user email overlap alone as high duplicate risk
+- Auto-approve or auto-reject from match decisions
+
+**Canonical source (054):** `registration_duplicate_matches` via detail loader `listDuplicateMatches` → verification facts.
 
 ### 3. `additional_information_required`
 
@@ -161,7 +165,7 @@ Treating them as `failed` or `not_eligible` would invent a verification gate tha
 | Detail UI | `#reg-recommendation` advisory panel (021); Approve/Reject unchanged |
 | Client-controlled recommendation | Rejected (input is facts only; query/body ignored) |
 | Email / phone verification workflows | Not added |
-| Duplicate scoring | Not added |
+| Duplicate scoring | Consumed indirectly via stored match ledger facts (054); recommendation still does not invent scores |
 
 Operators may still approve under existing Foundation / Growth / Network rules regardless of this advisory code.
 

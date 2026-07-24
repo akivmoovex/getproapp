@@ -103,10 +103,33 @@ function renderRegisterChurchPage(opts) {
   });
 }
 
+/**
+ * Public email-verification result (success / generic failure / rate limit).
+ * Never includes application details or the raw token.
+ * @param {{ authenticated?: boolean, csrfToken?: string|null, outcome?: string }} opts
+ */
+function renderEmailVerificationResultPage(opts) {
+  const raw = opts && opts.outcome != null ? String(opts.outcome) : "invalid";
+  const outcome =
+    raw === "verified" || raw === "rate_limited" ? raw : "invalid";
+  return renderApexView("apex/email-verification-result.ejs", {
+    ...shellLocals(opts),
+    pageTitle:
+      outcome === "verified"
+        ? "Email verified"
+        : outcome === "rate_limited"
+          ? "Too many requests"
+          : "Verification unavailable",
+    activeNav: "email-verification",
+    outcome,
+  });
+}
+
 module.exports = {
   renderFeaturesPage,
   renderForChurchesPage,
   renderPricingPage,
   renderDirectoryPage,
   renderRegisterChurchPage,
+  renderEmailVerificationResultPage,
 };

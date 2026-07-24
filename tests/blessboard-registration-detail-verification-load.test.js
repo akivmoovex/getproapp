@@ -80,8 +80,9 @@ describe("loadRegistrationVerificationForDetail (no Postgres)", () => {
     assert.equal(typeof verification.summary.unsupported, "number");
     assert.equal(verification.checkedAt, NOW);
     const unsupported = verification.facts.filter((f) => f.supported === false);
-    assert.ok(unsupported.length >= 3);
+    assert.ok(unsupported.length >= 2);
     assert.ok(!unsupported.some((f) => f.key === "applicant_identity_confirmed"));
+    assert.ok(!unsupported.some((f) => f.key === "applicant_email_verified"));
     for (const f of unsupported) {
       assert.equal(f.status, STATUSES.NOT_CHECKED);
     }
@@ -179,7 +180,7 @@ describe("loadRegistrationVerificationForDetail (no Postgres)", () => {
     );
     const emailVerified = verification.facts.find((f) => f.key === "applicant_email_verified");
     assert.equal(emailVerified.status, STATUSES.NOT_CHECKED);
-    assert.equal(emailVerified.supported, false);
+    assert.equal(emailVerified.supported, true);
     assert.notEqual(verification.summary.passed, 99);
   });
 

@@ -458,6 +458,6 @@ describe("detail route phoneVerification locals and approval paths", () => {
     );
     assert.ok(phoneIdx > 0 && factsIdx > phoneIdx);
     assert.ok(recIdx > factsIdx && checklistIdx > recIdx);
-    assert.match(source, /\{\s*\.\.\.detailOptions,\s*phoneVerification\s*\}/);
+    assert.match(source, /\{\s*\.\.\.detailOptions,\s*phoneVerification,\s*emailVerification\s*\}/);
   });
 });

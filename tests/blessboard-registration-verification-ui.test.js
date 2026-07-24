@@ -209,7 +209,8 @@ describe("registration verification UI (no Postgres)", () => {
     });
     const html = renderDetail({ verification });
     assert.doesNotMatch(html, /action="[^"]*\/verification"/i);
-    assert.doesNotMatch(html, /name="verification_override"|Run again|Start call|Resend Verification/i);
+    // Email resend (Prompt 040) is allowed on detail; omit dedicated verification workspace controls.
+    assert.doesNotMatch(html, /name="verification_override"|Run again|Start call/i);
     assert.doesNotMatch(html, /overall recommendation|verification complete/i);
     assert.match(html, /data-bb-pa-reg-verification-advisory="1"/);
     assert.match(html, /Verification results are advisory/i);

@@ -60,6 +60,9 @@
     if (code === 'retry_succeeded') return 'Provisioning retry completed.';
     if (code === 'organization_linked') return 'Application linked to the existing organization.';
     if (code === 'phone_attempt_recorded') return 'Phone verification attempt recorded.';
+    if (code === 'email_verification_sent') {
+      return 'Verification email resend was accepted for processing.';
+    }
     return null;
   }
   function errorText(code) {
@@ -67,6 +70,18 @@
     if (code === 'confirm_required') return 'Confirmation is required.';
     if (code === 'invalid') return 'The call attempt could not be recorded. Review the fields and try again.';
     if (code === 'phone_attempt_failed') return 'The call attempt could not be saved right now.';
+    if (code === 'cooldown') {
+      return 'Please wait at least 60 seconds before resending another verification email.';
+    }
+    if (code === 'invalid_email') {
+      return 'The applicant email is missing or invalid.';
+    }
+    if (code === 'email_sending_unavailable') {
+      return 'Email delivery is not configured. A verification token was recorded but no message was sent.';
+    }
+    if (code === 'email_verification_failed') {
+      return 'The verification email could not be processed right now.';
+    }
     if (code === 'not_found') return 'This registration application could not be found.';
     if (code === 'organization_not_found') return 'That organization key was not found.';
     if (code === 'not_provisioned') {
@@ -232,6 +247,8 @@
     <a href="#reg-verification">Verification</a>
     <a href="#reg-approval-checklist">Approval checklist</a>
     <a href="#reg-phone-verification">Phone verification</a>
+    <a href="#reg-email-verification">Email verification</a>
+    <a href="/admin/registration-applications/<%= encodeURIComponent(app.id) %>/duplicates" data-bb-pa-reg-duplicates-nav="1">Duplicate matches</a>
     <a href="#reg-activity">Review activity</a>
   </nav>
 
@@ -1446,6 +1463,168 @@
       </div>
       <% } %>
     </div>
+    <% } %>
+  </section>
+
+  <!-- Email verification (status + resend; no change-email / manual verify) -->
+  <%
+    var evPayload =
+      typeof emailVerification !== 'undefined' && emailVerification && typeof emailVerification === 'object'
+        ? emailVerification
+        : null;
+    var evUnavailable = Boolean(evPayload && evPayload.unavailable);
+    function emailStatusMeta(status) {
+      var s = String(status || '').trim().toLowerCase();
+      if (s === 'verified') return { label: 'Verified', tone: 'success' };
+      if (s === 'sent') return { label: 'Sent', tone: 'warn' };
+      if (s === 'expired') return { label: 'Expired', tone: 'danger' };
+      if (s === 'replaced') return { label: 'Replaced', tone: 'muted' };
+      return { label: 'Not sent', tone: 'muted' };
+    }
+    var evStatusKey = evPayload && evPayload.status != null
+      ? String(evPayload.status).trim().toLowerCase()
+      : 'not_sent';
+    if (
+      evStatusKey !== 'not_sent' &&
+      evStatusKey !== 'sent' &&
+      evStatusKey !== 'verified' &&
+      evStatusKey !== 'expired' &&
+      evStatusKey !== 'replaced'
+    ) {
+      evStatusKey = 'not_sent';
+    }
+    var evStatusMeta = emailStatusMeta(evStatusKey);
+    var evStatusToneClass = toneChip(evStatusMeta.tone);
+    var evEmail = evPayload && displayOrMissing(evPayload.email);
+    var evSentAt = evPayload && evPayload.sentAt ? evPayload.sentAt : null;
+    var evExpiresAt = evPayload && evPayload.expiresAt ? evPayload.expiresAt : null;
+    var evVerifiedAt = evPayload && evPayload.verifiedAt ? evPayload.verifiedAt : null;
+    var evReplacedAt = evPayload && evPayload.invalidatedAt ? evPayload.invalidatedAt : null;
+    var evIsEmpty =
+      Boolean(evPayload) &&
+      !evUnavailable &&
+      evStatusKey === 'not_sent' &&
+      !evEmail &&
+      !evSentAt &&
+      !evExpiresAt &&
+      !evVerifiedAt &&
+      !evReplacedAt;
+    var evResendEmail = evEmail || displayOrMissing(app.contactEmail);
+    var evCanResend = Boolean(displayOrMissing(app.id) && evResendEmail);
+  %>
+  <section
+    id="reg-email-verification"
+    class="bb-pa-panel bb-pa-reg-email<%= evUnavailable ? ' bb-pa-reg-email--unavailable' : '' %>"
+    aria-labelledby="reg-email-verification-title"
+    data-bb-pa-reg-section="email-verification"
+    data-bb-pa-reg-email="1"
+    data-bb-pa-reg-email-unavailable="<%= evUnavailable ? '1' : '0' %>"
+  >
+    <h2 id="reg-email-verification-title" class="bb-pa-section-title">Email verification</h2>
+    <p class="bb-pa-hint" role="note" data-bb-pa-reg-email-intro="1">
+      Review ownership status for the applicant email. Change-email and manual verify controls are not available yet.
+    </p>
+
+    <% if (!evPayload) { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-email-missing="1">Email verification status is not available.</p>
+    <% } else if (evUnavailable) { %>
+    <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-email-unavailable-banner="1">
+      Email verification status is temporarily unavailable. The rest of this application detail remains available.
+    </p>
+    <% } else if (evIsEmpty) { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-email-empty="1">No email verification has been sent for this application.</p>
+    <% } %>
+
+    <% if (evPayload && !evUnavailable && !evIsEmpty) { %>
+    <div class="bb-pa-reg-email__summary" data-bb-pa-reg-email-summary="1">
+      <h3 class="bb-pa-lede">Current status</h3>
+      <dl class="bb-pa-dl bb-pa-reg-email__summary-dl">
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="email">
+          <dt>Email address</dt>
+          <dd data-bb-pa-reg-email-address="1"><%= evEmail || 'Not provided' %></dd>
+        </div>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="status">
+          <dt>Status</dt>
+          <dd data-bb-pa-reg-email-status="1">
+            <span
+              class="bb-pa-chip <%= evStatusToneClass %>"
+              data-bb-pa-reg-email-status-chip="1"
+              data-bb-pa-reg-email-status-value="<%= evStatusKey %>"
+            ><%= evStatusMeta.label %></span>
+          </dd>
+        </div>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="sent">
+          <dt>Sent time</dt>
+          <dd data-bb-pa-reg-email-sent-at="1"><%= evSentAt ? (fmtDate(evSentAt) || 'Not provided') : 'Not provided' %></dd>
+        </div>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="expires">
+          <dt>Expiry</dt>
+          <dd data-bb-pa-reg-email-expires-at="1"><%= evExpiresAt ? (fmtDate(evExpiresAt) || 'Not provided') : 'Not provided' %></dd>
+        </div>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="verified">
+          <dt>Verified time</dt>
+          <dd data-bb-pa-reg-email-verified-at="1"><%= evVerifiedAt ? (fmtDate(evVerifiedAt) || 'Not provided') : 'Not provided' %></dd>
+        </div>
+        <% if (evReplacedAt) { %>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="replaced">
+          <dt>Replaced time</dt>
+          <dd data-bb-pa-reg-email-replaced-at="1"><%= fmtDate(evReplacedAt) || 'Not provided' %></dd>
+        </div>
+        <% } %>
+      </dl>
+    </div>
+    <% } else if (evPayload && !evUnavailable && evIsEmpty) { %>
+    <div class="bb-pa-reg-email__summary" data-bb-pa-reg-email-summary="1">
+      <h3 class="bb-pa-lede">Current status</h3>
+      <dl class="bb-pa-dl bb-pa-reg-email__summary-dl">
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="status">
+          <dt>Status</dt>
+          <dd data-bb-pa-reg-email-status="1">
+            <span
+              class="bb-pa-chip <%= evStatusToneClass %>"
+              data-bb-pa-reg-email-status-chip="1"
+              data-bb-pa-reg-email-status-value="<%= evStatusKey %>"
+            ><%= evStatusMeta.label %></span>
+          </dd>
+        </div>
+      </dl>
+    </div>
+    <% } %>
+
+    <% if (evCanResend) { %>
+    <div class="bb-pa-reg-email__resend" data-bb-pa-reg-email-resend="1">
+      <h3 class="bb-pa-lede">Resend verification email</h3>
+      <p class="bb-pa-reg-email__recipient" data-bb-pa-reg-email-resend-recipient="1">
+        Recipient: <strong><%= evResendEmail %></strong>
+      </p>
+      <p class="bb-pa-hint" role="note" data-bb-pa-reg-email-resend-cooldown="1">
+        Wait at least 60 seconds between resend attempts. Resending replaces any previous unused verification link.
+      </p>
+      <p class="bb-pa-hint" role="note" data-bb-pa-reg-email-resend-no-delivery-claim="1">
+        Resend records a verification request. It does not confirm that the message was delivered, opened, or bounced.
+      </p>
+      <form
+        class="bb-pa-form bb-pa-reg-email__form"
+        method="post"
+        action="/admin/registration-applications/<%= app.id %>/email-verification/resend"
+        data-bb-pa-reg-email-resend-form="1"
+      >
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button class="bb-pa-btn bb-pa-btn--primary" type="submit" data-bb-pa-reg-email-resend-submit="1">
+          Resend verification email
+        </button>
+      </form>
+    </div>
+    <% } else { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-email-resend-omitted="1">
+      Resend is unavailable because the applicant email is missing.
+    </p>
+    <% } %>
+
+    <% if (evPayload) { %>
+    <p class="bb-pa-hint bb-pa-reg-email__provider-note" role="note" data-bb-pa-reg-email-provider-limitation="1">
+      Delivery, bounce, and open tracking are not available. BlessBoard does not receive email-service-provider events yet, so Delivered, Bounced, and Opened are not shown.
+    </p>
     <% } %>
   </section>
 

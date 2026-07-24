@@ -175,12 +175,16 @@ function tenantAbsoluteUrl(hostname, pathWithQuery, env) {
 }
 
 /**
- * Redact transfer query params from log URLs.
+ * Redact transfer query params and public email-verification path tokens from log URLs.
  * @param {string} url
  */
 function redactAuthTransferQuery(url) {
   return String(url || "")
-    .replace(/([?&])(tr|code|transfer)=([^&#]*)/gi, "$1$2=REDACTED");
+    .replace(/([?&])(tr|code|transfer)=([^&#]*)/gi, "$1$2=REDACTED")
+    .replace(
+      /\/register\/email-verification\/(?!result(?:\/|\?|#|$))[^/?#]+/gi,
+      "/register/email-verification/REDACTED"
+    );
 }
 
 module.exports = {

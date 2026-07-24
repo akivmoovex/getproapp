@@ -42,6 +42,15 @@ describe("V5 access URL redaction", () => {
     assert.match(out, /code=REDACTED/);
     assert.doesNotMatch(out, /RAW_TRANSFER_TOKEN|RAW_CODE/);
   });
+
+  it("redacts public email-verification path tokens", () => {
+    const token = "plaintext-verify-token-never-log";
+    const out = redactAuthTransferQuery(`/register/email-verification/${token}?x=1`);
+    assert.match(out, /\/register\/email-verification\/REDACTED/);
+    assert.doesNotMatch(out, new RegExp(token));
+    const result = redactAuthTransferQuery("/register/email-verification/result?outcome=verified");
+    assert.match(result, /\/register\/email-verification\/result\?outcome=verified/);
+  });
 });
 
 describe("V5 request id + error handler", () => {

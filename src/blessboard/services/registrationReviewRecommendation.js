@@ -176,6 +176,7 @@ function buildRegistrationReviewRecommendation(input = {}) {
   const phone = byKey.get("phone_unique_registration_scope");
   const riskDecision = byKey.get("risk_decision_present");
   const duplicateEvidence = byKey.get("duplicate_review_evidence");
+  const strongIdentifier = byKey.get("strong_duplicate_identifier");
   const organizationLinked = byKey.get("organization_linked");
 
   const strongReasons = [];
@@ -191,21 +192,58 @@ function buildRegistrationReviewRecommendation(input = {}) {
     strongBlocking.push(phone.key);
   }
 
-  if (riskDecision && riskDecision.supported && riskDecision.result === "reject") {
-    strongReasons.push(reasonFrom(riskDecision, "Stored risk decision indicates reject."));
+  if (
+    strongIdentifier &&
+    strongIdentifier.supported &&
+    (strongIdentifier.status === "failed" || strongIdentifier.status === "warning") &&
+    strongIdentifier.result !== "duplicate_matches_unavailable" &&
+    strongIdentifier.result !== "no_duplicate_matches_payload"
+  ) {
+    strongReasons.push(
+      reasonFrom(
+        strongIdentifier,
+        "Canonical duplicate matches include a strong exact identifier (not name alone)."
+      )
+    );
+    strongBlocking.push(strongIdentifier.key);
+  }
+
+  if (
+    riskDecision &&
+    riskDecision.supported &&
+    (riskDecision.result === "reject" ||
+      riskDecision.result === "allow_with_high_risk_duplicate_decision" ||
+      riskDecision.result === "high_risk_duplicate_decision_without_risk_snapshot")
+  ) {
+    strongReasons.push(
+      reasonFrom(
+        riskDecision,
+        riskDecision.result === "reject"
+          ? "Stored risk decision indicates reject."
+          : "Risk snapshot conflicts with high-risk duplicate-match review decisions."
+      )
+    );
     strongBlocking.push(riskDecision.key);
   }
 
   if (
     duplicateEvidence &&
     duplicateEvidence.supported &&
-    duplicateEvidence.status === "warning" &&
-    duplicateEvidence.result === "held_for_duplicate_review"
+    (duplicateEvidence.result === "confirmed_duplicate" ||
+      duplicateEvidence.result === "impersonation_concern" ||
+      (duplicateEvidence.status === "warning" &&
+        duplicateEvidence.result === "held_for_duplicate_review") ||
+      (duplicateEvidence.status === "failed" &&
+        (duplicateEvidence.result === "confirmed_duplicate" ||
+          duplicateEvidence.result === "impersonation_concern")))
   ) {
     strongReasons.push(
       reasonFrom(
         duplicateEvidence,
-        "Application is held for duplicate review with explicit duplicate-review evidence."
+        duplicateEvidence.result === "confirmed_duplicate" ||
+          duplicateEvidence.result === "impersonation_concern"
+          ? "Canonical duplicate review recorded confirmed_duplicate or impersonation_concern."
+          : "Application is held for duplicate review with explicit duplicate-review evidence."
       )
     );
     strongBlocking.push(duplicateEvidence.key);
@@ -219,7 +257,8 @@ function buildRegistrationReviewRecommendation(input = {}) {
     duplicateEvidence.supported &&
     duplicateEvidence.status === "warning" &&
     (duplicateEvidence.result === "held_for_duplicate_review" ||
-      duplicateEvidence.result === "risk_duplicate_signals")
+      duplicateEvidence.result === "risk_duplicate_signals" ||
+      duplicateEvidence.result === "matches_awaiting_review")
   ) {
     if (!strongBlocking.includes(organizationLinked.key)) {
       strongReasons.push(

@@ -72,6 +72,14 @@ describe("auth transfer helpers", () => {
     assert.match(redactAuthTransferQuery("/login?tr=SECRET&x=1"), /tr=REDACTED/);
     assert.match(redactAuthTransferQuery("/auth/callback?code=SECRET"), /code=REDACTED/);
     assert.doesNotMatch(redactAuthTransferQuery("/login?tr=SECRET"), /SECRET/);
+    assert.match(
+      redactAuthTransferQuery("/register/email-verification/SECRET_TOKEN"),
+      /\/register\/email-verification\/REDACTED/
+    );
+    assert.doesNotMatch(
+      redactAuthTransferQuery("/register/email-verification/SECRET_TOKEN"),
+      /SECRET_TOKEN/
+    );
   });
 
   it("safeTenantNextPath rejects open redirects and path traversal", () => {

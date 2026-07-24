@@ -1,0 +1,44 @@
+<%#
+  Apex public email-verification result (Phase2 Prompt 041).
+  Locals: authenticated, csrfToken, outcome ('verified' | 'invalid' | 'rate_limited')
+  Never receives or renders the raw token.
+%>
+<%
+  var resultOutcome = typeof outcome !== 'undefined' ? String(outcome || '') : 'invalid';
+  if (resultOutcome !== 'verified' && resultOutcome !== 'rate_limited') {
+    resultOutcome = 'invalid';
+  }
+  var isVerified = resultOutcome === 'verified';
+  var isRateLimited = resultOutcome === 'rate_limited';
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section
+  class="bb-apex-container bb-apex-email-verify"
+  data-bb-apex-page="email-verification-result"
+  data-bb-email-verify-outcome="<%= resultOutcome %>"
+>
+  <div class="bb-apex-email-verify__card" role="status">
+    <% if (isVerified) { %>
+    <h1 class="bb-apex-email-verify__title" data-bb-email-verify-title="1">Email verified</h1>
+    <p class="bb-apex-email-verify__lead" data-bb-email-verify-message="1">
+      Your email address has been confirmed. You may close this window.
+    </p>
+    <% } else if (isRateLimited) { %>
+    <h1 class="bb-apex-email-verify__title" data-bb-email-verify-title="1">Too many requests</h1>
+    <p class="bb-apex-email-verify__lead" data-bb-email-verify-message="1">
+      Please wait a few minutes and try again.
+    </p>
+    <% } else { %>
+    <h1 class="bb-apex-email-verify__title" data-bb-email-verify-title="1">Verification link unavailable</h1>
+    <p class="bb-apex-email-verify__lead" data-bb-email-verify-message="1">
+      This verification link is invalid or has expired.
+    </p>
+    <% } %>
+    <p class="bb-apex-email-verify__actions">
+      <a class="bb-apex-btn bb-apex-btn--primary" href="/" data-bb-email-verify-home="1">Return to BlessBoard</a>
+    </p>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>

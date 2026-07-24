@@ -1886,3 +1886,34 @@ ul.bb-apex-features {
   color: inherit;
 }
 
+
+/* —— Public email verification result (Phase2 Prompt 041) —— */
+.bb-apex-email-verify {
+  padding: 2.5rem 1rem 3.5rem;
+  min-height: 50vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.bb-apex-email-verify__card {
+  width: min(32rem, 100%);
+  margin: 0 auto;
+  padding: 1.5rem 1.35rem;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+.bb-apex-email-verify__title {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  line-height: 1.25;
+}
+.bb-apex-email-verify__lead {
+  margin: 0 0 1.25rem;
+  color: var(--bb-color-muted, #44474e);
+  line-height: 1.5;
+}
+.bb-apex-email-verify__actions {
+  margin: 0;
+}

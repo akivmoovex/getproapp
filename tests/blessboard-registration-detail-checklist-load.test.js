@@ -259,14 +259,12 @@ describe("loadRegistrationApprovalChecklistForDetail (no Postgres)", () => {
     assert.equal(result.summary.complete, 0);
     assert.equal(result.summary.requiredComplete, 0);
     assert.equal(result.summary.requiredOutstanding, 10);
-    assert.ok(result.summary.notAvailable >= 1);
-    assert.ok(result.summary.manualReviewRequired >= 1);
+    assert.equal(result.summary.notAvailable, 0);
+    assert.equal(result.summary.manualReviewRequired, 10);
     for (const item of result.items) {
       assert.notEqual(item.status, CHECKLIST_STATUSES.COMPLETE);
-      assert.ok(
-        item.status === CHECKLIST_STATUSES.NOT_AVAILABLE ||
-          item.status === CHECKLIST_STATUSES.MANUAL_REVIEW_REQUIRED
-      );
+      assert.equal(item.status, CHECKLIST_STATUSES.MANUAL_REVIEW_REQUIRED);
+      assert.equal(item.supported, true);
     }
     assert.doesNotMatch(JSON.stringify(result), /simulated checklist boom/);
     assert.ok(logs.length >= 1);

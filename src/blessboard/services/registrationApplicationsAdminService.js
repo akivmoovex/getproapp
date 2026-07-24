@@ -42,6 +42,9 @@ const {
   buildRegistrationVerificationFacts,
 } = require("./registrationVerificationFacts");
 const {
+  listDuplicateMatches,
+} = require("./registrationDuplicateMatchQueryService");
+const {
   buildRegistrationReviewRecommendation,
   CODES: RECOMMENDATION_CODES,
   LABELS: RECOMMENDATION_LABELS,
@@ -57,6 +60,10 @@ const {
   derivePhoneVerificationSummary,
   SUMMARY_STATUSES: PHONE_VERIFICATION_SUMMARY_STATUSES,
 } = require("./registrationPhoneVerificationService");
+const {
+  getVerificationStatus: getRegistrationEmailVerificationStatus,
+  SUMMARY_STATUSES: EMAIL_VERIFICATION_SUMMARY_STATUSES,
+} = require("./registrationEmailVerificationService");
 const {
   findOccupyingPhoneMatch,
   findSimilarOrganizationMatch,
@@ -268,6 +275,105 @@ function buildSafePhoneVerificationUnavailable() {
 }
 
 /**
+ * Log email-verification status helper failures without exposing internals to clients.
+ * @param {string} message
+ * @param {unknown} [err]
+ * @param {Function} [logFn]
+ */
+function logEmailVerificationFailure(message, err, logFn) {
+  const logger = typeof logFn === "function" ? logFn : console.error;
+  try {
+    logger(
+      "[registration-email-verification]",
+      message,
+      err && err.message ? err.message : ""
+    );
+  } catch {
+    /* ignore logger failure */
+  }
+}
+
+/**
+ * Conservative email-verification payload when status load fails.
+ * Detail page stays available; raw DB errors and tokens are not exposed.
+ */
+function buildSafeEmailVerificationUnavailable() {
+  return {
+    status: EMAIL_VERIFICATION_SUMMARY_STATUSES.NOT_SENT,
+    email: null,
+    sentAt: null,
+    expiresAt: null,
+    verifiedAt: null,
+    invalidatedAt: null,
+    unavailable: true,
+  };
+}
+
+/**
+ * Map getVerificationStatus result to a safe detail payload (no hashes / plaintext).
+ * @param {{ status?: string, token?: object|null }} result
+ */
+function mapEmailVerificationForDetail(result) {
+  const token = result && result.token && typeof result.token === "object" ? result.token : null;
+  const status =
+    result && result.status != null
+      ? String(result.status)
+      : EMAIL_VERIFICATION_SUMMARY_STATUSES.NOT_SENT;
+  return {
+    status,
+    email: token && token.email != null ? String(token.email) : null,
+    sentAt: token && token.sentAt != null ? token.sentAt : null,
+    expiresAt: token && token.expiresAt != null ? token.expiresAt : null,
+    verifiedAt: token && token.verifiedAt != null ? token.verifiedAt : null,
+    invalidatedAt: token && token.invalidatedAt != null ? token.invalidatedAt : null,
+  };
+}
+
+/**
+ * Load email-verification status for the detail view model.
+ * Never throws; never mutates the application; never accepts client emailVerification input.
+ * Never exposes token hashes or plaintext tokens.
+ *
+ * @param {{ query: Function }} db
+ * @param {string} applicationId
+ * @param {{
+ *   getRegistrationEmailVerificationStatus?: Function,
+ *   logEmailVerificationError?: Function,
+ *   emailVerificationRepository?: object,
+ *   now?: Date|string|Function,
+ * }} [options]
+ */
+async function loadRegistrationEmailVerificationForDetail(db, applicationId, options = {}) {
+  const getStatus =
+    typeof options.getRegistrationEmailVerificationStatus === "function"
+      ? options.getRegistrationEmailVerificationStatus
+      : getRegistrationEmailVerificationStatus;
+  const logFn = options.logEmailVerificationError;
+
+  try {
+    const statusDeps = {
+      client: db,
+    };
+    if (options.emailVerificationRepository) {
+      statusDeps.repository = options.emailVerificationRepository;
+    }
+    if (options.now != null) {
+      statusDeps.now =
+        typeof options.now === "function" ? options.now : () => options.now;
+    }
+    const raw = await getStatus(applicationId, statusDeps);
+    return mapEmailVerificationForDetail(raw && typeof raw === "object" ? raw : {});
+  } catch (err) {
+    logEmailVerificationFailure(
+      "email verification status load failed; using safe unavailable fallback",
+      err,
+      logFn
+    );
+    return buildSafeEmailVerificationUnavailable();
+  }
+}
+
+/**
  * Load phone-verification history + derived summary for the detail view model.
  * Never throws; never mutates the application; never accepts client phoneVerification input.
  *
@@ -328,17 +434,14 @@ async function loadRegistrationPhoneVerificationForDetail(db, applicationId, opt
  */
 function buildSafeApprovalChecklistFallback(calculatedAt) {
   const items = APPROVAL_CHECKLIST_ITEM_DEFS.map((def) => {
-    const unsupported = def.key === "applicant_email_verified";
     return {
       key: def.key,
       label: def.label,
-      status: unsupported
-        ? APPROVAL_CHECKLIST_STATUSES.NOT_AVAILABLE
-        : APPROVAL_CHECKLIST_STATUSES.MANUAL_REVIEW_REQUIRED,
+      status: APPROVAL_CHECKLIST_STATUSES.MANUAL_REVIEW_REQUIRED,
       explanation:
         "Approval checklist could not be calculated. Manual review is required. This advisory checklist does not change the current BlessBoard approval gate.",
       sourceFactKeys: Array.isArray(def.sourceFactKeys) ? [...def.sourceFactKeys] : [],
-      supported: !unsupported,
+      supported: true,
       required: Boolean(def.required),
       actionTarget: def.actionTarget == null ? null : String(def.actionTarget),
     };
@@ -351,12 +454,8 @@ function buildSafeApprovalChecklistFallback(calculatedAt) {
       complete: 0,
       incomplete: 0,
       warning: 0,
-      notAvailable: items.filter(
-        (i) => i.status === APPROVAL_CHECKLIST_STATUSES.NOT_AVAILABLE
-      ).length,
-      manualReviewRequired: items.filter(
-        (i) => i.status === APPROVAL_CHECKLIST_STATUSES.MANUAL_REVIEW_REQUIRED
-      ).length,
+      notAvailable: 0,
+      manualReviewRequired: items.length,
       requiredComplete: 0,
       requiredOutstanding: requiredCount,
     },
@@ -422,6 +521,8 @@ function loadRegistrationApprovalChecklistForDetail(
  * Build read-only verification facts for a detail payload.
  * Optional lookup failures degrade to not_checked (service behavior); total build
  * failure returns an empty verification object so the detail page stays usable.
+ * Canonical duplicate matches (when available) feed name / strong-identifier /
+ * review-evidence facts. Does not run scoring writes or auto approve/reject.
  *
  * @param {{ query: Function }} db
  * @param {object} application
@@ -431,8 +532,11 @@ function loadRegistrationApprovalChecklistForDetail(
  *   findOccupyingPhoneMatch?: Function,
  *   findSimilarOrganizationMatch?: Function,
  *   findUserByEmail?: Function,
+ *   listDuplicateMatches?: Function,
+ *   duplicateMatches?: object,
  *   logVerificationError?: Function,
  *   phoneVerification?: object,
+ *   emailVerification?: object,
  * }} [options]
  */
 async function loadRegistrationVerificationForDetail(db, application, contacts, options = {}) {
@@ -444,6 +548,10 @@ async function loadRegistrationVerificationForDetail(db, application, contacts, 
   const phoneVerification =
     options.phoneVerification && typeof options.phoneVerification === "object"
       ? options.phoneVerification
+      : undefined;
+  const emailVerification =
+    options.emailVerification && typeof options.emailVerification === "object"
+      ? options.emailVerification
       : undefined;
 
   const appId = application && application.id != null ? String(application.id) : "";
@@ -515,11 +623,42 @@ async function loadRegistrationVerificationForDetail(db, application, contacts, 
     }
   };
 
+  let duplicateMatches = options.duplicateMatches;
+  if (!duplicateMatches || typeof duplicateMatches !== "object") {
+    const listFn =
+      typeof options.listDuplicateMatches === "function"
+        ? options.listDuplicateMatches
+        : listDuplicateMatches;
+    try {
+      const listed = await listFn(db, appId);
+      if (listed && listed.ok) {
+        duplicateMatches = {
+          available: true,
+          unavailable: false,
+          matches: Array.isArray(listed.matches) ? listed.matches : [],
+        };
+      } else if (listed && listed.status === "not_found") {
+        duplicateMatches = { available: true, unavailable: false, matches: [] };
+      } else if (listed && listed.status === "lookup_error") {
+        duplicateMatches = { available: true, unavailable: true, matches: [] };
+      } else {
+        // Degrade to "no payload" so unit stubs without a match ledger stay honest
+        // without inventing an unavailable warning on every detail load.
+        duplicateMatches = undefined;
+      }
+    } catch (err) {
+      logVerificationFailure("duplicate match list failed", err, logFn);
+      duplicateMatches = undefined;
+    }
+  }
+
   try {
     const verification = await buildFacts({
       application,
       contacts: contacts || [],
       phoneVerification,
+      emailVerification,
+      duplicateMatches,
       findOccupyingPhoneMatch: safePhone,
       findSimilarOrganizationMatch: safeName,
       findUserByEmail: safeEmail,
@@ -536,6 +675,8 @@ async function loadRegistrationVerificationForDetail(db, application, contacts, 
         application,
         contacts: contacts || [],
         phoneVerification,
+        emailVerification,
+        duplicateMatches,
       });
       return {
         facts: Array.isArray(fallback.facts) ? fallback.facts : [],
@@ -1175,11 +1316,16 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
       id,
       detailOptions
     );
+    const emailVerification = await loadRegistrationEmailVerificationForDetail(
+      db,
+      id,
+      detailOptions
+    );
     const verification = await loadRegistrationVerificationForDetail(
       db,
       application,
       contacts,
-      { ...detailOptions, phoneVerification }
+      { ...detailOptions, phoneVerification, emailVerification }
     );
     const reviewRecommendation = loadRegistrationReviewRecommendationForDetail(
       verification,
@@ -1199,6 +1345,7 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
       reviewRecommendation,
       approvalChecklist,
       phoneVerification,
+      emailVerification,
       contacts,
       auditEvents,
       platformAdmins,
@@ -2095,6 +2242,7 @@ module.exports = {
   loadRegistrationReviewRecommendationForDetail,
   loadRegistrationApprovalChecklistForDetail,
   loadRegistrationPhoneVerificationForDetail,
+  loadRegistrationEmailVerificationForDetail,
   updateRegistrationFollowUpStatus,
   markNetworkValidationComplete,
   assignRegistrationSupport,

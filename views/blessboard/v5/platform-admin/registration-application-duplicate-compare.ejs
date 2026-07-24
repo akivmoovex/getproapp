@@ -1,0 +1,393 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var payload = typeof comparison !== 'undefined' && comparison ? comparison : {};
+  var cmp = payload.comparison || {};
+  var match = payload.match || {};
+  var unavailable = Boolean(payload.unavailable);
+  var listHref = payload.listHref || '/admin/registration-applications';
+  var detailHref = payload.detailHref || listHref;
+  var attributes = Array.isArray(cmp.attributes) ? cmp.attributes : [];
+  var reasonTags = Array.isArray(cmp.reasonTags) ? cmp.reasonTags : [];
+  var reasons = Array.isArray(cmp.reasons) ? cmp.reasons : [];
+  var authorizedSubject = cmp.authorizedSubject || {};
+  var authorizedCandidate = cmp.authorizedCandidate || {};
+  var subjectTitle = authorizedSubject.publicName || authorizedSubject.legalName || 'Submitted application';
+  var candidateTitle = authorizedCandidate.publicName
+    || authorizedCandidate.legalName
+    || authorizedCandidate.label
+    || match.candidateLabel
+    || 'Matched record';
+  var candidateTypeLabel = match.matchedRecordTypeLabel || 'Matched record';
+  var decisionOptions = Array.isArray(cmp.decisionOptions) && cmp.decisionOptions.length
+    ? cmp.decisionOptions
+    : [
+        { value: 'different_church', label: 'Different church', reasonRequired: false },
+        { value: 'link_existing_church', label: 'Link existing church', reasonRequired: false },
+        { value: 'additional_branch_request', label: 'Additional branch request', reasonRequired: false },
+        { value: 'clarification_required', label: 'Request clarification', reasonRequired: false },
+        { value: 'senior_review', label: 'Senior review', reasonRequired: false },
+        { value: 'impersonation_concern', label: 'Impersonation concern', reasonRequired: true },
+        { value: 'confirmed_duplicate', label: 'Confirmed duplicate', reasonRequired: true }
+      ];
+  var appId = payload.applicationId || match.applicationId || '';
+  var matchId = payload.matchId || match.id || '';
+  var decisionAction = (appId && matchId)
+    ? '/admin/registration-applications/' + encodeURIComponent(appId) + '/duplicates/' + encodeURIComponent(matchId) + '/decision'
+    : '#';
+  var riskLevel = match.riskLevel || cmp.riskLevel || 'none';
+  var reasonRequiredForStrong = Boolean(cmp.reasonRequiredForStrongMatch)
+    || riskLevel === 'strong'
+    || riskLevel === 'confirmed';
+  var currentDecision = match.reviewDecision || cmp.reviewDecision || null;
+  var currentReviewStatus = match.reviewStatus || (currentDecision ? String(currentDecision).replace(/_/g, ' ') : 'Not reviewed');
+  var currentReason = match.reviewReason || cmp.reviewReason || null;
+  var reviewedByUserId = match.reviewedByUserId || cmp.reviewedByUserId || null;
+  var reviewedAt = match.reviewedAt || cmp.reviewedAt || null;
+  var flashNotice = typeof notice !== 'undefined' ? notice : null;
+  var flashError = typeof error !== 'undefined' ? error : null;
+
+  function labelStatus(s) {
+    return String(s || '').replace(/_/g, ' ') || '—';
+  }
+  function fmtDate(d) {
+    if (!d) return null;
+    try {
+      return new Date(d).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    } catch (e) {
+      return null;
+    }
+  }
+  function noticeText(code) {
+    if (code === 'duplicate_decision_saved') return 'Duplicate review decision saved.';
+    return null;
+  }
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    if (code === 'reason_required') {
+      return 'A reason is required for this decision (strong-match override, impersonation concern, or confirmed duplicate).';
+    }
+    if (code === 'invalid_decision') return 'That review decision is not allowed.';
+    if (code === 'invalid') return 'The decision could not be recorded. Check the fields and try again.';
+    if (code === 'not_found') return 'This duplicate match could not be found.';
+    if (code === 'decision_failed') return 'The decision could not be saved right now.';
+    return null;
+  }
+  var noticeMsg = noticeText(flashNotice);
+  var errorMsg = errorText(flashError);
+  var reviewedAtLabel = fmtDate(reviewedAt);
+%>
+<div
+  class="bb-pa-org-detail bb-pa-reg-duplicate-compare"
+  data-bb-pa-reg-duplicate-compare="1"
+  data-bb-pa-reg-duplicate-compare-screen="1"
+  data-bb-pa-reg-duplicate-compare-unavailable="<%= unavailable ? '1' : '0' %>"
+  data-bb-pa-advisory="1"
+  data-bb-pa-auto-merge="0"
+  data-bb-pa-auto-reject="0"
+  data-bb-pa-auto-approve="0"
+  data-bb-pa-decision-form="1"
+>
+  <header class="bb-pa-page-head bb-pa-reg-duplicate-compare__head">
+    <p class="bb-pa-breadcrumb" data-bb-pa-reg-duplicate-compare-back="1">
+      <a href="<%= listHref %>">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to duplicate matches
+      </a>
+    </p>
+    <h1 class="bb-pa-page-head__title" data-bb-pa-reg-duplicate-compare-title="1">Duplicate comparison</h1>
+    <p class="bb-pa-lede" data-bb-pa-reg-duplicate-compare-lede="1">
+      Compare authorized registration and organization fields, then record a review decision.
+      Recording a decision does not merge, approve, reject, or provision automatically.
+    </p>
+  </header>
+
+  <% if (noticeMsg) { %>
+  <p class="bb-pa-banner bb-pa-banner--ok" role="status" data-bb-pa-reg-duplicate-compare-notice="1">
+    <%= noticeMsg %>
+  </p>
+  <% } %>
+  <% if (errorMsg) { %>
+  <p class="bb-pa-banner bb-pa-banner--danger" role="alert" data-bb-pa-reg-duplicate-compare-error-banner="1">
+    <%= errorMsg %>
+  </p>
+  <% } %>
+
+  <% if (unavailable || !cmp || !attributes.length) { %>
+  <div data-bb-pa-reg-duplicate-compare-error="1">
+    <%- include('../partials/error-state', {
+      title: 'Unable to load comparison',
+      body: 'This duplicate comparison could not be loaded right now. Return to the matches list and try again.',
+      actionHref: listHref,
+      actionLabel: 'Back to duplicate matches'
+    }) %>
+  </div>
+  <% } else { %>
+
+  <div class="bb-pa-panel bb-pa-reg-duplicate-compare__summary" data-bb-pa-reg-duplicate-compare-summary="1">
+    <ul class="bb-pa-reg-overview__chips">
+      <li>
+        <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-reg-duplicate-compare-risk="1">
+          <%= cmp.riskLabel || labelStatus(cmp.riskLevel) %>
+        </span>
+      </li>
+      <li>
+        <span class="bb-pa-chip bb-pa-chip--muted" data-bb-pa-reg-duplicate-compare-score="1">
+          Score <%= cmp.score %>
+        </span>
+      </li>
+      <li>
+        <span class="bb-pa-chip bb-pa-chip--muted" data-bb-pa-reg-duplicate-compare-type="1">
+          <%= candidateTypeLabel %>
+        </span>
+      </li>
+    </ul>
+    <% if (cmp.explanation) { %>
+    <p class="bb-pa-hint" data-bb-pa-reg-duplicate-compare-explanation="1"><%= cmp.explanation %></p>
+    <% } %>
+    <% if (reasonTags.length || reasons.length) { %>
+    <ul class="bb-pa-reg-dup-card__reasons" data-bb-pa-reg-duplicate-compare-reasons="1" aria-label="Match reasons">
+      <% (reasonTags.length ? reasonTags : reasons).forEach(function (tag) { %>
+      <li class="bb-pa-reg-dup-card__reason">
+        <span class="material-symbols-outlined" aria-hidden="true">info</span>
+        <%= tag %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <!-- Desktop: side-by-side comparison -->
+  <section
+    class="bb-pa-reg-duplicate-compare__desktop"
+    aria-labelledby="dup-compare-desktop-heading"
+    data-bb-pa-reg-duplicate-compare-desktop="1"
+  >
+    <h2 id="dup-compare-desktop-heading" class="bb-pa-section-title">Side-by-side comparison</h2>
+    <div class="bb-pa-reg-duplicate-compare__columns" data-bb-pa-reg-duplicate-compare-grid="1">
+      <article class="bb-pa-panel bb-pa-reg-duplicate-compare__side" data-bb-pa-reg-duplicate-compare-subject="1">
+        <p class="bb-pa-reg-duplicates__eyebrow">Submitted application</p>
+        <h3 class="bb-pa-reg-duplicate-compare__side-title"><%= subjectTitle %></h3>
+      </article>
+      <article class="bb-pa-panel bb-pa-reg-duplicate-compare__side" data-bb-pa-reg-duplicate-compare-candidate="1">
+        <p class="bb-pa-reg-duplicates__eyebrow"><%= candidateTypeLabel %></p>
+        <h3 class="bb-pa-reg-duplicate-compare__side-title"><%= candidateTitle %></h3>
+      </article>
+    </div>
+
+    <ul class="bb-pa-reg-duplicate-compare__rows" data-bb-pa-reg-duplicate-compare-rows="1">
+      <% attributes.forEach(function (attr) { %>
+      <li
+        class="bb-pa-reg-duplicate-compare__row bb-pa-reg-duplicate-compare__row--<%= attr.state %>"
+        data-bb-pa-reg-duplicate-compare-attr="<%= attr.key %>"
+        data-compare-state="<%= attr.state %>"
+      >
+        <div class="bb-pa-reg-duplicate-compare__row-label">
+          <span class="material-symbols-outlined" aria-hidden="true"><%= attr.icon %></span>
+          <span><%= attr.label %></span>
+        </div>
+        <div class="bb-pa-reg-duplicate-compare__row-values">
+          <div class="bb-pa-reg-duplicate-compare__value" data-side="subject">
+            <span class="bb-pa-reg-duplicate-compare__value-label">Application</span>
+            <p><%= attr.subjectValue %></p>
+          </div>
+          <div class="bb-pa-reg-duplicate-compare__state" data-bb-pa-reg-duplicate-compare-state="1">
+            <span class="material-symbols-outlined" aria-hidden="true"><%= attr.stateIcon %></span>
+            <span class="bb-pa-reg-duplicate-compare__state-text"><%= attr.stateLabel %></span>
+            <% if (attr.reasonTags && attr.reasonTags.length) { %>
+            <span class="bb-pa-reg-duplicate-compare__state-reason"><%= attr.reasonTags.join(' · ') %></span>
+            <% } %>
+          </div>
+          <div class="bb-pa-reg-duplicate-compare__value" data-side="candidate">
+            <span class="bb-pa-reg-duplicate-compare__value-label">Existing</span>
+            <p><%= attr.candidateValue %></p>
+          </div>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <!-- Mobile: attribute-by-attribute cards -->
+  <section
+    class="bb-pa-reg-duplicate-compare__mobile"
+    aria-labelledby="dup-compare-mobile-heading"
+    data-bb-pa-reg-duplicate-compare-mobile="1"
+  >
+    <h2 id="dup-compare-mobile-heading" class="bb-pa-section-title">Attribute comparison</h2>
+    <ul class="bb-pa-reg-duplicate-compare__attr-cards" data-bb-pa-reg-duplicate-compare-attr-cards="1">
+      <% attributes.forEach(function (attr) { %>
+      <li
+        class="bb-pa-reg-duplicate-compare__attr-card bb-pa-reg-duplicate-compare__attr-card--<%= attr.state %>"
+        data-bb-pa-reg-duplicate-compare-mobile-attr="<%= attr.key %>"
+        data-compare-state="<%= attr.state %>"
+      >
+        <div class="bb-pa-reg-duplicate-compare__attr-card-head">
+          <h3>
+            <span class="material-symbols-outlined" aria-hidden="true"><%= attr.icon %></span>
+            <%= attr.label %>
+          </h3>
+          <p class="bb-pa-reg-duplicate-compare__state" data-bb-pa-reg-duplicate-compare-state="1">
+            <span class="material-symbols-outlined" aria-hidden="true"><%= attr.stateIcon %></span>
+            <span class="bb-pa-reg-duplicate-compare__state-text"><%= attr.stateLabel %></span>
+          </p>
+        </div>
+        <% if (attr.reasonTags && attr.reasonTags.length) { %>
+        <p class="bb-pa-reg-duplicate-compare__state-reason">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <%= attr.reasonTags.join(' · ') %>
+        </p>
+        <% } %>
+        <dl class="bb-pa-dl bb-pa-reg-duplicate-compare__attr-card-dl">
+          <div>
+            <dt>Application</dt>
+            <dd><%= attr.subjectValue %></dd>
+          </div>
+          <div>
+            <dt>Existing</dt>
+            <dd><%= attr.candidateValue %></dd>
+          </div>
+        </dl>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section
+    id="reg-duplicate-decision"
+    class="bb-pa-panel bb-pa-reg-duplicate-compare__decision"
+    aria-labelledby="dup-decision-heading"
+    data-bb-pa-reg-duplicate-decision="1"
+  >
+    <h2 id="dup-decision-heading" class="bb-pa-section-title">Review decision</h2>
+    <p class="bb-pa-hint">
+      Record an advisory decision for this match. This does not merge records, approve the application,
+      reject the application, or provision an organization.
+    </p>
+
+    <div
+      class="bb-pa-reg-duplicate-compare__review-state"
+      data-bb-pa-reg-duplicate-review-state="1"
+      data-review-decision="<%= currentDecision || '' %>"
+    >
+      <h3 class="bb-pa-reg-duplicates__eyebrow">Current review state</h3>
+      <dl class="bb-pa-dl">
+        <div>
+          <dt>Status</dt>
+          <dd data-bb-pa-reg-duplicate-review-status="1"><%= currentReviewStatus %></dd>
+        </div>
+        <% if (currentDecision) { %>
+        <div>
+          <dt>Decision</dt>
+          <dd data-bb-pa-reg-duplicate-review-decision="1"><%= labelStatus(currentDecision) %></dd>
+        </div>
+        <% } %>
+        <% if (currentReason) { %>
+        <div>
+          <dt>Reason on file</dt>
+          <dd data-bb-pa-reg-duplicate-review-reason="1"><%= currentReason %></dd>
+        </div>
+        <% } %>
+        <% if (reviewedByUserId) { %>
+        <div>
+          <dt>Reviewer</dt>
+          <dd data-bb-pa-reg-duplicate-reviewer="1" title="<%= reviewedByUserId %>">
+            Platform admin · <%= String(reviewedByUserId).slice(0, 8) %>…
+          </dd>
+        </div>
+        <% } %>
+        <% if (reviewedAtLabel) { %>
+        <div>
+          <dt>Reviewed at</dt>
+          <dd data-bb-pa-reg-duplicate-reviewed-at="1"><%= reviewedAtLabel %></dd>
+        </div>
+        <% } %>
+      </dl>
+    </div>
+
+    <form
+      class="bb-pa-form bb-pa-reg-duplicate-compare__form"
+      method="post"
+      action="<%= decisionAction %>"
+      data-bb-pa-reg-duplicate-decision-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <input type="hidden" name="return_to" value="compare" />
+
+      <div class="bb-pa-field">
+        <label for="duplicate_decision">Decision</label>
+        <select
+          id="duplicate_decision"
+          name="decision"
+          required
+          data-bb-pa-reg-duplicate-decision-select="1"
+        >
+          <option value="">Select a decision…</option>
+          <% decisionOptions.forEach(function (opt) { %>
+          <option
+            value="<%= opt.value %>"
+            data-reason-required="<%= opt.reasonRequired ? '1' : '0' %>"
+            <%= currentDecision === opt.value ? 'selected' : '' %>
+          ><%= opt.label %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="bb-pa-field">
+        <label for="duplicate_decision_reason">
+          Reason
+          <% if (reasonRequiredForStrong) { %>
+          <span class="bb-pa-req" aria-hidden="true">*</span>
+          <% } %>
+        </label>
+        <textarea
+          id="duplicate_decision_reason"
+          name="reason"
+          rows="4"
+          maxlength="2000"
+          data-bb-pa-reg-duplicate-decision-reason="1"
+          <%= reasonRequiredForStrong ? 'required' : '' %>
+          aria-describedby="duplicate-decision-reason-help"
+          placeholder="Explain the rationale for this decision"
+        ><%= currentReason || '' %></textarea>
+        <p id="duplicate-decision-reason-help" class="bb-pa-hint" data-bb-pa-reg-duplicate-reason-guidance="1">
+          A reason is required for impersonation concern, confirmed duplicate, and when overriding a
+          strong or confirmed match (including different church, clarification, senior review, or
+          additional branch request).
+          <% if (reasonRequiredForStrong) { %>
+          This match is currently <strong><%= labelStatus(riskLevel) %></strong>, so a reason is required.
+          <% } %>
+        </p>
+      </div>
+
+      <div class="bb-pa-reg-duplicate-compare__form-actions">
+        <button type="submit" class="bb-pa-btn bb-pa-btn--primary" data-bb-pa-reg-duplicate-decision-submit="1">
+          Save review decision
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <% } %>
+
+  <p class="bb-pa-reg-duplicates__back">
+    <a href="<%= listHref %>">Back to duplicate matches</a>
+    ·
+    <a href="<%= detailHref %>">Application detail</a>
+  </p>
+
+  <section
+    class="bb-pa-panel bb-pa-reg-duplicates-unavailable"
+    aria-labelledby="pa-reg-dup-compare-unavailable-heading"
+    data-bb-pa-reg-duplicate-compare-deferred="1"
+  >
+    <h2 id="pa-reg-dup-compare-unavailable-heading" class="bb-pa-section-title">Not available on this page</h2>
+    <ul class="bb-pa-domain-unavailable__list">
+      <li data-bb-pa-unavailable="auto-merge">Automatic merge is not available.</li>
+      <li data-bb-pa-unavailable="auto-reject">Automatic rejection is not available.</li>
+      <li data-bb-pa-unavailable="auto-approve">Automatic approval is not available.</li>
+      <li data-bb-pa-unavailable="auto-provision">Automatic provisioning is not available.</li>
+      <li data-bb-pa-unavailable="user-identities">Unrelated user identities are not shown.</li>
+    </ul>
+  </section>
+</div>
+<%- include('../partials/platform-admin-shell-end') %>

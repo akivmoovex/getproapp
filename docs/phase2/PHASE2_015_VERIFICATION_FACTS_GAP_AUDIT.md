@@ -30,12 +30,12 @@ Stitch Checklist expects mandatory items, final reviewer note, gated Approve.
 
 | # | Fact key | User-facing label | Canonical source | Table / column / service | Value type | Derivable now | Reliable pass/fail | Manual review | Last-checked timestamp | Audit evidence | Recommended Phase2 status | Admin explanation (honest) | Missing backend capability |
 |---|----------|-------------------|------------------|--------------------------|------------|---------------|--------------------|---------------|------------------------|----------------|---------------|----------------------------|----------------------------|
-| 1 | `applicant_email_verified` | Applicant email verified | — | No `email_verified_at` / token on application | — | **no** | **no** | Required for true ownership proof | None | None | `not_checked` | Email ownership is not confirmed by BlessBoard registration today. | Persist verification status/token or defer |
+| 1 | `applicant_email_verified` | Applicant email verified | Email verification tokens | Canonical `emailVerification.status` from `registration_email_verification_tokens` (via detail loader) | status enum | **yes** (042) | **yes** for ownership when `verified` | Required when not verified | Token `verified_at` / `expires_at` | Token ledger | `passed` only when `verified`; `not_checked` for `sent`/`not_sent`/`replaced`; `warning` for `expired`/`unavailable` | Sent/expired are **not** verified. Email uniqueness remains a separate fact. | Real SMTP/ESP (delivery); change-email / manual-verify later |
 | 2 | `applicant_email_unique` | Applicant email unique | Risk + auth | `evaluateRegistrationRisk` → `authRepo.findUserByEmail`; code `duplicate_email` | boolean signal + reason code | **partial** | **partial** | Yes when `duplicate_email` or provision `duplicate_email_review` | `risk_decided_at` for snapshot only | `risk_reason_codes`, provision path | `warning` if code present; else `not_checked` (do not invent `passed`) | Checks whether a platform **user** already has this email. Does not prove uniqueness across all pending applications or org contacts unless re-queried. | Pending-app email uniqueness query; org/branch contact scan |
 | 3 | `applicant_phone_unique` | Applicant phone unique | Risk + unique index | `contact_phone_normalized`; `findOccupyingPhoneMatch`; unique index on active phones | normalized E.164 string + reason `duplicate_phone` | **yes** (against registration apps) | **yes** for registration-app occupancy | Optional if conflicting formats suspected | `risk_decided_at` or live re-query | Risk codes; DB unique constraint | Live re-query → `passed`/`failed`; stale snapshot alone → prefer re-check | Phone uniqueness uses normalized E.164 among open/in-flight applications and provisioned/provisioning rows. Not checked against platform users, orgs, churches, branches, or support contacts. | Broader uniqueness scopes if product requires |
-| 4 | `similar_church_name_found` | Similar church name found | Risk | `findSimilarOrganizationMatch` — exact `lower(church_name)` + city + country | reason `similar_organization` | **yes** (exact match only) | **yes** for exact triple; **no** for fuzzy similarity | Yes for product “similar” | `risk_decided_at` | Risk codes | `warning` if code; else live re-query → `passed`/`warning` | Exact same church name, city, and country as another open or provisioned application. Not a fuzzy similarity score. | Fuzzy name matching (explicitly deferred) |
-| 5 | `strong_duplicate_identifier_found` | Strong duplicate identifier found | Risk | `duplicate_phone` (reject), `duplicate_email` (review), prior rejection | reason codes | **partial** | **yes** for phone occupancy; **partial** for email | Yes for email/name | `risk_decided_at` | Risk codes | Map phone → `failed`/`warning`; email → `warning`; none → `not_checked` without live pass claim | Strongest automated signal today is normalized phone occupancy. Email means existing platform user, not ownership proof. | Durable match rows / decisions |
-| 6 | `duplicate_results_reviewed` | Duplicate results reviewed | Status / admin actions | `application_status=duplicate_review`; link-org; approve/reject; `review_events` | status + events | **partial** | **no** as structured “reviewed” | **Yes** | Event `at` in `review_events` | `review_events`, status transitions | `manually_reviewed` only if explicit event/action exists; else `not_checked` | Holding in duplicate review or approving/linking does not equal a structured per-match review decision. | `duplicate_review_decisions` / snapshot JSONB |
+| 4 | `similar_church_name_found` / `church_name_exact_match` | Similar church name found | Risk + match ledger | Live exact triple lookup **or** canonical match signals `exact_church_name` / `exact_name_city_country` (054) | reason / signals | **yes** | **yes** for exact; **no** fuzzy | Yes | Match `updated_at` / live | Risk codes; match ledger | `warning` if name signal; never strong-identifier failure from name alone | Exact name (+ city/country when available). Not a fuzzy score. Name alone → manual review, not high duplicate risk. | Fuzzy name matching (explicitly deferred) |
+| 5 | `strong_duplicate_identifier` / `strong_duplicate_identifier_found` | Strong duplicate identifier found | Match ledger | High-weight signals: registration number, phone overlap, church-owned email, website domain; risk levels `strong`/`confirmed` (054) | signals + risk_level | **yes** (054) | **yes** for stored strong signals | Yes | Match timestamps | `registration_duplicate_matches` | `failed` for phone/reg-number/confirmed; `warning` for other strong exact ids; name-only → not strong | Strongest automated signals from canonical scoring. Does **not** auto-reject. | — |
+| 6 | `duplicate_results_reviewed` / `duplicate_review_evidence` | Duplicate results reviewed | Match ledger decisions | Allowlisted `review_decision` on `registration_duplicate_matches` (+ legacy review_events fallback) | decision enum | **yes** (054) | **yes** for structured decisions | **Yes** | `reviewed_at` | Match ledger; `review_events` | `manually_reviewed` for `different_church` / completing decisions (evidence preserved); `failed` for `confirmed_duplicate` / `impersonation_concern`; else warning/incomplete | Holding in duplicate review is not enough; per-match decisions are canonical. No auto approve/reject. | — |
 | 7 | `applicant_contacted_by_phone` | Applicant contacted by phone | Structured phone attempts | `phoneVerification.summary.applicantContacted` (answered outcomes) | summary | **yes** (032) | **yes** for contact | Informational | Attempt `attempted_at` | Phone attempt ledger | `passed` when answered; `not_checked` with no attempts; `warning` if history unavailable | Support-contact phone notes are **not** verification evidence | — |
 | 8 | `applicant_identity_confirmed` | Applicant identity confirmed | Structured phone attempts | Newest explicit `applicant_identity_status` (`confirmed` / `not_confirmed`); ignore later `not_checked` | attempt fields | **yes** (032) | **yes** | Required | Attempt timestamps | Phone attempt ledger | `passed` / `failed` / `not_checked` / `warning` (unavailable) | Do not infer from answered call, uniqueness, name match, or notes | — |
 | 9 | `applicant_authority_confirmed` | Applicant authority confirmed | Structured phone attempts (+ terms separate) | Newest explicit `applicant_authority_status`; `authority_terms_accepted` remains a separate fact | attempt fields | **yes** (032) | **yes** for authority | Required for Stitch meaning | Attempt timestamps | Phone attempt ledger | `passed` / `failed` / `not_checked` / `warning`; terms alone never confirm authority | Terms/privacy acceptance is supporting context only | — |
@@ -57,17 +57,17 @@ Stitch Checklist expects mandatory items, final reviewer note, gated Approve.
 
 | Question | Finding |
 |----------|---------|
-| **Source field** | **None** on `platform_church_registration_applications` for email verified status |
-| **Confirmation timestamp** | **None** |
-| **Token / confirmation mechanism** | **None** for registration applicant email ownership. Platform users use password/invite flows separately (`blessboard.users.email_normalized`) |
-| **Confirms email ownership?** | **No** |
-| **Applies to applicant or user account?** | Registration stores `contact_email` (lowercased at validation). Provisioning may create/invite a **user** with that email. That is account provisioning, not prior email verification |
-| **Acknowledgement / delivery** | Any registration acknowledgement mail is delivery/notification only — **not** verification (PHASE2_003) |
+| **Source field** | Canonical status from `blessboard.registration_email_verification_tokens` (not a denormalized column on the application row) |
+| **Confirmation timestamp** | Token `verified_at` when status is `verified` |
+| **Token / confirmation mechanism** | Hash-only magic-link tokens; public consume route (041); admin resend (039–040) |
+| **Confirms email ownership?** | **Yes** when status is `verified` — wired into `applicant_email_verified` (Prompt 042). `sent` / `expired` / `not_sent` / `replaced` are **not** treated as verified |
+| **Applies to applicant or user account?** | Registration applicant `contact_email` ownership. Separate from platform user invite/password flows |
+| **Acknowledgement / delivery** | Outbound SMTP/ESP still unavailable; delivery claims must not be invented. Token status may still be `sent` when recorded |
 | **Case normalization** | **Yes** for registration: `validateEmail` lowercases. Platform users: `normalizeEmail` / `email_normalized` |
 | **Uniqueness vs pending applications** | **Not** a dedicated uniqueness constraint on `contact_email`. Risk does **not** flag another pending app with the same email (except soft phone+email idempotency) |
-| **Uniqueness vs platform users** | **Yes** — `duplicate_email` when `findUserByEmail` hits; also provision can enter `duplicate_email_review` |
+| **Uniqueness vs platform users** | **Yes** — `duplicate_email` when `findUserByEmail` hits; also provision can enter `duplicate_email_review`. Uniqueness fact stays separate from ownership |
 | **Uniqueness vs organization / church / branch contacts** | **Not** part of registration risk evaluation |
-| **Safe display** | Always `not_checked` for “email verified”. Email uniqueness may be `warning` from stored `duplicate_email` or live user lookup — **never** invent `passed` without a live uniqueness query documented as limited scope |
+| **Safe display** | Ownership fact from canonical status only. Email uniqueness may be `warning` from stored `duplicate_email` or live user lookup — **never** invent uniqueness `passed` without a live uniqueness query documented as limited scope |
 
 ---
 
@@ -208,10 +208,12 @@ UI flags: `riskReviewActionsAvailable`, `networkApproveAvailable`, `markValidati
 
 | Bucket | Fact keys |
 |--------|-----------|
-| **Reliably derivable now** | `applicant_phone_unique` (registration scope), `similar_church_name_found` (exact), `required_registration_fields_complete`, `requested_plan_eligible`, `application_linked_to_organization`, `existing_risk_decision`, `support_or_follow_up_required`, `approval_eligible_under_current_rules` |
-| **Partially derivable** | `applicant_email_unique`, `strong_duplicate_identifier_found`, `duplicate_results_reviewed`, `requested_organization_key_available`, `provisioning_prerequisites_satisfied`, `final_reviewer_note_entered` |
+| **Reliably derivable now** | `applicant_phone_unique` (registration scope), `similar_church_name_found` / `church_name_exact_match` (exact), `strong_duplicate_identifier` (054 match ledger), `duplicate_results_reviewed` / `duplicate_review_evidence` (054 decisions), `required_registration_fields_complete`, `requested_plan_eligible`, `application_linked_to_organization`, `existing_risk_decision` / `risk_decision_present`, `support_or_follow_up_required`, `approval_eligible_under_current_rules` |
+| **Partially derivable** | `applicant_email_unique`, `requested_organization_key_available`, `provisioning_prerequisites_satisfied`, `final_reviewer_note_entered` |
 | **Supported via phone attempts (032)** | `applicant_contacted_by_phone`, `applicant_identity_confirmed`, `applicant_authority_confirmed` (terms remain separate via `authority_terms_accepted`) |
-| **Unsupported** | `applicant_email_verified`, `registration_documents_complete`, `requested_website_key_available` (as distinct fact) |
+| **Supported via email tokens (042)** | `applicant_email_verified` (canonical status only; uniqueness separate) |
+| **Supported via duplicate matches (054)** | `church_name_exact_match`, `strong_duplicate_identifier`, `duplicate_review_evidence`, `risk_decision_present` (enriched with match decisions) |
+| **Unsupported** | `registration_documents_complete`, `requested_website_key_available` (as distinct fact) |
 
 ---
 
@@ -219,17 +221,19 @@ UI flags: `riskReviewActionsAvailable`, `networkApproveAvailable`, `markValidati
 
 **One smallest batch:** Phase2 **Batch 7 read-only verification-facts service**
 
-### Status — **COMPLETE** (2026-07-23, Prompts 016–018; phone evidence 032 on 2026-07-24)
+### Status — **COMPLETE** (2026-07-23, Prompts 016–018; phone evidence 032; email ownership 042; duplicate evidence 054 on 2026-07-24)
 
 Implemented:
 
 - `src/blessboard/services/registrationVerificationFacts.js` — `buildRegistrationVerificationFacts`
-- Detail loader integration: phone history once → facts (+ `phoneVerification`) → recommendation → checklist
+- Detail loader integration: phone → email → duplicate matches → facts → recommendation → checklist (status/matches loaded once each)
 - Read-only Verification UI on `registration-application-detail.ejs` (`#reg-verification`): summary counts, fact cards, shared status chips, advisory notice
 - Structured phone evidence (032): `applicant_contacted_by_phone`, `applicant_identity_confirmed`, `applicant_authority_confirmed` from attempt summary; support contacts no longer count as verification evidence
-- Tests: facts, loader, phone-evidence facts, UI
+- Email ownership (042): `applicant_email_verified` from canonical email-verification status; sent/expired not treated as verified; approval gate unchanged
+- Duplicate evidence (054): `church_name_exact_match`, `strong_duplicate_identifier`, `duplicate_review_evidence`, `risk_decision_present` from `registration_duplicate_matches`; recommendation + checklist recalculated; **no** auto approve/reject
+- Tests: facts, loader, phone-evidence facts, email-ownership facts, duplicate-evidence facts, UI
 
-Still deferred: dedicated verification route, run-checks, overrides, approval checklist gating, email verification persistence, duplicate scoring, working verification actions.
+Still deferred: dedicated verification route, run-checks, overrides, approval checklist gating, real SMTP/ESP, change-email/manual-verify, working verification actions.
 
 ### Explicit exclusions (unchanged)
 

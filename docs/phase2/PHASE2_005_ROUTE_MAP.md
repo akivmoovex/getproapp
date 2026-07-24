@@ -101,35 +101,56 @@
 | **Redirect** | — |
 | **Stitch** | 13 |
 
+### GET `/register/email-verification/:token` (+ result)
+
+| Field | Value |
+|-------|--------|
+| **Existing or new** | **New — COMPLETE (041)** |
+| **Middleware** | Apex host only; **no** auth; public rate limit |
+| **Permission** | Public (token is the credential) |
+| **CSRF** | N/A (GET consume) |
+| **Service** | `consumeVerificationToken` |
+| **Repository** | `registration_email_verification_tokens` |
+| **View** | `apex/email-verification-result.ejs` via `/register/email-verification/result` |
+| **Validation** | Token present; generic failure otherwise |
+| **Redirect** | `303` → tokenless result (`outcome=verified|invalid`); never to `/admin` |
+| **Stitch** | 13 (public consume) |
+
 ### GET `/admin/registration-applications/:applicationId/duplicates`
 
 | Field | Value |
 |-------|--------|
-| **Existing or new** | **New** |
-| **Middleware** | Same |
-| **Permission** | View applications |
-| **CSRF** | N/A |
-| **Service** | New `listRegistrationDuplicateMatches` (derive from risk + queries) |
-| **Repository** | Existing duplicate finders + org name/city search; optional future child table |
-| **View** | **New** `registration-application-duplicates.ejs` |
-| **Validation** | UUID |
+| **Existing or new** | **New — COMPLETE (049)** |
+| **Middleware** | `requireApex` + `requirePlatformAdmin` |
+| **Permission** | Platform admin (same as application detail) |
+| **CSRF** | N/A (GET read-only) |
+| **Loader** | `loadRegistrationDuplicateMatchesForAdmin` → `listDuplicateMatches` (048) once |
+| **Service** | `registrationDuplicateMatchQueryService.listDuplicateMatches` |
+| **Repository** | Match ledger (047) + batched record enrichment (048) |
+| **View** | `registration-application-duplicates.ejs` (Platform Admin shell) — **COMPLETE** screen (050): mobile cards, empty/error states, advisory score/risk/reasons |
+| **Validation** | Application UUID |
 | **Redirect** | — |
+| **States** | Empty + error; no auto merge/reject; no decision POST; no unrelated user identities |
 | **Stitch** | 14 |
+| **Tests** | Route: `blessboard-registration-duplicate-matches-route.test.js`; screen: `blessboard-registration-duplicate-matches-screen.test.js` |
 
 ### GET `/admin/registration-applications/:applicationId/duplicates/:matchId`
 
 | Field | Value |
 |-------|--------|
-| **Existing or new** | **New** |
-| **Middleware** | Same |
-| **Permission** | View applications |
-| **CSRF** | N/A |
-| **Service** | `getRegistrationDuplicateComparison` |
-| **Repository** | Application + matched org/application by id |
-| **View** | **New** `registration-application-duplicate-compare.ejs` |
-| **Validation** | UUIDs; match may be org key or synthetic match id |
-| **Redirect** | Invalid match → duplicates list |
+| **Existing or new** | **New — COMPLETE (049)** |
+| **Middleware** | `requireApex` + `requirePlatformAdmin` |
+| **Permission** | Platform admin |
+| **CSRF** | N/A (GET read-only) |
+| **Loader** | `loadRegistrationDuplicateComparisonForAdmin` → `getDuplicateComparison` (048) once |
+| **Service** | `registrationDuplicateMatchQueryService.getDuplicateComparison` |
+| **Repository** | Match row + subject application + matched record (approved fields only) |
+| **View** | `registration-application-duplicate-compare.ejs` (Platform Admin shell) — **COMPLETE** screen (051) + decision UI (053): desktop side-by-side + mobile attribute cards; text+icon match highlights; decision form (CSRF, review state, notices); no auto merge/approve/reject |
+| **Validation** | Application + match UUIDs |
+| **Redirect** | Unknown match → `303` → duplicates list |
+| **States** | Error state; decision form when comparison loads; flash notice/error; no auto merge/reject/approve |
 | **Stitch** | 15 |
+| **Tests** | Route: `blessboard-registration-duplicate-matches-route.test.js`; screen: `blessboard-registration-duplicate-comparison-screen.test.js` |
 
 ---
 
@@ -145,10 +166,10 @@ Unless noted: **Middleware** = `requireApex` + `requirePlatformAdmin`; **CSRF** 
 | **Record phone call (CRM)** | `POST …/:id/contact` (method phone) | **Existing** | `addRegistrationSupportContact` | support contacts | method/outcome/note | Remains CRM-only |
 | **Record phone verification attempt** | `POST …/:id/phone-verification/attempts` | **New — COMPLETE (030)** | `recordPhoneVerificationAttempt` | `registration_phone_verification_attempts` | outcome/identity/authority/result | Append-only; audit event deferred |
 | **Verify phone (discrete)** | `POST …/:id/phone-verification/verify` | **New** | set phone verified | nullable columns / review_events | confirm | Still deferred; may share attempt form later |
-| **Resend email verification** | `POST …/:id/email-verification/resend` | **New** | mailer | token store | rate limit | **BACKEND_BLOCKED** until mailer |
+| **Resend email verification** | `POST …/:id/email-verification/resend` | **New — COMPLETE (039)** | `resendRegistrationVerificationEmail` → token create + message builder + send adapter | token store | CSRF + cooldown + email validate | Honest `email_sending_unavailable` until real mailer; never exposes plaintext token |
 | **Change applicant email** | `POST …/:id/email-verification/change-email` | **New** | update email + invalidate tokens | update `contact_email` | email format + confirm | Audit in `review_events` |
 | **Manual email verification** | `POST …/:id/email-verification/manual-verify` | **New** | set verified_at | columns / events | confirm reason | High sensitivity — same role today |
-| **Record duplicate decision** | `POST …/:id/duplicates/:matchId/decision` | **New** | record decision; may call link/reject | JSONB/child + existing link | decision enum | Reuse `linkRegistrationApplicationToOrganization` for “existing” |
+| **Record duplicate decision** | `POST …/:id/duplicates/:matchId/decision` | **New — COMPLETE (052)**; UI **COMPLETE (053)** | `recordDuplicateMatchReviewDecision` | `recordRegistrationDuplicateMatchDecision` + `review_events` (+ org audit when linked) | allowlisted decision; reason required for strong override / different_church on strong / impersonation_concern / confirmed_duplicate | **No** merge/reject/approve/provision; CSRF; session reviewer; form on compare screen; redirect to compare or list |
 | **Record verification override** | `POST …/:id/verification/override` | **New** | append allowlisted override | `review_events` | code + note | Prefer reuse audit JSONB |
 
 ### Existing POSTs to keep (not renamed)

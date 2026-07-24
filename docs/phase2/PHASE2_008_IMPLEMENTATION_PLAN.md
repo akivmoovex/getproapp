@@ -182,7 +182,7 @@
 | **Read-only UI** | **COMPLETE** (Prompt 029) — `#reg-phone-verification` on registration detail (summary + history; empty/unavailable states) |
 | **Record attempt POST** | **COMPLETE** (Prompt 030) — `POST /admin/registration-applications/:id/phone-verification/attempts`; CSRF; `platform_admin`; service once; flash notice; audit event deferred |
 | **Record call attempt form** | **COMPLETE** (Prompt 031) — expandable “Record call attempt” form on registration detail → existing POST; conservative defaults; allowlisted flash notices |
-| **Structured phone → verification facts** | **COMPLETE** (Prompt 032) — detail loader order phone → facts → recommendation → checklist; contacted / identity / authority from summary |
+| **Structured phone → verification facts** | **COMPLETE** (Prompt 032) — contacted / identity / authority from summary; loader now phone → email → facts → recommendation → checklist (email ownership 042) |
 | **Routes** | Detail GET locals + record-attempt POST; dedicated phone-verification workspace GET still deferred; CRM `POST …/contact` remains separate |
 | **Repos** | Attempt table + service + detail load + read-only UI + record POST + form + facts wiring ready; dedicated workspace + discrete verify/fail still deferred |
 | **Tests** | Storage (026, Postgres-gated); service unit (027); detail loader (028); phone UI (029); attempt route (030); record form (031); facts/phone-evidence (032) |
@@ -203,15 +203,28 @@
 
 | Item | Detail |
 |------|--------|
-| **Scope** | Email workspace UI; manual verify / change email if columns exist |
-| **Files** | New EJS; routes; service stubs |
-| **Migration** | Needed for verified_at / status; mailer for resend |
-| **Routes** | **New** GET + POSTs (resend/change/manual) |
-| **Services** | New; resend **BACKEND_BLOCKED** until mailer |
-| **Tests** | Manual verify path; CSRF |
+| **Scope** | Email ownership verification: storage → message/delivery → routes/mailer → UI |
+| **Files** | Migration; repository; `registrationEmailVerificationService.js`; `registrationEmailVerificationMessage.js`; `registrationEmailVerificationDelivery.js`; later EJS/routes |
+| **Migration** | **COMPLETE** (Prompt 034) — `037_registration_email_verification_tokens.sql` (hash-only; one active `sent` token per application) |
+| **Repository** | **COMPLETE** (034) — create / find-by-hash / latest / invalidate / mark-verified |
+| **Services** | **COMPLETE** (034) for pure token create/consume/status; **COMPLETE** (037) message builder; **COMPLETE** (038) `sendRegistrationVerificationEmail` safe unavailable stub; **COMPLETE** (039) `resendRegistrationVerificationEmail` admin orchestration; change/manual/real mailer still deferred |
+| **Message builder** | **COMPLETE** (037) — public URL `/register/email-verification/:token`; HTML escaped; no passwords/sensitive details; no send/log/persist |
+| **Delivery** | **SAFE STUB** (038) — no third-party provider added; default adapter returns `accepted_for_processing: false` and does not claim delivery or log plaintext tokens |
+| **Admin resend route** | **COMPLETE** (039) — `POST /admin/registration-applications/:id/email-verification/resend` (apex + platform admin + CSRF); cooldown; safe redirects; no approval-state changes |
+| **Resend UI** | **COMPLETE** (040) — detail `#reg-email-verification` form (CSRF, visible recipient, 60s guidance, omit if email missing; no token/admin/app hidden fields; no change-email/manual-verify) |
+| **Public verify route** | **COMPLETE** (041) — `GET /register/email-verification/:token` + tokenless result page; apex only; no auth; rate limit; one-time consume; generic invalid; no approval changes |
+| **Ownership → facts / checklist** | **COMPLETE** (042) — `applicant_email_verified` from canonical status; email uniqueness unchanged; recommendation/checklist consume corrected fact only; loader phone → email → facts → recommendation → checklist; status not reloaded; **no** approval-gate change |
+| **Production limitation** | BlessBoard V5 has **no** outbound SMTP/ESP adapter. Production resend records a token then surfaces `email_sending_unavailable`; do not invent Delivered/Bounced/Opened without ESP events. |
+| **Routes** | Admin resend **COMPLETE (039)**; public verify **COMPLETE (041)**; change/manual — **not implemented** |
+| **Tests** | Service stub (034); storage Postgres-gated (034); message builder (037); delivery stub (038); resend route stubs (039); resend UI render (040); public verify route + render (041); ownership facts wiring (042) |
 | **Stitch** | 13 |
-| **Exclusions** | Fake SMTP event timelines |
-| **Done when** | Honest UI for unverified email; manual verify audited **or** explicit defer note |
+| **Exclusions** | Change-email; manual verify; real email sending; approval-gate changes |
+| **Done when** | Admin can issue/consume hash tokens in tests; messages build safely; send path honestly reports unavailable; admin resend route + UI; public verify route; ownership fact wired; mailer later |
+| **Token-storage status** | **COMPLETE** (034) |
+| **Message + delivery-stub status** | **COMPLETE** (037–038) |
+| **Admin resend status** | **COMPLETE** (039–040) |
+| **Public verify status** | **COMPLETE** (041) |
+| **Ownership facts status** | **COMPLETE** (042) |
 
 ---
 
@@ -220,15 +233,30 @@
 | Item | Detail |
 |------|--------|
 | **Scope** | List potential matches for an application |
-| **Files** | New EJS; service to assemble matches; routes |
+| **Files** | `registrationDuplicateNormalization.js`; later EJS + list matcher + routes |
 | **Migration** | Optional JSONB snapshot — start **derive-only** |
-| **Routes** | **New** `GET …/:id/duplicates` |
-| **Services** | New list matcher using repo finders + org search |
-| **Repos** | Existing duplicate helpers + org queries |
-| **Tests** | Risk duplicate fixtures |
+| **Normalization helpers** | **COMPLETE** (Prompt 044) — church name, phone (E.164 reuse), email, website domain, registration number, address; originals preserved; null for unusable; no DB/scoring |
+| **Duplicate scoring** | **COMPLETE** (Prompt 046) — `registrationDuplicateScoring.js` + `PHASE2_046_DUPLICATE_SCORING_RULES.md`; `none`/`possible`/`strong`/`confirmed`; high weight for registration number, verified phone, church-owned email; limited name; weak town; confirmed only with manual evidence; no auto merge/reject/gate changes |
+| **Duplicate match storage** | **COMPLETE** (Prompt 047) — migration `038_registration_duplicate_matches.sql`; repo `replaceRegistrationDuplicateMatches` / `listRegistrationDuplicateMatches` / `getRegistrationDuplicateMatchById` / `recordRegistrationDuplicateMatchDecision`; JSONB evidence only; decisions allowlisted; no routes/UI |
+| **Duplicate match query service** | **COMPLETE** (Prompt 048) — `registrationDuplicateMatchQueryService.js`; batched candidates (apps/orgs/churches/branches/domains/user-by-email); score + store; `runDuplicateCheck` / `listDuplicateMatches` / `getDuplicateComparison`; no routes/UI |
+| **Duplicate matches route + loader** | **COMPLETE** (Prompt 049) — `GET …/:id/duplicates` + `GET …/:id/duplicates/:matchId`; `registrationDuplicateMatchesAdminLoader.js`; PA shell EJS; empty/unavailable; no decision POST; no auto merge/reject |
+| **Duplicate Matches screen** | **COMPLETE** (Prompt 050) — desktop/mobile cards (not table); subject + count summary; risk/score/reasons/location/contact overlap/org status/review status/Compare; empty-state + error-state; CSS `?v=43`; rendering tests |
+| **Duplicate decision POST** | **COMPLETE** (Prompt 052) — `POST …/:id/duplicates/:matchId/decision`; CSRF; allowlisted decisions; conditional reason; session reviewer; ledger write + review_events; no merge/reject/approve/provision |
+| **Duplicate decision UI** | **COMPLETE** (Prompt 053) — decision form on compare screen; seven options; reason guidance; CSRF; review state; flash notices; CSS `?v=45` |
+| **Duplicate evidence → verification** | **COMPLETE** (Prompt 054) — facts/recommendation/checklist consume canonical matches + decisions; name alone → warning; strong identifiers → failed/warning; `different_church` completes review while preserving evidence; `confirmed_duplicate` / `impersonation_concern` → high-risk; **no** auto approve/reject |
+| **Routes** | **COMPLETE** (049) read-only list + compare; decision POST **COMPLETE** (052); decision UI **COMPLETE** (053) |
+| **Services** | Normalization + scoring + storage + query + admin loader + verification wiring (054) ready |
+| **Repos** | Existing duplicate helpers + org queries + match ledger (047) + candidate loaders (048) |
+| **Tests** | Normalization (044); scoring (046); storage Postgres-gated (047); query stubbed + Postgres-gated (048); route stubbed (049); screen rendering (050); decision UI (053); duplicate evidence facts (054) |
 | **Stitch** | 14 |
-| **Exclusions** | ML confidence theater |
+| **Exclusions** | ML confidence theater; fuzzy scores; auto merge/reject; decision POST; Mark Different / Create New / AI panels from Stitch |
 | **Done when** | Matches listed with reasons from real signals |
+| **Normalization status** | **COMPLETE** (044) |
+| **Scoring status** | **COMPLETE** (046) |
+| **Storage status** | **COMPLETE** (047) |
+| **Query service status** | **COMPLETE** (048) |
+| **Route + loader status** | **COMPLETE** (049) |
+| **Screen status** | **COMPLETE** (050) |
 
 ---
 
@@ -237,14 +265,19 @@
 | Item | Detail |
 |------|--------|
 | **Scope** | Side-by-side compare + decisions |
-| **Files** | New EJS; POST decision handler |
-| **Migration** | Optional decision JSONB |
-| **Routes** | **New** GET compare; POST decision; **REUSE** link-organization / reject |
-| **Services** | Comparison assembler + decision recorder |
-| **Tests** | Link + decision audit |
+| **Files** | Compare EJS (049 route + **051 screen** + **053 decision UI COMPLETE**); decision service + POST **COMPLETE** (052) |
+| **Migration** | Match ledger decisions (047) |
+| **Routes** | GET compare **COMPLETE** (049); POST decision **COMPLETE** (052); **REUSE** link-organization / reject on detail (unchanged; not auto-invoked) |
+| **Services** | `registrationDuplicateReviewDecisionService.recordDuplicateMatchReviewDecision` — allowlisted decisions; conditional reason; review_events + optional org audit; `DECISION_OPTIONS` for UI |
+| **Tests** | Compare route (049); comparison screen + decision UI (051/053); decision service + route (052) |
 | **Stitch** | 15 |
-| **Exclusions** | Fraud vendor |
+| **Exclusions** | Fraud vendor; auto merge/reject/approve/provision from decision POST |
 | **Done when** | Different / Link / Reject-or-note paths work with redirects + audit |
+| **GET compare status** | **COMPLETE** (049) |
+| **Compare screen status** | **COMPLETE** (051) — desktop side-by-side; mobile attribute cards; authorized fields only; text+icon highlights |
+| **Decision POST status** | **COMPLETE** (052) |
+| **Decision UI status** | **COMPLETE** (053) — form on compare; seven allowlisted options; reason guidance; CSRF; current review state + reviewer/time; success/error notices; CSS `?v=45`; no auto merge/approve/reject |
+| **Verification wiring status** | **COMPLETE** (054) — detail verification facts + recommendation + checklist from canonical matches/decisions |
 
 ---
 
