@@ -281,6 +281,166 @@
 
 ---
 
+## Batch 15 — Communication / rejection storage (Prompt 062)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | Append-only communications ledger + nullable rejection metadata columns; repository methods only |
+| **Migration** | `039_registration_application_communications.sql` |
+| **Routes** | None |
+| **Services** | None |
+| **Views / CSS** | None |
+| **Repository** | `createRegistrationApplicationCommunication`, `listRegistrationApplicationCommunications`, `findLatestRegistrationApplicationCommunication`, `updateRegistrationRejectionMetadata` |
+| **Tests** | `blessboard-registration-application-communications-storage.test.js` |
+| **Stitch** | 16 / 17 storage foundation (UI later) |
+| **Exclusions** | Routes, EJS, email sending, application-status / follow-up changes, reject route changes, reopen, review_events writes from this batch |
+| **Done when** | Migration + repo + Postgres-gated tests — **met** |
+
+---
+
+## Batch 16 — Communication service (Prompt 063)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | Business rules for internal notes, information requests, applicant messages, history + honest delivery statuses |
+| **Files** | `src/blessboard/services/registrationApplicationCommunicationService.js` |
+| **Migration** | None |
+| **Routes / views** | None |
+| **Tests** | `blessboard-registration-application-communication-service.test.js` (+ 062 storage regression) |
+| **Stitch** | 16 / 17 service foundation |
+| **Exclusions** | Routes, EJS, CSS, rejection/status/follow-up changes, real ESP, reopen, approval |
+| **Done when** | Stubbed unit tests cover validation + delivery honesty — **met** |
+
+---
+
+## Batch 17 — Information-request POST route (Prompt 064)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | `POST /admin/registration-applications/:id/request-information` |
+| **Files** | `platformAdminRoutes.js`; route tests |
+| **Migration** | None |
+| **Service** | `recordInformationRequest` (once) + `updateApplicationSupportFollowUp` (`awaiting_customer`, review event `information_requested`) |
+| **Views / CSS** | None |
+| **Tests** | `blessboard-registration-information-request-route.test.js` |
+| **Exclusions** | EJS/CSS; application_status changes; claim email sent; reopen |
+| **Done when** | Auth/CSRF/validation/service/follow-up/review-event/redirect covered — **met** |
+
+---
+
+## Batch 18 — Request-information form UI (Prompt 065)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | Request Additional Information form on registration detail (`#reg-communications`) |
+| **Files** | `registration-application-detail.ejs`; `platform-admin.css`; shell `?v=47`; form rendering tests |
+| **Migration** | None |
+| **Service / routes** | Unchanged (uses 064 POST) |
+| **Views / CSS** | Section nav **Communication**; single-column `bb-pa-form`; allowlisted notices; no JS |
+| **Tests** | `blessboard-registration-information-request-form.test.js` |
+| **Exclusions** | History list UI; route/service changes; delivery claims |
+| **Done when** | Fields, CSRF, prefill, categories, notices, rendering tests — **met** |
+
+---
+
+## Batch 19 — Communication history loader (Prompt 066)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | Load communication history once on registration detail |
+| **Files** | `registrationApplicationsAdminService.js`; loader tests |
+| **Migration** | None |
+| **Service** | `loadRegistrationCommunicationsForDetail` via `getCommunicationHistory` (once) |
+| **View-model** | `communications = { items, summary, unavailable }` — summary: total, internalNotes, informationRequests, applicantMessages, rejectionNotices, sendingUnavailable, failed, latestCommunicationAt |
+| **Views / CSS / routes** | Unchanged |
+| **Tests** | `blessboard-registration-detail-communications-load.test.js` |
+| **Exclusions** | EJS history UI; writes; application_status; admin email/display on items |
+| **Done when** | Newest-first, empty, unavailable, no-dupe-call, property preservation — **met** |
+
+---
+
+## Batch 20 — Communication history UI (Prompt 067)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | Phase2 Communication Log desktop/mobile UI in `#reg-communications` |
+| **Files** | `registration-application-detail.ejs`; `platform-admin.css`; shell `?v=48`; route locals; rendering tests |
+| **Migration** | None |
+| **View-model** | `communications = { items, summary, unavailable }` |
+| **UI** | Summary counts; card list (not table); empty/unavailable; applicant vs internal blocks; honest delivery (Sent only when status is `sent`) |
+| **Tests** | `blessboard-registration-communications-history-ui.test.js` |
+| **Exclusions** | Edit/delete; rejection workspace; fake delivery KPIs |
+| **Done when** | Summary, cards, empty/unavailable, escape, no Sent claim — **met** |
+
+---
+
+## Batch 21 — Rejection service upgrade (Prompt 068)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | Extend `rejectRegistrationApplication` + `recordRejectionNotice` |
+| **Files** | `registrationApplicationsAdminService.js`; `registrationApplicationCommunicationService.js`; unit + PG tests |
+| **Migration** | Uses 039 metadata columns (no new migration) |
+| **Behavior** | `application_status=rejected`; `rejection_reason` compat; category / reapplication / notification status; optional `rejection_notice`; safe adapter only when `notifyApplicant`; one transaction; review event `reject` |
+| **Views / routes** | Unchanged |
+| **Tests** | `blessboard-registration-rejection-service.test.js`; `blessboard-registration-rejection-service-pg.test.js` |
+| **Exclusions** | EJS; route body fields; reopen; automatic deletion; documents |
+| **Done when** | Unit + PG coverage for category, notice, honest notify, legacy reason — **met** |
+
+---
+
+## Batch 22 — Rejection route upgrade (Prompt 069)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | `POST /admin/registration-applications/:id/reject` |
+| **Files** | `platformAdminRoutes.js`; route tests; risk-review redirect assert; allowlisted notice mapping |
+| **Migration** | None |
+| **Behavior** | CSRF + platform_admin; parse category / internal note / applicant explanation / reapplication / notify; session admin + route app id; legacy `rejection_reason` compat; redirect `?notice=application_rejected#reg-rejection` |
+| **Views** | Notice text for `application_rejected` only (form UI deferred) |
+| **Tests** | `blessboard-registration-reject-route.test.js` |
+| **Exclusions** | Rejection Workspace EJS form redesign; reopen |
+| **Done when** | Auth/CSRF/categories/message separation/notify validation/safe errors — **met** |
+
+---
+
+## Batch 23 — Rejection Workspace UI (Prompt 070)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | Phase2 Rejection Workspace desktop/mobile UI at `#reg-rejection` |
+| **Files** | `registration-application-detail.ejs`; `platform-admin.css`; shell `?v=49`; detail model metadata fields; rendering tests |
+| **Form** | Category, internal notes, applicant explanation, reapplication, notify, confirmation checkbox; button **Reject and record decision**; CSRF; email limitation |
+| **Completed state** | Rejected by/date, category, reapplication, notification status, applicant explanation, internal notes; reopen deferred to 071 |
+| **Tests** | `blessboard-registration-rejection-workspace-ui.test.js` |
+| **Exclusions** | Route/service behavior changes (beyond model fields for display); reopen deferred to 071 |
+| **Done when** | Form + completed state + notices + escape + mobile isolation — **met** |
+
+---
+
+## Batch 24 — Reopen rejected application (Prompt 071)
+
+| Item | Detail |
+|------|--------|
+| **Status** | **COMPLETE** (2026-07-24) |
+| **Scope** | Controlled reopen: rejected → submitted |
+| **Files** | `reopenRegistrationApplication`; `POST …/reopen`; completed-state reopen form; CSS `?v=50`; service + route + UI tests |
+| **Behavior** | requireApex + platform_admin + CSRF; reason required; only currently rejected; preserve `rejection_reason` / metadata / communications; append `review_events` `reopen`; no email; redirect `?notice=application_reopened` |
+| **Tests** | `blessboard-registration-reopen-service.test.js`; `blessboard-registration-reopen-route.test.js`; workspace UI reopen asserts |
+| **Exclusions** | Auto email; deleting rejection history; soft “draft reopen” status |
+| **Done when** | Auth/CSRF/status/reason/history/redirect — **met** |
+
+---
+
 ## Batch 14 — Tests and closure
 
 | Item | Detail |

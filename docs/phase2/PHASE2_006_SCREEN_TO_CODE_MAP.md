@@ -251,6 +251,25 @@
 
 ---
 
+## Prompt 8 (storage → service → info-request → history → rejection — 062–071)
+
+### Phase2 - 16 / 17 — Rejection Workspace + Communication Log
+
+| Field | Value |
+|-------|--------|
+| **Stitch** | 16 Rejection Workspace; 17 Communication Log (see `PHASE2_061`) |
+| **Routes / views** | Detail GET passes `communications`; `#reg-communications` history/compose; **`#reg-rejection` workspace UI (070)**; reject POST (069); **reopen POST (071)** |
+| **Migration** | **COMPLETE (062)** — `039_registration_application_communications.sql` |
+| **Rejection metadata** | On application model: `rejectionCategory`, `reapplicationAllowed`, `rejectionNotificationStatus`; `rejection_reason` as internal notes |
+| **Reject route** | **COMPLETE (069)** — upgraded fields; `notice=application_rejected#reg-rejection` |
+| **Rejection UI** | **COMPLETE (070)** — category, internal notes, applicant explanation, reapplication, notify, confirmation checkbox, completed rejected state; reopen form added in **071** |
+| **Reopen** | **COMPLETE (071)** — `POST …/reopen`; rejected → submitted; preserve rejection history/metadata/comms; review event; no email; `notice=application_reopened`; `platform-admin.css?v=50` |
+| **Communication Log** | **COMPLETE (065–067)** |
+| **Tests** | Service/route/history + rejection workspace UI + **reopen** |
+| **Exclusions** | Real ESP; rich-text templates |
+
+---
+
 ## Summary counts (Prompts 1–7)
 
 | Classification | Approx. screens |

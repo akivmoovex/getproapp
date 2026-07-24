@@ -171,6 +171,10 @@ Unless noted: **Middleware** = `requireApex` + `requirePlatformAdmin`; **CSRF** 
 | **Manual email verification** | `POST …/:id/email-verification/manual-verify` | **New** | set verified_at | columns / events | confirm reason | High sensitivity — same role today |
 | **Record duplicate decision** | `POST …/:id/duplicates/:matchId/decision` | **New — COMPLETE (052)**; UI **COMPLETE (053)** | `recordDuplicateMatchReviewDecision` | `recordRegistrationDuplicateMatchDecision` + `review_events` (+ org audit when linked) | allowlisted decision; reason required for strong override / different_church on strong / impersonation_concern / confirmed_duplicate | **No** merge/reject/approve/provision; CSRF; session reviewer; form on compare screen; redirect to compare or list |
 | **Record verification override** | `POST …/:id/verification/override` | **New** | append allowlisted override | `review_events` | code + note | Prefer reuse audit JSONB |
+| **Registration communications storage** | *(no route yet for compose UI)* | **Storage COMPLETE (062)**; **Service COMPLETE (063)** | `registrationApplicationCommunicationService` | `registration_application_communications` + create/list/findLatest; rejection metadata via `updateRegistrationRejectionMetadata` | allowlisted type/channel/direction/delivery; request categories | Append-only ledger; honest `sending_unavailable` |
+| **Request additional information** | `POST …/:id/request-information` | **New — COMPLETE (064)** | `recordInformationRequest` + `updateApplicationSupportFollowUp` | communications insert + follow-up `awaiting_customer` + `review_events` (`information_requested`) | CSRF; platform_admin; form fields only (no form actor/app ids) | Does **not** change `application_status`; notice `information_requested`; never claims email sent when unavailable |
+| **Reject registration** | `POST …/:id/reject` | **Route UPGRADED (069)**; service **COMPLETE (068)** | `rejectRegistrationApplication` + `recordRejectionNotice` | `application_status=rejected`; `rejection_reason`; metadata; optional `rejection_notice` | CSRF; platform_admin; allowlisted category; require internal note; require applicant explanation when notify; form never supplies actor/app ids or delivery status | Redirect `?notice=application_rejected#reg-rejection`; legacy `rejection_reason` still accepted; no raw DB/mailer errors |
+| **Reopen rejected application** | `POST …/:id/reopen` | **New — COMPLETE (071)** | `reopenRegistrationApplication` | `application_status=submitted`; append `review_events` `reopen`; **preserve** `rejection_reason` + metadata + communications | CSRF; platform_admin; reason required; only when currently `rejected` | Redirect `?notice=application_reopened`; no email; form never supplies admin id or status |
 
 ### Existing POSTs to keep (not renamed)
 
@@ -178,6 +182,7 @@ Unless noted: **Middleware** = `requireApex` + `requirePlatformAdmin`; **CSRF** 
 |------|---------|
 | `…/follow-up-status` | Workflow status |
 | `…/reject` | Rejection |
+| `…/reopen` | Reopen rejected application |
 | `…/approve` | Approve + provision |
 | `…/mark-validation-complete` | Network validation |
 | `…/retry-provision` | Retry |

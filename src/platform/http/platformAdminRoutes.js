@@ -100,6 +100,7 @@ const {
   assignRegistrationSupport,
   addRegistrationSupportContact,
   rejectRegistrationApplication,
+  reopenRegistrationApplication,
   approveAndProvisionRegistrationApplication,
   linkRegistrationApplicationToOrganization,
   STATUS: REG_APP_STATUS,
@@ -107,6 +108,7 @@ const {
   MAX_LIMIT: REG_MAX_LIMIT,
   ALLOWED_LIMITS: REG_ALLOWED_LIMITS,
   QUEUE_FILTERS,
+  REJECTION_CATEGORIES,
 } = require("../../blessboard/services/registrationApplicationsAdminService");
 const {
   getOrganizationOnboardingSummary,
@@ -124,6 +126,9 @@ const registrationAppRepo = require("../../blessboard/repositories/platformChurc
 const {
   recordPhoneVerificationAttempt,
 } = require("../../blessboard/services/registrationPhoneVerificationService");
+const {
+  recordInformationRequest,
+} = require("../../blessboard/services/registrationApplicationCommunicationService");
 const {
   resendRegistrationVerificationEmail,
   RESEND_STATUS: EMAIL_RESEND_STATUS,
@@ -506,6 +511,271 @@ function mapEmailVerificationResendError(resultOrErr) {
 }
 
 /**
+ * Parse multi-value form fields into string arrays (arrays, JSON arrays, or comma-separated).
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+function parseRequestInformationListField(value) {
+  if (value == null) return [];
+  if (Array.isArray(value)) {
+    return value.map((v) => String(v).trim()).filter(Boolean);
+  }
+  const raw = String(value).trim();
+  if (!raw) return [];
+  if (raw.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map((v) => String(v).trim()).filter(Boolean);
+      }
+    } catch {
+      /* fall through to comma split */
+    }
+  }
+  return raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Parse information-request form body. Application/admin IDs never come from the form.
+ * @param {object|null|undefined} body
+ * @param {string} applicationId
+ * @returns {{ ok: true, input: object } | { ok: false, code: string }}
+ */
+function parseInformationRequestForm(body, applicationId) {
+  const id = String(applicationId || "").trim();
+  if (!id) return { ok: false, code: "invalid_application_id" };
+  const src = body && typeof body === "object" ? body : {};
+  return {
+    ok: true,
+    input: {
+      applicationId: id,
+      recipient: src.recipient,
+      subject: src.subject,
+      applicantMessage: src.applicant_message,
+      internalNote: src.internal_note,
+      requestCategory: src.request_category,
+      requestedFields: parseRequestInformationListField(src.requested_fields),
+      requestedDocuments: parseRequestInformationListField(src.requested_documents),
+      responseDueAt: src.response_due_at,
+      channel: src.channel,
+    },
+  };
+}
+
+/**
+ * Map information-request failures to safe redirect error codes.
+ * @param {unknown} err
+ * @returns {string}
+ */
+function mapInformationRequestError(err) {
+  const code = err && err.message != null ? String(err.message) : "";
+  if (
+    code === "invalid_application_id" ||
+    code === "not_found" ||
+    code === "application_id_required"
+  ) {
+    return "not_found";
+  }
+  if (
+    code === "email_sending_unavailable" ||
+    code === "sending_unavailable"
+  ) {
+    return "sending_unavailable";
+  }
+  if (
+    code === "invalid_administrator_id" ||
+    code === "recipient_required" ||
+    code === "subject_required" ||
+    code === "applicant_message_required" ||
+    code === "request_category_required" ||
+    code === "invalid_request_category" ||
+    code === "invalid_email_recipient" ||
+    code === "invalid_channel" ||
+    code === "invalid_response_deadline" ||
+    code === "invalid_requested_array" ||
+    code === "invalid" ||
+    code.startsWith("invalid_")
+  ) {
+    return "invalid";
+  }
+  return "information_request_failed";
+}
+
+/**
+ * Parse reject form body. Application/admin IDs and delivery/status never come from the form.
+ * Legacy `rejection_reason` maps to internal decision note for existing tests/forms.
+ * @param {object|null|undefined} body
+ * @param {string} applicationId
+ * @returns {{ ok: true, input: object } | { ok: false, code: string }}
+ */
+function parseRejectForm(body, applicationId) {
+  const id = String(applicationId || "").trim();
+  if (!id) return { ok: false, code: "invalid_application_id" };
+  const src = body && typeof body === "object" ? body : {};
+
+  const internalDecisionNote = String(
+    src.internal_decision_note != null && String(src.internal_decision_note).trim() !== ""
+      ? src.internal_decision_note
+      : src.rejection_reason != null
+        ? src.rejection_reason
+        : ""
+  )
+    .trim()
+    .slice(0, 500);
+  if (!internalDecisionNote || internalDecisionNote.length < 3) {
+    return { ok: false, code: "rejection_reason_required" };
+  }
+
+  let rejectionCategory = null;
+  if (src.rejection_category != null && String(src.rejection_category).trim() !== "") {
+    rejectionCategory = String(src.rejection_category).trim().toLowerCase();
+    if (!REJECTION_CATEGORIES.includes(rejectionCategory)) {
+      return { ok: false, code: "invalid_rejection_category" };
+    }
+  }
+
+  const applicantExplanation = String(
+    src.applicant_explanation != null ? src.applicant_explanation : ""
+  )
+    .trim()
+    .slice(0, 8000);
+
+  const notifyRaw = src.notify_applicant;
+  const notifyApplicant =
+    notifyRaw === true ||
+    notifyRaw === 1 ||
+    notifyRaw === "1" ||
+    String(notifyRaw || "").trim().toLowerCase() === "true" ||
+    String(notifyRaw || "").trim().toLowerCase() === "on" ||
+    String(notifyRaw || "").trim().toLowerCase() === "yes";
+
+  if (notifyApplicant && !applicantExplanation) {
+    return { ok: false, code: "applicant_explanation_required" };
+  }
+
+  const hasReapplication = Object.prototype.hasOwnProperty.call(src, "reapplication_allowed");
+  let reapplicationAllowed;
+  if (hasReapplication) {
+    const raw = src.reapplication_allowed;
+    if (raw == null || String(raw).trim() === "") {
+      reapplicationAllowed = null;
+    } else {
+      reapplicationAllowed =
+        raw === true ||
+        raw === 1 ||
+        raw === "1" ||
+        String(raw).trim().toLowerCase() === "true" ||
+        String(raw).trim().toLowerCase() === "on" ||
+        String(raw).trim().toLowerCase() === "yes";
+    }
+  }
+
+  return {
+    ok: true,
+    input: {
+      applicationId: id,
+      rejectionCategory,
+      internalDecisionNote,
+      applicantExplanation: applicantExplanation || null,
+      reapplicationAllowed: hasReapplication ? reapplicationAllowed : undefined,
+      notifyApplicant,
+    },
+  };
+}
+
+/**
+ * Map reject service / parse failures to safe redirect error codes.
+ * @param {{ status?: string, message?: string }|null|undefined} result
+ * @returns {string}
+ */
+function mapRejectRouteError(result) {
+  const status = result && result.status != null ? String(result.status) : "";
+  const message = result && result.message != null ? String(result.message) : "";
+  if (
+    status === REG_APP_STATUS.NOT_FOUND ||
+    message === "not_found" ||
+    message === "invalid_application_id"
+  ) {
+    return "not_found";
+  }
+  if (status === REG_APP_STATUS.NOT_ELIGIBLE || message === "already_provisioned") {
+    return "not_eligible";
+  }
+  if (
+    status === REG_APP_STATUS.INVALID_INPUT ||
+    message === "invalid_input" ||
+    message === "rejection_reason_required" ||
+    message === "invalid_rejection_category" ||
+    message === "applicant_explanation_required" ||
+    message.startsWith("invalid_")
+  ) {
+    return "invalid";
+  }
+  return "reject_failed";
+}
+
+/**
+ * Parse reopen form body. Application/admin IDs never come from the form.
+ * @param {object|null|undefined} body
+ * @param {string} applicationId
+ * @returns {{ ok: true, input: object } | { ok: false, code: string }}
+ */
+function parseReopenForm(body, applicationId) {
+  const id = String(applicationId || "").trim();
+  if (!id) return { ok: false, code: "invalid_application_id" };
+  const src = body && typeof body === "object" ? body : {};
+  const reason = String(src.reopen_reason != null ? src.reopen_reason : "")
+    .trim()
+    .slice(0, 500);
+  if (!reason || reason.length < 3) {
+    return { ok: false, code: "reopen_reason_required" };
+  }
+  return {
+    ok: true,
+    input: {
+      applicationId: id,
+      reason,
+    },
+  };
+}
+
+/**
+ * Map reopen service / parse failures to safe redirect error codes.
+ * @param {{ status?: string, message?: string }|null|undefined} result
+ * @returns {string}
+ */
+function mapReopenRouteError(result) {
+  const status = result && result.status != null ? String(result.status) : "";
+  const message = result && result.message != null ? String(result.message) : "";
+  if (
+    status === REG_APP_STATUS.NOT_FOUND ||
+    message === "not_found" ||
+    message === "invalid_application_id"
+  ) {
+    return "not_found";
+  }
+  if (
+    status === REG_APP_STATUS.NOT_ELIGIBLE ||
+    message === "not_eligible" ||
+    message === "already_provisioned"
+  ) {
+    return "not_eligible";
+  }
+  if (
+    status === REG_APP_STATUS.INVALID_INPUT ||
+    message === "invalid_input" ||
+    message === "reopen_reason_required" ||
+    message.startsWith("invalid_")
+  ) {
+    return "invalid";
+  }
+  return "reopen_failed";
+}
+
+/**
  * Map duplicate decision service failures to safe redirect error codes.
  * @param {{ status?: string, message?: string }|null|undefined} result
  * @returns {string}
@@ -576,6 +846,15 @@ function createPlatformAdminRouter(deps) {
     typeof deps.recordPhoneVerificationAttempt === "function"
       ? deps.recordPhoneVerificationAttempt
       : recordPhoneVerificationAttempt;
+  const recordInformationRequestFn =
+    typeof deps.recordInformationRequest === "function"
+      ? deps.recordInformationRequest
+      : recordInformationRequest;
+  const updateApplicationSupportFollowUpFn =
+    typeof deps.updateApplicationSupportFollowUp === "function"
+      ? deps.updateApplicationSupportFollowUp
+      : (client, applicationId, patch) =>
+          registrationAppRepo.updateApplicationSupportFollowUp(client, applicationId, patch);
   const resendRegistrationVerificationEmailFn =
     typeof deps.resendRegistrationVerificationEmail === "function"
       ? deps.resendRegistrationVerificationEmail
@@ -592,6 +871,14 @@ function createPlatformAdminRouter(deps) {
     typeof deps.recordDuplicateMatchReviewDecision === "function"
       ? deps.recordDuplicateMatchReviewDecision
       : recordDuplicateMatchReviewDecision;
+  const rejectRegistrationApplicationFn =
+    typeof deps.rejectRegistrationApplication === "function"
+      ? deps.rejectRegistrationApplication
+      : rejectRegistrationApplication;
+  const reopenRegistrationApplicationFn =
+    typeof deps.reopenRegistrationApplication === "function"
+      ? deps.reopenRegistrationApplication
+      : reopenRegistrationApplication;
   const router = express.Router();
 
   function requireApex(req, res, next) {
@@ -1016,6 +1303,7 @@ function createPlatformAdminRouter(deps) {
           approvalChecklist: detail.approvalChecklist || null,
           phoneVerification: detail.phoneVerification || null,
           emailVerification: detail.emailVerification || null,
+          communications: detail.communications || null,
           contacts: detail.contacts || [],
           auditEvents: detail.auditEvents || [],
           platformAdmins: detail.platformAdmins || [],
@@ -1385,6 +1673,81 @@ function createPlatformAdminRouter(deps) {
   );
 
   router.post(
+    "/admin/registration-applications/:id/request-information",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const anchor = "#reg-communications";
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf${anchor}`);
+      }
+
+      const parsed = parseInformationRequestForm(req.body, id);
+      if (!parsed.ok) {
+        return res.redirect(303, `${detailPath}?error=invalid${anchor}`);
+      }
+
+      try {
+        const existing = await findRegistrationApplicationByIdFn(getPool(), id);
+        if (!existing) {
+          return res.redirect(303, `${detailPath}?error=not_found${anchor}`);
+        }
+
+        const result = await recordInformationRequestFn(
+          parsed.input,
+          { platformAdminUserId: req.platformAdminContext.userId },
+          { client: getPool() }
+        );
+
+        if (!result || result.recorded !== true) {
+          return res.redirect(303, `${detailPath}?error=information_request_failed${anchor}`);
+        }
+
+        // Honest delivery: recorded may be sending_unavailable — never claim sent in notice.
+        const deliveryStatus =
+          result.delivery && result.delivery.status != null
+            ? String(result.delivery.status)
+            : "";
+
+        const noteLen =
+          parsed.input.applicantMessage != null
+            ? String(parsed.input.applicantMessage).trim().length
+            : 0;
+        await updateApplicationSupportFollowUpFn(getPool(), id, {
+          followUpStatus: "awaiting_customer",
+          reviewEvent: {
+            at: new Date().toISOString(),
+            action: "information_requested",
+            actor_user_id: req.platformAdminContext.userId,
+            to_status: "awaiting_customer",
+            reason_codes: parsed.input.requestCategory
+              ? [String(parsed.input.requestCategory).trim().toLowerCase()]
+              : [],
+            note_len: noteLen,
+            delivery_status: deliveryStatus || undefined,
+          },
+        });
+
+        return res.redirect(303, `${detailPath}?notice=information_requested${anchor}`);
+      } catch (err) {
+        const error = mapInformationRequestError(err);
+        if (error === "information_request_failed") {
+          // eslint-disable-next-line no-console
+          console.error("[platform-admin] information request failed", {
+            applicationId: id.slice(0, 36),
+            message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
+          });
+        }
+        return res.redirect(303, `${detailPath}?error=${error}${anchor}`);
+      }
+    }
+  );
+
+  router.post(
     "/admin/registration-applications/:id/reject",
     requireApex,
     requirePlatformAdmin,
@@ -1392,27 +1755,107 @@ function createPlatformAdminRouter(deps) {
       setAdminNoStore(res);
       const id = String(req.params.id || "");
       const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const anchor = "#reg-rejection";
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
-        return res.redirect(303, `${detailPath}?error=csrf`);
+        return res.redirect(303, `${detailPath}?error=csrf${anchor}`);
       }
-      const result = await rejectRegistrationApplication(getPool(), {
-        applicationId: id,
-        actorUserId: req.platformAdminContext.userId,
-        reason: req.body && req.body.rejection_reason,
-        deploymentCode: (() => {
-          const deployment = getPlatformDeploymentCode(env);
-          return deployment && deployment.ok ? deployment.code : "blessboard-org-v5";
-        })(),
-      });
-      if (!result.ok) {
-        let error = "reject_failed";
-        if (result.status === REG_APP_STATUS.INVALID_INPUT) error = "invalid";
-        else if (result.status === REG_APP_STATUS.NOT_FOUND) error = "not_found";
-        else if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) error = "not_eligible";
-        return res.redirect(303, `${detailPath}?error=${error}`);
+
+      const parsed = parseRejectForm(req.body, id);
+      if (!parsed.ok) {
+        const error =
+          parsed.code === "invalid_application_id" ? "not_found" : "invalid";
+        return res.redirect(303, `${detailPath}?error=${error}${anchor}`);
       }
-      return res.redirect(303, `${detailPath}?notice=rejected`);
+
+      try {
+        const result = await rejectRegistrationApplicationFn(
+          getPool(),
+          {
+            applicationId: parsed.input.applicationId,
+            platformAdminUserId: req.platformAdminContext.userId,
+            rejectionCategory: parsed.input.rejectionCategory,
+            internalDecisionNote: parsed.input.internalDecisionNote,
+            applicantExplanation: parsed.input.applicantExplanation,
+            reapplicationAllowed: parsed.input.reapplicationAllowed,
+            notifyApplicant: parsed.input.notifyApplicant,
+            deploymentCode: (() => {
+              const deployment = getPlatformDeploymentCode(env);
+              return deployment && deployment.ok ? deployment.code : "blessboard-org-v5";
+            })(),
+          },
+          typeof deps.rejectRegistrationOptions === "object" && deps.rejectRegistrationOptions
+            ? deps.rejectRegistrationOptions
+            : undefined
+        );
+
+        if (!result || !result.ok) {
+          const error = mapRejectRouteError(result);
+          return res.redirect(303, `${detailPath}?error=${error}${anchor}`);
+        }
+
+        // Do not trust client-submitted delivery/status; notice is fixed and honest.
+        return res.redirect(
+          303,
+          `${detailPath}?notice=application_rejected${anchor}`
+        );
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[platform-admin] reject registration failed", {
+          applicationId: id.slice(0, 36),
+          message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
+        });
+        return res.redirect(303, `${detailPath}?error=reject_failed${anchor}`);
+      }
+    }
+  );
+
+  router.post(
+    "/admin/registration-applications/:id/reopen",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const errorAnchor = "#reg-rejection";
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf${errorAnchor}`);
+      }
+
+      const parsed = parseReopenForm(req.body, id);
+      if (!parsed.ok) {
+        const error =
+          parsed.code === "invalid_application_id"
+            ? "not_found"
+            : parsed.code === "reopen_reason_required"
+              ? "invalid"
+              : "invalid";
+        return res.redirect(303, `${detailPath}?error=${error}${errorAnchor}`);
+      }
+
+      try {
+        const result = await reopenRegistrationApplicationFn(getPool(), {
+          applicationId: parsed.input.applicationId,
+          platformAdminUserId: req.platformAdminContext.userId,
+          reason: parsed.input.reason,
+        });
+
+        if (!result || !result.ok) {
+          const error = mapReopenRouteError(result);
+          return res.redirect(303, `${detailPath}?error=${error}${errorAnchor}`);
+        }
+
+        return res.redirect(303, `${detailPath}?notice=application_reopened`);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[platform-admin] reopen registration failed", {
+          applicationId: id.slice(0, 36),
+          message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
+        });
+        return res.redirect(303, `${detailPath}?error=reopen_failed${errorAnchor}`);
+      }
     }
   );
 
@@ -2644,4 +3087,11 @@ module.exports = {
   mapPhoneVerificationAttemptError,
   mapEmailVerificationResendError,
   mapDuplicateDecisionError,
+  parseInformationRequestForm,
+  mapInformationRequestError,
+  parseRejectForm,
+  mapRejectRouteError,
+  parseReopenForm,
+  mapReopenRouteError,
+  REJECTION_CATEGORIES,
 };

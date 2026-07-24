@@ -65,6 +65,10 @@ const {
   SUMMARY_STATUSES: EMAIL_VERIFICATION_SUMMARY_STATUSES,
 } = require("./registrationEmailVerificationService");
 const {
+  getCommunicationHistory,
+  recordRejectionNotice,
+} = require("./registrationApplicationCommunicationService");
+const {
   findOccupyingPhoneMatch,
   findSimilarOrganizationMatch,
 } = require("./registrationRiskDecision");
@@ -307,6 +311,225 @@ function buildSafeEmailVerificationUnavailable() {
     invalidatedAt: null,
     unavailable: true,
   };
+}
+
+const SAFE_COMMUNICATIONS_SUMMARY = Object.freeze({
+  total: 0,
+  internalNotes: 0,
+  informationRequests: 0,
+  applicantMessages: 0,
+  rejectionNotices: 0,
+  sendingUnavailable: 0,
+  failed: 0,
+  latestCommunicationAt: null,
+});
+
+/**
+ * Empty communications view-model (history available, nothing recorded).
+ * @returns {{ items: object[], summary: object, unavailable: false }}
+ */
+function buildEmptyCommunicationsForDetail() {
+  return {
+    items: [],
+    summary: { ...SAFE_COMMUNICATIONS_SUMMARY },
+    unavailable: false,
+  };
+}
+
+/**
+ * Conservative communications payload when history load fails.
+ * Detail page stays available; raw DB/provider errors are not exposed.
+ * @returns {{ items: object[], summary: object, unavailable: true }}
+ */
+function buildSafeCommunicationsUnavailable() {
+  return {
+    items: [],
+    summary: { ...SAFE_COMMUNICATIONS_SUMMARY },
+    unavailable: true,
+  };
+}
+
+/**
+ * Log communication-history load failures without exposing internals to clients.
+ * @param {string} message
+ * @param {unknown} [err]
+ * @param {Function} [logFn]
+ */
+function logCommunicationsFailure(message, err, logFn) {
+  const logger = typeof logFn === "function" ? logFn : console.error;
+  try {
+    logger(
+      "[registration-communications]",
+      message,
+      err && err.message ? err.message : ""
+    );
+  } catch {
+    /* ignore logger failure */
+  }
+}
+
+/**
+ * Present a single communication for the detail view (no admin profile fields).
+ * @param {object} item
+ * @returns {object}
+ */
+function mapCommunicationItemForDetail(item) {
+  const src = item && typeof item === "object" ? item : {};
+  const labels =
+    src.labels && typeof src.labels === "object"
+      ? {
+          communicationType:
+            src.labels.communicationType != null
+              ? String(src.labels.communicationType)
+              : null,
+          channel: src.labels.channel != null ? String(src.labels.channel) : null,
+          direction: src.labels.direction != null ? String(src.labels.direction) : null,
+          deliveryStatus:
+            src.labels.deliveryStatus != null ? String(src.labels.deliveryStatus) : null,
+          requestCategory:
+            src.labels.requestCategory != null ? String(src.labels.requestCategory) : null,
+        }
+      : {
+          communicationType: null,
+          channel: null,
+          direction: null,
+          deliveryStatus: null,
+          requestCategory: null,
+        };
+  return {
+    id: src.id != null ? String(src.id) : null,
+    applicationId: src.applicationId != null ? String(src.applicationId) : null,
+    communicationType:
+      src.communicationType != null ? String(src.communicationType) : "",
+    channel: src.channel != null ? String(src.channel) : "",
+    direction: src.direction != null ? String(src.direction) : "",
+    recipient: src.recipient != null ? String(src.recipient) : null,
+    subject: src.subject != null ? String(src.subject) : null,
+    applicantMessage: src.applicantMessage != null ? String(src.applicantMessage) : null,
+    internalNote: src.internalNote != null ? String(src.internalNote) : null,
+    requestCategory: src.requestCategory != null ? String(src.requestCategory) : null,
+    requestedFields: Array.isArray(src.requestedFields) ? src.requestedFields.slice() : [],
+    requestedDocuments: Array.isArray(src.requestedDocuments)
+      ? src.requestedDocuments.slice()
+      : [],
+    responseDueAt: src.responseDueAt || null,
+    deliveryStatus: src.deliveryStatus != null ? String(src.deliveryStatus) : "",
+    deliveryErrorCode:
+      src.deliveryErrorCode != null ? String(src.deliveryErrorCode) : null,
+    createdByUserId: src.createdByUserId != null ? String(src.createdByUserId) : null,
+    createdAt: src.createdAt || null,
+    labels,
+  };
+}
+
+/**
+ * Sort communications newest first (createdAt, then id).
+ * @param {object[]} items
+ * @returns {object[]}
+ */
+function sortCommunicationsNewestFirst(items) {
+  return items.slice().sort((a, b) => {
+    const ta = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const tb = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    if (tb !== ta) return tb - ta;
+    const idA = a && a.id != null ? String(a.id) : "";
+    const idB = b && b.id != null ? String(b.id) : "";
+    if (idA === idB) return 0;
+    return idA < idB ? 1 : -1;
+  });
+}
+
+/**
+ * Derive summary counts from presented communication items.
+ * @param {object[]} items
+ * @returns {object}
+ */
+function summarizeCommunicationsForDetail(items) {
+  const list = Array.isArray(items) ? items : [];
+  let internalNotes = 0;
+  let informationRequests = 0;
+  let applicantMessages = 0;
+  let rejectionNotices = 0;
+  let sendingUnavailable = 0;
+  let failed = 0;
+
+  for (const item of list) {
+    const type =
+      item && item.communicationType != null
+        ? String(item.communicationType)
+        : "";
+    if (type === "internal_note") internalNotes += 1;
+    else if (type === "information_request") informationRequests += 1;
+    else if (type === "applicant_message") applicantMessages += 1;
+    else if (type === "rejection_notice") rejectionNotices += 1;
+
+    const delivery =
+      item && item.deliveryStatus != null ? String(item.deliveryStatus) : "";
+    if (delivery === "sending_unavailable") sendingUnavailable += 1;
+    else if (delivery === "failed") failed += 1;
+  }
+
+  const latest = list.length > 0 ? list[0] : null;
+  return {
+    total: list.length,
+    internalNotes,
+    informationRequests,
+    applicantMessages,
+    rejectionNotices,
+    sendingUnavailable,
+    failed,
+    latestCommunicationAt: latest && latest.createdAt ? latest.createdAt : null,
+  };
+}
+
+/**
+ * Load communication history for the detail view model.
+ * Never throws; never mutates the application; never accepts client communications input.
+ * Calls getCommunicationHistory at most once. Does not expose administrator email/display names.
+ *
+ * @param {{ query: Function }} db
+ * @param {string} applicationId
+ * @param {{
+ *   getCommunicationHistory?: Function,
+ *   logCommunicationsError?: Function,
+ *   communicationRepository?: object,
+ *   communicationsLimit?: number,
+ * }} [options]
+ */
+async function loadRegistrationCommunicationsForDetail(db, applicationId, options = {}) {
+  const getHistory =
+    typeof options.getCommunicationHistory === "function"
+      ? options.getCommunicationHistory
+      : getCommunicationHistory;
+  const logFn = options.logCommunicationsError;
+
+  try {
+    const historyDeps = {
+      client: db,
+    };
+    if (options.communicationRepository) {
+      historyDeps.repository = options.communicationRepository;
+    }
+    const historyOpts = {};
+    if (options.communicationsLimit != null) {
+      historyOpts.limit = options.communicationsLimit;
+    }
+    const raw = await getHistory(applicationId, historyOpts, historyDeps);
+    const list = Array.isArray(raw && raw.communications) ? raw.communications : [];
+    const items = sortCommunicationsNewestFirst(list.map(mapCommunicationItemForDetail));
+    return {
+      items,
+      summary: summarizeCommunicationsForDetail(items),
+      unavailable: false,
+    };
+  } catch (err) {
+    logCommunicationsFailure(
+      "communication history load failed; using safe unavailable fallback",
+      err,
+      logFn
+    );
+    return buildSafeCommunicationsUnavailable();
+  }
 }
 
 /**
@@ -854,6 +1077,14 @@ function mapListRow(row) {
     riskReasonLabels: reasonLabelsForAdmin(row.risk_reason_codes || []),
     riskDecidedAt: row.risk_decided_at || null,
     rejectionReason: row.rejection_reason != null ? String(row.rejection_reason) : null,
+    rejectionCategory:
+      row.rejection_category != null ? String(row.rejection_category) : null,
+    reapplicationAllowed:
+      row.reapplication_allowed == null ? null : Boolean(row.reapplication_allowed),
+    rejectionNotificationStatus:
+      row.rejection_notification_status != null
+        ? String(row.rejection_notification_status)
+        : null,
   };
 }
 
@@ -1321,6 +1552,11 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
       id,
       detailOptions
     );
+    const communications = await loadRegistrationCommunicationsForDetail(
+      db,
+      id,
+      detailOptions
+    );
     const verification = await loadRegistrationVerificationForDetail(
       db,
       application,
@@ -1346,6 +1582,7 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
       approvalChecklist,
       phoneVerification,
       emailVerification,
+      communications,
       contacts,
       auditEvents,
       platformAdmins,
@@ -1790,27 +2027,137 @@ async function addRegistrationSupportContact(db, input) {
 }
 
 /**
+ * Allowlisted rejection categories (Phase2 Prompt 068 / Stitch Rejection Workspace).
+ */
+const REJECTION_CATEGORIES = Object.freeze([
+  "duplicate_registration",
+  "applicant_not_authorized",
+  "contact_not_verified",
+  "invalid_or_incomplete_information",
+  "church_identity_not_confirmed",
+  "fraudulent_or_prohibited_use",
+  "unsupported_organization_type",
+  "applicant_withdrew",
+  "other",
+]);
+
+const REJECTION_CATEGORY_LABELS = Object.freeze({
+  duplicate_registration: "Duplicate registration",
+  applicant_not_authorized: "Applicant not authorized",
+  contact_not_verified: "Contact not verified",
+  invalid_or_incomplete_information: "Invalid or incomplete information",
+  church_identity_not_confirmed: "Church identity not confirmed",
+  fraudulent_or_prohibited_use: "Fraudulent or prohibited use",
+  unsupported_organization_type: "Unsupported organization type",
+  applicant_withdrew: "Applicant withdrew",
+  other: "Other",
+});
+
+const REJECTION_NOTIFICATION_STATUSES = Object.freeze([
+  "recorded",
+  "sending_unavailable",
+  "queued",
+  "sent",
+  "failed",
+]);
+
+/**
+ * Map communication delivery status onto application rejection_notification_status.
+ * @param {string|null|undefined} deliveryStatus
+ * @returns {string|null}
+ */
+function mapRejectionNotificationStatus(deliveryStatus) {
+  const status = String(deliveryStatus || "")
+    .trim()
+    .toLowerCase();
+  if (REJECTION_NOTIFICATION_STATUSES.includes(status)) return status;
+  return null;
+}
+
+/**
  * Reject an unprovisioned registration application (no tenant created).
+ * Preserves rejection_reason compatibility via `reason` and/or `internalDecisionNote`.
+ * Optional Prompt 068 fields: category, applicant explanation, reapplication, notify.
+ *
  * @param {{ query: Function, connect?: Function }} db
  * @param {{
  *   applicationId: string,
- *   actorUserId: string,
- *   reason: string,
+ *   actorUserId?: string,
+ *   platformAdminUserId?: string,
+ *   reason?: string,
+ *   internalDecisionNote?: string,
+ *   rejectionCategory?: string|null,
+ *   applicantExplanation?: string|null,
+ *   reapplicationAllowed?: boolean|null,
+ *   notifyApplicant?: boolean,
  *   deploymentCode?: string,
  * }} input
+ * @param {{
+ *   recordRejectionNotice?: Function,
+ *   emailAdapter?: object,
+ *   communicationRepository?: object,
+ * }} [options]
  */
-async function rejectRegistrationApplication(db, input) {
+async function rejectRegistrationApplication(db, input, options = {}) {
   const applicationId = String((input && input.applicationId) || "").trim();
-  const actorUserId = String((input && input.actorUserId) || "").trim();
-  const reason = String((input && input.reason) || "")
+  const platformAdminUserId = String(
+    (input && (input.platformAdminUserId || input.actorUserId)) || ""
+  ).trim();
+  const internalDecisionNote = String(
+    (input && (input.internalDecisionNote != null ? input.internalDecisionNote : "")) ||
+      ""
+  )
     .trim()
     .slice(0, 500);
-  if (!UUID_RE.test(applicationId) || !UUID_RE.test(actorUserId)) {
+  const legacyReason = String((input && (input.reason != null ? input.reason : "")) || "")
+    .trim()
+    .slice(0, 500);
+  const rejectionReason = (internalDecisionNote || legacyReason).slice(0, 500);
+  const applicantExplanation = String(
+    (input && (input.applicantExplanation != null ? input.applicantExplanation : "")) ||
+      ""
+  )
+    .trim()
+    .slice(0, 8000);
+  const notifyApplicant = Boolean(input && input.notifyApplicant === true);
+
+  if (!UUID_RE.test(applicationId) || !UUID_RE.test(platformAdminUserId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input" };
   }
-  if (!reason || reason.length < 3) {
+  if (!rejectionReason || rejectionReason.length < 3) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: "rejection_reason_required" };
   }
+
+  let rejectionCategory = null;
+  if (
+    input &&
+    Object.prototype.hasOwnProperty.call(input, "rejectionCategory") &&
+    input.rejectionCategory != null &&
+    String(input.rejectionCategory).trim() !== ""
+  ) {
+    rejectionCategory = String(input.rejectionCategory).trim().toLowerCase();
+    if (!REJECTION_CATEGORIES.includes(rejectionCategory)) {
+      return {
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        message: "invalid_rejection_category",
+      };
+    }
+  }
+
+  const setReapplication = Boolean(
+    input && Object.prototype.hasOwnProperty.call(input, "reapplicationAllowed")
+  );
+  const reapplicationAllowed = setReapplication
+    ? input.reapplicationAllowed == null
+      ? null
+      : Boolean(input.reapplicationAllowed)
+    : undefined;
+
+  const recordNoticeFn =
+    typeof options.recordRejectionNotice === "function"
+      ? options.recordRejectionNotice
+      : recordRejectionNotice;
 
   try {
     return await withOwnedClient(db, async (client) => {
@@ -1845,22 +2192,181 @@ async function rejectRegistrationApplication(db, input) {
           RISK_REASON_CODES.ADMIN_REJECTED,
         ]);
         const nowIso = new Date().toISOString();
+
+        let notificationStatus = null;
+        let noticeResult = null;
+
+        if (applicantExplanation) {
+          const noticeDeps = {
+            client,
+          };
+          if (options.emailAdapter) {
+            noticeDeps.emailAdapter = options.emailAdapter;
+          }
+          if (options.communicationRepository) {
+            noticeDeps.repository = options.communicationRepository;
+          }
+          noticeResult = await recordNoticeFn(
+            {
+              applicationId,
+              recipient: app.contact_email != null ? String(app.contact_email) : null,
+              subject: "Your BlessBoard registration application",
+              applicantMessage: applicantExplanation,
+              internalNote: rejectionReason,
+              channel: "email",
+              notifyApplicant,
+            },
+            { platformAdminUserId },
+            noticeDeps
+          );
+          notificationStatus = mapRejectionNotificationStatus(
+            noticeResult && noticeResult.delivery && noticeResult.delivery.status
+          );
+        }
+
+        const reviewEvent = {
+          at: nowIso,
+          action: "reject",
+          actor_user_id: platformAdminUserId,
+          reason_codes: reasonCodes,
+          note_len: rejectionReason.length,
+          applicant_explanation_len: applicantExplanation
+            ? applicantExplanation.length
+            : 0,
+          rejection_category: rejectionCategory || undefined,
+          reapplication_allowed: setReapplication ? reapplicationAllowed : undefined,
+          notify_applicant: notifyApplicant,
+          notification_status: notificationStatus || undefined,
+        };
+
         await repo.updateApplicationRiskReviewState(client, applicationId, {
           applicationStatus: "rejected",
           riskDecision: RISK_DECISIONS.REJECT,
           riskReasonCodes: reasonCodes,
           riskDecidedAt: nowIso,
-          rejectionReason: reason,
-          reviewEvent: {
-            at: nowIso,
-            action: "reject",
-            actor_user_id: actorUserId,
-            reason_codes: reasonCodes,
-            note_len: reason.length,
-          },
+          rejectionReason,
+          reviewEvent,
         });
+
+        if (rejectionCategory != null || setReapplication || notificationStatus != null) {
+          const metaPatch = {};
+          if (rejectionCategory != null) {
+            metaPatch.rejectionCategory = rejectionCategory;
+          }
+          if (setReapplication) {
+            metaPatch.reapplicationAllowed = reapplicationAllowed;
+          }
+          if (notificationStatus != null) {
+            metaPatch.rejectionNotificationStatus = notificationStatus;
+          }
+          await repo.updateRegistrationRejectionMetadata(client, applicationId, metaPatch);
+        }
+
         await client.query("COMMIT");
-        return { ok: true, status: STATUS.OK, alreadyRejected: false };
+        return {
+          ok: true,
+          status: STATUS.OK,
+          alreadyRejected: false,
+          rejectionCategory,
+          reapplicationAllowed: setReapplication ? reapplicationAllowed : null,
+          rejectionNotificationStatus: notificationStatus,
+          rejectionNotice:
+            noticeResult && noticeResult.communication
+              ? noticeResult.communication
+              : null,
+          delivery:
+            noticeResult && noticeResult.delivery ? noticeResult.delivery : null,
+        };
+      } catch (err) {
+        try {
+          await client.query("ROLLBACK");
+        } catch {
+          /* ignore */
+        }
+        throw err;
+      }
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, message: "lookup_error" };
+  }
+}
+
+/**
+ * Controlled reopen: rejected → submitted. Preserves rejection_reason, rejection
+ * metadata, communications, and prior review_events. Appends a reopen review event.
+ * Does not send email or clear rejection history.
+ *
+ * @param {{ query: Function, connect?: Function }} db
+ * @param {{
+ *   applicationId: string,
+ *   actorUserId?: string,
+ *   platformAdminUserId?: string,
+ *   reason: string,
+ * }} input
+ */
+async function reopenRegistrationApplication(db, input) {
+  const applicationId = String((input && input.applicationId) || "").trim();
+  const platformAdminUserId = String(
+    (input && (input.platformAdminUserId || input.actorUserId)) || ""
+  ).trim();
+  const reason = String((input && (input.reason != null ? input.reason : "")) || "")
+    .trim()
+    .slice(0, 500);
+
+  if (!UUID_RE.test(applicationId) || !UUID_RE.test(platformAdminUserId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_input" };
+  }
+  if (!reason || reason.length < 3) {
+    return { ok: false, status: STATUS.INVALID_INPUT, message: "reopen_reason_required" };
+  }
+
+  try {
+    return await withOwnedClient(db, async (client) => {
+      await client.query("BEGIN");
+      try {
+        const app = await repo.lockApplicationById(client, applicationId);
+        if (!app) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_FOUND, message: "not_found" };
+        }
+        if (app.organization_id || String(app.provisioning_status) === "provisioned") {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            status: STATUS.NOT_ELIGIBLE,
+            message: "already_provisioned",
+          };
+        }
+        const appStatus = String(app.application_status || "");
+        if (appStatus !== "rejected") {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+        }
+
+        const nowIso = new Date().toISOString();
+        const reviewEvent = {
+          at: nowIso,
+          action: "reopen",
+          actor_user_id: platformAdminUserId,
+          reason,
+          note_len: reason.length,
+          from_status: "rejected",
+          to_status: "submitted",
+        };
+
+        // Status only + append event. Do not clear rejection_reason or metadata.
+        await repo.updateApplicationRiskReviewState(client, applicationId, {
+          applicationStatus: "submitted",
+          reviewEvent,
+        });
+
+        await client.query("COMMIT");
+        return {
+          ok: true,
+          status: STATUS.OK,
+          applicationStatus: "submitted",
+          fromStatus: "rejected",
+        };
       } catch (err) {
         try {
           await client.query("ROLLBACK");
@@ -2243,11 +2749,15 @@ module.exports = {
   loadRegistrationApprovalChecklistForDetail,
   loadRegistrationPhoneVerificationForDetail,
   loadRegistrationEmailVerificationForDetail,
+  loadRegistrationCommunicationsForDetail,
   updateRegistrationFollowUpStatus,
   markNetworkValidationComplete,
   assignRegistrationSupport,
   addRegistrationSupportContact,
   rejectRegistrationApplication,
+  reopenRegistrationApplication,
+  REJECTION_CATEGORIES,
+  REJECTION_CATEGORY_LABELS,
   approveAndProvisionRegistrationApplication,
   linkRegistrationApplicationToOrganization,
   sanitizeProvisioningErrorDetail,

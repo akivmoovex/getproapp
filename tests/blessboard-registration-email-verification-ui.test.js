@@ -236,6 +236,6 @@ describe("registration email verification resend UI (Prompt 040, no Postgres)", 
     assert.match(css, /\.bb-pa-reg-email__summary-dl\s*\{/);
     assert.match(css, /@media \(max-width: 720px\)/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=46/);
+    assert.match(shell, /platform-admin\.css\?v=50/);
   });
 });

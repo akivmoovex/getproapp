@@ -34,7 +34,8 @@ const SELECT_COLUMNS = `
   provisioning_error_code, provisioning_error_detail,
   support_requested, follow_up_status,
   assigned_support_user_id, first_contacted_at, last_contacted_at, next_follow_up_at,
-  risk_decision, risk_reason_codes, risk_decided_at, rejection_reason, review_events
+  risk_decision, risk_reason_codes, risk_decided_at, rejection_reason, review_events,
+  rejection_category, reapplication_allowed, rejection_notification_status
 `;
 
 const UUID_RE =
@@ -784,6 +785,45 @@ const CONTACT_OUTCOMES = Object.freeze([
   "completed",
   "other",
 ]);
+
+/** Prompt 062 — registration application communications allowlists. */
+const COMMUNICATION_TYPES = Object.freeze([
+  "internal_note",
+  "information_request",
+  "applicant_message",
+  "rejection_notice",
+  "applicant_response",
+  "system_event",
+]);
+const COMMUNICATION_CHANNELS = Object.freeze(["internal", "email", "phone", "other"]);
+const COMMUNICATION_DIRECTIONS = Object.freeze(["internal", "outbound", "inbound"]);
+const COMMUNICATION_DELIVERY_STATUSES = Object.freeze([
+  "not_applicable",
+  "recorded",
+  "sending_unavailable",
+  "queued",
+  "sent",
+  "failed",
+]);
+const REJECTION_NOTIFICATION_STATUSES = Object.freeze([
+  "recorded",
+  "sending_unavailable",
+  "queued",
+  "sent",
+  "failed",
+]);
+
+const REG_APP_COMM_SELECT = `
+  id, application_id, communication_type, channel, direction, recipient, subject,
+  applicant_message, internal_note, request_category, requested_fields, requested_documents,
+  response_due_at, delivery_status, delivery_error_code, created_by_user_id, created_at
+`;
+
+const REJECTION_METADATA_SELECT = `
+  id, application_status, rejection_reason, rejection_category,
+  reapplication_allowed, rejection_notification_status, updated_at
+`;
+
 const LINKED_FILTERS = Object.freeze(["all", "linked", "unlinked"]);
 const SORT_OPTIONS = Object.freeze({
   created_desc: "a.created_at DESC, a.id DESC",
@@ -2539,6 +2579,264 @@ async function loadOrganizationOnboardingFacts(client, input = {}) {
   };
 }
 
+function nullIfEmptyString(value) {
+  if (value == null) return null;
+  const s = String(value).trim();
+  return s === "" ? null : s;
+}
+
+function normalizeJsonbStringArray(value, fieldName) {
+  if (value == null) return [];
+  if (!Array.isArray(value)) {
+    throw new Error(`invalid_${fieldName}`);
+  }
+  const out = [];
+  for (const item of value) {
+    if (item == null) continue;
+    const s = String(item).trim();
+    if (s === "") continue;
+    if (s.length > 200) throw new Error(`invalid_${fieldName}_item`);
+    out.push(s);
+  }
+  return out;
+}
+
+/**
+ * Insert an append-only registration application communication row.
+ * Does not send email, change application status, follow-up, or review_events.
+ * @param {{ query: Function }} client
+ * @param {object} fields
+ */
+async function createRegistrationApplicationCommunication(client, fields) {
+  const applicationId = String((fields && fields.applicationId) || "").trim();
+  if (!applicationId) throw new Error("application_id_required");
+  if (!UUID_RE.test(applicationId)) throw new Error("invalid_application_id");
+
+  const createdByUserId = String((fields && fields.createdByUserId) || "").trim();
+  if (!createdByUserId) throw new Error("created_by_user_id_required");
+  if (!UUID_RE.test(createdByUserId)) throw new Error("invalid_created_by_user_id");
+
+  const communicationType = String((fields && fields.communicationType) || "")
+    .trim()
+    .toLowerCase();
+  if (!COMMUNICATION_TYPES.includes(communicationType)) {
+    throw new Error("invalid_communication_type");
+  }
+
+  const channel = String((fields && fields.channel) || "")
+    .trim()
+    .toLowerCase();
+  if (!COMMUNICATION_CHANNELS.includes(channel)) {
+    throw new Error("invalid_communication_channel");
+  }
+
+  const direction = String((fields && fields.direction) || "")
+    .trim()
+    .toLowerCase();
+  if (!COMMUNICATION_DIRECTIONS.includes(direction)) {
+    throw new Error("invalid_communication_direction");
+  }
+
+  const deliveryStatus = String((fields && fields.deliveryStatus) || "")
+    .trim()
+    .toLowerCase();
+  if (!COMMUNICATION_DELIVERY_STATUSES.includes(deliveryStatus)) {
+    throw new Error("invalid_delivery_status");
+  }
+
+  if (communicationType === "internal_note") {
+    if (direction !== "internal") throw new Error("internal_note_direction_invalid");
+    if (deliveryStatus !== "not_applicable") {
+      throw new Error("internal_note_delivery_status_invalid");
+    }
+  }
+
+  const applicantMessage = nullIfEmptyString(fields && fields.applicantMessage);
+  const internalNote = nullIfEmptyString(fields && fields.internalNote);
+
+  if (
+    (communicationType === "information_request" ||
+      communicationType === "rejection_notice" ||
+      (communicationType === "applicant_message" && direction === "outbound")) &&
+    !applicantMessage
+  ) {
+    throw new Error("applicant_message_required");
+  }
+
+  let deliveryErrorCode = nullIfEmptyString(fields && fields.deliveryErrorCode);
+  if (deliveryStatus !== "failed") {
+    deliveryErrorCode = null;
+  }
+
+  const requestedFields = normalizeJsonbStringArray(
+    fields && fields.requestedFields,
+    "requested_fields"
+  );
+  const requestedDocuments = normalizeJsonbStringArray(
+    fields && fields.requestedDocuments,
+    "requested_documents"
+  );
+
+  const r = await client.query(
+    `INSERT INTO blessboard.registration_application_communications (
+       application_id, communication_type, channel, direction, recipient, subject,
+       applicant_message, internal_note, request_category, requested_fields, requested_documents,
+       response_due_at, delivery_status, delivery_error_code, created_by_user_id
+     ) VALUES (
+       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb,
+       $12::timestamptz, $13, $14, $15
+     )
+     RETURNING ${REG_APP_COMM_SELECT}`,
+    [
+      applicationId,
+      communicationType,
+      channel,
+      direction,
+      nullIfEmptyString(fields && fields.recipient),
+      nullIfEmptyString(fields && fields.subject),
+      applicantMessage,
+      internalNote,
+      nullIfEmptyString(fields && fields.requestCategory),
+      JSON.stringify(requestedFields),
+      JSON.stringify(requestedDocuments),
+      fields && fields.responseDueAt != null && String(fields.responseDueAt).trim() !== ""
+        ? fields.responseDueAt
+        : null,
+      deliveryStatus,
+      deliveryErrorCode,
+      createdByUserId,
+    ]
+  );
+  return r.rows[0];
+}
+
+/**
+ * List communications for an application (newest first).
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{ communicationType?: string|null, limit?: number }} [opts]
+ * @returns {Promise<object[]>}
+ */
+async function listRegistrationApplicationCommunications(client, applicationId, opts = {}) {
+  const id = String(applicationId || "").trim();
+  if (!id) throw new Error("application_id_required");
+  if (!UUID_RE.test(id)) throw new Error("invalid_application_id");
+
+  const limit = Math.min(Math.max(Number(opts.limit) || 100, 1), 200);
+  const params = [id];
+  let typeClause = "";
+  if (opts.communicationType != null && String(opts.communicationType).trim() !== "") {
+    const communicationType = String(opts.communicationType).trim().toLowerCase();
+    if (!COMMUNICATION_TYPES.includes(communicationType)) {
+      throw new Error("invalid_communication_type");
+    }
+    params.push(communicationType);
+    typeClause = ` AND communication_type = $${params.length}`;
+  }
+  params.push(limit);
+
+  const r = await client.query(
+    `SELECT ${REG_APP_COMM_SELECT}
+       FROM blessboard.registration_application_communications
+      WHERE application_id = $1${typeClause}
+      ORDER BY created_at DESC, id DESC
+      LIMIT $${params.length}`,
+    params
+  );
+  return r.rows;
+}
+
+/**
+ * Latest communication for an application (optional type filter).
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{ communicationType?: string|null }} [opts]
+ * @returns {Promise<object|null>}
+ */
+async function findLatestRegistrationApplicationCommunication(
+  client,
+  applicationId,
+  opts = {}
+) {
+  const rows = await listRegistrationApplicationCommunications(client, applicationId, {
+    communicationType: opts.communicationType,
+    limit: 1,
+  });
+  return rows[0] || null;
+}
+
+/**
+ * Update only rejection metadata columns (category / reapplication / notification status).
+ * Does not alter application_status or rejection_reason.
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {{
+ *   rejectionCategory?: string|null,
+ *   reapplicationAllowed?: boolean|null,
+ *   rejectionNotificationStatus?: string|null,
+ * }} patch
+ */
+async function updateRegistrationRejectionMetadata(client, applicationId, patch = {}) {
+  const id = String(applicationId || "").trim();
+  if (!id) throw new Error("application_id_required");
+  if (!UUID_RE.test(id)) throw new Error("invalid_application_id");
+
+  const setCategory = Object.prototype.hasOwnProperty.call(patch, "rejectionCategory");
+  const setReapply = Object.prototype.hasOwnProperty.call(patch, "reapplicationAllowed");
+  const setNotify = Object.prototype.hasOwnProperty.call(patch, "rejectionNotificationStatus");
+  if (!setCategory && !setReapply && !setNotify) {
+    throw new Error("rejection_metadata_patch_required");
+  }
+
+  let rejectionCategory = null;
+  if (setCategory) {
+    rejectionCategory = nullIfEmptyString(patch.rejectionCategory);
+  }
+
+  let reapplicationAllowed = null;
+  if (setReapply) {
+    if (patch.reapplicationAllowed == null) {
+      reapplicationAllowed = null;
+    } else {
+      reapplicationAllowed = Boolean(patch.reapplicationAllowed);
+    }
+  }
+
+  let rejectionNotificationStatus = null;
+  if (setNotify) {
+    rejectionNotificationStatus = nullIfEmptyString(patch.rejectionNotificationStatus);
+    if (
+      rejectionNotificationStatus != null &&
+      !REJECTION_NOTIFICATION_STATUSES.includes(rejectionNotificationStatus)
+    ) {
+      throw new Error("invalid_rejection_notification_status");
+    }
+  }
+
+  const r = await client.query(
+    `UPDATE blessboard.platform_church_registration_applications
+        SET rejection_category = CASE WHEN $2::boolean THEN $3::text ELSE rejection_category END,
+            reapplication_allowed = CASE WHEN $4::boolean THEN $5::boolean ELSE reapplication_allowed END,
+            rejection_notification_status = CASE
+              WHEN $6::boolean THEN $7::text
+              ELSE rejection_notification_status
+            END,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${REJECTION_METADATA_SELECT}`,
+    [
+      id,
+      setCategory,
+      rejectionCategory,
+      setReapply,
+      reapplicationAllowed,
+      setNotify,
+      rejectionNotificationStatus,
+    ]
+  );
+  return r.rows[0] || null;
+}
+
 module.exports = {
   TARGET_SCHEMA,
   TARGET_TABLE,
@@ -2551,6 +2849,11 @@ module.exports = {
   WORKFLOW_STATUSES,
   CONTACT_METHODS,
   CONTACT_OUTCOMES,
+  COMMUNICATION_TYPES,
+  COMMUNICATION_CHANNELS,
+  COMMUNICATION_DIRECTIONS,
+  COMMUNICATION_DELIVERY_STATUSES,
+  REJECTION_NOTIFICATION_STATUSES,
   PHONE_VERIFICATION_OUTCOMES,
   PHONE_VERIFICATION_CHECK_STATUSES,
   PHONE_VERIFICATION_RESULTS,
@@ -2584,6 +2887,10 @@ module.exports = {
   listApplicationSupportContacts,
   createPhoneVerificationAttempt,
   listPhoneVerificationAttempts,
+  createRegistrationApplicationCommunication,
+  listRegistrationApplicationCommunications,
+  findLatestRegistrationApplicationCommunication,
+  updateRegistrationRejectionMetadata,
   createRegistrationEmailVerificationToken,
   findRegistrationEmailVerificationTokenByHash,
   findLatestRegistrationEmailVerificationToken,

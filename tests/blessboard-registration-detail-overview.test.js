@@ -201,12 +201,15 @@ describe("registration detail overview and structured details (no Postgres)", ()
     );
     assert.match(html, />Approve and provision</);
     assert.match(html, /data-bb-pa-reject-form="1"/);
+    assert.match(html, /id="reg-rejection"/);
     assert.match(
       html,
       /method="post"\s+action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/reject"/
     );
-    assert.match(html, /name="rejection_reason"/);
-    assert.match(html, />Reject application</);
+    assert.match(html, /name="internal_decision_note"/);
+    assert.match(html, /Reject and record decision/);
+    assert.doesNotMatch(html, /name="rejection_reason"/);
+    assert.doesNotMatch(html, />Reject application</);
     assert.match(html, /data-bb-pa-assign-support-form="1"/);
     assert.match(html, /data-bb-pa-contact-form="1"/);
     assert.match(html, /data-bb-pa-link-organization-form="1"/);
@@ -222,6 +225,7 @@ describe("registration detail overview and structured details (no Postgres)", ()
     assert.match(html, /id="reg-documents"/);
     assert.match(html, /id="reg-activity"/);
     assert.match(html, /id="reg-actions"/);
+    assert.match(html, /id="reg-rejection"/);
     assert.match(html, /bb-pa-reg-detail-grid/);
     assert.match(html, /bb-pa-reg-section-nav/);
   });

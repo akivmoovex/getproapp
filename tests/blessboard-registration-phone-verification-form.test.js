@@ -290,7 +290,7 @@ describe("registration phone verification record form (Prompt 031, no Postgres)"
     const invalid = renderDetail({ notice: null, error: "invalid" });
     assert.match(
       invalid,
-      /The call attempt could not be recorded\. Review the fields and try again\./
+      /The request could not be processed\. Review the fields and try again\./
     );
 
     const failed = renderDetail({ notice: null, error: "phone_attempt_failed" });
