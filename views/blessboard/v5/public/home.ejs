@@ -45,8 +45,11 @@
     hero = rest.shift();
   }
 
+  var cmsHeading = hero && hero.heading ? String(hero.heading).trim() : '';
+  var staleDemoHeading = cmsHeading === 'A Place for Growth & Community';
   var heroHeading =
-    (hero && hero.heading) ||
+    ((!cmsHeading || staleDemoHeading) && demoFb && demoFb.heroHeading) ||
+    cmsHeading ||
     (demoFb && demoFb.heroHeading) ||
     pageTitle ||
     publicName;
@@ -58,10 +61,16 @@
 
   var accentBefore = heroHeading;
   var accentPhrase = '';
-  var headingWords = String(heroHeading || '').trim().split(/\s+/).filter(Boolean);
-  if (headingWords.length >= 4) {
-    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-2).join(' ');
+  var spiritualIdx = String(heroHeading || '').indexOf('Spiritual Growth');
+  if (spiritualIdx >= 0) {
+    accentBefore = String(heroHeading).slice(0, spiritualIdx);
+    accentPhrase = String(heroHeading).slice(spiritualIdx);
+  } else {
+    var headingWords = String(heroHeading || '').trim().split(/\s+/).filter(Boolean);
+    if (headingWords.length >= 4) {
+      accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
+      accentPhrase = headingWords.slice(-2).join(' ');
+    }
   }
 
   var teasers = typeof homeTeasers !== 'undefined' && homeTeasers ? homeTeasers : {

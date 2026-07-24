@@ -27,7 +27,10 @@
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
     '';
-  var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
+  var introMedia =
+    (intro && intro.mediaUrl) ||
+    (demoFb && demoFb.introMediaUrl) ||
+    null;
 
   var accentBefore = introHeading;
   var accentPhrase = '';
@@ -130,6 +133,18 @@
         Latest Release
       </p>
       <article class="bb-tp-featured-sermon__card">
+        <% if (featured.imageUrl) { %>
+        <div class="bb-tp-featured-sermon__media" data-bb-sermon-thumb="1">
+          <img
+            src="<%= featured.imageUrl %>"
+            alt="<%= featured.title %>"
+            width="720"
+            height="405"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+        <% } %>
         <div class="bb-tp-featured-sermon__copy">
           <h2 class="bb-tp-featured-sermon__title"><%= featured.title %></h2>
           <% if (featured.category) { %>
@@ -217,11 +232,21 @@
         %>
         <li class="bb-tp-sermon-card" data-bb-sermon-item="1">
           <div
-            class="bb-tp-sermon-card__media is-fallback"
-            role="img"
-            aria-label="<%= thumbLabel %>"
+            class="bb-tp-sermon-card__media<%= sermon.imageUrl ? '' : ' is-fallback' %>"
+            <% if (!sermon.imageUrl) { %>role="img" aria-label="<%= thumbLabel %>"<% } %>
           >
+            <% if (sermon.imageUrl) { %>
+            <img
+              src="<%= sermon.imageUrl %>"
+              alt="<%= thumbLabel %>"
+              width="400"
+              height="240"
+              loading="lazy"
+              decoding="async"
+            />
+            <% } else { %>
             <span class="material-symbols-outlined bb-tp-sermon-card__fallback-icon" aria-hidden="true">menu_book</span>
+            <% } %>
           </div>
           <div class="bb-tp-sermon-card__body">
             <h3 class="bb-tp-sermon-card__title"><%= sermon.title %></h3>

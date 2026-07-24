@@ -185,8 +185,65 @@ function mapSermon(row) {
     category: parsed.category,
     mediaUrl: safeExternalUrl(row.mediaUrl),
     resourceUrl: safeExternalUrl(row.resourceUrl),
+    // Optional thumb for cards (soft-fill / future schema); never treat as playable mediaUrl.
+    imageUrl: safeExternalUrl(row.imageUrl),
     status: row.status || null,
   };
+}
+
+/**
+ * Testing/demo soft-fill for local event/sermon thumbs when CMS image is empty.
+ * Uses same-site /church/images paths only — no Stitch hotlinks.
+ * Only fills demo-owned titles (exact catalog match or [Demo] marker).
+ */
+function softFillDemoEventImages(items) {
+  const catalog = testingDemoSpec.EVENTS || [];
+  return (items || []).map((ev) => {
+    if (!ev || ev.imageUrl) return ev;
+    const byTitle = catalog.find((c) => c.title === ev.title);
+    const demoMarked =
+      typeof testingDemoSpec.isDemoMarkedText === "function" &&
+      testingDemoSpec.isDemoMarkedText(ev.title);
+    if (!byTitle && !demoMarked) return ev;
+    let resolved = byTitle && byTitle.imageUrl ? byTitle.imageUrl : null;
+    if (!resolved && demoMarked) {
+      const demoItems = (items || []).filter(
+        (x) => x && testingDemoSpec.isDemoMarkedText(x.title)
+      );
+      const demoIndex = demoItems.findIndex((x) => x === ev || x.title === ev.title);
+      const pick = catalog[Math.max(0, demoIndex)] || catalog[0];
+      resolved = pick && pick.imageUrl ? pick.imageUrl : null;
+    }
+    const safe = resolved ? safeExternalUrl(resolved) : null;
+    if (!safe) return ev;
+    return { ...ev, imageUrl: safe };
+  });
+}
+
+function softFillDemoSermonImages(items) {
+  const catalog = testingDemoSpec.SERMONS || [];
+  return (items || []).map((sermon) => {
+    if (!sermon || sermon.imageUrl) return sermon;
+    const byTitle = catalog.find((c) => c.title === sermon.title);
+    const demoMarked =
+      typeof testingDemoSpec.isDemoMarkedText === "function" &&
+      testingDemoSpec.isDemoMarkedText(sermon.title);
+    if (!byTitle && !demoMarked) return sermon;
+    let resolved = byTitle && byTitle.imageUrl ? byTitle.imageUrl : null;
+    if (!resolved && demoMarked) {
+      const demoItems = (items || []).filter(
+        (x) => x && testingDemoSpec.isDemoMarkedText(x.title)
+      );
+      const demoIndex = demoItems.findIndex(
+        (x) => x === sermon || x.title === sermon.title
+      );
+      const pick = catalog[Math.max(0, demoIndex)] || catalog[0];
+      resolved = pick && pick.imageUrl ? pick.imageUrl : null;
+    }
+    const safe = resolved ? safeExternalUrl(resolved) : null;
+    if (!safe) return sermon;
+    return { ...sermon, imageUrl: safe };
+  });
 }
 
 const SOCIAL_CHANNEL_TYPES = new Set([
@@ -882,7 +939,7 @@ async function loadTenantPublicPageModel(db, input) {
       introHeading: "Meet Our Church Leadership",
       introBody:
         "Dedicated servants committed to shepherd, teach, and empower our congregation through spiritual guidance and practical grace. Demo intro for Stitch parity only.",
-      introMediaUrl: null,
+      introMediaUrl: testingDemoSpec.MEDIA.leadershipIntro,
     });
   }
 
@@ -892,6 +949,7 @@ async function loadTenantPublicPageModel(db, input) {
       introHeading: "Growing Together in Faith and Community",
       introBody:
         "Explore ministries designed to serve every member of our spiritual family. Demo intro for Stitch parity only.",
+      introMediaUrl: testingDemoSpec.MEDIA.ministriesIntro,
     });
   }
 
@@ -901,6 +959,7 @@ async function loadTenantPublicPageModel(db, input) {
       introHeading: "Gather with Us",
       introBody:
         "Upcoming gatherings published by this church. Demo intro for Stitch parity only.",
+      introMediaUrl: testingDemoSpec.MEDIA.eventsIntro,
     });
   }
 
@@ -910,6 +969,7 @@ async function loadTenantPublicPageModel(db, input) {
       introHeading: "Sermons & Resources",
       introBody:
         "Published messages and resources from this church. Demo intro for Stitch parity only.",
+      introMediaUrl: testingDemoSpec.MEDIA.sermonsIntro,
     });
   }
 
@@ -929,6 +989,21 @@ async function loadTenantPublicPageModel(db, input) {
       introHeading: testingDemoSpec.GIVING.introHeading,
       introBody: testingDemoSpec.GIVING.introBody,
     });
+  }
+
+  // Testing/demo: soft-fill local event/sermon thumbs when CMS media is empty (no hotlinks).
+  if (showEnvBadge) {
+    if (pageKey === "events") {
+      entities = softFillDemoEventImages(entities);
+    } else if (pageKey === "sermons") {
+      entities = softFillDemoSermonImages(entities);
+    } else if (pageKey === "home") {
+      homeTeasers = {
+        ...homeTeasers,
+        events: softFillDemoEventImages(homeTeasers.events),
+        sermons: softFillDemoSermonImages(homeTeasers.sermons),
+      };
+    }
   }
 
   const navItems = pathPrefix
@@ -983,7 +1058,7 @@ async function loadTenantPublicPageModel(db, input) {
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
     loginHref: "/login",
     apexHref: "https://blessboard.org/",
-    cssHref: "/blessboard/v5/tenant-public.css?v=35",
+    cssHref: "/blessboard/v5/tenant-public.css?v=36",
     pathPrefix,
     homeHref: pathPrefix || "/",
     hrefFor(pagePath) {

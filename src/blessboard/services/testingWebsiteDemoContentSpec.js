@@ -26,6 +26,19 @@ const MEDIA = Object.freeze({
   ministryYouth: "/church/images/leadership/ministry-2.jpg",
   ministryWomen: "/church/images/leadership/ministry-3.jpg",
   ministryMen: "/church/images/leadership/ministry-m1.jpg",
+  eventFeatured: "/church/images/events/event-1.jpg",
+  event2: "/church/images/events/event-2.jpg",
+  event3: "/church/images/events/event-3.jpg",
+  sermonFeatured: "/church/images/sermons/sermon-featured-desktop.jpg",
+  sermon1: "/church/images/sermons/sermon-1.jpg",
+  sermon2: "/church/images/sermons/sermon-2.jpg",
+  sermon3: "/church/images/sermons/sermon-3.jpg",
+  sermonThumb1: "/church/images/sermons/sermon-thumb-1.jpg",
+  sermonThumb2: "/church/images/sermons/sermon-thumb-2.jpg",
+  leadershipIntro: "/church/images/leadership/pastor-desktop.jpg",
+  ministriesIntro: "/church/images/leadership/ministry-1.jpg",
+  eventsIntro: "/church/images/events/event-1.jpg",
+  sermonsIntro: "/church/images/sermons/sermon-featured-desktop.jpg",
 });
 
 const IDENTITY = Object.freeze({
@@ -229,6 +242,7 @@ const EVENTS = Object.freeze([
     daysFromD0: 2,
     hourUtc: 10,
     timezone: "UTC",
+    imageUrl: MEDIA.eventFeatured,
   },
   {
     demoKey: "event:community-meal",
@@ -237,6 +251,7 @@ const EVENTS = Object.freeze([
     daysFromD0: 9,
     hourUtc: 17,
     timezone: "UTC",
+    imageUrl: MEDIA.event2,
   },
   {
     demoKey: "event:youth-night",
@@ -245,6 +260,7 @@ const EVENTS = Object.freeze([
     daysFromD0: 16,
     hourUtc: 18,
     timezone: "UTC",
+    imageUrl: MEDIA.event3,
   },
 ]);
 
@@ -256,6 +272,7 @@ const SERMONS = Object.freeze([
     daysBeforeD0: 7,
     category: "Welcome",
     summary: "An introduction to gathering as a community. Fictional testing sermon.",
+    imageUrl: MEDIA.sermonFeatured,
   },
   {
     demoKey: "sermon:faith",
@@ -264,6 +281,7 @@ const SERMONS = Object.freeze([
     daysBeforeD0: 14,
     category: "Teaching",
     summary: "Practical encouragement for daily faith. Demo content only.",
+    imageUrl: MEDIA.sermon1,
   },
   {
     demoKey: "sermon:service",
@@ -272,6 +290,7 @@ const SERMONS = Object.freeze([
     daysBeforeD0: 21,
     category: "Outreach",
     summary: "Why service matters in community life. Fictional resource entry.",
+    imageUrl: MEDIA.sermon2,
   },
   {
     demoKey: "sermon:prayer",
@@ -280,6 +299,7 @@ const SERMONS = Object.freeze([
     daysBeforeD0: 28,
     category: "Prayer",
     summary: "Habits of prayer for households and teams. Demo-only summary.",
+    imageUrl: MEDIA.sermon3,
   },
 ]);
 
@@ -426,6 +446,7 @@ function relativeDates(d0) {
       summary: ev.summary,
       timezone: ev.timezone,
       startsAt: start.toISOString(),
+      imageUrl: ev.imageUrl || null,
     };
   });
 
@@ -438,6 +459,7 @@ function relativeDates(d0) {
       category: s.category,
       summary: sermonSummaryWithCategory(s),
       preachedAt: when.toISOString(),
+      imageUrl: s.imageUrl || null,
     };
   });
 

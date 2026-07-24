@@ -16,7 +16,7 @@ const VERSIONS = {
   designSystem: "6",
   apex: "14",
   apexAuth: "6",
-  tenantPublic: "35",
+  tenantPublic: "36",
   tenantAuth: "13",
   memberPortal: "22",
   branchAdmin: "38",
@@ -127,7 +127,51 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(routes, /renderTenantPublicPage/);
     assert.match(routes, /preview:\s*true/);
     const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=35"/);
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=36"/);
+  });
+
+  it("PHASE2_092 P0/P1 guards: nav nowrap, brand, hero AR, dir-hero density, media soft-fill, contact honesty", () => {
+    const css = read("public/blessboard/v5/tenant-public.css");
+    const shell = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
+    const home = read("views/blessboard/v5/public/home.ejs");
+    const sermons = read("views/blessboard/v5/public/sermons.ejs");
+    const events = read("views/blessboard/v5/public/events.ejs");
+    const contact = read("views/blessboard/v5/public/contact.ejs");
+    const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
+    const spec = read("src/blessboard/services/testingWebsiteDemoContentSpec.js");
+    const service = read("src/blessboard/services/testingWebsiteDemoContentService.js");
+
+    assert.match(css, /\.bb-tp-nav--desktop[\s\S]*?flex-wrap:\s*nowrap/);
+    assert.match(css, /\.bb-tp-header__inner[\s\S]*?flex-wrap:\s*nowrap/);
+    assert.doesNotMatch(
+      css,
+      /@media \(min-width: 900px\)[\s\S]{0,1200}?\.bb-tp-brand\s*\{[^}]*max-width:\s*14rem/
+    );
+    assert.match(css, /\.bb-tp-hero__img[\s\S]*?aspect-ratio:\s*4\s*\/\s*3/);
+    assert.match(css, /\.bb-tp-dir-hero\s*\{[\s\S]*?padding:\s*1\.35rem\s+0\s+0\.85rem/);
+    assert.match(css, /overflow-x:\s*clip/);
+    assert.match(css, /html\s*\{[\s\S]*?overflow-x:\s*clip/);
+
+    assert.match(home, /Spiritual Growth/);
+    assert.match(home, /staleDemoHeading/);
+    assert.match(home, /ead45db5be774baa9454412262096ffc/);
+
+    assert.match(sermons, /sermon\.imageUrl/);
+    assert.match(sermons, /bb-tp-sermon-card__media<%= sermon\.imageUrl/);
+    assert.match(events, /introMediaUrl/);
+    assert.match(contact, /data-bb-contact-form="unavailable"/);
+    assert.doesNotMatch(contact, /<form[\s>]/i);
+    assert.doesNotMatch(contact, /method=["']post["']/i);
+
+    assert.match(model, /softFillDemoEventImages/);
+    assert.match(model, /softFillDemoSermonImages/);
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=36"/);
+    assert.match(spec, /eventFeatured:\s*"\/church\/images\/events\//);
+    assert.match(spec, /sermonFeatured:\s*"\/church\/images\/sermons\//);
+    assert.match(service, /kind === "event"/);
+
+    assert.match(shell, new RegExp(`tenant-public\\.css\\?v=${VERSIONS.tenantPublic}`));
+    assert.doesNotMatch(read("views/church/partials/public_shell_start.ejs"), /bb-tp-dir-hero/);
   });
 
   it("PHASE2_086 home CSS: landscape hero, band grid, violet service card, 390 overflow", () => {

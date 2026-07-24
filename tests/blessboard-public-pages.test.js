@@ -1983,7 +1983,7 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /Register/);
     assert.match(home.text, /Quick Links/);
     assert.match(home.text, /Powered by/);
-    assert.match(home.text, /tenant-public\.css\?v=35/);
+    assert.match(home.text, /tenant-public\.css\?v=36/);
     assert.doesNotMatch(home.text, /data-bb-preview-banner/);
     assert.doesNotMatch(home.text, /Back to content admin|Edit page/);
     assert.doesNotMatch(home.text, /href="\/hq"|href="\/admin"|bb-ca-preview/);
@@ -2018,6 +2018,87 @@ describe("blessboard public pages", () => {
         websiteStatus: "published",
       });
     }
+  });
+
+  it("PHASE2_092 demo media soft-fill, stale hero polish, denser dir-hero, no contact form", async () => {
+    requireDb();
+    const churchPages = await provisionEmptyPublicPages(pool, { churchId: churchA.id });
+    const branchPages = await provisionEmptyPublicPages(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+    });
+    for (const key of ["home", "events", "sermons", "contact"]) {
+      const churchPage = churchPages.pages.find((p) => p.pageKey === key);
+      const branchPage = branchPages.pages.find((p) => p.pageKey === key);
+      if (churchPage) await updatePublicPage(pool, churchPage.id, { status: "published" });
+      if (branchPage) await updatePublicPage(pool, branchPage.id, { status: "published" });
+    }
+
+    const home = branchPages.pages.find((p) => p.pageKey === "home");
+    await pool.query(`DELETE FROM blessboard.page_sections WHERE page_id = $1`, [home.id]);
+    await pool.query(
+      `INSERT INTO blessboard.page_sections
+         (page_id, section_key, section_type, heading, body_text, media_url, sort_order, status)
+       VALUES ($1, 'hero', 'hero', $2, $3, $4, 1, 'published')`,
+      [
+        home.id,
+        "A Place for Growth & Community",
+        "Stale demo hero body",
+        "/church/images/tenant-public/home-desktop-hero.jpg",
+      ]
+    );
+    const homeRes = await request(app).get("/").set("Host", HOST_A);
+    assert.equal(homeRes.status, 200);
+    assert.match(homeRes.text, /Spiritual Growth[\s\S]*?(?:&amp;|&) Community/);
+    assert.match(homeRes.text, /tenant-public\.css\?v=36/);
+
+    await pool.query(
+      `UPDATE blessboard.events SET status = 'draft' WHERE church_id = $1 AND status = 'published'`,
+      [churchA.id]
+    );
+    await pool.query(
+      `UPDATE blessboard.sermons SET status = 'draft' WHERE church_id = $1 AND status = 'published'`,
+      [churchA.id]
+    );
+
+    const soon = new Date(Date.now() + 4 * 86400000).toISOString();
+    const event = await createEvent(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      title: "[Demo] Sunday Worship Gathering",
+      summary: "Demo event for image soft-fill",
+      startsAt: soon,
+      timezone: "UTC",
+      status: "published",
+    });
+    assert.equal(event.ok, true, event.reason || event.status);
+    const evRes = await request(app).get("/events").set("Host", HOST_A);
+    assert.equal(evRes.status, 200);
+    assert.match(evRes.text, /\/church\/images\/events\//);
+    assert.doesNotMatch(evRes.text, /bb-tp-featured-event__media is-fallback/);
+    assert.match(evRes.text, /bb-tp-dir-hero/);
+
+    const sermon = await createSermon(pool, {
+      churchId: churchA.id,
+      title: "[Demo] Welcome Home",
+      speakerName: "Jordan Hale (Demo)",
+      summary: "Category: Welcome. Soft-fill thumb test.",
+      preachedAt: new Date().toISOString(),
+      status: "published",
+    });
+    assert.equal(sermon.ok, true, sermon.reason || sermon.status);
+    const serRes = await request(app).get("/sermons").set("Host", HOST_A);
+    assert.equal(serRes.status, 200);
+    assert.match(serRes.text, /\/church\/images\/sermons\//);
+    assert.doesNotMatch(serRes.text, /bb-tp-sermon-card__media is-fallback/);
+    assert.match(serRes.text, /data-bb-sermon-thumb="1"/);
+
+    const contact = await request(app).get("/contact").set("Host", HOST_A);
+    assert.equal(contact.status, 200);
+    assert.match(contact.text, /data-bb-contact-form="unavailable"/);
+    assert.doesNotMatch(contact.text, /<form[\s>]/i);
+    assert.doesNotMatch(contact.text, /method=["']post["']/i);
+    assert.doesNotMatch(contact.text, /prayer request form|mobile money checkout|bottom.?tab/i);
   });
 
   it("V4 church public routes and templates are untouched by V5 public parity", () => {

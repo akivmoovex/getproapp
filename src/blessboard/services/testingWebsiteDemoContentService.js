@@ -158,6 +158,7 @@ function isDemoPlaceholderContact(settings) {
 
 /**
  * Admin HTTPS validator rejects /church/images/* — patch via repository after create.
+ * Events store thumbs in image_url. Sermon thumbs soft-fill at render time (no image_url column).
  */
 async function patchEntityImage(db, kind, id, imageUrl) {
   if (!id || !imageUrl) return;
@@ -168,6 +169,8 @@ async function patchEntityImage(db, kind, id, imageUrl) {
       await contentRepo.updateMinistry(client, id, { imageUrl });
     } else if (kind === "section") {
       await contentRepo.updateSection(client, id, { mediaUrl: imageUrl });
+    } else if (kind === "event") {
+      await contentRepo.updateEvent(client, id, { imageUrl });
     }
   });
 }
@@ -984,6 +987,8 @@ async function seedTestingWebsiteDemoContent(db, input) {
         dryRun,
         refresh,
         actions,
+        imageUrl: ev.imageUrl,
+        imageKind: "event",
         createFn: () =>
           content.createEvent(db, {
             churchId,

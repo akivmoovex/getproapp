@@ -26,7 +26,10 @@
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
     '';
-  var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
+  var introMedia =
+    (intro && intro.mediaUrl) ||
+    (demoFb && demoFb.introMediaUrl) ||
+    null;
 
   var accentBefore = introHeading;
   var accentPhrase = '';

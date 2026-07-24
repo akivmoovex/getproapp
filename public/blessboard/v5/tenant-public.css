@@ -24,6 +24,10 @@ body.bb-tp-body {
   overflow-x: clip;
 }
 
+html {
+  overflow-x: clip;
+}
+
 .bb-tp-skip {
   position: absolute;
   left: -9999px;
@@ -151,6 +155,7 @@ body.bb-tp-body {
   justify-content: center;
   flex-wrap: nowrap;
   min-width: 0;
+  white-space: nowrap;
 }
 
 .bb-tp-nav__link {
@@ -1325,7 +1330,7 @@ body.bb-tp-body {
 
 /* —— About —— */
 .bb-tp-page-hero {
-  padding: 2.5rem 0 2rem;
+  padding: 1.75rem 0 1.35rem;
   overflow: hidden;
   background:
     radial-gradient(at 0% 0%, #e4dfff 0%, transparent 50%),
@@ -1416,16 +1421,16 @@ body.bb-tp-body {
 }
 
 .bb-tp-about__body {
-  padding: 1rem 0 2rem;
+  padding: 0.35rem 0 2rem;
 }
 
 .bb-tp-about-story-band {
-  padding: 0.5rem 0 0.25rem;
-  background: color-mix(in srgb, var(--bb-surface-dim, #f2f0ed) 35%, transparent);
+  padding: 0.75rem 0 0.5rem;
+  background: color-mix(in srgb, var(--bb-surface-dim, #f2f0ed) 42%, transparent);
 }
 
 .bb-tp-about__story-wrap {
-  padding: 2rem 0 2.5rem;
+  padding: 1.5rem 0 2rem;
 }
 
 .bb-tp-about-story {
@@ -1488,22 +1493,22 @@ body.bb-tp-body {
 }
 
 .bb-tp-about-purpose {
-  padding: 2.5rem 0;
+  padding: 1.75rem 0 2rem;
   background: var(--bb-surface);
 }
 
 .bb-tp-about-purpose__header {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.15rem;
 }
 
 .bb-tp-about-purpose__grid {
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .bb-tp-purpose-card {
-  padding: 1.75rem 1.5rem;
+  padding: 1.35rem 1.25rem;
   border-radius: var(--bb-radius);
   border: 1px solid var(--bb-line);
   background: #fff;
@@ -2119,11 +2124,11 @@ body.bb-tp-body {
 
 @media (min-width: 1200px) {
   .bb-tp-nav--desktop {
-    gap: 1.15rem;
+    gap: 0.85rem; /* keep 8 CMS links on one row at 1280 vs Stitch mock 5 */
   }
 
   .bb-tp-nav__link {
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
   }
 
   .bb-tp-brand {
@@ -2131,7 +2136,13 @@ body.bb-tp-body {
   }
 
   .bb-tp-header__actions {
-    gap: 1.5rem; /* Stitch CTA gap 24px when width allows */
+    gap: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .bb-tp-header__actions .bb-tp-btn {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.875rem;
   }
 }
 
@@ -2171,7 +2182,8 @@ body.bb-tp-body {
 
 @media (max-width: 430px) {
   .bb-tp-brand {
-    max-width: min(14rem, calc(100vw - 5.5rem));
+    /* Prefer wrapping over single-line 14rem ellipsis; leave room for menu */
+    max-width: min(16rem, calc(100vw - 4.75rem));
   }
 }
 
@@ -2218,7 +2230,7 @@ body.bb-tp-body {
 
 /* —— Batch 4: leadership / ministries —— */
 .bb-tp-dir-hero {
-  padding: 2.5rem 0 1.5rem;
+  padding: 1.35rem 0 0.85rem;
   background:
     radial-gradient(at 0% 0%, #e4dfff 0%, transparent 50%),
     radial-gradient(at 100% 100%, #d1cbff 0%, transparent 40%),
@@ -2234,8 +2246,8 @@ body.bb-tp-body {
 }
 
 .bb-tp-dir-hero__title {
-  margin: 0 0 0.75rem;
-  font-size: clamp(1.85rem, 4vw, 2.75rem);
+  margin: 0 0 0.45rem;
+  font-size: clamp(1.65rem, 3.6vw, 2.45rem);
   letter-spacing: -0.03em;
   line-height: 1.15;
   color: var(--bb-ink);
@@ -2243,11 +2255,11 @@ body.bb-tp-body {
 }
 
 .bb-tp-dir-hero__lead {
-  margin: 0 0 1.25rem;
+  margin: 0 0 0.85rem;
   max-width: 40rem;
   color: var(--bb-muted);
-  font-size: 1.05rem;
-  line-height: 1.6;
+  font-size: 1.02rem;
+  line-height: 1.55;
   white-space: pre-wrap;
 }
 
@@ -2261,7 +2273,7 @@ body.bb-tp-body {
 }
 
 .bb-tp-directory__body {
-  padding: 1rem 0 2.5rem;
+  padding: 0.35rem 0 2.5rem;
 }
 
 .bb-tp-directory__sections {
@@ -2850,8 +2862,8 @@ body.bb-tp-body {
 }
 
 .bb-tp-events-hero__media {
-  margin-top: 1.5rem;
-  max-width: 42rem;
+  margin-top: 0.85rem;
+  max-width: 36rem;
   margin-left: auto;
   margin-right: auto;
 }
@@ -3124,8 +3136,8 @@ body.bb-tp-body {
 }
 
 .bb-tp-sermons-hero__media {
-  margin: 1.5rem auto 0;
-  max-width: 48rem;
+  margin: 0.85rem auto 0;
+  max-width: 36rem;
 }
 
 .bb-tp-sermons-hero__media .bb-tp-media {
@@ -3169,14 +3181,47 @@ body.bb-tp-body {
 
 .bb-tp-featured-sermon__card {
   position: relative;
+  display: grid;
+  gap: 0;
   background: linear-gradient(145deg, #2d2a48 0%, #4a3f8a 55%, #6c5ce7 100%);
   border: none;
   border-radius: var(--bb-radius);
-  padding: 1.65rem 1.4rem 1.75rem;
+  padding: 0;
   box-shadow: var(--bb-shadow);
   color: #fff;
   min-width: 0;
   overflow: hidden;
+}
+
+.bb-tp-featured-sermon__media {
+  min-width: 0;
+  background: #1f1b33;
+}
+
+.bb-tp-featured-sermon__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 12rem;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.bb-tp-featured-sermon__copy {
+  padding: 1.65rem 1.4rem 1.75rem;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-featured-sermon__card:has(.bb-tp-featured-sermon__media) {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .bb-tp-featured-sermon__media img {
+    min-height: 100%;
+    aspect-ratio: auto;
+  }
 }
 
 .bb-tp-featured-sermon__title {
@@ -3285,9 +3330,19 @@ body.bb-tp-body {
   align-items: center;
   justify-content: center;
   min-height: 100%;
+  overflow: hidden;
   background:
     radial-gradient(circle at 30% 20%, rgba(108, 92, 231, 0.22), transparent 55%),
     linear-gradient(160deg, #efeaff 0%, #e8f4ff 100%);
+}
+
+.bb-tp-sermon-card__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 8.5rem;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
 }
 
 .bb-tp-sermon-card__media.is-fallback {
@@ -3566,7 +3621,7 @@ body.bb-tp-body {
 }
 
 .bb-tp-contact-hero .bb-tp-dir-hero__title {
-  max-width: 22ch;
+  max-width: 28ch;
 }
 
 .bb-tp-contact-hero__title-accent {
@@ -3575,11 +3630,11 @@ body.bb-tp-body {
 
 .bb-tp-contact-cards {
   list-style: none;
-  margin: 0 0 2.5rem;
+  margin: 0 0 1.75rem;
   padding: 0;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .bb-tp-contact-card {
@@ -3662,8 +3717,8 @@ body.bb-tp-body {
 
 .bb-tp-contact-main {
   display: grid;
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
 }
 
 .bb-tp-contact-message {
@@ -3671,7 +3726,7 @@ body.bb-tp-body {
   border: 1px solid var(--bb-line);
   border-radius: var(--bb-radius);
   box-shadow: var(--bb-shadow);
-  padding: 1.5rem 1.25rem 1.6rem;
+  padding: 1.35rem 1.2rem 1.45rem;
   min-width: 0;
 }
 
