@@ -928,37 +928,181 @@ function createContentAdminRouter(deps) {
         sortOrder: body.sort_order,
         status: body.status,
         sectionType: body.section_type,
+        expectedRevision:
+          body.base_revision != null && body.base_revision !== ""
+            ? Number(body.base_revision)
+            : undefined,
         ...publishPatch(body),
       });
       if (!updated.ok) {
         const isConflict = updated.status === ADMIN_STATUS.CONFLICT;
         const isConfirm = updated.reason === "confirm_publish";
         const statusCode = isConflict ? 409 : isConfirm || updated.status === ADMIN_STATUS.INVALID_INPUT ? 400 : 503;
+        const submitted = {
+          heading: body.heading != null ? String(body.heading) : section.heading,
+          body_text: body.body_text != null ? String(body.body_text) : section.bodyText,
+          media_url: body.media_url != null ? String(body.media_url) : section.mediaUrl || "",
+          sort_order: body.sort_order != null ? String(body.sort_order) : String(section.sortOrder),
+          status: body.status != null ? String(body.status) : section.status,
+          section_type: body.section_type != null ? String(body.section_type) : section.sectionType,
+        };
+        if (isConflict) {
+          const tenant = resolveTenantForAuthorization(req);
+          const orgId = tenant && tenant.organization && tenant.organization.id;
+          const conflictActionBase = `${scope.basePath}/pages/${req.params.pageKey}/sections/${req.params.sectionKey}/conflict`;
+          const html = renderContentAdminView(
+            "content-admin/section.ejs",
+            await shellLocals(req, res, {
+              scope,
+              page: bundle.page,
+              section: updated.section || section,
+              error: null,
+              conflict: true,
+              conflictPanel: true,
+              submitted,
+              conflictActionBase,
+              cancelPath: `${scope.basePath}/pages/${req.params.pageKey}/sections/${req.params.sectionKey}`,
+              canSaveAsDraft: Boolean(scope.branchId || (tenant && tenant.primaryBranch && tenant.primaryBranch.id)),
+              organizationId: orgId,
+            })
+          );
+          return res.status(statusCode).type("html").send(html);
+        }
         const html = renderContentAdminView(
           "content-admin/section.ejs",
           await shellLocals(req, res, {
             scope,
             page: bundle.page,
-            section: isConflict ? updated.section || section : section,
-            error: errorMessage(updated.reason, isConflict),
-            conflict: isConflict,
-            submitted: {
-              heading: body.heading != null ? String(body.heading) : section.heading,
-              body_text: body.body_text != null ? String(body.body_text) : section.bodyText,
-              media_url: body.media_url != null ? String(body.media_url) : section.mediaUrl || "",
-              sort_order: body.sort_order != null ? String(body.sort_order) : String(section.sortOrder),
-              status: body.status != null ? String(body.status) : section.status,
-              section_type: body.section_type != null ? String(body.section_type) : section.sectionType,
-            },
+            section,
+            error: errorMessage(updated.reason, false),
+            conflict: false,
+            submitted,
           })
         );
         return res.status(statusCode).type("html").send(html);
       }
+
+      // Audit successful draft saves (non-publish).
+      try {
+        const tenant = resolveTenantForAuthorization(req);
+        if (tenant && tenant.organization && tenant.organization.id) {
+          const auditSvc = require("../services/websiteAuditService");
+          const session = req.v5Session && req.v5Session.session;
+          await auditSvc.recordWebsiteAuditEvent(getPool(), {
+            organizationId: tenant.organization.id,
+            branchId: scope.branchId || null,
+            actorUserId: session && session.userId ? session.userId : null,
+            actorRole: variant === "hq" ? "church_hq_admin" : "branch_admin",
+            actionType: "draft_saved",
+            pageKey: req.params.pageKey,
+            sectionKey: req.params.sectionKey,
+            entityType: "page_section",
+            entityId: section.id,
+            result: "success",
+            after: {
+              heading: body.heading,
+              status: body.status,
+            },
+          });
+        }
+      } catch {
+        /* draft save already succeeded; audit failure is non-blocking for editor save */
+      }
+
       return res.redirect(
         303,
         `${scope.basePath}/pages/${req.params.pageKey}/sections/${req.params.sectionKey}?saved=1`
       );
     });
+
+    function actorUserIdFromReq(req) {
+      const session = req.v5Session && req.v5Session.session;
+      return session && session.userId ? String(session.userId) : null;
+    }
+
+    async function handleConflictResolution(req, res, resolution) {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!validateCsrfPost(req, res)) return;
+      const tenant = resolveTenantForAuthorization(req);
+      if (!tenant || !tenant.organization || !tenant.organization.id || !tenant.church) {
+        return sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
+      }
+      const userId = actorUserIdFromReq(req);
+      if (!userId) return sendControlled(req, res, 401, "Sign-in is required.", shellKind);
+
+      const conflictSvc = require("../services/websiteEditConflictService");
+      const body = req.body || {};
+      const branchId =
+        scope.branchId ||
+        (tenant.primaryBranch && tenant.primaryBranch.id) ||
+        null;
+
+      const result = await conflictSvc.resolveWebsiteEditConflict(getPool(), {
+        organizationId: tenant.organization.id,
+        churchId: scope.churchId,
+        branchId,
+        actorUserId: userId,
+        actorRole: variant === "hq" ? "church_hq_admin" : "branch_admin",
+        pageKey: req.params.pageKey,
+        sectionKey: req.params.sectionKey,
+        resolution,
+        confirmForce:
+          body.confirm_force === "1" &&
+          (body.acknowledge_replace === "1" || body.acknowledge_replace === "on"),
+        submitted: body,
+      });
+
+      if (!result.ok) {
+        if (result.status === conflictSvc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Section not found.", shellKind);
+        }
+        if (result.status === conflictSvc.STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "Not allowed.", shellKind);
+        }
+        return res.redirect(
+          303,
+          `${scope.basePath}/pages/${req.params.pageKey}/sections/${req.params.sectionKey}?conflict_error=1`
+        );
+      }
+
+      if (resolution === "use_latest") {
+        return res.redirect(
+          303,
+          `${scope.basePath}/pages/${req.params.pageKey}/sections/${req.params.sectionKey}?reloaded=1`
+        );
+      }
+      if (resolution === "save_as_draft" && result.submission) {
+        const dest =
+          variant === "hq"
+            ? `/hq/website/change-submissions/${result.submission.id}`
+            : `/branch-admin/website/submissions/${result.submission.id}`;
+        return res.redirect(303, dest);
+      }
+      return res.redirect(
+        303,
+        `${scope.basePath}/pages/${req.params.pageKey}/sections/${req.params.sectionKey}?saved=1`
+      );
+    }
+
+    router.post(
+      `${p}/pages/:pageKey/sections/:sectionKey/conflict/use-latest`,
+      rejectApex,
+      gateContent,
+      (req, res) => handleConflictResolution(req, res, "use_latest")
+    );
+    router.post(
+      `${p}/pages/:pageKey/sections/:sectionKey/conflict/save-as-draft`,
+      rejectApex,
+      gateContent,
+      (req, res) => handleConflictResolution(req, res, "save_as_draft")
+    );
+    router.post(
+      `${p}/pages/:pageKey/sections/:sectionKey/conflict/force-replace`,
+      rejectApex,
+      gateContent,
+      (req, res) => handleConflictResolution(req, res, "force_replace")
+    );
 
     for (const [routeKey, cfg] of Object.entries(ENTITY_ROUTES)) {
       router.get(`${p}/${routeKey}`, rejectApex, gateContent, async (req, res) => {

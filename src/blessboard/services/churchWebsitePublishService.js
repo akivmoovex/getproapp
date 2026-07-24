@@ -456,6 +456,28 @@ async function publishChurchWebsite(db, input) {
     };
   }
 
+  if (readiness.organizationId) {
+    const { validateWebsitePublication } = require("./websitePublicationValidationService");
+    const validation = await validateWebsitePublication(db, {
+      organizationId: readiness.organizationId,
+      churchId,
+      actorUserId: input.actorUserId || null,
+      deferServiceTimes: Boolean(input && input.deferServiceTimes),
+      mobilePreviewConfirmed: Boolean(input && input.mobilePreviewConfirmed),
+      env: input && input.env,
+    });
+    if (!validation.ok || !validation.publishable) {
+      return {
+        ok: false,
+        status: STATUS.NOT_READY,
+        reason: "validation_failed",
+        gaps: readiness.gaps || [],
+        validationErrors: (validation && validation.errors) || [],
+        validation,
+      };
+    }
+  }
+
   try {
     return await withTransaction(db, async (client) => {
       // Re-check inside TX to avoid races leaving partial publishes.
@@ -547,6 +569,13 @@ async function publishChurchWebsite(db, input) {
 
       let publicationVersion = null;
       try {
+        const submissionRepo = require("../repositories/websiteChangeSubmissionRepository");
+        const publishedSubmissionIds = await submissionRepo.markApprovedSubmissionsPublished(
+          client,
+          inner.organizationId,
+          input.actorUserId || null
+        );
+
         const versionSvc = require("./websitePublicationVersionService");
         publicationVersion = await versionSvc.recordPublishVersionInTransaction(client, {
           organizationId: inner.organizationId,
@@ -555,6 +584,13 @@ async function publishChurchWebsite(db, input) {
           publishedAt: publishedAt.toISOString(),
           sourceType: (input && input.sourceType) || "hq_edit",
           sourceSubmissionId: (input && input.sourceSubmissionId) || null,
+          publicationNote:
+            input && input.publicationNote
+              ? String(input.publicationNote).trim().slice(0, 2000)
+              : null,
+          notifyBranchAdmins: Boolean(input && input.notifyBranchAdmins),
+          notifyHqTeam: Boolean(input && input.notifyHqTeam),
+          publishedSubmissionIds,
           alreadyPublished: inner.websiteStatus === "published",
         });
       } catch (versionErr) {
@@ -573,6 +609,11 @@ async function publishChurchWebsite(db, input) {
         publicationVersionId: publicationVersion && publicationVersion.id,
         publicationVersionNumber:
           publicationVersion && publicationVersion.versionNumber,
+        publishedSubmissionIds:
+          (publicationVersion &&
+            publicationVersion.changeSummary &&
+            publicationVersion.changeSummary.publishedSubmissionIds) ||
+          [],
       };
     });
   } catch (err) {

@@ -1,0 +1,89 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+<%
+  var sub = submission || {};
+  var rows = events || [];
+  var labels = eventLabels || {};
+  var isHq = shellKind === 'hq';
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function eventLabel(k) { return labels[k] || k || '—'; }
+  var postPath = commentsPostPath;
+  var backPath = commentsBackPath;
+%>
+
+<section class="bb-hq-phase3-comments" data-bb-phase3-submission-review-comments="1" aria-label="Phase3 Submission Review Comments">
+  <header class="<%= isHq ? 'bb-hq-page-head' : 'bb-ba-page-head' %>">
+    <p class="<%= isHq ? 'bb-hq-breadcrumb' : 'bb-ba-breadcrumb' %>">
+      <a href="<%= backPath %>">Submission</a>
+      <span aria-hidden="true">›</span>
+      <span>Comments</span>
+    </p>
+    <h1 class="<%= isHq ? 'bb-hq-page-head__title' : 'bb-ba-page-head__title' %>">Submission Review Comments</h1>
+    <p class="<%= isHq ? 'bb-hq-lede' : 'bb-ba-lede' %>"><%= sub.title || 'Conversation' %></p>
+  </header>
+
+  <% if (typeof formError !== 'undefined' && formError) { %>
+  <p class="<%= isHq ? 'bb-hq-error' : 'bb-ba-error' %>" role="alert"><%= formError %></p>
+  <% } %>
+  <% if (typeof notice !== 'undefined' && notice) { %>
+  <p class="<%= isHq ? 'bb-hq-ok' : 'bb-ba-ok' %>" role="status"><%= notice %></p>
+  <% } %>
+
+  <ol class="bb-hq-phase3-comments__timeline" data-bb-phase3-comments-timeline="1">
+    <% rows.forEach(function (ev) { %>
+    <li class="bb-hq-card<%= ev.visibility === 'hq_internal' ? ' bb-hq-phase3-comments__internal' : '' %>">
+      <div class="bb-hq-phase3-comments__head">
+        <strong><%= ev.actorName || 'System' %></strong>
+        <span><%= eventLabel(ev.eventType) %></span>
+        <time><%= formatWhen(ev.createdAt) %></time>
+        <% if (ev.visibility === 'hq_internal') { %><span class="bb-hq-chip bb-hq-chip--warn">HQ internal</span><% } %>
+      </div>
+      <% if (ev.comment) { %><p><%= ev.comment %></p><% } %>
+      <p class="bb-hq-muted">
+        <% if (ev.pageKey) { %>Page: <%= ev.pageKey %><% } %>
+        <% if (ev.sectionKey) { %> · Section: <%= ev.sectionKey %><% } %>
+      </p>
+    </li>
+    <% }) %>
+  </ol>
+
+  <form method="post" action="<%= postPath %>" class="<%= isHq ? 'bb-hq-form' : 'bb-ba-form' %> bb-hq-panel">
+    <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+    <div class="<%= isHq ? 'bb-hq-field' : 'bb-ba-field' %>">
+      <label for="comment-body">Comment <span class="bb-hq-req">*</span></label>
+      <textarea id="comment-body" name="comment" rows="4" maxlength="2000" required></textarea>
+    </div>
+    <div class="<%= isHq ? 'bb-hq-field' : 'bb-ba-field' %>">
+      <label for="comment-page">Related page</label>
+      <input id="comment-page" name="page_key" value="<%= sub.pageKey || '' %>" />
+    </div>
+    <div class="<%= isHq ? 'bb-hq-field' : 'bb-ba-field' %>">
+      <label for="comment-section">Related section</label>
+      <input id="comment-section" name="section_key" value="<%= sub.sectionKey || '' %>" />
+    </div>
+    <% if (isHq) { %>
+    <label class="bb-hq-check">
+      <input type="checkbox" name="hq_internal" value="1" />
+      HQ internal only (hidden from branch administrators)
+    </label>
+    <% } %>
+    <p>
+      <button type="submit" class="<%= isHq ? 'bb-hq-btn bb-hq-btn--primary' : 'bb-ba-btn bb-ba-btn--primary' %>">Add comment</button>
+      <a class="<%= isHq ? 'bb-hq-btn bb-hq-btn--ghost' : 'bb-ba-btn bb-ba-btn--ghost' %>" href="<%= backPath %>">Back</a>
+    </p>
+  </form>
+</section>
+
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

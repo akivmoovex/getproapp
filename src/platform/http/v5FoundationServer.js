@@ -64,6 +64,12 @@ const {
 const {
   createWebsitePublicationVersionAdminRouter,
 } = require("../../blessboard/http/websitePublicationVersionAdminRoutes");
+const {
+  createWebsiteAuditAdminRouter,
+} = require("../../blessboard/http/websiteAuditAdminRoutes");
+const {
+  createWebsiteWorkflowBatchCAdminRouter,
+} = require("../../blessboard/http/websiteWorkflowBatchCAdminRoutes");
 const { createApexMarketingRouter } = require("../../blessboard/http/apexMarketingRoutes");
 const { createPlatformAdminRouter } = require("./platformAdminRoutes");
 const { createLoadV5Session } = require("./loadV5Session");
@@ -542,6 +548,20 @@ function createV5FoundationApp(options) {
   );
   app.use(
     createWebsitePublicationVersionAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
+    createWebsiteAuditAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
+    createWebsiteWorkflowBatchCAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       env,

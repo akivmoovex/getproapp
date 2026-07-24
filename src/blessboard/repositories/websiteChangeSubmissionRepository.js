@@ -55,6 +55,9 @@ function mapEvent(row) {
     actorName: row.actor_display_name || null,
     eventType: row.event_type,
     comment: row.comment,
+    visibility: row.visibility || "shared",
+    pageKey: row.page_key || null,
+    sectionKey: row.section_key || null,
     metadata: row.metadata_json || {},
     createdAt: row.created_at,
   };
@@ -571,8 +574,9 @@ async function applyReviewDecision(db, decision) {
 async function appendEvent(db, event) {
   const res = await db.query(
     `INSERT INTO blessboard.website_change_submission_events (
-       submission_id, organization_id, actor_user_id, event_type, comment, metadata_json
-     ) VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+       submission_id, organization_id, actor_user_id, event_type, comment,
+       visibility, page_key, section_key, metadata_json
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
      RETURNING *`,
     [
       event.submissionId,
@@ -580,6 +584,9 @@ async function appendEvent(db, event) {
       event.actorUserId || null,
       event.eventType,
       event.comment || null,
+      event.visibility || "shared",
+      event.pageKey || null,
+      event.sectionKey || null,
       JSON.stringify(event.metadata || {}),
     ]
   );
@@ -590,19 +597,52 @@ async function appendEvent(db, event) {
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
  * @param {string} submissionId
+ * @param {{ includeInternal?: boolean }} [opts]
  */
-async function listEvents(db, organizationId, submissionId) {
+async function listEvents(db, organizationId, submissionId, opts) {
   if (!isUuid(organizationId) || !isUuid(submissionId)) return [];
+  const includeInternal = Boolean(opts && opts.includeInternal);
   const res = await db.query(
     `SELECT e.*, u.display_name AS actor_display_name
        FROM blessboard.website_change_submission_events e
        LEFT JOIN blessboard.users u ON u.id = e.actor_user_id
       WHERE e.organization_id = $1
         AND e.submission_id = $2
+        AND ($3::boolean OR e.visibility = 'shared')
       ORDER BY e.created_at ASC, e.id ASC`,
-    [organizationId, submissionId]
+    [organizationId, submissionId, includeInternal]
   );
   return (res.rows || []).map(mapEvent);
+}
+
+/**
+ * Mark all approved submissions published (called inside publish TX).
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ * @param {string|null} actorUserId
+ */
+async function markApprovedSubmissionsPublished(db, organizationId, actorUserId) {
+  if (!isUuid(organizationId)) return [];
+  const res = await db.query(
+    `UPDATE blessboard.website_change_submissions
+        SET status = 'published',
+            updated_at = now()
+      WHERE organization_id = $1
+        AND status = 'approved'
+      RETURNING id`,
+    [organizationId]
+  );
+  const rows = res.rows || [];
+  for (const row of rows) {
+    await appendEvent(db, {
+      submissionId: row.id,
+      organizationId,
+      actorUserId: actorUserId || null,
+      eventType: "published",
+      comment: "Included in website publication",
+    });
+  }
+  return rows.map((r) => r.id);
 }
 
 module.exports = {
@@ -622,4 +662,5 @@ module.exports = {
   applyReviewDecision,
   appendEvent,
   listEvents,
+  markApprovedSubmissionsPublished,
 };

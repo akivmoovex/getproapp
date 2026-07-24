@@ -1,0 +1,70 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  var errList = typeof errors !== 'undefined' && errors ? errors : [];
+%>
+
+<section class="bb-hq-phase3-pubresult" data-bb-phase3-publication-result="1" aria-label="Phase3 Publication Result">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/website">Website</a>
+      <span aria-hidden="true">›</span>
+      <span>Publish result</span>
+    </p>
+    <% if (failed) { %>
+    <h1 class="bb-hq-page-head__title">Publication was not completed</h1>
+    <p class="bb-hq-lede">The live website remains unchanged.</p>
+    <% } else { %>
+    <h1 class="bb-hq-page-head__title">Website published successfully</h1>
+    <p class="bb-hq-lede">A new publication version was recorded.</p>
+    <% } %>
+  </header>
+
+  <% if (failed) { %>
+  <div class="bb-hq-panel">
+    <% if (errList.length) { %>
+    <ul class="bb-hq-error-list" role="alert">
+      <% errList.forEach(function (e) { %><li><%= e %></li><% }) %>
+    </ul>
+    <% } else { %>
+    <p class="bb-hq-error" role="alert">Validation or readiness checks blocked publication.</p>
+    <% } %>
+    <p class="bb-hq-form__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/content">Return to editor</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= previewPath %>">Preview again</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/publish/review">Back to confirmation</a>
+    </p>
+  </div>
+  <% } else { %>
+  <div class="bb-hq-panel">
+    <ul class="bb-hq-phase3-pubconfirm__checks">
+      <li class="is-ok"><span aria-hidden="true">✓</span> Website published</li>
+      <li class="is-ok"><span aria-hidden="true">✓</span> Publication version created</li>
+      <li class="is-ok"><span aria-hidden="true">✓</span> Prior live version superseded (when present)</li>
+      <li class="is-ok"><span aria-hidden="true">✓</span> Approved submissions marked published (when present)</li>
+    </ul>
+    <dl class="bb-hq-phase3-pubconfirm__dl">
+      <div><dt>Publication time</dt><dd><%= version ? formatWhen(version.publishedAt) : '—' %></dd></div>
+      <div><dt>Published by</dt><dd><%= (version && version.publishedByName) || publishedByName || '—' %></dd></div>
+      <div><dt>New version</dt><dd><%= version ? ('v' + version.versionNumber) : '—' %></dd></div>
+      <% if (version && version.changeSummary && version.changeSummary.publicationNote) { %>
+      <div><dt>Publication note</dt><dd><%= version.changeSummary.publicationNote %></dd></div>
+      <% } %>
+    </dl>
+    <p class="bb-hq-form__actions">
+      <% if (publicPath) { %><a class="bb-hq-btn bb-hq-btn--primary" href="<%= publicPath %>" rel="noopener">View live website</a><% } %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/publishing-history">View publishing history</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/workflow">Workflow dashboard</a>
+    </p>
+  </div>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

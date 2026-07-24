@@ -45,6 +45,7 @@ const EVENT_LABELS = Object.freeze({
   rejected: "Rejected",
   published: "Published",
   withdrawn: "Withdrawn",
+  comment: "Comment",
 });
 
 /** Valid transitions for HQ review and branch submit/withdraw. */
@@ -286,7 +287,9 @@ async function loadSubmissionReview(db, opts) {
     if (!submission) {
       return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
     }
-    const events = await repo.listEvents(db, organizationId, submissionId);
+    const events = await repo.listEvents(db, organizationId, submissionId, {
+      includeInternal: true,
+    });
     const comparison = buildContentComparison(
       submission.currentContent,
       submission.proposedContent
@@ -362,6 +365,23 @@ async function approveSubmission(db, opts) {
           from: existing.status,
         };
       }
+      const approvalSettingsSvc = require("./websiteApprovalSettingsService");
+      const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(
+        client,
+        organizationId
+      );
+      if (
+        settingsLoad.ok &&
+        settingsLoad.settings.preventSelfApproval &&
+        existing.submittedBy &&
+        String(existing.submittedBy) === String(reviewerUserId)
+      ) {
+        return {
+          ok: false,
+          status: STATUS.FORBIDDEN,
+          reason: "self_approval_blocked",
+        };
+      }
       const updated = await repo.applyReviewDecision(client, {
         organizationId,
         submissionId,
@@ -380,6 +400,19 @@ async function approveSubmission(db, opts) {
         actorUserId: reviewerUserId,
         eventType: "approved",
         comment: comment.value,
+      });
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEventInTransaction(client, {
+        organizationId,
+        branchId: updated.branchId,
+        actorUserId: reviewerUserId,
+        actorRole: "church_hq_admin",
+        actionType: "changes_approved",
+        pageKey: updated.pageKey,
+        sectionKey: updated.sectionKey,
+        entityType: "website_change_submission",
+        entityId: submissionId,
+        result: "success",
       });
       return { ok: true, status: STATUS.OK, submission: updated };
     });
@@ -408,9 +441,23 @@ async function requestChanges(db, opts) {
   ) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
   }
-  const feedback = requireText(opts.feedback, 2000);
+
+  const approvalSettingsSvc = require("./websiteApprovalSettingsService");
+  const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(
+    db,
+    organizationId
+  );
+  const requireComment =
+    !settingsLoad.ok || settingsLoad.settings.requireRequestChangesComment !== false;
+  const feedback = requireComment
+    ? requireText(opts.feedback, 2000)
+    : optionalText(opts.feedback, 2000);
   if (!feedback.ok) {
-    return { ok: false, status: STATUS.INVALID_INPUT, reason: "feedback_required" };
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: requireComment ? "feedback_required" : "feedback",
+    };
   }
 
   try {
@@ -448,6 +495,19 @@ async function requestChanges(db, opts) {
         eventType: "changes_requested",
         comment: feedback.value,
       });
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEventInTransaction(client, {
+        organizationId,
+        branchId: updated.branchId,
+        actorUserId: reviewerUserId,
+        actorRole: "church_hq_admin",
+        actionType: "changes_requested",
+        pageKey: updated.pageKey,
+        sectionKey: updated.sectionKey,
+        entityType: "website_change_submission",
+        entityId: submissionId,
+        result: "success",
+      });
       return { ok: true, status: STATUS.OK, submission: updated };
     });
   } catch {
@@ -475,9 +535,23 @@ async function rejectSubmission(db, opts) {
   ) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
   }
-  const reason = requireText(opts.rejectionReason, 2000);
+
+  const approvalSettingsSvc = require("./websiteApprovalSettingsService");
+  const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(
+    db,
+    organizationId
+  );
+  const requireReason =
+    !settingsLoad.ok || settingsLoad.settings.requireRejectionReason !== false;
+  const reason = requireReason
+    ? requireText(opts.rejectionReason, 2000)
+    : optionalText(opts.rejectionReason, 2000);
   if (!reason.ok) {
-    return { ok: false, status: STATUS.INVALID_INPUT, reason: "rejection_reason_required" };
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: requireReason ? "rejection_reason_required" : "rejection_reason",
+    };
   }
 
   try {
@@ -515,6 +589,19 @@ async function rejectSubmission(db, opts) {
         eventType: "rejected",
         comment: reason.value,
       });
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEventInTransaction(client, {
+        organizationId,
+        branchId: updated.branchId,
+        actorUserId: reviewerUserId,
+        actorRole: "church_hq_admin",
+        actionType: "submission_rejected",
+        pageKey: updated.pageKey,
+        sectionKey: updated.sectionKey,
+        entityType: "website_change_submission",
+        entityId: submissionId,
+        result: "success",
+      });
       return { ok: true, status: STATUS.OK, submission: updated };
     });
   } catch {
@@ -547,6 +634,8 @@ module.exports = {
   buildBranchSubmissionFormModel,
   parseChecklist,
   buildProposedFromBody,
+  listSubmissionConversation,
+  addSubmissionComment,
   insertSubmission: repo.insertSubmission,
   appendEvent: repo.appendEvent,
 };
@@ -622,7 +711,9 @@ async function loadBranchSubmission(db, opts) {
     if (!submission) {
       return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
     }
-    const events = await repo.listEvents(db, organizationId, submissionId);
+    const events = await repo.listEvents(db, organizationId, submissionId, {
+      includeInternal: false,
+    });
     const comparison = buildContentComparison(
       submission.currentContent,
       submission.proposedContent
@@ -946,6 +1037,19 @@ async function saveBranchSubmissionDraft(db, opts) {
         eventType: "created",
         comment: "Draft saved",
       });
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEventInTransaction(client, {
+        organizationId,
+        branchId,
+        actorUserId,
+        actorRole: "branch_admin",
+        actionType: "submission_created",
+        pageKey,
+        sectionKey: sectionKey || snap.resolvedSectionKey,
+        entityType: "website_change_submission",
+        entityId: created.id,
+        result: "success",
+      });
       return { ok: true, status: STATUS.OK, submission: created, created: true };
     });
   } catch {
@@ -1030,6 +1134,19 @@ async function submitBranchSubmission(db, opts) {
         eventType: wasResubmit ? "resubmitted" : "submitted",
         comment: existing.submitterNote || null,
       });
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEventInTransaction(client, {
+        organizationId,
+        branchId,
+        actorUserId,
+        actorRole: "branch_admin",
+        actionType: wasResubmit ? "submission_resubmitted" : "submission_submitted",
+        pageKey: updated.pageKey,
+        sectionKey: updated.sectionKey,
+        entityType: "website_change_submission",
+        entityId: id,
+        result: "success",
+      });
       return { ok: true, status: STATUS.OK, submission: updated, resubmitted: wasResubmit };
     });
   } catch {
@@ -1093,6 +1210,19 @@ async function withdrawBranchSubmission(db, opts) {
         eventType: "withdrawn",
         comment: "Withdrawn by branch administrator",
       });
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEventInTransaction(client, {
+        organizationId,
+        branchId,
+        actorUserId,
+        actorRole: "branch_admin",
+        actionType: "submission_withdrawn",
+        pageKey: updated.pageKey,
+        sectionKey: updated.sectionKey,
+        entityType: "website_change_submission",
+        entityId: submissionId,
+        result: "success",
+      });
       return { ok: true, status: STATUS.OK, submission: updated };
     });
   } catch {
@@ -1149,5 +1279,148 @@ async function duplicateBranchSubmissionDraft(db, opts) {
     });
   } catch {
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "duplicate" };
+  }
+}
+
+/**
+ * Conversation timeline (status events + comments) with visibility filtering.
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   submissionId: string,
+ *   branchId?: string|null,
+ *   includeInternal?: boolean,
+ * }} opts
+ */
+async function listSubmissionConversation(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const submissionId = opts && opts.submissionId;
+  if (!repo.isUuid(organizationId) || !repo.isUuid(submissionId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+  try {
+    let submission;
+    if (opts.branchId) {
+      if (!repo.isUuid(opts.branchId)) {
+        return { ok: false, status: STATUS.INVALID_INPUT, reason: "branch" };
+      }
+      submission = await repo.getSubmissionByOrgBranchAndId(
+        db,
+        organizationId,
+        opts.branchId,
+        submissionId
+      );
+    } else {
+      submission = await repo.getSubmissionByOrgAndId(db, organizationId, submissionId);
+    }
+    if (!submission) return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+
+    const includeInternal = Boolean(opts.includeInternal);
+    const events = await repo.listEvents(db, organizationId, submissionId, {
+      includeInternal,
+    });
+    return {
+      ok: true,
+      status: STATUS.OK,
+      submission,
+      events,
+      eventLabels: {
+        ...EVENT_LABELS,
+        comment: "Comment",
+      },
+      includeInternal,
+    };
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "conversation" };
+  }
+}
+
+/**
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   submissionId: string,
+ *   actorUserId: string,
+ *   actorRole?: string|null,
+ *   branchId?: string|null,
+ *   comment: string,
+ *   visibility?: string,
+ *   pageKey?: string|null,
+ *   sectionKey?: string|null,
+ *   allowInternal?: boolean,
+ * }} opts
+ */
+async function addSubmissionComment(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const submissionId = opts && opts.submissionId;
+  const actorUserId = opts && opts.actorUserId;
+  if (
+    !repo.isUuid(organizationId) ||
+    !repo.isUuid(submissionId) ||
+    !repo.isUuid(actorUserId)
+  ) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+  const text = requireText(opts.comment, 2000);
+  if (!text.ok) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "comment_required" };
+  }
+
+  let visibility = String(opts.visibility || "shared").toLowerCase();
+  if (visibility !== "shared" && visibility !== "hq_internal") {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "visibility" };
+  }
+  if (visibility === "hq_internal" && !opts.allowInternal) {
+    return { ok: false, status: STATUS.FORBIDDEN, reason: "internal_not_allowed" };
+  }
+
+  const pageKey =
+    opts.pageKey && PAGE_KEY_RE.test(String(opts.pageKey))
+      ? String(opts.pageKey)
+      : null;
+  const sectionKey =
+    opts.sectionKey && SECTION_KEY_RE.test(String(opts.sectionKey))
+      ? String(opts.sectionKey)
+      : null;
+
+  try {
+    return await withTransaction(db, async (client) => {
+      let submission;
+      if (opts.branchId) {
+        submission = await repo.getSubmissionByOrgBranchAndId(
+          client,
+          organizationId,
+          opts.branchId,
+          submissionId
+        );
+      } else {
+        submission = await repo.getSubmissionByOrgAndId(
+          client,
+          organizationId,
+          submissionId
+        );
+      }
+      if (!submission) return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+
+      const event = await repo.appendEvent(client, {
+        submissionId,
+        organizationId,
+        actorUserId,
+        eventType: "comment",
+        comment: text.value,
+        visibility,
+        pageKey: pageKey || submission.pageKey || null,
+        sectionKey: sectionKey || submission.sectionKey || null,
+      });
+
+      return {
+        ok: true,
+        status: STATUS.OK,
+        event,
+        submission,
+      };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "comment" };
   }
 }

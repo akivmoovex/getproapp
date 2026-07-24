@@ -1,0 +1,144 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var hist = historical || null;
+  var live = current || null;
+  var pages = pageOptions || [];
+  var labels = statusLabels || {};
+  var sources = sourceLabels || {};
+  function statusLabel(s) { return labels[s] || s || '—'; }
+  function sourceLabel(s) { return sources[s] || s || '—'; }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+%>
+
+<section class="bb-hq-phase3-restore" data-bb-phase3-restore-website-version="1" aria-label="Phase3 Restore Website Version">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website/version-history">Version history</a>
+        <span aria-hidden="true">›</span>
+        <span>Restore</span>
+      </p>
+      <h1 class="bb-hq-page-head__title"><% if (success) { %>Restored draft created<% } else { %>Restore Website Version<% } %></h1>
+      <p class="bb-hq-lede"><% if (success) { %><%= success %><% } else { %>Confirm restoration of version <%= hist ? hist.versionNumber : '' %> into a new draft<% } %></p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history">Back to Version History</a>
+    </p>
+  </header>
+
+  <% if (formError) { %>
+  <p class="bb-hq-error" role="alert"><%= formError %></p>
+  <% } %>
+
+  <% if (success && draftVersion) { %>
+  <div class="bb-hq-panel bb-hq-phase3-restore__success" data-bb-phase3-restore-success="1">
+    <p><strong>A restored draft has been created. Review it before publishing.</strong></p>
+    <p>Draft version v<%= draftVersion.versionNumber %> · Source historical v<%= hist ? hist.versionNumber : '—' %></p>
+    <p class="bb-hq-phase3-restore__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/version-history/<%= draftVersion.id %>/preview">Preview restored draft</a>
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="/hq/website">Open Website Editor</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history">View Version History</a>
+    </p>
+  </div>
+  <% } else if (hist) { %>
+
+  <div class="bb-hq-phase3-restore__compare">
+    <article class="bb-hq-card">
+      <h2>Current live</h2>
+      <% if (live) { %>
+      <p>Version <%= live.versionNumber %></p>
+      <p>Published <%= formatWhen(live.publishedAt) %></p>
+      <p>By <%= live.publishedByName || '—' %></p>
+      <p>Theme: <%= themeCurrent || live.themeKey || '—' %></p>
+      <% } else { %>
+      <p>No live published version yet.</p>
+      <% } %>
+    </article>
+    <article class="bb-hq-card bb-hq-card--accent">
+      <h2>Restoring to</h2>
+      <p>Version <%= hist.versionNumber %></p>
+      <p>Published <%= formatWhen(hist.publishedAt || hist.createdAt) %></p>
+      <p>By <%= hist.publishedByName || hist.createdByName || '—' %></p>
+      <p>Theme: <%= themeHistorical || hist.themeKey || '—' %></p>
+      <p>Source: <%= sourceLabel(hist.sourceType) %></p>
+      <p><a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= hist.id %>/preview">View Full Preview</a></p>
+    </article>
+  </div>
+
+  <form method="post" action="/hq/website/version-history/<%= hist.id %>/restore" class="bb-hq-form bb-hq-phase3-restore__form">
+    <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+
+    <fieldset class="bb-hq-fieldset">
+      <legend>Pages included</legend>
+      <label class="bb-hq-check">
+        <input type="checkbox" name="restore_all" value="1" checked />
+        Restore all pages from this version
+      </label>
+      <ul class="bb-hq-phase3-restore__pages">
+        <% pages.forEach(function (p) { %>
+        <li>
+          <label class="bb-hq-check">
+            <input type="checkbox" name="pages" value="<%= p.key %>"<%= p.selected ? ' checked' : '' %> />
+            <%= p.title %> <span class="bb-hq-muted">(<%= p.sectionCount %> sections)</span>
+          </label>
+        </li>
+        <% }) %>
+      </ul>
+    </fieldset>
+
+    <fieldset class="bb-hq-fieldset">
+      <legend>Restore options</legend>
+      <label class="bb-hq-check">
+        <input type="checkbox" name="restore_theme" value="1" checked />
+        Restore historical theme
+      </label>
+      <label class="bb-hq-check">
+        <input type="checkbox" name="keep_current_theme" value="1" />
+        Keep current theme instead
+      </label>
+      <label class="bb-hq-check">
+        <input type="checkbox" name="restore_navigation" value="1" checked />
+        Restore historical navigation (when present in snapshot)
+      </label>
+      <label class="bb-hq-check">
+        <input type="checkbox" name="keep_current_navigation" value="1" />
+        Keep current navigation instead
+      </label>
+    </fieldset>
+
+    <div class="bb-hq-field">
+      <label for="restore-reason">Internal restoration reason <span class="bb-hq-req">*</span></label>
+      <textarea id="restore-reason" name="restoration_reason" rows="3" maxlength="2000" required placeholder="Required for audit trail"></textarea>
+    </div>
+
+    <div class="bb-hq-field">
+      <p><strong>Original change summary:</strong>
+        <% var sum = hist.changeSummary || {}; %>
+        <%= (sum.sectionCount != null) ? (sum.sectionCount + ' sections across ' + (sum.pageCount || 0) + ' pages') : '—' %>
+      </p>
+      <p class="bb-hq-hint">Restoring creates a new draft only. The live website is not overwritten until you publish through the normal publish flow.</p>
+    </div>
+
+    <label class="bb-hq-check">
+      <input type="checkbox" name="confirm_restore" value="1" required />
+      I understand this creates a restoration draft and does not publish live immediately
+    </label>
+
+    <p class="bb-hq-phase3-restore__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history">Cancel</a>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Confirm &amp; Restore Version <%= hist.versionNumber %></button>
+    </p>
+  </form>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

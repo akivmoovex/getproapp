@@ -423,6 +423,13 @@ async function updatePageSection(db, sectionId, patch) {
     }
     fields.expectedUpdatedAt = parsed.value;
   }
+  if (body.expectedRevision !== undefined && body.expectedRevision !== null && body.expectedRevision !== "") {
+    const rev = Number(body.expectedRevision);
+    if (!Number.isFinite(rev) || rev < 1) {
+      return { ok: false, status: STATUS.INVALID_INPUT, section: null, reason: "expected_revision" };
+    }
+    fields.expectedRevision = rev;
+  }
   try {
     return await withClient(db, async (client) => {
       const existing = await repo.findSectionById(client, id);
@@ -440,7 +447,13 @@ async function updatePageSection(db, sectionId, patch) {
       }
       const result = await repo.updateSection(client, id, fields);
       if (result.conflict) {
-        return { ok: false, status: STATUS.CONFLICT, section: existing, reason: "optimistic_conflict" };
+        const latest = await repo.findSectionById(client, id);
+        return {
+          ok: false,
+          status: STATUS.CONFLICT,
+          section: latest || existing,
+          reason: "optimistic_conflict",
+        };
       }
       if (!result.section) return { ok: false, status: STATUS.NOT_FOUND, section: null };
       return { ok: true, status: STATUS.OK, section: result.section };

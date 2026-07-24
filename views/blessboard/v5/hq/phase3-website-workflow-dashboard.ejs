@@ -1,0 +1,154 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var d = dashboard || {};
+  var counts = d.counts || {};
+  var attention = d.needsAttention || [];
+  var recent = d.recentSubmissions || [];
+  var pubs = d.recentPublications || [];
+  var draft = d.draftSummary || {};
+  var labels = d.statusLabels || {};
+  var guide = d.workflowGuide || [];
+  function formatWhen(value) {
+    if (!value) return '—';
+    var dte = value instanceof Date ? value : new Date(value);
+    if (isNaN(dte.getTime())) return String(value).slice(0, 16);
+    return dte.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function statusLabel(s) { return labels[s] || s || '—'; }
+%>
+
+<section class="bb-hq-phase3-workflow" data-bb-phase3-website-workflow-dashboard="1" aria-label="Phase3 Website Workflow Dashboard">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Workflow</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Website Workflow Dashboard</h1>
+      <p class="bb-hq-lede">Submission review, draft status, and publication readiness</p>
+    </div>
+    <p class="bb-hq-page-head__actions bb-hq-phase3-workflow__desktop-actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= editPath %>">Edit Website</a>
+      <% if (publicPath) { %><a class="bb-hq-btn bb-hq-btn--ghost" href="<%= publicPath %>">View Live Website</a><% } %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/change-submissions">Review Submissions</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= previewPath %>">Preview Draft</a>
+      <% if (d.publishReady) { %>
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="/hq/website/publish/review">Publish</a>
+      <% } else { %>
+      <button type="button" class="bb-hq-btn bb-hq-btn--secondary" disabled title="Resolve validation before publishing">Publish</button>
+      <% } %>
+    </p>
+  </header>
+
+  <div class="bb-hq-phase3-workflow__counts" aria-label="Status counts">
+    <div class="bb-hq-stat"><span class="bb-hq-stat__n"><%= counts.draftChanges || 0 %></span><span class="bb-hq-stat__l">Draft changes</span></div>
+    <div class="bb-hq-stat"><span class="bb-hq-stat__n"><%= counts.pendingSubmissions || 0 %></span><span class="bb-hq-stat__l">Pending submissions</span></div>
+    <div class="bb-hq-stat"><span class="bb-hq-stat__n"><%= counts.changesRequested || 0 %></span><span class="bb-hq-stat__l">Changes requested</span></div>
+    <div class="bb-hq-stat"><span class="bb-hq-stat__n"><%= counts.approvedReady || 0 %></span><span class="bb-hq-stat__l">Approved and ready</span></div>
+    <div class="bb-hq-stat"><span class="bb-hq-stat__n"><%= counts.publishedRecently || 0 %></span><span class="bb-hq-stat__l">Published recently</span></div>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Workflow guide</h2>
+    <ol class="bb-hq-phase3-workflow__guide">
+      <% guide.forEach(function (step) { %><li><%= step %></li><% }) %>
+    </ol>
+    <p class="bb-hq-hint">Explanatory only — not live progress tracking.</p>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Needs attention</h2>
+    <% if (!attention.length) { %>
+    <p class="bb-hq-empty" data-bb-phase3-workflow-attention-empty="1">No submissions are waiting for review.</p>
+    <% } else { %>
+    <ul class="bb-hq-phase3-workflow__attention">
+      <% attention.forEach(function (item) { %>
+      <li>
+        <a href="<%= item.href %>"><%= item.label %></a>
+        <% if (item.meta) { %><span class="bb-hq-meta"><%= item.meta %></span><% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Recent submissions</h2>
+    <% if (!recent.length) { %>
+    <p class="bb-hq-empty">No website change submissions yet.</p>
+    <% } else { %>
+    <div class="bb-hq-table-wrap" data-bb-phase3-workflow-desktop="1">
+      <table class="bb-hq-table">
+        <thead><tr><th>Branch</th><th>Submission</th><th>Status</th><th>Submitted by</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          <% recent.forEach(function (row) { %>
+          <tr>
+            <td><%= row.branchName || '—' %></td>
+            <td><a href="/hq/website/change-submissions/<%= row.id %>"><%= row.title %></a></td>
+            <td><%= statusLabel(row.status) %></td>
+            <td><%= row.submittedByName || '—' %></td>
+            <td><%= formatWhen(row.submittedAt || row.updatedAt) %></td>
+            <td><a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--primary" href="/hq/website/change-submissions/<%= row.id %>">Review</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div class="bb-hq-phase3-workflow__cards" data-bb-phase3-workflow-mobile="1">
+      <% recent.forEach(function (row) { %>
+      <article class="bb-hq-card">
+        <h3><a href="/hq/website/change-submissions/<%= row.id %>"><%= row.title %></a></h3>
+        <p><%= row.branchName || '—' %> · <%= statusLabel(row.status) %></p>
+        <p><%= row.submittedByName || '—' %> · <%= formatWhen(row.submittedAt || row.updatedAt) %></p>
+        <p><a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--primary" href="/hq/website/change-submissions/<%= row.id %>">Review</a></p>
+      </article>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Draft website</h2>
+    <% if (!draft.unpublishedChanges && !draft.lastEditedAt) { %>
+    <p class="bb-hq-empty" data-bb-phase3-workflow-draft-empty="1">There are no unpublished website changes.</p>
+    <% } else { %>
+    <dl class="bb-hq-phase3-pubconfirm__dl">
+      <div><dt>Last edited</dt><dd><%= formatWhen(draft.lastEditedAt) %></dd></div>
+      <div><dt>Unpublished changes</dt><dd><%= draft.unpublishedChanges ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Theme</dt><dd><%= draft.themeKey || 'default' %></dd></div>
+    </dl>
+    <% } %>
+    <p class="bb-hq-form__actions">
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= previewPath %>">Preview</a>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= editPath %>">Continue editing</a>
+    </p>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Recent publications</h2>
+    <% if (!pubs.length) { %>
+    <p class="bb-hq-empty">No website publications have been recorded yet.</p>
+    <% } else { %>
+    <ul class="bb-hq-phase3-workflow__pubs">
+      <% pubs.forEach(function (p) { %>
+      <li>
+        <strong>v<%= p.versionNumber %></strong>
+        <% if (p.isCurrent) { %><span class="bb-hq-chip bb-hq-chip--tiny bb-hq-chip--ok">Current</span><% } %>
+        · <%= p.publishedByName || '—' %> · <%= formatWhen(p.publishedAt) %>
+        · pages: <%= (p.pagesAffected || []).length ? p.pagesAffected.join(', ') : '—' %>
+        <a href="/hq/website/publishing-history">View history</a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <p class="bb-hq-phase3-workflow__sticky" data-bb-phase3-workflow-sticky="1">
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= editPath %>">Edit Website</a>
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

@@ -16,6 +16,7 @@ function mapPage(row) {
     status: row.status,
     publishedAt: row.published_at,
     layoutMetadata: row.layout_metadata,
+    revisionNumber: row.revision_number != null ? Number(row.revision_number) : 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -34,6 +35,7 @@ function mapSection(row) {
     sortOrder: row.sort_order,
     status: row.status,
     layoutMetadata: row.layout_metadata,
+    revisionNumber: row.revision_number != null ? Number(row.revision_number) : 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -149,9 +151,9 @@ function mapGivingMethod(row) {
 }
 
 const PAGE_COLS = `id, church_id, branch_id, page_key, title, status, published_at,
-                   layout_metadata, created_at, updated_at`;
+                   layout_metadata, revision_number, created_at, updated_at`;
 const SECTION_COLS = `id, page_id, section_key, section_type, heading, body_text, media_url,
-                      sort_order, status, layout_metadata, created_at, updated_at`;
+                      sort_order, status, layout_metadata, revision_number, created_at, updated_at`;
 const LEADER_COLS = `id, church_id, branch_id, display_name, role_title, biography, image_url,
                      sort_order, status, created_at, updated_at`;
 const MINISTRY_COLS = `id, church_id, branch_id, name, summary, description, meeting_day,
@@ -243,7 +245,10 @@ async function updatePage(client, pageId, patch) {
     patch.layoutMetadata !== undefined ? patch.layoutMetadata : null,
   ];
   let where = "id = $1";
-  if (patch.expectedUpdatedAt != null) {
+  if (patch.expectedRevision != null && Number.isFinite(Number(patch.expectedRevision))) {
+    params.push(Number(patch.expectedRevision));
+    where += ` AND revision_number = $${params.length}`;
+  } else if (patch.expectedUpdatedAt != null) {
     params.push(patch.expectedUpdatedAt);
     where += ` AND date_trunc('milliseconds', updated_at) = date_trunc('milliseconds', $${params.length}::timestamptz)`;
   }
@@ -257,13 +262,14 @@ async function updatePage(client, pageId, patch) {
               ELSE published_at
             END,
             layout_metadata = COALESCE($5, layout_metadata),
+            revision_number = revision_number + 1,
             updated_at = now()
       WHERE ${where}
       RETURNING ${PAGE_COLS}`,
     params
   );
   if (r.rows[0]) return { page: mapPage(r.rows[0]), conflict: false };
-  if (patch.expectedUpdatedAt != null) {
+  if (patch.expectedRevision != null || patch.expectedUpdatedAt != null) {
     const existing = await findPageById(client, pageId);
     if (existing) return { page: null, conflict: true };
   }
@@ -336,7 +342,10 @@ async function updateSection(client, sectionId, patch) {
     patch.layoutMetadata !== undefined ? patch.layoutMetadata : null,
   ];
   let where = "id = $1";
-  if (patch.expectedUpdatedAt != null) {
+  if (patch.expectedRevision != null && Number.isFinite(Number(patch.expectedRevision))) {
+    params.push(Number(patch.expectedRevision));
+    where += ` AND revision_number = $${params.length}`;
+  } else if (patch.expectedUpdatedAt != null) {
     params.push(patch.expectedUpdatedAt);
     where += ` AND date_trunc('milliseconds', updated_at) = date_trunc('milliseconds', $${params.length}::timestamptz)`;
   }
@@ -349,13 +358,14 @@ async function updateSection(client, sectionId, patch) {
             sort_order = COALESCE($6, sort_order),
             status = COALESCE($7, status),
             layout_metadata = COALESCE($8, layout_metadata),
+            revision_number = revision_number + 1,
             updated_at = now()
       WHERE ${where}
       RETURNING ${SECTION_COLS}`,
     params
   );
   if (r.rows[0]) return { section: mapSection(r.rows[0]), conflict: false };
-  if (patch.expectedUpdatedAt != null) {
+  if (patch.expectedRevision != null || patch.expectedUpdatedAt != null) {
     const existing = await findSectionById(client, sectionId);
     if (existing) return { section: null, conflict: true };
   }

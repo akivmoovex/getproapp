@@ -63,6 +63,9 @@
   <% if (typeof saved !== 'undefined' && saved) { %>
   <%- include('../partials/flash-message', { type: 'success', title: 'Saved', message: 'Section saved.' }) %>
   <% } %>
+  <% if (typeof conflictPanel !== 'undefined' && conflictPanel) { %>
+  <%- include('./phase3-website-edit-conflict') %>
+  <% } %>
 
   <form
     method="post"
@@ -73,6 +76,7 @@
   >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <input type="hidden" name="expected_updated_at" value="<%= section.updatedAt instanceof Date ? section.updatedAt.toISOString() : section.updatedAt %>" />
+    <input type="hidden" name="base_revision" value="<%= section.revisionNumber != null ? section.revisionNumber : 1 %>" />
 
     <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-section-content-heading" data-bb-section-section="content">
       <h2 id="bb-ca-section-content-heading" class="bb-ba-section-title">Content</h2>

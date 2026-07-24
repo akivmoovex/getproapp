@@ -1,0 +1,125 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = items || [];
+  var f = filters || {};
+  var labels = actionLabels || {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function actionLabel(k) { return labels[k] || k || '—'; }
+%>
+
+<section class="bb-hq-phase3-audit" data-bb-phase3-website-audit-log="1" aria-label="Phase3 Website Audit Log">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Audit log</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Website Audit Log</h1>
+      <p class="bb-hq-lede">Accountability trail for website workflow actions</p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <button type="button" class="bb-hq-btn bb-hq-btn--ghost" disabled title="Export is not available yet">Export CSV</button>
+    </p>
+  </header>
+
+  <form method="get" action="/hq/website/audit-log" class="bb-hq-filter" role="search">
+    <div class="bb-hq-field">
+      <label for="aud-action">Action</label>
+      <select id="aud-action" name="action">
+        <option value="">All actions</option>
+        <% (actionTypes || []).forEach(function (k) { %>
+        <option value="<%= k %>"<%= f.actionType === k ? ' selected' : '' %>><%= actionLabel(k) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="aud-user">User</label>
+      <select id="aud-user" name="user">
+        <option value="">All users</option>
+        <% (actors || []).forEach(function (u) { %>
+        <option value="<%= u.id %>"<%= f.actorUserId === String(u.id) ? ' selected' : '' %>><%= u.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="aud-role">Role</label>
+      <input id="aud-role" name="role" value="<%= f.actorRole || '' %>" placeholder="e.g. church_hq_admin" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="aud-branch">Branch</label>
+      <select id="aud-branch" name="branch">
+        <option value="">All branches</option>
+        <% (branches || []).forEach(function (b) { %>
+        <option value="<%= b.id %>"<%= f.branchId === String(b.id) ? ' selected' : '' %>><%= b.displayName || b.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="aud-page">Page</label>
+      <input id="aud-page" name="page" value="<%= f.pageKey || '' %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="aud-result">Result</label>
+      <select id="aud-result" name="result">
+        <option value="">All results</option>
+        <% ['success','failure','denied','conflict'].forEach(function (k) { %>
+        <option value="<%= k %>"<%= f.result === k ? ' selected' : '' %>><%= k %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field"><label for="aud-from">From</label><input id="aud-from" name="from" type="date" value="<%= f.from || '' %>" /></div>
+    <div class="bb-hq-field"><label for="aud-to">To</label><input id="aud-to" name="to" type="date" value="<%= f.to || '' %>" /></div>
+    <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Apply filters</button>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-hq-empty" data-bb-phase3-audit-empty="1">
+    <p>No website audit events have been recorded yet.</p>
+  </div>
+  <% } else { %>
+  <div class="bb-hq-table-wrap" data-bb-phase3-audit-desktop="1">
+    <table class="bb-hq-table">
+      <thead>
+        <tr>
+          <th>Date</th><th>User</th><th>Role</th><th>Branch</th><th>Action</th><th>Page</th><th>Section</th><th>Result</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr>
+          <td><%= formatWhen(row.createdAt) %></td>
+          <td><%= row.actorName || '—' %></td>
+          <td><%= row.actorRole || '—' %></td>
+          <td><%= row.branchName || '—' %></td>
+          <td><%= row.actionLabel || actionLabel(row.actionType) %></td>
+          <td><%= row.pageKey || '—' %></td>
+          <td><%= row.sectionKey || '—' %></td>
+          <td><%= row.result %></td>
+          <td><a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/audit-log/<%= row.id %>">Details</a></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bb-hq-phase3-audit__cards" data-bb-phase3-audit-mobile="1">
+    <% rows.forEach(function (row) { %>
+    <li class="bb-hq-card">
+      <p><strong><%= row.actionLabel || actionLabel(row.actionType) %></strong></p>
+      <p><%= formatWhen(row.createdAt) %> · <%= row.actorName || '—' %></p>
+      <p><%= row.pageKey || '—' %><% if (row.sectionKey) { %> / <%= row.sectionKey %><% } %></p>
+      <p><a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/audit-log/<%= row.id %>">Details</a></p>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

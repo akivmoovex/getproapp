@@ -22,6 +22,9 @@ function mapVersion(row) {
     themeKey: row.theme_key,
     sourceType: row.source_type,
     sourceSubmissionId: row.source_submission_id,
+    sourceVersionId: row.source_version_id || null,
+    restorationReason: row.restoration_reason || null,
+    restoredBy: row.restored_by || null,
     snapshot: row.snapshot_json || {},
     changeSummary: row.change_summary_json || {},
     createdBy: row.created_by,
@@ -82,15 +85,19 @@ async function supersedePublishedVersions(db, organizationId) {
  * @param {object} input
  */
 async function insertPublishedVersion(db, input) {
+  const sourceType = input.sourceType || "hq_edit";
+  const isRestore = sourceType === "content_restoration";
   const res = await db.query(
     `INSERT INTO blessboard.website_publication_versions (
        organization_id, church_id, version_number, status, theme_key, source_type,
-       source_submission_id, snapshot_json, change_summary_json,
+       source_submission_id, source_version_id, restoration_reason, restored_by,
+       snapshot_json, change_summary_json,
        created_by, published_by, published_at
      ) VALUES (
        $1, $2, $3, 'published', $4, $5,
-       $6, $7::jsonb, $8::jsonb,
-       $9, $10, $11::timestamptz
+       $6, $7, $8, $9,
+       $10::jsonb, $11::jsonb,
+       $12, $13, $14::timestamptz
      )
      RETURNING *`,
     [
@@ -98,8 +105,11 @@ async function insertPublishedVersion(db, input) {
       input.churchId,
       input.versionNumber,
       input.themeKey || null,
-      input.sourceType || "hq_edit",
+      sourceType,
       input.sourceSubmissionId || null,
+      isRestore ? input.sourceVersionId || null : null,
+      isRestore ? input.restorationReason || null : null,
+      isRestore ? input.restoredBy || input.publishedBy || null : null,
       JSON.stringify(input.snapshot || {}),
       JSON.stringify(input.changeSummary || {}),
       input.createdBy || input.publishedBy || null,
@@ -249,14 +259,196 @@ async function listThemeKeys(db, organizationId) {
   return (res.rows || []).map((r) => r.theme_key);
 }
 
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ * @param {string} versionIdA
+ * @param {string} versionIdB
+ */
+async function loadVersionPair(db, organizationId, versionIdA, versionIdB) {
+  if (!isUuid(organizationId) || !isUuid(versionIdA) || !isUuid(versionIdB)) {
+    return { a: null, b: null };
+  }
+  const [a, b] = await Promise.all([
+    getVersionByOrgAndId(db, organizationId, versionIdA),
+    getVersionByOrgAndId(db, organizationId, versionIdB),
+  ]);
+  return { a, b };
+}
+
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ * @param {number} beforeVersionNumber
+ */
+async function loadPreviousPublishedVersion(db, organizationId, beforeVersionNumber) {
+  if (!isUuid(organizationId) || !Number.isFinite(Number(beforeVersionNumber))) return null;
+  const res = await db.query(
+    `${LIST_SELECT}
+      WHERE v.organization_id = $1
+        AND v.version_number < $2
+        AND v.status IN ('published', 'superseded')
+      ORDER BY v.version_number DESC
+      LIMIT 1`,
+    [organizationId, Number(beforeVersionNumber)]
+  );
+  return mapVersion(res.rows[0] || null);
+}
+
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {object} input
+ */
+async function insertDraftRestorationVersion(db, input) {
+  const res = await db.query(
+    `INSERT INTO blessboard.website_publication_versions (
+       organization_id, church_id, version_number, status, theme_key, source_type,
+       source_submission_id, source_version_id, restoration_reason, restored_by,
+       snapshot_json, change_summary_json, created_by
+     ) VALUES (
+       $1, $2, $3, 'draft', $4, 'content_restoration',
+       NULL, $5, $6, $7,
+       $8::jsonb, $9::jsonb, $7
+     )
+     RETURNING *`,
+    [
+      input.organizationId,
+      input.churchId,
+      input.versionNumber,
+      input.themeKey || null,
+      input.sourceVersionId,
+      input.restorationReason,
+      input.restoredBy,
+      JSON.stringify(input.snapshot || {}),
+      JSON.stringify(input.changeSummary || {}),
+    ]
+  );
+  return mapVersion(res.rows[0]);
+}
+
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ */
+async function getLatestDraftRestoration(db, organizationId) {
+  if (!isUuid(organizationId)) return null;
+  const res = await db.query(
+    `${LIST_SELECT}
+      WHERE v.organization_id = $1
+        AND v.status = 'draft'
+        AND v.source_type = 'content_restoration'
+      ORDER BY v.created_at DESC
+      LIMIT 1`,
+    [organizationId]
+  );
+  return mapVersion(res.rows[0] || null);
+}
+
+/**
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ * @param {string} versionId
+ */
+async function archiveDraftVersion(db, organizationId, versionId) {
+  if (!isUuid(organizationId) || !isUuid(versionId)) return null;
+  const res = await db.query(
+    `UPDATE blessboard.website_publication_versions
+        SET status = 'archived'
+      WHERE organization_id = $1
+        AND id = $2
+        AND status = 'draft'
+      RETURNING *`,
+    [organizationId, versionId]
+  );
+  return mapVersion(res.rows[0] || null);
+}
+
+/**
+ * Publishing history derived from version records.
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {{
+ *   organizationId: string,
+ *   sourceType?: string|null,
+ *   publishedBy?: string|null,
+ *   themeKey?: string|null,
+ *   from?: string|null,
+ *   to?: string|null,
+ *   limit?: number,
+ * }} filters
+ */
+async function listPublishingHistory(db, filters) {
+  const organizationId = filters && filters.organizationId;
+  if (!isUuid(organizationId)) return { items: [], total: 0 };
+
+  const where = [
+    "v.organization_id = $1",
+    "v.status IN ('published', 'superseded')",
+    "v.published_at IS NOT NULL",
+  ];
+  const params = [organizationId];
+  let i = 2;
+
+  if (filters.sourceType) {
+    where.push(`v.source_type = $${i}`);
+    params.push(String(filters.sourceType));
+    i += 1;
+  }
+  if (filters.publishedBy && isUuid(filters.publishedBy)) {
+    where.push(`v.published_by = $${i}`);
+    params.push(filters.publishedBy);
+    i += 1;
+  }
+  if (filters.themeKey) {
+    where.push(`v.theme_key = $${i}`);
+    params.push(String(filters.themeKey).slice(0, 80));
+    i += 1;
+  }
+  if (filters.from) {
+    where.push(`v.published_at >= $${i}::timestamptz`);
+    params.push(filters.from);
+    i += 1;
+  }
+  if (filters.to) {
+    where.push(`v.published_at < ($${i}::date + INTERVAL '1 day')`);
+    params.push(filters.to);
+    i += 1;
+  }
+
+  const whereSql = where.join(" AND ");
+  const limit = Math.min(Math.max(Number(filters.limit) || 50, 1), 100);
+  const countRes = await db.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.website_publication_versions v
+      WHERE ${whereSql}`,
+    params
+  );
+  const listRes = await db.query(
+    `${LIST_SELECT}
+      WHERE ${whereSql}
+      ORDER BY v.published_at DESC, v.version_number DESC
+      LIMIT $${i}`,
+    params.concat([limit])
+  );
+  return {
+    items: (listRes.rows || []).map(mapVersion),
+    total: countRes.rows[0] ? Number(countRes.rows[0].n) : 0,
+  };
+}
+
 module.exports = {
   isUuid,
   getNextVersionNumber,
   supersedePublishedVersions,
   insertPublishedVersion,
+  insertDraftRestorationVersion,
   listVersions,
   getVersionByOrgAndId,
   getCurrentPublishedVersion,
+  loadVersionPair,
+  loadPreviousPublishedVersion,
+  getLatestDraftRestoration,
+  archiveDraftVersion,
+  listPublishingHistory,
   listPublishers,
   listThemeKeys,
 };

@@ -353,6 +353,85 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     (req, res) => postDecision(req, res, "reject")
   );
 
+  router.get(
+    "/hq/website/change-submissions/:submissionId/comments",
+    rejectApex,
+    gateHq,
+    async (req, res) => {
+      const tenant = requireTenant(req, res);
+      if (!tenant) return;
+      const result = await svc.listSubmissionConversation(getPool(), {
+        organizationId: tenant.organization.id,
+        submissionId: req.params.submissionId,
+        includeInternal: true,
+      });
+      if (!result.ok) {
+        if (result.status === svc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This submission was not found.");
+        }
+        return sendControlled(req, res, 503, "Comments are temporarily unavailable.");
+      }
+      const html = await renderHqView(
+        "hq/phase3-submission-review-comments.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Submission Review Comments",
+          shellKind: "hq",
+          submission: result.submission,
+          events: result.events,
+          eventLabels: result.eventLabels,
+          commentsPostPath: `/hq/website/change-submissions/${result.submission.id}/comments`,
+          commentsBackPath: `/hq/website/change-submissions/${result.submission.id}`,
+          formError: String((req.query && req.query.error) || "") || null,
+          notice: String((req.query && req.query.notice) || "") || null,
+        })
+      );
+      return res.type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/hq/website/change-submissions/:submissionId/comments",
+    rejectApex,
+    gateHq,
+    async (req, res) => {
+      const tenant = requireTenant(req, res);
+      if (!tenant) return;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+      }
+      const reviewerUserId = actorUserId(req);
+      if (!reviewerUserId) {
+        return sendControlled(req, res, 401, "Sign-in is required.");
+      }
+      const result = await svc.addSubmissionComment(getPool(), {
+        organizationId: tenant.organization.id,
+        submissionId: req.params.submissionId,
+        actorUserId: reviewerUserId,
+        actorRole: "church_hq_admin",
+        comment: req.body && req.body.comment,
+        visibility:
+          req.body && (req.body.hq_internal === "1" || req.body.hq_internal === "on")
+            ? "hq_internal"
+            : "shared",
+        pageKey: req.body && req.body.page_key,
+        sectionKey: req.body && req.body.section_key,
+        allowInternal: true,
+      });
+      const base = `/hq/website/change-submissions/${encodeURIComponent(req.params.submissionId)}/comments`;
+      if (!result.ok) {
+        if (result.status === svc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This submission was not found.");
+        }
+        return res.redirect(
+          303,
+          `${base}?error=${encodeURIComponent(result.reason || "invalid_input")}`
+        );
+      }
+      return res.redirect(303, `${base}?notice=comment_added`);
+    }
+  );
+
   return router;
 }
 

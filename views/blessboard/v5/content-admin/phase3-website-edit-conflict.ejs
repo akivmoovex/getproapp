@@ -1,0 +1,85 @@
+<%
+  var unsaved = submitted || {};
+  var latest = section || {};
+  function val(v) { return v == null || v === '' ? '—' : String(v); }
+%>
+<section
+  class="bb-hq-phase3-conflict"
+  data-bb-phase3-website-edit-conflict="1"
+  aria-label="Phase3 Website Edit Conflict"
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="bb-hq-phase3-conflict__sheet">
+    <h2>This content changed while you were editing.</h2>
+    <p class="bb-hq-lede">
+      Page <strong><%= page && page.pageKey %></strong>
+      · Section <strong><%= latest.sectionKey || sectionKey %></strong>
+    </p>
+    <p class="bb-hq-hint">
+      Last updated <%= latest.updatedAt ? (latest.updatedAt instanceof Date ? latest.updatedAt.toISOString() : latest.updatedAt) : 'recently' %>
+      · Revision <%= latest.revisionNumber != null ? latest.revisionNumber : '—' %>
+    </p>
+
+    <div class="bb-hq-phase3-conflict__compare">
+      <article class="bb-hq-card">
+        <h3>Your unsaved version</h3>
+        <dl class="bb-hq-phase3-cmp__meta">
+          <dt>Heading</dt><dd><%= val(unsaved.heading) %></dd>
+          <dt>Body</dt><dd><%= val(unsaved.body_text != null ? unsaved.body_text : unsaved.bodyText) %></dd>
+          <dt>Media</dt><dd><%= val(unsaved.media_url != null ? unsaved.media_url : unsaved.mediaUrl) %></dd>
+          <dt>Status</dt><dd><%= val(unsaved.status) %></dd>
+        </dl>
+      </article>
+      <article class="bb-hq-card">
+        <h3>Latest saved version</h3>
+        <dl class="bb-hq-phase3-cmp__meta">
+          <dt>Heading</dt><dd><%= val(latest.heading) %></dd>
+          <dt>Body</dt><dd><%= val(latest.bodyText) %></dd>
+          <dt>Media</dt><dd><%= val(latest.mediaUrl) %></dd>
+          <dt>Status</dt><dd><%= val(latest.status) %></dd>
+        </dl>
+      </article>
+    </div>
+
+    <p class="bb-hq-hint">Keeping your changes replaces the latest values for this section only. Field-level merge is not supported.</p>
+
+    <div class="bb-hq-phase3-conflict__actions">
+      <form method="post" action="<%= conflictActionBase %>/use-latest" class="bb-hq-inline-form">
+        <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+        <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Use latest version</button>
+      </form>
+
+      <% if (typeof canSaveAsDraft !== 'undefined' && canSaveAsDraft) { %>
+      <form method="post" action="<%= conflictActionBase %>/save-as-draft" class="bb-hq-inline-form">
+        <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+        <input type="hidden" name="heading" value="<%= unsaved.heading != null ? unsaved.heading : '' %>" />
+        <input type="hidden" name="body_text" value="<%= unsaved.body_text != null ? unsaved.body_text : (unsaved.bodyText || '') %>" />
+        <input type="hidden" name="media_url" value="<%= unsaved.media_url != null ? unsaved.media_url : (unsaved.mediaUrl || '') %>" />
+        <input type="hidden" name="status" value="<%= unsaved.status != null ? unsaved.status : '' %>" />
+        <input type="hidden" name="sort_order" value="<%= unsaved.sort_order != null ? unsaved.sort_order : '' %>" />
+        <input type="hidden" name="section_type" value="<%= unsaved.section_type != null ? unsaved.section_type : '' %>" />
+        <button type="submit" class="bb-hq-btn bb-hq-btn--ghost">Save my work as a separate draft</button>
+      </form>
+      <% } %>
+
+      <form method="post" action="<%= conflictActionBase %>/force-replace" class="bb-hq-inline-form">
+        <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+        <input type="hidden" name="confirm_force" value="1" />
+        <input type="hidden" name="heading" value="<%= unsaved.heading != null ? unsaved.heading : '' %>" />
+        <input type="hidden" name="body_text" value="<%= unsaved.body_text != null ? unsaved.body_text : (unsaved.bodyText || '') %>" />
+        <input type="hidden" name="media_url" value="<%= unsaved.media_url != null ? unsaved.media_url : (unsaved.mediaUrl || '') %>" />
+        <input type="hidden" name="status" value="<%= unsaved.status != null ? unsaved.status : '' %>" />
+        <input type="hidden" name="sort_order" value="<%= unsaved.sort_order != null ? unsaved.sort_order : '' %>" />
+        <input type="hidden" name="section_type" value="<%= unsaved.section_type != null ? unsaved.section_type : '' %>" />
+        <label class="bb-hq-check">
+          <input type="checkbox" name="acknowledge_replace" value="1" required />
+          I understand this replaces the latest section values
+        </label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Keep my changes</button>
+      </form>
+
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= cancelPath %>">Cancel and return</a>
+    </div>
+  </div>
+</section>

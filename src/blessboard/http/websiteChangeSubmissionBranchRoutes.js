@@ -558,6 +558,86 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     }
   );
 
+  router.get(
+    "/branch-admin/website/submissions/:submissionId/comments",
+    rejectApex,
+    gateBranch,
+    async (req, res) => {
+      const tenant = requireBranchTenant(req, res);
+      if (!tenant) return;
+      const result = await svc.listSubmissionConversation(getPool(), {
+        organizationId: tenant.organization.id,
+        branchId: tenant.actorBranchId,
+        submissionId: req.params.submissionId,
+        includeInternal: false,
+      });
+      if (!result.ok) {
+        if (result.status === svc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This submission was not found.");
+        }
+        return sendControlled(req, res, 503, "Comments are temporarily unavailable.");
+      }
+      const html = await renderView(
+        "hq/phase3-submission-review-comments.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Submission Review Comments",
+          shellKind: "branch",
+          submission: result.submission,
+          events: result.events,
+          eventLabels: result.eventLabels,
+          commentsPostPath: `/branch-admin/website/submissions/${result.submission.id}/comments`,
+          commentsBackPath: `/branch-admin/website/submissions/${result.submission.id}`,
+          formError: String((req.query && req.query.error) || "") || null,
+          notice: String((req.query && req.query.notice) || "") || null,
+        })
+      );
+      return res.type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/branch-admin/website/submissions/:submissionId/comments",
+    rejectApex,
+    gateBranch,
+    async (req, res) => {
+      const tenant = requireBranchTenant(req, res);
+      if (!tenant) return;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+      }
+      const actor = actorUserId(req);
+      if (!actor) return sendControlled(req, res, 401, "Sign-in is required.");
+
+      const result = await svc.addSubmissionComment(getPool(), {
+        organizationId: tenant.organization.id,
+        branchId: tenant.actorBranchId,
+        submissionId: req.params.submissionId,
+        actorUserId: actor,
+        actorRole: "branch_admin",
+        comment: req.body && req.body.comment,
+        visibility: "shared",
+        pageKey: req.body && req.body.page_key,
+        sectionKey: req.body && req.body.section_key,
+        allowInternal: false,
+      });
+      const base = `/branch-admin/website/submissions/${encodeURIComponent(req.params.submissionId)}/comments`;
+      if (!result.ok) {
+        if (result.status === svc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This submission was not found.");
+        }
+        if (result.status === svc.STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "Internal comments are not allowed for branch users.");
+        }
+        return res.redirect(
+          303,
+          `${base}?error=${encodeURIComponent(result.reason || "invalid_input")}`
+        );
+      }
+      return res.redirect(303, `${base}?notice=comment_added`);
+    }
+  );
+
   return router;
 }
 

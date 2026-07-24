@@ -42,11 +42,15 @@
       </p>
       <h1 class="bb-hq-page-head__title">Website Version History</h1>
       <p class="bb-hq-lede">Review previous and current website versions</p>
+      <% if (typeof notice !== 'undefined' && notice) { %>
+      <p class="bb-hq-error" role="alert"><%= notice %></p>
+      <% } %>
       <% if (live) { %>
       <p><span class="bb-hq-chip bb-hq-chip--ok">Current live: v<%= live.versionNumber %></span></p>
       <% } %>
     </div>
     <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/publishing-history">Publishing history</a>
       <% if (livePreviewPath) { %>
       <a class="bb-hq-btn bb-hq-btn--primary" href="<%= livePreviewPath %>" target="_blank" rel="noopener">Preview live website</a>
       <% } %>
@@ -117,6 +121,11 @@
           <td><%= sourceLabel(row.sourceType) %></td>
           <td class="bb-hq-table__actions">
             <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history?detail=<%= row.id %>">View details</a>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= row.id %>/preview">Preview</a>
+            <% if (live && live.id !== row.id) { %>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/compare?baseVersionId=<%= row.id %>&amp;compareVersionId=<%= live.id %>">Compare with current</a>
+            <% } %>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= row.id %>/restore">Restore</a>
             <% if (row.sourceSubmissionId) { %>
             <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/change-submissions/<%= row.sourceSubmissionId %>">View source submission</a>
             <% } %>
@@ -129,7 +138,13 @@
               <h2>Version v<%= row.versionNumber %> details</h2>
               <p><strong>Change summary:</strong> <%= (row.changeSummary && row.changeSummary.sectionCount != null) ? (row.changeSummary.sectionCount + ' sections across ' + (row.changeSummary.pageCount || 0) + ' pages') : '—' %></p>
               <p><strong>Snapshot pages:</strong> <%= ((row.snapshot && row.snapshot.pageKeys) || []).join(', ') || '—' %></p>
-              <p class="bb-hq-hint">Compare, restore, and download actions are not available in this Phase3 batch.</p>
+              <p class="bb-hq-phase3-wvh__detail-actions">
+                <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--primary" href="/hq/website/version-history/<%= row.id %>/preview">Preview snapshot</a>
+                <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= row.id %>/restore">Restore to draft</a>
+                <% if (live && live.id !== row.id) { %>
+                <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/compare?baseVersionId=<%= row.id %>&amp;compareVersionId=<%= live.id %>">Compare with current</a>
+                <% } %>
+              </p>
             </div>
           </td>
         </tr>

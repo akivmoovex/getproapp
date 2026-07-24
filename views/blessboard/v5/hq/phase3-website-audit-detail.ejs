@@ -1,0 +1,71 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var e = event || {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+%>
+
+<section class="bb-hq-phase3-audit-detail" data-bb-phase3-website-audit-detail="1" aria-label="Phase3 Website Audit Detail">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq/website/audit-log">Audit log</a>
+      <span aria-hidden="true">›</span>
+      <span>Detail</span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= e.actionLabel || e.actionType %></h1>
+    <p class="bb-hq-lede"><%= e.summary || '' %></p>
+  </header>
+
+  <div class="bb-hq-panel">
+    <dl class="bb-hq-phase3-cmp__meta">
+      <dt>Actor</dt><dd><%= e.actorName || '—' %></dd>
+      <dt>Role</dt><dd><%= e.actorRole || '—' %></dd>
+      <dt>Timestamp</dt><dd><%= formatWhen(e.createdAt) %></dd>
+      <dt>Branch</dt><dd><%= e.branchName || '—' %></dd>
+      <dt>Page</dt><dd><%= e.pageKey || '—' %></dd>
+      <dt>Section</dt><dd><%= e.sectionKey || '—' %></dd>
+      <dt>Result</dt><dd><%= e.result || '—' %></dd>
+      <dt>Related entity</dt><dd><%= e.entityType || '—' %><% if (e.entityId) { %> · <%= e.entityId %><% } %></dd>
+    </dl>
+  </div>
+
+  <div class="bb-hq-phase3-audit-detail__grid">
+    <article class="bb-hq-card">
+      <h2>Before</h2>
+      <% if (!(e.beforeFields || []).length) { %><p class="bb-hq-muted">No before values recorded.</p><% } %>
+      <dl class="bb-hq-phase3-cmp__meta">
+        <% (e.beforeFields || []).forEach(function (f) { %>
+        <dt><%= f.label %></dt><dd><%= f.value %></dd>
+        <% }) %>
+      </dl>
+    </article>
+    <article class="bb-hq-card">
+      <h2>After</h2>
+      <% if (!(e.afterFields || []).length) { %><p class="bb-hq-muted">No after values recorded.</p><% } %>
+      <dl class="bb-hq-phase3-cmp__meta">
+        <% (e.afterFields || []).forEach(function (f) { %>
+        <dt><%= f.label %></dt><dd><%= f.value %></dd>
+        <% }) %>
+      </dl>
+    </article>
+  </div>
+
+  <% if ((e.metadataFields || []).length) { %>
+  <article class="bb-hq-card">
+    <h2>Additional details</h2>
+    <dl class="bb-hq-phase3-cmp__meta">
+      <% e.metadataFields.forEach(function (f) { %>
+      <dt><%= f.label %></dt><dd><%= f.value %></dd>
+      <% }) %>
+    </dl>
+  </article>
+  <% } %>
+
+  <p><a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/audit-log">Back to audit log</a></p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

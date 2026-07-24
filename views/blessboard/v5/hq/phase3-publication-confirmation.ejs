@@ -1,0 +1,146 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var v = typeof validation !== 'undefined' && validation ? validation : {};
+  var summary = v.summary || {};
+  var checks = v.checks || [];
+  var errors = v.errors || [];
+  var warnings = v.warnings || [];
+  var approved = summary.approvedSubmissions || [];
+  var live = summary.currentLiveVersion || null;
+  var pageTitles = summary.pageTitles || {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function pageLabel(key) { return pageTitles[key] || key; }
+%>
+
+<section class="bb-hq-phase3-pubconfirm" data-bb-phase3-publication-confirmation="1" aria-label="Phase3 Publication Confirmation">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Publish</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Publication Confirmation</h1>
+      <p class="bb-hq-lede">Review changes and validation before publishing the live website</p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= previewPath %>">Preview draft</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website">Back to website</a>
+    </p>
+  </header>
+
+  <% if (error) { %><p class="bb-hq-error" role="alert"><%= error %></p><% } %>
+  <% if (notice === 'preview_ack') { %><p class="bb-hq-ok" role="status">Preview acknowledged.</p><% } %>
+
+  <div class="bb-hq-panel bb-hq-phase3-pubconfirm__summary">
+    <h2 class="bb-hq-panel__title">Change summary</h2>
+    <dl class="bb-hq-phase3-pubconfirm__dl">
+      <div><dt>Pages changed</dt><dd><%= summary.pageCount || 0 %><% if ((summary.pagesChanged || []).length) { %> — <%= (summary.pagesChanged || []).map(pageLabel).join(', ') %><% } %></dd></div>
+      <div><dt>Sections changed</dt><dd><%= summary.sectionsChanged || 0 %></dd></div>
+      <div><dt>Branches affected</dt><dd><%= (summary.branchesAffected || []).length ? summary.branchesAffected.join(', ') : 'None recorded' %></dd></div>
+      <div><dt>Theme changes</dt><dd><%= summary.themeChanges ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Navigation changes</dt><dd><%= summary.navigationChanges ? 'Yes' : 'No' %></dd></div>
+      <div><dt>Approved submissions included</dt><dd><%= approved.length %></dd></div>
+      <div><dt>Current live version</dt><dd><%= live ? ('v' + live.versionNumber + ' · ' + formatWhen(live.publishedAt)) : 'None yet' %></dd></div>
+      <div><dt>Proposed new version</dt><dd>v<%= summary.proposedVersionNumber || '—' %></dd></div>
+    </dl>
+    <% if (approved.length) { %>
+    <ul class="bb-hq-phase3-pubconfirm__subs">
+      <% approved.forEach(function (s) { %>
+      <li><a href="/hq/website/change-submissions/<%= s.id %>"><%= s.title %></a> · <%= s.branchName || 'Branch' %></li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Validation checklist</h2>
+    <% if (errors.length) { %>
+    <ul class="bb-hq-error-list" role="alert">
+      <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+    </ul>
+    <% } %>
+    <% if (warnings.length) { %>
+    <ul class="bb-hq-warn-list">
+      <% warnings.forEach(function (w) { %><li><%= w %></li><% }) %>
+    </ul>
+    <% } %>
+    <ul class="bb-hq-phase3-pubconfirm__checks">
+      <% checks.forEach(function (c) { %>
+      <li class="<%= c.ok ? 'is-ok' : 'is-fail' %>">
+        <span aria-hidden="true"><%= c.ok ? '✓' : '✗' %></span>
+        <%= c.label %>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
+
+  <div class="bb-hq-panel">
+    <h2 class="bb-hq-panel__title">Publication options</h2>
+    <form method="post" action="/hq/website/publish" class="bb-hq-form bb-hq-phase3-pubconfirm__form" data-bb-phase3-publish-form="1">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="from_confirmation" value="1" />
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="defer_service_times" value="1" <%= deferServiceTimes ? 'checked' : '' %> />
+          Publish without service times (explicit decision)
+        </label>
+      </div>
+      <div class="bb-hq-field">
+        <label for="pub-note">Publication note</label>
+        <textarea id="pub-note" name="publication_note" rows="3" maxlength="2000" placeholder="Optional note stored with this version"></textarea>
+      </div>
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="mobile_preview_confirmed" value="1" />
+          I confirm I reviewed the mobile preview
+        </label>
+        <p class="bb-hq-hint">This records your confirmation only. Automated mobile visual verification is not available.</p>
+      </div>
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="notify_branch_admins" value="1" />
+          Notify branch administrators (preference only)
+        </label>
+      </div>
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="notify_hq_team" value="1" />
+          Notify HQ team (preference only)
+        </label>
+        <p class="bb-hq-hint">Notification delivery is not implemented yet. Preferences are stored with the publication record.</p>
+      </div>
+      <div class="bb-hq-field bb-hq-phase3-pubconfirm__schedule" aria-disabled="true">
+        <label>
+          <input type="checkbox" disabled />
+          Schedule publication
+        </label>
+        <p class="bb-hq-hint">Scheduled publishing is not available yet.</p>
+      </div>
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="confirm_publish" value="1" required <%= v.publishable ? '' : 'disabled' %> />
+          I confirm publishing this church website now
+        </label>
+      </div>
+      <div class="bb-hq-form__actions">
+        <% if (v.publishable) { %>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Publish now</button>
+        <% } else { %>
+        <button type="button" class="bb-hq-btn bb-hq-btn--primary" disabled title="Resolve validation errors first">Publish now</button>
+        <% } %>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/content">Return to editor</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= previewPath %>">Preview again</a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

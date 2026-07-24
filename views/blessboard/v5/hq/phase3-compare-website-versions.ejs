@@ -1,0 +1,237 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var a = versionA || null;
+  var b = versionB || null;
+  var f = filters || {};
+  var d = diff || { changes: [], totalChanges: 0, pagesPresent: [], changeTypeFilters: [] };
+  var labels = statusLabels || {};
+  var sources = sourceLabels || {};
+  var titles = pageTitles || {};
+  function statusLabel(s) { return labels[s] || s || '—'; }
+  function sourceLabel(s) { return sources[s] || s || '—'; }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var dt = value instanceof Date ? value : new Date(value);
+    if (isNaN(dt.getTime())) return String(value).slice(0, 16);
+    return dt.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function pageTitle(key) { return titles[key] || key || '—'; }
+  function versionLabel(v) {
+    if (!v) return '—';
+    return 'v' + v.versionNumber + (v.status === 'published' ? ' (Current)' : '');
+  }
+  function swapHref() {
+    var params = new URLSearchParams();
+    params.set('baseVersionId', f.compareVersionId || (b && b.id) || '');
+    params.set('compareVersionId', f.baseVersionId || (a && a.id) || '');
+    if (f.page) params.set('page', f.page);
+    if (f.changeType && f.changeType !== 'all') params.set('changeType', f.changeType);
+    return '/hq/website/version-history/compare?' + params.toString();
+  }
+  function filterHref(changeType, pageKey) {
+    var params = new URLSearchParams();
+    params.set('baseVersionId', f.baseVersionId || (a && a.id) || '');
+    params.set('compareVersionId', f.compareVersionId || (b && b.id) || '');
+    if (pageKey) params.set('page', pageKey);
+    else if (f.page) params.set('page', f.page);
+    if (changeType && changeType !== 'all') params.set('changeType', changeType);
+    return '/hq/website/version-history/compare?' + params.toString();
+  }
+  function diffClass(t) {
+    var key = String(t || '').toLowerCase();
+    if (key === 'added' || key === 'shown') return 'bb-hq-phase3-cmp__diff--added';
+    if (key === 'removed' || key === 'hidden') return 'bb-hq-phase3-cmp__diff--removed';
+    if (key === 'modified' || key === 'moved') return 'bb-hq-phase3-cmp__diff--modified';
+    return 'bb-hq-phase3-cmp__diff--muted';
+  }
+%>
+
+<section class="bb-hq-phase3-cmp" data-bb-phase3-compare-website-versions="1" aria-label="Phase3 Compare Website Versions">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website/version-history">Version history</a>
+        <span aria-hidden="true">›</span>
+        <span>Compare</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Compare Website Versions</h1>
+      <p class="bb-hq-lede">Review differences between two immutable publication snapshots</p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history">Return to Version History</a>
+    </p>
+  </header>
+
+  <form method="get" action="/hq/website/version-history/compare" class="bb-hq-filter bb-hq-phase3-cmp__selectors" role="search">
+    <div class="bb-hq-field">
+      <label for="cmp-a">Version A</label>
+      <select id="cmp-a" name="baseVersionId" required>
+        <% (allVersions || []).forEach(function (v) { %>
+        <option value="<%= v.id %>"<%= a && a.id === v.id ? ' selected' : '' %>>v<%= v.versionNumber %> · <%= statusLabel(v.status) %> · <%= formatWhen(v.publishedAt || v.createdAt) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <p class="bb-hq-phase3-cmp__swap">
+      <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="<%= swapHref() %>">Swap versions</a>
+    </p>
+    <div class="bb-hq-field">
+      <label for="cmp-b">Version B</label>
+      <select id="cmp-b" name="compareVersionId" required>
+        <% (allVersions || []).forEach(function (v) { %>
+        <option value="<%= v.id %>"<%= b && b.id === v.id ? ' selected' : '' %>>v<%= v.versionNumber %> · <%= statusLabel(v.status) %> · <%= formatWhen(v.publishedAt || v.createdAt) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="cmp-page">Page</label>
+      <select id="cmp-page" name="page">
+        <option value="">All pages</option>
+        <% (d.pagesPresent || []).forEach(function (p) { %>
+        <option value="<%= p.key %>"<%= f.page === p.key ? ' selected' : '' %>><%= p.title %></option>
+        <% }) %>
+      </select>
+    </div>
+    <input type="hidden" name="changeType" value="<%= f.changeType || 'all' %>" />
+    <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Compare</button>
+  </form>
+
+  <div class="bb-hq-phase3-cmp__meta-grid">
+    <article class="bb-hq-card">
+      <h2>Version A</h2>
+      <dl class="bb-hq-phase3-cmp__meta">
+        <dt>Version</dt><dd><%= versionLabel(a) %></dd>
+        <dt>Status</dt><dd><span class="bb-hq-chip"><%= statusLabel(a && a.status) %></span></dd>
+        <dt>Publication date</dt><dd><%= formatWhen(a && a.publishedAt) %></dd>
+        <dt>Publisher</dt><dd><%= (a && a.publishedByName) || '—' %></dd>
+        <dt>Theme</dt><dd><%= (a && a.themeKey) || '—' %></dd>
+        <dt>Source</dt><dd><%= sourceLabel(a && a.sourceType) %></dd>
+      </dl>
+      <p class="bb-hq-phase3-cmp__actions">
+        <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= a.id %>/preview">Preview Version A</a>
+        <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= a.id %>/restore">Restore Version A</a>
+      </p>
+    </article>
+    <article class="bb-hq-card">
+      <h2>Version B</h2>
+      <dl class="bb-hq-phase3-cmp__meta">
+        <dt>Version</dt><dd><%= versionLabel(b) %></dd>
+        <dt>Status</dt><dd><span class="bb-hq-chip"><%= statusLabel(b && b.status) %></span></dd>
+        <dt>Publication date</dt><dd><%= formatWhen(b && b.publishedAt) %></dd>
+        <dt>Publisher</dt><dd><%= (b && b.publishedByName) || '—' %></dd>
+        <dt>Theme</dt><dd><%= (b && b.themeKey) || '—' %></dd>
+        <dt>Source</dt><dd><%= sourceLabel(b && b.sourceType) %></dd>
+      </dl>
+      <p class="bb-hq-phase3-cmp__actions">
+        <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= b.id %>/preview">Preview Version B</a>
+        <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= b.id %>/restore">Restore Version B</a>
+      </p>
+    </article>
+  </div>
+
+  <nav class="bb-hq-phase3-cmp__filters" aria-label="Change type filters">
+    <% (d.changeTypeFilters || []).forEach(function (ft) { %>
+    <a class="bb-hq-btn bb-hq-btn--sm<%= (f.changeType || 'all') === ft.key ? ' bb-hq-btn--primary' : ' bb-hq-btn--ghost' %>" href="<%= filterHref(ft.key, null) %>"><%= ft.label %><% if (ft.key === 'all') { %> (<%= d.totalChanges %>)<% } %></a>
+    <% }) %>
+  </nav>
+
+  <nav class="bb-hq-phase3-cmp__pages" aria-label="Pages in either version">
+    <a class="bb-hq-chip<%= !f.page ? ' bb-hq-chip--ok' : '' %>" href="<%= filterHref(f.changeType || 'all', '') %>">All pages</a>
+    <% (d.pagesPresent || []).forEach(function (p) { %>
+    <a class="bb-hq-chip<%= f.page === p.key ? ' bb-hq-chip--ok' : '' %>" href="<%= filterHref(f.changeType || 'all', p.key) %>"><%= p.title %></a>
+    <% }) %>
+  </nav>
+
+  <div class="bb-hq-phase3-cmp__desktop" data-bb-phase3-cmp-desktop="1">
+    <div class="bb-hq-phase3-cmp__columns">
+      <section>
+        <h2>Version A · <%= versionLabel(a) %></h2>
+        <% (d.changes || []).forEach(function (ch) { %>
+        <article class="bb-hq-card bb-hq-phase3-cmp__change <%= diffClass(ch.diffType) %>">
+          <p class="bb-hq-phase3-cmp__change-label"><%= ch.diffLabel %> · <%= ch.label %></p>
+          <p class="bb-hq-phase3-cmp__change-meta"><%= ch.pageTitle || 'Site' %><% if (ch.sectionKey) { %> · <%= ch.sectionKey %><% } %></p>
+          <p class="bb-hq-phase3-cmp__value"><%= ch.valueA != null && ch.valueA !== '' ? ch.valueA : '—' %></p>
+        </article>
+        <% }) %>
+        <% if (!(d.changes || []).length) { %>
+        <p class="bb-hq-empty">No differences for this filter.</p>
+        <% } %>
+      </section>
+      <section>
+        <h2>Version B · <%= versionLabel(b) %></h2>
+        <% (d.changes || []).forEach(function (ch) { %>
+        <article class="bb-hq-card bb-hq-phase3-cmp__change <%= diffClass(ch.diffType) %>">
+          <p class="bb-hq-phase3-cmp__change-label"><%= ch.diffLabel %> · <%= ch.label %></p>
+          <p class="bb-hq-phase3-cmp__change-meta"><%= ch.pageTitle || 'Site' %><% if (ch.sectionKey) { %> · <%= ch.sectionKey %><% } %></p>
+          <p class="bb-hq-phase3-cmp__value"><%= ch.valueB != null && ch.valueB !== '' ? ch.valueB : '—' %></p>
+        </article>
+        <% }) %>
+        <% if (!(d.changes || []).length) { %>
+        <p class="bb-hq-empty">No differences for this filter.</p>
+        <% } %>
+      </section>
+    </div>
+  </div>
+
+  <div class="bb-hq-phase3-cmp__mobile" data-bb-phase3-cmp-mobile="1">
+    <div class="bb-hq-phase3-wcr__tabs" role="tablist">
+      <button type="button" class="bb-hq-phase3-wcr__tab is-active" data-bb-cmp-tab="a" aria-selected="true">Version A</button>
+      <button type="button" class="bb-hq-phase3-wcr__tab" data-bb-cmp-tab="b" aria-selected="false">Version B</button>
+      <button type="button" class="bb-hq-phase3-wcr__tab" data-bb-cmp-tab="changes" aria-selected="false">Changes</button>
+    </div>
+    <div class="bb-hq-phase3-cmp__panel is-active" data-bb-cmp-panel="a">
+      <% (d.changes || []).forEach(function (ch) { %>
+      <article class="bb-hq-card <%= diffClass(ch.diffType) %>">
+        <p><strong><%= ch.diffLabel %></strong> · <%= ch.label %></p>
+        <p><%= ch.valueA != null && ch.valueA !== '' ? ch.valueA : '—' %></p>
+      </article>
+      <% }) %>
+    </div>
+    <div class="bb-hq-phase3-cmp__panel" data-bb-cmp-panel="b" hidden>
+      <% (d.changes || []).forEach(function (ch) { %>
+      <article class="bb-hq-card <%= diffClass(ch.diffType) %>">
+        <p><strong><%= ch.diffLabel %></strong> · <%= ch.label %></p>
+        <p><%= ch.valueB != null && ch.valueB !== '' ? ch.valueB : '—' %></p>
+      </article>
+      <% }) %>
+    </div>
+    <div class="bb-hq-phase3-cmp__panel" data-bb-cmp-panel="changes" hidden>
+      <ul class="bb-hq-phase3-cmp__change-list">
+        <% (d.changes || []).forEach(function (ch) { %>
+        <li class="<%= diffClass(ch.diffType) %>">
+          <strong><%= ch.diffLabel %></strong> — <%= ch.pageTitle || 'Site' %>: <%= ch.label %>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-bb-phase3-compare-website-versions="1"]');
+  if (!root) return;
+  var tabs = root.querySelectorAll('[data-bb-cmp-tab]');
+  var panels = root.querySelectorAll('[data-bb-cmp-panel]');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var key = tab.getAttribute('data-bb-cmp-tab');
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.classList.toggle('is-active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panels.forEach(function (panel) {
+        var match = panel.getAttribute('data-bb-cmp-panel') === key;
+        panel.classList.toggle('is-active', match);
+        panel.hidden = !match;
+      });
+    });
+  });
+})();
+</script>
+
+<%- include('../partials/hq-shell-end') %>

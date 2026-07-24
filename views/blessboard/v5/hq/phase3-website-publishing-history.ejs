@@ -1,0 +1,160 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = items || [];
+  var f = filters || {};
+  var labels = statusLabels || {};
+  var sources = sourceLabels || {};
+  var events = eventTypeLabels || {};
+  var live = current || null;
+  var detailId = typeof detailId !== 'undefined' ? detailId : null;
+  function statusLabel(s) { return labels[s] || s || '—'; }
+  function sourceLabel(s) { return sources[s] || s || '—'; }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function pagesList(entry) {
+    var pages = entry.pagesAffected || [];
+    if (Array.isArray(pages) && pages.length) return pages.join(', ');
+    return '—';
+  }
+%>
+
+<section class="bb-hq-phase3-pubhist" data-bb-phase3-website-publishing-history="1" aria-label="Phase3 Website Publishing History">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Publishing history</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Website Publishing History</h1>
+      <p class="bb-hq-lede">Publication events derived from recorded website versions</p>
+      <% if (live) { %>
+      <p><span class="bb-hq-chip bb-hq-chip--ok">Current live: v<%= live.versionNumber %></span></p>
+      <% } %>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history">Version history</a>
+    </p>
+  </header>
+
+  <form method="get" action="/hq/website/publishing-history" class="bb-hq-filter" role="search">
+    <div class="bb-hq-field">
+      <label for="ph-event">Event / source</label>
+      <select id="ph-event" name="sourceType">
+        <option value="">All events</option>
+        <% ['hq_edit','branch_submission','theme_change','content_restoration','initial_setup'].forEach(function (k) { %>
+        <option value="<%= k %>"<%= f.sourceType === k ? ' selected' : '' %>><%= sourceLabel(k) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="ph-publisher">Publisher</label>
+      <select id="ph-publisher" name="publisher">
+        <option value="">All publishers</option>
+        <% (publishers || []).forEach(function (u) { %>
+        <option value="<%= u.id %>"<%= f.publishedBy === String(u.id) ? ' selected' : '' %>><%= u.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="ph-theme">Theme</label>
+      <select id="ph-theme" name="theme">
+        <option value="">All themes</option>
+        <% (themeKeys || []).forEach(function (tk) { %>
+        <option value="<%= tk %>"<%= f.themeKey === tk ? ' selected' : '' %>><%= tk %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field"><label for="ph-from">From</label><input id="ph-from" name="from" type="date" value="<%= f.from || '' %>" /></div>
+    <div class="bb-hq-field"><label for="ph-to">To</label><input id="ph-to" name="to" type="date" value="<%= f.to || '' %>" /></div>
+    <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Apply filters</button>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-hq-empty" data-bb-phase3-pubhist-empty="1">
+    <p>No website publications have been recorded yet.</p>
+    <p><a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website">Open Website publish</a></p>
+  </div>
+  <% } else { %>
+
+  <div class="bb-hq-table-wrap bb-hq-phase3-pubhist__table" data-bb-phase3-pubhist-desktop="1">
+    <table class="bb-hq-table">
+      <thead>
+        <tr>
+          <th>Version</th><th>Event</th><th>Published</th><th>Published by</th><th>Source submission</th><th>Scope</th><th>Theme</th><th>Pages</th><th>Previous</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (entry) { var v = entry.version; %>
+        <tr<%= entry.isCurrent ? ' class="bb-hq-phase3-pubhist__row--current"' : '' %>>
+          <td>
+            v<%= v.versionNumber %>
+            <% if (entry.isCurrent) { %><span class="bb-hq-chip bb-hq-chip--tiny bb-hq-chip--ok">Current</span><% } %>
+          </td>
+          <td><%= entry.eventLabel %></td>
+          <td><%= formatWhen(v.publishedAt) %></td>
+          <td><%= v.publishedByName || '—' %></td>
+          <td>
+            <% if (v.sourceSubmissionId) { %>
+            <a href="/hq/website/change-submissions/<%= v.sourceSubmissionId %>">View submission</a>
+            <% } else { %>—<% } %>
+          </td>
+          <td><%= entry.scopeLabel || 'Church-wide' %></td>
+          <td><%= v.themeKey || '—' %></td>
+          <td><%= pagesList(entry) %></td>
+          <td>
+            <% if (entry.previousVersion) { %>
+            v<%= entry.previousVersion.versionNumber %>
+            <% } else { %>—<% } %>
+          </td>
+          <td class="bb-hq-table__actions">
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/publishing-history?detail=<%= v.id %>">View details</a>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= v.id %>/preview">Preview</a>
+            <% if (entry.previousVersion) { %>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/compare?baseVersionId=<%= entry.previousVersion.id %>&amp;compareVersionId=<%= v.id %>">Compare with previous</a>
+            <% } %>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history?detail=<%= v.id %>">View version record</a>
+          </td>
+        </tr>
+        <% if (detailId && detailId === String(v.id)) { %>
+        <tr>
+          <td colspan="10">
+            <div class="bb-hq-panel">
+              <h2><%= entry.eventLabel %> · v<%= v.versionNumber %></h2>
+              <p><strong>Publication note:</strong> <%= entry.publicationNote || '—' %></p>
+              <p><strong>Source type:</strong> <%= sourceLabel(v.sourceType) %></p>
+              <% if (v.sourceVersionId) { %>
+              <p><strong>Restored from version id:</strong> <%= v.sourceVersionId %></p>
+              <p><strong>Restoration reason:</strong> <%= v.restorationReason || '—' %></p>
+              <% } %>
+            </div>
+          </td>
+        </tr>
+        <% } %>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="bb-hq-phase3-pubhist__cards" data-bb-phase3-pubhist-mobile="1">
+    <% rows.forEach(function (entry) { var v = entry.version; %>
+    <li class="bb-hq-card<%= entry.isCurrent ? ' bb-hq-phase3-pubhist__card--current' : '' %>">
+      <p class="bb-hq-chip"><%= entry.eventLabel %></p>
+      <h2>Version <%= v.versionNumber %><% if (entry.isCurrent) { %> · Current<% } %></h2>
+      <p>By <%= v.publishedByName || '—' %></p>
+      <p><%= formatWhen(v.publishedAt) %></p>
+      <p>Source: <%= sourceLabel(v.sourceType) %></p>
+      <p><a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/version-history/<%= v.id %>/preview">Preview</a></p>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

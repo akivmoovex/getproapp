@@ -13,11 +13,23 @@
       Optional content (leadership, sermons, events, giving) is not required.
     </p>
     <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/workflow">
+        Workflow dashboard
+      </a>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/change-submissions">
         Website change submissions
       </a>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history">
         Version history
+      </a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/publishing-history">
+        Publishing history
+      </a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/audit-log">
+        Audit log
+      </a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/approval-settings">
+        Approval settings
       </a>
     </p>
   </header>
@@ -94,24 +106,11 @@
       <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Acknowledge preview</button>
     </form>
 
-    <form method="post" action="/hq/website/publish" class="bb-hq-form" style="margin-bottom:1.25rem;">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <div class="bb-hq-field">
-        <label>
-          <input type="checkbox" name="defer_service_times" value="1" <%= deferServiceTimes ? 'checked' : '' %> />
-          Publish without service times (explicit decision)
-        </label>
-      </div>
-      <div class="bb-hq-field">
-        <label>
-          <input type="checkbox" name="confirm_publish" value="1" required />
-          I confirm publishing this church website
-        </label>
-      </div>
-      <div class="bb-hq-form__actions">
-        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Publish website</button>
-      </div>
-    </form>
+    <p class="bb-hq-form__actions" style="margin-bottom:1.25rem;">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review<%= deferServiceTimes ? '?defer_service_times=1' : '' %>">
+        Review &amp; publish
+      </a>
+    </p>
 
     <form method="post" action="/hq/website/unpublish" class="bb-hq-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />

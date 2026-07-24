@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Phase3 HQ Website Version History routes.
+ * Phase3 HQ Website Version History, Compare, Restore, and Publishing History routes.
  */
 
 const express = require("express");
@@ -13,7 +13,9 @@ const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorization
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
 const versionSvc = require("../services/websitePublicationVersionService");
+const versionRepo = require("../repositories/websitePublicationVersionRepository");
 
 function renderHqView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -39,8 +41,9 @@ function sendControlled(req, res, status, message) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Website version history · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=58" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Website versions · BlessBoard</title>
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=59" />
 </head>
 <body class="bb-hq-body">
   <main class="bb-hq-login-unavailable">
@@ -50,6 +53,18 @@ function sendControlled(req, res, status, message) {
   </main>
 </body>
 </html>`);
+}
+
+function actorUserId(req) {
+  const session = req.v5Session && req.v5Session.session;
+  if (session && session.userId) return String(session.userId);
+  if (req.v5Session && req.v5Session.userId) return String(req.v5Session.userId);
+  return (
+    (req.blessBoardAuthorizationContext &&
+      req.blessBoardAuthorizationContext.user &&
+      req.blessBoardAuthorizationContext.user.id) ||
+    null
+  );
 }
 
 /**
@@ -100,11 +115,18 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     });
   }
 
-  router.get("/hq/website/version-history", rejectApex, gateHq, async (req, res) => {
+  function requireTenant(req, res) {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.organization || !tenant.organization.id) {
-      return sendControlled(req, res, 403, "You do not have access to this site.");
+      sendControlled(req, res, 403, "You do not have access to this site.");
+      return null;
     }
+    return tenant;
+  }
+
+  router.get("/hq/website/version-history", rejectApex, gateHq, async (req, res) => {
+    const tenant = requireTenant(req, res);
+    if (!tenant) return;
 
     const result = await versionSvc.loadVersionHistory(getPool(), {
       organizationId: tenant.organization.id,
@@ -122,6 +144,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     const orgKey =
       (tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
       null;
+    const notice = String((req.query && req.query.notice) || "") || null;
     const html = await renderHqView(
       "hq/phase3-website-version-history.ejs",
       await shellLocals(req, res, {
@@ -136,6 +159,272 @@ function createWebsitePublicationVersionAdminRouter(deps) {
         sourceLabels: result.sourceLabels,
         livePreviewPath: publicChurchHomePath(orgKey),
         detailId: String((req.query && req.query.detail) || "") || null,
+        notice,
+      })
+    );
+    return res.type("html").send(html);
+  });
+
+  router.get("/hq/website/version-history/compare", rejectApex, gateHq, async (req, res) => {
+    const tenant = requireTenant(req, res);
+    if (!tenant) return;
+
+    const q = req.query || {};
+    const result = await versionSvc.compareVersions(getPool(), {
+      organizationId: tenant.organization.id,
+      baseVersionId: q.baseVersionId || q.a || null,
+      compareVersionId: q.compareVersionId || q.b || null,
+      pageKey: q.page || null,
+      changeType: q.changeType || "all",
+    });
+
+    if (!result.ok) {
+      if (result.status === versionSvc.STATUS.NOT_FOUND) {
+        return sendControlled(req, res, 404, "Version not found.");
+      }
+      const msg = result.message || "Select two valid versions to compare.";
+      return res.redirect(
+        303,
+        `/hq/website/version-history?notice=${encodeURIComponent(msg)}`
+      );
+    }
+
+    const versionsList = await versionRepo.listVersions(getPool(), {
+      organizationId: tenant.organization.id,
+      limit: 100,
+    });
+
+    const html = await renderHqView(
+      "hq/phase3-compare-website-versions.ejs",
+      await shellLocals(req, res, {
+        pageTitle: "Compare Website Versions",
+        versionA: result.versionA,
+        versionB: result.versionB,
+        current: result.current,
+        diff: result.diff,
+        filters: result.filters,
+        statusLabels: result.statusLabels,
+        sourceLabels: result.sourceLabels,
+        pageTitles: result.pageTitles,
+        allVersions: versionsList.items || [],
+      })
+    );
+    return res.type("html").send(html);
+  });
+
+  router.get(
+    "/hq/website/version-history/:versionId/preview",
+    rejectApex,
+    gateHq,
+    async (req, res) => {
+      const tenant = requireTenant(req, res);
+      if (!tenant) return;
+
+      const result = await versionSvc.loadHistoricalVersionPreview(getPool(), {
+        organizationId: tenant.organization.id,
+        versionId: req.params.versionId,
+      });
+      if (!result.ok) {
+        if (result.status === versionSvc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Version not found.");
+        }
+        return sendControlled(req, res, 400, "Unable to preview this version.");
+      }
+
+      const html = await renderHqView(
+        "hq/phase3-historical-version-preview.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Historical Version Preview",
+          version: result.version,
+          pages: result.pages,
+          themeKey: result.themeKey,
+          statusLabels: result.statusLabels,
+          sourceLabels: result.sourceLabels,
+          pageTitles: result.pageTitles,
+          banner: result.banner,
+          readOnly: true,
+          robotsNoIndex: true,
+        })
+      );
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      return res.type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/hq/website/version-history/:versionId/restore",
+    rejectApex,
+    gateHq,
+    async (req, res) => {
+      const tenant = requireTenant(req, res);
+      if (!tenant) return;
+
+      const result = await versionSvc.prepareVersionRestore(getPool(), {
+        organizationId: tenant.organization.id,
+        versionId: req.params.versionId,
+      });
+      if (!result.ok) {
+        if (result.status === versionSvc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Version not found.");
+        }
+        return sendControlled(req, res, 400, "This version cannot be restored.");
+      }
+
+      const formError = String((req.query && req.query.error) || "") || null;
+      const html = await renderHqView(
+        "hq/phase3-restore-website-version.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Restore Website Version",
+          historical: result.historical,
+          current: result.current,
+          pageOptions: result.pageOptions,
+          themeHistorical: result.themeHistorical,
+          themeCurrent: result.themeCurrent,
+          statusLabels: result.statusLabels,
+          sourceLabels: result.sourceLabels,
+          formError,
+          success: null,
+          draftVersion: null,
+        })
+      );
+      return res.type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/hq/website/version-history/:versionId/restore",
+    rejectApex,
+    gateHq,
+    async (req, res) => {
+      const tenant = requireTenant(req, res);
+      if (!tenant) return;
+
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+      }
+
+      const userId = actorUserId(req);
+      if (!userId) {
+        return sendControlled(req, res, 401, "Sign-in is required.");
+      }
+
+      const churchId = tenant.church && tenant.church.id;
+      if (!churchId) {
+        return sendControlled(req, res, 403, "Church context is required.");
+      }
+
+      const body = req.body || {};
+      let selectedPageKeys = body.pages || body.page_keys || [];
+      if (!Array.isArray(selectedPageKeys)) selectedPageKeys = [selectedPageKeys];
+      selectedPageKeys = selectedPageKeys.map((k) => String(k)).filter(Boolean);
+
+      if (body.restore_all === "1" || body.restore_all === "on") {
+        const prepared = await versionSvc.prepareVersionRestore(getPool(), {
+          organizationId: tenant.organization.id,
+          versionId: req.params.versionId,
+        });
+        if (!prepared.ok) {
+          if (prepared.status === versionSvc.STATUS.NOT_FOUND) {
+            return sendControlled(req, res, 404, "Version not found.");
+          }
+          return sendControlled(req, res, 400, "This version cannot be restored.");
+        }
+        selectedPageKeys = (prepared.pageOptions || []).map((p) => p.key);
+      }
+
+      const result = await versionSvc.createRestoredDraft(getPool(), {
+        organizationId: tenant.organization.id,
+        churchId,
+        versionId: req.params.versionId,
+        actorUserId: userId,
+        restorationReason: body.restoration_reason || body.reason,
+        selectedPageKeys,
+        restoreTheme:
+          body.keep_current_theme !== "1" &&
+          body.keep_current_theme !== "on" &&
+          (body.restore_theme === "1" ||
+            body.restore_theme === "on" ||
+            body.restore_theme == null),
+        restoreNavigation:
+          body.keep_current_navigation !== "1" &&
+          body.keep_current_navigation !== "on" &&
+          (body.restore_navigation === "1" ||
+            body.restore_navigation === "on" ||
+            body.restore_navigation == null),
+        confirmed: body.confirm_restore === "1" || body.confirm_restore === "on",
+      });
+
+      if (!result.ok) {
+        if (result.status === versionSvc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Version not found.");
+        }
+        const reasonMap = {
+          restoration_reason: "A restoration reason is required.",
+          confirmation: "Confirm restoration before continuing.",
+          pages: "Select at least one page to restore.",
+          draft_source: "Draft versions cannot be used as a restore source.",
+        };
+        const msg = reasonMap[result.reason] || "Unable to create restored draft.";
+        return res.redirect(
+          303,
+          `/hq/website/version-history/${encodeURIComponent(req.params.versionId)}/restore?error=${encodeURIComponent(msg)}`
+        );
+      }
+
+      const html = await renderHqView(
+        "hq/phase3-restore-website-version.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Restore Website Version",
+          historical: result.historical,
+          current: null,
+          pageOptions: [],
+          themeHistorical: result.historical.themeKey,
+          themeCurrent: null,
+          statusLabels: versionSvc.STATUS_LABELS,
+          sourceLabels: versionSvc.SOURCE_LABELS,
+          formError: null,
+          success: result.message,
+          draftVersion: result.draftVersion,
+          restoredPageKeys: result.restoredPageKeys,
+        })
+      );
+      return res.type("html").send(html);
+    }
+  );
+
+  router.get("/hq/website/publishing-history", rejectApex, gateHq, async (req, res) => {
+    const tenant = requireTenant(req, res);
+    if (!tenant) return;
+
+    const q = req.query || {};
+    const result = await versionSvc.listPublishingHistory(getPool(), {
+      organizationId: tenant.organization.id,
+      sourceType: q.eventType || q.sourceType || null,
+      publishedBy: q.publisher || null,
+      themeKey: q.theme || null,
+      from: q.from || null,
+      to: q.to || null,
+    });
+
+    if (!result.ok) {
+      return sendControlled(req, res, 503, "Publishing history is temporarily unavailable.");
+    }
+
+    const html = await renderHqView(
+      "hq/phase3-website-publishing-history.ejs",
+      await shellLocals(req, res, {
+        pageTitle: "Website Publishing History",
+        items: result.items,
+        total: result.total,
+        current: result.current,
+        publishers: result.publishers,
+        themeKeys: result.themeKeys,
+        filters: result.filters,
+        statusLabels: result.statusLabels,
+        sourceLabels: result.sourceLabels,
+        eventTypeLabels: result.eventTypeLabels,
+        detailId: String(q.detail || "") || null,
       })
     );
     return res.type("html").send(html);

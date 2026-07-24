@@ -1,0 +1,70 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var v = version || null;
+  var pageList = pages || [];
+  var titles = pageTitles || {};
+  var labels = statusLabels || {};
+  var sources = sourceLabels || {};
+  function statusLabel(s) { return labels[s] || s || '—'; }
+  function sourceLabel(s) { return sources[s] || s || '—'; }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+%>
+
+<section class="bb-hq-phase3-histprev" data-bb-phase3-historical-version-preview="1" aria-label="Phase3 Historical Version Preview">
+  <div class="bb-hq-phase3-histprev__banner" role="status">
+    <strong><%= typeof banner !== 'undefined' && banner ? banner : 'Historical Version Preview' %></strong>
+    <span>Read-only snapshot · does not change draft or live content</span>
+  </div>
+
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website/version-history">Version history</a>
+        <span aria-hidden="true">›</span>
+        <span>Preview v<%= v ? v.versionNumber : '' %></span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Version <%= v ? v.versionNumber : '' %> preview</h1>
+      <p class="bb-hq-lede">
+        <%= statusLabel(v && v.status) %> ·
+        <%= formatWhen(v && (v.publishedAt || v.createdAt)) %> ·
+        <%= sourceLabel(v && v.sourceType) %> ·
+        Theme <%= themeKey || (v && v.themeKey) || 'default' %>
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history">Back</a>
+      <% if (v) { %>
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="/hq/website/version-history/<%= v.id %>/restore">Restore this version</a>
+      <% } %>
+    </p>
+  </header>
+
+  <% if (!pageList.length) { %>
+  <div class="bb-hq-empty">
+    <p>This version snapshot has no public pages recorded.</p>
+  </div>
+  <% } else { %>
+  <% pageList.forEach(function (page) { %>
+  <article class="bb-hq-card bb-hq-phase3-histprev__page">
+    <h2><%= page.title || titles[page.pageKey] || page.pageKey %></h2>
+    <p class="bb-hq-muted"><%= page.pageKey %> · <%= page.status || '—' %></p>
+    <% (page.sections || []).forEach(function (sec) { %>
+    <div class="bb-hq-phase3-histprev__section">
+      <% if (sec.heading) { %><h3><%= sec.heading %></h3><% } %>
+      <% if (sec.bodyText) { %><p><%= sec.bodyText %></p><% } %>
+      <% if (sec.mediaUrl) { %><p class="bb-hq-muted">Media: <%= sec.mediaUrl %></p><% } %>
+    </div>
+    <% }) %>
+  </article>
+  <% }) %>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

@@ -33,6 +33,10 @@ const {
   publicChurchHomePath,
   hqPreviewPagePath,
 } = require("../urls/churchUrlHelper");
+const {
+  validateWebsitePublication,
+} = require("../services/websitePublicationValidationService");
+const versionRepo = require("../repositories/websitePublicationVersionRepository");
 
 /**
  * @param {string} relativePath
@@ -232,7 +236,78 @@ function createChurchWebsiteAdminRouter(deps) {
     if (!result.ok) {
       return sendControlled(req, res, 503, "Could not record preview acknowledgement.");
     }
+    const next = String((req.body && req.body.next) || "");
+    if (next === "publish_review") {
+      return res.redirect(303, "/hq/website/publish/review?notice=preview_ack");
+    }
     return res.redirect(303, "/hq/website?notice=preview_ack");
+  });
+
+  router.get("/hq/website/publish/review", rejectApex, gateHq, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    const defer =
+      String((req.query && req.query.defer_service_times) || "") === "1";
+    const validation = await validateWebsitePublication(getPool(), {
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      actorUserId: await actorUserId(req),
+      deferServiceTimes: defer,
+      env,
+    });
+    if (!validation.ok && validation.status === "lookup_error") {
+      return sendControlled(req, res, 503, "Publication review is temporarily unavailable.");
+    }
+    const orgKey = (tenant.organization && tenant.organization.key) || null;
+    const html = renderHqView(
+      "hq/phase3-publication-confirmation.ejs",
+      await shellLocals(req, res, {
+        pageTitle: "Publication Confirmation",
+        validation,
+        deferServiceTimes: defer,
+        previewPath: hqPreviewPagePath("home"),
+        publicPath: publicChurchHomePath(orgKey),
+        notice: String((req.query && req.query.notice) || "") || null,
+        error: null,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/hq/website/publish/result", rejectApex, gateHq, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.organization || !tenant.organization.id) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    const failed = String((req.query && req.query.failed) || "") === "1";
+    let version = null;
+    const versionId = String((req.query && req.query.version) || "").trim();
+    if (versionId && versionRepo.isUuid(versionId)) {
+      version = await versionRepo.getVersionByOrgAndId(
+        getPool(),
+        tenant.organization.id,
+        versionId
+      );
+    }
+    const orgKey = (tenant.organization && tenant.organization.key) || null;
+    const html = renderHqView(
+      "hq/phase3-publication-result.ejs",
+      await shellLocals(req, res, {
+        pageTitle: failed ? "Publication Failed" : "Website Published",
+        failed,
+        version,
+        publishedByName: (req.v5Session && req.v5Session.user && req.v5Session.user.displayName) || null,
+        errors: String((req.query && req.query.errors) || "")
+          .split("|")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        publicPath: publicChurchHomePath(orgKey),
+        previewPath: hqPreviewPagePath("home"),
+      })
+    );
+    return res.status(failed ? 400 : 200).type("html").send(html);
   });
 
   router.post("/hq/website/publish", rejectApex, gateHq, async (req, res) => {
@@ -249,15 +324,60 @@ function createChurchWebsiteAdminRouter(deps) {
       body.defer_service_times === "1" ||
       body.defer_service_times === "on" ||
       body.defer_service_times === true;
+    const mobilePreviewConfirmed =
+      body.mobile_preview_confirmed === "1" ||
+      body.mobile_preview_confirmed === "on" ||
+      body.mobile_preview_confirmed === true;
+    const fromConfirmation =
+      body.from_confirmation === "1" || body.from_confirmation === true;
     const result = await publishChurchWebsite(getPool(), {
       churchId: tenant.church.id,
       actorUserId: await actorUserId(req),
       deferServiceTimes,
       confirmPublish: body.confirm_publish,
+      publicationNote: body.publication_note || null,
+      mobilePreviewConfirmed,
+      notifyBranchAdmins:
+        body.notify_branch_admins === "1" ||
+        body.notify_branch_admins === "on" ||
+        body.notify_branch_admins === true,
+      notifyHqTeam:
+        body.notify_hq_team === "1" ||
+        body.notify_hq_team === "on" ||
+        body.notify_hq_team === true,
       env,
     });
     if (!result.ok) {
       if (result.status === PUBLISH_STATUS.NOT_READY || result.status === PUBLISH_STATUS.INVALID_INPUT) {
+        if (fromConfirmation && tenant.organization) {
+          const validation =
+            result.validation ||
+            (await validateWebsitePublication(getPool(), {
+              organizationId: tenant.organization.id,
+              churchId: tenant.church.id,
+              actorUserId: await actorUserId(req),
+              deferServiceTimes,
+              mobilePreviewConfirmed,
+              env,
+            }));
+          const orgKey = (tenant.organization && tenant.organization.key) || null;
+          const html = renderHqView(
+            "hq/phase3-publication-confirmation.ejs",
+            await shellLocals(req, res, {
+              pageTitle: "Publication Confirmation",
+              validation,
+              deferServiceTimes,
+              previewPath: hqPreviewPagePath("home"),
+              publicPath: publicChurchHomePath(orgKey),
+              notice: null,
+              error:
+                result.reason === "confirm_publish"
+                  ? "Confirm publishing before continuing."
+                  : "Publication was not completed. The live website remains unchanged.",
+            })
+          );
+          return res.status(400).type("html").send(html);
+        }
         const readiness = await evaluatePublishReadiness(getPool(), {
           churchId: tenant.church.id,
           deferServiceTimes,
@@ -286,6 +406,12 @@ function createChurchWebsiteAdminRouter(deps) {
         return res.status(400).type("html").send(html);
       }
       return sendControlled(req, res, 503, "Website could not be published.");
+    }
+    if (result.publicationVersionId) {
+      return res.redirect(
+        303,
+        `/hq/website/publish/result?version=${encodeURIComponent(result.publicationVersionId)}`
+      );
     }
     const publicPath =
       result.publicPath ||

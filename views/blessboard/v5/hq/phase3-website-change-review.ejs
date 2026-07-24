@@ -60,6 +60,9 @@
       · Submitted by <%= sub.submittedByName || '—' %>
       on <%= formatWhen(sub.submittedAt) %>
     </p>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/change-submissions/<%= sub.id %>/comments">Review comments</a>
+    </p>
   </header>
 
   <% if (formError === 'feedback_required') { %>
