@@ -29,6 +29,9 @@ const {
   getAdminAnnouncement,
   presentAnnouncementForRender,
 } = require("../services/announcementsService");
+const {
+  resolveAnnouncementProductPolicy,
+} = require("../services/announcementProductPolicy");
 const { createMediaUploadService } = require("../media/mediaUploadService");
 const { sendPrivateMediaDownload } = require("./sendPrivateMediaDownload");
 const {
@@ -152,10 +155,7 @@ function createAnnouncementAdminRouter(deps) {
   const mediaService = deps.mediaService || createMediaUploadService(env);
   const loginNextDefault =
     variant === "hq" ? "/hq/announcements" : "/branch-admin/announcements";
-  const productPolicy = {
-    allowPlatformAdminPublish:
-      String(env.BLESSBOARD_ALLOW_PLATFORM_ADMIN_ANNOUNCEMENT_PUBLISH || "") === "1",
-  };
+  const productPolicy = resolveAnnouncementProductPolicy(env);
 
   const allowedRoles =
     variant === "hq"
@@ -184,6 +184,19 @@ function createAnnouncementAdminRouter(deps) {
   }
 
   async function shellLocals(req, res, extra) {
+    const authzCtx = req.blessBoardAuthorizationContext;
+    const roleKeys = ((authzCtx && authzCtx.effectiveRoles) || []).map((r) =>
+      r && r.roleKey ? String(r.roleKey) : ""
+    );
+    const isPlatformAdmin = roleKeys.includes("platform_admin");
+    const testingPlatformAdminPublishBanner = Boolean(
+      productPolicy.showTestingPlatformAdminPublishBanner && isPlatformAdmin
+    );
+    const bannerExtra = {
+      testingPlatformAdminPublishBanner,
+      testingPlatformAdminPublishBannerText:
+        "Testing mode: Platform Admin publishing enabled",
+    };
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
         env,
@@ -192,6 +205,7 @@ function createAnnouncementAdminRouter(deps) {
         pageTitle: (extra && extra.pageTitle) || "Announcements",
         extra: {
           shellKind: "branch",
+          ...bannerExtra,
           ...(extra || {}),
         },
       });
@@ -204,6 +218,7 @@ function createAnnouncementAdminRouter(deps) {
       pageTitle: (extra && extra.pageTitle) || "Announcements",
       extra: {
         shellKind: "hq",
+        ...bannerExtra,
         ...(extra || {}),
       },
     });
@@ -448,6 +463,7 @@ function createAnnouncementAdminRouter(deps) {
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         productPolicy,
+        env,
         title: body.title,
         body: body.body,
         status: body.status || "draft",
@@ -629,6 +645,7 @@ function createAnnouncementAdminRouter(deps) {
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         productPolicy,
+        env,
         status: "published",
         confirmPublish: body.confirm_publish,
         expectedUpdatedAt: body.expected_updated_at || item.updatedAt,
@@ -673,6 +690,7 @@ function createAnnouncementAdminRouter(deps) {
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         productPolicy,
+        env,
         status: "archived",
         expectedUpdatedAt: body.expected_updated_at || item.updatedAt,
         enforcePublishConfirm: false,
@@ -717,6 +735,7 @@ function createAnnouncementAdminRouter(deps) {
         actorUserId: scope.actorUserId,
         tenant: scope.tenant,
         productPolicy,
+        env,
         title: body.title,
         body: body.body,
         status: nextStatus,

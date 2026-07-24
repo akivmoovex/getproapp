@@ -914,6 +914,10 @@ describe("blessboard content admin", () => {
     assert.equal(preview.res.status, 200);
     assert.match(preview.res.text, /Pastor Draft/);
     assert.match(preview.res.text, /noindex|Preview/i);
+    assert.match(preview.res.text, /data-bb-shell="tenant-public"/);
+    assert.match(preview.res.text, /data-bb-preview-banner="1"/);
+    assert.match(preview.res.text, /data-bb-leadership="1"/);
+    assert.doesNotMatch(preview.res.text, /bb-ca-preview-body/);
 
     const unauth = await request(app).get("/hq/content/preview/leadership").set("Host", HOST_A);
     assert.ok(unauth.status === 303 || unauth.status === 401);

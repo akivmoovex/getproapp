@@ -1055,6 +1055,10 @@ function createContentAdminRouter(deps) {
       const scope = await resolveScope(req, res);
       if (!scope) return;
       const pageKey = req.params.pageKey;
+      const tenant = resolveTenantForAuthorization(req);
+      if (!tenant || !tenant.church || !tenant.primaryBranch) {
+        return sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
+      }
       const bundle = await getAdminPageBundle(getPool(), {
         ...scopeInput(scope),
         pageKey,
@@ -1068,26 +1072,30 @@ function createContentAdminRouter(deps) {
       if (bundle.page.status === "archived") {
         return sendControlled(req, res, 404, "Page not found.", shellKind);
       }
-      const sections = (bundle.sections || []).filter((s) => s.status !== "archived");
-      let entities = [];
-      const entityCfg = ENTITY_ROUTES[pageKey];
-      if (entityCfg) {
-        const listed = await entityCfg.listFn(getPool(), scopeInput(scope));
-        entities = ((listed && listed.items) || []).filter(
-          (item) => item.status === "draft" || item.status === "published"
+
+      const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel");
+      const { renderTenantPublicPage } = require("./renderTenantPublicPage");
+      const model = await loadTenantPublicPageModel(getPool(), {
+        tenant,
+        pageKey,
+        hostname: String(req.hostname || ""),
+        preview: true,
+        previewBranchId: scope.branchId,
+        previewMeta: {
+          backHref: scope.basePath,
+          editHref: `${scope.basePath}/pages/${pageKey}`,
+        },
+      });
+      if (model.kind !== KIND.OK) {
+        return sendControlled(
+          req,
+          res,
+          model.kind === KIND.UNAVAILABLE ? 503 : 404,
+          "Preview is unavailable for this page.",
+          shellKind
         );
       }
-      const html = renderContentAdminView(
-        "content-admin/preview.ejs",
-        await shellLocals(req, res, {
-          scope,
-          page: bundle.page,
-          pageKey,
-          pageTitle: PAGE_KEY_TITLES[pageKey] || bundle.page.title,
-          sections,
-          entities,
-        })
-      );
+      const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });
   }

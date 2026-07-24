@@ -14,14 +14,14 @@ function read(rel) {
 /** Canonical cache-bust versions for live V5 shells (keep in sync with templates). */
 const VERSIONS = {
   designSystem: "5",
-  apex: "12",
+  apex: "14",
   apexAuth: "6",
-  tenantPublic: "28",
+  tenantPublic: "31",
   tenantAuth: "13",
   memberPortal: "22",
-  branchAdmin: "37",
-  hqAdmin: "54",
-  platformAdmin: "31",
+  branchAdmin: "38",
+  hqAdmin: "56",
+  platformAdmin: "33",
   mediaPickerCss: "8",
   mediaPickerJs: "6",
   designSystemJs: "3",
@@ -116,12 +116,17 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     );
   });
 
-  it("content preview loads design-system head and versioned public CSS", () => {
-    const preview = read("views/blessboard/v5/content-admin/preview.ejs");
-    assert.match(preview, /head-design-system/);
-    assert.match(preview, new RegExp(`tenant-public\\.css\\?v=${VERSIONS.tenantPublic}`));
-    assert.match(preview, new RegExp(`hq-admin\\.css\\?v=${VERSIONS.hqAdmin}`));
-    assert.match(preview, new RegExp(`branch-admin\\.css\\?v=${VERSIONS.branchAdmin}`));
+  it("content preview uses public shell CSS and draft-aware renderer", () => {
+    const shell = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
+    assert.match(shell, /head-design-system/);
+    assert.match(shell, new RegExp(`tenant-public\\.css\\?v=${VERSIONS.tenantPublic}`));
+    assert.match(shell, /data-bb-preview-banner/);
+    const routes = read("src/blessboard/http/contentAdminRoutes.js");
+    assert.match(routes, /loadTenantPublicPageModel/);
+    assert.match(routes, /renderTenantPublicPage/);
+    assert.match(routes, /preview:\s*true/);
+    const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=31"/);
   });
 });
 

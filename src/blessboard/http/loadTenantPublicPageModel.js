@@ -3,6 +3,7 @@
 /**
  * Load read-only V5 tenant public page view models from content tables.
  * Branch-scoped published content overrides church-wide when present.
+ * Set input.preview=true for authenticated admin preview (drafts included; same templates).
  * No cache in this phase.
  */
 
@@ -16,6 +17,7 @@ const {
   listPublishedContactChannels,
   listPublishedGivingMethods,
 } = require("../services/publicContentReadService");
+const contentAdmin = require("../services/publicContentAdminService");
 const { PAGE_KEY_TITLES } = require("../services/publicContentConstants");
 const { NAV_ITEMS, PAGE_KEY_TO_PATH } = require("./tenantPublicPaths");
 const { buildTenantPublicSeo } = require("./tenantPublicSeo");
@@ -79,6 +81,33 @@ async function resolvePublishedList(db, listFn, churchId, primaryBranchId) {
   return { ok: false, items: [], contentScope: null };
 }
 
+/**
+ * Preserve service_times layout_metadata entries for public templates (no HTML).
+ * @param {unknown} meta
+ */
+function sanitizeLayoutMetadata(meta) {
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
+  const out = {};
+  if (meta.schema != null) out.schema = String(meta.schema).slice(0, 64);
+  if (Array.isArray(meta.entries)) {
+    out.entries = meta.entries
+      .filter((e) => e && typeof e === "object")
+      .slice(0, 20)
+      .map((e) => ({
+        id: e.id != null ? String(e.id).slice(0, 64) : null,
+        name: e.name != null ? String(e.name).slice(0, 120) : "",
+        day: e.day != null ? String(e.day).slice(0, 16) : "",
+        startTime: e.startTime != null ? String(e.startTime).slice(0, 8) : "",
+        endTime: e.endTime != null ? String(e.endTime).slice(0, 8) : "",
+        location: e.location != null ? String(e.location).slice(0, 200) : "",
+        note: e.note != null ? String(e.note).slice(0, 200) : "",
+        enabled: e.enabled !== false,
+        sortOrder: Number.isFinite(Number(e.sortOrder)) ? Number(e.sortOrder) : 0,
+      }));
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 function mapSection(section) {
   return {
     sectionKey: section.sectionKey,
@@ -87,7 +116,23 @@ function mapSection(section) {
     bodyText: section.bodyText,
     mediaUrl: safeExternalUrl(section.mediaUrl),
     sortOrder: section.sortOrder,
+    status: section.status || null,
+    layoutMetadata: sanitizeLayoutMetadata(section.layoutMetadata),
   };
+}
+
+/**
+ * @param {string|null|undefined} summary
+ * @returns {{ category: string|null, summary: string|null }}
+ */
+function parseSermonSummary(summary) {
+  const raw = summary == null ? "" : String(summary).trim();
+  if (!raw) return { category: null, summary: null };
+  const m = /^Category:\s*([^.\n]+)[.\s—-]*(.*)$/i.exec(raw);
+  if (!m) return { category: null, summary: raw };
+  const category = String(m[1] || "").trim().slice(0, 64) || null;
+  const rest = String(m[2] || "").trim();
+  return { category, summary: rest || raw };
 }
 
 function mapLeader(row) {
@@ -96,6 +141,8 @@ function mapLeader(row) {
     roleTitle: row.roleTitle,
     biography: row.biography,
     imageUrl: safeExternalUrl(row.imageUrl),
+    sortOrder: row.sortOrder != null ? Number(row.sortOrder) : 0,
+    status: row.status || null,
   };
 }
 
@@ -108,6 +155,8 @@ function mapMinistry(row) {
     contactEmail: row.contactEmail || null,
     contactHref: row.contactEmail ? safeExternalUrl(`mailto:${row.contactEmail}`) : null,
     imageUrl: safeExternalUrl(row.imageUrl),
+    sortOrder: row.sortOrder != null ? Number(row.sortOrder) : 0,
+    status: row.status || null,
   };
 }
 
@@ -121,18 +170,77 @@ function mapEvent(row, fallbackTimezone) {
     location: row.location,
     registrationUrl: safeExternalUrl(row.registrationUrl),
     imageUrl: safeExternalUrl(row.imageUrl),
+    status: row.status || null,
   };
 }
 
 function mapSermon(row) {
+  const parsed = parseSermonSummary(row.summary);
   return {
     title: row.title,
     speakerName: row.speakerName,
     preachedAt: row.preachedAt,
-    summary: row.summary,
+    summary: parsed.summary,
+    category: parsed.category,
     mediaUrl: safeExternalUrl(row.mediaUrl),
     resourceUrl: safeExternalUrl(row.resourceUrl),
+    status: row.status || null,
   };
+}
+
+const SOCIAL_CHANNEL_TYPES = new Set([
+  "facebook",
+  "instagram",
+  "youtube",
+  "twitter",
+  "x",
+  "linkedin",
+  "social",
+]);
+
+function isSocialChannel(channelType) {
+  const t = String(channelType || "").toLowerCase();
+  if (SOCIAL_CHANNEL_TYPES.has(t)) return true;
+  return t.includes("facebook") || t.includes("instagram") || t.includes("youtube");
+}
+
+function extractServiceTimesEntries(sections) {
+  for (const s of sections || []) {
+    const key = String(s.sectionKey || "");
+    const type = String(s.sectionType || "");
+    const isServiceTimes =
+      key === "service_times" ||
+      key === "services" ||
+      key === "worship_times" ||
+      type === "service_times" ||
+      type === "services" ||
+      type === "worship_times";
+    if (!isServiceTimes) continue;
+    const meta = s.layoutMetadata;
+    if (meta && Array.isArray(meta.entries)) {
+      return meta.entries
+        .filter((e) => e && e.enabled !== false && (e.name || e.startTime))
+        .slice()
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+    }
+    return [];
+  }
+  return [];
+}
+
+function pickAnnouncementHighlight(sections) {
+  for (const s of sections || []) {
+    const blob = `${s.sectionKey || ""} ${s.sectionType || ""} ${s.heading || ""}`.toLowerCase();
+    if (
+      blob.includes("announcement") ||
+      blob.includes("highlight") ||
+      blob.includes("this week") ||
+      blob.includes("this_week")
+    ) {
+      if (s.heading || s.bodyText) return s;
+    }
+  }
+  return null;
 }
 
 /**
@@ -170,7 +278,13 @@ function channelIcon(channelType) {
   if (t.includes("address") || t.includes("location") || t.includes("map")) {
     return "location_on";
   }
-  if (t.includes("web") || t.includes("url") || t.includes("link")) return "language";
+  if (t.includes("facebook")) return "public";
+  if (t.includes("instagram")) return "photo_camera";
+  if (t.includes("youtube")) return "smart_display";
+  if (t.includes("twitter") || t === "x") return "alternate_email";
+  if (t.includes("web") || t.includes("url") || t.includes("link") || t.includes("social")) {
+    return "language";
+  }
   if (t.includes("whatsapp") || t.includes("chat") || t.includes("message")) return "chat";
   return "contact_mail";
 }
@@ -342,11 +456,79 @@ function firstSectionDescription(sections) {
 }
 
 /**
+ * Prefer draft|published admin page for preview (same templates as published).
+ */
+async function resolvePreviewPage(db, scope) {
+  const churchId = scope.churchId;
+  const pageKey = scope.pageKey;
+  const preferredBranchId =
+    scope.branchId != null && String(scope.branchId).trim()
+      ? String(scope.branchId).trim()
+      : null;
+
+  async function loadBundle(branchId) {
+    const bundle = await contentAdmin.getAdminPageBundle(db, {
+      churchId,
+      branchId,
+      pageKey,
+    });
+    if (!bundle.ok || !bundle.page) return null;
+    if (bundle.page.status === "archived") return null;
+    const sections = (bundle.sections || [])
+      .filter((s) => s.status === "draft" || s.status === "published")
+      .map(mapSection);
+    return {
+      ok: true,
+      page: bundle.page,
+      sections,
+      contentScope: branchId ? "branch" : "church",
+    };
+  }
+
+  if (preferredBranchId) {
+    const branch = await loadBundle(preferredBranchId);
+    if (branch) return branch;
+  }
+  const church = await loadBundle(null);
+  if (church) return church;
+  return {
+    ok: false,
+    status: "not_found",
+    page: null,
+    sections: [],
+    contentScope: null,
+  };
+}
+
+async function resolvePreviewList(db, listFn, churchId, primaryBranchId) {
+  const branchList = await listFn(db, { churchId, branchId: primaryBranchId });
+  const branchItems = ((branchList && branchList.items) || []).filter(
+    (item) => item.status === "draft" || item.status === "published"
+  );
+  if (branchItems.length > 0) {
+    return { ok: true, items: branchItems, contentScope: "branch" };
+  }
+  const churchList = await listFn(db, { churchId, branchId: null });
+  const churchItems = ((churchList && churchList.items) || []).filter(
+    (item) => item.status === "draft" || item.status === "published"
+  );
+  return {
+    ok: true,
+    items: churchItems,
+    contentScope: churchItems.length ? "church" : null,
+  };
+}
+
+/**
  * @param {{ query?: Function, connect?: Function }} db
  * @param {{
  *   tenant: object,
  *   pageKey: string,
- *   hostname: string,
+ *   hostname?: string,
+ *   pathPrefix?: string,
+ *   preview?: boolean,
+ *   previewBranchId?: string|null,
+ *   previewMeta?: { backHref?: string, editHref?: string }|null,
  * }} input
  */
 async function loadTenantPublicPageModel(db, input) {
@@ -355,10 +537,15 @@ async function loadTenantPublicPageModel(db, input) {
     return { kind: KIND.UNAVAILABLE, reason: "tenant_unresolved" };
   }
 
+  const isPreview = Boolean(input.preview);
   const churchId = tenant.church.id;
   const primaryBranchId = tenant.primaryBranch.id;
   const pageKey = String(input.pageKey || "home");
   const hostname = String(input.hostname || "");
+  const previewBranchId =
+    input.previewBranchId != null && String(input.previewBranchId).trim()
+      ? String(input.previewBranchId).trim()
+      : null;
 
   const { churchSettings: settings, branchSettings } = await loadPublicSettings(
     db,
@@ -372,12 +559,11 @@ async function loadTenantPublicPageModel(db, input) {
     tenant.church.displayName ||
     "Church";
 
-  if (websiteStatus === "suspended") {
+  if (websiteStatus === "suspended" && !isPreview) {
     return { kind: KIND.UNAVAILABLE, reason: "website_suspended" };
   }
 
-  // Site-level draft/unpublished: do not expose CMS content on public surfaces.
-  if (websiteStatus !== "published") {
+  if (!isPreview && websiteStatus !== "published") {
     return {
       kind: KIND.SETUP,
       reason: "website_unpublished",
@@ -404,13 +590,22 @@ async function loadTenantPublicPageModel(db, input) {
     (branchSettings && branchSettings.timezone) ||
     null;
 
-  const pageResult = await resolvePublishedPage(db, {
-    churchId,
-    primaryBranchId,
-    pageKey,
-  });
+  const pageResult = isPreview
+    ? await resolvePreviewPage(db, {
+        churchId,
+        branchId: previewBranchId,
+        pageKey,
+      })
+    : await resolvePublishedPage(db, {
+        churchId,
+        primaryBranchId,
+        pageKey,
+      });
 
-  const sections = (pageResult.sections || []).map(mapSection);
+  const pageSections = isPreview
+    ? pageResult.sections || []
+    : (pageResult.sections || []).map(mapSection);
+
   const pageTitle =
     (pageResult.page && pageResult.page.title) || PAGE_KEY_TITLES[pageKey] || pageKey;
 
@@ -418,48 +613,144 @@ async function loadTenantPublicPageModel(db, input) {
   let entitiesScope = null;
   let entitiesEmptyMessage = "";
 
+  async function loadEntityList(publishedFn, adminFn, mapper, prepare) {
+    if (isPreview) {
+      const list = await resolvePreviewList(db, adminFn, churchId, primaryBranchId);
+      let items = (list.items || []).map(mapper);
+      if (prepare) items = prepare(items);
+      return { items, contentScope: list.contentScope };
+    }
+    const list = await resolvePublishedList(db, publishedFn, churchId, primaryBranchId);
+    let items = (list.items || []).map(mapper);
+    if (prepare) items = prepare(items);
+    return { items, contentScope: list.contentScope };
+  }
+
   if (pageKey === "leadership") {
-    const list = await resolvePublishedList(db, listPublishedLeaders, churchId, primaryBranchId);
-    entities = (list.items || []).map(mapLeader);
+    const list = await loadEntityList(
+      listPublishedLeaders,
+      contentAdmin.listAdminLeaders,
+      mapLeader
+    );
+    entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Leadership profiles will appear here when published.";
   } else if (pageKey === "ministries") {
-    const list = await resolvePublishedList(db, listPublishedMinistries, churchId, primaryBranchId);
-    entities = (list.items || []).map(mapMinistry);
+    const list = await loadEntityList(
+      listPublishedMinistries,
+      contentAdmin.listAdminMinistries,
+      mapMinistry
+    );
+    entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Ministries will appear here when published.";
   } else if (pageKey === "events") {
-    const list = await resolvePublishedList(db, listPublishedEvents, churchId, primaryBranchId);
-    entities = preparePublicEvents(
-      (list.items || []).map((row) => mapEvent(row, canonicalTimezone))
+    const list = await loadEntityList(
+      listPublishedEvents,
+      contentAdmin.listAdminEvents,
+      (row) => mapEvent(row, canonicalTimezone),
+      (items) => preparePublicEvents(items)
     );
+    entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Upcoming events will appear here when published.";
   } else if (pageKey === "sermons") {
-    const list = await resolvePublishedList(db, listPublishedSermons, churchId, primaryBranchId);
-    entities = (list.items || []).map(mapSermon);
+    const list = await loadEntityList(
+      listPublishedSermons,
+      contentAdmin.listAdminSermons,
+      mapSermon
+    );
+    entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Sermons will appear here when published.";
   } else if (pageKey === "contact") {
-    const list = await resolvePublishedList(
-      db,
+    const list = await loadEntityList(
       listPublishedContactChannels,
-      churchId,
-      primaryBranchId
+      contentAdmin.listAdminContactChannels,
+      mapContact
     );
-    entities = (list.items || []).map(mapContact);
+    entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Contact details will appear here when published.";
   } else if (pageKey === "giving") {
-    const list = await resolvePublishedList(
-      db,
+    const list = await loadEntityList(
       listPublishedGivingMethods,
-      churchId,
-      primaryBranchId
+      contentAdmin.listAdminGivingMethods,
+      mapGiving
     );
-    entities = (list.items || []).map(mapGiving);
+    entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Giving options will appear here when published.";
+  }
+
+  let homeTeasers = {
+    ministries: [],
+    leaders: [],
+    events: [],
+    sermons: [],
+    announcement: null,
+  };
+  let socialLinks = [];
+  let serviceTimesEntries = extractServiceTimesEntries(pageSections);
+
+  if (pageKey === "home" || pageKey === "about" || pageKey === "contact") {
+    const contactList = isPreview
+      ? await resolvePreviewList(
+          db,
+          contentAdmin.listAdminContactChannels,
+          churchId,
+          primaryBranchId
+        )
+      : await resolvePublishedList(db, listPublishedContactChannels, churchId, primaryBranchId);
+    const allChannels = (contactList.items || []).map(mapContact);
+    socialLinks = allChannels.filter((ch) => isSocialChannel(ch.channelType));
+  }
+
+  if (pageKey === "home") {
+    homeTeasers.announcement = pickAnnouncementHighlight(pageSections);
+
+    const ministries = await loadEntityList(
+      listPublishedMinistries,
+      contentAdmin.listAdminMinistries,
+      mapMinistry
+    );
+    homeTeasers.ministries = (ministries.items || []).slice(0, 4);
+
+    const leaders = await loadEntityList(
+      listPublishedLeaders,
+      contentAdmin.listAdminLeaders,
+      mapLeader
+    );
+    homeTeasers.leaders = (leaders.items || []).slice(0, 3);
+
+    const events = await loadEntityList(
+      listPublishedEvents,
+      contentAdmin.listAdminEvents,
+      (row) => mapEvent(row, canonicalTimezone),
+      (items) => preparePublicEvents(items)
+    );
+    homeTeasers.events = (events.items || []).slice(0, 3);
+
+    const sermons = await loadEntityList(
+      listPublishedSermons,
+      contentAdmin.listAdminSermons,
+      mapSermon
+    );
+    homeTeasers.sermons = (sermons.items || []).slice(0, 3);
+  }
+
+  if ((pageKey === "about" || pageKey === "contact") && !serviceTimesEntries.length) {
+    const homePage = isPreview
+      ? await resolvePreviewPage(db, {
+          churchId,
+          branchId: previewBranchId,
+          pageKey: "home",
+        })
+      : await resolvePublishedPage(db, { churchId, primaryBranchId, pageKey: "home" });
+    const homeSections = isPreview
+      ? homePage.sections || []
+      : (homePage.sections || []).map(mapSection);
+    serviceTimesEntries = extractServiceTimesEntries(homeSections);
   }
 
   const dataEnvironment = tenant.church.dataEnvironment || null;
@@ -467,7 +758,7 @@ async function loadTenantPublicPageModel(db, input) {
   const showEnvBadge = env === "testing" || env === "demo";
   const primaryEmail = settings && settings.primaryEmail ? String(settings.primaryEmail) : "";
   const primaryPhone = settings && settings.primaryPhone ? String(settings.primaryPhone) : "";
-  const footerTagline = firstSectionDescription(sections);
+  const footerTagline = firstSectionDescription(pageSections) || "";
   const pathPrefix = String(input.pathPrefix || "").replace(/\/$/, "");
 
   const seo = buildTenantPublicSeo({
@@ -475,23 +766,33 @@ async function loadTenantPublicPageModel(db, input) {
     pageKey,
     publicName,
     pageTitle,
-    description: firstSectionDescription(sections),
-    dataEnvironment,
-    websiteStatus,
+    description: firstSectionDescription(pageSections),
+    dataEnvironment: isPreview ? "testing" : dataEnvironment,
+    websiteStatus: isPreview ? "draft" : websiteStatus,
     pathPrefix,
   });
 
   const hasPage = Boolean(pageResult.page);
-  const hasSections = sections.length > 0;
+  const hasSections = pageSections.length > 0;
   const hasEntities = entities.length > 0;
+  const hasHomeTeasers =
+    pageKey === "home" &&
+    Boolean(
+      homeTeasers.ministries.length ||
+        homeTeasers.leaders.length ||
+        homeTeasers.events.length ||
+        homeTeasers.sermons.length ||
+        homeTeasers.announcement ||
+        serviceTimesEntries.length
+    );
 
-  // Entity pages: empty if no entities (sections optional). Content pages: empty if no sections.
-  // Contact also considers public branch/church settings (address/phone/email/map).
   let showEmptyState = false;
   if (pageKey === "contact") {
     showEmptyState = !hasEntities && !hasSections && !publicContact.hasAny;
   } else if (["leadership", "ministries", "events", "sermons", "giving"].includes(pageKey)) {
     showEmptyState = !hasEntities && !hasSections;
+  } else if (pageKey === "home") {
+    showEmptyState = !hasSections && !hasHomeTeasers;
   } else {
     showEmptyState = !hasSections;
   }
@@ -505,6 +806,15 @@ async function loadTenantPublicPageModel(db, input) {
         })
       )
     : NAV_ITEMS;
+
+  const previewMeta = isPreview
+    ? {
+        backHref: (input.previewMeta && input.previewMeta.backHref) || "/hq/content",
+        editHref:
+          (input.previewMeta && input.previewMeta.editHref) ||
+          `/hq/content/pages/${pageKey}`,
+      }
+    : null;
 
   return {
     kind: KIND.OK,
@@ -523,12 +833,15 @@ async function loadTenantPublicPageModel(db, input) {
     primaryPhone,
     footerTagline,
     publicContact,
+    socialLinks,
+    serviceTimesEntries,
+    homeTeasers,
     canonicalTimezone,
     primaryBranchDisplayName: tenant.primaryBranch.displayName,
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
     loginHref: "/login",
     apexHref: "https://blessboard.org/",
-    cssHref: "/blessboard/v5/tenant-public.css?v=30",
+    cssHref: "/blessboard/v5/tenant-public.css?v=31",
     pathPrefix,
     homeHref: pathPrefix || "/",
     hrefFor(pagePath) {
@@ -542,10 +855,11 @@ async function loadTenantPublicPageModel(db, input) {
     page: pageResult.page
       ? {
           title: pageResult.page.title,
+          status: pageResult.page.status || null,
           contentScope: pageResult.contentScope,
         }
       : null,
-    sections,
+    sections: pageSections,
     entities,
     entitiesScope,
     entitiesEmptyMessage,
@@ -557,9 +871,12 @@ async function loadTenantPublicPageModel(db, input) {
         : hasPage
           ? "Content for this page is being prepared."
           : "This page is not published yet. Please check back soon.",
+    isPreview,
+    previewMeta,
     seo,
   };
 }
+
 
 module.exports = {
   KIND,
@@ -570,4 +887,7 @@ module.exports = {
   safeExternalUrl,
   buildPublicContact,
   validCoordinates,
+  parseSermonSummary,
+  mapSection,
+  mapSermon,
 };

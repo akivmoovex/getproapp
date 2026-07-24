@@ -2,14 +2,16 @@
   Tenant Home — Stitch 01-public-home-*-v2 (Refined).
   Desktop: ead45db5be774baa9454412262096ffc
   Mobile:  89177588fbf8405dbebd5747c38e19ce
-  Published CMS sections only. No fabricated metrics, announcements,
-  prayer widgets, schedule sidebars, or ministry demo cards.
+  CMS + live teasers from published (or preview draft) content. No fabricated metrics.
 %>
 <%
   var hero = null;
   var rest = [];
   var serviceTimesSection = null;
-  var serviceTimesEntries = [];
+  var serviceTimesEntriesLocal =
+    typeof serviceTimesEntries !== 'undefined' && serviceTimesEntries && serviceTimesEntries.length
+      ? serviceTimesEntries
+      : [];
   (sections || []).forEach(function (s) {
     var key = String(s.sectionKey || '');
     var type = String(s.sectionType || '');
@@ -18,15 +20,17 @@
       type === 'service_times' || type === 'services' || type === 'worship_times';
     if (isServiceTimes && !serviceTimesSection) {
       serviceTimesSection = s;
-      var meta = s.layoutMetadata && typeof s.layoutMetadata === 'object' ? s.layoutMetadata : null;
-      if (meta && Array.isArray(meta.entries)) {
-        serviceTimesEntries = meta.entries.filter(function (e) {
-          return e && e.enabled !== false;
-        }).slice().sort(function (a, b) {
-          var ao = a.sortOrder != null ? Number(a.sortOrder) : 0;
-          var bo = b.sortOrder != null ? Number(b.sortOrder) : 0;
-          return ao - bo;
-        });
+      if (!serviceTimesEntriesLocal.length) {
+        var meta = s.layoutMetadata && typeof s.layoutMetadata === 'object' ? s.layoutMetadata : null;
+        if (meta && Array.isArray(meta.entries)) {
+          serviceTimesEntriesLocal = meta.entries.filter(function (e) {
+            return e && e.enabled !== false;
+          }).slice().sort(function (a, b) {
+            var ao = a.sortOrder != null ? Number(a.sortOrder) : 0;
+            var bo = b.sortOrder != null ? Number(b.sortOrder) : 0;
+            return ao - bo;
+          });
+        }
       }
       return;
     }
@@ -41,14 +45,23 @@
   var heroBody = (hero && hero.bodyText) || '';
   var heroMedia = hero && hero.mediaUrl ? hero.mediaUrl : null;
 
-  // Stitch display titles accent the trailing phrase (e.g. "Growth & Community").
-  // Apply the same treatment to live headings without inventing copy.
   var accentBefore = heroHeading;
   var accentPhrase = '';
   var headingWords = String(heroHeading || '').trim().split(/\s+/).filter(Boolean);
   if (headingWords.length >= 4) {
     accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
     accentPhrase = headingWords.slice(-2).join(' ');
+  }
+
+  var teasers = typeof homeTeasers !== 'undefined' && homeTeasers ? homeTeasers : {
+    ministries: [], leaders: [], events: [], sermons: [], announcement: null
+  };
+  var announce = teasers.announcement || null;
+  // Keep announcement section out of generic rest stack when already highlighted.
+  if (announce) {
+    rest = rest.filter(function (s) {
+      return s.sectionKey !== announce.sectionKey;
+    });
   }
 
   function dayLabel(day) {
@@ -65,6 +78,12 @@
     h = h % 12;
     if (h === 0) h = 12;
     return h + ':' + min + ' ' + ampm;
+  }
+  function bioSnippet(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    if (t.length <= 140) return t;
+    return t.slice(0, 137) + '…';
   }
 %>
 
@@ -124,13 +143,13 @@
     </div>
   </section>
 
-  <% if (serviceTimesEntries.length) { %>
+  <% if (serviceTimesEntriesLocal.length) { %>
   <section class="bb-tp-container bb-tp-home__service-times" data-bb-home-service-times="1" aria-labelledby="bb-tp-service-times-heading">
-    <h2 id="bb-tp-service-times-heading" class="bb-tp-section-title">
+    <h2 id="bb-tp-service-times-heading" class="bb-tp-section-title bb-tp-section-title--ruled">
       <%= (serviceTimesSection && serviceTimesSection.heading) || 'Service Times' %>
     </h2>
     <ul class="bb-tp-service-times-list">
-      <% serviceTimesEntries.forEach(function (entry) { %>
+      <% serviceTimesEntriesLocal.forEach(function (entry) { %>
       <li class="bb-tp-service-times-item">
         <span class="bb-tp-service-times-item__day"><%= dayLabel(entry.day) %></span>
         <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
@@ -145,10 +164,24 @@
   </section>
   <% } else if (serviceTimesSection && serviceTimesSection.bodyText) { %>
   <section class="bb-tp-container bb-tp-home__service-times" data-bb-home-service-times="1" aria-labelledby="bb-tp-service-times-heading">
-    <h2 id="bb-tp-service-times-heading" class="bb-tp-section-title">
+    <h2 id="bb-tp-service-times-heading" class="bb-tp-section-title bb-tp-section-title--ruled">
       <%= serviceTimesSection.heading || 'Service Times' %>
     </h2>
     <p class="bb-tp-body"><%= serviceTimesSection.bodyText %></p>
+  </section>
+  <% } %>
+
+  <% if (announce && (announce.heading || announce.bodyText)) { %>
+  <section class="bb-tp-container bb-tp-home__announce" data-bb-home-announce="1" aria-labelledby="bb-tp-announce-heading">
+    <div class="bb-tp-home-announce">
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill">This week</p>
+      <% if (announce.heading) { %>
+      <h2 id="bb-tp-announce-heading" class="bb-tp-section-title"><%= announce.heading %></h2>
+      <% } else { %>
+      <h2 id="bb-tp-announce-heading" class="bb-tp-section-title">Announcement</h2>
+      <% } %>
+      <% if (announce.bodyText) { %><p class="bb-tp-body"><%= announce.bodyText %></p><% } %>
+    </div>
   </section>
   <% } %>
 
@@ -170,8 +203,9 @@
     </div>
   </div>
   <% } else if (rest.length) { %>
-  <div class="bb-tp-container bb-tp-home__sections">
+  <div class="bb-tp-container bb-tp-home__sections" data-bb-home-welcome="1">
     <% rest.forEach(function (section) { %>
+    <% if (!section.heading && !section.bodyText && !section.mediaUrl) return; %>
     <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
       <% if (section.mediaUrl) { %>
       <div class="bb-tp-content-block__media">
@@ -186,6 +220,120 @@
     <% }) %>
   </div>
   <% } %>
+
+  <% if (teasers.ministries && teasers.ministries.length) { %>
+  <section class="bb-tp-container bb-tp-home__teaser" data-bb-home-ministries="1" aria-labelledby="bb-tp-home-ministries-heading">
+    <header class="bb-tp-home__teaser-head">
+      <h2 id="bb-tp-home-ministries-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Ministries</h2>
+      <a class="bb-tp-home__teaser-link" href="<%= hrefFor('/ministries') %>">View all</a>
+    </header>
+    <div class="bb-tp-ministry-grid bb-tp-ministry-grid--home">
+      <% teasers.ministries.forEach(function (m) { %>
+      <article class="bb-tp-ministry-card">
+        <div class="bb-tp-ministry-card__media<%= m.imageUrl ? ' has-media' : '' %>">
+          <% if (m.imageUrl) { %>
+          <img src="<%= m.imageUrl %>" alt="" width="640" height="360" loading="lazy" decoding="async" />
+          <% } else { %>
+          <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          <% } %>
+        </div>
+        <div class="bb-tp-ministry-card__body">
+          <h3 class="bb-tp-ministry-card__title"><%= m.name %></h3>
+          <% if (m.summary) { %><p class="bb-tp-ministry-card__summary"><%= m.summary %></p><% } %>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (teasers.leaders && teasers.leaders.length) { %>
+  <section class="bb-tp-container bb-tp-home__teaser" data-bb-home-leadership="1" aria-labelledby="bb-tp-home-leadership-heading">
+    <header class="bb-tp-home__teaser-head">
+      <h2 id="bb-tp-home-leadership-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Leadership</h2>
+      <a class="bb-tp-home__teaser-link" href="<%= hrefFor('/leadership') %>">Meet our team</a>
+    </header>
+    <div class="bb-tp-leader-grid bb-tp-leader-grid--home">
+      <% teasers.leaders.forEach(function (leader) { %>
+      <article class="bb-tp-leader-card">
+        <div class="bb-tp-leader-card__media<%= leader.imageUrl ? ' has-media' : '' %>">
+          <% if (leader.imageUrl) { %>
+          <img src="<%= leader.imageUrl %>" alt="" width="320" height="320" loading="lazy" decoding="async" />
+          <% } else { %>
+          <span class="bb-tp-leader-card__initials" aria-hidden="true"><%= initials(leader.displayName) %></span>
+          <% } %>
+        </div>
+        <div class="bb-tp-leader-card__body">
+          <h3 class="bb-tp-leader-card__name"><%= leader.displayName %></h3>
+          <% if (leader.roleTitle) { %><p class="bb-tp-leader-card__role"><%= leader.roleTitle %></p><% } %>
+          <% if (leader.biography) { %><p class="bb-tp-leader-card__bio"><%= bioSnippet(leader.biography) %></p><% } %>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (teasers.events && teasers.events.length) { %>
+  <section class="bb-tp-container bb-tp-home__teaser" data-bb-home-events="1" aria-labelledby="bb-tp-home-events-heading">
+    <header class="bb-tp-home__teaser-head">
+      <h2 id="bb-tp-home-events-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Upcoming events</h2>
+      <a class="bb-tp-home__teaser-link" href="<%= hrefFor('/events') %>">All events</a>
+    </header>
+    <div class="bb-tp-event-grid bb-tp-event-grid--home">
+      <% teasers.events.forEach(function (event) { %>
+      <% var parts = formatEventParts(event.startsAt, event.timezone, event.endsAt); %>
+      <article class="bb-tp-event-card">
+        <div class="bb-tp-event-card__date" aria-hidden="true">
+          <span class="bb-tp-event-card__month"><%= parts.month %></span>
+          <span class="bb-tp-event-card__day"><%= parts.day %></span>
+        </div>
+        <div class="bb-tp-event-card__body">
+          <h3 class="bb-tp-event-card__title"><%= event.title %></h3>
+          <% if (parts.timeRange) { %><p class="bb-tp-event-card__meta"><%= parts.weekday %> · <%= parts.timeRange %></p><% } %>
+          <% if (event.summary) { %><p class="bb-tp-event-card__summary"><%= event.summary %></p><% } %>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (teasers.sermons && teasers.sermons.length) { %>
+  <section class="bb-tp-container bb-tp-home__teaser" data-bb-home-sermons="1" aria-labelledby="bb-tp-home-sermons-heading">
+    <header class="bb-tp-home__teaser-head">
+      <h2 id="bb-tp-home-sermons-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Latest sermons</h2>
+      <a class="bb-tp-home__teaser-link" href="<%= hrefFor('/sermons') %>">All sermons</a>
+    </header>
+    <ul class="bb-tp-home-sermon-list">
+      <% teasers.sermons.forEach(function (sermon) { %>
+      <li class="bb-tp-home-sermon">
+        <% if (sermon.category) { %><p class="bb-tp-home-sermon__cat"><%= sermon.category %></p><% } %>
+        <h3 class="bb-tp-home-sermon__title"><%= sermon.title %></h3>
+        <p class="bb-tp-home-sermon__meta">
+          <%= sermon.speakerName %><% if (sermon.preachedAt) { %> · <%= formatDate(sermon.preachedAt) %><% } %>
+        </p>
+        <% if (sermon.summary) { %><p class="bb-tp-home-sermon__summary"><%= bioSnippet(sermon.summary) %></p><% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <section class="bb-tp-home-cta-pair" aria-label="Next steps">
+    <div class="bb-tp-container bb-tp-home-cta-pair__grid">
+      <a class="bb-tp-home-cta-card bb-tp-home-cta-card--give" href="<%= hrefFor('/giving') %>">
+        <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
+        <span class="bb-tp-home-cta-card__title">Give</span>
+        <span class="bb-tp-home-cta-card__lead">Safe giving information — we never process payments here.</span>
+      </a>
+      <a class="bb-tp-home-cta-card bb-tp-home-cta-card--contact" href="<%= hrefFor('/contact') %>">
+        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+        <span class="bb-tp-home-cta-card__title">Visit &amp; contact</span>
+        <span class="bb-tp-home-cta-card__lead">Find our address, hours, and how to reach the office.</span>
+      </a>
+    </div>
+  </section>
 
   <section class="bb-tp-shortcuts" aria-label="Explore">
     <div class="bb-tp-container">

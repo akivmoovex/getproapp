@@ -38,6 +38,9 @@ const {
   preparePublicEvents,
   buildPublicContact,
   validCoordinates,
+  parseSermonSummary,
+  mapSection,
+  mapSermon,
 } = require("../src/blessboard/http/loadTenantPublicPageModel");
 const { formatEventParts } = require("../src/blessboard/http/renderTenantPublicPage");
 
@@ -1092,5 +1095,379 @@ describe("blessboard public pages", () => {
 
     const isolated = await request(app).get("/giving").set("Host", HOST_B);
     assert.doesNotMatch(isolated.text, /Online Giving|Sunday Offering/);
+  });
+
+  it("parseSermonSummary extracts category prefix without inventing labels", () => {
+    assert.deepEqual(parseSermonSummary("Category: Teaching. A short note."), {
+      category: "Teaching",
+      summary: "A short note.",
+    });
+    assert.deepEqual(parseSermonSummary("Plain summary only"), {
+      category: null,
+      summary: "Plain summary only",
+    });
+    assert.deepEqual(parseSermonSummary(""), { category: null, summary: null });
+    const mapped = mapSermon({
+      title: "Demo",
+      speakerName: "A",
+      preachedAt: null,
+      summary: "Category: Prayer. Habits of prayer.",
+      mediaUrl: null,
+      resourceUrl: null,
+    });
+    assert.equal(mapped.category, "Prayer");
+    assert.equal(mapped.summary, "Habits of prayer.");
+  });
+
+  it("mapSection preserves sanitized service_times layout metadata", () => {
+    const mapped = mapSection({
+      sectionKey: "service_times",
+      sectionType: "service_times",
+      heading: "Service Times",
+      bodyText: null,
+      mediaUrl: null,
+      sortOrder: 1,
+      layoutMetadata: {
+        schema: "service_times_v1",
+        entries: [
+          {
+            id: "sun",
+            name: "Sunday Worship",
+            day: "sunday",
+            startTime: "10:00",
+            endTime: "11:30",
+            location: "Sanctuary",
+            enabled: true,
+            sortOrder: 1,
+          },
+          { name: "Hidden", enabled: false, startTime: "09:00" },
+        ],
+        script: "<script>evil()</script>",
+      },
+    });
+    assert.equal(mapped.layoutMetadata.schema, "service_times_v1");
+    assert.equal(mapped.layoutMetadata.entries.length, 2);
+    assert.equal(mapped.layoutMetadata.entries[0].name, "Sunday Worship");
+    assert.equal(mapped.layoutMetadata.script, undefined);
+  });
+
+  it("home renders live teasers, service times, announcement, and CTAs without fake counts", async () => {
+    requireDb();
+    await pool.query(
+      `UPDATE blessboard.leaders SET status = 'archived' WHERE church_id = $1 AND status IN ('published', 'draft')`,
+      [churchA.id]
+    );
+    await pool.query(
+      `UPDATE blessboard.ministries SET status = 'archived' WHERE church_id = $1 AND status IN ('published', 'draft')`,
+      [churchA.id]
+    );
+    await pool.query(
+      `UPDATE blessboard.events SET status = 'archived' WHERE church_id = $1 AND status IN ('published', 'draft')`,
+      [churchA.id]
+    );
+    await pool.query(
+      `UPDATE blessboard.sermons SET status = 'archived' WHERE church_id = $1 AND status IN ('published', 'draft')`,
+      [churchA.id]
+    );
+
+    // Prefer branch-scoped home (authoritative override) so teaser fixtures land on the live page.
+    const branchPages = await provisionEmptyPublicPages(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+    });
+    const home = branchPages.pages.find((p) => p.pageKey === "home");
+    await updatePublicPage(pool, home.id, { status: "published", title: "Home" });
+    await pool.query(`UPDATE blessboard.page_sections SET status = 'draft' WHERE page_id = $1`, [
+      home.id,
+    ]);
+
+    async function upsertSection(fields) {
+      await pool.query(
+        `INSERT INTO blessboard.page_sections
+           (page_id, section_key, section_type, heading, body_text, sort_order, status, layout_metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, 'published', $7::jsonb)
+         ON CONFLICT (page_id, section_key) DO UPDATE
+           SET section_type = EXCLUDED.section_type,
+               heading = EXCLUDED.heading,
+               body_text = EXCLUDED.body_text,
+               sort_order = EXCLUDED.sort_order,
+               status = 'published',
+               layout_metadata = EXCLUDED.layout_metadata`,
+        [
+          home.id,
+          fields.key,
+          fields.type,
+          fields.heading,
+          fields.body,
+          fields.sort || 1,
+          fields.meta ? JSON.stringify(fields.meta) : null,
+        ]
+      );
+    }
+
+    await upsertSection({
+      key: "hero",
+      type: "hero",
+      heading: "Gather With Courage And Hope",
+      body: "Published home hero copy",
+      sort: 1,
+    });
+    await upsertSection({
+      key: "welcome",
+      type: "body",
+      heading: "Welcome",
+      body: "A short welcome for visitors.",
+      sort: 20,
+    });
+    await upsertSection({
+      key: "announcement_highlight",
+      type: "announcement",
+      heading: "This Week Spotlight",
+      body: "Community meal after the morning service.",
+      sort: 15,
+    });
+    await upsertSection({
+      key: "service_times",
+      type: "service_times",
+      heading: "Service Times",
+      body: null,
+      sort: 10,
+      meta: {
+        schema: "service_times_v1",
+        entries: [
+          {
+            id: "sun",
+            name: "Sunday Worship",
+            day: "sunday",
+            startTime: "10:00",
+            endTime: "11:30",
+            location: "Main sanctuary",
+            enabled: true,
+            sortOrder: 1,
+          },
+        ],
+      },
+    });
+
+    assert.equal(
+      (
+        await createLeader(pool, {
+          churchId: churchA.id,
+          displayName: "Home Teaser Pastor",
+          roleTitle: "Pastor",
+          biography: "Short bio for home teaser.",
+          status: "published",
+        })
+      ).ok,
+      true
+    );
+    assert.equal(
+      (
+        await createLeader(pool, {
+          churchId: churchA.id,
+          displayName: "Draft Home Leader",
+          roleTitle: "Elder",
+          status: "draft",
+        })
+      ).ok,
+      true
+    );
+    assert.equal(
+      (
+        await createMinistry(pool, {
+          churchId: churchA.id,
+          name: "Home Teaser Youth",
+          summary: "Youth teaser summary",
+          status: "published",
+        })
+      ).ok,
+      true
+    );
+    const soon = new Date(Date.now() + 7 * 86400000).toISOString();
+    assert.equal(
+      (
+        await createEvent(pool, {
+          churchId: churchA.id,
+          title: "Home Teaser Event",
+          summary: "Upcoming teaser event",
+          startsAt: soon,
+          timezone: "UTC",
+          status: "published",
+        })
+      ).ok,
+      true
+    );
+    assert.equal(
+      (
+        await createSermon(pool, {
+          churchId: churchA.id,
+          title: "Home Teaser Sermon",
+          speakerName: "Home Teaser Pastor",
+          summary: "Category: Teaching. Latest message summary.",
+          preachedAt: new Date().toISOString(),
+          status: "published",
+        })
+      ).ok,
+      true
+    );
+
+    const res = await request(app).get("/").set("Host", HOST_A);
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-home="1"/);
+    assert.match(res.text, /data-bb-home-service-times="1"/);
+    assert.match(res.text, /Sunday Worship/);
+    assert.match(res.text, /Main sanctuary/);
+    assert.match(res.text, /data-bb-home-announce="1"/);
+    assert.match(res.text, /This Week Spotlight/);
+    assert.match(res.text, /data-bb-home-welcome="1"/);
+    assert.match(res.text, /A short welcome for visitors/);
+    assert.match(res.text, /data-bb-home-ministries="1"/);
+    assert.match(res.text, /Home Teaser Youth/);
+    assert.match(res.text, /data-bb-home-leadership="1"/);
+    assert.match(res.text, /Home Teaser Pastor/);
+    assert.doesNotMatch(res.text, /Draft Home Leader/);
+    assert.match(res.text, /data-bb-home-events="1"/);
+    assert.match(res.text, /Home Teaser Event/);
+    assert.match(res.text, /data-bb-home-sermons="1"/);
+    assert.match(res.text, /Home Teaser Sermon/);
+    assert.match(res.text, /Teaching/);
+    assert.match(res.text, /bb-tp-home-cta-card--give/);
+    assert.match(res.text, /bb-tp-home-cta-card--contact/);
+    assert.match(res.text, /bb-tp-hero__cta-desktop/);
+    assert.match(res.text, /bb-tp-hero__cta-mobile/);
+    assert.match(res.text, /bb-tp-hero__eyebrow-desktop/);
+    assert.match(res.text, /bb-tp-hero__eyebrow-mobile/);
+    assert.doesNotMatch(res.text, /data-bb-preview-banner/);
+    assert.doesNotMatch(res.text, /1\.2k\+|Active Members|\d+\+\s*Ministries/i);
+  });
+
+  it("about shows mission vision values and service information from stored content", async () => {
+    requireDb();
+    const pages = await provisionEmptyPublicPages(pool, { churchId: churchA.id });
+    const about = pages.pages.find((p) => p.pageKey === "about");
+    await updatePublicPage(pool, about.id, { status: "published" });
+    await pool.query(`UPDATE blessboard.page_sections SET status = 'draft' WHERE page_id = $1`, [
+      about.id,
+    ]);
+
+    async function upsertAbout(fields) {
+      await pool.query(
+        `INSERT INTO blessboard.page_sections
+           (page_id, section_key, section_type, heading, body_text, sort_order, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'published')
+         ON CONFLICT (page_id, section_key) DO UPDATE
+           SET section_type = EXCLUDED.section_type,
+               heading = EXCLUDED.heading,
+               body_text = EXCLUDED.body_text,
+               sort_order = EXCLUDED.sort_order,
+               status = 'published'`,
+        [about.id, fields.key, fields.type, fields.heading, fields.body, fields.sort || 1]
+      );
+    }
+
+    await upsertAbout({
+      key: "about_hero",
+      type: "hero",
+      heading: "About Our Church Family",
+      body: "Hero for about parity.",
+      sort: 1,
+    });
+    await upsertAbout({
+      key: "mission",
+      type: "mission",
+      heading: "Our Mission",
+      body: "Mission body published.",
+      sort: 20,
+    });
+    await upsertAbout({
+      key: "vision",
+      type: "vision",
+      heading: "Our Vision",
+      body: "Vision body published.",
+      sort: 30,
+    });
+    await upsertAbout({
+      key: "values",
+      type: "values",
+      heading: "Our Values",
+      body: "Values body published.",
+      sort: 40,
+    });
+    await upsertAbout({
+      key: "story",
+      type: "story",
+      heading: "Our Story",
+      body: "Story body published.",
+      sort: 50,
+    });
+
+    await pool.query(
+      `UPDATE blessboard.branch_settings
+          SET address_line_1 = $2,
+              city = $3,
+              phone = $4
+        WHERE branch_id = $1`,
+      [branchA.id, "12 Parity Lane", "Demo City", "+15550100"]
+    );
+
+    const res = await request(app).get("/about").set("Host", HOST_A);
+    assert.equal(res.status, 200);
+    assert.match(res.text, /Our Mission/);
+    assert.match(res.text, /Mission body published/);
+    assert.match(res.text, /Our Vision/);
+    assert.match(res.text, /Our Values/);
+    assert.match(res.text, /Our Story/);
+    assert.match(res.text, /Story body published/);
+    assert.match(res.text, /data-bb-about-services="1"/);
+    assert.match(res.text, /12 Parity Lane|Demo City/);
+    assert.match(res.text, /bb-tp-about-hero__eyebrow-desktop/);
+    assert.match(res.text, /bb-tp-about-hero__eyebrow-mobile/);
+    assert.doesNotMatch(res.text, /1,200\+|Year Established/i);
+  });
+  it("empty home sections collapse and blank cards are not rendered", async () => {
+    requireDb();
+    const pages = await provisionEmptyPublicPages(pool, { churchId: churchA.id });
+    const home = pages.pages.find((p) => p.pageKey === "home");
+    await updatePublicPage(pool, home.id, { status: "published" });
+    await createPageSection(pool, {
+      pageId: home.id,
+      sectionKey: "blank_block",
+      sectionType: "body",
+      heading: "",
+      bodyText: "",
+      status: "published",
+      confirmPublish: true,
+    });
+    const res = await request(app).get("/").set("Host", HOST_A);
+    assert.equal(res.status, 200);
+    assert.doesNotMatch(res.text, /data-section="blank_block"/);
+  });
+
+  it("desktop and mobile structural markers coexist on public pages", async () => {
+    requireDb();
+    for (const p of ["/", "/about", "/events", "/sermons", "/giving", "/contact"]) {
+      const res = await request(app).get(p).set("Host", HOST_A);
+      assert.equal(res.status, 200, p);
+      assert.match(res.text, /id="bb-tp-drawer"/);
+      assert.match(res.text, /id="bb-tp-menu-btn"/);
+      assert.match(res.text, /bb-tp-nav--desktop/);
+      assert.match(res.text, /overflow-x|bb-tp-body/);
+      assert.doesNotMatch(res.text, /views\/church\/public|church\.css\?v=/);
+    }
+  });
+
+  it("V4 church public routes and templates are untouched by V5 public parity", () => {
+    const v4About = path.join(__dirname, "../views/church/public/about.ejs");
+    const v4Home = path.join(__dirname, "../views/church/partials/home_branch.ejs");
+    const v4Routes = path.join(__dirname, "../src/routes/church/publicPages.js");
+    assert.equal(fs.existsSync(v4About), true);
+    assert.equal(fs.existsSync(v4Home), true);
+    assert.equal(fs.existsSync(v4Routes), true);
+    const homeV5 = fs.readFileSync(
+      path.join(__dirname, "../views/blessboard/v5/public/home.ejs"),
+      "utf8"
+    );
+    assert.match(homeV5, /data-bb-stitch-home="refined-v2"/);
+    assert.doesNotMatch(homeV5, /isPreviewMode|websiteContentService/);
   });
 });

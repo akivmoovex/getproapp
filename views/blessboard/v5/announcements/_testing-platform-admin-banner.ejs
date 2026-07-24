@@ -1,0 +1,11 @@
+<% if (typeof testingPlatformAdminPublishBanner !== 'undefined' && testingPlatformAdminPublishBanner) { %>
+  <p
+    class="bb-ba-lede"
+    role="status"
+    data-bb-announcement-testing-platform-admin-publish="1"
+  >
+    <strong><%= typeof testingPlatformAdminPublishBannerText !== 'undefined' && testingPlatformAdminPublishBannerText
+      ? testingPlatformAdminPublishBannerText
+      : 'Testing mode: Platform Admin publishing enabled' %></strong>
+  </p>
+<% } %>

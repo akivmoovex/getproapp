@@ -225,6 +225,37 @@
 
   <% } %>
 
+  <%
+    var aboutServiceEntries = typeof serviceTimesEntries !== 'undefined' && serviceTimesEntries ? serviceTimesEntries : [];
+    var aboutContact = typeof publicContact !== 'undefined' && publicContact ? publicContact : null;
+    var showAboutServices = aboutServiceEntries.length || (aboutContact && aboutContact.hasAny);
+  %>
+  <% if (showAboutServices) { %>
+  <section class="bb-tp-container bb-tp-about-services" data-bb-about-services="1" aria-labelledby="bb-tp-about-services-heading">
+    <h2 id="bb-tp-about-services-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Service information</h2>
+    <% if (aboutServiceEntries.length) { %>
+    <ul class="bb-tp-service-times-list">
+      <% aboutServiceEntries.forEach(function (entry) { %>
+      <li class="bb-tp-service-times-item">
+        <span class="bb-tp-service-times-item__day"><%= String(entry.day || '').charAt(0).toUpperCase() + String(entry.day || '').slice(1) %></span>
+        <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
+        <span class="bb-tp-service-times-item__time"><%= entry.startTime %><% if (entry.endTime) { %>–<%= entry.endTime %><% } %></span>
+        <% if (entry.location) { %><span class="bb-tp-service-times-item__location"><%= entry.location %></span><% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+    <% if (aboutContact && aboutContact.hasAny) { %>
+    <div class="bb-tp-about-services__contact">
+      <% if (aboutContact.addressText) { %><p class="bb-tp-body"><%= aboutContact.addressText %></p><% } %>
+      <% if (aboutContact.phone) { %><p class="bb-tp-meta"><%= aboutContact.phone %></p><% } %>
+      <% if (aboutContact.email) { %><p class="bb-tp-meta"><%= aboutContact.email %></p><% } %>
+      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact' %>">Contact details</a>
+    </div>
+    <% } %>
+  </section>
+  <% } %>
+
   <section class="bb-tp-about__join" aria-label="Join">
     <div class="bb-tp-container">
       <div class="bb-tp-about__join-inner">

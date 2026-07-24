@@ -87,6 +87,22 @@
             <li><a href="<%= typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact' %>">Contact details</a></li>
             <% } %>
           </ul>
+          <% if (typeof socialLinks !== 'undefined' && socialLinks && socialLinks.length) { %>
+          <ul class="bb-tp-footer__social" aria-label="Social links">
+            <% socialLinks.forEach(function (link) { %>
+            <li>
+              <% if (link.href) { %>
+              <a href="<%= link.href %>" rel="noopener noreferrer">
+                <span class="material-symbols-outlined" aria-hidden="true"><%= link.icon || 'language' %></span>
+                <span><%= link.label %></span>
+              </a>
+              <% } else { %>
+              <span><%= link.label %></span>
+              <% } %>
+            </li>
+            <% }) %>
+          </ul>
+          <% } %>
         </div>
 
         <div class="bb-tp-footer__col">

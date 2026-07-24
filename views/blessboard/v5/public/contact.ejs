@@ -121,6 +121,26 @@
     </div>
     <% } else { %>
 
+    <%
+      var contactServiceEntries =
+        typeof serviceTimesEntries !== 'undefined' && serviceTimesEntries ? serviceTimesEntries : [];
+    %>
+    <% if (contactServiceEntries.length) { %>
+    <section class="bb-tp-contact-services" data-bb-contact-services="1" aria-labelledby="bb-tp-contact-services-heading">
+      <h2 id="bb-tp-contact-services-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Service times</h2>
+      <ul class="bb-tp-service-times-list">
+        <% contactServiceEntries.forEach(function (entry) { %>
+        <li class="bb-tp-service-times-item">
+          <span class="bb-tp-service-times-item__day"><%= String(entry.day || '').charAt(0).toUpperCase() + String(entry.day || '').slice(1) %></span>
+          <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
+          <span class="bb-tp-service-times-item__time"><%= entry.startTime %><% if (entry.endTime) { %>–<%= entry.endTime %><% } %></span>
+          <% if (entry.location) { %><span class="bb-tp-service-times-item__location"><%= entry.location %></span><% } %>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
     <% if (hasChannelCards) { %>
     <ul class="bb-tp-contact-cards" data-bb-contact-channels="1">
       <% channels.forEach(function (channel) { %>

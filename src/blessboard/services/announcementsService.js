@@ -11,6 +11,11 @@ const {
   STATUS: AUTHZ_STATUS,
 } = require("./authorizeBlessBoardTenantAccess");
 const { safeExternalUrl } = require("../http/tenantPublicSafe");
+const {
+  DEFAULT_PRODUCT_POLICY,
+  resolveAnnouncementProductPolicy,
+} = require("./announcementProductPolicy");
+const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -29,12 +34,6 @@ const MEDIA_ASSET_PATH_RE =
   /^\/_bb\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-/** Product policy: platform admins may inspect; publish requires explicit opt-in. */
-const DEFAULT_PRODUCT_POLICY = Object.freeze({
-  allowPlatformAdminPublish: false,
-});
-
 /**
  * @param {{ connect?: Function, query?: Function }} db
  * @param {(client: object) => Promise<*>} fn
@@ -186,6 +185,11 @@ function evaluateAnnouncementCapability(effectiveRoles, scope, productPolicy, ac
   if (action === "write") {
     if (hasHq) return { ok: true, mode: "hq" };
     if (hasBranch && scope.branchId) return { ok: true, mode: "branch" };
+    if (hasPlatform && policy.allowPlatformAdminPublish) {
+      return { ok: true, mode: "platform_publish" };
+    }
+    // Legacy inspect path: platform may create/edit drafts when product policy is off,
+    // but publish still requires allowPlatformAdminPublish (see publish action).
     if (hasPlatform) return { ok: true, mode: "platform_inspect" };
     return { ok: false, reason: "role" };
   }
@@ -201,6 +205,48 @@ function evaluateAnnouncementCapability(effectiveRoles, scope, productPolicy, ac
   }
 
   return { ok: false, reason: "action" };
+}
+
+/**
+ * Append-only audit for announcement writes (safe metadata only).
+ * @param {{ query: Function }} client
+ * @param {{
+ *   churchId: string,
+ *   branchId?: string|null,
+ *   actorUserId: string,
+ *   actionKey: string,
+ *   entityId: string,
+ *   status?: string|null,
+ *   fromStatus?: string|null,
+ *   toStatus?: string|null,
+ *   title?: string|null,
+ *   capabilityMode?: string|null,
+ *   env?: NodeJS.ProcessEnv,
+ * }} input
+ */
+async function auditAnnouncementWrite(client, input) {
+  const title = input.title != null ? String(input.title) : "";
+  await recordBlessBoardAudit(client, {
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    actorUserId: input.actorUserId,
+    actionKey: input.actionKey,
+    entityType: "announcement",
+    entityId: input.entityId,
+    outcome: "success",
+    env: input.env,
+    metadata: {
+      status: input.status != null ? String(input.status).slice(0, 32) : undefined,
+      from_status: input.fromStatus != null ? String(input.fromStatus).slice(0, 32) : undefined,
+      to_status: input.toStatus != null ? String(input.toStatus).slice(0, 32) : undefined,
+      title_len: title ? title.length : 0,
+      actor_type:
+        input.capabilityMode && String(input.capabilityMode).startsWith("platform")
+          ? "platform_admin"
+          : "tenant_admin",
+      source: "announcements_service",
+    },
+  });
 }
 
 /**
@@ -369,6 +415,7 @@ async function createAnnouncement(db, input) {
 
   try {
     return await withClient(db, async (client) => {
+      let capabilityMode = null;
       if (input.tenant) {
         const authz = await authorizeActor(client, {
           actorUserId,
@@ -387,6 +434,7 @@ async function createAnnouncement(db, input) {
         if (!writeCap.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: writeCap.reason };
         }
+        capabilityMode = writeCap.mode;
         if (branchId == null && writeCap.mode === "branch") {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "church_wide_denied" };
         }
@@ -400,6 +448,7 @@ async function createAnnouncement(db, input) {
           if (!pubCap.ok) {
             return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: pubCap.reason };
           }
+          capabilityMode = pubCap.mode;
         }
       }
 
@@ -446,6 +495,34 @@ async function createAnnouncement(db, input) {
         });
       }
 
+      await auditAnnouncementWrite(client, {
+        churchId,
+        branchId,
+        actorUserId,
+        actionKey: "announcement_created",
+        entityId: item.id,
+        status: item.status,
+        toStatus: item.status,
+        title: item.title,
+        capabilityMode,
+        env: input.env,
+      });
+      if (item.status === "published") {
+        await auditAnnouncementWrite(client, {
+          churchId,
+          branchId,
+          actorUserId,
+          actionKey: "announcement_published",
+          entityId: item.id,
+          status: "published",
+          fromStatus: "draft",
+          toStatus: "published",
+          title: item.title,
+          capabilityMode,
+          env: input.env,
+        });
+      }
+
       const bundle = await loadAnnouncementBundle(client, item);
       return { ok: true, status: STATUS.OK, item: bundle };
     });
@@ -487,6 +564,7 @@ async function updateAnnouncement(db, id, patch) {
 
       const scopeBranchId = existing.branchId;
       let effectiveRoles = [];
+      let capabilityMode = null;
       if (raw.tenant && raw.actorUserId) {
         const authz = await authorizeActor(client, {
           actorUserId: raw.actorUserId,
@@ -506,6 +584,7 @@ async function updateAnnouncement(db, id, patch) {
         if (!writeCap.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: writeCap.reason };
         }
+        capabilityMode = writeCap.mode;
         if (scopeBranchId == null && writeCap.mode === "branch") {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "church_wide_denied" };
         }
@@ -542,6 +621,7 @@ async function updateAnnouncement(db, id, patch) {
           if (!pubCap.ok) {
             return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: pubCap.reason };
           }
+          capabilityMode = pubCap.mode;
         }
         built.fields.setPublishedAtNow = true;
       }
@@ -580,6 +660,28 @@ async function updateAnnouncement(db, id, patch) {
           });
           sort += 1;
         }
+      }
+
+      if (raw.actorUserId) {
+        let actionKey = "announcement_updated";
+        if (nextStatus === "published" && existing.status !== "published") {
+          actionKey = "announcement_published";
+        } else if (nextStatus === "archived" && existing.status !== "archived") {
+          actionKey = "announcement_archived";
+        }
+        await auditAnnouncementWrite(client, {
+          churchId: result.item.churchId,
+          branchId: result.item.branchId,
+          actorUserId: raw.actorUserId,
+          actionKey,
+          entityId: result.item.id,
+          status: result.item.status,
+          fromStatus: existing.status,
+          toStatus: result.item.status,
+          title: result.item.title,
+          capabilityMode,
+          env: raw.env,
+        });
       }
 
       const bundle = await loadAnnouncementBundle(client, result.item);
@@ -862,6 +964,7 @@ module.exports = {
   STATUS,
   AUDIENCE_KEYS,
   DEFAULT_PRODUCT_POLICY,
+  resolveAnnouncementProductPolicy,
   evaluateAnnouncementCapability,
   requirePublishConfirm,
   httpsOrMediaUrl,

@@ -596,6 +596,221 @@ body.bb-tp-body {
   padding-bottom: var(--bb-section);
 }
 
+.bb-tp-preview-banner {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  background: #1f1635;
+  color: #f5f2ff;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.bb-tp-preview-banner a {
+  color: #d7cfff;
+  text-decoration: underline;
+}
+
+.bb-tp-preview-banner__links {
+  margin-left: auto;
+}
+
+.bb-tp-body--preview {
+  padding-top: 0;
+}
+
+.bb-tp-home__announce {
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
+}
+
+.bb-tp-home-announce {
+  padding: 1.25rem 1.35rem;
+  border-radius: 1rem;
+  border: 1px solid var(--bb-line, #e6e2f0);
+  background: linear-gradient(135deg, #f7f4ff, #fff);
+}
+
+.bb-tp-home__teaser {
+  padding-top: 0.5rem;
+  padding-bottom: var(--bb-section);
+}
+
+.bb-tp-home__teaser-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.bb-tp-home__teaser-link {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--bb-violet, #6c5ce7);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bb-tp-home__teaser-link:hover {
+  text-decoration: underline;
+}
+
+.bb-tp-ministry-grid--home,
+.bb-tp-leader-grid--home,
+.bb-tp-event-grid--home {
+  margin-top: 0;
+}
+
+.bb-tp-home-sermon-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.bb-tp-home-sermon {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--bb-line, #e6e2f0);
+  border-radius: 0.85rem;
+  background: var(--bb-surface, #fff);
+}
+
+.bb-tp-home-sermon__cat,
+.bb-tp-sermon-card__category {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-home-sermon__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.bb-tp-home-sermon__meta,
+.bb-tp-home-sermon__summary {
+  margin: 0.35rem 0 0;
+  color: var(--bb-muted, #5c5670);
+  font-size: 0.92rem;
+}
+
+.bb-tp-home-cta-pair {
+  padding: 0.5rem 0 var(--bb-section);
+}
+
+.bb-tp-home-cta-pair__grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .bb-tp-home-cta-pair__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bb-tp-home-cta-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.25rem 1.35rem;
+  border-radius: 1rem;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--bb-line, #e6e2f0);
+  background: var(--bb-surface, #fff);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.bb-tp-home-cta-card:hover {
+  border-color: var(--bb-violet, #6c5ce7);
+  transform: translateY(-1px);
+}
+
+.bb-tp-home-cta-card .material-symbols-outlined {
+  color: var(--bb-violet, #6c5ce7);
+  font-size: 1.5rem;
+}
+
+.bb-tp-home-cta-card__title {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.bb-tp-home-cta-card__lead {
+  color: var(--bb-muted, #5c5670);
+  font-size: 0.92rem;
+}
+
+.bb-tp-footer__social {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.bb-tp-footer__social a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.bb-tp-footer__social a:hover {
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-about-services {
+  padding-bottom: var(--bb-section);
+}
+
+.bb-tp-about-services__contact {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.bb-tp-contact-services {
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-preview-banner {
+    font-size: 0.8rem;
+  }
+
+  .bb-tp-preview-banner__links {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .bb-tp-home__teaser-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bb-tp-service-times-item {
+    grid-template-columns: 1fr;
+  }
+
+  .bb-tp-hero__title {
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+  }
+}
+
 .bb-tp-service-times-list {
   list-style: none;
   margin: 1rem 0 0;

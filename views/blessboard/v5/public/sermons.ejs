@@ -119,6 +119,9 @@
       <article class="bb-tp-featured-sermon__card">
         <div class="bb-tp-featured-sermon__copy">
           <h2 class="bb-tp-featured-sermon__title"><%= featured.title %></h2>
+          <% if (featured.category) { %>
+          <p class="bb-tp-sermon-card__category"><%= featured.category %></p>
+          <% } %>
           <% if (featured.speakerName || featured.preachedAt) { %>
           <p class="bb-tp-meta bb-tp-featured-sermon__meta">
             <% if (featured.speakerName) { %>
@@ -209,6 +212,9 @@
           </div>
           <div class="bb-tp-sermon-card__body">
             <h3 class="bb-tp-sermon-card__title"><%= sermon.title %></h3>
+            <% if (sermon.category) { %>
+            <p class="bb-tp-sermon-card__category"><%= sermon.category %></p>
+            <% } %>
             <% if (sermon.speakerName || sermon.preachedAt) { %>
             <p class="bb-tp-meta bb-tp-sermon-card__meta">
               <% if (sermon.speakerName) { %>
