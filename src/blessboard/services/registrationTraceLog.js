@@ -16,6 +16,7 @@ const LOG_PREFIX = "[blessboard-church-registration]";
 const ALWAYS_ON_EVENTS = Object.freeze(
   new Set([
     "church_registration_db_error",
+    "church_registration_schema_mismatch",
     "church_registration_session",
     "church_registration_transaction",
     "platform_church_registration_db_error",
@@ -57,6 +58,7 @@ const ALLOWED_KEYS = Object.freeze(
     "table",
     "targetRelation",
     "undefinedTable",
+    "missingColumns",
     "reasonCodes",
     "decision",
     "rootStatus",
@@ -101,12 +103,12 @@ function sanitizeRegistrationTraceFields(fields) {
     if (!ALLOWED_KEYS.has(key)) continue;
     const value = fields[key];
     if (value === undefined) continue;
-    if (key === "riskReasonCodes" || key === "reasonCodes") {
+    if (key === "riskReasonCodes" || key === "reasonCodes" || key === "missingColumns") {
       if (!Array.isArray(value)) continue;
       out[key] = value
         .map((c) => clip(c, 64))
         .filter(Boolean)
-        .slice(0, 20);
+        .slice(0, 40);
       continue;
     }
     if (typeof value === "boolean" || typeof value === "number") {

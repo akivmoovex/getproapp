@@ -79,7 +79,7 @@ function logReceived(req, application, { duplicate = false, mode = "enquiry" } =
 /**
  * Safe operator log for DB failures — no form body, passwords, or DATABASE_URL.
  * @param {import('express').Request | null} req
- * @param {Error & { code?: string, schema?: string, table?: string }} err
+ * @param {Error & { code?: string, schema?: string, table?: string, missingColumns?: string[] }} err
  */
 function logRegistrationDbError(req, err) {
   const pgCode = err && err.code != null ? String(err.code).slice(0, 32) : null;
@@ -91,21 +91,67 @@ function logRegistrationDbError(req, err) {
     err && err.table != null
       ? String(err.table).slice(0, 128)
       : repo.TARGET_TABLE;
+  const isSchemaMismatch =
+    pgCode === "schema_mismatch" ||
+    (err && err.name === "PublicRegistrationSchemaMismatchError") ||
+    pgCode === "42703";
+  const missingColumns = Array.isArray(err && err.missingColumns)
+    ? err.missingColumns.map((c) => String(c).slice(0, 64)).slice(0, 40)
+    : null;
   logRegistrationTrace(
     req,
     {
-      event: "church_registration_db_error",
+      event: isSchemaMismatch
+        ? "church_registration_schema_mismatch"
+        : "church_registration_db_error",
       operation: "registration_db",
       outcome: "fail",
-      failureCategory: pgCode === "42P01" ? "undefined_table" : "database_error",
+      failureCategory:
+        pgCode === "42P01"
+          ? "undefined_table"
+          : isSchemaMismatch
+            ? "schema_mismatch"
+            : "database_error",
       pgCode,
       schema,
       table,
       targetRelation: repo.TARGET_RELATION,
       undefinedTable: pgCode === "42P01",
+      ...(missingColumns ? { missingColumns } : {}),
     },
     { level: "error", force: true }
   );
+}
+
+function mapRegistrationPersistError(req, err) {
+  if (err && (err.code === "duplicate_registration_phone" || err.name === "DuplicateRegistrationPhoneError")) {
+    return {
+      ok: false,
+      error: err.message || DUPLICATE_PHONE_MESSAGE,
+      field: "phone",
+      code: "duplicate_registration_phone",
+      httpStatus: 400,
+    };
+  }
+  if (
+    err &&
+    (err.code === "schema_mismatch" || err.name === "PublicRegistrationSchemaMismatchError")
+  ) {
+    logRegistrationDbError(req, err);
+    return {
+      ok: false,
+      error: GENERIC_SAVE_ERROR,
+      code: "schema_mismatch",
+      httpStatus: 503,
+    };
+  }
+  logRegistrationDbError(req, err);
+  return {
+    ok: false,
+    error: GENERIC_SAVE_ERROR,
+    code: err && err.code ? String(err.code) : "db_error",
+    pgCode: err && err.code ? String(err.code) : null,
+  };
 }
 
 function logProvisionOutcome(req, result) {
@@ -314,22 +360,7 @@ async function submitPlatformChurchRegistration(pool, req, validationResult) {
       riskReasonCodes: risk.reasonCodes,
     };
   } catch (err) {
-    if (err && (err.code === "duplicate_registration_phone" || err.name === "DuplicateRegistrationPhoneError")) {
-      return {
-        ok: false,
-        error: err.message || DUPLICATE_PHONE_MESSAGE,
-        field: "phone",
-        code: "duplicate_registration_phone",
-        httpStatus: 400,
-      };
-    }
-    logRegistrationDbError(req, err);
-    return {
-      ok: false,
-      error: GENERIC_SAVE_ERROR,
-      code: err && err.code ? String(err.code) : "db_error",
-      pgCode: err && err.code ? String(err.code) : null,
-    };
+    return mapRegistrationPersistError(req, err);
   }
 }
 
@@ -442,22 +473,7 @@ async function submitInstantFreeChurchRegistration(pool, req, validationResult, 
       /* ignore */
     }
   } catch (err) {
-    if (err && (err.code === "duplicate_registration_phone" || err.name === "DuplicateRegistrationPhoneError")) {
-      return {
-        ok: false,
-        error: err.message || DUPLICATE_PHONE_MESSAGE,
-        field: "phone",
-        code: "duplicate_registration_phone",
-        httpStatus: 400,
-      };
-    }
-    logRegistrationDbError(req, err);
-    return {
-      ok: false,
-      error: GENERIC_SAVE_ERROR,
-      code: err && err.code ? String(err.code) : "db_error",
-      pgCode: err && err.code ? String(err.code) : null,
-    };
+    return mapRegistrationPersistError(req, err);
   }
 
   // Soft idempotent twin: honor the existing row's state over a freshly computed hold.

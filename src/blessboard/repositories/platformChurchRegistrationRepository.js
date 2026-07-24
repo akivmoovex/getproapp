@@ -24,6 +24,11 @@ const FORBIDDEN_RELATION_FRAGMENTS = Object.freeze([
   " FROM church_applications",
 ]);
 
+/**
+ * Full admin/detail column list (includes Phase2 rejection metadata from migration 039).
+ * Do not use for public registration INSERT RETURNING / idempotency SELECTs — those
+ * must not depend on admin-only columns.
+ */
 const SELECT_COLUMNS = `
   id, status, church_name, country, city, contact_name, contact_email, contact_phone,
   contact_phone_normalized,
@@ -37,6 +42,53 @@ const SELECT_COLUMNS = `
   risk_decision, risk_reason_codes, risk_decided_at, rejection_reason, review_events,
   rejection_category, reapplication_allowed, rejection_notification_status
 `;
+
+/**
+ * Columns required for public registration write path (INSERT + idempotency SELECT/RETURNING).
+ * Excludes admin-only rejection metadata (rejection_category, reapplication_allowed,
+ * rejection_notification_status) — those are set later by admin rejection workflows.
+ */
+const PUBLIC_WRITE_SELECT_COLUMNS = `
+  id, status, church_name, country, city, contact_name, contact_email, contact_phone,
+  contact_phone_normalized,
+  role_in_church, branch_name, branch_count, selected_plan, message, consent_terms,
+  review_notes, source_ip, user_agent, created_at, updated_at,
+  organization_id, application_status, provisioning_status,
+  provisioning_started_at, provisioned_at, provisioning_failed_at,
+  provisioning_error_code, provisioning_error_detail,
+  support_requested, follow_up_status,
+  assigned_support_user_id, first_contacted_at, last_contacted_at, next_follow_up_at,
+  risk_decision, risk_reason_codes, risk_decided_at, rejection_reason, review_events
+`;
+
+/** Admin-only columns never written by public registration INSERT. */
+const PUBLIC_REGISTRATION_ADMIN_ONLY_COLUMNS = Object.freeze([
+  "rejection_category",
+  "reapplication_allowed",
+  "rejection_notification_status",
+]);
+
+const PUBLIC_REGISTRATION_REQUIRED_COLUMNS = Object.freeze(
+  PUBLIC_WRITE_SELECT_COLUMNS.split(",")
+    .map((c) => c.trim())
+    .filter(Boolean)
+);
+
+/** @type {{ ok: boolean, missingColumns: string[] } | null} */
+let publicRegistrationSchemaCache = null;
+
+class PublicRegistrationSchemaMismatchError extends Error {
+  /**
+   * @param {string[]} missingColumns
+   */
+  constructor(missingColumns) {
+    super("public_registration_schema_mismatch");
+    this.name = "PublicRegistrationSchemaMismatchError";
+    this.code = "schema_mismatch";
+    this.missingColumns = Array.isArray(missingColumns) ? missingColumns.slice() : [];
+    this.httpStatus = 503;
+  }
+}
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -138,6 +190,53 @@ function isUniquePhoneViolation(err) {
 }
 
 /**
+ * Read-only readiness check for public registration writes.
+ * Does not run DDL. Lists exact missing columns for internal logging only.
+ * @param {{ query: Function }} client
+ * @returns {Promise<{ ok: boolean, missingColumns: string[] }>}
+ */
+async function checkPublicRegistrationSchemaReady(client) {
+  if (publicRegistrationSchemaCache && publicRegistrationSchemaCache.ok) {
+    return publicRegistrationSchemaCache;
+  }
+  if (!client || typeof client.query !== "function") {
+    return { ok: false, missingColumns: PUBLIC_REGISTRATION_REQUIRED_COLUMNS.slice() };
+  }
+  const r = await client.query(
+    `SELECT column_name
+       FROM information_schema.columns
+      WHERE table_schema = $1
+        AND table_name = $2
+        AND column_name = ANY($3::text[])`,
+    [TARGET_SCHEMA, TARGET_TABLE, PUBLIC_REGISTRATION_REQUIRED_COLUMNS.slice()]
+  );
+  const present = new Set((r.rows || []).map((row) => String(row.column_name)));
+  const missingColumns = PUBLIC_REGISTRATION_REQUIRED_COLUMNS.filter((c) => !present.has(c));
+  const result = { ok: missingColumns.length === 0, missingColumns };
+  if (result.ok) {
+    publicRegistrationSchemaCache = result;
+  }
+  return result;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @throws {PublicRegistrationSchemaMismatchError}
+ */
+async function assertPublicRegistrationSchemaReady(client) {
+  const check = await checkPublicRegistrationSchemaReady(client);
+  if (!check.ok) {
+    throw new PublicRegistrationSchemaMismatchError(check.missingColumns);
+  }
+  return check;
+}
+
+/** Test helper — clears process-level schema readiness cache. */
+function resetPublicRegistrationSchemaCacheForTests() {
+  publicRegistrationSchemaCache = null;
+}
+
+/**
  * @param {{ query: Function }} client
  * @param {object} fields
  */
@@ -177,7 +276,7 @@ async function insertApplicationRow(client, fields) {
        $16, $17,
        $19, $20::text[], $21
      )
-     RETURNING ${SELECT_COLUMNS}`,
+     RETURNING ${PUBLIC_WRITE_SELECT_COLUMNS}`,
     [
       fields.church_name,
       fields.country,
@@ -210,6 +309,7 @@ async function insertApplicationRow(client, fields) {
  * @param {object} fields
  */
 async function createApplication(pool, fields) {
+  await assertPublicRegistrationSchemaReady(pool);
   return insertApplicationRow(pool, fields);
 }
 
@@ -223,7 +323,7 @@ async function createApplication(pool, fields) {
 async function findRecentRegistrationDuplicate(client, opts) {
   const windowMinutes = Math.min(Math.max(Number(opts.windowMinutes) || 15, 1), 60);
   const r = await client.query(
-    `SELECT ${SELECT_COLUMNS}
+    `SELECT ${PUBLIC_WRITE_SELECT_COLUMNS}
        FROM ${TARGET_RELATION}
       WHERE lower(contact_email) = lower($1)
         AND lower(church_name) = lower($2)
@@ -249,7 +349,7 @@ async function findRecentPhoneIdempotentDuplicate(client, opts) {
   if (!normalized) return null;
   const windowMinutes = Math.min(Math.max(Number(opts.windowMinutes) || 15, 1), 60);
   const r = await client.query(
-    `SELECT ${SELECT_COLUMNS}
+    `SELECT ${PUBLIC_WRITE_SELECT_COLUMNS}
        FROM ${TARGET_RELATION}
       WHERE lower(contact_email) = lower($1)
         AND contact_phone_normalized = $2
@@ -271,7 +371,7 @@ async function findActiveRegistrationByPhone(client, contactPhoneNormalized) {
   const normalized = String(contactPhoneNormalized || "").trim();
   if (!normalized) return null;
   const r = await client.query(
-    `SELECT ${SELECT_COLUMNS}
+    `SELECT ${PUBLIC_WRITE_SELECT_COLUMNS}
        FROM ${TARGET_RELATION}
       WHERE contact_phone_normalized = $1
         AND ${phoneUniquenessSqlPredicate()}
@@ -308,6 +408,8 @@ async function createApplicationIdempotent(pool, fields, opts = {}) {
   }
 
   async function resolveOrInsert(client) {
+    await assertPublicRegistrationSchemaReady(client);
+
     const existing = await findRecentRegistrationDuplicate(client, {
       contact_email: fields.contact_email,
       church_name: fields.church_name,
@@ -2843,6 +2945,9 @@ module.exports = {
   TARGET_RELATION,
   FORBIDDEN_RELATION_FRAGMENTS,
   SELECT_COLUMNS,
+  PUBLIC_WRITE_SELECT_COLUMNS,
+  PUBLIC_REGISTRATION_REQUIRED_COLUMNS,
+  PUBLIC_REGISTRATION_ADMIN_ONLY_COLUMNS,
   APPLICATION_STATUSES,
   PROVISIONING_STATUSES,
   FOLLOW_UP_STATUSES,
@@ -2860,8 +2965,12 @@ module.exports = {
   LINKED_FILTERS,
   SORT_OPTIONS,
   DuplicateRegistrationPhoneError,
+  PublicRegistrationSchemaMismatchError,
   isUniquePhoneViolation,
   normalizeFollowUpStatusInput,
+  checkPublicRegistrationSchemaReady,
+  assertPublicRegistrationSchemaReady,
+  resetPublicRegistrationSchemaCacheForTests,
   createApplication,
   createApplicationIdempotent,
   findRecentPendingDuplicate,
