@@ -66,6 +66,8 @@ test("HQ Broadcasts route uses unlessTenant and Stitch center view", () => {
 
 test("Website and Broadcasts are not duplicate modules under church V4 HQ shell", () => {
   const churchHqShell = read("views/church/partials/hq_shell_start.ejs");
-  assert.match(churchHqShell, /href="\/hq\/broadcasts"/);
+  const classicNav = read("src/church/http/classicAdminNav.js");
+  assert.match(classicNav, /href: "\/hq\/broadcasts"/);
+  assert.doesNotMatch(classicNav, /href: "\/hq\/website"/);
   assert.doesNotMatch(churchHqShell, /href="\/hq\/website"/);
 });

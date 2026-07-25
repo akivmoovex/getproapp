@@ -283,7 +283,7 @@ test("branch admin shell includes mobile drawer and topbar markup", () => {
   assert.match(shell, /church-branch-menu-btn/);
   assert.match(shell, /church-branch-drawer/);
   assert.match(shell, /church-branch-mobile-topbar/);
-  assert.match(shell, /church\.css\?v=54/);
+  assert.match(shell, /church\.css\?v=56/);
 });
 
 test("platform host does not expose branch-only public events route", async () => {

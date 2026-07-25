@@ -138,11 +138,13 @@ test(
     const branchA = await branchesRepo.createBranch(pool, {
       organization_id: orgA.id,
       slug: "main",
+      host_slug: `hs_branchA_${suffix}`.slice(0, 40),
       name: `Branch A ${suffix}`,
     });
     const branchB = await branchesRepo.createBranch(pool, {
       organization_id: orgB.id,
       slug: "main",
+      host_slug: `hs_branchB_${suffix}`.slice(0, 40),
       name: `Branch B ${suffix}`,
     });
     await branchAdminsRepo.createBranchAdmin(pool, {
@@ -432,6 +434,10 @@ test(
     assert.match(directory.text, /HQ Pending One/);
     assert.match(directory.text, /HQ Pending Two/);
     assert.doesNotMatch(directory.text, /Foreign Pending/);
+    assert.match(directory.text, /data-testid="hq-nav-member-verification"/);
+    assert.match(directory.text, /href="\/hq\/member-verification"/);
+    assert.match(directory.text, /href="\/hq\/members"/);
+    assert.equal((directory.text.match(/data-testid="hq-nav-member-verification"/g) || []).length, 2); // desktop + mobile
 
     const branchFiltered = await agent.get(`/hq/members?branch_id=${branch1.id}&status=pending`);
     assert.equal(branchFiltered.status, 200);
@@ -448,11 +454,20 @@ test(
     assert.match(queue.text, /HQ Pending One/);
     assert.match(queue.text, /HQ Pending Two/);
     assert.doesNotMatch(queue.text, /Foreign Pending/);
+    assert.match(
+      queue.text,
+      /church-branch-nav-link--active[\s\S]{0,240}?data-nav-key="verification"/
+    );
+    assert.match(queue.text, /church-admin-mobile-nav__group is-open"\s+data-church-nav-group="people"/);
 
     const queueBranch = await agent.get(`/hq/member-verification?branch_id=${branch2.id}`);
     assert.equal(queueBranch.status, 200);
     assert.match(queueBranch.text, /HQ Pending Two/);
     assert.doesNotMatch(queueBranch.text, /HQ Pending One/);
+    assert.match(
+      queueBranch.text,
+      /church-branch-nav-link--active[\s\S]{0,240}?data-nav-key="verification"/
+    );
 
     const detail = await agent.get(`/hq/members/${pending1.id}`);
     assert.equal(detail.status, 200);
@@ -489,6 +504,7 @@ test(
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: orgFresh.id,
       slug: "main",
+      host_slug: `hs_foundationBranch_${suffix}`.slice(0, 40),
       name: "Main",
       status: "active",
     });
@@ -512,6 +528,11 @@ test(
     });
     assert.equal((await agent.get("/hq/members")).status, 403);
     assert.equal((await agent.get("/hq/member-verification")).status, 403);
+    const dash = await agent.get("/hq/dashboard");
+    assert.equal(dash.status, 200);
+    assert.doesNotMatch(dash.text, /data-testid="hq-nav-member-verification"/);
+    assert.doesNotMatch(dash.text, /href="\/hq\/member-verification"/);
+    assert.match(dash.text, /href="\/hq\/members"/);
     await cleanup(pool, [branch.id], [orgFresh.id]);
   }
 );

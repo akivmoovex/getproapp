@@ -108,12 +108,12 @@ test("branch admin localized assets exist", () => {
   }
 });
 
-test("branch admin shell references church.css?v=54", () => {
+test("branch admin shell references church.css?v=56", () => {
   const text = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/branch_admin_shell_start.ejs"),
     "utf8"
   );
-  assert.match(text, /church\.css\?v=54/);
+  assert.match(text, /church\.css\?v=56/);
   assert.match(text, /data-branch-shell="stitch-v41"/);
   assert.match(text, /church-branch-sidebar/);
   assert.match(text, /church-branch-desktop-topbar/);
@@ -124,7 +124,11 @@ test("branch admin shell references church.css?v=54", () => {
 
 test("branch admin nav includes expected links and icons", () => {
   const text = fs.readFileSync(
-    path.join(__dirname, "../views/church/partials/branch_admin_nav.ejs"),
+    path.join(__dirname, "../src/church/http/classicAdminNav.js"),
+    "utf8"
+  );
+  const links = fs.readFileSync(
+    path.join(__dirname, "../views/church/partials/admin_nav_links.ejs"),
     "utf8"
   );
   for (const marker of [
@@ -143,8 +147,8 @@ test("branch admin nav includes expected links and icons", () => {
   ]) {
     assert.match(text, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
-  assert.match(text, /material-symbols-outlined/);
-  assert.match(text, /church-branch-nav-link--active/);
+  assert.match(links, /material-symbols-outlined/);
+  assert.match(links, /church-branch-nav-link--active/);
 });
 
 test("unauthenticated branch routes redirect to /branch/login", async () => {

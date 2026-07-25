@@ -138,7 +138,7 @@ module.exports = function registerHqAdminMembersRoutes(router) {
         return res.render(
           "church/hq/verification_queue",
           hqAdminLocals(req, {
-            activeNav: "members",
+            activeNav: "verification",
             pendingMembers,
             pendingCount,
             statusFilter: parsed.status,

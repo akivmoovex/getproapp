@@ -5,6 +5,11 @@ const { getHqStatusBanner } = require("../../church/churchStatusAccess");
 const { churchSessionCsrfLocals } = require("../../church/churchSessionCsrf");
 const { resolvePackageFromPlanCode } = require("../../church/blessBoardPackageCatalogue");
 const { listNavFeatureGates } = require("../../church/blessBoardPackageFeatures");
+const {
+  buildClassicHqNavItems,
+  buildClassicHqMobileNav,
+} = require("../../church/http/classicAdminNav");
+const { organisationAllowsBranchPaths } = require("../../services/church/branchPathRoutingService");
 
 function packageFeatureLocalsFromOrg(org, portal) {
   const resolved = resolvePackageFromPlanCode(org && org.plan_code);
@@ -26,7 +31,8 @@ function inferHqActiveNav(req) {
   if (p.startsWith("/hq/broadcasts")) return "broadcasts";
   if (p.startsWith("/hq/support-access")) return "support-access";
   if (p.startsWith("/hq/audit")) return "audit";
-  if (p.startsWith("/hq/member-verification") || p.startsWith("/hq/members")) return "members";
+  if (p.startsWith("/hq/member-verification")) return "verification";
+  if (p.startsWith("/hq/members")) return "members";
   if (p.startsWith("/hq/attendance")) return "attendance";
   if (p.startsWith("/hq/giving-summary")) return "giving-summary";
   if (p.startsWith("/hq/branches")) return "branches";
@@ -57,6 +63,18 @@ function hqAdminLocals(req, extra) {
       }
     : packageFeatureLocalsFromOrg(org, "hq");
   const planContext = extraObj.planContext || req.churchPlanContext || null;
+  const activeNav = extraObj.activeNav != null ? extraObj.activeNav : inferHqActiveNav(req);
+  const packageFeatureNav = extraObj.packageFeatureNav || packageLocals.packageFeatureNav;
+  const includeMemberVerification =
+    extraObj.includeMemberVerification != null
+      ? Boolean(extraObj.includeMemberVerification)
+      : organisationAllowsBranchPaths(org);
+  const adminNavItems = buildClassicHqNavItems({
+    packageFeatureNav,
+    planContext,
+    includeMemberVerification,
+  });
+  const mobileNav = buildClassicHqMobileNav(adminNavItems, activeNav);
   return {
     churchName: org.name,
     organizationName: org.name,
@@ -65,11 +83,15 @@ function hqAdminLocals(req, extra) {
     branch,
     hqAdmin: req.churchHqAdmin || null,
     statusBanner: getHqStatusBanner(req.churchContext),
-    activeNav: extraObj.activeNav != null ? extraObj.activeNav : inferHqActiveNav(req),
     ...csrf,
     ...packageLocals,
     ...(planContext ? { planContext } : {}),
     ...extraObj,
+    // Keep canonical nav after extras so callers cannot drop the model.
+    activeNav,
+    navActive: activeNav,
+    adminNavItems,
+    mobileNav,
   };
 }
 
@@ -138,6 +160,7 @@ async function recordHqAudit(pool, req, { action, branchId, entityType, entityId
 
 module.exports = {
   hqAdminLocals,
+  inferHqActiveNav,
   flashFromQuery,
   HQ_NOTICES,
   BRANCH_NOTICES,

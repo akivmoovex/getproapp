@@ -4,6 +4,10 @@ const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const { churchSessionCsrfLocals } = require("../../church/churchSessionCsrf");
 const { resolvePackageFromPlanCode } = require("../../church/blessBoardPackageCatalogue");
 const { listNavFeatureGates } = require("../../church/blessBoardPackageFeatures");
+const {
+  buildClassicBranchNavItems,
+  buildClassicBranchMobileNav,
+} = require("../../church/http/classicAdminNav");
 
 function packageFeatureLocalsFromOrg(org, portal) {
   const resolved = resolvePackageFromPlanCode(org && org.plan_code);
@@ -128,6 +132,19 @@ function branchAdminLocals(req, extra) {
       }
     : packageFeatureLocalsFromOrg(org, "branch");
   const planContext = (extra && extra.planContext) || req.churchPlanContext || null;
+  let resetInboxPendingCount = 0;
+  if (extra && extra.branchResetInboxPendingCount != null) {
+    resetInboxPendingCount = Number(extra.branchResetInboxPendingCount) || 0;
+  } else if (typeof req.branchResetInboxPendingCount === "number") {
+    resetInboxPendingCount = req.branchResetInboxPendingCount;
+  }
+  const packageFeatureNav =
+    (extra && extra.packageFeatureNav) || packageLocals.packageFeatureNav;
+  const adminNavItems = buildClassicBranchNavItems({
+    packageFeatureNav,
+    resetInboxPendingCount,
+  });
+  const mobileNav = buildClassicBranchMobileNav(adminNavItems, navActive);
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
@@ -138,10 +155,15 @@ function branchAdminLocals(req, extra) {
     shellTitle,
     adminName,
     adminAvatarUrl: "/church/images/branch-admin/avatar-pastor-stitch.jpg",
+    branchResetInboxPendingCount: resetInboxPendingCount,
     ...csrf,
     ...packageLocals,
     ...(planContext ? { planContext } : {}),
     ...(extra || {}),
+    // Keep canonical nav after extras so callers cannot drop the model.
+    navActive,
+    adminNavItems,
+    mobileNav,
   };
 }
 

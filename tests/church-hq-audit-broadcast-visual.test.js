@@ -146,11 +146,13 @@ test("existing HQ audit and broadcast route paths remain unchanged", () => {
 
 test("HQ shell does not add screens 59 or 60 navigation", () => {
   const shell = fs.readFileSync(path.join(__dirname, "../views/church/partials/hq_shell_start.ejs"), "utf8");
+  const nav = fs.readFileSync(path.join(__dirname, "../src/church/http/classicAdminNav.js"), "utf8");
   assert.match(shell, /data-hq-shell="stitch-v49"/);
-  assert.match(shell, /href="\/hq\/audit"/);
-  assert.match(shell, /href="\/hq\/broadcasts"/);
+  assert.match(nav, /href: "\/hq\/audit"/);
+  assert.match(nav, /href: "\/hq\/broadcasts"/);
+  assert.doesNotMatch(nav, /\/hq\/permissions/);
+  assert.doesNotMatch(nav, /\/hq\/templates/);
   assert.doesNotMatch(shell, /\/hq\/permissions/);
-  assert.doesNotMatch(shell, /\/hq\/templates/);
   assert.doesNotMatch(shell, /Permissions/);
   assert.doesNotMatch(shell, /Templates/);
 });

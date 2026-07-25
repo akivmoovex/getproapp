@@ -42,11 +42,15 @@ test("Phase 6 eight screens have responsive Branch Admin views and Stitch hooks"
 
   assert.match(detail, /data-p6-screen="attendance-record-detail"/);
   assert.match(detail, /data-responsive="desktop-mobile"/);
+  assert.match(detail, /aria-busy=/);
   assert.match(detail, /data-testid="attendance-detail-back"/);
   assert.match(detail, /data-testid="attendance-detail-breakdown"/);
   assert.match(detail, /data-testid="attendance-detail-members-empty"/);
-  assert.match(detail, /aria-busy=/);
+  assert.match(detail, /data-testid="attendance-detail-context"/);
+  assert.match(detail, /data-testid="attendance-detail-total"/);
+  assert.match(detail, /Individual member attendance was not recorded for this service/);
   assert.doesNotMatch(detail, /\+12%|Sunny|Weather|Present|Absent|Late|Excused/);
+  assert.doesNotMatch(detail, /First Service \(08:00\)|aggregate headcounts|database|schema/i);
 });
 
 test("Phase 6 wrappers wire Branch and HQ shells without duplicate modules", () => {
@@ -69,21 +73,29 @@ test("Phase 6 wrappers wire Branch and HQ shells without duplicate modules", () 
 });
 
 test("Phase 6 navigation: Attendance and Giving remain separate; active nav keys exist", () => {
-  const nav = read("views/church/partials/branch_admin_nav.ejs");
+  const nav = read("src/church/http/classicAdminNav.js");
   const shell = read("views/church/partials/branch_admin_shell_start.ejs");
   const hqShell = read("views/church/partials/hq_shell_start.ejs");
   const shared = read("src/routes/church/branchAdminShared.js");
   const hqShared = read("src/routes/church/hqAdminShared.js");
 
-  assert.match(nav, /data-testid="nav-attendance"/);
-  assert.match(nav, /href="\/branch\/attendance"/);
-  assert.match(nav, /data-testid="nav-giving"/);
-  assert.match(nav, /href="\/branch\/giving-summary"/);
-  assert.doesNotMatch(nav, /data-testid="nav-giving"[^]*href="\/branch\/attendance/);
+  assert.match(nav, /testId: "nav-attendance"/);
+  assert.match(nav, /href: "\/branch\/attendance"/);
+  assert.match(nav, /testId: "nav-giving"/);
+  assert.match(nav, /href: "\/branch\/giving-summary"/);
+  assert.doesNotMatch(nav, /testId: "nav-giving"[^]*href: "\/branch\/attendance/);
+  assert.match(nav, /href: "\/hq\/member-verification"/);
+  assert.match(nav, /testId: "hq-nav-member-verification"/);
+  assert.match(nav, /label: "Member Verification"/);
+  assert.match(nav, /keys: Object\.freeze\(\["members", "verification", "attendance"\]\)/);
+  assert.match(hqShared, /member-verification"\)\) return "verification"/);
+  assert.match(hqShared, /organisationAllowsBranchPaths/);
 
   assert.match(shell, /href="\/branch\/giving-summary"/);
   assert.match(shell, /data-testid="nav-more-giving"/);
-  assert.match(hqShell, /href="\/hq\/attendance"/);
+  assert.match(shell, /admin_mobile_nav_groups/);
+  assert.match(hqShell, /href: "\/hq\/attendance"|admin_mobile_nav_groups/);
+  assert.match(hqShell, /admin_mobile_nav_groups/);
 
   assert.match(shared, /startsWith\("\/branch\/attendance"\)\)\s*return "attendance"/);
   assert.match(shared, /giving-summary/);
@@ -100,8 +112,8 @@ test("Phase 6 CSS is scoped to branch/HQ admin bodies and shells bump cache", ()
 
   const branchShell = read("views/church/partials/branch_admin_shell_start.ejs");
   const hqShell = read("views/church/partials/hq_shell_start.ejs");
-  assert.match(branchShell, /church\.css\?v=54/);
-  assert.match(hqShell, /church\.css\?v=54/);
+  assert.match(branchShell, /church\.css\?v=56/);
+  assert.match(hqShell, /church\.css\?v=56/);
 });
 
 test("Phase 6 Giving Summary + Settings screens are wired without duplicate modules", () => {
@@ -116,9 +128,9 @@ test("Phase 6 Giving Summary + Settings screens are wired without duplicate modu
   assert.match(settingsRoute, /validateGivingSettingsFields/);
   assert.doesNotMatch(settingsRoute, /sk_live|webhook_secret/);
 
-  const nav = read("views/church/partials/branch_admin_nav.ejs");
-  assert.match(nav, /data-testid="nav-giving-settings"/);
-  assert.match(nav, /href="\/branch\/giving-settings"/);
+  const nav = read("src/church/http/classicAdminNav.js");
+  assert.match(nav, /testId: "nav-giving-settings"/);
+  assert.match(nav, /href: "\/branch\/giving-settings"/);
 });
 
 test("Phase 6 uses classic /branch/attendance routes (not a second subsystem)", () => {

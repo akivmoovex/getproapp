@@ -83,7 +83,6 @@ test("Phase 6 Giving Settings view hooks and no payment secrets UI", () => {
   const wrapper = read("views/church/branch-admin/giving_settings.ejs");
   const route = read("src/routes/church/branchAdminGivingSettings.js");
   const css = read("public/church/church.css");
-  const nav = read("views/church/partials/branch_admin_nav.ejs");
   const shell = read("views/church/partials/branch_admin_shell_start.ejs");
 
   assert.match(wrapper, /phase6_giving_settings_body/);
@@ -104,11 +103,12 @@ test("Phase 6 Giving Settings view hooks and no payment secrets UI", () => {
   assert.doesNotMatch(route, /router\.(get|post)\(\s*"\/branch-admin\/giving/);
 
   assert.match(css, /\.church-body--branch-admin \.church-p6-giving-settings/);
-  assert.match(shell, /church\.css\?v=54/);
-  assert.match(nav, /href="\/branch\/giving-settings"/);
-  assert.match(nav, /data-testid="nav-giving-settings"/);
-  assert.match(nav, /href="\/branch\/giving-summary"/);
-  assert.match(nav, /href="\/branch\/attendance"/);
+  assert.match(shell, /church\.css\?v=56/);
+  const navSrc = read("src/church/http/classicAdminNav.js");
+  assert.match(navSrc, /href: "\/branch\/giving-settings"/);
+  assert.match(navSrc, /testId: "nav-giving-settings"/);
+  assert.match(navSrc, /href: "\/branch\/giving-summary"/);
+  assert.match(navSrc, /href: "\/branch\/attendance"/);
 });
 
 test("Phase 6 Giving four-screen static audit hooks", () => {
@@ -116,16 +116,16 @@ test("Phase 6 Giving four-screen static audit hooks", () => {
   const settings = read("views/church/partials/phase6_giving_settings_body.ejs");
   const branchGiving = read("src/routes/church/branchAdminGiving.js");
   const hqGiving = read("src/routes/church/hqAdminGiving.js");
-  const nav = read("views/church/partials/branch_admin_nav.ejs");
+  const nav = read("src/church/http/classicAdminNav.js");
 
   assert.match(summary, /data-p6-screen="giving-summary"/);
   assert.match(settings, /data-p6-screen="giving-settings"/);
   assert.match(branchGiving, /\/branch\/giving-summary/);
   assert.match(hqGiving, /\/hq\/giving-summary/);
-  assert.match(nav, /data-testid="nav-giving"/);
-  assert.match(nav, /href="\/branch\/giving-summary"/);
-  assert.match(nav, /data-testid="nav-attendance"/);
-  assert.match(nav, /href="\/branch\/attendance"/);
+  assert.match(nav, /testId: "nav-giving"/);
+  assert.match(nav, /href: "\/branch\/giving-summary"/);
+  assert.match(nav, /testId: "nav-attendance"/);
+  assert.match(nav, /href: "\/branch\/attendance"/);
   assert.doesNotMatch(
     nav,
     /data-testid="nav-giving"[^>]*href="\/branch\/attendance"|href="\/branch\/attendance"[^>]*data-testid="nav-giving"/
@@ -189,11 +189,13 @@ test(
     const branchA = await branchesRepo.createBranch(pool, {
       organization_id: orgA.id,
       slug: "main",
+      host_slug: `hs_branchA_${suffix}`.slice(0, 40),
       name: `P6GS Branch A ${suffix}`,
     });
     const branchB = await branchesRepo.createBranch(pool, {
       organization_id: orgB.id,
       slug: "main",
+      host_slug: `hs_branchB_${suffix}`.slice(0, 40),
       name: `P6GS Branch B ${suffix}`,
     });
     const passwordHash = await bcrypt.hash("testpass123", 12);

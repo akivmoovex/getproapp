@@ -49,6 +49,8 @@ async function getPublishedGivingSettingsForBranch(pool, branchId) {
  * @returns {Promise<object>}
  */
 async function upsertGivingSettingsForBranch(pool, branchId, fields) {
+  const text = (value) => (value == null ? "" : String(value));
+  const optionalText = (value) => (value == null || value === "" ? null : String(value));
   const r = await pool.query(
     `INSERT INTO public.church_giving_settings (
        organization_id, branch_id,
@@ -91,22 +93,22 @@ async function upsertGivingSettingsForBranch(pool, branchId, fields) {
     [
       fields.organization_id,
       branchId,
-      fields.bank_name,
-      fields.account_name,
-      fields.account_number,
-      fields.branch_code,
-      fields.swift_code || null,
-      fields.mobile_money_provider_1,
-      fields.mobile_money_number_1,
-      fields.mobile_money_name_1,
-      fields.mobile_money_provider_2 || null,
-      fields.mobile_money_number_2 || null,
-      fields.mobile_money_name_2 || null,
+      text(fields.bank_name),
+      text(fields.account_name),
+      text(fields.account_number),
+      text(fields.branch_code),
+      optionalText(fields.swift_code),
+      text(fields.mobile_money_provider_1),
+      text(fields.mobile_money_number_1),
+      text(fields.mobile_money_name_1),
+      optionalText(fields.mobile_money_provider_2),
+      optionalText(fields.mobile_money_number_2),
+      optionalText(fields.mobile_money_name_2),
       JSON.stringify(fields.giving_categories_json || []),
-      fields.giving_instructions,
-      fields.qr_code_label || null,
-      fields.finance_contact_name || null,
-      fields.finance_contact_phone || null,
+      text(fields.giving_instructions),
+      optionalText(fields.qr_code_label),
+      optionalText(fields.finance_contact_name),
+      optionalText(fields.finance_contact_phone),
       fields.updated_by_admin_id || null,
     ]
   );

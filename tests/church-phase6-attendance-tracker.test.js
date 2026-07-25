@@ -100,23 +100,22 @@ test("attendance uniqueness rule is documented for branch tracker rows", () => {
 
 test("Giving navigation stays separate from Attendance destinations", () => {
   const nav = fs.readFileSync(
-    path.join(__dirname, "../views/church/partials/branch_admin_nav.ejs"),
+    path.join(__dirname, "../src/church/http/classicAdminNav.js"),
     "utf8"
   );
   const shell = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/branch_admin_shell_start.ejs"),
     "utf8"
   );
-  assert.match(nav, /href="\/branch\/attendance"/);
-  assert.match(nav, /data-testid="nav-attendance"/);
-  assert.match(nav, /href="\/branch\/giving-summary"/);
-  assert.match(nav, /data-testid="nav-giving"/);
-  assert.doesNotMatch(nav, /data-testid="nav-giving"[^>]*href="\/branch\/attendance/);
-  assert.doesNotMatch(nav, /href="\/branch\/attendance"[^>]*data-testid="nav-giving"/);
-  const givingHrefLines = nav.split("\n").filter((line) => line.includes('data-testid="nav-giving"'));
-  assert.equal(givingHrefLines.length, 1);
-  assert.match(givingHrefLines[0], /href="\/branch\/giving-summary"/);
-  assert.doesNotMatch(givingHrefLines[0], /\/branch\/attendance/);
+  assert.match(nav, /href: "\/branch\/attendance"/);
+  assert.match(nav, /testId: "nav-attendance"/);
+  assert.match(nav, /href: "\/branch\/giving-summary"/);
+  assert.match(nav, /testId: "nav-giving"/);
+  assert.doesNotMatch(nav, /testId: "nav-giving"[^]*href: "\/branch\/attendance/);
+  const givingItem = nav.match(/key: "giving-summary"[\s\S]*?testId: "nav-giving"/);
+  assert.ok(givingItem);
+  assert.match(givingItem[0], /href: "\/branch\/giving-summary"/);
+  assert.doesNotMatch(givingItem[0], /\/branch\/attendance/);
   assert.match(shell, /data-testid="nav-more-giving"/);
   assert.match(shell, /href="\/branch\/giving-summary"/);
   assert.match(shell, /href="\/branch\/attendance"/);
@@ -169,11 +168,13 @@ test(
     const branchA = await branchesRepo.createBranch(pool, {
       organization_id: orgA.id,
       slug: "main",
+      host_slug: `hs_branchA_${suffix}`.slice(0, 40),
       name: `Branch A ${suffix}`,
     });
     const branchB = await branchesRepo.createBranch(pool, {
       organization_id: orgB.id,
       slug: "main",
+      host_slug: `hs_branchB_${suffix}`.slice(0, 40),
       name: `Branch B ${suffix}`,
     });
     await branchAdminsRepo.createBranchAdmin(pool, {
@@ -288,10 +289,15 @@ test(
     assert.match(detail.text, /data-testid="attendance-detail-back"/);
     assert.match(detail.text, /data-testid="attendance-detail-breakdown"/);
     assert.match(detail.text, /data-testid="attendance-detail-members-empty"/);
+    assert.match(detail.text, /data-testid="attendance-detail-context"/);
+    assert.match(detail.text, /data-testid="attendance-detail-total"/);
+    assert.match(detail.text, /Individual member attendance was not recorded for this service/);
     assert.match(detail.text, /data-testid="attendance-detail-edit"/);
     assert.match(detail.text, /data-testid="attendance-detail-submit"/);
+    assert.match(detail.text, /data-testid="attendance-detail-mobile-actions"/);
     assert.match(detail.text, /href="\/branch\/attendance"/);
     assert.doesNotMatch(detail.text, /\+12%|Sunny,|Weather|First Service \(08:00\)/);
+    assert.doesNotMatch(detail.text, /aggregate headcounts/i);
 
     const editPage = await agent.get(`/branch/attendance/${recordId}?edit=1`);
     assert.equal(editPage.status, 200);
@@ -451,12 +457,14 @@ test(
     const branch1 = await branchesRepo.createBranch(pool, {
       organization_id: orgFresh.id,
       slug: "main",
+      host_slug: `hs_branch1_${suffix}`.slice(0, 40),
       name: "Main Campus",
       status: "active",
     });
     const branch2 = await branchesRepo.createBranch(pool, {
       organization_id: orgFresh.id,
       slug: "east",
+      host_slug: `hs_branch2_${suffix}`.slice(0, 40),
       name: "East Campus",
       status: "active",
     });
@@ -475,6 +483,7 @@ test(
     const branchOther = await branchesRepo.createBranch(pool, {
       organization_id: orgOtherFresh.id,
       slug: "main",
+      host_slug: `hs_branchOther_${suffix}`.slice(0, 40),
       name: "Other Main",
       status: "active",
     });
@@ -565,8 +574,12 @@ test(
     assert.equal(hqDetail.status, 200);
     assert.match(hqDetail.text, /data-p6-screen="attendance-record-detail"/);
     assert.match(hqDetail.text, /HQ Visible Main/);
+    assert.match(hqDetail.text, /Individual member attendance was not recorded for this service/);
+    assert.match(hqDetail.text, /data-testid="attendance-detail-total"/);
     assert.doesNotMatch(hqDetail.text, /data-testid="attendance-detail-edit"/);
     assert.doesNotMatch(hqDetail.text, /data-testid="attendance-detail-submit"/);
+    assert.doesNotMatch(hqDetail.text, /data-testid="attendance-detail-mobile-actions"/);
+    assert.doesNotMatch(hqDetail.text, /Sunny|Weather|\+12%/);
     assert.match(hqDetail.text, /href="\/hq\/attendance"/);
 
     const foreignId = (
@@ -600,6 +613,7 @@ test(
     const foundationBranch = await branchesRepo.createBranch(pool, {
       organization_id: foundationFresh.id,
       slug: "main",
+      host_slug: `hs_foundationBranch_${suffix}`.slice(0, 40),
       name: "Found Main",
       status: "active",
     });

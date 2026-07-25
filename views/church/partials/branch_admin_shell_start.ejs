@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=54"/>
+  <link rel="stylesheet" href="/church/church.css?v=56"/>
 </head>
 <body class="church-body church-body--branch-admin" data-branch-shell="stitch-v41">
   <div class="church-branch-layout">
@@ -103,8 +103,8 @@
             <span class="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
-        <nav class="church-drawer__nav church-drawer__nav--admin">
-          <%- include('./branch_admin_nav') %>
+        <nav class="church-drawer__nav church-drawer__nav--admin" data-testid="branch-mobile-drawer-nav">
+          <%- include('./admin_mobile_nav_groups', { idPrefix: 'church-branch' }) %>
         </nav>
         <div class="church-drawer__actions">
           <a class="church-btn church-btn--outline church-btn--block" href="/">Public website</a>

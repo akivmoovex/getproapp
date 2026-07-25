@@ -94,13 +94,19 @@ async function searchMembersForOrganization(pool, organizationId, query, opts = 
   const status = String(opts.status || "").trim();
   const branchId = opts.branchId != null ? Number(opts.branchId) : null;
   const limit = Math.min(Math.max(Number(opts.limit) || 100, 1), 200);
-  const params = [orgId, `%${q.toLowerCase()}%`, `%${normalizePhone(q)}%`];
+  const phoneNorm = normalizePhone(q);
+  const params = [orgId, `%${q.toLowerCase()}%`];
+  let phoneClause = "";
+  if (phoneNorm) {
+    params.push(`%${phoneNorm}%`);
+    phoneClause = ` OR m.phone_normalized LIKE $${params.length}`;
+  }
   let where = `WHERE m.organization_id = $1
      AND (
        lower(m.full_name) LIKE $2
        OR lower(trim(m.email)) LIKE $2
-       OR m.phone_normalized LIKE $3
        OR m.phone ILIKE $2
+       ${phoneClause}
      )`;
   if (Number.isFinite(branchId) && branchId > 0) {
     params.push(branchId);
@@ -258,13 +264,19 @@ async function searchMembersForBranch(pool, branchId, query, opts = {}) {
     return listMembersForBranch(pool, branchId, opts);
   }
   const status = String(opts.status || "").trim();
-  const params = [branchId, `%${q.toLowerCase()}%`, `%${normalizePhone(q)}%`];
+  const phoneNorm = normalizePhone(q);
+  const params = [branchId, `%${q.toLowerCase()}%`];
+  let phoneClause = "";
+  if (phoneNorm) {
+    params.push(`%${phoneNorm}%`);
+    phoneClause = ` OR phone_normalized LIKE $${params.length}`;
+  }
   let where = `WHERE branch_id = $1
      AND (
        lower(full_name) LIKE $2
        OR lower(trim(email)) LIKE $2
-       OR phone_normalized LIKE $3
        OR phone ILIKE $2
+       ${phoneClause}
      )`;
   if (status && status !== "all") {
     params.push(status);
@@ -290,12 +302,19 @@ async function listPendingMembersForBranch(pool, branchId, opts = {}) {
   const params = [branchId];
   let where = `WHERE branch_id = $1 AND status = 'pending'`;
   if (q) {
-    params.push(`%${q.toLowerCase()}%`, `%${normalizePhone(q)}%`);
+    const phoneNorm = normalizePhone(q);
+    params.push(`%${q.toLowerCase()}%`);
+    const qIdx = params.length;
+    let phoneClause = "";
+    if (phoneNorm) {
+      params.push(`%${phoneNorm}%`);
+      phoneClause = ` OR phone_normalized LIKE $${params.length}`;
+    }
     where += ` AND (
-       lower(full_name) LIKE $${params.length - 1}
-       OR lower(trim(email)) LIKE $${params.length - 1}
-       OR phone_normalized LIKE $${params.length}
-       OR phone ILIKE $${params.length - 1}
+       lower(full_name) LIKE $${qIdx}
+       OR lower(trim(email)) LIKE $${qIdx}
+       OR phone ILIKE $${qIdx}
+       ${phoneClause}
      )`;
   }
   const r = await pool.query(
@@ -334,12 +353,19 @@ async function listMembersForOrganization(pool, organizationId, opts = {}) {
     where += ` AND m.status = $${params.length}`;
   }
   if (q) {
-    params.push(`%${q.toLowerCase()}%`, `%${normalizePhone(q)}%`);
+    const phoneNorm = normalizePhone(q);
+    params.push(`%${q.toLowerCase()}%`);
+    const qIdx = params.length;
+    let phoneClause = "";
+    if (phoneNorm) {
+      params.push(`%${phoneNorm}%`);
+      phoneClause = ` OR m.phone_normalized LIKE $${params.length}`;
+    }
     where += ` AND (
-       lower(m.full_name) LIKE $${params.length - 1}
-       OR lower(trim(m.email)) LIKE $${params.length - 1}
-       OR m.phone_normalized LIKE $${params.length}
-       OR m.phone ILIKE $${params.length - 1}
+       lower(m.full_name) LIKE $${qIdx}
+       OR lower(trim(m.email)) LIKE $${qIdx}
+       OR m.phone ILIKE $${qIdx}
+       ${phoneClause}
      )`;
   }
 

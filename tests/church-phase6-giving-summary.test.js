@@ -153,15 +153,15 @@ test("computeSameMonthYoYChange only when historical same-currency data exists",
 });
 
 test("Giving navigation destination stays on giving-summary, not attendance", () => {
-  const nav = fs.readFileSync(path.join(__dirname, "../views/church/partials/branch_admin_nav.ejs"), "utf8");
+  const nav = fs.readFileSync(path.join(__dirname, "../src/church/http/classicAdminNav.js"), "utf8");
   const shell = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/branch_admin_shell_start.ejs"),
     "utf8"
   );
-  assert.match(nav, /data-testid="nav-giving"/);
-  assert.match(nav, /href="\/branch\/giving-summary"/);
-  assert.doesNotMatch(nav, /data-testid="nav-giving"[^>]*href="\/branch\/attendance/);
-  assert.doesNotMatch(nav, /href="\/branch-admin\/attendance/);
+  assert.match(nav, /testId: "nav-giving"/);
+  assert.match(nav, /href: "\/branch\/giving-summary"/);
+  assert.doesNotMatch(nav, /testId: "nav-giving"[^]*href: "\/branch\/attendance/);
+  assert.doesNotMatch(nav, /href: "\/branch-admin\/attendance/);
   assert.match(shell, /href="\/branch\/giving-summary"/);
   assert.match(shell, /data-testid="nav-more-giving"/);
 });
@@ -208,11 +208,13 @@ test(
     const branchA = await branchesRepo.createBranch(pool, {
       organization_id: orgA.id,
       slug: "main",
+      host_slug: `hs_branchA_${suffix}`.slice(0, 40),
       name: `Branch A ${suffix}`,
     });
     const branchB = await branchesRepo.createBranch(pool, {
       organization_id: orgB.id,
       slug: "main",
+      host_slug: `hs_branchB_${suffix}`.slice(0, 40),
       name: `Branch B ${suffix}`,
     });
     await branchAdminsRepo.createBranchAdmin(pool, {
@@ -338,12 +340,14 @@ test(
     const branch1 = await branchesRepo.createBranch(pool, {
       organization_id: orgFresh.id,
       slug: "main",
+      host_slug: `hs_branch1_${suffix}`.slice(0, 40),
       name: "Main Campus",
       status: "active",
     });
     const branch2 = await branchesRepo.createBranch(pool, {
       organization_id: orgFresh.id,
       slug: "east",
+      host_slug: `hs_branch2_${suffix}`.slice(0, 40),
       name: "East Campus",
       status: "active",
     });
@@ -362,6 +366,7 @@ test(
     const branchOther = await branchesRepo.createBranch(pool, {
       organization_id: orgOtherFresh.id,
       slug: "main",
+      host_slug: `hs_branchOther_${suffix}`.slice(0, 40),
       name: "Other Main",
       status: "active",
     });
@@ -435,19 +440,26 @@ test(
     assert.equal(page.status, 200);
     assert.match(page.text, /data-p6-screen="giving-summary"/);
     assert.match(page.text, /name="branch_id"/);
-    assert.match(page.text, /HQ Visible Main/);
-    assert.match(page.text, /HQ Visible East/);
-    assert.doesNotMatch(page.text, /Foreign Giving/);
+    assert.match(page.text, /Main Campus/);
+    assert.match(page.text, /East Campus/);
+    assert.match(page.text, /giving-kpi-total">K[\s\u00a0]*770\.00/);
+    assert.doesNotMatch(page.text, /Other Main/);
+    assert.doesNotMatch(page.text, /9999/);
     assert.doesNotMatch(page.text, /data-testid="giving-compose"/);
 
     const branchFiltered = await agent.get(`/hq/giving-summary?branch_id=${branch1.id}`);
     assert.equal(branchFiltered.status, 200);
-    assert.match(branchFiltered.text, /HQ Visible Main/);
-    assert.doesNotMatch(branchFiltered.text, /HQ Visible East/);
+    assert.match(branchFiltered.text, /Main Campus/);
+    // Branch names remain in the filter <select>; assert scoped results + KPI only.
+    assert.match(branchFiltered.text, /<td>Main Campus<\/td>/);
+    assert.doesNotMatch(branchFiltered.text, /<td>East Campus<\/td>/);
+    assert.doesNotMatch(branchFiltered.text, /church-p6-person-card__contact">East Campus/);
+    assert.match(branchFiltered.text, /giving-kpi-total">K[\s\u00a0]*550\.00/);
 
     const badBranch = await agent.get(`/hq/giving-summary?branch_id=${branchOther.id}`);
     assert.equal(badBranch.status, 200);
-    assert.doesNotMatch(badBranch.text, /Foreign Giving/);
+    assert.doesNotMatch(badBranch.text, /Other Main/);
+    assert.doesNotMatch(badBranch.text, /9999/);
 
     const foundationOrg = await organizationsRepo.createOrganization(pool, {
       platform_tenant_id: TENANT_ZM,
@@ -464,6 +476,7 @@ test(
     const foundationBranch = await branchesRepo.createBranch(pool, {
       organization_id: foundationFresh.id,
       slug: "main",
+      host_slug: `hs_foundationBranch_${suffix}`.slice(0, 40),
       name: "Found Main",
       status: "active",
     });

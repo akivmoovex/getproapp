@@ -9,6 +9,10 @@
       var closeBtn = document.getElementById("church-branch-drawer-close");
       if (!menuBtn || !drawer || !overlay) return;
 
+      function isOpen() {
+        return drawer.classList.contains("is-open");
+      }
+
       function openDrawer() {
         drawer.classList.add("is-open");
         overlay.classList.add("is-open");
@@ -19,6 +23,7 @@
       }
 
       function closeDrawer() {
+        if (!isOpen()) return;
         drawer.classList.remove("is-open");
         overlay.classList.remove("is-open");
         drawer.setAttribute("aria-hidden", "true");
@@ -27,9 +32,41 @@
         window.setTimeout(function () {
           if (!drawer.classList.contains("is-open")) overlay.hidden = true;
         }, 250);
+        try {
+          menuBtn.focus();
+        } catch (e) {}
       }
 
-      menuBtn.addEventListener("click", openDrawer);
+      function bindAccordion(root) {
+        var nav = root.querySelector('[data-church-mobile-nav="grouped"]');
+        if (!nav || nav.getAttribute("data-church-mobile-nav-bound") === "1") return;
+        nav.setAttribute("data-church-mobile-nav-bound", "1");
+        var toggles = nav.querySelectorAll("[data-church-nav-group-toggle]");
+        Array.prototype.forEach.call(toggles, function (btn) {
+          btn.addEventListener("click", function () {
+            var willOpen = btn.getAttribute("aria-expanded") !== "true";
+            Array.prototype.forEach.call(toggles, function (other) {
+              var otherId = other.getAttribute("aria-controls");
+              var otherPanel = otherId ? document.getElementById(otherId) : null;
+              var openThis = willOpen && other === btn;
+              other.setAttribute("aria-expanded", openThis ? "true" : "false");
+              var group = other.closest
+                ? other.closest("[data-church-nav-group]")
+                : other.parentNode;
+              if (group && group.classList) {
+                group.classList.toggle("is-open", openThis);
+              }
+              if (otherPanel) otherPanel.hidden = !openThis;
+            });
+          });
+        });
+      }
+
+      bindAccordion(drawer);
+      menuBtn.addEventListener("click", function () {
+        if (isOpen()) closeDrawer();
+        else openDrawer();
+      });
       if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
       overlay.addEventListener("click", closeDrawer);
       drawer.querySelectorAll("a").forEach(function (link) {

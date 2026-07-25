@@ -1,0 +1,21 @@
+<%
+  /* Shared link renderer for classic Branch / HQ admin nav items. */
+  var _items = typeof adminNavItems !== 'undefined' && adminNavItems ? adminNavItems : [];
+  var _active = typeof navActive !== 'undefined' ? navActive : (typeof activeNav !== 'undefined' ? activeNav : '');
+  function _navClass(key) {
+    return 'church-branch-nav-link' + (_active === key ? ' church-branch-nav-link--active' : '');
+  }
+%>
+<% _items.forEach(function (item) { %>
+<a
+  href="<%= item.href %>"
+  class="<%= _navClass(item.key) %>"
+  <% if (item.testId) { %>data-testid="<%= item.testId %>"<% } %>
+  <% if (item.navDest) { %>data-nav-dest="<%= item.navDest %>"<% } %>
+  <% if (_active === item.key) { %>aria-current="page"<% } %>
+  data-nav-key="<%= item.key %>"
+>
+  <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+  <span><%= item.label %><% if (item.badgeCount) { %><span class="church-nav-count"><%= item.badgeCount %></span><% } %></span><% if (item.lockLabel) { %> <span class="church-plan-lock"><%= item.lockLabel %></span><% } %>
+</a>
+<% }); %>

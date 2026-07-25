@@ -3477,6 +3477,121 @@ a.church-branch-stat-card--link:hover {
   color: var(--church-primary);
 }
 
+/* Classic Branch/HQ mobile drawer — grouped accordion (desktop sidebar stays flat) */
+.church-drawer--admin {
+  padding-bottom: calc(var(--church-space-lg) + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(var(--church-space-lg) + env(safe-area-inset-left, 0px));
+  padding-right: calc(var(--church-space-lg) + env(safe-area-inset-right, 0px));
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.church-drawer--admin .church-drawer__nav--admin {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.church-admin-mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.church-admin-mobile-nav__primary,
+.church-admin-mobile-nav__account,
+.church-admin-mobile-nav__group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.church-admin-mobile-nav__group {
+  min-width: 0;
+  border-radius: 12px;
+}
+
+.church-admin-mobile-nav__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--church-navy);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.church-admin-mobile-nav__toggle:hover {
+  background: var(--church-surface-container-low);
+}
+
+.church-admin-mobile-nav__toggle:focus-visible {
+  outline: 2px solid var(--church-primary);
+  outline-offset: 2px;
+}
+
+.church-admin-mobile-nav__toggle-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.church-admin-mobile-nav__chevron {
+  flex: 0 0 auto;
+  font-size: 1.25rem;
+  transition: transform 0.15s ease;
+}
+
+.church-admin-mobile-nav__group.is-open .church-admin-mobile-nav__chevron,
+.church-admin-mobile-nav__toggle[aria-expanded="true"] .church-admin-mobile-nav__chevron {
+  transform: rotate(180deg);
+}
+
+.church-admin-mobile-nav__group-list {
+  padding: 0 0 4px 8px;
+}
+
+.church-admin-mobile-nav__group-list[hidden] {
+  display: none !important;
+}
+
+.church-admin-mobile-nav .church-branch-nav-link {
+  min-width: 0;
+}
+
+.church-body--hq-admin .church-branch-bottom-nav {
+  display: none !important;
+}
+
+@media (max-width: 960px) {
+  .church-body--hq-admin .church-branch-sidebar--desktop {
+    display: none;
+  }
+
+  .church-body--hq-admin .church-branch-mobile-topbar {
+    display: flex;
+  }
+
+  .church-body--hq-admin .church-hq-main {
+    padding-top: 0;
+  }
+}
+
 @media (min-width: 768px) {
   .church-mission-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -19363,12 +19478,121 @@ html:has(> body.church-body--apex) {
   border: 1px solid rgba(108, 92, 231, 0.16);
 }
 
+.church-body--branch-admin .church-p6-attendance-detail__total-card,
+.church-body--hq-admin .church-p6-attendance-detail__total-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.16), rgba(108, 92, 231, 0.05));
+  border: 1px solid rgba(108, 92, 231, 0.18);
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .church-body--branch-admin .church-p6-attendance-detail__total-card,
+  .church-body--hq-admin .church-p6-attendance-detail__total-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.church-body--branch-admin .church-p6-attendance-detail__total-main,
+.church-body--hq-admin .church-p6-attendance-detail__total-main {
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .church-body--branch-admin .church-p6-attendance-detail__total-main,
+  .church-body--hq-admin .church-p6-attendance-detail__total-main {
+    text-align: left;
+  }
+}
+
+.church-body--branch-admin .church-p6-attendance-detail__status-pill,
+.church-body--hq-admin .church-p6-attendance-detail__status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--church-navy);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.church-body--branch-admin .church-p6-attendance-detail__total-value,
+.church-body--hq-admin .church-p6-attendance-detail__total-value {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+  color: var(--church-primary);
+}
+
+.church-body--branch-admin .church-p6-attendance-detail__total-core,
+.church-body--hq-admin .church-p6-attendance-detail__total-core {
+  display: none;
+  gap: 24px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .church-body--branch-admin .church-p6-attendance-detail__total-core,
+  .church-body--hq-admin .church-p6-attendance-detail__total-core {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+.church-body--branch-admin .church-p6-attendance-detail__core-value,
+.church-body--hq-admin .church-p6-attendance-detail__core-value {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--church-navy);
+}
+
+.church-body--branch-admin .church-p6-attendance-detail__core-label,
+.church-body--hq-admin .church-p6-attendance-detail__core-label {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--church-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .church-body--branch-admin .church-p6-attendance-detail__breakdown,
 .church-body--hq-admin .church-p6-attendance-detail__breakdown {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.church-body--branch-admin .church-p6-attendance-detail__breakdown .church-p6-attendance-stat--mobile-wide,
+.church-body--hq-admin .church-p6-attendance-detail__breakdown .church-p6-attendance-stat--mobile-wide {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .church-body--branch-admin .church-p6-attendance-detail__breakdown,
+  .church-body--hq-admin .church-p6-attendance-detail__breakdown {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Desktop total card already shows adults/youth/children */
+  .church-body--branch-admin .church-p6-attendance-detail__breakdown .church-p6-attendance-stat--core,
+  .church-body--hq-admin .church-p6-attendance-detail__breakdown .church-p6-attendance-stat--core {
+    display: none;
+  }
 }
 
 @media (min-width: 900px) {
@@ -19408,16 +19632,50 @@ html:has(> body.church-body--apex) {
   gap: 8px;
 }
 
+.church-body--branch-admin .church-p6-attendance-detail__mobile-actions,
+.church-body--hq-admin .church-p6-attendance-detail__mobile-actions {
+  display: none;
+}
+
 @media (max-width: 767px) {
-  .church-body--branch-admin .church-p6-attendance-detail__hero-actions,
-  .church-body--hq-admin .church-p6-attendance-detail__hero-actions {
-    width: 100%;
+  .church-body--branch-admin .church-p6-attendance-detail__hero-actions--desktop,
+  .church-body--hq-admin .church-p6-attendance-detail__hero-actions--desktop {
+    display: none;
   }
 
-  .church-body--branch-admin .church-p6-attendance-detail__hero-actions .church-btn,
-  .church-body--hq-admin .church-p6-attendance-detail__hero-actions .church-btn {
+  .church-body--branch-admin .church-p6-attendance-detail__mobile-actions,
+  .church-body--hq-admin .church-p6-attendance-detail__mobile-actions {
+    position: sticky;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 5;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(40, 50, 54, 0.1);
+    box-shadow: 0 8px 24px rgba(19, 29, 33, 0.12);
+  }
+
+  .church-body--branch-admin .church-p6-attendance-detail__mobile-submit,
+  .church-body--hq-admin .church-p6-attendance-detail__mobile-submit {
     flex: 1 1 auto;
+    margin: 0;
+  }
+
+  .church-body--branch-admin .church-p6-attendance-detail__mobile-actions .church-btn--outline,
+  .church-body--hq-admin .church-p6-attendance-detail__mobile-actions .church-btn--outline {
+    flex: 0 0 auto;
+    min-width: 48px;
     justify-content: center;
+  }
+
+  .church-body--branch-admin .church-p6-attendance-detail,
+  .church-body--hq-admin .church-p6-attendance-detail {
+    padding-bottom: 24px;
+    overflow-x: hidden;
   }
 }
 

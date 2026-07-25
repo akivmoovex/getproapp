@@ -1,0 +1,88 @@
+<%
+  var mn = (typeof mobileNav !== 'undefined' && mobileNav) ? mobileNav : null;
+  var mnPrimary = mn && mn.primary ? mn.primary : [];
+  var mnSections = mn && mn.sections ? mn.sections : [];
+  var mnAccount = mn && mn.account ? mn.account : [];
+  var mnIdPrefix = typeof idPrefix !== 'undefined' && idPrefix ? idPrefix : 'church-admin';
+  var mnActive = typeof navActive !== 'undefined' ? navActive : (typeof activeNav !== 'undefined' ? activeNav : '');
+  function mnLinkClass(key) {
+    return 'church-branch-nav-link' + (mnActive === key ? ' church-branch-nav-link--active' : '');
+  }
+%>
+<div class="church-admin-mobile-nav" data-church-mobile-nav="grouped" data-testid="admin-mobile-nav-grouped">
+  <% if (mnPrimary.length) { %>
+  <div class="church-admin-mobile-nav__primary" data-church-mobile-nav-primary="1">
+    <% mnPrimary.forEach(function (item) { %>
+    <a
+      href="<%= item.href %>"
+      class="<%= mnLinkClass(item.key) %>"
+      <% if (item.testId) { %>data-testid="<%= item.testId %>"<% } %>
+      <% if (item.navDest) { %>data-nav-dest="<%= item.navDest %>"<% } %>
+      <% if (mnActive === item.key) { %>aria-current="page"<% } %>
+      data-nav-key="<%= item.key %>"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+      <span><%= item.label %><% if (item.badgeCount) { %><span class="church-nav-count"><%= item.badgeCount %></span><% } %></span><% if (item.lockLabel) { %> <span class="church-plan-lock"><%= item.lockLabel %></span><% } %>
+    </a>
+    <% }); %>
+  </div>
+  <% } %>
+
+  <% mnSections.forEach(function (section) { %>
+  <div
+    class="church-admin-mobile-nav__group<%= section.open ? ' is-open' : '' %>"
+    data-church-nav-group="<%= section.id %>"
+  >
+    <button
+      type="button"
+      class="church-admin-mobile-nav__toggle"
+      id="<%= mnIdPrefix %>-nav-toggle-<%= section.id %>"
+      data-church-nav-group-toggle="1"
+      aria-expanded="<%= section.open ? 'true' : 'false' %>"
+      aria-controls="<%= mnIdPrefix %>-nav-group-<%= section.id %>"
+    >
+      <span class="church-admin-mobile-nav__toggle-label"><%= section.label %></span>
+      <span class="material-symbols-outlined church-admin-mobile-nav__chevron" aria-hidden="true">expand_more</span>
+    </button>
+    <div
+      id="<%= mnIdPrefix %>-nav-group-<%= section.id %>"
+      class="church-admin-mobile-nav__group-list"
+      role="region"
+      aria-labelledby="<%= mnIdPrefix %>-nav-toggle-<%= section.id %>"
+      <% if (!section.open) { %>hidden<% } %>
+    >
+      <% section.items.forEach(function (item) { %>
+      <a
+        href="<%= item.href %>"
+        class="<%= mnLinkClass(item.key) %>"
+        <% if (item.testId) { %>data-testid="<%= item.testId %>"<% } %>
+        <% if (item.navDest) { %>data-nav-dest="<%= item.navDest %>"<% } %>
+        <% if (mnActive === item.key) { %>aria-current="page"<% } %>
+        data-nav-key="<%= item.key %>"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+        <span><%= item.label %><% if (item.badgeCount) { %><span class="church-nav-count"><%= item.badgeCount %></span><% } %></span><% if (item.lockLabel) { %> <span class="church-plan-lock"><%= item.lockLabel %></span><% } %>
+      </a>
+      <% }); %>
+    </div>
+  </div>
+  <% }) %>
+
+  <% if (mnAccount.length) { %>
+  <div class="church-admin-mobile-nav__account" data-church-mobile-nav-account="1">
+    <% mnAccount.forEach(function (item) { %>
+    <a
+      href="<%= item.href %>"
+      class="<%= mnLinkClass(item.key) %>"
+      <% if (item.testId) { %>data-testid="<%= item.testId %>"<% } %>
+      <% if (item.navDest) { %>data-nav-dest="<%= item.navDest %>"<% } %>
+      <% if (mnActive === item.key) { %>aria-current="page"<% } %>
+      data-nav-key="<%= item.key %>"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+      <span><%= item.label %><% if (item.badgeCount) { %><span class="church-nav-count"><%= item.badgeCount %></span><% } %></span><% if (item.lockLabel) { %> <span class="church-plan-lock"><%= item.lockLabel %></span><% } %>
+    </a>
+    <% }); %>
+  </div>
+  <% } %>
+</div>

@@ -131,7 +131,7 @@ test(
 test("branch admin sermons and resources routes are registered in nav", () => {
   const fs = require("fs");
   const nav = fs.readFileSync(
-    path.join(__dirname, "../views/church/partials/branch_admin_nav.ejs"),
+    path.join(__dirname, "../src/church/http/classicAdminNav.js"),
     "utf8"
   );
   assert.match(nav, /\/branch\/sermons/);
