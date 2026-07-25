@@ -195,7 +195,16 @@ describe("registration onboarding analytics (Prompt 27)", () => {
         [failApp.id]
       );
 
-      // Mark bootstrap onboarding started/completed in window (after registration).
+      // Mark bootstrap onboarding started/completed inside the analytics window.
+      // Backdate application created_at first so started/completed offsets stay
+      // after created_at (median query) and before now (calendar-day exclusive end).
+      await pool.query(
+        `UPDATE blessboard.platform_church_registration_applications
+            SET created_at = now() - interval '2 days',
+                updated_at = now() - interval '2 days'
+          WHERE id = $1`,
+        [fixtures.bootAppId]
+      );
       await pool.query(
         `UPDATE blessboard.organization_onboarding oo
             SET onboarding_status = 'completed',
