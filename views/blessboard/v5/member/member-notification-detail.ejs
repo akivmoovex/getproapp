@@ -1,0 +1,66 @@
+<%- include('../partials/member-shell-start') %>
+<%
+  var n = item || {};
+  function typeLabel(key) { return (typeLabels && typeLabels[key]) || key || ''; }
+  function formatWhen(value) {
+    if (!value) return '';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-mp-notification-detail"
+  data-bb-member-notification-detail="1"
+  data-bb-stitch-notifications="25-member-notifications"
+  aria-label="Notification detail"
+>
+  <header class="bb-mp-page-head">
+    <p class="bb-mp-breadcrumb">
+      <a href="/member/notifications">Notifications</a>
+      <span aria-hidden="true">›</span>
+      <span>Message</span>
+    </p>
+    <h1 class="bb-mp-page-head__title"><%= n.title %></h1>
+    <p class="bb-mp-lede">
+      <%= n.senderDisplayName %> · <%= typeLabel(n.messageType) %> · <%= formatWhen(n.createdAt) %>
+      <% if (n.priority && n.priority !== 'normal') { %>
+      · <span class="bb-mp-chip bb-mp-chip--priority"><%= (priorityLabels && priorityLabels[n.priority]) || n.priority %></span>
+      <% } %>
+    </p>
+  </header>
+
+  <article class="bb-mp-card bb-mp-notification-detail__card">
+    <div class="bb-mp-prose" data-bb-notification-body="1"><%- n.bodyHtml %></div>
+    <% if (n.callToActionUrl && n.callToActionLabel) { %>
+    <p class="bb-mp-notification-detail__cta">
+      <a class="bb-mp-btn bb-mp-btn--primary" href="<%= n.callToActionUrl %>" rel="noopener noreferrer"><%= n.callToActionLabel %></a>
+    </p>
+    <% } %>
+  </article>
+
+  <div class="bb-mp-notification-detail__actions">
+    <% if (n.readAt) { %>
+    <form method="post" action="/member/notifications/<%= n.id %>/unread">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <button class="bb-mp-btn bb-mp-btn--ghost" type="submit">Mark unread</button>
+    </form>
+    <% } else { %>
+    <form method="post" action="/member/notifications/<%= n.id %>/read">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <button class="bb-mp-btn bb-mp-btn--ghost" type="submit">Mark read</button>
+    </form>
+    <% } %>
+    <form method="post" action="/member/notifications/<%= n.id %>/archive">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <button class="bb-mp-btn bb-mp-btn--ghost" type="submit">Archive</button>
+    </form>
+    <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/notifications">Back to inbox</a>
+  </div>
+</section>
+
+<%- include('../partials/member-shell-end') %>

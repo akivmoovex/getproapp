@@ -1,0 +1,225 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = items || [];
+  var f = filters || {};
+  var labels = statusLabels || {};
+  var sources = sourceLabels || {};
+  var live = current || null;
+  var detailId = typeof detailId !== 'undefined' ? detailId : null;
+  var historyPath = typeof historyListPath !== 'undefined' && historyListPath
+    ? historyListPath
+    : '/hq/website/network-version-history';
+  function statusLabel(s) { return labels[s] || s || '—'; }
+  function sourceLabel(s) { return sources[s] || s || '—'; }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'published') return 'bb-hq-chip--ok';
+    if (key === 'superseded') return 'bb-hq-chip--muted';
+    if (key === 'draft') return 'bb-hq-chip--pending';
+    if (key === 'archived') return 'bb-hq-chip--muted';
+    return 'bb-hq-chip--warn';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function pagesChanged(row) {
+    var summary = row.changeSummary || {};
+    var pages = summary.pagesChanged || summary.pageKeys || [];
+    if (Array.isArray(pages) && pages.length) return pages.join(', ');
+    return '—';
+  }
+%>
+
+<section
+  class="bb-hq-phase4-nwvh bb-hq-phase3-wvh"
+  data-bb-phase4-network-website-version-history="1"
+  data-bb-phase3-website-version-history="1"
+  aria-label="Phase4 Network Website Version History"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website/advanced">Advanced</a>
+        <span aria-hidden="true">›</span>
+        <span>Version history</span>
+      </p>
+      <p class="bb-hq-chip bb-hq-chip--muted">Network · Advanced</p>
+      <h1 class="bb-hq-page-head__title">Network Website Version History</h1>
+      <p class="bb-hq-lede">
+        Review, compare, and restore previous website publications for this organization. History is preserved.
+      </p>
+      <p class="bb-hq-visually-hidden">Website Version History</p>
+      <% if (typeof notice !== 'undefined' && notice) { %>
+      <p class="bb-hq-error" role="alert"><%= notice %></p>
+      <% } %>
+      <% if (live) { %>
+      <p>
+        <span class="bb-hq-chip bb-hq-chip--ok">Current Active</span>
+        <span class="bb-hq-visually-hidden">Current live: v<%= live.versionNumber %></span>
+        Last published <%= formatWhen(live.publishedAt) %>
+      </p>
+      <% } %>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/advanced">Advanced hub</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/publishing-history">Publishing history</a>
+      <% if (livePreviewPath) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= livePreviewPath %>" target="_blank" rel="noopener">Preview live website</a>
+      <% } %>
+    </p>
+  </header>
+
+  <div class="bb-hq-summary bb-hq-phase4-nwvh__summary">
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Total publications</p>
+      <p class="bb-hq-card__value"><%= typeof total !== 'undefined' ? total : rows.length %></p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Last published</p>
+      <p class="bb-hq-card__value bb-hq-phase4-nwvh__when"><%= live ? formatWhen(live.publishedAt) : '—' %></p>
+    </article>
+  </div>
+
+  <form method="get" action="<%= historyPath %>" class="bb-hq-filter bb-hq-phase3-wvh__filter" role="search">
+    <div class="bb-hq-field">
+      <label for="wvh-status">Status</label>
+      <select id="wvh-status" name="status">
+        <option value="">All statuses</option>
+        <% ['published','superseded','draft','restored','archived'].forEach(function (k) { %>
+        <option value="<%= k %>"<%= f.status === k ? ' selected' : '' %>><%= statusLabel(k) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wvh-publisher">Published by</label>
+      <select id="wvh-publisher" name="publisher">
+        <option value="">All publishers</option>
+        <% (publishers || []).forEach(function (u) { %>
+        <option value="<%= u.id %>"<%= f.publishedBy === String(u.id) ? ' selected' : '' %>><%= u.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wvh-theme">Theme</label>
+      <select id="wvh-theme" name="theme">
+        <option value="">All themes</option>
+        <% (themeKeys || []).forEach(function (tk) { %>
+        <option value="<%= tk %>"<%= f.themeKey === tk ? ' selected' : '' %>><%= tk %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field"><label for="wvh-from">From</label><input id="wvh-from" name="from" type="date" value="<%= f.from || '' %>" /></div>
+    <div class="bb-hq-field"><label for="wvh-to">To</label><input id="wvh-to" name="to" type="date" value="<%= f.to || '' %>" /></div>
+    <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">
+      <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+      Filter
+    </button>
+  </form>
+
+  <% if (!rows.length) { %>
+  <%- include('../partials/phase4-system-state', {
+    systemState: typeof emptyState !== 'undefined' && emptyState ? emptyState : {
+      type: 'empty',
+      icon: 'history',
+      heading: 'No website versions yet',
+      body: 'No publication versions are recorded yet. Publish the website to create the first history entry.',
+      primaryAction: { href: '/hq/website/publish/review', label: 'Publish Website Review', icon: 'publish' },
+      secondaryAction: { href: '/hq/website', label: 'Return to Website', icon: 'arrow_back' }
+    }
+  }) %>
+  <div class="bb-hq-visually-hidden" data-bb-phase3-wvh-empty="1" data-bb-phase4-nwvh-empty="1" data-bb-phase4-nwvh-mobile="1">No publication versions are recorded yet.</div>
+  <% } else { %>
+
+  <div class="bb-hq-table-wrap bb-hq-phase3-wvh__table" data-bb-phase3-wvh-desktop="1" data-bb-phase4-nwvh-desktop="1">
+    <table class="bb-hq-table">
+      <thead>
+        <tr>
+          <th>Publication</th>
+          <th>Published Date</th>
+          <th>Published By</th>
+          <th>Theme</th>
+          <th>Source</th>
+          <th>Pages Changed</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr<%= live && live.id === row.id ? ' class="bb-hq-phase3-wvh__row--current"' : '' %>>
+          <td>
+            <% if (live && live.id === row.id) { %>
+            <span class="bb-hq-chip bb-hq-chip--tiny bb-hq-chip--ok">LIVE</span>
+            Current website
+            <% } else { %>
+            Previous website
+            <% } %>
+          </td>
+          <td><%= formatWhen(row.publishedAt) %></td>
+          <td><%= row.publishedByName || row.createdByName || '—' %></td>
+          <td><%= row.themeKey || '—' %></td>
+          <td><%= sourceLabel(row.sourceType) %></td>
+          <td><%= pagesChanged(row) %></td>
+          <td><span class="bb-hq-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span></td>
+          <td class="bb-hq-table__actions">
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/<%= row.id %>/preview" title="Preview">
+              <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+              Preview
+            </a>
+            <% if (live && live.id !== row.id) { %>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/compare?baseVersionId=<%= row.id %>&amp;compareVersionId=<%= live.id %>">Compare</a>
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= row.id %>/restore">Restore</a>
+            <% } %>
+          </td>
+        </tr>
+        <% if (detailId && detailId === String(row.id)) { %>
+        <tr class="bb-hq-phase3-wvh__detail">
+          <td colspan="8">
+            <div class="bb-hq-panel">
+              <h2>Publication details</h2>
+              <p><strong>Change summary:</strong> <%= (row.changeSummary && row.changeSummary.sectionCount != null) ? (row.changeSummary.sectionCount + ' sections across ' + (row.changeSummary.pageCount || 0) + ' pages') : '—' %></p>
+              <p class="bb-hq-phase3-wvh__detail-actions">
+                <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--primary" href="/hq/website/version-history/<%= row.id %>/preview">Preview</a>
+                <% if (live && live.id !== row.id) { %>
+                <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= row.id %>/restore">Restore as draft</a>
+                <% } %>
+              </p>
+            </div>
+          </td>
+        </tr>
+        <% } %>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="bb-hq-phase3-wvh__cards" data-bb-phase3-wvh-mobile="1" data-bb-phase4-nwvh-mobile="1">
+    <% rows.forEach(function (row) { %>
+    <li class="bb-hq-card<%= live && live.id === row.id ? ' bb-hq-phase3-wvh__card--current' : '' %>">
+      <div class="bb-hq-phase3-wvh__card-head">
+        <h2><%= live && live.id === row.id ? 'Current website' : 'Previous website' %></h2>
+        <span class="bb-hq-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+      </div>
+      <p>Published <%= formatWhen(row.publishedAt) %></p>
+      <p>By <%= row.publishedByName || '—' %></p>
+      <p>Source: <%= sourceLabel(row.sourceType) %></p>
+      <p class="bb-hq-phase4-nwvh__card-actions">
+        <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/version-history/<%= row.id %>/preview">Preview</a>
+        <% if (live && live.id !== row.id) { %>
+        <a class="bb-hq-btn bb-hq-btn--secondary" href="/hq/website/version-history/<%= row.id %>/restore">Restore</a>
+        <% } %>
+      </p>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

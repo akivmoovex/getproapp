@@ -1,0 +1,137 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var o = overview || {};
+  var page = o.branchPage || {};
+  var draft = o.draft || null;
+  var history = o.history || [];
+  var state = o.primaryState || 'none';
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-website bb-phase4-website--branch"
+  data-bb-phase4-branch-website-overview="1"
+  data-bb-stitch-screen="Phase4 - Branch Website Overview"
+  data-bb-viewport="responsive"
+  aria-label="Branch Website"
+>
+  <header class="bb-ba-page-head bb-ba-page-head--split">
+    <div>
+      <p class="bb-ba-breadcrumb">
+        <a href="/branch-admin">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <span>Website</span>
+      </p>
+      <h1 class="bb-ba-page-head__title"><%= o.title || 'Branch Website' %></h1>
+      <p class="bb-ba-lede">
+        <strong><%= o.branchName || 'Branch' %></strong>
+        — <%= o.subtitle || 'Update information shown for your branch' %>
+      </p>
+    </div>
+    <p class="bb-ba-page-head__actions">
+      <a class="bb-ba-btn bb-ba-btn--primary" href="<%= o.editPath || '/branch-admin/content' %>">Edit Branch Website</a>
+    </p>
+  </header>
+
+  <article class="bb-ba-card" data-bb-phase4-branch-page="1">
+    <h2 class="bb-ba-section-title">Current branch page</h2>
+    <p><span class="bb-ba-chip"><%= page.statusLabel || '—' %></span></p>
+    <% if (page.publicUrl) { %>
+    <p><a href="<%= page.publicUrl %>" rel="noopener"><%= page.publicUrl %></a></p>
+    <% } %>
+    <dl class="bb-phase4-website__dl">
+      <div><dt>Last updated</dt><dd><%= formatWhen(page.lastUpdated) %></dd></div>
+      <div><dt>Contact email</dt><dd><%= page.contactEmail || '—' %></dd></div>
+      <div><dt>Contact phone</dt><dd><%= page.contactPhone || '—' %></dd></div>
+      <div><dt>Service times</dt><dd><%= page.serviceTimesHint || 'Managed in branch content' %></dd></div>
+    </dl>
+    <p>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= o.previewPath || '/branch-admin/content/preview/home' %>">Preview Branch Page</a>
+    </p>
+  </article>
+
+  <% if (state === 'changes_requested' && draft && draft.reviewerComment) { %>
+  <article class="bb-ba-card bb-phase4-website__feedback" data-bb-phase4-hq-feedback="1">
+    <h2 class="bb-ba-section-title">HQ feedback</h2>
+    <p class="bb-hq-muted">
+      <%= draft.reviewerName || 'HQ reviewer' %>
+      · <%= formatWhen(draft.reviewedAt) %>
+      <% if (draft.pageKey) { %> · <%= draft.pageKey %><% } %>
+    </p>
+    <blockquote class="bb-phase4-website__comment"><%= draft.reviewerComment %></blockquote>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= draft.resubmitHref || o.submitPath %>">Edit and Resubmit</a>
+  </article>
+  <% } %>
+
+  <article class="bb-ba-card" data-bb-phase4-branch-draft="1">
+    <h2 class="bb-ba-section-title">Draft changes</h2>
+    <% if (!draft) { %>
+    <p data-bb-phase4-empty="branch-draft">There are no unpublished branch website changes.</p>
+    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= o.editPath %>">Edit Branch Website</a>
+    <% } else { %>
+    <p>
+      <span class="bb-ba-chip"><%= draft.statusLabel %></span>
+      <%= draft.title %>
+    </p>
+    <p class="bb-ba-muted">
+      Last saved <%= formatWhen(draft.lastSavedAt) %>
+      <% if (draft.lastSavedBy) { %> · <%= draft.lastSavedBy %><% } %>
+      <% if (draft.pageKey) { %> · <%= draft.pageKey %><% } %>
+    </p>
+    <p class="bb-phase4-website__inline-actions">
+      <% if (state === 'draft' || state === 'changes_requested') { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= o.editPath %>">Continue Editing</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
+      <a class="bb-ba-btn bb-ba-btn--primary" href="<%= draft.resubmitHref || o.submitPath %>">
+        <%= state === 'changes_requested' ? 'Edit and Resubmit' : 'Submit to HQ' %>
+      </a>
+      <% } else if (state === 'waiting') { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= draft.href %>">View Submission</a>
+      <% } else if (state === 'approved') { %>
+      <p class="bb-ba-muted">Waiting for Publication</p>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= draft.href %>">View Submission</a>
+      <% } else if (state === 'published') { %>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= page.publicUrl || o.publicPath %>">View Live Branch Page</a>
+      <% } %>
+    </p>
+    <% } %>
+  </article>
+
+  <article class="bb-ba-card" data-bb-phase4-branch-history="1">
+    <h2 class="bb-ba-section-title">Submission history</h2>
+    <% if (!history.length) { %>
+    <p class="bb-ba-empty">No submissions yet.</p>
+    <% } else { %>
+    <ul class="bb-phase4-website__card-list">
+      <% history.forEach(function (item) { %>
+      <li>
+        <div>
+          <strong><%= item.title %></strong>
+          <p class="bb-ba-muted">
+            <%= formatWhen(item.submittedAt) %> · <%= item.statusLabel %>
+            <% if (item.latestSharedResponse) { %>
+            · <%= item.latestSharedResponse %>
+            <% } %>
+          </p>
+        </div>
+        <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= item.href %>">View</a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </article>
+
+  <p class="bb-phase4-website__sticky-edit">
+    <a class="bb-ba-btn bb-ba-btn--primary" href="<%= o.editPath || '/branch-admin/content' %>">Edit Branch Website</a>
+  </p>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

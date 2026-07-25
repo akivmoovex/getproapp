@@ -1,0 +1,141 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var r = typeof restore !== 'undefined' && restore ? restore : {};
+  var pub = r.publication || {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-growth-restore"
+  data-bb-phase4-restore-previous-website="1"
+  data-bb-stitch-screen="Phase4 - Restore Previous Website"
+  data-bb-viewport="responsive"
+  aria-label="Restore Previous Website"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="<%= r.recentChangesPath || '/hq/website/recent-changes' %>">Recent changes</a>
+        <span aria-hidden="true">›</span>
+        <span>Restore</span>
+      </p>
+      <h1 class="bb-hq-page-head__title"><%= r.title || 'Restore Previous Website' %></h1>
+      <p class="bb-hq-lede"><%= r.subtitle || 'Create a draft using this earlier website' %></p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewHref %>">Back to Preview</a>
+    </p>
+  </header>
+
+  <% if (formError) { %>
+  <div class="bb-hq-alert bb-hq-alert--error" role="alert"><%= formError %></div>
+  <% } %>
+
+  <% if (r.hasConflictingDraft) { %>
+  <article class="bb-hq-card bb-phase4-growth-restore__conflict" data-bb-phase4-restore-conflict="1" role="alert">
+    <h2 class="bb-hq-section-title">Unpublished changes already exist</h2>
+    <p>You already have unpublished website changes. Finish or discard them before restoring a previous website.</p>
+    <p class="bb-phase4-growth-restore__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.editPath || '/hq/content' %>">Return to Current Draft</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.draftPreviewPath || '/hq/content/preview/home' %>">Preview Current Draft</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.overviewPath || '/hq/website' %>">Go to Website Overview</a>
+    </p>
+  </article>
+  <% } else { %>
+
+  <article class="bb-hq-card" data-bb-phase4-restore-summary="1">
+    <p class="bb-phase4-recent__label">Previous Website</p>
+    <h2 class="bb-hq-section-title"><%= r.changeSummary || pub.changeSummary || 'Website changes were published.' %></h2>
+    <dl class="bb-phase4-recent__meta">
+      <div><dt>Published on</dt><dd><%= formatWhen(r.publishedAt) %></dd></div>
+      <div><dt>Published by</dt><dd><%= r.publishedByName || '—' %></dd></div>
+      <div><dt>Source</dt><dd><%= (pub && pub.sourceLabel) || 'Website Update' %></dd></div>
+      <div><dt>Theme</dt><dd><%= r.themeHistorical || 'default' %></dd></div>
+      <% if (pub.pagesChanged && pub.pagesChanged.length) { %>
+      <div><dt>Areas changed</dt><dd><%= pub.pagesChanged.join(', ') %></dd></div>
+      <% } %>
+      <% if (pub.branchesAffected && pub.branchesAffected.length) { %>
+      <div><dt>Branches</dt><dd><%= pub.branchesAffected.join(', ') %></dd></div>
+      <% } %>
+    </dl>
+    <p><a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewHref %>">Preview Again</a></p>
+  </article>
+
+  <div class="bb-phase4-growth-restore__safety" role="note">
+    <%= r.safetyNotice || 'Your live website will stay unchanged. A new draft will be created for you to review and publish.' %>
+  </div>
+
+  <form
+    method="post"
+    action="/hq/website/recent-changes/<%= publicationId %>/restore"
+    class="bb-hq-form bb-hq-card bb-phase4-growth-restore__form"
+    data-bb-phase4-restore-form="1"
+  >
+    <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= csrfToken %>" />
+    <h2 class="bb-hq-section-title">Restoration options</h2>
+
+    <fieldset class="bb-phase4-growth-restore__fieldset">
+      <legend>Content</legend>
+      <label class="bb-phase4-growth-restore__option">
+        <input type="radio" name="restore_scope" value="complete" checked />
+        <span>
+          <strong>Restore the complete website</strong>
+          <span class="bb-hq-muted">Includes public pages, sections, and site configuration from this publication.</span>
+        </span>
+      </label>
+    </fieldset>
+
+    <fieldset class="bb-phase4-growth-restore__fieldset">
+      <legend>Theme</legend>
+      <label class="bb-phase4-growth-restore__option">
+        <input type="radio" name="theme_choice" value="keep_current" checked />
+        <span>
+          <strong>Keep my current theme</strong>
+          <span class="bb-hq-muted">Restore content into the current design (<%= r.themeCurrent || 'default' %>).</span>
+        </span>
+      </label>
+      <% if (r.themesDiffer && r.previousThemeAllowed) { %>
+      <label class="bb-phase4-growth-restore__option">
+        <input type="radio" name="theme_choice" value="use_previous" />
+        <span>
+          <strong>Use the theme from the previous website</strong>
+          <span class="bb-hq-muted">Restore both content and the earlier design (<%= r.themeHistorical || 'default' %>). Theme changes go live only after you publish.</span>
+        </span>
+      </label>
+      <% } else if (r.themesDiffer && !r.previousThemeAllowed) { %>
+      <p class="bb-hq-hint">The previous theme is not available for your plan. The current theme will be retained.</p>
+      <% } %>
+    </fieldset>
+
+    <div class="bb-hq-field">
+      <label for="restoration-note">Why are you restoring this website?</label>
+      <textarea id="restoration-note" name="restoration_note" rows="3" maxlength="2000" placeholder="Optional"></textarea>
+    </div>
+
+    <div class="bb-hq-field">
+      <label>
+        <input type="checkbox" name="confirm_restore" value="1" required />
+        I understand that this will create a draft and will not change the live website.
+      </label>
+    </div>
+
+    <p class="bb-phase4-growth-restore__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.recentChangesPath || '/hq/website/recent-changes' %>">Cancel</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewHref %>">Preview Again</a>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create Restored Draft</button>
+    </p>
+  </form>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

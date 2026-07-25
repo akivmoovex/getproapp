@@ -1,0 +1,218 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = items || [];
+  var s = summary || {};
+  var f = filters || {};
+  var availability = channelAvailability || {};
+  function statusLabel(key) {
+    return (statusLabels && statusLabels[key]) || key || '—';
+  }
+  function typeLabel(key) {
+    return (typeLabels && typeLabels[key]) || key || '—';
+  }
+  function statusChip(key) {
+    var k = String(key || '');
+    if (k === 'sent') return 'bb-hq-chip--ok';
+    if (k === 'scheduled' || k === 'sending') return 'bb-hq-chip--pending';
+    if (k === 'failed' || k === 'partially_delivered') return 'bb-hq-chip--danger';
+    if (k === 'draft') return 'bb-hq-chip--muted';
+    return 'bb-hq-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+  function channelsOf(item) {
+    var list = [];
+    if (item.channelInApp) list.push('In-app');
+    if (item.channelEmail) list.push('Email');
+    if (item.channelSms) list.push('SMS');
+    if (item.channelPush) list.push('Push');
+    return list.join(' · ') || 'In-app';
+  }
+  function filterHref(overrides) {
+    var next = Object.assign({}, f, overrides || {});
+    var parts = [];
+    Object.keys(next).forEach(function (k) {
+      if (next[k]) parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(next[k]));
+    });
+    return '/hq/broadcasts' + (parts.length ? ('?' + parts.join('&')) : '');
+  }
+  function noticeText(n) {
+    if (n === 'draft_saved') return 'Draft saved.';
+    if (n === 'sent') return 'Message sent. In-app notifications were created for eligible members.';
+    if (n === 'cancelled') return 'Scheduled message cancelled.';
+    return n ? String(n) : '';
+  }
+  function errorText(e) {
+    if (e === 'empty_audience') return 'No eligible members matched this audience.';
+    if (e === 'already_sent' || e === 'duplicate_send') return 'This message was already sent.';
+    if (e === 'call_to_action_url' || e === 'call_to_action_url_https_required') return 'Call-to-action URL must be a safe https or site path.';
+    return e ? 'Please check the form and try again (' + e + ').' : '';
+  }
+%>
+
+<section
+  class="bb-hq-broadcasts"
+  data-bb-hq-broadcast-center="1"
+  data-bb-stitch-broadcast="61-hq-broadcast-center-v2"
+  data-bb-viewport="responsive"
+  aria-label="Broadcast Center"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <span>Broadcast Center</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Broadcast Center</h1>
+      <p class="bb-hq-lede">
+        Manage church communications — announcements, leadership messages, and direct notes.
+        The member notification inbox is the canonical record.
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= filterHref({ status: 'scheduled' }) %>">View Scheduled</a>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/broadcasts/new">
+        <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+        Create Message
+      </a>
+    </p>
+  </header>
+
+  <% if (notice) { %>
+  <div class="bb-hq-alert bb-hq-alert--ok" role="status"><%= noticeText(notice) %></div>
+  <% } %>
+  <% if (error) { %>
+  <div class="bb-hq-alert bb-hq-alert--danger" role="alert"><%= errorText(error) %></div>
+  <% } %>
+
+  <% if (availability.email && !availability.email.available) { %>
+  <div class="bb-hq-alert bb-hq-alert--muted" role="status" data-bb-delivery-unavailable="email">
+    Email, SMS, and Push delivery are shown honestly. External providers are not configured for member messaging — in-app notifications still work.
+  </div>
+  <% } %>
+
+  <div class="bb-hq-broadcasts__summary" role="list" aria-label="Broadcast summary">
+    <article class="bb-hq-metric-card" role="listitem">
+      <p class="bb-hq-metric-card__label">Drafts</p>
+      <p class="bb-hq-metric-card__value" data-bb-summary="drafts"><%= s.draft || 0 %></p>
+    </article>
+    <article class="bb-hq-metric-card" role="listitem">
+      <p class="bb-hq-metric-card__label">Scheduled</p>
+      <p class="bb-hq-metric-card__value" data-bb-summary="scheduled"><%= s.scheduled || 0 %></p>
+    </article>
+    <article class="bb-hq-metric-card" role="listitem">
+      <p class="bb-hq-metric-card__label">Sent recently</p>
+      <p class="bb-hq-metric-card__value" data-bb-summary="sent-recently"><%= s.sentRecently || 0 %></p>
+      <p class="bb-hq-metric-card__hint">Last 7 days</p>
+    </article>
+    <article class="bb-hq-metric-card" role="listitem">
+      <p class="bb-hq-metric-card__label">Needs attention</p>
+      <p class="bb-hq-metric-card__value" data-bb-summary="needs-attention"><%= s.needsAttention || 0 %></p>
+      <p class="bb-hq-metric-card__hint">Failed or partial</p>
+    </article>
+  </div>
+
+  <form class="bb-hq-broadcasts__filters" method="get" action="/hq/broadcasts" role="search">
+    <label class="bb-hq-field">
+      <span class="bb-hq-label">Search</span>
+      <input class="bb-hq-input" type="search" name="q" value="<%= f.q || '' %>" placeholder="Title or preview" maxlength="100" />
+    </label>
+    <label class="bb-hq-field">
+      <span class="bb-hq-label">Status</span>
+      <select class="bb-hq-input" name="status">
+        <option value="">All</option>
+        <% ['draft','scheduled','sending','sent','partially_delivered','failed','cancelled'].forEach(function (st) { %>
+        <option value="<%= st %>" <%= f.status === st ? 'selected' : '' %>><%= statusLabel(st) %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label class="bb-hq-field">
+      <span class="bb-hq-label">Type</span>
+      <select class="bb-hq-input" name="message_type">
+        <option value="">All</option>
+        <% Object.keys(typeLabels || {}).forEach(function (t) { %>
+        <option value="<%= t %>" <%= f.message_type === t ? 'selected' : '' %>><%= typeLabels[t] %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label class="bb-hq-field">
+      <span class="bb-hq-label">Channel</span>
+      <select class="bb-hq-input" name="channel">
+        <option value="">All</option>
+        <option value="in_app" <%= f.channel === 'in_app' ? 'selected' : '' %>>In-app</option>
+        <option value="email" <%= f.channel === 'email' ? 'selected' : '' %>>Email</option>
+        <option value="sms" <%= f.channel === 'sms' ? 'selected' : '' %>>SMS</option>
+        <option value="push" <%= f.channel === 'push' ? 'selected' : '' %>>Push</option>
+      </select>
+    </label>
+    <div class="bb-hq-broadcasts__filter-actions">
+      <button class="bb-hq-btn bb-hq-btn--ghost" type="submit">Apply</button>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/broadcasts">Clear</a>
+    </div>
+  </form>
+
+  <section class="bb-hq-broadcasts__list" aria-label="Active communications">
+    <div class="bb-hq-broadcasts__list-head">
+      <h2 class="bb-hq-section-title">Communications</h2>
+      <p class="bb-hq-muted"><%= total %> message<%= total === 1 ? '' : 's' %></p>
+    </div>
+
+    <% if (!rows.length) { %>
+    <div class="bb-hq-empty" data-bb-empty="broadcasts">
+      <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+      <h3>No messages yet</h3>
+      <p>Create a draft or send a church announcement to get started.</p>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/broadcasts/new">Create Message</a>
+    </div>
+    <% } else { %>
+    <ul class="bb-hq-broadcast-cards">
+      <% rows.forEach(function (item) { %>
+      <li class="bb-hq-broadcast-card<%= item.status === 'sending' || item.priority === 'urgent' ? ' is-emphasis' : '' %>">
+        <div class="bb-hq-broadcast-card__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">campaign</span>
+        </div>
+        <div class="bb-hq-broadcast-card__body">
+          <div class="bb-hq-broadcast-card__top">
+            <h3 class="bb-hq-broadcast-card__title">
+              <a href="/hq/broadcasts/<%= item.id %>"><%= item.title %></a>
+            </h3>
+            <span class="bb-hq-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+          </div>
+          <p class="bb-hq-broadcast-card__meta">
+            <%= typeLabel(item.messageType) %>
+            · <%= item.senderDisplayName || '—' %>
+            · <%= formatWhen(item.sentAt || item.scheduledAt || item.createdAt) %>
+          </p>
+          <% if (item.previewText) { %>
+          <p class="bb-hq-broadcast-card__preview"><%= item.previewText %></p>
+          <% } %>
+          <p class="bb-hq-broadcast-card__channels">
+            <span class="bb-hq-label-inline">Channels</span> <%= channelsOf(item) %>
+            <% if (item.status === 'sent' || item.status === 'partially_delivered') { %>
+            · <span data-bb-recipient-count="<%= item.recipientCount %>"><%= item.recipientCount %> recipients</span>
+            · <span data-bb-in-app-count="<%= item.inAppCreatedCount %>"><%= item.inAppCreatedCount %> in-app</span>
+            <% } %>
+          </p>
+          <% if (item.status === 'failed' || item.status === 'partially_delivered') { %>
+          <p class="bb-hq-broadcast-card__warn" role="status">Delivery needs attention — external channels may be unavailable.</p>
+          <% } %>
+        </div>
+        <div class="bb-hq-broadcast-card__actions">
+          <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/broadcasts/<%= item.id %>">Open</a>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

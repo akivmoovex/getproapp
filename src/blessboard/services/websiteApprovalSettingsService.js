@@ -120,6 +120,8 @@ async function saveSettings(db, opts) {
       // Persist preference only; do not activate silent publish rights.
       trustedBranchPublishEnabled:
         mode === "trusted_branch_publish" && boolFromBody(opts.trustedBranchPublishEnabled, false),
+      requireRestoreApproval: boolFromBody(opts.requireRestoreApproval, false),
+      hqDirectPublishEnabled: boolFromBody(opts.hqDirectPublishEnabled, true),
       updatedBy: actorUserId,
     });
 

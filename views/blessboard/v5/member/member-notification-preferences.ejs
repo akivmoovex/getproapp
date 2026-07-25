@@ -1,0 +1,113 @@
+<%- include('../partials/member-shell-start') %>
+<%
+  var prefs = preferences || [];
+  var avail = availability || {};
+  var contactInfo = contact || {};
+  function noticeText(n) {
+    if (n === 'saved') return 'Preferences saved.';
+    return n ? String(n) : '';
+  }
+%>
+
+<section
+  class="bb-mp-notification-prefs"
+  data-bb-member-notification-preferences="1"
+  data-bb-stitch-notifications="25-member-notifications"
+  aria-label="Notification preferences"
+>
+  <header class="bb-mp-page-head">
+    <p class="bb-mp-breadcrumb">
+      <a href="/member/notifications">Notifications</a>
+      <span aria-hidden="true">›</span>
+      <span>Preferences</span>
+    </p>
+    <h1 class="bb-mp-page-head__title">Notification preferences</h1>
+    <p class="bb-mp-lede">Choose how eligible messages reach you. In-app remains your digital letterbox.</p>
+  </header>
+
+  <% if (notice) { %><div class="bb-mp-alert bb-mp-alert--ok" role="status"><%= noticeText(notice) %></div><% } %>
+  <% if (error) { %><div class="bb-mp-alert bb-mp-alert--danger" role="alert">Could not save preferences.</div><% } %>
+
+  <div class="bb-mp-card bb-mp-notification-prefs__contact">
+    <h2 class="bb-mp-section-title">Contact channels</h2>
+    <dl class="bb-mp-dl">
+      <div><dt>Email</dt><dd><%= contactInfo.emailMasked || 'Not on file' %></dd></div>
+      <div><dt>Phone</dt><dd><%= contactInfo.phoneMasked || 'Not on file' %></dd></div>
+      <div><dt>Push devices</dt><dd>
+        <% if (contactInfo.pushStatus === 'not_available_yet') { %>Not available yet<% } else { %><%= contactInfo.pushDevices || 0 %><% } %>
+      </dd></div>
+    </dl>
+    <p class="bb-mp-muted">Update email or phone in <a href="/member/profile">account settings</a>.</p>
+  </div>
+
+  <form method="post" action="/member/notification-preferences" class="bb-mp-notification-prefs__form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+
+    <div class="bb-mp-card">
+      <h2 class="bb-mp-section-title">Presets</h2>
+      <div class="bb-mp-chip-row" role="group" aria-label="Preference presets">
+        <label class="bb-mp-chip"><input type="radio" name="preset" value="all_updates" /> All Updates</label>
+        <label class="bb-mp-chip"><input type="radio" name="preset" value="important_only" /> Important Only</label>
+        <label class="bb-mp-chip"><input type="radio" name="preset" value="in_app_only" /> In-App Only</label>
+        <label class="bb-mp-chip is-active"><input type="radio" name="preset" value="custom" checked /> Custom</label>
+      </div>
+    </div>
+
+    <div class="bb-mp-card">
+      <h2 class="bb-mp-section-title">Category channels</h2>
+      <div class="bb-mp-pref-matrix" role="table" aria-label="Notification preference matrix">
+        <div class="bb-mp-pref-matrix__head" role="row">
+          <span role="columnheader">Category</span>
+          <span role="columnheader">In-app</span>
+          <span role="columnheader">Email<%= !(avail.email && avail.email.available) ? ' (n/a)' : '' %></span>
+          <span role="columnheader">SMS<%= !(avail.sms && avail.sms.available) ? ' (n/a)' : '' %></span>
+          <span role="columnheader">Push<%= !(avail.push && avail.push.available) ? ' (n/a)' : '' %></span>
+        </div>
+        <% prefs.forEach(function (pref) { %>
+        <div class="bb-mp-pref-matrix__row" role="row">
+          <span role="rowheader"><%= (categoryLabels && categoryLabels[pref.category]) || pref.category %></span>
+          <label role="cell">
+            <span class="bb-shell-sr-only">In-app for <%= pref.category %></span>
+            <input type="checkbox" name="<%= pref.category %>__in_app" value="1" checked disabled />
+            <input type="hidden" name="<%= pref.category %>__in_app" value="1" />
+          </label>
+          <label role="cell">
+            <span class="bb-shell-sr-only">Email for <%= pref.category %></span>
+            <input type="checkbox" name="<%= pref.category %>__email" value="1"
+              <%= pref.emailEnabled ? 'checked' : '' %>
+              <%= (avail.email && avail.email.available && contactInfo.hasEmail) ? '' : 'disabled' %> />
+          </label>
+          <label role="cell">
+            <span class="bb-shell-sr-only">SMS for <%= pref.category %></span>
+            <input type="checkbox" name="<%= pref.category %>__sms" value="1"
+              <%= pref.smsEnabled ? 'checked' : '' %>
+              <%= (avail.sms && avail.sms.available && contactInfo.hasPhone) ? '' : 'disabled' %> />
+          </label>
+          <label role="cell">
+            <span class="bb-shell-sr-only">Push for <%= pref.category %></span>
+            <input type="checkbox" name="<%= pref.category %>__push" value="1"
+              <%= pref.pushEnabled ? 'checked' : '' %>
+              <%= (avail.push && avail.push.available) ? '' : 'disabled' %> />
+          </label>
+        </div>
+        <% }) %>
+      </div>
+      <% if (!(avail.sms && avail.sms.available)) { %>
+      <p class="bb-mp-hint" data-bb-channel-unavailable="sms">SMS is not available yet.</p>
+      <% } %>
+      <% if (!(avail.push && avail.push.available)) { %>
+      <p class="bb-mp-hint" data-bb-channel-unavailable="push">Push is not available yet.</p>
+      <% } %>
+      <% if (!(avail.email && avail.email.available)) { %>
+      <p class="bb-mp-hint" data-bb-channel-unavailable="email">Email delivery is not configured.</p>
+      <% } %>
+    </div>
+
+    <div class="bb-mp-notification-prefs__actions">
+      <button class="bb-mp-btn bb-mp-btn--primary" type="submit">Save preferences</button>
+      <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/notifications">Back to inbox</a>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/member-shell-end') %>

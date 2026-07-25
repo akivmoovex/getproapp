@@ -1,0 +1,11 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var lockModel = lockModel || {};
+  lockModel.lockKind = 'network';
+  lockModel.screenTitle = 'Advanced Website Feature Locked';
+%>
+<section data-bb-phase4-advanced-website-feature-locked="1" aria-label="Phase4 Advanced Website Feature Locked">
+  <p class="bb-hq-visually-hidden">Phase4 - Advanced Website Feature Locked</p>
+  <%- include('../partials/phase4-website-feature-lock', { lockModel: lockModel }) %>
+</section>
+<%- include('../partials/hq-shell-end') %>

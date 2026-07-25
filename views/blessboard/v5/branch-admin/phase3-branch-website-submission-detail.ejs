@@ -37,7 +37,16 @@
     <p class="bb-ba-lede"><%= pageTitleFromKey(sub.pageKey) %><% if (sub.sectionKey) { %> · <%= pageTitleFromKey(sub.sectionKey) %><% } %></p>
   </header>
 
-  <% if (notice === 'submitted') { %><p class="bb-ba-ok" role="status">Status: Pending review. Your HQ administrator will review these changes. The live website will not change until approval and publication.</p><% } %>
+  <% if (notice === 'submitted') { %>
+  <div class="bb-ba-panel bb-ba-phase4-sbu__success" role="status" data-bb-phase4-sbu-success="1">
+    <h2>Submission Sent</h2>
+    <p>HQ has been notified. You will receive an update once the changes are reviewed. The live website will not change until approval and publication.</p>
+    <p class="bb-ba-phase4-sbu__actions">
+      <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/website">Return to Dashboard</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= listPath %>">View submissions</a>
+    </p>
+  </div>
+  <% } %>
   <% if (notice === 'draft_saved') { %><p class="bb-ba-ok" role="status">Draft saved.</p><% } %>
   <% if (formError === 'invalid_transition') { %><p class="bb-ba-error" role="alert">This action is not available for the current status.</p><% } %>
 

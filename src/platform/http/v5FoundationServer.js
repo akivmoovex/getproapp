@@ -45,6 +45,8 @@ const { createTenantRegistrationRouter } = require("../../blessboard/http/tenant
 const { createMemberPortalRouter } = require("../../blessboard/http/memberPortalRoutes");
 const { createAnnouncementAdminRouter } = require("../../blessboard/http/announcementAdminRoutes");
 const { createAnnouncementMemberRouter } = require("../../blessboard/http/announcementMemberRoutes");
+const { createBroadcastAdminRouter } = require("../../blessboard/http/broadcastAdminRoutes");
+const { createMemberNotificationRouter } = require("../../blessboard/http/memberNotificationRoutes");
 const { createParticipationMemberRouter } = require("../../blessboard/http/participationMemberRoutes");
 const { createParticipationAdminRouter } = require("../../blessboard/http/participationAdminRoutes");
 const { createAttendanceAdminRouter } = require("../../blessboard/http/attendanceAdminRoutes");
@@ -590,6 +592,20 @@ function createV5FoundationApp(options) {
       env,
       sendUnavailable,
       mediaService,
+    })
+  );
+  app.use(
+    createMemberNotificationRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
+    createBroadcastAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
     })
   );
   app.use(

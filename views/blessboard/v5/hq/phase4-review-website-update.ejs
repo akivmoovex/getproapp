@@ -1,0 +1,267 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var sub = submission || {};
+  var labels = statusLabels || {};
+  var evLabels = eventLabels || {};
+  var comps = (comparison && comparison.fields) || [];
+  var timeline = events || [];
+  var changedCount = 0;
+  comps.forEach(function (f) { if (f.changed) changedCount += 1; });
+  function statusLabel(s) {
+    if (s === 'pending_review') return 'Waiting for Review';
+    if (s === 'withdrawn') return 'Cancelled';
+    return labels[s] || s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'pending_review') return 'bb-hq-chip--pending';
+    if (key === 'changes_requested') return 'bb-hq-chip--warn';
+    if (key === 'approved' || key === 'published') return 'bb-hq-chip--ok';
+    if (key === 'rejected') return 'bb-hq-chip--danger';
+    return 'bb-hq-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 16);
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+  function pageTitleFromKey(key) {
+    if (!key) return '—';
+    return String(key).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+  function cellValue(field, side) {
+    if (side === 'current' && field.unavailableCurrent) return 'Unavailable';
+    if (side === 'proposed' && field.unavailableProposed) return 'Unavailable';
+    var v = side === 'current' ? field.current : field.proposed;
+    if (v == null || v === '') return '—';
+    return v;
+  }
+  var listHref = typeof listPath !== 'undefined' && listPath ? listPath : '/hq/website/change-requests';
+  var actionBase = (typeof listPath !== 'undefined' && listPath ? listPath : '/hq/website/change-submissions') + '/' + encodeURIComponent(sub.id || '');
+  var priority = String(sub.priority || 'normal').toLowerCase();
+%>
+
+<section
+  class="bb-hq-phase4-rwu bb-hq-phase3-wcr"
+  data-bb-phase4-review-website-update="1"
+  data-bb-phase4-review-website-update-mobile="1"
+  data-bb-phase3-website-change-review="1"
+  aria-label="Phase4 Review Website Update"
+>
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="<%= listHref %>">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to Website Change Requests
+      </a>
+    </p>
+    <div class="bb-hq-phase4-rwu__title-row bb-hq-phase3-wcr__title-row">
+      <div>
+        <% if (priority === 'urgent' || priority === 'important') { %>
+        <p class="bb-hq-chip bb-hq-chip--warn"><%= priority === 'urgent' ? 'Urgent review' : 'Important review' %></p>
+        <% } %>
+        <h1 class="bb-hq-page-head__title">Review Website Update</h1>
+        <p class="bb-hq-visually-hidden">Review Website Changes</p>
+      </div>
+      <span class="bb-hq-chip <%= statusChip(sub.status) %>"><%= statusLabel(sub.status) %></span>
+    </div>
+    <p class="bb-hq-lede">
+      <strong><%= sub.branchName || 'Branch' %></strong>
+      · Submitted by <%= sub.submittedByName || '—' %>
+      on <%= formatWhen(sub.submittedAt) %>
+    </p>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= actionBase %>/comments">View Comments</a>
+      <% if (pagePreviewPath) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= pagePreviewPath %>" target="_blank" rel="noopener">Open preview</a>
+      <% } %>
+    </p>
+  </header>
+
+  <% if (formError === 'feedback_required') { %>
+  <p class="bb-hq-error" role="alert">Feedback is required when requesting changes.</p>
+  <% } else if (formError === 'rejection_reason_required') { %>
+  <p class="bb-hq-error" role="alert">A rejection reason is required.</p>
+  <% } else if (formError === 'invalid_transition') { %>
+  <p class="bb-hq-error" role="alert">This request cannot be reviewed in its current status.</p>
+  <% } else if (formError === 'self_approval_blocked') { %>
+  <p class="bb-hq-error" role="alert">Self-approval is blocked by network approval settings.</p>
+  <% } else if (formError) { %>
+  <p class="bb-hq-error" role="alert">The review could not be completed. Check your input and try again.</p>
+  <% } %>
+
+  <div class="bb-hq-phase4-rwu__workspace bb-hq-phase3-wcr__workspace" data-bb-phase3-wcr-workspace="1">
+    <div class="bb-hq-phase4-rwu__compare bb-hq-phase3-wcr__compare" data-bb-phase3-wcr-compare="1">
+      <div class="bb-hq-panel bb-hq-phase4-rwu__what-changed">
+        <h2 class="bb-hq-panel__title">What Changed</h2>
+        <p class="bb-hq-hint">
+          <span class="material-symbols-outlined" aria-hidden="true">rule</span>
+          <%= changedCount %> modification<%= changedCount === 1 ? '' : 's' %> detected
+        </p>
+      </div>
+
+      <div class="bb-hq-phase3-wcr__tabs" role="tablist" aria-label="Comparison panels">
+        <button type="button" class="bb-hq-phase3-wcr__tab is-active" data-bb-phase3-wcr-tab="current" aria-selected="true">Current Website</button>
+        <button type="button" class="bb-hq-phase3-wcr__tab" data-bb-phase3-wcr-tab="proposed" aria-selected="false">Requested Update</button>
+      </div>
+      <p class="bb-hq-visually-hidden">Currently Published · Proposed Changes</p>
+
+      <div class="bb-hq-phase3-wcr__panels">
+        <article class="bb-hq-panel bb-hq-phase3-wcr__panel is-active" data-bb-phase3-wcr-panel="current">
+          <h2 class="bb-hq-panel__title">Current Website</h2>
+          <% if (!comps.length) { %>
+          <p class="bb-hq-hint">No comparable fields are available for the current content.</p>
+          <% } else { %>
+          <dl class="bb-hq-phase3-wcr__fields">
+            <% comps.forEach(function (field) { %>
+            <div class="<%= field.changed ? 'bb-hq-phase3-wcr__field--changed' : '' %>">
+              <dt><%= field.label %></dt>
+              <dd><%= cellValue(field, 'current') %></dd>
+            </div>
+            <% }) %>
+          </dl>
+          <% } %>
+        </article>
+
+        <article class="bb-hq-panel bb-hq-phase3-wcr__panel" data-bb-phase3-wcr-panel="proposed">
+          <h2 class="bb-hq-panel__title">Requested Update</h2>
+          <% if (!comps.length) { %>
+          <p class="bb-hq-hint">No comparable fields are available for the proposed content.</p>
+          <% } else { %>
+          <dl class="bb-hq-phase3-wcr__fields">
+            <% comps.forEach(function (field) { %>
+            <div class="<%= field.changed ? 'bb-hq-phase3-wcr__field--changed' : '' %>">
+              <dt>
+                <%= field.label %>
+                <% if (field.changed) { %><span class="bb-hq-chip bb-hq-chip--tiny bb-hq-chip--warn">Changed</span><% } %>
+              </dt>
+              <dd><%= cellValue(field, 'proposed') %></dd>
+            </div>
+            <% }) %>
+          </dl>
+          <% } %>
+        </article>
+      </div>
+    </div>
+
+    <aside class="bb-hq-phase4-rwu__aside bb-hq-phase3-wcr__aside">
+      <div class="bb-hq-panel">
+        <h2 class="bb-hq-panel__title">Change Summary</h2>
+        <dl class="bb-hq-phase3-wcr__summary">
+          <div><dt>Page affected</dt><dd><%= pageTitleFromKey(sub.pageKey) %></dd></div>
+          <div><dt>Section affected</dt><dd><%= sub.sectionKey ? pageTitleFromKey(sub.sectionKey) : '—' %></dd></div>
+          <div><dt>Change type</dt><dd><%= sub.changeType || '—' %></dd></div>
+          <div><dt>Reason for change</dt><dd><%= sub.reason || '—' %></dd></div>
+          <div><dt>Message to reviewer</dt><dd><%= sub.submitterNote || '—' %></dd></div>
+        </dl>
+      </div>
+
+      <% if (reviewable) { %>
+      <div class="bb-hq-panel bb-hq-phase4-rwu__decision bb-hq-phase3-wcr__decision" data-bb-phase3-wcr-decision="1">
+        <h2 class="bb-hq-panel__title">Reviewer Feedback</h2>
+        <p class="bb-hq-hint" role="note">
+          Approval does not publish the live website. Use Publish Website Review after approval.
+        </p>
+
+        <form method="post" action="<%= actionBase %>/approve" class="bb-hq-form bb-hq-phase3-wcr__form">
+          <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= csrfToken %>" />
+          <div class="bb-hq-field">
+            <label for="reviewer_comment">Reviewer comment <span class="bb-hq-hint">(optional)</span></label>
+            <textarea id="reviewer_comment" name="reviewer_comment" rows="3" maxlength="2000"></textarea>
+          </div>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--primary">
+            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+            Approve
+          </button>
+          <button type="button" class="bb-hq-btn bb-hq-btn--ghost" disabled title="Approve and publish now is unavailable until content apply is supported">
+            Approve &amp; Publish
+          </button>
+        </form>
+
+        <form method="post" action="<%= actionBase %>/request-changes" class="bb-hq-form bb-hq-phase3-wcr__form">
+          <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= csrfToken %>" />
+          <div class="bb-hq-field">
+            <label for="feedback">Request changes note <span class="bb-hq-hint">(required)</span></label>
+            <textarea id="feedback" name="feedback" rows="3" maxlength="2000" required></textarea>
+          </div>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">
+            <span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span>
+            Request Changes
+          </button>
+        </form>
+
+        <form method="post" action="<%= actionBase %>/reject" class="bb-hq-form bb-hq-phase3-wcr__form" onsubmit="return confirm('Reject this website update request?');">
+          <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= csrfToken %>" />
+          <div class="bb-hq-field">
+            <label for="rejection_reason">Rejection reason <span class="bb-hq-hint">(required)</span></label>
+            <textarea id="rejection_reason" name="rejection_reason" rows="3" maxlength="2000" required></textarea>
+          </div>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--danger">
+            <span class="material-symbols-outlined" aria-hidden="true">block</span>
+            Reject Request
+          </button>
+        </form>
+      </div>
+      <% } else { %>
+      <div class="bb-hq-panel">
+        <h2 class="bb-hq-panel__title">Read-only</h2>
+        <p class="bb-hq-hint">This request can no longer be acted upon from review.</p>
+        <% if (sub.status === 'approved') { %>
+        <p><a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Go to Publish Website Review</a></p>
+        <% } %>
+        <% if (sub.reviewerComment) { %>
+        <p><strong>Reviewer comment:</strong> <%= sub.reviewerComment %></p>
+        <% } %>
+        <% if (sub.rejectionReason) { %>
+        <p><strong>Rejection reason:</strong> <%= sub.rejectionReason %></p>
+        <% } %>
+      </div>
+      <% } %>
+
+      <div class="bb-hq-panel">
+        <h2 class="bb-hq-panel__title">Timeline</h2>
+        <% if (!timeline.length) { %>
+        <p class="bb-hq-hint">No timeline events are recorded yet.</p>
+        <% } else { %>
+        <ol class="bb-hq-phase3-wcr__timeline">
+          <% timeline.forEach(function (ev) { %>
+          <li>
+            <strong><%= evLabels[ev.eventType] || ev.eventType %></strong>
+            <span class="bb-hq-hint"><%= formatWhen(ev.createdAt) %></span>
+            <% if (ev.comment) { %><p><%= ev.comment %></p><% } %>
+          </li>
+          <% }) %>
+        </ol>
+        <% } %>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-bb-phase3-wcr-compare="1"]');
+  if (!root) return;
+  var tabs = root.querySelectorAll('[data-bb-phase3-wcr-tab]');
+  var panels = root.querySelectorAll('[data-bb-phase3-wcr-panel]');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var key = tab.getAttribute('data-bb-phase3-wcr-tab');
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.classList.toggle('is-active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panels.forEach(function (p) {
+        p.classList.toggle('is-active', p.getAttribute('data-bb-phase3-wcr-panel') === key);
+      });
+    });
+  });
+})();
+</script>
+
+<%- include('../partials/hq-shell-end') %>

@@ -128,6 +128,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
     settings: "Church settings",
     account: "Account",
     content: "Website",
+    broadcasts: "Broadcast Center",
     announcements: "Announcements",
     participation: "Participation",
     attendance: "Attendance",

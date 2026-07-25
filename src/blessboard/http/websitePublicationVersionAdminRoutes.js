@@ -16,6 +16,18 @@ const { publicChurchHomePath } = require("../urls/churchUrlHelper");
 const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
 const versionSvc = require("../services/websitePublicationVersionService");
 const versionRepo = require("../repositories/websitePublicationVersionRepository");
+const {
+  renderWebsiteFeatureLocked,
+  checkWebsiteCapability,
+  planEntitlementSvc,
+} = require("./websitePlanEntitlementHttp");
+const {
+  buildVersionHistoryErrorState,
+  buildVersionHistoryEmptyState,
+  createNetworkGovernanceRoleGate,
+  renderSystemStatePage,
+  retryHrefFromRequest,
+} = require("./websiteSystemStateHttp");
 
 function renderHqView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -81,28 +93,11 @@ function createWebsitePublicationVersionAdminRouter(deps) {
   const env = deps.env || process.env;
   const isProduction = String(env.NODE_ENV || "") === "production";
 
-  const requireHq = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
-
   const rejectApex = createRejectApex({
     isApexHost,
     mode: "unlessTenant",
     sendUnavailable: (req, res) => sendControlled(req, res, 404, "Not found on this host."),
   });
-
-  function gateHq(req, res, next) {
-    const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
-    if (!sessionOk) {
-      const wantsHtml = String(req.get("accept") || "").includes("text/html");
-      if (wantsHtml) {
-        return res.redirect(303, "/login?next=/hq/website/version-history");
-      }
-      return sendControlled(req, res, 401, "Sign-in is required.");
-    }
-    return requireHq(req, res, next);
-  }
 
   async function shellLocals(req, res, extras) {
     return buildHqAdminShellLocals(req, res, {
@@ -115,17 +110,52 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     });
   }
 
+  const gateHq = createNetworkGovernanceRoleGate({
+    getPool,
+    shellLocalsFn: shellLocals,
+    sendControlled,
+    loginNext: "/hq/website/version-history",
+    createRequireBlessBoardTenantRole,
+  });
+
   function requireTenant(req, res) {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.organization || !tenant.organization.id) {
       sendControlled(req, res, 403, "You do not have access to this site.");
       return null;
     }
+    if (!tenant.church || !tenant.church.id) {
+      sendControlled(req, res, 403, "You do not have access to this site.");
+      return null;
+    }
+    return tenant;
+  }
+
+  async function requireNetworkHistory(req, res) {
+    const tenant = requireTenant(req, res);
+    if (!tenant) return null;
+    const entitled = await checkWebsiteCapability(
+      getPool,
+      tenant,
+      "website.network_version_history",
+      env
+    );
+    if (!entitled.ok && entitled.status === planEntitlementSvc.STATUS.NOT_ENTITLED) {
+      await renderWebsiteFeatureLocked(req, res, shellLocals, entitled, {
+        featureTitle: "Network Website Version History",
+        returnHref: "/hq/website",
+      });
+      return null;
+    }
+    if (!entitled.ok) {
+      sendControlled(req, res, 503, "Version history is temporarily unavailable.");
+      return null;
+    }
     return tenant;
   }
 
   router.get("/hq/website/version-history", rejectApex, gateHq, async (req, res) => {
-    const tenant = requireTenant(req, res);
+    const tenant = await requireNetworkHistory(req, res);
     if (!tenant) return;
 
     const result = await versionSvc.loadVersionHistory(getPool(), {
@@ -138,7 +168,21 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     });
 
     if (!result.ok) {
-      return sendControlled(req, res, 503, "Version history is temporarily unavailable.");
+      if (typeof console !== "undefined" && console.error) {
+        console.error("[website-version-history] load failed", {
+          status: result.status || null,
+        });
+      }
+      const listPath = "/hq/website/version-history";
+      return renderSystemStatePage(
+        req,
+        res,
+        shellLocals,
+        buildVersionHistoryErrorState({
+          retryHref: retryHrefFromRequest(req, listPath),
+        }),
+        { statusCode: 503, pageTitle: "Something went wrong" }
+      );
     }
 
     const orgKey =
@@ -146,9 +190,9 @@ function createWebsitePublicationVersionAdminRouter(deps) {
       null;
     const notice = String((req.query && req.query.notice) || "") || null;
     const html = await renderHqView(
-      "hq/phase3-website-version-history.ejs",
+      "hq/phase4-network-website-version-history.ejs",
       await shellLocals(req, res, {
-        pageTitle: "Website Version History",
+        pageTitle: "Network Website Version History",
         items: result.items,
         total: result.total,
         current: result.current,
@@ -159,6 +203,65 @@ function createWebsitePublicationVersionAdminRouter(deps) {
         sourceLabels: result.sourceLabels,
         livePreviewPath: publicChurchHomePath(orgKey),
         detailId: String((req.query && req.query.detail) || "") || null,
+        historyListPath: "/hq/website/version-history",
+        emptyState: buildVersionHistoryEmptyState(),
+        notice,
+      })
+    );
+    return res.type("html").send(html);
+  });
+
+  router.get("/hq/website/network-version-history", rejectApex, gateHq, async (req, res) => {
+    const tenant = await requireNetworkHistory(req, res);
+    if (!tenant) return;
+
+    const result = await versionSvc.loadVersionHistory(getPool(), {
+      organizationId: tenant.organization.id,
+      status: req.query && req.query.status,
+      publishedBy: req.query && req.query.publisher,
+      themeKey: req.query && req.query.theme,
+      from: req.query && req.query.from,
+      to: req.query && req.query.to,
+    });
+
+    if (!result.ok) {
+      if (typeof console !== "undefined" && console.error) {
+        console.error("[website-network-version-history] load failed", {
+          status: result.status || null,
+        });
+      }
+      const listPath = "/hq/website/network-version-history";
+      return renderSystemStatePage(
+        req,
+        res,
+        shellLocals,
+        buildVersionHistoryErrorState({
+          retryHref: retryHrefFromRequest(req, listPath),
+        }),
+        { statusCode: 503, pageTitle: "Something went wrong" }
+      );
+    }
+
+    const orgKey =
+      (tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
+      null;
+    const notice = String((req.query && req.query.notice) || "") || null;
+    const html = await renderHqView(
+      "hq/phase4-network-website-version-history.ejs",
+      await shellLocals(req, res, {
+        pageTitle: "Network Website Version History",
+        items: result.items,
+        total: result.total,
+        current: result.current,
+        publishers: result.publishers,
+        themeKeys: result.themeKeys,
+        filters: result.filters,
+        statusLabels: result.statusLabels,
+        sourceLabels: result.sourceLabels,
+        livePreviewPath: publicChurchHomePath(orgKey),
+        detailId: String((req.query && req.query.detail) || "") || null,
+        historyListPath: "/hq/website/network-version-history",
+        emptyState: buildVersionHistoryEmptyState(),
         notice,
       })
     );
@@ -166,7 +269,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
   });
 
   router.get("/hq/website/version-history/compare", rejectApex, gateHq, async (req, res) => {
-    const tenant = requireTenant(req, res);
+    const tenant = await requireNetworkHistory(req, res);
     if (!tenant) return;
 
     const q = req.query || {};
@@ -428,6 +531,284 @@ function createWebsitePublicationVersionAdminRouter(deps) {
       })
     );
     return res.type("html").send(html);
+  });
+
+  router.get("/hq/website/recent-changes", rejectApex, gateHq, async (req, res) => {
+    const tenant = requireTenant(req, res);
+    if (!tenant) return;
+    if (!tenant.church || !tenant.church.id) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+
+    const result = await versionSvc.loadGrowthRecentWebsiteChanges(getPool(), {
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      organizationKey: (tenant.organization && tenant.organization.key) || null,
+      env,
+    });
+    if (!result.ok) {
+      if (result.reason === "plan_not_growth") {
+        const entitled = {
+          ok: false,
+          status: planEntitlementSvc.STATUS.NOT_ENTITLED,
+          planKey: result.planKey || "foundation",
+          requiredPlanKey: "growth",
+          lockKind: "growth",
+        };
+        return renderWebsiteFeatureLocked(req, res, shellLocals, entitled, {
+          featureTitle: "Recent Website Changes",
+          returnHref: "/hq/website",
+        });
+      }
+      return sendControlled(req, res, 503, "Recent website changes are temporarily unavailable.");
+    }
+
+    const html = await renderHqView(
+      "hq/phase4-recent-website-changes.ejs",
+      await shellLocals(req, res, {
+        pageTitle: "Recent Website Changes",
+        recent: result,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get(
+    "/hq/website/recent-changes/:publicationId/preview",
+    rejectApex,
+    gateHq,
+    async (req, res) => {
+      const tenant = requireTenant(req, res);
+      if (!tenant) return;
+      if (!tenant.church || !tenant.church.id) {
+        return sendControlled(req, res, 403, "You do not have access to this site.");
+      }
+
+      const result = await versionSvc.loadGrowthPreviousWebsitePreview(getPool(), {
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        publicationId: req.params.publicationId,
+        organizationKey: (tenant.organization && tenant.organization.key) || null,
+        env,
+      });
+      if (!result.ok) {
+        if (result.reason === "plan_not_growth") {
+          return sendControlled(
+            req,
+            res,
+            404,
+            "Previous Website Preview is available on the Growth plan."
+          );
+        }
+        if (result.reason === "is_current") {
+          return res.redirect(303, result.redirectTo || "/hq/website/recent-changes");
+        }
+        if (result.status === versionSvc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Previous website not found.");
+        }
+        return sendControlled(req, res, 400, "Unable to preview this website.");
+      }
+
+      const html = await renderHqView(
+        "hq/phase4-previous-website-preview.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Previous Website Preview",
+          preview: result,
+          robotsNoIndex: true,
+        })
+      );
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/hq/website/recent-changes/:publicationId/restore",
+    rejectApex,
+    gateHq,
+    async (req, res) => {
+      const tenant = requireTenant(req, res);
+      if (!tenant) return;
+      if (!tenant.church || !tenant.church.id) {
+        return sendControlled(req, res, 403, "You do not have access to this site.");
+      }
+
+      const result = await versionSvc.prepareGrowthRestorePreviousWebsite(getPool(), {
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        publicationId: req.params.publicationId,
+        organizationKey: (tenant.organization && tenant.organization.key) || null,
+        env,
+      });
+      if (!result.ok) {
+        if (result.reason === "plan_not_growth" || result.reason === "not_eligible_backup") {
+          return sendControlled(req, res, 404, "This website cannot be restored.");
+        }
+        if (result.status === versionSvc.STATUS.NOT_FOUND || result.reason === "is_current") {
+          return sendControlled(req, res, 404, "Previous website not found.");
+        }
+        return sendControlled(req, res, 400, "Unable to open restoration.");
+      }
+
+      if (result.existingRestoredDraft) {
+        return res.redirect(303, "/hq/website/restored-draft");
+      }
+
+      const formError = String((req.query && req.query.error) || "") || null;
+      const html = await renderHqView(
+        "hq/phase4-restore-previous-website.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Restore Previous Website",
+          restore: result,
+          formError,
+          publicationId: req.params.publicationId,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/hq/website/recent-changes/:publicationId/restore",
+    rejectApex,
+    gateHq,
+    async (req, res) => {
+      const tenant = requireTenant(req, res);
+      if (!tenant) return;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+      }
+      const userId = actorUserId(req);
+      if (!userId) {
+        return sendControlled(req, res, 401, "Sign-in is required.");
+      }
+      if (!tenant.church || !tenant.church.id) {
+        return sendControlled(req, res, 403, "Church context is required.");
+      }
+
+      const body = req.body || {};
+      const themeChoice =
+        body.theme_choice === "use_previous" ? "use_previous" : "keep_current";
+      const result = await versionSvc.createGrowthRestoredWebsiteDraft(getPool(), {
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        publicationId: req.params.publicationId,
+        actorUserId: userId,
+        themeChoice,
+        restorationNote: body.restoration_note || body.restoration_reason || null,
+        confirmed:
+          body.confirm_restore === "1" ||
+          body.confirm_restore === "on" ||
+          body.confirm_draft === "1" ||
+          body.confirm_draft === "on",
+        organizationKey: (tenant.organization && tenant.organization.key) || null,
+        env,
+      });
+
+      if (!result.ok) {
+        if (result.reason === "draft_conflict") {
+          return res.redirect(
+            303,
+            `/hq/website/recent-changes/${encodeURIComponent(
+              req.params.publicationId
+            )}/restore?error=${encodeURIComponent(
+              result.message ||
+                "You already have unpublished website changes. Finish or discard them before restoring a previous website."
+            )}`
+          );
+        }
+        if (
+          result.reason === "plan_not_growth" ||
+          result.reason === "not_eligible_backup" ||
+          result.status === versionSvc.STATUS.NOT_FOUND
+        ) {
+          return sendControlled(req, res, 404, "This website cannot be restored.");
+        }
+        const reasonMap = {
+          confirmation: "Confirm that this will create a draft before continuing.",
+          restoration_reason: "Add a short restoration note, or leave the default.",
+          snapshot_incomplete: "This saved website cannot be restored safely.",
+        };
+        const msg = reasonMap[result.reason] || "Unable to create restored draft.";
+        return res.redirect(
+          303,
+          `/hq/website/recent-changes/${encodeURIComponent(
+            req.params.publicationId
+          )}/restore?error=${encodeURIComponent(msg)}`
+        );
+      }
+
+      return res.redirect(303, result.redirectTo || "/hq/website/restored-draft");
+    }
+  );
+
+  router.get("/hq/website/restored-draft", rejectApex, gateHq, async (req, res) => {
+    const tenant = requireTenant(req, res);
+    if (!tenant) return;
+    if (!tenant.church || !tenant.church.id) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+
+    const result = await versionSvc.loadGrowthRestoredWebsiteDraftReview(getPool(), {
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      organizationKey: (tenant.organization && tenant.organization.key) || null,
+      actorUserId: actorUserId(req),
+      env,
+    });
+    if (!result.ok) {
+      if (result.reason === "plan_not_growth") {
+        return sendControlled(req, res, 404, "Restored drafts are available on the Growth plan.");
+      }
+      if (result.reason === "no_restored_draft") {
+        return res.redirect(303, "/hq/website/recent-changes");
+      }
+      return sendControlled(req, res, 503, "Restored draft review is temporarily unavailable.");
+    }
+
+    const html = await renderHqView(
+      "hq/phase4-restored-website-draft-review.ejs",
+      await shellLocals(req, res, {
+        pageTitle: "Restored Website Draft",
+        review: result,
+        notice: String((req.query && req.query.notice) || "") || null,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post("/hq/website/restored-draft/discard", rejectApex, gateHq, async (req, res) => {
+    const tenant = requireTenant(req, res);
+    if (!tenant) return;
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    const userId = actorUserId(req);
+    if (!userId) {
+      return sendControlled(req, res, 401, "Sign-in is required.");
+    }
+    if (!tenant.church || !tenant.church.id) {
+      return sendControlled(req, res, 403, "Church context is required.");
+    }
+
+    const result = await versionSvc.discardGrowthRestoredWebsiteDraft(getPool(), {
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      actorUserId: userId,
+      env,
+    });
+    if (!result.ok) {
+      if (result.reason === "plan_not_growth") {
+        return sendControlled(req, res, 404, "Not found.");
+      }
+      return res.redirect(303, "/hq/website/restored-draft?notice=discard_failed");
+    }
+    return res.redirect(
+      303,
+      `${result.redirectTo || "/hq/website/recent-changes"}?notice=draft_discarded`
+    );
   });
 
   return router;

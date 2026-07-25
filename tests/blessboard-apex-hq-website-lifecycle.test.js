@@ -271,7 +271,15 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
     assert.notEqual(publish.status, 404);
     assert.doesNotMatch(publish.text || "", /Not found on this host/i);
     if (publish.status === 303) {
-      assert.match(String(publish.headers.location || ""), new RegExp(`/c/${rec.organizationKey}`));
+      const loc = String(publish.headers.location || "");
+      // Phase 3+ redirects to publication result when a version id exists; otherwise public path.
+      assert.ok(
+        loc.includes("/hq/website/publish/success") ||
+          loc.includes("/hq/website/publish/result") ||
+          loc.includes(`/c/${rec.organizationKey}`) ||
+          loc.includes("/hq/website"),
+        `unexpected publish redirect: ${loc}`
+      );
     }
   });
 

@@ -46,6 +46,7 @@ function buildMemberShellLocals(req, res, opts) {
   const defaultTitles = {
     home: "Dashboard",
     profile: "Profile",
+    notifications: "Notifications",
     announcements: "Announcements",
     events: "Events",
     ministries: "Ministries",

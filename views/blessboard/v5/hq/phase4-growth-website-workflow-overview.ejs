@@ -1,0 +1,191 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var o = overview || {};
+  var counts = o.counts || {};
+  var attention = o.needsAttention || [];
+  var recent = o.recentSubmissions || [];
+  var changes = o.recentWebsiteChanges || [];
+  var draft = o.draftPanel || {};
+  var guide = o.workflowGuide || ['Edit', 'Submit', 'Review', 'Publish'];
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-website bb-phase4-website--growth"
+  data-bb-phase4-growth-website-workflow-overview="1"
+  data-bb-stitch-screen="Phase4 - Growth Website Workflow Overview"
+  data-bb-viewport="responsive"
+  aria-label="Website Overview"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <span>Website</span>
+      </p>
+      <h1 class="bb-hq-page-head__title"><%= o.title || 'Website Overview' %></h1>
+      <p class="bb-hq-lede"><%= o.subtitle || 'Manage website updates from your church and branches' %></p>
+    </div>
+    <p class="bb-hq-page-head__actions bb-phase4-website__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath || '/hq/content' %>">Edit Website</a>
+      <% if (o.liveAvailable && o.publicPath) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.publicPath %>" rel="noopener">View Live Website</a>
+      <% } else { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Website</a>
+      <% } %>
+    </p>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+  <div class="bb-hq-alert bb-hq-alert--ok" role="status"><%= notice %></div>
+  <% } %>
+
+  <% if (o.restoredDraft) { %>
+  <div class="bb-phase4-website__draft-notice" data-bb-phase4-restored-draft-notice="1" role="status">
+    <div>
+      <p class="bb-phase4-website__draft-notice-title"><%= o.restoredDraft.label || 'A restored website draft is ready for review.' %></p>
+    </div>
+    <p class="bb-phase4-website__draft-notice-actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.restoredDraft.href || '/hq/website/restored-draft' %>">Review Draft</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.restoredDraft.previewHref || '/hq/content/preview/home' %>">Preview Draft</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.restoredDraft.editHref || '/hq/content' %>">Continue Editing</a>
+    </p>
+  </div>
+  <% } %>
+
+  <nav class="bb-phase4-website__guide" aria-label="Workflow guide">
+    <ol>
+      <% guide.forEach(function (step, idx) { %>
+      <li<%= idx === 0 ? ' class="is-current"' : '' %>><span><%= step %></span></li>
+      <% }) %>
+    </ol>
+    <p class="bb-hq-hint">Explanatory only — not live progress.</p>
+  </nav>
+
+  <div class="bb-phase4-website__summary" role="list" aria-label="Workflow summary">
+    <article class="bb-hq-card" role="listitem" data-bb-phase4-count="draft">
+      <p class="bb-phase4-website__count-label">Draft Changes</p>
+      <p class="bb-phase4-website__count-value"><%= counts.draftChanges || 0 %></p>
+    </article>
+    <article class="bb-hq-card" role="listitem" data-bb-phase4-count="waiting">
+      <p class="bb-phase4-website__count-label">Waiting for Review</p>
+      <p class="bb-phase4-website__count-value"><%= counts.waitingForReview || 0 %></p>
+    </article>
+    <article class="bb-hq-card" role="listitem" data-bb-phase4-count="requested">
+      <p class="bb-phase4-website__count-label">Changes Requested</p>
+      <p class="bb-phase4-website__count-value"><%= counts.changesRequested || 0 %></p>
+    </article>
+    <article class="bb-hq-card" role="listitem" data-bb-phase4-count="ready">
+      <p class="bb-phase4-website__count-label">Ready to Publish</p>
+      <p class="bb-phase4-website__count-value"><%= counts.readyToPublish || 0 %></p>
+    </article>
+  </div>
+
+  <div class="bb-phase4-website__growth-grid">
+    <div class="bb-phase4-website__main-col">
+      <section class="bb-hq-card" data-bb-phase4-draft-panel="1">
+        <h2 class="bb-hq-section-title">Website draft</h2>
+        <% if (draft.hasDraft) { %>
+        <p><%= draft.summary || 'Unpublished website changes are available.' %></p>
+        <p class="bb-hq-muted">Last edited <%= formatWhen(draft.lastEditedAt) %><% if (draft.themeKey) { %> · Theme <%= draft.themeKey %><% } %></p>
+        <p class="bb-phase4-website__inline-actions">
+          <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
+          <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath %>">Continue Editing</a>
+        </p>
+        <% } else { %>
+        <p class="bb-hq-empty" data-bb-phase4-empty="draft">There are no unpublished website changes.</p>
+        <% } %>
+      </section>
+
+      <section class="bb-hq-card" data-bb-phase4-recent-submissions="1">
+        <div class="bb-phase4-website__section-head">
+          <h2 class="bb-hq-section-title">Recent branch submissions</h2>
+          <a href="/hq/website/change-requests">View all</a>
+        </div>
+        <% if (!recent.length) { %>
+        <p class="bb-hq-empty" data-bb-phase4-empty="submissions">No branch updates are waiting for review.</p>
+        <% } else { %>
+        <ul class="bb-phase4-website__card-list">
+          <% recent.forEach(function (item) { %>
+          <li>
+            <div>
+              <strong><%= item.title %></strong>
+              <p class="bb-hq-muted">
+                <%= item.branchName || 'Church' %>
+                · <%= item.statusLabel %>
+                · <%= item.submittedByName || '—' %>
+                · <%= formatWhen(item.submittedAt) %>
+              </p>
+            </div>
+            <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= item.href %>">Review</a>
+          </li>
+          <% }) %>
+        </ul>
+        <% } %>
+      </section>
+
+      <section class="bb-hq-card" data-bb-phase4-recent-website-changes="1">
+        <div class="bb-phase4-website__section-head">
+          <h2 class="bb-hq-section-title">Recent Website Changes</h2>
+          <a href="<%= o.recentChangesPath || '/hq/website/recent-changes' %>">View all</a>
+        </div>
+        <% if (!changes.length) { %>
+        <p class="bb-hq-empty" data-bb-phase4-empty="publications">No recent website publications are available.</p>
+        <% } else { %>
+        <ul class="bb-phase4-website__card-list">
+          <% changes.forEach(function (item) { %>
+          <li>
+            <div>
+              <strong><%= item.summary %></strong>
+              <p class="bb-hq-muted">
+                <%= formatWhen(item.publishedAt) %>
+                · by <%= item.publishedByName || '—' %>
+                <% if (item.pagesAffected && item.pagesAffected.length) { %>
+                · <%= item.pagesAffected.length %> page<%= item.pagesAffected.length === 1 ? '' : 's' %>
+                <% } %>
+              </p>
+            </div>
+            <p class="bb-phase4-website__inline-actions">
+              <% if (item.previewHref) { %><a class="bb-hq-btn bb-hq-btn--ghost" href="<%= item.previewHref %>">Preview</a><% } %>
+              <% if (item.restoreAvailable && item.restoreHref) { %><a class="bb-hq-btn bb-hq-btn--ghost" href="<%= item.restoreHref %>">Restore as Draft</a><% } %>
+            </p>
+          </li>
+          <% }) %>
+        </ul>
+        <% } %>
+      </section>
+    </div>
+
+    <aside class="bb-hq-card bb-phase4-website__attention" data-bb-phase4-needs-attention="1">
+      <h2 class="bb-hq-section-title">Needs Attention</h2>
+      <% if (!attention.length) { %>
+      <p class="bb-hq-empty">No branch updates are waiting for review.</p>
+      <% } else { %>
+      <ul class="bb-phase4-website__attention-list">
+        <% attention.forEach(function (item) { %>
+        <li>
+          <strong><%= item.label %></strong>
+          <% if (item.meta) { %><p class="bb-hq-muted"><%= item.meta %></p><% } %>
+          <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= item.href %>"><%= item.actionLabel || 'Open' %></a>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </aside>
+  </div>
+
+  <p class="bb-phase4-website__sticky-edit">
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath || '/hq/content' %>">Edit Website</a>
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

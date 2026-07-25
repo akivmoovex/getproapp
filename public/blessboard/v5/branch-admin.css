@@ -5482,3 +5482,92 @@ body.bb-ba-drawer-open {
   .bb-ba-phase3-bws__cards { display: grid; }
   .bb-ba-phase3-bws-detail__compare { grid-template-columns: 1fr; }
 }
+
+/* --- Phase4 Stage 1 branch website overview --- */
+.bb-phase4-website--branch .bb-phase4-website__card-list,
+.bb-phase4-website--branch .bb-phase4-website__dl {
+  margin-top: 0.75rem;
+}
+.bb-phase4-website__feedback {
+  border-left: 4px solid var(--bb-violet, #6c5ce7);
+}
+.bb-phase4-website__comment {
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 1rem;
+  background: #f5f6f8;
+  border-radius: 0.75rem;
+  white-space: pre-wrap;
+}
+.bb-phase4-website--branch .bb-phase4-website__sticky-edit {
+  position: sticky;
+  bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  margin-top: 1.25rem;
+  z-index: 3;
+}
+@media (min-width: 900px) {
+  .bb-phase4-website--branch .bb-phase4-website__sticky-edit { display: none; }
+}
+.bb-ba-page-head--split {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (min-width: 800px) {
+  .bb-ba-page-head--split {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}
+.bb-ba-page-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Phase4 Submit Branch Website Update (mobile-first) */
+.bb-ba-phase4-sbu__diffs {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.bb-ba-phase4-sbu__diffs li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #faf8f5;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.bb-ba-phase4-sbu__diffs .material-symbols-outlined {
+  font-size: 1rem;
+}
+.bb-ba-phase4-sbu__safety {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+  margin: 0.75rem 0 0;
+  color: #4b5563;
+}
+.bb-ba-phase4-sbu__success {
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+.bb-ba-phase4-sbu__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.bb-ba-phase4-sbu__sticky {
+  position: sticky;
+  bottom: 0;
+  padding: 0.75rem 0 0.25rem;
+  background: linear-gradient(180deg, transparent, #fff 35%);
+  z-index: 2;
+}

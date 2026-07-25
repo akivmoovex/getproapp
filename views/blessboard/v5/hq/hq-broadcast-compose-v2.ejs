@@ -1,0 +1,207 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var formData = form || {};
+  var availability = channelAvailability || {};
+  function errorText(e) {
+    if (e === 'empty_audience') return 'No eligible members matched this audience.';
+    if (e === 'message_type_reserved') return 'System notices and giving receipts cannot be created manually.';
+    if (e === 'call_to_action_url' || e === 'call_to_action_url_https_required' || e === 'call_to_action_pair') {
+      return 'Provide a valid call-to-action label and https (or site path) URL together.';
+    }
+    if (e === 'in_app_required') return 'In-app delivery is required because it is the canonical letterbox.';
+    if (e === 'body_html_not_allowed' || e === 'title_html_not_allowed') return 'HTML is not allowed in message fields.';
+    return e ? 'Please check the form and try again (' + e + ').' : '';
+  }
+%>
+
+<section
+  class="bb-hq-broadcast-compose"
+  data-bb-hq-broadcast-compose="1"
+  data-bb-stitch-broadcast="61-hq-broadcast-center-v2"
+  aria-label="Create broadcast message"
+>
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/broadcasts">Broadcast Center</a>
+      <span aria-hidden="true">›</span>
+      <span>Create Message</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Create Message</h1>
+    <p class="bb-hq-lede">Compose a church communication. In-app notifications are always created for eligible members.</p>
+  </header>
+
+  <% if (error) { %>
+  <div class="bb-hq-alert bb-hq-alert--danger" role="alert"><%= errorText(error) %></div>
+  <% } %>
+
+  <form class="bb-hq-form bb-hq-broadcast-compose__form" method="post" action="/hq/broadcasts/send">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+
+    <div class="bb-hq-broadcast-compose__grid">
+      <div class="bb-hq-card">
+        <h2 class="bb-hq-section-title">Message</h2>
+        <label class="bb-hq-field">
+          <span class="bb-hq-label">Title</span>
+          <input class="bb-hq-input" name="title" required maxlength="200" value="<%= formData.title || '' %>" />
+        </label>
+        <label class="bb-hq-field">
+          <span class="bb-hq-label">Short preview</span>
+          <input class="bb-hq-input" name="preview_text" maxlength="500" value="<%= formData.preview_text || '' %>" />
+        </label>
+        <label class="bb-hq-field">
+          <span class="bb-hq-label">Full message</span>
+          <textarea class="bb-hq-input bb-hq-input--area" name="body" required maxlength="20000" rows="10"><%= formData.body || '' %></textarea>
+          <span class="bb-hq-hint">Plain text. Optional: **bold**, _italic_, - lists, and [label](https://…) links.</span>
+        </label>
+        <div class="bb-hq-form-row">
+          <label class="bb-hq-field">
+            <span class="bb-hq-label">Message type</span>
+            <select class="bb-hq-input" name="message_type" required>
+              <% (messageTypes || []).forEach(function (t) { %>
+              <option value="<%= t %>" <%= formData.message_type === t ? 'selected' : '' %>><%= (typeLabels && typeLabels[t]) || t %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label class="bb-hq-field">
+            <span class="bb-hq-label">Priority</span>
+            <select class="bb-hq-input" name="priority">
+              <% ['normal','important','urgent'].forEach(function (p) { %>
+              <option value="<%= p %>" <%= (formData.priority || 'normal') === p ? 'selected' : '' %>><%= (priorityLabels && priorityLabels[p]) || p %></option>
+              <% }) %>
+            </select>
+          </label>
+        </div>
+        <label class="bb-hq-field">
+          <span class="bb-hq-label">Sender display name</span>
+          <input class="bb-hq-input" name="sender_display_name" required maxlength="120" value="<%= formData.sender_display_name || '' %>" />
+        </label>
+        <div class="bb-hq-form-row">
+          <label class="bb-hq-field">
+            <span class="bb-hq-label">Call-to-action label</span>
+            <input class="bb-hq-input" name="call_to_action_label" maxlength="100" value="<%= formData.call_to_action_label || '' %>" />
+          </label>
+          <label class="bb-hq-field">
+            <span class="bb-hq-label">Call-to-action URL</span>
+            <input class="bb-hq-input" name="call_to_action_url" maxlength="2000" placeholder="https://… or /member/…" value="<%= formData.call_to_action_url || '' %>" />
+          </label>
+        </div>
+      </div>
+
+      <aside class="bb-hq-broadcast-compose__side">
+        <div class="bb-hq-card">
+          <h2 class="bb-hq-section-title">Audience</h2>
+          <label class="bb-hq-field">
+            <span class="bb-hq-label">Audience type</span>
+            <select class="bb-hq-input" name="audience_type" id="bb-audience-type">
+              <option value="all_active_members" selected>All active members</option>
+              <option value="branches">Selected branches</option>
+              <option value="ministries">Selected ministries</option>
+              <option value="members">Specific members</option>
+              <option value="roles">Selected roles</option>
+              <option value="event_attendees">Event attendees</option>
+            </select>
+          </label>
+          <label class="bb-hq-field" data-audience-panel="branches">
+            <span class="bb-hq-label">Branches</span>
+            <select class="bb-hq-input" name="branch_ids" multiple size="4">
+              <% (branches || []).forEach(function (b) { %>
+              <option value="<%= b.id %>"><%= b.displayName || b.name || b.id %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label class="bb-hq-field" data-audience-panel="ministries">
+            <span class="bb-hq-label">Ministries</span>
+            <select class="bb-hq-input" name="ministry_ids" multiple size="4">
+              <% (ministries || []).forEach(function (m) { %>
+              <option value="<%= m.id %>"><%= m.title || m.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label class="bb-hq-field" data-audience-panel="members">
+            <span class="bb-hq-label">Member IDs</span>
+            <textarea class="bb-hq-input bb-hq-input--area" name="member_ids" rows="3" placeholder="One UUID per line"></textarea>
+          </label>
+          <label class="bb-hq-field" data-audience-panel="roles">
+            <span class="bb-hq-label">Roles</span>
+            <select class="bb-hq-input" name="role_keys" multiple size="3">
+              <option value="branch_admin">Branch administrators</option>
+              <option value="church_hq_admin">HQ administrators</option>
+            </select>
+          </label>
+          <label class="bb-hq-field" data-audience-panel="event_attendees">
+            <span class="bb-hq-label">Event</span>
+            <select class="bb-hq-input" name="event_id">
+              <option value="">Select event</option>
+              <% (events || []).forEach(function (ev) { %>
+              <option value="<%= ev.id %>"><%= ev.title %></option>
+              <% }) %>
+            </select>
+          </label>
+          <p class="bb-hq-hint">Recipient estimate uses live membership data for this church only.</p>
+        </div>
+
+        <div class="bb-hq-card">
+          <h2 class="bb-hq-section-title">Delivery channels</h2>
+          <label class="bb-hq-check">
+            <input type="checkbox" checked disabled /> In-app <span class="bb-hq-hint">(required)</span>
+          </label>
+          <input type="hidden" name="channel_in_app" value="1" />
+          <label class="bb-hq-check">
+            <input type="checkbox" name="channel_email" value="1" <%= formData.channel_email ? 'checked' : '' %> <%= availability.email && availability.email.available ? '' : 'disabled' %> />
+            Email
+            <% if (!(availability.email && availability.email.available)) { %>
+            <span class="bb-hq-hint">— not configured</span>
+            <% } %>
+          </label>
+          <label class="bb-hq-check">
+            <input type="checkbox" name="channel_sms" value="1" <%= formData.channel_sms ? 'checked' : '' %> <%= availability.sms && availability.sms.available ? '' : 'disabled' %> />
+            SMS
+            <% if (!(availability.sms && availability.sms.available)) { %>
+            <span class="bb-hq-hint">— not available yet</span>
+            <% } %>
+          </label>
+          <label class="bb-hq-check">
+            <input type="checkbox" name="channel_push" value="1" <%= formData.channel_push ? 'checked' : '' %> <%= availability.push && availability.push.available ? '' : 'disabled' %> />
+            Push
+            <% if (!(availability.push && availability.push.available)) { %>
+            <span class="bb-hq-hint">— not available yet</span>
+            <% } %>
+          </label>
+          <% if (jobsEnabled) { %>
+          <label class="bb-hq-field">
+            <span class="bb-hq-label">Schedule (optional)</span>
+            <input class="bb-hq-input" type="datetime-local" name="scheduled_at" />
+          </label>
+          <% } else { %>
+          <p class="bb-hq-hint">Scheduling is available when background jobs are enabled.</p>
+          <% } %>
+        </div>
+      </aside>
+    </div>
+
+    <div class="bb-hq-broadcast-compose__actions">
+      <button class="bb-hq-btn bb-hq-btn--ghost" type="submit" formaction="/hq/broadcasts/draft" formmethod="post">Save Draft</button>
+      <button class="bb-hq-btn bb-hq-btn--primary" type="submit">Send Now</button>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/broadcasts">Cancel</a>
+    </div>
+  </form>
+</section>
+
+<script>
+(function () {
+  var select = document.getElementById('bb-audience-type');
+  if (!select) return;
+  function sync() {
+    var value = select.value;
+    document.querySelectorAll('[data-audience-panel]').forEach(function (el) {
+      el.hidden = el.getAttribute('data-audience-panel') !== value;
+    });
+  }
+  select.addEventListener('change', sync);
+  sync();
+})();
+</script>
+
+<%- include('../partials/hq-shell-end') %>

@@ -1,0 +1,126 @@
+<%- include('../partials/member-shell-start') %>
+<%
+  var rows = items || [];
+  var activeCategory = category || 'all';
+  function typeLabel(key) { return (typeLabels && typeLabels[key]) || key || ''; }
+  function formatWhen(value) {
+    if (!value) return '';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+  }
+  function catHref(key) {
+    return '/member/notifications' + (key && key !== 'all' ? ('?category=' + encodeURIComponent(key)) : '');
+  }
+  function noticeText(n) {
+    if (n === 'all_read') return 'All notifications marked as read.';
+    if (n === 'archived') return 'Notification archived.';
+    if (n === 'read') return 'Marked as read.';
+    if (n === 'unread') return 'Marked as unread.';
+    return n ? String(n) : '';
+  }
+%>
+
+<section
+  class="bb-mp-notifications"
+  data-bb-member-notifications="1"
+  data-bb-stitch-notifications="25-member-notifications"
+  data-bb-viewport="responsive"
+  aria-label="Notifications"
+>
+  <header class="bb-mp-page-head bb-mp-page-head--split">
+    <div>
+      <p class="bb-mp-eyebrow">Sacred communication hub</p>
+      <h1 class="bb-mp-page-head__title">Notifications</h1>
+      <p class="bb-mp-lede">Messages, updates, and receipts from your church</p>
+    </div>
+    <div class="bb-mp-page-head__actions">
+      <% if (unreadCount > 0) { %>
+      <span class="bb-mp-unread-pill" data-bb-unread-count="<%= unreadCount %>" aria-label="<%= unreadCount %> unread">
+        <%= unreadCount %> unread
+      </span>
+      <form method="post" action="/member/notifications/read-all" class="bb-mp-inline-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <button class="bb-mp-btn bb-mp-btn--ghost" type="submit">Mark all as read</button>
+      </form>
+      <% } else { %>
+      <span class="bb-mp-unread-pill bb-mp-unread-pill--zero" data-bb-unread-count="0">No unread</span>
+      <% } %>
+      <a class="bb-mp-btn bb-mp-btn--primary" href="/member/notification-preferences">Preferences</a>
+    </div>
+  </header>
+
+  <% if (notice) { %>
+  <div class="bb-mp-alert bb-mp-alert--ok" role="status"><%= noticeText(notice) %></div>
+  <% } %>
+
+  <div class="bb-mp-notifications__layout">
+    <div class="bb-mp-notifications__main">
+      <div class="bb-mp-chip-row" role="tablist" aria-label="Notification categories">
+        <% Object.keys(categoryLabels || {}).forEach(function (key) { %>
+        <a
+          class="bb-mp-chip<%= activeCategory === key ? ' is-active' : '' %>"
+          href="<%= catHref(key) %>"
+          role="tab"
+          aria-selected="<%= activeCategory === key ? 'true' : 'false' %>"
+        ><%= categoryLabels[key] %></a>
+        <% }) %>
+      </div>
+
+      <% if (!rows.length) { %>
+      <div class="bb-mp-empty" data-bb-empty="notifications">
+        <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+        <h2>You have no notifications yet.</h2>
+        <p>Church announcements, ministry updates, and receipts will appear here.</p>
+      </div>
+      <% } else { %>
+      <ul class="bb-mp-notification-list">
+        <% rows.forEach(function (item) { %>
+        <li class="bb-mp-notification-card<%= item.unread ? ' is-unread' : '' %><%= item.priority === 'urgent' ? ' is-urgent' : '' %>">
+          <% if (item.unread) { %>
+          <span class="bb-mp-notification-card__dot" aria-hidden="true"></span>
+          <span class="bb-shell-sr-only">Unread</span>
+          <% } %>
+          <div class="bb-mp-notification-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined">
+              <%= item.messageType === 'giving_receipt' ? 'receipt_long' : (item.messageType === 'direct_message' ? 'mail' : 'campaign') %>
+            </span>
+          </div>
+          <div class="bb-mp-notification-card__body">
+            <div class="bb-mp-notification-card__top">
+              <h2 class="bb-mp-notification-card__title">
+                <a href="/member/notifications/<%= item.id %>"><%= item.title %></a>
+              </h2>
+              <% if (item.priority === 'urgent' || item.priority === 'important') { %>
+              <span class="bb-mp-chip bb-mp-chip--priority"><%= (priorityLabels && priorityLabels[item.priority]) || item.priority %></span>
+              <% } %>
+            </div>
+            <p class="bb-mp-notification-card__meta">
+              <%= item.senderDisplayName %> · <%= typeLabel(item.messageType) %> · <%= formatWhen(item.createdAt) %>
+            </p>
+            <% if (item.previewText) { %>
+            <p class="bb-mp-notification-card__preview"><%= item.previewText %></p>
+            <% } %>
+            <% if (item.callToActionUrl && item.callToActionLabel) { %>
+            <p><a class="bb-mp-link" href="<%= item.callToActionUrl %>"><%= item.callToActionLabel %></a></p>
+            <% } %>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </div>
+
+    <aside class="bb-mp-notifications__side" aria-label="Delivery preferences shortcut">
+      <div class="bb-mp-card">
+        <h2 class="bb-mp-section-title">Delivery preferences</h2>
+        <p class="bb-mp-muted">Control how eligible messages reach you by email, SMS, push, and in-app.</p>
+        <a class="bb-mp-btn bb-mp-btn--ghost" href="/member/notification-preferences">Advanced settings</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<%- include('../partials/member-shell-end') %>

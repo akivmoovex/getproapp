@@ -1,0 +1,122 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var model = planFeatures || {};
+  var plans = model.plans || [];
+  var groups = model.groups || [];
+  var currentKey = model.currentPlanKey || 'foundation';
+%>
+
+<section
+  class="bb-hq-phase4-wpf"
+  data-bb-phase4-website-plan-features="1"
+  data-bb-phase4-website-plan-features-mobile="1"
+  aria-label="Phase4 Website Plan Features"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Plan features</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Website Plan Features</h1>
+      <p class="bb-hq-lede">
+        Compare website management capabilities designed to scale with your church.
+      </p>
+      <p class="bb-hq-hint">
+        Current plan:
+        <span class="bb-hq-chip bb-hq-chip--ok"><%= model.currentPlanLabel || 'Foundation' %></span>
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website">Website Overview</a>
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="/hq/account#package">View package &amp; account</a>
+    </p>
+  </header>
+
+  <div class="bb-hq-phase4-wpf__plans" data-bb-phase4-wpf-plans="1">
+    <% plans.forEach(function (plan) { %>
+    <article
+      id="<%= plan.key %>"
+      class="bb-hq-panel bb-hq-phase4-wpf__plan<%= plan.isCurrent ? ' is-current' : '' %><%= plan.popular ? ' is-popular' : '' %>"
+      data-bb-phase4-wpf-plan="<%= plan.key %>"
+      <%= plan.isCurrent ? 'aria-current="true"' : '' %>
+    >
+      <% if (plan.popular && !plan.isCurrent) { %>
+      <p class="bb-hq-chip bb-hq-chip--pending">Popular choice</p>
+      <% } %>
+      <% if (plan.isCurrent) { %>
+      <p class="bb-hq-chip bb-hq-chip--ok">Current plan</p>
+      <% } %>
+      <p class="bb-hq-hint"><%= plan.tierLabel %></p>
+      <h2 class="bb-hq-panel__title"><%= plan.label %></h2>
+      <p class="bb-hq-phase4-wpf__price"><%= plan.priceLabel %></p>
+      <% if (plan.priceNote) { %><p class="bb-hq-hint"><%= plan.priceNote %></p><% } %>
+      <p class="bb-hq-phase4-wpf__cta">
+        <% if (plan.ctaDisabled || !plan.ctaHref) { %>
+        <button type="button" class="bb-hq-btn bb-hq-btn--ghost" disabled><%= plan.ctaLabel %></button>
+        <% } else { %>
+        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= plan.ctaHref %>"><%= plan.ctaLabel %></a>
+        <% } %>
+      </p>
+    </article>
+    <% }) %>
+  </div>
+
+  <div class="bb-hq-phase4-wpf__compare bb-hq-phase4-wpf__compare--desktop" data-bb-phase4-wpf-desktop="1">
+    <% groups.forEach(function (group) { %>
+    <div class="bb-hq-panel">
+      <h2 class="bb-hq-panel__title"><%= group.title %></h2>
+      <div class="bb-hq-table-wrap">
+        <table class="bb-hq-table bb-hq-phase4-wpf__table">
+          <thead>
+            <tr>
+              <th scope="col">Capability</th>
+              <th scope="col">Foundation</th>
+              <th scope="col">Growth</th>
+              <th scope="col">Network</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% group.features.forEach(function (feature) { %>
+            <tr>
+              <th scope="row"><%= feature.label %></th>
+              <% ['foundation','growth','network'].forEach(function (pk) { %>
+              <td class="bb-hq-phase4-wpf__cell bb-hq-phase4-wpf__cell--<%= feature.cells[pk].status %><%= currentKey === pk ? ' is-current-col' : '' %>">
+                <span class="bb-hq-phase4-wpf__status"><%= feature.cells[pk].label %></span>
+                <% if (feature.cells[pk].note) { %><span class="bb-hq-hint"><%= feature.cells[pk].note %></span><% } %>
+              </td>
+              <% }) %>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+
+  <div class="bb-hq-phase4-wpf__compare-mobile" data-bb-phase4-wpf-mobile="1">
+    <% plans.forEach(function (plan) { %>
+    <article class="bb-hq-panel bb-hq-phase4-wpf__mobile-card<%= plan.isCurrent ? ' is-current' : '' %>">
+      <h2 class="bb-hq-panel__title"><%= plan.label %></h2>
+      <p class="bb-hq-phase4-wpf__price"><%= plan.priceLabel %></p>
+      <% groups.forEach(function (group) { %>
+      <h3 class="bb-hq-phase4-wpf__group-title"><%= group.title %></h3>
+      <ul class="bb-hq-phase4-wpf__mobile-list">
+        <% group.features.forEach(function (feature) { %>
+        <li>
+          <span><%= feature.label %></span>
+          <span class="bb-hq-chip bb-hq-chip--tiny"><%= feature.cells[plan.key].label %></span>
+        </li>
+        <% }) %>
+      </ul>
+      <% }) %>
+    </article>
+    <% }) %>
+  </div>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

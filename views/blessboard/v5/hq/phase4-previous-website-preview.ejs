@@ -1,0 +1,115 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var p = typeof preview !== 'undefined' && preview ? preview : {};
+  var pages = p.pages || [];
+  var viewport = String((typeof queryViewport !== 'undefined' && queryViewport) || 'desktop');
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-history-preview"
+  data-bb-phase4-previous-website-preview="1"
+  data-bb-stitch-screen="Phase4 - Previous Website Preview"
+  data-bb-viewport="responsive"
+  data-bb-preview-mode="<%= viewport === 'mobile' ? 'mobile' : 'desktop' %>"
+  aria-label="Previous Website Preview"
+>
+  <div class="bb-phase4-history-preview__banner" role="status">
+    <strong><%= p.bannerTitle || 'Previous Website Preview' %></strong>
+    <span><%= p.bannerSubtitle || 'This is a saved website from an earlier publication.' %></span>
+  </div>
+
+  <div class="bb-phase4-history-preview__toolbar">
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= p.recentChangesPath || '/hq/website/recent-changes' %>">
+      Back to Recent Changes
+    </a>
+    <div class="bb-phase4-history-preview__toggle" role="group" aria-label="Preview size">
+      <button type="button" class="bb-hq-btn bb-hq-btn--ghost is-active" data-bb-preview-toggle="desktop">Desktop</button>
+      <button type="button" class="bb-hq-btn bb-hq-btn--ghost" data-bb-preview-toggle="mobile">Mobile</button>
+    </div>
+    <p class="bb-hq-muted bb-phase4-history-preview__pubmeta">
+      <%= formatWhen(p.publishedAt) %>
+      · Published by <%= p.publishedByName || '—' %>
+    </p>
+    <% if (p.canRestore && p.restoreHref) { %>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= p.restoreHref %>">Restore as Draft</a>
+    <% } %>
+  </div>
+
+  <aside class="bb-hq-card bb-phase4-history-preview__meta" data-bb-phase4-history-preview-meta="1">
+    <h2 class="bb-hq-section-title">Publication details</h2>
+    <dl class="bb-phase4-recent__meta">
+      <div><dt>Published on</dt><dd><%= formatWhen(p.publishedAt) %></dd></div>
+      <div><dt>Published by</dt><dd><%= p.publishedByName || '—' %></dd></div>
+      <div><dt>Theme</dt><dd><%= p.themeKey || 'default' %></dd></div>
+      <div><dt>What changed</dt><dd><%= p.changeSummary || 'Website changes were published.' %></dd></div>
+      <% if (pages.length) { %>
+      <div>
+        <dt>Pages included</dt>
+        <dd><%= pages.map(function (pg) { return pg.title; }).join(', ') %></dd>
+      </div>
+      <% } %>
+      <% if (p.publication && (p.publication.branchesAffected || []).length) { %>
+      <div>
+        <dt>Branches included</dt>
+        <dd><%= (p.publication.branchesAffected || []).join(', ') %></dd>
+      </div>
+      <% } %>
+    </dl>
+    <p class="bb-hq-hint">Read-only saved website. Draft and live content are unchanged.</p>
+  </aside>
+
+  <div class="bb-phase4-history-preview__frame-wrap">
+    <div class="bb-phase4-history-preview__frame" data-bb-history-preview-frame="1">
+      <% if (!pages.length) { %>
+      <div class="bb-hq-empty">
+        <p>This saved website has no public pages recorded.</p>
+      </div>
+      <% } else { %>
+      <% pages.forEach(function (page) { %>
+      <article class="bb-phase4-history-preview__page" data-bb-history-page="<%= page.pageKey %>">
+        <header class="bb-phase4-history-preview__page-head">
+          <h2><%= page.title %></h2>
+        </header>
+        <% (page.sections || []).forEach(function (sec) { %>
+        <div class="bb-phase4-history-preview__section">
+          <% if (sec.heading) { %><h3><%= sec.heading %></h3><% } %>
+          <% if (sec.bodyText) { %><p><%= sec.bodyText %></p><% } %>
+          <% if (sec.mediaUrl) { %>
+          <p class="bb-hq-muted">Image: <%= sec.mediaUrl %></p>
+          <% } %>
+        </div>
+        <% }) %>
+      </article>
+      <% }) %>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-bb-phase4-previous-website-preview]');
+  if (!root) return;
+  var buttons = root.querySelectorAll('[data-bb-preview-toggle]');
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var mode = btn.getAttribute('data-bb-preview-toggle') || 'desktop';
+      root.setAttribute('data-bb-preview-mode', mode);
+      buttons.forEach(function (b) {
+        b.classList.toggle('is-active', b === btn);
+      });
+    });
+  });
+})();
+</script>
+
+<%- include('../partials/hq-shell-end') %>

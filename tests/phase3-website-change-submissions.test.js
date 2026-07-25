@@ -20,6 +20,7 @@ const { createBlessBoardUser } = require("../src/blessboard/services/createBless
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
+const { assignOrganizationPlan } = require("../src/platform/services/entitlementService");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const wcsRepo = require("../src/blessboard/repositories/websiteChangeSubmissionRepository");
@@ -253,6 +254,20 @@ describe("phase3 website change submissions review", () => {
           WHERE id = $1`,
         [approvedId, users.hqA.user.id]
       );
+
+      const planAssign = await assignOrganizationPlan(pool, {
+        organizationId: orgA.id,
+        planKey: "growth",
+        status: "active",
+      });
+      assert.equal(planAssign.ok, true, planAssign.reason);
+      const planAssignB = await assignOrganizationPlan(pool, {
+        organizationId: orgB.id,
+        planKey: "growth",
+        status: "active",
+      });
+      assert.equal(planAssignB.ok, true, planAssignB.reason);
+
 
       app = createV5FoundationApp({
         getPool: () => pool,

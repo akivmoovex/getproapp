@@ -21,6 +21,12 @@ const {
   hqPreviewPagePath,
 } = require("../urls/churchUrlHelper");
 const svc = require("../services/websiteChangeSubmissionService");
+const {
+  renderWebsiteFeatureLocked,
+  checkWebsiteCapability,
+  planEntitlementSvc,
+} = require("./websitePlanEntitlementHttp");
+const { buildChangeRequestsEmptyState } = require("./websiteSystemStateHttp");
 
 /**
  * @param {string} relativePath
@@ -103,7 +109,7 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     if (!sessionOk) {
       const wantsHtml = String(req.get("accept") || "").includes("text/html");
       if (wantsHtml) {
-        return res.redirect(303, "/login?next=/hq/website/change-submissions");
+        return res.redirect(303, "/login?next=/hq/website/change-requests");
       }
       return sendControlled(req, res, 401, "Sign-in is required.");
     }
@@ -143,6 +149,22 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     const tenant = requireTenant(req, res);
     if (!tenant) return;
 
+    const entitled = await checkWebsiteCapability(
+      getPool,
+      tenant,
+      "website.change_requests",
+      env
+    );
+    if (!entitled.ok && entitled.status === planEntitlementSvc.STATUS.NOT_ENTITLED) {
+      return renderWebsiteFeatureLocked(req, res, shellLocals, entitled, {
+        featureTitle: "Website Change Requests",
+        returnHref: "/hq/website",
+      });
+    }
+    if (!entitled.ok) {
+      return sendControlled(req, res, 503, "Submissions are temporarily unavailable.");
+    }
+
     const result = await svc.loadSubmissionsList(getPool(), {
       organizationId: tenant.organization.id,
       q: req.query && req.query.q,
@@ -157,9 +179,9 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     if (!result.ok) {
       if (result.status === svc.STATUS.LOOKUP_ERROR) {
         const html = renderHqView(
-          "hq/phase3-website-change-submissions.ejs",
+          "hq/phase4-website-change-requests.ejs",
           await shellLocals(req, res, {
-            pageTitle: "Website Change Submissions",
+            pageTitle: "Website Change Requests",
             items: [],
             total: 0,
             summary: {
@@ -181,9 +203,11 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
               submittedTo: "",
             },
             statusLabels: svc.STATUS_LABELS,
+            listPath: "/hq/website/change-submissions",
             editorPath: hqContentPagePath("home"),
             previewPathFor: (pageKey) => hqPreviewPagePath(pageKey),
             queryError: "Submissions could not be loaded. Try again shortly.",
+            emptyState: null,
             notice: null,
           })
         );
@@ -194,9 +218,9 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
 
     const notice = String((req.query && req.query.notice) || "") || null;
     const html = renderHqView(
-      "hq/phase3-website-change-submissions.ejs",
+      "hq/phase4-website-change-requests.ejs",
       await shellLocals(req, res, {
-        pageTitle: "Website Change Submissions",
+        pageTitle: "Website Change Requests",
         items: result.items,
         total: result.total,
         summary: result.summary,
@@ -205,9 +229,15 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
         branches: result.branches,
         filters: result.filters,
         statusLabels: svc.STATUS_LABELS,
+        listPath: "/hq/website/change-submissions",
         editorPath: hqContentPagePath("home"),
         previewPathFor: (pageKey) => hqPreviewPagePath(pageKey),
         queryError: null,
+        emptyState: buildChangeRequestsEmptyState({
+          viewerRole: "hq",
+          listPath: "/hq/website/change-submissions",
+          editorPath: hqContentPagePath("home"),
+        }),
         notice,
       })
     );
@@ -221,6 +251,22 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
+
+      const entitled = await checkWebsiteCapability(
+        getPool,
+        tenant,
+        "website.change_requests",
+        env
+      );
+      if (!entitled.ok && entitled.status === planEntitlementSvc.STATUS.NOT_ENTITLED) {
+        return renderWebsiteFeatureLocked(req, res, shellLocals, entitled, {
+          featureTitle: "Review Website Update",
+          returnHref: "/hq/website",
+        });
+      }
+      if (!entitled.ok) {
+        return sendControlled(req, res, 503, "Submission review is temporarily unavailable.");
+      }
 
       const result = await svc.loadSubmissionReview(getPool(), {
         organizationId: tenant.organization.id,
@@ -239,9 +285,9 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
 
       const formError = String((req.query && req.query.error) || "") || null;
       const html = renderHqView(
-        "hq/phase3-website-change-review.ejs",
+        "hq/phase4-review-website-update.ejs",
         await shellLocals(req, res, {
-          pageTitle: "Review Website Changes",
+          pageTitle: "Review Website Update",
           submission: result.submission,
           events: result.events,
           comparison: result.comparison,
@@ -263,6 +309,16 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
   async function postDecision(req, res, action) {
     const tenant = requireTenant(req, res);
     if (!tenant) return;
+
+    const entitled = await checkWebsiteCapability(
+      getPool,
+      tenant,
+      "website.change_requests",
+      env
+    );
+    if (!entitled.ok) {
+      return sendControlled(req, res, 403, "This action is not available on your current plan.");
+    }
 
     const submitted = req.body && req.body[CSRF_FIELD];
     if (!validateCsrf(req, submitted, env)) {
@@ -430,6 +486,38 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
       }
       return res.redirect(303, `${base}?notice=comment_added`);
     }
+  );
+
+
+  // Phase4 preferred paths (alias to canonical handlers).
+  router.get("/hq/website/change-requests", rejectApex, gateHq, (req, res) => {
+    const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+    return res.redirect(302, "/hq/website/change-submissions" + qs);
+  });
+  router.get("/hq/website/change-requests/:submissionId", rejectApex, gateHq, (req, res) => {
+    const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+    return res.redirect(
+      302,
+      `/hq/website/change-submissions/${encodeURIComponent(req.params.submissionId)}` + qs
+    );
+  });
+  router.post(
+    "/hq/website/change-requests/:submissionId/approve",
+    rejectApex,
+    gateHq,
+    (req, res) => postDecision(req, res, "approve")
+  );
+  router.post(
+    "/hq/website/change-requests/:submissionId/request-changes",
+    rejectApex,
+    gateHq,
+    (req, res) => postDecision(req, res, "request-changes")
+  );
+  router.post(
+    "/hq/website/change-requests/:submissionId/reject",
+    rejectApex,
+    gateHq,
+    (req, res) => postDecision(req, res, "reject")
   );
 
   return router;

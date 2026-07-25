@@ -7,6 +7,14 @@
 const PORTAL_NAV = Object.freeze([
   { key: "home", label: "Dashboard", href: "/member", icon: "dashboard", enabled: true, nav: true },
   {
+    key: "notifications",
+    label: "Notifications",
+    href: "/member/notifications",
+    icon: "notifications",
+    enabled: true,
+    nav: true,
+  },
+  {
     key: "announcements",
     label: "Announcements",
     href: "/member/announcements",
@@ -91,7 +99,7 @@ const PORTAL_MODULES = Object.freeze([
 
 const PORTAL_MOBILE_TABS = Object.freeze([
   "home",
-  "announcements",
+  "notifications",
   "events",
   "ministries",
   "profile",

@@ -1,0 +1,134 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var hub = hub || {};
+  var counts = hub.counts || {};
+  var links = hub.links || {};
+%>
+
+<section
+  class="bb-hq-phase4-awm"
+  data-bb-phase4-advanced-website-management="1"
+  data-bb-phase4-advanced-website-management-mobile="1"
+  aria-label="Phase4 Advanced Website Management"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Advanced</span>
+      </p>
+      <p class="bb-hq-chip bb-hq-chip--muted">
+        <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+        Network Governance Hub
+      </p>
+      <h1 class="bb-hq-page-head__title">Advanced Website Management</h1>
+      <p class="bb-hq-lede">
+        Centrally manage content integrity, track versioning, and configure multi-admin workflows across your church branch ecosystem.
+      </p>
+    </div>
+  </header>
+
+  <p class="bb-hq-phase4-awm__info" role="note">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    These controls are intended for churches with multiple administrators and branch website updates.
+  </p>
+
+  <div class="bb-hq-summary bb-hq-phase4-awm__summary">
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Active Branches</p>
+      <p class="bb-hq-card__value"><%= counts.activeBranches != null ? counts.activeBranches : '—' %></p>
+    </article>
+    <article class="bb-hq-card bb-hq-card--accent">
+      <p class="bb-hq-card__label">Waiting for Review</p>
+      <p class="bb-hq-card__value"><%= counts.pendingReview != null ? counts.pendingReview : '—' %></p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Approved Ready</p>
+      <p class="bb-hq-card__value"><%= counts.approvedReady != null ? counts.approvedReady : '—' %></p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Publications</p>
+      <p class="bb-hq-card__value"><%= counts.publications != null ? counts.publications : '—' %></p>
+    </article>
+  </div>
+
+  <div class="bb-hq-phase4-awm__grid">
+    <article class="bb-hq-panel bb-hq-phase4-awm__card">
+      <h2 class="bb-hq-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">history</span>
+        Website Version History
+      </h2>
+      <p>Explore the chronological archive of published website changes for this organization.</p>
+      <p class="bb-hq-phase4-awm__actions">
+        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= links.versionHistory || '/hq/website/network-version-history' %>">Open</a>
+      </p>
+    </article>
+
+    <article class="bb-hq-panel bb-hq-phase4-awm__card">
+      <h2 class="bb-hq-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">difference</span>
+        Compare Website Versions
+      </h2>
+      <p>Side-by-side comparison of two historical publications to verify content integrity.</p>
+      <p class="bb-hq-phase4-awm__actions">
+        <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= links.compare || '/hq/website/version-history/compare' %>">Compare</a>
+      </p>
+    </article>
+
+    <article class="bb-hq-panel bb-hq-phase4-awm__card">
+      <h2 class="bb-hq-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">restore_page</span>
+        Restore Previous Website
+      </h2>
+      <p>Restore an earlier published website as a draft, then publish through the normal review flow.</p>
+      <p class="bb-hq-phase4-awm__actions">
+        <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= links.recentChanges || '/hq/website/recent-changes' %>">Recent Changes</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= links.versionHistory || '/hq/website/network-version-history' %>">Full history</a>
+      </p>
+    </article>
+
+    <article class="bb-hq-panel bb-hq-phase4-awm__card">
+      <h2 class="bb-hq-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">cloud_done</span>
+        Publishing History
+      </h2>
+      <p>Log of website publications for this organization.</p>
+      <p class="bb-hq-phase4-awm__actions">
+        <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= links.publishingHistory || '/hq/website/publishing-history' %>">Open</a>
+      </p>
+    </article>
+
+    <article class="bb-hq-panel bb-hq-phase4-awm__card">
+      <h2 class="bb-hq-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
+        Website Audit Log
+      </h2>
+      <p>A ledger of administrator website actions for this organization.</p>
+      <p class="bb-hq-phase4-awm__actions">
+        <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= links.auditLog || '/hq/website/audit-log' %>">Open Log</a>
+      </p>
+    </article>
+
+    <article class="bb-hq-panel bb-hq-phase4-awm__card">
+      <h2 class="bb-hq-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">rule</span>
+        Approval Settings &amp; Workflow
+      </h2>
+      <p>Configure who may approve branch website changes and which content types require HQ verification.</p>
+      <ul class="bb-hq-phase4-awm__features">
+        <li>Hierarchical approval</li>
+        <li class="is-disabled">Change freezing <span class="bb-hq-hint">Not available yet</span></li>
+        <li class="is-disabled">Multi-signature publishing <span class="bb-hq-hint">Not available yet</span></li>
+      </ul>
+      <p class="bb-hq-phase4-awm__actions">
+        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= links.approvalSettings || '/hq/website/network-approval-settings' %>">Open Settings</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= links.changeRequests || '/hq/website/change-requests' %>">Change Requests</a>
+      </p>
+    </article>
+  </div>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

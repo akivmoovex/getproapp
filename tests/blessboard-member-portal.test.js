@@ -365,6 +365,7 @@ describe("blessboard member portal", () => {
     assert.match(res.text, /href="\/member\/profile"/);
     assert.match(res.text, /aria-label="Open navigation"/);
     assert.match(res.text, />\s*Profile\s*</);
+    assert.match(res.text, /href="\/member\/notifications"/);
     assert.match(res.text, /href="\/member\/announcements"/);
     assert.match(res.text, /href="\/member\/events"/);
     assert.match(res.text, /href="\/member\/ministries"/);
@@ -375,7 +376,6 @@ describe("blessboard member portal", () => {
     assert.match(res.text, />Dashboard</);
     assert.doesNotMatch(res.text, /href="\/member\/prayer"/);
     assert.doesNotMatch(res.text, /href="\/member\/prayer-request"/);
-    assert.doesNotMatch(res.text, /notifications/i);
     assert.match(
       res.text,
       /data-bb-module="giving"[^>]*data-bb-module-enabled="1"|data-bb-module-enabled="1"[^>]*data-bb-module="giving"/

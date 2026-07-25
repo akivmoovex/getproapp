@@ -1,0 +1,131 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var msg = message || {};
+  function statusLabel(key) { return (statusLabels && statusLabels[key]) || key || '—'; }
+  function typeLabel(key) { return (typeLabels && typeLabels[key]) || key || '—'; }
+  function audienceLabel(key) { return (audienceLabels && audienceLabels[key]) || key || '—'; }
+  function deliveryLabel(key) { return (deliveryLabels && deliveryLabels[key]) || key || '—'; }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+  function noticeText(n) {
+    if (n === 'sent') return 'Message sent.';
+    if (n === 'draft_saved') return 'Draft saved.';
+    if (n === 'cancelled') return 'Scheduled message cancelled.';
+    return n ? String(n) : '';
+  }
+  function errorText(e) {
+    if (e === 'empty_audience') return 'No eligible members matched this audience.';
+    if (e === 'already_sent' || e === 'duplicate_send') return 'This message was already sent.';
+    return e ? String(e) : '';
+  }
+  var deliveryRows = delivery || [];
+%>
+
+<section
+  class="bb-hq-broadcast-detail"
+  data-bb-hq-broadcast-detail="1"
+  data-bb-stitch-broadcast="61-hq-broadcast-center-v2"
+  aria-label="Broadcast detail"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/broadcasts">Broadcast Center</a>
+        <span aria-hidden="true">›</span>
+        <span>Message</span>
+      </p>
+      <h1 class="bb-hq-page-head__title"><%= msg.title %></h1>
+      <p class="bb-hq-lede">
+        <%= typeLabel(msg.messageType) %> · <%= statusLabel(msg.status) %>
+        <% if (msg.priority && msg.priority !== 'normal') { %>
+        · <span class="bb-hq-chip bb-hq-chip--pending"><%= (priorityLabels && priorityLabels[msg.priority]) || msg.priority %></span>
+        <% } %>
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <% if (msg.status === 'draft' || msg.status === 'scheduled') { %>
+      <form method="post" action="/hq/broadcasts/<%= msg.id %>/send" class="bb-hq-inline-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <button class="bb-hq-btn bb-hq-btn--primary" type="submit">Send Now</button>
+      </form>
+      <% } %>
+      <% if (msg.status === 'scheduled') { %>
+      <form method="post" action="/hq/broadcasts/<%= msg.id %>/cancel" class="bb-hq-inline-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <button class="bb-hq-btn bb-hq-btn--ghost" type="submit">Cancel schedule</button>
+      </form>
+      <% } %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/broadcasts">Back</a>
+    </p>
+  </header>
+
+  <% if (notice) { %><div class="bb-hq-alert bb-hq-alert--ok" role="status"><%= noticeText(notice) %></div><% } %>
+  <% if (error) { %><div class="bb-hq-alert bb-hq-alert--danger" role="alert"><%= errorText(error) %></div><% } %>
+
+  <div class="bb-hq-broadcast-detail__grid">
+    <article class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Message</h2>
+      <p class="bb-hq-muted">From <%= msg.senderDisplayName %> · Created <%= formatWhen(msg.createdAt) %></p>
+      <% if (msg.previewText) { %><p class="bb-hq-broadcast-detail__preview"><%= msg.previewText %></p><% } %>
+      <div class="bb-hq-prose" data-bb-message-body="1"><%- bodyHtml %></div>
+      <% if (msg.callToActionUrl && msg.callToActionLabel) { %>
+      <p><a class="bb-hq-btn bb-hq-btn--ghost" href="<%= msg.callToActionUrl %>" rel="noopener noreferrer"><%= msg.callToActionLabel %></a></p>
+      <% } %>
+    </article>
+
+    <aside class="bb-hq-broadcast-detail__side">
+      <div class="bb-hq-card">
+        <h2 class="bb-hq-section-title">Audience</h2>
+        <ul class="bb-hq-plain-list">
+          <% (audiences || []).forEach(function (a) { %>
+          <li><%= audienceLabel(a.audienceType) %></li>
+          <% }) %>
+        </ul>
+        <% if (!audiences || !audiences.length) { %><p class="bb-hq-muted">No audience rows.</p><% } %>
+      </div>
+
+      <div class="bb-hq-card">
+        <h2 class="bb-hq-section-title">Delivery</h2>
+        <dl class="bb-hq-dl">
+          <div><dt>Requested channels</dt><dd>
+            In-app<%= msg.channelEmail ? ', Email' : '' %><%= msg.channelSms ? ', SMS' : '' %><%= msg.channelPush ? ', Push' : '' %>
+          </dd></div>
+          <div><dt>Created by</dt><dd><%= msg.creatorDisplayName || '—' %></dd></div>
+          <div><dt>Sent / scheduled</dt><dd><%= formatWhen(msg.sentAt || msg.scheduledAt) %></dd></div>
+          <div><dt>Recipients</dt><dd data-bb-recipient-count="<%= msg.recipientCount %>"><%= msg.recipientCount %></dd></div>
+          <div><dt>In-app created</dt><dd data-bb-in-app-count="<%= msg.inAppCreatedCount %>"><%= msg.inAppCreatedCount %></dd></div>
+          <div><dt>Excluded (inactive)</dt><dd><%= msg.excludedInactiveCount %></dd></div>
+          <% if (inAppReads) { %>
+          <div><dt>In-app read</dt><dd><%= inAppReads.readCount %> of <%= inAppReads.total %></dd></div>
+          <% } %>
+        </dl>
+        <% if (deliveryRows.length) { %>
+        <table class="bb-hq-table bb-hq-table--compact" data-bb-delivery-summary="1">
+          <thead><tr><th>Channel</th><th>Status</th><th>Count</th></tr></thead>
+          <tbody>
+            <% deliveryRows.forEach(function (row) { %>
+            <tr>
+              <td><%= row.channel %></td>
+              <td><%= deliveryLabel(row.status) %></td>
+              <td><%= row.count %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <% } %>
+        <p class="bb-hq-hint">Open rates and click rates are not tracked.</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

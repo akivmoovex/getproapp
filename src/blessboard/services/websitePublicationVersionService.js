@@ -14,6 +14,7 @@ const STATUS = Object.freeze({
   NOT_FOUND: "not_found",
   LOOKUP_ERROR: "lookup_error",
   CONFLICT: "conflict",
+  FORBIDDEN: "forbidden",
 });
 
 const STATUS_LABELS = Object.freeze({
@@ -31,6 +32,18 @@ const SOURCE_LABELS = Object.freeze({
   content_restoration: "Content restoration",
   initial_setup: "Initial setup",
 });
+
+/** Phase4 Growth recent-changes friendly source labels. */
+const FRIENDLY_SOURCE_LABELS = Object.freeze({
+  hq_edit: "HQ Update",
+  branch_submission: "Branch Update",
+  theme_change: "Theme Update",
+  content_restoration: "Restored Website",
+  initial_setup: "Initial Website Setup",
+});
+
+const FRIENDLY_SOURCE_FALLBACK = "Website Update";
+const GROWTH_PREVIOUS_LIMIT = 5;
 
 const DIFF_LABELS = Object.freeze({
   added: "Added",
@@ -944,6 +957,22 @@ async function createRestoredDraft(db, opts) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "confirmation" };
   }
 
+  try {
+    const approvalSettingsSvc = require("./websiteApprovalSettingsService");
+    const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(db, organizationId);
+    if (
+      settingsLoad.ok &&
+      settingsLoad.settings &&
+      settingsLoad.settings.requireRestoreApproval
+    ) {
+      if (!reason || reason.length < 3) {
+        return { ok: false, status: STATUS.INVALID_INPUT, reason: "restore_approval_note" };
+      }
+    }
+  } catch {
+    /* settings optional; continue with existing validation */
+  }
+
   const selected = Array.isArray(opts.selectedPageKeys)
     ? opts.selectedPageKeys.map((k) => String(k)).filter(Boolean)
     : [];
@@ -981,9 +1010,11 @@ async function createRestoredDraft(db, opts) {
 
       const restoredSnapshot = {
         themeKey:
-          opts.restoreTheme !== false
-            ? historical.themeKey || snap.themeKey || "default"
-            : "default",
+          opts.themeKeyOverride != null && String(opts.themeKeyOverride).trim()
+            ? String(opts.themeKeyOverride).trim().slice(0, 80)
+            : opts.restoreTheme !== false
+              ? historical.themeKey || snap.themeKey || "default"
+              : opts.currentThemeKey || "default",
         pageKeys: pagesToRestore.map((p) => p.pageKey),
         pages: pagesToRestore,
         navigation: opts.restoreNavigation ? snap.navigation || [] : [],
@@ -1150,6 +1181,723 @@ async function listPublishingHistory(db, opts) {
 }
 
 /**
+ * @param {string|null|undefined} sourceType
+ */
+function friendlySourceLabel(sourceType) {
+  const key = String(sourceType || "").trim();
+  if (!key) return FRIENDLY_SOURCE_FALLBACK;
+  return FRIENDLY_SOURCE_LABELS[key] || FRIENDLY_SOURCE_FALLBACK;
+}
+
+/**
+ * @param {object|null} version
+ */
+function buildFriendlyChangeSummary(version) {
+  const summary = (version && version.changeSummary) || {};
+  if (summary.publicationNote && String(summary.publicationNote).trim()) {
+    const note = String(summary.publicationNote).trim();
+    if (note.length <= 220) return note;
+  }
+  const pages = Array.isArray(summary.pagesChanged)
+    ? summary.pagesChanged
+    : Array.isArray(summary.pageKeys)
+      ? summary.pageKeys
+      : [];
+  const pageLabels = pages
+    .map((k) => PAGE_KEY_TITLES[k] || k)
+    .filter(Boolean)
+    .slice(0, 4);
+  const branches = Array.isArray(summary.branchesAffected)
+    ? summary.branchesAffected.filter(Boolean)
+    : [];
+  if (pageLabels.length && branches.length) {
+    return `${pageLabels.join(" and ")} updated · ${branches[0]} included`;
+  }
+  if (pageLabels.length === 1) return `${pageLabels[0]} updated`;
+  if (pageLabels.length > 1) return `${pageLabels.join(" and ")} updated`;
+  if (branches.length) return `${branches[0]} updates published`;
+  if (summary.themeChanges) return "Website theme and navigation updated";
+  return "Website changes were published.";
+}
+
+/**
+ * @param {object|null} version
+ * @param {{ isCurrent?: boolean, organizationKey?: string|null }} opts
+ */
+function presentGrowthPublicationCard(version, opts) {
+  if (!version) return null;
+  const summary = version.changeSummary || {};
+  const pages = Array.isArray(summary.pagesChanged)
+    ? summary.pagesChanged
+    : Array.isArray(summary.pageKeys)
+      ? summary.pageKeys
+      : [];
+  const branches = Array.isArray(summary.branchesAffected)
+    ? summary.branchesAffected.filter(Boolean)
+    : [];
+  const isCurrent = Boolean(opts && opts.isCurrent);
+  return {
+    id: version.id,
+    label: isCurrent ? "Current Website" : "Previous Website",
+    isCurrent,
+    publishedAt: version.publishedAt,
+    publishedByName: version.publishedByName || null,
+    themeKey: version.themeKey || "default",
+    sourceLabel: friendlySourceLabel(version.sourceType),
+    changeSummary: buildFriendlyChangeSummary(version),
+    pagesChanged: pages.map((k) => PAGE_KEY_TITLES[k] || k).slice(0, 8),
+    branchesAffected: branches.slice(0, 8),
+    previewAvailable: !isCurrent,
+    previewHref: isCurrent
+      ? null
+      : `/hq/website/recent-changes/${version.id}/preview`,
+    canRestore: !isCurrent,
+    restoreHref: isCurrent
+      ? null
+      : `/hq/website/recent-changes/${version.id}/restore`,
+  };
+}
+
+/**
+ * Growth-plan recent website changes (current + ≤5 previous).
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   churchId: string,
+ *   organizationKey?: string|null,
+ *   planKey?: string|null,
+ *   env?: object,
+ * }} opts
+ */
+async function loadGrowthRecentWebsiteChanges(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const churchId = opts && opts.churchId;
+  if (!versionRepo.isUuid(organizationId) || !versionRepo.isUuid(churchId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "tenant" };
+  }
+
+  const { evaluatePublishReadiness } = require("./churchWebsitePublishService");
+  const readiness = await evaluatePublishReadiness(db, {
+    churchId,
+    deferServiceTimes: true,
+    env: opts.env,
+  });
+  const planKey = String(
+    (opts.planKey != null ? opts.planKey : readiness && readiness.planKey) || ""
+  )
+    .trim()
+    .toLowerCase();
+  const { normalizePlanKey } = require("./websiteOverviewService");
+  const normalized = normalizePlanKey(planKey);
+
+  // Growth recent-changes is Growth+ (Network inherits Growth website tools).
+  if (normalized !== "growth" && normalized !== "network") {
+    return {
+      ok: false,
+      status: STATUS.FORBIDDEN || "forbidden",
+      reason: "plan_not_growth",
+      planKey: normalized,
+    };
+  }
+
+  try {
+    const current = await versionRepo.loadCurrentWebsitePublication(db, organizationId);
+    const previousList = await versionRepo.listRecentWebsitePublications(db, {
+      organizationId,
+      limit: GROWTH_PREVIOUS_LIMIT,
+      excludeId: current ? current.id : null,
+    });
+    const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+    const orgKey =
+      opts.organizationKey || (readiness && readiness.organizationKey) || null;
+
+    return {
+      ok: true,
+      status: STATUS.OK,
+      planKey: "growth",
+      stitchScreen: "Phase4 - Recent Website Changes",
+      title: "Recent Website Changes",
+      subtitle: "Review the latest published website updates",
+      retentionLimit: GROWTH_PREVIOUS_LIMIT,
+      retentionNotice:
+        "Your five most recent published websites are available for recovery.",
+      canRestore: true,
+      overviewPath: "/hq/website",
+      publicPath: publicChurchHomePath(orgKey),
+      restoredDraftPath: "/hq/website/restored-draft",
+      currentWebsite: presentGrowthPublicationCard(current, {
+        isCurrent: true,
+        organizationKey: orgKey,
+      }),
+      previousWebsites: (previousList.items || []).map((v) =>
+        presentGrowthPublicationCard(v, { isCurrent: false, organizationKey: orgKey })
+      ),
+    };
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "recent_changes" };
+  }
+}
+
+/**
+ * Growth-plan previous website historical preview (immutable snapshot).
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   churchId: string,
+ *   publicationId: string,
+ *   organizationKey?: string|null,
+ *   planKey?: string|null,
+ *   env?: object,
+ * }} opts
+ */
+async function loadGrowthPreviousWebsitePreview(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const churchId = opts && opts.churchId;
+  const publicationId = opts && opts.publicationId;
+  if (
+    !versionRepo.isUuid(organizationId) ||
+    !versionRepo.isUuid(churchId) ||
+    !versionRepo.isUuid(publicationId)
+  ) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+
+  const listGate = await loadGrowthRecentWebsiteChanges(db, {
+    organizationId,
+    churchId,
+    organizationKey: opts.organizationKey,
+    planKey: opts.planKey,
+    env: opts.env,
+  });
+  if (!listGate.ok) {
+    return listGate;
+  }
+
+  try {
+    const version = await versionRepo.loadHistoricalPublicationPreview(
+      db,
+      organizationId,
+      publicationId
+    );
+    if (!version || !version.publishedAt) {
+      return { ok: false, status: STATUS.NOT_FOUND, reason: "publication" };
+    }
+    if (!["published", "superseded"].includes(String(version.status || ""))) {
+      return { ok: false, status: STATUS.NOT_FOUND, reason: "status" };
+    }
+
+    const current = await versionRepo.getCurrentPublishedVersion(db, organizationId);
+    if (current && current.id === version.id) {
+      return {
+        ok: false,
+        status: STATUS.INVALID_INPUT,
+        reason: "is_current",
+        redirectTo: listGate.publicPath || "/hq/website/recent-changes",
+      };
+    }
+
+    const snapshot = version.snapshot || {};
+    const pages = Array.isArray(snapshot.pages) ? snapshot.pages : [];
+    const publicPages = pages.map((page) => ({
+      pageKey: page.pageKey,
+      title: page.title || PAGE_KEY_TITLES[page.pageKey] || page.pageKey,
+      sections: Array.isArray(page.sections)
+        ? page.sections.map((sec) => ({
+            sectionKey: sec.sectionKey,
+            heading: sec.heading || null,
+            bodyText: sec.bodyText || null,
+            mediaUrl: sec.mediaUrl || null,
+            status: sec.status || null,
+          }))
+        : [],
+    }));
+
+    return {
+      ok: true,
+      status: STATUS.OK,
+      planKey: "growth",
+      stitchScreen: "Phase4 - Previous Website Preview",
+      bannerTitle: "Previous Website Preview",
+      bannerSubtitle: "This is a saved website from an earlier publication.",
+      recentChangesPath: "/hq/website/recent-changes",
+      publication: presentGrowthPublicationCard(version, { isCurrent: false }),
+      publishedAt: version.publishedAt,
+      publishedByName: version.publishedByName || null,
+      themeKey: version.themeKey || snapshot.themeKey || "default",
+      changeSummary: buildFriendlyChangeSummary(version),
+      pages: publicPages,
+      pageTitles: PAGE_KEY_TITLES,
+      readOnly: true,
+      noIndex: true,
+      canRestore: true,
+      restoreHref: `/hq/website/recent-changes/${version.id}/restore`,
+      draftMutated: false,
+      liveMutated: false,
+    };
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "growth_preview" };
+  }
+}
+
+/**
+ * @param {import('pg').Pool} db
+ * @param {string} churchId
+ */
+async function churchHasUnpublishedDraftPages(db, churchId) {
+  const res = await db.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.public_pages
+      WHERE church_id = $1
+        AND branch_id IS NULL
+        AND status = 'draft'
+        AND page_key = ANY($2::text[])`,
+    [churchId, PUBLIC_PAGE_KEYS.slice()]
+  );
+  return Boolean(res.rows[0] && Number(res.rows[0].n) > 0);
+}
+
+/**
+ * Collect missing media warnings from a snapshot.
+ * @param {object} snapshot
+ */
+function collectMissingMediaWarnings(snapshot) {
+  const warnings = [];
+  const pages = Array.isArray(snapshot && snapshot.pages) ? snapshot.pages : [];
+  for (const page of pages) {
+    for (const sec of page.sections || []) {
+      if (sec && sec.mediaUrl != null && String(sec.mediaUrl).trim() === "") {
+        warnings.push({
+          pageKey: page.pageKey,
+          sectionKey: sec.sectionKey,
+          message:
+            "One image from the previous website is no longer available. Replace it before publishing.",
+        });
+      }
+    }
+  }
+  return warnings;
+}
+
+/**
+ * Growth restore confirmation screen model.
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   churchId: string,
+ *   publicationId: string,
+ *   organizationKey?: string|null,
+ *   planKey?: string|null,
+ *   env?: object,
+ * }} opts
+ */
+async function prepareGrowthRestorePreviousWebsite(db, opts) {
+  const previewGate = await loadGrowthPreviousWebsitePreview(db, opts);
+  if (!previewGate.ok) return previewGate;
+
+  const organizationId = opts.organizationId;
+  const churchId = opts.churchId;
+  const publicationId = opts.publicationId;
+
+  const eligible = await loadGrowthRecentWebsiteChanges(db, opts);
+  if (!eligible.ok) return eligible;
+  const allowedIds = new Set(
+    (eligible.previousWebsites || []).map((p) => p.id).filter(Boolean)
+  );
+  if (!allowedIds.has(publicationId)) {
+    return { ok: false, status: STATUS.FORBIDDEN, reason: "not_eligible_backup" };
+  }
+
+  const hasDraft = await churchHasUnpublishedDraftPages(db, churchId);
+  const pendingRestore = await versionRepo.getLatestDraftRestoration(db, organizationId);
+  const themeHistorical = previewGate.themeKey || "default";
+  const themeCurrent =
+    (eligible.currentWebsite && eligible.currentWebsite.themeKey) || "default";
+  const themesDiffer = String(themeHistorical) !== String(themeCurrent);
+
+  return {
+    ok: true,
+    status: STATUS.OK,
+    planKey: "growth",
+    stitchScreen: "Phase4 - Restore Previous Website",
+    title: "Restore Previous Website",
+    subtitle: "Create a draft using this earlier website",
+    publication: previewGate.publication,
+    publishedAt: previewGate.publishedAt,
+    publishedByName: previewGate.publishedByName,
+    changeSummary: previewGate.changeSummary,
+    themeHistorical,
+    themeCurrent,
+    themesDiffer,
+    previousThemeAllowed: true,
+    previewHref: `/hq/website/recent-changes/${publicationId}/preview`,
+    recentChangesPath: "/hq/website/recent-changes",
+    overviewPath: "/hq/website",
+    editPath: "/hq/content",
+    draftPreviewPath: "/hq/content/preview/home",
+    hasConflictingDraft: hasDraft && !(pendingRestore && pendingRestore.sourceVersionId === publicationId),
+    existingRestoredDraft:
+      pendingRestore && pendingRestore.sourceVersionId === publicationId
+        ? pendingRestore
+        : null,
+    safetyNotice:
+      "Your live website will stay unchanged. A new draft will be created for you to review and publish.",
+  };
+}
+
+/**
+ * Create Growth restored website draft (complete website).
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   churchId: string,
+ *   publicationId: string,
+ *   actorUserId: string,
+ *   themeChoice?: 'keep_current'|'use_previous',
+ *   restorationNote?: string|null,
+ *   confirmed?: boolean,
+ *   organizationKey?: string|null,
+ *   planKey?: string|null,
+ *   env?: object,
+ * }} opts
+ */
+async function createGrowthRestoredWebsiteDraft(db, opts) {
+  const prepared = await prepareGrowthRestorePreviousWebsite(db, opts);
+  if (!prepared.ok) {
+    try {
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEvent(db, {
+        organizationId: opts.organizationId,
+        actorUserId: opts.actorUserId || null,
+        actorRole: "church_hq_admin",
+        actionType: "previous_website_restore_failed",
+        entityType: "website_publication_version",
+        entityId: opts.publicationId || null,
+        result: "failed",
+        metadata: { reason: prepared.reason || "prepare_failed" },
+      });
+    } catch (_err) {
+      // ignore audit failure on failed prepare
+    }
+    return prepared;
+  }
+
+  if (prepared.hasConflictingDraft) {
+    return {
+      ok: false,
+      status: STATUS.CONFLICT,
+      reason: "draft_conflict",
+      message:
+        "You already have unpublished website changes. Finish or discard them before restoring a previous website.",
+    };
+  }
+
+  if (!opts.confirmed) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "confirmation" };
+  }
+
+  if (prepared.existingRestoredDraft && prepared.existingRestoredDraft.id) {
+    return {
+      ok: true,
+      status: STATUS.OK,
+      idempotent: true,
+      draftVersion: prepared.existingRestoredDraft,
+      redirectTo: "/hq/website/restored-draft",
+      message: "A restored draft is already available for review.",
+    };
+  }
+
+  const themeChoice =
+    opts.themeChoice === "use_previous" && prepared.previousThemeAllowed
+      ? "use_previous"
+      : "keep_current";
+
+  const historical = await versionRepo.getVersionByOrgAndId(
+    db,
+    opts.organizationId,
+    opts.publicationId
+  );
+  if (!historical) {
+    return { ok: false, status: STATUS.NOT_FOUND, reason: "publication" };
+  }
+  const snap = historical.snapshot || {};
+  const allPages = Array.isArray(snap.pages) ? snap.pages : [];
+  const selectedPageKeys = allPages.map((p) => p.pageKey).filter(Boolean);
+  if (!selectedPageKeys.length) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "snapshot_incomplete" };
+  }
+
+  const note = normalizeText(opts.restorationNote);
+  const reason =
+    note && note.length
+      ? note
+      : "Restored previous website as draft for review.";
+
+  try {
+    const auditSvc = require("./websiteAuditService");
+    await auditSvc.recordWebsiteAuditEvent(db, {
+      organizationId: opts.organizationId,
+      actorUserId: opts.actorUserId || null,
+      actorRole: "church_hq_admin",
+      actionType: "previous_website_restore_started",
+      entityType: "website_publication_version",
+      entityId: opts.publicationId,
+      result: "success",
+      metadata: { themeChoice },
+    });
+  } catch (_err) {
+    // continue; restore itself records success audit
+  }
+
+  const liveBefore = await versionRepo.getCurrentPublishedVersion(db, opts.organizationId);
+
+  const result = await createRestoredDraft(db, {
+    organizationId: opts.organizationId,
+    churchId: opts.churchId,
+    versionId: opts.publicationId,
+    actorUserId: opts.actorUserId,
+    restorationReason: reason,
+    selectedPageKeys,
+    restoreTheme: themeChoice === "use_previous",
+    currentThemeKey: prepared.themeCurrent || "default",
+    themeKeyOverride:
+      themeChoice === "use_previous"
+        ? prepared.themeHistorical
+        : prepared.themeCurrent || "default",
+    restoreNavigation: true,
+    confirmed: true,
+  });
+
+  if (!result.ok) {
+    try {
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEvent(db, {
+        organizationId: opts.organizationId,
+        actorUserId: opts.actorUserId || null,
+        actorRole: "church_hq_admin",
+        actionType: "previous_website_restore_failed",
+        entityType: "website_publication_version",
+        entityId: opts.publicationId,
+        result: "failed",
+        metadata: { reason: result.reason || "restore_failed" },
+      });
+    } catch (_err) {
+      // ignore
+    }
+    return result;
+  }
+
+  // Prefer Growth-friendly audit name in addition to version_restored from createRestoredDraft.
+  try {
+    const auditSvc = require("./websiteAuditService");
+    await auditSvc.recordWebsiteAuditEvent(db, {
+      organizationId: opts.organizationId,
+      actorUserId: opts.actorUserId || null,
+      actorRole: "church_hq_admin",
+      actionType: "previous_website_restored_as_draft",
+      entityType: "website_publication_version",
+      entityId: result.draftVersion && result.draftVersion.id,
+      result: "success",
+      metadata: {
+        sourcePublicationId: opts.publicationId,
+        themeChoice,
+      },
+    });
+  } catch (_err) {
+    // non-fatal
+  }
+
+  const liveAfter = await versionRepo.getCurrentPublishedVersion(db, opts.organizationId);
+  if (liveBefore && liveAfter && liveBefore.id !== liveAfter.id) {
+    return { ok: false, status: STATUS.CONFLICT, reason: "live_mutated" };
+  }
+
+  return {
+    ok: true,
+    status: STATUS.OK,
+    draftVersion: result.draftVersion,
+    historical: result.historical,
+    themeChoice,
+    redirectTo: "/hq/website/restored-draft",
+    message: result.message,
+    liveUnchanged: true,
+  };
+}
+
+/**
+ * Restored draft review screen.
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   churchId: string,
+ *   organizationKey?: string|null,
+ *   actorUserId?: string|null,
+ *   planKey?: string|null,
+ *   env?: object,
+ * }} opts
+ */
+async function loadGrowthRestoredWebsiteDraftReview(db, opts) {
+  const listGate = await loadGrowthRecentWebsiteChanges(db, opts);
+  if (!listGate.ok) return listGate;
+
+  const draft = await versionRepo.getLatestDraftRestoration(db, opts.organizationId);
+  if (!draft) {
+    return { ok: false, status: STATUS.NOT_FOUND, reason: "no_restored_draft" };
+  }
+
+  const source = draft.sourceVersionId
+    ? await versionRepo.getVersionByOrgAndId(db, opts.organizationId, draft.sourceVersionId)
+    : null;
+  const snap = draft.snapshot || {};
+  const warnings = collectMissingMediaWarnings(snap);
+  const pageKeys = Array.isArray(snap.pageKeys)
+    ? snap.pageKeys
+    : Array.isArray(snap.pages)
+      ? snap.pages.map((p) => p.pageKey)
+      : [];
+
+  const { validateWebsitePublication } = require("./websitePublicationValidationService");
+  const validation = await validateWebsitePublication(db, {
+    organizationId: opts.organizationId,
+    churchId: opts.churchId,
+    actorUserId: opts.actorUserId || null,
+    deferServiceTimes: true,
+    env: opts.env,
+  });
+
+  const readinessChecks = (validation.checks || []).map((c) => ({
+    key: c.key,
+    label: c.label,
+    ok: Boolean(c.ok),
+    state: c.ok ? "Ready" : "Needs Attention",
+  }));
+
+  try {
+    const auditSvc = require("./websiteAuditService");
+    await auditSvc.recordWebsiteAuditEvent(db, {
+      organizationId: opts.organizationId,
+      actorUserId: opts.actorUserId || null,
+      actorRole: "church_hq_admin",
+      actionType: "restored_draft_opened",
+      entityType: "website_publication_version",
+      entityId: draft.id,
+      result: "success",
+      metadata: {},
+    });
+  } catch (_err) {
+    // non-fatal
+  }
+
+  return {
+    ok: true,
+    status: STATUS.OK,
+    planKey: "growth",
+    stitchScreen: "Phase4 - Restored Website Draft Review",
+    title: "Restored Website Draft",
+    subtitle: "Review this draft before publishing",
+    statusBadge: "Draft",
+    safetyNotice: "Your live website has not changed.",
+    draft,
+    sourcePublication: source
+      ? presentGrowthPublicationCard(source, { isCurrent: false })
+      : null,
+    previousPublishedAt: source && source.publishedAt,
+    restoredByName: draft.createdByName || null,
+    restoredAt: draft.createdAt,
+    restorationNote: draft.restorationReason || null,
+    themeKey: draft.themeKey || snap.themeKey || "default",
+    themeChoiceLabel:
+      source && String(draft.themeKey) === String(source.themeKey)
+        ? "Previous website theme"
+        : "Current theme kept",
+    pagesIncluded: pageKeys.map((k) => PAGE_KEY_TITLES[k] || k),
+    branchesIncluded:
+      (draft.changeSummary && draft.changeSummary.branchesAffected) || [],
+    changeSummary: buildFriendlyChangeSummary(source || draft),
+    warnings,
+    readinessChecks,
+    publishable: Boolean(validation && validation.publishable),
+    previewPath: "/hq/content/preview/home",
+    editPath: "/hq/content",
+    publishReviewPath: "/hq/website/publish/review",
+    discardPath: "/hq/website/restored-draft/discard",
+    overviewPath: "/hq/website",
+    recentChangesPath: "/hq/website/recent-changes",
+    canDiscard: true,
+  };
+}
+
+/**
+ * Discard restored draft: archive restoration record and re-apply current live snapshot as published pages.
+ * @param {import('pg').Pool} db
+ * @param {{
+ *   organizationId: string,
+ *   churchId: string,
+ *   actorUserId: string,
+ *   planKey?: string|null,
+ *   env?: object,
+ * }} opts
+ */
+async function discardGrowthRestoredWebsiteDraft(db, opts) {
+  const listGate = await loadGrowthRecentWebsiteChanges(db, opts);
+  if (!listGate.ok) return listGate;
+
+  const draft = await versionRepo.getLatestDraftRestoration(db, opts.organizationId);
+  if (!draft) {
+    return { ok: false, status: STATUS.NOT_FOUND, reason: "no_restored_draft" };
+  }
+
+  const current = await versionRepo.getCurrentPublishedVersion(db, opts.organizationId);
+  try {
+    return await withTransaction(db, async (client) => {
+      if (current && current.snapshot && Array.isArray(current.snapshot.pages)) {
+        for (const page of current.snapshot.pages) {
+          await applySnapshotPageToDraft(client, opts.churchId, page);
+          const ensured = await publicContentRepo.findPageByScope(client, {
+            churchId: opts.churchId,
+            branchId: null,
+            pageKey: page.pageKey,
+          });
+          if (ensured) {
+            await publicContentRepo.updatePage(client, ensured.id, {
+              status: "published",
+            });
+            const sections = await publicContentRepo.listSectionsForPage(client, ensured.id, {});
+            for (const sec of sections || []) {
+              if (sec.status !== "published") {
+                await publicContentRepo.updateSection(client, sec.id, { status: "published" });
+              }
+            }
+          }
+        }
+      }
+
+      await versionRepo.archiveDraftVersion(client, opts.organizationId, draft.id);
+
+      const auditSvc = require("./websiteAuditService");
+      await auditSvc.recordWebsiteAuditEventInTransaction(client, {
+        organizationId: opts.organizationId,
+        actorUserId: opts.actorUserId || null,
+        actorRole: "church_hq_admin",
+        actionType: "restored_draft_discarded",
+        entityType: "website_publication_version",
+        entityId: draft.id,
+        result: "success",
+        metadata: { sourcePublicationId: draft.sourceVersionId || null },
+      });
+
+      return {
+        ok: true,
+        status: STATUS.OK,
+        redirectTo: "/hq/website/recent-changes",
+        message: "Restored draft discarded. Live website was not changed by discard.",
+      };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "discard" };
+  }
+}
+
+/**
  * @param {import('pg').Pool} db
  * @param {{ organizationId: string, versionId: string }} opts
  */
@@ -1210,4 +1958,13 @@ module.exports = {
   createRestoredDraft,
   listPublishingHistory,
   loadPublishingHistoryEntry,
+  loadGrowthRecentWebsiteChanges,
+  loadGrowthPreviousWebsitePreview,
+  prepareGrowthRestorePreviousWebsite,
+  createGrowthRestoredWebsiteDraft,
+  loadGrowthRestoredWebsiteDraftReview,
+  discardGrowthRestoredWebsiteDraft,
+  friendlySourceLabel,
+  FRIENDLY_SOURCE_LABELS,
+  GROWTH_PREVIOUS_LIMIT,
 };

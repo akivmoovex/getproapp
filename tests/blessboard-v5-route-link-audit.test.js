@@ -154,6 +154,8 @@ function collectRegisteredPathPatterns() {
     "src/blessboard/http/branchRegistrationAdminRoutes.js",
     "src/blessboard/http/memberPortalRoutes.js",
     "src/blessboard/http/announcementMemberRoutes.js",
+    "src/blessboard/http/memberNotificationRoutes.js",
+    "src/blessboard/http/broadcastAdminRoutes.js",
     "src/blessboard/http/participationMemberRoutes.js",
     "src/blessboard/http/formsRequestsMemberRoutes.js",
   ];

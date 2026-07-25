@@ -1,0 +1,141 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var o = overview || {};
+  var checklist = o.checklist || [];
+  var undo = o.undoLastPublish || {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-website"
+  data-bb-phase4-foundation-website-overview="1"
+  data-bb-stitch-screen="Phase4 - Foundation Website Overview"
+  data-bb-viewport="responsive"
+  aria-label="Church Website"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <span>Website</span>
+      </p>
+      <h1 class="bb-hq-page-head__title"><%= o.title || 'Church Website' %></h1>
+      <p class="bb-hq-lede"><%= o.subtitle || 'Edit and publish your church website' %></p>
+    </div>
+    <p class="bb-hq-page-head__actions bb-phase4-website__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath || '/hq/content' %>">
+        <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+        Edit Website
+      </a>
+      <% if (o.liveAvailable && o.publicPath) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.publicPath %>" rel="noopener">View Live Website</a>
+      <% } else { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath || '/hq/content/preview/home' %>">Preview Website</a>
+      <% } %>
+    </p>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+  <div class="bb-hq-alert bb-hq-alert--ok" role="status"><%= notice %></div>
+  <% } %>
+
+  <% if (o.isEmptyWebsite) { %>
+  <div class="bb-phase4-website__empty bb-hq-card" data-bb-phase4-empty="new-website">
+    <h2>Your church website is ready to set up.</h2>
+    <p>Add your church details and homepage content, then publish when you are ready.</p>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath || '/hq/content' %>">Start Editing</a>
+  </div>
+  <% } %>
+
+  <% if (o.hasUnpublishedChanges) { %>
+  <div class="bb-phase4-website__draft-notice" role="status" data-bb-phase4-draft-notice="1">
+    <div>
+      <p class="bb-phase4-website__draft-notice-title">You have unpublished website changes.</p>
+      <p class="bb-hq-muted">These will not be visible to visitors until you publish them.</p>
+    </div>
+    <p class="bb-phase4-website__draft-notice-actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.editPath %>">Continue Editing</a>
+      <% if (o.canPublish) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Publish Changes</a>
+      <% } else if (o.showFixDetails) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Fix Website Details</a>
+      <% } %>
+    </p>
+  </div>
+  <% } %>
+
+  <div class="bb-phase4-website__grid">
+    <article class="bb-hq-card bb-phase4-website__status" data-bb-phase4-website-status="1">
+      <p class="bb-phase4-website__status-badge"><%= o.websiteStatusLabel || 'Not Published' %></p>
+      <h2 class="bb-hq-section-title">Website status</h2>
+      <% if (o.publicPath) { %>
+      <p class="bb-phase4-website__url">
+        <a href="<%= o.publicPath %>" rel="noopener"><%= o.publicPath %></a>
+      </p>
+      <% } %>
+      <dl class="bb-phase4-website__dl">
+        <div><dt>Last published</dt><dd><%= formatWhen(o.lastPublishedAt) %></dd></div>
+        <div><dt>Published by</dt><dd><%= o.lastPublishedByName || '—' %></dd></div>
+        <div><dt>Theme</dt><dd><%= o.themeKey || 'default' %></dd></div>
+      </dl>
+      <div class="bb-phase4-website__preview-card" aria-hidden="true">
+        <span class="material-symbols-outlined">language</span>
+        <span>Website preview</span>
+      </div>
+      <p class="bb-phase4-website__status-actions">
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.editPath %>">Edit Website</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
+        <% if (o.canPublish) { %>
+        <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Publish Changes</a>
+        <% } else if (o.showFixDetails) { %>
+        <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Fix Website Details</a>
+        <% } %>
+      </p>
+    </article>
+
+    <aside class="bb-hq-card bb-phase4-website__checklist" data-bb-phase4-setup-checklist="1">
+      <h2 class="bb-hq-section-title">Church setup</h2>
+      <ul class="bb-phase4-website__checklist-list">
+        <% checklist.forEach(function (item) { %>
+        <li class="<%= item.complete ? 'is-complete' : 'is-open' %>">
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.complete ? 'check_circle' : 'radio_button_unchecked' %></span>
+          <span>
+            <strong><%= item.label %></strong>
+            <span class="bb-phase4-website__check-state"><%= item.state %></span>
+          </span>
+        </li>
+        <% }) %>
+      </ul>
+    </aside>
+  </div>
+
+  <% if (undo.eligible) { %>
+  <div class="bb-hq-card bb-phase4-website__undo" data-bb-phase4-undo="1">
+    <div>
+      <h2 class="bb-hq-section-title">Need to undo your latest publication?</h2>
+      <p class="bb-hq-muted">You can restore your previous published website as a draft for review.</p>
+    </div>
+    <% if (undo.enabled && undo.href) { %>
+    <a class="bb-hq-btn bb-hq-btn--ghost bb-phase4-website__undo-btn" href="<%= undo.href %>">Undo Last Publish</a>
+    <% } else { %>
+    <button type="button" class="bb-hq-btn bb-hq-btn--ghost" disabled title="<%= undo.explanation || 'Not available' %>">Undo Last Publish</button>
+    <% } %>
+  </div>
+  <% } %>
+
+  <p class="bb-phase4-website__sticky-edit">
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath || '/hq/content' %>">Edit Website</a>
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

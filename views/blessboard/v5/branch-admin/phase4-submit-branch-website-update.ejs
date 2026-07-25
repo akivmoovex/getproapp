@@ -1,0 +1,156 @@
+<%- include('../partials/branch-admin-shell-start') %>
+<%
+  var m = model || {};
+  var sub = m.submission || null;
+  var proposed = m.proposedContent || {};
+  var summary = m.changeSummary || {};
+  var comps = (m.comparison && m.comparison.fields) || [];
+  var changed = comps.filter(function (f) { return f.changed; });
+  var actionSave = sub
+    ? '/branch-admin/website/submissions/' + sub.id + '/save'
+    : '/branch-admin/website/submissions/draft';
+  var actionSubmit = sub
+    ? '/branch-admin/website/submissions/' + sub.id + '/submit'
+    : '/branch-admin/website/submissions/submit';
+  var notice = typeof notice !== 'undefined' ? notice : null;
+  var submittedOk = notice === 'submitted';
+%>
+
+<section
+  class="bb-ba-phase4-sbu bb-ba-phase3-submit"
+  data-bb-phase4-submit-branch-website-update="1"
+  data-bb-phase3-submit-website-changes="1"
+  aria-label="Phase4 Submit Branch Website Update"
+>
+  <header class="bb-ba-page-head">
+    <p class="bb-ba-breadcrumb">
+      <a href="<%= listPath %>">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to submissions
+      </a>
+    </p>
+    <h1 class="bb-ba-page-head__title">Submit Branch Website Update</h1>
+    <p class="bb-ba-lede">Review changes and send them to HQ for approval · <%= branchDisplayName %></p>
+    <p class="bb-ba-hint">Step 1 of 3 · Review Changes</p>
+    <p class="bb-hq-visually-hidden">Submit Website Changes</p>
+  </header>
+
+  <% if (submittedOk) { %>
+  <div class="bb-ba-panel bb-ba-phase4-sbu__success" role="status" data-bb-phase4-sbu-success="1">
+    <h2>
+      <span class="material-symbols-outlined" aria-hidden="true">published_with_changes</span>
+      Submission Sent
+    </h2>
+    <p>HQ has been notified. You will receive an update once the changes are reviewed.</p>
+    <p class="bb-ba-phase4-sbu__actions">
+      <a class="bb-ba-btn bb-ba-btn--primary" href="/branch-admin/website">Return to Dashboard</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= listPath %>">View submissions</a>
+    </p>
+  </div>
+  <% } else { %>
+
+  <% if (formError === 'title_required') { %><p class="bb-ba-error" role="alert">Update title is required.</p><% } %>
+  <% if (formError === 'reason_required') { %><p class="bb-ba-error" role="alert">Reason for changes is required to submit.</p><% } %>
+  <% if (formError === 'checklist_required') { %><p class="bb-ba-error" role="alert">Confirm every checklist item before submitting.</p><% } %>
+  <% if (formError === 'draft_only') { %><p class="bb-ba-error" role="alert">Branch submissions are draft-only under current network settings.</p><% } %>
+  <% if (formError === 'no_changes') { %><p class="bb-ba-error" role="alert">Submit at least one content change before sending for approval.</p><% } %>
+  <% if (formError && formError !== 'title_required' && formError !== 'reason_required' && formError !== 'checklist_required' && formError !== 'draft_only' && formError !== 'no_changes') { %>
+  <p class="bb-ba-error" role="alert">Could not save. Check your fields and try again.</p>
+  <% } %>
+
+  <div class="bb-ba-panel bb-ba-phase4-sbu__review">
+    <h2>
+      <span class="material-symbols-outlined" aria-hidden="true">rule</span>
+      Review Changes
+    </h2>
+    <% if (!changed.length) { %>
+    <p class="bb-ba-hint">Edit proposed fields below to preview differences against the live website.</p>
+    <% } else { %>
+    <ul class="bb-ba-phase4-sbu__diffs">
+      <% changed.forEach(function (field) { %>
+      <li>
+        <strong><%= field.label %></strong>
+        <span class="bb-ba-hint"><%= field.current || '—' %></span>
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        <span><%= field.proposed || '—' %></span>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+    <ul class="bb-ba-phase3-submit__summary">
+      <li><strong>Pages changed:</strong> <%= (summary.pagesChanged || []).join(', ') || m.pageKey || '—' %></li>
+      <li><strong>Sections changed:</strong> <%= (summary.sectionsChanged || []).join(', ') || m.sectionKey || '—' %></li>
+    </ul>
+    <p class="bb-ba-phase4-sbu__safety" role="note">
+      <span class="material-symbols-outlined" aria-hidden="true">info</span>
+      Your live branch page will not change until HQ approves and publishes.
+    </p>
+  </div>
+
+  <form method="post" action="<%= actionSubmit %>" class="bb-ba-form bb-ba-phase3-submit__form bb-ba-phase4-sbu__form" data-bb-phase3-submit-form="1">
+    <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken %>" />
+    <% if (sub) { %><input type="hidden" name="submission_id" value="<%= sub.id %>" /><% } %>
+    <input type="hidden" name="page_key" value="<%= m.pageKey || 'home' %>" />
+    <input type="hidden" name="section_key" value="<%= m.sectionKey || '' %>" />
+    <input type="hidden" name="change_type" value="Content Update" />
+
+    <div class="bb-ba-panel">
+      <h2>Proposed content</h2>
+      <div class="bb-ba-field"><label for="heading">Heading</label><input id="heading" name="heading" maxlength="200" value="<%= proposed.heading || '' %>" /></div>
+      <div class="bb-ba-field"><label for="body_text">Body text</label><textarea id="body_text" name="body_text" rows="4" maxlength="20000"><%= proposed.bodyText || '' %></textarea></div>
+      <div class="bb-ba-field"><label for="media_url">Image / media URL</label><input id="media_url" name="media_url" maxlength="2000" value="<%= proposed.mediaUrl || '' %>" /></div>
+      <div class="bb-ba-field"><label for="service_times">Service times</label><input id="service_times" name="service_times" maxlength="2000" value="<%= proposed.serviceTimes || '' %>" /></div>
+      <div class="bb-ba-field"><label for="contact_details">Contact details</label><textarea id="contact_details" name="contact_details" rows="2" maxlength="2000"><%= proposed.contactDetails || '' %></textarea></div>
+      <div class="bb-ba-field"><label for="button_text">Button text</label><input id="button_text" name="button_text" maxlength="200" value="<%= proposed.buttonText || '' %>" /></div>
+      <div class="bb-ba-field"><label for="button_url">Button destination</label><input id="button_url" name="button_url" maxlength="2000" value="<%= proposed.buttonUrl || '' %>" /></div>
+    </div>
+
+    <div class="bb-ba-panel">
+      <h2>
+        <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+        Update Context
+      </h2>
+      <div class="bb-ba-field"><label for="title">Update Title</label><input id="title" name="title" required maxlength="200" value="<%= sub && sub.title ? sub.title : '' %>" /></div>
+      <div class="bb-ba-field">
+        <label for="priority">Priority Level</label>
+        <select id="priority" name="priority">
+          <% (priorities || ['normal','important','urgent']).forEach(function (p) { %>
+          <option value="<%= p %>"<%= (sub && sub.priority === p) || (!sub && p === 'normal') ? ' selected' : '' %>><%= p === 'normal' ? 'Standard' : (p.charAt(0).toUpperCase() + p.slice(1)) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-ba-field"><label for="reason">Reason for changes</label><textarea id="reason" name="reason" rows="3" maxlength="2000" required><%= sub && sub.reason ? sub.reason : '' %></textarea></div>
+      <div class="bb-ba-field"><label for="submitter_note">Message to Reviewer</label><textarea id="submitter_note" name="submitter_note" rows="3" maxlength="2000"><%= sub && sub.submitterNote ? sub.submitterNote : '' %></textarea></div>
+      <div class="bb-ba-field">
+        <label for="requested_publication_date">Requested publication date <span class="bb-ba-hint">(optional)</span></label>
+        <input id="requested_publication_date" name="requested_publication_date" type="date" value="<%= sub && sub.requestedPublicationDate ? String(sub.requestedPublicationDate).slice(0,10) : '' %>" />
+      </div>
+      <p class="bb-ba-hint">Approval destination: HQ Website Change Requests</p>
+    </div>
+
+    <div class="bb-ba-panel">
+      <h2>
+        <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+        Final Confirmation
+      </h2>
+      <p class="bb-ba-hint">Please complete the checklist before submitting.</p>
+      <label class="bb-ba-check"><input type="checkbox" name="checklist_content" value="1"<%= sub && sub.checklist && sub.checklist.contentReviewed ? ' checked' : '' %> /> I have verified all dates and times</label>
+      <label class="bb-ba-check"><input type="checkbox" name="checklist_contact" value="1"<%= sub && sub.checklist && sub.checklist.contactConfirmed ? ' checked' : '' %> /> Contact details confirmed</label>
+      <label class="bb-ba-check"><input type="checkbox" name="checklist_images" value="1"<%= sub && sub.checklist && sub.checklist.imagesApproved ? ' checked' : '' %> /> Images follow brand guidelines</label>
+      <label class="bb-ba-check"><input type="checkbox" name="checklist_branch" value="1"<%= sub && sub.checklist && sub.checklist.branchAccurate ? ' checked' : '' %> /> Branch information is accurate</label>
+    </div>
+
+    <p class="bb-ba-phase3-submit__warning" role="note">
+      Submitting sends these changes to your HQ administrator. The live website will not change until approval and publication.
+    </p>
+
+    <p class="bb-ba-phase3-submit__actions bb-ba-phase4-sbu__sticky">
+      <button type="submit" formaction="<%= actionSave %>" class="bb-ba-btn bb-ba-btn--secondary">Save Draft</button>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= editorPath %>">Go Back</a>
+      <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Continue · Submit for Approval</button>
+    </p>
+  </form>
+  <% } %>
+</section>
+
+<%- include('../partials/branch-admin-shell-end') %>

@@ -494,6 +494,59 @@ async function publishChurchWebsite(db, input) {
         };
       }
 
+      // Narrow idempotency: rapid duplicate POSTs only when nothing new is waiting.
+      if (inner.organizationId && input.actorUserId) {
+        const draftRes = await client.query(
+          `SELECT COUNT(*)::int AS n
+             FROM blessboard.public_pages
+            WHERE church_id = $1
+              AND branch_id IS NULL
+              AND status = 'draft'
+              AND page_key = ANY($2::text[])`,
+          [churchId, PUBLIC_PAGE_KEYS.slice()]
+        );
+        const draftN = draftRes.rows[0] ? Number(draftRes.rows[0].n) : 0;
+        const approvedRes = await client.query(
+          `SELECT COUNT(*)::int AS n
+             FROM blessboard.website_change_submissions
+            WHERE organization_id = $1
+              AND status = 'approved'`,
+          [inner.organizationId]
+        );
+        const approvedN = approvedRes.rows[0] ? Number(approvedRes.rows[0].n) : 0;
+        if (draftN === 0 && approvedN === 0) {
+          const recentRes = await client.query(
+            `SELECT id, version_number, published_at, published_by
+               FROM blessboard.website_publication_versions
+              WHERE organization_id = $1
+                AND published_by = $2
+                AND status = 'published'
+                AND published_at > now() - interval '15 seconds'
+              ORDER BY published_at DESC
+              LIMIT 1`,
+            [inner.organizationId, input.actorUserId]
+          );
+          const recent = recentRes.rows[0];
+          if (recent && recent.id) {
+            return {
+              ok: true,
+              status: STATUS.OK,
+              publishedAt: recent.published_at
+                ? new Date(recent.published_at).toISOString()
+                : new Date().toISOString(),
+              pageCount: PUBLIC_PAGE_KEYS.length,
+              publicPath: inner.publicPath,
+              organizationKey: inner.organizationKey,
+              alreadyPublished: true,
+              idempotent: true,
+              publicationVersionId: recent.id,
+              publicationVersionNumber: recent.version_number,
+              publishedSubmissionIds: [],
+            };
+          }
+        }
+      }
+
       await ensureRequiredDraftPages(client, churchId);
 
       const publishedAt = new Date();

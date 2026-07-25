@@ -1,0 +1,118 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var r = typeof review !== 'undefined' && review ? review : {};
+  var checks = r.readinessChecks || [];
+  var warnings = r.warnings || [];
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-growth-restore bb-phase4-growth-restore--review"
+  data-bb-phase4-restored-website-draft-review="1"
+  data-bb-stitch-screen="Phase4 - Restored Website Draft Review"
+  data-bb-viewport="responsive"
+  aria-label="Restored Website Draft Review"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="<%= r.recentChangesPath || '/hq/website/recent-changes' %>">Recent changes</a>
+        <span aria-hidden="true">›</span>
+        <span>Restored draft</span>
+      </p>
+      <h1 class="bb-hq-page-head__title"><%= r.title || 'Restored Website Draft' %></h1>
+      <p class="bb-hq-lede"><%= r.subtitle || 'Review this draft before publishing' %></p>
+      <p class="bb-phase4-growth-restore__badge"><%= r.statusBadge || 'Draft' %></p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.publishReviewPath || '/hq/website/publish/review' %>">Publish Draft</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewPath || '/hq/content/preview/home' %>">Preview Draft</a>
+    </p>
+  </header>
+
+  <div class="bb-phase4-growth-restore__safety" role="status">
+    <%= r.safetyNotice || 'Your live website has not changed.' %>
+  </div>
+
+  <div class="bb-phase4-growth-restore__grid">
+    <article class="bb-hq-card" data-bb-phase4-restore-log="1">
+      <h2 class="bb-hq-section-title">Restoration summary</h2>
+      <dl class="bb-phase4-recent__meta">
+        <div><dt>Previous publication</dt><dd><%= formatWhen(r.previousPublishedAt) %></dd></div>
+        <div><dt>Restored by</dt><dd><%= r.restoredByName || '—' %></dd></div>
+        <div><dt>Restored on</dt><dd><%= formatWhen(r.restoredAt) %></dd></div>
+        <div><dt>Theme</dt><dd><%= r.themeChoiceLabel || r.themeKey || 'default' %></dd></div>
+        <% if ((r.pagesIncluded || []).length) { %>
+        <div><dt>Pages included</dt><dd><%= (r.pagesIncluded || []).join(', ') %></dd></div>
+        <% } %>
+        <% if ((r.branchesIncluded || []).length) { %>
+        <div><dt>Branches included</dt><dd><%= (r.branchesIncluded || []).join(', ') %></dd></div>
+        <% } %>
+        <div><dt>What changed</dt><dd><%= r.changeSummary || 'Website changes were published.' %></dd></div>
+        <% if (r.restorationNote) { %>
+        <div><dt>Restoration note</dt><dd><%= r.restorationNote %></dd></div>
+        <% } %>
+      </dl>
+    </article>
+
+    <article class="bb-hq-card" data-bb-phase4-restore-readiness="1">
+      <h2 class="bb-hq-section-title">Readiness</h2>
+      <% if (warnings.length) { %>
+      <ul class="bb-phase4-growth-restore__warnings" role="status">
+        <% warnings.forEach(function (w) { %>
+        <li><%= w.message || w %></li>
+        <% }) %>
+      </ul>
+      <p class="bb-phase4-growth-restore__actions">
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.editPath || '/hq/content' %>">Open Editor</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.editPath || '/hq/content' %>">Review Missing Items</a>
+      </p>
+      <% } %>
+      <ul class="bb-phase4-publish__checks">
+        <% checks.forEach(function (c) { %>
+        <li class="<%= c.ok ? 'is-ready' : 'is-attention' %>">
+          <span class="material-symbols-outlined" aria-hidden="true"><%= c.ok ? 'check_circle' : 'error' %></span>
+          <span>
+            <strong><%= c.label %></strong>
+            <span class="bb-phase4-website__check-state"><%= c.state %></span>
+          </span>
+        </li>
+        <% }) %>
+      </ul>
+    </article>
+  </div>
+
+  <article class="bb-hq-card" data-bb-phase4-restore-preview-panel="1">
+    <h2 class="bb-hq-section-title">Draft preview</h2>
+    <p class="bb-hq-muted">Use the normal authenticated draft preview. This is not the historical previous-website preview.</p>
+    <p class="bb-phase4-growth-restore__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.previewPath || '/hq/content/preview/home' %>">Open Full Preview</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewPath || '/hq/content/preview/home' %>">Desktop Preview</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewPath || '/hq/content/preview/home' %>">Mobile Preview</a>
+    </p>
+  </article>
+
+  <p class="bb-phase4-growth-restore__actions bb-phase4-growth-restore__actions--bar">
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewPath %>">Preview Draft</a>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.editPath %>">Edit Draft</a>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.publishReviewPath || '/hq/website/publish/review' %>">Publish Draft</a>
+    <% if (r.canDiscard) { %>
+    <form method="post" action="<%= r.discardPath || '/hq/website/restored-draft/discard' %>" class="bb-phase4-growth-restore__discard">
+      <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-hq-btn bb-hq-btn--ghost">Discard Restored Draft</button>
+    </form>
+    <% } %>
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

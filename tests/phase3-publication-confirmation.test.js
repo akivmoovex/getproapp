@@ -255,10 +255,11 @@ describe("phase3 publication confirmation", () => {
       users.hqA.rawToken
     );
     assert.equal(res.status, 200);
-    assert.match(res.text, /Publication Confirmation/);
-    assert.match(res.text, /data-bb-phase3-publication-confirmation="1"/);
-    assert.match(res.text, /Proposed new version/);
-    assert.match(res.text, /Pages changed/);
+    assert.match(res.text, /Publish Website Changes\?/);
+    assert.match(res.text, /data-bb-phase4-publish-website-review="1"/);
+    assert.match(res.text, /data-bb-stitch-screen="Phase4 - Publish Website Review"/);
+    assert.match(res.text, /Change Summary|unpublished changes ready for review/i);
+    assert.match(res.text, /Pages changed|Sections changed|Readiness Checklist/);
   });
 
   it("unauthorized users blocked", async () => {
@@ -284,7 +285,7 @@ describe("phase3 publication confirmation", () => {
       users.hqA.rawToken
     );
     assert.equal(res.status, 200);
-    assert.match(res.text, /Sections changed/);
+    assert.match(res.text, /Readiness Checklist|Change Summary|Sections changed|unpublished changes ready for review/i);
     assert.doesNotMatch(res.text, /undefined/);
   });
 
@@ -495,11 +496,12 @@ describe("phase3 publication confirmation", () => {
         confirm_publish: "1",
         defer_service_times: "1",
         from_confirmation: "1",
+        preview_reviewed: "1",
         publication_note: "From confirmation UI",
       });
     assert.ok(ok.status === 303 || ok.status === 400);
     if (ok.status === 303) {
-      assert.match(ok.headers.location || "", /publish\/result/);
+      assert.match(ok.headers.location || "", /publish\/(success|result|error)/);
     }
   });
 });

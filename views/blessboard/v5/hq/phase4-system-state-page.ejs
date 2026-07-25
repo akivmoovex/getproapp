@@ -1,0 +1,16 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var state = systemState || {};
+  var screenLabel = state.screenLabel || state.heading || 'Website';
+%>
+<section
+  class="bb-hq-phase4-sys-page"
+  data-bb-phase4-system-state-page="1"
+  aria-label="<%= screenLabel %>"
+>
+  <% if (state.stitchLabel) { %>
+  <p class="bb-hq-visually-hidden"><%= state.stitchLabel %></p>
+  <% } %>
+  <%- include('../partials/phase4-system-state', { systemState: state }) %>
+</section>
+<%- include('../partials/hq-shell-end') %>

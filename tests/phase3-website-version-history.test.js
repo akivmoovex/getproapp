@@ -20,6 +20,7 @@ const { createBlessBoardUser } = require("../src/blessboard/services/createBless
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
+const { assignOrganizationPlan } = require("../src/platform/services/entitlementService");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
@@ -196,6 +197,13 @@ describe("phase3 website version history", () => {
         orgB.id
       );
 
+      const planAssign = await assignOrganizationPlan(pool, {
+        organizationId: orgA.id,
+        planKey: "professional",
+        status: "active",
+      });
+      assert.equal(planAssign.ok, true, planAssign.reason);
+
       app = createV5FoundationApp({
         getPool: () => pool,
         env: baseEnv(),
@@ -278,6 +286,20 @@ describe("phase3 website version history", () => {
     assert.equal(current1.snapshot.sessions, undefined);
     assert.equal(current1.snapshot.csrf, undefined);
     assert.equal(current1.snapshot.prayerRequests, undefined);
+
+    // Force a draft delta so the second publish is not treated as a rapid no-op.
+    const publicContentRepo = require("../src/blessboard/repositories/publicContentRepository");
+    const home = await publicContentRepo.findPageByScope(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      pageKey: "home",
+    });
+    if (home && home.id) {
+      await publicContentRepo.updatePage(pool, home.id, {
+        title: `Home ${Date.now()}`,
+        status: "draft",
+      });
+    }
 
     const second = await publishChurchWebsite(pool, {
       churchId: churchA.id,

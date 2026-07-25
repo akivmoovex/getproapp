@@ -47,6 +47,34 @@ const LIST_SELECT = `
   LEFT JOIN blessboard.users pu ON pu.id = v.published_by
 `;
 
+/** List cards: omit heavy snapshot_json payload. */
+const LIST_SELECT_SUMMARY = `
+  SELECT
+    v.id,
+    v.organization_id,
+    v.church_id,
+    v.version_number,
+    v.status,
+    v.theme_key,
+    v.source_type,
+    v.source_submission_id,
+    v.source_version_id,
+    v.restoration_reason,
+    v.restored_by,
+    '{}'::jsonb AS snapshot_json,
+    v.change_summary_json,
+    v.created_by,
+    v.created_at,
+    v.published_by,
+    v.published_at,
+    v.superseded_at,
+    cu.display_name AS created_by_name,
+    pu.display_name AS published_by_name
+  FROM blessboard.website_publication_versions v
+  LEFT JOIN blessboard.users cu ON cu.id = v.created_by
+  LEFT JOIN blessboard.users pu ON pu.id = v.published_by
+`;
+
 /**
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
@@ -435,6 +463,86 @@ async function listPublishingHistory(db, filters) {
   };
 }
 
+/**
+ * Current live publication without loading full snapshot JSON.
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ */
+async function loadCurrentWebsitePublication(db, organizationId) {
+  if (!isUuid(organizationId)) return null;
+  const res = await db.query(
+    `${LIST_SELECT_SUMMARY}
+      WHERE v.organization_id = $1 AND v.status = 'published'
+      ORDER BY v.published_at DESC NULLS LAST, v.version_number DESC
+      LIMIT 1`,
+    [organizationId]
+  );
+  return mapVersion(res.rows[0] || null);
+}
+
+/**
+ * Recent published/superseded publications (newest first), summary fields only.
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {{ organizationId: string, limit?: number, excludeId?: string|null }} filters
+ */
+async function listRecentWebsitePublications(db, filters) {
+  const organizationId = filters && filters.organizationId;
+  if (!isUuid(organizationId)) return { items: [], total: 0 };
+  const limit = Math.min(Math.max(Number(filters.limit) || 6, 1), 20);
+  const params = [organizationId];
+  let where = `
+    v.organization_id = $1
+    AND v.status IN ('published', 'superseded')
+    AND v.published_at IS NOT NULL`;
+  if (filters.excludeId && isUuid(filters.excludeId)) {
+    params.push(filters.excludeId);
+    where += ` AND v.id <> $${params.length}`;
+  }
+  const countRes = await db.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.website_publication_versions v
+      WHERE ${where}`,
+    params
+  );
+  const listRes = await db.query(
+    `${LIST_SELECT_SUMMARY}
+      WHERE ${where}
+      ORDER BY v.published_at DESC, v.version_number DESC
+      LIMIT $${params.length + 1}`,
+    params.concat([limit])
+  );
+  return {
+    items: (listRes.rows || []).map(mapVersion),
+    total: countRes.rows[0] ? Number(countRes.rows[0].n) : 0,
+  };
+}
+
+/**
+ * Full publication for historical preview (includes snapshot).
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ * @param {string} publicationId
+ */
+async function loadHistoricalPublicationPreview(db, organizationId, publicationId) {
+  return getVersionByOrgAndId(db, organizationId, publicationId);
+}
+
+/**
+ * Previous published website relative to current (summary only).
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} organizationId
+ */
+async function loadPreviousWebsitePublication(db, organizationId) {
+  const current = await loadCurrentWebsitePublication(db, organizationId);
+  if (!current) return null;
+  const listed = await listRecentWebsitePublications(db, {
+    organizationId,
+    limit: 1,
+    excludeId: current.id,
+  });
+  return (listed.items && listed.items[0]) || null;
+}
+
 module.exports = {
   isUuid,
   getNextVersionNumber,
@@ -451,4 +559,8 @@ module.exports = {
   listPublishingHistory,
   listPublishers,
   listThemeKeys,
+  listRecentWebsitePublications,
+  loadCurrentWebsitePublication,
+  loadPreviousWebsitePublication,
+  loadHistoricalPublicationPreview,
 };

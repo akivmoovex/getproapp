@@ -36,6 +36,8 @@ const DEFAULTS = Object.freeze({
     "navigation",
   ],
   trustedBranchPublishEnabled: false,
+  requireRestoreApproval: false,
+  hqDirectPublishEnabled: true,
 });
 
 function mapSettings(row) {
@@ -54,6 +56,15 @@ function mapSettings(row) {
       ? row.approval_content_types_json
       : DEFAULTS.approvalContentTypes.slice(),
     trustedBranchPublishEnabled: Boolean(row.trusted_branch_publish_enabled),
+    requireRestoreApproval: Boolean(
+      row.require_restore_approval != null
+        ? row.require_restore_approval
+        : DEFAULTS.requireRestoreApproval
+    ),
+    hqDirectPublishEnabled:
+      row.hq_direct_publish_enabled == null
+        ? DEFAULTS.hqDirectPublishEnabled
+        : Boolean(row.hq_direct_publish_enabled),
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
   };
@@ -86,9 +97,10 @@ async function upsertSettings(db, input) {
        require_preview_before_publish, require_mobile_preview_confirmation,
        prevent_self_approval, require_request_changes_comment, require_rejection_reason,
        review_notification_preferences_json, approval_content_types_json,
-       trusted_branch_publish_enabled, updated_by, updated_at
+       trusted_branch_publish_enabled, require_restore_approval, hq_direct_publish_enabled,
+       updated_by, updated_at
      ) VALUES (
-       $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10, $11, now()
+       $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10, $11, $12, $13, now()
      )
      ON CONFLICT (organization_id) DO UPDATE SET
        branch_edit_mode = EXCLUDED.branch_edit_mode,
@@ -100,6 +112,8 @@ async function upsertSettings(db, input) {
        review_notification_preferences_json = EXCLUDED.review_notification_preferences_json,
        approval_content_types_json = EXCLUDED.approval_content_types_json,
        trusted_branch_publish_enabled = EXCLUDED.trusted_branch_publish_enabled,
+       require_restore_approval = EXCLUDED.require_restore_approval,
+       hq_direct_publish_enabled = EXCLUDED.hq_direct_publish_enabled,
        updated_by = EXCLUDED.updated_by,
        updated_at = now()
      RETURNING *`,
@@ -114,6 +128,8 @@ async function upsertSettings(db, input) {
       JSON.stringify(input.reviewNotificationPreferences || {}),
       JSON.stringify(input.approvalContentTypes || []),
       Boolean(input.trustedBranchPublishEnabled),
+      Boolean(input.requireRestoreApproval),
+      input.hqDirectPublishEnabled !== false,
       input.updatedBy || null,
     ]
   );

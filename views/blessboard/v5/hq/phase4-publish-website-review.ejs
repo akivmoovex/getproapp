@@ -1,0 +1,207 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var r = typeof review !== 'undefined' && review ? review : {};
+  var change = r.changeSummary || {};
+  var checks = r.readinessChecks || [];
+  var approved = r.approvedSubmissions || [];
+  var errors = r.errors || [];
+  var warnings = r.warnings || [];
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-publish"
+  data-bb-phase4-publish-website-review="1"
+  data-bb-phase3-publication-confirmation="1"
+  data-bb-stitch-screen="Phase4 - Publish Website Review"
+  data-bb-viewport="responsive"
+  aria-label="Publish Website Review"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="<%= r.overviewPath || '/hq/website' %>">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Publish</span>
+      </p>
+      <h1 class="bb-hq-page-head__title"><%= r.title || 'Publish Website Changes?' %></h1>
+      <p class="bb-hq-lede"><%= r.subtitle || 'Review what will become visible on your public website' %></p>
+      <p class="bb-phase4-publish__draft-status">
+        <span class="bb-phase4-publish__chip"><%= r.draftStatusLabel || 'Draft changes' %></span>
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions bb-phase4-publish__actions-top">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.overviewPath || '/hq/website' %>">Back</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewPath %>">Preview Again</a>
+    </p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="bb-hq-alert bb-hq-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <% if (notice === 'preview_ack') { %>
+  <div class="bb-hq-alert bb-hq-alert--ok" role="status">Preview acknowledged.</div>
+  <% } %>
+
+  <div class="bb-phase4-publish__grid">
+    <article class="bb-hq-card bb-phase4-publish__summary" data-bb-phase4-publish-change-summary="1">
+      <h2 class="bb-hq-section-title">Change Summary</h2>
+      <% if (change.items && change.items.length) { %>
+      <ul class="bb-phase4-publish__change-list">
+        <% change.items.forEach(function (item) { %>
+        <li>
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon || 'edit_note' %></span>
+          <span>
+            <strong><%= item.title %></strong>
+            <% if (item.detail) { %><span class="bb-hq-muted"><%= item.detail %></span><% } %>
+          </span>
+        </li>
+        <% }) %>
+      </ul>
+      <% } else { %>
+      <p data-bb-phase4-publish-fallback-summary="1"><%= change.fallbackMessage || 'Your website has unpublished changes ready for review.' %></p>
+      <% } %>
+      <dl class="bb-phase4-publish__meta">
+        <% if (change.pageCount) { %>
+        <div><dt>Pages changed</dt><dd><%= change.pageCount %></dd></div>
+        <% } %>
+        <% if (change.sectionsChanged) { %>
+        <div><dt>Sections changed</dt><dd><%= change.sectionsChanged %></dd></div>
+        <% } %>
+        <% if ((change.branchesAffected || []).length) { %>
+        <div><dt>Branches affected</dt><dd><%= (change.branchesAffected || []).join(', ') %></dd></div>
+        <% } %>
+      </dl>
+    </article>
+
+    <article class="bb-hq-card" data-bb-phase4-publish-readiness="1">
+      <h2 class="bb-hq-section-title">Readiness Checklist</h2>
+      <% if (errors.length) { %>
+      <ul class="bb-phase4-publish__problems" role="alert">
+        <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+      </ul>
+      <% } %>
+      <% if (warnings.length) { %>
+      <ul class="bb-phase4-publish__warnings">
+        <% warnings.forEach(function (w) { %><li><%= w %></li><% }) %>
+      </ul>
+      <% } %>
+      <ul class="bb-phase4-publish__checks">
+        <% checks.forEach(function (c) { %>
+        <li class="<%= c.ok ? 'is-ready' : 'is-attention' %>">
+          <span class="material-symbols-outlined" aria-hidden="true"><%= c.ok ? 'check_circle' : 'error' %></span>
+          <span>
+            <strong><%= c.label %></strong>
+            <span class="bb-phase4-publish__check-state"><%= c.displayState || c.state %></span>
+          </span>
+        </li>
+        <% }) %>
+      </ul>
+    </article>
+  </div>
+
+  <% if (approved.length) { %>
+  <article class="bb-hq-card" data-bb-phase4-publish-approved="1">
+    <h2 class="bb-hq-section-title">Approved branch updates</h2>
+    <ul class="bb-phase4-publish__approved">
+      <% approved.forEach(function (s) { %>
+      <li>
+        <strong><%= s.title %></strong>
+        <span class="bb-hq-muted">
+          <%= s.branchName || 'Branch' %>
+          <% if (s.approvedBy) { %> · Approved by <%= s.approvedBy %><% } %>
+          <% if (s.approvedAt) { %> · <%= formatWhen(s.approvedAt) %><% } %>
+          <% if ((s.areasAffected || []).length) { %> · <%= (s.areasAffected || []).join(', ') %><% } %>
+        </span>
+      </li>
+      <% }) %>
+    </ul>
+  </article>
+  <% } %>
+
+  <article class="bb-hq-card">
+    <h2 class="bb-hq-section-title">User Confirmation</h2>
+    <form
+      id="phase4-publish-form"
+      method="post"
+      action="/hq/website/publish"
+      class="bb-hq-form bb-phase4-publish__form"
+      data-bb-phase4-publish-form="1"
+      data-bb-phase3-publish-form="1"
+    >
+      <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= csrfToken %>" />
+      <input type="hidden" name="from_confirmation" value="1" />
+      <input type="hidden" name="confirm_publish" value="1" />
+      <% if (deferServiceTimes) { %>
+      <input type="hidden" name="defer_service_times" value="1" />
+      <% } %>
+
+      <div class="bb-hq-field">
+        <label>
+          <input
+            type="checkbox"
+            name="preview_reviewed"
+            value="1"
+            required
+            <%= r.previewAcknowledged ? 'checked' : '' %>
+          />
+          I have reviewed the website preview.
+        </label>
+      </div>
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="mobile_preview_confirmed" value="1" <%= r.requireMobileCheckbox ? 'required' : '' %> />
+          I have checked the mobile preview.
+        </label>
+        <p class="bb-hq-hint">This records your confirmation only. Automated visual verification is not available.</p>
+      </div>
+      <div class="bb-hq-field">
+        <label for="phase4-pub-note">Add a note about these changes</label>
+        <textarea
+          id="phase4-pub-note"
+          name="publication_note"
+          rows="3"
+          maxlength="2000"
+          placeholder="Optional"
+        ></textarea>
+      </div>
+      <div class="bb-hq-field bb-phase4-publish__schedule" aria-disabled="true">
+        <label>
+          <input type="checkbox" disabled />
+          Schedule publication
+        </label>
+        <p class="bb-hq-hint">Scheduled publishing is not available yet.</p>
+      </div>
+
+      <div class="bb-phase4-publish__form-actions">
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.overviewPath || '/hq/website' %>">Cancel</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.previewPath %>">Preview Again</a>
+        <% if (r.publishable) { %>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Publish Website</button>
+        <% } else { %>
+        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.editPath || '/hq/content' %>">Fix Problems</a>
+        <% } %>
+      </div>
+    </form>
+  </article>
+
+  <div class="bb-phase4-publish__sticky" aria-label="Publish actions">
+    <% if (r.publishable) { %>
+    <button type="submit" form="phase4-publish-form" class="bb-hq-btn bb-hq-btn--primary bb-phase4-publish__sticky-btn">Publish Website</button>
+    <% } else { %>
+    <a class="bb-hq-btn bb-hq-btn--primary bb-phase4-publish__sticky-btn" href="<%= r.editPath || '/hq/content' %>">Fix Problems</a>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

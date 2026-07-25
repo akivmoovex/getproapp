@@ -1,0 +1,113 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var r = typeof recent !== 'undefined' && recent ? recent : {};
+  var current = r.currentWebsite || null;
+  var previous = r.previousWebsites || [];
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-recent"
+  data-bb-phase4-recent-website-changes-page="1"
+  data-bb-stitch-screen="Phase4 - Recent Website Changes"
+  data-bb-viewport="responsive"
+  aria-label="Recent Website Changes"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="<%= r.overviewPath || '/hq/website' %>">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Recent changes</span>
+      </p>
+      <h1 class="bb-hq-page-head__title"><%= r.title || 'Recent Website Changes' %></h1>
+      <p class="bb-hq-lede"><%= r.subtitle || 'Review the latest published website updates' %></p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.overviewPath || '/hq/website' %>">Back</a>
+      <% if (r.publicPath) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.publicPath %>" rel="noopener">View Live Website</a>
+      <% } %>
+    </p>
+  </header>
+
+  <p class="bb-phase4-recent__retention" role="note">
+    <%= r.retentionNotice || 'Your five most recent published websites are available for recovery.' %>
+  </p>
+
+  <% if (current) { %>
+  <article class="bb-hq-card bb-phase4-recent__current" data-bb-phase4-recent-current="1">
+    <p class="bb-phase4-recent__label">
+      <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+      Current Website
+    </p>
+    <h2 class="bb-hq-section-title"><%= current.changeSummary %></h2>
+    <dl class="bb-phase4-recent__meta">
+      <div><dt>Published on</dt><dd><%= formatWhen(current.publishedAt) %></dd></div>
+      <div><dt>Published by</dt><dd><%= current.publishedByName || '—' %></dd></div>
+      <div><dt>Theme</dt><dd><%= current.themeKey || 'default' %></dd></div>
+      <% if ((current.pagesChanged || []).length) { %>
+      <div><dt>Pages updated</dt><dd><%= (current.pagesChanged || []).join(', ') %></dd></div>
+      <% } %>
+      <% if ((current.branchesAffected || []).length) { %>
+      <div><dt>Branches affected</dt><dd><%= (current.branchesAffected || []).join(', ') %></dd></div>
+      <% } %>
+    </dl>
+    <% if (r.publicPath) { %>
+    <p class="bb-phase4-recent__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.publicPath %>" rel="noopener">View Live Website</a>
+    </p>
+    <% } %>
+  </article>
+  <% } %>
+
+  <section class="bb-phase4-recent__previous" aria-label="Previous website updates">
+    <h2 class="bb-hq-section-title">Previous Website Updates</h2>
+    <% if (!previous.length) { %>
+    <div class="bb-hq-card bb-phase4-recent__empty" data-bb-phase4-recent-empty="1">
+      <p>No previous website changes are available yet.</p>
+      <p class="bb-hq-muted">Previous published websites will appear here after future updates.</p>
+    </div>
+    <% } else { %>
+    <ol class="bb-phase4-recent__timeline">
+      <% previous.forEach(function (item) { %>
+      <li class="bb-hq-card bb-phase4-recent__card" data-bb-phase4-recent-previous="1">
+        <p class="bb-phase4-recent__label">Previous Website</p>
+        <h3><%= item.changeSummary %></h3>
+        <p class="bb-hq-muted">
+          <%= formatWhen(item.publishedAt) %>
+          · Published by <%= item.publishedByName || '—' %>
+          · <%= item.sourceLabel || 'Website Update' %>
+        </p>
+        <% if ((item.pagesChanged || []).length) { %>
+        <p class="bb-hq-muted">Pages: <%= (item.pagesChanged || []).join(', ') %></p>
+        <% } %>
+        <% if ((item.branchesAffected || []).length) { %>
+        <p class="bb-hq-muted">Branches: <%= (item.branchesAffected || []).join(', ') %></p>
+        <% } %>
+        <p class="bb-phase4-recent__actions">
+          <% if (item.previewHref) { %>
+          <a class="bb-hq-btn bb-hq-btn--primary" href="<%= item.previewHref %>">Preview</a>
+          <% } %>
+          <% if (item.canRestore && item.restoreHref) { %>
+          <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= item.restoreHref %>">Restore as Draft</a>
+          <% } %>
+        </p>
+      </li>
+      <% }) %>
+    </ol>
+    <% } %>
+  </section>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

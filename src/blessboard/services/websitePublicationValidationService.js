@@ -153,6 +153,21 @@ async function validateWebsitePublication(db, opts) {
       errors.push("Preview confirmation is required before publication.");
     }
 
+    if (settingsPersisted && settings.hqDirectPublishEnabled === false) {
+      checks.push({
+        key: "hq_direct_publish",
+        label: "HQ direct publish allowed",
+        ok: false,
+      });
+      errors.push("HQ direct publish is disabled in network approval settings.");
+    } else {
+      checks.push({
+        key: "hq_direct_publish",
+        label: "HQ direct publish allowed",
+        ok: true,
+      });
+    }
+
     const requireMobile =
       settingsPersisted && Boolean(settings.requireMobilePreviewConfirmation);
     const mobileOk = !requireMobile || Boolean(opts.mobilePreviewConfirmed);

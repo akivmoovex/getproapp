@@ -20,6 +20,7 @@ const { createBlessBoardUser } = require("../src/blessboard/services/createBless
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
+const { assignOrganizationPlan } = require("../src/platform/services/entitlementService");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
@@ -304,6 +305,13 @@ describe("phase3 website version compare restore", () => {
         .sort((x, y) => x.versionNumber - y.versionNumber)[0];
       assert.ok(versionCurrent);
       assert.ok(versionOlder);
+
+      const planAssign = await assignOrganizationPlan(pool, {
+        organizationId: orgA.id,
+        planKey: "professional",
+        status: "active",
+      });
+      assert.equal(planAssign.ok, true, planAssign.reason);
 
       app = createV5FoundationApp({
         getPool: () => pool,

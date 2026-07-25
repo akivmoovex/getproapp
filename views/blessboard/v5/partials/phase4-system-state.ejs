@@ -1,0 +1,60 @@
+<%
+  var state = systemState || {};
+  var type = String(state.type || 'empty');
+  var icon = state.icon || (
+    type === 'error' ? 'cloud_off' :
+    type === 'restricted' ? 'lock_person' :
+    type === 'locked' ? 'lock' :
+    type === 'not_found' ? 'search_off' :
+    'check_circle'
+  );
+  var heading = state.heading || 'Nothing to show';
+  var leadTitle = state.title || null;
+  var body = state.body || '';
+  var primary = state.primaryAction || null;
+  var secondary = state.secondaryAction || null;
+  var hint = state.hint || null;
+  var titleId = 'bb-phase4-sys-title-' + String(type).replace(/[^a-z0-9_-]/gi, '');
+%>
+<section
+  class="bb-hq-phase4-sys bb-hq-phase4-sys--<%= type %>"
+  data-bb-phase4-system-state="1"
+  data-bb-phase4-system-state-type="<%= type %>"
+  data-bb-phase4-system-state-mobile="1"
+  aria-labelledby="<%= titleId %>"
+  <% if (type === 'error') { %>role="alert"<% } else if (type === 'empty' || type === 'restricted') { %>role="status"<% } %>
+>
+  <div class="bb-hq-phase4-sys__card">
+    <p class="bb-hq-phase4-sys__icon" aria-hidden="true">
+      <span class="material-symbols-outlined"><%= icon %></span>
+    </p>
+    <% if (leadTitle) { %>
+    <p class="bb-hq-phase4-sys__eyebrow"><%= heading %></p>
+    <h2 class="bb-hq-phase4-sys__title" id="<%= titleId %>"><%= leadTitle %></h2>
+    <% } else { %>
+    <h2 class="bb-hq-phase4-sys__title" id="<%= titleId %>"><%= heading %></h2>
+    <% } %>
+    <% if (body) { %>
+    <p class="bb-hq-phase4-sys__body"><%= body %></p>
+    <% } %>
+    <% if (hint) { %>
+    <p class="bb-hq-phase4-sys__hint"><%= hint %></p>
+    <% } %>
+    <% if ((primary && primary.href) || (secondary && secondary.href)) { %>
+    <p class="bb-hq-phase4-sys__actions">
+      <% if (primary && primary.href) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= primary.href %>">
+        <% if (primary.icon) { %><span class="material-symbols-outlined" aria-hidden="true"><%= primary.icon %></span><% } %>
+        <%= primary.label || 'Continue' %>
+      </a>
+      <% } %>
+      <% if (secondary && secondary.href) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= secondary.href %>">
+        <% if (secondary.icon) { %><span class="material-symbols-outlined" aria-hidden="true"><%= secondary.icon %></span><% } %>
+        <%= secondary.label || 'Back' %>
+      </a>
+      <% } %>
+    </p>
+    <% } %>
+  </div>
+</section>

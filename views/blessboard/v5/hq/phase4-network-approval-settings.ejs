@@ -1,0 +1,183 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var s = settings || {};
+  var modeLabels = branchEditModeLabels || {};
+  var typeLabels = contentTypeLabels || {};
+  var selectedTypes = s.approvalContentTypes || [];
+  var prefs = s.reviewNotificationPreferences || {};
+  var admins = branchAdmins || [];
+  var formAction = typeof formActionPath !== 'undefined' && formActionPath
+    ? formActionPath
+    : '/hq/website/network-approval-settings';
+%>
+
+<section
+  class="bb-hq-phase4-nas bb-hq-phase3-approval"
+  data-bb-phase4-network-approval-settings="1"
+  data-bb-phase4-network-approval-settings-mobile="1"
+  data-bb-phase3-website-approval-settings="1"
+  aria-label="Phase4 Network Approval Settings"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website/advanced">Advanced</a>
+        <span aria-hidden="true">›</span>
+        <span>Approval settings</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Network Approval Settings</h1>
+      <p class="bb-hq-lede">
+        Configure how branches interact with central website governance while keeping operational agility.
+      </p>
+      <p class="bb-hq-visually-hidden">Website Approval Settings</p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/advanced">Advanced hub</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/workflow">Workflow dashboard</a>
+    </p>
+  </header>
+
+  <% if (error) { %><p class="bb-hq-error" role="alert"><%= error %></p><% } %>
+  <% if (notice === 'saved') { %><p class="bb-hq-ok" role="status">Network approval settings saved.</p><% } %>
+
+  <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-phase4-nas__form bb-hq-phase3-approval__form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <div class="bb-hq-panel">
+      <h2 class="bb-hq-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
+        Branch Publishing Rules
+      </h2>
+      <p class="bb-hq-hint">Define autonomy levels for branch website updates.</p>
+      <div class="bb-hq-field">
+        <label for="branch-edit-mode">Branch edit mode</label>
+        <select id="branch-edit-mode" name="branch_edit_mode" required>
+          <% Object.keys(modeLabels).forEach(function (k) { %>
+          <option value="<%= k %>"<%= s.branchEditMode === k ? ' selected' : '' %>><%= modeLabels[k] %></option>
+          <% }) %>
+        </select>
+      </div>
+      <p class="bb-hq-hint">
+        Trusted branch publish can be stored as a preference but is not silently activated in this release.
+        Direct publication rights are not granted from this screen.
+      </p>
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="hq_direct_publish_enabled" value="1"<%= s.hqDirectPublishEnabled !== false ? ' checked' : '' %> />
+          HQ administrators may publish directly
+        </label>
+      </div>
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="require_restore_approval" value="1"<%= s.requireRestoreApproval ? ' checked' : '' %> />
+          Require approval note before restoring a previous website
+        </label>
+      </div>
+      <div class="bb-hq-field is-disabled">
+        <label>
+          <input type="checkbox" disabled />
+          Local autonomy for events without approval
+        </label>
+        <p class="bb-hq-hint">Not available yet</p>
+      </div>
+    </div>
+
+    <div class="bb-hq-panel">
+      <h2 class="bb-hq-panel__title">
+        <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+        Critical Policy
+      </h2>
+      <div class="bb-hq-field"><label><input type="checkbox" name="prevent_self_approval" value="1"<%= s.preventSelfApproval ? ' checked' : '' %> /> Prevent self-approval</label></div>
+      <div class="bb-hq-field"><label><input type="checkbox" name="require_request_changes_comment" value="1"<%= s.requireRequestChangesComment ? ' checked' : '' %> /> Require reviewer comment when requesting changes</label></div>
+      <div class="bb-hq-field"><label><input type="checkbox" name="require_rejection_reason" value="1"<%= s.requireRejectionReason ? ' checked' : '' %> /> Require rejection reason</label></div>
+      <div class="bb-hq-field"><label><input type="checkbox" name="require_preview_before_publish" value="1"<%= s.requirePreviewBeforePublish ? ' checked' : '' %> /> Require preview confirmation before publication</label></div>
+      <div class="bb-hq-field"><label><input type="checkbox" name="require_mobile_preview_confirmation" value="1"<%= s.requireMobilePreviewConfirmation ? ' checked' : '' %> /> Require mobile preview confirmation before publication</label></div>
+    </div>
+
+    <div class="bb-hq-panel">
+      <h2 class="bb-hq-panel__title">Central Approval Manifest</h2>
+      <p class="bb-hq-hint">Flag content types that always require HQ verification.</p>
+      <div class="bb-hq-phase3-approval__types bb-hq-phase4-nas__types">
+        <% Object.keys(typeLabels).forEach(function (k) { %>
+        <label>
+          <input type="checkbox" name="approval_content_types" value="<%= k %>"<%= selectedTypes.indexOf(k) >= 0 ? ' checked' : '' %> />
+          <%= typeLabels[k] %>
+        </label>
+        <% }) %>
+      </div>
+    </div>
+
+    <div class="bb-hq-panel">
+      <h2 class="bb-hq-panel__title">Regional Rules</h2>
+      <div class="bb-hq-field is-disabled">
+        <label><input type="checkbox" disabled /> Cross-region visibility sync</label>
+        <p class="bb-hq-hint">Not available yet</p>
+      </div>
+      <div class="bb-hq-field is-disabled">
+        <label><input type="checkbox" disabled /> Geofenced media</label>
+        <p class="bb-hq-hint">Not available yet</p>
+      </div>
+      <div class="bb-hq-field is-disabled">
+        <label for="audit-retention">Audit retention</label>
+        <select id="audit-retention" disabled>
+          <option>24 Months</option>
+          <option>5 Years (Compliant)</option>
+          <option>Indefinite</option>
+        </select>
+        <p class="bb-hq-hint">Not available yet — audit events use existing retention.</p>
+      </div>
+    </div>
+
+    <div class="bb-hq-panel">
+      <h2 class="bb-hq-panel__title">Trusted branch administrators</h2>
+      <p class="bb-hq-hint">Existing branch administrators are listed for reference. Trusted direct publish is not activated.</p>
+      <% if (!admins.length) { %>
+      <p class="bb-hq-empty">No branch administrators are assigned for this organization.</p>
+      <% } else { %>
+      <div class="bb-hq-table-wrap" data-bb-phase3-approval-desktop="1">
+        <table class="bb-hq-table">
+          <thead><tr><th>User</th><th>Branch</th><th>Permission</th><th>Status</th><th>Access</th></tr></thead>
+          <tbody>
+            <% admins.forEach(function (a) { %>
+            <tr>
+              <td><%= a.displayName || a.email %></td>
+              <td><%= a.branchName %></td>
+              <td><%= a.permission %></td>
+              <td><%= a.status %></td>
+              <td><span class="bb-hq-chip">Publish inactive</span></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="bb-hq-phase3-approval__cards" data-bb-phase3-approval-mobile="1">
+        <% admins.forEach(function (a) { %>
+        <article class="bb-hq-card">
+          <h3><%= a.displayName || a.email %></h3>
+          <p><%= a.branchName %> · <%= a.permission %> · <%= a.status %></p>
+          <p><span class="bb-hq-chip">Publish inactive</span></p>
+        </article>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+
+    <div class="bb-hq-panel">
+      <h2 class="bb-hq-panel__title">Notification preferences</h2>
+      <p class="bb-hq-hint">Preferences are stored only. Email, SMS, push, and webhook delivery are not available yet.</p>
+      <div class="bb-hq-field"><label><input type="checkbox" name="notify_branch_admins" value="1"<%= prefs.notifyBranchAdmins ? ' checked' : '' %> /> Notify branch administrators on review decisions</label></div>
+      <div class="bb-hq-field"><label><input type="checkbox" name="notify_hq_team" value="1"<%= prefs.notifyHqTeam ? ' checked' : '' %> /> Notify HQ team on new submissions</label></div>
+    </div>
+
+    <div class="bb-hq-form__actions bb-hq-phase4-nas__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Save All Changes</button>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/advanced">Discard</a>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

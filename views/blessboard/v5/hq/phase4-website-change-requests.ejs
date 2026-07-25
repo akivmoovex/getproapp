@@ -1,0 +1,270 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = items || [];
+  var branchOptions = branches || [];
+  var pageOptions = pageKeys || [];
+  var submitterOptions = submitters || [];
+  var f = filters || {};
+  var searchQ = f.q ? String(f.q) : '';
+  var activeStatus = f.status ? String(f.status) : '';
+  var activeBranch = f.branchId ? String(f.branchId) : '';
+  var activePage = f.pageKey ? String(f.pageKey) : '';
+  var activeSubmitter = f.submittedBy ? String(f.submittedBy) : '';
+  var fromDate = f.submittedFrom ? String(f.submittedFrom) : '';
+  var toDate = f.submittedTo ? String(f.submittedTo) : '';
+  var labels = statusLabels || {};
+  var sums = summary || {
+    pendingReview: 0,
+    changesRequested: 0,
+    approvedToday: 0,
+    recentlyPublished: 0
+  };
+  var statusChoices = [
+    { key: '', label: 'All Statuses' },
+    { key: 'pending_review', label: labels.pending_review || 'Waiting for Review' },
+    { key: 'changes_requested', label: labels.changes_requested || 'Changes Requested' },
+    { key: 'approved', label: labels.approved || 'Approved' },
+    { key: 'rejected', label: labels.rejected || 'Rejected' },
+    { key: 'published', label: labels.published || 'Published' },
+    { key: 'withdrawn', label: labels.withdrawn || 'Cancelled' },
+    { key: 'draft', label: labels.draft || 'Draft' }
+  ];
+  function statusLabel(s) {
+    if (s === 'pending_review') return 'Waiting for Review';
+    if (s === 'withdrawn') return 'Cancelled';
+    return labels[s] || s || '—';
+  }
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'pending_review') return 'bb-hq-chip--pending';
+    if (key === 'changes_requested') return 'bb-hq-chip--warn';
+    if (key === 'approved' || key === 'published') return 'bb-hq-chip--ok';
+    if (key === 'rejected') return 'bb-hq-chip--danger';
+    return 'bb-hq-chip--muted';
+  }
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  function pageTitleFromKey(key) {
+    if (!key) return '—';
+    return String(key).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+  var listAction = typeof listPath !== 'undefined' && listPath ? listPath : '/hq/website/change-requests';
+  var emptyStateModel = typeof emptyState !== 'undefined' && emptyState ? emptyState : {
+    type: 'empty',
+    icon: 'check_circle',
+    heading: 'All caught up!',
+    body: 'There are no pending website change requests from branches at this time.',
+    primaryAction: { href: listAction + '?status=published', label: 'View Request History', icon: 'history' },
+    secondaryAction: { href: listAction, label: 'Refresh Queue', icon: 'refresh' }
+  };
+%>
+
+<section
+  class="bb-hq-phase4-wcrq bb-hq-phase3-wcs"
+  data-bb-phase4-website-change-requests="1"
+  data-bb-phase3-website-change-submissions="1"
+  aria-label="Phase4 Website Change Requests"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <span>Change Requests</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Website Change Requests</h1>
+      <p class="bb-hq-lede">
+        Review and synchronize content updates from church branches.
+      </p>
+      <p class="bb-hq-visually-hidden">Website Change Submissions</p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/plan-features">Plan features</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/advanced">Advanced</a>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= editorPath %>">
+        <span class="material-symbols-outlined" aria-hidden="true">web</span>
+        Open Website Editor
+      </a>
+    </p>
+  </header>
+
+  <% if (queryError) { %>
+  <%- include('../partials/phase4-system-state', {
+    systemState: {
+      type: 'error',
+      icon: 'cloud_off',
+      heading: 'Unable to load change requests',
+      body: queryError,
+      primaryAction: { href: listAction, label: 'Try Again', icon: 'refresh' },
+      secondaryAction: { href: '/hq/website', label: 'Return to Website', icon: 'arrow_back' }
+    }
+  }) %>
+  <% } else { %>
+
+  <% if (notice === 'approved') { %>
+  <p class="bb-hq-ok" role="status">Request approved. Publish when ready from Website Publish.</p>
+  <% } else if (notice === 'changes_requested') { %>
+  <p class="bb-hq-ok" role="status">Changes requested. The branch administrator can revise and resubmit.</p>
+  <% } else if (notice === 'rejected') { %>
+  <p class="bb-hq-ok" role="status">Request rejected.</p>
+  <% } %>
+
+  <div class="bb-hq-summary bb-hq-phase4-wcrq__summary bb-hq-phase3-wcs__summary" data-bb-phase3-wcs-summary="1">
+    <article class="bb-hq-card bb-hq-card--accent">
+      <p class="bb-hq-card__label">Waiting for Review</p>
+      <p class="bb-hq-card__value"><%= sums.pendingReview %></p>
+      <p class="bb-hq-hint">Active</p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Changes Requested</p>
+      <p class="bb-hq-card__value"><%= sums.changesRequested %></p>
+      <p class="bb-hq-hint">Requires branch action</p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Approved</p>
+      <p class="bb-hq-card__value"><%= sums.approvedToday %></p>
+      <p class="bb-hq-hint">Ready to publish</p>
+    </article>
+    <article class="bb-hq-card">
+      <p class="bb-hq-card__label">Published</p>
+      <p class="bb-hq-card__value"><%= sums.recentlyPublished %></p>
+      <p class="bb-hq-hint">Recent</p>
+    </article>
+  </div>
+
+  <form
+    method="get"
+    action="<%= listAction %>"
+    class="bb-hq-filter bb-hq-phase4-wcrq__filter bb-hq-phase3-wcs__filter"
+    data-bb-phase3-wcs-filter="1"
+    role="search"
+  >
+    <div class="bb-hq-field">
+      <label for="wcs-q">Search</label>
+      <input id="wcs-q" name="q" type="search" maxlength="100" value="<%= searchQ %>" placeholder="Title, branch, submitter…" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-status">Status</label>
+      <select id="wcs-status" name="status">
+        <% statusChoices.forEach(function (opt) { %>
+        <option value="<%= opt.key %>"<%= activeStatus === opt.key ? ' selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-branch">Branch</label>
+      <select id="wcs-branch" name="branch">
+        <option value="">All Branches</option>
+        <% branchOptions.forEach(function (b) { %>
+        <option value="<%= b.id %>"<%= activeBranch === String(b.id) ? ' selected' : '' %>><%= b.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-page">Area</label>
+      <select id="wcs-page" name="page">
+        <option value="">All Areas</option>
+        <% pageOptions.forEach(function (pk) { %>
+        <option value="<%= pk %>"<%= activePage === pk ? ' selected' : '' %>><%= pageTitleFromKey(pk) %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-submitter">Submitted by</label>
+      <select id="wcs-submitter" name="submitted_by">
+        <option value="">All users</option>
+        <% submitterOptions.forEach(function (u) { %>
+        <option value="<%= u.id %>"<%= activeSubmitter === String(u.id) ? ' selected' : '' %>><%= u.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-from">From</label>
+      <input id="wcs-from" name="from" type="date" value="<%= fromDate %>" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="wcs-to">To</label>
+      <input id="wcs-to" name="to" type="date" value="<%= toDate %>" />
+    </div>
+    <div class="bb-hq-filter__actions">
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Apply
+      </button>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= listAction %>">Clear Filters</a>
+    </div>
+  </form>
+
+  <% if (!rows.length) { %>
+  <%- include('../partials/phase4-system-state', { systemState: emptyStateModel }) %>
+  <div class="bb-hq-visually-hidden" data-bb-phase3-wcs-empty="1">No website changes are waiting for review.</div>
+  <% } else { %>
+
+  <div class="bb-hq-table-wrap bb-hq-phase4-wcrq__table bb-hq-phase3-wcs__table-wrap" data-bb-phase3-wcs-desktop="1" data-bb-phase4-wcrq-desktop="1">
+    <table class="bb-hq-table">
+      <thead>
+        <tr>
+          <th scope="col">Title</th>
+          <th scope="col">Branch</th>
+          <th scope="col">Submitted By</th>
+          <th scope="col">Date</th>
+          <th scope="col">Area</th>
+          <th scope="col">Status</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (row) { %>
+        <tr>
+          <td>
+            <a href="<%= listAction %>/<%= row.id %>"><%= row.title %></a>
+            <% if (row.changeType) { %><p class="bb-hq-hint"><%= row.changeType %></p><% } %>
+          </td>
+          <td><%= row.branchName || '—' %></td>
+          <td><%= row.submittedByName || '—' %></td>
+          <td><%= formatWhen(row.submittedAt) %></td>
+          <td><%= pageTitleFromKey(row.pageKey) %></td>
+          <td>
+            <span class="bb-hq-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+          </td>
+          <td class="bb-hq-table__actions">
+            <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--primary" href="<%= listAction %>/<%= row.id %>">Review</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="bb-hq-phase4-wcrq__cards bb-hq-phase3-wcs__cards" data-bb-phase3-wcs-mobile="1" data-bb-phase4-wcrq-mobile="1">
+    <% rows.forEach(function (row) { %>
+    <li class="bb-hq-card bb-hq-phase4-wcrq__card bb-hq-phase3-wcs__card">
+      <div class="bb-hq-phase3-wcs__card-head">
+        <p class="bb-hq-hint"><%= (row.branchName || 'Branch').toUpperCase() %></p>
+        <span class="bb-hq-chip <%= statusChip(row.status) %>"><%= statusLabel(row.status) %></span>
+      </div>
+      <h2 class="bb-hq-phase3-wcs__card-title"><%= row.title %></h2>
+      <dl class="bb-hq-phase3-wcs__meta">
+        <div><dt>Submitted</dt><dd><%= formatWhen(row.submittedAt) %> by <%= row.submittedByName || '—' %></dd></div>
+        <div><dt>Area</dt><dd><%= pageTitleFromKey(row.pageKey) %></dd></div>
+      </dl>
+      <p class="bb-hq-phase3-wcs__card-actions">
+        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= listAction %>/<%= row.id %>">
+          Review Request
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </a>
+      </p>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+  <% } %>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

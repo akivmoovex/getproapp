@@ -1,0 +1,56 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var e = typeof publishError !== 'undefined' && publishError ? publishError : {};
+  var problems = e.problems || [];
+%>
+
+<section
+  class="bb-phase4-publish bb-phase4-publish--error"
+  data-bb-phase4-publish-website-error="1"
+  data-bb-stitch-screen="Phase4 - Publish Website Error"
+  data-bb-viewport="responsive"
+  aria-label="Publish Website Error"
+>
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="<%= e.overviewPath || '/hq/website' %>">Website</a>
+      <span aria-hidden="true">›</span>
+      <span>Publish</span>
+    </p>
+    <p class="bb-phase4-publish__error-icon" aria-hidden="true">
+      <span class="material-symbols-outlined">error</span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= e.title || 'Your website was not published.' %></h1>
+    <% if (e.liveUnchanged !== false) { %>
+    <p class="bb-hq-lede"><%= e.subtitle || 'The live website has not changed.' %></p>
+    <% } %>
+  </header>
+
+  <article class="bb-hq-card" role="alert">
+    <h2 class="bb-hq-section-title">What needs attention</h2>
+    <% if (problems.length) { %>
+    <ul class="bb-phase4-publish__problems">
+      <% problems.forEach(function (p) { %><li><%= p %></li><% }) %>
+    </ul>
+    <% } else { %>
+    <p>Website information needs attention before publishing.</p>
+    <% } %>
+  </article>
+
+  <p class="bb-phase4-publish__error-actions">
+    <% if (e.showFixProblems) { %>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= e.editPath || '/hq/content' %>">Fix Problems</a>
+    <% } %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= e.previewPath %>">Preview Again</a>
+    <% if (e.showTryAgain) { %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= e.reviewPath || '/hq/website/publish/review' %>">Try Publishing Again</a>
+    <% } else { %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= e.reviewPath || '/hq/website/publish/review' %>">Return to review</a>
+    <% } %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= e.overviewPath || '/hq/website' %>">Return to Website Overview</a>
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

@@ -72,7 +72,9 @@ function buildBranchAdminShellLocals(req, res, opts) {
     resources: "Resources",
     forms: "Forms",
     requests: "Requests",
-    content: "Website",
+    content: "Content",
+    website: "Branch Website",
+    website_submissions: "Change requests",
   };
 
   return {

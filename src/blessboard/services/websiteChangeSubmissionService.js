@@ -1090,6 +1090,19 @@ async function submitBranchSubmission(db, opts) {
   const id = resolvedId;
 
   try {
+    const approvalSettingsSvc = require("./websiteApprovalSettingsService");
+    const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(db, organizationId);
+    if (settingsLoad.ok && settingsLoad.settings) {
+      const resolved = approvalSettingsSvc.resolveBranchEditMode(settingsLoad.settings);
+      if (resolved.mode === "draft_only") {
+        return { ok: false, status: STATUS.FORBIDDEN, reason: "draft_only" };
+      }
+    }
+  } catch {
+    /* continue */
+  }
+
+  try {
     return await withTransaction(db, async (client) => {
       const existing = await repo.getSubmissionByOrgBranchAndId(
         client,

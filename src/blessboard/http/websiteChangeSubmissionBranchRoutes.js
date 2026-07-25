@@ -178,7 +178,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     return buildBranchAdminShellLocals(req, res, {
       env,
       isProduction,
-      activeNav: "content",
+      activeNav: (extras && extras.activeNav) || "website_submissions",
       pageTitle: extras && extras.pageTitle ? extras.pageTitle : "Website submissions",
       extra: extras,
     });
@@ -202,6 +202,48 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
       checklist: svc.parseChecklist(body),
     };
   }
+
+  router.get("/branch-admin/website", rejectApex, gateBranch, async (req, res) => {
+    const tenant = requireBranchTenant(req, res);
+    if (!tenant) return;
+
+    const {
+      loadBranchWebsiteOverview,
+    } = require("../services/websiteOverviewService");
+    const overview = await loadBranchWebsiteOverview(getPool(), {
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      branchId: tenant.actorBranchId,
+      organizationKey:
+        tenant.organization.key || tenant.organization.organizationKey || null,
+      branchDisplayName:
+        (tenant.primaryBranch && tenant.primaryBranch.displayName) || null,
+      env,
+    });
+    if (!overview.ok) {
+      const code =
+        overview.status === "forbidden" || overview.status === "not_found" ? 404 : 503;
+      return sendControlled(
+        req,
+        res,
+        code,
+        code === 404 ? "Not found." : "Website overview is temporarily unavailable."
+      );
+    }
+
+    // Prefer assigned branch display name from overview
+    const html = renderView(
+      "branch-admin/phase4-branch-website-overview.ejs",
+      await Promise.resolve(
+        shellLocals(req, res, {
+          pageTitle: "Branch Website",
+          activeNav: "website",
+          overview,
+        })
+      )
+    );
+    return res.status(200).type("html").send(html);
+  });
 
   router.get("/branch-admin/website/submissions", rejectApex, gateBranch, async (req, res) => {
     const tenant = requireBranchTenant(req, res);
@@ -304,15 +346,16 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     }
 
     const html = renderView(
-      "branch-admin/phase3-submit-website-changes.ejs",
+      "branch-admin/phase4-submit-branch-website-update.ejs",
       shellLocals(req, res, {
-        pageTitle: "Submit Website Changes",
+        pageTitle: "Submit Branch Website Update",
         model,
         statusLabels: svc.STATUS_LABELS,
         priorities: svc.PRIORITIES,
         editorPath: editorPath(),
         listPath: "/branch-admin/website/submissions",
         formError: String((req.query && req.query.error) || "") || null,
+        notice: String((req.query && req.query.notice) || "") || null,
         branchDisplayName:
           (tenant.primaryBranch &&
             (tenant.primaryBranch.displayName || tenant.primaryBranch.key)) ||

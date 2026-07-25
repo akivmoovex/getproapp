@@ -176,16 +176,27 @@ describe("phase3 website publishing history", () => {
         orgB.id
       );
 
-      for (let i = 0; i < 2; i += 1) {
-        const pub = await publishChurchWebsite(pool, {
-          churchId: churchA.id,
-          actorUserId: users.hqA.user.id,
-          confirmPublish: true,
-          deferServiceTimes: true,
-          env: baseEnv(),
-        });
-        assert.equal(pub.ok, true, pub.reason || JSON.stringify(pub.gaps || []));
-      }
+      const first = await publishChurchWebsite(pool, {
+        churchId: churchA.id,
+        actorUserId: users.hqA.user.id,
+        confirmPublish: true,
+        deferServiceTimes: true,
+        env: baseEnv(),
+      });
+      assert.equal(first.ok, true, first.reason || JSON.stringify(first.gaps || []));
+
+      // Seed a second publication record without relying on rapid republish idempotency.
+      await versionRepo.supersedePublishedVersions(pool, orgA.id);
+      await versionRepo.insertPublishedVersion(pool, {
+        organizationId: orgA.id,
+        churchId: churchA.id,
+        versionNumber: 2,
+        themeKey: "default",
+        sourceType: "hq_edit",
+        publishedBy: users.hqA.user.id,
+        snapshot: { pages: [], pageKeys: ["home"] },
+        changeSummary: { pagesChanged: ["home"], publicationNote: "Second publish fixture" },
+      });
 
       const list = await versionRepo.listVersions(pool, { organizationId: orgA.id });
       versions = list.items.filter((v) => v.publishedAt);

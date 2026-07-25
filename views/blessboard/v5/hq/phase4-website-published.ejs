@@ -1,0 +1,72 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var s = typeof success !== 'undefined' && success ? success : {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-phase4-publish bb-phase4-publish--success"
+  data-bb-phase4-website-published="1"
+  data-bb-phase3-publication-result="1"
+  data-bb-stitch-screen="Phase4 - Website Published"
+  data-bb-viewport="responsive"
+  aria-label="Website Published"
+>
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="<%= s.overviewPath || '/hq/website' %>">Website</a>
+      <span aria-hidden="true">›</span>
+      <span>Published</span>
+    </p>
+    <p class="bb-phase4-publish__success-icon" aria-hidden="true">
+      <span class="material-symbols-outlined">check_circle</span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= s.title || 'Your church website has been published.' %></h1>
+  </header>
+
+  <article class="bb-hq-card bb-phase4-publish__success-card">
+    <h2 class="bb-hq-section-title">Publication Details</h2>
+    <dl class="bb-phase4-publish__meta">
+      <div><dt>Published</dt><dd><%= formatWhen(s.publishedAt) %></dd></div>
+      <div><dt>Published by</dt><dd><%= s.publishedByName || '—' %></dd></div>
+      <% if (s.pagesUpdated != null) { %>
+      <div><dt>Pages updated</dt><dd><%= s.pagesUpdated %></dd></div>
+      <% } %>
+      <% if ((s.branchesAffected || []).length) { %>
+      <div><dt>Branches affected</dt><dd><%= (s.branchesAffected || []).join(', ') %></dd></div>
+      <% } %>
+      <% if (s.publicationNote) { %>
+      <div><dt>Publication note</dt><dd><%= s.publicationNote %></dd></div>
+      <% } %>
+    </dl>
+
+    <% if (s.showGrowthRecoveryNote) { %>
+    <p class="bb-phase4-publish__recovery" data-bb-phase4-publish-growth-note="1">
+      This publication has been saved in Recent Website Changes.
+    </p>
+    <% } %>
+  </article>
+
+  <p class="bb-phase4-publish__success-actions">
+    <% if (s.publicPath) { %>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= s.publicPath %>" rel="noopener">View Live Website</a>
+    <% } %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= s.overviewPath || '/hq/website' %>">Return to Website Overview</a>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= s.editPath || '/hq/content' %>">Continue Editing</a>
+    <% if (s.recentChangesPath) { %>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= s.recentChangesPath %>">View Recent Website Changes</a>
+    <% } %>
+  </p>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

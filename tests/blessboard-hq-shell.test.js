@@ -284,10 +284,11 @@ describe("blessboard hq shell", () => {
     assert.doesNotMatch(res.text, /Campus Old/);
     assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
     assert.doesNotMatch(res.text, new RegExp(campusA.id, "i"));
+    assert.match(res.text, /href="\/hq\/broadcasts"/);
     assert.doesNotMatch(res.text, /href="\/hq\/broadcast"/i);
     assert.doesNotMatch(
       res.text,
-      /Broadcast|Role management|Organization templates|Quick Export|New Branch Registry/i
+      /Role management|Organization templates|Quick Export|New Branch Registry/i
     );
     assert.doesNotMatch(
       res.text,
