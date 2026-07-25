@@ -222,7 +222,7 @@ describe("POST request-information route (Prompt 064)", () => {
     assert.equal(res.status, 303);
     assert.match(
       String(res.headers.location || ""),
-      /error=csrf#reg-communications/
+      /\/request-information\?error=csrf/
     );
     assert.equal(state.recordCalls.length, 0);
   });
@@ -234,7 +234,7 @@ describe("POST request-information route (Prompt 064)", () => {
     assert.match(
       String(res.headers.location || ""),
       new RegExp(
-        `/admin/registration-applications/${APP_ID}\\?notice=information_requested#reg-communications`
+        `/admin/registration-applications/${APP_ID}/information-requested\\?notice=information_requested`
       )
     );
     assert.equal(state.recordCalls.length, 1);
@@ -265,7 +265,7 @@ describe("POST request-information route (Prompt 064)", () => {
     const { app, state } = buildApp({ missingApplication: true });
     const res = await postRequest(app);
     assert.equal(res.status, 303);
-    assert.match(String(res.headers.location || ""), /error=not_found#reg-communications/);
+    assert.match(String(res.headers.location || ""), /error=not_found/);
     assert.equal(state.recordCalls.length, 0);
   });
 
@@ -277,7 +277,7 @@ describe("POST request-information route (Prompt 064)", () => {
     });
     const res = await postRequest(app);
     assert.equal(res.status, 303);
-    assert.match(String(res.headers.location || ""), /error=invalid#reg-communications/);
+    assert.match(String(res.headers.location || ""), /\/request-information\?error=invalid/);
     assert.equal(state.recordCalls.length, 1);
     assert.equal(state.followUpCalls.length, 0);
   });
@@ -292,7 +292,7 @@ describe("POST request-information route (Prompt 064)", () => {
     assert.equal(res.status, 303);
     assert.match(
       String(res.headers.location || ""),
-      /error=information_request_failed#reg-communications/
+      /\/request-information\?error=information_request_failed/
     );
     assert.doesNotMatch(String(res.headers.location || ""), /hunter2|SMTP/i);
   });

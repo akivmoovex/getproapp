@@ -268,12 +268,12 @@ describe("registration recommendation UI (no Postgres)", () => {
     assert.doesNotMatch(html, /action="[^"]*recommendation[^"]*"/i);
   });
 
-  it("preserves existing Approve and Reject forms", () => {
+  it("preserves Approve and Reject confirmation entry points", () => {
     const html = renderDetail();
     assert.match(html, /data-bb-pa-approve-form="1"/);
-    assert.match(html, /action="\/admin\/registration-applications\/[^"]+\/approve"/);
+    assert.match(html, /href="\/admin\/registration-applications\/[^"]+\/approve"/);
     assert.match(html, /data-bb-pa-reject-form="1"/);
-    assert.match(html, /action="\/admin\/registration-applications\/[^"]+\/reject"/);
+    assert.match(html, /href="\/admin\/registration-applications\/[^"]+\/reject"/);
   });
 
   it("has no client-side recalculation logic", () => {

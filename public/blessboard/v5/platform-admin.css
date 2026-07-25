@@ -3047,6 +3047,483 @@ tr.is-disabled td {
   grid-column: 1 / -1;
 }
 
+/* —— Phase 5 registration queue —— */
+.bb-pa-reg-queue .bb-pa-page-head__title {
+  letter-spacing: -0.02em;
+}
+.bb-pa-reg-queue__table th,
+.bb-pa-reg-queue__table td {
+  vertical-align: middle;
+}
+.bb-pa-reg-queue__church {
+  font-weight: 600;
+}
+.bb-pa-reg-queue__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem 1.15rem 1rem;
+}
+.bb-pa-reg-queue__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.bb-pa-reg-queue__card-title {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+.bb-pa-reg-queue__card-meta {
+  display: grid;
+  gap: 0.55rem 1rem;
+  margin: 0;
+  grid-template-columns: 1fr;
+}
+.bb-pa-reg-queue__card-meta > div {
+  display: grid;
+  gap: 0.15rem;
+}
+.bb-pa-reg-queue__card-meta dt {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-muted, #5a6b73);
+  font-weight: 600;
+}
+.bb-pa-reg-queue__card-meta dd {
+  margin: 0;
+  font-size: 0.98rem;
+  color: var(--bb-ink, #1a2b33);
+  overflow-wrap: anywhere;
+}
+.bb-pa-reg-queue .bb-pa-reg-card__action {
+  margin: 0;
+  padding: 0;
+}
+.bb-pa-reg-queue .bb-pa-reg-card__action .bb-pa-btn {
+  min-height: 2.75rem;
+  font-weight: 600;
+}
+.bb-pa-reg-empty.bb-ds-empty,
+.bb-pa-reg-no-results.bb-ds-empty {
+  margin-top: 1.25rem;
+  padding: 2.5rem 1.5rem;
+}
+@media (min-width: 700px) {
+  .bb-pa-reg-queue__card-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* —— Phase 5 registration review hub —— */
+.bb-pa-reg-hub__title {
+  overflow-wrap: anywhere;
+  letter-spacing: -0.02em;
+}
+.bb-pa-reg-hub__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+  align-items: center;
+}
+.bb-pa-reg-hub__dup {
+  margin: 0 0 1.25rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 0.9rem;
+  border: 1px solid #f0c36d;
+  background: #fff8eb;
+}
+.bb-pa-reg-hub__dup-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+.bb-pa-reg-hub__dup-dl {
+  margin: 0.85rem 0;
+}
+.bb-pa-reg-hub__dup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+.bb-pa-reg-hub__layout {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+.bb-pa-reg-hub__main {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.bb-pa-reg-hub__card .bb-pa-dl dd,
+.bb-pa-reg-hub__email,
+.bb-pa-reg-hub__contact-value {
+  overflow-wrap: anywhere;
+}
+.bb-pa-reg-hub__contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+.bb-pa-reg-hub__message-body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.bb-pa-reg-hub__decision-actions {
+  display: grid;
+  gap: 0.65rem;
+}
+.bb-pa-reg-hub__mobile-decision {
+  display: none;
+}
+.bb-pa-reg-hub__secondary {
+  margin-top: 1.25rem;
+}
+.bb-pa-reg-hub__secondary-summary {
+  cursor: pointer;
+  font-weight: 650;
+  list-style: disclosure-closed;
+}
+.bb-pa-reg-hub__secondary[open] > .bb-pa-reg-hub__secondary-summary {
+  list-style: disclosure-open;
+  margin-bottom: 0.85rem;
+}
+.bb-pa-reg-hub__secondary-body {
+  min-width: 0;
+}
+@media (min-width: 960px) {
+  .bb-pa-reg-hub__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  }
+  .bb-pa-reg-hub__decision {
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+@media (max-width: 899px) {
+  .bb-pa-reg-hub {
+    padding-bottom: 5.5rem;
+  }
+  .bb-pa-reg-hub__decision {
+    display: none;
+  }
+  .bb-pa-reg-hub__mobile-decision {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.45rem;
+    padding: 0.65rem 0.75rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid var(--bb-line, #d9e4e9);
+    backdrop-filter: blur(8px);
+  }
+  .bb-pa-reg-hub__mobile-decision .bb-pa-btn {
+    min-height: 2.75rem;
+    font-size: 0.85rem;
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+}
+
+/* —— Phase 5 approval confirmation / processing / success —— */
+.bb-pa-reg-approve-confirm {
+  max-width: 42rem;
+}
+.bb-pa-reg-approve-confirm__list {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.25rem;
+}
+.bb-pa-reg-approve-confirm__list li {
+  margin: 0.35rem 0;
+}
+.bb-pa-reg-approve-confirm__actions {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+.bb-pa-reg-approve-confirm__actions .bb-pa-btn {
+  min-height: 2.85rem;
+}
+.bb-pa-reg-approve-confirm__org-key {
+  margin-top: 0.75rem;
+}
+.bb-pa-reg-approve-processing {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(20, 28, 36, 0.55);
+}
+.bb-pa-reg-approve-processing[hidden] {
+  display: none !important;
+}
+.bb-pa-reg-approve-processing__card {
+  width: min(100%, 28rem);
+  padding: 1.5rem 1.35rem;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(16, 24, 40, 0.22);
+}
+.bb-pa-reg-approve-processing__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+.bb-pa-reg-approve-processing__steps {
+  margin: 1rem 0;
+  padding-left: 1.15rem;
+}
+.bb-pa-reg-approve-processing__steps li {
+  margin: 0.4rem 0;
+}
+html.bb-pa-reg-approve-processing-active {
+  overflow: hidden;
+}
+.bb-pa-reg-approved {
+  margin: 0 0 1.25rem;
+  border: 1px solid #c9d8ef;
+  background: linear-gradient(180deg, #f7faff 0%, #fff 70%);
+}
+.bb-pa-reg-approved__title {
+  overflow-wrap: anywhere;
+  margin: 0.15rem 0 0.5rem;
+}
+.bb-pa-reg-approved__facts {
+  margin: 1rem 0;
+}
+.bb-pa-reg-approved__invite-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: stretch;
+}
+.bb-pa-reg-approved__invite-row input {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.bb-pa-reg-approved__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+.bb-pa-reg-approved__actions .bb-pa-btn {
+  min-height: 2.75rem;
+}
+@media (max-width: 719px) {
+  .bb-pa-reg-approve-confirm {
+    max-width: none;
+  }
+  .bb-pa-reg-approve-confirm__actions .bb-pa-btn--block {
+    width: 100%;
+  }
+  .bb-pa-reg-approved__actions {
+    flex-direction: column;
+  }
+  .bb-pa-reg-approved__actions .bb-pa-btn {
+    width: 100%;
+    text-align: center;
+  }
+  .bb-pa-reg-approved__invite-row {
+    flex-direction: column;
+  }
+}
+
+/* —— Phase 5 request information / needs information —— */
+.bb-pa-reg-request-info {
+  max-width: 42rem;
+  padding-bottom: 5.5rem;
+}
+.bb-pa-reg-request-info__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+  align-items: center;
+}
+.bb-pa-reg-request-info__reasons {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.bb-pa-reg-request-info__reason {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.75rem;
+  min-height: 3rem;
+  cursor: pointer;
+}
+.bb-pa-reg-request-info__reason input {
+  margin-top: 0.2rem;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+.bb-pa-reg-request-info__message {
+  width: 100%;
+  min-height: 8rem;
+}
+.bb-pa-reg-request-info__actions {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+.bb-pa-reg-request-info__actions .bb-pa-btn {
+  min-height: 2.85rem;
+}
+.bb-pa-reg-info-requested {
+  max-width: 42rem;
+}
+.bb-pa-reg-info-requested__reasons {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.bb-pa-reg-info-requested__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+.bb-pa-reg-info-requested__actions .bb-pa-btn {
+  min-height: 2.75rem;
+}
+.bb-pa-reg-needs-info {
+  margin: 0 0 1.25rem;
+  border: 1px solid #f0c36d;
+  background: #fffaf0;
+}
+.bb-pa-reg-needs-info__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+.bb-pa-reg-needs-info__actions .bb-pa-btn {
+  min-height: 2.75rem;
+}
+@media (max-width: 719px) {
+  .bb-pa-reg-request-info__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom, 0));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 28%);
+  }
+  .bb-pa-reg-info-requested__actions,
+  .bb-pa-reg-needs-info__actions {
+    flex-direction: column;
+  }
+  .bb-pa-reg-info-requested__actions .bb-pa-btn,
+  .bb-pa-reg-needs-info__actions .bb-pa-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* —— Phase 5 rejection confirmation / rejected result —— */
+.bb-pa-reg-reject {
+  max-width: 42rem;
+  padding-bottom: 5.5rem;
+}
+.bb-pa-reg-reject__reasons {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.bb-pa-reg-reject__reason {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.75rem;
+  min-height: 3rem;
+  cursor: pointer;
+}
+.bb-pa-reg-reject__reason input {
+  margin-top: 0.2rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+}
+.bb-pa-reg-reject__note,
+.bb-pa-reg-reject [data-bb-pa-reg-reject-applicant="1"] {
+  width: 100%;
+  min-height: 6rem;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.bb-pa-reg-reject__confirm {
+  margin-top: 1rem;
+}
+.bb-pa-reg-reject__actions {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+.bb-pa-reg-reject__actions .bb-pa-btn {
+  min-height: 2.85rem;
+}
+.bb-pa-reg-reject__actions .bb-pa-btn--danger {
+  box-shadow: none;
+}
+.bb-pa-reg-rejected {
+  max-width: 42rem;
+}
+.bb-pa-reg-rejected__internal {
+  margin-top: 1rem;
+}
+.bb-pa-reg-rejected__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+.bb-pa-reg-rejected__actions .bb-pa-btn {
+  min-height: 2.75rem;
+}
+.bb-pa-reg-reject [data-bb-pa-reg-reject-church="1"],
+.bb-pa-reg-rejected [data-bb-pa-reg-rejected-church="1"],
+.bb-pa-reg-reject .bb-pa-reg-hub__email,
+.bb-pa-reg-reject .bb-pa-reg-hub__email a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+@media (max-width: 719px) {
+  .bb-pa-reg-reject__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom, 0));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 28%);
+  }
+  .bb-pa-reg-rejected__actions {
+    flex-direction: column;
+  }
+  .bb-pa-reg-rejected__actions .bb-pa-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 /* —— Registration detail overview / structured cards (Phase2 Batch 4–5) —— */
 .bb-pa-reg-overview {
   margin-bottom: 0.75rem;

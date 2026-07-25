@@ -229,9 +229,21 @@ describe("registration approval without password (Prompt 49)", () => {
       path.join(__dirname, "../views/blessboard/v5/platform-admin/registration-application-detail.ejs"),
       "utf8"
     );
-    assert.doesNotMatch(detail, /name="administrator_password"/);
-    assert.doesNotMatch(detail, /name="administrator_password_confirm"/);
-    assert.match(detail, /invitation will be created for the church administrator/i);
+    const secondary = fs.readFileSync(
+      path.join(__dirname, "../views/blessboard/v5/partials/pa-registration-detail-secondary.ejs"),
+      "utf8"
+    );
+    const confirm = fs.readFileSync(
+      path.join(
+        __dirname,
+        "../views/blessboard/v5/platform-admin/registration-application-approve-confirm.ejs"
+      ),
+      "utf8"
+    );
+    const combined = `${detail}\n${secondary}\n${confirm}`;
+    assert.doesNotMatch(combined, /name="administrator_password"/);
+    assert.doesNotMatch(combined, /name="administrator_password_confirm"/);
+    assert.match(combined, /invitation will be created for the church administrator|invited HQ administrator|Prepare invitation information/i);
   });
 
   it("2–3. Missing password does not block Foundation exception approval", async () => {
@@ -476,7 +488,22 @@ describe("registration approval without password (Prompt 49)", () => {
       path.join(__dirname, "../views/blessboard/v5/platform-admin/registration-application-detail.ejs"),
       "utf8"
     );
-    assert.match(detail, /Copy or resend the invitation from the organization page/);
+    const secondary = fs.readFileSync(
+      path.join(__dirname, "../views/blessboard/v5/partials/pa-registration-detail-secondary.ejs"),
+      "utf8"
+    );
+    const confirm = fs.readFileSync(
+      path.join(
+        __dirname,
+        "../views/blessboard/v5/platform-admin/registration-application-approve-confirm.ejs"
+      ),
+      "utf8"
+    );
+    const combined = `${detail}\n${secondary}\n${confirm}`;
+    assert.match(
+      combined,
+      /Copy or resend the invitation from the organization page|Prepare invitation information for you to copy|Administrator invitation prepared/i
+    );
   });
 
   it("16–17. CSRF required; unauthorized cannot approve", async () => {

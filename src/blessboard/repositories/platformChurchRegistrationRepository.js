@@ -703,6 +703,7 @@ function normalizeFollowUpStatusInput(status) {
     .trim()
     .toLowerCase();
   if (s === "call_pending") return "contact_pending";
+  if (s === "needs_information") return "needs_information";
   if (s === "needs_help" || s === "self_onboarding") return s;
   return s;
 }
@@ -1025,6 +1026,10 @@ function buildRegistrationListWhere(filters) {
     if (follow === "contact_pending") {
       clauses.push(
         `${EFFECTIVE_FOLLOW_UP_SQL} IN ('contact_pending', 'call_pending')`
+      );
+    } else if (follow === "needs_information") {
+      clauses.push(
+        `${EFFECTIVE_FOLLOW_UP_SQL} IN ('awaiting_customer', 'needs_help', 'self_onboarding')`
       );
     } else {
       params.push(filters.followUpStatus);

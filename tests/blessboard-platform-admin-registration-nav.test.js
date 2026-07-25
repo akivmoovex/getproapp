@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Phase2 Batch 1 — Platform Admin Registration Applications navigation alignment.
+ * Phase2 Batch 1 — Platform Admin Church Registrations navigation alignment.
  * Focused: single nav item, href, active state on list/detail, no duplicates, auth gate.
  */
 
@@ -63,21 +63,21 @@ function activeRegistrationLink(html, sectionAttr) {
   const section = html.match(sectionRe);
   assert.ok(section, `missing nav section ${sectionAttr}`);
   const linkRe =
-    /<a[^>]*href="\/admin\/registration-applications"[^>]*>[\s\S]*?Registration Applications[\s\S]*?<\/a>/i;
+    /<a[^>]*href="\/admin\/registration-applications"[^>]*>[\s\S]*?Church Registrations[\s\S]*?<\/a>/i;
   const link = section[0].match(linkRe);
-  assert.ok(link, "Registration Applications link missing in section");
+  assert.ok(link, "Church Registrations link missing in section");
   return link[0];
 }
 
 describe("platform-admin registration nav config", () => {
-  it("defines exactly one Registration Applications nav item after Organizations", () => {
+  it("defines exactly one Church Registrations nav item after Organizations", () => {
     const regItems = PLATFORM_ADMIN_NAV.filter(
       (item) => item.key === "registration-applications"
     );
     assert.equal(regItems.length, 1);
-    assert.equal(regItems[0].label, "Registration Applications");
+    assert.equal(regItems[0].label, "Church Registrations");
     assert.equal(regItems[0].href, "/admin/registration-applications");
-    assert.equal(regItems[0].icon, "app_registration");
+    assert.equal(regItems[0].icon, "church");
     assert.equal(regItems[0].nav, true);
     assert.equal(regItems[0].enabled, true);
 
@@ -122,7 +122,7 @@ describe("platform-admin registration nav config", () => {
     assert.equal(locals.activeNav, "registration-applications");
   });
 
-  it("shell fallback markup includes Registration Applications once", () => {
+  it("shell fallback markup includes Church Registrations once", () => {
     const start = fs.readFileSync(
       path.join(__dirname, "../views/blessboard/v5/partials/platform-admin-shell-start.ejs"),
       "utf8"
@@ -298,7 +298,7 @@ describe("platform-admin registration nav HTTP", () => {
     return `${DEFAULT_V5_COOKIE}=${created.rawToken}`;
   }
 
-  it("platform admin sees Registration Applications in desktop and mobile nav", async (t) => {
+  it("platform admin sees Church Registrations in desktop and mobile nav", async (t) => {
     if (!requireDb(t)) return;
     const cookie = await cookieFor(users.platform);
     const res = await request(app)
@@ -308,11 +308,11 @@ describe("platform-admin registration nav HTTP", () => {
     assert.equal(res.status, 200);
 
     assert.equal(
-      countLabelInNavSection(res.text, 'data-bb-nav="desktop"', "Registration Applications"),
+      countLabelInNavSection(res.text, 'data-bb-nav="desktop"', "Church Registrations"),
       1
     );
     assert.equal(
-      countLabelInNavSection(res.text, 'data-bb-nav="mobile-links"', "Registration Applications"),
+      countLabelInNavSection(res.text, 'data-bb-nav="mobile-links"', "Church Registrations"),
       1
     );
 
@@ -322,7 +322,7 @@ describe("platform-admin registration nav HTTP", () => {
     assert.match(res.text, /href="\/admin\/account"/);
   });
 
-  it("Registration Applications is active on the list route", async (t) => {
+  it("Church Registrations is active on the list route", async (t) => {
     if (!requireDb(t)) return;
     const cookie = await cookieFor(users.platform);
     const res = await request(app)
@@ -339,7 +339,7 @@ describe("platform-admin registration nav HTTP", () => {
     }
   });
 
-  it("Registration Applications is active on the application detail route", async (t) => {
+  it("Church Registrations is active on the application detail route", async (t) => {
     if (!requireDb(t)) return;
     assert.ok(fixtures.submittedApp && fixtures.submittedApp.id);
     const cookie = await cookieFor(users.platform);

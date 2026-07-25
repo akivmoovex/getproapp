@@ -389,7 +389,7 @@ describe("registration communication history UI (Prompt 067, no Postgres)", () =
     assert.match(css, /\.bb-pa-reg-communications__list\s*\{/);
     assert.match(css, /\.bb-pa-reg-communications-card\s*\{/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=50/);
+    assert.match(shell, /platform-admin\.css\?v=55/);
   });
 
   it("keeps the request-information form in the same section", () => {

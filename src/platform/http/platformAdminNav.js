@@ -23,9 +23,9 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
   },
   {
     key: "registration-applications",
-    label: "Registration Applications",
+    label: "Church Registrations",
     href: "/admin/registration-applications",
-    icon: "app_registration",
+    icon: "church",
     nav: true,
     enabled: true,
   },

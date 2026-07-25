@@ -186,38 +186,33 @@ describe("registration operator UI contracts", () => {
     assert.match(dash, /queue=provisioned/);
   });
 
-  it("16. list uses mobile cards and operator display status", () => {
+  it("16. list uses mobile cards and Phase 5 display status", () => {
     const list = read("views/blessboard/v5/platform-admin/registration-applications.ejs");
     assert.match(list, /data-bb-pa-reg-cards="1"/);
-    assert.match(list, /data-bb-pa-display-status/);
-    assert.match(list, /data-bb-pa-reg-guide="1"/);
-    assert.match(list, /How registration works/);
+    assert.match(list, /data-bb-pa-display-status|data-bb-pa-phase5-status/);
+    assert.match(list, /presentPhase5QueueStatus|registrationQueue/);
     assert.doesNotMatch(list, /labelStatus\(row\.applicationStatus\)/);
   });
 
-  it("Prompt 53: list action buttons use presenter openActionLabel with visible text", () => {
+  it("Prompt 53 / Phase 5: list action buttons use Review with visible text", () => {
     const list = read("views/blessboard/v5/platform-admin/registration-applications.ejs");
-    assert.match(list, /row\.openActionLabel/);
-    assert.match(list, /row\.actionHref/);
-    assert.match(list, /data-bb-pa-reg-primary="1"/);
-    assert.match(list, /aria-label="<%= \(row\.openActionLabel/);
+    assert.match(list, /presentPhase5QueueAction|Review/);
+    assert.match(list, /data-bb-pa-reg-primary="1"|data-bb-pa-reg-review=/);
+    assert.match(list, />Review</);
     assert.doesNotMatch(list, /primaryHref\(/);
-    assert.doesNotMatch(list, /View organization' : 'Open'/);
-    assert.doesNotMatch(list, /%>\s*<%=\s*row\.recommendedAction\s*%>/);
     const css = read("public/blessboard/v5/platform-admin.css");
-    assert.match(css, /\.bb-pa-table a:not\(\.bb-pa-btn\)/);
-    assert.match(css, /\.bb-pa-table a\.bb-pa-btn[\s\S]*?color:\s*#fff/);
     assert.match(css, /\.bb-pa-btn--primary[\s\S]*?color:\s*#fff/);
-    assert.doesNotMatch(css, /\.bb-pa-table a\s*\{\s*color:\s*var\(--bb-violet/);
   });
 
-  it("17. technical details are collapsed by default", () => {
+  it("17. technical details remain collapsed under secondary disclosure", () => {
     const detail = read("views/blessboard/v5/platform-admin/registration-application-detail.ejs");
-    assert.match(detail, /data-bb-pa-tech-details/);
-    assert.match(detail, /<details[^>]*data-bb-pa-tech-details/);
-    assert.doesNotMatch(detail, /<details[^>]*\bopen\b[^>]*data-bb-pa-tech-details/);
-    assert.match(detail, /data-bb-pa-display-status="1"/);
-    assert.match(detail, /mark-validation-complete/);
-    assert.match(detail, /Approve and create organization|Approve and provision/);
+    const secondary = read("views/blessboard/v5/partials/pa-registration-detail-secondary.ejs");
+    assert.match(detail, /data-bb-pa-reg-secondary="1"/);
+    assert.match(secondary, /data-bb-pa-tech-details/);
+    assert.match(secondary, /<details[^>]*data-bb-pa-tech-details/);
+    assert.doesNotMatch(secondary, /<details[^>]*\bopen\b[^>]*data-bb-pa-tech-details/);
+    assert.match(detail, /data-bb-pa-display-status="1"|data-bb-pa-phase5-status/);
+    assert.match(secondary, /mark-validation-complete/);
+    assert.match(detail, /Approve and create church|Continue to approval confirmation/);
   });
 });

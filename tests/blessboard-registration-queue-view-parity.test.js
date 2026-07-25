@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Phase2 Batch 3 — registration queue view parity (markup / filter contract).
+ * Phase2 Batch 3 / Phase 5 — registration queue view parity (markup / filter contract).
  * Prefer no PostgreSQL. Optional HTTP cases skip when DB unavailable.
  */
 
@@ -12,6 +12,7 @@ const { describe, it } = require("node:test");
 const ejs = require("ejs");
 
 const registrationStatus = require("../src/blessboard/services/registrationStatusPresentation");
+const registrationQueue = require("../src/blessboard/services/registrationQueuePresentation");
 const {
   APPLICATION_STATUSES,
   PROVISIONING_STATUSES,
@@ -36,6 +37,7 @@ function renderList(locals) {
     wrapped,
     {
       registrationStatus,
+      registrationQueue,
       applications: [],
       filters: {},
       queueFilters: QUEUE_FILTERS,
@@ -52,6 +54,7 @@ function renderList(locals) {
       rangeFrom: 0,
       rangeTo: 0,
       listError: false,
+      visibleStatus: "",
       ...locals,
     },
     {
@@ -67,6 +70,7 @@ describe("registration queue view parity (no Postgres)", () => {
     const html = renderList({});
     for (const name of [
       "q",
+      "visible_status",
       "queue",
       "selected_plan",
       "application_status",
@@ -87,6 +91,7 @@ describe("registration queue view parity (no Postgres)", () => {
 
   it("keeps selected filter values after render", () => {
     const html = renderList({
+      visibleStatus: "new",
       filters: {
         q: "grace",
         queue: "needs_review",
@@ -104,6 +109,7 @@ describe("registration queue view parity (no Postgres)", () => {
       limit: 50,
     });
     assert.match(html, /value="grace"/);
+    assert.match(html, /name="visible_status"[\s\S]*value="new"[^>]*selected/);
     assert.match(html, /value="needs_review"[^>]*selected|selected[^>]*value="needs_review"/);
     assert.match(html, /value="growth"[^>]*selected|selected[^>]*value="growth"/);
     assert.match(html, /value="submitted"[^>]*selected|selected[^>]*value="submitted"/);
@@ -128,8 +134,10 @@ describe("registration queue view parity (no Postgres)", () => {
   it("renders empty queue state without create-application CTA", () => {
     const html = renderList({ applications: [], total: 0, filters: {} });
     assert.match(html, /data-bb-pa-reg-state="empty"/);
-    assert.match(html, /No registration applications yet/i);
-    assert.doesNotMatch(html, /Manual Invite|Create application|New application/i);
+    assert.match(html, /No church registrations yet/i);
+    assert.match(html, /Return to Dashboard/i);
+    assert.match(html, /href="\/admin"/);
+    assert.doesNotMatch(html, /Manual Invite|Create application|New application|Manual Registration/i);
     assert.doesNotMatch(html, /data-bb-pa-reg-state="no-results"/);
   });
 
@@ -140,7 +148,7 @@ describe("registration queue view parity (no Postgres)", () => {
       filters: { q: "zzznomatch" },
     });
     assert.match(html, /data-bb-pa-reg-state="no-results"/);
-    assert.match(html, /No matching applications/i);
+    assert.match(html, /No registrations match these filters/i);
     assert.match(html, /data-bb-pa-reg-clear-filters="1"/);
     assert.match(html, /Clear filters/);
   });
@@ -149,11 +157,12 @@ describe("registration queue view parity (no Postgres)", () => {
     const html = renderList({ listError: true, applications: [] });
     assert.match(html, /data-bb-pa-reg-list-error="1"/);
     assert.match(html, /data-bb-ds="error-state"/);
-    assert.match(html, /Unable to load applications/i);
+    assert.match(html, /Unable to load registrations/i);
     assert.match(html, /href="\/admin\/registration-applications"/);
     assert.match(html, />Retry</);
     assert.doesNotMatch(html, /data-bb-pa-reg-filter="1"/);
     assert.doesNotMatch(html, /stack|ECONNREFUSED|postgresql:\/\//i);
+    assert.doesNotMatch(html, /No church registrations yet/i);
   });
 
   it("renders mobile cards and desktop table without Approve/Reject queue actions", () => {
@@ -190,10 +199,92 @@ describe("registration queue view parity (no Postgres)", () => {
     assert.match(html, /data-bb-pa-reg-cards="1"/);
     assert.match(html, /data-bb-pa-reg-primary="1"/);
     assert.match(html, />Review</);
+    assert.match(html, /data-bb-phase5-status="new"/);
+    assert.match(html, /data-bb-pa-phase5-status="new"/);
+    assert.match(html, />New</);
     assert.doesNotMatch(html, /data-bb-pa-reg-approve|name="approve"|Approve and Provision Church/i);
     assert.doesNotMatch(html, /data-bb-pa-reg-reject|Reject Registration/i);
     assert.doesNotMatch(html, /Verification Progress|phone verification is completed/i);
     assert.doesNotMatch(html, /Confirmed duplicate|No likely duplicate|Possible match/i);
+    assert.doesNotMatch(html, /organizationKey|organization_id/);
+    assert.doesNotMatch(html, /pat@example\.com/);
+    assert.match(html, /data-bb-pa-phase5-status="new"[^>]*>New</);
+    assert.match(html, /href="\/admin\/registration-applications\/11111111-1111-4111-8111-111111111111"/);
+  });
+
+  it("shows Approved and Rejected Phase 5 labels without technical columns", () => {
+    const html = renderList({
+      total: 2,
+      totalPages: 1,
+      rangeFrom: 1,
+      rangeTo: 2,
+      applications: [
+        {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          churchName: "Approved Church",
+          city: "Nairobi",
+          country: "Kenya",
+          selectedPlan: "foundation",
+          selectedPlanLabel: "Foundation",
+          contactName: "Ada",
+          contactPhone: "+254700000001",
+          createdAt: "2026-07-02T00:00:00.000Z",
+          applicationStatus: "closed",
+          provisioningStatus: "provisioned",
+          organizationKey: "approved-church-key",
+          operatorQueue: "provisioned",
+        },
+        {
+          id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          churchName: "Rejected Church",
+          city: "Accra",
+          country: "Ghana",
+          selectedPlan: "growth",
+          selectedPlanLabel: "Growth",
+          contactName: "Ben",
+          contactPhone: "+233200000001",
+          createdAt: "2026-07-03T00:00:00.000Z",
+          applicationStatus: "rejected",
+          provisioningStatus: "not_started",
+          followUpStatus: "not_interested",
+          operatorQueue: "rejected",
+        },
+      ],
+    });
+    assert.match(html, /data-bb-pa-phase5-status="approved"/);
+    assert.match(html, />Approved</);
+    assert.match(html, /data-bb-pa-phase5-status="rejected"/);
+    assert.match(html, />Rejected</);
+    assert.doesNotMatch(html, /approved-church-key/);
+    assert.doesNotMatch(html, /Organization key|Application ID/i);
+  });
+
+  it("shows Needs Information visible label", () => {
+    const html = renderList({
+      total: 1,
+      totalPages: 1,
+      rangeFrom: 1,
+      rangeTo: 1,
+      applications: [
+        {
+          id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          churchName: "Waiting Church",
+          city: "Cape Town",
+          country: "South Africa",
+          selectedPlan: "growth",
+          selectedPlanLabel: "Growth",
+          contactName: "Sam",
+          contactPhone: "+27210000001",
+          createdAt: "2026-07-04T00:00:00.000Z",
+          applicationStatus: "submitted",
+          provisioningStatus: "not_started",
+          followUpStatus: "awaiting_customer",
+          operatorQueue: "needs_review",
+        },
+      ],
+    });
+    assert.match(html, /data-bb-pa-phase5-status="needs_information"/);
+    assert.match(html, /Needs Information/);
   });
 
   it("preserves pagination links when multiple pages", () => {
@@ -204,6 +295,7 @@ describe("registration queue view parity (no Postgres)", () => {
       totalPages: 3,
       rangeFrom: 11,
       rangeTo: 20,
+      visibleStatus: "new",
       filters: { queue: "needs_review", selectedPlan: "foundation" },
       applications: [
         {
@@ -231,5 +323,6 @@ describe("registration queue view parity (no Postgres)", () => {
     assert.match(html, /page=3/);
     assert.match(html, /queue=needs_review/);
     assert.match(html, /selected_plan=foundation/);
+    assert.match(html, /visible_status=new/);
   });
 });

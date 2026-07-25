@@ -1,0 +1,216 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var app = application || {};
+  var rq = (typeof registrationQueue !== 'undefined' && registrationQueue) ? registrationQueue : null;
+  function displayOrMissing(value) {
+    if (value == null) return null;
+    var s = String(value).trim();
+    return s ? s : null;
+  }
+  var churchName = displayOrMissing(app.churchName) || 'Church registration';
+  var contactName = displayOrMissing(app.contactName);
+  var phoneDisplay = displayOrMissing(app.contactPhoneNormalized) || displayOrMissing(app.contactPhone);
+  var emailDisplay = displayOrMissing(app.contactEmail);
+  var planLabel = displayOrMissing(app.selectedPlanLabel) || displayOrMissing(app.selectedPlan);
+  var phase5Status = rq && rq.presentPhase5QueueStatus
+    ? rq.presentPhase5QueueStatus(app)
+    : { key: 'new', label: 'New', chipClass: 'bb-pa-chip--warn' };
+  var reasonOptions = (typeof infoRequestReasons !== 'undefined' && infoRequestReasons && infoRequestReasons.length)
+    ? infoRequestReasons
+    : (rq && rq.PHASE5_INFO_REQUEST_REASONS ? rq.PHASE5_INFO_REQUEST_REASONS : []);
+  var cancelHref = app.id
+    ? ('/admin/registration-applications/' + encodeURIComponent(String(app.id)))
+    : '/admin/registration-applications';
+  var formAction = app.id
+    ? ('/admin/registration-applications/' + encodeURIComponent(String(app.id)) + '/request-information')
+    : '#';
+  var dupWarning = (typeof duplicateWarning !== 'undefined' && duplicateWarning) ? duplicateWarning : { show: false };
+  var showDupWarning = Boolean(dupWarning && dupWarning.show && dupWarning.match);
+  var dupMatch = showDupWarning ? dupWarning.match : null;
+  var defaultSubject = 'Information request — ' + churchName;
+  var flashError = typeof error !== 'undefined' ? error : null;
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    if (code === 'invalid') return 'Select at least one reason or enter a message, and confirm the contact email.';
+    if (code === 'sending_unavailable') return 'Outbound email is not available. The request was not recorded as sent.';
+    if (code === 'information_request_failed') return 'The information request could not be saved right now.';
+    if (code === 'not_found') return 'This registration application could not be found.';
+    return code ? 'Something went wrong.' : null;
+  }
+  var errorMsg = errorText(flashError);
+%>
+
+<section
+  class="bb-pa-org-detail bb-pa-reg-request-info"
+  data-bb-pa-reg-request-info="1"
+  data-bb-pa-reg-dup-warning="<%= showDupWarning ? '1' : '0' %>"
+  aria-label="Request information"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="<%= cancelHref %>" data-bb-pa-reg-request-cancel="1">Cancel</a>
+    <span aria-hidden="true">/</span>
+    <span>Request information</span>
+  </nav>
+
+  <% if (errorMsg) { %>
+  <div class="bb-pa-flash bb-pa-flash--error" role="alert"><%= errorMsg %></div>
+  <% } %>
+
+  <% if (showDupWarning && dupMatch) { %>
+  <aside class="bb-pa-reg-hub__dup" data-bb-pa-reg-dup-banner="1" role="status">
+    <h2 class="bb-pa-reg-hub__dup-title">Possible duplicate church found</h2>
+    <p class="bb-pa-hint">Duplicate evidence is advisory. Recording a request does not change duplicate review state.</p>
+    <dl class="bb-pa-dl">
+      <div><dt>Matching record</dt><dd><%= dupMatch.name %></dd></div>
+      <% if (dupMatch.reason) { %>
+      <div><dt>Match reason</dt><dd><%= dupMatch.reason %></dd></div>
+      <% } %>
+    </dl>
+  </aside>
+  <% } %>
+
+  <header class="bb-pa-page-head bb-pa-reg-request-info__head">
+    <h1 class="bb-pa-page-head__title" data-bb-pa-reg-request-church="1"><%= churchName %></h1>
+    <p class="bb-pa-lede bb-pa-reg-request-info__meta">
+      <span class="bb-pa-chip <%= phase5Status.chipClass %>" data-bb-pa-phase5-status="<%= phase5Status.key %>"><%= phase5Status.label %></span>
+      <% if (planLabel) { %><span data-bb-pa-reg-request-plan="1"><%= planLabel %></span><% } %>
+    </p>
+  </header>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-request-contact-title" data-bb-pa-reg-request-contact="1">
+    <h2 id="reg-request-contact-title" class="bb-pa-section-title">Contact</h2>
+    <dl class="bb-pa-dl">
+      <% if (contactName) { %>
+      <div><dt>Contact person</dt><dd data-bb-pa-reg-request-contact-name="1"><%= contactName %></dd></div>
+      <% } %>
+      <% if (phoneDisplay) { %>
+      <div>
+        <dt>Phone</dt>
+        <dd data-bb-pa-reg-request-phone="1">
+          <a class="bb-pa-link bb-pa-reg-hub__tap" href="tel:<%= String(phoneDisplay).replace(/[^\d+]/g, '') %>"><%= phoneDisplay %></a>
+        </dd>
+      </div>
+      <% } %>
+      <% if (emailDisplay) { %>
+      <div>
+        <dt>Email</dt>
+        <dd class="bb-pa-reg-hub__email" data-bb-pa-reg-request-email="1">
+          <a class="bb-pa-link bb-pa-reg-hub__tap" href="mailto:<%= emailDisplay %>"><%= emailDisplay %></a>
+        </dd>
+      </div>
+      <% } %>
+    </dl>
+  </section>
+
+  <form
+    class="bb-pa-form bb-pa-reg-request-info__form"
+    method="post"
+    action="<%= formAction %>"
+    data-bb-pa-reg-request-form="1"
+    data-bb-pa-reg-communications-form="1"
+  >
+    <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+    <input type="hidden" name="recipient" value="<%= emailDisplay || '' %>" />
+    <input type="hidden" name="subject" value="<%= defaultSubject %>" />
+    <input type="hidden" name="channel" value="email" />
+
+    <section class="bb-pa-panel" aria-labelledby="reg-request-reasons-title">
+      <h2 id="reg-request-reasons-title" class="bb-pa-section-title">What do you need?</h2>
+      <p class="bb-pa-hint">Select one or more reasons, or write a message below.</p>
+      <ul class="bb-pa-reg-request-info__reasons" data-bb-pa-reg-request-reasons="1">
+        <% reasonOptions.forEach(function (reason) { %>
+        <li>
+          <label class="bb-pa-reg-request-info__reason">
+            <input
+              type="checkbox"
+              name="request_reasons"
+              value="<%= reason.code %>"
+              data-bb-pa-reg-request-reason="<%= reason.code %>"
+            />
+            <span><%= reason.label %></span>
+          </label>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+
+    <section class="bb-pa-panel" aria-labelledby="reg-request-message-title">
+      <h2 id="reg-request-message-title" class="bb-pa-section-title">Message</h2>
+      <div class="bb-pa-field">
+        <label for="applicant_message">Message or review note</label>
+        <textarea
+          id="applicant_message"
+          name="applicant_message"
+          rows="6"
+          maxlength="8000"
+          class="bb-pa-reg-request-info__message"
+          data-bb-pa-reg-request-message="1"
+          placeholder="Describe what the applicant should clarify or provide."
+        ></textarea>
+      </div>
+      <div class="bb-pa-field">
+        <label for="internal_note">Internal note (optional)</label>
+        <textarea
+          id="internal_note"
+          name="internal_note"
+          rows="3"
+          maxlength="8000"
+          data-bb-pa-reg-request-internal="1"
+        ></textarea>
+      </div>
+      <p class="bb-pa-hint" data-bb-pa-reg-request-no-send-claim="1">
+        This records an information request and sets follow-up to awaiting customer.
+        It does not claim that email or SMS was delivered unless a real delivery record says so.
+      </p>
+    </section>
+
+    <div class="bb-pa-reg-request-info__actions" data-bb-pa-reg-request-actions="1">
+      <button
+        class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--block"
+        type="submit"
+        data-bb-pa-reg-request-submit="1"
+      >Record information request</button>
+      <a
+        class="bb-pa-btn bb-pa-btn--secondary bb-pa-btn--block"
+        href="<%= cancelHref %>"
+        data-bb-pa-reg-request-cancel-btn="1"
+      >Cancel</a>
+    </div>
+  </form>
+</section>
+
+<script>
+(function () {
+  var form = document.querySelector('[data-bb-pa-reg-request-form="1"]');
+  if (!form) return;
+  form.addEventListener('submit', function (event) {
+    var reasons = form.querySelectorAll('input[name="request_reasons"]:checked');
+    var message = form.querySelector('[data-bb-pa-reg-request-message="1"]');
+    var messageVal = message && message.value ? String(message.value).trim() : '';
+    if (!reasons.length && !messageVal) {
+      event.preventDefault();
+      window.alert('Select at least one reason or enter a message.');
+      return false;
+    }
+    if (!messageVal && reasons.length) {
+      var labels = [];
+      for (var i = 0; i < reasons.length; i++) {
+        var span = reasons[i].parentNode && reasons[i].parentNode.querySelector('span');
+        labels.push(span ? String(span.textContent || '').trim() : String(reasons[i].value));
+      }
+      if (message) {
+        message.value = 'Please provide: ' + labels.join('; ') + '.';
+      }
+    }
+    if (!form.querySelector('input[name="request_category"]')) {
+      var cat = document.createElement('input');
+      cat.type = 'hidden';
+      cat.name = 'request_category';
+      cat.value = reasons.length ? String(reasons[0].value) : 'other';
+      form.appendChild(cat);
+    }
+  });
+})();
+</script>
+
+<%- include('../partials/platform-admin-shell-end') %>

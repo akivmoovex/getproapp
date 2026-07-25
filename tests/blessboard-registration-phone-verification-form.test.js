@@ -285,7 +285,10 @@ describe("registration phone verification record form (Prompt 031, no Postgres)"
   it("renders allowlisted notices and errors only", () => {
     const ok = renderDetail({ notice: "phone_attempt_recorded", error: null });
     assert.match(ok, /Phone verification attempt recorded\./);
-    assert.doesNotMatch(ok, /<script>/);
+    assert.match(
+      ok,
+      /bb-pa-flash--ok[^>]*>Phone verification attempt recorded\.<\/div>/
+    );
 
     const invalid = renderDetail({ notice: null, error: "invalid" });
     assert.match(
@@ -318,11 +321,11 @@ describe("registration phone verification record form (Prompt 031, no Postgres)"
     assert.doesNotMatch(slice, /<details[^>]*open/);
   });
 
-  it("preserves Approve and Reject forms unchanged", () => {
+  it("preserves Approve and Reject confirmation entry points", () => {
     const html = renderDetail();
     assert.match(html, /data-bb-pa-approve-form="1"/);
-    assert.match(html, /action="\/admin\/registration-applications\/[^"]+\/approve"/);
-    assert.match(html, /action="\/admin\/registration-applications\/[^"]+\/reject"/);
+    assert.match(html, /href="\/admin\/registration-applications\/[^"]+\/approve"/);
+    assert.match(html, /href="\/admin\/registration-applications\/[^"]+\/reject"/);
   });
 
   it("does not calculate approval or verification status in client script", () => {

@@ -10,16 +10,18 @@
   var provStatuses = provisioningStatuses || ['not_started', 'provisioning', 'provisioned', 'provisioning_failed'];
   var followStatuses = followUpStatuses || [];
   var linkedOpts = linkedFilters || ['all', 'linked', 'unlinked'];
+  var rq = (typeof registrationQueue !== 'undefined' && registrationQueue) ? registrationQueue : null;
+  var visibleStatusSelected = rq && rq.resolveSelectedVisibleStatus
+    ? rq.resolveSelectedVisibleStatus(f, typeof visibleStatus !== 'undefined' ? visibleStatus : '')
+    : '';
+  var phase5StatusFilters = (rq && rq.PHASE5_STATUS_FILTERS) ? rq.PHASE5_STATUS_FILTERS : [
+    { key: '', label: 'All statuses' },
+    { key: 'new', label: 'New' },
+    { key: 'needs_information', label: 'Needs Information' },
+    { key: 'approved', label: 'Approved' },
+    { key: 'rejected', label: 'Rejected' }
+  ];
 
-  function toneChip(tone) {
-    if (typeof registrationStatus !== 'undefined' && registrationStatus && registrationStatus.chipClassForTone) {
-      return registrationStatus.chipClassForTone(tone);
-    }
-    if (tone === 'success') return 'bb-pa-chip--ok';
-    if (tone === 'danger') return 'bb-pa-chip--danger';
-    if (tone === 'warn') return 'bb-pa-chip--warn';
-    return 'bb-pa-chip--muted';
-  }
   function statusLabel(kind, value) {
     if (typeof registrationStatus !== 'undefined' && registrationStatus && registrationStatus.presentRegistrationStatus) {
       return registrationStatus.presentRegistrationStatus(kind, value).label;
@@ -30,12 +32,31 @@
     return String(value || '').replace(/_/g, ' ');
   }
   function fmtDate(d) {
+    if (rq && rq.formatRegistrationDate) return rq.formatRegistrationDate(d);
     if (!d) return '—';
     try {
       return new Date(d).toISOString().slice(0, 10);
     } catch (e) {
       return '—';
     }
+  }
+  function fmtLocation(row) {
+    if (rq && rq.formatRegistrationLocation) return rq.formatRegistrationLocation(row);
+    var city = row && row.city ? String(row.city) : '';
+    var country = row && row.country ? String(row.country) : '';
+    if (city && country) return city + ', ' + country;
+    return city || country || '—';
+  }
+  function phase5Status(row) {
+    if (rq && rq.presentPhase5QueueStatus) return rq.presentPhase5QueueStatus(row);
+    return { key: 'new', label: 'New', tone: 'warn', chipClass: 'bb-pa-chip--warn' };
+  }
+  function reviewAction(row) {
+    if (rq && rq.presentPhase5QueueAction) return rq.presentPhase5QueueAction(row);
+    return {
+      label: 'Review',
+      href: row && row.id ? ('/admin/registration-applications/' + encodeURIComponent(row.id)) : null
+    };
   }
   function pushFilter(parts, key, value) {
     if (value != null && String(value) !== '') {
@@ -45,6 +66,7 @@
   function queryPage(p) {
     var parts = ['page=' + encodeURIComponent(p), 'limit=' + encodeURIComponent(limit)];
     pushFilter(parts, 'q', f.q);
+    pushFilter(parts, 'visible_status', visibleStatusSelected);
     pushFilter(parts, 'queue', f.queue);
     pushFilter(parts, 'selected_plan', f.selectedPlan);
     pushFilter(parts, 'application_status', f.applicationStatus);
@@ -63,6 +85,7 @@
   }
   var hasActiveFilters = Boolean(
     (f.q && String(f.q).trim()) ||
+    (visibleStatusSelected && String(visibleStatusSelected).trim()) ||
     (f.queue && String(f.queue).trim()) ||
     (f.selectedPlan && String(f.selectedPlan).trim()) ||
     (f.applicationStatus && String(f.applicationStatus).trim()) ||
@@ -76,9 +99,10 @@
     (f.linked && f.linked !== 'all' && String(f.linked).trim())
   );
   var moreFiltersOpen = Boolean(
+    (f.queue && String(f.queue).trim()) ||
     (f.applicationStatus && String(f.applicationStatus).trim()) ||
     (f.provisioningStatus && String(f.provisioningStatus).trim()) ||
-    (f.followUpStatus && String(f.followUpStatus).trim()) ||
+    (f.followUpStatus && String(f.followUpStatus).trim() && visibleStatusSelected !== 'needs_information') ||
     (f.from && String(f.from).trim()) ||
     (f.to && String(f.to).trim()) ||
     f.supportRequested === 'true' || f.supportRequested === 'false' ||
@@ -89,46 +113,36 @@
 %>
 
 <section
-  class="bb-pa-orgs bb-pa-reg-ops"
+  class="bb-pa-orgs bb-pa-reg-ops bb-pa-reg-queue"
   data-bb-pa-registration-applications="1"
+  data-bb-pa-reg-phase5-queue="1"
   data-bb-pa-reg-list-error="<%= listError ? '1' : '0' %>"
   data-bb-pa-reg-has-filters="<%= hasActiveFilters ? '1' : '0' %>"
-  aria-label="Registration applications"
+  aria-label="Church registrations"
 >
   <header class="bb-pa-page-head bb-pa-page-head--split">
     <div>
-      <p class="bb-pa-orgs__eyebrow">Registration operations</p>
-      <h1 class="bb-pa-page-head__title">Registration Applications</h1>
+      <h1 class="bb-pa-page-head__title">Church Registrations</h1>
       <p class="bb-pa-lede">
-        Work from the queue that needs action. Foundation and Growth usually provision themselves;
-        Network needs support validation before an administrator creates the organization.
+        Review and manage churches applying to join BlessBoard.
       </p>
     </div>
-    <% if (!listError) { %>
+    <% if (!listError && totalCount > 0) { %>
     <p class="bb-pa-page-head__actions">
       <span class="bb-pa-orgs__total" data-bb-count="registration-total"><%= totalCount %></span>
-      <span class="bb-pa-orgs__total-label">applications</span>
+      <span class="bb-pa-orgs__total-label"><%= totalCount === 1 ? 'registration' : 'registrations' %></span>
     </p>
     <% } %>
   </header>
 
   <% if (listError) { %>
   <%- include('../partials/error-state', {
-    title: 'Unable to load applications',
-    body: 'Registration applications could not be loaded right now. Try again in a moment.',
+    title: 'Unable to load registrations',
+    body: 'Church registrations could not be loaded right now. Try again in a moment.',
     actionHref: '/admin/registration-applications',
     actionLabel: 'Retry'
   }) %>
   <% } else { %>
-
-  <aside class="bb-pa-reg-guide" data-bb-pa-reg-guide="1" aria-label="How registration works">
-    <h2 class="bb-pa-reg-guide__title">How registration works</h2>
-    <ul class="bb-pa-reg-guide__list">
-      <li><strong>Foundation</strong> — automatically provisioned unless review is required.</li>
-      <li><strong>Growth</strong> — automatically provisioned with a 30-day trial unless review is required.</li>
-      <li><strong>Network</strong> — validated by customer support, then approved by platform admin. Plan activation is separate.</li>
-    </ul>
-  </aside>
 
   <form
     class="bb-pa-org-filter bb-pa-reg-filter"
@@ -144,23 +158,28 @@
         name="q"
         type="search"
         value="<%= f.q || '' %>"
-        placeholder="Church, contact, email, phone, org key"
+        placeholder="Church, contact, email, or phone"
         autocomplete="off"
         data-bb-pa-reg-filter-field="q"
       />
     </div>
     <div class="bb-pa-field">
-      <label for="queue">Queue</label>
-      <select id="queue" name="queue" data-bb-pa-reg-queue="1" data-bb-pa-reg-filter-field="queue">
-        <% queues.forEach(function (q) { %>
-        <option value="<%= q.key %>"<%= (f.queue || '') === q.key ? ' selected' : '' %>><%= q.label %></option>
+      <label for="visible_status">Status</label>
+      <select
+        id="visible_status"
+        name="visible_status"
+        data-bb-pa-reg-visible-status="1"
+        data-bb-pa-reg-filter-field="visible_status"
+      >
+        <% phase5StatusFilters.forEach(function (opt) { %>
+        <option value="<%= opt.key %>"<%= visibleStatusSelected === opt.key ? ' selected' : '' %>><%= opt.label %></option>
         <% }) %>
       </select>
     </div>
     <div class="bb-pa-field">
       <label for="selected_plan">Plan</label>
       <select id="selected_plan" name="selected_plan" data-bb-pa-reg-plan-filter="1" data-bb-pa-reg-filter-field="selected_plan">
-        <option value="">All</option>
+        <option value="">All plans</option>
         <% (allowedPlans || ['foundation', 'growth', 'network']).forEach(function (p) { %>
         <option value="<%= p %>"<%= f.selectedPlan === p ? ' selected' : '' %>>
           <%= p === 'network' ? 'Network' : (p === 'foundation' ? 'Foundation' : (p === 'growth' ? 'Growth' : p)) %>
@@ -180,6 +199,14 @@
     <details class="bb-pa-reg-filter__more" data-bb-pa-reg-filter-more="1"<%= moreFiltersOpen ? ' open' : '' %>>
       <summary>More filters</summary>
       <div class="bb-pa-reg-filter__more-grid">
+        <div class="bb-pa-field">
+          <label for="queue">Operator queue</label>
+          <select id="queue" name="queue" data-bb-pa-reg-queue="1" data-bb-pa-reg-filter-field="queue">
+            <% queues.forEach(function (q) { %>
+            <option value="<%= q.key %>"<%= (f.queue || '') === q.key ? ' selected' : '' %>><%= q.label %></option>
+            <% }) %>
+          </select>
+        </div>
         <div class="bb-pa-field">
           <label for="application_status">Application status</label>
           <select
@@ -289,8 +316,8 @@
   <% if (!rows.length) { %>
     <% if (hasActiveFilters) { %>
     <%- include('../partials/empty-state', {
-      title: 'No matching applications',
-      body: 'No registration applications match the current search or filters. Clear filters to see the full queue.',
+      title: 'No registrations match these filters',
+      body: 'Try adjusting search or filters, or clear filters to see the full queue.',
       actionHref: clearHref(),
       actionLabel: 'Clear filters',
       className: 'bb-pa-reg-no-results',
@@ -299,65 +326,65 @@
     <div hidden data-bb-pa-reg-state="no-results"></div>
     <% } else { %>
     <%- include('../partials/empty-state', {
-      title: 'No registration applications yet',
+      title: 'No church registrations yet',
       body: 'When churches submit the public registration form, their applications will appear here for review.',
+      actionHref: '/admin',
+      actionLabel: 'Return to Dashboard',
       className: 'bb-pa-reg-empty',
-      icon: 'inbox'
+      icon: 'church'
     }) %>
     <div hidden data-bb-pa-reg-state="empty"></div>
     <% } %>
   <% } else { %>
-  <div class="bb-pa-table-wrap bb-pa-orgs-table-wrap" data-bb-pa-reg-table="1">
-    <table class="bb-pa-table">
+  <div class="bb-pa-table-wrap bb-pa-orgs-table-wrap bb-pa-reg-queue__table-wrap" data-bb-pa-reg-table="1">
+    <table class="bb-pa-table bb-pa-reg-queue__table">
       <thead>
         <tr>
-          <th scope="col">Church / organization</th>
+          <th scope="col">Church name</th>
+          <th scope="col">Location</th>
+          <th scope="col">Contact person</th>
+          <th scope="col">Phone</th>
           <th scope="col">Plan</th>
-          <th scope="col">Primary contact</th>
-          <th scope="col">Submitted</th>
+          <th scope="col">Date</th>
           <th scope="col">Status</th>
-          <th scope="col">Next action</th>
           <th scope="col">Action</th>
         </tr>
       </thead>
       <tbody>
-        <% rows.forEach(function (row) { %>
+        <% rows.forEach(function (row) {
+          var st = phase5Status(row);
+          var act = reviewAction(row);
+        %>
         <tr
           data-bb-operator-queue="<%= row.operatorQueue || '' %>"
-          data-bb-display-status="<%= row.displayStatus || '' %>"
+          data-bb-display-status="<%= st.label %>"
+          data-bb-phase5-status="<%= st.key %>"
           data-bb-recommended-action="<%= row.recommendedAction || '' %>"
         >
           <td>
-            <a class="bb-pa-link" href="/admin/registration-applications/<%= row.id %>"><%= row.churchName %></a>
-            <div class="bb-pa-muted"><%= row.city %><%= row.city && row.country ? ', ' : '' %><%= row.country %></div>
+            <a class="bb-pa-link bb-pa-reg-queue__church" href="<%= act.href || ('/admin/registration-applications/' + row.id) %>"><%= row.churchName %></a>
           </td>
+          <td><%= fmtLocation(row) %></td>
+          <td><%= row.contactName || '—' %></td>
+          <td><%= row.contactPhoneNormalized || row.contactPhone || '—' %></td>
           <td>
             <span data-bb-pa-plan-badge="<%= String(row.selectedPlan || '').toLowerCase() %>"><%= row.selectedPlanLabel || row.selectedPlan || '—' %></span>
-            <% if (row.isNetworkPlan || row.supportRequested) { %>
-            <div><span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="<%= row.supportRequested ? '1' : '0' %>"><%= row.isNetworkPlan ? 'Network' : 'Support requested' %></span></div>
-            <% } %>
-          </td>
-          <td>
-            <div><%= row.contactName %></div>
-            <div class="bb-pa-muted"><%= row.contactEmail %></div>
-            <div class="bb-pa-muted"><%= row.contactPhoneNormalized || row.contactPhone || '—' %></div>
           </td>
           <td><%= fmtDate(row.createdAt) %></td>
           <td>
-            <span class="bb-pa-chip <%= toneChip(row.operatorTone) %>" data-bb-pa-display-status="1"><%= row.displayStatus || '—' %></span>
-            <div class="bb-pa-muted" data-bb-pa-reg-status-row="1">
-              <%- include('../partials/pa-registration-status-chip', { statusKind: 'application', statusValue: row.applicationStatus }) %>
-              <%- include('../partials/pa-registration-status-chip', { statusKind: 'provisioning', statusValue: row.provisioningStatus }) %>
-            </div>
+            <span
+              class="bb-pa-chip <%= st.chipClass %>"
+              data-bb-pa-display-status="1"
+              data-bb-pa-phase5-status="<%= st.key %>"
+            ><%= st.label %></span>
           </td>
-          <td><%= row.recommendedActionLabel || '—' %></td>
           <td>
             <a
               class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--sm"
-              href="<%= row.actionHref || ('/admin/registration-applications/' + row.id) %>"
+              href="<%= act.href || ('/admin/registration-applications/' + row.id) %>"
               data-bb-pa-reg-primary="1"
-              aria-label="<%= (row.openActionLabel || 'Review') + ' registration for ' + (row.churchName || 'application') %>"
-            ><%= row.openActionLabel || 'Review' %></a>
+              aria-label="Review registration for <%= row.churchName || 'application' %>"
+            >Review</a>
           </td>
         </tr>
         <% }) %>
@@ -365,35 +392,56 @@
     </table>
   </div>
 
-  <ul class="bb-pa-orgs-cards bb-pa-reg-cards" data-bb-pa-reg-cards="1">
-    <% rows.forEach(function (row) { %>
+  <ul class="bb-pa-orgs-cards bb-pa-reg-cards bb-pa-reg-queue__cards" data-bb-pa-reg-cards="1">
+    <% rows.forEach(function (row) {
+      var st = phase5Status(row);
+      var act = reviewAction(row);
+    %>
     <li
-      class="bb-pa-org-card"
+      class="bb-pa-org-card bb-pa-reg-queue__card"
       data-bb-operator-queue="<%= row.operatorQueue || '' %>"
-      data-bb-display-status="<%= row.displayStatus || '' %>"
+      data-bb-display-status="<%= st.label %>"
+      data-bb-phase5-status="<%= st.key %>"
     >
-      <a class="bb-pa-org-card__link" href="/admin/registration-applications/<%= row.id %>">
-        <span class="bb-pa-org-card__title"><%= row.churchName %></span>
-        <span class="bb-pa-org-card__meta"><%= row.selectedPlanLabel || row.selectedPlan || '—' %> · <%= fmtDate(row.createdAt) %></span>
-        <span class="bb-pa-org-card__meta"><%= row.contactName %> · <%= row.contactEmail %></span>
-        <span class="bb-pa-org-card__meta"><%= row.contactPhoneNormalized || row.contactPhone || '' %></span>
-        <% if (row.supportRequested) { %>
-        <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="1">Support requested</span>
-        <% } %>
-        <span class="bb-pa-chip <%= toneChip(row.operatorTone) %>" data-bb-pa-display-status="1"><%= row.displayStatus || '—' %></span>
-        <span class="bb-pa-org-card__meta" data-bb-pa-reg-status-row="1">
-          <%- include('../partials/pa-registration-status-chip', { statusKind: 'application', statusValue: row.applicationStatus }) %>
-          <%- include('../partials/pa-registration-status-chip', { statusKind: 'provisioning', statusValue: row.provisioningStatus }) %>
-        </span>
-        <span class="bb-pa-org-card__meta"><strong>Next:</strong> <%= row.recommendedActionLabel || '—' %></span>
-      </a>
+      <div class="bb-pa-reg-queue__card-head">
+        <h2 class="bb-pa-reg-queue__card-title">
+          <a class="bb-pa-link" href="<%= act.href || ('/admin/registration-applications/' + row.id) %>"><%= row.churchName %></a>
+        </h2>
+        <span
+          class="bb-pa-chip <%= st.chipClass %>"
+          data-bb-pa-display-status="1"
+          data-bb-pa-phase5-status="<%= st.key %>"
+        ><%= st.label %></span>
+      </div>
+      <dl class="bb-pa-reg-queue__card-meta">
+        <div>
+          <dt>Location</dt>
+          <dd><%= fmtLocation(row) %></dd>
+        </div>
+        <div>
+          <dt>Contact</dt>
+          <dd><%= row.contactName || '—' %></dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd><%= row.contactPhoneNormalized || row.contactPhone || '—' %></dd>
+        </div>
+        <div>
+          <dt>Plan</dt>
+          <dd data-bb-pa-plan-badge="<%= String(row.selectedPlan || '').toLowerCase() %>"><%= row.selectedPlanLabel || row.selectedPlan || '—' %></dd>
+        </div>
+        <div>
+          <dt>Registered</dt>
+          <dd><%= fmtDate(row.createdAt) %></dd>
+        </div>
+      </dl>
       <p class="bb-pa-reg-card__action">
         <a
-          class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--sm bb-pa-btn--block"
-          href="<%= row.actionHref || ('/admin/registration-applications/' + row.id) %>"
+          class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--block"
+          href="<%= act.href || ('/admin/registration-applications/' + row.id) %>"
           data-bb-pa-reg-primary="1"
-          aria-label="<%= (row.openActionLabel || 'Review') + ' registration for ' + (row.churchName || 'application') %>"
-        ><%= row.openActionLabel || 'Review' %></a>
+          aria-label="Review registration for <%= row.churchName || 'application' %>"
+        >Review</a>
       </p>
     </li>
     <% }) %>

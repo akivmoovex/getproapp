@@ -1,0 +1,153 @@
+<%
+  var orgLocal = (typeof org !== 'undefined' && org) ? org : {};
+  var branchRowsLocal = (typeof branches !== 'undefined' && branches) ? branches : [];
+  var statusChipFn = (typeof statusChip === 'function') ? statusChip : function () { return 'bb-pa-chip--muted'; };
+  var statusLabelFn = (typeof statusLabel === 'function') ? statusLabel : function (s) { return s || '—'; };
+  var phase5ApprovalNotices = {
+    organization_provisioned: true,
+    network_organization_created: true,
+    already_provisioned: true,
+    retry_succeeded: true
+  };
+  var phase5NoticeCode = typeof notice !== 'undefined' && notice ? String(notice) : '';
+  var showPhase5ApprovalSuccess = Boolean(phase5ApprovalNotices[phase5NoticeCode]);
+  var phase5AlreadyProvisioned = phase5NoticeCode === 'already_provisioned';
+  var phase5InviteReady = typeof inviteOnceLink !== 'undefined' && inviteOnceLink;
+  var phase5PendingInvite = typeof pendingInvitations !== 'undefined' && pendingInvitations && pendingInvitations.length;
+  var phase5AdminLabel = null;
+  if (phase5PendingInvite) {
+    var firstInv = pendingInvitations[0];
+    phase5AdminLabel = (firstInv && (firstInv.displayName || firstInv.emailDisplay || firstInv.emailNormalized)) || null;
+  }
+  var phase5PrimaryBranch = null;
+  if (branchRowsLocal.length) {
+    for (var bi = 0; bi < branchRowsLocal.length; bi++) {
+      if (branchRowsLocal[bi] && branchRowsLocal[bi].isPrimary) {
+        phase5PrimaryBranch = branchRowsLocal[bi];
+        break;
+      }
+    }
+    if (!phase5PrimaryBranch) phase5PrimaryBranch = branchRowsLocal[0];
+  }
+  var phase5BranchLabel = orgLocal.firstBranchName ||
+    (phase5PrimaryBranch && phase5PrimaryBranch.displayName) ||
+    null;
+  var phase5PlanLabel = orgLocal.planLabel || orgLocal.planKey || null;
+  var phase5OrgHref = orgLocal.organizationKey
+    ? ('/admin/organizations/' + encodeURIComponent(orgLocal.organizationKey))
+    : '#';
+  var phase5OnboardingHref = phase5OrgHref !== '#' ? (phase5OrgHref + '#pa-org-onboarding') : '#pa-org-onboarding';
+%>
+<% if (showPhase5ApprovalSuccess) { %>
+<section
+  class="bb-pa-panel bb-pa-reg-approved"
+  data-bb-pa-reg-approved="1"
+  data-bb-pa-reg-approved-notice="<%= phase5NoticeCode %>"
+  data-bb-pa-reg-approved-already="<%= phase5AlreadyProvisioned ? '1' : '0' %>"
+  aria-labelledby="pa-reg-approved-title"
+>
+  <header class="bb-pa-reg-approved__head">
+    <p class="bb-pa-org-detail__eyebrow"><%= phase5AlreadyProvisioned ? 'Already provisioned' : 'Church approved' %></p>
+    <h2 id="pa-reg-approved-title" class="bb-pa-page-head__title bb-pa-reg-approved__title">
+      <%= orgLocal.displayName || 'Church organization' %>
+    </h2>
+    <p class="bb-pa-lede">
+      <% if (phase5AlreadyProvisioned) { %>
+      This registration was already linked to an organization. Provisioning was not run again.
+      <% } else { %>
+      Organization created. Administrator invitation prepared for you to copy when shown below.
+      <% } %>
+    </p>
+  </header>
+
+  <dl class="bb-pa-dl bb-pa-reg-approved__facts">
+    <div>
+      <dt>Organization status</dt>
+      <dd data-bb-pa-reg-approved-status="1">
+        <span class="bb-pa-chip <%= statusChipFn(orgLocal.organizationStatus) %>"><%= statusLabelFn(orgLocal.organizationStatus) %></span>
+      </dd>
+    </div>
+    <% if (phase5PlanLabel) { %>
+    <div>
+      <dt>Selected plan</dt>
+      <dd data-bb-pa-reg-approved-plan="1"><%= phase5PlanLabel %></dd>
+    </div>
+    <% } %>
+    <% if (phase5BranchLabel) { %>
+    <div>
+      <dt>First branch</dt>
+      <dd data-bb-pa-reg-approved-branch="1"><%= phase5BranchLabel %></dd>
+    </div>
+    <% } %>
+    <% if (phase5AdminLabel) { %>
+    <div>
+      <dt>Invited HQ administrator</dt>
+      <dd data-bb-pa-reg-approved-admin="1"><%= phase5AdminLabel %></dd>
+    </div>
+    <% } %>
+    <div>
+      <dt>Invitation status</dt>
+      <dd data-bb-pa-reg-approved-invite-status="1">
+        <% if (phase5InviteReady) { %>
+        Administrator invitation prepared — copy once below. It will not be shown again after you leave this page.
+        <% } else if (phase5PendingInvite) { %>
+        Administrator invitation prepared. The one-time copy link is no longer available on refresh; create a replacement invitation below if needed.
+        <% } else if (phase5AlreadyProvisioned) { %>
+        No new invitation was generated for this already-provisioned organization.
+        <% } else { %>
+        Administrator invitation prepared. If a copy link is not shown, use the invitation section below when available.
+        <% } %>
+      </dd>
+    </div>
+  </dl>
+
+  <% if (phase5InviteReady) { %>
+  <div class="bb-pa-field bb-pa-reg-approved__invite" data-bb-pa-reg-approved-invite="1">
+    <label for="pa_phase5_invite_once_link">Copy invitation</label>
+    <div class="bb-pa-reg-approved__invite-row">
+      <input
+        id="pa_phase5_invite_once_link"
+        type="text"
+        readonly
+        value="<%= inviteOnceLink %>"
+        data-bb-pa-invite-copy-once="1"
+        onclick="this.select()"
+      />
+      <button
+        type="button"
+        class="bb-pa-btn bb-pa-btn--secondary"
+        data-bb-pa-reg-approved-copy="1"
+        data-invite-target="pa_phase5_invite_once_link"
+      >Copy invitation</button>
+    </div>
+    <p class="bb-pa-muted">Invitation values are not placed in the URL. Refreshing clears this copy-once link.</p>
+  </div>
+  <% } %>
+
+  <div class="bb-pa-reg-approved__actions">
+    <a class="bb-pa-btn bb-pa-btn--primary" href="<%= phase5OrgHref %>" data-bb-pa-reg-approved-open-profile="1">Open church profile</a>
+    <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= phase5OnboardingHref %>" data-bb-pa-reg-approved-open-onboarding="1">Open onboarding</a>
+    <a class="bb-pa-btn bb-pa-btn--secondary" href="/admin/registration-applications" data-bb-pa-reg-approved-return="1">Return to registrations</a>
+  </div>
+  <p class="bb-pa-hint" data-bb-pa-reg-approved-no-email="1">
+    BlessBoard does not claim that a welcome email was sent. Share the invitation out of band when you have copied it.
+  </p>
+</section>
+<script>
+(function () {
+  var btn = document.querySelector('[data-bb-pa-reg-approved-copy="1"]');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var id = btn.getAttribute('data-invite-target');
+    var input = id ? document.getElementById(id) : null;
+    var value = input && input.value ? String(input.value) : '';
+    if (!value) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).catch(function () {});
+    } else if (input) {
+      input.select();
+    }
+  });
+})();
+</script>
+<% } %>

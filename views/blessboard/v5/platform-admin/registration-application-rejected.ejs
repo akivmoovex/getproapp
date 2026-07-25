@@ -1,0 +1,133 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var app = application || {};
+  var rq = (typeof registrationQueue !== 'undefined' && registrationQueue) ? registrationQueue : null;
+  var summary = (typeof rejectionSummary !== 'undefined' && rejectionSummary) ? rejectionSummary : {};
+  function displayOrMissing(value) {
+    if (value == null) return null;
+    var s = String(value).trim();
+    return s ? s : null;
+  }
+  function fmtDate(d) {
+    if (!d) return null;
+    try {
+      return new Date(d).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    } catch (e) {
+      return null;
+    }
+  }
+  var churchName = displayOrMissing(app.churchName) || 'Church registration';
+  var phase5Status = rq && rq.presentPhase5QueueStatus
+    ? rq.presentPhase5QueueStatus(app)
+    : { key: 'rejected', label: 'Rejected', chipClass: 'bb-pa-chip--danger' };
+  var appIdEnc = app.id ? encodeURIComponent(String(app.id)) : '';
+  var viewHref = appIdEnc ? ('/admin/registration-applications/' + appIdEnc) : '/admin/registration-applications';
+  var reopenAction = appIdEnc ? ('/admin/registration-applications/' + appIdEnc + '/reopen') : '#';
+  var canReopen = Boolean(summary.canReopen);
+  var dupWarning = (typeof duplicateWarning !== 'undefined' && duplicateWarning) ? duplicateWarning : { show: false };
+  var showDup = Boolean(
+    summary.category === 'duplicate_registration' &&
+    dupWarning && dupWarning.show && dupWarning.match
+  );
+  var dupMatch = showDup ? dupWarning.match : null;
+%>
+
+<section
+  class="bb-pa-org-detail bb-pa-reg-rejected"
+  data-bb-pa-reg-rejected="1"
+  data-bb-pa-reg-rejected-delivery="<%= summary.deliveryKey || 'recorded' %>"
+  aria-label="Church registration rejected"
+>
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-org-detail__eyebrow" data-bb-pa-reg-rejected-label="1"><%= summary.deliveryLabel || 'Rejection recorded' %></p>
+    <h1 class="bb-pa-page-head__title" data-bb-pa-reg-rejected-church="1"><%= churchName %></h1>
+    <p class="bb-pa-lede">
+      <span class="bb-pa-chip <%= phase5Status.chipClass %>" data-bb-pa-phase5-status="<%= phase5Status.key %>"><%= phase5Status.label %></span>
+      <% if (summary.rejectedAt) { %>
+      <span data-bb-pa-reg-rejected-at="1"><%= fmtDate(summary.rejectedAt) %></span>
+      <% } %>
+    </p>
+  </header>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-rejected-summary-title">
+    <h2 id="reg-rejected-summary-title" class="bb-pa-section-title">Rejection summary</h2>
+    <dl class="bb-pa-dl">
+      <% if (summary.categoryLabel) { %>
+      <div>
+        <dt>Rejection reason</dt>
+        <dd data-bb-pa-reg-rejected-reason="1"><%= summary.categoryLabel %></dd>
+      </div>
+      <% } %>
+      <% if (summary.actorUserId) { %>
+      <div>
+        <dt>Rejected by</dt>
+        <dd data-bb-pa-reg-rejected-by="1">Platform administrator</dd>
+      </div>
+      <% } %>
+      <div>
+        <dt>Communication</dt>
+        <dd data-bb-pa-reg-rejected-delivery-label="1"><%= summary.deliveryLabel || 'Rejection recorded' %></dd>
+      </div>
+    </dl>
+
+    <% if (summary.applicantMessage) { %>
+    <div data-bb-pa-reg-rejected-applicant="1">
+      <h3 class="bb-pa-lede">Applicant-facing message</h3>
+      <p><%= summary.applicantMessage %></p>
+    </div>
+    <% } %>
+
+    <% if (summary.internalNote) { %>
+    <details class="bb-pa-reg-rejected__internal" data-bb-pa-reg-rejected-internal="1">
+      <summary>Internal note</summary>
+      <p><%= summary.internalNote %></p>
+    </details>
+    <% } %>
+
+    <p class="bb-pa-hint" data-bb-pa-reg-rejected-no-delete="1">
+      The registration record was preserved. No organization, church, branch, or user was deleted by this rejection.
+    </p>
+  </section>
+
+  <% if (showDup && dupMatch) { %>
+  <aside class="bb-pa-reg-hub__dup" data-bb-pa-reg-rejected-dup="1" role="status">
+    <h2 class="bb-pa-reg-hub__dup-title">Duplicate context</h2>
+    <p data-bb-pa-reg-dup-name="1"><%= dupMatch.name %></p>
+    <% if (dupMatch.reason) { %><p data-bb-pa-reg-dup-reason="1"><%= dupMatch.reason %></p><% } %>
+    <% if (dupMatch.existingHref) { %>
+    <p>
+      <a class="bb-pa-link" href="<%= dupMatch.existingHref %>" data-bb-pa-reg-dup-view-existing="1">View existing church or registration</a>
+    </p>
+    <% } %>
+  </aside>
+  <% } %>
+
+  <div class="bb-pa-reg-rejected__actions">
+    <a class="bb-pa-btn bb-pa-btn--secondary" href="/admin/registration-applications" data-bb-pa-reg-rejected-return="1">Return to registrations</a>
+    <a class="bb-pa-btn bb-pa-btn--primary" href="<%= viewHref %>" data-bb-pa-reg-rejected-view="1">View registration details</a>
+  </div>
+
+  <% if (canReopen) { %>
+  <section class="bb-pa-panel" data-bb-pa-reg-rejected-reopen="1" aria-labelledby="reg-rejected-reopen-title">
+    <h2 id="reg-rejected-reopen-title" class="bb-pa-section-title">Reopen registration</h2>
+    <p class="bb-pa-hint">
+      Returns the application to submitted for further review. Rejection history is preserved. No email is sent automatically.
+    </p>
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="<%= reopenAction %>"
+      data-bb-pa-reopen-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <div class="bb-pa-field">
+        <label for="reopen_reason">Reason for reopen</label>
+        <textarea id="reopen_reason" name="reopen_reason" rows="3" maxlength="500" required data-bb-pa-reg-rejected-reopen-reason="1"></textarea>
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--secondary" type="submit" data-bb-pa-reg-rejected-reopen-submit="1">Reopen registration</button>
+    </form>
+  </section>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

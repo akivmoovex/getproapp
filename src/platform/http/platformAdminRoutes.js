@@ -109,6 +109,7 @@ const {
   ALLOWED_LIMITS: REG_ALLOWED_LIMITS,
   QUEUE_FILTERS,
   REJECTION_CATEGORIES,
+  REJECTION_CATEGORY_LABELS,
 } = require("../../blessboard/services/registrationApplicationsAdminService");
 const {
   getOrganizationOnboardingSummary,
@@ -138,6 +139,15 @@ const {
   loadRegistrationDuplicateComparisonForAdmin,
   STATUS: DUPLICATE_MATCHES_STATUS,
 } = require("../../blessboard/services/registrationDuplicateMatchesAdminLoader");
+const {
+  applyVisibleStatusQuery,
+  presentPhase5DuplicateWarning,
+  presentPhase5NeedsInformationState,
+  presentPhase5InformationDelivery,
+  presentPhase5RejectionSummary,
+  PHASE5_INFO_REQUEST_REASONS,
+  PHASE5_REJECT_REASONS,
+} = require("../../blessboard/services/registrationQueuePresentation");
 const {
   recordDuplicateMatchReviewDecision,
   STATUS: DUPLICATE_DECISION_STATUS,
@@ -231,7 +241,7 @@ function sendControlled(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Platform admin · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=33" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=55" />
 </head>
 <body class="bb-pa-body">
   <main class="bb-pa-notice">
@@ -554,6 +564,19 @@ function parseInformationRequestForm(body, applicationId) {
   const id = String(applicationId || "").trim();
   if (!id) return { ok: false, code: "invalid_application_id" };
   const src = body && typeof body === "object" ? body : {};
+  const reasonCodes = parseRequestInformationListField(
+    src.request_reasons != null ? src.request_reasons : src.requested_fields
+  ).map((code) => String(code || "").trim().toLowerCase())
+    .filter(Boolean);
+  let requestCategory =
+    src.request_category != null ? String(src.request_category).trim().toLowerCase() : "";
+  if (!requestCategory && reasonCodes.length) {
+    requestCategory = reasonCodes[0];
+  }
+  let requestedFields = parseRequestInformationListField(src.requested_fields);
+  if ((!requestedFields || !requestedFields.length) && reasonCodes.length) {
+    requestedFields = reasonCodes.slice();
+  }
   return {
     ok: true,
     input: {
@@ -562,8 +585,8 @@ function parseInformationRequestForm(body, applicationId) {
       subject: src.subject,
       applicantMessage: src.applicant_message,
       internalNote: src.internal_note,
-      requestCategory: src.request_category,
-      requestedFields: parseRequestInformationListField(src.requested_fields),
+      requestCategory,
+      requestedFields,
       requestedDocuments: parseRequestInformationListField(src.requested_documents),
       responseDueAt: src.response_due_at,
       channel: src.channel,
@@ -622,7 +645,15 @@ function parseRejectForm(body, applicationId) {
   if (!id) return { ok: false, code: "invalid_application_id" };
   const src = body && typeof body === "object" ? body : {};
 
-  const internalDecisionNote = String(
+  let rejectionCategory = null;
+  if (src.rejection_category != null && String(src.rejection_category).trim() !== "") {
+    rejectionCategory = String(src.rejection_category).trim().toLowerCase();
+    if (!REJECTION_CATEGORIES.includes(rejectionCategory)) {
+      return { ok: false, code: "invalid_rejection_category" };
+    }
+  }
+
+  let internalDecisionNote = String(
     src.internal_decision_note != null && String(src.internal_decision_note).trim() !== ""
       ? src.internal_decision_note
       : src.rejection_reason != null
@@ -631,16 +662,22 @@ function parseRejectForm(body, applicationId) {
   )
     .trim()
     .slice(0, 500);
-  if (!internalDecisionNote || internalDecisionNote.length < 3) {
-    return { ok: false, code: "rejection_reason_required" };
+
+  // Allowlisted category label may satisfy the stored reason when the admin did not type a note.
+  // "other" still requires free-text so operators cannot reject without explanation.
+  if (
+    (!internalDecisionNote || internalDecisionNote.length < 3) &&
+    rejectionCategory &&
+    rejectionCategory !== "other"
+  ) {
+    const label = REJECTION_CATEGORY_LABELS[rejectionCategory];
+    if (label && String(label).trim().length >= 3) {
+      internalDecisionNote = String(label).trim().slice(0, 500);
+    }
   }
 
-  let rejectionCategory = null;
-  if (src.rejection_category != null && String(src.rejection_category).trim() !== "") {
-    rejectionCategory = String(src.rejection_category).trim().toLowerCase();
-    if (!REJECTION_CATEGORIES.includes(rejectionCategory)) {
-      return { ok: false, code: "invalid_rejection_category" };
-    }
+  if (!internalDecisionNote || internalDecisionNote.length < 3) {
+    return { ok: false, code: "rejection_reason_required" };
   }
 
   const applicantExplanation = String(
@@ -707,7 +744,10 @@ function mapRejectRouteError(result) {
   ) {
     return "not_found";
   }
-  if (status === REG_APP_STATUS.NOT_ELIGIBLE || message === "already_provisioned") {
+  if (message === "already_provisioned") {
+    return "already_provisioned";
+  }
+  if (status === REG_APP_STATUS.NOT_ELIGIBLE || message === "not_eligible") {
     return "not_eligible";
   }
   if (
@@ -885,6 +925,10 @@ function createPlatformAdminRouter(deps) {
     typeof deps.reopenRegistrationApplication === "function"
       ? deps.reopenRegistrationApplication
       : reopenRegistrationApplication;
+  const getRegistrationApplicationDetailFn =
+    typeof deps.getRegistrationApplicationDetail === "function"
+      ? deps.getRegistrationApplicationDetail
+      : getRegistrationApplicationDetail;
   const router = express.Router();
 
   function requireApex(req, res, next) {
@@ -1196,21 +1240,24 @@ function createPlatformAdminRouter(deps) {
     requirePlatformAdmin,
     async (req, res) => {
       setAdminNoStore(res);
+      const visibleStatusRaw =
+        req.query.visible_status != null ? String(req.query.visible_status) : "";
+      const listQuery = applyVisibleStatusQuery(req.query || {});
       const list = await listRegistrationApplicationsAdmin(getPool(), {
-        page: req.query.page,
-        limit: req.query.limit,
-        q: req.query.q,
-        application_status: req.query.application_status,
-        provisioning_status: req.query.provisioning_status,
-        follow_up_status: req.query.follow_up_status,
-        selected_plan: req.query.selected_plan || req.query.plan,
-        support_requested: req.query.support_requested,
-        requires_review: req.query.requires_review,
-        overdue_follow_up: req.query.overdue_follow_up || req.query.overdue,
-        queue: req.query.queue,
-        linked: req.query.linked,
-        from: req.query.from,
-        to: req.query.to,
+        page: listQuery.page,
+        limit: listQuery.limit,
+        q: listQuery.q,
+        application_status: listQuery.application_status,
+        provisioning_status: listQuery.provisioning_status,
+        follow_up_status: listQuery.follow_up_status,
+        selected_plan: listQuery.selected_plan || listQuery.plan,
+        support_requested: listQuery.support_requested,
+        requires_review: listQuery.requires_review,
+        overdue_follow_up: listQuery.overdue_follow_up || listQuery.overdue,
+        queue: listQuery.queue,
+        linked: listQuery.linked,
+        from: listQuery.from,
+        to: listQuery.to,
       });
       if (!list.ok) {
         if (list.status === REG_APP_STATUS.INVALID_INPUT) {
@@ -1219,7 +1266,7 @@ function createPlatformAdminRouter(deps) {
         const errorHtml = renderPlatformAdminView(
           "platform-admin/registration-applications.ejs",
           shellLocals(req, res, "registration-applications", {
-            pageTitle: "Registration Applications",
+            pageTitle: "Church Registrations",
             listError: true,
             applications: [],
             page: 1,
@@ -1227,6 +1274,7 @@ function createPlatformAdminRouter(deps) {
             total: 0,
             totalPages: 0,
             filters: {},
+            visibleStatus: visibleStatusRaw,
             queueFilters: QUEUE_FILTERS,
             defaultLimit: REG_DEFAULT_LIMIT,
             maxLimit: REG_MAX_LIMIT,
@@ -1245,7 +1293,7 @@ function createPlatformAdminRouter(deps) {
       const html = renderPlatformAdminView(
         "platform-admin/registration-applications.ejs",
         shellLocals(req, res, "registration-applications", {
-          pageTitle: "Registration Applications",
+          pageTitle: "Church Registrations",
           listError: false,
           applications: list.applications,
           page: list.page,
@@ -1253,6 +1301,7 @@ function createPlatformAdminRouter(deps) {
           total: list.total,
           totalPages: list.totalPages,
           filters: list.filters || {},
+          visibleStatus: visibleStatusRaw,
           queueFilters: list.queueFilters || QUEUE_FILTERS,
           defaultLimit: REG_DEFAULT_LIMIT,
           maxLimit: REG_MAX_LIMIT,
@@ -1299,10 +1348,32 @@ function createPlatformAdminRouter(deps) {
         });
         if (onboard.ok && onboard.summary) onboardingSummary = onboard.summary;
       }
+      const appId = detail.application && detail.application.id
+        ? String(detail.application.id)
+        : String(req.params.id || "");
+      let duplicateMatchesLoaded = null;
+      let duplicateWarning = null;
+      try {
+        duplicateMatchesLoaded = await loadRegistrationDuplicateMatchesForAdminFn(
+          getPool(),
+          appId
+        );
+        duplicateWarning = presentPhase5DuplicateWarning(
+          duplicateMatchesLoaded,
+          appId
+        );
+      } catch {
+        duplicateMatchesLoaded = null;
+        duplicateWarning = { show: false, match: null, listHref: null, advisory: true };
+      }
+      const intent = String(req.query.intent || "")
+        .trim()
+        .toLowerCase()
+        .slice(0, 64);
       const html = renderPlatformAdminView(
         "platform-admin/registration-application-detail.ejs",
         shellLocals(req, res, "registration-applications", {
-          pageTitle: detail.application.churchName || "Registration application",
+          pageTitle: detail.application.churchName || "Review church registration",
           application: detail.application,
           verification: detail.verification || null,
           reviewRecommendation: detail.reviewRecommendation || null,
@@ -1317,6 +1388,9 @@ function createPlatformAdminRouter(deps) {
           contactMethods: detail.contactMethods || registrationAppRepo.CONTACT_METHODS,
           contactOutcomes: detail.contactOutcomes || registrationAppRepo.CONTACT_OUTCOMES,
           onboardingSummary,
+          duplicateMatchesLoaded,
+          duplicateWarning,
+          intent,
           notice: flash.notice,
           error: flash.error,
         })
@@ -1678,6 +1752,108 @@ function createPlatformAdminRouter(deps) {
     }
   );
 
+  router.get(
+    "/admin/registration-applications/:id/request-information",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const detail = await getRegistrationApplicationDetail(getPool(), id, env);
+      if (!detail.ok) {
+        if (detail.status === REG_APP_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid application id.");
+        }
+        if (detail.status === REG_APP_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This registration application could not be found.");
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Registration application detail is temporarily unavailable."
+        );
+      }
+      const app = detail.application || {};
+      let duplicateMatchesLoaded = null;
+      let duplicateWarning = null;
+      try {
+        duplicateMatchesLoaded = await loadRegistrationDuplicateMatchesForAdminFn(
+          getPool(),
+          app.id ? String(app.id) : id
+        );
+        duplicateWarning = presentPhase5DuplicateWarning(
+          duplicateMatchesLoaded,
+          app.id ? String(app.id) : id
+        );
+      } catch {
+        duplicateMatchesLoaded = null;
+        duplicateWarning = { show: false, match: null, listHref: null, advisory: true };
+      }
+      const flash = readFlash(req);
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-application-request-information.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: `Request information · ${app.churchName || "Registration"}`,
+          application: app,
+          duplicateMatchesLoaded,
+          duplicateWarning,
+          infoRequestReasons: PHASE5_INFO_REQUEST_REASONS,
+          notice: flash.notice,
+          error: flash.error,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/registration-applications/:id/information-requested",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detail = await getRegistrationApplicationDetail(getPool(), id, env);
+      if (!detail.ok) {
+        if (detail.status === REG_APP_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid application id.");
+        }
+        if (detail.status === REG_APP_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This registration application could not be found.");
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Registration application detail is temporarily unavailable."
+        );
+      }
+      const app = detail.application || {};
+      const needsState = presentPhase5NeedsInformationState(
+        detail.communications || null,
+        app
+      );
+      const flash = readFlash(req);
+      const delivery =
+        needsState.delivery ||
+        presentPhase5InformationDelivery(null, {});
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-application-information-requested.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: `Information requested · ${app.churchName || "Registration"}`,
+          application: app,
+          needsInformationState: needsState,
+          deliverySummary: delivery,
+          notice: flash.notice,
+          error: flash.error,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
   router.post(
     "/admin/registration-applications/:id/request-information",
     requireApex,
@@ -1686,21 +1862,22 @@ function createPlatformAdminRouter(deps) {
       setAdminNoStore(res);
       const id = String(req.params.id || "");
       const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
-      const anchor = "#reg-communications";
+      const requestPath = `${detailPath}/request-information`;
+      const resultPath = `${detailPath}/information-requested`;
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
-        return res.redirect(303, `${detailPath}?error=csrf${anchor}`);
+        return res.redirect(303, `${requestPath}?error=csrf`);
       }
 
       const parsed = parseInformationRequestForm(req.body, id);
       if (!parsed.ok) {
-        return res.redirect(303, `${detailPath}?error=invalid${anchor}`);
+        return res.redirect(303, `${requestPath}?error=invalid`);
       }
 
       try {
         const existing = await findRegistrationApplicationByIdFn(getPool(), id);
         if (!existing) {
-          return res.redirect(303, `${detailPath}?error=not_found${anchor}`);
+          return res.redirect(303, `${detailPath}?error=not_found`);
         }
 
         const result = await recordInformationRequestFn(
@@ -1710,7 +1887,7 @@ function createPlatformAdminRouter(deps) {
         );
 
         if (!result || result.recorded !== true) {
-          return res.redirect(303, `${detailPath}?error=information_request_failed${anchor}`);
+          return res.redirect(303, `${requestPath}?error=information_request_failed`);
         }
 
         // Honest delivery: recorded may be sending_unavailable — never claim sent in notice.
@@ -1730,15 +1907,18 @@ function createPlatformAdminRouter(deps) {
             action: "information_requested",
             actor_user_id: req.platformAdminContext.userId,
             to_status: "awaiting_customer",
-            reason_codes: parsed.input.requestCategory
-              ? [String(parsed.input.requestCategory).trim().toLowerCase()]
-              : [],
+            reason_codes: Array.isArray(parsed.input.requestedFields) &&
+              parsed.input.requestedFields.length
+              ? parsed.input.requestedFields.map((c) => String(c).trim().toLowerCase())
+              : parsed.input.requestCategory
+                ? [String(parsed.input.requestCategory).trim().toLowerCase()]
+                : [],
             note_len: noteLen,
             delivery_status: deliveryStatus || undefined,
           },
         });
 
-        return res.redirect(303, `${detailPath}?notice=information_requested${anchor}`);
+        return res.redirect(303, `${resultPath}?notice=information_requested`);
       } catch (err) {
         const error = mapInformationRequestError(err);
         if (error === "information_request_failed") {
@@ -1748,8 +1928,147 @@ function createPlatformAdminRouter(deps) {
             message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
           });
         }
-        return res.redirect(303, `${detailPath}?error=${error}${anchor}`);
+        return res.redirect(303, `${requestPath}?error=${error}`);
       }
+    }
+  );
+
+  router.get(
+    "/admin/registration-applications/:id/reject",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const rejectedPath = `${detailPath}/rejected`;
+      const detail = await getRegistrationApplicationDetailFn(getPool(), id, env);
+      if (!detail.ok) {
+        if (detail.status === REG_APP_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid application id.");
+        }
+        if (detail.status === REG_APP_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This registration application could not be found.");
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Registration application detail is temporarily unavailable."
+        );
+      }
+      const app = detail.application || {};
+      if (String(app.applicationStatus || "") === "rejected") {
+        return res.redirect(303, `${rejectedPath}?notice=already_rejected`);
+      }
+      const orgKey =
+        app.organizationKey != null && String(app.organizationKey).trim()
+          ? String(app.organizationKey).trim()
+          : null;
+      const blocked =
+        Boolean(app.organizationId) ||
+        String(app.provisioningStatus || "") === "provisioned" ||
+        !app.rejectActionsAvailable;
+      let preselectCategory = String(req.query.rejection_category || "")
+        .trim()
+        .toLowerCase()
+        .slice(0, 80);
+      if (preselectCategory && !REJECTION_CATEGORIES.includes(preselectCategory)) {
+        preselectCategory = "";
+      }
+      let duplicateMatchesLoaded = null;
+      let duplicateWarning = null;
+      try {
+        duplicateMatchesLoaded = await loadRegistrationDuplicateMatchesForAdminFn(
+          getPool(),
+          app.id ? String(app.id) : id
+        );
+        duplicateWarning = presentPhase5DuplicateWarning(
+          duplicateMatchesLoaded,
+          app.id ? String(app.id) : id
+        );
+      } catch {
+        duplicateMatchesLoaded = null;
+        duplicateWarning = { show: false, match: null, listHref: null, advisory: true };
+      }
+      const flash = readFlash(req);
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-application-reject.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: `Reject · ${app.churchName || "Registration"}`,
+          application: app,
+          duplicateMatchesLoaded,
+          duplicateWarning,
+          rejectReasons: PHASE5_REJECT_REASONS,
+          preselectCategory,
+          rejectBlocked: blocked,
+          organizationHref: orgKey
+            ? `/admin/organizations/${encodeURIComponent(orgKey)}`
+            : null,
+          notice: flash.notice,
+          error: flash.error,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/registration-applications/:id/rejected",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detail = await getRegistrationApplicationDetailFn(getPool(), id, env);
+      if (!detail.ok) {
+        if (detail.status === REG_APP_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid application id.");
+        }
+        if (detail.status === REG_APP_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This registration application could not be found.");
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Registration application detail is temporarily unavailable."
+        );
+      }
+      const app = detail.application || {};
+      if (String(app.applicationStatus || "") !== "rejected") {
+        return res.redirect(
+          303,
+          `/admin/registration-applications/${encodeURIComponent(id)}`
+        );
+      }
+      let duplicateWarning = null;
+      try {
+        const loaded = await loadRegistrationDuplicateMatchesForAdminFn(
+          getPool(),
+          app.id ? String(app.id) : id
+        );
+        duplicateWarning = presentPhase5DuplicateWarning(loaded, app.id ? String(app.id) : id);
+      } catch {
+        duplicateWarning = { show: false, match: null, listHref: null, advisory: true };
+      }
+      const rejectionSummary = presentPhase5RejectionSummary(
+        app,
+        detail.communications || null
+      );
+      const flash = readFlash(req);
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-application-rejected.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: `Rejected · ${app.churchName || "Registration"}`,
+          application: app,
+          rejectionSummary,
+          duplicateWarning,
+          notice: flash.notice,
+          error: flash.error,
+        })
+      );
+      return res.status(200).type("html").send(html);
     }
   );
 
@@ -1761,17 +2080,18 @@ function createPlatformAdminRouter(deps) {
       setAdminNoStore(res);
       const id = String(req.params.id || "");
       const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
-      const anchor = "#reg-rejection";
+      const rejectPath = `${detailPath}/reject`;
+      const rejectedPath = `${detailPath}/rejected`;
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
-        return res.redirect(303, `${detailPath}?error=csrf${anchor}`);
+        return res.redirect(303, `${rejectPath}?error=csrf`);
       }
 
       const parsed = parseRejectForm(req.body, id);
       if (!parsed.ok) {
         const error =
           parsed.code === "invalid_application_id" ? "not_found" : "invalid";
-        return res.redirect(303, `${detailPath}?error=${error}${anchor}`);
+        return res.redirect(303, `${rejectPath}?error=${error}`);
       }
 
       try {
@@ -1797,21 +2117,20 @@ function createPlatformAdminRouter(deps) {
 
         if (!result || !result.ok) {
           const error = mapRejectRouteError(result);
-          return res.redirect(303, `${detailPath}?error=${error}${anchor}`);
+          if (error === "already_provisioned" || error === "not_eligible") {
+            return res.redirect(303, `${rejectPath}?error=${error}`);
+          }
+          return res.redirect(303, `${rejectPath}?error=${error}`);
         }
 
-        // Do not trust client-submitted delivery/status; notice is fixed and honest.
-        return res.redirect(
-          303,
-          `${detailPath}?notice=application_rejected${anchor}`
-        );
+        return res.redirect(303, `${rejectedPath}?notice=application_rejected`);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error("[platform-admin] reject registration failed", {
           applicationId: id.slice(0, 36),
           message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
         });
-        return res.redirect(303, `${detailPath}?error=reject_failed${anchor}`);
+        return res.redirect(303, `${rejectPath}?error=reject_failed`);
       }
     }
   );
@@ -1865,6 +2184,84 @@ function createPlatformAdminRouter(deps) {
     }
   );
 
+  router.get(
+    "/admin/registration-applications/:id/approve",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const id = String(req.params.id || "");
+      const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const detail = await getRegistrationApplicationDetail(getPool(), id, env);
+      if (!detail.ok) {
+        if (detail.status === REG_APP_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid application id.");
+        }
+        if (detail.status === REG_APP_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This registration application could not be found.");
+        }
+        return sendControlled(
+          req,
+          res,
+          503,
+          "Registration application detail is temporarily unavailable."
+        );
+      }
+      const app = detail.application || {};
+      const orgKey =
+        app.organizationKey != null && String(app.organizationKey).trim()
+          ? String(app.organizationKey).trim()
+          : null;
+      const alreadyLinked =
+        Boolean(orgKey) &&
+        (String(app.provisioningStatus || "") === "provisioned" ||
+          Boolean(app.organizationId));
+      if (alreadyLinked && orgKey) {
+        return res.redirect(
+          303,
+          `/admin/organizations/${encodeURIComponent(orgKey)}?notice=already_provisioned`
+        );
+      }
+      if (!app.riskReviewActionsAvailable && !app.networkApproveAvailable) {
+        if (orgKey) {
+          return res.redirect(
+            303,
+            `/admin/organizations/${encodeURIComponent(orgKey)}?notice=already_provisioned`
+          );
+        }
+        return res.redirect(303, `${detailPath}?error=not_eligible`);
+      }
+      let duplicateMatchesLoaded = null;
+      let duplicateWarning = null;
+      try {
+        duplicateMatchesLoaded = await loadRegistrationDuplicateMatchesForAdminFn(
+          getPool(),
+          app.id ? String(app.id) : id
+        );
+        duplicateWarning = presentPhase5DuplicateWarning(
+          duplicateMatchesLoaded,
+          app.id ? String(app.id) : id
+        );
+      } catch {
+        duplicateMatchesLoaded = null;
+        duplicateWarning = { show: false, match: null, listHref: null, advisory: true };
+      }
+      const flash = readFlash(req);
+      const html = renderPlatformAdminView(
+        "platform-admin/registration-application-approve-confirm.ejs",
+        shellLocals(req, res, "registration-applications", {
+          pageTitle: `Approve ${app.churchName || "church"}`,
+          application: app,
+          duplicateMatchesLoaded,
+          duplicateWarning,
+          notice: flash.notice,
+          error: flash.error,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
   router.post(
     "/admin/registration-applications/:id/approve",
     requireApex,
@@ -1873,9 +2270,10 @@ function createPlatformAdminRouter(deps) {
       setAdminNoStore(res);
       const id = String(req.params.id || "");
       const detailPath = `/admin/registration-applications/${encodeURIComponent(id)}`;
+      const confirmPath = `${detailPath}/approve`;
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
-        return res.redirect(303, `${detailPath}?error=csrf`);
+        return res.redirect(303, `${confirmPath}?error=csrf`);
       }
       const deployment = getPlatformDeploymentCode(env);
       const requestId =
@@ -1890,7 +2288,7 @@ function createPlatformAdminRouter(deps) {
           requestId,
         });
         if (!result.ok) {
-          return res.redirect(303, `${detailPath}?error=${mapApproveError(result)}`);
+          return res.redirect(303, `${confirmPath}?error=${mapApproveError(result)}`);
         }
         if (result.alreadyProvisioned) {
           const key = result.organizationKey || (result.records && result.records.organizationKey);
@@ -1937,7 +2335,7 @@ function createPlatformAdminRouter(deps) {
           pgCode: err && err.code != null ? String(err.code).slice(0, 32) : null,
           requestId: requestId != null ? String(requestId).slice(0, 64) : null,
         });
-        return res.redirect(303, `${detailPath}?error=approve_failed`);
+        return res.redirect(303, `${confirmPath}?error=approve_failed`);
       }
     }
   );

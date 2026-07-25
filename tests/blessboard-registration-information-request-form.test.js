@@ -88,6 +88,7 @@ function renderDetail(locals = {}) {
     wrapped,
     {
       registrationStatus,
+      registrationQueue: require("../src/blessboard/services/registrationQueuePresentation"),
       application: baseApp(),
       contacts: [],
       auditEvents: [],
@@ -104,6 +105,9 @@ function renderDetail(locals = {}) {
       approvalChecklist: null,
       phoneVerification: null,
       emailVerification: null,
+      communications: null,
+      duplicateWarning: { show: false },
+      intent: "",
       ...locals,
     },
     {
@@ -209,7 +213,7 @@ describe("registration information request form (Prompt 065, no Postgres)", () =
     const css = fs.readFileSync(CSS, "utf8");
     assert.match(css, /\.bb-pa-reg-communications__form\s*\{/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=50/);
+    assert.match(shell, /platform-admin\.css\?v=55/);
   });
 
   it("shows allowlisted success and error notices only", () => {

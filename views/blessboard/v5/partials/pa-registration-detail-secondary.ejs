@@ -1,0 +1,2425 @@
+<%#
+  Secondary registration review evidence (Phase 5).
+  Included inside collapsed Additional review details on the decision hub.
+  Relies on locals/helpers defined by registration-application-detail.ejs.
+%>
+<%
+  var app = (typeof application !== 'undefined' && application) ? application : {};
+  var ov = app.operatorView || {};
+  var contactRows = contacts || [];
+  var audits = auditEvents || [];
+  var admins = platformAdmins || [];
+  var followOpts = followUpStatuses || [];
+  var methodOpts = contactMethods || [];
+  var outcomeOpts = contactOutcomes || [];
+  var flashNotice = typeof notice !== 'undefined' ? notice : null;
+  var flashError = typeof error !== 'undefined' ? error : null;
+  var displayStatus = ov.displayStatus || app.displayStatus || '—';
+  var statusExplanation = ov.explanation || app.statusExplanation || '';
+  var operatorQueue = ov.queue || app.operatorQueue || '';
+  var operatorTone = ov.tone || app.operatorTone || 'muted';
+  var organizationHref = ov.organizationHref ||
+    (app.organizationKey
+      ? '/admin/organizations/' + encodeURIComponent(app.organizationKey)
+      : null);
+
+  function labelStatus(s) {
+    return String(s || '').replace(/_/g, ' ') || '—';
+  }
+  function toneChip(tone) {
+    if (typeof registrationStatus !== 'undefined' && registrationStatus && registrationStatus.chipClassForTone) {
+      return registrationStatus.chipClassForTone(tone);
+    }
+    if (tone === 'success') return 'bb-pa-chip--ok';
+    if (tone === 'danger') return 'bb-pa-chip--danger';
+    if (tone === 'warn') return 'bb-pa-chip--warn';
+    return 'bb-pa-chip--muted';
+  }
+  function fmtDate(d) {
+    if (!d) return null;
+    try {
+      return new Date(d).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    } catch (e) {
+      return null;
+    }
+  }
+  function displayOrMissing(value) {
+    if (value == null) return null;
+    var s = String(value).trim();
+    return s ? s : null;
+  }
+  function noticeText(code) {
+    if (code === 'follow_up_saved') return 'Follow-up status updated.';
+    if (code === 'support_assigned') return 'Support assignment saved.';
+    if (code === 'contact_saved') return 'Contact note added.';
+    if (code === 'approved') return 'Application approved and provisioned.';
+    if (code === 'already_provisioned') return 'Organization was already provisioned.';
+    if (code === 'network_organization_created') {
+      return 'Network organization created. Activate the Network plan from the organization page when ready.';
+    }
+    if (code === 'validation_complete') {
+      return 'Network validation marked complete. A platform administrator can create the organization.';
+    }
+    if (code === 'rejected') return 'Application rejected. No organization was provisioned.';
+    if (code === 'application_rejected') {
+      return 'Application rejected. No organization was provisioned. This does not confirm that a rejection message was delivered.';
+    }
+    if (code === 'application_reopened') {
+      return 'Application reopened for review. Prior rejection history and communications were preserved. No email was sent.';
+    }
+    if (code === 'retry_succeeded') return 'Provisioning retry completed.';
+    if (code === 'organization_linked') return 'Application linked to the existing organization.';
+    if (code === 'phone_attempt_recorded') return 'Phone verification attempt recorded.';
+    if (code === 'email_verification_sent') {
+      return 'Verification email resend was accepted for processing.';
+    }
+    if (code === 'information_requested') {
+      return 'Information request recorded. Follow-up is set to awaiting customer. This does not confirm that a message was delivered.';
+    }
+    return null;
+  }
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    if (code === 'confirm_required') return 'Confirmation is required.';
+    if (code === 'invalid') return 'The request could not be processed. Review the fields and try again.';
+    if (code === 'phone_attempt_failed') return 'The call attempt could not be saved right now.';
+    if (code === 'cooldown') {
+      return 'Please wait at least 60 seconds before resending another verification email.';
+    }
+    if (code === 'invalid_email') {
+      return 'The applicant email is missing or invalid.';
+    }
+    if (code === 'email_sending_unavailable') {
+      return 'Email delivery is not configured. A verification token was recorded but no message was sent.';
+    }
+    if (code === 'sending_unavailable') {
+      return 'Outbound email is not available right now. The information request was not recorded as sent.';
+    }
+    if (code === 'email_verification_failed') {
+      return 'The verification email could not be processed right now.';
+    }
+    if (code === 'information_request_failed') {
+      return 'The information request could not be saved right now.';
+    }
+    if (code === 'not_found') return 'This registration application could not be found.';
+    if (code === 'organization_not_found') return 'That organization key was not found.';
+    if (code === 'not_provisioned') {
+      return 'This action is available after the organization is provisioned.';
+    }
+    if (code === 'not_eligible') {
+      return 'This application is not eligible for that action.';
+    }
+    if (code === 'identity_conflict') {
+      return 'The administrator email belongs to an account that cannot safely own this church. Resolve the identity conflict before approving.';
+    }
+    if (code === 'duplicate_email_review') {
+      return 'This email still needs duplicate review before provisioning can continue.';
+    }
+    if (code === 'network_validation_required') {
+      return 'Network validation must be completed before creating the organization.';
+    }
+    if (code === 'administrator_email_required') {
+      return 'Administrator email is required.';
+    }
+    if (code === 'not_platform_admin') return 'Only active platform administrators can be assigned.';
+    if (code === 'provision_failed') {
+      return 'Provisioning failed. No organization was created.';
+    }
+    if (code === 'schema_mismatch') {
+      return 'Registration approval is temporarily unavailable because the database schema is incomplete. BlessBoard support has been notified via server logs — try again after pending migrations are applied.';
+    }
+    if (code === 'follow_up_failed' || code === 'assign_failed' || code === 'contact_failed' ||
+        code === 'reject_failed' || code === 'reopen_failed' || code === 'approve_failed' ||
+        code === 'retry_failed' || code === 'link_failed') {
+      return 'The change could not be saved. Try again.';
+    }
+    return code ? 'Something went wrong.' : null;
+  }
+  var infoRequestCategories = [
+    { value: 'clarify_church_identity', label: 'Clarify church identity' },
+    { value: 'confirm_applicant_authority', label: 'Confirm applicant authority' },
+    { value: 'upload_registration_document', label: 'Upload registration document' },
+    { value: 'correct_phone', label: 'Correct phone' },
+    { value: 'correct_email', label: 'Correct email' },
+    { value: 'confirm_location', label: 'Confirm location' },
+    { value: 'explain_possible_duplicate', label: 'Explain possible duplicate' },
+    { value: 'confirm_website_name', label: 'Confirm website name' },
+    { value: 'add_service_times', label: 'Add service times' },
+    { value: 'other', label: 'Other' }
+  ];
+  var infoRequestRecipient = displayOrMissing(app.contactEmail) || '';
+  var noticeMsg = noticeText(flashNotice);
+  var errorMsg = errorText(flashError);
+  var cityVal = displayOrMissing(app.city);
+  var countryVal = displayOrMissing(app.country);
+  var locationLabel = [cityVal, countryVal].filter(Boolean).join(', ') || null;
+  var roleVal = displayOrMissing(app.roleInChurch);
+  var branchNameVal = displayOrMissing(app.branchName);
+  var branchCountVal = displayOrMissing(app.branchCount);
+  var messageVal = displayOrMissing(app.message);
+  var assigneeLabel = displayOrMissing(app.assignedSupportDisplayName) ||
+    displayOrMissing(app.assignedSupportEmail) ||
+    null;
+  var submittedLabel = fmtDate(app.createdAt);
+  var lastActivityLabel = fmtDate(app.lastActivityAt) || fmtDate(app.lastContactedAt) || submittedLabel;
+  var appRef = displayOrMissing(app.id);
+  var ORIGIN_APPLICANT = 'Applicant-provided';
+  var ORIGIN_SYSTEM = 'System-derived';
+  var ORIGIN_ADMIN = 'Administrator-entered';
+%>
+
+
+<nav class="bb-pa-reg-section-nav" aria-label="Additional review sections" data-bb-pa-reg-section-nav="1">
+  <a href="#reg-actions">Actions</a>
+  <a href="#reg-details">Details</a>
+  <a href="#reg-verification">Verification</a>
+  <a href="#reg-recommendation">Recommendation</a>
+  <a href="#reg-approval-checklist" data-bb-pa-reg-checklist-nav="1">Approval checklist</a>
+  <a href="#reg-phone-verification">Phone</a>
+  <a href="#reg-email-verification">Email</a>
+  <a href="#reg-communications" data-bb-pa-reg-communications-nav="1">Communication</a>
+  <a href="#reg-rejection" data-bb-pa-reg-rejection-nav="1">Rejection</a>
+  <a href="#reg-activity">Activity</a>
+</nav>
+
+  <section
+    id="reg-actions"
+    class="bb-pa-panel bb-pa-reg-actions"
+    aria-labelledby="reg-action-title"
+    data-bb-pa-reg-section="actions"
+  >
+    <h2 id="reg-action-title" class="bb-pa-section-title">Review actions</h2>
+    <p class="bb-pa-hint">
+      Approval confirmation and rejection use the Phase 5 dedicated pages. Retry and network validation remain here when available.
+    </p>
+
+    <% if (app.riskReviewActionsAvailable || app.networkApproveAvailable) { %>
+    <p class="bb-pa-lede">
+      <% if (app.networkApproveAvailable && !app.riskReviewActionsAvailable) { %>
+      Network approval creates the organization. Confirm on the dedicated approval page before continuing.
+      <% } else { %>
+      Approve provisions this application with the canonical orchestrator. Confirm on the dedicated approval page before continuing.
+      <% } %>
+    </p>
+    <p>
+      <a
+        class="bb-pa-btn bb-pa-btn--primary"
+        href="/admin/registration-applications/<%= app.id %>/approve"
+        data-bb-pa-approve-confirm-link="1"
+        data-bb-pa-approve-form="1"
+        <%= app.networkApproveAvailable && !app.riskReviewActionsAvailable ? 'data-bb-pa-network-approve-form="1"' : '' %>
+      ><%= app.networkApproveAvailable && !app.riskReviewActionsAvailable ? 'Continue to organization approval' : 'Continue to approval confirmation' %></a>
+    </p>
+
+    <% } else if (app.retryProvisionAvailable) { %>
+    <p class="bb-pa-lede" role="note" data-bb-pa-provisioning-failed="1">
+      <%= app.retryAllowedNote || 'Review the failure category in technical details, then retry only if no organization was created.' %>
+    </p>
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/retry-provision"
+      data-bb-pa-retry-provision-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <p class="bb-pa-lede">
+        Retry uses the same idempotent provisioning orchestrator. It will not create a duplicate tenant if one already exists.
+        An invitation will be created for the church administrator if provisioning succeeds.
+      </p>
+      <div class="bb-pa-field">
+        <label for="retry_organization_key">Organization key (optional override)</label>
+        <input id="retry_organization_key" name="organization_key" type="text" maxlength="80" autocomplete="off" />
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Retry provisioning</button>
+    </form>
+
+    <% } else if (app.markValidationCompleteAvailable) { %>
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/mark-validation-complete"
+      data-bb-pa-mark-validation-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <p class="bb-pa-lede">
+        Confirm that customer-support validation is complete so a platform administrator can create the organization.
+      </p>
+      <button class="bb-pa-btn bb-pa-btn--primary" type="submit">Mark validation complete</button>
+    </form>
+
+    <% } else if (app.organizationKey && organizationHref) { %>
+    <p class="bb-pa-lede">
+      <a class="bb-pa-btn bb-pa-btn--primary" href="<%= organizationHref %>" data-bb-pa-view-organization="1">View organization</a>
+    </p>
+    <% if (app.organizationDisplayName) { %>
+    <p class="bb-pa-muted"><%= app.organizationDisplayName %> · <code class="bb-pa-key"><%= app.organizationKey %></code></p>
+    <% } %>
+
+    <% } else { %>
+    <p class="bb-pa-lede">
+      <%= ov.recommendedActionLabel || app.recommendedActionLabel || 'No action required' %>
+    </p>
+    <% } %>
+
+    <% if (app.provisioningStatus === 'provisioning_failed' && !app.retryProvisionAvailable) { %>
+    <p class="bb-pa-lede" role="note" data-bb-pa-provisioning-failed="1">
+      <%= app.retryAllowedNote || 'This failure is not retryable from this screen.' %>
+    </p>
+    <% } %>
+  </section>
+
+  <!-- Rejection workspace (Prompt 070) -->
+  <%
+    var rejectionCategories = [
+      { value: 'duplicate_registration', label: 'Duplicate registration' },
+      { value: 'applicant_not_authorized', label: 'Applicant not authorized' },
+      { value: 'contact_not_verified', label: 'Contact not verified' },
+      { value: 'invalid_or_incomplete_information', label: 'Invalid or incomplete information' },
+      { value: 'church_identity_not_confirmed', label: 'Church identity not confirmed' },
+      { value: 'fraudulent_or_prohibited_use', label: 'Fraudulent or prohibited use' },
+      { value: 'unsupported_organization_type', label: 'Unsupported organization type' },
+      { value: 'applicant_withdrew', label: 'Applicant withdrew' },
+      { value: 'other', label: 'Other' }
+    ];
+    function rejectionCategoryLabel(value) {
+      var key = String(value || '').trim().toLowerCase();
+      for (var i = 0; i < rejectionCategories.length; i += 1) {
+        if (rejectionCategories[i].value === key) return rejectionCategories[i].label;
+      }
+      return key ? labelStatus(key) : null;
+    }
+    function rejectionNotificationLabel(status) {
+      var s = String(status || '').trim().toLowerCase();
+      if (s === 'sent') return 'Sent';
+      if (s === 'sending_unavailable') return 'Sending unavailable';
+      if (s === 'failed') return 'Failed';
+      if (s === 'queued') return 'Queued';
+      if (s === 'recorded') return 'Recorded';
+      if (!s) return 'Not recorded';
+      return labelStatus(s);
+    }
+    var isRejectedApp = String(app.applicationStatus || '') === 'rejected';
+    var showRejectionForm = Boolean(app.rejectActionsAvailable);
+    var showRejectionCompleted = isRejectedApp;
+    var rejectEvent = null;
+    if (showRejectionCompleted && Array.isArray(app.reviewEvents)) {
+      for (var ri = app.reviewEvents.length - 1; ri >= 0; ri -= 1) {
+        var ev = app.reviewEvents[ri];
+        if (ev && typeof ev === 'object' && String(ev.action || '') === 'reject') {
+          rejectEvent = ev;
+          break;
+        }
+      }
+    }
+    var rejectedAt = (rejectEvent && rejectEvent.at) || app.riskDecidedAt || null;
+    var rejectedById = rejectEvent && rejectEvent.actor_user_id
+      ? String(rejectEvent.actor_user_id)
+      : null;
+    var rejectedByLabel = 'Platform administrator';
+    if (rejectedById && Array.isArray(admins)) {
+      for (var ai = 0; ai < admins.length; ai += 1) {
+        if (admins[ai] && String(admins[ai].id) === rejectedById) {
+          rejectedByLabel = displayOrMissing(admins[ai].displayName) ||
+            displayOrMissing(admins[ai].email) ||
+            rejectedByLabel;
+          break;
+        }
+      }
+    }
+    var completedCategory = displayOrMissing(app.rejectionCategory) ||
+      (rejectEvent && rejectEvent.rejection_category
+        ? String(rejectEvent.rejection_category)
+        : null);
+    var completedReapply = app.reapplicationAllowed;
+    if (completedReapply == null && rejectEvent && typeof rejectEvent.reapplication_allowed === 'boolean') {
+      completedReapply = rejectEvent.reapplication_allowed;
+    }
+    var completedNotifyStatus = displayOrMissing(app.rejectionNotificationStatus) ||
+      (rejectEvent && rejectEvent.notification_status
+        ? String(rejectEvent.notification_status)
+        : null);
+    var completedApplicantExplanation = null;
+    var commForReject = typeof communications !== 'undefined' && communications && typeof communications === 'object'
+      ? communications
+      : null;
+    if (commForReject && Array.isArray(commForReject.items)) {
+      for (var ci = 0; ci < commForReject.items.length; ci += 1) {
+        var citem = commForReject.items[ci];
+        if (citem && String(citem.communicationType || '') === 'rejection_notice') {
+          completedApplicantExplanation = displayOrMissing(citem.applicantMessage);
+          break;
+        }
+      }
+    }
+    var completedInternalNote = displayOrMissing(app.rejectionReason);
+    var canReopenSecondary =
+      showRejectionCompleted &&
+      !app.organizationId &&
+      String(app.provisioningStatus || '') !== 'provisioned';
+  %>
+  <% if (showRejectionForm || showRejectionCompleted) { %>
+  <section
+    id="reg-rejection"
+    class="bb-pa-panel bb-pa-reg-rejection<%= showRejectionCompleted ? ' bb-pa-reg-rejection--completed' : '' %>"
+    aria-labelledby="reg-rejection-title"
+    data-bb-pa-reg-section="rejection"
+    data-bb-pa-reg-rejection="1"
+    data-bb-pa-reg-rejection-completed="<%= showRejectionCompleted ? '1' : '0' %>"
+  >
+    <h2 id="reg-rejection-title" class="bb-pa-section-title">Rejection workspace</h2>
+    <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="admin"><%= ORIGIN_ADMIN %></p>
+
+    <% if (showRejectionCompleted) { %>
+    <div class="bb-pa-reg-rejection__completed" data-bb-pa-reg-rejection-completed-panel="1">
+      <p class="bb-pa-lede" data-bb-pa-reg-rejection-completed-lede="1">
+        This application has been rejected. No organization was provisioned from this decision.
+      </p>
+      <p>
+        <a
+          class="bb-pa-btn bb-pa-btn--secondary"
+          href="/admin/registration-applications/<%= app.id %>/rejected"
+          data-bb-pa-reg-rejection-view-result="1"
+        >View Phase 5 rejection summary</a>
+      </p>
+      <dl class="bb-pa-dl bb-pa-reg-rejection__summary-dl" data-bb-pa-reg-rejection-summary="1">
+        <div>
+          <dt>Rejected by</dt>
+          <dd data-bb-pa-reg-rejection-rejected-by="1"><%= rejectedByLabel %></dd>
+        </div>
+        <div>
+          <dt>Rejected date</dt>
+          <dd data-bb-pa-reg-rejection-rejected-at="1"><%= fmtDate(rejectedAt) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Category</dt>
+          <dd data-bb-pa-reg-rejection-category="1"><%= rejectionCategoryLabel(completedCategory) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Reapplication allowed</dt>
+          <dd data-bb-pa-reg-rejection-reapplication="1">
+            <% if (completedReapply == null) { %>Not provided<% } else { %><%= completedReapply ? 'Yes' : 'No' %><% } %>
+          </dd>
+        </div>
+        <div>
+          <dt>Notification status</dt>
+          <dd data-bb-pa-reg-rejection-notification="1"><%= rejectionNotificationLabel(completedNotifyStatus) %></dd>
+        </div>
+      </dl>
+
+      <% if (completedApplicantExplanation) { %>
+      <div
+        class="bb-pa-reg-rejection__applicant"
+        data-bb-pa-reg-rejection-applicant-completed="1"
+      >
+        <p class="bb-pa-reg-rejection__block-label">Applicant-facing explanation</p>
+        <p class="bb-pa-reg-rejection__block-body"><%= completedApplicantExplanation %></p>
+      </div>
+      <% } %>
+
+      <% if (completedInternalNote) { %>
+      <div
+        class="bb-pa-reg-rejection__internal"
+        data-bb-pa-reg-rejection-internal-completed="1"
+      >
+        <p class="bb-pa-reg-rejection__block-label">Internal decision notes</p>
+        <p class="bb-pa-reg-rejection__block-body"><%= completedInternalNote %></p>
+      </div>
+      <% } %>
+
+      <% if (canReopenSecondary) { %>
+      <div class="bb-pa-reg-rejection__reopen" data-bb-pa-reg-rejection-reopen="1">
+        <h3 class="bb-pa-reg-rejection__reopen-title" id="reg-reopen-title">Reopen application</h3>
+        <p class="bb-pa-muted" data-bb-pa-reg-rejection-reopen-lede="1">
+          Return this application to submitted for further review. Rejection history, metadata, and communication records are preserved. No email is sent automatically.
+        </p>
+        <form
+          class="bb-pa-form bb-pa-reg-rejection__reopen-form"
+          method="post"
+          action="/admin/registration-applications/<%= app.id %>/reopen"
+          data-bb-pa-reopen-form="1"
+          data-bb-pa-reg-rejection-reopen-form="1"
+          aria-labelledby="reg-reopen-title"
+        >
+          <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+          <div class="bb-pa-field">
+            <label for="reopen_reason">Reason for reopen</label>
+            <textarea
+              id="reopen_reason"
+              name="reopen_reason"
+              rows="3"
+              maxlength="500"
+              required
+              data-bb-pa-reg-rejection-field="reopen_reason"
+            ></textarea>
+          </div>
+          <div class="bb-pa-reg-rejection__reopen-actions" data-bb-pa-reg-rejection-reopen-actions="1">
+            <button
+              class="bb-pa-btn bb-pa-btn--secondary"
+              type="submit"
+              data-bb-pa-reg-rejection-reopen-submit="1"
+            >
+              Reopen application
+            </button>
+          </div>
+        </form>
+      </div>
+      <% } else { %>
+      <p class="bb-pa-hint" data-bb-pa-reg-rejection-no-reopen="1">
+        Reopen is not available while this registration is linked or provisioned.
+      </p>
+      <% } %>
+    </div>
+    <% } else if (showRejectionForm) { %>
+    <p class="bb-pa-lede" data-bb-pa-reg-rejection-lede="1">
+      Record a rejection decision on the dedicated confirmation page. This does not provision an organization.
+    </p>
+    <p class="bb-pa-hint" role="note" data-bb-pa-reg-rejection-email-unavailable="1">
+      Outbound email may be unavailable. Recording a rejection does not confirm that a message was delivered, opened, or bounced.
+    </p>
+    <div class="bb-pa-reg-rejection__actions" data-bb-pa-reg-rejection-actions="1">
+      <a
+        class="bb-pa-btn bb-pa-btn--danger"
+        href="/admin/registration-applications/<%= app.id %>/reject"
+        data-bb-pa-reg-rejection-form="1"
+        data-bb-pa-reject-form="1"
+        data-bb-pa-reg-rejection-submit="1"
+      >Continue to rejection confirmation</a>
+    </div>
+    <% } %>
+  </section>
+  <% } %>
+
+  <!-- Structured registration details -->
+  <div
+    id="reg-details"
+    class="bb-pa-reg-detail-grid"
+    data-bb-pa-reg-section="details"
+    data-bb-pa-reg-detail-grid="1"
+  >
+    <section class="bb-pa-panel bb-pa-reg-card" aria-labelledby="reg-church-title" data-bb-pa-reg-card="church">
+      <h2 id="reg-church-title" class="bb-pa-section-title">Church information</h2>
+      <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="applicant"><%= ORIGIN_APPLICANT %></p>
+      <dl class="bb-pa-dl">
+        <div>
+          <dt>Church name</dt>
+          <dd><%= displayOrMissing(app.churchName) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Requested plan</dt>
+          <dd>
+            <%= app.selectedPlanLabel || app.selectedPlan || 'Not provided' %>
+            <% if (app.isNetworkPlan) { %>
+            <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-plan-badge="network">Network</span>
+            <% } %>
+          </dd>
+        </div>
+        <% if (branchCountVal) { %>
+        <div>
+          <dt>Existing branch count (stated)</dt>
+          <dd><%= branchCountVal %></dd>
+        </div>
+        <% } %>
+        <% if (messageVal) { %>
+        <div>
+          <dt>Applicant notes</dt>
+          <dd><%= messageVal %></dd>
+        </div>
+        <% } %>
+      </dl>
+    </section>
+
+    <section class="bb-pa-panel bb-pa-reg-card" aria-labelledby="reg-location-title" data-bb-pa-reg-card="location">
+      <h2 id="reg-location-title" class="bb-pa-section-title">Location and first branch</h2>
+      <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="applicant"><%= ORIGIN_APPLICANT %></p>
+      <dl class="bb-pa-dl">
+        <div>
+          <dt>Country</dt>
+          <dd><%= countryVal || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Town or city</dt>
+          <dd><%= cityVal || 'Not provided' %></dd>
+        </div>
+        <% if (locationLabel) { %>
+        <div>
+          <dt>Location summary</dt>
+          <dd><%= locationLabel %></dd>
+        </div>
+        <% } %>
+        <div>
+          <dt>First branch name</dt>
+          <dd><%= branchNameVal || 'Not provided' %></dd>
+        </div>
+      </dl>
+    </section>
+
+    <section
+      id="reg-applicant"
+      class="bb-pa-panel bb-pa-reg-card"
+      aria-labelledby="reg-applicant-title"
+      data-bb-pa-reg-card="applicant"
+      data-bb-pa-reg-section="applicant"
+    >
+      <h2 id="reg-applicant-title" class="bb-pa-section-title">Contact and applicant</h2>
+      <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="applicant"><%= ORIGIN_APPLICANT %></p>
+      <dl class="bb-pa-dl">
+        <div>
+          <dt>Applicant name</dt>
+          <dd data-bb-pa-reg-applicant-name="1"><%= displayOrMissing(app.contactName) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Role or relationship</dt>
+          <dd><%= roleVal || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd data-bb-pa-reg-applicant-phone="1"><%= displayOrMissing(app.contactPhone) || 'Not provided' %></dd>
+        </div>
+        <% if (displayOrMissing(app.contactPhoneNormalized)) { %>
+        <div>
+          <dt>Phone (normalized)</dt>
+          <dd><code class="bb-pa-key"><%= app.contactPhoneNormalized %></code></dd>
+        </div>
+        <% } %>
+        <div>
+          <dt>Email</dt>
+          <dd data-bb-pa-reg-applicant-email="1"><%= displayOrMissing(app.contactEmail) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Support request</dt>
+          <dd>
+            <% if (app.supportRequested) { %>
+            <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-support-requested="1">Support requested</span>
+            <% } else { %>
+            Not requested
+            <% } %>
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section
+      id="reg-administration"
+      class="bb-pa-panel bb-pa-reg-card"
+      aria-labelledby="reg-proposed-admin-title"
+      data-bb-pa-reg-card="administration"
+      data-bb-pa-reg-section="administration"
+    >
+      <h2 id="reg-proposed-admin-title" class="bb-pa-section-title">Proposed administration</h2>
+      <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="applicant"><%= ORIGIN_APPLICANT %></p>
+      <p class="bb-pa-hint">
+        No separate proposed-administrator fields are stored. Contact details below are shown as the applicant contact used for provisioning invitations.
+      </p>
+      <dl class="bb-pa-dl">
+        <div>
+          <dt>Proposed administrator name</dt>
+          <dd><%= displayOrMissing(app.contactName) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Proposed administrator email</dt>
+          <dd><%= displayOrMissing(app.contactEmail) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Proposed administrator phone</dt>
+          <dd><%= displayOrMissing(app.contactPhone) || 'Not provided' %></dd>
+        </div>
+      </dl>
+    </section>
+
+    <section
+      id="reg-website"
+      class="bb-pa-panel bb-pa-reg-card"
+      aria-labelledby="reg-website-title"
+      data-bb-pa-reg-card="website"
+      data-bb-pa-reg-section="website"
+    >
+      <h2 id="reg-website-title" class="bb-pa-section-title">Website and access</h2>
+      <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="system"><%= ORIGIN_SYSTEM %></p>
+      <dl class="bb-pa-dl">
+        <div>
+          <dt>Provisioning status</dt>
+          <dd>
+            <%- include('../partials/pa-registration-status-chip', { statusKind: 'provisioning', statusValue: app.provisioningStatus }) %>
+          </dd>
+        </div>
+        <% if (app.organizationKey) { %>
+        <div>
+          <dt>Organization key</dt>
+          <dd><code class="bb-pa-key"><%= app.organizationKey %></code></dd>
+        </div>
+        <div>
+          <dt>Linked organization</dt>
+          <dd>
+            <% if (organizationHref) { %>
+            <a class="bb-pa-link" href="<%= organizationHref %>"><%= app.organizationDisplayName || app.organizationKey %></a>
+            <% } else { %>
+            <%= app.organizationDisplayName || app.organizationKey %>
+            <% } %>
+          </dd>
+        </div>
+        <% if (app.organizationStatus) { %>
+        <div>
+          <dt>Organization status</dt>
+          <dd><%= labelStatus(app.organizationStatus) %></dd>
+        </div>
+        <% } %>
+        <% } else { %>
+        <div>
+          <dt>Linked organization</dt>
+          <dd>Not linked</dd>
+        </div>
+        <% } %>
+      </dl>
+      <p class="bb-pa-hint">
+        No requested website URL or slug was stored on this application. Domain and publication setup appear on the organization after provisioning.
+      </p>
+    </section>
+
+    <section class="bb-pa-panel bb-pa-reg-card" aria-labelledby="reg-declarations-title" data-bb-pa-reg-card="declarations">
+      <h2 id="reg-declarations-title" class="bb-pa-section-title">Declarations and submission</h2>
+      <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="applicant"><%= ORIGIN_APPLICANT %></p>
+      <dl class="bb-pa-dl">
+        <div>
+          <dt>Terms acceptance</dt>
+          <dd data-bb-pa-reg-consent="1"><%= app.consentTerms ? 'Accepted' : 'Not accepted' %></dd>
+        </div>
+        <div>
+          <dt>Submission timestamp</dt>
+          <dd><%= submittedLabel || 'Not provided' %></dd>
+        </div>
+        <% if (app.rejectionReason) { %>
+        <div>
+          <dt>Rejection reason</dt>
+          <dd><span class="bb-pa-reg-origin" data-bb-pa-reg-origin="admin"><%= ORIGIN_ADMIN %></span> <%= app.rejectionReason %></dd>
+        </div>
+        <% } %>
+      </dl>
+    </section>
+  </div>
+
+  <!-- Documents (honest empty) -->
+  <section
+    id="reg-documents"
+    class="bb-pa-panel"
+    aria-labelledby="reg-documents-title"
+    data-bb-pa-reg-section="documents"
+    data-bb-pa-reg-documents="1"
+  >
+    <h2 id="reg-documents-title" class="bb-pa-section-title">Documents</h2>
+    <%- include('../partials/empty-state', {
+      title: 'No registration documents available',
+      body: 'No registration documents are stored or linked for this application. Upload, preview, download, and document verification are not available.',
+      className: 'bb-pa-reg-documents-empty',
+      icon: 'folder_off'
+    }) %>
+  </section>
+
+  <!-- Advisory recommendation (read-only Phase2; does not gate approval) -->
+  <%
+    var recRaw = typeof reviewRecommendation !== 'undefined' ? reviewRecommendation : null;
+    var recValid = recRaw && typeof recRaw === 'object' && !Array.isArray(recRaw);
+    var recFallback = !recValid;
+    var recCode = recValid && recRaw.code != null ? String(recRaw.code) : 'manual_review_required';
+    var recLabel = recValid && recRaw.label != null && String(recRaw.label).trim()
+      ? String(recRaw.label)
+      : 'Manual review required';
+    var recTone = recValid && recRaw.tone != null ? String(recRaw.tone) : 'warn';
+    if (recTone !== 'ok' && recTone !== 'warn' && recTone !== 'danger') recTone = 'warn';
+    var recExplanation = recValid && recRaw.explanation != null && String(recRaw.explanation).trim()
+      ? String(recRaw.explanation)
+      : 'A recommendation could not be calculated. Manual review is required. This advisory does not approve or reject the application.';
+    var recCalculatedAt = recValid && recRaw.calculatedAt ? recRaw.calculatedAt : null;
+    var recReasons = recValid && Array.isArray(recRaw.reasons) ? recRaw.reasons : [];
+    var recBlocking = recValid && Array.isArray(recRaw.blockingFacts) ? recRaw.blockingFacts : [];
+    var recWarning = recValid && Array.isArray(recRaw.warningFacts) ? recRaw.warningFacts : [];
+    var recAdvisory = !(recValid && recRaw.advisory === false);
+    var recToneChip = toneChip(recTone);
+    var recBannerMod = recTone === 'ok'
+      ? 'bb-pa-reg-recommendation--ok'
+      : recTone === 'danger'
+        ? 'bb-pa-reg-recommendation--danger'
+        : 'bb-pa-reg-recommendation--warn';
+    var factLabelByKey = {};
+    if (typeof verification !== 'undefined' && verification && Array.isArray(verification.facts)) {
+      verification.facts.forEach(function (vf) {
+        if (vf && vf.key != null) {
+          factLabelByKey[String(vf.key)] = vf.label != null ? String(vf.label) : String(vf.key);
+        }
+      });
+    }
+    var blockingKeySet = {};
+    recBlocking.forEach(function (k) { blockingKeySet[String(k)] = true; });
+    var normalizedReasons = [];
+    recReasons.forEach(function (r) {
+      if (!r || typeof r !== 'object') return;
+      var fk = r.factKey != null ? String(r.factKey) : '';
+      if (!fk) return;
+      normalizedReasons.push({
+        factKey: fk,
+        factLabel: factLabelByKey[fk] || fk.replace(/_/g, ' '),
+        status: r.status != null ? String(r.status) : 'not_checked',
+        message: r.message != null ? String(r.message) : '',
+        isBlocking: Boolean(blockingKeySet[fk])
+      });
+    });
+    var blockingReasons = normalizedReasons.filter(function (r) { return r.isBlocking; });
+    var otherReasons = normalizedReasons.filter(function (r) { return !r.isBlocking; });
+    var REASONS_VISIBLE = 3;
+    var visibleOther = otherReasons.slice(0, REASONS_VISIBLE);
+    var hiddenOther = otherReasons.slice(REASONS_VISIBLE);
+    var initialReasons = blockingReasons.concat(visibleOther);
+  %>
+  <section
+    id="reg-recommendation"
+    class="bb-pa-panel bb-pa-reg-recommendation <%= recBannerMod %>"
+    aria-labelledby="reg-recommendation-title"
+    data-bb-pa-reg-section="recommendation"
+    data-bb-pa-reg-recommendation="1"
+    data-bb-pa-reg-recommendation-code="<%= recCode %>"
+    data-bb-pa-reg-recommendation-tone="<%= recTone %>"
+    data-bb-pa-reg-recommendation-fallback="<%= recFallback ? '1' : '0' %>"
+  >
+    <header class="bb-pa-reg-recommendation__head">
+      <div class="bb-pa-reg-recommendation__title-row">
+        <h2 id="reg-recommendation-title" class="bb-pa-section-title">Review recommendation</h2>
+        <span
+          class="bb-pa-chip <%= recToneChip %>"
+          data-bb-pa-reg-recommendation-label="1"
+        ><%= recLabel %></span>
+      </div>
+      <div class="bb-pa-reg-recommendation__badges">
+        <span class="bb-pa-chip bb-pa-chip--muted" data-bb-pa-reg-recommendation-advisory="1">Advisory</span>
+        <span class="bb-pa-muted" data-bb-pa-reg-recommendation-tone-text="1">
+          <% if (recTone === 'ok') { %>Status: OK<% } else if (recTone === 'danger') { %>Status: Attention required<% } else { %>Status: Warning<% } %>
+        </span>
+      </div>
+    </header>
+
+    <p class="bb-pa-hint" role="note" data-bb-pa-reg-recommendation-notice="1">
+      This recommendation supports the administrator’s review. It does not approve or reject the application.
+      Current BlessBoard approval rules remain unchanged.
+    </p>
+
+    <p class="bb-pa-reg-recommendation__explanation" data-bb-pa-reg-recommendation-explanation="1"><%= recExplanation %></p>
+
+    <ul class="bb-pa-reg-recommendation__counts" data-bb-pa-reg-recommendation-counts="1">
+      <li data-bb-pa-reg-recommendation-count="blocking">
+        <span class="bb-pa-reg-recommendation__count-label">Blocking facts</span>
+        <strong><%= recBlocking.length %></strong>
+      </li>
+      <li data-bb-pa-reg-recommendation-count="warning">
+        <span class="bb-pa-reg-recommendation__count-label">Warning facts</span>
+        <strong><%= recWarning.length %></strong>
+      </li>
+      <% if (recCalculatedAt) { %>
+      <li data-bb-pa-reg-recommendation-count="calculatedAt">
+        <span class="bb-pa-reg-recommendation__count-label">Calculated</span>
+        <strong><%= fmtDate(recCalculatedAt) || 'Not provided' %></strong>
+      </li>
+      <% } %>
+    </ul>
+
+    <p class="bb-pa-reg-recommendation__verify-link">
+      <a class="bb-pa-link" href="#reg-verification" data-bb-pa-reg-recommendation-verify-link="1">View verification facts</a>
+    </p>
+
+    <% if (initialReasons.length) { %>
+    <div class="bb-pa-reg-recommendation__reasons" data-bb-pa-reg-recommendation-reasons="1">
+      <h3 class="bb-pa-lede">Main reasons</h3>
+      <ul class="bb-pa-reg-recommendation__reason-list">
+        <% initialReasons.forEach(function (reason) { %>
+        <li
+          class="bb-pa-reg-recommendation__reason<%= reason.isBlocking ? ' bb-pa-reg-recommendation__reason--blocking' : '' %>"
+          data-bb-pa-reg-recommendation-reason="1"
+          data-bb-pa-reg-recommendation-reason-blocking="<%= reason.isBlocking ? '1' : '0' %>"
+        >
+          <div class="bb-pa-reg-recommendation__reason-head">
+            <span class="bb-pa-reg-recommendation__reason-fact" data-bb-pa-reg-recommendation-reason-fact="1"><%= reason.factLabel %></span>
+            <%- include('../partials/pa-registration-status-chip', {
+              statusKind: 'verification',
+              statusValue: reason.status
+            }) %>
+          </div>
+          <% if (reason.message) { %>
+          <p class="bb-pa-reg-recommendation__reason-msg" data-bb-pa-reg-recommendation-reason-msg="1"><%= reason.message %></p>
+          <% } %>
+        </li>
+        <% }); %>
+      </ul>
+      <% if (hiddenOther.length) { %>
+      <details class="bb-pa-reg-recommendation__more" data-bb-pa-reg-recommendation-more="1">
+        <summary>Show <%= hiddenOther.length %> more reason<%= hiddenOther.length === 1 ? '' : 's' %></summary>
+        <ul class="bb-pa-reg-recommendation__reason-list">
+          <% hiddenOther.forEach(function (reason) { %>
+          <li
+            class="bb-pa-reg-recommendation__reason"
+            data-bb-pa-reg-recommendation-reason="1"
+            data-bb-pa-reg-recommendation-reason-blocking="0"
+          >
+            <div class="bb-pa-reg-recommendation__reason-head">
+              <span class="bb-pa-reg-recommendation__reason-fact"><%= reason.factLabel %></span>
+              <%- include('../partials/pa-registration-status-chip', {
+                statusKind: 'verification',
+                statusValue: reason.status
+              }) %>
+            </div>
+            <% if (reason.message) { %>
+            <p class="bb-pa-reg-recommendation__reason-msg"><%= reason.message %></p>
+            <% } %>
+          </li>
+          <% }); %>
+        </ul>
+      </details>
+      <% } %>
+    </div>
+    <% } %>
+  </section>
+
+  <!-- Verification (read-only Phase2 facts) -->
+  <%
+    var verificationModel = typeof verification !== 'undefined' ? verification : null;
+    var verificationFacts = verificationModel && Array.isArray(verificationModel.facts) ? verificationModel.facts : null;
+    var verificationSummary = verificationModel && verificationModel.summary ? verificationModel.summary : null;
+    var verificationCheckedAt = verificationModel && verificationModel.checkedAt ? verificationModel.checkedAt : null;
+  %>
+  <section
+    id="reg-verification"
+    class="bb-pa-panel bb-pa-reg-verification"
+    aria-labelledby="reg-verification-title"
+    data-bb-pa-reg-section="verification"
+    data-bb-pa-reg-verification="1"
+  >
+    <h2 id="reg-verification-title" class="bb-pa-section-title">Verification</h2>
+    <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="system"><%= ORIGIN_SYSTEM %></p>
+    <p class="bb-pa-hint" role="note" data-bb-pa-reg-verification-advisory="1">
+      Verification results are advisory. Approval continues to follow the current BlessBoard approval rules until the Phase2 approval checklist is implemented.
+    </p>
+
+    <% if (!verificationModel) { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-verification-missing="1">Verification information is not available.</p>
+    <% } else if (!verificationFacts || !verificationFacts.length) { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-verification-empty="1">Verification information is not available.</p>
+    <% } else { %>
+    <% if (verificationSummary) { %>
+    <div class="bb-pa-reg-verification__summary" data-bb-pa-reg-verification-summary="1">
+      <h3 class="bb-pa-lede">Summary</h3>
+      <ul class="bb-pa-reg-verification__summary-list">
+        <li data-bb-pa-reg-verification-count="passed"><span class="bb-pa-reg-verification__count-label">Passed</span> <strong><%= Number(verificationSummary.passed) || 0 %></strong></li>
+        <li data-bb-pa-reg-verification-count="warning"><span class="bb-pa-reg-verification__count-label">Warnings</span> <strong><%= Number(verificationSummary.warning) || 0 %></strong></li>
+        <li data-bb-pa-reg-verification-count="failed"><span class="bb-pa-reg-verification__count-label">Failed</span> <strong><%= Number(verificationSummary.failed) || 0 %></strong></li>
+        <li data-bb-pa-reg-verification-count="notChecked"><span class="bb-pa-reg-verification__count-label">Not checked</span> <strong><%= Number(verificationSummary.notChecked) || 0 %></strong></li>
+        <li data-bb-pa-reg-verification-count="supported"><span class="bb-pa-reg-verification__count-label">Supported</span> <strong><%= Number(verificationSummary.supported) || 0 %></strong></li>
+        <li data-bb-pa-reg-verification-count="unsupported"><span class="bb-pa-reg-verification__count-label">Unsupported</span> <strong><%= Number(verificationSummary.unsupported) || 0 %></strong></li>
+        <li data-bb-pa-reg-verification-count="checkedAt">
+          <span class="bb-pa-reg-verification__count-label">Last checked</span>
+          <strong><%= verificationCheckedAt ? (fmtDate(verificationCheckedAt) || 'Not provided') : 'Not provided' %></strong>
+        </li>
+      </ul>
+    </div>
+    <% } %>
+
+    <div class="bb-pa-reg-verification__grid" data-bb-pa-reg-verification-grid="1">
+      <% verificationFacts.forEach(function (vf) { %>
+      <%
+        var factKey = vf && vf.key != null ? String(vf.key) : '';
+        var factLabel = vf && vf.label != null ? String(vf.label) : factKey;
+        var factStatus = vf && vf.status != null ? String(vf.status) : 'not_checked';
+        var factResult = vf && vf.result != null ? String(vf.result) : '';
+        var factExplanation = vf && vf.explanation != null ? String(vf.explanation) : '';
+        var factSource = vf && vf.source != null ? String(vf.source) : '';
+        var factChecked = vf && vf.checkedAt ? vf.checkedAt : null;
+        var factSupported = !(vf && vf.supported === false);
+        var factManual = Boolean(vf && vf.requiresManualReview);
+        var resultLabel = factResult ? factResult.replace(/_/g, ' ') : '—';
+      %>
+      <article
+        class="bb-pa-panel bb-pa-reg-verification-fact<%= factSupported ? '' : ' bb-pa-reg-verification-fact--unsupported' %>"
+        data-bb-pa-reg-verification-fact="1"
+        data-bb-pa-reg-verification-fact-key="<%= factKey %>"
+        data-bb-pa-reg-verification-supported="<%= factSupported ? '1' : '0' %>"
+        aria-labelledby="reg-verification-fact-<%= factKey %>"
+      >
+        <header class="bb-pa-reg-verification-fact__head">
+          <h3 id="reg-verification-fact-<%= factKey %>" class="bb-pa-reg-verification-fact__title"><%= factLabel %></h3>
+          <%- include('../partials/pa-registration-status-chip', {
+            statusKind: 'verification',
+            statusValue: factStatus
+          }) %>
+        </header>
+        <% if (!factSupported) { %>
+        <p class="bb-pa-hint" data-bb-pa-reg-verification-unsupported="1">
+          Not checked. This check is not currently supported because BlessBoard does not yet store the required evidence.
+        </p>
+        <% } %>
+        <dl class="bb-pa-dl bb-pa-reg-verification-fact__meta">
+          <div>
+            <dt>Result</dt>
+            <dd data-bb-pa-reg-verification-result="1"><%= resultLabel %></dd>
+          </div>
+          <div>
+            <dt>Source</dt>
+            <dd data-bb-pa-reg-verification-source="1"><%= factSource || '—' %></dd>
+          </div>
+          <div>
+            <dt>Checked</dt>
+            <dd data-bb-pa-reg-verification-checked-at="1"><%= factChecked ? (fmtDate(factChecked) || 'Not provided') : 'Not provided' %></dd>
+          </div>
+          <% if (factManual) { %>
+          <div>
+            <dt>Manual review</dt>
+            <dd data-bb-pa-reg-verification-manual="1">Required</dd>
+          </div>
+          <% } %>
+        </dl>
+        <% if (factExplanation) { %>
+        <p class="bb-pa-reg-verification-fact__explanation" data-bb-pa-reg-verification-explanation="1"><%= factExplanation %></p>
+        <% } %>
+      </article>
+      <% }) %>
+    </div>
+    <% } %>
+  </section>
+
+  <!-- Approval requirements checklist (read-only Phase2; does not gate approval) -->
+  <%
+    var clRaw = typeof approvalChecklist !== 'undefined' ? approvalChecklist : null;
+    var clValid = clRaw && typeof clRaw === 'object' && !Array.isArray(clRaw);
+    var clFallback = !clValid;
+    var clItems = clValid && Array.isArray(clRaw.items) ? clRaw.items : null;
+    var clSummary = clValid && clRaw.summary && typeof clRaw.summary === 'object' ? clRaw.summary : null;
+    var clCalculatedAt = clValid && clRaw.calculatedAt ? clRaw.calculatedAt : null;
+    var clAdvisory = !(clValid && clRaw.advisory === false);
+    var clEmptyItems = clValid && Array.isArray(clRaw.items) && clRaw.items.length === 0;
+
+    function checklistStatusMeta(status) {
+      var s = String(status || '').toLowerCase();
+      if (s === 'complete') return { tone: 'success', label: 'Complete' };
+      if (s === 'incomplete') return { tone: 'danger', label: 'Incomplete' };
+      if (s === 'warning') return { tone: 'warn', label: 'Warning' };
+      if (s === 'not_available') return { tone: 'muted', label: 'Not available' };
+      if (s === 'manual_review_required') return { tone: 'warn', label: 'Manual review required' };
+      return { tone: 'warn', label: 'Manual review required' };
+    }
+
+    function checklistActionLabel(target) {
+      var t = String(target || '');
+      if (t === '#reg-verification') return 'Review verification';
+      if (t === '#reg-contact' || t === '#reg-applicant') return 'Review contact';
+      if (t === '#reg-administration') return 'Review administration';
+      if (t === '#reg-website') return 'Review website details';
+      if (t === '#reg-activity' || t === '#reg-review-activity') return 'Review activity';
+      return 'Review section';
+    }
+
+    function isSafeChecklistAnchor(target) {
+      if (target == null) return false;
+      var t = String(target);
+      return /^#reg-[a-z0-9-]+$/i.test(t);
+    }
+  %>
+  <section
+    id="reg-approval-checklist"
+    class="bb-pa-panel bb-pa-reg-checklist<%= clFallback ? ' bb-pa-reg-checklist--fallback' : '' %>"
+    aria-labelledby="reg-approval-checklist-title"
+    data-bb-pa-reg-section="approval-checklist"
+    data-bb-pa-reg-checklist="1"
+    data-bb-pa-reg-checklist-fallback="<%= clFallback ? '1' : '0' %>"
+  >
+    <header class="bb-pa-reg-checklist__head">
+      <div class="bb-pa-reg-checklist__title-row">
+        <h2 id="reg-approval-checklist-title" class="bb-pa-section-title">Approval requirements</h2>
+        <% if (clAdvisory) { %>
+        <span class="bb-pa-chip bb-pa-chip--muted" data-bb-pa-reg-checklist-advisory="1">Advisory</span>
+        <% } %>
+      </div>
+    </header>
+
+    <p class="bb-pa-hint" role="note" data-bb-pa-reg-checklist-notice="1">
+      This checklist supports review but does not change the current BlessBoard approval rules.
+    </p>
+
+    <% if (clFallback) { %>
+    <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-checklist-missing="1">
+      Approval requirements could not be calculated. Manual review is required. No checklist item is marked complete.
+    </p>
+    <% } else if (clEmptyItems) { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-checklist-empty="1">Approval checklist information is not available.</p>
+    <% } else { %>
+
+    <% if (clSummary) { %>
+    <ul class="bb-pa-reg-checklist__summary" data-bb-pa-reg-checklist-summary="1">
+      <li data-bb-pa-reg-checklist-count="requiredComplete">
+        <span class="bb-pa-reg-checklist__count-label">Required complete</span>
+        <strong><%= Number(clSummary.requiredComplete) || 0 %></strong>
+      </li>
+      <li data-bb-pa-reg-checklist-count="requiredOutstanding">
+        <span class="bb-pa-reg-checklist__count-label">Required outstanding</span>
+        <strong><%= Number(clSummary.requiredOutstanding) || 0 %></strong>
+      </li>
+      <li data-bb-pa-reg-checklist-count="complete">
+        <span class="bb-pa-reg-checklist__count-label">Complete</span>
+        <strong><%= Number(clSummary.complete) || 0 %></strong>
+      </li>
+      <li data-bb-pa-reg-checklist-count="warning">
+        <span class="bb-pa-reg-checklist__count-label">Warnings</span>
+        <strong><%= Number(clSummary.warning) || 0 %></strong>
+      </li>
+      <li data-bb-pa-reg-checklist-count="manualReviewRequired">
+        <span class="bb-pa-reg-checklist__count-label">Manual review required</span>
+        <strong><%= Number(clSummary.manualReviewRequired) || 0 %></strong>
+      </li>
+      <li data-bb-pa-reg-checklist-count="notAvailable">
+        <span class="bb-pa-reg-checklist__count-label">Not available</span>
+        <strong><%= Number(clSummary.notAvailable) || 0 %></strong>
+      </li>
+      <% if (clCalculatedAt) { %>
+      <li data-bb-pa-reg-checklist-count="calculatedAt">
+        <span class="bb-pa-reg-checklist__count-label">Calculated</span>
+        <strong><%= fmtDate(clCalculatedAt) || 'Not provided' %></strong>
+      </li>
+      <% } %>
+    </ul>
+    <% } %>
+
+    <div class="bb-pa-reg-checklist__list" data-bb-pa-reg-checklist-list="1">
+      <% clItems.forEach(function (ci) { %>
+      <%
+        if (!ci || typeof ci !== 'object') return;
+        var ciKey = ci.key != null ? String(ci.key) : '';
+        var ciLabel = ci.label != null ? String(ci.label) : (ciKey || 'Checklist item');
+        var ciStatus = ci.status != null ? String(ci.status) : 'manual_review_required';
+        var ciMeta = checklistStatusMeta(ciStatus);
+        var ciToneClass = toneChip(ciMeta.tone);
+        var ciExplanation = ci.explanation != null ? String(ci.explanation) : '';
+        var ciRequired = ci.required !== false;
+        var ciSources = Array.isArray(ci.sourceFactKeys) ? ci.sourceFactKeys : [];
+        var ciTarget = ci.actionTarget;
+        var ciSafeTarget = isSafeChecklistAnchor(ciTarget) ? String(ciTarget) : null;
+      %>
+      <article
+        class="bb-pa-reg-checklist-item"
+        data-bb-pa-reg-checklist-item="1"
+        data-bb-pa-reg-checklist-item-key="<%= ciKey %>"
+        data-bb-pa-reg-checklist-item-status="<%= ciStatus %>"
+        data-bb-pa-reg-checklist-item-required="<%= ciRequired ? '1' : '0' %>"
+        aria-labelledby="reg-checklist-item-<%= ciKey || 'unknown' %>"
+      >
+        <header class="bb-pa-reg-checklist-item__head">
+          <h3 id="reg-checklist-item-<%= ciKey || 'unknown' %>" class="bb-pa-reg-checklist-item__title"><%= ciLabel %></h3>
+          <div class="bb-pa-reg-checklist-item__badges">
+            <span
+              class="bb-pa-chip <%= ciToneClass %>"
+              data-bb-pa-reg-checklist-item-status-chip="1"
+            ><%= ciMeta.label %></span>
+            <span
+              class="bb-pa-chip <%= ciRequired ? 'bb-pa-chip--warn' : 'bb-pa-chip--muted' %>"
+              data-bb-pa-reg-checklist-item-required-chip="1"
+            ><%= ciRequired ? 'Required' : 'Optional' %></span>
+          </div>
+        </header>
+        <% if (ciExplanation) { %>
+        <p class="bb-pa-reg-checklist-item__explanation" data-bb-pa-reg-checklist-item-explanation="1"><%= ciExplanation %></p>
+        <% } %>
+        <% if (ciSources.length) { %>
+        <p class="bb-pa-muted bb-pa-reg-checklist-item__sources" data-bb-pa-reg-checklist-item-sources="1">
+          Source facts: <%= ciSources.map(function (k) { return String(k).replace(/_/g, ' '); }).join('; ') %>
+        </p>
+        <% } %>
+        <% if (ciSafeTarget) { %>
+        <p class="bb-pa-reg-checklist-item__action">
+          <a
+            class="bb-pa-link"
+            href="<%= ciSafeTarget %>"
+            data-bb-pa-reg-checklist-item-action="1"
+          ><%= checklistActionLabel(ciSafeTarget) %></a>
+        </p>
+        <% } %>
+      </article>
+      <% }); %>
+    </div>
+    <% } %>
+  </section>
+
+  <!-- Phone verification (summary, record form, history) -->
+  <%
+    var pvPayload =
+      typeof phoneVerification !== 'undefined' && phoneVerification && typeof phoneVerification === 'object'
+        ? phoneVerification
+        : null;
+    var pvUnavailable = Boolean(pvPayload && pvPayload.unavailable);
+    var pvSummary =
+      pvPayload && pvPayload.summary && typeof pvPayload.summary === 'object'
+        ? pvPayload.summary
+        : null;
+    var pvAttempts = pvPayload && Array.isArray(pvPayload.attempts)
+      ? pvPayload.attempts
+      : [];
+    function phoneEnumLabel(value, map) {
+      var key = String(value == null ? '' : value).trim().toLowerCase();
+      if (!key) return '—';
+      if (map && map[key]) return map[key];
+      return labelStatus(key);
+    }
+    var PHONE_OUTCOME_LABELS = {
+      answered: 'Answered',
+      no_answer: 'No answer',
+      unavailable: 'Number unavailable',
+      wrong_number: 'Wrong number',
+      callback_requested: 'Callback requested',
+      information_inconsistent: 'Information inconsistent'
+    };
+    var PHONE_CHECK_LABELS = {
+      not_checked: 'Not checked',
+      confirmed: 'Confirmed',
+      not_confirmed: 'Not confirmed'
+    };
+    var PHONE_RESULT_LABELS = {
+      not_checked: 'Not checked',
+      pending: 'Pending',
+      verified: 'Verified',
+      failed: 'Failed'
+    };
+    function phoneStatusMeta(status) {
+      var s = String(status || '').trim().toLowerCase();
+      if (s === 'verified') return { label: 'Verified', tone: 'success' };
+      if (s === 'failed') return { label: 'Failed', tone: 'danger' };
+      if (s === 'pending') return { label: 'Pending', tone: 'warn' };
+      return { label: 'Not checked', tone: 'muted' };
+    }
+    function yesNo(value) {
+      return value ? 'Yes' : 'No';
+    }
+    var pvStatusKey = pvSummary && pvSummary.verificationStatus != null
+      ? String(pvSummary.verificationStatus)
+      : 'not_checked';
+    var pvStatusMeta = phoneStatusMeta(pvStatusKey);
+    var pvStatusToneClass = toneChip(pvStatusMeta.tone);
+    var pvPrefillPhone = displayOrMissing(app.contactPhone) || '';
+    var pvPrefillCountry = countryVal || '';
+    var pvCanRecord = Boolean(displayOrMissing(app.id));
+  %>
+  <section
+    id="reg-phone-verification"
+    class="bb-pa-panel bb-pa-reg-phone<%= pvUnavailable ? ' bb-pa-reg-phone--unavailable' : '' %>"
+    aria-labelledby="reg-phone-verification-title"
+    data-bb-pa-reg-section="phone-verification"
+    data-bb-pa-reg-phone="1"
+    data-bb-pa-reg-phone-unavailable="<%= pvUnavailable ? '1' : '0' %>"
+  >
+    <h2 id="reg-phone-verification-title" class="bb-pa-section-title">Phone verification</h2>
+    <p class="bb-pa-hint" role="note" data-bb-pa-reg-phone-intro="1">
+      Review contact status and call history below. Use Record call attempt to log a verification call.
+    </p>
+
+    <% if (!pvPayload) { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-phone-missing="1">Phone verification history is not available.</p>
+    <% } else if (pvUnavailable) { %>
+    <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-phone-unavailable-banner="1">
+      Call history is temporarily unavailable. The rest of this application detail remains available.
+    </p>
+    <% } %>
+
+    <% if (pvPayload && !pvUnavailable) { %>
+    <div class="bb-pa-reg-phone__summary" data-bb-pa-reg-phone-summary="1">
+      <h3 class="bb-pa-lede">Contact and status</h3>
+      <dl class="bb-pa-dl bb-pa-reg-phone__summary-dl">
+        <div>
+          <dt>Applicant name</dt>
+          <dd data-bb-pa-reg-phone-applicant-name="1"><%= displayOrMissing(app.contactName) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Applicant role</dt>
+          <dd data-bb-pa-reg-phone-applicant-role="1"><%= roleVal || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Registration phone</dt>
+          <dd data-bb-pa-reg-phone-registration-phone="1"><%= displayOrMissing(app.contactPhone) || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Country</dt>
+          <dd data-bb-pa-reg-phone-country="1"><%= countryVal || 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Total call attempts</dt>
+          <dd data-bb-pa-reg-phone-total-attempts="1"><%= pvSummary ? (Number(pvSummary.totalAttempts) || 0) : 0 %></dd>
+        </div>
+        <div>
+          <dt>Last attempted</dt>
+          <dd data-bb-pa-reg-phone-last-attempted="1"><%= pvSummary && pvSummary.lastAttemptedAt ? (fmtDate(pvSummary.lastAttemptedAt) || 'Not provided') : 'Not provided' %></dd>
+        </div>
+        <div>
+          <dt>Phone verification status</dt>
+          <dd data-bb-pa-reg-phone-status="1">
+            <span
+              class="bb-pa-chip <%= pvStatusToneClass %>"
+              data-bb-pa-reg-phone-status-chip="1"
+              data-bb-pa-reg-phone-status-value="<%= pvStatusKey %>"
+            ><%= pvStatusMeta.label %></span>
+          </dd>
+        </div>
+        <div>
+          <dt>Follow-up required</dt>
+          <dd data-bb-pa-reg-phone-follow-up-required="1"><%= yesNo(pvSummary && pvSummary.followUpRequired) %></dd>
+        </div>
+        <% if (pvSummary && pvSummary.nextFollowUpAt) { %>
+        <div>
+          <dt>Next follow-up</dt>
+          <dd data-bb-pa-reg-phone-next-follow-up="1"><%= fmtDate(pvSummary.nextFollowUpAt) || 'Not provided' %></dd>
+        </div>
+        <% } %>
+        <div>
+          <dt>Applicant contacted</dt>
+          <dd data-bb-pa-reg-phone-applicant-contacted="1"><%= yesNo(pvSummary && pvSummary.applicantContacted) %></dd>
+        </div>
+        <div>
+          <dt>Identity confirmed</dt>
+          <dd data-bb-pa-reg-phone-identity-confirmed="1"><%= yesNo(pvSummary && pvSummary.identityConfirmed) %></dd>
+        </div>
+        <div>
+          <dt>Authority confirmed</dt>
+          <dd data-bb-pa-reg-phone-authority-confirmed="1"><%= yesNo(pvSummary && pvSummary.authorityConfirmed) %></dd>
+        </div>
+        <div>
+          <dt>Answered attempts</dt>
+          <dd data-bb-pa-reg-phone-answered-attempts="1"><%= pvSummary ? (Number(pvSummary.answeredAttempts) || 0) : 0 %></dd>
+        </div>
+        <div>
+          <dt>Failed attempts</dt>
+          <dd data-bb-pa-reg-phone-failed-attempts="1"><%= pvSummary ? (Number(pvSummary.failedAttempts) || 0) : 0 %></dd>
+        </div>
+      </dl>
+    </div>
+    <% } %>
+
+    <% if (pvCanRecord) { %>
+    <details class="bb-pa-reg-phone__record" data-bb-pa-reg-phone-record="1">
+      <summary class="bb-pa-lede" data-bb-pa-reg-phone-record-summary="1">Record call attempt</summary>
+      <form
+        class="bb-pa-form bb-pa-reg-phone__form"
+        method="post"
+        action="/admin/registration-applications/<%= app.id %>/phone-verification/attempts"
+        data-bb-pa-reg-phone-form="1"
+      >
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+
+        <p class="bb-pa-hint bb-pa-reg-phone__form-span" id="pv-form-guidance" data-bb-pa-reg-phone-form-guidance="1">
+          Answered does not automatically mean verified.
+          Verified requires applicant identity confirmation.
+          Authority confirmation should only be selected when discussed during an answered call.
+          A reason is required when marking verified or failed.
+          Use follow-up when another call or document is needed.
+        </p>
+
+        <div class="bb-pa-field">
+          <label for="pv_phone_number_called">Phone number called</label>
+          <input
+            id="pv_phone_number_called"
+            name="phone_number_called"
+            type="text"
+            maxlength="64"
+            required
+            autocomplete="tel"
+            value="<%= pvPrefillPhone %>"
+            aria-describedby="pv-form-guidance"
+            data-bb-pa-reg-phone-field="phone_number_called"
+          />
+        </div>
+
+        <div class="bb-pa-field">
+          <label for="pv_country">Country</label>
+          <input
+            id="pv_country"
+            name="country"
+            type="text"
+            maxlength="120"
+            autocomplete="country-name"
+            value="<%= pvPrefillCountry %>"
+            data-bb-pa-reg-phone-field="country"
+          />
+        </div>
+
+        <div class="bb-pa-field">
+          <label for="pv_contact_person_name">Contact person name <span class="bb-pa-muted">(optional)</span></label>
+          <input
+            id="pv_contact_person_name"
+            name="contact_person_name"
+            type="text"
+            maxlength="200"
+            autocomplete="name"
+            data-bb-pa-reg-phone-field="contact_person_name"
+          />
+        </div>
+
+        <div class="bb-pa-field">
+          <label for="pv_contact_person_role">Contact person role <span class="bb-pa-muted">(optional)</span></label>
+          <input
+            id="pv_contact_person_role"
+            name="contact_person_role"
+            type="text"
+            maxlength="120"
+            data-bb-pa-reg-phone-field="contact_person_role"
+          />
+        </div>
+
+        <div class="bb-pa-field">
+          <label for="pv_attempted_at">Attempt date and time</label>
+          <input
+            id="pv_attempted_at"
+            name="attempted_at"
+            type="datetime-local"
+            required
+            data-bb-pa-reg-phone-field="attempted_at"
+          />
+        </div>
+
+        <div class="bb-pa-field">
+          <label for="pv_outcome">Call outcome</label>
+          <select id="pv_outcome" name="outcome" required data-bb-pa-reg-phone-field="outcome">
+            <option value="" selected>Select outcome</option>
+            <option value="answered">Answered</option>
+            <option value="no_answer">No answer</option>
+            <option value="unavailable">Number unavailable</option>
+            <option value="wrong_number">Wrong number</option>
+            <option value="callback_requested">Callback requested</option>
+            <option value="information_inconsistent">Information inconsistent</option>
+          </select>
+        </div>
+
+        <fieldset class="bb-pa-reg-phone__fieldset bb-pa-reg-phone__form-span" data-bb-pa-reg-phone-fieldset="status">
+          <legend>Applicant confirmation</legend>
+          <div class="bb-pa-field">
+            <label for="pv_applicant_identity_status">Applicant identity status</label>
+            <select
+              id="pv_applicant_identity_status"
+              name="applicant_identity_status"
+              data-bb-pa-reg-phone-field="applicant_identity_status"
+            >
+              <option value="not_checked" selected>Not checked</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="not_confirmed">Not confirmed</option>
+            </select>
+          </div>
+          <div class="bb-pa-field">
+            <label for="pv_applicant_authority_status">Applicant authority status</label>
+            <select
+              id="pv_applicant_authority_status"
+              name="applicant_authority_status"
+              data-bb-pa-reg-phone-field="applicant_authority_status"
+            >
+              <option value="not_checked" selected>Not checked</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="not_confirmed">Not confirmed</option>
+            </select>
+          </div>
+        </fieldset>
+
+        <fieldset class="bb-pa-reg-phone__fieldset bb-pa-reg-phone__form-span" data-bb-pa-reg-phone-fieldset="result">
+          <legend>Verification decision</legend>
+          <div class="bb-pa-field">
+            <label for="pv_verification_result">Verification result</label>
+            <select
+              id="pv_verification_result"
+              name="verification_result"
+              data-bb-pa-reg-phone-field="verification_result"
+            >
+              <option value="pending" selected>Pending</option>
+              <option value="verified">Verified</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+          <div class="bb-pa-field">
+            <label for="pv_verification_reason">
+              Verification reason
+              <span class="bb-pa-muted">(required when verified or failed)</span>
+            </label>
+            <textarea
+              id="pv_verification_reason"
+              name="verification_reason"
+              rows="3"
+              maxlength="1000"
+              aria-describedby="pv-reason-help"
+              data-bb-pa-reg-phone-field="verification_reason"
+            ></textarea>
+            <p class="bb-pa-muted" id="pv-reason-help">Explain why the number was verified or failed.</p>
+          </div>
+        </fieldset>
+
+        <div class="bb-pa-field bb-pa-reg-phone__form-span">
+          <label for="pv_notes">Notes <span class="bb-pa-muted">(optional)</span></label>
+          <textarea
+            id="pv_notes"
+            name="notes"
+            rows="4"
+            maxlength="5000"
+            data-bb-pa-reg-phone-field="notes"
+          ></textarea>
+        </div>
+
+        <div class="bb-pa-field bb-pa-reg-phone__form-span">
+          <label for="pv_follow_up_at">Follow-up date and time <span class="bb-pa-muted">(optional)</span></label>
+          <input
+            id="pv_follow_up_at"
+            name="follow_up_at"
+            type="datetime-local"
+            data-bb-pa-reg-phone-field="follow_up_at"
+          />
+        </div>
+
+        <button class="bb-pa-btn bb-pa-btn--primary bb-pa-reg-phone__form-span" type="submit" data-bb-pa-reg-phone-submit="1">
+          Record call attempt
+        </button>
+      </form>
+    </details>
+    <% } %>
+
+    <% if (pvPayload && !pvUnavailable) { %>
+    <div class="bb-pa-reg-phone__history" data-bb-pa-reg-phone-history="1">
+      <h3 class="bb-pa-lede">Call history</h3>
+      <% if (!pvAttempts.length) { %>
+      <p class="bb-pa-muted" data-bb-pa-reg-phone-empty="1">No phone verification calls have been recorded.</p>
+      <% } else { %>
+      <div class="bb-pa-reg-phone__attempt-list" data-bb-pa-reg-phone-attempt-list="1">
+        <% pvAttempts.forEach(function (attempt, attemptIndex) { %>
+        <%
+          if (!attempt || typeof attempt !== 'object') return;
+          var atId = attempt.id != null ? String(attempt.id) : String(attemptIndex);
+          var atWhen = attempt.attempted_at != null ? attempt.attempted_at : attempt.attemptedAt;
+          var atPhone = displayOrMissing(
+            attempt.phone_number_called != null ? attempt.phone_number_called : attempt.phoneNumberCalled
+          );
+          var atPerson = displayOrMissing(
+            attempt.contact_person_name != null ? attempt.contact_person_name : attempt.contactPersonName
+          );
+          var atRole = displayOrMissing(
+            attempt.contact_person_role != null ? attempt.contact_person_role : attempt.contactPersonRole
+          );
+          var atOutcome = attempt.outcome != null ? String(attempt.outcome) : '';
+          var atIdentity = attempt.applicant_identity_status != null
+            ? String(attempt.applicant_identity_status)
+            : (attempt.applicantIdentityStatus != null ? String(attempt.applicantIdentityStatus) : 'not_checked');
+          var atAuthority = attempt.applicant_authority_status != null
+            ? String(attempt.applicant_authority_status)
+            : (attempt.applicantAuthorityStatus != null ? String(attempt.applicantAuthorityStatus) : 'not_checked');
+          var atResult = attempt.verification_result != null
+            ? String(attempt.verification_result)
+            : (attempt.verificationResult != null ? String(attempt.verificationResult) : 'pending');
+          var atReason = displayOrMissing(
+            attempt.verification_reason != null ? attempt.verification_reason : attempt.verificationReason
+          );
+          var atFollowUp = attempt.follow_up_at != null ? attempt.follow_up_at : attempt.followUpAt;
+          var atNotes = displayOrMissing(attempt.notes);
+          var atResultMeta = phoneStatusMeta(atResult);
+          var atResultTone = toneChip(atResultMeta.tone);
+        %>
+        <article
+          class="bb-pa-reg-phone-attempt"
+          data-bb-pa-reg-phone-attempt="1"
+          data-bb-pa-reg-phone-attempt-id="<%= atId %>"
+          data-bb-pa-reg-phone-attempt-index="<%= attemptIndex %>"
+          aria-labelledby="reg-phone-attempt-<%= atId %>"
+        >
+          <header class="bb-pa-reg-phone-attempt__head">
+            <h4 id="reg-phone-attempt-<%= atId %>" class="bb-pa-reg-phone-attempt__title">
+              <%= fmtDate(atWhen) || 'Attempt time not provided' %>
+            </h4>
+            <div class="bb-pa-reg-phone-attempt__badges">
+              <span class="bb-pa-chip bb-pa-chip--muted" data-bb-pa-reg-phone-attempt-outcome="1">
+                Outcome: <%= phoneEnumLabel(atOutcome, PHONE_OUTCOME_LABELS) %>
+              </span>
+              <span class="bb-pa-chip <%= atResultTone %>" data-bb-pa-reg-phone-attempt-result="1">
+                Verification: <%= phoneEnumLabel(atResult, PHONE_RESULT_LABELS) %>
+              </span>
+            </div>
+          </header>
+          <dl class="bb-pa-dl bb-pa-reg-phone-attempt__meta">
+            <% if (atPhone) { %>
+            <div>
+              <dt>Phone called</dt>
+              <dd data-bb-pa-reg-phone-attempt-phone="1"><%= atPhone %></dd>
+            </div>
+            <% } %>
+            <% if (atPerson) { %>
+            <div>
+              <dt>Contact person</dt>
+              <dd data-bb-pa-reg-phone-attempt-person="1"><%= atPerson %></dd>
+            </div>
+            <% } %>
+            <% if (atRole) { %>
+            <div>
+              <dt>Contact person role</dt>
+              <dd data-bb-pa-reg-phone-attempt-role="1"><%= atRole %></dd>
+            </div>
+            <% } %>
+            <div>
+              <dt>Identity status</dt>
+              <dd data-bb-pa-reg-phone-attempt-identity="1"><%= phoneEnumLabel(atIdentity, PHONE_CHECK_LABELS) %></dd>
+            </div>
+            <div>
+              <dt>Authority status</dt>
+              <dd data-bb-pa-reg-phone-attempt-authority="1"><%= phoneEnumLabel(atAuthority, PHONE_CHECK_LABELS) %></dd>
+            </div>
+            <% if (atReason) { %>
+            <div>
+              <dt>Verification reason</dt>
+              <dd data-bb-pa-reg-phone-attempt-reason="1"><%= atReason %></dd>
+            </div>
+            <% } %>
+            <% if (atFollowUp) { %>
+            <div>
+              <dt>Follow-up</dt>
+              <dd data-bb-pa-reg-phone-attempt-follow-up="1"><%= fmtDate(atFollowUp) || 'Not provided' %></dd>
+            </div>
+            <% } %>
+          </dl>
+          <% if (atNotes) { %>
+          <p class="bb-pa-reg-phone-attempt__notes" data-bb-pa-reg-phone-attempt-notes="1"><%= atNotes %></p>
+          <% } %>
+        </article>
+        <% }); %>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+  </section>
+
+  <!-- Email verification (status + resend; no change-email / manual verify) -->
+  <%
+    var evPayload =
+      typeof emailVerification !== 'undefined' && emailVerification && typeof emailVerification === 'object'
+        ? emailVerification
+        : null;
+    var evUnavailable = Boolean(evPayload && evPayload.unavailable);
+    function emailStatusMeta(status) {
+      var s = String(status || '').trim().toLowerCase();
+      if (s === 'verified') return { label: 'Verified', tone: 'success' };
+      if (s === 'sent') return { label: 'Sent', tone: 'warn' };
+      if (s === 'expired') return { label: 'Expired', tone: 'danger' };
+      if (s === 'replaced') return { label: 'Replaced', tone: 'muted' };
+      return { label: 'Not sent', tone: 'muted' };
+    }
+    var evStatusKey = evPayload && evPayload.status != null
+      ? String(evPayload.status).trim().toLowerCase()
+      : 'not_sent';
+    if (
+      evStatusKey !== 'not_sent' &&
+      evStatusKey !== 'sent' &&
+      evStatusKey !== 'verified' &&
+      evStatusKey !== 'expired' &&
+      evStatusKey !== 'replaced'
+    ) {
+      evStatusKey = 'not_sent';
+    }
+    var evStatusMeta = emailStatusMeta(evStatusKey);
+    var evStatusToneClass = toneChip(evStatusMeta.tone);
+    var evEmail = evPayload && displayOrMissing(evPayload.email);
+    var evSentAt = evPayload && evPayload.sentAt ? evPayload.sentAt : null;
+    var evExpiresAt = evPayload && evPayload.expiresAt ? evPayload.expiresAt : null;
+    var evVerifiedAt = evPayload && evPayload.verifiedAt ? evPayload.verifiedAt : null;
+    var evReplacedAt = evPayload && evPayload.invalidatedAt ? evPayload.invalidatedAt : null;
+    var evIsEmpty =
+      Boolean(evPayload) &&
+      !evUnavailable &&
+      evStatusKey === 'not_sent' &&
+      !evEmail &&
+      !evSentAt &&
+      !evExpiresAt &&
+      !evVerifiedAt &&
+      !evReplacedAt;
+    var evResendEmail = evEmail || displayOrMissing(app.contactEmail);
+    var evCanResend = Boolean(displayOrMissing(app.id) && evResendEmail);
+  %>
+  <section
+    id="reg-email-verification"
+    class="bb-pa-panel bb-pa-reg-email<%= evUnavailable ? ' bb-pa-reg-email--unavailable' : '' %>"
+    aria-labelledby="reg-email-verification-title"
+    data-bb-pa-reg-section="email-verification"
+    data-bb-pa-reg-email="1"
+    data-bb-pa-reg-email-unavailable="<%= evUnavailable ? '1' : '0' %>"
+  >
+    <h2 id="reg-email-verification-title" class="bb-pa-section-title">Email verification</h2>
+    <p class="bb-pa-hint" role="note" data-bb-pa-reg-email-intro="1">
+      Review ownership status for the applicant email. Change-email and manual verify controls are not available yet.
+    </p>
+
+    <% if (!evPayload) { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-email-missing="1">Email verification status is not available.</p>
+    <% } else if (evUnavailable) { %>
+    <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-email-unavailable-banner="1">
+      Email verification status is temporarily unavailable. The rest of this application detail remains available.
+    </p>
+    <% } else if (evIsEmpty) { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-email-empty="1">No email verification has been sent for this application.</p>
+    <% } %>
+
+    <% if (evPayload && !evUnavailable && !evIsEmpty) { %>
+    <div class="bb-pa-reg-email__summary" data-bb-pa-reg-email-summary="1">
+      <h3 class="bb-pa-lede">Current status</h3>
+      <dl class="bb-pa-dl bb-pa-reg-email__summary-dl">
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="email">
+          <dt>Email address</dt>
+          <dd data-bb-pa-reg-email-address="1"><%= evEmail || 'Not provided' %></dd>
+        </div>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="status">
+          <dt>Status</dt>
+          <dd data-bb-pa-reg-email-status="1">
+            <span
+              class="bb-pa-chip <%= evStatusToneClass %>"
+              data-bb-pa-reg-email-status-chip="1"
+              data-bb-pa-reg-email-status-value="<%= evStatusKey %>"
+            ><%= evStatusMeta.label %></span>
+          </dd>
+        </div>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="sent">
+          <dt>Sent time</dt>
+          <dd data-bb-pa-reg-email-sent-at="1"><%= evSentAt ? (fmtDate(evSentAt) || 'Not provided') : 'Not provided' %></dd>
+        </div>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="expires">
+          <dt>Expiry</dt>
+          <dd data-bb-pa-reg-email-expires-at="1"><%= evExpiresAt ? (fmtDate(evExpiresAt) || 'Not provided') : 'Not provided' %></dd>
+        </div>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="verified">
+          <dt>Verified time</dt>
+          <dd data-bb-pa-reg-email-verified-at="1"><%= evVerifiedAt ? (fmtDate(evVerifiedAt) || 'Not provided') : 'Not provided' %></dd>
+        </div>
+        <% if (evReplacedAt) { %>
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="replaced">
+          <dt>Replaced time</dt>
+          <dd data-bb-pa-reg-email-replaced-at="1"><%= fmtDate(evReplacedAt) || 'Not provided' %></dd>
+        </div>
+        <% } %>
+      </dl>
+    </div>
+    <% } else if (evPayload && !evUnavailable && evIsEmpty) { %>
+    <div class="bb-pa-reg-email__summary" data-bb-pa-reg-email-summary="1">
+      <h3 class="bb-pa-lede">Current status</h3>
+      <dl class="bb-pa-dl bb-pa-reg-email__summary-dl">
+        <div class="bb-pa-reg-email__card" data-bb-pa-reg-email-field="status">
+          <dt>Status</dt>
+          <dd data-bb-pa-reg-email-status="1">
+            <span
+              class="bb-pa-chip <%= evStatusToneClass %>"
+              data-bb-pa-reg-email-status-chip="1"
+              data-bb-pa-reg-email-status-value="<%= evStatusKey %>"
+            ><%= evStatusMeta.label %></span>
+          </dd>
+        </div>
+      </dl>
+    </div>
+    <% } %>
+
+    <% if (evCanResend) { %>
+    <div class="bb-pa-reg-email__resend" data-bb-pa-reg-email-resend="1">
+      <h3 class="bb-pa-lede">Resend verification email</h3>
+      <p class="bb-pa-reg-email__recipient" data-bb-pa-reg-email-resend-recipient="1">
+        Recipient: <strong><%= evResendEmail %></strong>
+      </p>
+      <p class="bb-pa-hint" role="note" data-bb-pa-reg-email-resend-cooldown="1">
+        Wait at least 60 seconds between resend attempts. Resending replaces any previous unused verification link.
+      </p>
+      <p class="bb-pa-hint" role="note" data-bb-pa-reg-email-resend-no-delivery-claim="1">
+        Resend records a verification request. It does not confirm that the message was delivered, opened, or bounced.
+      </p>
+      <form
+        class="bb-pa-form bb-pa-reg-email__form"
+        method="post"
+        action="/admin/registration-applications/<%= app.id %>/email-verification/resend"
+        data-bb-pa-reg-email-resend-form="1"
+      >
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button class="bb-pa-btn bb-pa-btn--primary" type="submit" data-bb-pa-reg-email-resend-submit="1">
+          Resend verification email
+        </button>
+      </form>
+    </div>
+    <% } else { %>
+    <p class="bb-pa-muted" data-bb-pa-reg-email-resend-omitted="1">
+      Resend is unavailable because the applicant email is missing.
+    </p>
+    <% } %>
+
+    <% if (evPayload) { %>
+    <p class="bb-pa-hint bb-pa-reg-email__provider-note" role="note" data-bb-pa-reg-email-provider-limitation="1">
+      Delivery, bounce, and open tracking are not available. BlessBoard does not receive email-service-provider events yet, so Delivered, Bounced, and Opened are not shown.
+    </p>
+    <% } %>
+  </section>
+
+  <!-- Communication log + request additional information (Prompts 065–067) -->
+  <%
+    var commPayload = typeof communications !== 'undefined' && communications && typeof communications === 'object'
+      ? communications
+      : null;
+    var commUnavailable = Boolean(commPayload && commPayload.unavailable);
+    var commItems = commPayload && Array.isArray(commPayload.items) ? commPayload.items : [];
+    var commSummary = commPayload && commPayload.summary && typeof commPayload.summary === 'object'
+      ? commPayload.summary
+      : {
+          total: 0,
+          internalNotes: 0,
+          informationRequests: 0,
+          applicantMessages: 0,
+          rejectionNotices: 0,
+          sendingUnavailable: 0,
+          failed: 0,
+          latestCommunicationAt: null
+        };
+    function communicationTypeLabel(item) {
+      if (item && item.labels && item.labels.communicationType) return String(item.labels.communicationType);
+      return labelStatus(item && item.communicationType);
+    }
+    function communicationChannelLabel(item) {
+      if (item && item.labels && item.labels.channel) return String(item.labels.channel);
+      return labelStatus(item && item.channel);
+    }
+    function communicationDirectionLabel(item) {
+      if (item && item.labels && item.labels.direction) return String(item.labels.direction);
+      return labelStatus(item && item.direction);
+    }
+    function communicationDeliveryLabel(status) {
+      var s = String(status || '').trim().toLowerCase();
+      if (s === 'sent') return 'Sent';
+      if (s === 'sending_unavailable') return 'Sending unavailable';
+      if (s === 'failed') return 'Failed';
+      if (s === 'queued') return 'Queued';
+      if (s === 'recorded') return 'Recorded';
+      if (s === 'not_applicable') return 'Not applicable';
+      if (!s) return 'Unknown';
+      return labelStatus(s);
+    }
+    function communicationDeliveryTone(status) {
+      var s = String(status || '').trim().toLowerCase();
+      if (s === 'sent') return 'success';
+      if (s === 'sending_unavailable') return 'warn';
+      if (s === 'failed') return 'danger';
+      if (s === 'queued') return 'warn';
+      return 'muted';
+    }
+    function communicationRequestCategoryLabel(item) {
+      if (!item) return null;
+      if (item.labels && item.labels.requestCategory) return String(item.labels.requestCategory);
+      return displayOrMissing(item.requestCategory);
+    }
+    function joinListValues(values) {
+      if (!Array.isArray(values) || !values.length) return null;
+      var parts = [];
+      values.forEach(function (v) {
+        var s = displayOrMissing(v);
+        if (s) parts.push(s);
+      });
+      return parts.length ? parts.join(', ') : null;
+    }
+  %>
+  <section
+    id="reg-communications"
+    class="bb-pa-panel bb-pa-reg-communications<%= commUnavailable ? ' bb-pa-reg-communications--unavailable' : '' %>"
+    aria-labelledby="reg-communications-title"
+    data-bb-pa-reg-section="communications"
+    data-bb-pa-reg-communications="1"
+    data-bb-pa-reg-communications-unavailable="<%= commUnavailable ? '1' : '0' %>"
+  >
+    <h2 id="reg-communications-title" class="bb-pa-section-title">Communication</h2>
+    <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="admin"><%= ORIGIN_ADMIN %></p>
+    <p class="bb-pa-lede" data-bb-pa-reg-communications-lede="1">
+      Review recorded messages and request additional information from the applicant.
+    </p>
+
+    <div class="bb-pa-reg-communications__history" data-bb-pa-reg-communications-history="1">
+      <h3 class="bb-pa-lede" id="reg-communications-history-title">Communication log</h3>
+
+      <% if (!commPayload) { %>
+      <p class="bb-pa-muted" data-bb-pa-reg-communications-missing="1">
+        Communication history is not available.
+      </p>
+      <% } else if (commUnavailable) { %>
+      <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-communications-unavailable-banner="1">
+        Communication history is temporarily unavailable
+      </p>
+      <% } else { %>
+      <div class="bb-pa-reg-communications__summary" data-bb-pa-reg-communications-summary="1">
+        <dl class="bb-pa-dl bb-pa-reg-communications__summary-dl">
+          <div>
+            <dt>Total communications</dt>
+            <dd data-bb-pa-reg-communications-summary-total="1"><%= Number(commSummary.total) || 0 %></dd>
+          </div>
+          <div>
+            <dt>Information requests</dt>
+            <dd data-bb-pa-reg-communications-summary-information-requests="1"><%= Number(commSummary.informationRequests) || 0 %></dd>
+          </div>
+          <div>
+            <dt>Internal notes</dt>
+            <dd data-bb-pa-reg-communications-summary-internal-notes="1"><%= Number(commSummary.internalNotes) || 0 %></dd>
+          </div>
+          <div>
+            <dt>Applicant messages</dt>
+            <dd data-bb-pa-reg-communications-summary-applicant-messages="1"><%= Number(commSummary.applicantMessages) || 0 %></dd>
+          </div>
+          <div>
+            <dt>Rejection notices</dt>
+            <dd data-bb-pa-reg-communications-summary-rejection-notices="1"><%= Number(commSummary.rejectionNotices) || 0 %></dd>
+          </div>
+          <div>
+            <dt>Sending unavailable</dt>
+            <dd data-bb-pa-reg-communications-summary-sending-unavailable="1"><%= Number(commSummary.sendingUnavailable) || 0 %></dd>
+          </div>
+          <div>
+            <dt>Failed</dt>
+            <dd data-bb-pa-reg-communications-summary-failed="1"><%= Number(commSummary.failed) || 0 %></dd>
+          </div>
+          <div>
+            <dt>Latest activity</dt>
+            <dd data-bb-pa-reg-communications-summary-latest="1"><%= fmtDate(commSummary.latestCommunicationAt) || 'None' %></dd>
+          </div>
+        </dl>
+      </div>
+
+      <% if (!commItems.length) { %>
+      <p class="bb-pa-muted" data-bb-pa-reg-communications-empty="1">
+        No communication has been recorded
+      </p>
+      <% } else { %>
+      <div class="bb-pa-reg-communications__list" data-bb-pa-reg-communications-list="1">
+        <% commItems.forEach(function (item, itemIndex) { %>
+        <%
+          if (!item || typeof item !== 'object') return;
+          var itemId = item.id != null ? String(item.id) : String(itemIndex);
+          var itemType = item.communicationType != null ? String(item.communicationType) : '';
+          var itemDelivery = item.deliveryStatus != null ? String(item.deliveryStatus) : '';
+          var itemDeliveryLabel = communicationDeliveryLabel(itemDelivery);
+          var itemDeliveryTone = toneChip(communicationDeliveryTone(itemDelivery));
+          var itemRecipient = displayOrMissing(item.recipient);
+          var itemSubject = displayOrMissing(item.subject);
+          var itemApplicantMsg = displayOrMissing(item.applicantMessage);
+          var itemInternalNote = displayOrMissing(item.internalNote);
+          var itemCategory = communicationRequestCategoryLabel(item);
+          var itemFields = joinListValues(item.requestedFields);
+          var itemDocs = joinListValues(item.requestedDocuments);
+          var itemDue = item.responseDueAt || null;
+        %>
+        <article
+          class="bb-pa-reg-communications-card"
+          data-bb-pa-reg-communications-card="1"
+          data-bb-pa-reg-communications-card-id="<%= itemId %>"
+          data-bb-pa-reg-communications-card-type="<%= itemType %>"
+          data-bb-pa-reg-communications-card-delivery="<%= itemDelivery %>"
+          aria-labelledby="reg-comm-card-<%= itemId %>"
+        >
+          <header class="bb-pa-reg-communications-card__head">
+            <h4 id="reg-comm-card-<%= itemId %>" class="bb-pa-reg-communications-card__title">
+              <%= communicationTypeLabel(item) %>
+            </h4>
+            <div class="bb-pa-reg-communications-card__badges">
+              <span class="bb-pa-chip bb-pa-chip--muted" data-bb-pa-reg-communications-card-channel="1">
+                <%= communicationChannelLabel(item) %>
+              </span>
+              <span class="bb-pa-chip bb-pa-chip--muted" data-bb-pa-reg-communications-card-direction="1">
+                <%= communicationDirectionLabel(item) %>
+              </span>
+              <span class="bb-pa-chip <%= itemDeliveryTone %>" data-bb-pa-reg-communications-card-delivery-label="1"><%= itemDeliveryLabel %></span>
+            </div>
+          </header>
+
+          <dl class="bb-pa-dl bb-pa-reg-communications-card__meta">
+            <div>
+              <dt>Type</dt>
+              <dd data-bb-pa-reg-communications-card-type-label="1"><%= communicationTypeLabel(item) %></dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd data-bb-pa-reg-communications-card-created="1"><%= fmtDate(item.createdAt) || 'Not provided' %></dd>
+            </div>
+            <% if (itemRecipient) { %>
+            <div>
+              <dt>Recipient</dt>
+              <dd data-bb-pa-reg-communications-card-recipient="1"><%= itemRecipient %></dd>
+            </div>
+            <% } %>
+            <% if (itemSubject) { %>
+            <div>
+              <dt>Subject</dt>
+              <dd data-bb-pa-reg-communications-card-subject="1"><%= itemSubject %></dd>
+            </div>
+            <% } %>
+            <% if (itemCategory) { %>
+            <div>
+              <dt>Request category</dt>
+              <dd data-bb-pa-reg-communications-card-category="1"><%= itemCategory %></dd>
+            </div>
+            <% } %>
+            <% if (itemFields) { %>
+            <div>
+              <dt>Requested fields</dt>
+              <dd data-bb-pa-reg-communications-card-fields="1"><%= itemFields %></dd>
+            </div>
+            <% } %>
+            <% if (itemDocs) { %>
+            <div>
+              <dt>Requested documents</dt>
+              <dd data-bb-pa-reg-communications-card-documents="1"><%= itemDocs %></dd>
+            </div>
+            <% } %>
+            <% if (itemDue) { %>
+            <div>
+              <dt>Response deadline</dt>
+              <dd data-bb-pa-reg-communications-card-deadline="1"><%= fmtDate(itemDue) || 'Not provided' %></dd>
+            </div>
+            <% } %>
+          </dl>
+
+          <% if (itemApplicantMsg) { %>
+          <div
+            class="bb-pa-reg-communications-card__applicant"
+            data-bb-pa-reg-communications-card-applicant="1"
+          >
+            <p class="bb-pa-reg-communications-card__block-label">Applicant-facing message</p>
+            <p class="bb-pa-reg-communications-card__block-body"><%= itemApplicantMsg %></p>
+          </div>
+          <% } %>
+
+          <% if (itemInternalNote) { %>
+          <div
+            class="bb-pa-reg-communications-card__internal"
+            data-bb-pa-reg-communications-card-internal="1"
+          >
+            <p class="bb-pa-reg-communications-card__block-label">Internal note</p>
+            <p class="bb-pa-reg-communications-card__block-body"><%= itemInternalNote %></p>
+          </div>
+          <% } %>
+        </article>
+        <% }) %>
+      </div>
+      <% } %>
+      <% } %>
+    </div>
+
+    <div class="bb-pa-reg-communications__compose" data-bb-pa-reg-communications-compose="1">
+    <h3 class="bb-pa-lede" id="reg-communications-compose-title">Request additional information</h3>
+    <p class="bb-pa-hint" role="note" data-bb-pa-reg-communications-email-unavailable="1">
+      Outbound email may be unavailable. Saving this form records the request; it does not confirm that a message was delivered, opened, or bounced.
+    </p>
+
+    <form
+      class="bb-pa-form bb-pa-reg-communications__form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/request-information"
+      data-bb-pa-reg-communications-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+
+      <div class="bb-pa-field">
+        <label for="info_request_recipient">Recipient</label>
+        <input
+          id="info_request_recipient"
+          name="recipient"
+          type="email"
+          maxlength="320"
+          required
+          autocomplete="email"
+          value="<%= infoRequestRecipient %>"
+          data-bb-pa-reg-communications-field="recipient"
+        />
+      </div>
+
+      <div class="bb-pa-field">
+        <label for="info_request_subject">Subject</label>
+        <input
+          id="info_request_subject"
+          name="subject"
+          type="text"
+          maxlength="200"
+          required
+          autocomplete="off"
+          data-bb-pa-reg-communications-field="subject"
+        />
+      </div>
+
+      <div class="bb-pa-field" data-bb-pa-reg-communications-applicant-block="1">
+        <label for="info_request_applicant_message">Applicant-facing message</label>
+        <p class="bb-pa-muted" id="info_request_applicant_message_hint">
+          Visible to the applicant. Do not put internal review notes here.
+        </p>
+        <textarea
+          id="info_request_applicant_message"
+          name="applicant_message"
+          rows="5"
+          maxlength="4000"
+          required
+          aria-describedby="info_request_applicant_message_hint"
+          data-bb-pa-reg-communications-field="applicant_message"
+        ></textarea>
+      </div>
+
+      <div class="bb-pa-field" data-bb-pa-reg-communications-internal-block="1">
+        <label for="info_request_internal_note">Internal note <span class="bb-pa-muted">(optional)</span></label>
+        <p class="bb-pa-muted" id="info_request_internal_note_hint">
+          Platform administrators only. Not shown to the applicant.
+        </p>
+        <textarea
+          id="info_request_internal_note"
+          name="internal_note"
+          rows="3"
+          maxlength="4000"
+          aria-describedby="info_request_internal_note_hint"
+          data-bb-pa-reg-communications-field="internal_note"
+        ></textarea>
+      </div>
+
+      <div class="bb-pa-field">
+        <label for="info_request_category">Request category</label>
+        <select
+          id="info_request_category"
+          name="request_category"
+          required
+          data-bb-pa-reg-communications-field="request_category"
+        >
+          <option value="" selected>Select category</option>
+          <% infoRequestCategories.forEach(function (cat) { %>
+          <option value="<%= cat.value %>"><%= cat.label %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="bb-pa-field">
+        <label for="info_request_requested_fields">Requested fields <span class="bb-pa-muted">(optional)</span></label>
+        <p class="bb-pa-muted" id="info_request_requested_fields_hint">
+          Comma-separated field names (for example: church name, city).
+        </p>
+        <textarea
+          id="info_request_requested_fields"
+          name="requested_fields"
+          rows="2"
+          maxlength="2000"
+          aria-describedby="info_request_requested_fields_hint"
+          data-bb-pa-reg-communications-field="requested_fields"
+        ></textarea>
+      </div>
+
+      <div class="bb-pa-field">
+        <label for="info_request_requested_documents">Requested documents <span class="bb-pa-muted">(optional)</span></label>
+        <p class="bb-pa-muted" id="info_request_requested_documents_hint">
+          Comma-separated document names (for example: registration certificate).
+        </p>
+        <textarea
+          id="info_request_requested_documents"
+          name="requested_documents"
+          rows="2"
+          maxlength="2000"
+          aria-describedby="info_request_requested_documents_hint"
+          data-bb-pa-reg-communications-field="requested_documents"
+        ></textarea>
+      </div>
+
+      <div class="bb-pa-field">
+        <label for="info_request_response_due_at">Response deadline <span class="bb-pa-muted">(optional)</span></label>
+        <input
+          id="info_request_response_due_at"
+          name="response_due_at"
+          type="datetime-local"
+          data-bb-pa-reg-communications-field="response_due_at"
+        />
+      </div>
+
+      <div class="bb-pa-field">
+        <label for="info_request_channel">Channel</label>
+        <select
+          id="info_request_channel"
+          name="channel"
+          required
+          data-bb-pa-reg-communications-field="channel"
+        >
+          <option value="email" selected>Email</option>
+          <option value="phone">Phone</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <button
+        class="bb-pa-btn bb-pa-btn--primary"
+        type="submit"
+        data-bb-pa-reg-communications-submit="1"
+      >
+        Record information request
+      </button>
+    </form>
+    </div>
+  </section>
+
+  <!-- Review activity -->
+  <section
+    id="reg-activity"
+    class="bb-pa-panel"
+    aria-labelledby="reg-activity-title"
+    data-bb-pa-reg-section="activity"
+  >
+    <h2 id="reg-activity-title" class="bb-pa-section-title">Review activity</h2>
+    <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="system"><%= ORIGIN_SYSTEM %></p>
+
+    <% if (app.riskDecision || (app.riskReasonLabels && app.riskReasonLabels.length)) { %>
+    <h3 class="bb-pa-lede">Stored risk indicators</h3>
+    <dl class="bb-pa-dl">
+      <div>
+        <dt>Risk decision</dt>
+        <dd><%= app.riskDecision ? labelStatus(app.riskDecision) : 'Not provided' %></dd>
+      </div>
+      <div>
+        <dt>Risk decided</dt>
+        <dd><%= fmtDate(app.riskDecidedAt) || 'Not provided' %></dd>
+      </div>
+      <div>
+        <dt>Risk reasons</dt>
+        <dd>
+          <% if (app.riskReasonLabels && app.riskReasonLabels.length) { %>
+          <ul class="bb-pa-entitlement-source-list" data-bb-pa-risk-reasons="1">
+            <% app.riskReasonLabels.forEach(function (r) { %>
+            <li data-bb-pa-risk-reason="<%= r.code %>"><%= r.label %> <code class="bb-pa-key"><%= r.code %></code></li>
+            <% }) %>
+          </ul>
+          <% } else { %>
+          Not provided
+          <% } %>
+        </dd>
+      </div>
+    </dl>
+    <% } %>
+
+    <h3 class="bb-pa-lede">Contact notes</h3>
+    <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="admin"><%= ORIGIN_ADMIN %></p>
+    <% if (!contactRows.length) { %>
+    <p class="bb-pa-muted">No contact notes yet.</p>
+    <% } else { %>
+    <ul class="bb-pa-list" data-bb-pa-contact-history="1">
+      <% contactRows.forEach(function (c) { %>
+      <li class="bb-pa-list__item">
+        <strong><%= labelStatus(c.contactMethod) %></strong>
+        · <%= labelStatus(c.outcome) %>
+        · <%= fmtDate(c.contactedAt) || '—' %>
+        <div class="bb-pa-muted">by <%= c.createdByDisplayName || c.createdByEmail || 'admin' %></div>
+        <p><%= c.note %></p>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+
+    <h3 class="bb-pa-lede">Audit events</h3>
+    <% if (!audits.length) { %>
+    <p class="bb-pa-muted">No audit events yet.</p>
+    <% } else { %>
+    <ul class="bb-pa-list" data-bb-pa-reg-audit="1">
+      <% audits.forEach(function (e) { %>
+      <li class="bb-pa-list__item">
+        <strong><%= e.actionKey %></strong>
+        · <%= e.outcome %>
+        · <%= fmtDate(e.createdAt) || '—' %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <!-- Technical details (collapsed) -->
+  <details class="bb-pa-panel" data-bb-pa-tech-details="1">
+    <summary class="bb-pa-section-title">Technical details</summary>
+    <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="system"><%= ORIGIN_SYSTEM %></p>
+    <dl class="bb-pa-dl">
+      <div><dt>Application id</dt><dd><code class="bb-pa-key"><%= app.id || '—' %></code></dd></div>
+      <div>
+        <dt>Application status</dt>
+        <dd><%- include('../partials/pa-registration-status-chip', { statusKind: 'application', statusValue: app.applicationStatus }) %></dd>
+      </div>
+      <div>
+        <dt>Provisioning status</dt>
+        <dd><%- include('../partials/pa-registration-status-chip', { statusKind: 'provisioning', statusValue: app.provisioningStatus }) %></dd>
+      </div>
+      <div><dt>Follow-up status</dt><dd><%= labelStatus(app.followUpStatus) %></dd></div>
+      <div><dt>Workflow status</dt><dd><%= labelStatus(app.workflowStatus) %></dd></div>
+      <div><dt>Priority</dt><dd><%= app.priorityLabel || '—' %></dd></div>
+      <div><dt>Selected plan code</dt><dd><code class="bb-pa-key"><%= app.selectedPlan || '—' %></code></dd></div>
+      <div><dt>Provisioning started</dt><dd><%= fmtDate(app.provisioningStartedAt) || '—' %></dd></div>
+      <div><dt>Provisioned at</dt><dd><%= fmtDate(app.provisionedAt) || '—' %></dd></div>
+      <div><dt>Failed at</dt><dd><%= fmtDate(app.provisioningFailedAt) || '—' %></dd></div>
+      <div><dt>Error code</dt><dd><%= app.provisioningErrorCode || '—' %></dd></div>
+      <div><dt>Failure category</dt><dd><%= app.provisioningFailureCategory || '—' %></dd></div>
+      <div><dt>Error summary</dt><dd><%= app.provisioningErrorSummary || '—' %></dd></div>
+      <% if (app.legacyStatus && app.legacyStatus !== app.applicationStatus) { %>
+      <div><dt>Legacy status (compat)</dt><dd><%= app.legacyStatus %></dd></div>
+      <% } %>
+      <% if (app.organizationKey) { %>
+      <div><dt>Organization key</dt><dd><code class="bb-pa-key"><%= app.organizationKey %></code></dd></div>
+      <div><dt>Organization name</dt><dd><%= app.organizationDisplayName || '—' %></dd></div>
+      <div><dt>Organization status</dt><dd><%= labelStatus(app.organizationStatus) %></dd></div>
+      <div><dt>Organization id</dt><dd><code class="bb-pa-key"><%= app.organizationId || '—' %></code></dd></div>
+      <div><dt>Current plan</dt><dd><%= app.planKeyLabel || app.planKey || '—' %><% if (app.planKey && app.planKeyLabel && app.planKey !== app.planKeyLabel) { %> <code class="bb-pa-key"><%= app.planKey %></code><% } %></dd></div>
+      <div><dt>Subscription status</dt><dd><%= app.subscriptionStatus ? labelStatus(app.subscriptionStatus) : '—' %></dd></div>
+      <div><dt>Subscription starts</dt><dd><%= fmtDate(app.subscriptionStartsAt) || '—' %></dd></div>
+      <div><dt>Subscription ends</dt><dd><%= fmtDate(app.subscriptionEndsAt) || '—' %></dd></div>
+      <div><dt>Organization created</dt><dd><%= fmtDate(app.organizationCreatedAt) || '—' %></dd></div>
+      <div><dt>Onboarding status</dt><dd><%= labelStatus(app.onboardingStatus) %></dd></div>
+      <div>
+        <dt>Publication</dt>
+        <dd>
+          <%= (app.publication && app.publication.publishedPages) || 0 %> published /
+          <%= (app.publication && app.publication.draftPages) || 0 %> draft
+        </dd>
+      </div>
+      <div><dt>Last activity</dt><dd><%= fmtDate(app.lastActivityAt) || '—' %></dd></div>
+      <% } %>
+      <% if (ov.recommendedAction) { %>
+      <div><dt>Operator action key</dt><dd><code class="bb-pa-key"><%= ov.recommendedAction %></code></dd></div>
+      <% } %>
+      <% if (operatorQueue) { %>
+      <div><dt>Operator queue</dt><dd><code class="bb-pa-key"><%= operatorQueue %></code></dd></div>
+      <% } %>
+    </dl>
+    <% var obSum = typeof onboardingSummary !== 'undefined' ? onboardingSummary : null; %>
+    <% if (obSum && app.organizationKey) { %>
+    <p class="bb-pa-lede" data-bb-pa-onboarding-progress="1">
+      Onboarding progress · <%= obSum.completedCount %>/<%= obSum.totalCount %> (<%= obSum.percentage %>%)
+      · <span class="bb-pa-chip"><%= labelStatus(obSum.publicationStatus) %></span>
+      · <a class="bb-pa-link" href="/admin/organizations/<%= encodeURIComponent(app.organizationKey) %>#pa-org-onboarding">Full checklist on organization</a>
+    </p>
+    <ul class="bb-pa-entitlement-source-list" data-bb-pa-onboarding-checklist="1">
+      <% (obSum.checklist || []).forEach(function (item) { %>
+      <li data-bb-pa-checklist-item="<%= item.key %>" data-bb-pa-checklist-complete="<%= item.completed ? '1' : '0' %>">
+        <%= item.label %> · <%= item.completed ? 'complete' : 'incomplete' %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </details>
+
+  <!-- Support operations -->
+  <% if (app.followUpAvailable) { %>
+  <section
+    id="reg-support-ops"
+    class="bb-pa-panel"
+    aria-labelledby="reg-support-ops-title"
+    data-bb-pa-reg-section="support-ops"
+  >
+    <h2 id="reg-support-ops-title" class="bb-pa-section-title">Support operations</h2>
+    <p class="bb-pa-reg-origin" data-bb-pa-reg-origin="admin"><%= ORIGIN_ADMIN %></p>
+    <p class="bb-pa-lede" role="note">
+      Follow-up, assignment, and contact notes for BlessBoard setup and onboarding only.
+      Do not record member, pastoral, prayer, health, or confidential church matters.
+    </p>
+    <dl class="bb-pa-dl">
+      <div><dt>Follow-up status</dt><dd><%= labelStatus(app.followUpStatus) %></dd></div>
+      <div>
+        <dt>Assigned support</dt>
+        <dd><%= assigneeLabel || 'Unassigned' %></dd>
+      </div>
+      <div><dt>First contacted</dt><dd><%= fmtDate(app.firstContactedAt) || '—' %></dd></div>
+      <div><dt>Last contacted</dt><dd><%= fmtDate(app.lastContactedAt) || '—' %></dd></div>
+      <div><dt>Next follow-up</dt><dd><%= fmtDate(app.nextFollowUpAt) || '—' %></dd></div>
+      <div><dt>Onboarding completed</dt><dd><%= fmtDate(app.onboardingCompletedAt) || '—' %></dd></div>
+    </dl>
+
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/follow-up-status"
+      data-bb-pa-follow-up-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <div class="bb-pa-field">
+        <label for="follow_up_status">Update follow-up status</label>
+        <select id="follow_up_status" name="follow_up_status" required>
+          <% followOpts.forEach(function (s) { %>
+          <option value="<%= s %>"<%= app.followUpStatus === s ? ' selected' : '' %>><%= labelStatus(s) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--secondary" type="submit">Save follow-up status</button>
+    </form>
+
+    <% if (app.supportAssignmentAvailable) { %>
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/assign-support"
+      data-bb-pa-assign-support-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <div class="bb-pa-field">
+        <label for="support_user_id">Assign support administrator</label>
+        <select id="support_user_id" name="support_user_id">
+          <option value="">Unassigned</option>
+          <% admins.forEach(function (u) { %>
+          <option value="<%= u.id %>"<%= app.assignedSupportUserId === u.id ? ' selected' : '' %>>
+            <%= u.displayName || u.email %> (<%= u.email %>)
+          </option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--secondary" type="submit">Save assignment</button>
+    </form>
+    <% } %>
+
+    <% if (app.contactHistoryAvailable) { %>
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/contact"
+      data-bb-pa-contact-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <div class="bb-pa-field">
+        <label for="contact_method">Contact method</label>
+        <select id="contact_method" name="contact_method" required>
+          <% methodOpts.forEach(function (s) { %>
+          <option value="<%= s %>"><%= labelStatus(s) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-pa-field">
+        <label for="outcome">Outcome</label>
+        <select id="outcome" name="outcome" required>
+          <% outcomeOpts.forEach(function (s) { %>
+          <option value="<%= s %>"><%= labelStatus(s) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-pa-field">
+        <label for="note">Note</label>
+        <textarea id="note" name="note" rows="4" maxlength="2000" required></textarea>
+      </div>
+      <div class="bb-pa-field">
+        <label for="contact_follow_up_status">Also set follow-up status <span class="bb-pa-muted">(optional)</span></label>
+        <select id="contact_follow_up_status" name="follow_up_status">
+          <option value="">Leave unchanged</option>
+          <% followOpts.forEach(function (s) { %>
+          <option value="<%= s %>"><%= labelStatus(s) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-pa-field">
+        <label for="next_follow_up_at">Next follow-up <span class="bb-pa-muted">(optional)</span></label>
+        <input id="next_follow_up_at" name="next_follow_up_at" type="datetime-local" />
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--secondary" type="submit">Add contact note</button>
+    </form>
+    <% } %>
+  </section>
+  <% } %>
+
+  <!-- Link organization (secondary) -->
+  <% if (app.linkOrganizationAvailable) { %>
+  <section class="bb-pa-panel" aria-labelledby="reg-link-org-title">
+    <h2 id="reg-link-org-title" class="bb-pa-section-title">Link organization</h2>
+    <form
+      class="bb-pa-form"
+      method="post"
+      action="/admin/registration-applications/<%= app.id %>/link-organization"
+      data-bb-pa-link-organization-form="1"
+    >
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <p class="bb-pa-lede">
+        Link to an existing organization without provisioning a new tenant.
+        Network paid activation remains a separate billing action.
+      </p>
+      <div class="bb-pa-field">
+        <label for="link_organization_key">Organization key</label>
+        <input id="link_organization_key" name="organization_key" type="text" required maxlength="80" autocomplete="off" />
+      </div>
+      <button class="bb-pa-btn bb-pa-btn--secondary" type="submit">Link organization</button>
+    </form>
+  </section>
+  <% } %>

@@ -229,6 +229,10 @@ describe("mapRejectRouteError (Prompt 069)", () => {
     );
     assert.equal(
       mapRejectRouteError({ status: REG_APP_STATUS.NOT_ELIGIBLE, message: "already_provisioned" }),
+      "already_provisioned"
+    );
+    assert.equal(
+      mapRejectRouteError({ status: REG_APP_STATUS.NOT_ELIGIBLE, message: "not_eligible" }),
       "not_eligible"
     );
     assert.equal(
@@ -264,7 +268,10 @@ describe("POST reject route (Prompt 069)", () => {
     const { app, state } = buildApp();
     const res = await postReject(app, baseBody(), { csrf: false });
     assert.equal(res.status, 303);
-    assert.match(String(res.headers.location || ""), /error=csrf#reg-rejection/);
+    assert.match(
+      String(res.headers.location || ""),
+      new RegExp(`/admin/registration-applications/${APP_ID}/reject\\?error=csrf`)
+    );
     assert.equal(state.rejectCalls.length, 0);
   });
 
@@ -284,7 +291,7 @@ describe("POST reject route (Prompt 069)", () => {
     assert.match(
       String(res.headers.location || ""),
       new RegExp(
-        `/admin/registration-applications/${APP_ID}\\?notice=application_rejected#reg-rejection`
+        `/admin/registration-applications/${APP_ID}/rejected\\?notice=application_rejected`
       )
     );
     assert.equal(state.rejectCalls.length, 1);
@@ -309,10 +316,19 @@ describe("POST reject route (Prompt 069)", () => {
     assert.equal(res.status, 303);
     assert.match(
       String(res.headers.location || ""),
-      /notice=application_rejected#reg-rejection/
+      /\/rejected\?notice=application_rejected/
     );
     assert.equal(state.rejectCalls[0].input.internalDecisionNote, "Operator rejection after review");
     assert.equal(state.rejectCalls[0].input.notifyApplicant, false);
+  });
+
+  it("fills internal note from category label when note omitted (non-other)", async () => {
+    const parsed = parseRejectForm(
+      { rejection_category: "duplicate_registration" },
+      APP_ID
+    );
+    assert.equal(parsed.ok, true);
+    assert.ok(parsed.input.internalDecisionNote.length >= 3);
   });
 
   it("validates categories and notify explanation before calling the service", async () => {
@@ -321,13 +337,16 @@ describe("POST reject route (Prompt 069)", () => {
       app,
       baseBody({ rejection_category: "made_up_category" })
     );
-    assert.match(String(badCategory.headers.location || ""), /error=invalid#reg-rejection/);
+    assert.match(
+      String(badCategory.headers.location || ""),
+      /\/reject\?error=invalid/
+    );
 
     const missingNote = await postReject(app, {
       rejection_category: "other",
       applicant_explanation: "Hello",
     });
-    assert.match(String(missingNote.headers.location || ""), /error=invalid#reg-rejection/);
+    assert.match(String(missingNote.headers.location || ""), /\/reject\?error=invalid/);
 
     const notifyMissing = await postReject(
       app,
@@ -336,7 +355,7 @@ describe("POST reject route (Prompt 069)", () => {
         applicant_explanation: "",
       })
     );
-    assert.match(String(notifyMissing.headers.location || ""), /error=invalid#reg-rejection/);
+    assert.match(String(notifyMissing.headers.location || ""), /\/reject\?error=invalid/);
     assert.equal(state.rejectCalls.length, 0);
   });
 
@@ -372,7 +391,7 @@ describe("POST reject route (Prompt 069)", () => {
       })
     );
     assert.equal(res.status, 303);
-    assert.match(String(res.headers.location || ""), /notice=application_rejected#reg-rejection/);
+    assert.match(String(res.headers.location || ""), /\/rejected\?notice=application_rejected/);
     assert.doesNotMatch(String(res.headers.location || ""), /notice=sent|delivery=sent/);
     assert.equal(state.rejectCalls.length, 1);
     assert.equal(
@@ -391,7 +410,7 @@ describe("POST reject route (Prompt 069)", () => {
     });
     const res = await postReject(app, baseBody());
     assert.equal(res.status, 303);
-    assert.match(String(res.headers.location || ""), /error=reject_failed#reg-rejection/);
+    assert.match(String(res.headers.location || ""), /\/reject\?error=reject_failed/);
     assert.doesNotMatch(String(res.headers.location || ""), /hunter2|SMTP|connection refused/);
   });
 
@@ -404,7 +423,7 @@ describe("POST reject route (Prompt 069)", () => {
       }),
     });
     const notFound = await postReject(notFoundApp.app, baseBody());
-    assert.match(String(notFound.headers.location || ""), /error=not_found#reg-rejection/);
+    assert.match(String(notFound.headers.location || ""), /\/reject\?error=not_found/);
 
     const ineligibleApp = buildApp({
       rejectImpl: async () => ({
@@ -414,20 +433,154 @@ describe("POST reject route (Prompt 069)", () => {
       }),
     });
     const ineligible = await postReject(ineligibleApp.app, baseBody());
-    assert.match(String(ineligible.headers.location || ""), /error=not_eligible#reg-rejection/);
+    assert.match(
+      String(ineligible.headers.location || ""),
+      /\/reject\?error=already_provisioned/
+    );
   });
 
-  it("registers the upgraded reject route and exports helpers", () => {
+  it("registers the upgraded reject route and Phase 5 result redirects", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "../src/platform/http/platformAdminRoutes.js"),
       "utf8"
     );
     assert.match(src, /\/admin\/registration-applications\/:id\/reject/);
+    assert.match(src, /\/admin\/registration-applications\/:id\/rejected/);
     assert.match(src, /parseRejectForm/);
     assert.match(src, /notice=application_rejected/);
     assert.match(src, /#reg-rejection/);
     assert.match(src, /internal_decision_note/);
     assert.match(src, /applicant_explanation/);
     assert.match(src, /notify_applicant/);
+  });
+});
+
+describe("GET reject / rejected routes (Phase 5)", () => {
+  function buildDetailApp(overrides = {}) {
+    const detail = overrides.detail || {
+      ok: true,
+      application: {
+        id: APP_ID,
+        churchName: "Grace Test Church",
+        applicationStatus: "submitted",
+        provisioningStatus: "not_started",
+        rejectActionsAvailable: true,
+        contactName: "Pat",
+        contactEmail: "pat@example.com",
+        selectedPlanLabel: "Foundation",
+      },
+      communications: { items: [] },
+    };
+    const router = createPlatformAdminRouter({
+      getPool: () => ({
+        query: async () => {
+          throw new Error("pool.query must not be used by stubbed reject GET tests");
+        },
+      }),
+      isApexHost: () => (overrides.nonApex ? false : true),
+      env: ENV,
+      findUserStatusById: async () => ({ id: ADMIN_ID, status: "active" }),
+      listActiveAuthorizationRoles: async () => [{ roleKey: "platform_admin" }],
+      getRegistrationApplicationDetail: async () => detail,
+      loadRegistrationDuplicateMatchesForAdmin: async () => ({
+        ok: true,
+        matches: overrides.matches || [],
+      }),
+      log: () => {},
+    });
+    const app = express();
+    app.use(express.urlencoded({ extended: false }));
+    app.use(simpleCookieParser);
+    app.use((req, _res, next) => {
+      req.v5Session = {
+        authenticated: true,
+        session: { userId: ADMIN_ID, user: { displayName: "Platform Admin" } },
+      };
+      next();
+    });
+    app.use(router);
+    return app;
+  }
+
+  it("loads rejection confirmation page", async () => {
+    const app = buildDetailApp();
+    const res = await request(app).get(`/admin/registration-applications/${APP_ID}/reject`);
+    assert.equal(res.status, 200);
+    assert.match(String(res.text || ""), /data-bb-pa-reg-reject="1"/);
+    assert.match(String(res.text || ""), /Confirm rejection/i);
+    assert.match(String(res.text || ""), /name="_csrf"/);
+    assert.doesNotMatch(String(res.headers["content-type"] || ""), /json/);
+  });
+
+  it("blocks apex host and provisioned applications", async () => {
+    const nonApex = buildDetailApp({ nonApex: true });
+    const blockedApex = await request(nonApex).get(
+      `/admin/registration-applications/${APP_ID}/reject`
+    );
+    assert.ok([404, 403, 503].includes(blockedApex.status));
+
+    const provisioned = buildDetailApp({
+      detail: {
+        ok: true,
+        application: {
+          id: APP_ID,
+          churchName: "Linked Church",
+          applicationStatus: "approved",
+          provisioningStatus: "provisioned",
+          organizationId: "org-1",
+          organizationKey: "linked-church",
+          rejectActionsAvailable: false,
+        },
+        communications: { items: [] },
+      },
+    });
+    const res = await request(provisioned).get(
+      `/admin/registration-applications/${APP_ID}/reject`
+    );
+    assert.equal(res.status, 200);
+    assert.match(String(res.text || ""), /data-bb-pa-reg-reject-blocked="1"/);
+    assert.match(String(res.text || ""), /data-bb-pa-reg-reject-blocked-panel="1"/);
+    assert.doesNotMatch(String(res.text || ""), /data-bb-pa-reg-reject-form="1"/);
+  });
+
+  it("rejected result page uses stored rejection summary", async () => {
+    const app = buildDetailApp({
+      detail: {
+        ok: true,
+        application: {
+          id: APP_ID,
+          churchName: "Rejected Church",
+          applicationStatus: "rejected",
+          provisioningStatus: "not_started",
+          rejectionCategory: "duplicate_registration",
+          rejectionReason: "Internal note only",
+          rejectionNotificationStatus: "recorded",
+          rejectActionsAvailable: false,
+          reviewEvents: [
+            {
+              at: "2026-07-25T12:00:00.000Z",
+              action: "reject",
+              actor_user_id: ADMIN_ID,
+              rejection_category: "duplicate_registration",
+            },
+          ],
+        },
+        communications: {
+          items: [
+            {
+              communicationType: "rejection_notice",
+              applicantMessage: 'Sorry <b>x</b>',
+            },
+          ],
+        },
+      },
+    });
+    const res = await request(app).get(`/admin/registration-applications/${APP_ID}/rejected`);
+    assert.equal(res.status, 200);
+    assert.match(String(res.text || ""), /data-bb-pa-reg-rejected="1"/);
+    assert.match(String(res.text || ""), /Rejection recorded/);
+    assert.match(String(res.text || ""), /Duplicate church/);
+    assert.match(String(res.text || ""), /Sorry &lt;b&gt;x&lt;\/b&gt;/);
+    assert.match(String(res.text || ""), /data-bb-pa-reg-rejected-reopen="1"/);
   });
 });

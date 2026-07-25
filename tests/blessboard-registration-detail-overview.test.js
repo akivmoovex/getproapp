@@ -1,8 +1,7 @@
 "use strict";
 
 /**
- * Phase2 Batch 4–5 — registration detail overview + structured details (markup only).
- * No PostgreSQL required.
+ * Phase 5 — decision-focused registration review hub (markup; no Postgres).
  */
 
 const assert = require("node:assert/strict");
@@ -12,6 +11,7 @@ const { describe, it } = require("node:test");
 const ejs = require("ejs");
 
 const registrationStatus = require("../src/blessboard/services/registrationStatusPresentation");
+const registrationQueue = require("../src/blessboard/services/registrationQueuePresentation");
 
 const VIEW = path.join(
   __dirname,
@@ -79,6 +79,7 @@ function renderDetail(locals) {
     wrapped,
     {
       registrationStatus,
+      registrationQueue,
       application: baseApp(),
       contacts: [],
       auditEvents: [],
@@ -96,6 +97,8 @@ function renderDetail(locals) {
       csrfToken: "test-csrf",
       notice: null,
       error: null,
+      duplicateWarning: { show: false, match: null, listHref: null, advisory: true },
+      intent: "",
       ...locals,
     },
     {
@@ -106,55 +109,29 @@ function renderDetail(locals) {
   );
 }
 
+function primaryHtml(html) {
+  const idx = html.indexOf('data-bb-pa-reg-secondary="1"');
+  return idx >= 0 ? html.slice(0, idx) : html;
+}
+
 describe("registration detail overview and structured details (no Postgres)", () => {
-  it("renders overview header fields and section navigation", () => {
+  it("renders Phase 5 hub header and decision panel", () => {
     const html = renderDetail({});
+    assert.match(html, /data-bb-pa-reg-phase5-hub="1"/);
     assert.match(html, /data-bb-pa-reg-detail-overview="1"/);
     assert.match(html, /data-bb-pa-reg-church-name="1"/);
     assert.match(html, /Grace Test Church/);
-    assert.match(html, /data-bb-pa-reg-app-ref="1"/);
-    assert.match(html, /data-bb-pa-reg-overview-chips="1"/);
-    assert.match(html, /data-bb-pa-reg-overview-applicant="1"/);
-    assert.match(html, /Pat Applicant/);
-    assert.match(html, /data-bb-pa-reg-overview-assignee="1"/);
-    assert.match(html, /Ops Admin/);
-    assert.match(html, /data-bb-pa-reg-overview-follow-up="1"/);
-    assert.match(html, /data-bb-pa-reg-overview-activity="1"/);
-    assert.match(html, /data-bb-pa-reg-section-nav="1"/);
-    assert.match(html, /href="#reg-overview"/);
-    assert.match(html, /href="#reg-details"/);
-    assert.match(html, /href="#reg-applicant"/);
-    assert.match(html, /href="#reg-administration"/);
-    assert.match(html, /href="#reg-website"/);
-    assert.match(html, /href="#reg-documents"/);
-    assert.match(html, /href="#reg-verification"/);
-    assert.match(html, /href="#reg-activity"/);
+    assert.match(html, /Back to Church Registrations/);
+    assert.match(html, /data-bb-pa-phase5-status="new"/);
+    assert.match(html, /data-bb-pa-reg-hub-decision="1"/);
+    assert.match(html, /data-bb-pa-phase5-decision="approve"/);
+    assert.match(html, /data-bb-pa-phase5-decision="request-information"/);
+    assert.match(html, /data-bb-pa-phase5-decision="reject"/);
+    assert.match(html, /aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve/);
+    assert.doesNotMatch(primaryHtml(html), /#reg-actions/);
   });
 
-  it("renders structured detail group headings and origin labels", () => {
-    const html = renderDetail({});
-    assert.match(html, /data-bb-pa-reg-detail-grid="1"/);
-    assert.match(html, /data-bb-pa-reg-card="church"/);
-    assert.match(html, /Church information/);
-    assert.match(html, /data-bb-pa-reg-card="location"/);
-    assert.match(html, /Location and first branch/);
-    assert.match(html, /data-bb-pa-reg-card="applicant"/);
-    assert.match(html, /Contact and applicant/);
-    assert.match(html, /data-bb-pa-reg-card="administration"/);
-    assert.match(html, /Proposed administration/);
-    assert.match(html, /data-bb-pa-reg-card="website"/);
-    assert.match(html, /Website and access/);
-    assert.match(html, /data-bb-pa-reg-card="declarations"/);
-    assert.match(html, /Declarations and submission/);
-    assert.match(html, /data-bb-pa-reg-origin="applicant"/);
-    assert.match(html, /Applicant-provided/);
-    assert.match(html, /data-bb-pa-reg-origin="system"/);
-    assert.match(html, /System-derived/);
-    assert.match(html, /data-bb-pa-reg-origin="admin"/);
-    assert.match(html, /Administrator-entered/);
-  });
-
-  it("uses Not provided for optional empties and omits schema-missing fields", () => {
+  it("omits unavailable optional church fields from primary hub", () => {
     const html = renderDetail({
       application: baseApp({
         roleInChurch: null,
@@ -164,93 +141,172 @@ describe("registration detail overview and structured details (no Postgres)", ()
         city: "",
         country: "Kenya",
         contactPhone: "",
+        contactPhoneNormalized: "",
       }),
     });
-    assert.match(html, /Role or relationship[\s\S]*Not provided/);
-    assert.match(html, /First branch name[\s\S]*Not provided/);
-    assert.match(html, /Town or city[\s\S]*Not provided/);
-    assert.match(html, /Phone[\s\S]*Not provided/);
-    assert.doesNotMatch(html, /Denomination|Tax ID|Street address|Postal|WhatsApp|Preferred contact method/i);
-    assert.doesNotMatch(html, /Existing branch count \(stated\)/);
-    assert.doesNotMatch(html, /Applicant notes/);
+    const primary = primaryHtml(html);
+    assert.match(primary, /Kenya/);
+    assert.doesNotMatch(primary, /Town or city/);
+    assert.doesNotMatch(primary, /Expected branches/);
+    assert.doesNotMatch(primary, /Applicant message/);
+    assert.doesNotMatch(primary, /Position or role/);
+    assert.doesNotMatch(primary, /Denomination|Tax ID|Estimated members/i);
   });
 
-  it("renders honest documents empty state without upload or download controls", () => {
-    const html = renderDetail({});
-    assert.match(html, /data-bb-pa-reg-documents="1"/);
-    assert.match(html, /No registration documents available/i);
-    assert.match(html, /No registration documents are stored or linked/i);
-    assert.doesNotMatch(html, /type="file"|name="document"|Upload document|Request Resubmission|Approve All|View Sensitive/i);
-    assert.doesNotMatch(html, /href="[^"]*\/download|data-bb-pa-reg-doc-download|data-bb-pa-reg-doc-upload/i);
-    assert.doesNotMatch(html, /Authenticity \d|Verified Oct|document was checked/i);
+  it("escapes applicant message text", () => {
+    const html = renderDetail({
+      application: baseApp({ message: 'Hello <script>alert(1)</script> & "x"' }),
+    });
+    assert.match(html, /data-bb-pa-reg-hub-message="1"/);
+    assert.match(html, /Hello &lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; (?:&quot;|&#34;)x(?:&quot;|&#34;)/);
+    assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/);
   });
 
-  it("does not invent verification progress or duplicate results", () => {
-    const html = renderDetail({});
-    assert.doesNotMatch(html, /Verification Progress|verification score|98\.5%/i);
-    assert.doesNotMatch(html, /Confirmed duplicate|No likely duplicate|Possible match|Duplicate Checks/i);
-    assert.doesNotMatch(html, /www\.gracecommunityassembly|Certificate_of_Incorporation/i);
+  it("renders duplicate warning when real match payload is provided", () => {
+    const html = renderDetail({
+      duplicateWarning: {
+        show: true,
+        advisory: true,
+        listHref: "/admin/registration-applications/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/duplicates",
+        match: {
+          id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          name: "Existing Grace Chapel",
+          location: "Lusaka, Zambia",
+          reason: "Exact name",
+          riskLevel: "strong",
+          riskLabel: "High match",
+          stateLabel: "active",
+          existingHref: "/admin/organizations/grace-existing",
+          compareHref: null,
+        },
+      },
+    });
+    assert.match(html, /data-bb-pa-reg-dup-warning="1"/);
+    assert.match(html, /data-bb-pa-reg-dup-banner="1"/);
+    assert.match(html, /Possible duplicate church found/i);
+    assert.match(html, /Existing Grace Chapel/);
+    assert.match(html, /data-bb-pa-reg-dup-view-existing="1"/);
+    assert.match(html, /href="\/admin\/organizations\/grace-existing"/);
+    assert.match(html, /data-bb-pa-reg-dup-continue="1"/);
+    assert.match(html, /data-bb-pa-reg-dup-reject="1"/);
+    assert.match(html, /rejection_category=duplicate_registration/);
   });
 
-  it("preserves Approve and Reject form actions and methods", () => {
+  it("hides duplicate warning when no matches", () => {
+    const html = renderDetail({
+      duplicateWarning: { show: false, match: null, listHref: null, advisory: true },
+    });
+    assert.match(html, /data-bb-pa-reg-dup-warning="0"/);
+    assert.doesNotMatch(html, /data-bb-pa-reg-dup-banner="1"/);
+    assert.doesNotMatch(html, /Possible duplicate church found/i);
+  });
+
+  it("shows existing-record link only when duplicate payload includes a valid href", () => {
+    const withLink = renderDetail({
+      duplicateWarning: {
+        show: true,
+        advisory: true,
+        listHref: "/admin/registration-applications/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/duplicates",
+        match: {
+          name: "Linked Chapel",
+          reason: "Exact name",
+          riskLabel: "High match",
+          existingHref: "/admin/organizations/linked-chapel",
+        },
+      },
+    });
+    assert.match(withLink, /data-bb-pa-reg-dup-view-existing="1"/);
+    assert.match(withLink, /href="\/admin\/organizations\/linked-chapel"/);
+
+    const withoutLink = renderDetail({
+      duplicateWarning: {
+        show: true,
+        advisory: true,
+        listHref: null,
+        match: {
+          name: "Unlinked Chapel",
+          reason: "Exact name",
+          riskLabel: "High match",
+          existingHref: null,
+        },
+      },
+    });
+    assert.match(withoutLink, /data-bb-pa-reg-dup-banner="1"/);
+    assert.doesNotMatch(withoutLink, /data-bb-pa-reg-dup-view-existing="1"/);
+  });
+
+  it("preserves application id on Phase 5 decision links", () => {
     const html = renderDetail({});
+    const id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+    assert.match(html, new RegExp(`/admin/registration-applications/${id}/approve`));
+    assert.match(
+      html,
+      new RegExp(`/admin/registration-applications/${id}/request-information`)
+    );
+    assert.match(html, new RegExp(`/admin/registration-applications/${id}/reject`));
+  });
+
+  it("keeps secondary evidence accessible and Phase 5 confirmation links", () => {
+    const html = renderDetail({});
+    assert.match(html, /data-bb-pa-reg-secondary="1"/);
+    assert.match(html, /Additional review details/);
     assert.match(html, /data-bb-pa-approve-form="1"/);
     assert.match(
       html,
-      /method="post"\s+action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve"/
+      /href="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve"/
     );
-    assert.match(html, />Approve and provision</);
-    assert.match(html, /data-bb-pa-reject-form="1"/);
-    assert.match(html, /id="reg-rejection"/);
+    assert.doesNotMatch(
+      html,
+      /method="post"[\s\S]*action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve"/
+    );
+    assert.match(html, /data-bb-pa-reg-rejection-form="1"|data-bb-pa-reg-rejection="1"/);
     assert.match(
       html,
-      /method="post"\s+action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/reject"/
+      /href="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/reject"/
     );
-    assert.match(html, /name="internal_decision_note"/);
-    assert.match(html, /Reject and record decision/);
-    assert.doesNotMatch(html, /name="rejection_reason"/);
-    assert.doesNotMatch(html, />Reject application</);
-    assert.match(html, /data-bb-pa-assign-support-form="1"/);
-    assert.match(html, /data-bb-pa-contact-form="1"/);
-    assert.match(html, /data-bb-pa-link-organization-form="1"/);
-  });
-
-  it("keeps mobile-friendly section structure markers", () => {
-    const html = renderDetail({});
-    assert.match(html, /id="reg-overview"/);
-    assert.match(html, /id="reg-details"/);
-    assert.match(html, /id="reg-applicant"/);
-    assert.match(html, /id="reg-administration"/);
-    assert.match(html, /id="reg-website"/);
-    assert.match(html, /id="reg-documents"/);
-    assert.match(html, /id="reg-activity"/);
+    assert.match(html, /data-bb-pa-reg-documents="1"/);
+    assert.match(html, /data-bb-pa-reg-verification="1"/);
     assert.match(html, /id="reg-actions"/);
-    assert.match(html, /id="reg-rejection"/);
-    assert.match(html, /bb-pa-reg-detail-grid/);
-    assert.match(html, /bb-pa-reg-section-nav/);
   });
 
-  it("escapes applicant-provided HTML content", () => {
+  it("keeps technical identifiers out of primary decision reading flow labels", () => {
+    const primary = primaryHtml(renderDetail({}));
+    assert.doesNotMatch(primary, /Application ID|Organization key|Provisioning status|Deployment/i);
+    assert.doesNotMatch(primary, /data-bb-pa-reg-app-ref=/);
+  });
+
+  it("renders mobile sticky decision markup", () => {
+    const html = renderDetail({});
+    assert.match(html, /data-bb-pa-reg-hub-mobile-decision="1"/);
+    assert.match(html, /data-bb-pa-phase5-decision-mobile="approve"/);
+    assert.match(html, /data-bb-pa-phase5-decision-mobile="request-information"/);
+    assert.match(html, /data-bb-pa-phase5-decision-mobile="reject"/);
+    assert.match(html, /data-bb-pa-reg-hub-call="1"|data-bb-pa-reg-hub-call-btn="1"/);
+    assert.match(html, /data-bb-pa-reg-hub-mailto="1"|data-bb-pa-reg-hub-email-btn="1"/);
+  });
+
+  it("wraps long church names and emails without inventing verification claims", () => {
     const html = renderDetail({
       application: baseApp({
-        churchName: '<img src=x onerror=alert(1)>Evil Church',
-        contactName: '<script>alert(2)</script>',
-        message: '<b>bold</b> & notes',
+        churchName: "Grace Community Chapel of the Everlasting Covenant Fellowship International",
+        contactEmail: "very.long.applicant.email.address@example.ministry.organization.test",
       }),
     });
-    assert.doesNotMatch(html, /<img src=x onerror=/);
-    assert.doesNotMatch(html, /<script>alert\(2\)<\/script>/);
-    assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;Evil Church|&lt;img/);
-    assert.match(html, /&lt;script&gt;alert\(2\)&lt;\/script&gt;/);
-    assert.match(html, /&lt;b&gt;bold&lt;\/b&gt; &amp; notes/);
+    assert.match(html, /bb-pa-reg-hub__title/);
+    assert.match(html, /bb-pa-reg-hub__email|bb-pa-reg-hub__contact-value/);
+    assert.doesNotMatch(html, /phone is verified|email is verified|Verified contact/i);
   });
 
-  it("states website fields are not stored when unlinked", () => {
-    const html = renderDetail({
-      application: baseApp({ organizationKey: null, organizationId: null }),
-    });
-    assert.match(html, /No requested website URL or slug was stored/i);
-    assert.match(html, /Not linked/);
-    assert.doesNotMatch(html, /Official Primary Domain|Member Care Subdomain/i);
+  it("opens secondary details only for follow-up intent (Phase 5 actions use dedicated pages)", () => {
+    const rejectIntent = renderDetail({ intent: "reject" });
+    assert.doesNotMatch(
+      rejectIntent,
+      /data-bb-pa-reg-secondary="1"[^>]*\sopen|data-bb-pa-reg-secondary="1" open/
+    );
+    const followUp = renderDetail({ intent: "follow-up" });
+    assert.match(
+      followUp,
+      /data-bb-pa-reg-secondary="1"[^>]*\sopen|data-bb-pa-reg-secondary="1" open/
+    );
   });
 });

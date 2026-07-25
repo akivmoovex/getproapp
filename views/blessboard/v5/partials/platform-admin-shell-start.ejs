@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=50" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=55" />
 </head>
 <%
   var paNav = (typeof navItems !== 'undefined' && navItems && navItems.length)
@@ -14,7 +14,7 @@
     : [
         { key: 'home', label: 'Dashboard', href: '/admin', icon: 'dashboard' },
         { key: 'organizations', label: 'Organizations', href: '/admin/organizations', icon: 'corporate_fare' },
-        { key: 'registration-applications', label: 'Registration Applications', href: '/admin/registration-applications', icon: 'app_registration' },
+        { key: 'registration-applications', label: 'Church Registrations', href: '/admin/registration-applications', icon: 'church' },
         { key: 'plans', label: 'Plans', href: '/admin/plans', icon: 'workspace_premium' },
         { key: 'subscriptions', label: 'Subscriptions', href: '/admin/subscriptions', icon: 'receipt_long' },
         { key: 'domains', label: 'Domains', href: '/admin/domains', icon: 'language' },

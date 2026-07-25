@@ -124,24 +124,22 @@ function rejectionBlock(html) {
 }
 
 describe("registration rejection workspace UI (Prompt 070, no Postgres)", () => {
-  it("renders #reg-rejection nav and form fields with CSRF", () => {
+  it("renders #reg-rejection nav and Phase 5 confirmation link", () => {
     const html = renderDetail();
     assert.match(html, /id="reg-rejection"/);
     assert.match(html, /href="#reg-rejection"/);
     assert.match(html, /data-bb-pa-reg-rejection-nav="1">Rejection</);
     const block = rejectionBlock(html);
     assert.match(block, /data-bb-pa-reg-rejection-form="1"/);
-    assert.match(block, /name="_csrf" value="test-csrf-token"/);
-    assert.match(block, /name="rejection_category"/);
-    assert.match(block, /name="internal_decision_note"/);
-    assert.match(block, /name="applicant_explanation"/);
-    assert.match(block, /name="reapplication_allowed"/);
-    assert.match(block, /name="notify_applicant"/);
-    assert.match(block, /name="confirm_reject"/);
-    assert.match(block, /I understand this will reject the application/);
-    assert.match(block, /Reject and record decision/);
-    assert.doesNotMatch(block, />Confirm</);
-    assert.doesNotMatch(block, /name="(application_id|application_status|platform_admin_user_id|administrator_id)"/i);
+    assert.match(
+      block,
+      /href="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/reject"/
+    );
+    assert.match(block, /Continue to rejection confirmation/);
+    assert.doesNotMatch(block, /method="post"[\s\S]*\/reject"/);
+    assert.doesNotMatch(block, /name="rejection_category"/);
+    assert.doesNotMatch(block, /name="internal_decision_note"/);
+    assert.doesNotMatch(block, /Reject and record decision/);
   });
 
   it("keeps Approve visually separated from the rejection workspace", () => {
@@ -152,32 +150,34 @@ describe("registration rejection workspace UI (Prompt 070, no Postgres)", () => 
     assert.ok(rejectIdx > approveIdx);
     assert.match(html, /id="reg-actions"/);
     assert.match(html, /id="reg-rejection"/);
+    assert.match(
+      html,
+      /href="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve"/
+    );
+    assert.doesNotMatch(
+      html,
+      /method="post"[\s\S]*action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve"/
+    );
   });
 
-  it("separates internal and applicant text and shows email limitation", () => {
+  it("shows email limitation without claiming delivery on confirmation link", () => {
     const html = renderDetail();
     const block = rejectionBlock(html);
-    assert.match(block, /data-bb-pa-reg-rejection-internal-block="1"/);
-    assert.match(block, /data-bb-pa-reg-rejection-applicant-block="1"/);
-    assert.match(block, /Platform administrators only/);
-    assert.match(block, /Visible to the applicant/);
     assert.match(block, /data-bb-pa-reg-rejection-email-unavailable="1"/);
     assert.match(block, /Outbound email may be unavailable/i);
     assert.doesNotMatch(block, /was delivered successfully|email was sent/i);
   });
 
-  it("renders allowlisted categories and mobile-friendly destructive isolation CSS", () => {
+  it("renders mobile-friendly destructive isolation CSS", () => {
     const html = renderDetail();
     const block = rejectionBlock(html);
-    assert.match(block, /<option value="duplicate_registration">Duplicate registration<\/option>/);
-    assert.match(block, /<option value="applicant_withdrew">Applicant withdrew<\/option>/);
     assert.match(block, /bb-pa-reg-rejection__actions/);
     assert.match(block, /bb-pa-btn--danger/);
     const css = fs.readFileSync(CSS, "utf8");
     assert.match(css, /\.bb-pa-reg-rejection__form\s*\{/);
     assert.match(css, /\.bb-pa-reg-rejection__actions\s*\{/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=50/);
+    assert.match(shell, /platform-admin\.css\?v=55/);
   });
 
   it("shows completed rejection state with controlled reopen form", () => {

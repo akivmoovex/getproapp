@@ -1,0 +1,233 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var app = application || {};
+  var rq = (typeof registrationQueue !== 'undefined' && registrationQueue) ? registrationQueue : null;
+  function displayOrMissing(value) {
+    if (value == null) return null;
+    var s = String(value).trim();
+    return s ? s : null;
+  }
+  var churchName = displayOrMissing(app.churchName) || 'Church registration';
+  var planLabel = displayOrMissing(app.selectedPlanLabel) || displayOrMissing(app.selectedPlan);
+  var contactName = displayOrMissing(app.contactName);
+  var contactEmail = displayOrMissing(app.contactEmail);
+  var locationLabel = rq && rq.formatRegistrationLocation
+    ? rq.formatRegistrationLocation(app)
+    : [displayOrMissing(app.city), displayOrMissing(app.country)].filter(Boolean).join(', ') || null;
+  var branchLabel = displayOrMissing(app.branchName) || 'Headquarters';
+  var cancelHref = app.id
+    ? ('/admin/registration-applications/' + encodeURIComponent(String(app.id)))
+    : '/admin/registration-applications';
+  var approveAction = app.id
+    ? ('/admin/registration-applications/' + encodeURIComponent(String(app.id)) + '/approve')
+    : '#';
+  var isNetwork = Boolean(app.networkApproveAvailable) && !app.riskReviewActionsAvailable;
+  var dupWarning = (typeof duplicateWarning !== 'undefined' && duplicateWarning) ? duplicateWarning : null;
+  if (!dupWarning) {
+    dupWarning = { show: false, match: null, listHref: null, advisory: true };
+  }
+  var showDupWarning = Boolean(dupWarning && dupWarning.show && dupWarning.match);
+  var dupMatch = showDupWarning ? dupWarning.match : null;
+  var flashError = typeof error !== 'undefined' ? error : null;
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    if (code === 'not_eligible') return 'This registration cannot be approved right now.';
+    if (code === 'duplicate_email_review') return 'This email still needs duplicate review before provisioning can continue.';
+    if (code === 'identity_conflict') return 'The administrator email belongs to an account that cannot safely own this church.';
+    if (code === 'provision_failed') return 'Provisioning failed. No organization was created.';
+    if (code === 'network_validation_required') return 'Network validation must be completed before creating the organization.';
+    if (code === 'administrator_email_required') return 'Administrator email is required.';
+    if (code === 'approve_failed') return 'Approval could not be completed. Try again from the review page.';
+    return code ? 'Something went wrong.' : null;
+  }
+  var errorMsg = errorText(flashError);
+%>
+
+<section
+  class="bb-pa-org-detail bb-pa-reg-approve-confirm"
+  data-bb-pa-reg-approve-confirm="1"
+  data-bb-pa-reg-dup-warning="<%= showDupWarning ? '1' : '0' %>"
+  aria-label="Approve church confirmation"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="<%= cancelHref %>" data-bb-pa-reg-approve-cancel="1">Cancel</a>
+    <span aria-hidden="true">/</span>
+    <span>Confirm approval</span>
+  </nav>
+
+  <% if (errorMsg) { %>
+  <div class="bb-pa-flash bb-pa-flash--error" role="alert"><%= errorMsg %></div>
+  <% } %>
+
+  <% if (showDupWarning && dupMatch) { %>
+  <aside class="bb-pa-reg-hub__dup bb-pa-reg-approve-confirm__dup" data-bb-pa-reg-dup-banner="1" role="status">
+    <h2 class="bb-pa-reg-hub__dup-title">Possible duplicate church found</h2>
+    <p class="bb-pa-hint">
+      Duplicate evidence is advisory unless backend policy already blocks this approval.
+      Confirming approval does not change duplicate review state by itself.
+    </p>
+    <dl class="bb-pa-dl">
+      <div>
+        <dt>Matching record</dt>
+        <dd><%= dupMatch.name %></dd>
+      </div>
+      <% if (dupMatch.location) { %>
+      <div>
+        <dt>Location</dt>
+        <dd><%= dupMatch.location %></dd>
+      </div>
+      <% } %>
+      <div>
+        <dt>Match reason</dt>
+        <dd><%= dupMatch.reason %></dd>
+      </div>
+    </dl>
+    <% if (dupMatch.existingHref) { %>
+    <p>
+      <a class="bb-pa-link" href="<%= dupMatch.existingHref %>" data-bb-pa-reg-dup-view-existing="1">View existing church or registration</a>
+    </p>
+    <% } %>
+  </aside>
+  <% } %>
+
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-org-detail__eyebrow">Confirmation required</p>
+    <h1 class="bb-pa-page-head__title">Approve registration</h1>
+    <p class="bb-pa-lede">
+      Review the church details before final approval. This creates their organization now — there is no background job.
+    </p>
+  </header>
+
+  <section class="bb-pa-panel bb-pa-reg-approve-confirm__summary" aria-labelledby="reg-approve-summary-title">
+    <h2 id="reg-approve-summary-title" class="bb-pa-section-title">Church summary</h2>
+    <dl class="bb-pa-dl">
+      <div>
+        <dt>Church name</dt>
+        <dd data-bb-pa-reg-approve-church="1"><%= churchName %></dd>
+      </div>
+      <% if (planLabel) { %>
+      <div>
+        <dt>Selected plan</dt>
+        <dd data-bb-pa-reg-approve-plan="1"><%= planLabel %></dd>
+      </div>
+      <% } %>
+      <% if (contactName || contactEmail) { %>
+      <div>
+        <dt>Main contact</dt>
+        <dd data-bb-pa-reg-approve-contact="1">
+          <% if (contactName) { %><%= contactName %><% } %>
+          <% if (contactName && contactEmail) { %> · <% } %>
+          <% if (contactEmail) { %><span class="bb-pa-reg-hub__email"><%= contactEmail %></span><% } %>
+        </dd>
+      </div>
+      <% } %>
+      <% if (locationLabel) { %>
+      <div>
+        <dt>Main location</dt>
+        <dd data-bb-pa-reg-approve-location="1"><%= locationLabel %></dd>
+      </div>
+      <% } %>
+      <div>
+        <dt>Proposed first branch</dt>
+        <dd data-bb-pa-reg-approve-branch="1"><%= branchLabel %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="reg-approve-next-title">
+    <h2 id="reg-approve-next-title" class="bb-pa-section-title">What happens next</h2>
+    <ul class="bb-pa-reg-approve-confirm__list" data-bb-pa-reg-approve-effects="1">
+      <li>Create the organization</li>
+      <li>Create the church</li>
+      <li>Create the first branch</li>
+      <li>Create an invited HQ administrator</li>
+      <li>Prepare invitation information for you to copy</li>
+    </ul>
+    <p class="bb-pa-hint" data-bb-pa-reg-approve-no-email="1">
+      Approval does not send an automated welcome email and does not activate the administrator account immediately.
+      The administrator sets a password when they accept the invitation.
+      <% if (isNetwork) { %>
+      Network plan activation remains a separate billing step on the organization page.
+      <% } %>
+    </p>
+  </section>
+
+  <form
+    class="bb-pa-form bb-pa-reg-approve-confirm__form"
+    method="post"
+    action="<%= approveAction %>"
+    data-bb-pa-approve-confirm-form="1"
+    data-bb-pa-approve-form="1"
+  >
+    <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+    <div class="bb-pa-field bb-pa-reg-approve-confirm__org-key">
+      <label for="organization_key">Organization key (optional override)</label>
+      <input id="organization_key" name="organization_key" type="text" maxlength="80" autocomplete="off" />
+    </div>
+    <div class="bb-pa-reg-approve-confirm__actions">
+      <button
+        class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--block"
+        type="submit"
+        data-bb-pa-approve-confirm-submit="1"
+      >Confirm approval</button>
+      <a
+        class="bb-pa-btn bb-pa-btn--secondary bb-pa-btn--block"
+        href="<%= cancelHref %>"
+        data-bb-pa-reg-approve-cancel-btn="1"
+      >Cancel</a>
+    </div>
+  </form>
+
+  <div
+    class="bb-pa-reg-approve-processing"
+    data-bb-pa-reg-approve-processing="1"
+    hidden
+    aria-hidden="true"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="bb-pa-reg-approve-processing__card">
+      <h2 class="bb-pa-reg-approve-processing__title">Creating church account</h2>
+      <p class="bb-pa-lede" data-bb-pa-reg-approve-processing-church="1">
+        Setting up <%= churchName %>. Please wait for the server response.
+      </p>
+      <ul class="bb-pa-reg-approve-processing__steps" data-bb-pa-reg-approve-processing-steps="1">
+        <li>Creating church organization</li>
+        <li>Creating first branch</li>
+        <li>Preparing administrator invitation</li>
+      </ul>
+      <p class="bb-pa-hint">
+        This page waits for the real approval response. Progress is not marked complete until the server replies.
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  var form = document.querySelector('[data-bb-pa-approve-confirm-form="1"]');
+  if (!form) return;
+  var submitBtn = form.querySelector('[data-bb-pa-approve-confirm-submit="1"]');
+  var processing = document.querySelector('[data-bb-pa-reg-approve-processing="1"]');
+  var submitting = false;
+  form.addEventListener('submit', function (event) {
+    if (submitting) {
+      event.preventDefault();
+      return false;
+    }
+    submitting = true;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-busy', 'true');
+      submitBtn.textContent = 'Confirming…';
+    }
+    if (processing) {
+      processing.hidden = false;
+      processing.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('bb-pa-reg-approve-processing-active');
+    }
+  });
+})();
+</script>
+
+<%- include('../partials/platform-admin-shell-end') %>

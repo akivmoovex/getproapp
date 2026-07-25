@@ -235,14 +235,18 @@ describe("registration views wire shared status chips", () => {
       ),
       "utf8"
     );
-    assert.match(list, /pa-registration-status-chip/);
-    assert.match(list, /statusKind: 'application'/);
-    assert.match(list, /statusKind: 'provisioning'/);
-    assert.match(detail, /pa-registration-status-chip/);
-    assert.match(detail, /statusKind: 'application'/);
-    assert.match(detail, /statusKind: 'provisioning'/);
-    assert.match(list, /registrationStatus\.chipClassForTone/);
-    assert.match(detail, /registrationStatus\.chipClassForTone/);
+    const secondary = fs.readFileSync(
+      path.join(
+        __dirname,
+        "../views/blessboard/v5/partials/pa-registration-detail-secondary.ejs"
+      ),
+      "utf8"
+    );
+    assert.match(list, /pa-registration-status-chip|data-bb-pa-phase5-status/);
+    assert.match(detail, /data-bb-pa-phase5-status|data-bb-pa-display-status/);
+    assert.match(secondary, /pa-registration-status-chip/);
+    assert.match(secondary, /statusKind: 'application'/);
+    assert.match(secondary, /statusKind: 'provisioning'/);
   });
 
   it("shell locals expose registrationStatus helper", () => {

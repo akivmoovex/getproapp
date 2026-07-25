@@ -216,7 +216,7 @@ describe("registration verification UI (no Postgres)", () => {
     assert.match(html, /Verification results are advisory/i);
   });
 
-  it("preserves Approve and Reject forms unchanged", async () => {
+  it("preserves Approve and Reject confirmation entry points", async () => {
     const verification = await buildRegistrationVerificationFacts({
       now: "2026-07-23T16:00:00.000Z",
       application: baseApp(),
@@ -228,10 +228,18 @@ describe("registration verification UI (no Postgres)", () => {
     assert.match(html, /data-bb-pa-approve-form="1"/);
     assert.match(
       html,
-      /method="post"\s+action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve"/
+      /href="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve"/
     );
     assert.match(html, /data-bb-pa-reject-form="1"/);
     assert.match(
+      html,
+      /href="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/reject"/
+    );
+    assert.doesNotMatch(
+      html,
+      /method="post"\s+action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/approve"/
+    );
+    assert.doesNotMatch(
       html,
       /method="post"\s+action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/reject"/
     );

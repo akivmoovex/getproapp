@@ -281,10 +281,14 @@ describe("platform-admin registration applications (Phase 5)", () => {
     assert.equal(res.status, 200);
     assert.match(res.headers["cache-control"] || "", /no-store/);
     assert.match(res.text, /data-bb-pa-registration-applications="1"/);
+    assert.match(res.text, /Church Registrations/);
     assert.match(res.text, /Submitted Enquiry Church/);
     assert.match(res.text, /Duplicate Review Church/);
     assert.match(res.text, /Failed Provision Church/);
-    assert.match(res.text, new RegExp(fixtures.organizationKey));
+    assert.match(res.text, /data-bb-pa-reg-phase5-queue="1"/);
+    assert.match(res.text, /data-bb-pa-phase5-status=/);
+    assert.doesNotMatch(res.text, /<th[^>]*>Organization/);
+    assert.doesNotMatch(res.text, /Organization key|Application ID/i);
     assert.match(res.text, /href="\/admin\/registration-applications"/);
     assert.doesNotMatch(res.text, /href="\/admin\/churches"/);
     assert.doesNotMatch(res.text, /password_hash|hunter2|postgresql:\/\//i);
@@ -307,7 +311,9 @@ describe("platform-admin registration applications (Phase 5)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(search.status, 200);
-    assert.match(search.text, new RegExp(fixtures.organizationKey));
+    // Org-key search still works; Phase 5 queue must not render the key as a column.
+    assert.match(search.text, /data-bb-pa-registration-applications="1"/);
+    assert.doesNotMatch(search.text, new RegExp(`>${fixtures.organizationKey}<`));
 
     const bad = await request(app)
       .get("/admin/registration-applications?from=not-a-date")
@@ -320,7 +326,7 @@ describe("platform-admin registration applications (Phase 5)", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(empty.status, 200);
-    assert.match(empty.text, /No matching applications/i);
+    assert.match(empty.text, /No registrations match these filters/i);
     assert.match(empty.text, /data-bb-pa-reg-state="no-results"/);
     assert.match(empty.text, /data-bb-pa-reg-clear-filters="1"/);
   });

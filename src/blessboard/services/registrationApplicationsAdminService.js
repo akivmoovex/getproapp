@@ -1284,6 +1284,10 @@ function normalizeListFilters(input) {
         if (rawFollow === "contact_pending" || rawFollow === "call_pending") {
           return "contact_pending";
         }
+        // Phase 5 visible Needs Information → all three follow-up statuses
+        if (rawFollow === "needs_information") {
+          return "needs_information";
+        }
         return repo.FOLLOW_UP_STATUSES.includes(rawFollow) ? rawFollow : null;
       })(),
       selectedPlan,

@@ -16,6 +16,7 @@ const {
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 const { isTestingDataMaintenanceAllowed } = require("../config/testingDataMaintenance");
 const registrationStatus = require("../../blessboard/services/registrationStatusPresentation");
+const registrationQueue = require("../../blessboard/services/registrationQueuePresentation");
 
 /**
  * @param {import('express').Request} req
@@ -52,7 +53,7 @@ function buildPlatformAdminShellLocals(req, res, opts) {
   const defaultTitles = {
     home: "Platform admin",
     organizations: "Organizations",
-    "registration-applications": "Registration Applications",
+    "registration-applications": "Church Registrations",
     plans: "Plans",
     subscriptions: "Subscriptions",
     domains: "Domains",
@@ -75,6 +76,7 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     mobileTabs,
     testingMaintenanceEnabled: testingMaintenance,
     registrationStatus,
+    registrationQueue,
     ...(opts.extra || {}),
   };
 }

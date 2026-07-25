@@ -1,0 +1,145 @@
+<%
+  var appLocal = (typeof app !== 'undefined' && app) ? app : {};
+  var rqLocal = (typeof rq !== 'undefined' && rq) ? rq : null;
+  var phase5 = (typeof phase5Status !== 'undefined' && phase5Status)
+    ? phase5Status
+    : { key: 'new', label: 'New', chipClass: 'bb-pa-chip--muted' };
+  function displayLocal(value) {
+    if (typeof displayOrMissing === 'function') return displayOrMissing(value);
+    if (value == null) return null;
+    var s = String(value).trim();
+    return s ? s : null;
+  }
+  function labelLocal(s) {
+    if (typeof labelStatus === 'function') return labelStatus(s);
+    return String(s || '').replace(/_/g, ' ') || '—';
+  }
+  var needsState = (typeof needsInformationState !== 'undefined' && needsInformationState)
+    ? needsInformationState
+    : (rqLocal && rqLocal.presentPhase5NeedsInformationState
+      ? rqLocal.presentPhase5NeedsInformationState(
+          (typeof communications !== 'undefined' ? communications : null),
+          appLocal
+        )
+      : null);
+  var showNeedsFocus = phase5 && phase5.key === 'needs_information';
+  function fmtNeedsDate(d) {
+    if (!d) return null;
+    try {
+      return new Date(d).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    } catch (e) {
+      return null;
+    }
+  }
+  var phoneLocal = (typeof phoneDisplay !== 'undefined') ? phoneDisplay : null;
+  var emailLocal = (typeof emailDisplay !== 'undefined') ? emailDisplay : null;
+  var phoneHrefLocal = (typeof phoneHref !== 'undefined') ? phoneHref : null;
+  var emailHrefLocal = (typeof emailHref !== 'undefined') ? emailHref : null;
+  var appIdEncLocal = (typeof appIdEnc !== 'undefined') ? appIdEnc : '';
+  var canApproveLocal = Boolean(typeof canPhase5Approve !== 'undefined' && canPhase5Approve);
+  var approveHrefLocal = (typeof decisionApproveHref !== 'undefined') ? decisionApproveHref : '#';
+  var rejectHrefLocal = (typeof decisionRejectHref !== 'undefined') ? decisionRejectHref : '#';
+%>
+<% if (showNeedsFocus) { %>
+<section
+  class="bb-pa-panel bb-pa-reg-needs-info"
+  data-bb-pa-reg-needs-info="1"
+  data-bb-pa-reg-needs-waiting="<%= needsState && needsState.waiting ? '1' : '0' %>"
+  data-bb-pa-reg-needs-has-response="<%= needsState && needsState.hasApplicantResponse ? '1' : '0' %>"
+  aria-labelledby="reg-needs-info-title"
+>
+  <header class="bb-pa-reg-needs-info__head">
+    <p class="bb-pa-org-detail__eyebrow">Needs information</p>
+    <h2 id="reg-needs-info-title" class="bb-pa-section-title"><%= appLocal.churchName || 'Registration' %></h2>
+    <p class="bb-pa-lede">
+      <span class="bb-pa-chip <%= phase5.chipClass %>"><%= phase5.label %></span>
+      <% if (needsState && needsState.requestedAt) { %>
+      <span data-bb-pa-reg-needs-requested-at="1">Requested <%= fmtNeedsDate(needsState.requestedAt) %></span>
+      <% } %>
+    </p>
+  </header>
+
+  <dl class="bb-pa-dl bb-pa-reg-needs-info__facts">
+    <% if (displayLocal(appLocal.contactName) || phoneLocal || emailLocal) { %>
+    <div>
+      <dt>Main contact</dt>
+      <dd data-bb-pa-reg-needs-contact="1">
+        <% if (displayLocal(appLocal.contactName)) { %><%= appLocal.contactName %><% } %>
+        <% if (phoneLocal) { %>
+          · <a class="bb-pa-link bb-pa-reg-hub__tap" href="<%= phoneHrefLocal || ('tel:' + String(phoneLocal).replace(/[^\d+]/g, '')) %>"><%= phoneLocal %></a>
+        <% } %>
+        <% if (emailLocal) { %>
+          · <a class="bb-pa-link bb-pa-reg-hub__tap bb-pa-reg-hub__email" href="<%= emailHrefLocal || ('mailto:' + emailLocal) %>"><%= emailLocal %></a>
+        <% } %>
+      </dd>
+    </div>
+    <% } %>
+    <div>
+      <dt>Application status</dt>
+      <dd data-bb-pa-reg-needs-app-status="1"><%= labelLocal(appLocal.applicationStatus) %></dd>
+    </div>
+    <div>
+      <dt>Follow-up status</dt>
+      <dd data-bb-pa-reg-needs-follow-up="1"><%= labelLocal(appLocal.followUpStatus) %></dd>
+    </div>
+    <% if (needsState && needsState.reasonLabels && needsState.reasonLabels.length) { %>
+    <div>
+      <dt>Selected reasons</dt>
+      <dd data-bb-pa-reg-needs-reasons="1">
+        <ul>
+          <% needsState.reasonLabels.forEach(function (label) { %>
+          <li><%= label %></li>
+          <% }) %>
+        </ul>
+      </dd>
+    </div>
+    <% } %>
+    <% if (needsState && needsState.messageSummary) { %>
+    <div>
+      <dt>Request message</dt>
+      <dd data-bb-pa-reg-needs-message="1"><%= needsState.messageSummary %></dd>
+    </div>
+    <% } %>
+  </dl>
+
+  <% if (needsState && needsState.waiting) { %>
+  <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-needs-waiting-banner="1">
+    Waiting for information. No later applicant response is stored for this request.
+  </p>
+  <% } else if (needsState && needsState.hasApplicantResponse) { %>
+  <p class="bb-pa-banner bb-pa-banner--ok" role="status" data-bb-pa-reg-needs-response-banner="1">
+    Later applicant information is stored. Review the communication history in additional details.
+  </p>
+  <% } %>
+
+  <% if (needsState && needsState.hasApplicantResponse) { %>
+  <p>
+    <a
+      class="bb-pa-btn bb-pa-btn--secondary"
+      href="#reg-communications"
+      data-bb-pa-reg-needs-review-new="1"
+      onclick="var d=document.querySelector('[data-bb-pa-reg-secondary]'); if(d) d.open=true;"
+    >Review new information</a>
+  </p>
+  <% } %>
+
+  <div class="bb-pa-reg-needs-info__actions" data-bb-pa-reg-needs-actions="1">
+    <a
+      class="bb-pa-btn bb-pa-btn--secondary"
+      href="<%= appIdEncLocal ? ('/admin/registration-applications/' + appIdEncLocal + '?intent=follow-up#reg-support-ops') : '#reg-support-ops' %>"
+      data-bb-pa-reg-needs-follow-up-action="1"
+      onclick="var d=document.querySelector('[data-bb-pa-reg-secondary]'); if(d) d.open=true;"
+    >Record follow-up</a>
+    <a class="bb-pa-btn bb-pa-btn--secondary" href="/admin/registration-applications" data-bb-pa-reg-needs-return="1">Return to registrations</a>
+    <% if (canApproveLocal) { %>
+    <a class="bb-pa-btn bb-pa-btn--primary" href="<%= approveHrefLocal %>" data-bb-pa-reg-needs-approve="1">Approve</a>
+    <% } %>
+    <% if (appLocal.rejectActionsAvailable) { %>
+    <a class="bb-pa-btn bb-pa-btn--danger" href="<%= rejectHrefLocal %>" data-bb-pa-reg-needs-reject="1">Reject</a>
+    <% } %>
+  </div>
+  <p class="bb-pa-hint" data-bb-pa-reg-needs-no-reminder="1">
+    Send reminder is not available. Use Record follow-up to update the existing follow-up status.
+  </p>
+</section>
+<% } %>

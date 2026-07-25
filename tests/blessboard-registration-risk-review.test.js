@@ -553,7 +553,7 @@ describe("registration risk review (Prompt 18)", () => {
       .type("form")
       .send({ rejection_reason: "Operator rejection after review", [CSRF_FIELD]: csrf });
     assert.equal(rejectOk.status, 303);
-    assert.match(String(rejectOk.headers.location), /notice=application_rejected#reg-rejection/);
+    assert.match(String(rejectOk.headers.location), /\/rejected\?notice=application_rejected/);
 
     const row = await appRepo.findApplicationById(pool, held.application.id);
     assert.equal(row.application_status, "rejected");

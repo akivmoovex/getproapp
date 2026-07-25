@@ -356,3 +356,37 @@ Confirmed working routes from the codebase (representative set):
 | **Total (excl. `* 2` / `* 3` duplicates)** | **110** |
 
 See also: [`docs/blessboard-stitch-asset-map.md`](blessboard-stitch-asset-map.md), [`docs/blessboard-screen-implementation-status.md`](blessboard-screen-implementation-status.md), [`docs/blessboard-final-stitch-parity-report.md`](blessboard-final-stitch-parity-report.md).
+
+---
+
+## Phase 5 — Platform admin church registration (Stitch MCP)
+
+**Last audited:** 2026-07-25 · See [`docs/phase5/PHASE5_007_FINAL_AUDIT.md`](phase5/PHASE5_007_FINAL_AUDIT.md)  
+**Stitch project:** `17124191473876947591`  
+**Canonical app surface:** BlessBoard V5 platform admin (`/admin/registration-applications*`)  
+**CSS:** `platform-admin.css?v=55`
+
+| Stitch title | Device | Route / surface | Coverage |
+|--------------|--------|-----------------|----------|
+| Phase5 - Church Registrations | Desktop | `GET /admin/registration-applications` | Implemented (documented differences) |
+| Phase5 - Church Registrations - Empty State | Desktop | same | Implemented (documented differences) |
+| Phase5 - Church Registrations - Mobile | Mobile | same | Implemented (documented differences) |
+| Phase5 - Review Church Registration | Desktop | `GET …/:id` | Implemented (documented differences) |
+| Phase5 - Review Church Registration - Mobile | Mobile | same | Implemented (documented differences) |
+| Phase5 - Review Church Registration - Duplicate Warning | Desktop | same (+ server matches) | Implemented |
+| Phase5 - Review Church Registration - Duplicate Warning - Mobile | Mobile | same | Implemented |
+| Phase5 - Approve Church Confirmation | Desktop | `GET …/:id/approve` | Implemented |
+| Phase5 - Approve Church Confirmation - Mobile | Mobile | same | Implemented |
+| Phase5 - Church Approval Processing | Desktop | client overlay on POST | Functional difference (no fake async) |
+| Phase5 - Church Approved | Desktop | org detail success panel | Functional difference (no welcome email) |
+| Phase5 - Church Approved - Mobile | Mobile | same | Functional difference |
+| Phase5 - Request Information | Desktop | `GET …/:id/request-information` | Functional difference (Record…) |
+| Phase5 - Request Information - Mobile | Mobile | same | Functional difference |
+| Phase5 - Information Requested | Desktop | `GET …/:id/information-requested` | Functional difference |
+| Phase5 - Church Registration Needs Information | Desktop | hub panel | Functional difference (no reminder send) |
+| Phase5 - Church Registration Needs Information - Mobile | Mobile | same | Functional difference |
+| Phase5 - Reject Church Registration | Desktop | `GET …/:id/reject` | Implemented |
+| Phase5 - Reject Church Registration - Mobile | Mobile | same | Implemented |
+| Phase5 - Church Registration Rejected | Desktop | `GET …/:id/rejected` | Functional difference (honest delivery) |
+
+**Verdict:** `COMPLETE_WITH_DOCUMENTED_DIFFERENCES` · **Deployment:** `READY_WITH_P1_FOLLOW_UP`

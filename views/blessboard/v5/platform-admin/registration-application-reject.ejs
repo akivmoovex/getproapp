@@ -1,0 +1,275 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var app = application || {};
+  var rq = (typeof registrationQueue !== 'undefined' && registrationQueue) ? registrationQueue : null;
+  function displayOrMissing(value) {
+    if (value == null) return null;
+    var s = String(value).trim();
+    return s ? s : null;
+  }
+  var churchName = displayOrMissing(app.churchName) || 'Church registration';
+  var contactName = displayOrMissing(app.contactName);
+  var phoneDisplay = displayOrMissing(app.contactPhoneNormalized) || displayOrMissing(app.contactPhone);
+  var emailDisplay = displayOrMissing(app.contactEmail);
+  var planLabel = displayOrMissing(app.selectedPlanLabel) || displayOrMissing(app.selectedPlan);
+  var phase5Status = rq && rq.presentPhase5QueueStatus
+    ? rq.presentPhase5QueueStatus(app)
+    : { key: 'new', label: 'New', chipClass: 'bb-pa-chip--warn' };
+  var reasons = (typeof rejectReasons !== 'undefined' && rejectReasons && rejectReasons.length)
+    ? rejectReasons
+    : (rq && rq.PHASE5_REJECT_REASONS ? rq.PHASE5_REJECT_REASONS : []);
+  var selectedCategory = (typeof preselectCategory !== 'undefined' && preselectCategory)
+    ? String(preselectCategory)
+    : '';
+  var blocked = Boolean(typeof rejectBlocked !== 'undefined' && rejectBlocked);
+  var orgHref = (typeof organizationHref !== 'undefined' && organizationHref) ? organizationHref : null;
+  var cancelHref = app.id
+    ? ('/admin/registration-applications/' + encodeURIComponent(String(app.id)))
+    : '/admin/registration-applications';
+  var formAction = app.id
+    ? ('/admin/registration-applications/' + encodeURIComponent(String(app.id)) + '/reject')
+    : '#';
+  var dupWarning = (typeof duplicateWarning !== 'undefined' && duplicateWarning) ? duplicateWarning : { show: false };
+  var showDupWarning = Boolean(dupWarning && dupWarning.show && dupWarning.match);
+  var dupMatch = showDupWarning ? dupWarning.match : null;
+  var flashError = typeof error !== 'undefined' ? error : null;
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    if (code === 'invalid') return 'Choose a rejection reason. If you select Other, add a short explanation.';
+    if (code === 'not_eligible') return 'This registration cannot be rejected in its current state.';
+    if (code === 'already_provisioned') return 'This registration is already linked or provisioned and cannot be rejected from this screen.';
+    if (code === 'reject_failed') return 'The rejection could not be saved right now.';
+    if (code === 'not_found') return 'This registration application could not be found.';
+    return code ? 'Something went wrong.' : null;
+  }
+  var errorMsg = errorText(flashError);
+%>
+
+<section
+  class="bb-pa-org-detail bb-pa-reg-reject"
+  data-bb-pa-reg-reject="1"
+  data-bb-pa-reg-reject-blocked="<%= blocked ? '1' : '0' %>"
+  data-bb-pa-reg-dup-warning="<%= showDupWarning ? '1' : '0' %>"
+  aria-label="Reject church registration"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="<%= cancelHref %>" data-bb-pa-reg-reject-cancel="1">Cancel</a>
+    <span aria-hidden="true">/</span>
+    <span>Reject registration</span>
+  </nav>
+
+  <% if (errorMsg) { %>
+  <div class="bb-pa-flash bb-pa-flash--error" role="alert"><%= errorMsg %></div>
+  <% } %>
+
+  <% if (showDupWarning && dupMatch) { %>
+  <aside class="bb-pa-reg-hub__dup" data-bb-pa-reg-dup-banner="1" role="status">
+    <h2 class="bb-pa-reg-hub__dup-title">Possible duplicate church found</h2>
+    <dl class="bb-pa-dl">
+      <div><dt>Matching record</dt><dd data-bb-pa-reg-dup-name="1"><%= dupMatch.name %></dd></div>
+      <% if (dupMatch.location) { %>
+      <div><dt>Location</dt><dd><%= dupMatch.location %></dd></div>
+      <% } %>
+      <% if (dupMatch.reason) { %>
+      <div><dt>Match reason</dt><dd data-bb-pa-reg-dup-reason="1"><%= dupMatch.reason %></dd></div>
+      <% } %>
+    </dl>
+    <% if (dupMatch.existingHref) { %>
+    <p>
+      <a class="bb-pa-link" href="<%= dupMatch.existingHref %>" data-bb-pa-reg-dup-view-existing="1">View existing church or registration</a>
+    </p>
+    <% } %>
+    <p class="bb-pa-hint">Rejecting this application does not merge, delete, or change the existing record.</p>
+  </aside>
+  <% } %>
+
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-org-detail__eyebrow">Confirmation required</p>
+    <h1 class="bb-pa-page-head__title" data-bb-pa-reg-reject-church="1"><%= churchName %></h1>
+    <p class="bb-pa-lede">
+      <span class="bb-pa-chip <%= phase5Status.chipClass %>" data-bb-pa-phase5-status="<%= phase5Status.key %>"><%= phase5Status.label %></span>
+      <% if (planLabel) { %><span data-bb-pa-reg-reject-plan="1"><%= planLabel %></span><% } %>
+    </p>
+  </header>
+
+  <section class="bb-pa-panel" data-bb-pa-reg-reject-contact="1" aria-labelledby="reg-reject-contact-title">
+    <h2 id="reg-reject-contact-title" class="bb-pa-section-title">Main contact</h2>
+    <dl class="bb-pa-dl">
+      <% if (contactName) { %>
+      <div><dt>Contact</dt><dd><%= contactName %></dd></div>
+      <% } %>
+      <% if (phoneDisplay) { %>
+      <div>
+        <dt>Phone</dt>
+        <dd><a class="bb-pa-link bb-pa-reg-hub__tap" href="tel:<%= String(phoneDisplay).replace(/[^\d+]/g, '') %>"><%= phoneDisplay %></a></dd>
+      </div>
+      <% } %>
+      <% if (emailDisplay) { %>
+      <div>
+        <dt>Email</dt>
+        <dd class="bb-pa-reg-hub__email"><a class="bb-pa-link" href="mailto:<%= emailDisplay %>"><%= emailDisplay %></a></dd>
+      </div>
+      <% } %>
+    </dl>
+  </section>
+
+  <% if (blocked) { %>
+  <section class="bb-pa-panel" data-bb-pa-reg-reject-blocked-panel="1" role="status">
+    <h2 class="bb-pa-section-title">Rejection not available</h2>
+    <p class="bb-pa-lede">
+      This registration is already linked, provisioned, or otherwise protected and cannot be rejected as an unprovisioned application.
+    </p>
+    <div class="bb-pa-reg-reject__actions">
+      <% if (orgHref) { %>
+      <a class="bb-pa-btn bb-pa-btn--primary" href="<%= orgHref %>" data-bb-pa-reg-reject-org="1">Open organization</a>
+      <% } %>
+      <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= cancelHref %>" data-bb-pa-reg-reject-cancel-btn="1">Return to review</a>
+    </div>
+  </section>
+  <% } else { %>
+  <form
+    class="bb-pa-form bb-pa-reg-reject__form"
+    method="post"
+    action="<%= formAction %>"
+    data-bb-pa-reg-reject-form="1"
+    data-bb-pa-reject-form="1"
+  >
+    <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+
+    <section class="bb-pa-panel" aria-labelledby="reg-reject-reasons-title">
+      <h2 id="reg-reject-reasons-title" class="bb-pa-section-title">Rejection reason</h2>
+      <ul class="bb-pa-reg-reject__reasons" data-bb-pa-reg-reject-reasons="1">
+        <% reasons.forEach(function (reason) { %>
+        <li>
+          <label class="bb-pa-reg-reject__reason">
+            <input
+              type="radio"
+              name="rejection_category"
+              value="<%= reason.code %>"
+              required
+              <%= selectedCategory === reason.code ? 'checked' : '' %>
+              data-bb-pa-reg-reject-reason="<%= reason.code %>"
+            />
+            <span><%= reason.label %></span>
+          </label>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+
+    <section class="bb-pa-panel">
+      <div class="bb-pa-field" data-bb-pa-reg-reject-internal-block="1">
+        <label for="internal_decision_note">Internal note</label>
+        <p class="bb-pa-muted">Platform administrators only. Required when reason is Other.</p>
+        <textarea
+          id="internal_decision_note"
+          name="internal_decision_note"
+          rows="4"
+          maxlength="500"
+          class="bb-pa-reg-reject__note"
+          data-bb-pa-reg-reject-internal="1"
+        ></textarea>
+      </div>
+      <div class="bb-pa-field" data-bb-pa-reg-reject-applicant-block="1">
+        <label for="applicant_explanation">Applicant-facing message (optional)</label>
+        <p class="bb-pa-muted">Stored when provided. Recording a rejection does not confirm delivery.</p>
+        <textarea
+          id="applicant_explanation"
+          name="applicant_explanation"
+          rows="4"
+          maxlength="8000"
+          data-bb-pa-reg-reject-applicant="1"
+        ></textarea>
+      </div>
+      <p class="bb-pa-hint" data-bb-pa-reg-reject-no-send-claim="1">
+        Confirm rejection records the decision and sets application status to rejected.
+        No organization, church, branch, user, or invitation is deleted.
+      </p>
+      <div class="bb-pa-confirm bb-pa-reg-reject__confirm" data-bb-pa-reg-reject-confirm="1">
+        <label>
+          <input
+            type="checkbox"
+            name="confirm_reject"
+            value="1"
+            required
+            data-bb-pa-reg-reject-confirm-check="1"
+          />
+          I confirm this registration should be rejected
+        </label>
+      </div>
+    </section>
+
+    <div class="bb-pa-reg-reject__actions" data-bb-pa-reg-reject-actions="1">
+      <button
+        class="bb-pa-btn bb-pa-btn--danger bb-pa-btn--block"
+        type="submit"
+        data-bb-pa-reg-reject-submit="1"
+      >Confirm rejection</button>
+      <a class="bb-pa-btn bb-pa-btn--secondary bb-pa-btn--block" href="<%= cancelHref %>" data-bb-pa-reg-reject-cancel-btn="1">Cancel</a>
+    </div>
+  </form>
+
+  <div
+    class="bb-pa-reg-approve-processing"
+    data-bb-pa-reg-reject-processing="1"
+    hidden
+    aria-hidden="true"
+    role="status"
+  >
+    <div class="bb-pa-reg-approve-processing__card">
+      <h2 class="bb-pa-reg-approve-processing__title">Recording rejection</h2>
+      <p class="bb-pa-lede">Please wait for the server response. This page does not invent progress.</p>
+    </div>
+  </div>
+  <% } %>
+</section>
+
+<% if (!blocked) { %>
+<script>
+(function () {
+  var form = document.querySelector('[data-bb-pa-reg-reject-form="1"]');
+  if (!form) return;
+  var submitBtn = form.querySelector('[data-bb-pa-reg-reject-submit="1"]');
+  var processing = document.querySelector('[data-bb-pa-reg-reject-processing="1"]');
+  var note = form.querySelector('[data-bb-pa-reg-reject-internal="1"]');
+  var confirmBox = form.querySelector('[data-bb-pa-reg-reject-confirm-check="1"]');
+  var submitting = false;
+  form.addEventListener('submit', function (event) {
+    var selected = form.querySelector('input[name="rejection_category"]:checked');
+    if (!selected) {
+      event.preventDefault();
+      window.alert('Choose a rejection reason.');
+      return false;
+    }
+    var noteVal = note && note.value ? String(note.value).trim() : '';
+    if (selected.value === 'other' && noteVal.length < 3) {
+      event.preventDefault();
+      window.alert('Add a short explanation when the reason is Other.');
+      return false;
+    }
+    if (confirmBox && !confirmBox.checked) {
+      event.preventDefault();
+      window.alert('Confirm that this registration should be rejected.');
+      return false;
+    }
+    if (submitting) {
+      event.preventDefault();
+      return false;
+    }
+    submitting = true;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-busy', 'true');
+      submitBtn.textContent = 'Confirming…';
+    }
+    if (processing) {
+      processing.hidden = false;
+      processing.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('bb-pa-reg-approve-processing-active');
+    }
+  });
+})();
+</script>
+<% } %>
+
+<%- include('../partials/platform-admin-shell-end') %>

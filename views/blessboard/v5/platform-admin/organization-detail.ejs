@@ -160,6 +160,16 @@
   </p>
   <% } %>
 
+  <%- include('../partials/pa-registration-approved-success', {
+    org: org,
+    branches: branchRows,
+    notice: flashNotice,
+    inviteOnceLink: (typeof inviteOnceLink !== 'undefined' ? inviteOnceLink : null),
+    pendingInvitations: (typeof pendingInvitations !== 'undefined' ? pendingInvitations : []),
+    statusChip: statusChip,
+    statusLabel: statusLabel
+  }) %>
+
   <% if ((typeof inviteOnceLink !== 'undefined' && inviteOnceLink) || (typeof pendingInvitations !== 'undefined' && pendingInvitations && pendingInvitations.length)) { %>
   <section class="bb-pa-panel" id="pa-org-invitation" data-bb-pa-org-invitation="1" aria-labelledby="pa-org-invitation-title">
     <h2 id="pa-org-invitation-title" class="bb-pa-panel__title">Administrator invitation</h2>

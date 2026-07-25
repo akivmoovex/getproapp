@@ -367,11 +367,11 @@ describe("registration phone verification UI (Prompt 029, no Postgres)", () => {
     assert.match(css, /@media \(max-width: 719px\)[\s\S]*\.bb-pa-reg-phone-attempt__head/);
   });
 
-  it("preserves existing approval and rejection forms", () => {
+  it("preserves existing approval and rejection confirmation entry points", () => {
     const html = renderDetail();
     assert.match(html, /data-bb-pa-approve-form="1"/);
-    assert.match(html, /action="\/admin\/registration-applications\/[^"]+\/approve"/);
-    assert.match(html, /action="\/admin\/registration-applications\/[^"]+\/reject"/);
+    assert.match(html, /href="\/admin\/registration-applications\/[^"]+\/approve"/);
+    assert.match(html, /href="\/admin\/registration-applications\/[^"]+\/reject"/);
 
     const route = fs.readFileSync(ROUTE, "utf8");
     assert.match(route, /\/admin\/registration-applications\/:id\/approve/);
