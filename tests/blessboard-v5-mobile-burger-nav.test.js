@@ -94,7 +94,7 @@ describe("blessboard v5 cross-shell mobile burger contracts", () => {
       assert.doesNotMatch(end, /data-bb-nav="mobile-tabs"/);
       assert.match(css, /@media \(min-width:\s*900px\)/);
       if (shell.usesShellNav) {
-        assert.match(end, /shell-nav\.js\?v=2/);
+        assert.match(end, /shell-nav\.js\?v=3/);
         assert.match(read("public/blessboard/v5/shell-nav.js"), /matchMedia/);
         assert.match(read("public/blessboard/v5/shell-nav.js"), /closeOnNavigate/);
       }

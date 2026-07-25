@@ -9,16 +9,73 @@
   var DEFAULT_DESKTOP_MQ = "(min-width: 900px)";
 
   /**
+   * @param {Element} el
+   * @param {Element} root
+   * @returns {boolean}
+   */
+  function isHiddenInTree(el, root) {
+    var node = el;
+    while (node && node !== root) {
+      if (node.hidden) return true;
+      if (typeof node.hasAttribute === "function" && node.hasAttribute("hidden")) return true;
+      node = node.parentElement || node.parentNode;
+    }
+    return false;
+  }
+
+  /**
    * @param {Element} drawer
    * @returns {HTMLElement[]}
    */
   function focusableIn(drawer) {
-    return Array.prototype.slice.call(
-      drawer.querySelectorAll(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    return Array.prototype.slice
+      .call(
+        drawer.querySelectorAll(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
       )
-    ).filter(function (el) {
-      return !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true";
+      .filter(function (el) {
+        if (el.hasAttribute("disabled") || el.getAttribute("aria-hidden") === "true") {
+          return false;
+        }
+        return !isHiddenInTree(el, drawer);
+      });
+  }
+
+  /**
+   * Exclusive accordion for grouped mobile nav (one open group at a time).
+   * @param {ParentNode} [root]
+   */
+  function bindMobileNavAccordion(root) {
+    var scope = root || document;
+    var navs = scope.querySelectorAll
+      ? scope.querySelectorAll('[data-bb-mobile-nav="grouped"]')
+      : [];
+    Array.prototype.forEach.call(navs, function (nav) {
+      if (nav.getAttribute("data-bb-mobile-nav-bound") === "1") return;
+      nav.setAttribute("data-bb-mobile-nav-bound", "1");
+
+      var toggles = nav.querySelectorAll("[data-bb-nav-group-toggle]");
+      Array.prototype.forEach.call(toggles, function (btn) {
+        btn.addEventListener("click", function () {
+          var willOpen = btn.getAttribute("aria-expanded") !== "true";
+          Array.prototype.forEach.call(toggles, function (other) {
+            var otherId = other.getAttribute("aria-controls");
+            var otherPanel = otherId ? document.getElementById(otherId) : null;
+            var openThis = willOpen && other === btn;
+            other.setAttribute("aria-expanded", openThis ? "true" : "false");
+            var group = other.closest
+              ? other.closest("[data-bb-nav-group]")
+              : other.parentNode;
+            if (group && group.classList) {
+              group.classList.toggle("is-open", openThis);
+            }
+            if (otherPanel) {
+              otherPanel.hidden = !openThis;
+            }
+          });
+        });
+      });
     });
   }
 
@@ -41,6 +98,8 @@
     );
     var drawer = document.getElementById(opts.drawerId);
     if (!toggle || !drawer) return null;
+
+    bindMobileNavAccordion(drawer);
 
     var openLabel = opts.openLabel || toggle.getAttribute("aria-label") || "Open navigation";
     var closeLabel = opts.closeLabel || "Close navigation";
@@ -167,5 +226,8 @@
     return { setOpen: setOpen, isOpen: isOpen };
   }
 
-  global.BlessBoardShellNav = { bindShellDrawer: bindShellDrawer };
+  global.BlessBoardShellNav = {
+    bindShellDrawer: bindShellDrawer,
+    bindMobileNavAccordion: bindMobileNavAccordion,
+  };
 })(typeof window !== "undefined" ? window : globalThis);

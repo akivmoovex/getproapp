@@ -14,6 +14,7 @@ const { FEATURE_KEYS } = require("../../platform/services/entitlementService");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { formatRoleLabel } = require("./renderTenantLandingPage");
 const { HQ_ADMIN_NAV, HQ_ADMIN_MOBILE_TABS } = require("./hqAdminNav");
+const { buildHqMobileNav } = require("./adminMobileNavGroups");
 
 /**
  * @param {import('express').Request} req
@@ -115,6 +116,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
     opts.entitledFeatures ||
     (await resolveHqNavEntitlements(req, opts.getPool));
   const navItems = filterHqNavItems(HQ_ADMIN_NAV, entitledFeatures);
+  const mobileNav = buildHqMobileNav(navItems, activeNav);
   const mobileTabs = HQ_ADMIN_MOBILE_TABS.map((key) =>
     navItems.find((item) => item.key === key)
   ).filter(Boolean);
@@ -153,6 +155,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
     roleLabel: primaryHqRoleLabel(req),
     displayName: session && session.user ? session.user.displayName : "",
     navItems,
+    mobileNav,
     mobileTabs,
     entitledFeatures,
     ...(opts.extra || {}),

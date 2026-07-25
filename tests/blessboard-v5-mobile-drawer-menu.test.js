@@ -45,7 +45,7 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
 
   it("apex shell drawer has header row and scoped nav; CSS version bumped", () => {
     const start = read("views/blessboard/v5/partials/apex-shell-start.ejs");
-    assert.match(start, /apex\.css\?v=13/);
+    assert.match(start, /apex\.css\?v=14/);
     assert.match(start, /bb-apex-drawer__head/);
     assert.match(start, /bb-apex-drawer__nav/);
     assert.match(start, /variant: 'drawer'/);
@@ -78,6 +78,7 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
         item: "bb-mp-drawer__item",
         account: "bb-mp-drawer__account",
         logout: 'method="post" action="/member/logout"',
+        ariaSource: "views/blessboard/v5/partials/member-shell-start.ejs",
       },
       {
         start: "views/blessboard/v5/partials/branch-admin-shell-start.ejs",
@@ -86,6 +87,8 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
         item: "bb-ba-drawer__item",
         account: "bb-ba-drawer__account",
         logout: 'method="post"',
+        ariaSource: "views/blessboard/v5/partials/admin-mobile-nav-groups.ejs",
+        grouped: true,
       },
       {
         start: "views/blessboard/v5/partials/hq-shell-start.ejs",
@@ -94,6 +97,8 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
         item: "bb-hq-drawer__item",
         account: "bb-hq-drawer__account",
         logout: 'method="post" action="/hq/logout"',
+        ariaSource: "views/blessboard/v5/partials/admin-mobile-nav-groups.ejs",
+        grouped: true,
       },
       {
         start: "views/blessboard/v5/partials/platform-admin-shell-start.ejs",
@@ -102,6 +107,7 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
         item: "bb-pa-drawer__item",
         account: "bb-pa-drawer__account",
         logout: 'method="post"',
+        ariaSource: "views/blessboard/v5/partials/platform-admin-shell-start.ejs",
       },
     ];
     for (const shell of shells) {
@@ -110,8 +116,15 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
       assert.match(start, new RegExp(shell.item));
       assert.match(start, new RegExp(shell.account));
       assert.match(start, new RegExp(shell.logout));
-      assert.match(start, /<% if \(activeNav === item\.key\) \{ %>aria-current="page"<% \} %>/);
-      assert.doesNotMatch(start, /<%= activeNav === item\.key \? 'aria-current=/);
+      if (shell.grouped) {
+        assert.match(start, /admin-mobile-nav-groups/);
+      }
+      const ariaSource = read(shell.ariaSource);
+      assert.match(
+        ariaSource,
+        /<% if \((?:mnActive|activeNav) === item\.key\) \{ %>aria-current="page"<% \} %>/
+      );
+      assert.doesNotMatch(ariaSource, /<%= (?:mnActive|activeNav) === item\.key \? 'aria-current=/);
       const css = read(shell.css);
       assert.match(css, new RegExp(`\\.${shell.list}\\s*\\{[\\s\\S]*?flex-direction:\\s*column`));
     }

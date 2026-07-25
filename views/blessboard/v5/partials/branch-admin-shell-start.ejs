@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=41" />
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=42" />
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=8" />
   <% } %>
@@ -25,10 +25,23 @@
         { key: 'resources', label: 'Resources', href: '/branch-admin/resources', icon: 'menu_book' },
         { key: 'forms', label: 'Forms', href: '/branch-admin/forms', icon: 'description' },
         { key: 'requests', label: 'Requests', href: '/branch-admin/requests', icon: 'inbox' },
-        { key: 'content', label: 'Website', href: '/branch-admin/content', icon: 'language' },
+        { key: 'website', label: 'Website', href: '/branch-admin/website', icon: 'language' },
+        { key: 'content', label: 'Content', href: '/branch-admin/content', icon: 'web' },
+        { key: 'website_submissions', label: 'Change requests', href: '/branch-admin/website/submissions', icon: 'edit_note' },
         { key: 'settings', label: 'Settings', href: '/branch-admin/settings', icon: 'settings' },
         { key: 'account', label: 'Account', href: '/branch-admin/account', icon: 'person' },
       ];
+  var baMobileNav = (typeof mobileNav !== 'undefined' && mobileNav)
+    ? mobileNav
+    : {
+        primary: baNav.filter(function (item) {
+          return item.key !== 'account';
+        }),
+        sections: [],
+        account: baNav.filter(function (item) {
+          return item.key === 'account';
+        }),
+      };
   var baRole = typeof roleLabel !== 'undefined' && roleLabel ? roleLabel : 'Branch admin';
   var baDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
   var baChurch = typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : '';
@@ -170,13 +183,25 @@
           </p>
           <% } %>
           <div class="bb-ba-drawer__links" data-bb-nav="mobile-links">
-            <ul class="bb-ba-drawer__list">
-              <% baNav.forEach(function (item) { %>
+            <%- include('./admin-mobile-nav-groups', {
+              mobileNav: baMobileNav,
+              activeNav: activeNav,
+              linkClass: 'bb-ba-nav-link',
+              listClass: 'bb-ba-drawer__list',
+              itemClass: 'bb-ba-drawer__item',
+              idPrefix: 'bb-ba'
+            }) %>
+          </div>
+          <div class="bb-ba-drawer__account">
+            <% if (baMobileNav.account && baMobileNav.account.length) { %>
+            <ul class="bb-ba-drawer__list bb-ba-drawer__account-list">
+              <% baMobileNav.account.forEach(function (item) { %>
               <li class="bb-ba-drawer__item">
                 <a
                   href="<%= item.href %>"
                   class="bb-ba-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
                   <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+                  data-bb-nav-key="<%= item.key %>"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
                   <span><%= item.label %></span>
@@ -184,8 +209,7 @@
               </li>
               <% }) %>
             </ul>
-          </div>
-          <div class="bb-ba-drawer__account">
+            <% } %>
             <form class="bb-ba-logout" method="post" action="/branch-admin/logout" data-bb-branch-logout="1">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <button type="submit">

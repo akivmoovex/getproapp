@@ -1,0 +1,69 @@
+<%
+  var mn = (typeof mobileNav !== 'undefined' && mobileNav) ? mobileNav : null;
+  var mnPrimary = mn && mn.primary ? mn.primary : [];
+  var mnSections = mn && mn.sections ? mn.sections : [];
+  var mnLinkClass = typeof linkClass !== 'undefined' && linkClass ? linkClass : 'bb-nav-link';
+  var mnListClass = typeof listClass !== 'undefined' && listClass ? listClass : 'bb-drawer__list';
+  var mnItemClass = typeof itemClass !== 'undefined' && itemClass ? itemClass : 'bb-drawer__item';
+  var mnIdPrefix = typeof idPrefix !== 'undefined' && idPrefix ? idPrefix : 'bb-nav';
+  var mnActive = typeof activeNav !== 'undefined' ? activeNav : '';
+%>
+<div class="bb-shell-mobile-nav" data-bb-mobile-nav="grouped" data-bb-nav="mobile-links-inner">
+  <% if (mnPrimary.length) { %>
+  <ul class="<%= mnListClass %> bb-shell-mobile-nav__primary" data-bb-mobile-nav-primary="1">
+    <% mnPrimary.forEach(function (item) { %>
+    <li class="<%= mnItemClass %>">
+      <a
+        href="<%= item.href %>"
+        class="<%= mnLinkClass %><%= mnActive === item.key ? ' is-active' : '' %>"
+        <% if (mnActive === item.key) { %>aria-current="page"<% } %>
+        data-bb-nav-key="<%= item.key %>"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+        <span><%= item.label %></span>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <% mnSections.forEach(function (section) { %>
+  <div
+    class="bb-shell-mobile-nav__group<%= section.open ? ' is-open' : '' %>"
+    data-bb-nav-group="<%= section.id %>"
+  >
+    <button
+      type="button"
+      class="bb-shell-mobile-nav__toggle"
+      id="<%= mnIdPrefix %>-nav-toggle-<%= section.id %>"
+      data-bb-nav-group-toggle="1"
+      aria-expanded="<%= section.open ? 'true' : 'false' %>"
+      aria-controls="<%= mnIdPrefix %>-nav-group-<%= section.id %>"
+    >
+      <span class="bb-shell-mobile-nav__toggle-label"><%= section.label %></span>
+      <span class="material-symbols-outlined bb-shell-mobile-nav__chevron" aria-hidden="true">expand_more</span>
+    </button>
+    <ul
+      id="<%= mnIdPrefix %>-nav-group-<%= section.id %>"
+      class="<%= mnListClass %> bb-shell-mobile-nav__group-list"
+      role="region"
+      aria-labelledby="<%= mnIdPrefix %>-nav-toggle-<%= section.id %>"
+      <% if (!section.open) { %>hidden<% } %>
+    >
+      <% section.items.forEach(function (item) { %>
+      <li class="<%= mnItemClass %>">
+        <a
+          href="<%= item.href %>"
+          class="<%= mnLinkClass %><%= mnActive === item.key ? ' is-active' : '' %>"
+          <% if (mnActive === item.key) { %>aria-current="page"<% } %>
+          data-bb-nav-key="<%= item.key %>"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+          <span><%= item.label %></span>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
+  <% }) %>
+</div>

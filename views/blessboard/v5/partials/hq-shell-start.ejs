@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=69" />
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=70" />
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=8" />
   <% } %>
@@ -34,6 +34,17 @@
         { key: 'audit', label: 'Audit', href: '/hq/audit', icon: 'history' },
         { key: 'account', label: 'Account', href: '/hq/account', icon: 'person' },
       ];
+  var hqMobileNav = (typeof mobileNav !== 'undefined' && mobileNav)
+    ? mobileNav
+    : {
+        primary: hqNav.filter(function (item) {
+          return item.key !== 'account';
+        }),
+        sections: [],
+        account: hqNav.filter(function (item) {
+          return item.key === 'account';
+        }),
+      };
   var hqRole = typeof roleLabel !== 'undefined' && roleLabel ? roleLabel : 'HQ admin';
   var hqDisplay = typeof displayName !== 'undefined' && displayName ? displayName : '';
   var hqChurch = typeof churchDisplayName !== 'undefined' && churchDisplayName ? churchDisplayName : '';
@@ -176,13 +187,25 @@
           </p>
           <% } %>
           <div class="bb-hq-drawer__links" data-bb-nav="mobile-links">
-            <ul class="bb-hq-drawer__list">
-              <% hqNav.forEach(function (item) { %>
+            <%- include('./admin-mobile-nav-groups', {
+              mobileNav: hqMobileNav,
+              activeNav: activeNav,
+              linkClass: 'bb-hq-nav-link',
+              listClass: 'bb-hq-drawer__list',
+              itemClass: 'bb-hq-drawer__item',
+              idPrefix: 'bb-hq'
+            }) %>
+          </div>
+          <div class="bb-hq-drawer__account">
+            <% if (hqMobileNav.account && hqMobileNav.account.length) { %>
+            <ul class="bb-hq-drawer__list bb-hq-drawer__account-list">
+              <% hqMobileNav.account.forEach(function (item) { %>
               <li class="bb-hq-drawer__item">
                 <a
                   href="<%= item.href %>"
                   class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
                   <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+                  data-bb-nav-key="<%= item.key %>"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
                   <span><%= item.label %></span>
@@ -190,8 +213,7 @@
               </li>
               <% }) %>
             </ul>
-          </div>
-          <div class="bb-hq-drawer__account">
+            <% } %>
             <form class="bb-hq-logout" method="post" action="/hq/logout" data-bb-hq-logout="1">
               <input type="hidden" name="_csrf" value="<%= hqCsrf %>" />
               <button type="submit">

@@ -16,6 +16,7 @@ const {
   BRANCH_ADMIN_MODULES,
   BRANCH_ADMIN_MOBILE_TABS,
 } = require("./branchAdminNav");
+const { buildBranchMobileNav } = require("./adminMobileNavGroups");
 
 /**
  * @param {import('express').Request} req
@@ -55,6 +56,7 @@ function buildBranchAdminShellLocals(req, res, opts) {
   setCsrfCookie(res, csrfToken, { secure: isProduction });
   const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
   const navItems = BRANCH_ADMIN_NAV.filter((item) => item.nav && item.enabled);
+  const mobileNav = buildBranchMobileNav(navItems, activeNav);
   const mobileTabs = BRANCH_ADMIN_MOBILE_TABS.map((key) =>
     navItems.find((item) => item.key === key)
   ).filter(Boolean);
@@ -87,6 +89,7 @@ function buildBranchAdminShellLocals(req, res, opts) {
     roleLabel: primaryRoleLabel(req),
     displayName: session && session.user ? session.user.displayName : "",
     navItems,
+    mobileNav,
     mobileTabs,
     portalModules: BRANCH_ADMIN_MODULES,
     ...(opts.extra || {}),
