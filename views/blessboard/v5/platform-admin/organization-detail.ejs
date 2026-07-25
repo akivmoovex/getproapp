@@ -266,7 +266,7 @@
   <% if (ob) { %>
   <section
     class="bb-pa-panel bb-pa-org-detail-panel"
-    id="pa-org-onboarding"
+    id="bb-pa-org-onboarding"
     aria-labelledby="pa-org-onboarding-heading"
     data-bb-pa-org-onboarding="1"
   >
@@ -280,6 +280,33 @@
       Progress is derived at read time from live church data.
       Follow-up status never blocks portal access. Organization operational status is unchanged by these controls.
     </p>
+
+    <div class="bb-pa-org-public-website" data-bb-pa-public-website="1">
+      <h3 class="bb-pa-subsection-title">Public website</h3>
+      <% if (ob.publicWebsiteAvailable && ob.publicWebsitePath) { %>
+      <p data-bb-pa-public-website-url="1">
+        <a class="bb-pa-link" href="<%= ob.publicWebsitePath %>" rel="noopener">
+          https://blessboard.org<%= ob.publicWebsitePath %>
+        </a>
+      </p>
+      <p class="bb-pa-org-public-website__actions">
+        <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= ob.publicWebsitePath %>" rel="noopener" data-bb-pa-open-public-website="1">Open website</a>
+        <button
+          type="button"
+          class="bb-pa-btn bb-pa-btn--ghost"
+          data-bb-pa-copy-public-website="1"
+          data-bb-copy-text="https://blessboard.org<%= ob.publicWebsitePath %>"
+        >Copy URL</button>
+      </p>
+      <% } else { %>
+      <p data-bb-pa-public-website-unavailable="1">
+        Public website address unavailable
+        <% if (ob.publicWebsiteUnavailableReason) { %>
+        <span class="bb-pa-hint"> — <%= ob.publicWebsiteUnavailableReason %></span>
+        <% } %>
+      </p>
+      <% } %>
+    </div>
 
     <dl class="bb-pa-dl bb-pa-dl--grid" data-bb-pa-onboarding-summary="1">
       <div>
@@ -1177,5 +1204,17 @@
     </aside>
   </div>
 </section>
+
+<script>
+(function () {
+  var btn = document.querySelector('[data-bb-pa-copy-public-website="1"]');
+  if (!btn || !navigator.clipboard || !navigator.clipboard.writeText) return;
+  btn.addEventListener('click', function () {
+    var text = btn.getAttribute('data-bb-copy-text') || '';
+    if (!text) return;
+    navigator.clipboard.writeText(text).catch(function () {});
+  });
+})();
+</script>
 
 <%- include('../partials/platform-admin-shell-end') %>

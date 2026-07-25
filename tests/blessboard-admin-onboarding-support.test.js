@@ -228,9 +228,18 @@ describe("platform-admin organization onboarding support (Phase 6)", () => {
     assert.equal(orgDetails.completed, true);
     assert.equal(firstBranch.completed, true);
     assert.equal(logo.completed, false);
-    assert.equal(preview.completed, false);
-    assert.equal(publish.completed, false);
-    assert.equal(s.publicationStatus, "unpublished");
+    // Approval provision auto-publishes Foundation homepage + acknowledges preview.
+    assert.equal(preview.completed, true);
+    assert.equal(publish.completed, true);
+    assert.equal(s.publicationStatus, "published");
+    assert.equal(s.publicWebsitePath, `/c/${fixtures.organizationKey}`);
+    assert.equal(publish.actionUrl, `/c/${fixtures.organizationKey}`);
+    assert.equal(publish.actionLabel, "View published website");
+    assert.equal(
+      preview.actionUrl,
+      `/admin/organizations/${fixtures.organizationKey}/website-preview`
+    );
+    assert.doesNotMatch(String(preview.actionUrl || ""), /\/hq\/website$/);
 
     assert.ok(s.lastActivityAt);
     assert.equal(s.lastActivitySource, "church_admin_last_login");
@@ -331,7 +340,11 @@ describe("platform-admin organization onboarding support (Phase 6)", () => {
       limit: 50,
     });
     assert.equal(unpublished.ok, true);
-    assert.ok(unpublished.organizations.some((o) => o.organizationKey === fixtures.organizationKey));
+    // Auto-published Foundation churches are not in the unpublished filter.
+    assert.equal(
+      unpublished.organizations.some((o) => o.organizationKey === fixtures.organizationKey),
+      false
+    );
 
     const invalid = await listPlatformOrganizations(pool, { product: "not-a-product" });
     assert.equal(invalid.ok, false);

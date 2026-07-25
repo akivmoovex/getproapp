@@ -207,6 +207,7 @@ async function loadFoundationWebsiteOverview(db, opts) {
         getOrganizationOnboardingSummary(db, {
           organizationId,
           organizationKey: opts.organizationKey || null,
+          linkContext: "hq",
         }),
       ]);
 

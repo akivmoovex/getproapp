@@ -2871,6 +2871,112 @@ function createPlatformAdminRouter(deps) {
     return `/admin/organizations/${encodeURIComponent(String(organizationKey || "").trim().toLowerCase())}`;
   }
 
+  /**
+   * Org-scoped website preview for platform admins.
+   * Resolves tenant by organization_key from the URL — never from session tenant.
+   */
+  router.get(
+    "/admin/organizations/:organizationKey/website-preview",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const rawKey = String((req.params && req.params.organizationKey) || "")
+        .trim()
+        .toLowerCase();
+      const { normalizeOrganizationKey } = require("../../blessboard/services/organizationKey");
+      const keyNorm = normalizeOrganizationKey(rawKey);
+      if (!keyNorm.ok) {
+        return sendControlled(req, res, 404, "This organization could not be found.");
+      }
+
+      try {
+        const {
+          getBlessBoardCatalogueContext,
+        } = require("../../blessboard/services/getBlessBoardCatalogueContext");
+        const {
+          buildBlessBoardTenantContext,
+        } = require("../../blessboard/http/buildBlessBoardTenantContext");
+        const {
+          loadTenantPublicPageModel,
+          KIND,
+        } = require("../../blessboard/http/loadTenantPublicPageModel");
+        const {
+          renderTenantPublicPage,
+        } = require("../../blessboard/http/renderTenantPublicPage");
+        const { findOrganizationByKey } = require("../../blessboard/repositories/blessBoardCatalogueRepository");
+
+        const org = await findOrganizationByKey(getPool(), keyNorm.key);
+        if (!org || String(org.status || "") === "retired" || String(org.status || "") === "inactive") {
+          return sendControlled(req, res, 404, "This organization could not be found.");
+        }
+
+        const catalogue = await getBlessBoardCatalogueContext(getPool(), org.id);
+        if (!catalogue.ok || !catalogue.context) {
+          return sendControlled(req, res, 404, "This church website preview could not be loaded.");
+        }
+
+        const tenant = buildBlessBoardTenantContext({
+          organization: {
+            id: catalogue.context.organization.id,
+            key: catalogue.context.organization.key,
+          },
+          church: catalogue.context.church
+            ? {
+                id: catalogue.context.church.id,
+                churchKey: catalogue.context.church.key,
+                displayName: catalogue.context.church.displayName,
+                dataEnvironment: catalogue.context.church.dataEnvironment,
+              }
+            : null,
+          hqBranch: catalogue.context.hqBranch
+            ? {
+                id: catalogue.context.hqBranch.id,
+                branchKey: catalogue.context.hqBranch.key,
+                displayName: catalogue.context.hqBranch.displayName,
+              }
+            : null,
+          primaryBranch: catalogue.context.primaryBranch
+            ? {
+                id: catalogue.context.primaryBranch.id,
+                branchKey: catalogue.context.primaryBranch.key,
+                displayName: catalogue.context.primaryBranch.displayName,
+              }
+            : null,
+        });
+        if (!tenant) {
+          return sendControlled(req, res, 404, "This church website preview could not be loaded.");
+        }
+
+        const model = await loadTenantPublicPageModel(getPool(), {
+          tenant,
+          pageKey: "home",
+          hostname: String(req.hostname || ""),
+          preview: true,
+          pathPrefix: `/c/${keyNorm.key}`,
+          previewMeta: {
+            backHref: orgDetailPath(keyNorm.key),
+            editHref: null,
+            bannerLabel: "Platform admin preview",
+          },
+        });
+        if (model.kind !== KIND.OK) {
+          return sendControlled(
+            req,
+            res,
+            model.kind === KIND.UNAVAILABLE ? 503 : 404,
+            "Website preview is unavailable for this organization."
+          );
+        }
+        const html = renderTenantPublicPage(model);
+        res.setHeader("X-Robots-Tag", "noindex, nofollow");
+        return res.status(200).type("html").send(html);
+      } catch {
+        return sendControlled(req, res, 503, "Website preview is temporarily unavailable.");
+      }
+    }
+  );
+
   router.post(
     "/admin/organizations/:organizationKey/invitations/resend",
     requireApex,

@@ -6,6 +6,14 @@
  */
 
 const repo = require("../repositories/platformChurchRegistrationRepository");
+const {
+  normalizeOrganizationKey,
+} = require("./organizationKey");
+const {
+  publicChurchHomePath,
+  hqPreviewPagePath,
+  hqWebsitePath,
+} = require("../urls/churchUrlHelper");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -61,10 +69,82 @@ function derivePublicationStatus(pub) {
 }
 
 /**
+ * @param {unknown} rawKey
+ * @returns {{ ok: true, key: string } | { ok: false, reason: string }}
+ */
+function resolveOrganizationKeyFact(rawKey) {
+  const norm = normalizeOrganizationKey(rawKey);
+  if (!norm.ok) {
+    return { ok: false, reason: norm.reason || "invalid_key" };
+  }
+  return { ok: true, key: norm.key };
+}
+
+/**
+ * Platform-admin preview is org-scoped (never session tenant).
+ * HQ preview uses the authenticated tenant session.
+ * @param {string|null} organizationKey
+ * @param {'platform_admin'|'hq'} linkContext
+ */
+function resolvePreviewActionUrl(organizationKey, linkContext) {
+  if (linkContext === "hq") {
+    return hqPreviewPagePath("home");
+  }
+  const key = String(organizationKey || "")
+    .trim()
+    .toLowerCase();
+  if (!key || !ORG_KEY_RE.test(key)) return null;
+  return `/admin/organizations/${encodeURIComponent(key)}/website-preview`;
+}
+
+/**
+ * Publish complete → public miniwebsite. Incomplete → HQ publish workflow (HQ)
+ * or org-detail anchor for platform admin (never a false public Complete).
+ * @param {{
+ *   organizationKey: string|null,
+ *   publishComplete: boolean,
+ *   linkContext: 'platform_admin'|'hq',
+ * }} input
+ */
+function resolvePublishAction(input) {
+  const keyNorm = resolveOrganizationKeyFact(input.organizationKey);
+  const publicPath = keyNorm.ok ? publicChurchHomePath(keyNorm.key) : null;
+
+  if (input.publishComplete && publicPath) {
+    return {
+      actionUrl: publicPath,
+      actionLabel: "View published website",
+    };
+  }
+
+  if (input.linkContext === "hq") {
+    return {
+      actionUrl: hqWebsitePath(),
+      actionLabel: "Publish website",
+    };
+  }
+
+  // Platform admin: do not send reviewers to a session-scoped HQ dashboard.
+  if (keyNorm.ok) {
+    return {
+      actionUrl: `/admin/organizations/${encodeURIComponent(keyNorm.key)}#bb-pa-org-onboarding`,
+      actionLabel: "Publish website",
+    };
+  }
+  return { actionUrl: null, actionLabel: "Publish website" };
+}
+
+/**
  * @param {object} facts
  * @param {string} organizationKey
+ * @param {{ linkContext?: 'platform_admin'|'hq' }} [options]
  */
-function buildChecklist(facts, organizationKey) {
+function buildChecklist(facts, organizationKey, options = {}) {
+  const linkContext = options.linkContext === "hq" ? "hq" : "platform_admin";
+  const keyFact = resolveOrganizationKeyFact(organizationKey || facts.organizationKey);
+  const organizationKeyAvailable = keyFact.ok;
+  const resolvedKey = keyFact.ok ? keyFact.key : null;
+
   const hasOrgName = Boolean(String(facts.orgDisplayName || "").trim());
   const hasChurch = Boolean(facts.churchId);
   const hasChurchName = Boolean(String(facts.churchDisplayName || "").trim());
@@ -80,8 +160,59 @@ function buildChecklist(facts, organizationKey) {
 
   const serviceTimesComplete = Boolean(facts.hasServiceTimesContent);
   const logoComplete = Boolean(facts.hasLogo);
-  const previewComplete = Boolean(facts.previewAcknowledged);
-  const publishComplete = (Number(facts.publishedPages) || 0) > 0;
+
+  const previewAcknowledged = Boolean(facts.previewAcknowledged);
+  const previewRouteAvailable = Boolean(facts.hasPreviewableHomepage);
+  const previewComplete = previewAcknowledged && previewRouteAvailable;
+  const previewActionUrl = previewRouteAvailable
+    ? resolvePreviewActionUrl(resolvedKey, linkContext)
+    : null;
+
+  const publishedHomepageAvailable = Boolean(facts.hasPublishedHomepage);
+  const websiteStatusPublished =
+    String(facts.websiteStatus || "").toLowerCase() === "published";
+  const publicWebsitePath = organizationKeyAvailable
+    ? publicChurchHomePath(resolvedKey)
+    : null;
+  const publicWebsiteResolvable = Boolean(
+    organizationKeyAvailable && publishedHomepageAvailable && publicWebsitePath
+  );
+  const publishComplete =
+    organizationKeyAvailable &&
+    publishedHomepageAvailable &&
+    publicWebsiteResolvable &&
+    (websiteStatusPublished || (Number(facts.publishedPages) || 0) > 0);
+
+  let publishExplanation;
+  if (publishComplete) {
+    publishExplanation = "Published homepage is addressable at the public website path.";
+  } else if ((Number(facts.publishedPages) || 0) > 0 && !organizationKeyAvailable) {
+    publishExplanation =
+      "Published content exists, but the public website address is unavailable.";
+  } else if (organizationKeyAvailable && !publishedHomepageAvailable) {
+    publishExplanation = "The website has not been published yet.";
+  } else if (!organizationKeyAvailable) {
+    publishExplanation = "A valid organization key is required before the site can be public.";
+  } else {
+    publishExplanation = "No published public_pages rows for this church.";
+  }
+
+  const publishAction = resolvePublishAction({
+    organizationKey: resolvedKey,
+    publishComplete,
+    linkContext,
+  });
+
+  let previewExplanation;
+  if (previewComplete) {
+    previewExplanation = "Preview acknowledged and a previewable homepage exists.";
+  } else if (previewAcknowledged && !previewRouteAvailable) {
+    previewExplanation = "Preview was acknowledged, but no previewable homepage exists yet.";
+  } else if (previewRouteAvailable) {
+    previewExplanation = "Homepage can be previewed; acknowledgement not recorded yet.";
+  } else {
+    previewExplanation = "No previewable homepage is available yet.";
+  }
 
   const items = [
     {
@@ -144,22 +275,20 @@ function buildChecklist(facts, organizationKey) {
       label: CHECKLIST_LABELS.preview,
       completed: previewComplete,
       source: "stored",
-      explanation: previewComplete
-        ? "Preview acknowledged on the onboarding record."
-        : "Portal preview acknowledgement not recorded (deferred path routing).",
-      actionUrl: "/hq/website",
-      actionLabel: "Website preview",
+      explanation: previewExplanation,
+      actionUrl: previewActionUrl,
+      actionLabel: previewActionUrl ? "Open website preview" : null,
+      previewAcknowledged,
+      previewRouteAvailable,
     },
     {
       key: "publish",
       label: CHECKLIST_LABELS.publish,
       completed: publishComplete,
       source: "derived",
-      explanation: publishComplete
-        ? "At least one public page is published."
-        : "No published public_pages rows for this church.",
-      actionUrl: "/hq/website",
-      actionLabel: "Publish website",
+      explanation: publishExplanation,
+      actionUrl: publishAction.actionUrl,
+      actionLabel: publishAction.actionLabel,
     },
   ];
 
@@ -212,9 +341,18 @@ function resolveLastActivity(facts) {
 /**
  * @param {object} facts
  * @param {string} organizationKey
+ * @param {{ linkContext?: 'platform_admin'|'hq' }} [options]
  */
-function assembleSummary(facts, organizationKey) {
-  const checklist = buildChecklist(facts, organizationKey);
+function assembleSummary(facts, organizationKey, options = {}) {
+  const keyFact = resolveOrganizationKeyFact(organizationKey || facts.organizationKey);
+  const resolvedKey = keyFact.ok ? keyFact.key : null;
+  const publicWebsitePath = keyFact.ok ? publicChurchHomePath(resolvedKey) : null;
+  const publishedHomepageAvailable = Boolean(facts.hasPublishedHomepage);
+  const publicWebsiteAvailable = Boolean(
+    keyFact.ok && publishedHomepageAvailable && publicWebsitePath
+  );
+
+  const checklist = buildChecklist(facts, resolvedKey || organizationKey, options);
   const completedCount = checklist.filter((c) => c.completed).length;
   const totalCount = checklist.length;
   const percentage =
@@ -236,9 +374,34 @@ function assembleSummary(facts, organizationKey) {
     churchStatus === "inactive" ||
     churchStatus === "archived";
 
+  let publicWebsiteUnavailableReason = null;
+  if (!publicWebsiteAvailable) {
+    if (!keyFact.ok) {
+      publicWebsiteUnavailableReason =
+        keyFact.reason === "reserved_key"
+          ? "Organization key is reserved and cannot form a public path."
+          : "A valid organization key is missing.";
+    } else if (!publishedHomepageAvailable) {
+      publicWebsiteUnavailableReason = "The website has not been published yet.";
+    } else if (operationallySuspended) {
+      publicWebsiteUnavailableReason = "Organization or church is not active.";
+    } else {
+      publicWebsiteUnavailableReason = "Public website address unavailable.";
+    }
+  }
+
   return {
     organizationId: String(facts.organizationId),
-    organizationKey: String(facts.organizationKey || organizationKey),
+    organizationKey: resolvedKey || String(facts.organizationKey || organizationKey || ""),
+    organizationKeyAvailable: keyFact.ok,
+    publicWebsitePath,
+    publicWebsiteAvailable,
+    publicWebsiteUnavailableReason,
+    publishedHomepageAvailable,
+    publishedHomepageId: facts.publishedHomepageId
+      ? String(facts.publishedHomepageId)
+      : null,
+    websiteStatus: facts.websiteStatus != null ? String(facts.websiteStatus) : null,
     hasBlessBoardChurch: Boolean(facts.churchId),
     onboardingStatus: statusResolved.status,
     onboardingStatusStored: facts.onboardingStatus != null ? String(facts.onboardingStatus) : null,
@@ -287,7 +450,11 @@ function assembleSummary(facts, organizationKey) {
 
 /**
  * @param {{ query: Function }} db
- * @param {{ organizationId?: string, organizationKey?: string }} input
+ * @param {{
+ *   organizationId?: string,
+ *   organizationKey?: string,
+ *   linkContext?: 'platform_admin'|'hq',
+ * }} input
  */
 async function getOrganizationOnboardingSummary(db, input) {
   if (!db || typeof db.query !== "function") {
@@ -299,6 +466,7 @@ async function getOrganizationOnboardingSummary(db, input) {
     input && input.organizationKey != null
       ? String(input.organizationKey).trim().toLowerCase()
       : "";
+  const linkContext = input && input.linkContext === "hq" ? "hq" : "platform_admin";
 
   if (organizationIdRaw && !UUID_RE.test(organizationIdRaw)) {
     return { ok: false, status: STATUS.INVALID_INPUT, message: "invalid_organization_id", summary: null };
@@ -329,7 +497,7 @@ async function getOrganizationOnboardingSummary(db, input) {
       };
     }
 
-    const summary = assembleSummary(facts, facts.organizationKey);
+    const summary = assembleSummary(facts, facts.organizationKey, { linkContext });
     return { ok: true, status: STATUS.OK, summary };
   } catch {
     return { ok: false, status: STATUS.LOOKUP_ERROR, message: "lookup_error", summary: null };
@@ -347,4 +515,7 @@ module.exports = {
   resolveLastActivity,
   assembleSummary,
   getOrganizationOnboardingSummary,
+  resolveOrganizationKeyFact,
+  resolvePreviewActionUrl,
+  resolvePublishAction,
 };

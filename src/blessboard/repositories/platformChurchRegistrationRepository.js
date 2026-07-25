@@ -2555,10 +2555,14 @@ async function loadOrganizationOnboardingFacts(client, input = {}) {
         su.email_normalized AS support_email,
         cs.primary_email,
         cs.primary_phone,
+        cs.website_status,
         COALESCE(bc.active_branch_count, 0)::int AS active_branch_count,
         COALESCE(bc.has_branch_contact, false) AS has_branch_contact,
         COALESCE(pub.draft_pages, 0)::int AS draft_pages,
         COALESCE(pub.published_pages, 0)::int AS published_pages,
+        COALESCE(pub.has_published_homepage, false) AS has_published_homepage,
+        COALESCE(pub.has_previewable_homepage, false) AS has_previewable_homepage,
+        COALESCE(pub.published_homepage_id::text, NULL) AS published_homepage_id,
         COALESCE(svc.has_service_times, false) AS has_service_times,
         false AS has_logo,
         login_stats.church_admin_last_login_at,
@@ -2598,7 +2602,32 @@ async function loadOrganizationOnboardingFacts(client, input = {}) {
        LEFT JOIN LATERAL (
          SELECT
            COUNT(*) FILTER (WHERE pp.status = 'draft')::int AS draft_pages,
-           COUNT(*) FILTER (WHERE pp.status = 'published')::int AS published_pages
+           COUNT(*) FILTER (WHERE pp.status = 'published')::int AS published_pages,
+           EXISTS (
+             SELECT 1
+               FROM blessboard.public_pages home
+              WHERE home.church_id = c.id
+                AND home.branch_id IS NULL
+                AND home.page_key = 'home'
+                AND home.status = 'published'
+           ) AS has_published_homepage,
+           EXISTS (
+             SELECT 1
+               FROM blessboard.public_pages home
+              WHERE home.church_id = c.id
+                AND home.branch_id IS NULL
+                AND home.page_key = 'home'
+                AND home.status IN ('draft', 'published')
+           ) AS has_previewable_homepage,
+           (
+             SELECT home.id
+               FROM blessboard.public_pages home
+              WHERE home.church_id = c.id
+                AND home.branch_id IS NULL
+                AND home.page_key = 'home'
+                AND home.status = 'published'
+              LIMIT 1
+           ) AS published_homepage_id
            FROM blessboard.public_pages pp
           WHERE pp.church_id = c.id
        ) pub ON TRUE
@@ -2675,10 +2704,16 @@ async function loadOrganizationOnboardingFacts(client, input = {}) {
         : null,
     primaryEmail: row.primary_email != null ? String(row.primary_email) : null,
     primaryPhone: row.primary_phone != null ? String(row.primary_phone) : null,
+    websiteStatus: row.website_status != null ? String(row.website_status) : null,
     activeBranchCount: Number(row.active_branch_count) || 0,
     hasBranchContact: Boolean(row.has_branch_contact),
     draftPages: Number(row.draft_pages) || 0,
     publishedPages: Number(row.published_pages) || 0,
+    hasPublishedHomepage: Boolean(row.has_published_homepage),
+    hasPreviewableHomepage: Boolean(row.has_previewable_homepage),
+    publishedHomepageId: row.published_homepage_id
+      ? String(row.published_homepage_id)
+      : null,
     hasServiceTimesContent: Boolean(row.has_service_times),
     hasLogo: Boolean(row.has_logo),
     churchAdminLastLoginAt: row.church_admin_last_login_at || null,
