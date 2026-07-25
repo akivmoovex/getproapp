@@ -48,6 +48,16 @@
   <div class="bb-hq-alert bb-hq-alert--ok" role="status"><%= notice %></div>
   <% } %>
 
+  <% if (o.unpublishedNotice) { %>
+  <div class="bb-hq-alert" role="status" data-bb-website-unpublished="1">
+    <strong>Website not published yet.</strong>
+    <%= o.unpublishedNotice %>
+    <% if (o.publicPath) { %>
+    <span class="bb-hq-muted"> Public path after publish: <code><%= o.publicPath %></code></span>
+    <% } %>
+  </div>
+  <% } %>
+
   <% if (o.isEmptyWebsite) { %>
   <div class="bb-phase4-website__empty bb-hq-card" data-bb-phase4-empty="new-website">
     <h2>Your church website is ready to set up.</h2>
@@ -78,9 +88,16 @@
     <article class="bb-hq-card bb-phase4-website__status" data-bb-phase4-website-status="1">
       <p class="bb-phase4-website__status-badge"><%= o.websiteStatusLabel || 'Not Published' %></p>
       <h2 class="bb-hq-section-title">Website status</h2>
-      <% if (o.publicPath) { %>
+      <% if (o.organizationKey) { %>
+      <p class="bb-hq-muted">Organization key: <code><%= o.organizationKey %></code></p>
+      <% } %>
+      <% if (o.liveAvailable && o.publicPath) { %>
       <p class="bb-phase4-website__url">
         <a href="<%= o.publicPath %>" rel="noopener"><%= o.publicPath %></a>
+      </p>
+      <% } else if (o.publicPath) { %>
+      <p class="bb-phase4-website__url bb-hq-muted">
+        Public path (not live yet): <code><%= o.publicPath %></code>
       </p>
       <% } %>
       <dl class="bb-phase4-website__dl">

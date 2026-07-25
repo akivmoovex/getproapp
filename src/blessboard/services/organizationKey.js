@@ -79,6 +79,48 @@ function normalizeOrganizationKey(raw) {
 }
 
 /**
+ * Append numeric collision suffix while staying within 64 chars and ORG_KEY_RE.
+ * n=1 → base; n>=2 → base-n (e.g. grace-community-church-2).
+ * @param {string} base
+ * @param {number} n
+ * @returns {string}
+ */
+function withOrganizationKeySuffix(base, n) {
+  const root = String(base || "").trim().toLowerCase();
+  if (!root) return "";
+  if (!n || n <= 1) return root.slice(0, 64);
+  const suffix = `-${n}`;
+  const maxRoot = Math.max(1, 64 - suffix.length);
+  let truncated = root.slice(0, maxRoot).replace(/-+$/g, "");
+  if (!truncated) truncated = "c";
+  if (!/^[a-z]/.test(truncated)) truncated = `c-${truncated}`.slice(0, maxRoot);
+  return `${truncated}${suffix}`.slice(0, 64);
+}
+
+/**
+ * Resolve a usable base key from a church display name (or preferred raw key),
+ * escaping reserved tokens without requiring an operator to type a key.
+ * @param {string} raw
+ * @returns {{ ok: true, key: string } | { ok: false, reason: string }}
+ */
+function resolveBaseOrganizationKey(raw) {
+  const slug = slugifyOrganizationKey(raw);
+  if (!slug) return { ok: false, reason: "invalid_key" };
+
+  const direct = normalizeOrganizationKey(slug);
+  if (direct.ok) return direct;
+
+  if (direct.reason === "reserved_key") {
+    const alts = [`${slug}-church`, `org-${slug}`, `c-${slug}`];
+    for (const alt of alts) {
+      const norm = normalizeOrganizationKey(alt);
+      if (norm.ok) return norm;
+    }
+  }
+  return { ok: false, reason: direct.reason || "invalid_key" };
+}
+
+/**
  * @param {string} key
  * @returns {boolean}
  */
@@ -91,5 +133,7 @@ module.exports = {
   RESERVED_ORGANIZATION_KEYS,
   slugifyOrganizationKey,
   normalizeOrganizationKey,
+  resolveBaseOrganizationKey,
+  withOrganizationKeySuffix,
   isReservedOrganizationKey,
 };

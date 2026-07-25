@@ -14,7 +14,6 @@ const bcrypt = require("bcryptjs");
 const appRepo = require("../repositories/platformChurchRegistrationRepository");
 const authRepo = require("../repositories/blessBoardAuthRepository");
 const inviteRepo = require("../repositories/userInvitationRepository");
-const publicContentRepo = require("../repositories/publicContentRepository");
 const entitlementRepo = require("../../platform/repositories/entitlementRepository");
 const {
   withProvisioningTransaction,
@@ -27,9 +26,12 @@ const userCreate = require("./createBlessBoardUser");
 const roleAssign = require("./assignBlessBoardRole");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
 const { logRegistrationTrace } = require("./registrationTraceLog");
-const { normalizeOrganizationKey } = require("./organizationKey");
+const {
+  normalizeOrganizationKey,
+  resolveBaseOrganizationKey,
+  withOrganizationKeySuffix,
+} = require("./organizationKey");
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
-const { PUBLIC_PAGE_KEYS, PAGE_KEY_TITLES } = require("./publicContentConstants");
 const { generateInviteToken, INVITE_TTL_MS } = require("./inviteBlessBoardStaff");
 const { BCRYPT_ROUNDS, normalizeEmail } = userCreate;
 const STATUS = Object.freeze({
@@ -309,6 +311,53 @@ async function assertOrganizationKeyAvailable(client, organizationKey) {
   if (r.rows[0]) {
     throw new OrchestratorError(STATUS.SLUG_UNAVAILABLE, "slug_unavailable");
   }
+}
+
+/**
+ * Allocate a unique organization_key inside the provisioning transaction.
+ * Prefer an exact operator-supplied key when available; otherwise slugify the
+ * church name and resolve collisions with -2, -3, … suffixes.
+ *
+ * @param {{ query: Function }} client
+ * @param {{ preferredKey?: string|null, churchName?: string|null, exactPreferred?: boolean }} input
+ * @returns {Promise<string>}
+ */
+async function allocateUniqueOrganizationKey(client, input) {
+  const preferred = String((input && input.preferredKey) || "").trim();
+  const churchName = String((input && input.churchName) || "").trim();
+  const exactPreferred = Boolean(input && input.exactPreferred && preferred);
+
+  if (exactPreferred) {
+    const keyNorm = normalizeOrganizationKey(preferred);
+    if (!keyNorm.ok) {
+      throw new OrchestratorError(
+        keyNorm.reason === "reserved_key" ? STATUS.SLUG_UNAVAILABLE : STATUS.INVALID_INPUT,
+        keyNorm.reason === "reserved_key" ? "slug_unavailable" : "invalid_input:organizationKey"
+      );
+    }
+    await assertOrganizationKeyAvailable(client, keyNorm.key);
+    return keyNorm.key;
+  }
+
+  const base = resolveBaseOrganizationKey(preferred || churchName);
+  if (!base.ok) {
+    throw new OrchestratorError(
+      base.reason === "reserved_key" ? STATUS.SLUG_UNAVAILABLE : STATUS.INVALID_INPUT,
+      base.reason === "reserved_key" ? "slug_unavailable" : "invalid_input:organizationKey"
+    );
+  }
+
+  for (let n = 1; n <= 200; n += 1) {
+    const candidateRaw = withOrganizationKeySuffix(base.key, n);
+    const candidate = normalizeOrganizationKey(candidateRaw);
+    if (!candidate.ok) continue;
+    const r = await client.query(
+      `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
+      [candidate.key]
+    );
+    if (!r.rows[0]) return candidate.key;
+  }
+  throw new OrchestratorError(STATUS.SLUG_UNAVAILABLE, "slug_unavailable");
 }
 
 /**
@@ -688,16 +737,15 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       await validatePlanCatalogueForProvision(client, planKey);
 
       provisioningStage = "resolve_organization_key";
-      const keySource = requestedOrganizationKey || application.church_name;
-      const keyNorm = normalizeOrganizationKey(keySource);
-      if (!keyNorm.ok) {
-        throw new OrchestratorError(
-          keyNorm.reason === "reserved_key" ? STATUS.SLUG_UNAVAILABLE : STATUS.INVALID_INPUT,
-          keyNorm.reason === "reserved_key" ? "slug_unavailable" : "invalid_input:organizationKey"
-        );
-      }
-      const organizationKey = keyNorm.key;
-      await assertOrganizationKeyAvailable(client, organizationKey);
+      const preferredKey = requestedOrganizationKey
+        ? String(requestedOrganizationKey).trim()
+        : "";
+      const organizationKey = await allocateUniqueOrganizationKey(client, {
+        preferredKey: preferredKey || null,
+        churchName: application.church_name,
+        // Operator-supplied keys must be exact; auto church-name keys collide with -2/-3.
+        exactPreferred: Boolean(preferredKey),
+      });
 
       provisioningStage = "resolve_administrator_identity";
       const emailNormalized = normalizeEmail(application.contact_email);
@@ -756,6 +804,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           tenant.message || tenant.status
         );
       }
+      provisioningStage = "organization_created";
+      provisioningStage = "organization_key_created";
 
       const countryRaw = String(application.country || "")
         .trim()
@@ -794,6 +844,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           church.message || church.status
         );
       }
+      provisioningStage = "church_created";
+      provisioningStage = "hq_branch_created";
 
       let administratorUserId = null;
       let invitationId = null;
@@ -959,7 +1011,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       const branchId = church.records.hqBranch.id;
       const organizationId = tenant.records.organization.id;
 
-      provisioningStage = "ensure_draft_website";
+      provisioningStage = "website_created";
       await ensureMinimalDraftPages(client, churchId);
       await ensureDraftChurchSettings(client, {
         churchId,
@@ -967,11 +1019,37 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         primaryEmail: application.contact_email,
         primaryPhone: application.contact_phone,
       });
+      provisioningStage = "default_pages_seeded";
+
       provisioningStage = "ensure_organization_onboarding";
       await ensureOrganizationOnboarding(client, {
         organizationId,
         applicationId,
       });
+
+      provisioningStage = "website_published";
+      const {
+        publishInitialFoundationWebsite,
+      } = require("./churchWebsitePublishService");
+      const initialPublish = await publishInitialFoundationWebsite(client, {
+        churchId,
+        organizationId,
+        organizationKey,
+        publicName: displayName,
+        actorUserId: administratorViaInvitation ? invitingActorUserId : administratorUserId,
+        env: actorContext.env || process.env,
+        source: "registration_provision",
+      });
+      if (!initialPublish || !initialPublish.ok) {
+        throw new OrchestratorError(
+          STATUS.DATABASE_CONFLICT,
+          (initialPublish && initialPublish.reason) || "initial_website_publish_failed"
+        );
+      }
+      provisioningStage = "public_route_verified";
+      if (!initialPublish.publicPath || initialPublish.publicPath !== `/c/${organizationKey}`) {
+        throw new OrchestratorError(STATUS.DATABASE_CONFLICT, "public_route_unverified");
+      }
 
       provisioningStage = "close_application";
       const closed = await appRepo.updateApplicationProvisioningState(client, applicationId, {
@@ -1269,4 +1347,6 @@ module.exports = {
   buildSubscriptionAssignment,
   classifyExistingAdministratorIdentity,
   extractProvisionErrorDiagnostics,
+  allocateUniqueOrganizationKey,
+  assertOrganizationKeyAvailable,
 };

@@ -392,10 +392,15 @@ describe("registration approval provision fix", () => {
     assert.equal(approved.ok, true, approved.message || approved.status);
     assert.equal(approved.records.provisioningStatus, "provisioned");
     const pages = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1 AND status = 'draft'`,
+      `SELECT COUNT(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1 AND status = 'published'`,
       [approved.records.churchId]
     );
     assert.equal(pages.rows[0].n, 8);
+    const settings = await pool.query(
+      `SELECT website_status FROM blessboard.church_settings WHERE church_id = $1`,
+      [approved.records.churchId]
+    );
+    assert.equal(settings.rows[0].website_status, "published");
 
     // Restore columns for later suites sharing this process DB if any.
     await pool.query(`

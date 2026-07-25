@@ -246,8 +246,13 @@ async function loadFoundationWebsiteOverview(db, opts) {
       editPath: "/hq/content",
       previewPath: hqPreviewPagePath("home"),
       publicPath,
+      organizationKey: orgKey,
       liveAvailable: hasPublished,
       websiteStatusLabel: friendlyStatus,
+      websitePublished: hasPublished,
+      unpublishedNotice: !hasPublished
+        ? "Website not published yet. Preview your draft, then publish when ready."
+        : null,
       lastPublishedAt: currentPub && currentPub.publishedAt,
       lastPublishedByName: currentPub && currentPub.publishedByName,
       themeKey: draftPages.themeKey || "default",

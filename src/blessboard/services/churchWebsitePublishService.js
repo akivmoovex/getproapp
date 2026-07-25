@@ -758,6 +758,233 @@ async function unpublishChurchWebsite(db, input) {
   }
 }
 
+/**
+ * Seed a safe home welcome section when missing (never overwrite existing copy).
+ * Uses provision-safe column sets (no revision_number).
+ * @param {{ query: Function }} client
+ * @param {{ churchId: string, publicName: string }} fields
+ */
+async function ensureInitialHomeWelcomeSection(client, fields) {
+  const churchId = String((fields && fields.churchId) || "").trim();
+  const publicName =
+    String((fields && fields.publicName) || "").trim() || "Church";
+  if (!UUID_RE.test(churchId)) return { created: false };
+
+  const pageResult = await publicContentRepo.ensureDraftPage(client, {
+    churchId,
+    branchId: null,
+    pageKey: "home",
+    title: PAGE_KEY_TITLES.home || "Home",
+  });
+  const page = pageResult && pageResult.page;
+  if (!page || !page.id) return { created: false, page: null };
+
+  const existing = await publicContentRepo.findSectionByPageAndKeyForProvision(
+    client,
+    page.id,
+    "welcome"
+  );
+  if (existing) return { created: false, page, section: existing };
+
+  const section = await publicContentRepo.insertSection(client, {
+    pageId: page.id,
+    sectionKey: "welcome",
+    sectionType: "text",
+    heading: `Welcome to ${publicName}`,
+    bodyText:
+      `${publicName} is getting started on BlessBoard. ` +
+      "Update this homepage from Church Website when you are ready.",
+    mediaUrl: null,
+    sortOrder: 0,
+    status: "draft",
+    layoutMetadata: null,
+  });
+  return { created: true, page, section };
+}
+
+/**
+ * First-time Foundation publish inside an existing provisioning transaction.
+ * Publishes required pages + draft sections and sets website_status=published
+ * so `/c/:organizationKey` is immediately usable. Skips HQ readiness gates
+ * (preview ack / service-times) that block first publish after approval.
+ *
+ * @param {{ query: Function }} client
+ * @param {{
+ *   churchId: string,
+ *   organizationId: string,
+ *   organizationKey: string,
+ *   publicName?: string|null,
+ *   actorUserId?: string|null,
+ *   env?: object,
+ *   source?: string,
+ * }} input
+ */
+async function publishInitialFoundationWebsite(client, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const organizationKey = String((input && input.organizationKey) || "")
+    .trim()
+    .toLowerCase();
+  if (!UUID_RE.test(churchId) || !UUID_RE.test(organizationId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "scope" };
+  }
+  const keyNorm = normalizeOrganizationKey(organizationKey);
+  if (!keyNorm.ok) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "organization_key" };
+  }
+
+  const settings = await settingsRepo.findChurchSettings(client, churchId);
+  if (settings && String(settings.websiteStatus || "") === "published") {
+    const publishedPages = await client.query(
+      `SELECT COUNT(*)::int AS n
+         FROM blessboard.public_pages
+        WHERE church_id = $1
+          AND branch_id IS NULL
+          AND status = 'published'
+          AND page_key = ANY($2::text[])`,
+      [churchId, PUBLIC_PAGE_KEYS.slice()]
+    );
+    const n = publishedPages.rows[0] ? Number(publishedPages.rows[0].n) : 0;
+    if (n === PUBLIC_PAGE_KEYS.length) {
+      return {
+        ok: true,
+        status: STATUS.OK,
+        alreadyPublished: true,
+        publicPath: `/c/${keyNorm.key}`,
+        organizationKey: keyNorm.key,
+        pageCount: n,
+      };
+    }
+  }
+
+  const publicName =
+    String((input && input.publicName) || "").trim() ||
+    (settings && settings.publicName) ||
+    "Church";
+
+  await ensureRequiredDraftPages(client, churchId);
+  await ensureInitialHomeWelcomeSection(client, { churchId, publicName });
+
+  const publishedAt = new Date();
+  const pageUpdate = await client.query(
+    `UPDATE blessboard.public_pages
+        SET status = 'published',
+            published_at = COALESCE(published_at, $2::timestamptz),
+            updated_at = now()
+      WHERE church_id = $1
+        AND branch_id IS NULL
+        AND page_key = ANY($3::text[])
+        AND status <> 'archived'
+    RETURNING id, page_key, status`,
+    [churchId, publishedAt.toISOString(), PUBLIC_PAGE_KEYS.slice()]
+  );
+  if (pageUpdate.rowCount !== PUBLIC_PAGE_KEYS.length) {
+    throw Object.assign(new Error("partial_page_publish"), {
+      code: "PARTIAL_PAGE_PUBLISH",
+      expected: PUBLIC_PAGE_KEYS.length,
+      actual: pageUpdate.rowCount,
+    });
+  }
+
+  await client.query(
+    `UPDATE blessboard.page_sections ps
+        SET status = 'published',
+            updated_at = now()
+       FROM blessboard.public_pages pp
+      WHERE ps.page_id = pp.id
+        AND pp.church_id = $1
+        AND pp.branch_id IS NULL
+        AND pp.page_key = ANY($2::text[])
+        AND ps.status = 'draft'`,
+    [churchId, PUBLIC_PAGE_KEYS.slice()]
+  );
+
+  await settingsRepo.ensureChurchSettingsRow(client, {
+    churchId,
+    publicName,
+  });
+  const existing = await settingsRepo.findChurchSettings(client, churchId);
+  await settingsRepo.upsertChurchSettings(client, churchId, {
+    publicName: (existing && existing.publicName) || publicName,
+    denomination: existing ? existing.denomination : null,
+    primaryEmail: existing ? existing.primaryEmail : null,
+    primaryPhone: existing ? existing.primaryPhone : null,
+    defaultTimezone: existing ? existing.defaultTimezone : null,
+    defaultCountryCode: existing ? existing.defaultCountryCode : null,
+    websiteStatus: "published",
+  });
+
+  await appRepo.ensureOrganizationOnboardingRow(client, { organizationId });
+  await appRepo.updateOrganizationOnboarding(client, organizationId, {
+    previewAcknowledged: true,
+    onboardingStatus: "in_progress",
+    onboardingStartedAt: publishedAt.toISOString(),
+    lastActivityAt: publishedAt.toISOString(),
+  });
+
+  await recordAuditEventSafe(client, {
+    deploymentCode: deploymentCode(input && input.env),
+    organizationId,
+    churchId,
+    branchId: null,
+    actorUserId: (input && input.actorUserId) || null,
+    actionKey: "website.published",
+    entityType: "church",
+    entityId: churchId,
+    outcome: "success",
+    metadata: {
+      from_status: (settings && settings.websiteStatus) || "draft",
+      to_status: "published",
+      count: pageUpdate.rowCount,
+      source: (input && input.source) || "registration_provision",
+      initial_foundation_publish: true,
+    },
+  });
+
+  let publicationVersionId = null;
+  let publicationVersionNumber = null;
+  await client.query("SAVEPOINT initial_foundation_publish_version");
+  try {
+    const versionSvc = require("./websitePublicationVersionService");
+    const publicationVersion = await versionSvc.recordPublishVersionInTransaction(client, {
+      organizationId,
+      churchId,
+      actorUserId: (input && input.actorUserId) || null,
+      publishedAt: publishedAt.toISOString(),
+      sourceType: "initial_setup",
+      publicationNote: "Initial Foundation website published at registration approval",
+      publishedSubmissionIds: [],
+      alreadyPublished: false,
+    });
+    publicationVersionId = publicationVersion && publicationVersion.id;
+    publicationVersionNumber = publicationVersion && publicationVersion.versionNumber;
+    await client.query("RELEASE SAVEPOINT initial_foundation_publish_version");
+  } catch (versionErr) {
+    try {
+      await client.query("ROLLBACK TO SAVEPOINT initial_foundation_publish_version");
+    } catch {
+      /* ignore */
+    }
+    const pgCode = versionErr && versionErr.code ? String(versionErr.code) : "";
+    // Hosted DBs may lag migrations 041+/043; public route only needs website_status.
+    if (pgCode !== "42P01" && pgCode !== "42703") {
+      throw versionErr;
+    }
+  }
+
+  return {
+    ok: true,
+    status: STATUS.OK,
+    alreadyPublished: false,
+    publishedAt: publishedAt.toISOString(),
+    pageCount: pageUpdate.rowCount,
+    publicPath: `/c/${keyNorm.key}`,
+    organizationKey: keyNorm.key,
+    publicationVersionId,
+    publicationVersionNumber,
+  };
+}
+
 module.exports = {
   STATUS,
   GAP,
@@ -765,6 +992,8 @@ module.exports = {
   evaluatePublishReadiness,
   acknowledgeWebsitePreview,
   publishChurchWebsite,
+  publishInitialFoundationWebsite,
+  ensureInitialHomeWelcomeSection,
   unpublishChurchWebsite,
   ensureRequiredDraftPages,
 };

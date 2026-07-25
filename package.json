@@ -56,6 +56,7 @@
     "test:v5:logging-sensitive": "node --test tests/v5-logging-sensitive-data.test.js",
     "platform:tenant:provision": "node db/scripts/platform-tenant-provision.js",
     "blessboard:church:provision": "node db/scripts/blessboard-church-provision.js",
+    "blessboard:public-miniwebsite:repair": "node db/scripts/blessboard-public-miniwebsite-repair.js",
     "blessboard:growth-trial:expiry": "node db/scripts/blessboard-growth-trial-expiry.js",
     "blessboard:user:create": "node db/scripts/blessboard-user-create.js",
     "blessboard:user:role:assign": "node db/scripts/blessboard-user-role-assign.js",
