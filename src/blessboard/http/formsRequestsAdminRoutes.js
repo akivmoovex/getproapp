@@ -207,7 +207,8 @@ function createFormsRequestsAdminRouter(deps) {
   const rejectApex = createRejectApex({
     isApexHost,
     sendUnavailable,
-    mode: variant === "hq" ? "unlessTenant" : "hard",
+    // Branch modules must match /branch-admin shell: allow apex when session tenant resolves.
+    mode: "unlessTenant",
   });
 
   function gate(req, res, next) {

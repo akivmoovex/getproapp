@@ -1,8 +1,9 @@
 "use strict";
 
 /**
- * Branch-admin navigation + dashboard module model.
- * Enabled entries match live /branch-admin routes; disabled are placeholders only.
+ * Branch-admin navigation + dashboard module model (BlessBoard V5 Foundation).
+ * Enabled entries match live /branch-admin routes — not Church Phase 6 /branch/* aliases.
+ * Reports stays disabled: no V5 branch monthly-reports backend on this deployment.
  */
 
 const BRANCH_ADMIN_NAV = Object.freeze([

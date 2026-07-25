@@ -11,6 +11,7 @@ const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
+const { createRejectApex } = require("./rejectApex");
 const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
 const {
   listMemberRegistrations,
@@ -61,7 +62,6 @@ function createBranchRegistrationAdminRouter(deps) {
   const getPool = deps.getPool;
   const isApexHost = deps.isApexHost;
   const env = deps.env || process.env;
-  const sendUnavailable = deps.sendUnavailable;
   const isProduction = String(env.NODE_ENV || "") === "production";
 
   const router = express.Router();
@@ -70,13 +70,29 @@ function createBranchRegistrationAdminRouter(deps) {
     allowedRoles: ["platform_admin", "church_hq_admin", "branch_admin"],
   });
 
-  function rejectApex(req, res, next) {
-    if (isApexHost(req)) {
-      if (typeof sendUnavailable === "function") return sendUnavailable(req, res);
-      return res.status(503).type("text").send("Unavailable");
-    }
-    return next();
+  function sendMissingTenantContext(req, res) {
+    return sendLoginUnavailable(
+      req,
+      res,
+      403,
+      "Your account is signed in, but this branch workspace could not be loaded. Confirm you are assigned to an active organization and branch, then sign in again."
+    );
   }
+
+  const rejectApex = createRejectApex({
+    isApexHost,
+    mode: "unlessTenant",
+    sendUnavailable: (req, res) => {
+      if (!(req.v5Session && req.v5Session.authenticated)) {
+        const wantsHtml = String(req.get("accept") || "").includes("text/html");
+        if (wantsHtml) {
+          return res.redirect(303, "/login?next=/branch-admin/registrations");
+        }
+        return sendLoginUnavailable(req, res, 401, "Sign-in is required.");
+      }
+      return sendMissingTenantContext(req, res);
+    },
+  });
 
   function gateAccess(req, res, next) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
@@ -87,6 +103,10 @@ function createBranchRegistrationAdminRouter(deps) {
         return res.redirect(303, `/login?next=${nextUrl}`);
       }
       return sendLoginUnavailable(req, res, 401, "Sign-in is required.");
+    }
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || tenant.resolved !== true) {
+      return sendMissingTenantContext(req, res);
     }
     return requireAccess(req, res, next);
   }

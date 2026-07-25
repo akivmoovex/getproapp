@@ -14,12 +14,11 @@ const {
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
-const { formatRoleLabel } = require("./renderTenantLandingPage");
+const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
+const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
   CSRF_FIELD,
-  issueCsrfToken,
   validateCsrf,
-  setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const {
   STATUS,
@@ -96,7 +95,8 @@ function createParticipationAdminRouter(deps) {
   const rejectApex = createRejectApex({
     isApexHost,
     sendUnavailable,
-    mode: variant === "hq" ? "unlessTenant" : "hard",
+    // Branch modules must match /branch-admin shell: allow apex when session tenant resolves.
+    mode: "unlessTenant",
   });
 
   function gate(req, res, next) {
@@ -111,46 +111,30 @@ function createParticipationAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function primaryRoleLabel(req) {
-    const roles =
-      req.blessBoardAuthorizationContext && req.blessBoardAuthorizationContext.effectiveRoles
-        ? req.blessBoardAuthorizationContext.effectiveRoles
-        : [];
-    const order =
-      variant === "hq"
-        ? ["church_hq_admin", "platform_admin", "branch_admin"]
-        : ["branch_admin", "church_hq_admin", "platform_admin"];
-    for (const key of order) {
-      const hit = roles.find((r) => r.roleKey === key);
-      if (hit) return formatRoleLabel(hit.roleKey);
+  async function shellLocals(req, res, extra) {
+    if (variant === "branch") {
+      return buildBranchAdminShellLocals(req, res, {
+        env,
+        isProduction,
+        activeNav: "participation",
+        pageTitle: (extra && extra.pageTitle) || "Participation",
+        extra: {
+          shellKind: "branch",
+          ...(extra || {}),
+        },
+      });
     }
-    return roles[0] ? formatRoleLabel(roles[0].roleKey) : variant === "hq" ? "HQ admin" : "Branch admin";
-  }
-
-  function shellLocals(req, res, extra) {
-    const tenant = resolveTenantForAuthorization(req);
-    const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
-    const base = {
-      pageTitle: "Participation",
+    return buildHqAdminShellLocals(req, res, {
+      env,
+      isProduction,
+      getPool,
       activeNav: "participation",
-      shellKind,
-      csrfToken,
-      churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-      roleLabel: primaryRoleLabel(req),
-      displayName:
-        req.v5Session && req.v5Session.session && req.v5Session.session.user
-          ? req.v5Session.session.user.displayName
-          : "",
-      ...(extra || {}),
-    };
-    if (variant === "hq") {
-      base.hqBranchDisplayName = tenant && tenant.hqBranch ? tenant.hqBranch.displayName : "";
-    } else {
-      base.branchDisplayName =
-        tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "";
-    }
-    return base;
+      pageTitle: (extra && extra.pageTitle) || "Participation",
+      extra: {
+        shellKind: "hq",
+        ...(extra || {}),
+      },
+    });
   }
 
   async function resolveScope(req, res) {
@@ -231,7 +215,7 @@ function createParticipationAdminRouter(deps) {
       }
       const html = renderView(
         "participation/admin-overview.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           basePath: scope.basePath,
           ministries: ministries.items,
           events: events.items,
