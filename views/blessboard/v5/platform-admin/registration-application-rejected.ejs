@@ -38,7 +38,8 @@
   data-bb-pa-reg-rejected-delivery="<%= summary.deliveryKey || 'recorded' %>"
   aria-label="Church registration rejected"
 >
-  <header class="bb-pa-page-head">
+  <header class="bb-pa-page-head bb-pa-reg-rejected__head">
+    <div class="bb-pa-reg-rejected__icon" aria-hidden="true">✕</div>
     <p class="bb-pa-org-detail__eyebrow" data-bb-pa-reg-rejected-label="1"><%= summary.deliveryLabel || 'Rejection recorded' %></p>
     <h1 class="bb-pa-page-head__title" data-bb-pa-reg-rejected-church="1"><%= churchName %></h1>
     <p class="bb-pa-lede">
@@ -73,19 +74,33 @@
     <% if (summary.applicantMessage) { %>
     <div data-bb-pa-reg-rejected-applicant="1">
       <h3 class="bb-pa-lede">Applicant-facing message</h3>
-      <p><%= summary.applicantMessage %></p>
+      <p class="bb-pa-reg-longtext"><%= summary.applicantMessage %></p>
     </div>
     <% } %>
 
     <% if (summary.internalNote) { %>
     <details class="bb-pa-reg-rejected__internal" data-bb-pa-reg-rejected-internal="1">
       <summary>Internal note</summary>
-      <p><%= summary.internalNote %></p>
+      <p class="bb-pa-reg-longtext"><%= summary.internalNote %></p>
     </details>
     <% } %>
 
+    <section class="bb-pa-reg-rejected__audit" data-bb-pa-reg-rejected-audit="1" aria-label="Audit information">
+      <h3 class="bb-pa-lede">Audit information</h3>
+      <ul>
+        <% if (summary.rejectedAt) { %>
+        <li>Rejected at <%= fmtDate(summary.rejectedAt) %>.</li>
+        <% } %>
+        <li>Application status is rejected. No organization was provisioned by this action.</li>
+        <li>Rejection recorded. External delivery is not yet connected unless a verified send record exists.</li>
+      </ul>
+    </section>
+
     <p class="bb-pa-hint" data-bb-pa-reg-rejected-no-delete="1">
       The registration record was preserved. No organization, church, branch, or user was deleted by this rejection.
+    </p>
+    <p class="bb-pa-hint" data-bb-pa-reg-rejected-no-approve="1">
+      Approval is not available from this result screen unless the registration is reopened.
     </p>
   </section>
 

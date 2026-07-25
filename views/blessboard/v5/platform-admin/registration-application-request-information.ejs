@@ -159,8 +159,29 @@
         ></textarea>
       </div>
       <p class="bb-pa-hint" data-bb-pa-reg-request-no-send-claim="1">
-        This records an information request and sets follow-up to awaiting customer.
-        It does not claim that email or SMS was delivered unless a real delivery record says so.
+        Request recorded behavior: this saves the information request and sets follow-up to awaiting customer.
+        External delivery is not yet connected — this form does not send email or SMS.
+      </p>
+    </section>
+
+    <section class="bb-pa-panel" aria-labelledby="reg-request-channel-title" data-bb-pa-reg-request-channels="1">
+      <h2 id="reg-request-channel-title" class="bb-pa-section-title">Delivery channels</h2>
+      <ul class="bb-pa-reg-request-info__channels">
+        <li>
+          <label class="bb-pa-reg-request-info__channel">
+            <input type="radio" name="channel_ui" value="email" checked disabled />
+            <span>Email (record only)</span>
+          </label>
+        </li>
+        <li>
+          <label class="bb-pa-reg-request-info__channel bb-pa-reg-request-info__channel--unavailable">
+            <input type="radio" name="channel_ui" value="sms" disabled />
+            <span>SMS — unavailable</span>
+          </label>
+        </li>
+      </ul>
+      <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-request-delivery-banner="1">
+        Request recorded. External delivery is not yet connected.
       </p>
     </section>
 

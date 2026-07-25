@@ -145,6 +145,7 @@ const {
   presentPhase5NeedsInformationState,
   presentPhase5InformationDelivery,
   presentPhase5RejectionSummary,
+  presentSuggestedOrganizationKeyPreview,
   PHASE5_INFO_REQUEST_REASONS,
   PHASE5_REJECT_REASONS,
 } = require("../../blessboard/services/registrationQueuePresentation");
@@ -241,7 +242,7 @@ function sendControlled(req, res, status, message) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Platform admin · BlessBoard</title>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=55" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=56" />
 </head>
 <body class="bb-pa-body">
   <main class="bb-pa-notice">
@@ -2247,6 +2248,7 @@ function createPlatformAdminRouter(deps) {
         duplicateWarning = { show: false, match: null, listHref: null, advisory: true };
       }
       const flash = readFlash(req);
+      const suggestedOrganizationKey = presentSuggestedOrganizationKeyPreview(app.churchName);
       const html = renderPlatformAdminView(
         "platform-admin/registration-application-approve-confirm.ejs",
         shellLocals(req, res, "registration-applications", {
@@ -2254,6 +2256,7 @@ function createPlatformAdminRouter(deps) {
           application: app,
           duplicateMatchesLoaded,
           duplicateWarning,
+          suggestedOrganizationKey,
           notice: flash.notice,
           error: flash.error,
         })

@@ -59,6 +59,10 @@
     </p>
   </header>
 
+  <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-needs-status-banner="1">
+    Outstanding information request. Approval stays available only when current eligibility rules allow it.
+  </p>
+
   <dl class="bb-pa-dl bb-pa-reg-needs-info__facts">
     <% if (displayLocal(appLocal.contactName) || phoneLocal || emailLocal) { %>
     <div>
@@ -84,7 +88,7 @@
     </div>
     <% if (needsState && needsState.reasonLabels && needsState.reasonLabels.length) { %>
     <div>
-      <dt>Selected reasons</dt>
+      <dt>Outstanding request</dt>
       <dd data-bb-pa-reg-needs-reasons="1">
         <ul>
           <% needsState.reasonLabels.forEach(function (label) { %>
@@ -96,7 +100,7 @@
     <% } %>
     <% if (needsState && needsState.messageSummary) { %>
     <div>
-      <dt>Request message</dt>
+      <dt>Request message / reviewer notes</dt>
       <dd data-bb-pa-reg-needs-message="1"><%= needsState.messageSummary %></dd>
     </div>
     <% } %>
@@ -111,6 +115,19 @@
     Later applicant information is stored. Review the communication history in additional details.
   </p>
   <% } %>
+
+  <section class="bb-pa-reg-needs-info__audit" data-bb-pa-reg-needs-audit="1" aria-label="Audit timeline">
+    <h3 class="bb-pa-lede">Audit timeline</h3>
+    <ul>
+      <% if (needsState && needsState.requestedAt) { %>
+      <li data-bb-pa-reg-needs-audit-request="1">Information request recorded <%= fmtNeedsDate(needsState.requestedAt) %>.</li>
+      <% } else { %>
+      <li>Needs-information follow-up is active for this registration.</li>
+      <% } %>
+      <li>Follow-up status: <%= labelLocal(appLocal.followUpStatus) %>.</li>
+      <li>Application status unchanged by the information request: <%= labelLocal(appLocal.applicationStatus) %>.</li>
+    </ul>
+  </section>
 
   <% if (needsState && needsState.hasApplicantResponse) { %>
   <p>
@@ -130,16 +147,23 @@
       data-bb-pa-reg-needs-follow-up-action="1"
       onclick="var d=document.querySelector('[data-bb-pa-reg-secondary]'); if(d) d.open=true;"
     >Record follow-up</a>
+    <a
+      class="bb-pa-btn bb-pa-btn--secondary"
+      href="<%= appIdEncLocal ? ('/admin/registration-applications/' + appIdEncLocal + '/request-information') : '#' %>"
+      data-bb-pa-reg-needs-request-again="1"
+    >Request again</a>
     <a class="bb-pa-btn bb-pa-btn--secondary" href="/admin/registration-applications" data-bb-pa-reg-needs-return="1">Return to registrations</a>
     <% if (canApproveLocal) { %>
     <a class="bb-pa-btn bb-pa-btn--primary" href="<%= approveHrefLocal %>" data-bb-pa-reg-needs-approve="1">Approve</a>
+    <% } else { %>
+    <button class="bb-pa-btn bb-pa-btn--primary" type="button" disabled data-bb-pa-reg-needs-approve-disabled="1">Approve unavailable</button>
     <% } %>
     <% if (appLocal.rejectActionsAvailable) { %>
     <a class="bb-pa-btn bb-pa-btn--danger" href="<%= rejectHrefLocal %>" data-bb-pa-reg-needs-reject="1">Reject</a>
     <% } %>
   </div>
   <p class="bb-pa-hint" data-bb-pa-reg-needs-no-reminder="1">
-    Send reminder is not available. Use Record follow-up to update the existing follow-up status.
+    Send reminder is not available. External delivery is not yet connected. Use Record follow-up to update the existing follow-up status.
   </p>
 </section>
 <% } %>

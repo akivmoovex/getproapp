@@ -264,6 +264,6 @@ describe("Phase 5 request-information UI (no Postgres)", () => {
     assert.match(css, /\.bb-pa-reg-needs-info\b/);
     assert.match(css, /@media \(max-width: 719px\)[\s\S]*bb-pa-reg-request-info__actions/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=55/);
+    assert.match(shell, /platform-admin\.css\?v=56/);
   });
 });

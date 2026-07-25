@@ -177,7 +177,7 @@ describe("registration rejection workspace UI (Prompt 070, no Postgres)", () => 
     assert.match(css, /\.bb-pa-reg-rejection__form\s*\{/);
     assert.match(css, /\.bb-pa-reg-rejection__actions\s*\{/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=55/);
+    assert.match(shell, /platform-admin\.css\?v=56/);
   });
 
   it("shows completed rejection state with controlled reopen form", () => {

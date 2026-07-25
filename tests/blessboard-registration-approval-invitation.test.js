@@ -502,7 +502,7 @@ describe("registration approval without password (Prompt 49)", () => {
     const combined = `${detail}\n${secondary}\n${confirm}`;
     assert.match(
       combined,
-      /Copy or resend the invitation from the organization page|Prepare invitation information for you to copy|Administrator invitation prepared/i
+      /Copy or resend the invitation from the organization page|Prepare invitation information for you to copy|Prepare an HQ administrator invitation for you to copy|Administrator invitation prepared/i
     );
   });
 

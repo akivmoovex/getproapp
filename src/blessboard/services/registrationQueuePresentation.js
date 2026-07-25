@@ -543,6 +543,34 @@ function presentPhase5RejectionSummary(application, communications) {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/**
+ * Presentation-only suggested organization key + public path preview for approval confirm.
+ * Does not allocate or reserve a key — provisioning still auto-allocates unless overridden.
+ * @param {string|null|undefined} churchName
+ * @returns {{ key: string|null, publicPath: string|null, publicUrlPreview: string|null }}
+ */
+function presentSuggestedOrganizationKeyPreview(churchName) {
+  try {
+    const {
+      slugifyOrganizationKey,
+      normalizeOrganizationKey,
+    } = require("./organizationKey");
+    const slug = slugifyOrganizationKey(churchName);
+    const norm = normalizeOrganizationKey(slug);
+    if (!norm.ok) {
+      return { key: null, publicPath: null, publicUrlPreview: null };
+    }
+    const publicPath = `/c/${norm.key}`;
+    return {
+      key: norm.key,
+      publicPath,
+      publicUrlPreview: `https://blessboard.org${publicPath}`,
+    };
+  } catch {
+    return { key: null, publicPath: null, publicUrlPreview: null };
+  }
+}
+
 module.exports = {
   PHASE5_VISIBLE,
   PHASE5_LABELS,
@@ -561,5 +589,6 @@ module.exports = {
   presentPhase5InformationDelivery,
   presentPhase5NeedsInformationState,
   presentPhase5RejectionSummary,
+  presentSuggestedOrganizationKeyPreview,
   chipClassForTone,
 };

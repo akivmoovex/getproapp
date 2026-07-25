@@ -50,11 +50,13 @@
   data-bb-pa-reg-info-delivery="<%= delivery.key %>"
   aria-label="Information requested"
 >
-  <header class="bb-pa-page-head">
+  <header class="bb-pa-page-head bb-pa-reg-info-requested__head">
+    <div class="bb-pa-reg-approved__icon" aria-hidden="true">✓</div>
     <p class="bb-pa-org-detail__eyebrow" data-bb-pa-reg-info-result-label="1"><%= headline %></p>
     <h1 class="bb-pa-page-head__title" data-bb-pa-reg-info-church="1"><%= churchName %></h1>
     <p class="bb-pa-lede">
       <span class="bb-pa-chip <%= phase5Status.chipClass %>" data-bb-pa-phase5-status="<%= phase5Status.key %>"><%= phase5Status.label %></span>
+      <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-reg-info-follow-up="1">Follow-up: awaiting customer</span>
       <% if (recordedAt) { %>
       <span data-bb-pa-reg-info-recorded-at="1"><%= recordedAt %></span>
       <% } %>
@@ -104,15 +106,14 @@
       </div>
       <% } %>
     </dl>
-    <p class="bb-pa-hint" data-bb-pa-reg-info-no-false-sent="1">
-      Follow-up is set to awaiting customer. Application status was not changed by this action.
-      Do not treat a status update alone as proof that a message was delivered.
+    <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-info-no-false-sent="1">
+      Request recorded. External delivery is not yet connected. Application status was not changed by this action.
     </p>
   </section>
 
   <div class="bb-pa-reg-info-requested__actions">
+    <a class="bb-pa-btn bb-pa-btn--primary" href="<%= viewHref %>" data-bb-pa-reg-info-view="1">Return to review</a>
     <a class="bb-pa-btn bb-pa-btn--secondary" href="/admin/registration-applications" data-bb-pa-reg-info-return="1">Return to registrations</a>
-    <a class="bb-pa-btn bb-pa-btn--primary" href="<%= viewHref %>" data-bb-pa-reg-info-view="1">View registration</a>
     <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= anotherHref %>" data-bb-pa-reg-info-another="1">Record another request</a>
   </div>
 </section>

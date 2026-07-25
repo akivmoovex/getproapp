@@ -28,6 +28,9 @@
   }
   var showDupWarning = Boolean(dupWarning && dupWarning.show && dupWarning.match);
   var dupMatch = showDupWarning ? dupWarning.match : null;
+  var suggested = (typeof suggestedOrganizationKey !== 'undefined' && suggestedOrganizationKey)
+    ? suggestedOrganizationKey
+    : { key: null, publicPath: null, publicUrlPreview: null };
   var flashError = typeof error !== 'undefined' ? error : null;
   function errorText(code) {
     if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
@@ -69,7 +72,7 @@
     <dl class="bb-pa-dl">
       <div>
         <dt>Matching record</dt>
-        <dd><%= dupMatch.name %></dd>
+        <dd data-bb-pa-reg-dup-name="1"><%= dupMatch.name %></dd>
       </div>
       <% if (dupMatch.location) { %>
       <div>
@@ -79,7 +82,7 @@
       <% } %>
       <div>
         <dt>Match reason</dt>
-        <dd><%= dupMatch.reason %></dd>
+        <dd data-bb-pa-reg-dup-reason="1"><%= dupMatch.reason %></dd>
       </div>
     </dl>
     <% if (dupMatch.existingHref) { %>
@@ -113,7 +116,7 @@
       <% } %>
       <% if (contactName || contactEmail) { %>
       <div>
-        <dt>Main contact</dt>
+        <dt>Applicant / main contact</dt>
         <dd data-bb-pa-reg-approve-contact="1">
           <% if (contactName) { %><%= contactName %><% } %>
           <% if (contactName && contactEmail) { %> · <% } %>
@@ -131,17 +134,31 @@
         <dt>Proposed first branch</dt>
         <dd data-bb-pa-reg-approve-branch="1"><%= branchLabel %></dd>
       </div>
+      <% if (suggested && suggested.key) { %>
+      <div>
+        <dt>Organization key (auto)</dt>
+        <dd data-bb-pa-reg-approve-org-key-preview="1"><code class="bb-pa-key"><%= suggested.key %></code></dd>
+      </div>
+      <div>
+        <dt>Public website preview</dt>
+        <dd data-bb-pa-reg-approve-public-url-preview="1">
+          <code><%= suggested.publicUrlPreview || suggested.publicPath %></code>
+        </dd>
+      </div>
+      <% } %>
     </dl>
+    <p class="bb-pa-hint" data-bb-pa-reg-approve-key-hint="1">
+      The final organization key is allocated during provisioning. The preview above is illustrative unless you override it below.
+    </p>
   </section>
 
   <section class="bb-pa-panel" aria-labelledby="reg-approve-next-title">
     <h2 id="reg-approve-next-title" class="bb-pa-section-title">What happens next</h2>
     <ul class="bb-pa-reg-approve-confirm__list" data-bb-pa-reg-approve-effects="1">
       <li>Create the organization</li>
-      <li>Create the church</li>
-      <li>Create the first branch</li>
-      <li>Create an invited HQ administrator</li>
-      <li>Prepare invitation information for you to copy</li>
+      <li>Create the church and first branch</li>
+      <li>Prepare an HQ administrator invitation for you to copy</li>
+      <li>Publish the Foundation public miniwebsite when provisioning succeeds</li>
     </ul>
     <p class="bb-pa-hint" data-bb-pa-reg-approve-no-email="1">
       Approval does not send an automated welcome email and does not activate the administrator account immediately.
@@ -160,10 +177,36 @@
     data-bb-pa-approve-form="1"
   >
     <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-    <div class="bb-pa-field bb-pa-reg-approve-confirm__org-key">
-      <label for="organization_key">Organization key (optional override)</label>
-      <input id="organization_key" name="organization_key" type="text" maxlength="80" autocomplete="off" />
+
+    <div class="bb-pa-field">
+      <label for="reviewer_note">Reviewer note (optional)</label>
+      <textarea
+        id="reviewer_note"
+        name="reviewer_note"
+        rows="3"
+        maxlength="2000"
+        data-bb-pa-reg-approve-reviewer-note="1"
+        placeholder="Internal note for audit trail (not emailed)."
+      ></textarea>
     </div>
+
+    <details class="bb-pa-reg-approve-confirm__advanced" data-bb-pa-reg-approve-advanced="1">
+      <summary>Advanced: organization key override</summary>
+      <div class="bb-pa-field bb-pa-reg-approve-confirm__org-key">
+        <label for="organization_key">Organization key override</label>
+        <input
+          id="organization_key"
+          name="organization_key"
+          type="text"
+          maxlength="80"
+          autocomplete="off"
+          placeholder="<%= (suggested && suggested.key) ? suggested.key : 'leave blank for auto-allocate' %>"
+          data-bb-pa-reg-approve-org-key="1"
+        />
+        <p class="bb-pa-hint">Leave blank to auto-allocate a unique key. Override only when you need a specific public path.</p>
+      </div>
+    </details>
+
     <div class="bb-pa-reg-approve-confirm__actions">
       <button
         class="bb-pa-btn bb-pa-btn--primary bb-pa-btn--block"
@@ -183,22 +226,30 @@
     data-bb-pa-reg-approve-processing="1"
     hidden
     aria-hidden="true"
-    role="status"
-    aria-live="polite"
   >
-    <div class="bb-pa-reg-approve-processing__card">
-      <h2 class="bb-pa-reg-approve-processing__title">Creating church account</h2>
-      <p class="bb-pa-lede" data-bb-pa-reg-approve-processing-church="1">
-        Setting up <%= churchName %>. Please wait for the server response.
-      </p>
-      <ul class="bb-pa-reg-approve-processing__steps" data-bb-pa-reg-approve-processing-steps="1">
-        <li>Creating church organization</li>
-        <li>Creating first branch</li>
-        <li>Preparing administrator invitation</li>
-      </ul>
-      <p class="bb-pa-hint">
-        This page waits for the real approval response. Progress is not marked complete until the server replies.
-      </p>
+    <div class="bb-pa-reg-approve-processing__frame" role="status" aria-live="polite" aria-busy="true">
+      <div class="bb-pa-reg-approve-processing__secure" data-bb-pa-reg-approve-processing-secure="1">
+        <span>Secure processing</span>
+      </div>
+      <div class="bb-pa-reg-approve-processing__card">
+        <div class="bb-pa-reg-approve-processing__bar" aria-hidden="true">
+          <span class="bb-pa-reg-approve-processing__bar-fill"></span>
+        </div>
+        <h2 class="bb-pa-reg-approve-processing__title">Creating church account</h2>
+        <p class="bb-pa-lede" data-bb-pa-reg-approve-processing-church="1">
+          Setting up <strong><%= churchName %></strong>. Waiting for the server to finish the approval transaction.
+        </p>
+        <ol class="bb-pa-reg-approve-processing__steps" data-bb-pa-reg-approve-processing-steps="1">
+          <li data-step="org" data-state="pending">Creating church organization…</li>
+          <li data-step="branch" data-state="pending">Creating first branch…</li>
+          <li data-step="invite" data-state="pending">Preparing administrator invitation…</li>
+          <li data-step="site" data-state="pending">Publishing public miniwebsite when ready…</li>
+        </ol>
+        <p class="bb-pa-hint" data-bb-pa-reg-approve-processing-honest="1">
+          Progress is not marked complete until the server replies. Refreshing this page cancels the waiting UI — check the registration or organization page if you already submitted.
+        </p>
+        <p class="bb-pa-reg-approve-processing__sync" aria-hidden="true">System processing</p>
+      </div>
     </div>
   </div>
 </section>
@@ -208,24 +259,50 @@
   var form = document.querySelector('[data-bb-pa-approve-confirm-form="1"]');
   if (!form) return;
   var submitBtn = form.querySelector('[data-bb-pa-approve-confirm-submit="1"]');
+  var cancelBtn = form.querySelector('[data-bb-pa-reg-approve-cancel-btn="1"]');
   var processing = document.querySelector('[data-bb-pa-reg-approve-processing="1"]');
   var submitting = false;
+  var storageKey = 'bb-pa-reg-approve-pending:' + (form.getAttribute('action') || '');
+
+  try {
+    if (sessionStorage.getItem(storageKey) === '1' && processing) {
+      processing.hidden = false;
+      processing.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('bb-pa-reg-approve-processing-active');
+      var honest = processing.querySelector('[data-bb-pa-reg-approve-processing-honest="1"]');
+      if (honest) {
+        honest.textContent =
+          'A previous approval submit may still be finishing. If this screen persists, open the registration or organization page to confirm the result.';
+      }
+    }
+  } catch (e) {}
+
   form.addEventListener('submit', function (event) {
     if (submitting) {
       event.preventDefault();
       return false;
     }
     submitting = true;
+    try { sessionStorage.setItem(storageKey, '1'); } catch (e) {}
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.setAttribute('aria-busy', 'true');
       submitBtn.textContent = 'Confirming…';
+    }
+    if (cancelBtn) {
+      cancelBtn.setAttribute('aria-disabled', 'true');
+      cancelBtn.classList.add('bb-pa-btn--disabled');
+      cancelBtn.addEventListener('click', function (ev) { ev.preventDefault(); }, { once: true });
     }
     if (processing) {
       processing.hidden = false;
       processing.setAttribute('aria-hidden', 'false');
       document.documentElement.classList.add('bb-pa-reg-approve-processing-active');
     }
+  });
+
+  window.addEventListener('pageshow', function () {
+    try { sessionStorage.removeItem(storageKey); } catch (e) {}
   });
 })();
 </script>

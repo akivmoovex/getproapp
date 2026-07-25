@@ -213,7 +213,7 @@ describe("registration information request form (Prompt 065, no Postgres)", () =
     const css = fs.readFileSync(CSS, "utf8");
     assert.match(css, /\.bb-pa-reg-communications__form\s*\{/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=55/);
+    assert.match(shell, /platform-admin\.css\?v=56/);
   });
 
   it("shows allowlisted success and error notices only", () => {

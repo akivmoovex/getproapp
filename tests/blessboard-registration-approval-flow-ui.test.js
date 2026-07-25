@@ -49,17 +49,23 @@ function renderConfirm(locals) {
   const wrapped = source
     .replace("<%- include('../partials/platform-admin-shell-start') %>", "<!-- shell-start -->")
     .replace("<%- include('../partials/platform-admin-shell-end') %>", "<!-- shell-end -->");
+  const app = (locals && locals.application) || baseApp();
+  const suggested =
+    (locals && locals.suggestedOrganizationKey) ||
+    registrationQueue.presentSuggestedOrganizationKeyPreview(app.churchName);
   return ejs.render(
     wrapped,
     {
       registrationQueue,
-      application: baseApp(),
+      application: app,
       csrfField: "_csrf",
       csrfToken: "test-csrf",
       notice: null,
       error: null,
       duplicateWarning: { show: false, match: null, listHref: null, advisory: true },
+      suggestedOrganizationKey: suggested,
       ...locals,
+      application: app,
     },
     { filename: CONFIRM_VIEW, root: PARTIALS, views: [PARTIALS] }
   );
@@ -96,7 +102,11 @@ function renderOrg(locals) {
       plans: [],
       featureKeys: [],
       registrationApplicationId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-      onboardingSummary: null,
+      onboardingSummary: {
+        publicWebsitePath: "/c/grace-test",
+        publicWebsiteAvailable: true,
+        publicWebsiteUnavailableReason: null,
+      },
       supportContacts: [],
       platformAdmins: [],
       growthTrial: null,
@@ -172,13 +182,17 @@ describe("Phase 5 approval confirmation UI (no Postgres)", () => {
     const html = renderConfirm({});
     assert.match(html, /data-bb-pa-reg-approve-effects="1"/);
     assert.match(html, /Create the organization/);
-    assert.match(html, /Create the church/);
-    assert.match(html, /Create the first branch/);
-    assert.match(html, /invited HQ administrator/i);
-    assert.match(html, /Prepare invitation information/);
+    assert.match(html, /Create the church and first branch/);
+    assert.match(html, /HQ administrator invitation/i);
+    assert.match(html, /public miniwebsite/i);
     assert.match(html, /data-bb-pa-reg-approve-no-email="1"/);
     assert.doesNotMatch(html, /welcome email has been sent|automated welcome email will be sent/i);
     assert.match(html, /no background job/i);
+    assert.match(html, /data-bb-pa-reg-approve-org-key-preview="1"/);
+    assert.match(html, /data-bb-pa-reg-approve-public-url-preview="1"/);
+    assert.match(html, /\/c\/grace-test-church/);
+    assert.match(html, /data-bb-pa-reg-approve-advanced="1"/);
+    assert.match(html, /data-bb-pa-reg-approve-reviewer-note="1"/);
   });
 
   it("includes client processing state without fake completion", () => {
@@ -188,6 +202,7 @@ describe("Phase 5 approval confirmation UI (no Postgres)", () => {
     assert.match(html, /Creating first branch/);
     assert.match(html, /Preparing administrator invitation/);
     assert.match(html, /not marked complete until the server replies/i);
+    assert.match(html, /data-bb-pa-reg-approve-processing-honest="1"/);
     assert.match(html, /submitBtn\.disabled = true/);
     assert.match(html, /submitting = true/);
     assert.doesNotMatch(html, /setTimeout|setInterval|poll/i);
@@ -199,7 +214,7 @@ describe("Phase 5 approval confirmation UI (no Postgres)", () => {
     assert.match(css, /\.bb-pa-reg-approve-processing\b/);
     assert.match(css, /@media \(max-width: 719px\)[\s\S]*bb-pa-reg-approve-confirm/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=55/);
+    assert.match(shell, /platform-admin\.css\?v=56/);
   });
 });
 
@@ -227,11 +242,17 @@ describe("Phase 5 church approved success UI (no Postgres)", () => {
     assert.match(html, /data-bb-pa-reg-approved-invite="1"/);
     assert.match(html, /data-bb-pa-reg-approved-copy="1"/);
     assert.match(html, /data-bb-pa-reg-approved-open-profile="1"/);
+    assert.match(html, /Open organization/);
+    assert.match(html, /data-bb-pa-reg-approved-org-key="1"/);
+    assert.match(html, /data-bb-pa-reg-approved-public-path="1"[^>]*>\/c\/grace-test</);
+    assert.match(html, /data-bb-pa-reg-approved-open-public="1"/);
+    assert.match(html, /href="\/c\/grace-test"/);
     assert.match(html, /data-bb-pa-reg-approved-open-onboarding="1"/);
     assert.match(html, /href="\/admin\/organizations\/grace-test#pa-org-onboarding"/);
     assert.match(html, /data-bb-pa-reg-approved-return="1"/);
     assert.match(html, /href="\/admin\/registration-applications"/);
     assert.match(html, /data-bb-pa-reg-approved-no-email="1"/);
+    assert.match(html, /External delivery is not yet connected/i);
     assert.doesNotMatch(html, /Welcome Email Sent|Resend Welcome Email/i);
     assert.doesNotMatch(html, /href="[^"]*invite\/accept\?token=/);
     assert.match(html, /value="https:\/\/blessboard\.org\/invite\/accept\?token=copy-once-test"/);

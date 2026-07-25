@@ -33,10 +33,25 @@
     (phase5PrimaryBranch && phase5PrimaryBranch.displayName) ||
     null;
   var phase5PlanLabel = orgLocal.planLabel || orgLocal.planKey || null;
-  var phase5OrgHref = orgLocal.organizationKey
-    ? ('/admin/organizations/' + encodeURIComponent(orgLocal.organizationKey))
+  var phase5OrgKey = orgLocal.organizationKey ? String(orgLocal.organizationKey) : null;
+  var phase5OrgHref = phase5OrgKey
+    ? ('/admin/organizations/' + encodeURIComponent(phase5OrgKey))
     : '#';
   var phase5OnboardingHref = phase5OrgHref !== '#' ? (phase5OrgHref + '#pa-org-onboarding') : '#pa-org-onboarding';
+  var ob = (typeof onboardingSummary !== 'undefined' && onboardingSummary) ? onboardingSummary : null;
+  var phase5PublicPath = null;
+  var phase5PublicAvailable = false;
+  var phase5PublicUnavailableReason = null;
+  if (ob && ob.publicWebsitePath) {
+    phase5PublicPath = String(ob.publicWebsitePath);
+    phase5PublicAvailable = Boolean(ob.publicWebsiteAvailable);
+    phase5PublicUnavailableReason = ob.publicWebsiteUnavailableReason || null;
+  } else if (phase5OrgKey) {
+    phase5PublicPath = '/c/' + encodeURIComponent(phase5OrgKey);
+    phase5PublicAvailable = false;
+    phase5PublicUnavailableReason = 'Confirm publication status on the organization page.';
+  }
+  var phase5PublicUrl = phase5PublicPath ? ('https://blessboard.org' + phase5PublicPath) : null;
 %>
 <% if (showPhase5ApprovalSuccess) { %>
 <section
@@ -47,10 +62,19 @@
   aria-labelledby="pa-reg-approved-title"
 >
   <header class="bb-pa-reg-approved__head">
+    <div class="bb-pa-reg-approved__icon" aria-hidden="true">✓</div>
     <p class="bb-pa-org-detail__eyebrow"><%= phase5AlreadyProvisioned ? 'Already provisioned' : 'Church approved' %></p>
     <h2 id="pa-reg-approved-title" class="bb-pa-page-head__title bb-pa-reg-approved__title">
       <%= orgLocal.displayName || 'Church organization' %>
     </h2>
+    <p class="bb-pa-lede bb-pa-reg-approved__badges">
+      <span class="bb-pa-chip <%= statusChipFn(orgLocal.organizationStatus) %>" data-bb-pa-reg-approved-status="1">
+        <%= statusLabelFn(orgLocal.organizationStatus) %>
+      </span>
+      <span data-bb-pa-reg-approved-complete-label="1">
+        <%= phase5AlreadyProvisioned ? 'Organization already linked' : 'Registration complete' %>
+      </span>
+    </p>
     <p class="bb-pa-lede">
       <% if (phase5AlreadyProvisioned) { %>
       This registration was already linked to an organization. Provisioning was not run again.
@@ -60,78 +84,119 @@
     </p>
   </header>
 
-  <dl class="bb-pa-dl bb-pa-reg-approved__facts">
-    <div>
-      <dt>Organization status</dt>
-      <dd data-bb-pa-reg-approved-status="1">
-        <span class="bb-pa-chip <%= statusChipFn(orgLocal.organizationStatus) %>"><%= statusLabelFn(orgLocal.organizationStatus) %></span>
-      </dd>
-    </div>
-    <% if (phase5PlanLabel) { %>
-    <div>
-      <dt>Selected plan</dt>
-      <dd data-bb-pa-reg-approved-plan="1"><%= phase5PlanLabel %></dd>
-    </div>
-    <% } %>
-    <% if (phase5BranchLabel) { %>
-    <div>
-      <dt>First branch</dt>
-      <dd data-bb-pa-reg-approved-branch="1"><%= phase5BranchLabel %></dd>
-    </div>
-    <% } %>
-    <% if (phase5AdminLabel) { %>
-    <div>
-      <dt>Invited HQ administrator</dt>
-      <dd data-bb-pa-reg-approved-admin="1"><%= phase5AdminLabel %></dd>
-    </div>
-    <% } %>
-    <div>
-      <dt>Invitation status</dt>
-      <dd data-bb-pa-reg-approved-invite-status="1">
-        <% if (phase5InviteReady) { %>
-        Administrator invitation prepared — copy once below. It will not be shown again after you leave this page.
-        <% } else if (phase5PendingInvite) { %>
-        Administrator invitation prepared. The one-time copy link is no longer available on refresh; create a replacement invitation below if needed.
-        <% } else if (phase5AlreadyProvisioned) { %>
-        No new invitation was generated for this already-provisioned organization.
-        <% } else { %>
-        Administrator invitation prepared. If a copy link is not shown, use the invitation section below when available.
-        <% } %>
-      </dd>
-    </div>
-  </dl>
+  <div class="bb-pa-reg-approved__grid">
+    <dl class="bb-pa-dl bb-pa-reg-approved__facts">
+      <% if (phase5OrgKey) { %>
+      <div>
+        <dt>Organization key</dt>
+        <dd data-bb-pa-reg-approved-org-key="1"><code class="bb-pa-key"><%= phase5OrgKey %></code></dd>
+      </div>
+      <% } %>
+      <% if (phase5PlanLabel) { %>
+      <div>
+        <dt>Service plan</dt>
+        <dd data-bb-pa-reg-approved-plan="1"><%= phase5PlanLabel %></dd>
+      </div>
+      <% } %>
+      <% if (phase5BranchLabel) { %>
+      <div>
+        <dt>First branch / location</dt>
+        <dd data-bb-pa-reg-approved-branch="1"><%= phase5BranchLabel %></dd>
+      </div>
+      <% } %>
+      <% if (phase5AdminLabel) { %>
+      <div>
+        <dt>Administrator</dt>
+        <dd data-bb-pa-reg-approved-admin="1"><%= phase5AdminLabel %></dd>
+      </div>
+      <% } %>
+      <div>
+        <dt>Public miniwebsite</dt>
+        <dd data-bb-pa-reg-approved-public="1">
+          <% if (phase5PublicPath) { %>
+          <code data-bb-pa-reg-approved-public-path="1"><%= phase5PublicPath %></code>
+          <% if (phase5PublicAvailable) { %>
+          <span class="bb-pa-chip bb-pa-chip--ok" data-bb-pa-reg-approved-public-ok="1">Published</span>
+          <% } else { %>
+          <span class="bb-pa-chip bb-pa-chip--warn" data-bb-pa-reg-approved-public-warn="1">Check status</span>
+          <% } %>
+          <% } else { %>
+          <span data-bb-pa-reg-approved-public-missing="1">Not available</span>
+          <% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Invitation status</dt>
+        <dd data-bb-pa-reg-approved-invite-status="1">
+          <% if (phase5InviteReady) { %>
+          Administrator invitation prepared — copy once below. It will not be shown again after you leave this page.
+          <% } else if (phase5PendingInvite) { %>
+          Administrator invitation prepared. The one-time copy link is no longer available on refresh; create a replacement invitation below if needed.
+          <% } else if (phase5AlreadyProvisioned) { %>
+          No new invitation was generated for this already-provisioned organization.
+          <% } else { %>
+          Administrator invitation prepared. If a copy link is not shown, use the invitation section below when available.
+          <% } %>
+        </dd>
+      </div>
+    </dl>
 
-  <% if (phase5InviteReady) { %>
-  <div class="bb-pa-field bb-pa-reg-approved__invite" data-bb-pa-reg-approved-invite="1">
-    <label for="pa_phase5_invite_once_link">Copy invitation</label>
-    <div class="bb-pa-reg-approved__invite-row">
-      <input
-        id="pa_phase5_invite_once_link"
-        type="text"
-        readonly
-        value="<%= inviteOnceLink %>"
-        data-bb-pa-invite-copy-once="1"
-        onclick="this.select()"
-      />
-      <button
-        type="button"
-        class="bb-pa-btn bb-pa-btn--secondary"
-        data-bb-pa-reg-approved-copy="1"
-        data-invite-target="pa_phase5_invite_once_link"
-      >Copy invitation</button>
-    </div>
-    <p class="bb-pa-muted">Invitation values are not placed in the URL. Refreshing clears this copy-once link.</p>
+    <aside class="bb-pa-reg-approved__invite-card" data-bb-pa-reg-approved-invite-card="1">
+      <p class="bb-pa-hint" data-bb-pa-reg-approved-no-email="1">
+        BlessBoard does not claim that a welcome email was sent. External delivery is not yet connected — share the invitation out of band when you have copied it.
+      </p>
+      <% if (phase5InviteReady) { %>
+      <div class="bb-pa-field bb-pa-reg-approved__invite" data-bb-pa-reg-approved-invite="1">
+        <label for="pa_phase5_invite_once_link">Copy invitation</label>
+        <div class="bb-pa-reg-approved__invite-row">
+          <input
+            id="pa_phase5_invite_once_link"
+            type="text"
+            readonly
+            value="<%= inviteOnceLink %>"
+            data-bb-pa-invite-copy-once="1"
+            onclick="this.select()"
+          />
+          <button
+            type="button"
+            class="bb-pa-btn bb-pa-btn--secondary"
+            data-bb-pa-reg-approved-copy="1"
+            data-invite-target="pa_phase5_invite_once_link"
+          >Copy invitation</button>
+        </div>
+        <p class="bb-pa-muted">Invitation values are not placed in the URL. Refreshing clears this copy-once link.</p>
+      </div>
+      <% } %>
+      <% if (!phase5PublicAvailable && phase5PublicUnavailableReason) { %>
+      <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-approved-public-warning="1">
+        Public miniwebsite warning: <%= phase5PublicUnavailableReason %>
+      </p>
+      <% } %>
+    </aside>
   </div>
-  <% } %>
+
+  <div class="bb-pa-reg-approved__next" data-bb-pa-reg-approved-next="1">
+    <h3 class="bb-pa-section-title">Onboarding next steps</h3>
+    <ol>
+      <li>Copy and share the administrator invitation when available.</li>
+      <li>Open the organization profile and confirm Foundation checklist items.</li>
+      <li>Open the public miniwebsite path when published.</li>
+    </ol>
+  </div>
 
   <div class="bb-pa-reg-approved__actions">
-    <a class="bb-pa-btn bb-pa-btn--primary" href="<%= phase5OrgHref %>" data-bb-pa-reg-approved-open-profile="1">Open church profile</a>
+    <a class="bb-pa-btn bb-pa-btn--primary" href="<%= phase5OrgHref %>" data-bb-pa-reg-approved-open-profile="1">Open organization</a>
+    <% if (phase5PublicAvailable && phase5PublicPath) { %>
+    <a
+      class="bb-pa-btn bb-pa-btn--secondary"
+      href="<%= phase5PublicPath %>"
+      rel="noopener"
+      data-bb-pa-reg-approved-open-public="1"
+    >Open public website</a>
+    <% } %>
     <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= phase5OnboardingHref %>" data-bb-pa-reg-approved-open-onboarding="1">Open onboarding</a>
     <a class="bb-pa-btn bb-pa-btn--secondary" href="/admin/registration-applications" data-bb-pa-reg-approved-return="1">Return to registrations</a>
   </div>
-  <p class="bb-pa-hint" data-bb-pa-reg-approved-no-email="1">
-    BlessBoard does not claim that a welcome email was sent. Share the invitation out of band when you have copied it.
-  </p>
 </section>
 <script>
 (function () {
