@@ -53,6 +53,7 @@
     if (e === 'empty_audience') return 'No eligible members matched this audience.';
     if (e === 'already_sent' || e === 'duplicate_send') return 'This message was already sent.';
     if (e === 'call_to_action_url' || e === 'call_to_action_url_https_required') return 'Call-to-action URL must be a safe https or site path.';
+    if (e === 'unavailable') return 'Broadcast Center could not load messages right now. You can still create a new message.';
     return e ? 'Please check the form and try again (' + e + ').' : '';
   }
 %>

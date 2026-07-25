@@ -108,11 +108,51 @@ function createBroadcastAdminRouter(deps) {
   const isApexHost = deps.isApexHost;
   const env = deps.env || process.env;
   const router = express.Router();
-  const rejectApex = createRejectApex({ isApexHost });
+  // HQ is used on apex with session-scoped tenant — match other HQ routers.
+  const rejectApex = createRejectApex({
+    isApexHost,
+    mode: "unlessTenant",
+    sendUnavailable: (req, res) => {
+      if (!(req.v5Session && req.v5Session.authenticated)) {
+        const wantsHtml = String(req.get("accept") || "").includes("text/html");
+        if (wantsHtml) {
+          return res.redirect(303, "/login?next=/hq/broadcasts");
+        }
+        return res.status(401).type("text").send("Sign-in is required.");
+      }
+      return res
+        .status(403)
+        .type("text")
+        .send(
+          "Your account is signed in, but this church HQ workspace could not be loaded."
+        );
+    },
+  });
   const requireHq = createRequireBlessBoardTenantRole({
     getPool,
     allowedRoles: ["church_hq_admin", "platform_admin"],
   });
+
+  function gateHq(req, res, next) {
+    const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
+    if (!sessionOk) {
+      const wantsHtml = String(req.get("accept") || "").includes("text/html");
+      if (wantsHtml) {
+        return res.redirect(303, "/login?next=/hq/broadcasts");
+      }
+      return res.status(401).type("text").send("Sign-in is required.");
+    }
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || tenant.resolved !== true) {
+      return res
+        .status(403)
+        .type("text")
+        .send(
+          "Your account is signed in, but this church HQ workspace could not be loaded."
+        );
+    }
+    return requireHq(req, res, next);
+  }
 
   async function shell(req, res, activeNav, extra) {
     return buildHqAdminShellLocals(req, res, {
@@ -134,53 +174,85 @@ function createBroadcastAdminRouter(deps) {
     return req.v5Session && req.v5Session.session ? req.v5Session.session.userId : null;
   }
 
-  router.get("/hq/broadcasts", rejectApex, requireHq, async (req, res) => {
-    const cid = churchId(req);
-    if (!cid) return res.status(403).type("text").send("Forbidden");
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const result = await getBroadcastCenter(getPool(), {
-      churchId: cid,
-      status: req.query.status ? String(req.query.status) : null,
-      messageType: req.query.message_type ? String(req.query.message_type) : null,
-      audienceType: req.query.audience_type ? String(req.query.audience_type) : null,
-      channel: req.query.channel ? String(req.query.channel) : null,
-      branchId: req.query.branch ? String(req.query.branch) : null,
-      q: req.query.q ? String(req.query.q).slice(0, 100) : null,
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-      env,
-    });
-    const branchesListed = await listBlessBoardBranches(getPool(), cid);
+  async function renderBroadcastCenter(req, res, extras) {
     const html = renderV5Ejs("hq/hq-broadcast-center-v2.ejs", {
       ...(await shell(req, res, "broadcasts", { pageTitle: "Broadcast Center" })),
-      summary: result.summary,
-      items: result.items,
-      total: result.total,
-      page,
+      summary: (extras && extras.summary) || { draft: 0, scheduled: 0, sentRecently: 0, needsAttention: 0 },
+      items: (extras && extras.items) || [],
+      total: (extras && extras.total) || 0,
+      page: (extras && extras.page) || 1,
       pageSize: PAGE_SIZE,
-      totalPages: Math.max(1, Math.ceil((result.total || 0) / PAGE_SIZE)),
-      filters: {
-        status: req.query.status || "",
-        message_type: req.query.message_type || "",
-        audience_type: req.query.audience_type || "",
-        channel: req.query.channel || "",
-        branch: req.query.branch || "",
-        q: req.query.q || "",
+      totalPages: (extras && extras.totalPages) || 1,
+      filters: (extras && extras.filters) || {
+        status: "",
+        message_type: "",
+        audience_type: "",
+        channel: "",
+        branch: "",
+        q: "",
       },
-      branches: branchesListed.branches || [],
-      channelAvailability: result.channelAvailability,
+      branches: (extras && extras.branches) || [],
+      channelAvailability: (extras && extras.channelAvailability) || getDeliveryChannelAvailability(env),
       statusLabels: MESSAGE_STATUS_LABELS,
       typeLabels: MESSAGE_TYPE_LABELS,
       priorityLabels: PRIORITY_LABELS,
       audienceLabels: AUDIENCE_TYPE_LABELS,
-      notice: req.query.notice || null,
-      error: req.query.error || null,
+      notice: (extras && extras.notice) || null,
+      error: (extras && extras.error) || null,
       jobsEnabled: areBlessBoardJobsEnabled(env),
     });
-    return res.type("html").send(html);
+    return res.status(200).type("html").send(html);
+  }
+
+  router.get("/hq/broadcasts", rejectApex, gateHq, async (req, res) => {
+    const cid = churchId(req);
+    if (!cid) return res.status(403).type("text").send("Forbidden");
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const filters = {
+      status: req.query.status || "",
+      message_type: req.query.message_type || "",
+      audience_type: req.query.audience_type || "",
+      channel: req.query.channel || "",
+      branch: req.query.branch || "",
+      q: req.query.q || "",
+    };
+    try {
+      const result = await getBroadcastCenter(getPool(), {
+        churchId: cid,
+        status: req.query.status ? String(req.query.status) : null,
+        messageType: req.query.message_type ? String(req.query.message_type) : null,
+        audienceType: req.query.audience_type ? String(req.query.audience_type) : null,
+        channel: req.query.channel ? String(req.query.channel) : null,
+        branchId: req.query.branch ? String(req.query.branch) : null,
+        q: req.query.q ? String(req.query.q).slice(0, 100) : null,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+        env,
+      });
+      const branchesListed = await listBlessBoardBranches(getPool(), cid);
+      return renderBroadcastCenter(req, res, {
+        summary: result.summary,
+        items: result.items,
+        total: result.total,
+        page,
+        totalPages: Math.max(1, Math.ceil((result.total || 0) / PAGE_SIZE)),
+        filters,
+        branches: branchesListed.branches || [],
+        channelAvailability: result.channelAvailability,
+        notice: req.query.notice || null,
+        error: req.query.error || null,
+      });
+    } catch {
+      return renderBroadcastCenter(req, res, {
+        page,
+        filters,
+        notice: null,
+        error: "unavailable",
+      });
+    }
   });
 
-  router.get("/hq/broadcasts/new", rejectApex, requireHq, async (req, res) => {
+  router.get("/hq/broadcasts/new", rejectApex, gateHq, async (req, res) => {
     const cid = churchId(req);
     if (!cid) return res.status(403).type("text").send("Forbidden");
     const branchesListed = await listBlessBoardBranches(getPool(), cid);
@@ -229,7 +301,7 @@ function createBroadcastAdminRouter(deps) {
     return res.type("html").send(html);
   });
 
-  router.get("/hq/broadcasts/:broadcastId", rejectApex, requireHq, async (req, res) => {
+  router.get("/hq/broadcasts/:broadcastId", rejectApex, gateHq, async (req, res) => {
     const cid = churchId(req);
     const id = String(req.params.broadcastId || "");
     if (!cid || !isUuid(id)) return res.status(404).type("text").send("Not found");
@@ -260,7 +332,7 @@ function createBroadcastAdminRouter(deps) {
     return res.type("html").send(html);
   });
 
-  router.post("/hq/broadcasts/draft", rejectApex, requireHq, async (req, res) => {
+  router.post("/hq/broadcasts/draft", rejectApex, gateHq, async (req, res) => {
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
       return res.status(403).type("text").send("Invalid CSRF token");
     }
@@ -280,7 +352,7 @@ function createBroadcastAdminRouter(deps) {
     return res.redirect(303, `/hq/broadcasts/${result.message.id}?notice=draft_saved`);
   });
 
-  router.post("/hq/broadcasts/send", rejectApex, requireHq, async (req, res) => {
+  router.post("/hq/broadcasts/send", rejectApex, gateHq, async (req, res) => {
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
       return res.status(403).type("text").send("Invalid CSRF token");
     }
@@ -308,7 +380,7 @@ function createBroadcastAdminRouter(deps) {
     return res.redirect(303, `/hq/broadcasts/${result.message.id}?notice=sent`);
   });
 
-  router.post("/hq/broadcasts/:broadcastId/send", rejectApex, requireHq, async (req, res) => {
+  router.post("/hq/broadcasts/:broadcastId/send", rejectApex, gateHq, async (req, res) => {
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
       return res.status(403).type("text").send("Invalid CSRF token");
     }
@@ -334,7 +406,7 @@ function createBroadcastAdminRouter(deps) {
     return res.redirect(303, `/hq/broadcasts/${id}?notice=sent`);
   });
 
-  router.post("/hq/broadcasts/:broadcastId/cancel", rejectApex, requireHq, async (req, res) => {
+  router.post("/hq/broadcasts/:broadcastId/cancel", rejectApex, gateHq, async (req, res) => {
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
       return res.status(403).type("text").send("Invalid CSRF token");
     }
@@ -348,7 +420,7 @@ function createBroadcastAdminRouter(deps) {
     return res.redirect(303, `/hq/broadcasts/${id}?notice=cancelled`);
   });
 
-  router.post("/hq/broadcasts/estimate-audience", rejectApex, requireHq, async (req, res) => {
+  router.post("/hq/broadcasts/estimate-audience", rejectApex, gateHq, async (req, res) => {
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
       return res.status(403).json({ ok: false, error: "csrf" });
     }

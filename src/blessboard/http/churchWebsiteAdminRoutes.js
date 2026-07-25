@@ -139,6 +139,15 @@ function createChurchWebsiteAdminRouter(deps) {
       }
       return sendControlled(req, res, 401, "Sign-in is required.");
     }
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || tenant.resolved !== true) {
+      return sendControlled(
+        req,
+        res,
+        403,
+        "Your account is signed in, but this church HQ workspace could not be loaded. Confirm you are assigned as a church HQ administrator for an active organization, then sign in again."
+      );
+    }
     return requireHq(req, res, next);
   }
 
@@ -158,67 +167,88 @@ function createChurchWebsiteAdminRouter(deps) {
     return session && session.userId ? String(session.userId) : null;
   }
 
-  router.get("/hq/website", rejectApex, gateHq, async (req, res) => {
-    const tenant = resolveTenantForAuthorization(req);
-    if (!tenant || !tenant.church || !tenant.church.id) {
-      return sendControlled(req, res, 403, "You do not have access to this site.");
-    }
-    const defer = String((req.query && req.query.defer_service_times) || "") === "1";
-    const organizationId =
-      tenant.organization && tenant.organization.id
-        ? String(tenant.organization.id)
-        : null;
-    const organizationKey =
-      (tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
-      null;
+  async function renderLegacyWebsite(req, res, locals) {
+    const html = renderHqView("hq/website.ejs", await shellLocals(req, res, locals));
+    return res.status(200).type("html").send(html);
+  }
 
-    if (organizationId) {
-      const overview = await loadHqWebsiteOverview(getPool(), {
-        organizationId,
+  router.get("/hq/website", rejectApex, gateHq, async (req, res) => {
+    try {
+      const tenant = resolveTenantForAuthorization(req);
+      if (!tenant || !tenant.church || !tenant.church.id) {
+        return sendControlled(req, res, 403, "You do not have access to this site.");
+      }
+      const defer = String((req.query && req.query.defer_service_times) || "") === "1";
+      const organizationId =
+        tenant.organization && tenant.organization.id
+          ? String(tenant.organization.id)
+          : null;
+      const organizationKey =
+        (tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
+        null;
+
+      if (organizationId) {
+        const overview = await loadHqWebsiteOverview(getPool(), {
+          organizationId,
+          churchId: tenant.church.id,
+          organizationKey,
+          env,
+        });
+        if (overview && overview.ok && !overview.useLegacyWebsiteScreen) {
+          const noticeRaw = String((req.query && req.query.notice) || "") || null;
+          const noticeMap = {
+            published: "Website published.",
+            unpublished: "Website unpublished. Content is preserved.",
+            preview_ack: "Preview acknowledged.",
+            foundation_repaired: "Website foundation repaired.",
+          };
+          const viewName =
+            overview.planKey === "growth"
+              ? "hq/phase4-growth-website-workflow-overview.ejs"
+              : "hq/phase4-foundation-website-overview.ejs";
+          const html = renderHqView(
+            viewName,
+            await shellLocals(req, res, {
+              overview,
+              notice: noticeMap[noticeRaw] || noticeRaw,
+              error: null,
+            })
+          );
+          return res.status(200).type("html").send(html);
+        }
+      }
+
+      const readiness = await evaluatePublishReadiness(getPool(), {
         churchId: tenant.church.id,
-        organizationKey,
+        deferServiceTimes: defer,
         env,
       });
-      if (overview && overview.ok && !overview.useLegacyWebsiteScreen) {
-        const noticeRaw = String((req.query && req.query.notice) || "") || null;
-        const noticeMap = {
-          published: "Website published.",
-          unpublished: "Website unpublished. Content is preserved.",
-          preview_ack: "Preview acknowledged.",
-          foundation_repaired: "Website foundation repaired.",
-        };
-        const viewName =
-          overview.planKey === "growth"
-            ? "hq/phase4-growth-website-workflow-overview.ejs"
-            : "hq/phase4-foundation-website-overview.ejs";
-        const html = renderHqView(
-          viewName,
-          await shellLocals(req, res, {
-            overview,
-            notice: noticeMap[noticeRaw] || noticeRaw,
-            error: null,
-          })
-        );
-        return res.status(200).type("html").send(html);
+      if (!readiness.ok && readiness.status === PUBLISH_STATUS.LOOKUP_ERROR) {
+        return renderLegacyWebsite(req, res, {
+          readiness: {
+            ok: false,
+            websiteStatus: "draft",
+            gaps: [],
+            planKey: null,
+            publicPath: publicChurchHomePath(organizationKey),
+          },
+          gapLabels: GAP_LABELS,
+          error: "Website status is temporarily unavailable. Try again shortly.",
+          notice: null,
+          deferServiceTimes: defer,
+          previewPath: hqPreviewPagePath("home"),
+          publicPath: publicChurchHomePath(organizationKey),
+          organizationKey,
+          needsFoundationRepair: false,
+          foundationGaps: [],
+        });
       }
-    }
-
-    const readiness = await evaluatePublishReadiness(getPool(), {
-      churchId: tenant.church.id,
-      deferServiceTimes: defer,
-      env,
-    });
-    if (!readiness.ok && readiness.status === PUBLISH_STATUS.LOOKUP_ERROR) {
-      return sendControlled(req, res, 503, "Website status is temporarily unavailable.");
-    }
-    const foundation = await inspectWebsiteFoundationGaps(getPool(), {
-      churchId: tenant.church.id,
-    });
-    const orgKey =
-      readiness.organizationKey || organizationKey || null;
-    const html = renderHqView(
-      "hq/website.ejs",
-      await shellLocals(req, res, {
+      const foundation = await inspectWebsiteFoundationGaps(getPool(), {
+        churchId: tenant.church.id,
+      });
+      const orgKey =
+        readiness.organizationKey || organizationKey || null;
+      return renderLegacyWebsite(req, res, {
         readiness,
         gapLabels: GAP_LABELS,
         error: null,
@@ -229,9 +259,27 @@ function createChurchWebsiteAdminRouter(deps) {
         organizationKey: orgKey,
         needsFoundationRepair: Boolean(foundation && foundation.needsRepair),
         foundationGaps: (foundation && foundation.gaps) || [],
-      })
-    );
-    return res.status(200).type("html").send(html);
+      });
+    } catch {
+      return renderLegacyWebsite(req, res, {
+        readiness: {
+          ok: false,
+          websiteStatus: "draft",
+          gaps: [],
+          planKey: null,
+          publicPath: "",
+        },
+        gapLabels: GAP_LABELS,
+        error: "Website management could not be loaded. Please try again.",
+        notice: null,
+        deferServiceTimes: false,
+        previewPath: hqPreviewPagePath("home"),
+        publicPath: "",
+        organizationKey: null,
+        needsFoundationRepair: false,
+        foundationGaps: [],
+      });
+    }
   });
 
   router.post("/hq/website/repair-foundation", rejectApex, gateHq, async (req, res) => {
