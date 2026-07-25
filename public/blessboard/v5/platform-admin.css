@@ -4661,8 +4661,14 @@ html.bb-pa-reg-approve-processing-active {
 }
 .bb-pa-reg-communications__compose {
   margin: 0;
-  padding-top: 0.35rem;
+  padding-top: 0.85rem;
   border-top: 1px solid var(--bb-line, #d9e4e9);
+}
+.bb-pa-reg-communications__compose-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
 }
 .bb-pa-reg-communications__summary {
   margin: 0 0 1rem;

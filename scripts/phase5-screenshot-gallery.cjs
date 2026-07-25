@@ -132,6 +132,143 @@ const fixtures = [
     },
   },
   {
+    id: "04-review-hub",
+    file: "platform-admin/registration-application-detail.ejs",
+    locals: {
+      application: {
+        ...APP,
+        followUpStatus: "new",
+        riskReviewActionsAvailable: true,
+        rejectActionsAvailable: true,
+        operatorView: {
+          displayStatus: "New",
+          tone: "warn",
+          queue: "phase5_new",
+          explanation: "Awaiting decision.",
+          recommendedActionLabel: "Approve and provision",
+        },
+      },
+      contacts: [],
+      auditEvents: [],
+      platformAdmins: [],
+      followUpStatuses: ["new", "awaiting_customer"],
+      contactMethods: ["phone", "email"],
+      contactOutcomes: ["reached", "other"],
+      verification: null,
+      reviewRecommendation: null,
+      approvalChecklist: null,
+      phoneVerification: null,
+      emailVerification: null,
+      communications: null,
+      duplicateWarning: { show: false },
+      intent: "",
+    },
+  },
+  {
+    id: "06-duplicate-warning",
+    file: "platform-admin/registration-application-detail.ejs",
+    locals: {
+      application: {
+        ...APP,
+        followUpStatus: "new",
+        riskReviewActionsAvailable: true,
+        rejectActionsAvailable: true,
+        operatorView: {
+          displayStatus: "New",
+          tone: "warn",
+          queue: "phase5_new",
+          explanation: "Possible duplicate.",
+          recommendedActionLabel: "Review carefully",
+        },
+      },
+      contacts: [],
+      auditEvents: [],
+      platformAdmins: [],
+      followUpStatuses: ["new"],
+      contactMethods: ["phone", "email"],
+      contactOutcomes: ["reached"],
+      verification: null,
+      reviewRecommendation: null,
+      approvalChecklist: null,
+      phoneVerification: null,
+      emailVerification: null,
+      communications: null,
+      duplicateWarning: {
+        show: true,
+        advisory: true,
+        listHref: `/admin/registration-applications/${APP.id}/duplicates`,
+        match: {
+          id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          riskLevel: "strong",
+          riskLabel: "Strong match",
+          churchName: "Grace Other Chapel",
+        },
+      },
+      intent: "",
+    },
+  },
+  {
+    id: "11-church-approved",
+    partial: "pa-registration-approved-success.ejs",
+    locals: {
+      org: {
+        organizationKey: "grace-community",
+        displayName: "Grace Community Chapel With Extremely Long Overflow Name",
+        organizationStatus: "active",
+        planLabel: "Foundation",
+        firstBranchName: "Main Branch",
+      },
+      branches: [{ displayName: "Main Branch", isPrimary: true }],
+      notice: "organization_provisioned",
+      inviteOnceLink: "https://blessboard.org/invite/accept?token=demo",
+      pendingInvitations: [
+        {
+          emailDisplay: "very.long.email.for.overflow.testing@example.org",
+          displayName: "Pat Applicant Long Name",
+          roleKey: "church_hq_admin",
+        },
+      ],
+      onboardingSummary: {
+        publicWebsitePath: "/c/grace-community",
+        publicWebsiteAvailable: true,
+      },
+      statusChip: () => "bb-pa-chip--ok",
+      statusLabel: (s) => s || "active",
+    },
+  },
+  {
+    id: "16-needs-information",
+    partial: "pa-registration-needs-information.ejs",
+    locals: {
+      app: {
+        churchName: APP.churchName,
+        contactName: APP.contactName,
+        applicationStatus: "submitted",
+        followUpStatus: "awaiting_customer",
+        rejectActionsAvailable: true,
+      },
+      phase5Status: {
+        key: "needs_information",
+        label: "Needs Information",
+        chipClass: "bb-pa-chip--warn",
+      },
+      needsInformationState: {
+        hasRequest: true,
+        waiting: true,
+        reasonLabels: ["Proof of church registration"],
+        messageSummary: "Please provide documents. ".repeat(8),
+        requestedAt: "2026-07-25T10:00:00.000Z",
+      },
+      phoneDisplay: APP.contactPhoneNormalized,
+      emailDisplay: APP.contactEmail,
+      appIdEnc: APP.id,
+      canPhase5Approve: false,
+      decisionApproveHref: "#",
+      decisionRejectHref: `#`,
+      registrationQueue,
+    },
+  },
+  {
     id: "10-approval-processing",
     file: "platform-admin/registration-application-approve-confirm.ejs",
     locals: {
@@ -216,7 +353,17 @@ async function main() {
   const report = [];
 
   for (const fixture of fixtures) {
-    const html = render(fixture.file, fixture.locals);
+    let html;
+    if (fixture.partial) {
+      const body = ejs.render(
+        fs.readFileSync(path.join(PARTIALS, fixture.partial), "utf8"),
+        fixture.locals,
+        { filename: path.join(PARTIALS, fixture.partial), root: PARTIALS, views: [PARTIALS] }
+      );
+      html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Phase5 shot</title><style>${CSS}</style></head><body class="bb-pa-body"><main class="bb-pa-page">${body}</main></body></html>`;
+    } else {
+      html = render(fixture.file, fixture.locals);
+    }
     for (const width of WIDTHS) {
       await page.setViewportSize({ width, height: width <= 430 ? 844 : 1100 });
       await page.setContent(html, { waitUntil: "load" });

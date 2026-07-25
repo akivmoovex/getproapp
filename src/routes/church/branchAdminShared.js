@@ -169,6 +169,7 @@ const MEMBER_NOTICES = new Set([
 ]);
 const ATTENDANCE_NOTICES = new Set([
   "created",
+  "updated",
   "submitted",
   "status_updated",
   "session_opened",
@@ -273,6 +274,7 @@ function noticeMessage(code) {
     import_reversed:
       "Import batch reversed. People created by this batch were suspended — not deleted.",
     created: "Attendance record saved.",
+    updated: "Attendance draft updated for this service date.",
     submitted: "Attendance record submitted successfully.",
     status_updated: "Attendance status updated.",
     session_opened: "Service session opened for check-in.",

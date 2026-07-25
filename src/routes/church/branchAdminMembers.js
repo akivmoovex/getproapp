@@ -16,7 +16,12 @@ const {
 } = require("../../church/memberRegistration");
 const {
   MEMBER_STATUS_FILTERS,
+  VERIFICATION_STATUS_FILTERS,
   memberStatusLabel,
+  verificationStatusLabel,
+  parseMemberDirectoryQuery,
+  parseVerificationQueueQuery,
+  resolveMemberListState,
   validateMemberProfileForAdmin,
   validateAdminNoteBody,
 } = require("../../church/memberDirectoryValidation");
@@ -179,12 +184,17 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
     try {
       const branch = req.churchContext.branch;
       const pool = getPgPool();
-      const filter = String(req.query.status || "all").trim();
-      const statusFilter = MEMBER_STATUS_FILTERS.includes(filter) ? filter : "all";
-      const q = String(req.query.q || "").trim();
+      const { status: statusFilter, q } = parseMemberDirectoryQuery(req.query);
       const members = q
         ? await membersRepo.searchMembersForBranch(pool, branch.id, q, { status: statusFilter })
         : await membersRepo.listMembersForBranch(pool, branch.id, { status: statusFilter });
+      const totalInBranch = await membersRepo.countMembersByStatusForBranch(pool, branch.id);
+      const hasMembersInScope = Object.values(totalInBranch).some((n) => Number(n) > 0);
+      const listState = resolveMemberListState(
+        { q, status: statusFilter, branchId: null },
+        members,
+        { hasMembersInScope }
+      );
       const planContext = await churchPlanService.loadPlanContextForOrganization(
         pool,
         req.churchContext.organization.id,
@@ -198,6 +208,13 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
           memberFilters: MEMBER_STATUS_FILTERS,
           memberStatusLabel,
           searchQuery: q,
+          branchFilterId: null,
+          branchOptions: [],
+          showBranchFilter: false,
+          listState,
+          listError: null,
+          memberDetailBase: "/branch/members",
+          portalKind: "branch",
           planContext,
           notice: noticeMessage(flashFromQuery(req, MEMBER_NOTICES)),
         })
@@ -211,7 +228,13 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
     try {
       const branch = req.churchContext.branch;
       const pool = getPgPool();
-      const pendingMembers = await membersRepo.listPendingMembersForBranch(pool, branch.id);
+      const { status: statusFilter, q } = parseVerificationQueueQuery(req.query);
+      const pendingMembers = await membersRepo.listPendingMembersForBranch(pool, branch.id, { q });
+      const pendingCount = q
+        ? (await membersRepo.listPendingMembersForBranch(pool, branch.id)).length
+        : pendingMembers.length;
+      const queueState =
+        pendingMembers.length > 0 ? "results" : q ? "no_results" : "empty";
       const planContext = await churchPlanService.loadPlanContextForOrganization(
         pool,
         req.churchContext.organization.id,
@@ -221,6 +244,19 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
         "church/branch-admin/verification_queue",
         branchAdminLocals(req, {
           pendingMembers,
+          pendingCount,
+          statusFilter,
+          verificationFilters: VERIFICATION_STATUS_FILTERS,
+          memberStatusLabel,
+          verificationStatusLabel,
+          searchQuery: q,
+          branchFilterId: null,
+          branchOptions: [],
+          showBranchFilter: false,
+          listState: queueState,
+          listError: null,
+          memberDetailBase: "/branch/members",
+          portalKind: "branch",
           planContext,
           notice: noticeMessage(flashFromQuery(req, MEMBER_NOTICES)),
         })

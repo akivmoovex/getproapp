@@ -389,16 +389,18 @@ describe("registration communication history UI (Prompt 067, no Postgres)", () =
     assert.match(css, /\.bb-pa-reg-communications__list\s*\{/);
     assert.match(css, /\.bb-pa-reg-communications-card\s*\{/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=56/);
+    assert.match(shell, /platform-admin\.css\?v=57/);
   });
 
-  it("keeps the request-information form in the same section", () => {
+  it("links secondary compose to Phase 5 request-information", () => {
     const html = renderDetail();
     assert.match(html, /data-bb-pa-reg-communications-compose="1"/);
+    assert.match(html, /data-bb-pa-reg-communications-open-request="1"/);
     assert.match(
       html,
-      /action="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/request-information"/
+      /href="\/admin\/registration-applications\/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\/request-information"/
     );
+    assert.doesNotMatch(html, /data-bb-pa-reg-communications-form="1"/);
   });
 
   it("wires communications into the detail route locals", () => {

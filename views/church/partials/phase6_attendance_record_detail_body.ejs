@@ -1,0 +1,265 @@
+<%
+  var rec = record || {};
+  var canEdit = typeof canEditRecord !== 'undefined' ? canEditRecord : false;
+  var canSubmit = typeof canSubmitRecord !== 'undefined' ? canSubmitRecord : false;
+  var editing = Boolean(editMode && canEdit);
+  var trackerHref = typeof trackerBackHref !== 'undefined' ? trackerBackHref : '/branch/attendance';
+  var detailAction = typeof detailActionBase !== 'undefined' ? detailActionBase : ('/branch/attendance/' + rec.id);
+  var statusKey = String(rec.status || 'draft');
+  var statusLabel = rec.status_label || (typeof attendanceStatusLabel === 'function' ? attendanceStatusLabel(statusKey) : statusKey);
+  var total = rec.total_attendance != null ? rec.total_attendance : (
+    Number(rec.adults_count || 0) + Number(rec.youth_count || 0) + Number(rec.children_count || 0)
+  );
+  var formData = form || {
+    attendance_type: rec.attendance_type,
+    service_name: rec.service_name,
+    attendance_date: rec.service_date_display,
+    adults_count: rec.adults_count,
+    youth_count: rec.youth_count,
+    children_count: rec.children_count,
+    first_time_visitors_count: rec.first_time_visitors_count,
+    new_members_count: rec.new_members_count,
+    volunteers_count: rec.volunteers_count,
+    notes: rec.notes
+  };
+  var types = attendanceTypes || [];
+  var createdLabel = rec.created_at_label || '';
+  var updatedLabel = rec.updated_at_label || '';
+  var isDraft = statusKey === 'draft';
+  var isSubmitted = statusKey === 'submitted' || statusKey === 'synced_to_monthly_report';
+%>
+      <div
+        class="church-p6-attendance-detail"
+        data-p6-screen="attendance-record-detail"
+        data-record-status="<%= statusKey %>"
+        data-edit-mode="<%= editing ? '1' : '0' %>"
+        data-responsive="desktop-mobile"
+        data-testid="attendance-record-detail"
+        aria-busy="false"
+      >
+        <header class="church-p6-attendance-detail__hero">
+          <div class="church-p6-attendance-detail__hero-main">
+            <a class="church-p6-attendance-detail__back" href="<%= trackerHref %>" data-testid="attendance-detail-back">
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+              Back to Attendance Logs
+            </a>
+            <h1 class="church-p6-page-hero__title" data-testid="attendance-detail-title"><%= rec.service_name || 'Attendance record' %></h1>
+            <p class="church-p6-attendance-detail__meta">
+              <span><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span> <%= rec.service_date_label || rec.service_date_display %></span>
+              <span><span class="material-symbols-outlined" aria-hidden="true">category</span> <%= rec.attendance_type %></span>
+              <% if (rec.branch_name) { %>
+              <span><span class="material-symbols-outlined" aria-hidden="true">location_on</span> <%= rec.branch_name %></span>
+              <% } %>
+            </p>
+          </div>
+          <div class="church-p6-attendance-detail__hero-actions">
+            <% if (canEdit && !editing) { %>
+            <a class="church-btn church-btn--outline" href="<%= detailAction %>?edit=1" data-testid="attendance-detail-edit">
+              <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+              Edit Record
+            </a>
+            <% } %>
+            <% if (canSubmit) { %>
+            <form method="post" action="<%= detailAction %>/update-status" class="church-p6-attendance-detail__inline-form">
+              <%- include('./csrf_field') %>
+              <input type="hidden" name="status" value="submitted"/>
+              <button class="church-btn church-btn--primary" type="submit" data-testid="attendance-detail-submit">
+                <span class="material-symbols-outlined" aria-hidden="true">send</span>
+                Submit record
+              </button>
+            </form>
+            <% } %>
+          </div>
+        </header>
+
+        <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+        <% if (error) { %><div class="church-alert church-alert--error" role="alert" data-testid="attendance-detail-error"><%= error %></div><% } %>
+
+        <section class="church-p6-attendance-detail__status" aria-label="Record status" data-testid="attendance-detail-status">
+          <ol class="church-p6-attendance-detail__steps">
+            <li class="is-done"><span class="material-symbols-outlined" aria-hidden="true">check</span> Created</li>
+            <li class="<%= isDraft || isSubmitted ? 'is-done' : '' %><%= isDraft ? ' is-current' : '' %>"><span class="material-symbols-outlined" aria-hidden="true">edit_document</span> Draft</li>
+            <li class="<%= isSubmitted ? 'is-done is-current' : '' %>"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span> Submitted</li>
+          </ol>
+          <p class="church-p6-attendance-detail__status-chip">
+            Current status
+            <span class="church-status-chip church-status-chip--<%= isSubmitted ? 'verified' : 'pending' %>"><%= statusLabel %></span>
+          </p>
+        </section>
+
+        <section class="church-p6-attendance-detail__total" data-testid="attendance-detail-total">
+          <p class="church-p6-attendance-stat__label">Total Attendance</p>
+          <p class="church-p6-attendance-stat__value"><%= total %></p>
+          <p class="church-p6-attendance-stat__hint">Adults + youth + children</p>
+        </section>
+
+        <% if (editing) { %>
+        <section class="church-branch-panel church-p6-panel" data-testid="attendance-detail-edit-form">
+          <h2 class="church-branch-panel__title">Edit draft record</h2>
+          <form class="church-form" method="post" action="<%= detailAction %>/update" data-unsaved-guard="1">
+            <%- include('./csrf_field') %>
+            <div class="church-form-grid">
+              <div class="church-field">
+                <label class="church-label" for="detail_attendance_type">Meeting type</label>
+                <select class="church-input" id="detail_attendance_type" name="attendance_type" required>
+                  <% types.forEach(function (t) { %>
+                  <option value="<%= t %>" <%= formData.attendance_type === t ? 'selected' : '' %>><%= t %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="church-field">
+                <label class="church-label" for="detail_attendance_date">Meeting date</label>
+                <input class="church-input" id="detail_attendance_date" name="attendance_date" type="date" required value="<%= formData.attendance_date || '' %>"/>
+              </div>
+              <div class="church-field church-field--full">
+                <label class="church-label" for="detail_service_name">Meeting name</label>
+                <input class="church-input" id="detail_service_name" name="service_name" type="text" required value="<%= formData.service_name || '' %>" maxlength="200"/>
+              </div>
+            </div>
+            <div class="church-p6-attendance-counts">
+              <%
+                var countFields = [
+                  { key: 'adults_count', label: 'Adults' },
+                  { key: 'youth_count', label: 'Youth' },
+                  { key: 'children_count', label: 'Children' },
+                  { key: 'first_time_visitors_count', label: 'Visitors' },
+                  { key: 'new_members_count', label: 'New members' },
+                  { key: 'volunteers_count', label: 'Volunteers' }
+                ];
+              %>
+              <% countFields.forEach(function (f) { %>
+              <div class="church-p6-attendance-count">
+                <label class="church-label" for="detail_<%= f.key %>"><%= f.label %></label>
+                <input class="church-input" id="detail_<%= f.key %>" name="<%= f.key %>" type="number" min="0" step="1" value="<%= formData[f.key] != null ? formData[f.key] : 0 %>"/>
+              </div>
+              <% }); %>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="detail_notes">Administrative notes</label>
+              <textarea class="church-input church-input--textarea" id="detail_notes" name="notes" rows="4"><%= formData.notes || '' %></textarea>
+            </div>
+            <div class="church-p6-attendance-compose__actions">
+              <a class="church-btn church-btn--outline" href="<%= detailAction %>">Cancel</a>
+              <button class="church-btn church-btn--outline" type="submit" name="submit_action" value="save_draft">Save draft</button>
+              <button class="church-btn church-btn--primary" type="submit" name="submit_action" value="submit">Save &amp; submit</button>
+            </div>
+          </form>
+        </section>
+        <% } else { %>
+        <section class="church-p6-attendance-detail__breakdown" aria-label="Attendance breakdown" data-testid="attendance-detail-breakdown">
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon" aria-hidden="true"><span class="material-symbols-outlined">groups</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">Adults</p>
+              <p class="church-p6-attendance-stat__value"><%= rec.adults_count %></p>
+            </div>
+          </article>
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon" aria-hidden="true"><span class="material-symbols-outlined">diversity_3</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">Youth</p>
+              <p class="church-p6-attendance-stat__value"><%= rec.youth_count %></p>
+            </div>
+          </article>
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon" aria-hidden="true"><span class="material-symbols-outlined">child_care</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">Children</p>
+              <p class="church-p6-attendance-stat__value"><%= rec.children_count %></p>
+            </div>
+          </article>
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon" aria-hidden="true"><span class="material-symbols-outlined">person_add</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">Visitors</p>
+              <p class="church-p6-attendance-stat__value"><%= rec.first_time_visitors_count %></p>
+            </div>
+          </article>
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon" aria-hidden="true"><span class="material-symbols-outlined">card_membership</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">New members</p>
+              <p class="church-p6-attendance-stat__value"><%= rec.new_members_count %></p>
+            </div>
+          </article>
+          <article class="church-p6-attendance-stat">
+            <div class="church-p6-attendance-stat__icon" aria-hidden="true"><span class="material-symbols-outlined">volunteer_activism</span></div>
+            <div>
+              <p class="church-p6-attendance-stat__label">Volunteers</p>
+              <p class="church-p6-attendance-stat__value"><%= rec.volunteers_count %></p>
+            </div>
+          </article>
+        </section>
+
+        <div class="church-p6-attendance-detail__grid">
+          <section class="church-branch-panel church-p6-panel" data-testid="attendance-detail-notes">
+            <h2 class="church-branch-panel__title">
+              <span class="material-symbols-outlined" aria-hidden="true">description</span>
+              Administrative Notes
+            </h2>
+            <% if (rec.notes) { %>
+            <p class="church-p6-attendance-detail__notes"><%= rec.notes %></p>
+            <% } else { %>
+            <div class="church-empty-state church-p6-empty" data-testid="attendance-detail-notes-empty">
+              <p class="church-empty-state__body">No notes recorded for this attendance entry.</p>
+            </div>
+            <% } %>
+          </section>
+
+          <section class="church-branch-panel church-p6-panel" data-testid="attendance-detail-lifecycle">
+            <h2 class="church-branch-panel__title">Record Lifecycle</h2>
+            <dl class="church-branch-dl">
+              <div>
+                <dt>Created by</dt>
+                <dd><%= rec.created_by_name || 'Branch admin' %></dd>
+              </div>
+              <div>
+                <dt>Created</dt>
+                <dd><%= createdLabel || '—' %></dd>
+              </div>
+              <div>
+                <dt>Last updated</dt>
+                <dd><%= updatedLabel || '—' %></dd>
+              </div>
+              <div>
+                <dt>Branch</dt>
+                <dd><%= rec.branch_name || '—' %></dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd><%= statusLabel %></dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+
+        <section class="church-branch-panel church-p6-panel" data-testid="attendance-detail-members">
+          <h2 class="church-branch-panel__title">Member attendance entries</h2>
+          <div class="church-empty-state church-p6-empty" data-testid="attendance-detail-members-empty">
+            <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">group_off</span>
+            <p class="church-empty-state__body">This attendance record uses aggregate headcounts.</p>
+            <p class="church-p6-empty__hint">Per-member present/absent entries are not part of this tracker. Use Service check-in when your package includes QR or manual member check-in.</p>
+            <% if (typeof checkInHref !== 'undefined' && checkInHref) { %>
+            <a class="church-btn church-btn--outline church-btn--sm" href="<%= checkInHref %>">Open service check-in</a>
+            <% } %>
+          </div>
+        </section>
+        <% } %>
+      </div>
+      <% if (editing) { %>
+      <script>
+        (function () {
+          var form = document.querySelector('[data-unsaved-guard="1"]');
+          if (!form) return;
+          var dirty = false;
+          form.addEventListener('input', function () { dirty = true; });
+          form.addEventListener('change', function () { dirty = true; });
+          form.addEventListener('submit', function () { dirty = false; });
+          window.addEventListener('beforeunload', function (e) {
+            if (!dirty) return;
+            e.preventDefault();
+            e.returnValue = '';
+          });
+        })();
+      </script>
+      <% } %>

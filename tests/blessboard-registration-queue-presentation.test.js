@@ -89,7 +89,7 @@ describe("registrationQueuePresentation Phase 5 status mapping", () => {
   it("maps visible_status onto existing query params without inventing filters", () => {
     assert.deepEqual(api.applyVisibleStatusQuery({ visible_status: "new", q: "grace" }), {
       q: "grace",
-      queue: "needs_review",
+      queue: "phase5_new",
     });
     assert.deepEqual(api.applyVisibleStatusQuery({ visible_status: "needs_information" }), {
       follow_up_status: "needs_information",

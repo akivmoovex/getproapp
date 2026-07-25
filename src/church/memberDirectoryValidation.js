@@ -9,6 +9,9 @@ const { normalizeMinistryInterest } = require("./memberPortalValidation");
 
 const MEMBER_STATUS_FILTERS = ["all", "pending", "verified", "rejected", "suspended"];
 
+/** Verification queue only surfaces pending registrations (existing status system). */
+const VERIFICATION_STATUS_FILTERS = ["pending"];
+
 function memberStatusLabel(status) {
   const map = {
     pending: "Pending",
@@ -17,6 +20,70 @@ function memberStatusLabel(status) {
     suspended: "Suspended",
   };
   return map[status] || status;
+}
+
+function verificationStatusLabel(status) {
+  if (status === "pending") return "Pending Review";
+  return memberStatusLabel(status);
+}
+
+/**
+ * Allowlisted query parse for member directory (branch or HQ).
+ * Invalid status/branch values fall back safely — never throw.
+ * @param {Record<string, unknown>} query
+ * @returns {{ status: string, q: string, branchId: number | null }}
+ */
+function parseMemberDirectoryQuery(query) {
+  const raw = query && typeof query === "object" ? query : {};
+  const statusRaw = String(raw.status || "all").trim().toLowerCase();
+  const status = MEMBER_STATUS_FILTERS.includes(statusRaw) ? statusRaw : "all";
+  const q = String(raw.q || "").trim().slice(0, 200);
+  const branchRaw = String(raw.branch_id || raw.branchId || "").trim();
+  let branchId = null;
+  if (branchRaw !== "") {
+    const n = Number(branchRaw);
+    if (Number.isFinite(n) && n > 0 && Number.isInteger(n)) {
+      branchId = n;
+    }
+  }
+  return { status, q, branchId };
+}
+
+/**
+ * Allowlisted query parse for member verification queue.
+ * @param {Record<string, unknown>} query
+ * @returns {{ status: string, q: string, branchId: number | null }}
+ */
+function parseVerificationQueueQuery(query) {
+  const raw = query && typeof query === "object" ? query : {};
+  const statusRaw = String(raw.status || "pending").trim().toLowerCase();
+  const status = VERIFICATION_STATUS_FILTERS.includes(statusRaw) ? statusRaw : "pending";
+  const q = String(raw.q || "").trim().slice(0, 200);
+  const branchRaw = String(raw.branch_id || raw.branchId || "").trim();
+  let branchId = null;
+  if (branchRaw !== "") {
+    const n = Number(branchRaw);
+    if (Number.isFinite(n) && n > 0 && Number.isInteger(n)) {
+      branchId = n;
+    }
+  }
+  return { status, q, branchId };
+}
+
+/**
+ * @param {{ q?: string, status?: string, branchId?: number | null }} filters
+ * @param {{ hasMembersInScope?: boolean }} meta
+ * @returns {"empty" | "no_results" | "results"}
+ */
+function resolveMemberListState(filters, members, meta = {}) {
+  const list = Array.isArray(members) ? members : [];
+  if (list.length > 0) return "results";
+  const hasQuery = Boolean(filters && String(filters.q || "").trim());
+  const statusActive = filters && filters.status && filters.status !== "all";
+  const branchActive = Boolean(filters && filters.branchId);
+  if (hasQuery || statusActive || branchActive) return "no_results";
+  if (meta.hasMembersInScope === false) return "empty";
+  return "empty";
 }
 
 function validateMemberProfileForAdmin(body) {
@@ -68,7 +135,12 @@ function validateAdminNoteBody(body) {
 
 module.exports = {
   MEMBER_STATUS_FILTERS,
+  VERIFICATION_STATUS_FILTERS,
   memberStatusLabel,
+  verificationStatusLabel,
+  parseMemberDirectoryQuery,
+  parseVerificationQueueQuery,
+  resolveMemberListState,
   validateMemberProfileForAdmin,
   validateAdminNoteBody,
 };

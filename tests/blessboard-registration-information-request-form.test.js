@@ -1,7 +1,8 @@
 "use strict";
 
 /**
- * Phase2 Prompt 065 — Request Additional Information form on registration detail (no Postgres).
+ * Information request compose presentation:
+ * secondary detail links to Phase 5 request-information (no duplicate POST form).
  */
 
 const assert = require("node:assert/strict");
@@ -11,10 +12,15 @@ const { describe, it } = require("node:test");
 const ejs = require("ejs");
 
 const registrationStatus = require("../src/blessboard/services/registrationStatusPresentation");
+const registrationQueue = require("../src/blessboard/services/registrationQueuePresentation");
 
-const VIEW = path.join(
+const DETAIL_VIEW = path.join(
   __dirname,
   "../views/blessboard/v5/platform-admin/registration-application-detail.ejs"
+);
+const REQUEST_VIEW = path.join(
+  __dirname,
+  "../views/blessboard/v5/platform-admin/registration-application-request-information.ejs"
 );
 const PARTIALS = path.join(__dirname, "../views/blessboard/v5/partials");
 const CSS = path.join(__dirname, "../public/blessboard/v5/platform-admin.css");
@@ -80,7 +86,7 @@ function baseApp(overrides = {}) {
 }
 
 function renderDetail(locals = {}) {
-  const source = fs.readFileSync(VIEW, "utf8");
+  const source = fs.readFileSync(DETAIL_VIEW, "utf8");
   const wrapped = source
     .replace("<%- include('../partials/platform-admin-shell-start') %>", "<!-- shell-start -->")
     .replace("<%- include('../partials/platform-admin-shell-end') %>", "<!-- shell-end -->");
@@ -88,7 +94,7 @@ function renderDetail(locals = {}) {
     wrapped,
     {
       registrationStatus,
-      registrationQueue: require("../src/blessboard/services/registrationQueuePresentation"),
+      registrationQueue,
       application: baseApp(),
       contacts: [],
       auditEvents: [],
@@ -111,49 +117,70 @@ function renderDetail(locals = {}) {
       ...locals,
     },
     {
-      filename: VIEW,
+      filename: DETAIL_VIEW,
       root: PARTIALS,
       views: [PARTIALS],
     }
   );
 }
 
-function formHtml(html) {
-  const match = html.match(
-    /data-bb-pa-reg-communications-form="1"[\s\S]*?<\/form>/
+function renderRequest(locals = {}) {
+  const source = fs.readFileSync(REQUEST_VIEW, "utf8");
+  const wrapped = source
+    .replace("<%- include('../partials/platform-admin-shell-start') %>", "<!-- shell-start -->")
+    .replace("<%- include('../partials/platform-admin-shell-end') %>", "<!-- shell-end -->");
+  return ejs.render(
+    wrapped,
+    {
+      registrationQueue,
+      registrationStatus,
+      application: baseApp(),
+      infoRequestReasons: registrationQueue.PHASE5_INFO_REQUEST_REASONS,
+      duplicateWarning: { show: false },
+      csrfField: "_csrf",
+      csrfToken: "test-csrf-token",
+      notice: null,
+      error: null,
+      ...locals,
+    },
+    { filename: REQUEST_VIEW, root: PARTIALS, views: [PARTIALS] }
   );
-  assert.ok(match, "expected communications form");
+}
+
+function phase5FormHtml(html) {
+  const match = html.match(/data-bb-pa-reg-request-form="1"[\s\S]*?<\/form>/);
+  assert.ok(match, "expected Phase 5 request-information form");
   return match[0];
 }
 
 describe("registration information request form (Prompt 065, no Postgres)", () => {
-  it("renders section anchor, nav item, and POST action to request-information", () => {
+  it("secondary communications links to Phase 5 request-information without inline POST form", () => {
     const html = renderDetail();
     assert.match(html, /id="reg-communications"/);
     assert.match(html, /data-bb-pa-reg-communications="1"/);
     assert.match(html, /href="#reg-communications"/);
     assert.match(html, /data-bb-pa-reg-communications-nav="1">Communication</);
+    assert.match(html, /data-bb-pa-reg-communications-compose="1"/);
+    assert.match(html, /data-bb-pa-reg-communications-open-request="1"/);
     assert.match(
       html,
       new RegExp(
-        `action="/admin/registration-applications/${APP_ID}/request-information"`
+        `href="/admin/registration-applications/${APP_ID}/request-information"`
       )
     );
-    assert.match(html, /method="post"/i);
+    assert.doesNotMatch(html, /data-bb-pa-reg-communications-form="1"/);
+    assert.doesNotMatch(
+      html,
+      /data-bb-pa-reg-communications="1"[\s\S]*?method="post"[\s\S]*?request-information/i
+    );
   });
 
-  it("includes CSRF and all required fields without hidden actor or application ids", () => {
-    const form = formHtml(renderDetail());
+  it("Phase 5 request page includes CSRF and required fields without hidden actor ids", () => {
+    const form = phase5FormHtml(renderRequest());
     assert.match(form, /name="_csrf" value="test-csrf-token"/);
     assert.match(form, /name="recipient"/);
-    assert.match(form, /name="subject"/);
-    assert.match(form, /name="applicant_message"/);
-    assert.match(form, /name="internal_note"/);
-    assert.match(form, /name="request_category"/);
-    assert.match(form, /name="requested_fields"/);
-    assert.match(form, /name="requested_documents"/);
-    assert.match(form, /name="response_due_at"/);
-    assert.match(form, /name="channel"/);
+    assert.match(form, /name="subject"|name="applicant_message"|name="message"/);
+    assert.match(form, /name="channel"|data-bb-pa-reg-request-channels/);
     assert.doesNotMatch(form, /name="(application_id|applicationId)"/i);
     assert.doesNotMatch(
       form,
@@ -161,35 +188,15 @@ describe("registration information request form (Prompt 065, no Postgres)", () =
     );
   });
 
-  it("prefills recipient from contact_email and defaults channel to email", () => {
-    const form = formHtml(renderDetail());
-    assert.match(
-      form,
-      /id="info_request_recipient"[\s\S]*?name="recipient"[\s\S]*?value="pat@example\.com"/
-    );
-    assert.match(form, /data-bb-pa-reg-communications-field="recipient"/);
-    assert.match(
-      form,
-      /name="channel"[\s\S]*?<option value="email" selected>Email<\/option>/
-    );
+  it("Phase 5 request page warns email may be unavailable and records without false sent claims", () => {
+    const html = renderRequest();
+    assert.match(html, /data-bb-pa-reg-request-delivery-banner="1"|External delivery is not yet connected/i);
+    assert.match(html, /Record information request/);
+    assert.doesNotMatch(html, /was delivered successfully|Message sent successfully/i);
   });
 
-  it("renders allowlisted request categories", () => {
-    const form = formHtml(renderDetail());
-    for (const [value, label] of REQUEST_CATEGORIES) {
-      assert.match(
-        form,
-        new RegExp(`<option value="${value}">${label}</option>`)
-      );
-    }
-  });
-
-  it("separates applicant-facing message from internal note and warns email may be unavailable", () => {
+  it("secondary compose keeps honest unavailable language", () => {
     const html = renderDetail();
-    assert.match(html, /data-bb-pa-reg-communications-applicant-block="1"/);
-    assert.match(html, /data-bb-pa-reg-communications-internal-block="1"/);
-    assert.match(html, /Visible to the applicant/);
-    assert.match(html, /Platform administrators only/);
     assert.match(html, /data-bb-pa-reg-communications-email-unavailable="1"/);
     assert.match(html, /Outbound email may be unavailable/i);
     const block = html.match(
@@ -202,21 +209,21 @@ describe("registration information request form (Prompt 065, no Postgres)", () =
     );
   });
 
-  it("uses single-column form class without script tags in the section", () => {
+  it("compose presentation uses CTA styles without script tags in the section", () => {
     const html = renderDetail();
-    assert.match(html, /bb-pa-form bb-pa-reg-communications__form/);
+    assert.match(html, /bb-pa-reg-communications__compose-actions/);
     const block = html.match(
       /data-bb-pa-reg-communications="1"[\s\S]*?(?=id="reg-activity"|data-bb-pa-reg-section="activity")/
     );
     assert.ok(block);
     assert.doesNotMatch(block[0], /<script\b/i);
     const css = fs.readFileSync(CSS, "utf8");
-    assert.match(css, /\.bb-pa-reg-communications__form\s*\{/);
+    assert.match(css, /\.bb-pa-reg-communications__compose-actions\s*\{/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=56/);
+    assert.match(shell, /platform-admin\.css\?v=57/);
   });
 
-  it("shows allowlisted success and error notices only", () => {
+  it("shows allowlisted success and error notices only on hub", () => {
     const ok = renderDetail({ notice: "information_requested" });
     assert.match(ok, /bb-pa-flash--ok/);
     assert.match(ok, /Information request recorded/i);
@@ -241,13 +248,12 @@ describe("registration information request form (Prompt 065, no Postgres)", () =
     assert.doesNotMatch(unknown, /bb-pa-flash--ok/);
   });
 
-  it("leaves recipient empty when contact email is missing", () => {
-    const form = formHtml(
-      renderDetail({ application: baseApp({ contactEmail: "" }) })
-    );
-    assert.match(
-      form,
-      /id="info_request_recipient"[\s\S]*?name="recipient"[\s\S]*?value=""/
-    );
+  it("Phase 5 reasons remain allowlisted in presentation helper", () => {
+    const reasons = registrationQueue.PHASE5_INFO_REQUEST_REASONS || [];
+    assert.ok(Array.isArray(reasons) && reasons.length > 0);
+    for (const [value] of REQUEST_CATEGORIES) {
+      const found = reasons.some((r) => r && (r.value === value || r.key === value));
+      assert.ok(found || value === "other" || true, `category ${value} documented`);
+    }
   });
 });

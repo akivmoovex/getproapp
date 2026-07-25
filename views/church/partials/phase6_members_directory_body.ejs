@@ -1,0 +1,168 @@
+<%
+  var rows = members || [];
+  var q = searchQuery || '';
+  var state = listState || (rows.length ? 'results' : ((q || (statusFilter && statusFilter !== 'all') || branchFilterId) ? 'no_results' : 'empty'));
+  var detailBase = typeof memberDetailBase !== 'undefined' ? memberDetailBase : '/branch/members';
+  var listAction = typeof directoryAction !== 'undefined' ? directoryAction : '/branch/members';
+  var verificationHref = typeof verificationHref !== 'undefined' ? verificationHref : '/branch/member-verification';
+  var importHref = typeof importHref !== 'undefined' ? importHref : '/branch/members/import';
+  var showImport = typeof showImportAction !== 'undefined' ? showImportAction : true;
+  var filters = memberFilters || ['all', 'pending', 'verified', 'rejected', 'suspended'];
+  function initials(name) {
+    return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('') || '?';
+  }
+  function formatJoined(dt) {
+    if (!dt) return '';
+    return new Date(dt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function filterHref(statusKey) {
+    var parts = [];
+    if (statusKey && statusKey !== 'all') parts.push('status=' + encodeURIComponent(statusKey));
+    if (q) parts.push('q=' + encodeURIComponent(q));
+    if (showBranchFilter && branchFilterId) parts.push('branch_id=' + encodeURIComponent(String(branchFilterId)));
+    return listAction + (parts.length ? ('?' + parts.join('&')) : '');
+  }
+%>
+      <div class="church-p6-directory" data-p6-screen="member-directory" data-list-state="<%= state %>">
+        <header class="church-p6-page-hero">
+          <div>
+            <p class="church-p6-page-hero__kicker church-show-mobile-only"><%= churchName %></p>
+            <h1 class="church-p6-page-hero__title">Member Directory</h1>
+            <p class="church-p6-page-hero__subtitle">Manage and oversee members for <%= churchName %>.</p>
+          </div>
+          <div class="church-p6-page-hero__actions">
+            <% if (showImport) { %>
+            <a class="church-btn church-btn--outline" href="<%= importHref %>">Import CSV</a>
+            <% } %>
+            <a class="church-btn church-btn--outline" href="<%= verificationHref %>">Verification queue</a>
+          </div>
+        </header>
+
+        <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+        <% if (typeof listError !== 'undefined' && listError) { %>
+        <div class="church-alert church-alert--error" role="alert" data-testid="directory-error"><%= listError %></div>
+        <% } %>
+        <%- include('./quota_warnings', {
+          quotaWarnings: (typeof planContext !== 'undefined' && planContext && planContext.quotaWarnings)
+            ? planContext.quotaWarnings.filter(function (w) { return w.meterKey === 'members'; })
+            : []
+        }) %>
+
+        <form class="church-p6-toolbar church-form" method="get" action="<%= listAction %>" role="search">
+          <div class="church-field church-field--grow">
+            <label class="church-label" for="directory-q">Search</label>
+            <input class="church-input" id="directory-q" name="q" type="search" value="<%= q %>" placeholder="Search members by name, email, or phone" maxlength="200" autocomplete="off"/>
+          </div>
+          <% if (showBranchFilter && branchOptions && branchOptions.length > 1) { %>
+          <div class="church-field">
+            <label class="church-label" for="directory-branch">Branch</label>
+            <select class="church-input" id="directory-branch" name="branch_id">
+              <option value="">All branches</option>
+              <% branchOptions.forEach(function (b) { %>
+              <option value="<%= b.id %>" <%= Number(branchFilterId) === Number(b.id) ? 'selected' : '' %>><%= b.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <% } %>
+          <% if (statusFilter && statusFilter !== 'all') { %>
+          <input type="hidden" name="status" value="<%= statusFilter %>"/>
+          <% } %>
+          <button class="church-btn church-btn--primary" type="submit">Search</button>
+        </form>
+
+        <div class="church-p6-filter-bar">
+          <div class="church-branch-filter-tabs" role="tablist" aria-label="Membership status">
+            <% filters.forEach(function (f) { %>
+            <a
+              class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>"
+              href="<%= filterHref(f) %>"
+              role="tab"
+              aria-selected="<%= statusFilter === f ? 'true' : 'false' %>"
+            ><%= f === 'all' ? 'All' : memberStatusLabel(f) %></a>
+            <% }); %>
+          </div>
+          <% if (state === 'results') { %>
+          <p class="church-p6-result-count" data-testid="directory-count">Showing <%= rows.length %> member<%= rows.length === 1 ? '' : 's' %></p>
+          <% } %>
+        </div>
+
+        <section class="church-branch-panel church-p6-panel" aria-busy="false" data-testid="directory-panel">
+          <% if (state === 'empty') { %>
+          <div class="church-empty-state church-p6-empty" data-testid="directory-empty">
+            <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">group</span>
+            <p class="church-empty-state__body">No members in this directory yet.</p>
+          </div>
+          <% } else if (state === 'no_results') { %>
+          <div class="church-empty-state church-p6-empty" data-testid="directory-no-results">
+            <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">search_off</span>
+            <p class="church-empty-state__body">No members match this search or filter.</p>
+            <a class="church-btn church-btn--outline church-btn--sm" href="<%= listAction %>">Clear filters</a>
+          </div>
+          <% } else { %>
+          <div class="church-branch-table-wrap church-show-desktop-only" data-testid="directory-table">
+            <table class="church-branch-table church-p6-table">
+              <thead>
+                <tr>
+                  <th>Member name</th>
+                  <th>Email address</th>
+                  <th>Phone</th>
+                  <% if (showBranchFilter) { %><th>Branch</th><% } %>
+                  <th>Status</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (m) { %>
+                <tr>
+                  <td>
+                    <div class="church-branch-member-cell">
+                      <span class="church-branch-avatar-initials" aria-hidden="true"><%= initials(m.full_name) %></span>
+                      <div>
+                        <strong><%= m.full_name %></strong>
+                        <% if (m.created_at) { %><span class="church-member-list__meta">Joined <%= formatJoined(m.created_at) %></span><% } %>
+                        <% if (m.ministry_interest) { %><span class="church-member-list__meta"><%= m.ministry_interest %></span><% } %>
+                      </div>
+                    </div>
+                  </td>
+                  <td><%= m.email || '' %></td>
+                  <td><%= m.phone || '' %></td>
+                  <% if (showBranchFilter) { %><td><%= m.branch_name || '' %></td><% } %>
+                  <td><span class="church-status-chip church-status-chip--<%= m.status %>"><%= memberStatusLabel(m.status) %></span></td>
+                  <td><%= m.created_at ? formatJoined(m.created_at) : '' %></td>
+                  <td>
+                    <a class="church-btn church-btn--ghost church-btn--sm" href="<%= detailBase %>/<%= m.id %>" aria-label="Open <%= m.full_name %>">View</a>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <ul class="church-branch-card-list church-show-mobile-only church-p6-card-list" data-testid="directory-cards">
+            <% rows.forEach(function (m) { %>
+            <li class="church-p6-person-card church-p6-person-card--directory">
+              <a class="church-p6-person-card__link" href="<%= detailBase %>/<%= m.id %>">
+                <span class="church-branch-avatar-initials" aria-hidden="true"><%= initials(m.full_name) %></span>
+                <div class="church-p6-person-card__body">
+                  <div class="church-p6-person-card__head">
+                    <strong><%= m.full_name %></strong>
+                    <span class="church-status-chip church-status-chip--<%= m.status %>"><%= memberStatusLabel(m.status) %></span>
+                  </div>
+                  <% if (m.ministry_interest) { %><span class="church-member-list__meta"><%= m.ministry_interest %></span><% } %>
+                  <% if (m.email || m.phone) { %>
+                  <p class="church-p6-person-card__contact"><%= [m.email, m.phone].filter(Boolean).join(' · ') %></p>
+                  <% } %>
+                  <% if (m.branch_name) { %><span class="church-member-list__meta"><%= m.branch_name %></span><% } %>
+                  <% if (m.created_at) { %><span class="church-member-list__meta">Joined <%= formatJoined(m.created_at) %></span><% } %>
+                </div>
+              </a>
+              <a class="church-p6-person-card__menu" href="<%= detailBase %>/<%= m.id %>" aria-label="Open <%= m.full_name %>">
+                <span class="material-symbols-outlined" aria-hidden="true">more_vert</span>
+              </a>
+            </li>
+            <% }); %>
+          </ul>
+          <% } %>
+        </section>
+      </div>

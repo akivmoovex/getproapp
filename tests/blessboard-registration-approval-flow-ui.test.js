@@ -214,7 +214,7 @@ describe("Phase 5 approval confirmation UI (no Postgres)", () => {
     assert.match(css, /\.bb-pa-reg-approve-processing\b/);
     assert.match(css, /@media \(max-width: 719px\)[\s\S]*bb-pa-reg-approve-confirm/);
     const shell = fs.readFileSync(SHELL, "utf8");
-    assert.match(shell, /platform-admin\.css\?v=56/);
+    assert.match(shell, /platform-admin\.css\?v=57/);
   });
 });
 

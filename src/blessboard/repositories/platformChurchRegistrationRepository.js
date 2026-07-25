@@ -1064,6 +1064,14 @@ function buildRegistrationListWhere(filters) {
       AND COALESCE(a.selected_plan, '') IS DISTINCT FROM 'network'
       AND ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = FALSE
     )`);
+  } else if (filters.queue === "phase5_new") {
+    // Residual Phase 5 “New” badge: not Rejected, not Approved, not Needs Information.
+    clauses.push(`(
+      a.application_status NOT IN ('rejected', 'cancelled')
+      AND a.provisioning_status IS DISTINCT FROM 'provisioned'
+      AND NOT (a.application_status = 'closed' AND a.organization_id IS NOT NULL)
+      AND ${EFFECTIVE_FOLLOW_UP_SQL} NOT IN ('awaiting_customer', 'needs_help', 'self_onboarding')
+    )`);
   } else if (filters.queue === "provisioning_failed") {
     clauses.push(`a.provisioning_status = 'provisioning_failed'`);
   } else if (filters.queue === "network_validation") {

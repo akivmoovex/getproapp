@@ -26,7 +26,8 @@ function inferHqActiveNav(req) {
   if (p.startsWith("/hq/broadcasts")) return "broadcasts";
   if (p.startsWith("/hq/support-access")) return "support-access";
   if (p.startsWith("/hq/audit")) return "audit";
-  if (p.startsWith("/hq/members")) return "members";
+  if (p.startsWith("/hq/member-verification") || p.startsWith("/hq/members")) return "members";
+  if (p.startsWith("/hq/attendance")) return "attendance";
   if (p.startsWith("/hq/branches")) return "branches";
   if (p.startsWith("/hq/cross-branch-reports")) return "reports-cross-branch";
   if (p.startsWith("/hq/custom-report-builder")) return "reports-builder";

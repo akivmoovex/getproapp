@@ -2,17 +2,27 @@
 
 const { getPgPool } = require("../../db/pg");
 const branchesRepo = require("../../db/pg/church/branchesRepo");
+const membersRepo = require("../../db/pg/church/membersRepo");
 const { requireChurchHqAdminSession } = require("../../church/hqAuth");
 const { requireChurchBranchHost } = require("./auth");
 const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
-const { memberStatusLabel } = require("../../church/memberDirectoryValidation");
+const {
+  MEMBER_STATUS_FILTERS,
+  VERIFICATION_STATUS_FILTERS,
+  memberStatusLabel,
+  verificationStatusLabel,
+  parseMemberDirectoryQuery,
+  parseVerificationQueueQuery,
+  resolveMemberListState,
+} = require("../../church/memberDirectoryValidation");
 const {
   transferMemberToBranch,
   listMemberBranchHistory,
 } = require("../../services/church/memberBranchTransferService");
 const {
   assertCrossBranchMemberAccess,
-  searchMembersAcrossBranches,
+  listMembersAcrossBranches,
+  listPendingMembersAcrossBranches,
   findMemberForHq,
 } = require("../../services/church/growthMultiBranchService");
 const { organisationAllowsBranchPaths } = require("../../services/church/branchPathRoutingService");
@@ -24,6 +34,12 @@ const MEMBER_NOTICES = new Set(["transferred"]);
 function memberNoticeMessage(code) {
   if (code === "transferred") return "Member transferred successfully.";
   return null;
+}
+
+function resolveAllowedBranchId(branchId, branches) {
+  if (branchId == null) return null;
+  const allowed = (branches || []).some((b) => Number(b.id) === Number(branchId));
+  return allowed ? branchId : null;
 }
 
 module.exports = function registerHqAdminMembersRoutes(router) {
@@ -40,18 +56,42 @@ module.exports = function registerHqAdminMembersRoutes(router) {
       }
 
       const pool = getPgPool();
-      const q = String(req.query.q || "").trim();
-      const members = q ? await searchMembersAcrossBranches(pool, org.id, q) : [];
       const branches = await branchesRepo.listBranchesForOrganization(pool, org.id);
+      const parsed = parseMemberDirectoryQuery(req.query);
+      const branchFilterId = resolveAllowedBranchId(parsed.branchId, branches);
+      const members = await listMembersAcrossBranches(pool, org.id, {
+        status: parsed.status,
+        branchId: branchFilterId,
+        q: parsed.q,
+      });
+      const totalInScope = await membersRepo.countMembersForOrganization(pool, org.id, {
+        branchId: branchFilterId,
+      });
+      const listState = resolveMemberListState(
+        { q: parsed.q, status: parsed.status, branchId: branchFilterId },
+        members,
+        { hasMembersInScope: totalInScope > 0 }
+      );
 
       return res.render(
-        "church/hq/members_lookup",
+        "church/hq/members_directory",
         hqAdminLocals(req, {
           activeNav: "members",
-          searchQuery: q,
           members,
-          branches,
+          statusFilter: parsed.status,
+          memberFilters: MEMBER_STATUS_FILTERS,
           memberStatusLabel,
+          searchQuery: parsed.q,
+          branchFilterId,
+          branchOptions: branches,
+          showBranchFilter: branches.length > 1,
+          listState,
+          listError: null,
+          memberDetailBase: "/hq/members",
+          directoryAction: "/hq/members",
+          verificationHref: "/hq/member-verification",
+          showImportAction: false,
+          portalKind: "hq",
           pathRoutingEnabled: organisationAllowsBranchPaths(org),
           notice: memberNoticeMessage(flashFromQuery(req, MEMBER_NOTICES)),
         })
@@ -60,6 +100,69 @@ module.exports = function registerHqAdminMembersRoutes(router) {
       return next(e);
     }
   });
+
+  router.get(
+    "/hq/member-verification",
+    requireChurchBranchHost,
+    requireChurchHqAdminSession,
+    async (req, res, next) => {
+      try {
+        const org = req.churchContext.organization;
+        try {
+          assertCrossBranchMemberAccess(org);
+        } catch (err) {
+          if (err.code === "PACKAGE_REQUIRED") {
+            return res.status(403).type("text").send(err.message);
+          }
+          throw err;
+        }
+
+        const pool = getPgPool();
+        const branches = await branchesRepo.listBranchesForOrganization(pool, org.id);
+        const parsed = parseVerificationQueueQuery(req.query);
+        const branchFilterId = resolveAllowedBranchId(parsed.branchId, branches);
+        const pendingMembers = await listPendingMembersAcrossBranches(pool, org.id, {
+          branchId: branchFilterId,
+          q: parsed.q,
+        });
+        const pendingCount = parsed.q
+          ? (
+              await listPendingMembersAcrossBranches(pool, org.id, {
+                branchId: branchFilterId,
+              })
+            ).length
+          : pendingMembers.length;
+        const listState =
+          pendingMembers.length > 0 ? "results" : parsed.q || branchFilterId ? "no_results" : "empty";
+
+        return res.render(
+          "church/hq/verification_queue",
+          hqAdminLocals(req, {
+            activeNav: "members",
+            pendingMembers,
+            pendingCount,
+            statusFilter: parsed.status,
+            verificationFilters: VERIFICATION_STATUS_FILTERS,
+            memberStatusLabel,
+            verificationStatusLabel,
+            searchQuery: parsed.q,
+            branchFilterId,
+            branchOptions: branches,
+            showBranchFilter: branches.length > 1,
+            listState,
+            listError: null,
+            memberDetailBase: "/hq/members",
+            membersListHref: "/hq/members",
+            verificationAction: "/hq/member-verification",
+            portalKind: "hq",
+            notice: null,
+          })
+        );
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
 
   router.get(
     "/hq/members/:memberId",

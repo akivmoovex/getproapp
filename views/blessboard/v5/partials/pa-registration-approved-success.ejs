@@ -186,13 +186,14 @@
 
   <div class="bb-pa-reg-approved__actions">
     <a class="bb-pa-btn bb-pa-btn--primary" href="<%= phase5OrgHref %>" data-bb-pa-reg-approved-open-profile="1">Open organization</a>
-    <% if (phase5PublicAvailable && phase5PublicPath) { %>
+    <% if (phase5PublicPath) { %>
     <a
       class="bb-pa-btn bb-pa-btn--secondary"
       href="<%= phase5PublicPath %>"
       rel="noopener"
       data-bb-pa-reg-approved-open-public="1"
-    >Open public website</a>
+      data-bb-pa-reg-approved-public-available="<%= phase5PublicAvailable ? '1' : '0' %>"
+    ><%= phase5PublicAvailable ? 'Open public website' : 'Open public path' %></a>
     <% } %>
     <a class="bb-pa-btn bb-pa-btn--secondary" href="<%= phase5OnboardingHref %>" data-bb-pa-reg-approved-open-onboarding="1">Open onboarding</a>
     <a class="bb-pa-btn bb-pa-btn--secondary" href="/admin/registration-applications" data-bb-pa-reg-approved-return="1">Return to registrations</a>

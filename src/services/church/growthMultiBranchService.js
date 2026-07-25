@@ -256,6 +256,24 @@ async function searchMembersAcrossBranches(pool, organizationId, query, opts = {
 
 /**
  * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{ status?: string, branchId?: number | null, q?: string, limit?: number }} [opts]
+ */
+async function listMembersAcrossBranches(pool, organizationId, opts = {}) {
+  return membersRepo.listMembersForOrganization(pool, organizationId, opts);
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{ branchId?: number | null, q?: string, limit?: number }} [opts]
+ */
+async function listPendingMembersAcrossBranches(pool, organizationId, opts = {}) {
+  return membersRepo.listPendingMembersForOrganization(pool, organizationId, opts);
+}
+
+/**
+ * @param {import("pg").Pool} pool
  * @param {number} memberId
  * @param {number} organizationId
  */
@@ -270,5 +288,7 @@ module.exports = {
   activateBranchByHq,
   deactivateBranchByHq,
   searchMembersAcrossBranches,
+  listMembersAcrossBranches,
+  listPendingMembersAcrossBranches,
   findMemberForHq,
 };

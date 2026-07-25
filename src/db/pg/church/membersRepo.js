@@ -92,6 +92,7 @@ async function searchMembersForOrganization(pool, organizationId, query, opts = 
   if (!Number.isFinite(orgId) || orgId <= 0 || !q) return [];
 
   const status = String(opts.status || "").trim();
+  const branchId = opts.branchId != null ? Number(opts.branchId) : null;
   const limit = Math.min(Math.max(Number(opts.limit) || 100, 1), 200);
   const params = [orgId, `%${q.toLowerCase()}%`, `%${normalizePhone(q)}%`];
   let where = `WHERE m.organization_id = $1
@@ -101,13 +102,18 @@ async function searchMembersForOrganization(pool, organizationId, query, opts = 
        OR m.phone_normalized LIKE $3
        OR m.phone ILIKE $2
      )`;
+  if (Number.isFinite(branchId) && branchId > 0) {
+    params.push(branchId);
+    where += ` AND m.branch_id = $${params.length}`;
+  }
   if (status && status !== "all") {
     params.push(status);
     where += ` AND m.status = $${params.length}`;
   }
 
   const r = await pool.query(
-    `SELECT m.id, m.full_name, m.email, m.phone, m.status, m.branch_id, m.created_at,
+    `SELECT m.id, m.full_name, m.email, m.phone, m.status, m.branch_id, m.created_at, m.updated_at,
+            m.age_group, m.ministry_interest,
             b.name AS branch_name, b.slug AS branch_slug
      FROM public.church_members m
      INNER JOIN public.church_branches b ON b.id = m.branch_id
@@ -279,15 +285,113 @@ async function searchMembersForBranch(pool, branchId, query, opts = {}) {
  * @param {number} branchId
  * @returns {Promise<object[]>}
  */
-async function listPendingMembersForBranch(pool, branchId) {
+async function listPendingMembersForBranch(pool, branchId, opts = {}) {
+  const q = String(opts.q || "").trim();
+  const params = [branchId];
+  let where = `WHERE branch_id = $1 AND status = 'pending'`;
+  if (q) {
+    params.push(`%${q.toLowerCase()}%`, `%${normalizePhone(q)}%`);
+    where += ` AND (
+       lower(full_name) LIKE $${params.length - 1}
+       OR lower(trim(email)) LIKE $${params.length - 1}
+       OR phone_normalized LIKE $${params.length}
+       OR phone ILIKE $${params.length - 1}
+     )`;
+  }
   const r = await pool.query(
-    `SELECT id, full_name, email, phone, age_group, ministry_interest, status, created_at
+    `SELECT id, full_name, email, phone, age_group, ministry_interest, status, created_at, review_comment
      FROM public.church_members
-     WHERE branch_id = $1 AND status = 'pending'
+     ${where}
      ORDER BY created_at ASC`,
-    [branchId]
+    params
   );
   return r.rows;
+}
+
+/**
+ * Org-scoped member directory for HQ (Growth). Always tenant-scoped by organization_id.
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{ status?: string, branchId?: number | null, q?: string, limit?: number }} [opts]
+ */
+async function listMembersForOrganization(pool, organizationId, opts = {}) {
+  const orgId = Number(organizationId);
+  if (!Number.isFinite(orgId) || orgId <= 0) return [];
+
+  const status = String(opts.status || "").trim();
+  const branchId = opts.branchId != null ? Number(opts.branchId) : null;
+  const q = String(opts.q || "").trim();
+  const limit = Math.min(Math.max(Number(opts.limit) || 200, 1), 200);
+  const params = [orgId];
+  let where = `WHERE m.organization_id = $1`;
+
+  if (Number.isFinite(branchId) && branchId > 0) {
+    params.push(branchId);
+    where += ` AND m.branch_id = $${params.length}`;
+  }
+  if (status && status !== "all") {
+    params.push(status);
+    where += ` AND m.status = $${params.length}`;
+  }
+  if (q) {
+    params.push(`%${q.toLowerCase()}%`, `%${normalizePhone(q)}%`);
+    where += ` AND (
+       lower(m.full_name) LIKE $${params.length - 1}
+       OR lower(trim(m.email)) LIKE $${params.length - 1}
+       OR m.phone_normalized LIKE $${params.length}
+       OR m.phone ILIKE $${params.length - 1}
+     )`;
+  }
+
+  const r = await pool.query(
+    `SELECT m.id, m.full_name, m.email, m.phone, m.age_group, m.ministry_interest, m.status,
+            m.created_at, m.updated_at, m.branch_id,
+            b.name AS branch_name, b.slug AS branch_slug
+     FROM public.church_members m
+     INNER JOIN public.church_branches b ON b.id = m.branch_id AND b.organization_id = m.organization_id
+     ${where}
+     ORDER BY m.full_name ASC
+     LIMIT ${limit}`,
+    params
+  );
+  return r.rows;
+}
+
+/**
+ * Org-scoped pending verification queue for HQ (Growth).
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{ branchId?: number | null, q?: string, limit?: number }} [opts]
+ */
+async function listPendingMembersForOrganization(pool, organizationId, opts = {}) {
+  return listMembersForOrganization(pool, organizationId, {
+    status: "pending",
+    branchId: opts.branchId,
+    q: opts.q,
+    limit: opts.limit || 200,
+  });
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{ branchId?: number | null }} [opts]
+ */
+async function countMembersForOrganization(pool, organizationId, opts = {}) {
+  const orgId = Number(organizationId);
+  if (!Number.isFinite(orgId) || orgId <= 0) return 0;
+  const branchId = opts.branchId != null ? Number(opts.branchId) : null;
+  const params = [orgId];
+  let where = `WHERE organization_id = $1`;
+  if (Number.isFinite(branchId) && branchId > 0) {
+    params.push(branchId);
+    where += ` AND branch_id = $${params.length}`;
+  }
+  const r = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM public.church_members ${where}`,
+    params
+  );
+  return r.rows[0]?.count ?? 0;
 }
 
 /**
@@ -765,6 +869,9 @@ module.exports = {
   findMemberByIdForOrganization,
   findMemberByIdForBranch,
   searchMembersForOrganization,
+  listMembersForOrganization,
+  listPendingMembersForOrganization,
+  countMembersForOrganization,
   findActiveRegistrationConflictForBranch,
   findProfileConflictForBranch,
   createPendingMember,

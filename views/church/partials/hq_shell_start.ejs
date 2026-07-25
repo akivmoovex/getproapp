@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=49"/>
+  <link rel="stylesheet" href="/church/church.css?v=52"/>
 </head>
 <body class="church-body church-body--hq-admin" data-hq-shell="stitch-v49">
 <%
@@ -26,6 +26,8 @@
         <a href="/hq/account" class="<%= hqNavClass('account') %>"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span>Account</span></a>
         <a href="/hq/notification-templates" class="<%= hqNavClass('notification-templates') %>"><span class="material-symbols-outlined" aria-hidden="true">mail</span><span>Notifications</span></a>
         <a href="/hq/branches" class="<%= hqNavClass('branches') %>"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><span>Branch registry</span></a>
+        <a href="/hq/members" class="<%= hqNavClass('members') %>"><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Members</span></a>
+        <a href="/hq/attendance" class="<%= hqNavClass('attendance') %>" data-testid="hq-nav-attendance"><span class="material-symbols-outlined" aria-hidden="true">event_available</span><span>Attendance</span></a>
         <a href="/hq/broadcasts" class="<%= hqNavClass('broadcasts') %>"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><span>Broadcasts</span></a>
         <a href="/hq/reports" class="<%= hqNavClass('reports') %>"><span class="material-symbols-outlined" aria-hidden="true">description</span><span>Review Reports</span></a>
         <% if (typeof packageFeatureNav !== 'undefined' && packageFeatureNav && packageFeatureNav.length) { %>

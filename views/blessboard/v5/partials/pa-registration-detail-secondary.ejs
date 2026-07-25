@@ -135,19 +135,6 @@
     }
     return code ? 'Something went wrong.' : null;
   }
-  var infoRequestCategories = [
-    { value: 'clarify_church_identity', label: 'Clarify church identity' },
-    { value: 'confirm_applicant_authority', label: 'Confirm applicant authority' },
-    { value: 'upload_registration_document', label: 'Upload registration document' },
-    { value: 'correct_phone', label: 'Correct phone' },
-    { value: 'correct_email', label: 'Correct email' },
-    { value: 'confirm_location', label: 'Confirm location' },
-    { value: 'explain_possible_duplicate', label: 'Explain possible duplicate' },
-    { value: 'confirm_website_name', label: 'Confirm website name' },
-    { value: 'add_service_times', label: 'Add service times' },
-    { value: 'other', label: 'Other' }
-  ];
-  var infoRequestRecipient = displayOrMissing(app.contactEmail) || '';
   var noticeMsg = noticeText(flashNotice);
   var errorMsg = errorText(flashError);
   var cityVal = displayOrMissing(app.city);
@@ -1992,154 +1979,21 @@
     </div>
 
     <div class="bb-pa-reg-communications__compose" data-bb-pa-reg-communications-compose="1">
-    <h3 class="bb-pa-lede" id="reg-communications-compose-title">Request additional information</h3>
-    <p class="bb-pa-hint" role="note" data-bb-pa-reg-communications-email-unavailable="1">
-      Outbound email may be unavailable. Saving this form records the request; it does not confirm that a message was delivered, opened, or bounced.
-    </p>
-
-    <form
-      class="bb-pa-form bb-pa-reg-communications__form"
-      method="post"
-      action="/admin/registration-applications/<%= app.id %>/request-information"
-      data-bb-pa-reg-communications-form="1"
-    >
-      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-
-      <div class="bb-pa-field">
-        <label for="info_request_recipient">Recipient</label>
-        <input
-          id="info_request_recipient"
-          name="recipient"
-          type="email"
-          maxlength="320"
-          required
-          autocomplete="email"
-          value="<%= infoRequestRecipient %>"
-          data-bb-pa-reg-communications-field="recipient"
-        />
+      <h3 class="bb-pa-lede" id="reg-communications-compose-title">Request additional information</h3>
+      <p class="bb-pa-hint" role="note" data-bb-pa-reg-communications-email-unavailable="1">
+        Outbound email may be unavailable. Recording a request does not confirm that a message was delivered, opened, or bounced.
+      </p>
+      <p class="bb-pa-lede" data-bb-pa-reg-communications-compose-lede="1">
+        Use the dedicated Phase 5 request-information page to record what is needed. This section keeps communication history only.
+      </p>
+      <div class="bb-pa-reg-communications__compose-actions" data-bb-pa-reg-communications-compose-actions="1">
+        <a
+          class="bb-pa-btn bb-pa-btn--primary"
+          href="/admin/registration-applications/<%= app.id %>/request-information"
+          data-bb-pa-reg-communications-open-request="1"
+          data-bb-pa-reg-communications-submit="1"
+        >Continue to request information</a>
       </div>
-
-      <div class="bb-pa-field">
-        <label for="info_request_subject">Subject</label>
-        <input
-          id="info_request_subject"
-          name="subject"
-          type="text"
-          maxlength="200"
-          required
-          autocomplete="off"
-          data-bb-pa-reg-communications-field="subject"
-        />
-      </div>
-
-      <div class="bb-pa-field" data-bb-pa-reg-communications-applicant-block="1">
-        <label for="info_request_applicant_message">Applicant-facing message</label>
-        <p class="bb-pa-muted" id="info_request_applicant_message_hint">
-          Visible to the applicant. Do not put internal review notes here.
-        </p>
-        <textarea
-          id="info_request_applicant_message"
-          name="applicant_message"
-          rows="5"
-          maxlength="4000"
-          required
-          aria-describedby="info_request_applicant_message_hint"
-          data-bb-pa-reg-communications-field="applicant_message"
-        ></textarea>
-      </div>
-
-      <div class="bb-pa-field" data-bb-pa-reg-communications-internal-block="1">
-        <label for="info_request_internal_note">Internal note <span class="bb-pa-muted">(optional)</span></label>
-        <p class="bb-pa-muted" id="info_request_internal_note_hint">
-          Platform administrators only. Not shown to the applicant.
-        </p>
-        <textarea
-          id="info_request_internal_note"
-          name="internal_note"
-          rows="3"
-          maxlength="4000"
-          aria-describedby="info_request_internal_note_hint"
-          data-bb-pa-reg-communications-field="internal_note"
-        ></textarea>
-      </div>
-
-      <div class="bb-pa-field">
-        <label for="info_request_category">Request category</label>
-        <select
-          id="info_request_category"
-          name="request_category"
-          required
-          data-bb-pa-reg-communications-field="request_category"
-        >
-          <option value="" selected>Select category</option>
-          <% infoRequestCategories.forEach(function (cat) { %>
-          <option value="<%= cat.value %>"><%= cat.label %></option>
-          <% }) %>
-        </select>
-      </div>
-
-      <div class="bb-pa-field">
-        <label for="info_request_requested_fields">Requested fields <span class="bb-pa-muted">(optional)</span></label>
-        <p class="bb-pa-muted" id="info_request_requested_fields_hint">
-          Comma-separated field names (for example: church name, city).
-        </p>
-        <textarea
-          id="info_request_requested_fields"
-          name="requested_fields"
-          rows="2"
-          maxlength="2000"
-          aria-describedby="info_request_requested_fields_hint"
-          data-bb-pa-reg-communications-field="requested_fields"
-        ></textarea>
-      </div>
-
-      <div class="bb-pa-field">
-        <label for="info_request_requested_documents">Requested documents <span class="bb-pa-muted">(optional)</span></label>
-        <p class="bb-pa-muted" id="info_request_requested_documents_hint">
-          Comma-separated document names (for example: registration certificate).
-        </p>
-        <textarea
-          id="info_request_requested_documents"
-          name="requested_documents"
-          rows="2"
-          maxlength="2000"
-          aria-describedby="info_request_requested_documents_hint"
-          data-bb-pa-reg-communications-field="requested_documents"
-        ></textarea>
-      </div>
-
-      <div class="bb-pa-field">
-        <label for="info_request_response_due_at">Response deadline <span class="bb-pa-muted">(optional)</span></label>
-        <input
-          id="info_request_response_due_at"
-          name="response_due_at"
-          type="datetime-local"
-          data-bb-pa-reg-communications-field="response_due_at"
-        />
-      </div>
-
-      <div class="bb-pa-field">
-        <label for="info_request_channel">Channel</label>
-        <select
-          id="info_request_channel"
-          name="channel"
-          required
-          data-bb-pa-reg-communications-field="channel"
-        >
-          <option value="email" selected>Email</option>
-          <option value="phone">Phone</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-
-      <button
-        class="bb-pa-btn bb-pa-btn--primary"
-        type="submit"
-        data-bb-pa-reg-communications-submit="1"
-      >
-        Record information request
-      </button>
-    </form>
     </div>
   </section>
 

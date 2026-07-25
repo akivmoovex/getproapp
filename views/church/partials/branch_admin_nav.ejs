@@ -17,6 +17,18 @@
   <span class="material-symbols-outlined" aria-hidden="true">group</span>
   <span>Members</span>
 </a>
+<a href="/branch/attendance" class="<%= navClass('attendance') %>" data-testid="nav-attendance">
+  <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
+  <span>Attendance</span>
+</a>
+<a href="/branch/giving-summary" class="<%= navClass('giving-summary') %>" data-testid="nav-giving" data-nav-dest="giving-summary">
+  <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+  <span>Giving</span>
+</a>
+<a href="/branch/giving-settings" class="<%= navClass('giving-settings') %>" data-testid="nav-giving-settings">
+  <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+  <span>Giving Settings</span>
+</a>
 <a href="/branch/ministries" class="<%= navClass('ministries') %>">
   <span class="material-symbols-outlined" aria-hidden="true">church</span>
   <span>Ministries</span>
@@ -24,10 +36,6 @@
 <a href="/branch/events" class="<%= navClass('events') %>">
   <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
   <span>Events</span>
-</a>
-<a href="/branch/attendance" class="<%= navClass('attendance') %>">
-  <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
-  <span>Attendance</span>
 </a>
 <% if (typeof packageFeatureNav !== 'undefined' && packageFeatureNav && packageFeatureNav.length) { %>
   <% packageFeatureNav.forEach(function (item) { %>
@@ -72,14 +80,6 @@
 <a href="/branch/contact-submissions" class="<%= navClass('contact') %>">
   <span class="material-symbols-outlined" aria-hidden="true">mail</span>
   <span>Contact</span>
-</a>
-<a href="/branch/giving-summary" class="<%= navClass('giving-summary') %>">
-  <span class="material-symbols-outlined" aria-hidden="true">payments</span>
-  <span>Giving</span>
-</a>
-<a href="/branch/giving-settings" class="<%= navClass('giving-settings') %>">
-  <span class="material-symbols-outlined" aria-hidden="true">tune</span>
-  <span>Giving Settings</span>
 </a>
 <a href="/branch/prayer-requests" class="<%= navClass('prayer') %>">
   <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>

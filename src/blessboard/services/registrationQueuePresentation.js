@@ -171,7 +171,8 @@ function applyVisibleStatusQuery(query) {
   if (!vs) return out;
 
   if (vs === PHASE5_VISIBLE.NEW) {
-    if (!out.queue) out.queue = "needs_review";
+    // Align with presentPhase5QueueStatus residual “New” (broader than needs_review).
+    if (!out.queue) out.queue = "phase5_new";
   } else if (vs === PHASE5_VISIBLE.NEEDS_INFORMATION) {
     if (!out.follow_up_status && !out.followUpStatus) {
       // Sentinel expanded in list repository to awaiting_customer | needs_help | self_onboarding
@@ -211,7 +212,7 @@ function resolveSelectedVisibleStatus(filters, visibleStatusRaw) {
   ) {
     return PHASE5_VISIBLE.NEEDS_INFORMATION;
   }
-  if (queue === "needs_review") return PHASE5_VISIBLE.NEW;
+  if (queue === "phase5_new" || queue === "needs_review") return PHASE5_VISIBLE.NEW;
   if (queue === "provisioned") return PHASE5_VISIBLE.APPROVED;
   if (queue === "rejected") return PHASE5_VISIBLE.REJECTED;
   return "";

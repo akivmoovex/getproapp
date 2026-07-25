@@ -294,7 +294,7 @@ describe("platform-admin mobile burger markup", () => {
   });
 
   it("cache-busts platform-admin CSS and shell-nav JS together", () => {
-    assert.match(start, /platform-admin\.css\?v=56/);
+    assert.match(start, /platform-admin\.css\?v=57/);
     assert.match(end, /shell-nav\.js\?v=2"/);
   });
 });

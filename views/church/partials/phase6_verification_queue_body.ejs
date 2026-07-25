@@ -1,0 +1,169 @@
+<%
+  var queueMembers = pendingMembers || [];
+  var queuePendingCount = (typeof pendingCount === 'number') ? pendingCount : queueMembers.length;
+  var q = searchQuery || '';
+  var state = listState || (queueMembers.length ? 'results' : (q ? 'no_results' : 'empty'));
+  var detailBase = typeof memberDetailBase !== 'undefined' ? memberDetailBase : '/branch/members';
+  var statusLabelFn = typeof verificationStatusLabel === 'function' ? verificationStatusLabel : function (s) { return s; };
+  function initials(name) {
+    return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('') || '?';
+  }
+  function formatApplied(dt) {
+    if (!dt) return '';
+    return new Date(dt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  function formatAppliedDate(dt) {
+    if (!dt) return '';
+    return new Date(dt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function buildQueueQuery(extra) {
+    var parts = [];
+    if (extra && extra.status && extra.status !== 'pending') parts.push('status=' + encodeURIComponent(extra.status));
+    else if (statusFilter && statusFilter !== 'pending' && !(extra && extra.clearStatus)) parts.push('status=' + encodeURIComponent(statusFilter));
+    if (extra && Object.prototype.hasOwnProperty.call(extra, 'q')) {
+      if (extra.q) parts.push('q=' + encodeURIComponent(extra.q));
+    } else if (q) {
+      parts.push('q=' + encodeURIComponent(q));
+    }
+    if (showBranchFilter && branchFilterId) parts.push('branch_id=' + encodeURIComponent(String(branchFilterId)));
+    return parts.length ? ('?' + parts.join('&')) : '';
+  }
+%>
+      <div class="church-p6-verification" data-p6-screen="verification-queue" data-list-state="<%= state %>">
+        <header class="church-p6-page-hero">
+          <div>
+            <p class="church-branch-breadcrumb church-show-desktop-only">Member Management / Verification Queue</p>
+            <div class="church-p6-page-hero__title-row">
+              <h1 class="church-p6-page-hero__title">Member Verification Queue</h1>
+              <% if (queuePendingCount > 0) { %>
+              <span class="church-p6-count-badge" data-testid="verification-pending-count"><%= queuePendingCount %> pending review</span>
+              <% } %>
+            </div>
+            <p class="church-p6-page-hero__subtitle">Verify new registrations and review pending membership applications for <%= churchName %>.</p>
+          </div>
+          <div class="church-p6-page-hero__actions">
+            <a class="church-btn church-btn--outline" href="<%= typeof membersListHref !== 'undefined' ? membersListHref : '/branch/members' %>">All members</a>
+          </div>
+        </header>
+
+        <% if (notice) { %>
+        <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+        <% } %>
+        <% if (listError) { %>
+        <div class="church-alert church-alert--error" role="alert" data-testid="verification-error"><%= listError %></div>
+        <% } %>
+        <%- include('./quota_warnings', {
+          quotaWarnings: (typeof planContext !== 'undefined' && planContext && planContext.quotaWarnings)
+            ? planContext.quotaWarnings.filter(function (w) { return w.meterKey === 'members'; })
+            : []
+        }) %>
+
+        <form class="church-p6-toolbar church-form" method="get" action="<%= typeof verificationAction !== 'undefined' ? verificationAction : '/branch/member-verification' %>" role="search">
+          <div class="church-field church-field--grow">
+            <label class="church-label" for="verification-q">Search</label>
+            <input class="church-input" id="verification-q" name="q" type="search" value="<%= q %>" placeholder="Search applicants by name, email, or phone" maxlength="200" autocomplete="off"/>
+          </div>
+          <% if (showBranchFilter && branchOptions && branchOptions.length > 1) { %>
+          <div class="church-field">
+            <label class="church-label" for="verification-branch">Branch</label>
+            <select class="church-input" id="verification-branch" name="branch_id">
+              <option value="">All branches</option>
+              <% branchOptions.forEach(function (b) { %>
+              <option value="<%= b.id %>" <%= Number(branchFilterId) === Number(b.id) ? 'selected' : '' %>><%= b.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <% } %>
+          <input type="hidden" name="status" value="pending"/>
+          <button class="church-btn church-btn--primary" type="submit">Search</button>
+        </form>
+
+        <div class="church-p6-filter-chips church-show-mobile-only" role="tablist" aria-label="Verification status">
+          <a class="church-p6-filter-chip church-p6-filter-chip--active" href="<%= (typeof verificationAction !== 'undefined' ? verificationAction : '/branch/member-verification') + buildQueueQuery({ q: q }) %>" role="tab" aria-selected="true">All (<%= queuePendingCount %>)</a>
+          <span class="church-p6-filter-chip church-p6-filter-chip--static" title="Uses existing pending membership status">Pending</span>
+        </div>
+
+        <section class="church-branch-panel church-branch-panel--glass church-p6-panel" aria-busy="false" data-testid="verification-panel">
+          <% if (state === 'empty') { %>
+          <div class="church-empty-state church-p6-empty" data-testid="verification-empty">
+            <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">how_to_reg</span>
+            <p class="church-empty-state__body">No pending member registrations right now.</p>
+            <p class="church-p6-empty__hint">Keep the community growing by verifying members promptly when new applications arrive.</p>
+          </div>
+          <% } else if (state === 'no_results') { %>
+          <div class="church-empty-state church-p6-empty" data-testid="verification-no-results">
+            <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">search_off</span>
+            <p class="church-empty-state__body">No pending applicants match your search.</p>
+            <a class="church-btn church-btn--outline church-btn--sm" href="<%= typeof verificationAction !== 'undefined' ? verificationAction : '/branch/member-verification' %>">Clear search</a>
+          </div>
+          <% } else { %>
+          <div class="church-branch-table-wrap church-show-desktop-only" data-testid="verification-table">
+            <table class="church-branch-table church-p6-table">
+              <thead>
+                <tr>
+                  <th>Applicant name</th>
+                  <th>Applied date</th>
+                  <th>Phone number</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% queueMembers.forEach(function (m) { %>
+                <tr>
+                  <td>
+                    <div class="church-branch-member-cell">
+                      <span class="church-branch-avatar-initials" aria-hidden="true"><%= initials(m.full_name) %></span>
+                      <div>
+                        <strong><%= m.full_name %></strong>
+                        <% if (m.email) { %><span class="church-member-list__meta"><%= m.email %></span><% } %>
+                        <% if (m.branch_name) { %><span class="church-member-list__meta"><%= m.branch_name %></span><% } %>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (m.created_at) { %>
+                    <span class="church-p6-date"><%= formatAppliedDate(m.created_at) %></span>
+                    <span class="church-member-list__meta"><%= new Date(m.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) %></span>
+                    <% } %>
+                  </td>
+                  <td><%= m.phone || '' %></td>
+                  <td><span class="church-status-chip church-status-chip--pending"><%= statusLabelFn(m.status || 'pending') %></span></td>
+                  <td>
+                    <a class="church-btn church-btn--primary church-btn--sm" href="<%= detailBase %>/<%= m.id %>">Review</a>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <ul class="church-branch-card-list church-show-mobile-only church-p6-card-list" data-testid="verification-cards">
+            <% queueMembers.forEach(function (m) { %>
+            <li class="church-p6-person-card">
+              <div class="church-branch-member-cell">
+                <span class="church-branch-avatar-initials" aria-hidden="true"><%= initials(m.full_name) %></span>
+                <div class="church-p6-person-card__body">
+                  <div class="church-p6-person-card__head">
+                    <strong><%= m.full_name %></strong>
+                    <span class="church-status-chip church-status-chip--pending"><%= statusLabelFn(m.status || 'pending') %></span>
+                  </div>
+                  <% if (m.created_at) { %><span class="church-member-list__meta">Applied: <%= formatAppliedDate(m.created_at) %></span><% } %>
+                  <% if (m.email || m.phone) { %>
+                  <p class="church-p6-person-card__contact"><%= [m.email, m.phone].filter(Boolean).join(' · ') %></p>
+                  <% } %>
+                  <% if (m.ministry_interest) { %>
+                  <p class="church-p6-person-card__note">&ldquo;<%= m.ministry_interest %>&rdquo;</p>
+                  <% } else if (m.review_comment) { %>
+                  <p class="church-p6-person-card__note"><%= m.review_comment %></p>
+                  <% } %>
+                  <% if (m.branch_name) { %><span class="church-member-list__meta"><%= m.branch_name %></span><% } %>
+                </div>
+              </div>
+              <a class="church-btn church-btn--primary church-btn--block" href="<%= detailBase %>/<%= m.id %>">Review application <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+            </li>
+            <% }); %>
+          </ul>
+          <% } %>
+        </section>
+      </div>

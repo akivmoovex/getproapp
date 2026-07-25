@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=47"/>
+  <link rel="stylesheet" href="/church/church.css?v=52"/>
 </head>
 <body class="church-body church-body--branch-admin" data-branch-shell="stitch-v41">
   <div class="church-branch-layout">
@@ -135,6 +135,9 @@
           </summary>
           <div class="church-branch-more__panel">
             <a href="/branch/member-verification">Verification</a>
+            <a href="/branch/attendance" data-testid="nav-more-attendance">Attendance</a>
+            <a href="/branch/giving-summary" data-testid="nav-more-giving">Giving</a>
+            <a href="/branch/giving-settings" data-testid="nav-more-giving-settings">Giving Settings</a>
             <a href="/branch/ministries">Ministries</a>
             <a href="/branch/reports">Reports</a>
             <% if (typeof packageFeatureNav !== 'undefined' && packageFeatureNav && packageFeatureNav.length) { %>
@@ -148,7 +151,6 @@
             <a href="/branch/sermons">Sermons</a>
             <a href="/branch/resources">Resources</a>
             <a href="/branch/contact-submissions">Contact</a>
-            <a href="/branch/giving-settings">Giving Settings</a>
             <a href="/branch/account">Account</a>
           </div>
         </details>

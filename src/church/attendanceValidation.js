@@ -97,10 +97,75 @@ function totalAttendanceCounts(row) {
   );
 }
 
+const ATTENDANCE_STATUS_FILTERS = ["all", "draft", "submitted", "synced_to_monthly_report"];
+
+/**
+ * Allowlisted query parse for attendance tracker list.
+ * @param {Record<string, unknown>} query
+ */
+function parseAttendanceTrackerQuery(query) {
+  const raw = query && typeof query === "object" ? query : {};
+  const typeRaw = String(raw.type || raw.attendance_type || "").trim();
+  const attendanceType = ATTENDANCE_TYPES.includes(typeRaw) ? typeRaw : "all";
+  const statusRaw = String(raw.status || "all").trim().toLowerCase();
+  const status = ATTENDANCE_STATUS_FILTERS.includes(statusRaw) ? statusRaw : "all";
+  const q = String(raw.q || "").trim().slice(0, 200);
+  const monthRaw = String(raw.month || "").trim();
+  const month = /^\d{4}-\d{2}$/.test(monthRaw) ? monthRaw : "";
+  const dateRaw = String(raw.date || raw.attendance_date || "").trim();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateRaw) ? dateRaw : "";
+  const branchRaw = String(raw.branch_id || raw.branchId || "").trim();
+  let branchId = null;
+  if (branchRaw !== "") {
+    const n = Number(branchRaw);
+    if (Number.isFinite(n) && n > 0 && Number.isInteger(n)) branchId = n;
+  }
+  const showForm = String(raw.new || "").trim() === "1" || String(raw.compose || "").trim() === "1";
+  return { attendanceType, status, q, month, date, branchId, showForm };
+}
+
+/**
+ * @param {{ q?: string, status?: string, attendanceType?: string, month?: string, date?: string, branchId?: number | null }} filters
+ * @param {unknown[]} rows
+ * @param {{ hasRecordsInScope?: boolean }} [opts]
+ */
+function resolveAttendanceListState(filters, rows, opts = {}) {
+  const list = Array.isArray(rows) ? rows : [];
+  if (list.length > 0) return "results";
+  const f = filters || {};
+  const hasFilter =
+    Boolean(f.q) ||
+    (f.status && f.status !== "all") ||
+    (f.attendanceType && f.attendanceType !== "all") ||
+    Boolean(f.month) ||
+    Boolean(f.date) ||
+    f.branchId != null;
+  if (hasFilter) return "no_results";
+  if (opts.hasRecordsInScope === false) return "empty";
+  return "empty";
+}
+
+function attendanceStatusLabel(status) {
+  const s = String(status || "").trim();
+  if (s === "draft") return "Draft";
+  if (s === "submitted") return "Submitted";
+  if (s === "synced_to_monthly_report") return "Synced";
+  return s || "—";
+}
+
+/** Human-readable uniqueness rule for branch-level tracker rows. */
+const ATTENDANCE_TRACKER_UNIQUENESS_RULE =
+  "(branch_id, service_date, attendance_type, lower(btrim(service_name))) WHERE ministry_id IS NULL";
+
 module.exports = {
   ATTENDANCE_TYPES,
+  ATTENDANCE_STATUS_FILTERS,
+  ATTENDANCE_TRACKER_UNIQUENESS_RULE,
   validateAttendanceBody,
   totalAttendanceCounts,
   parseNonNegativeInt,
   parseNonNegativeMoney,
+  parseAttendanceTrackerQuery,
+  resolveAttendanceListState,
+  attendanceStatusLabel,
 };

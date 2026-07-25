@@ -190,8 +190,12 @@
       ></textarea>
     </div>
 
-    <details class="bb-pa-reg-approve-confirm__advanced" data-bb-pa-reg-approve-advanced="1">
-      <summary>Advanced: organization key override</summary>
+    <details
+      class="bb-pa-reg-approve-confirm__advanced"
+      data-bb-pa-reg-approve-advanced="1"
+      data-bb-pa-reg-approve-org-key-collapsed="1"
+    >
+      <summary>Advanced: organization key override (optional)</summary>
       <div class="bb-pa-field bb-pa-reg-approve-confirm__org-key">
         <label for="organization_key">Organization key override</label>
         <input
@@ -203,7 +207,10 @@
           placeholder="<%= (suggested && suggested.key) ? suggested.key : 'leave blank for auto-allocate' %>"
           data-bb-pa-reg-approve-org-key="1"
         />
-        <p class="bb-pa-hint">Leave blank to auto-allocate a unique key. Override only when you need a specific public path.</p>
+        <p class="bb-pa-hint">
+          Leave blank to auto-allocate a unique key during provisioning. Override only when you need a specific
+          <code>/c/…</code> public path. Most approvals should leave this closed and empty.
+        </p>
       </div>
     </details>
 
