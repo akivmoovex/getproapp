@@ -105,6 +105,12 @@
     if (code === 'not_eligible') {
       return 'This application is not eligible for that action.';
     }
+    if (code === 'identity_conflict') {
+      return 'The administrator email belongs to an account that cannot safely own this church. Resolve the identity conflict before approving.';
+    }
+    if (code === 'duplicate_email_review') {
+      return 'This email still needs duplicate review before provisioning can continue.';
+    }
     if (code === 'network_validation_required') {
       return 'Network validation must be completed before creating the organization.';
     }

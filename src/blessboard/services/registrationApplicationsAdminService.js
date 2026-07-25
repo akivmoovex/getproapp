@@ -150,6 +150,10 @@ function logRegistrationApprovalFailure(fields, err) {
             : null,
         failureCategory: category,
         pgCode,
+        errorName: err && err.name != null ? String(err.name).slice(0, 80) : null,
+        constraint: err && err.constraint != null ? String(err.constraint).slice(0, 120) : null,
+        table: err && err.table != null ? String(err.table).slice(0, 120) : null,
+        schema: err && err.schema != null ? String(err.schema).slice(0, 64) : null,
         requestId:
           fields && fields.requestId != null ? String(fields.requestId).slice(0, 64) : null,
         safeMessage:
@@ -2661,6 +2665,14 @@ async function approveAndProvisionRegistrationApplication(db, input) {
         ok: false,
         status: STATUS.NOT_ELIGIBLE,
         message: "duplicate_email_review",
+        provisionStatus: provision.status,
+      };
+    }
+    if (provision.status === "identity_conflict") {
+      return {
+        ok: false,
+        status: STATUS.NOT_ELIGIBLE,
+        message: "identity_conflict",
         provisionStatus: provision.status,
       };
     }

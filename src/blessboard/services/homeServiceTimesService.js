@@ -306,7 +306,7 @@ async function ensureCanonicalServiceTimesSection(client, input) {
   const page = pageResult.page;
   if (!page) return { ok: false, status: STATUS.LOOKUP_ERROR, created: false, page: null };
 
-  const existing = await repo.findSectionByPageAndKey(
+  const existing = await repo.findSectionByPageAndKeyForProvision(
     client,
     page.id,
     SERVICE_TIMES_SECTION_KEY

@@ -42,6 +42,7 @@ const STATUS = Object.freeze({
   PROVISIONING_IN_PROGRESS: "provisioning_in_progress",
   RETRY_NOT_ALLOWED: "retry_not_allowed",
   DUPLICATE_EMAIL_REVIEW: "duplicate_email_review",
+  IDENTITY_CONFLICT: "identity_conflict",
   SLUG_UNAVAILABLE: "slug_unavailable",
   INVALID_PLAN: "invalid_plan",
   PLAN_CONFIGURATION_ERROR: "plan_configuration_error",
@@ -86,6 +87,12 @@ const ERROR_META = Object.freeze({
     retryable: false,
     severity: "info",
     publicMessage: "This registration needs review before it can continue.",
+  },
+  [STATUS.IDENTITY_CONFLICT]: {
+    retryable: false,
+    severity: "warn",
+    publicMessage:
+      "The administrator email is already linked to an account that cannot safely own this church.",
   },
   [STATUS.SLUG_UNAVAILABLE]: {
     retryable: true,
@@ -382,6 +389,52 @@ function sanitizeErrorDetail(raw) {
 }
 
 /**
+ * Safe diagnostic fields from a caught error (never passwords / connection strings / PII).
+ * @param {unknown} err
+ */
+function extractProvisionErrorDiagnostics(err) {
+  if (!err || typeof err !== "object") {
+    return {
+      errorName: null,
+      postgresCode: null,
+      constraint: null,
+      table: null,
+      schema: null,
+    };
+  }
+  const pgCode =
+    err.code != null && /^[0-9A-Z]{5}$/.test(String(err.code)) ? String(err.code) : null;
+  return {
+    errorName: err.name != null ? String(err.name).slice(0, 80) : null,
+    postgresCode: pgCode,
+    constraint: err.constraint != null ? String(err.constraint).slice(0, 120) : null,
+    table: err.table != null ? String(err.table).slice(0, 120) : null,
+    schema: err.schema != null ? String(err.schema).slice(0, 64) : null,
+  };
+}
+
+/**
+ * Whether an existing identity may safely administer another organization.
+ * Suspended/inactive accounts are conflicts; active and invited may be reused.
+ * @param {object|null|undefined} user
+ */
+function classifyExistingAdministratorIdentity(user) {
+  if (!user || !user.id) {
+    return { ok: true, reuse: false };
+  }
+  const status = String(user.status || "").trim().toLowerCase();
+  if (status === "active" || status === "invited") {
+    return { ok: true, reuse: true, status };
+  }
+  return {
+    ok: false,
+    reuse: false,
+    status,
+    reason: "identity_conflict",
+  };
+}
+
+/**
  * Persist failure / duplicate-review after outer rollback (or early commit path).
  * @param {{ connect?: Function, query?: Function }} db
  * @param {string} applicationId
@@ -559,9 +612,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
   let duplicateReview = false;
   let outcomeRecords = null;
   let planKey = null;
+  let provisioningStage = "start";
 
   try {
     outcomeRecords = await withProvisioningTransaction(db, async (client) => {
+      provisioningStage = "lock_application";
       const application = await appRepo.lockApplicationById(client, applicationId);
       if (!application) {
         throw new OrchestratorError(STATUS.APPLICATION_NOT_FOUND, "application_not_found");
@@ -571,6 +626,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         application.provisioning_status === "provisioned" &&
         application.organization_id
       ) {
+        provisioningStage = "already_provisioned";
         const records = await loadProvisionedRecords(client, application);
         return { alreadyProvisioned: true, records };
       }
@@ -579,7 +635,9 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         throw new OrchestratorError(STATUS.PROVISIONING_IN_PROGRESS, "provisioning_in_progress");
       }
 
-      if (application.application_status === "duplicate_review") {
+      // Admin invitation approval may proceed from duplicate_review after explicit approve.
+      // Self-service password provisioning still holds duplicate_review for operator review.
+      if (application.application_status === "duplicate_review" && !administratorViaInvitation) {
         throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
       }
 
@@ -601,16 +659,23 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         throw new OrchestratorError(STATUS.RETRY_NOT_ALLOWED, "retry_not_allowed");
       }
 
+      const eligibleStatuses = administratorViaInvitation
+        ? ["submitted", "duplicate_review"]
+        : ["submitted"];
       if (
-        application.application_status !== "submitted" &&
+        !eligibleStatuses.includes(String(application.application_status || "")) &&
         !(application.provisioning_status === "provisioning_failed" && allowRetry)
       ) {
-        // Allow submitted + failed-with-retry; block other surprises.
+        // Allow submitted (+ duplicate_review for admin invitation) + failed-with-retry.
         if (application.provisioning_status !== "not_started") {
+          throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
+        }
+        if (!eligibleStatuses.includes(String(application.application_status || ""))) {
           throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
         }
       }
 
+      provisioningStage = "validate_plan";
       planKey = mapPlanLabelToCanonical(application.selected_plan);
       if (networkOrganizationShell && String(application.selected_plan || "").toLowerCase() === "network") {
         // Network org creation uses a Foundation shell subscription; paid Network
@@ -622,6 +687,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
       await validatePlanCatalogueForProvision(client, planKey);
 
+      provisioningStage = "resolve_organization_key";
       const keySource = requestedOrganizationKey || application.church_name;
       const keyNorm = normalizeOrganizationKey(keySource);
       if (!keyNorm.ok) {
@@ -633,6 +699,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       const organizationKey = keyNorm.key;
       await assertOrganizationKeyAvailable(client, organizationKey);
 
+      provisioningStage = "resolve_administrator_identity";
       const emailNormalized = normalizeEmail(application.contact_email);
       if (!emailNormalized) {
         throw new OrchestratorError(STATUS.INVALID_INPUT, "invalid_input:administratorEmail");
@@ -642,6 +709,12 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         duplicateReview = true;
         throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
       }
+      if (existingUser && administratorViaInvitation) {
+        const identity = classifyExistingAdministratorIdentity(existingUser);
+        if (!identity.ok) {
+          throw new OrchestratorError(STATUS.IDENTITY_CONFLICT, "identity_conflict");
+        }
+      }
 
       const provisionedAt =
         input.provisionedAt != null ? new Date(input.provisionedAt) : new Date();
@@ -650,6 +723,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
       const subscriptionAssignment = buildSubscriptionAssignment(planKey, provisionedAt);
 
+      provisioningStage = "mark_provisioning";
       await appRepo.updateApplicationProvisioningState(client, applicationId, {
         applicationStatus: "submitted",
         provisioningStatus: "provisioning",
@@ -660,6 +734,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       const displayName = String(application.church_name || "").trim();
       const adminDisplayName = String(application.contact_name || displayName).trim() || displayName;
 
+      provisioningStage = "provision_platform_tenant";
       const tenant = await provisionPlatformTenant(
         client,
         {
@@ -695,6 +770,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         ? hqNamePrepared.display
         : "Headquarters";
 
+      provisioningStage = "provision_church_branch";
       const church = await churchProvision.provisionBlessBoardChurch(
         client,
         {
@@ -726,6 +802,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       let administratorLinkedExisting = false;
 
       if (administratorViaInvitation) {
+        provisioningStage = "prepare_administrator_invitation";
         let adminUser = existingUser;
         if (!adminUser) {
           adminUser = await authRepo.insertUser(client, {
@@ -746,6 +823,42 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
 
         const orgId = tenant.records.organization.id;
         const churchIdForInvite = church.records.church.id;
+
+        // Existing active identities get org-scoped roles immediately (safe multi-org reuse).
+        // Invited / new identities receive roles on invitation accept.
+        if (String(adminUser.status) === "active") {
+          provisioningStage = "assign_administrator_roles";
+          const hqRole = await roleAssign.assignBlessBoardRole(
+            client,
+            {
+              email: application.contact_email,
+              organizationKey,
+              roleKey: "church_hq_admin",
+              churchKey: organizationKey,
+            },
+            { manageTransaction: false }
+          );
+          if (!hqRole.ok) {
+            throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status);
+          }
+
+          const branchRole = await roleAssign.assignBlessBoardRole(
+            client,
+            {
+              email: application.contact_email,
+              organizationKey,
+              roleKey: "branch_admin",
+              churchKey: organizationKey,
+              branchKey: HQ_BRANCH_KEY,
+            },
+            { manageTransaction: false }
+          );
+          if (!branchRole.ok) {
+            throw new OrchestratorError(STATUS.DATABASE_CONFLICT, branchRole.message || branchRole.status);
+          }
+        }
+
+        provisioningStage = "create_administrator_invitation";
         const pending = await inviteRepo.findPendingByScope(client, {
           organizationId: orgId,
           churchId: churchIdForInvite,
@@ -793,6 +906,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           },
         });
       } else {
+        provisioningStage = "create_administrator_user";
         const user = await userCreate.createBlessBoardUser(
           client,
           {
@@ -810,6 +924,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         }
         administratorUserId = String(user.user.id);
 
+        provisioningStage = "assign_administrator_roles";
         const hqRole = await roleAssign.assignBlessBoardRole(
           client,
           {
@@ -844,6 +959,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       const branchId = church.records.hqBranch.id;
       const organizationId = tenant.records.organization.id;
 
+      provisioningStage = "ensure_draft_website";
       await ensureMinimalDraftPages(client, churchId);
       await ensureDraftChurchSettings(client, {
         churchId,
@@ -851,11 +967,13 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         primaryEmail: application.contact_email,
         primaryPhone: application.contact_phone,
       });
+      provisioningStage = "ensure_organization_onboarding";
       await ensureOrganizationOnboarding(client, {
         organizationId,
         applicationId,
       });
 
+      provisioningStage = "close_application";
       const closed = await appRepo.updateApplicationProvisioningState(client, applicationId, {
         applicationStatus: "closed",
         provisioningStatus: "provisioned",
@@ -866,6 +984,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         legacyStatus: "closed",
       });
 
+      provisioningStage = "write_success_audits";
       await writeSuccessAudits(client, {
         deploymentCode,
         organizationId,
@@ -879,6 +998,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         planKey,
       });
 
+      provisioningStage = "committed";
       return {
         alreadyProvisioned: false,
         records: {
@@ -936,6 +1056,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       { alreadyProvisioned: outcomeRecords.alreadyProvisioned }
     );
   } catch (err) {
+    const diagnostics = extractProvisionErrorDiagnostics(err);
+
     if (err && err.status === STATUS.DUPLICATE_EMAIL_REVIEW && duplicateReview) {
       // Duplicate review was committed inside the outer TX before throw — TX rolls back!
       // Must persist duplicate_review AFTER rollback.
@@ -948,8 +1070,10 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           applicationId,
           outcome: "rollback",
           failureCategory: STATUS.DUPLICATE_EMAIL_REVIEW,
+          provisioningStage,
           transactionRolledBack: true,
           canonicalPlanKey: planKey || null,
+          ...diagnostics,
         },
         { force: true }
       );
@@ -977,9 +1101,12 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         err.status === STATUS.SLUG_UNAVAILABLE ||
         err.status === STATUS.INVALID_PLAN ||
         err.status === STATUS.PLAN_CONFIGURATION_ERROR ||
-        err.status === STATUS.INVALID_INPUT
+        err.status === STATUS.INVALID_INPUT ||
+        err.status === STATUS.DUPLICATE_EMAIL_REVIEW ||
+        err.status === STATUS.IDENTITY_CONFLICT
       ) {
-        // No tenant writes expected; do not mark provisioning_failed for eligibility/slug/plan.
+        // No tenant writes expected (or admin identity conflict before tenant writes);
+        // do not mark provisioning_failed for eligibility/slug/plan/identity holds.
         logRegistrationTrace(
           null,
           {
@@ -989,8 +1116,10 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             applicationId,
             outcome: "fail",
             failureCategory: err.status,
+            provisioningStage,
             transactionRolledBack: true,
             canonicalPlanKey: planKey || null,
+            ...diagnostics,
           },
           { force: true }
         );
@@ -1006,8 +1135,10 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           applicationId,
           outcome: "rollback",
           failureCategory: failureCode,
+          provisioningStage,
           transactionRolledBack: true,
           canonicalPlanKey: planKey || null,
+          ...diagnostics,
         },
         { force: true, level: "error" }
       );
@@ -1031,18 +1162,29 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             outcome: "fail",
             failureCategory: "persist_failed",
             rootStatus: failureCode,
+            provisioningStage,
             persistError:
               persistErr && persistErr.message ? String(persistErr.message).slice(0, 120) : "error",
           },
           { force: true, level: "error" }
         );
       }
-      return fail(failureCode === STATUS.DUPLICATE_EMAIL_REVIEW ? failureCode : STATUS.PROVISIONING_FAILED, failureDetail, {
-        rootStatus: failureCode,
-      });
+      return fail(
+        failureCode === STATUS.DUPLICATE_EMAIL_REVIEW || failureCode === STATUS.IDENTITY_CONFLICT
+          ? failureCode
+          : STATUS.PROVISIONING_FAILED,
+        failureDetail,
+        {
+          rootStatus: failureCode,
+          provisioningStage,
+        }
+      );
     }
 
     failureDetail = sanitizeErrorDetail(err && err.message);
+    const pgCode = diagnostics.postgresCode;
+    const schemaMismatch = pgCode === "42703" || pgCode === "42P01";
+    failureCode = schemaMismatch ? STATUS.DATABASE_CONFLICT : STATUS.INTERNAL_ERROR;
     logRegistrationTrace(
       null,
       {
@@ -1051,9 +1193,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         requestId: requestId || null,
         applicationId,
         outcome: "rollback",
-        failureCategory: STATUS.INTERNAL_ERROR,
+        failureCategory: failureCode,
+        provisioningStage,
         transactionRolledBack: true,
         canonicalPlanKey: planKey || null,
+        ...diagnostics,
       },
       { force: true, level: "error" }
     );
@@ -1062,7 +1206,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         applicationStatus: "submitted",
         provisioningStatus: "provisioning_failed",
         provisioningFailedAt: new Date().toISOString(),
-        provisioningErrorCode: STATUS.INTERNAL_ERROR,
+        provisioningErrorCode: String(failureCode).slice(0, 120),
         provisioningErrorDetail: failureDetail.slice(0, 2000),
       });
     } catch (persistErr) {
@@ -1075,14 +1219,18 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           applicationId,
           outcome: "fail",
           failureCategory: "persist_failed",
-          rootStatus: STATUS.INTERNAL_ERROR,
+          rootStatus: failureCode,
+          provisioningStage,
           persistError:
             persistErr && persistErr.message ? String(persistErr.message).slice(0, 120) : "error",
         },
         { force: true, level: "error" }
       );
     }
-    return fail(STATUS.PROVISIONING_FAILED, failureDetail);
+    return fail(STATUS.PROVISIONING_FAILED, failureDetail, {
+      rootStatus: failureCode,
+      provisioningStage,
+    });
   }
 }
 
@@ -1119,4 +1267,6 @@ module.exports = {
   validateGrowthPlanCatalogue,
   validatePlanCatalogueForProvision,
   buildSubscriptionAssignment,
+  classifyExistingAdministratorIdentity,
+  extractProvisionErrorDiagnostics,
 };

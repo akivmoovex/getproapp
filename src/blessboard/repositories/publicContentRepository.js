@@ -150,9 +150,20 @@ function mapGivingMethod(row) {
   };
 }
 
+/**
+ * Core page/section columns for provision + reads.
+ * Intentionally omit revision_number so Foundation provisioning works when
+ * migration 043 (website revision columns) is not yet applied. mapPage/mapSection
+ * default revisionNumber to 1 when the column is absent from the row.
+ * Update paths that bump revision_number use *_WITH_REVISION below.
+ */
 const PAGE_COLS = `id, church_id, branch_id, page_key, title, status, published_at,
-                   layout_metadata, revision_number, created_at, updated_at`;
+                   layout_metadata, created_at, updated_at`;
 const SECTION_COLS = `id, page_id, section_key, section_type, heading, body_text, media_url,
+                      sort_order, status, layout_metadata, created_at, updated_at`;
+const PAGE_COLS_WITH_REVISION = `id, church_id, branch_id, page_key, title, status, published_at,
+                   layout_metadata, revision_number, created_at, updated_at`;
+const SECTION_COLS_WITH_REVISION = `id, page_id, section_key, section_type, heading, body_text, media_url,
                       sort_order, status, layout_metadata, revision_number, created_at, updated_at`;
 const LEADER_COLS = `id, church_id, branch_id, display_name, role_title, biography, image_url,
                      sort_order, status, created_at, updated_at`;
@@ -172,6 +183,31 @@ const GIVING_COLS = `id, church_id, branch_id, method_type, label, instructions,
  * @param {{ churchId: string, branchId: string|null, pageKey: string }} scope
  */
 async function findPageByScope(client, scope) {
+  const r = scope.branchId
+    ? await client.query(
+        `SELECT ${PAGE_COLS_WITH_REVISION}
+           FROM blessboard.public_pages
+          WHERE church_id = $1 AND branch_id = $2 AND page_key = $3
+          LIMIT 1`,
+        [scope.churchId, scope.branchId, scope.pageKey]
+      )
+    : await client.query(
+        `SELECT ${PAGE_COLS_WITH_REVISION}
+           FROM blessboard.public_pages
+          WHERE church_id = $1 AND branch_id IS NULL AND page_key = $2
+          LIMIT 1`,
+        [scope.churchId, scope.pageKey]
+      );
+  return mapPage(r.rows[0] || null);
+}
+
+/**
+ * Scope lookup without revision_number — used by Foundation provision when
+ * website revision migrations may not yet be applied.
+ * @param {{ query: Function }} client
+ * @param {{ churchId: string, branchId: string|null, pageKey: string }} scope
+ */
+async function findPageByScopeForProvision(client, scope) {
   const r = scope.branchId
     ? await client.query(
         `SELECT ${PAGE_COLS}
@@ -196,7 +232,7 @@ async function findPageByScope(client, scope) {
  */
 async function findPageById(client, pageId) {
   const r = await client.query(
-    `SELECT ${PAGE_COLS} FROM blessboard.public_pages WHERE id = $1 LIMIT 1`,
+    `SELECT ${PAGE_COLS_WITH_REVISION} FROM blessboard.public_pages WHERE id = $1 LIMIT 1`,
     [pageId]
   );
   return mapPage(r.rows[0] || null);
@@ -226,7 +262,7 @@ async function ensureDraftPage(client, fields) {
     : [fields.churchId, fields.pageKey, fields.title];
   const r = await client.query(sql, params);
   if (r.rows[0]) return { page: mapPage(r.rows[0]), created: true };
-  const existing = await findPageByScope(client, fields);
+  const existing = await findPageByScopeForProvision(client, fields);
   return { page: existing, created: false };
 }
 
@@ -265,7 +301,7 @@ async function updatePage(client, pageId, patch) {
             revision_number = revision_number + 1,
             updated_at = now()
       WHERE ${where}
-      RETURNING ${PAGE_COLS}`,
+      RETURNING ${PAGE_COLS_WITH_REVISION}`,
     params
   );
   if (r.rows[0]) return { page: mapPage(r.rows[0]), conflict: false };
@@ -289,7 +325,7 @@ async function listSectionsForPage(client, pageId, opts = {}) {
     statusClause = ` AND status = $${params.length}`;
   }
   const r = await client.query(
-    `SELECT ${SECTION_COLS}
+    `SELECT ${SECTION_COLS_WITH_REVISION}
        FROM blessboard.page_sections
       WHERE page_id = $1${statusClause}
       ORDER BY sort_order ASC, created_at ASC`,
@@ -361,7 +397,7 @@ async function updateSection(client, sectionId, patch) {
             revision_number = revision_number + 1,
             updated_at = now()
       WHERE ${where}
-      RETURNING ${SECTION_COLS}`,
+      RETURNING ${SECTION_COLS_WITH_REVISION}`,
     params
   );
   if (r.rows[0]) return { section: mapSection(r.rows[0]), conflict: false };
@@ -379,6 +415,23 @@ async function updateSection(client, sectionId, patch) {
  */
 async function findSectionByPageAndKey(client, pageId, sectionKey) {
   const r = await client.query(
+    `SELECT ${SECTION_COLS_WITH_REVISION}
+       FROM blessboard.page_sections
+      WHERE page_id = $1 AND section_key = $2
+      LIMIT 1`,
+    [pageId, sectionKey]
+  );
+  return mapSection(r.rows[0] || null);
+}
+
+/**
+ * Section lookup without revision_number — Foundation provision / service-times seed.
+ * @param {{ query: Function }} client
+ * @param {string} pageId
+ * @param {string} sectionKey
+ */
+async function findSectionByPageAndKeyForProvision(client, pageId, sectionKey) {
+  const r = await client.query(
     `SELECT ${SECTION_COLS}
        FROM blessboard.page_sections
       WHERE page_id = $1 AND section_key = $2
@@ -394,7 +447,7 @@ async function findSectionByPageAndKey(client, pageId, sectionKey) {
  */
 async function findSectionById(client, sectionId) {
   const r = await client.query(
-    `SELECT ${SECTION_COLS} FROM blessboard.page_sections WHERE id = $1 LIMIT 1`,
+    `SELECT ${SECTION_COLS_WITH_REVISION} FROM blessboard.page_sections WHERE id = $1 LIMIT 1`,
     [sectionId]
   );
   return mapSection(r.rows[0] || null);
@@ -890,6 +943,7 @@ module.exports = {
   updateSection,
   findSectionById,
   findSectionByPageAndKey,
+  findSectionByPageAndKeyForProvision,
   listLeaders,
   insertLeader,
   updateLeader,

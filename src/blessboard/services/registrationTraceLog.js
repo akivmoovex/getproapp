@@ -54,6 +54,10 @@ const ALLOWED_KEYS = Object.freeze(
     "durationMs",
     "ok",
     "pgCode",
+    "postgresCode",
+    "errorName",
+    "constraint",
+    "provisioningStage",
     "schema",
     "table",
     "targetRelation",
@@ -63,6 +67,8 @@ const ALLOWED_KEYS = Object.freeze(
     "decision",
     "rootStatus",
     "persistError",
+    "administratorViaInvitation",
+    "invitationCreated",
   ])
 );
 

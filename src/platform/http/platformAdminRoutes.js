@@ -316,6 +316,8 @@ function mapApproveError(result) {
   if (result.status === REG_APP_STATUS.NOT_FOUND) return "not_found";
   if (result.status === REG_APP_STATUS.NOT_ELIGIBLE) {
     if (result.message === "network_validation_required") return "network_validation_required";
+    if (result.message === "identity_conflict") return "identity_conflict";
+    if (result.message === "duplicate_email_review") return "duplicate_email_review";
     return "not_eligible";
   }
   if (result.status === REG_APP_STATUS.PROVISION_FAILED) return "provision_failed";
