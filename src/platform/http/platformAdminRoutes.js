@@ -2948,18 +2948,62 @@ function createPlatformAdminRouter(deps) {
           return sendControlled(req, res, 404, "This church website preview could not be loaded.");
         }
 
+        let websiteStatus = "draft";
+        if (tenant.church && tenant.church.id) {
+          const settingsRepo = require("../../blessboard/repositories/blessBoardSettingsRepository");
+          const settings = await settingsRepo.findChurchSettings(getPool(), tenant.church.id);
+          websiteStatus = settings && settings.websiteStatus
+            ? String(settings.websiteStatus)
+            : "draft";
+        }
+
+        // Published sites: render the same public model as /c/:key (no draft chrome).
+        // Draft sites: authenticated draft preview with admin banner, no HQ edit link.
+        const usePublicRender = websiteStatus === "published";
         const model = await loadTenantPublicPageModel(getPool(), {
           tenant,
           pageKey: "home",
           hostname: String(req.hostname || ""),
-          preview: true,
+          preview: !usePublicRender,
           pathPrefix: `/c/${keyNorm.key}`,
-          previewMeta: {
-            backHref: orgDetailPath(keyNorm.key),
-            editHref: null,
-            bannerLabel: "Platform admin preview",
-          },
+          previewMeta: usePublicRender
+            ? null
+            : {
+                backHref: orgDetailPath(keyNorm.key),
+                editHref: null,
+                bannerLabel: "Platform admin preview",
+                bannerDetail:
+                  "Draft preview for support review. Not visible to the public until published.",
+              },
         });
+        if (model.kind === KIND.SETUP && usePublicRender) {
+          // Published flag missing pages — fall back to draft preview for support.
+          const draftModel = await loadTenantPublicPageModel(getPool(), {
+            tenant,
+            pageKey: "home",
+            hostname: String(req.hostname || ""),
+            preview: true,
+            pathPrefix: `/c/${keyNorm.key}`,
+            previewMeta: {
+              backHref: orgDetailPath(keyNorm.key),
+              editHref: null,
+              bannerLabel: "Platform admin preview",
+              bannerDetail:
+                "Draft preview for support review. Not visible to the public until published.",
+            },
+          });
+          if (draftModel.kind !== KIND.OK) {
+            return sendControlled(
+              req,
+              res,
+              draftModel.kind === KIND.UNAVAILABLE ? 503 : 404,
+              "Website preview is unavailable for this organization."
+            );
+          }
+          const draftHtml = renderTenantPublicPage(draftModel);
+          res.setHeader("X-Robots-Tag", "noindex, nofollow");
+          return res.status(200).type("html").send(draftHtml);
+        }
         if (model.kind !== KIND.OK) {
           return sendControlled(
             req,

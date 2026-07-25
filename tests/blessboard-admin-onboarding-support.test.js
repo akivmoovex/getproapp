@@ -240,6 +240,9 @@ describe("platform-admin organization onboarding support (Phase 6)", () => {
       `/admin/organizations/${fixtures.organizationKey}/website-preview`
     );
     assert.doesNotMatch(String(preview.actionUrl || ""), /\/hq\/website$/);
+    for (const item of s.checklist) {
+      assert.doesNotMatch(String(item.actionUrl || ""), /^\/hq(\/|$)/);
+    }
 
     assert.ok(s.lastActivityAt);
     assert.equal(s.lastActivitySource, "church_admin_last_login");

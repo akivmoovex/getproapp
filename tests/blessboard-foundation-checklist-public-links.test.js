@@ -123,10 +123,13 @@ describe("foundation checklist preview/publish links", () => {
       "grace-community-church"
     );
     const publish = items.find((i) => i.key === "publish");
+    const serviceTimes = items.find((i) => i.key === "service_times");
     assert.equal(publish.completed, false);
     assert.match(publish.explanation, /has not been published yet/i);
     assert.equal(publish.actionLabel, "Publish website");
     assert.notEqual(publish.actionUrl, "/hq/website");
+    assert.equal(serviceTimes.actionUrl, null);
+    assert.doesNotMatch(String(serviceTimes.actionUrl || ""), /\/hq\//);
   });
 
   it("valid key + published homepage produces Publish complete with public path", () => {
@@ -354,6 +357,8 @@ describe("foundation checklist integration (platform admin)", () => {
       new RegExp(`/admin/organizations/${church.organizationKey}/website-preview`)
     );
     assert.doesNotMatch(detail.text, /href="\/hq\/website"/);
+    assert.doesNotMatch(detail.text, /href="\/hq\/content\/pages\/home"/);
+    assert.doesNotMatch(detail.text, /href="\/hq\/settings"/);
     assert.match(detail.text, /data-bb-pa-public-website="1"/);
   });
 

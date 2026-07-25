@@ -31,12 +31,16 @@
   <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta) { %>
   <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
     <div class="bb-tp-preview-banner__inner">
-      <strong>Preview</strong>
-      <span>— Admin preview (includes drafts). Not visible to the public unless published.</span>
+      <strong><%= previewMeta.bannerLabel || 'Preview' %></strong>
+      <span>— <%= previewMeta.bannerDetail || 'Admin preview (includes drafts). Not visible to the public unless published.' %></span>
       <span class="bb-tp-preview-banner__links">
-        <a href="<%= previewMeta.backHref %>">Back to content admin</a>
-        ·
+        <% if (previewMeta.backHref) { %>
+        <a href="<%= previewMeta.backHref %>">Back</a>
+        <% } %>
+        <% if (previewMeta.editHref) { %>
+        <% if (previewMeta.backHref) { %> · <% } %>
         <a href="<%= previewMeta.editHref %>">Edit page</a>
+        <% } %>
       </span>
     </div>
   </div>

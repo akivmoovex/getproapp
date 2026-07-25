@@ -120,8 +120,8 @@ function createHqAdminRouter(deps) {
   const getPool = deps.getPool;
   const isApexHost = deps.isApexHost;
   const env = deps.env || process.env;
-  const sendUnavailable = deps.sendUnavailable;
   const isProduction = String(env.NODE_ENV || "") === "production";
+  void deps.sendUnavailable;
 
   const router = express.Router();
   const requireHqAccess = createRequireBlessBoardTenantRole({
@@ -129,10 +129,42 @@ function createHqAdminRouter(deps) {
     allowedRoles: ["church_hq_admin", "platform_admin"],
   });
 
+  function sendMissingTenantContext(req, res) {
+    const reason = req.blessBoardSessionTenantReason || "tenant_context_missing";
+    console.info(
+      JSON.stringify({
+        event: "hq_admin_missing_tenant_context",
+        reason,
+        path: req.originalUrl || req.path || null,
+        hasSession: Boolean(req.v5Session && req.v5Session.authenticated),
+        hasOrganizationId: Boolean(
+          req.v5Session &&
+            req.v5Session.session &&
+            req.v5Session.session.organizationId
+        ),
+      })
+    );
+    return sendControlled(
+      req,
+      res,
+      403,
+      "Your account is signed in, but this church HQ workspace could not be loaded. Confirm you are assigned as a church HQ administrator for an active organization, then sign in again."
+    );
+  }
+
   const rejectApex = createRejectApex({
     isApexHost,
-    sendUnavailable,
     mode: "unlessTenant",
+    sendUnavailable: (req, res) => {
+      if (!(req.v5Session && req.v5Session.authenticated)) {
+        const wantsHtml = String(req.get("accept") || "").includes("text/html");
+        if (wantsHtml) {
+          return res.redirect(303, "/login?next=/hq");
+        }
+        return sendControlled(req, res, 401, "Sign-in is required.");
+      }
+      return sendMissingTenantContext(req, res);
+    },
   });
 
   function gateHq(req, res, next) {
@@ -143,6 +175,10 @@ function createHqAdminRouter(deps) {
         return res.redirect(303, "/login?next=/hq");
       }
       return sendControlled(req, res, 401, "Sign-in is required.");
+    }
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || tenant.resolved !== true) {
+      return sendMissingTenantContext(req, res);
     }
     return requireHqAccess(req, res, next);
   }

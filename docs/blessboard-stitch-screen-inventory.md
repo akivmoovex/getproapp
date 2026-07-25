@@ -389,4 +389,4 @@ See also: [`docs/blessboard-stitch-asset-map.md`](blessboard-stitch-asset-map.md
 | Phase5 - Reject Church Registration - Mobile | Mobile | same | Implemented |
 | Phase5 - Church Registration Rejected | Desktop | `GET …/:id/rejected` | Functional difference (honest delivery) |
 
-**Verdict:** `COMPLETE_WITH_DOCUMENTED_DIFFERENCES` · **Deployment:** `READY_WITH_P1_FOLLOW_UP`
+**Verdict:** `PARTIAL` (local) · Live assets: Phase 5 CSS identical on `blessboard.org` as of 2026-07-25; authenticated verification still required · See [`docs/phase5/PHASE5_009_FINAL_SCREEN_COMPLETENESS_AUDIT.md`](phase5/PHASE5_009_FINAL_SCREEN_COMPLETENESS_AUDIT.md)

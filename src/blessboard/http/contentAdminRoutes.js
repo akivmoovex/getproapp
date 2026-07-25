@@ -251,7 +251,7 @@ function createContentAdminRouter(deps) {
   const getPool = deps.getPool;
   const isApexHost = deps.isApexHost;
   const env = deps.env || process.env;
-  const sendUnavailable = deps.sendUnavailable;
+  void deps.sendUnavailable;
   const variant = deps.variant === "branch" ? "branch" : "hq";
   const mediaService = deps.mediaService || createMediaUploadService(env);
   const isProduction = String(env.NODE_ENV || "") === "production";
@@ -272,10 +272,53 @@ function createContentAdminRouter(deps) {
   const router = express.Router();
   const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
 
+  function sendMissingContentTenantContext(req, res) {
+    const reason = req.blessBoardSessionTenantReason || "tenant_context_missing";
+    console.info(
+      JSON.stringify({
+        event:
+          variant === "hq"
+            ? "hq_content_missing_tenant_context"
+            : "branch_content_missing_tenant_context",
+        reason,
+        path: req.originalUrl || req.path || null,
+        hasSession: Boolean(req.v5Session && req.v5Session.authenticated),
+        hasOrganizationId: Boolean(
+          req.v5Session &&
+            req.v5Session.session &&
+            req.v5Session.session.organizationId
+        ),
+      })
+    );
+    const message =
+      variant === "hq"
+        ? "Your account is signed in, but the church content editor could not be loaded. Confirm your HQ administrator assignment for an active organization, then sign in again."
+        : "Your account is signed in, but the branch content editor could not be loaded. Confirm your branch administrator assignment, then sign in again.";
+    const wantsHtml = String(req.get("accept") || "").includes("text/html");
+    if (!wantsHtml) {
+      return res.status(403).type("text").send(message);
+    }
+    return res.status(403).type("html").send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Content unavailable · BlessBoard</title></head>
+<body><main><h1>Workspace unavailable</h1><p>${message}</p>
+<p><a href="/login">Sign in again</a></p></main></body></html>`);
+  }
+
   const rejectApex = createRejectApex({
     isApexHost,
-    sendUnavailable,
-    mode: variant === "hq" ? "unlessTenant" : "hard",
+    mode: "unlessTenant",
+    sendUnavailable: (req, res) => {
+      if (!(req.v5Session && req.v5Session.authenticated)) {
+        const wantsHtml = String(req.get("accept") || "").includes("text/html");
+        if (wantsHtml) {
+          const nextUrl = encodeURIComponent(req.originalUrl || loginNextDefault);
+          return res.redirect(303, `/login?next=${nextUrl}`);
+        }
+        return res.status(401).type("text").send("Sign-in is required.");
+      }
+      return sendMissingContentTenantContext(req, res);
+    },
   });
 
   function gateContent(req, res, next) {
@@ -288,6 +331,10 @@ function createContentAdminRouter(deps) {
         return res.redirect(303, `/login?next=${nextUrl}`);
       }
       return sendControlled(req, res, 401, "Sign-in is required.", shellKind);
+    }
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || tenant.resolved !== true) {
+      return sendMissingContentTenantContext(req, res);
     }
     return requireAccess(req, res, next);
   }

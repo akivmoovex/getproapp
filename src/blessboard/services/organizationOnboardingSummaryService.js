@@ -9,11 +9,10 @@ const repo = require("../repositories/platformChurchRegistrationRepository");
 const {
   normalizeOrganizationKey,
 } = require("./organizationKey");
+const { publicChurchHomePath } = require("../urls/churchUrlHelper");
 const {
-  publicChurchHomePath,
-  hqPreviewPagePath,
-  hqWebsitePath,
-} = require("../urls/churchUrlHelper");
+  resolveWebsiteActionUrls,
+} = require("../urls/websiteActionUrls");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -87,19 +86,16 @@ function resolveOrganizationKeyFact(rawKey) {
  * @param {'platform_admin'|'hq'} linkContext
  */
 function resolvePreviewActionUrl(organizationKey, linkContext) {
-  if (linkContext === "hq") {
-    return hqPreviewPagePath("home");
-  }
-  const key = String(organizationKey || "")
-    .trim()
-    .toLowerCase();
-  if (!key || !ORG_KEY_RE.test(key)) return null;
-  return `/admin/organizations/${encodeURIComponent(key)}/website-preview`;
+  const actions = resolveWebsiteActionUrls({
+    actor: linkContext === "hq" ? "hq" : "platform_admin",
+    organizationKey,
+  });
+  return actions.previewUrl;
 }
 
 /**
  * Publish complete → public miniwebsite. Incomplete → HQ publish workflow (HQ)
- * or org-detail anchor for platform admin (never a false public Complete).
+ * or org-detail status for platform admin (never a false public Complete).
  * @param {{
  *   organizationKey: string|null,
  *   publishComplete: boolean,
@@ -107,31 +103,20 @@ function resolvePreviewActionUrl(organizationKey, linkContext) {
  * }} input
  */
 function resolvePublishAction(input) {
-  const keyNorm = resolveOrganizationKeyFact(input.organizationKey);
-  const publicPath = keyNorm.ok ? publicChurchHomePath(keyNorm.key) : null;
-
-  if (input.publishComplete && publicPath) {
+  const actions = resolveWebsiteActionUrls({
+    actor: input.linkContext === "hq" ? "hq" : "platform_admin",
+    organizationKey: input.organizationKey,
+  });
+  if (input.publishComplete && actions.publishedWebsiteUrl) {
     return {
-      actionUrl: publicPath,
-      actionLabel: "View published website",
+      actionUrl: actions.publishedWebsiteUrl,
+      actionLabel: actions.publishedWebsiteLabel || "View published website",
     };
   }
-
-  if (input.linkContext === "hq") {
-    return {
-      actionUrl: hqWebsitePath(),
-      actionLabel: "Publish website",
-    };
-  }
-
-  // Platform admin: do not send reviewers to a session-scoped HQ dashboard.
-  if (keyNorm.ok) {
-    return {
-      actionUrl: `/admin/organizations/${encodeURIComponent(keyNorm.key)}#bb-pa-org-onboarding`,
-      actionLabel: "Publish website",
-    };
-  }
-  return { actionUrl: null, actionLabel: "Publish website" };
+  return {
+    actionUrl: actions.publishWorkflowUrl,
+    actionLabel: actions.publishWorkflowLabel || "Publish website",
+  };
 }
 
 /**
@@ -144,6 +129,10 @@ function buildChecklist(facts, organizationKey, options = {}) {
   const keyFact = resolveOrganizationKeyFact(organizationKey || facts.organizationKey);
   const organizationKeyAvailable = keyFact.ok;
   const resolvedKey = keyFact.ok ? keyFact.key : null;
+  const websiteActions = resolveWebsiteActionUrls({
+    actor: linkContext === "hq" ? "hq" : "platform_admin",
+    organizationKey: resolvedKey,
+  });
 
   const hasOrgName = Boolean(String(facts.orgDisplayName || "").trim());
   const hasChurch = Boolean(facts.churchId);
@@ -214,6 +203,7 @@ function buildChecklist(facts, organizationKey, options = {}) {
     previewExplanation = "No previewable homepage is available yet.";
   }
 
+  const paSafe = linkContext === "platform_admin";
   const items = [
     {
       key: "organization_details",
@@ -223,8 +213,8 @@ function buildChecklist(facts, organizationKey, options = {}) {
       explanation: organizationDetailsComplete
         ? "Organization and church display names are present."
         : "Requires organization and church display names.",
-      actionUrl: "/hq/settings",
-      actionLabel: "Organization settings",
+      actionUrl: paSafe ? null : "/hq/settings",
+      actionLabel: paSafe ? null : "Organization settings",
     },
     {
       key: "first_branch",
@@ -234,8 +224,8 @@ function buildChecklist(facts, organizationKey, options = {}) {
       explanation: firstBranchComplete
         ? "At least one active BlessBoard branch exists."
         : "No active branch linked to this church yet.",
-      actionUrl: "/hq/settings#bb-hq-branch",
-      actionLabel: "First branch settings",
+      actionUrl: paSafe ? null : "/hq/settings#bb-hq-branch",
+      actionLabel: paSafe ? null : "First branch settings",
     },
     {
       key: "contact_details",
@@ -245,8 +235,8 @@ function buildChecklist(facts, organizationKey, options = {}) {
       explanation: contactDetailsComplete
         ? "Phone or email is present on church or branch settings."
         : "No phone or email on church_settings or branch_settings.",
-      actionUrl: "/hq/settings",
-      actionLabel: "Contact settings",
+      actionUrl: paSafe ? null : "/hq/settings",
+      actionLabel: paSafe ? null : "Contact settings",
     },
     {
       key: "service_times",
@@ -254,10 +244,14 @@ function buildChecklist(facts, organizationKey, options = {}) {
       completed: serviceTimesComplete,
       source: "derived",
       explanation: serviceTimesComplete
-        ? "Service-time content found on a public page section."
-        : "No structured service-time records; optional page sections not present.",
-      actionUrl: "/hq/content/pages/home",
-      actionLabel: "Edit home content",
+        ? paSafe
+          ? "Service-time content found on the church homepage (editable by church HQ administrators)."
+          : "Service-time content found on a public page section."
+        : paSafe
+          ? "No service-time content yet. Church HQ administrators edit this on the home page."
+          : "No structured service-time records; optional page sections not present.",
+      actionUrl: websiteActions.serviceTimesUrl,
+      actionLabel: websiteActions.serviceTimesLabel,
     },
     {
       key: "logo",
@@ -277,7 +271,9 @@ function buildChecklist(facts, organizationKey, options = {}) {
       source: "stored",
       explanation: previewExplanation,
       actionUrl: previewActionUrl,
-      actionLabel: previewActionUrl ? "Open website preview" : null,
+      actionLabel: previewActionUrl
+        ? websiteActions.previewLabel || "Open website preview"
+        : null,
       previewAcknowledged,
       previewRouteAvailable,
     },

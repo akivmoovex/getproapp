@@ -1018,10 +1018,24 @@ async function loadTenantPublicPageModel(db, input) {
 
   const previewMeta = isPreview
     ? {
-        backHref: (input.previewMeta && input.previewMeta.backHref) || "/hq/content",
-        editHref:
-          (input.previewMeta && input.previewMeta.editHref) ||
-          `/hq/content/pages/${pageKey}`,
+        backHref:
+          input.previewMeta && input.previewMeta.backHref != null
+            ? input.previewMeta.backHref
+            : "/hq/content",
+        editHref: (() => {
+          if (input.previewMeta && Object.prototype.hasOwnProperty.call(input.previewMeta, "editHref")) {
+            return input.previewMeta.editHref;
+          }
+          return `/hq/content/pages/${pageKey}`;
+        })(),
+        bannerLabel:
+          input.previewMeta && input.previewMeta.bannerLabel != null
+            ? String(input.previewMeta.bannerLabel)
+            : "Preview",
+        bannerDetail:
+          input.previewMeta && input.previewMeta.bannerDetail != null
+            ? String(input.previewMeta.bannerDetail)
+            : "Admin preview (includes drafts). Not visible to the public unless published.",
       }
     : null;
 

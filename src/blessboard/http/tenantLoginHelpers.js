@@ -110,8 +110,53 @@ function hasChurchHqAdminRole(roles) {
 }
 
 /**
+ * @param {Array<{ roleKey?: string, role_key?: string } | string>} roles
+ * @returns {boolean}
+ */
+function hasBranchAdminRole(roles) {
+  return (roles || []).some((r) => {
+    if (typeof r === "string") return r === "branch_admin";
+    return String(r.roleKey || r.role_key || "") === "branch_admin";
+  });
+}
+
+/**
+ * Apex-only safe return path for branch-admin post-login redirects.
+ * Accepts only local `/branch-admin` or `/branch-admin/...` paths.
+ * @param {unknown} raw
+ * @returns {string | null}
+ */
+function safeBranchAdminNextPath(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s) return null;
+  if (!s.startsWith("/") || s.startsWith("//")) return null;
+  if (/[\s\\?]/.test(s)) return null;
+
+  let decoded = s;
+  try {
+    decoded = decodeURIComponent(s);
+  } catch {
+    return null;
+  }
+  if (decoded.includes("\\") || decoded.includes("\0")) return null;
+
+  const pathOnly = decoded.split("#")[0].split("?")[0];
+  if (!pathOnly.startsWith("/") || pathOnly.startsWith("//")) return null;
+
+  const normalized = pathPosix.normalize(pathOnly);
+  if (!normalized.startsWith("/") || normalized.startsWith("//")) return null;
+  if (normalized.includes("..")) return null;
+  if (normalized !== "/branch-admin" && !normalized.startsWith("/branch-admin/")) {
+    return null;
+  }
+  if (normalized.length > 200) return null;
+  return normalized;
+}
+
+/**
  * Apex post-login destination (no tenant transfer).
- * Platform admins → `/admin`; HQ admins → `/hq` (session-scoped tenant on apex);
+ * Platform admins → `/admin`; HQ admins → `/hq`;
+ * branch admins → `/branch-admin` (session-scoped tenant on apex);
  * everyone else → `/account`.
  * @param {Array<{ roleKey?: string, role_key?: string }>} roles
  * @param {unknown} nextRaw
@@ -123,6 +168,9 @@ function resolveApexPostLoginPath(roles, nextRaw) {
   }
   if (hasChurchHqAdminRole(roles)) {
     return safeHqNextPath(nextRaw) || "/hq";
+  }
+  if (hasBranchAdminRole(roles)) {
+    return safeBranchAdminNextPath(nextRaw) || "/branch-admin";
   }
   return "/account";
 }
@@ -194,6 +242,8 @@ module.exports = {
   safeHqNextPath,
   hasPlatformAdminRole,
   hasChurchHqAdminRole,
+  hasBranchAdminRole,
+  safeBranchAdminNextPath,
   resolveApexPostLoginPath,
   defaultTenantPostLoginPath,
   getApexOrigin,
