@@ -36,6 +36,9 @@ const { getPlatformDeploymentCode } = require("../../platform/config/platformDep
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const { tenantAbsoluteUrl } = require("./tenantLoginHelpers");
 const { createRejectApex } = require("./rejectApex");
+const {
+  createRequireV5AuthenticatedSession,
+} = require("../../platform/http/v5SessionAuthGate");
 
 /**
  * @param {string} relativePath
@@ -132,30 +135,26 @@ function createBranchAdminRouter(deps) {
     );
   }
 
+  const requireSession = createRequireV5AuthenticatedSession({
+    loginNext: "/branch-admin",
+  });
+
   const rejectApex = createRejectApex({
     isApexHost,
     mode: "unlessTenant",
     sendUnavailable: (req, res) => {
+      // Unauthenticated (incl. store errors) should not reach here in unlessTenant
+      // mode, but keep the shared gate so store blips never force a login redirect.
       if (!(req.v5Session && req.v5Session.authenticated)) {
-        const wantsHtml = String(req.get("accept") || "").includes("text/html");
-        if (wantsHtml) {
-          return res.redirect(303, "/login?next=/branch-admin");
-        }
-        return sendLoginUnavailable(req, res, 401, "Sign-in is required.");
+        requireSession(req, res, { loginNext: "/branch-admin" });
+        return;
       }
       return sendMissingTenantContext(req, res);
     },
   });
 
   function gateAccess(req, res, next) {
-    const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
-    if (!sessionOk) {
-      const wantsHtml = String(req.get("accept") || "").includes("text/html");
-      if (wantsHtml) {
-        return res.redirect(303, "/login?next=/branch-admin");
-      }
-      return sendLoginUnavailable(req, res, 401, "Sign-in is required.");
-    }
+    if (!requireSession(req, res, { loginNext: "/branch-admin" })) return;
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || tenant.resolved !== true) {
       return sendMissingTenantContext(req, res);

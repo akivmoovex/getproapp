@@ -12,6 +12,9 @@ const {
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
+const {
+  createRequireV5AuthenticatedSession,
+} = require("../../platform/http/v5SessionAuthGate");
 const { CSRF_FIELD, validateCsrf } = require("../../platform/http/v5Csrf");
 const {
   listMemberRegistrations,
@@ -79,31 +82,27 @@ function createBranchRegistrationAdminRouter(deps) {
     );
   }
 
+  const requireSession = createRequireV5AuthenticatedSession({
+    loginNext: "/branch-admin/registrations",
+  });
+
   const rejectApex = createRejectApex({
     isApexHost,
     mode: "unlessTenant",
     sendUnavailable: (req, res) => {
       if (!(req.v5Session && req.v5Session.authenticated)) {
-        const wantsHtml = String(req.get("accept") || "").includes("text/html");
-        if (wantsHtml) {
-          return res.redirect(303, "/login?next=/branch-admin/registrations");
-        }
-        return sendLoginUnavailable(req, res, 401, "Sign-in is required.");
+        requireSession(req, res, {
+          loginNext: req.originalUrl || "/branch-admin/registrations",
+        });
+        return;
       }
       return sendMissingTenantContext(req, res);
     },
   });
 
   function gateAccess(req, res, next) {
-    const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
-    if (!sessionOk) {
-      const wantsHtml = String(req.get("accept") || "").includes("text/html");
-      if (wantsHtml) {
-        const nextUrl = encodeURIComponent(req.originalUrl || "/branch-admin/registrations");
-        return res.redirect(303, `/login?next=${nextUrl}`);
-      }
-      return sendLoginUnavailable(req, res, 401, "Sign-in is required.");
-    }
+    const nextUrl = req.originalUrl || "/branch-admin/registrations";
+    if (!requireSession(req, res, { loginNext: nextUrl })) return;
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || tenant.resolved !== true) {
       return sendMissingTenantContext(req, res);

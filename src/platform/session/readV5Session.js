@@ -47,16 +47,23 @@ async function readV5Session(client, opts) {
     return { ok: false, code: "inactive_user", session: null };
   }
 
+  // Touch is best-effort. Never fail an otherwise-valid session when last_seen
+  // cannot be updated (pool blips must not force a login redirect).
   if (opts.touch) {
-    const lastSeen = new Date(row.last_seen_at).getTime();
-    if (Date.now() - lastSeen >= LAST_SEEN_MIN_INTERVAL_MS) {
-      await client.query(
-        `UPDATE platform.deployment_sessions
-            SET last_seen_at = now()
-          WHERE id = $1 AND revoked_at IS NULL`,
-        [row.id]
-      );
-      row.last_seen_at = new Date();
+    try {
+      const lastSeenMs = row.last_seen_at ? new Date(row.last_seen_at).getTime() : 0;
+      const lastSeenValid = Number.isFinite(lastSeenMs) && lastSeenMs > 0;
+      if (!lastSeenValid || Date.now() - lastSeenMs >= LAST_SEEN_MIN_INTERVAL_MS) {
+        await client.query(
+          `UPDATE platform.deployment_sessions
+              SET last_seen_at = now()
+            WHERE id = $1 AND revoked_at IS NULL`,
+          [row.id]
+        );
+        row.last_seen_at = new Date();
+      }
+    } catch {
+      /* ignore touch failures */
     }
   }
 

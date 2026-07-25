@@ -15,6 +15,9 @@ const {
 } = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
+const {
+  createRequireV5AuthenticatedSession,
+} = require("../../platform/http/v5SessionAuthGate");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const {
@@ -134,14 +137,13 @@ function createGivingAdminRouter(deps) {
     mode: "unlessTenant",
   });
 
+  const requireSession = createRequireV5AuthenticatedSession({
+    loginNext,
+  });
+
   function gate(req, res, next) {
-    const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
-    if (!sessionOk) {
-      const wantsHtml = String(req.get("accept") || "").includes("text/html");
-      if (wantsHtml) {
-        return res.redirect(303, `/login?next=${encodeURIComponent(req.originalUrl || loginNext)}`);
-      }
-      return sendControlled(req, res, 401, "Sign-in is required.", shellKind);
+    if (!requireSession(req, res, { loginNext: req.originalUrl || loginNext })) {
+      return;
     }
     return requireAccess(req, res, next);
   }

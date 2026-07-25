@@ -96,6 +96,22 @@ function createV5AuthLogger(deps) {
       if (typeof fields.sessionFound === "boolean") {
         payload.sessionFound = fields.sessionFound;
       }
+      if (typeof fields.authenticatedUserPresent === "boolean") {
+        payload.authenticatedUserPresent = fields.authenticatedUserPresent;
+      }
+      if (fields.sessionLookupResult != null) {
+        payload.sessionLookupResult = String(fields.sessionLookupResult).slice(0, 64);
+      }
+      if (fields.redirectReason != null) {
+        payload.redirectReason = String(fields.redirectReason).slice(0, 64);
+      }
+      if (fields.sessionFingerprint != null) {
+        // Truncated hash fingerprint only — never raw tokens or full hashes.
+        payload.sessionFingerprint = String(fields.sessionFingerprint).slice(0, 16);
+      }
+      if (typeof fields.tenantContextPresent === "boolean") {
+        payload.tenantContextPresent = fields.tenantContextPresent;
+      }
       if (typeof fields.setCookieIssued === "boolean") {
         payload.setCookieIssued = fields.setCookieIssued;
       }

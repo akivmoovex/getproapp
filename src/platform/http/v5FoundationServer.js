@@ -17,6 +17,9 @@ const {
   assignV5RequestId,
   createV5ErrorHandler,
 } = require("./v5SafeLogging");
+const {
+  createV5PrivateNoStoreMiddleware,
+} = require("./v5PrivateNoStore");
 const { createV5AuthLogger } = require("./v5AuthObservability");
 const { createLoadPlatformHostContext } = require("./loadPlatformHostContext");
 const {
@@ -301,6 +304,7 @@ function createV5FoundationApp(options) {
   }
 
   app.use(assignV5RequestId);
+  app.use(createV5PrivateNoStoreMiddleware());
 
   // www → apex before any Set-Cookie (host-only CSRF / session cookies).
   app.use(foundationWwwToApexRedirect);
