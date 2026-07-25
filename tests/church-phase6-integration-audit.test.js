@@ -95,12 +95,30 @@ test("Phase 6 CSS is scoped to branch/HQ admin bodies and shells bump cache", ()
   assert.match(css, /\.church-body--branch-admin \.church-p6-attendance/);
   assert.match(css, /\.church-body--hq-admin \.church-p6-attendance-detail/);
   assert.match(css, /\.church-body--branch-admin \.church-p6-page-hero/);
+  assert.match(css, /\.church-body--branch-admin \.church-p6-giving-settings/);
   assert.doesNotMatch(css, /^\.church-p6-attendance\s*\{/m);
 
   const branchShell = read("views/church/partials/branch_admin_shell_start.ejs");
   const hqShell = read("views/church/partials/hq_shell_start.ejs");
-  assert.match(branchShell, /church\.css\?v=52/);
-  assert.match(hqShell, /church\.css\?v=52/);
+  assert.match(branchShell, /church\.css\?v=54/);
+  assert.match(hqShell, /church\.css\?v=54/);
+});
+
+test("Phase 6 Giving Summary + Settings screens are wired without duplicate modules", () => {
+  assert.match(read("views/church/branch-admin/giving_summary.ejs"), /phase6_giving_summary_body/);
+  assert.match(read("views/church/hq/giving_summary.ejs"), /phase6_giving_summary_body/);
+  assert.match(read("views/church/branch-admin/giving_settings.ejs"), /phase6_giving_settings_body/);
+  assert.match(read("views/church/partials/phase6_giving_settings_body.ejs"), /data-p6-screen="giving-settings"/);
+  assert.match(read("views/church/partials/phase6_giving_summary_body.ejs"), /data-p6-screen="giving-summary"/);
+
+  const settingsRoute = read("src/routes/church/branchAdminGivingSettings.js");
+  assert.match(settingsRoute, /requireChurchSessionCsrf/);
+  assert.match(settingsRoute, /validateGivingSettingsFields/);
+  assert.doesNotMatch(settingsRoute, /sk_live|webhook_secret/);
+
+  const nav = read("views/church/partials/branch_admin_nav.ejs");
+  assert.match(nav, /data-testid="nav-giving-settings"/);
+  assert.match(nav, /href="\/branch\/giving-settings"/);
 });
 
 test("Phase 6 uses classic /branch/attendance routes (not a second subsystem)", () => {

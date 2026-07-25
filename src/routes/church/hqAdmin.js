@@ -630,6 +630,8 @@ function registerHqAdminRoutes(router) {
   registerHqAdminMembersRoutes(router);
   const registerHqAdminAttendanceRoutes = require("./hqAdminAttendance");
   registerHqAdminAttendanceRoutes(router);
+  const registerHqAdminGivingRoutes = require("./hqAdminGiving");
+  registerHqAdminGivingRoutes(router);
   registerHqAdminBroadcastsRoutes(router);
   const registerPackageFeatureGateRoutes = require("./packageFeatureGates");
   registerPackageFeatureGateRoutes(router, "hq");

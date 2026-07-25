@@ -9,6 +9,8 @@ const {
   settingsFromForm,
   formFromSettings,
   validateForPublish,
+  validateGivingSettingsFields,
+  describeGivingSettingsReadiness,
 } = require("../../services/church/givingSettingsService");
 const {
   branchAdminLocals,
@@ -18,13 +20,29 @@ const {
   recordBranchAudit,
 } = require("./branchAdminShared");
 
+const ALLOWED_INTENTS = new Set(["draft", "publish"]);
+
 async function loadEditorState(pool, branchId) {
   const row = await givingSettingsRepo.getGivingSettingsForBranch(pool, branchId);
+  const form = formFromSettings(row);
   return {
-    form: formFromSettings(row),
+    form,
     status: row ? row.status : "draft",
     settingsId: row ? row.id : null,
+    readiness: describeGivingSettingsReadiness(row, form),
+    listError: null,
   };
+}
+
+function renderSettings(req, res, statusCode, extras) {
+  return res.status(statusCode).render(
+    "church/branch-admin/giving_settings",
+    branchAdminLocals(req, {
+      summaryHref: "/branch/giving-summary",
+      canEditSettings: true,
+      ...extras,
+    })
+  );
 }
 
 module.exports = function registerBranchAdminGivingSettingsRoutes(router) {
@@ -35,15 +53,25 @@ module.exports = function registerBranchAdminGivingSettingsRoutes(router) {
     async (req, res, next) => {
       try {
         const pool = getPgPool();
-        const editor = await loadEditorState(pool, req.churchContext.branch.id);
-        return res.render(
-          "church/branch-admin/giving_settings",
-          branchAdminLocals(req, {
-            ...editor,
-            error: null,
-            notice: noticeMessage(flashFromQuery(req, GIVING_SETTINGS_NOTICES)),
-          })
-        );
+        let editor;
+        let listError = null;
+        try {
+          editor = await loadEditorState(pool, req.churchContext.branch.id);
+        } catch {
+          editor = {
+            form: formFromSettings(null),
+            status: "draft",
+            settingsId: null,
+            readiness: describeGivingSettingsReadiness(null, formFromSettings(null)),
+          };
+          listError = "Giving settings could not be loaded. Please try again.";
+        }
+        return renderSettings(req, res, 200, {
+          ...editor,
+          listError,
+          error: null,
+          notice: noticeMessage(flashFromQuery(req, GIVING_SETTINGS_NOTICES)),
+        });
       } catch (e) {
         return next(e);
       }
@@ -53,29 +81,45 @@ module.exports = function registerBranchAdminGivingSettingsRoutes(router) {
   router.post(
     "/branch/giving-settings",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession, requireChurchSessionCsrf,
+    requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const org = req.churchContext.organization;
         const branch = req.churchContext.branch;
         const pool = getPgPool();
         const adminId = req.churchBranchAdmin.admin_id;
-        const intent = String(req.body._intent || "draft").trim();
+        const intentRaw = String(req.body._intent || "draft").trim();
+        const intent = ALLOWED_INTENTS.has(intentRaw) ? intentRaw : "draft";
         const settings = settingsFromForm(req.body || {});
+        const form = formFromSettings({
+          ...settings,
+          giving_categories_json: settings.giving_categories_json,
+        });
+
+        const fieldCheck = validateGivingSettingsFields(settings, req.body || {});
+        if (!fieldCheck.ok) {
+          const editor = await loadEditorState(pool, branch.id);
+          return renderSettings(req, res, 400, {
+            ...editor,
+            form,
+            readiness: describeGivingSettingsReadiness({ status: editor.status }, form),
+            error: fieldCheck.error,
+            notice: null,
+          });
+        }
 
         if (intent === "publish") {
           const validation = validateForPublish(settings);
           if (!validation.ok) {
             const editor = await loadEditorState(pool, branch.id);
-            return res.status(400).render(
-              "church/branch-admin/giving_settings",
-              branchAdminLocals(req, {
-                ...editor,
-                form: formFromSettings({ ...settings, giving_categories_json: settings.giving_categories_json }),
-                error: validation.error,
-                notice: null,
-              })
-            );
+            return renderSettings(req, res, 400, {
+              ...editor,
+              form,
+              readiness: describeGivingSettingsReadiness({ status: editor.status }, form),
+              error: validation.error,
+              notice: null,
+            });
           }
         }
 
@@ -100,14 +144,11 @@ module.exports = function registerBranchAdminGivingSettingsRoutes(router) {
           );
           if (!published) {
             const editor = await loadEditorState(pool, branch.id);
-            return res.status(400).render(
-              "church/branch-admin/giving_settings",
-              branchAdminLocals(req, {
-                ...editor,
-                error: "Giving settings could not be published.",
-                notice: null,
-              })
-            );
+            return renderSettings(req, res, 400, {
+              ...editor,
+              error: "Giving settings could not be published.",
+              notice: null,
+            });
           }
           await recordBranchAudit(pool, req, {
             action: "giving_settings_published",

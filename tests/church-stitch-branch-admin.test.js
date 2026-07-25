@@ -108,17 +108,17 @@ test("branch admin localized assets exist", () => {
   }
 });
 
-test("branch admin shell references church.css?v=47", () => {
+test("branch admin shell references church.css?v=54", () => {
   const text = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/branch_admin_shell_start.ejs"),
     "utf8"
   );
-  assert.match(text, /church\.css\?v=47/);
+  assert.match(text, /church\.css\?v=54/);
   assert.match(text, /data-branch-shell="stitch-v41"/);
   assert.match(text, /church-branch-sidebar/);
   assert.match(text, /church-branch-desktop-topbar/);
   assert.match(text, /church-branch-bottom-nav/);
-  assert.match(text, /Powered by[\s\S]{0,120}?GetPro/);
+  assert.match(text, /powered_by_getpro/);
   assert.doesNotMatch(text, /GetPro Church/);
 });
 

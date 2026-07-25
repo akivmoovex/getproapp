@@ -9,6 +9,15 @@ const {
   validateGivingSummaryBody,
   formatPeriodMonth,
   givingGrandTotal,
+  parseGivingSummaryQuery,
+  resolveGivingListState,
+  buildGivingOverviewFromSummaries,
+  computeSameMonthYoYChange,
+  formatGivingMoney,
+  givingStatusLabel,
+  GIVING_STATUS_FILTERS,
+  GIVING_FUND_FIELDS,
+  GIVING_RANGE_FILTERS,
 } = require("../../church/givingValidation");
 const {
   branchAdminLocals,
@@ -18,33 +27,107 @@ const {
   recordBranchAudit,
 } = require("./branchAdminShared");
 
-function formatMoney(amount) {
-  const n = Number(amount || 0);
-  return n.toLocaleString("en-ZM", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 function periodLabel(row) {
   return formatPeriodMonth(row.period_year, row.period_month);
+}
+
+function mapSummaryRows(summaries) {
+  return (summaries || []).map((s) => ({
+    ...s,
+    period_label: periodLabel(s),
+    status_label: givingStatusLabel(s.status),
+    currency_code: String(s.currency_code || "ZMW").trim().toUpperCase() || "ZMW",
+  }));
+}
+
+async function loadSummaryLocals(req, extras = {}) {
+  const branch = req.churchContext.branch;
+  const pool = getPgPool();
+  const parsed = extras.parsed || parseGivingSummaryQuery(req.query);
+  const filters = {
+    status: parsed.status,
+    range: parsed.month ? "all" : parsed.range,
+    month: parsed.month,
+    q: parsed.q,
+  };
+
+  let summaries = [];
+  let listError = null;
+  let allForTrend = [];
+  try {
+    summaries = await givingSummariesRepo.listGivingSummariesForBranch(pool, branch.id, filters);
+    allForTrend = await givingSummariesRepo.listGivingSummariesForBranch(pool, branch.id, {});
+  } catch {
+    listError = "Giving summaries could not be loaded. Please try again.";
+  }
+
+  const rows = mapSummaryRows(summaries);
+  const hasInScope = allForTrend.length > 0;
+  const listState = resolveGivingListState(
+    { q: parsed.q, status: parsed.status, range: filters.range, month: parsed.month },
+    rows,
+    { hasSummariesInScope: hasInScope }
+  );
+
+  const overviewBuilt = buildGivingOverviewFromSummaries(rows);
+  const now = new Date();
+  const yoy = computeSameMonthYoYChange(allForTrend, now.getFullYear(), now.getMonth() + 1);
+  const draftCount = allForTrend.filter((r) => r.status === "draft").length;
+
+  const fundBreakdown = GIVING_FUND_FIELDS.map((f) => {
+    const amount = overviewBuilt.totalsByFund[f.key] || 0;
+    const pct =
+      overviewBuilt.grandTotal > 0
+        ? Math.round((amount / overviewBuilt.grandTotal) * 1000) / 10
+        : 0;
+    return { key: f.key, label: f.label, amount, percent: pct };
+  }).filter((f) => f.amount > 0 || overviewBuilt.summaryCount > 0);
+
+  const nowDefault = formatPeriodMonth(now.getFullYear(), now.getMonth() + 1);
+
+  return {
+    summaries: rows,
+    statusFilter: parsed.status,
+    rangeFilter: parsed.month ? "all" : parsed.range,
+    monthFilter: parsed.month,
+    searchQuery: parsed.q,
+    givingStatusFilters: GIVING_STATUS_FILTERS,
+    givingRangeFilters: GIVING_RANGE_FILTERS,
+    givingStatusLabel,
+    givingFundFields: GIVING_FUND_FIELDS,
+    formatGivingMoney,
+    formatMoney: (amount, code) => formatGivingMoney(amount, code || overviewBuilt.currencyCode),
+    showForm: Boolean(parsed.showForm || extras.forceShowForm),
+    canRecord: true,
+    listState,
+    listError: extras.listError || listError,
+    overview: {
+      ...overviewBuilt,
+      draftCount,
+      yoy,
+      fundBreakdown,
+    },
+    summaryAction: "/branch/giving-summary",
+    summaryDetailBase: "/branch/giving-summary",
+    settingsHref: "/branch/giving-settings",
+    portalKind: "branch",
+    showBranchFilter: false,
+    branchOptions: [],
+    branchFilterId: null,
+    error: extras.error != null ? extras.error : null,
+    form: extras.form || { period_month: nowDefault },
+    notice:
+      extras.notice !== undefined
+        ? extras.notice
+        : noticeMessage(flashFromQuery(req, GIVING_NOTICES)),
+  };
 }
 
 module.exports = function registerBranchAdminGivingRoutes(router) {
   router.get("/branch/giving-summary", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
     try {
-      const branch = req.churchContext.branch;
-      const pool = getPgPool();
-      const summaries = await givingSummariesRepo.listGivingSummariesForBranch(pool, branch.id);
-      const now = new Date();
-      const defaultPeriod = formatPeriodMonth(now.getFullYear(), now.getMonth() + 1);
-      return res.render(
-        "church/branch-admin/giving_summary",
-        branchAdminLocals(req, {
-          summaries: summaries.map((s) => ({ ...s, period_label: periodLabel(s) })),
-          error: null,
-          form: { period_month: defaultPeriod },
-          formatMoney,
-          notice: noticeMessage(flashFromQuery(req, GIVING_NOTICES)),
-        })
-      );
+      const locals = await loadSummaryLocals(req);
+      return res.render("church/branch-admin/giving_summary", branchAdminLocals(req, locals));
     } catch (e) {
       return next(e);
     }
@@ -53,7 +136,8 @@ module.exports = function registerBranchAdminGivingRoutes(router) {
   router.post(
     "/branch/giving-summary",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession, requireChurchSessionCsrf,
+    requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const validation = validateGivingSummaryBody(req.body || {});
@@ -62,16 +146,15 @@ module.exports = function registerBranchAdminGivingRoutes(router) {
         const pool = getPgPool();
 
         if (!validation.ok) {
-          const summaries = await givingSummariesRepo.listGivingSummariesForBranch(pool, branch.id);
+          const locals = await loadSummaryLocals(req, {
+            error: validation.error,
+            form: validation.form,
+            forceShowForm: true,
+            notice: null,
+          });
           return res.status(400).render(
             "church/branch-admin/giving_summary",
-            branchAdminLocals(req, {
-              summaries: summaries.map((s) => ({ ...s, period_label: periodLabel(s) })),
-              error: validation.error,
-              form: validation.form,
-              formatMoney,
-              notice: null,
-            })
+            branchAdminLocals(req, locals)
           );
         }
 
@@ -121,15 +204,26 @@ module.exports = function registerBranchAdminGivingRoutes(router) {
           return res.status(404).type("text").send("Giving summary not found.");
         }
         const pool = getPgPool();
-        const summary = await givingSummariesRepo.findGivingSummaryByIdForBranch(pool, summaryId, branch.id);
+        const summary = await givingSummariesRepo.findGivingSummaryByIdForBranch(
+          pool,
+          summaryId,
+          branch.id
+        );
         if (!summary) {
           return res.status(404).type("text").send("Giving summary not found.");
         }
+        const currency = String(summary.currency_code || "ZMW").trim().toUpperCase() || "ZMW";
         return res.render(
           "church/branch-admin/giving_summary_detail",
           branchAdminLocals(req, {
-            summary: { ...summary, period_label: periodLabel(summary) },
-            formatMoney,
+            summary: {
+              ...summary,
+              period_label: periodLabel(summary),
+              status_label: givingStatusLabel(summary.status),
+              currency_code: currency,
+            },
+            formatMoney: (amount) => formatGivingMoney(amount, currency),
+            formatGivingMoney,
             notice: noticeMessage(flashFromQuery(req, GIVING_NOTICES)),
           })
         );

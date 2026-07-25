@@ -1,17 +1,14 @@
-<%- include('../partials/branch_admin_shell_start') %>
+<%- include('../partials/hq_shell_start') %>
       <header class="church-branch-topbar">
         <div>
-          <a class="church-branch-back" href="/branch/giving-summary">&larr; Back to giving summaries</a>
+          <a class="church-branch-back" href="/hq/giving-summary">&larr; Back to giving summaries</a>
           <h1 class="church-branch-topbar__title">Giving summary — <%= summary.period_label %></h1>
-          <p class="church-branch-topbar__subtitle"><%= churchName %></p>
+          <p class="church-branch-topbar__subtitle"><%= churchName %><% if (summary.branch_name) { %> · <%= summary.branch_name %><% } %></p>
         </div>
       </header>
       <div class="church-alert church-alert--info" role="note">
-        This is a summary for reporting only. BlessBoard does not process payments or provide full accounting in this MVP.
+        HQ view is read-only. Branch admins record and submit monthly giving summaries.
       </div>
-      <% if (notice) { %>
-      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
-      <% } %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Summary totals (<%= summary.currency_code || 'ZMW' %>)</h2>
         <dl class="church-branch-dl">
@@ -22,11 +19,7 @@
           <div><dt>Special offerings</dt><dd><%= formatMoney(summary.special_offerings_total) %></dd></div>
           <div><dt>Other giving</dt><dd><%= formatMoney(summary.other_giving_total) %></dd></div>
           <div><dt>Grand total</dt><dd><strong><%= formatMoney(summary.grand_total) %></strong></dd></div>
-          <div><dt>Currency</dt><dd><%= summary.currency_code || 'ZMW' %></dd></div>
           <div><dt>Status</dt><dd><span class="church-status-chip church-status-chip--<%= summary.status === 'draft' ? 'pending' : 'verified' %>"><%= summary.status_label || summary.status %></span></dd></div>
-          <div><dt>Recorded by</dt><dd><%= summary.created_by_name || 'Branch admin' %></dd></div>
-          <div><dt>Created</dt><dd><%= new Date(summary.created_at).toLocaleString('en-GB') %></dd></div>
-          <div><dt>Updated</dt><dd><%= new Date(summary.updated_at).toLocaleString('en-GB') %></dd></div>
         </dl>
         <% if (summary.notes) { %>
         <div class="church-branch-review-note">
@@ -35,4 +28,4 @@
         </div>
         <% } %>
       </section>
-<%- include('../partials/branch_admin_shell_end') %>
+<%- include('../partials/hq_shell_end') %>

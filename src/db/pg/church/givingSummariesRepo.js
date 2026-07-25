@@ -62,18 +62,145 @@ async function upsertGivingSummaryForBranchPeriod(pool, fields) {
 /**
  * @param {import("pg").Pool} pool
  * @param {number} branchId
+ * @param {{
+ *   status?: string,
+ *   range?: string,
+ *   month?: string,
+ *   q?: string,
+ *   now?: Date,
+ * }} [filters]
  * @returns {Promise<object[]>}
  */
-async function listGivingSummariesForBranch(pool, branchId) {
+async function listGivingSummariesForBranch(pool, branchId, filters = {}) {
+  const params = [branchId];
+  const where = ["g.branch_id = $1"];
+  if (filters.status && filters.status !== "all") {
+    params.push(filters.status);
+    where.push(`g.status = $${params.length}`);
+  }
+  if (filters.month && /^\d{4}-\d{2}$/.test(filters.month)) {
+    const [y, m] = filters.month.split("-").map(Number);
+    params.push(y, m);
+    where.push(`g.period_year = $${params.length - 1}`);
+    where.push(`g.period_month = $${params.length}`);
+  } else if (filters.range === "ytd" || filters.range === "current_month") {
+    const now = filters.now instanceof Date ? filters.now : new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    params.push(year);
+    where.push(`g.period_year = $${params.length}`);
+    if (filters.range === "current_month") {
+      params.push(month);
+      where.push(`g.period_month = $${params.length}`);
+    }
+  }
+  if (filters.q) {
+    params.push(`%${String(filters.q).trim()}%`);
+    where.push(`(COALESCE(g.notes, '') ILIKE $${params.length})`);
+  }
   const r = await pool.query(
     `SELECT g.*, ba.full_name AS created_by_name
      FROM public.church_giving_summaries g
      LEFT JOIN public.church_branch_admins ba ON ba.id = g.created_by_admin_id
-     WHERE g.branch_id = $1
+     WHERE ${where.join(" AND ")}
      ORDER BY g.period_year DESC, g.period_month DESC`,
-    [branchId]
+    params
   );
   return r.rows.map(rowWithTotal);
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{
+ *   branchId?: number | null,
+ *   status?: string,
+ *   range?: string,
+ *   month?: string,
+ *   q?: string,
+ *   now?: Date,
+ * }} [filters]
+ */
+async function listGivingSummariesForOrganization(pool, organizationId, filters = {}) {
+  const params = [organizationId];
+  const where = ["g.organization_id = $1"];
+  if (filters.branchId) {
+    params.push(filters.branchId);
+    where.push(`g.branch_id = $${params.length}`);
+  }
+  if (filters.status && filters.status !== "all") {
+    params.push(filters.status);
+    where.push(`g.status = $${params.length}`);
+  }
+  if (filters.month && /^\d{4}-\d{2}$/.test(filters.month)) {
+    const [y, m] = filters.month.split("-").map(Number);
+    params.push(y, m);
+    where.push(`g.period_year = $${params.length - 1}`);
+    where.push(`g.period_month = $${params.length}`);
+  } else if (filters.range === "ytd" || filters.range === "current_month") {
+    const now = filters.now instanceof Date ? filters.now : new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    params.push(year);
+    where.push(`g.period_year = $${params.length}`);
+    if (filters.range === "current_month") {
+      params.push(month);
+      where.push(`g.period_month = $${params.length}`);
+    }
+  }
+  if (filters.q) {
+    params.push(`%${String(filters.q).trim()}%`);
+    where.push(`(COALESCE(g.notes, '') ILIKE $${params.length})`);
+  }
+  const r = await pool.query(
+    `SELECT g.*, b.name AS branch_name, ba.full_name AS created_by_name
+     FROM public.church_giving_summaries g
+     INNER JOIN public.church_branches b ON b.id = g.branch_id AND b.organization_id = g.organization_id
+     LEFT JOIN public.church_branch_admins ba ON ba.id = g.created_by_admin_id
+     WHERE ${where.join(" AND ")}
+     ORDER BY g.period_year DESC, g.period_month DESC`,
+    params
+  );
+  return r.rows.map(rowWithTotal);
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{ branchId?: number | null }} [opts]
+ */
+async function countGivingSummariesForOrganization(pool, organizationId, opts = {}) {
+  const params = [organizationId];
+  let where = "organization_id = $1";
+  if (opts.branchId) {
+    params.push(opts.branchId);
+    where += ` AND branch_id = $${params.length}`;
+  }
+  const r = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM public.church_giving_summaries WHERE ${where}`,
+    params
+  );
+  return r.rows[0]?.count ?? 0;
+}
+
+/**
+ * Org-scoped lookup (never by id alone).
+ * @param {import("pg").Pool} pool
+ * @param {number} summaryId
+ * @param {number} organizationId
+ */
+async function findGivingSummaryByIdForOrganization(pool, summaryId, organizationId) {
+  const r = await pool.query(
+    `SELECT g.*, b.name AS branch_name, ba.full_name AS created_by_name
+     FROM public.church_giving_summaries g
+     INNER JOIN public.church_branches b
+       ON b.id = g.branch_id AND b.organization_id = g.organization_id
+     LEFT JOIN public.church_branch_admins ba ON ba.id = g.created_by_admin_id
+     WHERE g.id = $1 AND g.organization_id = $2
+     LIMIT 1`,
+    [summaryId, organizationId]
+  );
+  return rowWithTotal(r.rows[0] ?? null);
 }
 
 /**
@@ -144,7 +271,10 @@ async function markGivingSummaryIncludedInMonthlyReport(pool, summaryId, branchI
 module.exports = {
   upsertGivingSummaryForBranchPeriod,
   listGivingSummariesForBranch,
+  listGivingSummariesForOrganization,
+  countGivingSummariesForOrganization,
   findGivingSummaryByIdForBranch,
+  findGivingSummaryByIdForOrganization,
   getGivingSummaryForBranchPeriod,
   updateGivingSummaryStatusForBranch,
   markGivingSummaryIncludedInMonthlyReport,

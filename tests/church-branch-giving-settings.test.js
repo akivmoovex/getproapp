@@ -142,7 +142,8 @@ test(
 
     const editor = await adminAgent.get("/branch/giving-settings");
     assert.equal(editor.status, 200);
-    assert.match(editor.text, /Giving settings/);
+    assert.match(editor.text, /Giving Settings/);
+    assert.match(editor.text, /data-testid="giving-settings"/);
 
     const draftAccount = `DRAFT-ACC-${suffix}`;
     const saveDraft = await adminAgent.post("/branch/giving-settings").type("form").send({

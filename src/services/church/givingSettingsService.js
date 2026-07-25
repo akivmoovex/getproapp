@@ -96,6 +96,79 @@ function validateForPublish(settings) {
   return { ok: true };
 }
 
+const SETTINGS_TEXT_LIMITS = Object.freeze({
+  bank_name: 120,
+  account_name: 120,
+  account_number: 64,
+  branch_code: 64,
+  swift_code: 32,
+  mobile_money_provider_1: 80,
+  mobile_money_number_1: 40,
+  mobile_money_name_1: 120,
+  mobile_money_provider_2: 80,
+  mobile_money_number_2: 40,
+  mobile_money_name_2: 120,
+  giving_instructions: 4000,
+  qr_code_label: 120,
+  finance_contact_name: 120,
+  finance_contact_phone: 40,
+});
+
+/**
+ * Server-side length / shape checks for draft or publish (beyond publish channel rules).
+ * @param {object} settings
+ * @param {{ giving_categories?: string }} [form]
+ */
+function validateGivingSettingsFields(settings, form = {}) {
+  for (const [key, max] of Object.entries(SETTINGS_TEXT_LIMITS)) {
+    const value = String(settings[key] == null ? "" : settings[key]);
+    if (value.length > max) {
+      return { ok: false, error: `${key.replace(/_/g, " ")} is too long (max ${max} characters).` };
+    }
+  }
+  const categories = Array.isArray(settings.giving_categories_json)
+    ? settings.giving_categories_json
+    : parseCategories(form.giving_categories);
+  if (categories.length > 40) {
+    return { ok: false, error: "Too many giving categories (maximum 40)." };
+  }
+  for (const cat of categories) {
+    if (String(cat).length > 80) {
+      return { ok: false, error: "Each giving category must be 80 characters or fewer." };
+    }
+  }
+  return { ok: true };
+}
+
+/**
+ * Channel readiness for Phase 6 settings UI (no payment-provider secrets).
+ * @param {object | null} row
+ * @param {object} form
+ */
+function describeGivingSettingsReadiness(row, form) {
+  const settings = settingsFromForm(form || {});
+  const status = row && row.status === "published" ? "published" : "draft";
+  return {
+    status,
+    statusLabel: status === "published" ? "Published" : "Draft",
+    hasBankChannel: hasBankChannel(settings),
+    hasMobileChannel: hasMobileChannel(settings),
+    categoryCount: Array.isArray(settings.giving_categories_json)
+      ? settings.giving_categories_json.length
+      : parseCategories(form && form.giving_categories).length,
+    paymentProviderSupported: false,
+    paymentProviderStatus: "unavailable",
+    paymentProviderLabel:
+      "Not available — BlessBoard does not connect payment providers on this page.",
+    receiptsSupported: false,
+    goalsSupported: false,
+    anonymousPreferenceSupported: false,
+    defaultCurrencyEditable: false,
+    defaultCurrencyNote:
+      "Monthly giving summaries use each record’s currency code (default ZMW). Changing display currency here is not supported and does not convert stored amounts.",
+  };
+}
+
 function mobileMoneyEntries(settings) {
   if (!settings) return [];
   const entries = [];
@@ -238,6 +311,9 @@ module.exports = {
   settingsFromForm,
   formFromSettings,
   validateForPublish,
+  validateGivingSettingsFields,
+  describeGivingSettingsReadiness,
   prepareGivingDisplay,
   mobileMoneyEntries,
+  SETTINGS_TEXT_LIMITS,
 };
