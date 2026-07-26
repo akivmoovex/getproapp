@@ -495,7 +495,9 @@ async function publishChurchWebsite(db, input) {
       }
 
       // Narrow idempotency: rapid duplicate POSTs only when nothing new is waiting.
-      if (inner.organizationId && input.actorUserId) {
+      // Phase 7 draft apply always forces a version even when CMS page rows stay published.
+      const forcePublishVersion = Boolean(input && input.forcePublishVersion === true);
+      if (!forcePublishVersion && inner.organizationId && input.actorUserId) {
         const draftRes = await client.query(
           `SELECT COUNT(*)::int AS n
              FROM blessboard.public_pages
@@ -676,6 +678,10 @@ async function publishChurchWebsite(db, input) {
         status: STATUS.CONFLICT,
         reason: "partial_page_publish",
       };
+    }
+    if (process.env.BLESSBOARD_DEBUG_PUBLISH === "1") {
+      // eslint-disable-next-line no-console
+      console.error("[publishChurchWebsite]", err && err.message, err && err.code, err && err.stack);
     }
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup_error" };
   }

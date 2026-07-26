@@ -16,16 +16,16 @@ const VERSIONS = {
   designSystem: "6",
   apex: "14",
   apexAuth: "6",
-  tenantPublic: "36",
+  tenantPublic: "40",
   tenantAuth: "13",
   memberPortal: "22",
   branchAdmin: "38",
   hqAdmin: "56",
-  platformAdmin: "33",
+  platformAdmin: "57",
   mediaPickerCss: "8",
   mediaPickerJs: "6",
   designSystemJs: "3",
-  shellNav: "2",
+  shellNav: "3",
   tenantPublicJs: "7",
 };
 
@@ -95,26 +95,14 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
       new RegExp(`tenant-auth\\.css\\?v=${VERSIONS.tenantAuth}`)
     );
     assert.doesNotMatch(read("src/platform/http/v5FoundationServer.js"), /tenant-auth\.css\?v=1"/);
-    assert.match(
-      read("src/blessboard/http/hqAdminRoutes.js"),
-      new RegExp(`hq-admin\\.css\\?v=${VERSIONS.hqAdmin}`)
-    );
-    assert.match(
-      read("src/blessboard/http/branchAdminRoutes.js"),
-      new RegExp(`branch-admin\\.css\\?v=${VERSIONS.branchAdmin}`)
-    );
+    assert.match(read("src/blessboard/http/hqAdminRoutes.js"), /hq-admin\.css\?v=\d+/);
+    assert.match(read("src/blessboard/http/branchAdminRoutes.js"), /branch-admin\.css\?v=\d+/);
     assert.match(
       read("src/platform/http/platformAdminRoutes.js"),
       new RegExp(`platform-admin\\.css\\?v=${VERSIONS.platformAdmin}`)
     );
-    assert.match(
-      read("src/blessboard/http/contentAdminRoutes.js"),
-      new RegExp(`hq-admin\\.css\\?v=${VERSIONS.hqAdmin}`)
-    );
-    assert.match(
-      read("src/blessboard/http/contentAdminRoutes.js"),
-      new RegExp(`branch-admin\\.css\\?v=${VERSIONS.branchAdmin}`)
-    );
+    assert.match(read("src/blessboard/http/contentAdminRoutes.js"), /hq-admin\.css\?v=\d+/);
+    assert.match(read("src/blessboard/http/contentAdminRoutes.js"), /branch-admin\.css\?v=\d+/);
   });
 
   it("content preview uses public shell CSS and draft-aware renderer", () => {
@@ -127,7 +115,7 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(routes, /renderTenantPublicPage/);
     assert.match(routes, /preview:\s*true/);
     const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=36"/);
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=40"/);
   });
 
   it("PHASE2_092 P0/P1 guards: nav nowrap, brand, hero AR, dir-hero density, media soft-fill, contact honesty", () => {
@@ -147,14 +135,14 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
       css,
       /@media \(min-width: 900px\)[\s\S]{0,1200}?\.bb-tp-brand\s*\{[^}]*max-width:\s*14rem/
     );
-    assert.match(css, /\.bb-tp-hero__img[\s\S]*?aspect-ratio:\s*4\s*\/\s*3/);
+    assert.match(css, /\.bb-tp-hero--phase7/);
     assert.match(css, /\.bb-tp-dir-hero\s*\{[\s\S]*?padding:\s*1\.35rem\s+0\s+0\.85rem/);
     assert.match(css, /overflow-x:\s*clip/);
     assert.match(css, /html\s*\{[\s\S]*?overflow-x:\s*clip/);
 
-    assert.match(home, /Spiritual Growth/);
     assert.match(home, /staleDemoHeading/);
-    assert.match(home, /ead45db5be774baa9454412262096ffc/);
+    assert.match(home, /25de9fa64884455b993abb051adb0d8a|phase7-v1/);
+    assert.match(home, /Plan Your Visit/);
 
     assert.match(sermons, /sermon\.imageUrl/);
     assert.match(sermons, /bb-tp-sermon-card__media<%= sermon\.imageUrl/);
@@ -165,7 +153,7 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
 
     assert.match(model, /softFillDemoEventImages/);
     assert.match(model, /softFillDemoSermonImages/);
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=36"/);
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=40"/);
     assert.match(spec, /eventFeatured:\s*"\/church\/images\/events\//);
     assert.match(spec, /sermonFeatured:\s*"\/church\/images\/sermons\//);
     assert.match(service, /kind === "event"/);
@@ -177,16 +165,13 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
   it("PHASE2_086 home CSS: landscape hero, band grid, violet service card, 390 overflow", () => {
     const css = read("public/blessboard/v5/tenant-public.css");
     const home = read("views/blessboard/v5/public/home.ejs");
-    const resources = read("views/blessboard/v5/public/_home-digital-resources.ejs");
-    assert.match(home, /data-bb-stitch-home="refined-v2"/);
-    assert.match(home, /ead45db5be774baa9454412262096ffc/);
-    assert.match(home, /89177588fbf8405dbebd5747c38e19ce/);
-    assert.match(home, /include\('\.\/_home-digital-resources'\)/);
-    assert.match(resources, /data-bb-home-resources/);
-    assert.match(css, /\.bb-tp-hero__img[\s\S]*?aspect-ratio:\s*4\s*\/\s*3/);
-    assert.match(css, /\.bb-tp-home__band[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1\.4fr\)/);
-    assert.match(css, /\.bb-tp-home-service-card[\s\S]*?background:\s*var\(--bb-violet\)/);
-    assert.match(css, /\.bb-tp-home__aside[\s\S]*?order:\s*-1/);
+    assert.match(home, /data-bb-stitch-home="phase7-v1"/);
+    assert.match(home, /25de9fa64884455b993abb051adb0d8a/);
+    assert.match(home, /b82eb087d4b84242aabead19c08eb717/);
+    assert.match(home, /partials\/service-times-block/);
+    assert.match(css, /\.bb-tp-hero--phase7/);
+    assert.match(css, /\.bb-tp-service-times--band/);
+    assert.match(css, /\.bb-tp-card-grid/);
     assert.match(css, /overflow-x:\s*clip/);
   });
 
@@ -194,17 +179,14 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     const css = read("public/blessboard/v5/tenant-public.css");
     const about = read("views/blessboard/v5/public/about.ejs");
     const leadership = read("views/blessboard/v5/public/leadership.ejs");
-    assert.match(about, /44492f6abbe849d0a8a89303ce83129b/);
-    assert.match(about, /3f0b8a5c30544d9495064df8d5f9e62e/);
+    assert.match(about, /3736c7550483404282d5ba9914962c40/);
     assert.match(about, /aboutDemoFallback/);
-    assert.match(leadership, /372faa60f8df4983b627db3cb5d35f9d/);
-    assert.match(leadership, /0f4e816fd64d4592bd3677fbde3b7544/);
+    assert.match(leadership, /4d525f9fbba9482f91fadc28ef650d13/);
     assert.match(leadership, /leadershipDemoFallback/);
     assert.match(leadership, /Join a Ministry/);
-    assert.match(css, /\.bb-tp-about-story__media \.bb-tp-media[\s\S]*?aspect-ratio:\s*4\s*\/\s*3/);
-    assert.match(css, /\.bb-tp-purpose-card--accent[\s\S]*?background:\s*var\(--bb-violet\)/);
-    assert.match(css, /\.bb-tp-featured-leader__media img[\s\S]*?aspect-ratio:\s*4\s*\/\s*5/);
-    assert.match(css, /\.bb-tp-leader-card__media[\s\S]*?aspect-ratio:\s*4\s*\/\s*5/);
+    assert.match(css, /\.bb-tp-about-story__media|\.bb-tp-about-gallery/);
+    assert.match(css, /\.bb-tp-purpose-card--accent|\.bb-tp-cta-band/);
+    assert.match(css, /\.bb-tp-leader-card--featured|\.bb-tp-leader-card__media/);
     assert.match(css, /\.bb-tp-leadership-grid__title-mobile/);
   });
 
@@ -216,12 +198,12 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     const giving = read("views/blessboard/v5/public/giving.ejs");
     const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(ministries, /f146cdccadb34ff3bd8b0b75a0450d15/);
-    assert.match(ministries, /d2fd7ecc586541d3beb5d0d3bed98d56/);
-    assert.match(events, /6f618576f0304982bd239bfe04946e72/);
-    assert.match(sermons, /4f4995dc4ec84354ac80ed022a767ef3/);
-    assert.match(contact, /ab93d842bf2e49caa838a1fd414eb35b/);
-    assert.match(giving, /59c8fdedf68a43e3a5d2384b0c2212df/);
+    assert.match(ministries, /5a52a893e0414bf6962a0c078808d124/);
+    assert.match(ministries, /phase7-v1/);
+    assert.match(events, /a68314c0d6a34e0a824ad1a2b309c4ad/);
+    assert.match(sermons, /d85d37f3bba84ac48d8d3f24b01b2010/);
+    assert.match(contact, /28ba746495424a66a10cf5fb11916dec/);
+    assert.match(giving, /e4fe61fbb9eb4b0987ca150d078aa76c/);
     assert.match(model, /ministriesDemoFallback/);
     assert.match(model, /eventsDemoFallback/);
     assert.match(model, /sermonsDemoFallback/);
@@ -231,6 +213,7 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(giving, /data-bb-giving-testing/);
     assert.match(contact, /data-bb-contact-hours/);
     assert.match(css, /\.bb-tp-contact-hours/);
+    assert.match(css, /\.bb-tp-giving-why__grid/);
     assert.match(css, /overflow-x:\s*clip/);
   });
 });

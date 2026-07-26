@@ -1,10 +1,8 @@
 <%#
-  Contact — Stitch 08-public-contact-*-v2 (Populated).
-  Desktop: ab93d842bf2e49caa838a1fd414eb35b
-  Mobile:  9cbad6aacb6246549913e275f228fa80
-  Published channels + branch/church settings only.
-  No contact POST / CSRF form (unsupported in V5). Map only with valid lat/lng.
-  No fabricated hours, mailing lists, or phone/email/address.
+  Phase 7 — Church Website Contact (Desktop; responsive).
+  Stitch: 28ba746495424a66a10cf5fb11916dec
+  No contact POST (unsupported). Map only with valid lat/lng.
+  Service times repeated near location/map.
 %>
 <%
   var demoFb =
@@ -36,11 +34,20 @@
     (intro && intro.heading) ||
     (demoFb && demoFb.introHeading) ||
     pageTitle ||
-    'Contact Us';
+    "We'd Love to Hear From You";
   var introBody =
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
     '';
+
+  var officeHoursHeading =
+    (officeHoursSection && officeHoursSection.heading) ||
+    (demoFb && demoFb.officeHoursHeading) ||
+    'Office Hours';
+  var officeHoursBody =
+    (officeHoursSection && officeHoursSection.bodyText) ||
+    (demoFb && !officeHoursSection ? demoFb.officeHoursBody : null) ||
+    null;
 
   function formatTimeLabel(hhmm) {
     var m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(hhmm || ''));
@@ -51,17 +58,6 @@
     h = h % 12;
     if (h === 0) h = 12;
     return h + ':' + min + ' ' + ampm;
-  }
-
-  var accentBefore = introHeading;
-  var accentPhrase = '';
-  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
-  if (headingWords.length >= 4) {
-    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-2).join(' ');
-  } else if (headingWords.length >= 3) {
-    accentBefore = headingWords.slice(0, -1).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-1).join(' ');
   }
 
   var typesSeen = {};
@@ -112,86 +108,34 @@
   var showMapUnavailable = Boolean(contact.addressText && !contact.hasMap);
   var messageEmailHref = contact.emailHref || null;
   var messageEmail = contact.email || '';
+  var contactServiceEntries =
+    typeof serviceTimesEntries !== 'undefined' && serviceTimesEntries ? serviceTimesEntries : [];
+  var socialLinksList =
+    typeof socialLinks !== 'undefined' && socialLinks ? socialLinks.filter(function (s) { return s && (s.label || s.href); }) : [];
 %>
 
 <section
   class="bb-tp-directory bb-tp-contact"
   data-bb-contact="1"
-  data-bb-stitch-contact="populated-v2"
+  data-bb-stitch-contact="phase7-v1"
+  aria-label="Contact"
 >
-  <header class="bb-tp-dir-hero bb-tp-contact-hero" aria-label="Contact" data-bb-contact-hero="1">
-    <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-contact-hero__eyebrow-desktop">
-        Connect With Us
-      </p>
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-contact-hero__eyebrow-mobile">
-        Contact Us
-      </p>
-      <h1 class="bb-tp-dir-hero__title">
-        <% if (accentPhrase) { %>
-        <%= accentBefore %><span class="bb-tp-contact-hero__title-accent"><%= accentPhrase %></span>
-        <% } else { %>
-        <%= introHeading %>
-        <% } %>
-      </h1>
-      <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
-      <% } %>
-    </div>
-  </header>
+  <%- include('./partials/page-hero', {
+    heroHeading: introHeading,
+    heroBody: introBody,
+    heroMedia: null,
+    heroEyebrow: 'Get In Touch',
+    heroClass: 'bb-tp-contact-hero',
+    heroCtaPrimary: messageEmailHref
+      ? { href: messageEmailHref, label: 'Email Us' }
+      : { href: hrefFor('/about'), label: 'About Us' },
+    heroCtaSecondary: { href: hrefFor('/events'), label: 'View Events' },
+    editPageKey: 'contact',
+    editSectionKey: 'hero'
+  }) %>
+  <div class="bb-tp-contact-hero-marker" data-bb-contact-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
-    <% if (showEmptyState) { %>
-    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="contact">
-      <div class="bb-tp-empty__visual" aria-hidden="true">
-        <span class="material-symbols-outlined bb-tp-empty__icon">contact_mail</span>
-      </div>
-      <div class="bb-tp-empty__copy">
-        <p class="bb-tp-empty__badge">No contact details published</p>
-        <h2><%= emptyHeadline %></h2>
-        <p><%= emptyMessage %></p>
-        <p class="bb-tp-empty__hint">Published contact channels and branch address details will appear here when available.</p>
-        <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>">Home</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/about') %>">About</a>
-        </div>
-      </div>
-    </div>
-    <% } else { %>
-
-    <%
-      var contactServiceEntries =
-        typeof serviceTimesEntries !== 'undefined' && serviceTimesEntries ? serviceTimesEntries : [];
-    %>
-    <% if (contactServiceEntries.length) { %>
-    <section class="bb-tp-contact-services" data-bb-contact-services="1" aria-labelledby="bb-tp-contact-services-heading">
-      <h2 id="bb-tp-contact-services-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Service times</h2>
-      <ul class="bb-tp-service-times-list">
-        <% contactServiceEntries.forEach(function (entry) { %>
-        <li class="bb-tp-service-times-item">
-          <span class="bb-tp-service-times-item__day"><%= String(entry.day || '').charAt(0).toUpperCase() + String(entry.day || '').slice(1) %></span>
-          <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
-          <span class="bb-tp-service-times-item__time">
-            <%= formatTimeLabel(entry.startTime) %><% if (entry.endTime) { %>–<%= formatTimeLabel(entry.endTime) %><% } %>
-          </span>
-          <% if (entry.location) { %><span class="bb-tp-service-times-item__location"><%= entry.location %></span><% } %>
-        </li>
-        <% }) %>
-      </ul>
-    </section>
-    <% } %>
-
-    <% if (officeHoursSection && (officeHoursSection.heading || officeHoursSection.bodyText)) { %>
-    <section class="bb-tp-contact-hours" data-bb-contact-hours="1" aria-labelledby="bb-tp-contact-hours-heading">
-      <h2 id="bb-tp-contact-hours-heading" class="bb-tp-section-title bb-tp-section-title--ruled">
-        <%= officeHoursSection.heading || 'Office hours' %>
-      </h2>
-      <% if (officeHoursSection.bodyText) { %>
-      <p class="bb-tp-body"><%= officeHoursSection.bodyText %></p>
-      <% } %>
-    </section>
-    <% } %>
-
     <% if (hasChannelCards) { %>
     <ul class="bb-tp-contact-cards" data-bb-contact-channels="1">
       <% channels.forEach(function (channel) { %>
@@ -246,6 +190,15 @@
     <p class="bb-tp-lead" role="status"><%= entitiesEmptyMessage %></p>
     <% } %>
 
+    <% if (officeHoursHeading && officeHoursBody) { %>
+    <section class="bb-tp-contact-hours" data-bb-contact-hours="1" aria-labelledby="bb-tp-contact-hours-heading">
+      <h2 id="bb-tp-contact-hours-heading" class="bb-tp-section-title bb-tp-section-title--ruled">
+        <%= officeHoursHeading %>
+      </h2>
+      <p class="bb-tp-body"><%= officeHoursBody %></p>
+    </section>
+    <% } %>
+
     <div class="bb-tp-contact-main">
       <section
         class="bb-tp-contact-message"
@@ -267,7 +220,14 @@
             Email Us
           </a>
           <% } %>
+          <% if (contact.phoneHref) { %>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= contact.phoneHref %>" aria-label="Call <%= contact.phone %>">
+            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            Call Us
+          </a>
+          <% } else { %>
           <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/events') %>">View Events</a>
+          <% } %>
         </div>
       </section>
 
@@ -339,8 +299,49 @@
           </div>
         </section>
         <% } %>
+
+        <% if (contactServiceEntries.length) { %>
+        <section class="bb-tp-contact-services bb-tp-contact-services--aside" data-bb-contact-services="1" aria-labelledby="bb-tp-contact-services-heading">
+          <h2 id="bb-tp-contact-services-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Service Times</h2>
+          <ul class="bb-tp-service-times-list">
+            <% contactServiceEntries.forEach(function (entry) { %>
+            <li class="bb-tp-service-times-item">
+              <span class="bb-tp-service-times-item__day"><%= String(entry.day || '').charAt(0).toUpperCase() + String(entry.day || '').slice(1) %></span>
+              <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
+              <span class="bb-tp-service-times-item__time">
+                <%= formatTimeLabel(entry.startTime) %><% if (entry.endTime) { %>–<%= formatTimeLabel(entry.endTime) %><% } %>
+              </span>
+              <% if (entry.location) { %><span class="bb-tp-service-times-item__location"><%= entry.location %></span><% } %>
+            </li>
+            <% }) %>
+          </ul>
+        </section>
+        <% } %>
       </div>
     </div>
+
+    <% if (socialLinksList.length) { %>
+    <section class="bb-tp-contact-social" aria-label="Social links" data-bb-contact-social="1">
+      <h2 class="bb-tp-section-title bb-tp-section-title--ruled">Follow Our Journey</h2>
+      <ul class="bb-tp-contact-social__list">
+        <% socialLinksList.forEach(function (link) { %>
+        <li>
+          <% if (link.href) { %>
+          <a href="<%= link.href %>" rel="noopener noreferrer" class="bb-tp-contact-social__link">
+            <span class="material-symbols-outlined" aria-hidden="true"><%= link.icon || 'public' %></span>
+            <%= link.label || 'Social' %>
+          </a>
+          <% } else { %>
+          <span class="bb-tp-contact-social__link is-static">
+            <span class="material-symbols-outlined" aria-hidden="true"><%= link.icon || 'public' %></span>
+            <%= link.label || 'Social' %>
+          </span>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
 
     <% moreSections.forEach(function (section) { %>
     <section class="bb-tp-section bb-tp-content-block" data-section="<%= section.sectionKey %>">
@@ -351,7 +352,5 @@
       <% } %>
     </section>
     <% }) %>
-
-    <% } %>
   </div>
 </section>

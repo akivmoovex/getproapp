@@ -2,7 +2,7 @@
 
 /**
  * Authoritative-mode tenant public website routes.
- * Renders published content only; no admin chrome; no legacy tables.
+ * Renders published content for visitors; authorized admins get optional edit chrome.
  */
 
 const express = require("express");
@@ -18,6 +18,7 @@ const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel
 const { renderTenantPublicPage } = require("./renderTenantPublicPage");
 const { renderControlledErrorPage, renderFoundationHome } = require("./renderTenantLandingPage");
 const { resolveHostname } = require("../../platform/host");
+const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
 
 /**
  * @param {{
@@ -139,6 +140,18 @@ function createTenantPublicRouter(deps) {
 
     if (model.seo && model.seo.noindex) {
       res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    }
+
+    try {
+      await attachWebsiteAdminChrome({
+        req,
+        res,
+        db: getPool(),
+        model,
+        env: typeof deps.getEnv === "function" ? deps.getEnv() : process.env,
+      });
+    } catch {
+      model.websiteAdmin = null;
     }
 
     const html = renderTenantPublicPage(model);

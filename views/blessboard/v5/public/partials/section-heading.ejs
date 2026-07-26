@@ -1,0 +1,21 @@
+<%#
+  Shared section heading row.
+  Locals: sectionTitle, sectionLead (optional), sectionHref (optional), sectionLinkLabel (optional), sectionId (optional)
+%>
+<header class="bb-tp-section-head">
+  <div class="bb-tp-section-head__copy">
+    <% if (typeof sectionEyebrow !== 'undefined' && sectionEyebrow) { %>
+    <p class="bb-tp-eyebrow"><%= sectionEyebrow %></p>
+    <% } %>
+    <h2
+      class="bb-tp-section-title<%= typeof sectionRuled !== 'undefined' && sectionRuled ? ' bb-tp-section-title--ruled' : '' %>"
+      <% if (typeof sectionId !== 'undefined' && sectionId) { %>id="<%= sectionId %>"<% } %>
+    ><%= sectionTitle %></h2>
+    <% if (typeof sectionLead !== 'undefined' && sectionLead) { %>
+    <p class="bb-tp-section-head__lead"><%= sectionLead %></p>
+    <% } %>
+  </div>
+  <% if (typeof sectionHref !== 'undefined' && sectionHref) { %>
+  <a class="bb-tp-section-head__link" href="<%= sectionHref %>"><%= sectionLinkLabel || 'View all' %></a>
+  <% } %>
+</header>

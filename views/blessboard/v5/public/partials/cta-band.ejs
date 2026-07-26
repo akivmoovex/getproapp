@@ -1,0 +1,22 @@
+<%#
+  Shared CTA band.
+  Locals: ctaTitle, ctaBody, ctaPrimary, ctaSecondary (optional), ctaClass (optional)
+%>
+<section class="bb-tp-cta-band<%= typeof ctaClass !== 'undefined' && ctaClass ? ' ' + ctaClass : '' %>" data-bb-cta-band="1">
+  <div class="bb-tp-container bb-tp-cta-band__inner">
+    <div class="bb-tp-cta-band__copy">
+      <h2 class="bb-tp-section-title"><%= ctaTitle %></h2>
+      <% if (typeof ctaBody !== 'undefined' && ctaBody) { %>
+      <p class="bb-tp-body"><%= ctaBody %></p>
+      <% } %>
+    </div>
+    <div class="bb-tp-cta-band__actions">
+      <% if (typeof ctaPrimary !== 'undefined' && ctaPrimary) { %>
+      <a class="bb-tp-btn bb-tp-btn--primary" href="<%= ctaPrimary.href %>"><%= ctaPrimary.label %></a>
+      <% } %>
+      <% if (typeof ctaSecondary !== 'undefined' && ctaSecondary) { %>
+      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="<%= ctaSecondary.href %>"><%= ctaSecondary.label %></a>
+      <% } %>
+    </div>
+  </div>
+</section>

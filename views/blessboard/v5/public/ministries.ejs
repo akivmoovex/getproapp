@@ -1,9 +1,8 @@
 <%#
-  Ministries — Stitch 04-public-ministries-*-v4 (Populated).
-  Desktop: f146cdccadb34ff3bd8b0b75a0450d15
-  Mobile:  d2fd7ecc586541d3beb5d0d3bed98d56
-  Published ministries only (sort_order ASC). No category filters,
-  unsupported per-card actions, file guides, or sample ministries.
+  Phase 7 — Church Website Ministries (Desktop; responsive).
+  Stitch: 5a52a893e0414bf6962a0c078808d124
+  Reuses Stage 2 shell + page-hero / cta-band. Published ministries preferred;
+  centralized demo soft-fill when none published. No category filters or unsupported card actions.
 %>
 <%
   var demoFb =
@@ -16,12 +15,14 @@
   var ministries = (entities || []).filter(function (m) {
     return m && String(m.name || '').trim();
   });
+  var featured = ministries.length ? ministries.slice(0, Math.min(3, ministries.length)) : [];
+  var rest = ministries.length > 3 ? ministries.slice(3) : [];
   var intro = pageSections.length ? pageSections[0] : null;
   var introHeading =
     (intro && intro.heading) ||
     (demoFb && demoFb.introHeading) ||
     pageTitle ||
-    'Our Ministries';
+    'A Space to Belong and Grow';
   var introBody =
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
@@ -31,128 +32,201 @@
     (demoFb && demoFb.introMediaUrl) ||
     null;
 
-  var accentBefore = introHeading;
-  var accentPhrase = '';
-  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
-  if (headingWords.length >= 4) {
-    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-2).join(' ');
-  }
+  var audienceGroups = [];
+  var audienceSeen = {};
+  ministries.forEach(function (m) {
+    var key = String(m.audience || '').trim();
+    if (!key) return;
+    if (!audienceSeen[key]) {
+      audienceSeen[key] = true;
+      audienceGroups.push(key);
+    }
+  });
 %>
 
 <section
   class="bb-tp-directory bb-tp-ministries"
   data-bb-ministries="1"
-  data-bb-stitch-ministries="populated-v4"
+  data-bb-stitch-ministries="phase7-v1"
+  aria-label="Ministries"
 >
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-ministries-hero" aria-label="Ministries" data-bb-ministries-hero="1">
-    <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-ministries-hero__eyebrow-desktop">
-        Our Impact
-      </p>
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-ministries-hero__eyebrow-mobile">
-        Our Community
-      </p>
-      <h1 class="bb-tp-dir-hero__title">
-        <% if (accentPhrase) { %>
-        <%= accentBefore %><span class="bb-tp-ministries-hero__title-accent"><%= accentPhrase %></span>
-        <% } else { %>
-        <%= introHeading %>
-        <% } %>
-      </h1>
-      <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center"><%= introBody %></p>
-      <% } %>
-      <div class="bb-tp-page-hero__cta bb-tp-page-hero__cta--center bb-tp-ministries-hero__cta">
-        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">
-          <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
-          Join a Ministry
-        </a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/events') %>">
-          <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
-          View Events
-        </a>
-      </div>
-      <% if (introMedia) { %>
-      <div class="bb-tp-ministries-hero__media">
-        <img
-          class="bb-tp-media"
-          src="<%= introMedia %>"
-          alt=""
-          width="960"
-          height="420"
-          loading="eager"
-          decoding="async"
-        />
-      </div>
-      <% } %>
-    </div>
-  </header>
+  <%- include('./partials/page-hero', {
+    heroHeading: introHeading,
+    heroBody: introBody,
+    heroMedia: introMedia,
+    heroMediaAlt: 'Ministries at ' + publicName,
+    heroEyebrow: 'Our Community Ecosystem',
+    heroClass: 'bb-tp-ministries-hero',
+    heroCtaPrimary: { href: hrefFor('/contact'), label: 'Join a Ministry' },
+    heroCtaSecondary: { href: hrefFor('/events'), label: 'View Events' },
+    editPageKey: 'ministries',
+    editSectionKey: 'hero'
+  }) %>
+  <div class="bb-tp-ministries-hero-marker" data-bb-ministries-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
-    <% if (showEmptyState) { %>
-    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="ministries">
-      <div class="bb-tp-empty__visual" aria-hidden="true">
-        <span class="material-symbols-outlined bb-tp-empty__icon">diversity_3</span>
-      </div>
-      <div class="bb-tp-empty__copy">
-        <p class="bb-tp-empty__badge">Update in progress</p>
-        <h2><%= emptyHeadline %></h2>
-        <p><%= emptyMessage %></p>
-        <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register</a>
-        </div>
-      </div>
-    </div>
-    <% } else if (ministries.length) { %>
-    <ul class="bb-tp-ministry-grid" aria-label="Published ministries" data-bb-ministries-grid="1">
-      <% ministries.forEach(function (ministry, index) { %>
-      <li class="bb-tp-ministry-card<%= index === 0 ? ' bb-tp-ministry-card--featured' : '' %>" data-bb-ministry-card="1">
-        <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
-          <% if (ministry.imageUrl) { %>
-          <img
-            src="<%= ministry.imageUrl %>"
-            alt="<%= ministry.name %>"
-            width="640"
-            height="400"
-            loading="<%= index === 0 ? 'eager' : 'lazy' %>"
-            decoding="async"
-          />
-          <% } else { %>
-          <span
-            class="material-symbols-outlined bb-tp-ministry-card__fallback-icon"
-            role="img"
-            aria-label="<%= ministry.name %>"
-          >groups</span>
-          <% } %>
-        </div>
-        <div class="bb-tp-ministry-card__body">
-          <h2 class="bb-tp-ministry-card__title"><%= ministry.name %></h2>
-          <% if (ministry.summary) { %>
-          <p class="bb-tp-ministry-card__summary"><%= ministry.summary %></p>
-          <% } else if (ministry.description) { %>
-          <p class="bb-tp-ministry-card__summary"><%= ministry.description %></p>
-          <% } %>
-          <% if (ministry.meetingDay) { %>
-          <p class="bb-tp-meta">
-            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
-            <span><%= ministry.meetingDay %></span>
-          </p>
-          <% } %>
-          <% if (ministry.contactEmail && ministry.contactHref) { %>
-          <p class="bb-tp-meta" data-bb-ministry-contact="1">
-            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-            <a href="<%= ministry.contactHref %>" aria-label="Email <%= ministry.name %>"><%= ministry.contactEmail %></a>
-          </p>
-          <% } %>
-        </div>
-      </li>
-      <% }) %>
-    </ul>
+    <% if (featured.length) { %>
+    <section class="bb-tp-ministry-featured" aria-label="Featured ministries" data-bb-ministries-featured="1" data-bb-ministries-grid="1">
+      <h2 class="bb-tp-section-title bb-tp-section-title--ruled">Weekly Gatherings
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <%- include('../partials/structured-edit-trigger', {
+        editKind: 'ministry',
+        editEntityKey: 'new-ministry',
+        editLabel: 'Add ministry',
+        editPayload: { name: '', summary: '', description: '', visible: true, featured: false }
+      }) %>
+      <% } %>
+      </h2>
+      <ul class="bb-tp-ministry-grid bb-tp-ministry-grid--featured">
+        <% featured.forEach(function (ministry, index) { %>
+        <li class="bb-tp-ministry-card<%= index === 0 ? ' bb-tp-ministry-card--featured' : '' %>" data-bb-ministry-card="1">
+          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
+            <% if (ministry.imageUrl) { %>
+            <img
+              src="<%= ministry.imageUrl %>"
+              alt="<%= ministry.name %>"
+              width="640"
+              height="400"
+              loading="<%= index === 0 ? 'eager' : 'lazy' %>"
+              decoding="async"
+            />
+            <% } else { %>
+            <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
+            <% } %>
+          </div>
+          <div class="bb-tp-ministry-card__body">
+            <h3 class="bb-tp-ministry-card__title">
+              <%= ministry.name %>
+              <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+              <%- include('../partials/structured-edit-trigger', {
+                editKind: 'ministry',
+                editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
+                editLabel: 'Edit ' + ministry.name,
+                editPayload: {
+                  name: ministry.name,
+                  summary: ministry.summary,
+                  description: ministry.description,
+                  meetingDay: ministry.meetingDay,
+                  contactEmail: ministry.contactEmail,
+                  imageUrl: ministry.imageUrl,
+                  visible: true
+                }
+              }) %>
+              <% } %>
+            </h3>
+            <% if (ministry.summary) { %>
+            <p class="bb-tp-ministry-card__summary"><%= ministry.summary %></p>
+            <% } else if (ministry.description) { %>
+            <p class="bb-tp-ministry-card__summary"><%= ministry.description %></p>
+            <% } %>
+            <% if (ministry.meetingDay) { %>
+            <p class="bb-tp-meta">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <span><%= ministry.meetingDay %></span>
+            </p>
+            <% } %>
+            <% if (ministry.audience) { %>
+            <p class="bb-tp-meta">
+              <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+              <span><%= ministry.audience %></span>
+            </p>
+            <% } %>
+            <% if (ministry.leaderName) { %>
+            <p class="bb-tp-meta">
+              <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+              <span>Leader: <%= ministry.leaderName %></span>
+            </p>
+            <% } %>
+            <% if (ministry.contactEmail && ministry.contactHref) { %>
+            <p class="bb-tp-meta" data-bb-ministry-contact="1">
+              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+              <a href="<%= ministry.contactHref %>" aria-label="Email <%= ministry.name %>"><%= ministry.contactEmail %></a>
+            </p>
+            <% } else { %>
+            <p class="bb-tp-ministry-card__action">
+              <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="<%= hrefFor('/contact') %>">Contact for details</a>
+            </p>
+            <% } %>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
     <% } %>
 
-    <% if (!showEmptyState && pageSections.length > 1) { %>
+    <% if (rest.length) { %>
+    <section class="bb-tp-ministry-list-wrap" aria-label="More ministries" data-bb-ministries-more="1">
+      <h2 class="bb-tp-section-title bb-tp-section-title--ruled">More Ministries</h2>
+      <% if (audienceGroups.length > 1) { %>
+      <p class="bb-tp-lead bb-tp-ministries-audiences" data-bb-ministries-audiences="1">
+        Serving: <%= audienceGroups.join(' · ') %>
+      </p>
+      <% } %>
+      <ul class="bb-tp-ministry-grid">
+        <% rest.forEach(function (ministry) { %>
+        <li class="bb-tp-ministry-card" data-bb-ministry-card="1">
+          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
+            <% if (ministry.imageUrl) { %>
+            <img src="<%= ministry.imageUrl %>" alt="<%= ministry.name %>" width="640" height="400" loading="lazy" decoding="async" />
+            <% } else { %>
+            <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
+            <% } %>
+          </div>
+          <div class="bb-tp-ministry-card__body">
+            <h3 class="bb-tp-ministry-card__title">
+              <%= ministry.name %>
+              <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+              <%- include('../partials/structured-edit-trigger', {
+                editKind: 'ministry',
+                editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
+                editLabel: 'Edit ' + ministry.name,
+                editPayload: {
+                  name: ministry.name,
+                  summary: ministry.summary,
+                  description: ministry.description,
+                  meetingDay: ministry.meetingDay,
+                  contactEmail: ministry.contactEmail,
+                  imageUrl: ministry.imageUrl,
+                  visible: true
+                }
+              }) %>
+              <% } %>
+            </h3>
+            <% if (ministry.summary || ministry.description) { %>
+            <p class="bb-tp-ministry-card__summary"><%= ministry.summary || ministry.description %></p>
+            <% } %>
+            <% if (ministry.meetingDay) { %>
+            <p class="bb-tp-meta">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <span><%= ministry.meetingDay %></span>
+            </p>
+            <% } %>
+            <% if (ministry.audience) { %>
+            <p class="bb-tp-meta">
+              <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+              <span><%= ministry.audience %></span>
+            </p>
+            <% } %>
+            <% if (ministry.leaderName) { %>
+            <p class="bb-tp-meta">
+              <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+              <span>Leader: <%= ministry.leaderName %></span>
+            </p>
+            <% } %>
+            <% if (ministry.contactEmail && ministry.contactHref) { %>
+            <p class="bb-tp-meta" data-bb-ministry-contact="1">
+              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+              <a href="<%= ministry.contactHref %>" aria-label="Email <%= ministry.name %>"><%= ministry.contactEmail %></a>
+            </p>
+            <% } %>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
+    <% if (pageSections.length > 1) { %>
     <div class="bb-tp-directory__sections" data-bb-ministries-sections="1">
       <% pageSections.slice(1).forEach(function (section) { %>
       <section
@@ -174,19 +248,13 @@
     <% } %>
   </div>
 
-  <section class="bb-tp-dir-cta bb-tp-dir-cta--soft bb-tp-ministries-cta" aria-label="Get involved" data-bb-ministries-cta="1">
-    <div class="bb-tp-container">
-      <div class="bb-tp-dir-cta__inner bb-tp-ministries-cta__inner">
-        <h2 class="bb-tp-section-title">Still looking for your place?</h2>
-        <p class="bb-tp-body">Reach out — we will help you find a ministry fit at <%= publicName %>.</p>
-        <div class="bb-tp-page-hero__cta bb-tp-ministries-cta__actions">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">
-            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-            Contact Us
-          </a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register as a Member</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <div data-bb-ministries-cta="1">
+  <%- include('./partials/cta-band', {
+    ctaClass: 'bb-tp-cta-band--ministries',
+    ctaTitle: 'Find Your Place in the Mission',
+    ctaBody: 'Growth happens best in community. Reach out to find a ministry fit at ' + publicName + '.',
+    ctaPrimary: { href: hrefFor('/contact'), label: 'Start Volunteering' },
+    ctaSecondary: { href: hrefFor('/contact'), label: 'Ask a Question' }
+  }) %>
+  </div>
 </section>

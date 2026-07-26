@@ -1,0 +1,146 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+<%
+  var r = typeof review !== 'undefined' && review ? review : {};
+  var counts = r.counts || {};
+  var primaryAction = r.primaryAction || 'publish';
+  var actionPath = primaryAction === 'submit' ? (r.actions && r.actions.submitPath) : (r.actions && r.actions.publishPath);
+%>
+
+<section
+  class="bb-publish-review"
+  data-bb-website-publish-review="1"
+  data-bb-stitch-screen="Phase 7 - Website Publish Review - Desktop"
+  data-bb-stitch-screen-mobile="Phase 7 - Website Publish Review - Mobile"
+  aria-label="Website publish review"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="<%= scope.basePath %>">Content</a>
+        <span aria-hidden="true">›</span>
+        <a href="<%= r.actions && r.actions.draftChangesPath %>">Draft changes</a>
+        <span aria-hidden="true">›</span>
+        <span>Publish review</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Review and Publish</h1>
+      <p class="bb-hq-lede">Confirm what public visitors will see after publication.</p>
+    </div>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.actions && r.actions.draftChangesPath %>">Return to Draft Changes</a>
+    </p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="bb-hq-alert bb-hq-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <div class="bb-publish-review__grid">
+    <article class="bb-hq-card" data-bb-publish-summary="1">
+      <h2 class="bb-hq-section-title">Publication summary</h2>
+      <details class="bb-publish-review__collapse" open>
+        <summary>Status and scope</summary>
+        <dl class="bb-draft-review__meta">
+          <div><dt>Church</dt><dd><%= r.churchName || '—' %></dd></div>
+          <div><dt>Scope</dt><dd><%= r.scopeLabel || '—' %></dd></div>
+          <div><dt>Changed pages</dt><dd><%= counts.totalChangedPages || 0 %></dd></div>
+          <div><dt>Total changes</dt><dd><%= counts.totalChangedFields || 0 %></dd></div>
+        </dl>
+      </details>
+      <details class="bb-publish-review__collapse" open>
+        <summary>Change summary</summary>
+        <ul class="bb-draft-review__counts">
+          <li>Text: <%= counts.textChanges || 0 %></li>
+          <li>Images: <%= counts.imageChanges || 0 %></li>
+          <li>Videos: <%= counts.videoChanges || 0 %></li>
+          <li>Service times: <%= counts.serviceTimeChanges || 0 %></li>
+          <li>Leadership: <%= counts.leadershipChanges || 0 %></li>
+          <li>Ministries: <%= counts.ministryChanges || 0 %></li>
+          <li>Events: <%= counts.eventChanges || 0 %></li>
+          <li>Sermons: <%= counts.sermonChanges || 0 %></li>
+        </ul>
+      </details>
+      <% if (r.governanceNote) { %>
+      <p class="bb-hq-muted" data-bb-governance-status="1"><%= r.governanceNote %></p>
+      <% } %>
+    </article>
+
+    <article class="bb-hq-card" data-bb-publish-warnings="1">
+      <h2 class="bb-hq-section-title">Warnings and readiness</h2>
+      <details class="bb-publish-review__collapse" open>
+        <summary>All warnings (do not skip)</summary>
+      <% if ((r.blockers || []).length) { %>
+      <ul class="bb-phase4-publish__problems" role="alert">
+        <% (r.blockers || []).forEach(function (w) { %>
+        <li data-bb-warning-severity="blocking"><%= w.message %></li>
+        <% }) %>
+      </ul>
+      <% } %>
+      <% if ((r.advisories || []).length) { %>
+      <ul class="bb-phase4-publish__warnings">
+        <% (r.advisories || []).forEach(function (w) { %>
+        <li data-bb-warning-severity="warning"><%= w.message %></li>
+        <% }) %>
+      </ul>
+      <% } %>
+      <% if ((r.notes || []).length) { %>
+      <ul class="bb-publish-review__notes">
+        <% (r.notes || []).forEach(function (w) { %>
+        <li data-bb-warning-severity="informational"><%= w.message %></li>
+        <% }) %>
+      </ul>
+      <% } %>
+      <% if (!(r.blockers || []).length && !(r.advisories || []).length && !(r.notes || []).length) { %>
+      <p>No warnings for this publication.</p>
+      <% } %>
+      </details>
+    </article>
+  </div>
+
+  <article class="bb-hq-card" data-bb-publication-effect="1">
+    <h2 class="bb-hq-section-title">What happens next</h2>
+    <p><%= r.publicationEffect %></p>
+    <p class="bb-hq-muted">Public visitors continue to see the current published website until this action succeeds.</p>
+  </article>
+
+  <div class="bb-publish-review__actions bb-hq-card">
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.actions && r.actions.previewPath %>" data-bb-preview-website="1">Preview Website</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.actions && r.actions.continueEditingPath %>" data-bb-continue-editing="1">Continue Editing</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.actions && r.actions.draftChangesPath %>">Return to Draft Changes</a>
+    </p>
+
+    <% if (r.canProceed && actionPath) { %>
+    <form method="post" action="<%= actionPath %>" data-bb-publish-form="1" data-bb-primary-action="<%= primaryAction %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <% if (primaryAction === 'publish') { %>
+      <input type="hidden" name="confirm_publish" value="1" />
+      <label class="bb-publish-review__confirm">
+        <input type="checkbox" name="acknowledge_public" value="1" required />
+        I understand public visitors will see this new content after publication.
+      </label>
+      <% } %>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary" data-bb-primary-submit="1">
+        <%= r.primaryActionLabel || 'Publish Changes' %>
+      </button>
+    </form>
+    <% } else { %>
+    <p class="bb-hq-muted" data-bb-publish-blocked="1">Publishing is blocked until the issues above are resolved.</p>
+    <% } %>
+
+    <form method="post" action="<%= r.actions && r.actions.discardPath %>" class="bb-draft-review__discard" onsubmit="return confirm('Discard all unpublished draft changes for this website scope? The published website and version history will not be changed.');">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="confirm_discard" value="1" />
+      <button type="submit" class="bb-hq-btn bb-hq-btn--danger">Discard Draft</button>
+    </form>
+  </div>
+</section>
+
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

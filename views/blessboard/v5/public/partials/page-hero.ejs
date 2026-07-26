@@ -1,0 +1,109 @@
+<%#
+  Shared page hero — Phase 7 public church website.
+  Locals: heroHeading, heroBody, heroMedia, heroEyebrow (optional),
+          heroCtaPrimary (optional {href,label}), heroCtaSecondary (optional),
+          heroAccent (optional boolean), heroClass (optional),
+          editPageKey / editSectionKey (optional — Stage 4 inline text)
+%>
+<%
+  var _heading = typeof heroHeading !== 'undefined' ? heroHeading : '';
+  var _body = typeof heroBody !== 'undefined' ? heroBody : '';
+  var _media = typeof heroMedia !== 'undefined' ? heroMedia : null;
+  var _eyebrow = typeof heroEyebrow !== 'undefined' ? heroEyebrow : '';
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _canInline = Boolean(_wa && _wa.editingMode && typeof editPageKey !== 'undefined' && editPageKey && typeof editSectionKey !== 'undefined' && editSectionKey);
+  var _pageKey = _canInline ? String(editPageKey) : '';
+  var _sectionKey = _canInline ? String(editSectionKey) : '';
+  if (_canInline && typeof _wa.displayValue === 'function') {
+    _heading = _wa.displayValue(_sectionKey, 'heading', _heading);
+    _body = _wa.displayValue(_sectionKey, 'bodyText', _body);
+  }
+  var _accentBefore = _heading;
+  var _accentPhrase = '';
+  if (!_canInline && (typeof heroAccent === 'undefined' || heroAccent)) {
+    var _words = String(_heading || '').trim().split(/\s+/).filter(Boolean);
+    if (_words.length >= 4) {
+      _accentBefore = _words.slice(0, -2).join(' ') + ' ';
+      _accentPhrase = _words.slice(-2).join(' ');
+    }
+  }
+%>
+<header class="bb-tp-page-hero<%= typeof heroClass !== 'undefined' && heroClass ? ' ' + heroClass : '' %>" data-bb-page-hero="1">
+  <div class="bb-tp-page-hero__inner">
+    <div class="bb-tp-page-hero__copy">
+      <% if (_eyebrow) { %>
+      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill"><%= _eyebrow %></p>
+      <% } %>
+      <% if (_canInline) { %>
+      <%- include('../../partials/editable-text', {
+        editPageKey: _pageKey,
+        editSectionKey: _sectionKey,
+        editFieldKey: 'heading',
+        editValue: _heading,
+        editTag: 'h1',
+        editClass: 'bb-tp-page-hero__title',
+        editType: 'heading',
+        editMaxLength: 120,
+        editGuidance: 'Up to 120 characters',
+        editMultiline: false
+      }) %>
+      <% } else { %>
+      <h1 class="bb-tp-page-hero__title">
+        <% if (_accentPhrase) { %>
+        <%= _accentBefore %><span class="bb-tp-page-hero__title-accent"><%= _accentPhrase %></span>
+        <% } else { %>
+        <%= _heading %>
+        <% } %>
+      </h1>
+      <% } %>
+      <% if (_canInline || _body) { %>
+        <% if (_canInline) { %>
+        <%- include('../../partials/editable-text', {
+          editPageKey: _pageKey,
+          editSectionKey: _sectionKey,
+          editFieldKey: 'bodyText',
+          editValue: _body,
+          editTag: 'p',
+          editClass: 'bb-tp-page-hero__lead',
+          editType: 'paragraph',
+          editMaxLength: 500,
+          editGuidance: 'Up to 500 characters',
+          editMultiline: true
+        }) %>
+        <% } else if (_body) { %>
+        <p class="bb-tp-page-hero__lead"><%= _body %></p>
+        <% } %>
+      <% } %>
+      <% if ((typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary) || (typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary)) { %>
+      <div class="bb-tp-page-hero__cta">
+        <% if (typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary) { %>
+        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= heroCtaPrimary.href %>">
+          <%= heroCtaPrimary.label %>
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </a>
+        <% } %>
+        <% if (typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary) { %>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= heroCtaSecondary.href %>"><%= heroCtaSecondary.label %></a>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+    <% if (_media) { %>
+    <div class="bb-tp-page-hero__visual">
+      <img
+        class="bb-tp-page-hero__img"
+        src="<%= _media %>"
+        alt="<%= typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '' %>"
+        width="960"
+        height="720"
+        loading="eager"
+        decoding="async"
+      />
+    </div>
+    <% } else { %>
+    <div class="bb-tp-page-hero__visual" aria-hidden="true">
+      <div class="bb-tp-page-hero__fallback"></div>
+    </div>
+    <% } %>
+  </div>
+</header>

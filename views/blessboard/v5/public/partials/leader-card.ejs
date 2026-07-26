@@ -1,0 +1,67 @@
+<%#
+  Shared leader card.
+  Locals: leader, featured (optional boolean), bioMax (optional)
+%>
+<%
+  var _featured = typeof featured !== 'undefined' && featured;
+  var _bioMax = typeof bioMax !== 'undefined' ? bioMax : (_featured ? 400 : 140);
+  var _bio = '';
+  if (leader && leader.biography) {
+    var t = String(leader.biography).replace(/\s+/g, ' ').trim();
+    _bio = t.length <= _bioMax ? t : (t.slice(0, _bioMax - 1) + '…');
+  }
+  var _img = leader && leader.imageUrl ? leader.imageUrl : null;
+%>
+<article class="bb-tp-leader-card<%= _featured ? ' bb-tp-leader-card--featured' : '' %>">
+  <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %>">
+    <% if (_img) { %>
+    <img
+      src="<%= _img %>"
+      alt="<%= leader.displayName %>"
+      width="<%= _featured ? 480 : 320 %>"
+      height="<%= _featured ? 600 : 400 %>"
+      loading="<%= _featured ? 'eager' : 'lazy' %>"
+      decoding="async"
+    />
+    <% } else { %>
+    <div class="bb-tp-avatar<%= _featured ? ' bb-tp-avatar--xl' : '' %>" role="img" aria-label="<%= leader.displayName %>">
+      <%= initials(leader.displayName) %>
+    </div>
+    <% } %>
+  </div>
+  <div class="bb-tp-leader-card__body">
+    <% if (_featured && leader.roleTitle) { %>
+    <p class="bb-tp-leader-card__eyebrow"><%= leader.roleTitle %></p>
+    <% } %>
+    <h3 class="bb-tp-leader-card__name<%= _featured ? ' bb-tp-featured-leader__name' : '' %>">
+      <%= leader.displayName %>
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <%- include('../../partials/structured-edit-trigger', {
+        editKind: 'leader',
+        editEntityKey: String(leader.id || ('leader-' + leader.displayName)),
+        editLabel: 'Edit ' + leader.displayName,
+        editPayload: {
+          displayName: leader.displayName,
+          roleTitle: leader.roleTitle,
+          biography: leader.biography,
+          imageUrl: leader.imageUrl,
+          sortOrder: leader.sortOrder,
+          seniorLeader: Boolean(_featured),
+          visible: true
+        }
+      }) %>
+      <% } %>
+    </h3>
+    <% if (!_featured && leader.roleTitle) { %>
+    <p class="bb-tp-leader-card__role"><%= leader.roleTitle %></p>
+    <% } else if (_featured && leader.roleTitle) { %>
+    <p class="bb-tp-leader-card__role"><%= leader.roleTitle %></p>
+    <% } %>
+    <% if (_bio) { %>
+    <p class="bb-tp-leader-card__bio"><%= _bio %></p>
+    <% } %>
+    <% if (leader.contactHref) { %>
+    <a class="bb-tp-leader-card__contact" href="<%= leader.contactHref %>">Contact</a>
+    <% } %>
+  </div>
+</article>

@@ -18,6 +18,7 @@ const { renderControlledErrorPage } = require("./renderTenantLandingPage");
 const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
 const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../services/organizationKey");
 const { resolveHostname } = require("../../platform/host");
+const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
 
 const PAGE_SUFFIXES = Object.freeze([
   "",
@@ -188,6 +189,19 @@ function createPathPublicRouter(deps) {
 
     if (model.seo && !model.seo.noindex) {
       res.removeHeader("X-Robots-Tag");
+    }
+
+    try {
+      await attachWebsiteAdminChrome({
+        req,
+        res,
+        db: getPool(),
+        model,
+        tenant,
+        env: process.env,
+      });
+    } catch {
+      model.websiteAdmin = null;
     }
 
     const html = renderTenantPublicPage(model);

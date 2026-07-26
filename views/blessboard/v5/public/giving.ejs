@@ -1,10 +1,7 @@
 <%#
-  Giving — Stitch 07-public-giving-*-v2 (Populated).
-  Desktop: 59c8fdedf68a43e3a5d2384b0c2212df
-  Mobile:  a0616f23568c464a95eda9e317e2fa9d
-  Empty:   a08093b9ec32467bad300ef43ac800fa
-  Published giving methods only. Information display — no payment processing,
-  no fabricated bank or wallet details, impact stats, codes, or contribution history.
+  Phase 7 — Church Website Giving (Desktop; responsive).
+  Stitch: e4fe61fbb9eb4b0987ca150d078aa76c
+  Published methods only. No payment processing, checkout, or fabricated credentials.
 %>
 <%
   var demoFb =
@@ -21,7 +18,7 @@
     (intro && intro.heading) ||
     (demoFb && demoFb.introHeading) ||
     pageTitle ||
-    'Ways to Give';
+    'Investing in Sacred Space and Community';
   var introBody =
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
@@ -29,17 +26,11 @@
   var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
   var isTestingEnv =
     typeof showEnvBadge !== 'undefined' && showEnvBadge;
-
-  var accentBefore = introHeading;
-  var accentPhrase = '';
-  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
-  if (headingWords.length >= 4) {
-    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-2).join(' ');
-  } else if (headingWords.length >= 3) {
-    accentBefore = headingWords.slice(0, -1).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-1).join(' ');
-  }
+  var whyHeading = (demoFb && demoFb.whyHeading) || 'Why We Give';
+  var whyItems = (demoFb && demoFb.whyItems) || [];
+  var accountability =
+    (demoFb && demoFb.accountability) ||
+    'For questions about designations or receipts, contact the church office. BlessBoard never collects card, bank, or wallet credentials on this page.';
 
   function methodTypeLabel(type) {
     var t = String(type || '').toLowerCase();
@@ -56,73 +47,26 @@
 <section
   class="bb-tp-directory bb-tp-giving"
   data-bb-giving="1"
-  data-bb-stitch-giving="populated-v2"
+  data-bb-stitch-giving="phase7-v1"
+  aria-label="Giving"
 >
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-giving-hero" aria-label="Giving" data-bb-giving-hero="1">
-    <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-giving-hero__eyebrow-desktop">
-        <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
-        Faithful Stewardship
-      </p>
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-giving-hero__eyebrow-mobile">
-        Giving
-      </p>
-      <h1 class="bb-tp-dir-hero__title">
-        <% if (accentPhrase) { %>
-        <%= accentBefore %><span class="bb-tp-giving-hero__title-accent"><%= accentPhrase %></span>
-        <% } else { %>
-        <%= introHeading %>
-        <% } %>
-      </h1>
-      <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center"><%= introBody %></p>
-      <% } %>
-      <% if (introMedia) { %>
-      <div class="bb-tp-giving-hero__media">
-        <img
-          class="bb-tp-media"
-          src="<%= introMedia %>"
-          alt=""
-          width="960"
-          height="420"
-          loading="eager"
-          decoding="async"
-        />
-      </div>
-      <% } %>
-      <% if (methods.length) { %>
-      <div class="bb-tp-page-hero__cta bb-tp-giving-hero__cta">
-        <a class="bb-tp-btn bb-tp-btn--primary" href="#ways-to-give">
-          Explore Ways to Give
-        </a>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/contact') %>">
-          <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-          Contact Church
-        </a>
-      </div>
-      <% } %>
-    </div>
-  </header>
+  <%- include('./partials/page-hero', {
+    heroHeading: introHeading,
+    heroBody: introBody,
+    heroMedia: introMedia,
+    heroMediaAlt: 'Giving at ' + publicName,
+    heroEyebrow: 'A Culture of Generosity',
+    heroClass: 'bb-tp-giving-hero',
+    heroCtaPrimary: methods.length
+      ? { href: '#ways-to-give', label: 'Explore Ways to Give' }
+      : { href: hrefFor('/contact'), label: 'Contact Church' },
+    heroCtaSecondary: { href: hrefFor('/contact'), label: 'Contact Church' },
+    editPageKey: 'giving',
+    editSectionKey: 'hero'
+  }) %>
+  <div class="bb-tp-giving-hero-marker" data-bb-giving-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
-    <% if (showEmptyState) { %>
-    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="giving">
-      <div class="bb-tp-empty__visual" aria-hidden="true">
-        <span class="material-symbols-outlined bb-tp-empty__icon">volunteer_activism</span>
-      </div>
-      <div class="bb-tp-empty__copy">
-        <p class="bb-tp-empty__badge">Not available online</p>
-        <h2><%= emptyHeadline %></h2>
-        <p><%= emptyMessage %></p>
-        <p class="bb-tp-empty__hint">Published giving methods will appear here when available. BlessBoard does not process payments on this page.</p>
-        <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Church</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>">Home</a>
-        </div>
-      </div>
-    </div>
-    <% } else { %>
-
     <aside class="bb-tp-giving-notice" role="note" data-bb-giving-notice="1">
       <span class="material-symbols-outlined" aria-hidden="true">info</span>
       <p>
@@ -132,6 +76,21 @@
         <% } %>
       </p>
     </aside>
+
+    <% if (whyItems.length) { %>
+    <section class="bb-tp-giving-why" aria-labelledby="bb-tp-giving-why-heading" data-bb-giving-why="1">
+      <h2 id="bb-tp-giving-why-heading" class="bb-tp-section-title bb-tp-section-title--ruled"><%= whyHeading %></h2>
+      <ul class="bb-tp-giving-why__grid">
+        <% whyItems.forEach(function (item) { %>
+        <li class="bb-tp-giving-why__card">
+          <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon || 'volunteer_activism' %></span>
+          <h3><%= item.title %></h3>
+          <p><%= item.body %></p>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
 
     <% if (methods.length) { %>
     <section id="ways-to-give" class="bb-tp-giving-methods" aria-labelledby="ways-to-give-heading" data-bb-giving-methods="1">
@@ -196,10 +155,23 @@
     </section>
     <% }) %>
 
+    <section class="bb-tp-giving-accountability" data-bb-giving-accountability="1" aria-labelledby="bb-tp-giving-accountability-heading">
+      <h2 id="bb-tp-giving-accountability-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Financial Accountability</h2>
+      <p class="bb-tp-body"><%= accountability %></p>
+    </section>
+
     <p class="bb-tp-giving-disclaimer" role="note">
       BlessBoard does not process payments or collect financial account details on this page. Use only the published methods above, or contact the church office for help.
     </p>
 
-    <% } %>
+    <div data-bb-giving-support="1">
+    <%- include('./partials/cta-band', {
+      ctaClass: 'bb-tp-cta-band--giving',
+      ctaTitle: 'Need Assistance?',
+      ctaBody: 'If you have questions about designations or published payment instructions, contact the church office.',
+      ctaPrimary: { href: hrefFor('/contact'), label: 'Contact Finance Team' },
+      ctaSecondary: { href: hrefFor('/about'), label: 'About Our Church' }
+    }) %>
+    </div>
   </div>
 </section>

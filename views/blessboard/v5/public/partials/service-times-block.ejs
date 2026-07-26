@@ -1,0 +1,84 @@
+<%#
+  Shared service times block — Phase 7 home prominence.
+  Locals: serviceTimesEntries, serviceTimesHeading (optional), visitHref, directionsHref (optional),
+          serviceTimesVariant (optional: 'band' | 'card')
+%>
+<%
+  function dayLabel(day) {
+    var d = String(day || '');
+    if (!d) return '';
+    return d.charAt(0).toUpperCase() + d.slice(1);
+  }
+  function formatTimeLabel(hhmm) {
+    var m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(hhmm || ''));
+    if (!m) return String(hhmm || '');
+    var h = Number(m[1]);
+    var min = m[2];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return h + ':' + min + ' ' + ampm;
+  }
+  var _entries = typeof serviceTimesEntries !== 'undefined' && serviceTimesEntries ? serviceTimesEntries : [];
+  var _heading = typeof serviceTimesHeading !== 'undefined' && serviceTimesHeading ? serviceTimesHeading : 'Service Times';
+  var _variant = typeof serviceTimesVariant !== 'undefined' && serviceTimesVariant ? serviceTimesVariant : 'band';
+  var _visit = typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact');
+  var _directions = typeof directionsHref !== 'undefined' ? directionsHref : null;
+%>
+<section
+  class="bb-tp-service-times bb-tp-service-times--<%= _variant %>"
+  data-bb-home-service-times="1"
+  aria-labelledby="bb-tp-service-times-heading"
+>
+  <div class="bb-tp-service-times__inner">
+    <header class="bb-tp-service-times__head">
+      <h2 id="bb-tp-service-times-heading" class="bb-tp-service-times__title">
+        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+        <%= _heading %>
+      </h2>
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <%- include('../../partials/structured-edit-trigger', {
+        editKind: 'service_times',
+        editEntityKey: 'collection',
+        editSectionKey: 'service_times',
+        editLabel: 'Edit service times',
+        editPayload: { entries: _entries }
+      }) %>
+      <% } %>
+    </header>
+    <% if (_entries.length) { %>
+    <ul class="bb-tp-service-times__list">
+      <% _entries.forEach(function (entry) { %>
+      <li class="bb-tp-service-times__item">
+        <div class="bb-tp-service-times__item-main">
+          <span class="bb-tp-service-times__name"><%= entry.name %></span>
+          <span class="bb-tp-service-times__when">
+            <span class="bb-tp-service-times__day"><%= dayLabel(entry.day) %></span>
+            <span class="bb-tp-service-times__time">
+              <%= formatTimeLabel(entry.startTime) %><% if (entry.endTime) { %> – <%= formatTimeLabel(entry.endTime) %><% } %>
+            </span>
+          </span>
+        </div>
+        <% if (entry.location) { %>
+        <span class="bb-tp-service-times__location">
+          <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+          <%= entry.location %>
+        </span>
+        <% } %>
+        <% if (entry.note) { %>
+        <span class="bb-tp-service-times__note"><%= entry.note %></span>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+    <div class="bb-tp-service-times__actions">
+      <a class="bb-tp-btn bb-tp-btn--primary" href="<%= _visit %>">Plan Your Visit</a>
+      <% if (_directions) { %>
+      <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= _directions %>" rel="noopener noreferrer" target="_blank">Get Directions</a>
+      <% } else { %>
+      <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= _visit %>">Get Directions</a>
+      <% } %>
+    </div>
+  </div>
+</section>

@@ -1,10 +1,7 @@
 <%#
-  Leadership — Stitch 03-public-leadership-desktop-v2 (Populated) /
-  03-public-leadership-mobile-v4 (Restored); empty: 5f7b1d44…
-  Desktop: 372faa60f8df4983b627db3cb5d35f9d
-  Mobile:  0f4e816fd64d4592bd3677fbde3b7544
-  Published leaders only (sort_order ASC). No role/department inference,
-  unsupported contact/profile actions, or invented biographies.
+  Phase 7 — Church Website Leadership (Desktop; responsive).
+  Stitch: 4d525f9fbba9482f91fadc28ef650d13
+  Published leaders preferred; centralized demo soft-fill when none published.
 %>
 <%
   var demoFb =
@@ -18,13 +15,23 @@
     return leader && String(leader.displayName || '').trim();
   });
   var featured = leaders.length ? leaders[0] : null;
-  var others = leaders.length > 1 ? leaders.slice(1) : [];
+  var team = leaders.length > 1 ? leaders.slice(1, 4) : [];
+  var staff = leaders.length > 4 ? leaders.slice(4) : (leaders.length > 1 && leaders.length <= 4 ? [] : []);
+  // If 2–4 leaders total, show remaining as team; if more, first 3 after featured are executive team.
+  if (leaders.length > 1 && leaders.length <= 4) {
+    team = leaders.slice(1);
+    staff = [];
+  } else if (leaders.length > 4) {
+    team = leaders.slice(1, 4);
+    staff = leaders.slice(4);
+  }
+
   var intro = pageSections.length ? pageSections[0] : null;
   var introHeading =
     (intro && intro.heading) ||
     (demoFb && demoFb.introHeading) ||
     pageTitle ||
-    'Meet Our Church Leadership';
+    'Composed Focus, Sacred Leadership';
   var introBody =
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
@@ -33,155 +40,70 @@
     (intro && intro.mediaUrl) ||
     (demoFb && demoFb.introMediaUrl) ||
     null;
-
-  // Stitch display titles accent the trailing phrase without inventing copy.
-  var accentBefore = introHeading;
-  var accentPhrase = '';
-  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
-  if (headingWords.length >= 4) {
-    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-2).join(' ');
-  }
-
-  function bioSnippet(text, maxLen) {
-    var t = String(text || '').replace(/\s+/g, ' ').trim();
-    var max = maxLen || 160;
-    if (!t) return '';
-    if (t.length <= max) return t;
-    return t.slice(0, max - 1) + '…';
-  }
 %>
 
 <section
   class="bb-tp-directory bb-tp-leadership"
   data-bb-leadership="1"
-  data-bb-stitch-leadership="populated-v2"
+  data-bb-stitch-leadership="phase7-v1"
 >
-  <header class="bb-tp-dir-hero bb-tp-leadership-hero" aria-label="Leadership" data-bb-leadership-hero="1">
-    <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-leadership-hero__eyebrow-desktop">
-        Faith &amp; Community
-      </p>
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-leadership-hero__eyebrow-mobile">
-        Leadership
-      </p>
-      <h1 class="bb-tp-dir-hero__title">
-        <% if (accentPhrase) { %>
-        <%= accentBefore %><span class="bb-tp-leadership-hero__title-accent"><%= accentPhrase %></span>
-        <% } else { %>
-        <%= introHeading %>
-        <% } %>
-      </h1>
-      <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead"><%= introBody %></p>
-      <% } %>
-      <% if (introMedia) { %>
-      <div class="bb-tp-leadership-hero__media">
-        <img
-          class="bb-tp-media"
-          src="<%= introMedia %>"
-          alt=""
-          width="960"
-          height="420"
-          loading="eager"
-          decoding="async"
-        />
-      </div>
-      <% } %>
-    </div>
-  </header>
+  <%- include('./partials/page-hero', {
+    heroHeading: introHeading,
+    heroBody: introBody,
+    heroMedia: introMedia,
+    heroMediaAlt: 'Leadership at ' + publicName,
+    heroEyebrow: 'Our Heart for Service',
+    heroClass: 'bb-tp-leadership-hero',
+    heroCtaPrimary: { href: hrefFor('/contact'), label: 'Connect with Leadership' },
+    heroCtaSecondary: { href: hrefFor('/ministries'), label: 'Explore Ministries' }
+  }) %>
+  <div class="bb-tp-leadership-hero-marker" data-bb-leadership-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
-    <% if (showEmptyState) { %>
-    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="leadership">
-      <div class="bb-tp-empty__visual" aria-hidden="true">
-        <span class="material-symbols-outlined bb-tp-empty__icon">groups</span>
-      </div>
-      <div class="bb-tp-empty__copy">
-        <p class="bb-tp-empty__badge">Update in progress</p>
-        <h2><%= emptyHeadline %></h2>
-        <p><%= emptyMessage %></p>
-        <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/about') %>">About</a>
-        </div>
-      </div>
-    </div>
-    <% } else { %>
-
+    <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+    <p class="bb-tp-edit-collection-actions">
+      <%- include('../partials/structured-edit-trigger', {
+        editKind: 'leader',
+        editEntityKey: 'new-' + Date.now(),
+        editLabel: 'Add leadership member',
+        editPayload: { displayName: '', roleTitle: '', biography: '', imageUrl: '', visible: true, sortOrder: 100 }
+      }) %>
+      <span class="bb-tp-se-hint">Add leadership member</span>
+    </p>
+    <% } %>
     <% if (featured) { %>
-    <section class="bb-tp-featured-leader" aria-label="Featured leader" data-bb-leadership-featured="1">
-      <p class="bb-tp-featured-leader__label">
-        <%= featured.roleTitle || 'Leadership' %>
-      </p>
-      <article class="bb-tp-featured-leader__card">
-        <div class="bb-tp-featured-leader__media<%= featured.imageUrl ? '' : ' is-fallback' %>">
-          <% if (featured.imageUrl) { %>
-          <img
-            src="<%= featured.imageUrl %>"
-            alt="<%= featured.displayName %>"
-            width="480"
-            height="600"
-            loading="eager"
-            decoding="async"
-          />
-          <% } else { %>
-          <div
-            class="bb-tp-avatar bb-tp-avatar--xl"
-            role="img"
-            aria-label="<%= featured.displayName %>"
-          ><%= initials(featured.displayName) %></div>
-          <% } %>
-        </div>
-        <div class="bb-tp-featured-leader__copy">
-          <h2 class="bb-tp-featured-leader__name"><%= featured.displayName %></h2>
-          <% if (featured.roleTitle) { %>
-          <p class="bb-tp-featured-leader__role"><%= featured.roleTitle %></p>
-          <% } %>
-          <% if (featured.biography) { %>
-          <p class="bb-tp-body bb-tp-featured-leader__bio"><%= featured.biography %></p>
-          <% } %>
-        </div>
-      </article>
+    <section class="bb-tp-featured-leader" aria-label="Senior leader" data-bb-leadership-featured="1">
+      <p class="bb-tp-featured-leader__label"><%= featured.roleTitle || 'Senior Leader' %></p>
+      <%- include('./partials/leader-card', { leader: featured, featured: true, bioMax: 480 }) %>
     </section>
     <% } %>
 
-    <% if (others.length) { %>
-    <section class="bb-tp-leader-grid-wrap" aria-label="Leaders" data-bb-leadership-grid="1">
+    <% if (team.length) { %>
+    <section class="bb-tp-leader-grid-wrap" aria-label="Leadership team" data-bb-leadership-grid="1">
+      <h2 class="bb-tp-section-title bb-tp-section-title--ruled">
+        <span class="bb-tp-leadership-grid__title-desktop"><%= staff.length ? 'Leadership Team' : 'Ministry Leaders' %></span>
+        <span class="bb-tp-leadership-grid__title-mobile"><%= staff.length ? 'Leadership Team' : 'Ministry Leads' %></span>
+      </h2>
+      <ul class="bb-tp-leader-grid">
+        <% team.forEach(function (leader) { %>
+        <li>
+          <%- include('./partials/leader-card', { leader: leader, featured: false, bioMax: 160 }) %>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
+    <% if (staff.length) { %>
+    <section class="bb-tp-leader-grid-wrap bb-tp-leader-grid-wrap--staff" aria-label="Ministry and staff leaders" data-bb-leadership-staff="1">
       <h2 class="bb-tp-section-title bb-tp-section-title--ruled">
         <span class="bb-tp-leadership-grid__title-desktop">Ministry Leaders</span>
         <span class="bb-tp-leadership-grid__title-mobile">Ministry Leads</span>
       </h2>
-      <ul class="bb-tp-leader-grid">
-        <% others.forEach(function (leader) { %>
-        <li class="bb-tp-leader-card">
-          <div class="bb-tp-leader-card__media<%= leader.imageUrl ? '' : ' is-fallback' %>">
-            <% if (leader.imageUrl) { %>
-            <img
-              src="<%= leader.imageUrl %>"
-              alt="<%= leader.displayName %>"
-              width="320"
-              height="400"
-              loading="lazy"
-              decoding="async"
-            />
-            <% } else { %>
-            <div
-              class="bb-tp-avatar"
-              role="img"
-              aria-label="<%= leader.displayName %>"
-            ><%= initials(leader.displayName) %></div>
-            <% } %>
-          </div>
-          <div class="bb-tp-leader-card__body">
-            <h3 class="bb-tp-leader-card__name"><%= leader.displayName %></h3>
-            <% if (leader.roleTitle) { %>
-            <p class="bb-tp-leader-card__role"><%= leader.roleTitle %></p>
-            <% } %>
-            <% if (leader.biography) { %>
-            <p class="bb-tp-leader-card__bio"><%= bioSnippet(leader.biography, 140) %></p>
-            <% } %>
-          </div>
+      <ul class="bb-tp-leader-grid bb-tp-leader-grid--compact">
+        <% staff.forEach(function (leader) { %>
+        <li>
+          <%- include('./partials/leader-card', { leader: leader, featured: false, bioMax: 120 }) %>
         </li>
         <% }) %>
       </ul>
@@ -208,22 +130,15 @@
       <% }) %>
     </div>
     <% } %>
-
-    <% } %>
   </div>
 
-  <section class="bb-tp-dir-cta bb-tp-dir-cta--accent bb-tp-leadership-cta" aria-label="Serve" data-bb-leadership-cta="1">
-    <div class="bb-tp-container">
-      <div class="bb-tp-dir-cta__inner bb-tp-dir-cta__inner--split bb-tp-leadership-cta__inner">
-        <div class="bb-tp-dir-cta__copy">
-          <h2 class="bb-tp-section-title">Want to serve with us?</h2>
-          <p class="bb-tp-body">Discover how you can use your gifts to support <%= publicName %>.</p>
-        </div>
-        <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--on-accent" href="<%= hrefFor('/ministries') %>">Join a Ministry</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="<%= hrefFor('/contact') %>">Contact Church</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <div data-bb-leadership-cta="1">
+  <%- include('./partials/cta-band', {
+    ctaClass: 'bb-tp-cta-band--leadership',
+    ctaTitle: 'Connect with Leadership',
+    ctaBody: 'Reach out with a pastoral question or schedule a conversation with our team.',
+    ctaPrimary: { href: hrefFor('/contact'), label: 'Reach Out via Email' },
+    ctaSecondary: { href: hrefFor('/ministries'), label: 'Join a Ministry' }
+  }) %>
+  </div>
 </section>

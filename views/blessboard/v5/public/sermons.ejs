@@ -1,10 +1,8 @@
 <%#
-  Sermons & Resources — Stitch 06-public-sermons-*-v2 (Populated).
-  Desktop: 4f4995dc4ec84354ac80ed022a767ef3
-  Mobile:  96b380d4e47649c1bd7f05cabe9c3a1d
-  Empty:   0c7262cdda4547739ec0c1fa5128fb51
-  Published only (preached_at DESC). mediaUrl / resourceUrl only when safeExternalUrl allows.
-  No series, scripture, duration, thumbnails, embeds, filters, or fabricated archive.
+  Phase 7 — Church Website Sermons (Desktop; responsive).
+  Stitch: d85d37f3bba84ac48d8d3f24b01b2010
+  Published only. No search/filter UI (not functional). Series via category when present.
+  Media links only when safeExternalUrl allows; safe image fallbacks.
 %>
 <%
   var demoFb =
@@ -22,7 +20,7 @@
     (intro && intro.heading) ||
     (demoFb && demoFb.introHeading) ||
     pageTitle ||
-    'Sermons & Resources';
+    'Sacred Teachings for Modern Souls';
   var introBody =
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
@@ -32,13 +30,14 @@
     (demoFb && demoFb.introMediaUrl) ||
     null;
 
-  var accentBefore = introHeading;
-  var accentPhrase = '';
-  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
-  if (headingWords.length >= 3) {
-    accentBefore = headingWords.slice(0, -1).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-1).join(' ');
-  }
+  var seriesSeen = {};
+  var seriesList = [];
+  sermons.forEach(function (s) {
+    var cat = String(s.category || '').trim();
+    if (!cat || seriesSeen[cat]) return;
+    seriesSeen[cat] = true;
+    seriesList.push(cat);
+  });
 
   function mediaLabel(kind, title) {
     if (kind === 'audio') return 'Listen to sermon: ' + title;
@@ -63,60 +62,24 @@
 <section
   class="bb-tp-directory bb-tp-sermons"
   data-bb-sermons="1"
-  data-bb-stitch-sermons="populated-v2"
+  data-bb-stitch-sermons="phase7-v1"
+  aria-label="Sermons"
 >
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-sermons-hero" aria-label="Sermons" data-bb-sermons-hero="1">
-    <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-sermons-hero__eyebrow-desktop">
-        Teaching Library
-      </p>
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-sermons-hero__eyebrow-mobile">
-        Sermons
-      </p>
-      <h1 class="bb-tp-dir-hero__title">
-        <% if (accentPhrase) { %>
-        <%= accentBefore %><span class="bb-tp-sermons-hero__title-accent"><%= accentPhrase %></span>
-        <% } else { %>
-        <%= introHeading %>
-        <% } %>
-      </h1>
-      <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center"><%= introBody %></p>
-      <% } %>
-      <% if (introMedia) { %>
-      <div class="bb-tp-sermons-hero__media">
-        <img
-          class="bb-tp-media"
-          src="<%= introMedia %>"
-          alt=""
-          width="960"
-          height="420"
-          loading="eager"
-          decoding="async"
-        />
-      </div>
-      <% } %>
-    </div>
-  </header>
+  <%- include('./partials/page-hero', {
+    heroHeading: introHeading,
+    heroBody: introBody,
+    heroMedia: introMedia,
+    heroMediaAlt: 'Sermons at ' + publicName,
+    heroEyebrow: 'Spiritual Nourishment',
+    heroClass: 'bb-tp-sermons-hero',
+    heroCtaPrimary: { href: hrefFor('/events'), label: 'View Events' },
+    heroCtaSecondary: { href: hrefFor('/contact'), label: 'Contact Us' },
+    editPageKey: 'sermons',
+    editSectionKey: 'hero'
+  }) %>
+  <div class="bb-tp-sermons-hero-marker" data-bb-sermons-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
-    <% if (showEmptyState) { %>
-    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="sermons">
-      <div class="bb-tp-empty__visual" aria-hidden="true">
-        <span class="material-symbols-outlined bb-tp-empty__icon">menu_book</span>
-      </div>
-      <div class="bb-tp-empty__copy">
-        <p class="bb-tp-empty__badge">No sermons published</p>
-        <h2><%= emptyHeadline %></h2>
-        <p><%= emptyMessage %></p>
-        <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/events') %>">View Events</a>
-        </div>
-      </div>
-    </div>
-    <% } else { %>
-
     <% if (featured) { %>
     <%
       var featuredKind = featured.mediaUrl ? sermonMediaKind(featured.mediaUrl) : null;
@@ -133,8 +96,8 @@
         Latest Release
       </p>
       <article class="bb-tp-featured-sermon__card">
-        <% if (featured.imageUrl) { %>
-        <div class="bb-tp-featured-sermon__media" data-bb-sermon-thumb="1">
+        <div class="bb-tp-featured-sermon__media<%= featured.imageUrl ? '' : ' is-fallback' %>" data-bb-sermon-thumb="1">
+          <% if (featured.imageUrl) { %>
           <img
             src="<%= featured.imageUrl %>"
             alt="<%= featured.title %>"
@@ -143,14 +106,36 @@
             loading="eager"
             decoding="async"
           />
+          <% } else { %>
+          <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+          <% } %>
         </div>
-        <% } %>
         <div class="bb-tp-featured-sermon__copy">
-          <h2 class="bb-tp-featured-sermon__title"><%= featured.title %></h2>
+          <h2 class="bb-tp-featured-sermon__title">
+            <%= featured.title %>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('../partials/structured-edit-trigger', {
+              editKind: 'sermon',
+              editEntityKey: String(featured.id || ('sermon-' + featured.title)),
+              editLabel: 'Edit ' + featured.title,
+              editPayload: {
+                title: featured.title,
+                speakerName: featured.speakerName,
+                preachedAt: featured.preachedAt,
+                summary: featured.summary,
+                scripture: featured.scripture,
+                mediaUrl: featured.mediaUrl,
+                imageUrl: featured.imageUrl,
+                featured: true,
+                visible: true
+              }
+            }) %>
+            <% } %>
+          </h2>
           <% if (featured.category) { %>
           <p class="bb-tp-sermon-card__category"><%= featured.category %></p>
           <% } %>
-          <% if (featured.speakerName || featured.preachedAt) { %>
+          <% if (featured.speakerName || featured.preachedAt || featured.scripture) { %>
           <p class="bb-tp-meta bb-tp-featured-sermon__meta">
             <% if (featured.speakerName) { %>
             <span class="bb-tp-meta__item">
@@ -162,6 +147,12 @@
             <span class="bb-tp-meta__item">
               <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
               <%= formatDate(featured.preachedAt) %>
+            </span>
+            <% } %>
+            <% if (featured.scripture) { %>
+            <span class="bb-tp-meta__item">
+              <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+              <%= featured.scripture %>
             </span>
             <% } %>
           </p>
@@ -236,14 +227,7 @@
             <% if (!sermon.imageUrl) { %>role="img" aria-label="<%= thumbLabel %>"<% } %>
           >
             <% if (sermon.imageUrl) { %>
-            <img
-              src="<%= sermon.imageUrl %>"
-              alt="<%= thumbLabel %>"
-              width="400"
-              height="240"
-              loading="lazy"
-              decoding="async"
-            />
+            <img src="<%= sermon.imageUrl %>" alt="<%= thumbLabel %>" width="400" height="240" loading="lazy" decoding="async" />
             <% } else { %>
             <span class="material-symbols-outlined bb-tp-sermon-card__fallback-icon" aria-hidden="true">menu_book</span>
             <% } %>
@@ -253,7 +237,7 @@
             <% if (sermon.category) { %>
             <p class="bb-tp-sermon-card__category"><%= sermon.category %></p>
             <% } %>
-            <% if (sermon.speakerName || sermon.preachedAt) { %>
+            <% if (sermon.speakerName || sermon.preachedAt || sermon.scripture) { %>
             <p class="bb-tp-meta bb-tp-sermon-card__meta">
               <% if (sermon.speakerName) { %>
               <span class="bb-tp-meta__item">
@@ -265,6 +249,12 @@
               <span class="bb-tp-meta__item">
                 <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
                 <%= formatDate(sermon.preachedAt) %>
+              </span>
+              <% } %>
+              <% if (sermon.scripture) { %>
+              <span class="bb-tp-meta__item">
+                <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                <%= sermon.scripture %>
               </span>
               <% } %>
             </p>
@@ -307,6 +297,20 @@
     </section>
     <% } %>
 
+    <% if (seriesList.length > 1) { %>
+    <section class="bb-tp-sermon-series" aria-label="Sermon series" data-bb-sermon-series="1">
+      <h2 class="bb-tp-section-title bb-tp-section-title--ruled">Explore Series</h2>
+      <ul class="bb-tp-sermon-series__list">
+        <% seriesList.forEach(function (seriesName) { %>
+        <li class="bb-tp-sermon-series__item">
+          <span class="material-symbols-outlined" aria-hidden="true">library_books</span>
+          <span><%= seriesName %></span>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
     <% if (pageSections.length > 1) { %>
     <div class="bb-tp-directory__sections">
       <% pageSections.slice(1).forEach(function (section) { %>
@@ -319,8 +323,6 @@
       </section>
       <% }) %>
     </div>
-    <% } %>
-
     <% } %>
   </div>
 </section>

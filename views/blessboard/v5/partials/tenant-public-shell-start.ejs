@@ -1,7 +1,8 @@
 <%#
   BlessBoard V5 tenant public shell — document start + sticky header + mobile drawer.
+  Phase 7 church website foundation.
   Locals: seo, publicName, primaryBranchDisplayName, showEnvBadge, dataEnvironment,
-          navItems, activeNav, loginHref, cssHref (optional)
+          navItems, activeNav, loginHref, visitHref, cssHref (optional)
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,16 +18,19 @@
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=36' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=42' %>" />
 </head>
 <body
-  class="bb-tp-body<%= typeof isPreview !== 'undefined' && isPreview ? ' bb-tp-body--preview' : '' %>"
+  class="bb-tp-body<%= typeof isPreview !== 'undefined' && isPreview ? ' bb-tp-body--preview' : '' %><%= typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit ? ' bb-tp-body--admin' : '' %><%= typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode ? ' bb-tp-body--editing' : '' %>"
   data-bb-shell="tenant-public"
   data-bb-product="blessboard-v5"
   data-bb-page="<%= pageKey %>"
   <% if (typeof isPreview !== 'undefined' && isPreview) { %>data-bb-preview="1"<% } %>
+  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>data-bb-website-editing="1"<% } %>
 >
   <a class="bb-tp-skip" href="#bb-tp-main">Skip to content</a>
+
+  <%- include('./website-admin-chrome') %>
 
   <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta) { %>
   <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
@@ -79,8 +83,10 @@
         <% if (showEnvBadge) { %>
         <span class="bb-tp-env"><%= dataEnvironment %></span>
         <% } %>
-        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="/register">Register</a>
-        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= loginHref %>">Member Login</a>
+        <a
+          class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-header__visit"
+          href="<%= typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact') %>"
+        >Plan Your Visit</a>
         <button
           type="button"
           class="bb-tp-menu-btn bb-shell-burger"
@@ -142,9 +148,12 @@
       </ul>
     </nav>
     <div class="bb-tp-drawer__actions">
-      <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block" href="/register">Register as a Member</a>
+      <a
+        class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block"
+        href="<%= typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact') %>"
+      >Plan Your Visit</a>
       <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="<%= loginHref %>">Member Login</a>
-      <p class="bb-tp-drawer__powered"><%- include('./powered-by-getpro') %></p>
+      <p class="bb-tp-drawer__powered">Powered by BlessBoard</p>
     </div>
   </aside>
 

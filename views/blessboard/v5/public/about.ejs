@@ -1,9 +1,7 @@
 <%#
-  Tenant About — Stitch 02-public-about-*-v3 (Populated).
-  Desktop: 44492f6abbe849d0a8a89303ce83129b
-  Mobile:  3f0b8a5c30544d9495064df8d5f9e62e
-  Published CMS fields only. No fabricated history, stats, mission, or quotations.
-  Testing/demo soft-fill only when canonical fields are empty (never invents KPIs).
+  Phase 7 — Church Website About (Desktop; responsive).
+  Stitch: 3736c7550483404282d5ba9914962c40
+  Published CMS fields preferred; centralized demo soft-fill when sparse.
 %>
 <%
   function classifyAboutSection(s) {
@@ -14,23 +12,15 @@
     if (blob.indexOf('mission') >= 0) return 'mission';
     if (blob.indexOf('vision') >= 0) return 'vision';
     if (blob.indexOf('value') >= 0) return 'values';
+    if (blob.indexOf('belief') >= 0 || blob.indexOf('foundation') >= 0) return 'beliefs';
+    if (blob.indexOf('community') >= 0 || blob.indexOf('involvement') >= 0) return 'community';
+    if (blob.indexOf('gallery') >= 0) return 'gallery';
     if (blob.indexOf('story') >= 0 || blob.indexOf('history') >= 0) return 'story';
     return 'generic';
   }
 
   function sectionHasContent(s) {
     return Boolean(s && (s.heading || s.bodyText || s.mediaUrl));
-  }
-
-  function formatTimeLabel(hhmm) {
-    var m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(hhmm || ''));
-    if (!m) return String(hhmm || '');
-    var h = Number(m[1]);
-    var min = m[2];
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12;
-    if (h === 0) h = 12;
-    return h + ':' + min + ' ' + ampm;
   }
 
   var demoFb = typeof aboutDemoFallback !== 'undefined' && aboutDemoFallback ? aboutDemoFallback : null;
@@ -44,9 +34,7 @@
     if (isHero) hero = s;
     else rest.push(s);
   });
-  if (!hero && rest.length) {
-    hero = rest.shift();
-  }
+  if (!hero && rest.length) hero = rest.shift();
 
   var heroHeading =
     (hero && hero.heading) ||
@@ -59,20 +47,15 @@
     (demoFb && demoFb.heroMediaUrl) ||
     null;
 
-  // Stitch display titles accent the trailing phrase without inventing copy.
-  var accentBefore = heroHeading;
-  var accentPhrase = '';
-  var headingWords = String(heroHeading || '').trim().split(/\s+/).filter(Boolean);
-  if (headingWords.length >= 4) {
-    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-2).join(' ');
-  }
-
   var storySections = [];
   var missionSection = null;
   var visionSection = null;
   var valueSections = [];
+  var beliefsSection = null;
+  var communitySection = null;
+  var galleryUrls = [];
   var genericSections = [];
+
   rest.forEach(function (s) {
     if (!sectionHasContent(s)) return;
     var kind = classifyAboutSection(s);
@@ -80,104 +63,51 @@
     else if (kind === 'mission' && !missionSection) missionSection = s;
     else if (kind === 'vision' && !visionSection) visionSection = s;
     else if (kind === 'values') valueSections.push(s);
+    else if (kind === 'beliefs' && !beliefsSection) beliefsSection = s;
+    else if (kind === 'community' && !communitySection) communitySection = s;
+    else if (kind === 'gallery' && s.mediaUrl) galleryUrls.push(s.mediaUrl);
     else genericSections.push(s);
   });
 
   if (!storySections.length && demoFb && demoFb.story && sectionHasContent(demoFb.story)) {
     storySections = [demoFb.story];
   }
-  if (!missionSection && demoFb && demoFb.mission && sectionHasContent(demoFb.mission)) {
-    missionSection = demoFb.mission;
+  if (!missionSection && demoFb && demoFb.mission) missionSection = demoFb.mission;
+  if (!visionSection && demoFb && demoFb.vision) visionSection = demoFb.vision;
+  if (!valueSections.length && demoFb && demoFb.values) {
+    valueSections = Array.isArray(demoFb.values) ? demoFb.values.slice() : [demoFb.values];
   }
-  if (!visionSection && demoFb && demoFb.vision && sectionHasContent(demoFb.vision)) {
-    visionSection = demoFb.vision;
-  }
-  if (!valueSections.length && demoFb && demoFb.values && sectionHasContent(demoFb.values)) {
-    valueSections = [demoFb.values];
-  }
+  if (!beliefsSection && demoFb && demoFb.beliefs) beliefsSection = demoFb.beliefs;
+  if (!communitySection && demoFb && demoFb.community) communitySection = demoFb.community;
+  if (!galleryUrls.length && demoFb && demoFb.gallery) galleryUrls = demoFb.gallery.slice();
 
   var storyMedia = [];
   storySections.forEach(function (s) {
     if (s.mediaUrl && storyMedia.indexOf(s.mediaUrl) < 0) storyMedia.push(s.mediaUrl);
   });
-  if (!storyMedia.length && demoFb && demoFb.storyMediaUrl) {
-    storyMedia.push(demoFb.storyMediaUrl);
-  }
-  var collageMedia = storyMedia.slice(0, 2);
-
-  var hasPurpose = Boolean(
-    (missionSection && sectionHasContent(missionSection)) ||
-      (visionSection && sectionHasContent(visionSection))
-  );
-  var hasBodyContent =
-    storySections.length || hasPurpose || valueSections.length || genericSections.length;
+  if (!storyMedia.length && demoFb && demoFb.storyMediaUrl) storyMedia.push(demoFb.storyMediaUrl);
 %>
 
-<section class="bb-tp-about" data-bb-about="1" data-bb-stitch-about="populated-v3">
-  <header class="bb-tp-page-hero bb-tp-about-hero" aria-label="About" data-bb-about-hero="1">
-    <div class="bb-tp-page-hero__inner">
-      <div class="bb-tp-page-hero__copy">
-        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-about-hero__eyebrow-desktop">About Us</p>
-        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-about-hero__eyebrow-mobile">Our Identity</p>
-        <h1 class="bb-tp-page-hero__title">
-          <% if (accentPhrase) { %>
-          <%= accentBefore %><span class="bb-tp-about-hero__title-accent"><%= accentPhrase %></span>
-          <% } else { %>
-          <%= heroHeading %>
-          <% } %>
-        </h1>
-        <% if (heroBody) { %>
-        <p class="bb-tp-page-hero__lead"><%= heroBody %></p>
-        <% } %>
-        <div class="bb-tp-page-hero__cta bb-tp-about-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">
-            Get Connected
-            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-          </a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register as a Member</a>
-        </div>
-      </div>
-      <div class="bb-tp-page-hero__visual<%= heroMedia ? ' has-media' : '' %>" data-bb-about-hero-media="1">
-        <% if (heroMedia) { %>
-        <img
-          class="bb-tp-page-hero__img"
-          src="<%= heroMedia %>"
-          alt=""
-          width="640"
-          height="480"
-          loading="eager"
-          decoding="async"
-        />
-        <% } else { %>
-        <div class="bb-tp-page-hero__fallback" aria-hidden="true"></div>
-        <% } %>
-      </div>
-    </div>
-  </header>
-
-  <% if (showEmptyState) { %>
-  <div class="bb-tp-container">
-    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="about">
-      <div class="bb-tp-empty__visual" aria-hidden="true">
-        <span class="material-symbols-outlined bb-tp-empty__icon">info</span>
-      </div>
-      <div class="bb-tp-empty__copy">
-        <p class="bb-tp-empty__badge">Content coming soon</p>
-        <h2><%= emptyHeadline %></h2>
-        <p><%= emptyMessage %></p>
-        <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="/register">Register</a>
-        </div>
-      </div>
-    </div>
+<section class="bb-tp-about" data-bb-about="1" data-bb-stitch-about="phase7-v1">
+  <div data-bb-about-hero="1">
+  <%- include('./partials/page-hero', {
+    heroHeading: heroHeading,
+    heroBody: heroBody,
+    heroMedia: heroMedia,
+    heroMediaAlt: publicName + ' building',
+    heroEyebrow: 'About Us',
+    heroClass: 'bb-tp-about-hero',
+    heroCtaPrimary: { href: hrefFor('/contact'), label: 'Plan Your Visit' },
+    heroCtaSecondary: { href: hrefFor('/leadership'), label: 'Meet Leadership' },
+    editPageKey: 'about',
+    editSectionKey: 'hero'
+  }) %>
   </div>
-  <% } else if (hasBodyContent) { %>
 
   <% if (storySections.length) { %>
-  <section class="bb-tp-about-story-band" aria-label="Our story" data-bb-about-story="1" id="bb-tp-about-story">
+  <section class="bb-tp-about-story-band" aria-label="Church story" data-bb-about-story="1" id="bb-tp-about-story">
     <div class="bb-tp-container bb-tp-about__story-wrap">
-      <div class="bb-tp-about-story<%= collageMedia.length ? ' bb-tp-about-story--with-media' : '' %>">
+      <div class="bb-tp-about-story<%= storyMedia.length ? ' bb-tp-about-story--with-media' : '' %>">
         <div class="bb-tp-about-story__copy">
           <% storySections.forEach(function (section, idx) { %>
           <div class="bb-tp-about-story__block" data-section="<%= section.sectionKey || 'story' %>">
@@ -188,25 +118,21 @@
           </div>
           <% }) %>
         </div>
-        <% if (collageMedia.length) { %>
-        <div class="bb-tp-about-story__media<%= collageMedia.length > 1 ? ' bb-tp-about-story__media--collage' : '' %>">
-          <% collageMedia.forEach(function (url) { %>
-          <img class="bb-tp-media" src="<%= url %>" alt="" width="960" height="720" loading="lazy" decoding="async" />
-          <% }) %>
+        <% if (storyMedia.length) { %>
+        <div class="bb-tp-about-story__media">
+          <img class="bb-tp-media" src="<%= storyMedia[0] %>" alt="Life at <%= publicName %>" width="960" height="720" loading="lazy" decoding="async" />
         </div>
-        <% } else { %>
-        <div class="bb-tp-about-story__media-fallback" aria-hidden="true"></div>
         <% } %>
       </div>
     </div>
   </section>
   <% } %>
 
-  <% if (hasPurpose) { %>
-  <section class="bb-tp-about-purpose" aria-label="Purpose" data-bb-about-purpose="1">
+  <% if (missionSection || visionSection) { %>
+  <section class="bb-tp-about-purpose" aria-label="Mission and vision" data-bb-about-purpose="1">
     <div class="bb-tp-container">
       <header class="bb-tp-about-purpose__header">
-        <h2 class="bb-tp-section-title">Our Purpose</h2>
+        <h2 class="bb-tp-section-title">Mission &amp; Vision</h2>
       </header>
       <div class="bb-tp-about-purpose__grid<%= missionSection && visionSection ? ' bb-tp-about-purpose__grid--pair' : '' %>">
         <% if (missionSection && sectionHasContent(missionSection)) { %>
@@ -214,9 +140,6 @@
           <span class="bb-tp-purpose-card__icon material-symbols-outlined" aria-hidden="true">flag</span>
           <% if (missionSection.heading) { %><h3 class="bb-tp-purpose-card__title"><%= missionSection.heading %></h3><% } %>
           <% if (missionSection.bodyText) { %><p class="bb-tp-body"><%= missionSection.bodyText %></p><% } %>
-          <% if (missionSection.mediaUrl) { %>
-          <img class="bb-tp-media" src="<%= missionSection.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
-          <% } %>
         </article>
         <% } %>
         <% if (visionSection && sectionHasContent(visionSection)) { %>
@@ -224,9 +147,6 @@
           <span class="bb-tp-purpose-card__icon material-symbols-outlined" aria-hidden="true">visibility</span>
           <% if (visionSection.heading) { %><h3 class="bb-tp-purpose-card__title"><%= visionSection.heading %></h3><% } %>
           <% if (visionSection.bodyText) { %><p class="bb-tp-body"><%= visionSection.bodyText %></p><% } %>
-          <% if (visionSection.mediaUrl) { %>
-          <img class="bb-tp-media" src="<%= visionSection.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
-          <% } %>
         </article>
         <% } %>
       </div>
@@ -235,7 +155,7 @@
   <% } %>
 
   <% if (valueSections.length) { %>
-  <section class="bb-tp-about-values" aria-label="Values" data-bb-about-values="1">
+  <section class="bb-tp-about-values" aria-label="Core values" data-bb-about-values="1">
     <div class="bb-tp-container">
       <h2 class="bb-tp-section-title bb-tp-about-values__heading">Core Values</h2>
       <ul class="bb-tp-about-values__list">
@@ -254,11 +174,40 @@
   </section>
   <% } %>
 
+  <% if (beliefsSection && sectionHasContent(beliefsSection)) { %>
+  <section class="bb-tp-container bb-tp-about-beliefs" data-bb-about-beliefs="1" aria-labelledby="bb-tp-about-beliefs-heading">
+    <h2 id="bb-tp-about-beliefs-heading" class="bb-tp-section-title"><%= beliefsSection.heading || 'Beliefs' %></h2>
+    <% if (beliefsSection.bodyText) { %><p class="bb-tp-body"><%= beliefsSection.bodyText %></p><% } %>
+  </section>
+  <% } %>
+
+  <% if (communitySection && sectionHasContent(communitySection)) { %>
+  <section class="bb-tp-about-community" data-bb-about-community="1" aria-labelledby="bb-tp-about-community-heading">
+    <div class="bb-tp-container">
+      <h2 id="bb-tp-about-community-heading" class="bb-tp-section-title"><%= communitySection.heading || 'Community involvement' %></h2>
+      <% if (communitySection.bodyText) { %><p class="bb-tp-body"><%= communitySection.bodyText %></p><% } %>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (galleryUrls.length) { %>
+  <section class="bb-tp-container bb-tp-about-gallery" data-bb-about-gallery="1" aria-label="Image gallery">
+    <h2 class="bb-tp-section-title">Life at <%= publicName %></h2>
+    <ul class="bb-tp-about-gallery__grid">
+      <% galleryUrls.slice(0, 6).forEach(function (url, idx) { %>
+      <li>
+        <img src="<%= url %>" alt="Community moment <%= idx + 1 %> at <%= publicName %>" width="640" height="480" loading="lazy" decoding="async" />
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
   <% if (genericSections.length) { %>
   <div class="bb-tp-container bb-tp-about__body" data-bb-about-generic="1">
     <% genericSections.forEach(function (section) { %>
     <% if (!sectionHasContent(section)) return; %>
-    <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %> bb-tp-about__block" data-section="<%= section.sectionKey %>">
+    <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
       <% if (section.mediaUrl) { %>
       <div class="bb-tp-content-block__media">
         <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
@@ -273,53 +222,13 @@
   </div>
   <% } %>
 
-  <% } %>
-
-  <%
-    var aboutServiceEntries = typeof serviceTimesEntries !== 'undefined' && serviceTimesEntries ? serviceTimesEntries : [];
-    var aboutContact = typeof publicContact !== 'undefined' && publicContact ? publicContact : null;
-    var showAboutServices = aboutServiceEntries.length || (aboutContact && aboutContact.hasAny);
-  %>
-  <% if (showAboutServices) { %>
-  <section class="bb-tp-container bb-tp-about-services" data-bb-about-services="1" aria-labelledby="bb-tp-about-services-heading">
-    <h2 id="bb-tp-about-services-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Service information</h2>
-    <% if (aboutServiceEntries.length) { %>
-    <ul class="bb-tp-service-times-list">
-      <% aboutServiceEntries.forEach(function (entry) { %>
-      <li class="bb-tp-service-times-item">
-        <span class="bb-tp-service-times-item__day"><%= String(entry.day || '').charAt(0).toUpperCase() + String(entry.day || '').slice(1) %></span>
-        <span class="bb-tp-service-times-item__name"><%= entry.name %></span>
-        <span class="bb-tp-service-times-item__time">
-          <%= formatTimeLabel(entry.startTime) %><% if (entry.endTime) { %>–<%= formatTimeLabel(entry.endTime) %><% } %>
-        </span>
-        <% if (entry.location) { %><span class="bb-tp-service-times-item__location"><%= entry.location %></span><% } %>
-      </li>
-      <% }) %>
-    </ul>
-    <% } %>
-    <% if (aboutContact && aboutContact.hasAny) { %>
-    <div class="bb-tp-about-services__contact">
-      <% if (aboutContact.addressText) { %><p class="bb-tp-body"><%= aboutContact.addressText %></p><% } %>
-      <% if (aboutContact.phone) { %><p class="bb-tp-meta"><%= aboutContact.phone %></p><% } %>
-      <% if (aboutContact.email) { %><p class="bb-tp-meta"><%= aboutContact.email %></p><% } %>
-      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= hrefFor('/contact') %>">Contact details</a>
-    </div>
-    <% } %>
-  </section>
-  <% } %>
-
-  <section class="bb-tp-about__join" aria-label="Join" data-bb-about-join="1">
-    <div class="bb-tp-container">
-      <div class="bb-tp-about__join-inner">
-        <h2 class="bb-tp-section-title">Join Our Community</h2>
-        <p class="bb-tp-body">Connect with <%= publicName %> — plan a visit or register as a member.</p>
-        <div class="bb-tp-page-hero__cta bb-tp-about__join-cta">
-          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-about__join-cta-desktop" href="<%= hrefFor('/contact') %>">Plan Your Visit</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark bb-tp-about__join-cta-desktop" href="/register">Register</a>
-          <a class="bb-tp-btn bb-tp-btn--primary bb-tp-about__join-cta-mobile" href="<%= loginHref %>">Member Login</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark bb-tp-about__join-cta-mobile" href="/register">Register Now</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <div data-bb-about-join="1">
+  <%- include('./partials/cta-band', {
+    ctaClass: 'bb-tp-cta-band--visit',
+    ctaTitle: 'Experience ' + publicName,
+    ctaBody: 'Whether you are a seeker or a long-time believer, there is a seat for you. Join us this Sunday.',
+    ctaPrimary: { href: hrefFor('/contact'), label: 'Plan Your Visit' },
+    ctaSecondary: { href: hrefFor('/contact'), label: 'Get Directions' }
+  }) %>
+  </div>
 </section>

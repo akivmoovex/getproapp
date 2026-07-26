@@ -4216,3 +4216,1396 @@ html {
   outline-offset: 2px;
   box-shadow: var(--bb-shadow-focus, 0 0 0 4px rgba(108, 92, 231, 0.35));
 }
+
+/* —— Phase 7 public church website foundation —— */
+.bb-tp-header__visit {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-header__visit {
+    display: inline-flex;
+  }
+}
+
+.bb-tp-footer__grid--phase7 {
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-footer__grid--phase7 {
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 2.5rem;
+  }
+}
+
+.bb-tp-footer__list--services li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.65rem;
+}
+
+.bb-tp-footer__list--services strong {
+  font-weight: 650;
+  color: var(--bb-ink);
+}
+
+.bb-tp-footer__muted {
+  margin: 0;
+  color: var(--bb-muted, #5b6472);
+  font-size: 0.9375rem;
+}
+
+.bb-tp-footer__social-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--bb-muted, #5b6472);
+  font-size: 0.875rem;
+}
+
+.bb-tp-hero--phase7 {
+  position: relative;
+  min-height: min(72vh, 40rem);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.bb-tp-hero__media-plane {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.bb-tp-hero__media-plane .bb-tp-hero__img,
+.bb-tp-hero__media-plane .bb-tp-hero__fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  display: block;
+}
+
+.bb-tp-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(18, 16, 40, 0.25) 0%, rgba(18, 16, 40, 0.72) 72%, rgba(18, 16, 40, 0.88) 100%);
+}
+
+.bb-tp-hero__inner--overlay {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--bb-max);
+  margin: 0 auto;
+  padding: 3.5rem var(--bb-gutter-mobile, 1rem) 3rem;
+  display: block;
+}
+
+.bb-tp-hero--phase7 .bb-tp-hero__title {
+  color: #fff;
+  max-width: 18ch;
+  font-size: clamp(2.1rem, 5vw, 3.6rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.bb-tp-hero--phase7 .bb-tp-hero__lead {
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 38rem;
+}
+
+.bb-tp-eyebrow--on-dark {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.bb-tp-btn--on-dark {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+}
+
+.bb-tp-btn--on-dark:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.bb-tp-service-times--band {
+  background: var(--bb-violet, #6c5ce7);
+  color: #fff;
+  padding: 1.75rem 0;
+}
+
+.bb-tp-service-times__inner {
+  max-width: var(--bb-max);
+  margin: 0 auto;
+  padding: 0 var(--bb-gutter-mobile, 1rem);
+}
+
+.bb-tp-service-times__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  color: #fff;
+}
+
+.bb-tp-service-times__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  .bb-tp-service-times__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+  }
+}
+
+.bb-tp-service-times__item {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bb-tp-service-times__name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.bb-tp-service-times__when {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+.bb-tp-service-times__location,
+.bb-tp-service-times__note {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  font-size: 0.875rem;
+  opacity: 0.92;
+}
+
+.bb-tp-service-times__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.15rem;
+}
+
+.bb-tp-service-times--band .bb-tp-btn--primary {
+  background: #fff;
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-service-times--band .bb-tp-btn--ghost {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.bb-tp-home-welcome,
+.bb-tp-home-teaser,
+.bb-tp-home-about-preview,
+.bb-tp-home-contact {
+  padding: 2.75rem 0;
+}
+
+.bb-tp-home-welcome__grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-home-welcome__grid.has-media {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: center;
+    gap: 2.5rem;
+  }
+}
+
+.bb-tp-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1.35rem;
+}
+
+.bb-tp-section-head__lead {
+  margin: 0.45rem 0 0;
+  max-width: 42rem;
+  color: var(--bb-muted, #5b6472);
+}
+
+.bb-tp-section-head__link {
+  font-weight: 650;
+  color: var(--bb-violet, #6c5ce7);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bb-tp-section-head__link:hover {
+  text-decoration: underline;
+}
+
+.bb-tp-card-grid {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.bb-tp-card-grid--2 {
+  grid-template-columns: 1fr;
+}
+
+.bb-tp-card-grid--3 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 700px) {
+  .bb-tp-card-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bb-tp-card-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1000px) {
+  .bb-tp-card-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bb-tp-content-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: 1.15rem;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(228, 223, 236, 0.95);
+  box-shadow: 0 10px 28px rgba(48, 40, 90, 0.06);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+a.bb-tp-content-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(48, 40, 90, 0.1);
+}
+
+.bb-tp-content-card__media {
+  aspect-ratio: 16 / 10;
+  background: linear-gradient(135deg, #efeaff, #f1fbff);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.bb-tp-content-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bb-tp-content-card__media .material-symbols-outlined {
+  font-size: 2rem;
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-content-card__body {
+  padding: 1.1rem 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.bb-tp-content-card__title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.bb-tp-content-card__summary {
+  margin: 0;
+  color: var(--bb-muted, #5b6472);
+  font-size: 0.95rem;
+}
+
+.bb-tp-content-card__cta {
+  margin-top: auto;
+  padding-top: 0.55rem;
+  font-weight: 650;
+  color: var(--bb-violet, #6c5ce7);
+  font-size: 0.9rem;
+}
+
+.bb-tp-event-card--media {
+  overflow: hidden;
+  border-radius: 1.15rem;
+  background: #fff;
+  border: 1px solid rgba(228, 223, 236, 0.95);
+}
+
+.bb-tp-event-card__media {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.bb-tp-event-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bb-tp-sermon-feature {
+  display: grid;
+  gap: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(228, 223, 236, 0.95);
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-sermon-feature {
+    grid-template-columns: 1.1fr 1fr;
+    align-items: stretch;
+  }
+}
+
+.bb-tp-sermon-feature__media {
+  position: relative;
+  min-height: 14rem;
+  background: #1c1833;
+}
+
+.bb-tp-sermon-feature__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bb-tp-sermon-feature__play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--bb-violet, #6c5ce7);
+  display: grid;
+  place-items: center;
+  font-size: 1.75rem;
+}
+
+.bb-tp-sermon-feature__copy {
+  padding: 1.35rem 1.35rem 1.5rem;
+}
+
+.bb-tp-sermon-feature__title {
+  margin: 0.35rem 0 0.4rem;
+  font-size: 1.4rem;
+}
+
+.bb-tp-sermon-feature__meta {
+  margin: 0 0 0.75rem;
+  color: var(--bb-muted, #5b6472);
+  font-size: 0.95rem;
+}
+
+.bb-tp-cta-band {
+  padding: 2.75rem 0;
+  background: linear-gradient(135deg, #2d2463 0%, #6c5ce7 100%);
+  color: #fff;
+}
+
+.bb-tp-cta-band__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 800px) {
+  .bb-tp-cta-band__inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.bb-tp-cta-band .bb-tp-section-title,
+.bb-tp-cta-band .bb-tp-body {
+  color: #fff;
+}
+
+.bb-tp-cta-band__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bb-tp-cta-band .bb-tp-btn--primary {
+  background: #fff;
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-home-contact__grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 800px) {
+  .bb-tp-home-contact__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bb-tp-home-contact__item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid rgba(228, 223, 236, 0.95);
+}
+
+.bb-tp-home-contact__item .material-symbols-outlined {
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-home-contact__label {
+  margin: 0 0 0.2rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bb-muted, #5b6472);
+}
+
+.bb-tp-home-contact__item p {
+  margin: 0;
+}
+
+.bb-tp-about-gallery__grid {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 700px) {
+  .bb-tp-about-gallery__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bb-tp-about-gallery__grid img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 1rem;
+  display: block;
+}
+
+.bb-tp-about-beliefs,
+.bb-tp-about-community,
+.bb-tp-about-gallery {
+  padding: 2.5rem 0;
+}
+
+.bb-tp-page-hero__title-accent {
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-leader-card--featured {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+  background: #fff;
+  border: 1px solid rgba(228, 223, 236, 0.95);
+  border-radius: 1.35rem;
+  overflow: hidden;
+  padding: 0;
+}
+
+@media (min-width: 860px) {
+  .bb-tp-leader-card--featured {
+    grid-template-columns: 0.85fr 1.15fr;
+    align-items: stretch;
+  }
+}
+
+.bb-tp-leader-card--featured .bb-tp-leader-card__media {
+  min-height: 18rem;
+  margin: 0;
+  border-radius: 0;
+}
+
+.bb-tp-leader-card--featured .bb-tp-leader-card__body {
+  padding: 1.5rem 1.5rem 1.75rem;
+}
+
+.bb-tp-leader-card__eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--bb-violet, #6c5ce7);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bb-tp-leader-card__contact {
+  display: inline-flex;
+  margin-top: 0.65rem;
+  font-weight: 650;
+  color: var(--bb-violet, #6c5ce7);
+  text-decoration: none;
+}
+
+.bb-tp-leader-grid--compact {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 700px) {
+  .bb-tp-leader-grid--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1000px) {
+  .bb-tp-leader-grid--compact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .bb-tp-hero--phase7 {
+    min-height: min(68vh, 34rem);
+  }
+
+  .bb-tp-hero__media-plane .bb-tp-hero__img {
+    object-position: center 22%;
+  }
+
+  .bb-tp-service-times__actions .bb-tp-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* —— Phase 7 Stage 3: ministries / events / sermons / contact / giving —— */
+.bb-tp-ministries-hero .bb-tp-page-hero__inner,
+.bb-tp-events-hero .bb-tp-page-hero__inner,
+.bb-tp-sermons-hero .bb-tp-page-hero__inner,
+.bb-tp-contact-hero .bb-tp-page-hero__inner,
+.bb-tp-giving-hero .bb-tp-page-hero__inner {
+  align-items: center;
+}
+
+.bb-tp-ministry-featured {
+  margin-bottom: 2.5rem;
+}
+
+.bb-tp-ministry-grid--featured {
+  margin-top: 1.25rem;
+}
+
+.bb-tp-ministry-card__action {
+  margin: 0.85rem 0 0;
+}
+
+.bb-tp-ministries-audiences {
+  margin: 0.35rem 0 1rem;
+  color: var(--bb-muted, #5b6472);
+}
+
+.bb-tp-sermon-series {
+  margin: 2.5rem 0 1rem;
+}
+
+.bb-tp-sermon-series__list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 700px) {
+  .bb-tp-sermon-series__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bb-tp-sermon-series__item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(228, 223, 236, 0.95);
+  border-radius: 1rem;
+  background: #fff;
+  font-weight: 650;
+}
+
+.bb-tp-sermon-series__item .material-symbols-outlined {
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-featured-sermon__media.is-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 12rem;
+  background: linear-gradient(145deg, #f3f0fb, #ebe6f7);
+  color: var(--bb-violet, #6c5ce7);
+}
+
+.bb-tp-contact-services--aside {
+  margin-top: 1.5rem;
+}
+
+.bb-tp-contact-social {
+  margin: 2.5rem 0 1rem;
+}
+
+.bb-tp-contact-social__list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bb-tp-contact-social__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(228, 223, 236, 0.95);
+  background: #fff;
+  color: var(--bb-ink, #1c1630);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.bb-tp-contact-social__link.is-static {
+  color: var(--bb-muted, #5b6472);
+}
+
+.bb-tp-giving-why {
+  margin: 0 0 2.25rem;
+}
+
+.bb-tp-giving-why__grid {
+  list-style: none;
+  margin: 1.15rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 800px) {
+  .bb-tp-giving-why__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bb-tp-giving-why__card {
+  padding: 1.25rem 1.2rem;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(228, 223, 236, 0.95);
+  background: #fff;
+}
+
+.bb-tp-giving-why__card .material-symbols-outlined {
+  color: var(--bb-violet, #6c5ce7);
+  font-size: 1.75rem;
+}
+
+.bb-tp-giving-why__card h3 {
+  margin: 0.55rem 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.bb-tp-giving-why__card p {
+  margin: 0;
+  color: var(--bb-muted, #5b6472);
+  line-height: 1.55;
+}
+
+.bb-tp-giving-accountability {
+  margin: 2.25rem 0 1.25rem;
+}
+
+.bb-tp-cta-band--ministries,
+.bb-tp-cta-band--giving {
+  margin-top: 1rem;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-ministries-hero .bb-tp-page-hero__cta,
+  .bb-tp-events-hero .bb-tp-page-hero__cta,
+  .bb-tp-giving-hero .bb-tp-page-hero__cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bb-tp-ministries-hero .bb-tp-page-hero__cta .bb-tp-btn,
+  .bb-tp-events-hero .bb-tp-page-hero__cta .bb-tp-btn,
+  .bb-tp-giving-hero .bb-tp-page-hero__cta .bb-tp-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* —— Phase 7 Stage 4: admin chrome + inline editing —— */
+.bb-tp-admin-demo-notice {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.65rem 1.25rem;
+  background: #f7f4ee;
+  color: #4a4338;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  border-bottom: 1px solid rgba(74, 67, 56, 0.12);
+}
+
+.bb-tp-admin-demo-notice .material-symbols-outlined {
+  font-size: 1.15rem;
+  margin-top: 0.1rem;
+}
+
+.bb-tp-admin-bar,
+.bb-tp-edit-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: #1f1a2e;
+  color: #f5f3ff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bb-tp-admin-bar__inner,
+.bb-tp-edit-toolbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0.55rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+.bb-tp-admin-bar__left,
+.bb-tp-edit-toolbar__left,
+.bb-tp-admin-bar__right,
+.bb-tp-edit-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.bb-tp-admin-bar__link {
+  color: #d7d0ff;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.bb-tp-admin-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.bb-tp-admin-status--published { background: rgba(46, 204, 113, 0.22); }
+.bb-tp-admin-status--draft_changes { background: rgba(241, 196, 15, 0.28); color: #fff6c8; }
+.bb-tp-admin-status--unpublished_demo { background: rgba(230, 126, 34, 0.28); }
+.bb-tp-admin-status--publishing_unavailable,
+.bb-tp-admin-status--access_restricted { background: rgba(231, 76, 60, 0.28); }
+
+.bb-tp-edit-toolbar__hint {
+  font-size: 0.85rem;
+  color: rgba(245, 243, 255, 0.78);
+}
+
+.bb-tp-body--editing .bb-tp-inline-edit {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.bb-tp-body--editing .bb-tp-inline-edit:hover,
+.bb-tp-body--editing .bb-tp-inline-edit:focus-within {
+  outline: 1px dashed rgba(108, 92, 231, 0.55);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.bb-tp-inline-edit__display {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  max-width: 100%;
+}
+
+.bb-tp-inline-edit__pencil,
+.bb-tp-inline-edit__check,
+.bb-tp-inline-edit__cancel {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(108, 92, 231, 0.12);
+  color: #6c5ce7;
+  cursor: pointer;
+}
+
+.bb-tp-inline-edit__pencil:hover,
+.bb-tp-inline-edit__check:hover,
+.bb-tp-inline-edit__cancel:hover,
+.bb-tp-inline-edit__pencil:focus-visible,
+.bb-tp-inline-edit__check:focus-visible,
+.bb-tp-inline-edit__cancel:focus-visible {
+  background: rgba(108, 92, 231, 0.22);
+  outline: 2px solid #6c5ce7;
+  outline-offset: 2px;
+}
+
+.bb-tp-inline-edit__check {
+  background: rgba(46, 204, 113, 0.18);
+  color: #1e8449;
+}
+
+.bb-tp-inline-edit__cancel {
+  background: rgba(231, 76, 60, 0.14);
+  color: #c0392b;
+}
+
+.bb-tp-inline-edit__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: min(100%, 28rem);
+}
+
+.bb-tp-inline-edit__input {
+  width: 100%;
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(108, 92, 231, 0.45);
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2430;
+}
+
+.bb-tp-inline-edit__guidance {
+  font-size: 0.8rem;
+  color: #5b6472;
+}
+
+.bb-tp-inline-edit__actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.bb-tp-inline-edit__status {
+  min-height: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.bb-tp-inline-edit__status[data-bb-status-kind="ok"] { color: #1e8449; }
+.bb-tp-inline-edit__status[data-bb-status-kind="error"] { color: #c0392b; }
+.bb-tp-inline-edit__status[data-bb-status-kind="pending"] { color: #5b6472; }
+
+.bb-tp-body--editing .bb-tp-hero .bb-tp-inline-edit__pencil,
+.bb-tp-body--editing .bb-tp-hero .bb-tp-inline-edit__check,
+.bb-tp-body--editing .bb-tp-hero .bb-tp-inline-edit__cancel {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-admin-bar__inner,
+  .bb-tp-edit-toolbar__inner {
+    padding: 0.55rem 1rem;
+  }
+
+  .bb-tp-inline-edit__editor {
+    min-width: 100%;
+  }
+}
+
+/* —— Phase 7 Stage 5: structured editors —— */
+.bb-tp-structured-pencil {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-left: 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(108, 92, 231, 0.14);
+  color: #6c5ce7;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.bb-tp-structured-pencil:focus-visible {
+  outline: 2px solid #6c5ce7;
+  outline-offset: 2px;
+}
+.bb-tp-structured-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+.bb-tp-structured-editor__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 16, 32, 0.45);
+}
+.bb-tp-structured-editor__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(32rem, 100%);
+  height: 100%;
+  background: #fff;
+  color: #1f2430;
+  box-shadow: -12px 0 40px rgba(20, 16, 32, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+.bb-tp-structured-editor__header,
+.bb-tp-structured-editor__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid rgba(31, 36, 48, 0.08);
+}
+.bb-tp-structured-editor__footer {
+  border-bottom: 0;
+  border-top: 1px solid rgba(31, 36, 48, 0.08);
+  justify-content: flex-end;
+}
+.bb-tp-structured-editor__title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.bb-tp-structured-editor__close {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #5b6472;
+}
+.bb-tp-structured-editor__body {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 1.1rem 1.5rem;
+}
+.bb-tp-structured-editor__status {
+  min-height: 1.25rem;
+  margin: 0;
+  padding: 0 1.1rem;
+  font-size: 0.9rem;
+}
+.bb-tp-structured-editor__status[data-bb-status-kind="ok"] { color: #1e8449; }
+.bb-tp-structured-editor__status[data-bb-status-kind="error"] { color: #c0392b; }
+.bb-tp-se-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+}
+.bb-tp-se-field input,
+.bb-tp-se-field textarea,
+.bb-tp-se-field select {
+  font: inherit;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(108, 92, 231, 0.35);
+  border-radius: 8px;
+}
+.bb-tp-se-check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+}
+.bb-tp-se-preview {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f3f1f8;
+  margin-bottom: 0.85rem;
+}
+.bb-tp-se-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 12rem;
+  object-fit: cover;
+}
+.bb-tp-se-preview--mobile {
+  max-width: 10rem;
+}
+.bb-tp-se-demos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.bb-tp-se-demo {
+  border: 1px solid rgba(31, 36, 48, 0.1);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.35rem;
+  cursor: pointer;
+  text-align: left;
+}
+.bb-tp-se-demo img {
+  width: 100%;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.bb-tp-se-demo span {
+  display: block;
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  color: #5b6472;
+}
+.bb-tp-se-hint {
+  font-size: 0.85rem;
+  color: #5b6472;
+  margin: 0 0 0.65rem;
+}
+.bb-tp-se-item {
+  border: 1px solid rgba(31, 36, 48, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin: 0 0 0.85rem;
+}
+.bb-tp-se-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+.bb-tp-body--editing .bb-tp-edit-media-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+@media (max-width: 767px) {
+  .bb-tp-structured-editor__panel {
+    width: 100%;
+  }
+}
+
+/* —— Phase 7 Stage 7: mobile editing polish —— */
+.bb-tp-btn__label-short,
+.bb-tp-edit-toolbar__hint-short {
+  display: none;
+}
+.bb-tp-inline-edit__field-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #5b6472;
+}
+.bb-tp-btn--touch {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding-inline: 1rem;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-body--editing,
+  .bb-tp-body--admin {
+    overflow-x: clip;
+  }
+
+  .bb-tp-btn__label-full,
+  .bb-tp-edit-toolbar__hint-full {
+    display: none;
+  }
+  .bb-tp-btn__label-short,
+  .bb-tp-edit-toolbar__hint-short {
+    display: inline;
+  }
+
+  .bb-tp-admin-bar,
+  .bb-tp-edit-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 70;
+  }
+
+  .bb-tp-admin-bar__inner,
+  .bb-tp-edit-toolbar__inner {
+    padding: 0.5rem 0.85rem;
+    gap: 0.5rem;
+  }
+
+  .bb-tp-edit-toolbar__right,
+  .bb-tp-admin-bar__right {
+    gap: 0.4rem;
+  }
+
+  .bb-tp-edit-toolbar .bb-tp-btn,
+  .bb-tp-admin-bar .bb-tp-btn {
+    min-height: 2.75rem;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .bb-tp-admin-status {
+    font-size: 0.68rem;
+    max-width: 9.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bb-tp-body--editing .bb-tp-inline-edit {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .bb-tp-inline-edit__display {
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+  }
+
+  .bb-tp-inline-edit__pencil,
+  .bb-tp-inline-edit__check,
+  .bb-tp-inline-edit__cancel,
+  .bb-tp-structured-pencil {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .bb-tp-inline-edit__editor {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    min-width: 0;
+    padding: 0.75rem;
+    margin: 0.35rem 0 0.75rem;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(20, 16, 32, 0.14);
+    border: 1px solid rgba(108, 92, 231, 0.22);
+  }
+
+  .bb-tp-inline-edit__input {
+    font-size: 1rem; /* avoid iOS zoom */
+    min-height: 2.75rem;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .bb-tp-inline-edit__actions {
+    position: sticky;
+    bottom: 0;
+    gap: 0.55rem;
+    padding-top: 0.35rem;
+    background: linear-gradient(180deg, transparent, #fff 40%);
+  }
+
+  .bb-tp-body--editing .bb-tp-hero .bb-tp-inline-edit__editor {
+    background: rgba(255, 255, 255, 0.96);
+    color: #1f2430;
+  }
+
+  .bb-tp-body--editing .bb-tp-hero .bb-tp-inline-edit__input {
+    color: #1f2430;
+  }
+
+  /* Bottom sheet for media / service times / collection editors */
+  .bb-tp-structured-editor__panel {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    height: min(92vh, 100%);
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 40px rgba(20, 16, 32, 0.22);
+  }
+
+  .bb-tp-structured-editor__header,
+  .bb-tp-structured-editor__footer {
+    padding: 0.85rem 1rem;
+    min-height: 3.25rem;
+  }
+
+  .bb-tp-structured-editor__footer {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding-bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.65rem;
+  }
+
+  .bb-tp-structured-editor__footer .bb-tp-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  .bb-tp-structured-editor__body {
+    padding: 0.85rem 1rem 1.25rem;
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bb-tp-structured-editor__close {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .bb-tp-se-field input,
+  .bb-tp-se-field textarea,
+  .bb-tp-se-field select {
+    font-size: 1rem;
+    min-height: 2.75rem;
+  }
+
+  .bb-tp-se-actions-row .bb-tp-btn,
+  .bb-tp-se-item .bb-tp-btn {
+    min-height: 2.75rem;
+  }
+
+  .bb-tp-se-demos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bb-tp-se-library-grid {
+    max-height: 12rem;
+    overflow: auto;
+  }
+
+  .bb-tp-se-change-photo {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .bb-tp-body--editing .bb-tp-edit-media-wrap .bb-tp-structured-pencil {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  }
+
+  .bb-tp-unsaved-dialog {
+    width: calc(100vw - 1.5rem);
+    max-width: 24rem;
+  }
+
+  .bb-tp-unsaved-dialog__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .bb-tp-unsaved-dialog__actions .bb-tp-btn {
+    width: 100%;
+    min-height: 2.75rem;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-tp-structured-editor__panel,
+  .bb-tp-inline-edit__editor,
+  .bb-tp-unsaved-dialog {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Phase 7 Stage 6 — unsaved changes dialog */
+.bb-tp-unsaved-dialog {
+  border: none;
+  border-radius: 16px;
+  padding: 0;
+  max-width: min(28rem, calc(100vw - 2rem));
+  box-shadow: 0 18px 48px rgba(16, 18, 28, 0.28);
+}
+.bb-tp-unsaved-dialog::backdrop {
+  background: rgba(16, 18, 28, 0.45);
+}
+.bb-tp-unsaved-dialog__panel {
+  margin: 0;
+  padding: 1.35rem 1.35rem 1.15rem;
+}
+.bb-tp-unsaved-dialog__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+.bb-tp-unsaved-dialog__body {
+  margin: 0 0 1.1rem;
+  color: #5b6472;
+  line-height: 1.45;
+}
+.bb-tp-unsaved-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
+}

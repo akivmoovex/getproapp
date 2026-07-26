@@ -1,0 +1,34 @@
+<%#
+  Shared content card (ministry / generic).
+  Locals: cardTitle, cardSummary (optional), cardImage (optional), cardHref (optional),
+          cardImageAlt (optional), cardClass (optional), cardCta (optional)
+%>
+<% var _tag = typeof cardHref !== 'undefined' && cardHref ? 'a' : 'article'; %>
+<<%= _tag %>
+  class="bb-tp-content-card<%= typeof cardClass !== 'undefined' && cardClass ? ' ' + cardClass : '' %>"
+  <% if (typeof cardHref !== 'undefined' && cardHref) { %>href="<%= cardHref %>"<% } %>
+>
+  <div class="bb-tp-content-card__media<%= typeof cardImage !== 'undefined' && cardImage ? ' has-media' : '' %>">
+    <% if (typeof cardImage !== 'undefined' && cardImage) { %>
+    <img
+      src="<%= cardImage %>"
+      alt="<%= typeof cardImageAlt !== 'undefined' && cardImageAlt ? cardImageAlt : cardTitle %>"
+      width="640"
+      height="400"
+      loading="lazy"
+      decoding="async"
+    />
+    <% } else { %>
+    <span class="material-symbols-outlined" aria-hidden="true"><%= typeof cardIcon !== 'undefined' && cardIcon ? cardIcon : 'groups' %></span>
+    <% } %>
+  </div>
+  <div class="bb-tp-content-card__body">
+    <h3 class="bb-tp-content-card__title"><%= cardTitle %></h3>
+    <% if (typeof cardSummary !== 'undefined' && cardSummary) { %>
+    <p class="bb-tp-content-card__summary"><%= cardSummary %></p>
+    <% } %>
+    <% if (typeof cardCta !== 'undefined' && cardCta) { %>
+    <span class="bb-tp-content-card__cta"><%= cardCta %></span>
+    <% } %>
+  </div>
+</<%= _tag %>>

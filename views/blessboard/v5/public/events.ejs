@@ -1,10 +1,8 @@
 <%#
-  Events — Stitch 05-public-events-*-v2 (Populated).
-  Desktop: 6f618576f0304982bd239bfe04946e72
-  Mobile:  f58c416cbbd545429258d963b3a15b60
-  Empty:   6c3a2b460ac54e6a88336af9085e8c38
-  List/featured model only (no calendar). Published upcoming via preparePublicEvents.
-  Registration only when safe registrationUrl exists.
+  Phase 7 — Church Website Events (Desktop; responsive).
+  Stitch: a68314c0d6a34e0a824ad1a2b309c4ad
+  List/featured only — no calendar toggle (backend unsupported).
+  Upcoming via preparePublicEvents; expired omitted.
 %>
 <%
   var demoFb =
@@ -22,7 +20,7 @@
     (intro && intro.heading) ||
     (demoFb && demoFb.introHeading) ||
     pageTitle ||
-    'Gather with Us';
+    'Kingdom Gatherings';
   var introBody =
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
@@ -34,74 +32,31 @@
   var featuredParts = featured
     ? formatEventParts(featured.startsAt, featured.timezone, featured.endsAt)
     : null;
-
-  // Stitch display titles accent the trailing phrase without inventing copy.
-  var accentBefore = introHeading;
-  var accentPhrase = '';
-  var headingWords = String(introHeading || '').trim().split(/\s+/).filter(Boolean);
-  if (headingWords.length >= 4) {
-    accentBefore = headingWords.slice(0, -2).join(' ') + ' ';
-    accentPhrase = headingWords.slice(-2).join(' ');
-  }
 %>
 
 <section
   class="bb-tp-directory bb-tp-events"
   data-bb-events="1"
-  data-bb-stitch-events="populated-v2"
+  data-bb-stitch-events="phase7-v1"
+  aria-label="Events"
 >
-  <header class="bb-tp-dir-hero bb-tp-dir-hero--center bb-tp-events-hero" aria-label="Events" data-bb-events-hero="1">
-    <div class="bb-tp-container">
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-events-hero__eyebrow-desktop">
-        Community Calendar
-      </p>
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-events-hero__eyebrow-mobile">
-        Events
-      </p>
-      <h1 class="bb-tp-dir-hero__title">
-        <% if (accentPhrase) { %>
-        <%= accentBefore %><span class="bb-tp-events-hero__title-accent"><%= accentPhrase %></span>
-        <% } else { %>
-        <%= introHeading %>
-        <% } %>
-      </h1>
-      <% if (introBody) { %>
-      <p class="bb-tp-dir-hero__lead bb-tp-dir-hero__lead--center"><%= introBody %></p>
-      <% } %>
-      <% if (introMedia) { %>
-      <div class="bb-tp-events-hero__media">
-        <img
-          class="bb-tp-media"
-          src="<%= introMedia %>"
-          alt=""
-          width="960"
-          height="420"
-          loading="eager"
-          decoding="async"
-        />
-      </div>
-      <% } %>
-    </div>
-  </header>
+  <%- include('./partials/page-hero', {
+    heroHeading: introHeading,
+    heroBody: introBody,
+    heroMedia: introMedia,
+    heroMediaAlt: 'Events at ' + publicName,
+    heroEyebrow: 'Connect & Grow',
+    heroClass: 'bb-tp-events-hero',
+    heroCtaPrimary: featured && featured.registrationUrl
+      ? { href: featured.registrationUrl, label: 'Register for Featured Event' }
+      : { href: hrefFor('/contact'), label: 'Ask About Events' },
+    heroCtaSecondary: { href: hrefFor('/ministries'), label: 'Explore Ministries' },
+    editPageKey: 'events',
+    editSectionKey: 'hero'
+  }) %>
+  <div class="bb-tp-events-hero-marker" data-bb-events-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
-    <% if (showEmptyState) { %>
-    <div class="bb-tp-empty bb-tp-empty--split" role="status" data-bb-empty="events">
-      <div class="bb-tp-empty__visual" aria-hidden="true">
-        <span class="material-symbols-outlined bb-tp-empty__icon">event</span>
-      </div>
-      <div class="bb-tp-empty__copy">
-        <p class="bb-tp-empty__badge">No upcoming events</p>
-        <h2><%= emptyHeadline %></h2>
-        <p><%= emptyMessage %></p>
-        <div class="bb-tp-page-hero__cta">
-          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/contact') %>">Contact Us</a>
-          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>">Home</a>
-        </div>
-      </div>
-    </div>
-    <% } else { %>
-
     <% if (featured) { %>
     <section class="bb-tp-featured-event" aria-label="Featured event" data-bb-event-featured="1">
       <h2 class="bb-tp-featured-event__label bb-tp-section-title--ruled">Featured Gathering</h2>
@@ -126,11 +81,7 @@
             <% if (featuredParts.day) { %><strong><%= featuredParts.day %></strong><% } %>
           </div>
           <% } else { %>
-          <span
-            class="material-symbols-outlined bb-tp-featured-event__fallback-icon"
-            role="img"
-            aria-label="<%= featured.title %>"
-          >event</span>
+          <span class="material-symbols-outlined bb-tp-featured-event__fallback-icon" role="img" aria-label="<%= featured.title %>">event</span>
           <% } %>
         </div>
         <div class="bb-tp-featured-event__copy">
@@ -141,7 +92,28 @@
             <% if (featuredParts.time) { %><% if (featuredParts.weekday) { %> · <% } %><%= featuredParts.time %><% } %>
           </p>
           <% } %>
-          <h3 class="bb-tp-featured-event__title"><%= featured.title %></h3>
+          <h3 class="bb-tp-featured-event__title">
+            <%= featured.title %>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('../partials/structured-edit-trigger', {
+              editKind: 'event',
+              editEntityKey: String(featured.id || ('event-' + featured.title)),
+              editLabel: 'Edit ' + featured.title,
+              editPayload: {
+                title: featured.title,
+                summary: featured.summary,
+                startsAt: featured.startsAt,
+                endsAt: featured.endsAt,
+                location: featured.location,
+                registrationUrl: featured.registrationUrl,
+                imageUrl: featured.imageUrl,
+                timezone: featured.timezone,
+                featured: true,
+                visible: true
+              }
+            }) %>
+            <% } %>
+          </h3>
           <% if (featured.summary) { %>
           <p class="bb-tp-body"><%= featured.summary %></p>
           <% } %>
@@ -149,6 +121,12 @@
           <p class="bb-tp-meta">
             <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
             <%= featured.location %>
+          </p>
+          <% } %>
+          <% if (featured.organizer) { %>
+          <p class="bb-tp-meta">
+            <span class="material-symbols-outlined" aria-hidden="true">person</span>
+            <%= featured.organizer %>
           </p>
           <% } %>
           <div class="bb-tp-page-hero__cta">
@@ -188,14 +166,7 @@
         <li class="bb-tp-event-card" data-bb-event-item="1">
           <div class="bb-tp-event-card__media<%= event.imageUrl ? '' : ' is-fallback' %>">
             <% if (event.imageUrl) { %>
-            <img
-              src="<%= event.imageUrl %>"
-              alt="<%= event.title %>"
-              width="400"
-              height="240"
-              loading="lazy"
-              decoding="async"
-            />
+            <img src="<%= event.imageUrl %>" alt="<%= event.title %>" width="400" height="240" loading="lazy" decoding="async" />
             <% } else { %>
             <span class="material-symbols-outlined" aria-hidden="true">event</span>
             <% } %>
@@ -225,6 +196,12 @@
             <p class="bb-tp-meta">
               <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
               <%= event.location %>
+            </p>
+            <% } %>
+            <% if (event.organizer) { %>
+            <p class="bb-tp-meta">
+              <span class="material-symbols-outlined" aria-hidden="true">person</span>
+              <%= event.organizer %>
             </p>
             <% } %>
             <% if (event.registrationUrl) { %>
@@ -264,8 +241,6 @@
       </section>
       <% }) %>
     </div>
-    <% } %>
-
     <% } %>
   </div>
 </section>

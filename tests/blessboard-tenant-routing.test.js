@@ -19,6 +19,14 @@ const { provisionPlatformTenant } = require("../src/platform/services/provisionP
 const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
+const {
+  ensureChurchSettingsInitialized,
+  updateChurchSettings,
+} = require("../src/blessboard/services/blessBoardSettingsService");
+const {
+  provisionEmptyPublicPages,
+  updatePublicPage,
+} = require("../src/blessboard/services/publicContentAdminService");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_COOKIE, CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
@@ -117,6 +125,27 @@ describe("blessboard tenant routing http", () => {
       });
       assert.equal(church.ok, true, church.message);
       churchId = church.records && church.records.church && church.records.church.id;
+
+      await ensureChurchSettingsInitialized(pool, churchId);
+      await updateChurchSettings(pool, churchId, {
+        websiteStatus: "published",
+        publicName: CHURCH_NAME,
+      });
+      await provisionEmptyPublicPages(pool, { churchId, branchId: null });
+      const home = await pool.query(
+        `SELECT id FROM blessboard.public_pages
+          WHERE church_id = $1 AND page_key = 'home' AND branch_id IS NULL LIMIT 1`,
+        [churchId]
+      );
+      if (home.rows[0]) {
+        await updatePublicPage(pool, home.rows[0].id, { status: "published" });
+      }
+      await pool.query(
+        `UPDATE blessboard.public_pages
+            SET status = 'published'
+          WHERE church_id = $1 AND branch_id IS NULL AND status = 'draft'`,
+        [churchId]
+      );
 
       const user = await createBlessBoardUser(pool, {
         email: "router@example.org",

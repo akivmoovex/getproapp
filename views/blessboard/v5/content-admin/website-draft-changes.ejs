@@ -1,0 +1,165 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+<%
+  var r = typeof review !== 'undefined' && review ? review : null;
+  var empty = r && r.empty;
+  var counts = r && r.counts ? r.counts : {};
+  function formatWhen(value) {
+    if (!value) return '—';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+%>
+
+<section
+  class="bb-draft-review"
+  data-bb-website-draft-changes="1"
+  data-bb-stitch-screen="Phase 7 - Website Draft Changes - Desktop"
+  aria-label="Website draft changes"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="<%= scope.basePath %>">Content</a>
+        <span aria-hidden="true">›</span>
+        <span>Draft changes</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Website Draft Changes</h1>
+      <p class="bb-hq-lede">Review saved but unpublished changes before publishing.</p>
+    </div>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="bb-hq-alert bb-hq-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <% if (typeof notice !== 'undefined' && notice) { %>
+  <div class="bb-hq-alert bb-hq-alert--ok" role="status"><%= notice %></div>
+  <% } %>
+  <% if (typeof loadError !== 'undefined' && loadError) { %>
+  <div class="bb-hq-card">
+    <p>Draft load failed. Your saved drafts were preserved.</p>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= scope.basePath %>/draft-changes">Retry</a>
+    </p>
+  </div>
+  <% } else if (!r) { %>
+  <div class="bb-hq-card"><p>Draft changes are unavailable right now.</p></div>
+  <% } else if (empty) { %>
+  <article class="bb-hq-card bb-draft-review__empty" data-bb-draft-empty="1">
+    <h2 class="bb-hq-section-title">No draft changes</h2>
+    <p>There are no saved unpublished changes for this website scope.</p>
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.actions.viewWebsitePath %>" data-bb-view-website="1">View Website</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.actions.editWebsitePath %>" data-bb-edit-website="1">Edit Website</a>
+    </p>
+  </article>
+  <% } else { %>
+
+  <div class="bb-draft-review__summary bb-hq-card" data-bb-draft-summary="1">
+    <dl class="bb-draft-review__meta">
+      <div><dt>Website status</dt><dd><%= r.websiteStatusLabel %></dd></div>
+      <div><dt>Last published</dt><dd><%= formatWhen(r.lastPublishedAt) %></dd></div>
+      <div><dt>Last editor</dt><dd><%= r.lastEditorName || '—' %></dd></div>
+      <div><dt>Changed pages</dt><dd><%= counts.totalChangedPages || 0 %></dd></div>
+      <div><dt>Changed fields</dt><dd><%= counts.totalChangedFields || 0 %></dd></div>
+    </dl>
+    <ul class="bb-draft-review__counts" data-bb-draft-counts="1">
+      <li>Text changes: <%= counts.textChanges || 0 %></li>
+      <li>Image changes: <%= counts.imageChanges || 0 %></li>
+      <li>Video changes: <%= counts.videoChanges || 0 %></li>
+      <li>Service-time changes: <%= counts.serviceTimeChanges || 0 %></li>
+      <li>Leadership changes: <%= counts.leadershipChanges || 0 %></li>
+      <li>Ministry changes: <%= counts.ministryChanges || 0 %></li>
+      <li>Event changes: <%= counts.eventChanges || 0 %></li>
+      <li>Sermon changes: <%= counts.sermonChanges || 0 %></li>
+    </ul>
+  </div>
+
+  <% (r.warnings || []).forEach(function (w) { %>
+  <div
+    class="bb-hq-alert <%= w.severity === 'blocking' ? 'bb-hq-alert--error' : (w.severity === 'warning' ? 'bb-hq-alert--warn' : 'bb-hq-alert--ok') %>"
+    data-bb-warning-severity="<%= w.severity %>"
+    data-bb-warning-code="<%= w.code %>"
+    role="<%= w.severity === 'blocking' ? 'alert' : 'status' %>"
+  >
+    <strong><%= w.severity === 'blocking' ? 'Blocking' : (w.severity === 'warning' ? 'Warning' : 'Note') %>:</strong>
+    <%= w.message %>
+  </div>
+  <% }) %>
+
+  <div class="bb-draft-review__groups" data-bb-draft-groups="1">
+    <% (r.groupedPages || []).forEach(function (page) { %>
+    <article class="bb-hq-card" data-bb-draft-page="<%= page.pageKey %>">
+      <h2 class="bb-hq-section-title"><%= page.pageTitle %></h2>
+      <% (page.sections || []).forEach(function (section) { %>
+      <section class="bb-draft-review__section" data-bb-draft-section="<%= section.sectionKey %>">
+        <h3 class="bb-draft-review__section-title"><%= section.sectionTitle %></h3>
+        <% (section.items || []).forEach(function (item) { %>
+        <div class="bb-draft-review__item" data-bb-change-type="<%= item.changeType %>">
+          <div class="bb-draft-review__item-head">
+            <strong><%= item.fieldLabel %></strong>
+            <span class="bb-hq-muted">Modified by <%= item.editorName %> · <%= formatWhen(item.savedAt) %></span>
+          </div>
+          <% if (item.mediaThumb) { %>
+          <div class="bb-draft-review__media">
+            <img src="<%= item.mediaThumb %>" alt="" width="96" height="64" loading="lazy" />
+            <% if (item.mediaLabel) { %><span><%= item.mediaLabel %></span><% } %>
+          </div>
+          <% } else if (item.mediaLabel) { %>
+          <p class="bb-draft-review__media-label"><%= item.mediaLabel %></p>
+          <% } %>
+          <dl class="bb-draft-review__diff">
+            <div>
+              <dt>Previous</dt>
+              <dd>
+                <span><%= item.previousValue || '—' %></span>
+                <% if (item.previousTruncated) { %>
+                <details><summary>Expand</summary><p><%= item.previousValueFull %></p></details>
+                <% } %>
+              </dd>
+            </div>
+            <div>
+              <dt>New draft</dt>
+              <dd>
+                <span><%= item.newValue || '—' %></span>
+                <% if (item.newTruncated) { %>
+                <details><summary>Expand</summary><p><%= item.newValueFull %></p></details>
+                <% } %>
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <% }) %>
+      </section>
+      <% }) %>
+    </article>
+    <% }) %>
+  </div>
+
+  <div class="bb-draft-review__actions bb-hq-card" data-bb-draft-actions="1">
+    <p class="bb-hq-page-head__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.actions.previewPath %>" data-bb-preview-website="1">Preview Website</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= r.actions.continueEditingPath %>" data-bb-continue-editing="1">Continue Editing</a>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.actions.reviewPublishPath %>" data-bb-review-and-publish="1">Review and Publish</a>
+    </p>
+    <form method="post" action="<%= r.actions.discardPath %>" class="bb-draft-review__discard" data-bb-discard-draft="1" onsubmit="return confirm('Discard all unpublished draft changes for this website scope? The published website and version history will not be changed.');">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="confirm_discard" value="1" />
+      <button type="submit" class="bb-hq-btn bb-hq-btn--danger">Discard Draft</button>
+    </form>
+  </div>
+  <% } %>
+</section>
+
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

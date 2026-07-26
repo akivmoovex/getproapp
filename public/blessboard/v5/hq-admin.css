@@ -5807,3 +5807,165 @@ body.bb-hq-drawer-open { overflow: hidden; }
     justify-content: center;
   }
 }
+
+/* Phase 7 Stage 6 — draft changes / publish review */
+.bb-draft-review__meta,
+.bb-draft-review__counts {
+  display: grid;
+  gap: 0.65rem 1.25rem;
+  margin: 0 0 1rem;
+}
+.bb-draft-review__meta {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+.bb-draft-review__meta dt {
+  font-size: 0.8rem;
+  color: var(--bb-hq-muted, #5b6472);
+}
+.bb-draft-review__meta dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+.bb-draft-review__counts {
+  list-style: none;
+  padding: 0;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.bb-draft-review__section {
+  margin: 1rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(31, 36, 48, 0.08);
+}
+.bb-draft-review__section-title {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+}
+.bb-draft-review__item {
+  margin: 0 0 1rem;
+  padding: 0.85rem;
+  border-radius: 10px;
+  background: rgba(108, 92, 231, 0.04);
+}
+.bb-draft-review__item-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  margin-bottom: 0.55rem;
+}
+.bb-draft-review__diff {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+@media (min-width: 800px) {
+  .bb-draft-review__diff {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.bb-draft-review__diff dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bb-hq-muted, #5b6472);
+}
+.bb-draft-review__diff dd {
+  margin: 0.25rem 0 0;
+}
+.bb-draft-review__media {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.65rem;
+}
+.bb-draft-review__media img {
+  object-fit: cover;
+  border-radius: 8px;
+  background: #eee;
+}
+.bb-draft-review__actions,
+.bb-publish-review__actions {
+  display: grid;
+  gap: 1rem;
+}
+.bb-draft-review__discard {
+  margin: 0;
+}
+.bb-publish-review__grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (min-width: 900px) {
+  .bb-publish-review__grid {
+    grid-template-columns: 1.2fr 1fr;
+  }
+}
+.bb-publish-review__confirm {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin: 0.85rem 0;
+}
+.bb-hq-alert--warn {
+  background: rgba(241, 196, 15, 0.18);
+  border: 1px solid rgba(183, 121, 31, 0.35);
+  color: #7a4e00;
+}
+.bb-publish-review__notes {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+/* Phase 7 Stage 7 — mobile publish / draft review */
+@media (max-width: 767px) {
+  .bb-draft-review__meta,
+  .bb-draft-review__counts {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bb-draft-review__diff {
+    grid-template-columns: 1fr;
+  }
+  .bb-publish-review__grid {
+    grid-template-columns: 1fr;
+  }
+  .bb-draft-review__actions .bb-hq-page-head__actions,
+  .bb-publish-review__actions .bb-hq-page-head__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+  }
+  .bb-draft-review__actions .bb-hq-btn,
+  .bb-publish-review__actions .bb-hq-btn,
+  .bb-draft-review__discard .bb-hq-btn,
+  .bb-publish-review__actions form .bb-hq-btn {
+    width: 100%;
+    min-height: 2.75rem;
+    justify-content: center;
+  }
+  .bb-draft-review__section {
+    border: 1px solid rgba(31, 36, 48, 0.08);
+    border-radius: 10px;
+    padding: 0.35rem 0.65rem 0.65rem;
+  }
+  .bb-draft-review__section-title {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    padding: 0.45rem 0;
+    z-index: 1;
+  }
+  .bb-publish-review details.bb-publish-review__collapse {
+    border: 1px solid rgba(31, 36, 48, 0.1);
+    border-radius: 10px;
+    padding: 0.55rem 0.75rem;
+    margin: 0 0 0.75rem;
+  }
+  .bb-publish-review details.bb-publish-review__collapse > summary {
+    cursor: pointer;
+    font-weight: 600;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+  }
+}

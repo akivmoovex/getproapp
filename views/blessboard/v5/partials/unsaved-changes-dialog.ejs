@@ -1,0 +1,28 @@
+<%#
+  Phase 7 Stage 6 — unsaved field-input warning dialog.
+  Client-only: warns for active unsaved editor input, not saved drafts.
+%>
+<dialog
+  class="bb-tp-unsaved-dialog"
+  data-bb-unsaved-dialog="1"
+  data-bb-stitch-screen="Phase 7 - Unsaved Changes Warning - Desktop"
+  aria-labelledby="bb-tp-unsaved-title"
+>
+  <form method="dialog" class="bb-tp-unsaved-dialog__panel">
+    <h2 id="bb-tp-unsaved-title" class="bb-tp-unsaved-dialog__title">Unsaved changes</h2>
+    <p class="bb-tp-unsaved-dialog__body">
+      You have unsaved changes. Save or discard them before leaving.
+    </p>
+    <div class="bb-tp-unsaved-dialog__actions">
+      <button type="submit" value="continue" class="bb-tp-btn bb-tp-btn--ghost" data-bb-unsaved-continue="1">
+        Continue Editing
+      </button>
+      <button type="submit" value="discard" class="bb-tp-btn bb-tp-btn--ghost" data-bb-unsaved-discard="1">
+        Discard Changes
+      </button>
+      <button type="submit" value="save" class="bb-tp-btn bb-tp-btn--primary" data-bb-unsaved-save="1">
+        Save and Continue
+      </button>
+    </div>
+  </form>
+</dialog>

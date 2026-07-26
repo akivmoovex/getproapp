@@ -1,0 +1,69 @@
+<%#
+  Admin website chrome — Stage 4.
+  Admin view: status + Edit Website (+ demo notice). No pencils.
+  Editing mode: compact toolbar with Exit / Review and Publish.
+%>
+<%
+  var wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+%>
+<% if (wa && wa.canEdit) { %>
+  <% if (wa.showDemoNotice && !wa.editingMode) { %>
+  <div class="bb-tp-admin-demo-notice" role="status" data-bb-admin-demo-notice="1">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <span>Demo content is helping fill empty areas. Replace it anytime — visitors will not see admin notices.</span>
+  </div>
+  <% } %>
+
+  <% if (!wa.editingMode) { %>
+  <div class="bb-tp-admin-bar" data-bb-admin-bar="1" data-bb-admin-mode="view">
+    <div class="bb-tp-admin-bar__inner">
+      <div class="bb-tp-admin-bar__left">
+        <span class="bb-tp-admin-status bb-tp-admin-status--<%= wa.status.key %>" data-bb-website-status="<%= wa.status.key %>">
+          <%= wa.status.label %>
+        </span>
+        <% if (wa.manageHref) { %>
+        <a class="bb-tp-admin-bar__link" href="<%= wa.manageHref %>">Website management</a>
+        <% } %>
+      </div>
+      <div class="bb-tp-admin-bar__right">
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= wa.editHref %>" data-bb-edit-website="1">Edit Website</a>
+      </div>
+    </div>
+  </div>
+  <% } else { %>
+  <div
+    class="bb-tp-edit-toolbar"
+    data-bb-edit-toolbar="1"
+    data-bb-admin-mode="editing"
+    data-bb-csrf="<%= wa.csrfToken %>"
+    data-bb-save-url="<%= wa.saveUrl %>"
+    data-bb-page-key="<%= wa.pageKey %>"
+    data-bb-stitch-screen-desktop="Phase 7 - Church Website Editing Mode - Desktop"
+    data-bb-stitch-screen-mobile="Phase 7 - Church Website Editing Mode - Mobile"
+  >
+    <div class="bb-tp-edit-toolbar__inner">
+      <div class="bb-tp-edit-toolbar__left">
+        <span class="bb-tp-admin-status bb-tp-admin-status--<%= wa.status.key %>" data-bb-website-status="<%= wa.status.key %>">
+          <%= wa.status.label %>
+        </span>
+        <span class="bb-tp-edit-toolbar__hint">
+          <span class="bb-tp-edit-toolbar__hint-full">Editing mode — changes save as drafts</span>
+          <span class="bb-tp-edit-toolbar__hint-short">Draft editing</span>
+        </span>
+      </div>
+      <div class="bb-tp-edit-toolbar__right">
+        <% if (wa.hasDraftChanges) { %>
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= wa.reviewHref %>" data-bb-review-publish="1">
+          <span class="bb-tp-btn__label-full">Review and Publish</span>
+          <span class="bb-tp-btn__label-short">Review</span>
+        </a>
+        <% } %>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= wa.exitHref %>" data-bb-exit-editing="1">
+          <span class="bb-tp-btn__label-full">Exit Editing</span>
+          <span class="bb-tp-btn__label-short">Exit</span>
+        </a>
+      </div>
+    </div>
+  </div>
+  <% } %>
+<% } %>

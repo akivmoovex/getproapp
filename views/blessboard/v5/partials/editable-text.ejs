@@ -1,0 +1,134 @@
+<%#
+  Shared inline editable text field — Phase 7 Stage 4.
+  Locals:
+    editPageKey, editSectionKey, editFieldKey
+    editValue (display / current)
+    editTag (h1|h2|h3|p|span|a) default p
+    editClass (optional CSS class for display element)
+    editHref (optional — when tag is a)
+    editType (heading|paragraph|label|buttonText|buttonUrl|contactText)
+    editMaxLength (optional)
+    editGuidance (optional)
+    editId (optional id on display element)
+    editMultiline (optional boolean)
+%>
+<%
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _editing = _wa && _wa.editingMode;
+  var _pageKey = typeof editPageKey !== 'undefined' ? String(editPageKey) : (_wa && _wa.pageKey ? String(_wa.pageKey) : '');
+  var _sectionKey = String(typeof editSectionKey !== 'undefined' ? editSectionKey : '');
+  var _fieldKey = String(typeof editFieldKey !== 'undefined' ? editFieldKey : '');
+  var _fallback = typeof editValue !== 'undefined' && editValue != null ? String(editValue) : '';
+  var _value = _fallback;
+  if (_wa && typeof _wa.displayValue === 'function') {
+    _value = _wa.displayValue(_sectionKey, _fieldKey, _fallback);
+  } else if (_wa && _wa.overrides && _wa.overrides[_sectionKey + '::' + _fieldKey] != null) {
+    _value = String(_wa.overrides[_sectionKey + '::' + _fieldKey]);
+  }
+  var _tag = typeof editTag !== 'undefined' && editTag ? String(editTag) : 'p';
+  var _class = typeof editClass !== 'undefined' && editClass ? String(editClass) : '';
+  var _type = typeof editType !== 'undefined' && editType ? String(editType) : 'paragraph';
+  var _max = typeof editMaxLength !== 'undefined' && editMaxLength ? Number(editMaxLength) : (_type === 'heading' ? 120 : (_type === 'buttonText' ? 48 : 500));
+  var _guidance = typeof editGuidance !== 'undefined' && editGuidance ? String(editGuidance) : '';
+  var _id = typeof editId !== 'undefined' && editId ? String(editId) : '';
+  var _multiline = typeof editMultiline !== 'undefined' ? Boolean(editMultiline) : (_type === 'paragraph');
+  var _href = typeof editHref !== 'undefined' && editHref ? String(editHref) : '';
+  var _label = 'Edit ' + (_type === 'heading' ? 'heading' : (_type === 'buttonText' ? 'button text' : (_type === 'buttonUrl' ? 'button link' : (_type === 'contactText' ? 'contact text' : 'text'))));
+  function _escAttr(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+%>
+<% if (_editing) { %>
+<span
+  class="bb-tp-inline-edit"
+  data-bb-inline-edit="1"
+  data-bb-page="<%= _escAttr(_pageKey) %>"
+  data-bb-section="<%= _escAttr(_sectionKey) %>"
+  data-bb-field="<%= _escAttr(_fieldKey) %>"
+  data-bb-type="<%= _escAttr(_type) %>"
+  data-bb-max="<%= _max %>"
+  data-bb-multiline="<%= _multiline ? '1' : '0' %>"
+  data-bb-value="<%= _escAttr(_value) %>"
+  data-bb-stitch-screen-mobile="Phase 7 - Inline Text Editing - Mobile"
+>
+  <span class="bb-tp-inline-edit__display" data-bb-inline-display="1">
+    <% if (_tag === 'a') { %>
+    <a class="<%= _class %>" href="<%= _href || '#' %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></a>
+    <% } else if (_tag === 'h1') { %>
+    <h1 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h1>
+    <% } else if (_tag === 'h2') { %>
+    <h2 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h2>
+    <% } else if (_tag === 'h3') { %>
+    <h3 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h3>
+    <% } else if (_tag === 'span') { %>
+    <span class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></span>
+    <% } else { %>
+    <p class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></p>
+    <% } %>
+    <button
+      type="button"
+      class="bb-tp-inline-edit__pencil"
+      data-bb-inline-start="1"
+      aria-label="<%= _label %>"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+    </button>
+  </span>
+  <span class="bb-tp-inline-edit__editor" data-bb-inline-editor="1" hidden>
+    <span class="bb-tp-inline-edit__field-label"><%= _label %></span>
+    <% if (_multiline) { %>
+    <textarea
+      class="bb-tp-inline-edit__input"
+      data-bb-inline-input="1"
+      maxlength="<%= _max %>"
+      rows="4"
+      enterkeyhint="done"
+      aria-label="<%= _label %>"
+    ><%= _value %></textarea>
+    <% } else { %>
+    <input
+      type="<%= _type === 'buttonUrl' ? 'url' : 'text' %>"
+      class="bb-tp-inline-edit__input"
+      data-bb-inline-input="1"
+      maxlength="<%= _max %>"
+      value="<%= _escAttr(_value) %>"
+      enterkeyhint="done"
+      autocomplete="off"
+      aria-label="<%= _label %>"
+    />
+    <% } %>
+    <% if (_guidance) { %>
+    <span class="bb-tp-inline-edit__guidance" data-bb-inline-guidance="1"><%= _guidance %></span>
+    <% } else { %>
+    <span class="bb-tp-inline-edit__guidance" data-bb-inline-guidance="1">Up to <%= _max %> characters</span>
+    <% } %>
+    <span class="bb-tp-inline-edit__actions">
+      <button type="button" class="bb-tp-inline-edit__check" data-bb-inline-save="1" aria-label="Save changes">
+        <span class="material-symbols-outlined" aria-hidden="true">check</span>
+      </button>
+      <button type="button" class="bb-tp-inline-edit__cancel" data-bb-inline-cancel="1" aria-label="Discard changes">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </span>
+    <span class="bb-tp-inline-edit__status" data-bb-inline-status="1" role="status" aria-live="polite"></span>
+  </span>
+</span>
+<% } else { %>
+  <% if (_tag === 'a') { %>
+  <a class="<%= _class %>" href="<%= _href || '#' %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></a>
+  <% } else if (_tag === 'h1') { %>
+  <h1 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h1>
+  <% } else if (_tag === 'h2') { %>
+  <h2 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h2>
+  <% } else if (_tag === 'h3') { %>
+  <h3 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h3>
+  <% } else if (_tag === 'span') { %>
+  <span class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></span>
+  <% } else { %>
+  <p class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></p>
+  <% } %>
+<% } %>

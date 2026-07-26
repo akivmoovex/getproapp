@@ -1242,6 +1242,532 @@ function createContentAdminRouter(deps) {
       });
     }
 
+    /**
+     * Phase 7 Stage 4 — save inline text field to draft (does not publish).
+     */
+    router.post(`${p}/api/inline-field`, rejectApex, gateContent, express.json({ limit: "32kb" }), async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+
+      const submitted =
+        (req.body && req.body[CSRF_FIELD]) ||
+        (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
+      if (!validateCsrf(req, submitted, env)) {
+        return res.status(403).json({ ok: false, reason: "csrf", error: "Invalid or missing CSRF token." });
+      }
+
+      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const pageKey = String(body.pageKey || "").trim();
+      const sectionKey = String(body.sectionKey || "").trim();
+      const fieldKey = String(body.fieldKey || "").trim();
+      const newValue = body.value != null ? String(body.value) : "";
+
+      // Never trust client-provided organization / church IDs.
+      if (body.organizationId || body.churchId || body.organization_id || body.church_id) {
+        return res.status(400).json({
+          ok: false,
+          reason: "invalid_scope",
+          error: "Organization scope is determined by the signed-in session.",
+        });
+      }
+
+      const tenant = resolveTenantForAuthorization(req);
+      if (!tenant || !tenant.organization || !tenant.church) {
+        return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
+      }
+
+      const session = req.v5Session && req.v5Session.session;
+      if (!session || !session.userId) {
+        return res.status(401).json({ ok: false, reason: "auth", error: "Sign-in is required." });
+      }
+
+      const authzCtx = req.blessBoardAuthorizationContext;
+      const roleKeys = new Set(
+        ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
+      );
+      const allowed =
+        (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
+        (variant === "branch" &&
+          (roleKeys.has("branch_admin") ||
+            roleKeys.has("church_hq_admin") ||
+            roleKeys.has("platform_admin")));
+      if (!allowed) {
+        return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
+      }
+
+      const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
+      try {
+        const result = await saveInlineFieldDraft(getPool(), {
+          organizationId: tenant.organization.id,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          editorUserId: session.userId,
+          actorRole: roleKeys.has("platform_admin")
+            ? "platform_admin"
+            : roleKeys.has("church_hq_admin")
+              ? "church_hq_admin"
+              : "branch_admin",
+          pageKey,
+          sectionKey,
+          fieldKey,
+          newValue,
+        });
+        return res.status(200).json({
+          ok: true,
+          published: false,
+          saved: true,
+          draftCleared: Boolean(result.draftCleared),
+          value: result.value,
+          previousValue: result.previousValue,
+        });
+      } catch (err) {
+        const status = err && err.status ? Number(err.status) : 500;
+        const code = err && err.code ? String(err.code) : "SAVE_FAILED";
+        const message =
+          err && err.message && status < 500
+            ? String(err.message)
+            : "Could not save this change. Please try again.";
+        return res.status(status >= 400 && status < 600 ? status : 500).json({
+          ok: false,
+          reason: code.toLowerCase(),
+          error: message,
+          published: false,
+        });
+      }
+    });
+
+    /**
+     * Phase 7 Stage 5 — save/cancel structured drafts (media + collections). Does not publish.
+     */
+    router.post(
+      `${p}/api/structured-draft`,
+      rejectApex,
+      gateContent,
+      express.json({ limit: "256kb" }),
+      async (req, res) => {
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+
+        const submitted =
+          (req.body && req.body[CSRF_FIELD]) ||
+          (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
+        if (!validateCsrf(req, submitted, env)) {
+          return res
+            .status(403)
+            .json({ ok: false, reason: "csrf", error: "Invalid or missing CSRF token." });
+        }
+
+        const body = req.body && typeof req.body === "object" ? req.body : {};
+        if (body.organizationId || body.churchId || body.organization_id || body.church_id) {
+          return res.status(400).json({
+            ok: false,
+            reason: "invalid_scope",
+            error: "Organization scope is determined by the signed-in session.",
+          });
+        }
+
+        const tenant = resolveTenantForAuthorization(req);
+        if (!tenant || !tenant.organization || !tenant.church) {
+          return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
+        }
+        if (String(tenant.church.id) !== String(scope.churchId)) {
+          return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
+        }
+
+        const session = req.v5Session && req.v5Session.session;
+        if (!session || !session.userId) {
+          return res.status(401).json({ ok: false, reason: "auth", error: "Sign-in is required." });
+        }
+
+        const authzCtx = req.blessBoardAuthorizationContext;
+        const roleKeys = new Set(
+          ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
+        );
+        const allowed =
+          (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
+          (variant === "branch" &&
+            (roleKeys.has("branch_admin") ||
+              roleKeys.has("church_hq_admin") ||
+              roleKeys.has("platform_admin")));
+        if (!allowed) {
+          return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
+        }
+
+        const {
+          saveStructuredDraft,
+          cancelStructuredDraft,
+        } = require("../services/websiteStructuredDraftService");
+        const action = String(body.action || "save").trim().toLowerCase();
+        const actorRole = roleKeys.has("platform_admin")
+          ? "platform_admin"
+          : roleKeys.has("church_hq_admin")
+            ? "church_hq_admin"
+            : "branch_admin";
+
+        try {
+          if (action === "cancel") {
+            const result = await cancelStructuredDraft(getPool(), {
+              churchId: scope.churchId,
+              branchId: scope.branchId,
+              draftKind: body.draftKind,
+              pageKey: body.pageKey,
+              sectionKey: body.sectionKey,
+              entityKey: body.entityKey,
+            });
+            return res.status(200).json({ ok: true, published: false, ...result });
+          }
+
+          const result = await saveStructuredDraft(getPool(), {
+            organizationId: tenant.organization.id,
+            churchId: scope.churchId,
+            branchId: scope.branchId,
+            editorUserId: session.userId,
+            actorRole,
+            draftKind: body.draftKind,
+            pageKey: body.pageKey,
+            sectionKey: body.sectionKey,
+            entityKey: body.entityKey,
+            op: body.op || "upsert",
+            payload: body.payload || {},
+            previousPayload: body.previousPayload != null ? body.previousPayload : null,
+          });
+          return res.status(200).json({ ok: true, published: false, ...result });
+        } catch (err) {
+          const status = err && err.status ? Number(err.status) : 500;
+          const code = err && err.code ? String(err.code) : "SAVE_FAILED";
+          const message =
+            err && err.message && status < 500
+              ? String(err.message)
+              : "Could not save this change. Please try again.";
+          return res.status(status >= 400 && status < 600 ? status : 500).json({
+            ok: false,
+            reason: code.toLowerCase(),
+            error: message,
+            published: false,
+          });
+        }
+      }
+    );
+
+    /**
+     * Phase 7 Stage 6 — draft changes, publish review, discard, publish/submit, draft preview.
+     */
+    function resolveActorRole(req) {
+      const authzCtx = req.blessBoardAuthorizationContext;
+      const roleKeys = new Set(
+        ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
+      );
+      if (roleKeys.has("platform_admin")) return "platform_admin";
+      if (roleKeys.has("church_hq_admin")) return "church_hq_admin";
+      if (roleKeys.has("branch_admin")) return "branch_admin";
+      return null;
+    }
+
+    async function buildDraftReviewOpts(req, scope) {
+      const tenant = resolveTenantForAuthorization(req);
+      const session = req.v5Session && req.v5Session.session;
+      const orgKey = tenant && tenant.organization ? tenant.organization.key : null;
+      const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+      const publicHome = publicChurchHomePath(orgKey) || "/";
+      return {
+        organizationId: tenant && tenant.organization ? tenant.organization.id : null,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        actorRole: resolveActorRole(req),
+        actorUserId: session && session.userId,
+        scopeLabel: scope.scopeLabel || (scope.branchId ? "Branch website" : "Organization website"),
+        basePath: scope.basePath,
+        publicHomePath: publicHome,
+        editHomePath: `${publicHome}${publicHome.includes("?") ? "&" : "?"}website_edit=1`.replace(
+          "?&",
+          "?"
+        ),
+      };
+    }
+
+    router.get(`${p}/draft-changes`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const tenant = resolveTenantForAuthorization(req);
+      if (!tenant || !tenant.organization || !tenant.church) {
+        return sendControlled(req, res, 403, "Access denied.", shellKind);
+      }
+      const {
+        loadWebsiteDraftChangesReview,
+      } = require("../services/websiteDraftReviewService");
+      const reviewOpts = await buildDraftReviewOpts(req, scope);
+      const review = await loadWebsiteDraftChangesReview(getPool(), reviewOpts);
+      if (!review.ok) {
+        const html = renderContentAdminView(
+          "content-admin/website-draft-changes.ejs",
+          await shellLocals(req, res, {
+            scope,
+            review: null,
+            loadError: true,
+            error:
+              "We could not load draft changes. Your drafts were preserved — try again.",
+            notice: null,
+          })
+        );
+        return res.status(503).type("html").send(html);
+      }
+      const notice = String((req.query && req.query.notice) || "");
+      const errQ = String((req.query && req.query.error) || "");
+      const html = renderContentAdminView(
+        "content-admin/website-draft-changes.ejs",
+        await shellLocals(req, res, {
+          scope,
+          review,
+          loadError: false,
+          error:
+            errQ === "discard_failed"
+              ? "Discard failed. Drafts were preserved — try again."
+              : errQ === "publish_failed"
+                ? "Publication failed. Drafts were preserved — try again."
+                : errQ === "submit_failed"
+                  ? "Approval submission failed. Drafts were preserved — try again."
+                  : errQ === "csrf"
+                    ? "Invalid or missing security token. Refresh and try again."
+                    : errQ === "forbidden"
+                      ? "You do not have permission for that action."
+                      : null,
+          notice:
+            notice === "discarded"
+              ? "Unpublished draft changes were discarded. The published website was not changed."
+              : notice === "submitted"
+                ? "Changes were submitted for approval."
+                : notice === "published"
+                  ? "Website changes were published."
+                  : null,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    });
+
+    router.get(`${p}/draft-changes/publish-review`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const tenant = resolveTenantForAuthorization(req);
+      if (!tenant || !tenant.organization || !tenant.church) {
+        return sendControlled(req, res, 403, "Access denied.", shellKind);
+      }
+      const {
+        loadWebsiteDraftPublishReview,
+      } = require("../services/websiteDraftReviewService");
+      const reviewOpts = await buildDraftReviewOpts(req, scope);
+      const review = await loadWebsiteDraftPublishReview(getPool(), reviewOpts);
+      if (!review.ok) {
+        return res.redirect(303, `${scope.basePath}/draft-changes?error=load`);
+      }
+      if (!review.hasChanges) {
+        return res.redirect(303, `${scope.basePath}/draft-changes`);
+      }
+      const errQ = String((req.query && req.query.error) || "");
+      const html = renderContentAdminView(
+        "content-admin/website-publish-review.ejs",
+        await shellLocals(req, res, {
+          scope,
+          review,
+          error:
+            errQ === "publish_failed"
+              ? "Publication failed. Drafts were preserved and the public website was not changed."
+              : errQ === "submit_failed"
+                ? "Approval submission failed. Drafts were preserved — try again."
+                : errQ === "csrf"
+                  ? "Invalid or missing security token. Refresh and try again."
+                  : errQ === "not_ready"
+                    ? "Website is not ready to publish. Review the issues below."
+                    : errQ === "forbidden"
+                      ? "You do not have permission for that action."
+                      : null,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    });
+
+    router.post(`${p}/draft-changes/discard`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!validateCsrfPost(req, res)) return;
+      const tenant = resolveTenantForAuthorization(req);
+      const session = req.v5Session && req.v5Session.session;
+      if (!tenant || !tenant.organization || !session || !session.userId) {
+        return sendControlled(req, res, 403, "Access denied.", shellKind);
+      }
+      if (req.body && (req.body.organizationId || req.body.churchId)) {
+        return res.redirect(303, `${scope.basePath}/draft-changes?error=forbidden`);
+      }
+      const {
+        discardWebsiteDrafts,
+      } = require("../services/websiteDraftPublishService");
+      const result = await discardWebsiteDrafts(getPool(), {
+        organizationId: tenant.organization.id,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        actorUserId: session.userId,
+        actorRole: resolveActorRole(req),
+        confirmDiscard: req.body && req.body.confirm_discard,
+      });
+      if (!result.ok) {
+        return res.redirect(303, `${scope.basePath}/draft-changes?error=discard_failed`);
+      }
+      return res.redirect(303, `${scope.basePath}/draft-changes?notice=discarded`);
+    });
+
+    router.post(`${p}/draft-changes/publish`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!validateCsrfPost(req, res)) return;
+      const tenant = resolveTenantForAuthorization(req);
+      const session = req.v5Session && req.v5Session.session;
+      if (!tenant || !tenant.organization || !session || !session.userId) {
+        return sendControlled(req, res, 403, "Access denied.", shellKind);
+      }
+      if (req.body && (req.body.organizationId || req.body.churchId)) {
+        return res.redirect(303, `${scope.basePath}/draft-changes/publish-review?error=forbidden`);
+      }
+      const {
+        publishWebsiteDrafts,
+      } = require("../services/websiteDraftPublishService");
+      const result = await publishWebsiteDrafts(getPool(), {
+        organizationId: tenant.organization.id,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        actorUserId: session.userId,
+        actorRole: resolveActorRole(req),
+        confirmPublish: req.body && req.body.confirm_publish,
+        mobilePreviewConfirmed: Boolean(
+          req.body && (req.body.mobile_preview_confirmed === "1" || req.body.mobile_preview_confirmed === "on")
+        ),
+        env,
+      });
+      if (!result.ok) {
+        const code =
+          result.reason === "cross_org" || result.status === "forbidden"
+            ? "forbidden"
+            : result.reason === "no_changes" || result.status === "not_ready"
+              ? "not_ready"
+              : "publish_failed";
+        return res.redirect(303, `${scope.basePath}/draft-changes/publish-review?error=${code}`);
+      }
+      return res.redirect(303, `${scope.basePath}/draft-changes?notice=published`);
+    });
+
+    router.post(`${p}/draft-changes/submit`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!validateCsrfPost(req, res)) return;
+      const tenant = resolveTenantForAuthorization(req);
+      const session = req.v5Session && req.v5Session.session;
+      if (!tenant || !tenant.organization || !session || !session.userId) {
+        return sendControlled(req, res, 403, "Access denied.", shellKind);
+      }
+      if (!scope.branchId) {
+        return res.redirect(303, `${scope.basePath}/draft-changes/publish-review?error=forbidden`);
+      }
+      if (req.body && (req.body.organizationId || req.body.churchId)) {
+        return res.redirect(303, `${scope.basePath}/draft-changes/publish-review?error=forbidden`);
+      }
+      const {
+        submitWebsiteDraftsForApproval,
+      } = require("../services/websiteDraftPublishService");
+      const result = await submitWebsiteDraftsForApproval(getPool(), {
+        organizationId: tenant.organization.id,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        actorUserId: session.userId,
+        actorRole: resolveActorRole(req),
+        reason: req.body && req.body.reason,
+        submitterNote: req.body && req.body.submitter_note,
+      });
+      if (!result.ok) {
+        return res.redirect(303, `${scope.basePath}/draft-changes/publish-review?error=submit_failed`);
+      }
+      return res.redirect(303, `${scope.basePath}/draft-changes?notice=submitted`);
+    });
+
+    router.get(`${p}/draft-preview/:pageKey`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      const pageKey = String(req.params.pageKey || "home").trim();
+      const tenant = resolveTenantForAuthorization(req);
+      if (!tenant || !tenant.church || !tenant.primaryBranch) {
+        return sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
+      }
+
+      const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel");
+      const { renderTenantPublicPage } = require("./renderTenantPublicPage");
+      const {
+        loadDraftOverlayMap,
+        applyDraftsToSections,
+      } = require("../services/websiteInlineDraftService");
+      const {
+        listStructuredDrafts,
+        applyStructuredDraftsToModel,
+      } = require("../services/websiteStructuredDraftService");
+
+      const model = await loadTenantPublicPageModel(getPool(), {
+        tenant,
+        pageKey,
+        hostname: String(req.hostname || ""),
+        preview: true,
+        previewBranchId: scope.branchId,
+        previewMeta: {
+          backHref: `${scope.basePath}/draft-changes`,
+          editHref: null,
+          bannerLabel: "Draft preview",
+          bannerDetail:
+            "Authorization-protected draft preview. Public visitors cannot open this page.",
+        },
+      });
+      if (model.kind !== KIND.OK) {
+        return sendControlled(
+          req,
+          res,
+          model.kind === KIND.UNAVAILABLE ? 503 : 404,
+          "Draft preview is unavailable for this page. Your drafts were preserved.",
+          shellKind
+        );
+      }
+
+      try {
+        const overlayMap = await loadDraftOverlayMap(getPool(), {
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          pageKey: model.pageKey,
+        });
+        model.sections = applyDraftsToSections(model.sections, overlayMap);
+        if (model.pageKey === "contact" && model.publicContact) {
+          const email = overlayMap.get("details::email");
+          const phone = overlayMap.get("details::phone");
+          const address = overlayMap.get("details::address");
+          if (email !== undefined || phone !== undefined || address !== undefined) {
+            model.publicContact = {
+              ...model.publicContact,
+              email: email !== undefined ? email : model.publicContact.email,
+              phone: phone !== undefined ? phone : model.publicContact.phone,
+              addressText:
+                address !== undefined ? address : model.publicContact.addressText,
+              hasAny: true,
+            };
+          }
+        }
+        const structuredDrafts = await listStructuredDrafts(getPool(), {
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          status: "draft",
+        });
+        applyStructuredDraftsToModel(model, structuredDrafts);
+      } catch {
+        /* show CMS preview without overlays if draft load fails */
+      }
+
+      model.websiteAdmin = null;
+      model.cssHref = "/blessboard/v5/tenant-public.css?v=42";
+      const html = renderTenantPublicPage(model);
+      return res.status(200).type("html").send(html);
+    });
+
     router.get(`${p}/preview/:pageKey`, rejectApex, gateContent, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;

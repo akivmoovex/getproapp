@@ -1,0 +1,26 @@
+<%#
+  Pencil trigger for structured editors (image, video, collections).
+  Locals: editKind, editEntityKey, editSectionKey (optional), editLabel, editPayload (optional object)
+%>
+<%
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _kind = typeof editKind !== 'undefined' ? String(editKind) : '';
+  var _entity = typeof editEntityKey !== 'undefined' ? String(editEntityKey) : 'default';
+  var _section = typeof editSectionKey !== 'undefined' ? String(editSectionKey) : '';
+  var _label = typeof editLabel !== 'undefined' ? String(editLabel) : 'Edit';
+  var _payload = typeof editPayload !== 'undefined' && editPayload ? editPayload : {};
+%>
+<% if (_wa && _wa.editingMode && _kind) { %>
+<button
+  type="button"
+  class="bb-tp-structured-pencil"
+  data-bb-structured-open="1"
+  data-bb-kind="<%= _kind %>"
+  data-bb-entity="<%= _entity %>"
+  <% if (_section) { %>data-bb-section="<%= _section %>"<% } %>
+  data-bb-payload="<%= JSON.stringify(_payload).replace(/"/g, '&quot;') %>"
+  aria-label="<%= _label %>"
+>
+  <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+</button>
+<% } %>

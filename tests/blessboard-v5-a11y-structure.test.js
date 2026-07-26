@@ -2331,49 +2331,48 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     }
   });
 
-  it("events and sermons templates expose media/register aria-labels and empty roles", () => {
+  it("events and sermons templates expose media/register aria-labels without empty-state chrome", () => {
     const events = read("views/blessboard/v5/public/events.ejs");
     const sermons = read("views/blessboard/v5/public/sermons.ejs");
-    assert.match(events, /role="status"/);
-    assert.match(events, /data-bb-empty="events"/);
     assert.match(events, /aria-label="Register for/);
     assert.match(events, /aria-label="Featured event"/);
-    assert.match(events, /data-bb-stitch-events="populated-v2"/);
-    assert.match(events, /Community Calendar/);
+    assert.match(events, /data-bb-stitch-events="phase7-v1"/);
+    assert.match(events, /Connect & Grow|Kingdom Gatherings/);
     assert.match(events, /Upcoming Events/);
+    assert.doesNotMatch(events, /data-bb-empty="events"/);
     assert.doesNotMatch(events, /View Past Events|All Events|Conferences|Remind Me|Get Access/i);
     assert.doesNotMatch(events, /Past Events Archive|Weekly Worship|Cell Groups/i);
-    assert.doesNotMatch(events, /iframe|youtube\.com\/embed/i);
-    assert.match(sermons, /role="status"/);
-    assert.match(sermons, /data-bb-empty="sermons"/);
+    assert.doesNotMatch(events, /iframe|youtube\.com\/embed|data-bb-calendar=/i);
     assert.match(sermons, /aria-label="<%= mediaLabel/);
     assert.match(sermons, /aria-label="<%= resourceLabel/);
-    assert.match(sermons, /No sermons published/);
+    assert.match(sermons, /data-bb-stitch-sermons="phase7-v1"/);
+    assert.doesNotMatch(sermons, /data-bb-empty="sermons"/);
     assert.doesNotMatch(sermons, /iframe|youtube\.com\/embed/i);
   });
 
   it("events template keeps Stitch list hierarchy without fabricated filters or past archive", () => {
     const events = read("views/blessboard/v5/public/events.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(events, /data-bb-stitch-events="populated-v2"/);
+    assert.match(events, /data-bb-stitch-events="phase7-v1"/);
     assert.match(events, /aria-label="Events"/);
     assert.match(events, /Featured Gathering/);
     assert.match(events, /formatEventParts/);
     assert.match(events, /registrationUrl/);
     assert.match(events, /data-bb-event-register="1"/);
     assert.match(events, /role="img"/);
-    assert.match(css, /\.bb-tp-events-hero__title-accent/);
+    assert.match(events, /partials\/page-hero/);
+    assert.match(css, /\.bb-tp-page-hero__title-accent/);
     assert.match(css, /\.bb-tp-featured-event__card/);
     assert.match(css, /\.bb-tp-event-card__date/);
     assert.match(css, /@media \(max-width:\s*767px\)[\s\S]*\.bb-tp-event-card/);
   });
 
-  it("sermons template keeps Stitch featured/list hierarchy without series or archive chrome", () => {
+  it("sermons template keeps Stitch featured/list hierarchy without filter chrome", () => {
     const sermons = read("views/blessboard/v5/public/sermons.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(sermons, /data-bb-stitch-sermons="populated-v2"/);
+    assert.match(sermons, /data-bb-stitch-sermons="phase7-v1"/);
     assert.match(sermons, /aria-label="Sermons"/);
-    assert.match(sermons, /Teaching Library/);
+    assert.match(sermons, /Spiritual Nourishment/);
     assert.match(sermons, /Featured Sermon/);
     assert.match(sermons, /Latest Release/);
     assert.match(sermons, /Recent Sermons/);
@@ -2382,9 +2381,10 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     assert.match(sermons, /role="img"/);
     assert.match(sermons, /data-bb-sermon-media="1"/);
     assert.match(sermons, /data-bb-sermon-resource="1"/);
+    assert.match(sermons, /partials\/page-hero/);
     assert.doesNotMatch(sermons, /Notify Me|View Past Series|View Archive|All Messages|SERIES:/i);
-    assert.doesNotMatch(sermons, /Ephesians|42:15|iframe|youtube\.com\/embed/i);
-    assert.match(css, /\.bb-tp-sermons-hero__title-accent/);
+    assert.doesNotMatch(sermons, /All Speakers|data-bb-sermon-filter=|iframe|youtube\.com\/embed/i);
+    assert.match(css, /\.bb-tp-page-hero__title-accent/);
     assert.match(css, /\.bb-tp-featured-sermon__card/);
     assert.match(css, /\.bb-tp-sermon-card__media/);
     assert.match(css, /\.bb-tp-featured-sermon__play--mobile/);
@@ -2393,86 +2393,58 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
   it("home template keeps Stitch hero hierarchy without fabricated widgets", () => {
     const home = read("views/blessboard/v5/public/home.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(home, /data-bb-stitch-home="refined-v2"/);
-    assert.match(home, /aria-label="Welcome"/);
-    assert.match(home, /Join a Service/);
-    assert.match(home, /Join Our Next Service/);
-    assert.match(home, /Explore Ministries/);
-    assert.match(home, /role="status"/);
-    assert.match(home, /data-bb-empty="home"/);
-    assert.match(home, /Already a Member\?/);
-    assert.doesNotMatch(home, /1\.2k\+|Need Prayer|Weekly Service Times|Active Members/i);
-    assert.match(css, /\.bb-tp-hero__title-accent/);
-    assert.match(css, /\.bb-tp-hero__cta-desktop/);
+    assert.match(home, /data-bb-stitch-home="phase7-v1"/);
+    assert.match(home, /aria-label="Welcome"|data-bb-home="1"/);
+    assert.match(home, /Plan Your Visit/);
+    assert.match(home, /Service Times|data-bb-home-service-times|partials\/service-times-block/);
+    assert.match(home, /data-bb-home-ministries|data-bb-home-events/);
+    assert.doesNotMatch(home, /1\.2k\+|Need Prayer|Active Members/i);
+    assert.match(css, /\.bb-tp-hero--phase7/);
     assert.match(css, /@media \(max-width:\s*767px\)/);
-    assert.match(css, /aspect-ratio:\s*1\s*\/\s*1/);
   });
 
   it("about template keeps Stitch hierarchy without fabricated stats or story chrome", () => {
     const about = read("views/blessboard/v5/public/about.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(about, /data-bb-stitch-about="populated-v3"/);
-    assert.match(about, /aria-label="About"/);
-    assert.match(about, /About Us/);
-    assert.match(about, /Our Identity/);
-    assert.match(about, /Get Connected/);
-    assert.match(about, /Join Our Community/);
-    assert.match(about, /Plan Your Visit/);
-    assert.match(about, /Member Login/);
-    assert.match(about, /role="status"/);
-    assert.match(about, /data-bb-empty="about"/);
-    assert.match(about, /Our Purpose/);
-    assert.match(about, /Core Values/);
+    assert.match(about, /data-bb-stitch-about="phase7-v1"/);
+    assert.match(about, /aria-label="About"|data-bb-about="1"/);
+    assert.match(about, /Plan Your Visit|Core Values|Mission and vision/);
     assert.doesNotMatch(about, /Watch Our Story|1,200\+|Year Established|Download Annual Report/i);
     assert.doesNotMatch(about, /Hearts transformed|Active Programs|Community Impact/i);
-    assert.match(css, /\.bb-tp-about-hero__title-accent/);
-    assert.match(css, /\.bb-tp-about-story__media--collage/);
-    assert.match(css, /\.bb-tp-about-purpose__grid--pair/);
-    assert.match(css, /\.bb-tp-about__join-cta-mobile/);
+    assert.match(css, /\.bb-tp-about-gallery|\.bb-tp-cta-band/);
   });
 
   it("leadership template keeps Stitch hierarchy without invented people or groups", () => {
     const leadership = read("views/blessboard/v5/public/leadership.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(leadership, /data-bb-stitch-leadership="populated-v2"/);
-    assert.match(leadership, /aria-label="Leadership"/);
-    assert.match(leadership, /Faith &amp; Community/);
-    assert.match(leadership, /Want to serve with us\?/);
-    assert.match(leadership, /Join a Ministry/);
-    assert.match(leadership, /role="status"/);
-    assert.match(leadership, /data-bb-empty="leadership"/);
-    assert.match(leadership, /role="img"/);
-    assert.match(leadership, /initials\(/);
-    assert.match(leadership, /Ministry Leaders/);
+    assert.match(leadership, /data-bb-stitch-leadership="phase7-v1"/);
+    assert.match(leadership, /Connect with Leadership|Join a Ministry/);
+    assert.match(leadership, /partials\/leader-card/);
+    assert.match(leadership, /Ministry Leaders|Ministry Leads/);
     assert.doesNotMatch(leadership, /Contact Pastor|View Profile|Pastoral Team|Church Elders/i);
     assert.doesNotMatch(leadership, /Community Led|Live Updates|Rev\. Dr\. Samuel/i);
-    assert.match(css, /\.bb-tp-leadership-hero__title-accent/);
-    assert.match(css, /\.bb-tp-featured-leader__card/);
-    assert.match(css, /\.bb-tp-leadership-hero \.bb-tp-dir-hero__title\s*\{[^}]*color:\s*var\(--bb-ink\)/);
-    assert.match(leadership, /bb-tp-featured-leader__label/);
-    assert.match(leadership, /<h2 class="bb-tp-featured-leader__name"/);
-    assert.match(css, /\.bb-tp-leader-card__media\.is-fallback/);
-    assert.match(css, /\.bb-tp-avatar--xl/);
+    assert.doesNotMatch(leadership, /data-bb-empty="leadership"/);
+    assert.match(css, /\.bb-tp-leader-card--featured|\.bb-tp-leader-card__media/);
   });
 
-  it("ministries template keeps Stitch cards without unsupported actions or sample data", () => {
+  it("ministries template keeps Stitch cards without unsupported actions", () => {
     const ministries = read("views/blessboard/v5/public/ministries.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(ministries, /data-bb-stitch-ministries="populated-v4"/);
+    assert.match(ministries, /data-bb-stitch-ministries="phase7-v1"/);
     assert.match(ministries, /aria-label="Ministries"/);
-    assert.match(ministries, /Our Impact/);
-    assert.match(ministries, /Our Community/);
+    assert.match(ministries, /Our Community Ecosystem/);
     assert.match(ministries, /Join a Ministry/);
     assert.match(ministries, /View Events/);
-    assert.match(ministries, /Still looking for your place\?/);
-    assert.match(ministries, /role="status"/);
-    assert.match(ministries, /data-bb-empty="ministries"/);
+    assert.match(ministries, /Find Your Place in the Mission/);
+    assert.match(ministries, /partials\/page-hero/);
+    assert.match(ministries, /partials\/cta-band/);
+    assert.doesNotMatch(ministries, /data-bb-empty="ministries"/);
     assert.match(ministries, /meetingDay/);
     assert.match(ministries, /role="img"/);
     assert.doesNotMatch(ministries, /Learn More|Join Team|View Schedule|Contact Leader|Download/i);
-    assert.doesNotMatch(ministries, /All Ministries|Global Missions|500\+|Kingdom Kids/i);
+    assert.doesNotMatch(ministries, /Global Missions|500\+|Kingdom Kids/i);
     assert.doesNotMatch(ministries, /bb-tp-ministry-filter|data-bb-filter=/);
-    assert.match(css, /\.bb-tp-ministries-hero__title-accent/);
+    assert.match(css, /\.bb-tp-page-hero__title-accent/);
     assert.match(css, /\.bb-tp-ministry-card--featured/);
     assert.match(css, /\.bb-tp-ministry-card__fallback-icon/);
     assert.match(css, /@media \(max-width:\s*767px\)[\s\S]*\.bb-tp-ministry-card/);
@@ -2491,35 +2463,36 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     const contact = read("views/blessboard/v5/public/contact.ejs");
     const giving = read("views/blessboard/v5/public/giving.ejs");
     assert.match(contact, /role="status"/);
-    assert.match(contact, /data-bb-empty="contact"/);
     assert.match(contact, /aria-label="Email/);
     assert.match(contact, /aria-label="Call/);
     assert.match(contact, /data-bb-contact-map="unavailable"/);
     assert.match(contact, /data-bb-contact-form="unavailable"/);
     assert.match(contact, /Send a Message/);
+    assert.doesNotMatch(contact, /data-bb-empty="contact"/);
     assert.doesNotMatch(contact, /<form|name="_csrf"|csrfField|name="full_name"|name="message"/i);
     assert.match(giving, /role="note"/);
     assert.match(giving, /data-bb-giving-notice="1"/);
     assert.match(giving, /does not process payments/i);
     assert.match(giving, /Open published link/);
     assert.match(giving, /data-bb-giving-instructions="1"/);
+    assert.doesNotMatch(giving, /data-bb-empty="giving"/);
     assert.doesNotMatch(giving, /<form|Give Online|Donate Now|card number|cvv/i);
   });
 
-  it("contact template keeps Stitch cards/map hierarchy without invented hours or POST form", () => {
+  it("contact template keeps Stitch cards/map hierarchy without POST form", () => {
     const contact = read("views/blessboard/v5/public/contact.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(contact, /data-bb-stitch-contact="populated-v2"/);
+    assert.match(contact, /data-bb-stitch-contact="phase7-v1"/);
     assert.match(contact, /aria-label="Contact"/);
-    assert.match(contact, /Connect With Us/);
-    assert.match(contact, /Contact Us/);
+    assert.match(contact, /Get In Touch/);
     assert.match(contact, /bb-tp-contact-main/);
     assert.match(contact, /data-bb-contact-message="unavailable"/);
     assert.match(contact, /phoneHref|emailHref|channel\.href/);
     assert.match(contact, /mapEmbedUrl|directionsUrl/);
-    assert.doesNotMatch(contact, /Service Times|Office Hours|Stay Connected With|newsletter/i);
+    assert.match(contact, /Service Times|Office Hours/);
+    assert.match(contact, /partials\/page-hero/);
     assert.doesNotMatch(contact, /method="post"|action="\/contact"/i);
-    assert.match(css, /\.bb-tp-contact-hero__title-accent/);
+    assert.match(css, /\.bb-tp-page-hero__title-accent/);
     assert.match(contact, /bb-tp-contact-card__label/);
     assert.match(contact, /<h3 class="bb-tp-contact-card__label"/);
     assert.match(css, /\.bb-tp-contact-main/);
@@ -2530,21 +2503,25 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
   it("giving template keeps Stitch info-only hierarchy without payment or invented accounts", () => {
     const giving = read("views/blessboard/v5/public/giving.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
-    assert.match(giving, /data-bb-stitch-giving="populated-v2"/);
+    assert.match(giving, /data-bb-stitch-giving="phase7-v1"/);
     assert.match(giving, /aria-label="Giving"/);
-    assert.match(giving, /Faithful Stewardship/);
+    assert.match(giving, /A Culture of Generosity/);
     assert.match(giving, /Ways to Give/);
     assert.match(giving, /Explore Ways to Give/);
     assert.match(giving, /data-bb-giving-instructions="1"/);
     assert.match(giving, /Open published link/);
     assert.match(giving, /Contact for details/);
     assert.match(giving, /externalUrl/);
+    assert.match(giving, /Why We Give|data-bb-giving-why/);
+    assert.match(giving, /Financial Accountability|data-bb-giving-accountability/);
+    assert.match(giving, /partials\/page-hero/);
     assert.doesNotMatch(giving, /Give Online|Donate Now|Scan to Give|Merchant ID|Current Impact|Your Recent Contributions/i);
     assert.doesNotMatch(giving, /Standard Chartered|Airtel Money|1\.2k|amount|card number|<form/i);
-    assert.match(css, /\.bb-tp-giving-hero__title-accent/);
+    assert.match(css, /\.bb-tp-page-hero__title-accent/);
     assert.match(css, /\.bb-tp-giving-notice/);
     assert.match(css, /\.bb-tp-giving-card__instructions/);
     assert.match(css, /\.bb-tp-giving-card__body/);
+    assert.match(css, /\.bb-tp-giving-why__grid/);
   });
 
   it("tenant public CSS keeps contact/giving overflow guards", () => {

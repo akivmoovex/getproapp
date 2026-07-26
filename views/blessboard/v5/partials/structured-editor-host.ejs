@@ -1,0 +1,45 @@
+<%#
+  Stage 5 — shared structured editor modal host (one dialog for all editors).
+  Included from shell when websiteAdmin.editingMode.
+%>
+<%
+  var wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+%>
+<% if (wa && wa.editingMode) { %>
+<div
+  id="bb-tp-structured-editor"
+  class="bb-tp-structured-editor"
+  hidden
+  data-bb-structured-editor="1"
+  data-bb-csrf="<%= wa.csrfToken %>"
+  data-bb-structured-save="<%= wa.structuredSaveUrl %>"
+  data-bb-media-upload="<%= wa.mediaUploadUrl %>"
+  data-bb-media-list="<%= wa.mediaListUrl %>"
+  data-bb-page-key="<%= wa.pageKey %>"
+  data-bb-stitch-screen-mobile-media="Phase 7 - Media Editing - Mobile"
+  data-bb-stitch-screen-mobile-service-times="Phase 7 - Service Times Editing - Mobile"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="bb-tp-structured-editor-title"
+>
+  <div class="bb-tp-structured-editor__backdrop" data-bb-structured-dismiss="1" tabindex="-1"></div>
+  <div class="bb-tp-structured-editor__panel" data-bb-structured-panel="1">
+    <header class="bb-tp-structured-editor__header">
+      <h2 id="bb-tp-structured-editor-title" class="bb-tp-structured-editor__title">Edit</h2>
+      <button type="button" class="bb-tp-structured-editor__close" data-bb-structured-dismiss="1" aria-label="Close editor">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <div class="bb-tp-structured-editor__body" data-bb-structured-body="1"></div>
+    <p class="bb-tp-structured-editor__status" data-bb-structured-status="1" role="status" aria-live="polite"></p>
+    <footer class="bb-tp-structured-editor__footer">
+      <button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-structured-cancel="1">Cancel</button>
+      <button type="button" class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--touch" data-bb-structured-save="1">
+        <span class="material-symbols-outlined" aria-hidden="true">check</span>
+        Save draft
+      </button>
+    </footer>
+  </div>
+  <script type="application/json" id="bb-tp-demo-images-json"><%- JSON.stringify(wa.demoImages || []) %></script>
+</div>
+<% } %>

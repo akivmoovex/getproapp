@@ -16,6 +16,9 @@ const STATUS = Object.freeze({
 const ACTION_LABELS = Object.freeze({
   website_edit_started: "Website edit started",
   draft_saved: "Draft saved",
+  draft_discarded: "Draft discarded",
+  drafts_published: "Draft changes published",
+  drafts_submitted_for_approval: "Draft changes submitted for approval",
   submission_created: "Submission created",
   submission_submitted: "Submission submitted",
   submission_resubmitted: "Submission resubmitted",

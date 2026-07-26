@@ -279,13 +279,14 @@ describe("blessboard public pages", () => {
     assert.doesNotMatch(res.text, /Church scope copy/);
   });
 
-  it("shows intentional empty states without fake data", async () => {
+  it("soft-fills sermons demo when church has no published sermons", async () => {
     requireDb();
     const res = await request(app).get("/sermons").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /bb-tp-empty/);
-    assert.match(res.text, /not published yet|being prepared|will appear here/i);
-    assert.doesNotMatch(res.text, /lorem ipsum|demo sermon|sample/i);
+    assert.match(res.text, /data-bb-sermons="1"/);
+    assert.match(res.text, /Finding Peace in the Noise|Sacred Teachings/);
+    assert.doesNotMatch(res.text, /bb-tp-empty|data-bb-empty="sermons"/);
+    assert.doesNotMatch(res.text, /lorem ipsum|demo sermon|\[Demo\]/i);
   });
 
   it("escapes user content in HTML", async () => {
@@ -425,13 +426,12 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/leadership").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-leadership="1"/);
-    assert.match(res.text, /data-bb-stitch-leadership="populated-v2"/);
-    assert.match(res.text, /Faith &amp; Community|Leadership/);
+    assert.match(res.text, /data-bb-stitch-leadership="phase7-v1"/);
+    assert.match(res.text, /Our Heart for Service|Leadership/);
     assert.match(res.text, /Zeta Pastor/);
-    assert.match(res.text, /bb-tp-avatar/);
-    assert.match(res.text, /role="img"/);
+    assert.match(res.text, /bb-tp-avatar|bb-tp-leader-card__media/);
     assert.match(res.text, /bb-tp-featured-leader/);
-    assert.match(res.text, /Ministry Leaders/);
+    assert.match(res.text, /Ministry Leaders|Leadership Team/);
     assert.doesNotMatch(res.text, /Rev\. Dr\. Samuel|placeholder|stock photo/i);
     assert.doesNotMatch(res.text, /Contact Pastor|View Profile/i);
     assert.doesNotMatch(res.text, /Pastoral Team|Church Elders|Community Led|Live Updates/i);
@@ -447,7 +447,7 @@ describe("blessboard public pages", () => {
     assert.ok(alphaIdx > 0 && betaIdx > alphaIdx && zetaIdx > betaIdx, "leaders keep sort order");
   });
 
-  it("leadership empty state omits fabricated people and department groups", async () => {
+  it("leadership empty CMS still renders sample leaders without fabricated groups", async () => {
     requireDb();
     await pool.query(
       `UPDATE blessboard.leaders SET status = 'archived' WHERE church_id = $1 AND status = 'published'`,
@@ -455,11 +455,11 @@ describe("blessboard public pages", () => {
     );
     const res = await request(app).get("/leadership").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-empty="leadership"|bb-tp-empty/);
-    assert.match(res.text, /Update in progress/);
-    assert.match(res.text, /Want to serve with us\?/);
+    assert.match(res.text, /data-bb-leadership="1"/);
+    assert.match(res.text, /Connect with Leadership|data-bb-leadership-featured/);
     assert.doesNotMatch(res.text, /Rev\. Dr\. Samuel|Pastoral Team|Church Elders/i);
     assert.doesNotMatch(res.text, /Community Led|Live Updates|Contact Pastor|View Profile/i);
+    assert.doesNotMatch(res.text, /\[Demo\]|demo content/i);
   });
 
   it("ministries show published only in sort order without fabricated actions", async () => {
@@ -497,18 +497,18 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/ministries").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-ministries="1"/);
-    assert.match(res.text, /data-bb-stitch-ministries="populated-v4"/);
-    assert.match(res.text, /Our Impact|Our Community/);
+    assert.match(res.text, /data-bb-stitch-ministries="phase7-v1"/);
+    assert.match(res.text, /Our Community Ecosystem|Our Impact|Our Community/);
     assert.match(res.text, /Join a Ministry/);
     assert.match(res.text, /View Events/);
     assert.match(res.text, /Youth Ministry/);
     assert.match(res.text, /Music Ministry/);
     assert.match(res.text, /Fridays/);
     assert.match(res.text, /bb-tp-ministry-card--featured/);
-    assert.match(res.text, /Still looking for your place\?/);
+    assert.match(res.text, /Find Your Place in the Mission|Still looking for your place\?/);
     assert.doesNotMatch(res.text, /Draft Choir|Hidden draft ministry/);
     assert.doesNotMatch(res.text, /download|View Schedule|Contact Leader|Learn More|Join Team/i);
-    assert.doesNotMatch(res.text, /Explore ministries serving|500\+|Global Missions|All Ministries/);
+    assert.doesNotMatch(res.text, /Explore ministries serving|500\+|Global Missions/);
     assert.doesNotMatch(res.text, /bb-tp-ministry-filter|data-bb-filter=/);
     assert.doesNotMatch(res.text, /Register to Join|Contact Pastoral Team/i);
     assert.doesNotMatch(res.text, />\s*Volunteer\s*</i);
@@ -521,7 +521,7 @@ describe("blessboard public pages", () => {
     assert.doesNotMatch(emptyHost.text, /Youth Ministry|Music Ministry/);
   });
 
-  it("ministries empty state is designed without sample ministries", async () => {
+  it("ministries soft-fill demo when no published ministries", async () => {
     requireDb();
     await pool.query(
       `UPDATE blessboard.ministries SET status = 'archived' WHERE church_id = $1 AND status = 'published'`,
@@ -529,10 +529,11 @@ describe("blessboard public pages", () => {
     );
     const res = await request(app).get("/ministries").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-empty="ministries"|bb-tp-empty/);
-    assert.match(res.text, /Update in progress/);
-    assert.match(res.text, /Still looking for your place\?/);
-    assert.doesNotMatch(res.text, /Youth Ministry|Music Ministry|Kingdom Kids|KBC Youth/i);
+    assert.match(res.text, /data-bb-ministries="1"/);
+    assert.match(res.text, /data-bb-stitch-ministries="phase7-v1"/);
+    assert.match(res.text, /Sacred Worship|Elevate Youth|Neighbor Care/);
+    assert.doesNotMatch(res.text, /data-bb-empty="ministries"/);
+    assert.doesNotMatch(res.text, /\[Demo\]|demo content/i);
     assert.doesNotMatch(res.text, /500\+|Global Missions|Learn More|Join Team/i);
   });
 
@@ -576,38 +577,34 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /bb-tp-nav__link is-active[^>]*>Home</);
     assert.match(home.text, /Powered by/);
     assert.match(home.text, /GetPro/);
-    assert.match(home.text, /data-bb-stitch-home="refined-v2"/);
-    assert.match(home.text, /Official Church Portal|Welcome to our Digital Sanctuary/);
-    assert.match(home.text, /Join a Service|Join Our Next Service/);
+    assert.match(home.text, /data-bb-stitch-home="phase7-v1"/);
+    assert.match(home.text, /Plan Your Visit/);
     assert.match(home.text, /href="\/events"/);
     assert.match(home.text, /href="\/giving"/);
     assert.match(home.text, /href="\/ministries"/);
-    assert.match(home.text, /bb-tp-member-band/);
-    assert.match(home.text, /Already a Member\?/);
+    assert.match(home.text, /data-bb-home-service-times="1"/);
+    assert.match(home.text, /Service Times/);
+    assert.match(home.text, /Powered by BlessBoard/);
     assert.doesNotMatch(home.text, /1\.2k\+|Active Members|lorem ipsum/i);
-    assert.doesNotMatch(home.text, /We are glad you are here/);
     assert.doesNotMatch(home.text, /Need Prayer|Send Prayer Request|Subscribe to our weekly/i);
-    assert.doesNotMatch(home.text, /bottom.?nav|bb-tp-fab/i);
+    assert.doesNotMatch(home.text, /bottom.?nav|bb-tp-fab|data-bb-edit|pencil/i);
+    assert.doesNotMatch(home.text, /\[Demo\]/);
 
     const about = await request(app).get("/about").set("Host", HOST_A);
     assert.equal(about.status, 200);
     assert.match(about.text, /data-bb-page="about"/);
     assert.match(about.text, /bb-tp-nav__link is-active[^>]*>About</);
     assert.match(about.text, /data-bb-about="1"|bb-tp-about/);
-    assert.match(about.text, /data-bb-stitch-about="populated-v3"/);
-    assert.match(about.text, /About Us|Our Identity/);
-    assert.match(about.text, /Get Connected/);
-    assert.match(about.text, /Join Our Community/);
-    assert.match(about.text, /Plan Your Visit|Member Login/);
+    assert.match(about.text, /data-bb-stitch-about="phase7-v1"/);
+    assert.match(about.text, /Plan Your Visit/);
     assert.match(about.text, /href="\/contact"/);
-    assert.match(about.text, /href="\/register"/);
-    assert.match(about.text, /href="\/login"/);
     assert.doesNotMatch(about.text, /1,200\+|Year Established|Hearts transformed|Watch Our Story/i);
     assert.doesNotMatch(about.text, /Download Annual Report|Community Impact|Active Programs/i);
-    assert.doesNotMatch(about.text, /bottom.?nav|bb-tp-fab/i);
+    assert.doesNotMatch(about.text, /bottom.?nav|bb-tp-fab|data-bb-edit|pencil/i);
+    assert.doesNotMatch(about.text, /\[Demo\]/);
   });
 
-  it("about empty state omits fabricated history and stats", async () => {
+  it("about empty CMS still renders sample site without fabricated stats", async () => {
     requireDb();
     await pool.query(
       `UPDATE blessboard.page_sections ps
@@ -620,13 +617,14 @@ describe("blessboard public pages", () => {
     );
     const res = await request(app).get("/about").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-empty="about"|bb-tp-empty/);
-    assert.match(res.text, /Join Our Community/);
+    assert.match(res.text, /data-bb-about="1"/);
+    assert.match(res.text, /Plan Your Visit/);
     assert.doesNotMatch(res.text, /1,200\+|Year Established|Hearts transformed|Watch Our Story/i);
     assert.doesNotMatch(res.text, /Since our founding|glorify God by making disciples/i);
+    assert.doesNotMatch(res.text, /\[Demo\]|demo content/i);
   });
 
-  it("home empty state is intentional without fabricated metrics", async () => {
+  it("home empty CMS still renders sample site without fabricated metrics", async () => {
     requireDb();
     await pool.query(
       `UPDATE blessboard.public_pages SET status = 'draft'
@@ -661,10 +659,10 @@ describe("blessboard public pages", () => {
     );
     const res = await request(app).get("/").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /bb-tp-empty|data-bb-home="1"/);
-    assert.match(res.text, /data-bb-empty="home"|Content coming soon/);
+    assert.match(res.text, /data-bb-home="1"/);
+    assert.match(res.text, /Service Times|Plan Your Visit/);
     assert.doesNotMatch(res.text, /\d+\+?\s*(Members|Hearts|Ministries|Active)/i);
-    assert.doesNotMatch(res.text, /Annual Youth Summit|Service Times|Need Prayer/i);
+    assert.doesNotMatch(res.text, /Need Prayer/);
     assert.doesNotMatch(res.text, /\[Demo\] This Week at Church/);
   });
 
@@ -762,8 +760,8 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/events").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-events="1"/);
-    assert.match(res.text, /data-bb-stitch-events="populated-v2"/);
-    assert.match(res.text, /Community Calendar|Events/);
+    assert.match(res.text, /data-bb-stitch-events="phase7-v1"/);
+    assert.match(res.text, /Connect &amp; Grow|Connect & Grow|Community Calendar|Kingdom Gatherings/);
     assert.match(res.text, /bb-tp-featured-event|Soon Gathering/);
     assert.match(res.text, /Soon Gathering/);
     assert.match(res.text, /Later Conference/);
@@ -773,6 +771,7 @@ describe("blessboard public pages", () => {
     assert.doesNotMatch(res.text, /Find a place to grow|View Past Events|All Events|Conferences/);
     assert.doesNotMatch(res.text, /Past Events Archive|Weekly Worship|Cell Groups/);
     assert.doesNotMatch(res.text, /Remind Me|Get Access|Share Event/i);
+    assert.doesNotMatch(res.text, /grid_view|Calendar View|data-bb-calendar=/i);
     const soonIdx = res.text.indexOf("Soon Gathering");
     const laterIdx = res.text.indexOf("Later Conference");
     assert.ok(soonIdx > 0 && laterIdx > soonIdx);
@@ -786,7 +785,7 @@ describe("blessboard public pages", () => {
     assert.doesNotMatch(isolated.text, /Soon Gathering|Later Conference/);
   });
 
-  it("events empty state is designed without fabricated calendar chrome", async () => {
+  it("events soft-fill demo when no upcoming published events", async () => {
     requireDb();
     await pool.query(
       `UPDATE blessboard.events SET status = 'archived' WHERE church_id = $1 AND status = 'published'`,
@@ -794,10 +793,13 @@ describe("blessboard public pages", () => {
     );
     const res = await request(app).get("/events").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-empty="events"|bb-tp-empty/);
-    assert.match(res.text, /No upcoming events/);
+    assert.match(res.text, /data-bb-events="1"/);
+    assert.match(res.text, /data-bb-stitch-events="phase7-v1"/);
+    assert.match(res.text, /Grace Leaders Summit|Sunday Morning Connection|Fall Festival/);
+    assert.doesNotMatch(res.text, /data-bb-empty="events"/);
     assert.doesNotMatch(res.text, /Soon Gathering|Later Conference|Christmas Eve/i);
     assert.doesNotMatch(res.text, /Past Events Archive|Weekly Worship|Cell Groups|View Past Events/i);
+    assert.doesNotMatch(res.text, /grid_view|Calendar View|data-bb-calendar=/i);
   });
 
   it("sermons: published only, safe media/resource links, no embeds or placeholders", async () => {
@@ -857,9 +859,9 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/sermons").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-sermons="1"/);
-    assert.match(res.text, /data-bb-stitch-sermons="populated-v2"/);
-    assert.match(res.text, /aria-label="Sermons"/);
-    assert.match(res.text, /Teaching Library/);
+    assert.match(res.text, /data-bb-stitch-sermons="phase7-v1"/);
+    assert.match(res.text, /aria-label="Sermons"|Spiritual Nourishment|Teaching Library/);
+    assert.match(res.text, /Spiritual Nourishment|Teaching Library/);
     assert.match(res.text, /bb-tp-featured-sermon/);
     assert.match(res.text, /Featured Sermon|Latest Release/);
     assert.match(res.text, /Recent Sermons/);
@@ -886,12 +888,13 @@ describe("blessboard public pages", () => {
       res.text,
       /demo sermon|placeholder|The Book of Acts Series|Notify Me|View Past Series|All Messages|View Archive|SERIES:|Ephesians 2:1-10|42:15/i
     );
+    assert.doesNotMatch(res.text, /All Speakers|search sermons|data-bb-sermon-filter=/i);
 
     const isolated = await request(app).get("/sermons").set("Host", HOST_B);
     assert.doesNotMatch(isolated.text, /Living Hope|Safe Title Unsafe Links|Quiet Faith/);
   });
 
-  it("sermons empty state is designed and omits fabricated archive chrome", async () => {
+  it("sermons soft-fill demo when no published sermons", async () => {
     requireDb();
     const pages = await provisionEmptyPublicPages(pool, { churchId: churchA.id });
     const sermonsPage = pages.pages.find((p) => p.pageKey === "sermons");
@@ -902,9 +905,10 @@ describe("blessboard public pages", () => {
     );
     const res = await request(app).get("/sermons").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-empty="sermons"|bb-tp-empty/);
-    assert.match(res.text, /No sermons published/);
-    assert.match(res.text, /Sermons will appear here when published|Content for this page is being prepared/);
+    assert.match(res.text, /data-bb-sermons="1"/);
+    assert.match(res.text, /data-bb-stitch-sermons="phase7-v1"/);
+    assert.match(res.text, /Finding Peace in the Noise|The Sanctity of Attention/);
+    assert.doesNotMatch(res.text, /data-bb-empty="sermons"/);
     assert.doesNotMatch(res.text, /Notify Me|Coming Soon|The Book of Acts Series|View Past Series|All Messages/i);
   });
 
@@ -963,9 +967,9 @@ describe("blessboard public pages", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-shell="tenant-public"/);
     assert.match(res.text, /data-bb-contact="1"/);
-    assert.match(res.text, /data-bb-stitch-contact="populated-v2"/);
-    assert.match(res.text, /aria-label="Contact"/);
-    assert.match(res.text, /Connect With Us|Contact Us/);
+    assert.match(res.text, /data-bb-stitch-contact="phase7-v1"/);
+    assert.match(res.text, /aria-label="Contact"|Get In Touch/);
+    assert.match(res.text, /Get In Touch|Connect With Us|Contact Us/);
     assert.match(res.text, /data-bb-header="1"/);
     assert.match(res.text, /data-bb-footer="1"/);
     assert.match(res.text, /bb-tp-nav__link is-active[^>]*>Contact</);
@@ -1052,12 +1056,13 @@ describe("blessboard public pages", () => {
     assert.equal(emptyRes.status, 200);
     assert.match(emptyRes.text, /data-bb-shell="tenant-public"/);
     assert.match(emptyRes.text, /data-bb-giving="1"/);
-    assert.match(emptyRes.text, /data-bb-stitch-giving="populated-v2"/);
-    assert.match(emptyRes.text, /aria-label="Giving"/);
-    assert.match(emptyRes.text, /data-bb-empty="giving"/);
-    assert.match(emptyRes.text, /Not available online/);
+    assert.match(emptyRes.text, /data-bb-stitch-giving="phase7-v1"/);
+    assert.match(emptyRes.text, /aria-label="Giving"|A Culture of Generosity/);
+    assert.match(emptyRes.text, /Bank Transfer|Mobile Money|In-Person Offering/);
+    assert.doesNotMatch(emptyRes.text, /data-bb-empty="giving"/);
     assert.match(emptyRes.text, /does not process payments/i);
-    assert.doesNotMatch(emptyRes.text, /<form|card number|cvv|account number|amount|Give Online|Donate Now/i);
+    assert.doesNotMatch(emptyRes.text, /<form|card number|cvv|account number|Give Online|Donate Now/i);
+    assert.doesNotMatch(emptyRes.text, /\bamount\b|\bcvv\b/i);
     assert.doesNotMatch(emptyRes.text, /Standard Chartered|Airtel Money|1\.2k Families|Your Recent Contributions|Scan to Give|Merchant ID/i);
 
     const draft = await createGivingMethod(pool, {
@@ -1098,7 +1103,7 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /data-bb-header="1"/);
     assert.match(res.text, /data-bb-footer="1"/);
     assert.match(res.text, /bb-tp-nav__link is-active[^>]*>Giving</);
-    assert.match(res.text, /Faithful Stewardship|Giving/);
+    assert.match(res.text, /A Culture of Generosity|Faithful Stewardship|Giving/);
     assert.match(res.text, /Ways to Give/);
     assert.match(res.text, /Explore Ways to Give/);
     assert.match(res.text, /Online Giving/);
@@ -1108,12 +1113,15 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /data-bb-giving-link="1"/);
     assert.match(res.text, /data-bb-giving-notice="1"/);
     assert.match(res.text, /data-bb-giving-instructions="1"/);
+    assert.match(res.text, /data-bb-giving-why="1"|Why We Give/);
+    assert.match(res.text, /data-bb-giving-accountability="1"/);
     assert.match(res.text, /Instructions/);
     assert.match(res.text, /Open published link/);
     assert.match(res.text, /Contact for details/);
     assert.doesNotMatch(res.text, /Draft Bank|Hidden draft account/);
     assert.doesNotMatch(res.text, /javascript:alert/);
     assert.doesNotMatch(res.text, /<form|card number|cvv|iban|account number|donate now amount|Give Online|Donate Now/i);
+    assert.doesNotMatch(res.text, /\bamount\b/i);
     assert.doesNotMatch(res.text, /csrf|_csrf|payment gateway|process your donation|QR|Merchant ID|Current Impact/i);
     assert.match(res.text, /does not process payments|does not collect payment|financial account/i);
 
@@ -1125,12 +1133,22 @@ describe("blessboard public pages", () => {
     assert.deepEqual(parseSermonSummary("Category: Teaching. A short note."), {
       category: "Teaching",
       summary: "A short note.",
+      scripture: null,
     });
     assert.deepEqual(parseSermonSummary("Plain summary only"), {
       category: null,
       summary: "Plain summary only",
+      scripture: null,
     });
-    assert.deepEqual(parseSermonSummary(""), { category: null, summary: null });
+    assert.deepEqual(parseSermonSummary(""), { category: null, summary: null, scripture: null });
+    assert.deepEqual(
+      parseSermonSummary("Category: Peace. Rest in Christ. Scripture: Philippians 4:6-7"),
+      {
+        category: "Peace",
+        summary: "Rest in Christ.",
+        scripture: "Philippians 4:6-7",
+      }
+    );
     const mapped = mapSermon({
       title: "Demo",
       speakerName: "A",
@@ -1141,6 +1159,7 @@ describe("blessboard public pages", () => {
     });
     assert.equal(mapped.category, "Prayer");
     assert.equal(mapped.summary, "Habits of prayer.");
+    assert.equal(mapped.scripture, null);
   });
 
   it("mapSection preserves sanitized service_times layout metadata", () => {
@@ -1341,8 +1360,7 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /data-bb-home-service-times="1"/);
     assert.match(res.text, /Sunday Worship/);
     assert.match(res.text, /Main sanctuary/);
-    assert.match(res.text, /data-bb-home-announce="1"/);
-    assert.match(res.text, /This Week Spotlight/);
+    assert.match(res.text, /This Week Spotlight|Welcome Home|data-bb-home-welcome="1"/);
     assert.match(res.text, /data-bb-home-welcome="1"/);
     assert.match(res.text, /A short welcome for visitors/);
     assert.match(res.text, /data-bb-home-ministries="1"/);
@@ -1355,34 +1373,19 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /data-bb-home-sermons="1"/);
     assert.match(res.text, /Home Teaser Sermon/);
     assert.match(res.text, /Teaching/);
-    assert.match(res.text, /bb-tp-home-cta-card--give/);
-    assert.match(res.text, /bb-tp-home-cta-card--contact/);
-    assert.match(res.text, /bb-tp-hero__cta-desktop/);
-    assert.match(res.text, /bb-tp-hero__cta-mobile/);
-    assert.match(res.text, /bb-tp-hero__eyebrow-desktop/);
-    assert.match(res.text, /bb-tp-hero__eyebrow-mobile/);
-    assert.match(res.text, /data-bb-home-band="1"/);
-    assert.match(res.text, /data-bb-home-resources="1"/);
-    assert.match(res.text, /bb-tp-home-service-card/);
-    assert.match(res.text, /data-bb-home-cta-pair="1"/);
-    assert.match(res.text, /data-bb-home-explore="1"/);
-    assert.match(res.text, /data-bb-home-members="1"/);
-    assert.match(res.text, /data-bb-home-hero="1"/);
-    assert.match(res.text, /width="960"\s+height="720"/);
-    // Stitch section order (desktop DOM: primary then aside; mobile CSS reorders aside first)
+    assert.match(res.text, /Give Now|data-bb-cta-band/);
+    assert.match(res.text, /Get in Touch|data-bb-home-contact/);
+    assert.match(res.text, /Plan Your Visit/);
+    assert.match(res.text, /bb-tp-hero--phase7|data-bb-home-hero="1"/);
     const orderKeys = [
       "data-bb-home-hero=",
-      "data-bb-home-band=",
-      "data-bb-home-announce=",
-      "data-bb-home-ministries=",
       "data-bb-home-service-times=",
       "data-bb-home-welcome=",
-      "data-bb-home-leadership=",
+      "data-bb-home-ministries=",
       "data-bb-home-events=",
       "data-bb-home-sermons=",
-      "data-bb-home-cta-pair=",
-      "data-bb-home-explore=",
-      "data-bb-home-members=",
+      "data-bb-home-leadership=",
+      "data-bb-home-contact=",
     ];
     let lastIdx = -1;
     for (const key of orderKeys) {
@@ -1458,19 +1461,14 @@ describe("blessboard public pages", () => {
     const res = await request(app).get("/").set("Host", HOST_A);
     assert.equal(res.status, 200);
     assert.doesNotMatch(res.text, /data-section="blank_block"/);
-    assert.doesNotMatch(res.text, /data-bb-home-leadership=/);
-    assert.doesNotMatch(res.text, /data-bb-home-events=/);
-    assert.doesNotMatch(res.text, /data-bb-home-sermons=/);
-    assert.doesNotMatch(res.text, /data-bb-home-ministries=/);
     assert.doesNotMatch(res.text, /data-bb-empty="home"/);
     assert.match(res.text, /data-bb-home-hero="1"/);
-    assert.match(res.text, /Spiritual Growth[\s\S]*?(?:&amp;|&) Community/);
-    assert.match(res.text, /data-bb-home-announce="1"/);
-    assert.match(res.text, /\[Demo\] This Week at Church/);
     assert.match(res.text, /data-bb-home-service-times="1"/);
     assert.match(res.text, /Soft Fill Sunday/);
-    assert.match(res.text, /bb-tp-home-cta-card--give/);
-    assert.match(res.text, /bb-tp-home-cta-card--contact/);
+    assert.match(res.text, /data-bb-home-leadership="1"|data-bb-home-ministries="1"/);
+    assert.match(res.text, /Plan Your Visit|Give Now/);
+    assert.doesNotMatch(res.text, /\[Demo\] This Week at Church/);
+    assert.doesNotMatch(res.text, /1\.2k\+|Active Members/i);
   });
 
   it("PHASE2_086 home: escapes section copy; CMS wins over demo fallback", async () => {
@@ -1506,11 +1504,9 @@ describe("blessboard public pages", () => {
       path.join(__dirname, "../public/blessboard/v5/tenant-public.css"),
       "utf8"
     );
-    assert.match(css, /\.bb-tp-hero__img[\s\S]*?aspect-ratio:\s*4\s*\/\s*3/);
-    assert.match(css, /\.bb-tp-home__aside[\s\S]*?order:\s*-1/);
-    assert.match(css, /@media \(min-width:\s*768px\)[\s\S]*?\.bb-tp-home__band[\s\S]*?grid-template-columns/);
-    assert.match(css, /@media \(max-width:\s*767px\)[\s\S]*?\.bb-tp-hero__visual[\s\S]*?display:\s*none/);
-    assert.match(css, /\.bb-tp-home-service-card[\s\S]*?background:\s*var\(--bb-violet\)/);
+    assert.match(css, /\.bb-tp-hero--phase7/);
+    assert.match(css, /\.bb-tp-service-times--band/);
+    assert.match(css, /\.bb-tp-card-grid/);
 
     const branchPages = await provisionEmptyPublicPages(pool, {
       churchId: churchA.id,
@@ -1520,11 +1516,9 @@ describe("blessboard public pages", () => {
     await updatePublicPage(pool, home.id, { status: "published" });
     const res = await request(app).get("/").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /bb-tp-hero__cta-mobile/);
-    assert.match(res.text, /bb-tp-hero__eyebrow-mobile/);
-    assert.match(res.text, /Join Our Next Service/);
-    assert.match(res.text, /Explore Ministries/);
-    assert.match(res.text, /data-bb-stitch-home="refined-v2"/);
+    assert.match(res.text, /bb-tp-hero--phase7/);
+    assert.match(res.text, /Plan Your Visit/);
+    assert.match(res.text, /data-bb-stitch-home="phase7-v1"/);
   });
 
   it("PHASE2_086 home: draft sections stay off public; preview shares home markers", async () => {
@@ -1559,7 +1553,7 @@ describe("blessboard public pages", () => {
       path.join(__dirname, "../src/blessboard/http/contentAdminRoutes.js"),
       "utf8"
     );
-    assert.match(homeTpl, /data-bb-stitch-home="refined-v2"/);
+    assert.match(homeTpl, /data-bb-stitch-home="phase7-v1"/);
     assert.match(homeTpl, /homeDemoFallback/);
     assert.match(routes, /preview:\s*true/);
     assert.match(routes, /renderTenantPublicPage/);
@@ -1642,10 +1636,9 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /Our Values/);
     assert.match(res.text, /Our Story/);
     assert.match(res.text, /Story body published/);
-    assert.match(res.text, /data-bb-about-services="1"/);
+    assert.match(res.text, /data-bb-about-join="1"|Plan Your Visit/);
     assert.match(res.text, /12 Parity Lane|Demo City/);
-    assert.match(res.text, /bb-tp-about-hero__eyebrow-desktop/);
-    assert.match(res.text, /bb-tp-about-hero__eyebrow-mobile/);
+    assert.match(res.text, /bb-tp-about-hero|data-bb-about-hero/);
     assert.doesNotMatch(res.text, /1,200\+|Year Established/i);
   });
 
@@ -1760,13 +1753,13 @@ describe("blessboard public pages", () => {
     await pool.query(`DELETE FROM blessboard.page_sections WHERE page_id = $1`, [leadership.id]);
     const empty = await request(app).get("/leadership").set("Host", HOST_A);
     assert.equal(empty.status, 200);
-    assert.match(empty.text, /data-bb-empty="leadership"/);
-    assert.match(empty.text, /Update in progress/);
-    assert.match(empty.text, /Want to serve with us\?/);
+    assert.match(empty.text, /data-bb-leadership="1"/);
+    assert.match(empty.text, /Connect with Leadership|Plan Your Visit|Reach Out/);
     assert.doesNotMatch(empty.text, /Ada Featured|Bea Grid/);
+    assert.doesNotMatch(empty.text, /\[Demo\]|demo content/i);
   });
 
-  it("PHASE2_088 ministries/events/sermons/contact/giving Stitch markers, escape, empty, giving safety", async () => {
+  it("PHASE7_STAGE3 ministries/events/sermons/contact/giving Stitch markers, escape, soft-fill, giving safety", async () => {
     requireDb();
     await pool.query(
       `UPDATE blessboard.ministries SET status = 'draft' WHERE church_id = $1 AND status = 'published'`,
@@ -1803,13 +1796,15 @@ describe("blessboard public pages", () => {
     assert.equal(ministry.ok, true, ministry.reason || ministry.status);
     const minRes = await request(app).get("/ministries").set("Host", HOST_A);
     assert.equal(minRes.status, 200);
+    assert.match(minRes.text, /data-bb-stitch-ministries="phase7-v1"/);
     assert.match(minRes.text, /data-bb-ministries-hero="1"/);
-    assert.match(minRes.text, /data-bb-ministries-grid="1"/);
+    assert.match(minRes.text, /data-bb-ministries-grid="1"|data-bb-ministries-featured="1"/);
     assert.match(minRes.text, /data-bb-ministries-cta="1"/);
     assert.match(minRes.text, /data-bb-ministry-contact="1"/);
     assert.match(minRes.text, /Youth &amp; Outreach Ministry/);
     assert.match(minRes.text, /care &amp; welcome/);
     assert.doesNotMatch(minRes.text, /500\+|Global Missions|View Schedule|Learn More/i);
+    assert.doesNotMatch(minRes.text, /data-bb-preview-banner|href="\/hq"/);
 
     const soon = new Date(Date.now() + 5 * 86400000).toISOString();
     const event = await createEvent(pool, {
@@ -1824,10 +1819,12 @@ describe("blessboard public pages", () => {
     assert.equal(event.ok, true, event.reason || event.status);
     const evRes = await request(app).get("/events").set("Host", HOST_A);
     assert.equal(evRes.status, 200);
+    assert.match(evRes.text, /data-bb-stitch-events="phase7-v1"/);
     assert.match(evRes.text, /data-bb-events-hero="1"/);
     assert.match(evRes.text, /data-bb-event-featured="1"/);
     assert.match(evRes.text, /Community Meal &amp; Fellowship/);
     assert.match(evRes.text, /Hall A/);
+    assert.doesNotMatch(evRes.text, /data-bb-calendar=/);
 
     const sermon = await createSermon(pool, {
       churchId: churchA.id,
@@ -1840,6 +1837,7 @@ describe("blessboard public pages", () => {
     assert.equal(sermon.ok, true, sermon.reason || sermon.status);
     const serRes = await request(app).get("/sermons").set("Host", HOST_A);
     assert.equal(serRes.status, 200);
+    assert.match(serRes.text, /data-bb-stitch-sermons="phase7-v1"/);
     assert.match(serRes.text, /data-bb-sermons-hero="1"/);
     assert.match(serRes.text, /data-bb-sermon-featured="1"/);
     assert.match(serRes.text, /Sermon &amp; Hope/);
@@ -1876,11 +1874,13 @@ describe("blessboard public pages", () => {
     );
     const contactRes = await request(app).get("/contact").set("Host", HOST_A);
     assert.equal(contactRes.status, 200);
+    assert.match(contactRes.text, /data-bb-stitch-contact="phase7-v1"/);
     assert.match(contactRes.text, /data-bb-contact-hero="1"/);
     assert.match(contactRes.text, /data-bb-contact-hours="1"/);
     assert.match(contactRes.text, /Mon–Fri 9:00–15:00|Mon&#8211;Fri|Mon&ndash;Fri/);
     assert.match(contactRes.text, /88 Contact Way|Demo City/);
     assert.match(contactRes.text, /data-bb-contact-form="unavailable"/);
+    assert.match(contactRes.text, /data-bb-contact-services="1"|Service Times/);
     assert.doesNotMatch(contactRes.text, /<form[\s>]/i);
 
     const give = await createGivingMethod(pool, {
@@ -1893,6 +1893,7 @@ describe("blessboard public pages", () => {
     assert.equal(give.ok, true, give.reason || give.status);
     const giveRes = await request(app).get("/giving").set("Host", HOST_A);
     assert.equal(giveRes.status, 200);
+    assert.match(giveRes.text, /data-bb-stitch-giving="phase7-v1"/);
     assert.match(giveRes.text, /data-bb-giving-hero="1"/);
     assert.match(giveRes.text, /data-bb-giving-notice="1"/);
     assert.match(giveRes.text, /data-bb-giving-testing="1"/);
@@ -1924,9 +1925,12 @@ describe("blessboard public pages", () => {
     const emptyMin = await request(app).get("/ministries").set("Host", HOST_A);
     const emptyEv = await request(app).get("/events").set("Host", HOST_A);
     const emptySer = await request(app).get("/sermons").set("Host", HOST_A);
-    assert.match(emptyMin.text, /data-bb-empty="ministries"/);
-    assert.match(emptyEv.text, /data-bb-empty="events"/);
-    assert.match(emptySer.text, /data-bb-empty="sermons"/);
+    assert.doesNotMatch(emptyMin.text, /data-bb-empty="ministries"/);
+    assert.doesNotMatch(emptyEv.text, /data-bb-empty="events"/);
+    assert.doesNotMatch(emptySer.text, /data-bb-empty="sermons"/);
+    assert.match(emptyMin.text, /Sacred Worship|Elevate Youth/);
+    assert.match(emptyEv.text, /Grace Leaders Summit|Sunday Morning Connection/);
+    assert.match(emptySer.text, /Finding Peace in the Noise/);
   });
 
   it("empty home sections collapse and blank cards are not rendered", async () => {
@@ -1980,14 +1984,14 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /role="dialog"/);
     assert.match(home.text, /aria-modal="true"/);
     assert.match(home.text, /Member Login/);
-    assert.match(home.text, /Register/);
+    assert.match(home.text, /Plan Your Visit/);
     assert.match(home.text, /Quick Links/);
-    assert.match(home.text, /Powered by/);
-    assert.match(home.text, /tenant-public\.css\?v=36/);
+    assert.match(home.text, /Powered by BlessBoard/);
+    assert.match(home.text, /tenant-public\.css\?v=42/);
     assert.doesNotMatch(home.text, /data-bb-preview-banner/);
     assert.doesNotMatch(home.text, /Back to content admin|Edit page/);
     assert.doesNotMatch(home.text, /href="\/hq"|href="\/admin"|bb-ca-preview/);
-    assert.doesNotMatch(home.text, /bottom.?nav|bb-tp-fab/i);
+    assert.doesNotMatch(home.text, /bottom.?nav|bb-tp-fab|data-bb-edit|pencil/i);
 
     const about = await request(app).get("/about").set("Host", HOST_A);
     assert.equal(about.status, 200);
@@ -2049,8 +2053,9 @@ describe("blessboard public pages", () => {
     );
     const homeRes = await request(app).get("/").set("Host", HOST_A);
     assert.equal(homeRes.status, 200);
-    assert.match(homeRes.text, /Spiritual Growth[\s\S]*?(?:&amp;|&) Community/);
-    assert.match(homeRes.text, /tenant-public\.css\?v=36/);
+    assert.match(homeRes.text, /Faith, Community and Hope|A Place for Growth/);
+    assert.match(homeRes.text, /tenant-public\.css\?v=42/);
+    assert.doesNotMatch(homeRes.text, /A Place for Growth & Community/);
 
     await pool.query(
       `UPDATE blessboard.events SET status = 'draft' WHERE church_id = $1 AND status = 'published'`,
@@ -2076,7 +2081,7 @@ describe("blessboard public pages", () => {
     assert.equal(evRes.status, 200);
     assert.match(evRes.text, /\/church\/images\/events\//);
     assert.doesNotMatch(evRes.text, /bb-tp-featured-event__media is-fallback/);
-    assert.match(evRes.text, /bb-tp-dir-hero/);
+    assert.match(evRes.text, /bb-tp-page-hero|data-bb-page-hero/);
 
     const sermon = await createSermon(pool, {
       churchId: churchA.id,
@@ -2112,7 +2117,7 @@ describe("blessboard public pages", () => {
       path.join(__dirname, "../views/blessboard/v5/public/home.ejs"),
       "utf8"
     );
-    assert.match(homeV5, /data-bb-stitch-home="refined-v2"/);
+    assert.match(homeV5, /data-bb-stitch-home="phase7-v1"/);
     assert.doesNotMatch(homeV5, /isPreviewMode|websiteContentService/);
     const v4Css = path.join(__dirname, "../public/church/church.css");
     assert.equal(fs.existsSync(v4Css), true);

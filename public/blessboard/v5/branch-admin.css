@@ -5647,3 +5647,83 @@ body.bb-ba-drawer-open {
   background: linear-gradient(180deg, transparent, #fff 35%);
   z-index: 2;
 }
+
+/* Phase 7 Stage 6 — draft review (branch shell) */
+.bb-draft-review__meta,
+.bb-draft-review__counts {
+  display: grid;
+  gap: 0.65rem 1.25rem;
+  margin: 0 0 1rem;
+}
+.bb-draft-review__meta {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+.bb-draft-review__meta dt { font-size: 0.8rem; color: #5b6472; }
+.bb-draft-review__meta dd { margin: 0.15rem 0 0; font-weight: 600; }
+.bb-draft-review__counts {
+  list-style: none;
+  padding: 0;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.bb-draft-review__section {
+  margin: 1rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(31, 36, 48, 0.08);
+}
+.bb-draft-review__item {
+  margin: 0 0 1rem;
+  padding: 0.85rem;
+  border-radius: 10px;
+  background: rgba(108, 92, 231, 0.04);
+}
+.bb-draft-review__diff {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+@media (min-width: 800px) {
+  .bb-draft-review__diff { grid-template-columns: 1fr 1fr; }
+}
+.bb-publish-review__grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (min-width: 900px) {
+  .bb-publish-review__grid { grid-template-columns: 1.2fr 1fr; }
+}
+.bb-publish-review__confirm {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin: 0.85rem 0;
+}
+.bb-hq-alert--warn {
+  background: rgba(241, 196, 15, 0.18);
+  border: 1px solid rgba(183, 121, 31, 0.35);
+  color: #7a4e00;
+}
+
+@media (max-width: 767px) {
+  .bb-draft-review__meta,
+  .bb-draft-review__counts {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bb-publish-review__grid {
+    grid-template-columns: 1fr;
+  }
+  .bb-draft-review__actions .bb-hq-page-head__actions,
+  .bb-publish-review__actions .bb-hq-page-head__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+  }
+  .bb-draft-review__actions .bb-hq-btn,
+  .bb-publish-review__actions .bb-hq-btn,
+  .bb-draft-review__discard .bb-hq-btn {
+    width: 100%;
+    min-height: 2.75rem;
+    justify-content: center;
+  }
+}
