@@ -272,6 +272,57 @@ async function loadSubmissionsList(db, opts) {
 }
 
 /**
+ * Org-scoped existence check for HQ submission routes.
+ * Always filters by organization_id in the repository query — never load by id alone.
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {{ organizationId: string, submissionId: string }} opts
+ */
+async function assertSubmissionInOrganization(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const submissionId = opts && opts.submissionId;
+  if (!repo.isUuid(organizationId) || !repo.isUuid(submissionId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+  try {
+    const submission = await repo.getSubmissionByOrgAndId(db, organizationId, submissionId);
+    if (!submission) {
+      return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+    }
+    return { ok: true, status: STATUS.OK, submission };
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "assert" };
+  }
+}
+
+/**
+ * Branch-scoped existence check (organization_id + branch_id + id).
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {{ organizationId: string, branchId: string, submissionId: string }} opts
+ */
+async function assertSubmissionInOrganizationBranch(db, opts) {
+  const organizationId = opts && opts.organizationId;
+  const branchId = opts && opts.branchId;
+  const submissionId = opts && opts.submissionId;
+  if (!repo.isUuid(organizationId) || !repo.isUuid(branchId) || !repo.isUuid(submissionId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
+  }
+  try {
+    const submission = await repo.getSubmissionByOrgBranchAndId(
+      db,
+      organizationId,
+      branchId,
+      submissionId
+    );
+    if (!submission) {
+      return { ok: false, status: STATUS.NOT_FOUND, reason: "submission" };
+    }
+    return { ok: true, status: STATUS.OK, submission };
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "assert_branch" };
+  }
+}
+
+/**
  * @param {import('pg').Pool} db
  * @param {{ organizationId: string, submissionId: string }} opts
  */
@@ -621,6 +672,8 @@ module.exports = {
   canTransition,
   buildContentComparison,
   loadSubmissionsList,
+  assertSubmissionInOrganization,
+  assertSubmissionInOrganizationBranch,
   loadSubmissionReview,
   approveSubmission,
   requestChanges,

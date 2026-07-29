@@ -56,6 +56,15 @@ function escapeHtml(value) {
  * @param {string} message
  */
 function sendControlled(req, res, status, message) {
+  // Authenticated HQ responses must not be cached publicly (incl. 404 out-of-scope probes).
+  try {
+    res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("Vary", "Cookie");
+  } catch {
+    /* headers may be unavailable */
+  }
   const safe = escapeHtml(message);
   const wantsHtml = String(req.get("accept") || "").includes("text/html");
   if (!wantsHtml) {
@@ -252,6 +261,23 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
 
+      // Tenant isolation first: never reveal foreign submissions via plan-lock 200.
+      // Repository query is organization_id + id (session/host tenant, not client-supplied org).
+      const result = await svc.loadSubmissionReview(getPool(), {
+        organizationId: tenant.organization.id,
+        submissionId: req.params.submissionId,
+      });
+
+      if (!result.ok) {
+        if (result.status === svc.STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "This submission was not found.");
+        }
+        if (result.status === svc.STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 404, "This submission was not found.");
+        }
+        return sendControlled(req, res, 503, "Submission review is temporarily unavailable.");
+      }
+
       const entitled = await checkWebsiteCapability(
         getPool,
         tenant,
@@ -265,21 +291,6 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
         });
       }
       if (!entitled.ok) {
-        return sendControlled(req, res, 503, "Submission review is temporarily unavailable.");
-      }
-
-      const result = await svc.loadSubmissionReview(getPool(), {
-        organizationId: tenant.organization.id,
-        submissionId: req.params.submissionId,
-      });
-
-      if (!result.ok) {
-        if (result.status === svc.STATUS.NOT_FOUND) {
-          return sendControlled(req, res, 404, "This submission was not found.");
-        }
-        if (result.status === svc.STATUS.INVALID_INPUT) {
-          return sendControlled(req, res, 404, "This submission was not found.");
-        }
         return sendControlled(req, res, 503, "Submission review is temporarily unavailable.");
       }
 
@@ -310,6 +321,24 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     const tenant = requireTenant(req, res);
     if (!tenant) return;
 
+    const submissionId = req.params.submissionId;
+    const detailPath = `/hq/website/change-submissions/${encodeURIComponent(submissionId)}`;
+
+    // Scope check before entitlement so cross-org IDs return 404 (not plan 403).
+    const scoped = await svc.assertSubmissionInOrganization(getPool(), {
+      organizationId: tenant.organization.id,
+      submissionId,
+    });
+    if (!scoped.ok) {
+      if (
+        scoped.status === svc.STATUS.NOT_FOUND ||
+        scoped.status === svc.STATUS.INVALID_INPUT
+      ) {
+        return sendControlled(req, res, 404, "This submission was not found.");
+      }
+      return sendControlled(req, res, 503, "The review decision could not be saved.");
+    }
+
     const entitled = await checkWebsiteCapability(
       getPool,
       tenant,
@@ -329,9 +358,6 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     if (!reviewerUserId) {
       return sendControlled(req, res, 401, "Sign-in is required.");
     }
-
-    const submissionId = req.params.submissionId;
-    const detailPath = `/hq/website/change-submissions/${encodeURIComponent(submissionId)}`;
 
     let result;
     if (action === "approve") {

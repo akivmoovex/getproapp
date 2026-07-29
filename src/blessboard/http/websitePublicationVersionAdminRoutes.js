@@ -43,6 +43,14 @@ function escapeHtml(value) {
 }
 
 function sendControlled(req, res, status, message) {
+  try {
+    res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("Vary", "Cookie");
+  } catch {
+    /* headers may be unavailable */
+  }
   const safe = escapeHtml(message);
   const wantsHtml = String(req.get("accept") || "").includes("text/html");
   if (!wantsHtml) {
@@ -269,10 +277,11 @@ function createWebsitePublicationVersionAdminRouter(deps) {
   });
 
   router.get("/hq/website/version-history/compare", rejectApex, gateHq, async (req, res) => {
-    const tenant = await requireNetworkHistory(req, res);
+    const tenant = requireTenant(req, res);
     if (!tenant) return;
 
     const q = req.query || {};
+    // Tenant isolation first: foreign version IDs must 404 before plan feature-lock 200.
     const result = await versionSvc.compareVersions(getPool(), {
       organizationId: tenant.organization.id,
       baseVersionId: q.baseVersionId || q.a || null,
@@ -290,6 +299,22 @@ function createWebsitePublicationVersionAdminRouter(deps) {
         303,
         `/hq/website/version-history?notice=${encodeURIComponent(msg)}`
       );
+    }
+
+    const entitled = await checkWebsiteCapability(
+      getPool,
+      tenant,
+      "website.network_version_history",
+      env
+    );
+    if (!entitled.ok && entitled.status === planEntitlementSvc.STATUS.NOT_ENTITLED) {
+      return renderWebsiteFeatureLocked(req, res, shellLocals, entitled, {
+        featureTitle: "Network Website Version History",
+        returnHref: "/hq/website",
+      });
+    }
+    if (!entitled.ok) {
+      return sendControlled(req, res, 503, "Version history is temporarily unavailable.");
     }
 
     const versionsList = await versionRepo.listVersions(getPool(), {

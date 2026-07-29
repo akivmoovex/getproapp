@@ -35,6 +35,14 @@ function escapeHtml(value) {
 }
 
 function sendControlled(req, res, status, message) {
+  try {
+    res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("Vary", "Cookie");
+  } catch {
+    /* headers may be unavailable */
+  }
   const safe = escapeHtml(message);
   const wantsHtml = String(req.get("accept") || "").includes("text/html");
   if (!wantsHtml) {
@@ -172,6 +180,30 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
       ...tenant,
       actorBranchId: String(req.blessBoardActorBranchId),
     };
+  }
+
+  /**
+   * Branch isolation before CSRF: out-of-scope submission IDs return 404 uniformly.
+   * @returns {Promise<boolean>} true when the submission is in the actor branch scope
+   */
+  async function requireScopedBranchSubmission(req, res, tenant, submissionId) {
+    const scoped = await svc.assertSubmissionInOrganizationBranch(getPool(), {
+      organizationId: tenant.organization.id,
+      branchId: tenant.actorBranchId,
+      submissionId,
+    });
+    if (!scoped.ok) {
+      if (
+        scoped.status === svc.STATUS.NOT_FOUND ||
+        scoped.status === svc.STATUS.INVALID_INPUT
+      ) {
+        sendControlled(req, res, 404, "This submission was not found.");
+        return false;
+      }
+      sendControlled(req, res, 503, "Submission is temporarily unavailable.");
+      return false;
+    }
+    return true;
   }
 
   function shellLocals(req, res, extras) {
@@ -410,6 +442,9 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     async (req, res) => {
       const tenant = requireBranchTenant(req, res);
       if (!tenant) return;
+      if (!(await requireScopedBranchSubmission(req, res, tenant, req.params.submissionId))) {
+        return;
+      }
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
         return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
@@ -452,6 +487,9 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     async (req, res) => {
       const tenant = requireBranchTenant(req, res);
       if (!tenant) return;
+      if (!(await requireScopedBranchSubmission(req, res, tenant, req.params.submissionId))) {
+        return;
+      }
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
         return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
@@ -530,6 +568,9 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     async (req, res) => {
       const tenant = requireBranchTenant(req, res);
       if (!tenant) return;
+      if (!(await requireScopedBranchSubmission(req, res, tenant, req.params.submissionId))) {
+        return;
+      }
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
         return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
@@ -569,6 +610,9 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     async (req, res) => {
       const tenant = requireBranchTenant(req, res);
       if (!tenant) return;
+      if (!(await requireScopedBranchSubmission(req, res, tenant, req.params.submissionId))) {
+        return;
+      }
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
         return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
@@ -645,6 +689,9 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     async (req, res) => {
       const tenant = requireBranchTenant(req, res);
       if (!tenant) return;
+      if (!(await requireScopedBranchSubmission(req, res, tenant, req.params.submissionId))) {
+        return;
+      }
       const submitted = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, submitted, env)) {
         return sendControlled(req, res, 403, "Invalid or missing CSRF token.");

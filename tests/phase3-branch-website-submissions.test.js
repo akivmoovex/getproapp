@@ -635,6 +635,149 @@ describe("phase3 branch website submissions", () => {
     assert.equal(crossOrg.res.status, 404);
   });
 
+  it("tenant isolation: HQ same-org read, cross-org/branch mutations, cache and repo scope", async () => {
+    skipIfNeeded();
+    const northItem = await wcsRepo.insertSubmission(pool, {
+      organizationId: orgA.id,
+      branchId: branchNorth.id,
+      title: "Isolation North Target",
+      pageKey: "home",
+      changeType: "Text",
+      currentContent: { heading: "N" },
+      proposedContent: { heading: "N2" },
+      reason: "iso",
+      status: "pending_review",
+      submittedBy: users.branchNorth.user.id,
+    });
+    const ownBranchItem = await wcsRepo.insertSubmission(pool, {
+      organizationId: orgA.id,
+      branchId: branchA.id,
+      title: "Isolation Own Branch",
+      pageKey: "about",
+      changeType: "Text",
+      currentContent: { heading: "A" },
+      proposedContent: { heading: "A2" },
+      reason: "own",
+      status: "draft",
+      submittedBy: users.branchA.user.id,
+    });
+
+    // Branch admin can read own-branch submission.
+    const ownRead = await authedGet(
+      HOST_A,
+      `/branch-admin/website/submissions/${ownBranchItem.id}`,
+      users.branchA.rawToken
+    );
+    assert.equal(ownRead.res.status, 200);
+    assert.match(ownRead.res.text, /Isolation Own Branch/);
+
+    // HQ admin can read submissions from branches in their organization.
+    const hqRead = await authedGet(
+      HOST_A,
+      `/hq/website/change-submissions/${northItem.id}`,
+      users.hqA.rawToken
+    );
+    assert.equal(hqRead.res.status, 200);
+    assert.match(hqRead.res.text, /data-bb-phase3-website-change-review="1"/);
+    assert.match(hqRead.res.text, /Waiting for Review|North Campus/);
+    assert.match(String(hqRead.res.headers["cache-control"] || ""), /no-store/i);
+
+    // Cross-organization HQ mutation → 404 (not plan 403 / not 200).
+    const crossOrgMut = await request(app)
+      .post(`/hq/website/change-submissions/${northItem.id}/approve`)
+      .set("Host", HOST_B)
+      .set("Cookie", sidCookie(users.hqB.rawToken))
+      .type("form")
+      .send({ [CSRF_FIELD]: "x" });
+    assert.equal(crossOrgMut.status, 404);
+    assert.doesNotMatch(crossOrgMut.text, /Isolation North Target|BWS Org A|North Campus/);
+    assert.match(String(crossOrgMut.headers["cache-control"] || ""), /no-store/i);
+
+    // Cross-branch mutation → 404.
+    const crossBranchMut = await request(app)
+      .post(`/branch-admin/website/submissions/${northItem.id}/withdraw`)
+      .set("Host", HOST_A)
+      .set("Cookie", sidCookie(users.branchA.rawToken))
+      .type("form")
+      .send({ [CSRF_FIELD]: "x" });
+    assert.equal(crossBranchMut.status, 404);
+
+    // Anonymous and non-admin cannot open submission-admin routes.
+    const anon = await request(app)
+      .get(`/hq/website/change-submissions/${northItem.id}`)
+      .set("Host", HOST_A)
+      .set("Accept", "text/html");
+    assert.ok(anon.status === 303 || anon.status === 401);
+
+    const memberCreated = await createBlessBoardUser(pool, {
+      email: "bws-member-iso@example.test",
+      displayName: "Member Iso",
+      password: PASSWORD,
+    });
+    assert.equal(memberCreated.ok, true, memberCreated.message);
+    const memberSession = await createV5Session(pool, {
+      deploymentCode: "blessboard-org-v5",
+      userId: memberCreated.user.id,
+      organizationId: orgA.id,
+    });
+    assert.equal(memberSession.ok, true, memberSession.message || memberSession.code);
+    const memberHq = await request(app)
+      .get(`/hq/website/change-submissions/${northItem.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", sidCookie(memberSession.rawToken));
+    assert.ok(memberHq.status === 403 || memberHq.status === 401 || memberHq.status === 303);
+    const memberBranch = await request(app)
+      .get(`/branch-admin/website/submissions/${ownBranchItem.id}`)
+      .set("Host", HOST_A)
+      .set("Cookie", sidCookie(memberSession.rawToken));
+    assert.ok(
+      memberBranch.status === 403 || memberBranch.status === 401 || memberBranch.status === 303
+    );
+
+    // Existence not disclosed: foreign id and random uuid share the same 404 body.
+    const missingId = "00000000-0000-4000-8000-000000000099";
+    const foreign404 = await authedGet(
+      HOST_B,
+      `/hq/website/change-submissions/${northItem.id}`,
+      users.hqB.rawToken
+    );
+    const missing404 = await authedGet(
+      HOST_B,
+      `/hq/website/change-submissions/${missingId}`,
+      users.hqB.rawToken
+    );
+    assert.equal(foreign404.res.status, 404);
+    assert.equal(missing404.res.status, 404);
+    assert.equal(foreign404.res.text, missing404.res.text);
+
+    // Repository lookup includes organization (and branch) scope.
+    const inOrg = await wcsRepo.getSubmissionByOrgAndId(pool, orgA.id, northItem.id);
+    const outOrg = await wcsRepo.getSubmissionByOrgAndId(pool, orgB.id, northItem.id);
+    assert.ok(inOrg && inOrg.id === northItem.id);
+    assert.equal(outOrg, null);
+    const inBranch = await wcsRepo.getSubmissionByOrgBranchAndId(
+      pool,
+      orgA.id,
+      branchNorth.id,
+      northItem.id
+    );
+    const wrongBranch = await wcsRepo.getSubmissionByOrgBranchAndId(
+      pool,
+      orgA.id,
+      branchA.id,
+      northItem.id
+    );
+    assert.ok(inBranch && inBranch.id === northItem.id);
+    assert.equal(wrongBranch, null);
+
+    const asserted = await wcsSvc.assertSubmissionInOrganization(pool, {
+      organizationId: orgB.id,
+      submissionId: northItem.id,
+    });
+    assert.equal(asserted.ok, false);
+    assert.equal(asserted.status, wcsSvc.STATUS.NOT_FOUND);
+  });
+
   it("branch administrator sees only their assigned branch", async () => {
     skipIfNeeded();
     assert.ok(branchNorth && branchNorth.id);
