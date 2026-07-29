@@ -398,6 +398,21 @@ describe("blessboard platform-admin shell", () => {
       .redirects(0);
     assert.equal(anon.status, 303);
     assert.match(String(anon.headers.location || ""), /^\/login(\?|$)/);
+
+    // Clients without Accept: text/html must still reach sign-in (not a bare 401 body).
+    const anonPlain = await request(app)
+      .get("/admin")
+      .set("Host", "blessboard.org")
+      .redirects(0);
+    assert.equal(anonPlain.status, 303);
+    assert.match(String(anonPlain.headers.location || ""), /^\/login(\?|$)/);
+
+    const legacyLogin = await request(app)
+      .get("/admin/login")
+      .set("Host", "blessboard.org")
+      .redirects(0);
+    assert.equal(legacyLogin.status, 303);
+    assert.equal(legacyLogin.headers.location, "/login?next=%2Fadmin");
   });
 
   it("tenant hosts cannot serve platform-admin pages", async () => {

@@ -942,6 +942,23 @@ function createPlatformAdminRouter(deps) {
     return next();
   }
 
+  function redirectToApexLogin(req, res) {
+    return res.redirect(
+      303,
+      `/login?next=${encodeURIComponent(req.originalUrl || "/admin")}`
+    );
+  }
+
+  /**
+   * Navigational GETs (and HTML clients) must reach /login — not a bare 401 body.
+   * Non-GET API-style clients without text/html still receive 401.
+   */
+  function shouldRedirectUnauthenticatedToLogin(req) {
+    const method = String(req.method || "GET").toUpperCase();
+    if (method === "GET" || method === "HEAD") return true;
+    return String(req.get("accept") || "").includes("text/html");
+  }
+
   async function requirePlatformAdmin(req, res, next) {
     try {
       const session =
@@ -955,12 +972,8 @@ function createPlatformAdminRouter(deps) {
           cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
           sessionFound: false,
         });
-        const wantsHtml = String(req.get("accept") || "").includes("text/html");
-        if (wantsHtml) {
-          return res.redirect(
-            303,
-            `/login?next=${encodeURIComponent(req.originalUrl || "/admin")}`
-          );
+        if (shouldRedirectUnauthenticatedToLogin(req)) {
+          return redirectToApexLogin(req, res);
         }
         return sendControlled(req, res, 401, "Sign-in is required.");
       }
@@ -982,6 +995,9 @@ function createPlatformAdminRouter(deps) {
           failureCategory: "inactive_user",
           sessionFound: true,
         });
+        if (shouldRedirectUnauthenticatedToLogin(req)) {
+          return redirectToApexLogin(req, res);
+        }
         return sendControlled(req, res, 401, "Sign-in is required.");
       }
 
@@ -1034,6 +1050,11 @@ function createPlatformAdminRouter(deps) {
       extra,
     });
   }
+
+  // Classic /admin/login bookmark → V5 apex sign-in (not the foundation 503 catch-all).
+  router.get("/admin/login", requireApex, (req, res) => {
+    return res.redirect(303, "/login?next=%2Fadmin");
+  });
 
   router.get("/admin", requireApex, requirePlatformAdmin, async (req, res) => {
     const startedAt = Date.now();

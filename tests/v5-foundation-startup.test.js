@@ -187,12 +187,23 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
 
   it("legacy tenant and portal routes return controlled unavailable", async () => {
     requireDb();
-    // Apex platform-admin requires sign-in (not the generic foundation unavailable page).
+    // Apex platform-admin requires sign-in (redirect to /login, not foundation 503).
     const adminUnauth = await request(app)
       .get("/admin")
       .set("Host", "blessboard.org")
-      .set("Accept", "text/plain");
-    assert.equal(adminUnauth.status, 401);
+      .set("Accept", "text/plain")
+      .redirects(0);
+    assert.equal(adminUnauth.status, 303);
+    assert.match(String(adminUnauth.headers.location || ""), /^\/login(\?|$)/);
+
+    // Legacy /admin/login bookmark → V5 apex sign-in.
+    const adminLogin = await request(app)
+      .get("/admin/login")
+      .set("Host", "blessboard.org")
+      .set("Accept", "text/plain")
+      .redirects(0);
+    assert.equal(adminLogin.status, 303);
+    assert.equal(adminLogin.headers.location, "/login?next=%2Fadmin");
 
     // Branch-admin is tenant-only; on apex it remains controlled unavailable.
     const branchOnApex = await request(app)
@@ -202,7 +213,6 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
     assert.equal(branchOnApex.status, UNAVAILABLE_STATUS);
 
     const paths = [
-      "/admin/login",
       "/hq-admin",
       "/getpro-admin",
       "/client",
