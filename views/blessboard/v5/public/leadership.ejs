@@ -135,9 +135,9 @@
   <div data-bb-leadership-cta="1">
   <%- include('./partials/cta-band', {
     ctaClass: 'bb-tp-cta-band--leadership',
-    ctaTitle: 'Connect with Leadership',
-    ctaBody: 'Reach out with a pastoral question or schedule a conversation with our team.',
-    ctaPrimary: { href: hrefFor('/contact'), label: 'Reach Out via Email' },
+    ctaTitle: (demoFb && demoFb.contactCtaHeading) || 'Connect with Leadership',
+    ctaBody: (demoFb && demoFb.contactCtaBody) || ('Reach out with a pastoral question or schedule a conversation with the ' + publicName + ' team.'),
+    ctaPrimary: { href: hrefFor('/contact'), label: 'Contact Us' },
     ctaSecondary: { href: hrefFor('/ministries'), label: 'Join a Ministry' }
   }) %>
   </div>

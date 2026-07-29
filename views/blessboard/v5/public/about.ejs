@@ -114,7 +114,11 @@
             <% if (section.heading) { %>
             <h2 class="bb-tp-section-title<%= idx === 0 ? ' bb-tp-about-story__title' : '' %>"><%= section.heading %></h2>
             <% } %>
-            <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+            <% if (section.bodyText) { %>
+            <% String(section.bodyText).split(/\n\n+/).forEach(function (para) { %>
+            <% if (String(para).trim()) { %><p class="bb-tp-body"><%= String(para).trim() %></p><% } %>
+            <% }) %>
+            <% } %>
           </div>
           <% }) %>
         </div>
@@ -225,8 +229,8 @@
   <div data-bb-about-join="1">
   <%- include('./partials/cta-band', {
     ctaClass: 'bb-tp-cta-band--visit',
-    ctaTitle: 'Experience ' + publicName,
-    ctaBody: 'Whether you are a seeker or a long-time believer, there is a seat for you. Join us this Sunday.',
+    ctaTitle: (demoFb && demoFb.visitorCtaHeading) || ('Experience ' + publicName),
+    ctaBody: (demoFb && demoFb.visitorCtaBody) || ('Whether you are a seeker or a long-time believer, there is a seat for you at ' + publicName + '. Join us this Sunday.'),
     ctaPrimary: { href: hrefFor('/contact'), label: 'Plan Your Visit' },
     ctaSecondary: { href: hrefFor('/contact'), label: 'Get Directions' }
   }) %>

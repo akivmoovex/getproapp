@@ -57,6 +57,7 @@
     pageTitle ||
     publicName;
   var heroBody = (hero && hero.bodyText) || (demoFb && demoFb.heroBody) || '';
+  var heroEyebrow = (demoFb && demoFb.heroEyebrow) || ('Welcome to ' + publicName);
   var heroMedia =
     (hero && hero.mediaUrl) ||
     (demoFb && demoFb.heroMediaUrl) ||
@@ -127,7 +128,7 @@
     </div>
     <div class="bb-tp-hero__inner bb-tp-hero__inner--overlay">
       <div class="bb-tp-hero__copy">
-        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-eyebrow--on-dark"><%= publicName %></p>
+        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-eyebrow--on-dark"><%= heroEyebrow %></p>
         <%- include('../partials/editable-text', {
           editPageKey: 'home',
           editSectionKey: 'hero',
@@ -236,8 +237,8 @@
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-ministries="1" aria-labelledby="bb-tp-home-ministries-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-ministries-heading',
-      sectionTitle: 'Find Your Place',
-      sectionLead: 'Explore the different ways you can grow in your faith and serve others through our core ministries.',
+      sectionTitle: (demoFb && demoFb.ministriesIntroHeading) || 'Find Your Place',
+      sectionLead: (demoFb && demoFb.ministriesIntroBody) || 'Explore the different ways you can grow in your faith and serve others through our core ministries.',
       sectionHref: hrefFor('/ministries'),
       sectionLinkLabel: 'View all',
       sectionRuled: true
@@ -262,7 +263,8 @@
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-events="1" aria-labelledby="bb-tp-home-events-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-events-heading',
-      sectionTitle: 'Upcoming Events',
+      sectionTitle: (demoFb && demoFb.eventsIntroHeading) || 'Upcoming Events',
+      sectionLead: (demoFb && demoFb.eventsIntroBody) || '',
       sectionHref: hrefFor('/events'),
       sectionLinkLabel: 'View all',
       sectionRuled: true
@@ -297,7 +299,8 @@
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-sermons="1" aria-labelledby="bb-tp-home-sermons-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-sermons-heading',
-      sectionTitle: 'Latest Sermon',
+      sectionTitle: (demoFb && demoFb.sermonIntroHeading) || 'Latest Sermon',
+      sectionLead: (demoFb && demoFb.sermonIntroBody) || '',
       sectionHref: hrefFor('/sermons'),
       sectionLinkLabel: 'Full library',
       sectionRuled: true
@@ -327,7 +330,8 @@
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-leadership="1" aria-labelledby="bb-tp-home-leadership-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-leadership-heading',
-      sectionTitle: 'Meet Our Pastors',
+      sectionTitle: (demoFb && demoFb.leadershipIntroHeading) || 'Meet Our Pastors',
+      sectionLead: (demoFb && demoFb.leadershipIntroBody) || '',
       sectionHref: hrefFor('/leadership'),
       sectionLinkLabel: 'Meet our team',
       sectionRuled: true

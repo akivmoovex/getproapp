@@ -396,7 +396,7 @@ async function redeemTenantLoginTransfer(db, input) {
       status: STATUS.OK,
       rawSessionToken: session.rawToken,
       transfer: mapTransfer(consumed),
-      returnPath: sanitizeReturnPath(consumed.return_path) || "/branch-admin",
+      returnPath: sanitizeReturnPath(consumed.return_path) || null,
     };
   } catch {
     try {

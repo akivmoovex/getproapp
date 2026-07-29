@@ -518,7 +518,7 @@ describe("blessboard public pages", () => {
 
     const emptyHost = await request(app).get("/ministries").set("Host", HOST_B);
     assert.equal(emptyHost.status, 200);
-    assert.doesNotMatch(emptyHost.text, /Youth Ministry|Music Ministry/);
+    assert.doesNotMatch(emptyHost.text, /Music Ministry|Published youth|Published music/);
   });
 
   it("ministries soft-fill demo when no published ministries", async () => {
@@ -531,10 +531,10 @@ describe("blessboard public pages", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-ministries="1"/);
     assert.match(res.text, /data-bb-stitch-ministries="phase7-v1"/);
-    assert.match(res.text, /Sacred Worship|Elevate Youth|Neighbor Care/);
+    assert.match(res.text, /Children.?s Ministry|Youth Ministry|Women.?s Fellowship|Community Outreach/);
     assert.doesNotMatch(res.text, /data-bb-empty="ministries"/);
     assert.doesNotMatch(res.text, /\[Demo\]|demo content/i);
-    assert.doesNotMatch(res.text, /500\+|Global Missions|Learn More|Join Team/i);
+    assert.doesNotMatch(res.text, /500\+|Global Missions|Join Team/i);
   });
 
   it("V4 public page templates remain in place", () => {
@@ -795,7 +795,7 @@ describe("blessboard public pages", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-events="1"/);
     assert.match(res.text, /data-bb-stitch-events="phase7-v1"/);
-    assert.match(res.text, /Grace Leaders Summit|Sunday Morning Connection|Fall Festival/);
+    assert.match(res.text, /Leaders Equipping Weekend|Sunday Morning Connection|Neighbourhood Celebration|Fall Festival/);
     assert.doesNotMatch(res.text, /data-bb-empty="events"/);
     assert.doesNotMatch(res.text, /Soon Gathering|Later Conference|Christmas Eve/i);
     assert.doesNotMatch(res.text, /Past Events Archive|Weekly Worship|Cell Groups|View Past Events/i);
@@ -1928,8 +1928,8 @@ describe("blessboard public pages", () => {
     assert.doesNotMatch(emptyMin.text, /data-bb-empty="ministries"/);
     assert.doesNotMatch(emptyEv.text, /data-bb-empty="events"/);
     assert.doesNotMatch(emptySer.text, /data-bb-empty="sermons"/);
-    assert.match(emptyMin.text, /Sacred Worship|Elevate Youth/);
-    assert.match(emptyEv.text, /Grace Leaders Summit|Sunday Morning Connection/);
+    assert.match(emptyMin.text, /Children.?s Ministry|Youth Ministry|Community Outreach/);
+    assert.match(emptyEv.text, /Leaders Equipping Weekend|Sunday Morning Connection/);
     assert.match(emptySer.text, /Finding Peace in the Noise/);
   });
 
@@ -1983,11 +1983,12 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /aria-expanded="false"/);
     assert.match(home.text, /role="dialog"/);
     assert.match(home.text, /aria-modal="true"/);
-    assert.match(home.text, /Member Login/);
+    assert.match(home.text, /data-bb-public-login="1"/);
+    assert.match(home.text, />Login</);
     assert.match(home.text, /Plan Your Visit/);
     assert.match(home.text, /Quick Links/);
     assert.match(home.text, /Powered by BlessBoard/);
-    assert.match(home.text, /tenant-public\.css\?v=42/);
+    assert.match(home.text, /tenant-public\.css\?v=43/);
     assert.doesNotMatch(home.text, /data-bb-preview-banner/);
     assert.doesNotMatch(home.text, /Back to content admin|Edit page/);
     assert.doesNotMatch(home.text, /href="\/hq"|href="\/admin"|bb-ca-preview/);
@@ -2054,7 +2055,7 @@ describe("blessboard public pages", () => {
     const homeRes = await request(app).get("/").set("Host", HOST_A);
     assert.equal(homeRes.status, 200);
     assert.match(homeRes.text, /Faith, Community and Hope|A Place for Growth/);
-    assert.match(homeRes.text, /tenant-public\.css\?v=42/);
+    assert.match(homeRes.text, /tenant-public\.css\?v=43/);
     assert.doesNotMatch(homeRes.text, /A Place for Growth & Community/);
 
     await pool.query(

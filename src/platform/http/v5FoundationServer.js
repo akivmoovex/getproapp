@@ -129,6 +129,7 @@ const {
   resolveTenantForLogin,
   safeTenantNextPath,
   resolveApexPostLoginPath,
+  defaultTenantPostLoginPath,
   hasPlatformAdminRole,
   getApexOrigin,
   tenantAbsoluteUrl,
@@ -1166,7 +1167,37 @@ function createV5FoundationApp(options) {
         return sendAuthError(req, res, status, message);
       }
       setV5SessionCookie(res, redeemed.rawSessionToken, { secure: isProduction, env });
-      const dest = safeTenantNextPath(redeemed.returnPath) || "/branch-admin";
+      const {
+        resolveTenantPortalAccess,
+      } = require("../../blessboard/services/resolveTenantPortalAccess");
+      let dest = null;
+      try {
+        const access = await resolveTenantPortalAccess({
+          db: getPool(),
+          userId: redeemed.transfer && redeemed.transfer.userId,
+          organizationId: tenant.organization.id,
+          churchId: tenant.church.id,
+          branchId: tenant.primaryBranch && tenant.primaryBranch.id,
+          organizationStatus: tenant.organization && tenant.organization.status,
+          branchStatus: tenant.primaryBranch && tenant.primaryBranch.status,
+          nextRaw: redeemed.returnPath,
+        });
+        if (access && access.hasAccess && access.destination) {
+          dest = access.destination;
+        } else if (access && !access.hasAccess) {
+          return sendAuthError(
+            req,
+            res,
+            403,
+            "You are signed in, but you do not have an active role for this church. Return to the church website or contact an administrator."
+          );
+        }
+      } catch {
+        dest = null;
+      }
+      if (!dest) {
+        dest = safeTenantNextPath(redeemed.returnPath) || defaultTenantPostLoginPath([]);
+      }
       return res.redirect(303, dest);
     } catch {
       return sendAuthError(req, res, 503, "Sign-in is temporarily unavailable.");
@@ -1212,11 +1243,29 @@ function createV5FoundationApp(options) {
     }
     const session = req.v5Session.session;
     let roleKeys = [];
+    let portalOptions = [];
     try {
       const roles = await listActiveRolesForUser(getPool(), session.userId);
       roleKeys = roles.map((r) => r.role_key);
+      if (!apex && tenant) {
+        const {
+          resolveTenantPortalAccess,
+        } = require("../../blessboard/services/resolveTenantPortalAccess");
+        const access = await resolveTenantPortalAccess({
+          db: getPool(),
+          userId: session.userId,
+          organizationId: tenant.organization.id,
+          churchId: tenant.church.id,
+          branchId: tenant.primaryBranch && tenant.primaryBranch.id,
+          organizationStatus: tenant.organization && tenant.organization.status,
+          branchStatus: tenant.primaryBranch && tenant.primaryBranch.status,
+          roles,
+        });
+        portalOptions = (access && access.portals) || [];
+      }
     } catch {
       roleKeys = [];
+      portalOptions = [];
     }
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction });
@@ -1227,6 +1276,7 @@ function createV5FoundationApp(options) {
         deploymentCode: session.deploymentCode,
         organizationId: session.organizationId,
         roles: roleKeys,
+        portalOptions,
         showPlatformAdminLink: apex && hasPlatformAdminRole(roleKeys),
         csrfToken,
         hostKind: apex ? "apex" : "tenant",

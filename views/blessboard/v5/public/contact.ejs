@@ -190,6 +190,21 @@
     <p class="bb-tp-lead" role="status"><%= entitiesEmptyMessage %></p>
     <% } %>
 
+    <% if (demoFb && demoFb.visitorGuidance) { %>
+    <section class="bb-tp-contact-guidance" data-bb-contact-guidance="1" aria-labelledby="bb-tp-contact-guidance-heading">
+      <h2 id="bb-tp-contact-guidance-heading" class="bb-tp-section-title bb-tp-section-title--ruled">First Visit Guidance</h2>
+      <p class="bb-tp-body"><%= demoFb.visitorGuidance %></p>
+      <% if (demoFb.directionsHeading && demoFb.directionsBody) { %>
+      <h3 class="bb-tp-subsection-title"><%= demoFb.directionsHeading %></h3>
+      <p class="bb-tp-body"><%= demoFb.directionsBody %></p>
+      <% } %>
+      <% if (demoFb.serviceReminderHeading && demoFb.serviceReminderBody) { %>
+      <h3 class="bb-tp-subsection-title"><%= demoFb.serviceReminderHeading %></h3>
+      <p class="bb-tp-body"><%= demoFb.serviceReminderBody %></p>
+      <% } %>
+    </section>
+    <% } %>
+
     <% if (officeHoursHeading && officeHoursBody) { %>
     <section class="bb-tp-contact-hours" data-bb-contact-hours="1" aria-labelledby="bb-tp-contact-hours-heading">
       <h2 id="bb-tp-contact-hours-heading" class="bb-tp-section-title bb-tp-section-title--ruled">

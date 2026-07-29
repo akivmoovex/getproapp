@@ -16,7 +16,7 @@ const VERSIONS = {
   designSystem: "6",
   apex: "14",
   apexAuth: "6",
-  tenantPublic: "40",
+  tenantPublic: "43",
   tenantAuth: "13",
   memberPortal: "22",
   branchAdmin: "38",
@@ -115,7 +115,7 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(routes, /renderTenantPublicPage/);
     assert.match(routes, /preview:\s*true/);
     const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=40"/);
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=43"/);
   });
 
   it("PHASE2_092 P0/P1 guards: nav nowrap, brand, hero AR, dir-hero density, media soft-fill, contact honesty", () => {
@@ -153,7 +153,7 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
 
     assert.match(model, /softFillDemoEventImages/);
     assert.match(model, /softFillDemoSermonImages/);
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=40"/);
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=43"/);
     assert.match(spec, /eventFeatured:\s*"\/church\/images\/events\//);
     assert.match(spec, /sermonFeatured:\s*"\/church\/images\/sermons\//);
     assert.match(service, /kind === "event"/);

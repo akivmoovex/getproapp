@@ -2080,6 +2080,16 @@ html {
     display: inline-flex;
   }
 
+  .bb-tp-header__login {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .bb-tp-header__visit {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   .bb-tp-brand {
     max-width: min(18rem, 22vw);
   }

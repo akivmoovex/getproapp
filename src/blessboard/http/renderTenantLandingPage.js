@@ -255,6 +255,7 @@ function renderAccountPage(account) {
   const roleKeys = Array.isArray(account.roles) ? account.roles : [];
   const roleBadges = roleKeys.map((r) => formatRoleLabel(r)).filter(Boolean);
   const rolesLabel = roleBadges.join(", ") || "(none)";
+  const portalOptions = Array.isArray(account.portalOptions) ? account.portalOptions : [];
   return renderApexView("apex/account.ejs", {
     pageTitle: "Account",
     authenticated: true,
@@ -263,6 +264,7 @@ function renderAccountPage(account) {
     displayName: String(account.displayName || ""),
     rolesLabel,
     roleBadges,
+    portalOptions,
     hostKind,
     showPlatformAdminLink: Boolean(account.showPlatformAdminLink),
     churchDisplayName: account.churchDisplayName ? String(account.churchDisplayName) : "",

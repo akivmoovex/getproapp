@@ -180,14 +180,24 @@ function resolveApexPostLoginPath(roles, nextRaw) {
  * @returns {string}
  */
 function defaultTenantPostLoginPath(roles) {
-  const keys = (roles || []).map((r) => String(r.roleKey || r.role_key || ""));
-  if (keys.includes("church_hq_admin") || keys.includes("platform_admin")) {
+  const keys = (roles || []).map((r) =>
+    typeof r === "string" ? r : String(r.roleKey || r.role_key || "")
+  );
+  const unique = [...new Set(keys.filter(Boolean))];
+  const staffOrMember = unique.filter((k) =>
+    ["church_hq_admin", "branch_admin", "member", "platform_admin"].includes(k)
+  );
+  if (staffOrMember.length > 1) return "/account";
+  if (unique.includes("church_hq_admin") || unique.includes("platform_admin")) {
     return "/hq";
   }
-  if (keys.includes("branch_admin")) {
+  if (unique.includes("branch_admin")) {
     return "/branch-admin";
   }
-  return "/member";
+  if (unique.includes("member")) {
+    return "/member";
+  }
+  return "/account";
 }
 
 /**

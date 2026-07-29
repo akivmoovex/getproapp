@@ -648,11 +648,16 @@ async function loadTenantPublicPageModel(db, input) {
     primaryBranchId
   );
   const websiteStatus = settings ? settings.websiteStatus : "draft";
-  const publicName =
-    (settings && settings.publicName) ||
-    (branchSettings && branchSettings.publicName) ||
-    tenant.church.displayName ||
-    "Church";
+  const publicName = publicDemo.resolveCanonicalChurchName({
+    publicName: settings && settings.publicName,
+    churchDisplayName: tenant.church.displayName,
+    organizationDisplayName:
+      tenant.organization && tenant.organization.displayName
+        ? tenant.organization.displayName
+        : null,
+    branchDisplayName: tenant.primaryBranch.displayName,
+    branchSpecific: false,
+  });
 
   if (websiteStatus === "suspended" && !isPreview) {
     return { kind: KIND.UNAVAILABLE, reason: "website_suspended" };
@@ -892,7 +897,14 @@ async function loadTenantPublicPageModel(db, input) {
     showEmptyState = !hasSections;
   }
 
-  const demoPack = publicDemo.buildPublicDemoPack({ publicName });
+  const demoPack = publicDemo.buildPublicDemoPack({
+    publicName,
+    churchDisplayName: tenant.church.displayName,
+    organizationDisplayName:
+      tenant.organization && tenant.organization.displayName
+        ? tenant.organization.displayName
+        : null,
+  });
 
   // Stage 2: published sites with sparse CMS get a complete sample presentation.
   // Draft CMS rows are never read here; soft-fill never invents live statistics.
@@ -1075,8 +1087,13 @@ async function loadTenantPublicPageModel(db, input) {
     contactDemoFallback = Object.freeze({
       introHeading: demoPack.contactPage.introHeading,
       introBody: demoPack.contactPage.introBody,
+      visitorGuidance: demoPack.contactPage.visitorGuidance,
       officeHoursHeading: demoPack.contactPage.officeHoursHeading,
       officeHoursBody: demoPack.contactPage.officeHoursBody,
+      directionsHeading: demoPack.contactPage.directionsHeading,
+      directionsBody: demoPack.contactPage.directionsBody,
+      serviceReminderHeading: demoPack.contactPage.serviceReminderHeading,
+      serviceReminderBody: demoPack.contactPage.serviceReminderBody,
     });
     showEmptyState = false;
   }
@@ -1087,7 +1104,10 @@ async function loadTenantPublicPageModel(db, input) {
       introBody: demoPack.givingPage.introBody,
       whyHeading: demoPack.givingPage.whyHeading,
       whyItems: demoPack.givingPage.whyItems,
+      stewardshipHeading: demoPack.givingPage.stewardshipHeading,
+      stewardshipBody: demoPack.givingPage.stewardshipBody,
       accountability: demoPack.givingPage.accountability,
+      assistanceContact: demoPack.givingPage.assistanceContact,
     });
     if (!entities.length) {
       entities = demoPack.givingMethods.slice();
@@ -1185,9 +1205,11 @@ async function loadTenantPublicPageModel(db, input) {
     primaryBranchDisplayName: tenant.primaryBranch.displayName,
     hqBranchDisplayName: tenant.hqBranch ? tenant.hqBranch.displayName : "",
     loginHref: "/login",
+    portalHref: null,
+    portalLabel: null,
     apexHref: "https://blessboard.org/",
     visitHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=42",
+    cssHref: "/blessboard/v5/tenant-public.css?v=43",
     pathPrefix,
     homeHref: pathPrefix || "/",
     hrefFor(pagePath) {

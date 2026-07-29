@@ -18,7 +18,7 @@
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=42' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=43' %>" />
 </head>
 <body
   class="bb-tp-body<%= typeof isPreview !== 'undefined' && isPreview ? ' bb-tp-body--preview' : '' %><%= typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit ? ' bb-tp-body--admin' : '' %><%= typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode ? ' bb-tp-body--editing' : '' %>"
@@ -82,6 +82,19 @@
       <div class="bb-tp-header__actions" data-bb-header-actions="1">
         <% if (showEnvBadge) { %>
         <span class="bb-tp-env"><%= dataEnvironment %></span>
+        <% } %>
+        <% if (typeof portalHref !== 'undefined' && portalHref) { %>
+        <a
+          class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-header__login"
+          href="<%= portalHref %>"
+          data-bb-public-portal="1"
+        ><%= typeof portalLabel !== 'undefined' && portalLabel ? portalLabel : 'My Portal' %></a>
+        <% } else { %>
+        <a
+          class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-header__login"
+          href="<%= typeof loginHref !== 'undefined' && loginHref ? loginHref : '/login' %>"
+          data-bb-public-login="1"
+        >Login</a>
         <% } %>
         <a
           class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-header__visit"
@@ -152,7 +165,19 @@
         class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block"
         href="<%= typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact') %>"
       >Plan Your Visit</a>
-      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="<%= loginHref %>">Member Login</a>
+      <% if (typeof portalHref !== 'undefined' && portalHref) { %>
+      <a
+        class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block"
+        href="<%= portalHref %>"
+        data-bb-public-portal="1"
+      ><%= typeof portalLabel !== 'undefined' && portalLabel ? portalLabel : 'My Portal' %></a>
+      <% } else { %>
+      <a
+        class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block"
+        href="<%= typeof loginHref !== 'undefined' && loginHref ? loginHref : '/login' %>"
+        data-bb-public-login="1"
+      >Login</a>
+      <% } %>
       <p class="bb-tp-drawer__powered">Powered by BlessBoard</p>
     </div>
   </aside>

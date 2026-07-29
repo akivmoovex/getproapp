@@ -61,8 +61,19 @@
     <% } %>
     <% } else { %>
     <p class="bb-apex-account__note">
-      <a href="/hq">Church HQ</a> · <a href="/branch-admin">Branch admin</a>
+      Choose a portal for this church:
     </p>
+    <ul class="bb-apex-account__portals" data-bb-tenant-portals="1">
+      <% if (typeof portalOptions !== 'undefined' && portalOptions && portalOptions.length) { %>
+      <% portalOptions.forEach(function (portal) { %>
+      <li><a href="<%= portal.href %>" data-bb-portal-key="<%= portal.key %>"><%= portal.label %></a></li>
+      <% }) %>
+      <% } else { %>
+      <li><a href="/hq">Church HQ</a></li>
+      <li><a href="/branch-admin">Branch admin</a></li>
+      <li><a href="/member">Member portal</a></li>
+      <% } %>
+    </ul>
     <% } %>
 
     <form class="bb-apex-account__logout" method="post" action="/logout" data-bb-auth-logout="1">

@@ -154,6 +154,38 @@ function createTenantPublicRouter(deps) {
       model.websiteAdmin = null;
     }
 
+    try {
+      const {
+        resolveTenantPortalAccess,
+        publicPortalHeaderFromAccess,
+      } = require("../services/resolveTenantPortalAccess");
+      const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated && req.v5Session.session);
+      if (sessionOk) {
+        const tenantCtx = req.blessBoardTenantContext;
+        const access = await resolveTenantPortalAccess({
+          db: getPool(),
+          userId: req.v5Session.session.userId,
+          organizationId: tenantCtx.organization.id,
+          churchId: tenantCtx.church.id,
+          branchId: tenantCtx.primaryBranch && tenantCtx.primaryBranch.id,
+          organizationStatus: tenantCtx.organization && tenantCtx.organization.status,
+          branchStatus: tenantCtx.primaryBranch && tenantCtx.primaryBranch.status,
+        });
+        const header = publicPortalHeaderFromAccess(access);
+        model.portalHref = header.portalHref;
+        model.portalLabel = header.portalLabel;
+        model.loginHref = null;
+      } else {
+        model.portalHref = null;
+        model.portalLabel = null;
+        model.loginHref = "/login";
+      }
+    } catch {
+      model.portalHref = null;
+      model.portalLabel = null;
+      if (!model.loginHref) model.loginHref = "/login";
+    }
+
     const html = renderTenantPublicPage(model);
     return res.status(200).type("html").send(html);
   }

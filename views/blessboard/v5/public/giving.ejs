@@ -31,6 +31,9 @@
   var accountability =
     (demoFb && demoFb.accountability) ||
     'For questions about designations or receipts, contact the church office. BlessBoard never collects card, bank, or wallet credentials on this page.';
+  var stewardshipHeading = (demoFb && demoFb.stewardshipHeading) || 'Stewardship and Support';
+  var stewardshipBody = (demoFb && demoFb.stewardshipBody) || '';
+  var assistanceContact = (demoFb && demoFb.assistanceContact) || '';
 
   function methodTypeLabel(type) {
     var t = String(type || '').toLowerCase();
@@ -158,6 +161,10 @@
     <section class="bb-tp-giving-accountability" data-bb-giving-accountability="1" aria-labelledby="bb-tp-giving-accountability-heading">
       <h2 id="bb-tp-giving-accountability-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Financial Accountability</h2>
       <p class="bb-tp-body"><%= accountability %></p>
+      <% if (stewardshipBody) { %>
+      <h3 class="bb-tp-subsection-title"><%= stewardshipHeading || 'Stewardship and Support' %></h3>
+      <p class="bb-tp-body"><%= stewardshipBody %></p>
+      <% } %>
     </section>
 
     <p class="bb-tp-giving-disclaimer" role="note">
@@ -168,7 +175,7 @@
     <%- include('./partials/cta-band', {
       ctaClass: 'bb-tp-cta-band--giving',
       ctaTitle: 'Need Assistance?',
-      ctaBody: 'If you have questions about designations or published payment instructions, contact the church office.',
+      ctaBody: assistanceContact || 'If you have questions about designations or published payment instructions, contact the church office.',
       ctaPrimary: { href: hrefFor('/contact'), label: 'Contact Finance Team' },
       ctaSecondary: { href: hrefFor('/about'), label: 'About Our Church' }
     }) %>

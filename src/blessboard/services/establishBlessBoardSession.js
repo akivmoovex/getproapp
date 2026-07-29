@@ -7,6 +7,7 @@
  */
 
 const repo = require("../repositories/blessBoardAuthRepository");
+const memberRepo = require("../repositories/memberIdentityRepository");
 const { createV5Session } = require("../../platform/session/createV5Session");
 
 const STATUS = Object.freeze({
@@ -52,6 +53,44 @@ function preferSessionRole(roles, requireOrganizationId) {
     list.find((r) => r.role_key === "branch_admin") ||
     list[0]
   );
+}
+
+/**
+ * Active member membership for an organization (not a user_roles row).
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ * @param {string} organizationId
+ */
+async function resolveMemberScopeForOrganization(client, userId, organizationId) {
+  const scope = await client.query(
+    `SELECT c.id AS church_id, b.id AS branch_id
+       FROM blessboard.churches c
+       INNER JOIN blessboard.branches b
+         ON b.church_id = c.id AND b.status = 'active'
+      WHERE c.organization_id = $1
+        AND c.status = 'active'
+      ORDER BY CASE WHEN lower(b.branch_key) = 'hq' THEN 0 ELSE 1 END, b.created_at ASC
+      LIMIT 8`,
+    [organizationId]
+  );
+  for (const row of scope.rows || []) {
+    const member = await memberRepo.findActiveMemberByUserId(client, {
+      churchId: row.church_id,
+      userId,
+    });
+    if (!member) continue;
+    const membership = await memberRepo.findMembership(client, member.id, row.branch_id);
+    if (membership && membership.membershipStatus === "active") {
+      return {
+        organization_id: organizationId,
+        church_id: row.church_id,
+        branch_id: row.branch_id,
+        role_key: "member",
+        memberId: member.id,
+      };
+    }
+  }
+  return null;
 }
 
 /**
@@ -120,7 +159,11 @@ async function establishBlessBoardSession(db, input) {
 
     const roles = await repo.listActiveRolesForUser(client, user.id);
     const applicable = rolesApplicableToOrganization(roles, requireOrganizationId);
-    if (!applicable.length) {
+    let memberScope = null;
+    if (requireOrganizationId) {
+      memberScope = await resolveMemberScopeForOrganization(client, user.id, requireOrganizationId);
+    }
+    if (!applicable.length && !memberScope) {
       await client.query("ROLLBACK");
       return {
         ok: false,
@@ -131,7 +174,7 @@ async function establishBlessBoardSession(db, input) {
       };
     }
 
-    const preferred = preferSessionRole(roles, requireOrganizationId);
+    const preferred = preferSessionRole(roles, requireOrganizationId) || memberScope;
     if (!preferred) {
       await client.query("ROLLBACK");
       return {
@@ -166,6 +209,21 @@ async function establishBlessBoardSession(db, input) {
     await repo.touchLastLogin(client, user.id);
     await client.query("COMMIT");
 
+    const rolePayload = applicable.map((r) => ({
+      roleKey: r.role_key,
+      organizationId: r.organization_id,
+      churchId: r.church_id,
+      branchId: r.branch_id,
+    }));
+    if (memberScope) {
+      rolePayload.push({
+        roleKey: "member",
+        organizationId: memberScope.organization_id,
+        churchId: memberScope.church_id,
+        branchId: memberScope.branch_id,
+      });
+    }
+
     return {
       ok: true,
       status: STATUS.AUTHENTICATED,
@@ -178,12 +236,7 @@ async function establishBlessBoardSession(db, input) {
         displayName: user.display_name,
         status: user.status,
       },
-      roles: applicable.map((r) => ({
-        roleKey: r.role_key,
-        organizationId: r.organization_id,
-        churchId: r.church_id,
-        branchId: r.branch_id,
-      })),
+      roles: rolePayload,
     };
   } catch {
     try {
@@ -208,4 +261,5 @@ module.exports = {
   establishBlessBoardSession,
   rolesApplicableToOrganization,
   preferSessionRole,
+  resolveMemberScopeForOrganization,
 };
