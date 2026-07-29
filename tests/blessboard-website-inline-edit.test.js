@@ -438,7 +438,7 @@ describe("blessboard website inline edit foundation", () => {
       })
       .expect(403);
     assert.equal(res.body.ok, false);
-    assert.equal(res.body.reason, "csrf");
+    assert.equal(res.body.reason, "csrf_failed");
   });
 
   it("save failure preserves previous published content", async () => {

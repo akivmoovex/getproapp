@@ -809,6 +809,7 @@ function createV5FoundationApp(options) {
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       getTenantRoutingMode: () => getBlessBoardTenantRoutingMode(env),
+      getEnv: () => env,
     })
   );
 
@@ -816,6 +817,7 @@ function createV5FoundationApp(options) {
   app.use(
     createPathPublicRouter({
       getPool,
+      getEnv: () => env,
     })
   );
 

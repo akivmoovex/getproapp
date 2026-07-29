@@ -102,87 +102,108 @@ async function saveInlineFieldDraft(db, input) {
     throw mapError("VALIDATION", validated.error, 400);
   }
 
-  const page = await resolveContentPage(db, {
-    churchId: input.churchId,
-    branchId: input.branchId || null,
-    pageKey: input.pageKey,
-  });
-  // Page may be missing when soft-fill demo is showing; drafts are still allowed.
-  let section = null;
-  if (page) {
-    section = await contentRepo.findSectionByPageAndKey(db, page.id, input.sectionKey);
-  }
-
-  const previousValue = readPublishedFieldValue(
-    section,
-    input.fieldKey,
-    input.publicContact || null
-  );
-
-  const existing = await draftRepo.findActiveDraft(db, {
-    churchId: input.churchId,
-    branchId: input.branchId || null,
-    pageKey: input.pageKey,
-    sectionKey: input.sectionKey,
-    fieldKey: input.fieldKey,
-  });
-  const baselinePrevious =
-    existing && existing.previousValue != null ? existing.previousValue : previousValue;
-
-  if (String(validated.value) === String(baselinePrevious || "")) {
-    if (existing) {
-      await draftRepo.discardDraft(db, { id: existing.id, churchId: input.churchId });
+  try {
+    const page = await resolveContentPage(db, {
+      churchId: input.churchId,
+      branchId: input.branchId || null,
+      pageKey: input.pageKey,
+    });
+    // Page may be missing when soft-fill demo is showing; drafts are still allowed.
+    let section = null;
+    if (page) {
+      section = await contentRepo.findSectionByPageAndKey(db, page.id, input.sectionKey);
     }
+
+    const previousValue = readPublishedFieldValue(
+      section,
+      input.fieldKey,
+      input.publicContact || null
+    );
+
+    const existing = await draftRepo.findActiveDraft(db, {
+      churchId: input.churchId,
+      branchId: input.branchId || null,
+      pageKey: input.pageKey,
+      sectionKey: input.sectionKey,
+      fieldKey: input.fieldKey,
+    });
+    const baselinePrevious =
+      existing && existing.previousValue != null ? existing.previousValue : previousValue;
+
+    if (String(validated.value) === String(baselinePrevious || "")) {
+      if (existing) {
+        await draftRepo.discardDraft(db, { id: existing.id, churchId: input.churchId });
+      }
+      return {
+        saved: true,
+        published: false,
+        draftCleared: Boolean(existing),
+        value: validated.value,
+        previousValue: baselinePrevious,
+      };
+    }
+
+    const draft = await draftRepo.upsertDraftCompat(db, {
+      organizationId: input.organizationId,
+      churchId: input.churchId,
+      branchId: input.branchId || null,
+      pageKey: input.pageKey,
+      sectionKey: input.sectionKey,
+      fieldKey: input.fieldKey,
+      previousValue: baselinePrevious,
+      newValue: validated.value,
+      editorUserId: input.editorUserId,
+    });
+
+    try {
+      await auditSvc.recordWebsiteAuditEvent(db, {
+        organizationId: input.organizationId,
+        branchId: input.branchId || null,
+        actorUserId: input.editorUserId,
+        actorRole: input.actorRole || null,
+        actionType: "draft_saved",
+        pageKey: input.pageKey,
+        sectionKey: input.sectionKey,
+        entityType: "inline_field",
+        entityId: draft.id,
+        result: "success",
+        before: { fieldKey: input.fieldKey, value: baselinePrevious },
+        after: { fieldKey: input.fieldKey, value: draft.newValue },
+        metadata: { source: "inline_text_edit", published: false },
+      });
+    } catch {
+      // Audit must not block draft save.
+    }
+
     return {
       saved: true,
       published: false,
-      draftCleared: Boolean(existing),
-      value: validated.value,
-      previousValue: baselinePrevious,
+      draftCleared: false,
+      draftId: draft.id,
+      value: draft.newValue,
+      previousValue: draft.previousValue,
+      updatedAt: draft.updatedAt,
     };
+  } catch (err) {
+    if (err && err.status) throw err;
+    const pgCode = err && err.code != null ? String(err.code) : "";
+    if (pgCode.toUpperCase() === "42P01") {
+      const mapped = mapError(
+        "SAVE_FAILED",
+        "Could not save this change. Please try again.",
+        500
+      );
+      mapped.pgCode = "42P01";
+      throw mapped;
+    }
+    const mapped = mapError(
+      "SAVE_FAILED",
+      "Could not save this change. Please try again.",
+      500
+    );
+    mapped.pgCode = pgCode || null;
+    throw mapped;
   }
-
-  const draft = await draftRepo.upsertDraftCompat(db, {
-    organizationId: input.organizationId,
-    churchId: input.churchId,
-    branchId: input.branchId || null,
-    pageKey: input.pageKey,
-    sectionKey: input.sectionKey,
-    fieldKey: input.fieldKey,
-    previousValue: baselinePrevious,
-    newValue: validated.value,
-    editorUserId: input.editorUserId,
-  });
-
-  try {
-    await auditSvc.recordWebsiteAuditEvent(db, {
-      organizationId: input.organizationId,
-      branchId: input.branchId || null,
-      actorUserId: input.editorUserId,
-      actorRole: input.actorRole || null,
-      actionType: "draft_saved",
-      pageKey: input.pageKey,
-      sectionKey: input.sectionKey,
-      entityType: "inline_field",
-      entityId: draft.id,
-      result: "success",
-      before: { fieldKey: input.fieldKey, value: baselinePrevious },
-      after: { fieldKey: input.fieldKey, value: draft.newValue },
-      metadata: { source: "inline_text_edit", published: false },
-    });
-  } catch {
-    // Audit must not block draft save.
-  }
-
-  return {
-    saved: true,
-    published: false,
-    draftCleared: false,
-    draftId: draft.id,
-    value: draft.newValue,
-    previousValue: draft.previousValue,
-    updatedAt: draft.updatedAt,
-  };
 }
 
 /**

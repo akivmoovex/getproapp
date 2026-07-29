@@ -1253,7 +1253,13 @@ function createContentAdminRouter(deps) {
         (req.body && req.body[CSRF_FIELD]) ||
         (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
       if (!validateCsrf(req, submitted, env)) {
-        return res.status(403).json({ ok: false, reason: "csrf", error: "Invalid or missing CSRF token." });
+        return res.status(403).json({
+          ok: false,
+          reason: "csrf_failed",
+          code: "csrf_failed",
+          error: "Invalid or missing CSRF token.",
+          message: "Invalid or missing CSRF token.",
+        });
       }
 
       const body = req.body && typeof req.body === "object" ? req.body : {};
@@ -1316,21 +1322,58 @@ function createContentAdminRouter(deps) {
           ok: true,
           published: false,
           saved: true,
+          status: "draft_saved",
+          message: "Change saved as a draft.",
+          fieldKey: `${pageKey}::${sectionKey}::${fieldKey}`,
           draftCleared: Boolean(result.draftCleared),
           value: result.value,
           previousValue: result.previousValue,
         });
       } catch (err) {
         const status = err && err.status ? Number(err.status) : 500;
-        const code = err && err.code ? String(err.code) : "SAVE_FAILED";
+        const rawCode = err && err.code != null ? String(err.code) : "SAVE_FAILED";
+        const pgCode =
+          err && err.pgCode != null
+            ? String(err.pgCode)
+            : rawCode.toUpperCase() === "42P01"
+              ? "42P01"
+              : null;
+        const isClientError = status >= 400 && status < 500;
+        let reason = rawCode.toLowerCase();
+        if (pgCode === "42P01" || (!isClientError && !err.status)) reason = "save_failed";
+        else if (reason === "csrf") reason = "csrf_failed";
+        else if (reason === "validation") reason = "validation_failed";
+
         const message =
-          err && err.message && status < 500
+          isClientError && err && err.message
             ? String(err.message)
             : "Could not save this change. Please try again.";
+
+        try {
+          console.info(
+            JSON.stringify({
+              event: "website_inline_field_save_failed",
+              requestId: req.requestId || null,
+              reason,
+              pgCode,
+              pageKey,
+              sectionKey,
+              fieldKey,
+              churchId: scope.churchId || null,
+              branchId: scope.branchId || null,
+              variant,
+            })
+          );
+        } catch {
+          /* ignore log failures */
+        }
+
         return res.status(status >= 400 && status < 600 ? status : 500).json({
           ok: false,
-          reason: code.toLowerCase(),
+          reason,
+          code: reason,
           error: message,
+          message,
           published: false,
         });
       }

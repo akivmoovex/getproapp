@@ -34,11 +34,14 @@ const PAGE_SUFFIXES = Object.freeze([
 /**
  * @param {{
  *   getPool: () => { query: Function, connect?: Function },
+ *   getEnv?: () => NodeJS.ProcessEnv,
  * }} deps
  */
 function createPathPublicRouter(deps) {
   const router = express.Router();
   const getPool = deps.getPool;
+  const getEnv =
+    typeof deps.getEnv === "function" ? deps.getEnv : () => process.env;
 
   async function handlePathPublic(req, res) {
     const rawKey = String((req.params && req.params.organizationKey) || "").trim().toLowerCase();
@@ -198,7 +201,8 @@ function createPathPublicRouter(deps) {
         db: getPool(),
         model,
         tenant,
-        env: process.env,
+        // Must match content-admin CSRF validation secret (app env, not a divergent process.env).
+        env: getEnv(),
       });
     } catch {
       model.websiteAdmin = null;
