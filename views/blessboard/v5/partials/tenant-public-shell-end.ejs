@@ -95,23 +95,45 @@
           </ul>
           <% } %>
           <% if (typeof socialLinks !== 'undefined' && socialLinks && socialLinks.length) { %>
-          <ul class="bb-tp-footer__social" aria-label="Social links">
+          <ul class="bb-tp-footer__social" aria-label="Social links" data-bb-footer-social="1">
             <% socialLinks.forEach(function (link) { %>
-            <li>
-              <% if (link.href) { %>
+            <% if (link && link.href) { %>
+            <li data-bb-social-link="<%= link.id || link.channelType || '' %>">
               <a href="<%= link.href %>" rel="noopener noreferrer">
-                <span class="material-symbols-outlined" aria-hidden="true"><%= link.icon || 'language' %></span>
+                <% if (link.icon) { %>
+                <span class="material-symbols-outlined" aria-hidden="true"><%= link.icon %></span>
+                <% } %>
                 <span><%= link.label %></span>
               </a>
-              <% } else { %>
-              <span class="bb-tp-footer__social-label">
-                <span class="material-symbols-outlined" aria-hidden="true"><%= link.icon || 'language' %></span>
-                <span><%= link.label %></span>
-              </span>
+              <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+              <%- include('./structured-edit-trigger', {
+                editKind: 'social_link',
+                editEntityKey: link.id || ('social-' + (link.channelType || 'link')),
+                editLabel: 'Edit social link',
+                editPayload: {
+                  channelType: link.channelType || 'social',
+                  label: link.label || '',
+                  value: link.href || link.value || '',
+                  visible: true,
+                  sortOrder: link.sortOrder != null ? link.sortOrder : 10
+                }
+              }) %>
               <% } %>
             </li>
+            <% } %>
             <% }) %>
           </ul>
+          <% } %>
+          <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <p class="bb-tp-edit-collection-actions bb-tp-edit-collection-actions--footer">
+            <%- include('./structured-edit-trigger', {
+              editKind: 'social_link',
+              editEntityKey: 'new-social-' + Date.now(),
+              editLabel: 'Add social link',
+              editPayload: { channelType: 'facebook', label: 'Facebook', value: '', visible: true, sortOrder: 100 }
+            }) %>
+            <span class="bb-tp-se-hint">Add social link</span>
+          </p>
           <% } %>
         </div>
 
@@ -166,7 +188,7 @@
   <%- include('./unsaved-changes-dialog') %>
   <script src="/blessboard/v5/website-unsaved-guard.js?v=2" defer></script>
   <script src="/blessboard/v5/website-inline-edit.js?v=3" defer></script>
-  <script src="/blessboard/v5/website-structured-edit.js?v=4" defer></script>
+  <script src="/blessboard/v5/website-structured-edit.js?v=5" defer></script>
   <% } %>
 </body>
 </html>

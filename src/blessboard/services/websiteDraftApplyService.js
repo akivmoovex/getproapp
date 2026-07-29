@@ -251,18 +251,24 @@ async function applyEntityDraft(client, draft, ctx) {
     ministry: contentRepo.findMinistryById,
     event: contentRepo.findEventById,
     sermon: contentRepo.findSermonById,
+    giving_method: contentRepo.findGivingMethodById,
+    social_link: contentRepo.findContactChannelById,
   };
   const updateFns = {
     leader: contentRepo.updateLeader,
     ministry: contentRepo.updateMinistry,
     event: contentRepo.updateEvent,
     sermon: contentRepo.updateSermon,
+    giving_method: contentRepo.updateGivingMethod,
+    social_link: contentRepo.updateContactChannel,
   };
   const insertFns = {
     leader: contentRepo.insertLeader,
     ministry: contentRepo.insertMinistry,
     event: contentRepo.insertEvent,
     sermon: contentRepo.insertSermon,
+    giving_method: contentRepo.insertGivingMethod,
+    social_link: contentRepo.insertContactChannel,
   };
 
   if (!findFns[kind]) return;
@@ -382,6 +388,61 @@ async function applyEntityDraft(client, draft, ctx) {
       }
     }
     await insertFns.sermon(client, {
+      churchId,
+      branchId: branchId || null,
+      ...fields,
+    });
+    return;
+  }
+
+  if (kind === "giving_method") {
+    const fields = {
+      methodType: payload.methodType || "other",
+      label: payload.label || "Giving method",
+      description: payload.description || null,
+      accountDetails: payload.accountDetails || null,
+      instructions: payload.instructions || null,
+      externalUrl: payload.externalUrl || null,
+      buttonLabel: payload.buttonLabel || null,
+      qrImageUrl: payload.qrImageUrl || null,
+      sortOrder: payload.sortOrder != null ? Number(payload.sortOrder) : 0,
+      status: "published",
+    };
+    if (isExisting) {
+      const existing = await findFns.giving_method(client, entityKey);
+      if (existing && String(existing.churchId) === String(churchId)) {
+        await updateFns.giving_method(client, entityKey, fields);
+        return;
+      }
+      // Cross-org or missing → treat as not found (no leak)
+      return;
+    }
+    await insertFns.giving_method(client, {
+      churchId,
+      branchId: branchId || null,
+      ...fields,
+    });
+    return;
+  }
+
+  if (kind === "social_link") {
+    const fields = {
+      channelType: payload.channelType || "social",
+      label: payload.label || payload.channelType || "Social",
+      value: payload.value || "",
+      sortOrder: payload.sortOrder != null ? Number(payload.sortOrder) : 0,
+      status: "published",
+    };
+    if (!fields.value) return;
+    if (isExisting) {
+      const existing = await findFns.social_link(client, entityKey);
+      if (existing && String(existing.churchId) === String(churchId)) {
+        await updateFns.social_link(client, entityKey, fields);
+        return;
+      }
+      return;
+    }
+    await insertFns.social_link(client, {
       churchId,
       branchId: branchId || null,
       ...fields,

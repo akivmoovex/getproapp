@@ -1763,7 +1763,7 @@ function createContentAdminRouter(deps) {
       }
 
       model.websiteAdmin = null;
-      model.cssHref = "/blessboard/v5/tenant-public.css?v=43";
+      model.cssHref = "/blessboard/v5/tenant-public.css?v=44";
       const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });

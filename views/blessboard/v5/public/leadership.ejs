@@ -26,7 +26,9 @@
     staff = leaders.slice(4);
   }
 
-  var intro = pageSections.length ? pageSections[0] : null;
+  var intro =
+    pageSections.find(function (s) { return String(s.sectionKey || '') === 'hero'; }) ||
+    (pageSections.length ? pageSections[0] : null);
   var introHeading =
     (intro && intro.heading) ||
     (demoFb && demoFb.introHeading) ||
@@ -55,7 +57,9 @@
     heroEyebrow: 'Our Heart for Service',
     heroClass: 'bb-tp-leadership-hero',
     heroCtaPrimary: { href: hrefFor('/contact'), label: 'Connect with Leadership' },
-    heroCtaSecondary: { href: hrefFor('/ministries'), label: 'Explore Ministries' }
+    heroCtaSecondary: { href: hrefFor('/ministries'), label: 'Explore Ministries' },
+    editPageKey: 'leadership',
+    editSectionKey: 'hero'
   }) %>
   <div class="bb-tp-leadership-hero-marker" data-bb-leadership-hero="1" hidden></div>
 

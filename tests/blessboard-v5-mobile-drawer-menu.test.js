@@ -67,6 +67,8 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
     assert.doesNotMatch(start, /<%= activeNav === item\.key \? 'aria-current=/);
     const css = read("public/blessboard/v5/tenant-public.css");
     assert.match(css, /\.bb-tp-drawer__list\s*\{[\s\S]*?flex-direction:\s*column/);
+    assert.match(css, /\.bb-tp-drawer__list\s*\{[\s\S]*?gap:\s*0/);
+    assert.match(css, /\.bb-tp-drawer__link\s*\{[\s\S]*?padding:\s*0\.625rem/);
   });
 
   it("9–12: member, branch-admin, HQ, platform-admin drawers use stacked lists", () => {

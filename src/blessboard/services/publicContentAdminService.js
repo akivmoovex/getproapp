@@ -815,6 +815,16 @@ function buildGivingFields(raw, { partial }) {
     if (n.value != null) fields.label = n.value;
     else if (!partial) return { ok: false, reason: "label" };
   }
+  if (raw.description !== undefined) {
+    const n = plainText(raw.description, "description", { required: false, max: 2000 });
+    if (!n.ok) return n;
+    fields.description = n.value;
+  }
+  if (raw.accountDetails !== undefined) {
+    const n = plainText(raw.accountDetails, "account_details", { required: false, max: 2000 });
+    if (!n.ok) return n;
+    fields.accountDetails = n.value;
+  }
   if (raw.instructions !== undefined) {
     const n = plainText(raw.instructions, "instructions", { required: false, max: 5000 });
     if (!n.ok) return n;
@@ -824,6 +834,35 @@ function buildGivingFields(raw, { partial }) {
     const n = httpsMediaUrl(raw.externalUrl, "external_url");
     if (!n.ok) return n;
     fields.externalUrl = n.value;
+  }
+  if (raw.buttonLabel !== undefined) {
+    const n = plainText(raw.buttonLabel, "button_label", { required: false, max: 48 });
+    if (!n.ok) return n;
+    fields.buttonLabel = n.value;
+  }
+  if (raw.qrImageUrl !== undefined) {
+    if (raw.qrImageUrl == null || raw.qrImageUrl === "") {
+      fields.qrImageUrl = null;
+    } else {
+      const n = httpsMediaUrl(raw.qrImageUrl, "qr_image_url");
+      if (!n.ok) {
+        // Allow demo /church/images and media asset paths via plain path check
+        const path = String(raw.qrImageUrl || "").trim();
+        if (
+          path.startsWith("/church/images/") &&
+          !path.startsWith("//") &&
+          !path.includes("..") &&
+          !/\s/.test(path) &&
+          path.length <= 2000
+        ) {
+          fields.qrImageUrl = path;
+        } else {
+          return n;
+        }
+      } else {
+        fields.qrImageUrl = n.value;
+      }
+    }
   }
   if (raw.sortOrder !== undefined) fields.sortOrder = Number(raw.sortOrder);
   if (raw.status !== undefined || !partial) {
@@ -918,6 +957,8 @@ module.exports = {
   buildMinistryFields,
   buildEventFields,
   buildSermonFields,
+  buildContactFields,
+  buildGivingFields,
   provisionEmptyPublicPages,
   listAdminPages,
   getAdminPageBundle,

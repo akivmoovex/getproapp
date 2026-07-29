@@ -392,38 +392,68 @@ function mapContact(row) {
     href = safeExternalUrl(row.value);
   }
   return {
+    id: row.id || null,
     channelType: row.channelType,
     label: row.label,
     value: row.value,
     href,
     icon: channelIcon(row.channelType),
+    sortOrder: row.sortOrder != null ? row.sortOrder : 0,
   };
 }
 
 function mapGiving(row) {
   let instructions = row.instructions != null ? String(row.instructions) : "";
+  let accountDetails =
+    row.accountDetails != null
+      ? String(row.accountDetails)
+      : row.account_details != null
+        ? String(row.account_details)
+        : "";
   const markedDemo =
     /\[Demo\]/i.test(instructions) ||
     /\bDEMO\b/.test(instructions) ||
     /TEST ONLY/i.test(instructions) ||
-    /fictional/i.test(instructions);
+    /fictional/i.test(instructions) ||
+    /\[Demo\]/i.test(accountDetails) ||
+    /\bDEMO\b/.test(accountDetails);
+  const looksSensitive = (text) =>
+    Boolean(
+      text &&
+        (/\bIBAN\b/i.test(text) ||
+          /\bSWIFT\b/i.test(text) ||
+          /\brouting\s*#?\s*\d{9}\b/i.test(text) ||
+          /\b\d{8,17}\b/.test(text.replace(/DEMO[-0-9]*/gi, "")))
+    );
   // Never surface credential-like strings that are not clearly demo/test copy.
-  if (
-    instructions &&
-    !markedDemo &&
-    (/\bIBAN\b/i.test(instructions) ||
-      /\bSWIFT\b/i.test(instructions) ||
-      /\brouting\s*#?\s*\d{9}\b/i.test(instructions) ||
-      /\b\d{8,17}\b/.test(instructions.replace(/DEMO[-0-9]*/gi, "")))
-  ) {
+  if (instructions && !markedDemo && looksSensitive(instructions)) {
     instructions =
       "Contact the church office for published giving instructions. Account details are not shown on this page.";
   }
+  if (accountDetails && !markedDemo && looksSensitive(accountDetails)) {
+    accountDetails = "";
+  }
+  const qrRaw = row.qrImageUrl || row.qr_image_url || null;
+  let qrImageUrl = null;
+  if (qrRaw) {
+    const asPath = String(qrRaw);
+    if (asPath.startsWith("/church/images/") || asPath.startsWith("/_bb/media/")) {
+      qrImageUrl = asPath;
+    } else {
+      qrImageUrl = safeExternalUrl(asPath);
+    }
+  }
   return {
+    id: row.id || null,
     methodType: row.methodType,
     label: row.label,
+    description: row.description || null,
+    accountDetails: accountDetails || null,
     instructions: instructions || null,
     externalUrl: safeExternalUrl(row.externalUrl),
+    buttonLabel: row.buttonLabel || row.button_label || null,
+    qrImageUrl,
+    sortOrder: row.sortOrder != null ? row.sortOrder : 0,
     icon: methodIcon(row.methodType),
   };
 }
@@ -793,7 +823,7 @@ async function loadTenantPublicPageModel(db, input) {
   let socialLinks = [];
   let serviceTimesEntries = extractServiceTimesEntries(pageSections);
 
-  if (pageKey === "home" || pageKey === "about" || pageKey === "contact") {
+  {
     const contactList = isPreview
       ? await resolvePreviewList(
           db,
@@ -803,7 +833,7 @@ async function loadTenantPublicPageModel(db, input) {
         )
       : await resolvePublishedList(db, listPublishedContactChannels, churchId, primaryBranchId);
     const allChannels = (contactList.items || []).map(mapContact);
-    socialLinks = allChannels.filter((ch) => isSocialChannel(ch.channelType));
+    socialLinks = allChannels.filter((ch) => isSocialChannel(ch.channelType) && ch.href);
   }
 
   if (pageKey === "home") {
@@ -1126,8 +1156,9 @@ async function loadTenantPublicPageModel(db, input) {
     usedPublicDemoFill = true;
   }
 
+  // Soft-fill social placeholders without href must not render (no empty icon chips).
   if (!socialLinks.length) {
-    socialLinks = demoPack.socialLinks.slice();
+    socialLinks = (demoPack.socialLinks || []).filter((link) => link && link.href);
   }
 
   if (!serviceTimesEntries.length) {
@@ -1209,7 +1240,7 @@ async function loadTenantPublicPageModel(db, input) {
     portalLabel: null,
     apexHref: "https://blessboard.org/",
     visitHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=43",
+    cssHref: "/blessboard/v5/tenant-public.css?v=44",
     pathPrefix,
     homeHref: pathPrefix || "/",
     hrefFor(pagePath) {

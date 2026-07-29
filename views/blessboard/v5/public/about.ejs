@@ -111,13 +111,32 @@
         <div class="bb-tp-about-story__copy">
           <% storySections.forEach(function (section, idx) { %>
           <div class="bb-tp-about-story__block" data-section="<%= section.sectionKey || 'story' %>">
-            <% if (section.heading) { %>
-            <h2 class="bb-tp-section-title<%= idx === 0 ? ' bb-tp-about-story__title' : '' %>"><%= section.heading %></h2>
+            <% var storyKey = idx === 0 ? 'story' : (section.sectionKey || ('story-' + idx)); %>
+            <% if (section.heading || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && idx === 0)) { %>
+            <%- include('../partials/editable-text', {
+              editPageKey: 'about',
+              editSectionKey: storyKey,
+              editFieldKey: 'heading',
+              editValue: section.heading || '',
+              editTag: 'h2',
+              editClass: 'bb-tp-section-title' + (idx === 0 ? ' bb-tp-about-story__title' : ''),
+              editType: 'heading',
+              editMaxLength: 120,
+              editMultiline: false
+            }) %>
             <% } %>
-            <% if (section.bodyText) { %>
-            <% String(section.bodyText).split(/\n\n+/).forEach(function (para) { %>
-            <% if (String(para).trim()) { %><p class="bb-tp-body"><%= String(para).trim() %></p><% } %>
-            <% }) %>
+            <% if (section.bodyText || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && idx === 0)) { %>
+            <%- include('../partials/editable-text', {
+              editPageKey: 'about',
+              editSectionKey: storyKey,
+              editFieldKey: 'bodyText',
+              editValue: section.bodyText || '',
+              editTag: 'p',
+              editClass: 'bb-tp-body',
+              editType: 'paragraph',
+              editMaxLength: 4000,
+              editMultiline: true
+            }) %>
             <% } %>
           </div>
           <% }) %>
@@ -132,25 +151,65 @@
   </section>
   <% } %>
 
-  <% if (missionSection || visionSection) { %>
+  <% if (missionSection || visionSection || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
   <section class="bb-tp-about-purpose" aria-label="Mission and vision" data-bb-about-purpose="1">
     <div class="bb-tp-container">
       <header class="bb-tp-about-purpose__header">
         <h2 class="bb-tp-section-title">Mission &amp; Vision</h2>
       </header>
-      <div class="bb-tp-about-purpose__grid<%= missionSection && visionSection ? ' bb-tp-about-purpose__grid--pair' : '' %>">
-        <% if (missionSection && sectionHasContent(missionSection)) { %>
-        <article class="bb-tp-purpose-card" data-section="<%= missionSection.sectionKey || 'mission' %>" data-bb-about-mission="1">
+      <div class="bb-tp-about-purpose__grid<%= (missionSection || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) && (visionSection || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) ? ' bb-tp-about-purpose__grid--pair' : '' %>">
+        <% if (missionSection || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
+        <article class="bb-tp-purpose-card" data-section="<%= (missionSection && missionSection.sectionKey) || 'mission' %>" data-bb-about-mission="1">
           <span class="bb-tp-purpose-card__icon material-symbols-outlined" aria-hidden="true">flag</span>
-          <% if (missionSection.heading) { %><h3 class="bb-tp-purpose-card__title"><%= missionSection.heading %></h3><% } %>
-          <% if (missionSection.bodyText) { %><p class="bb-tp-body"><%= missionSection.bodyText %></p><% } %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'about',
+            editSectionKey: 'mission',
+            editFieldKey: 'heading',
+            editValue: (missionSection && missionSection.heading) || '',
+            editTag: 'h3',
+            editClass: 'bb-tp-purpose-card__title',
+            editType: 'heading',
+            editMaxLength: 120,
+            editMultiline: false
+          }) %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'about',
+            editSectionKey: 'mission',
+            editFieldKey: 'bodyText',
+            editValue: (missionSection && missionSection.bodyText) || '',
+            editTag: 'p',
+            editClass: 'bb-tp-body',
+            editType: 'paragraph',
+            editMaxLength: 2000,
+            editMultiline: true
+          }) %>
         </article>
         <% } %>
-        <% if (visionSection && sectionHasContent(visionSection)) { %>
-        <article class="bb-tp-purpose-card bb-tp-purpose-card--accent" data-section="<%= visionSection.sectionKey || 'vision' %>" data-bb-about-vision="1">
+        <% if (visionSection || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
+        <article class="bb-tp-purpose-card bb-tp-purpose-card--accent" data-section="<%= (visionSection && visionSection.sectionKey) || 'vision' %>" data-bb-about-vision="1">
           <span class="bb-tp-purpose-card__icon material-symbols-outlined" aria-hidden="true">visibility</span>
-          <% if (visionSection.heading) { %><h3 class="bb-tp-purpose-card__title"><%= visionSection.heading %></h3><% } %>
-          <% if (visionSection.bodyText) { %><p class="bb-tp-body"><%= visionSection.bodyText %></p><% } %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'about',
+            editSectionKey: 'vision',
+            editFieldKey: 'heading',
+            editValue: (visionSection && visionSection.heading) || '',
+            editTag: 'h3',
+            editClass: 'bb-tp-purpose-card__title',
+            editType: 'heading',
+            editMaxLength: 120,
+            editMultiline: false
+          }) %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'about',
+            editSectionKey: 'vision',
+            editFieldKey: 'bodyText',
+            editValue: (visionSection && visionSection.bodyText) || '',
+            editTag: 'p',
+            editClass: 'bb-tp-body',
+            editType: 'paragraph',
+            editMaxLength: 2000,
+            editMultiline: true
+          }) %>
         </article>
         <% } %>
       </div>

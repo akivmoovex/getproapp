@@ -103,6 +103,20 @@
       kind: 'location'
     });
   }
+  var _editingContact = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
+  if (_editingContact) {
+    var seenKinds = {};
+    settingsCards.forEach(function (c) { seenKinds[c.kind] = true; });
+    if (!seenKinds.phone && !typesSeen.phone && !typesSeen.tel && !typesSeen.call) {
+      settingsCards.push({ icon: 'call', label: 'Phone', value: '', href: '', kind: 'phone' });
+    }
+    if (!seenKinds.email && !typesSeen.email && !typesSeen.mail) {
+      settingsCards.push({ icon: 'mail', label: 'Email', value: '', href: '', kind: 'email' });
+    }
+    if (!seenKinds.location && !typesSeen.address && !typesSeen.location && !typesSeen.map) {
+      settingsCards.push({ icon: 'location_on', label: 'Location', value: '', href: null, multiline: true, kind: 'location' });
+    }
+  }
 
   var hasChannelCards = channels.length > 0 || settingsCards.length > 0;
   var showMapUnavailable = Boolean(contact.addressText && !contact.hasMap);
@@ -167,7 +181,22 @@
         </span>
         <div class="bb-tp-contact-card__body">
           <h3 class="bb-tp-contact-card__label"><%= card.label %></h3>
-          <% if (card.href) { %>
+          <% var contactField = card.kind === 'phone' ? 'phone' : (card.kind === 'email' ? 'email' : (card.kind === 'location' ? 'address' : null)); %>
+          <% if (contactField && typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'contact',
+            editSectionKey: 'details',
+            editFieldKey: contactField,
+            editValue: card.value || '',
+            editTag: card.href ? 'a' : 'p',
+            editClass: 'bb-tp-contact-card__value',
+            editHref: card.href || '',
+            editType: 'contactText',
+            editMaxLength: contactField === 'email' ? 254 : (contactField === 'phone' ? 40 : 300),
+            editMultiline: contactField === 'address',
+            editGuidance: contactField === 'email' ? 'Contact email' : (contactField === 'phone' ? 'Phone number' : 'Street address')
+          }) %>
+          <% } else if (card.href) { %>
           <p class="bb-tp-contact-card__value">
             <a
               href="<%= card.href %>"

@@ -95,6 +95,28 @@
     </section>
     <% } %>
 
+    <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+    <p class="bb-tp-edit-collection-actions">
+      <%- include('../partials/structured-edit-trigger', {
+        editKind: 'giving_method',
+        editEntityKey: 'new-' + Date.now(),
+        editLabel: 'Add giving method',
+        editPayload: {
+          methodType: 'bank_transfer',
+          label: '',
+          description: '',
+          accountDetails: '',
+          instructions: '',
+          externalUrl: '',
+          buttonLabel: 'Open published link',
+          qrImageUrl: '',
+          visible: true,
+          sortOrder: 100
+        }
+      }) %>
+      <span class="bb-tp-se-hint">Add giving method</span>
+    </p>
+    <% } %>
     <% if (methods.length) { %>
     <section id="ways-to-give" class="bb-tp-giving-methods" aria-labelledby="ways-to-give-heading" data-bb-giving-methods="1">
       <div class="bb-tp-giving-methods__head">
@@ -105,18 +127,32 @@
       </div>
       <ul class="bb-tp-giving-grid">
         <% methods.forEach(function (method) { %>
-        <li class="bb-tp-giving-card" data-bb-giving-method="<%= method.methodType || 'other' %>">
+        <li class="bb-tp-giving-card" data-bb-giving-method="<%= method.methodType || 'other' %>" data-bb-giving-id="<%= method.id || '' %>">
           <span class="bb-tp-giving-card__icon" aria-hidden="true">
             <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
           </span>
           <div class="bb-tp-giving-card__body">
             <p class="bb-tp-giving-card__type"><%= methodTypeLabel(method.methodType) %></p>
             <h3 class="bb-tp-giving-card__label"><%= method.label %></h3>
+            <% if (method.description) { %>
+            <p class="bb-tp-giving-card__description"><%= method.description %></p>
+            <% } %>
+            <% if (method.accountDetails) { %>
+            <div class="bb-tp-giving-card__account" data-bb-giving-account="1">
+              <p class="bb-tp-giving-card__instructions-label">Payment details</p>
+              <p class="bb-tp-giving-card__instructions-body"><%= method.accountDetails %></p>
+            </div>
+            <% } %>
             <% if (method.instructions) { %>
             <div class="bb-tp-giving-card__instructions" data-bb-giving-instructions="1">
               <p class="bb-tp-giving-card__instructions-label">Instructions</p>
               <p class="bb-tp-giving-card__instructions-body"><%= method.instructions %></p>
             </div>
+            <% } %>
+            <% if (method.qrImageUrl) { %>
+            <p class="bb-tp-giving-card__qr">
+              <img src="<%= method.qrImageUrl %>" alt="QR code for <%= method.label %>" width="160" height="160" loading="lazy" decoding="async" />
+            </p>
             <% } %>
             <% if (method.externalUrl) { %>
             <p class="bb-tp-giving-card__action">
@@ -126,9 +162,9 @@
                 rel="noopener noreferrer"
                 target="_blank"
                 data-bb-giving-link="1"
-                aria-label="Open published giving link for <%= method.label %> (opens in a new tab)"
+                aria-label="<%= method.buttonLabel || 'Open published link' %> for <%= method.label %> (opens in a new tab)"
               >
-                Open published link
+                <%= method.buttonLabel || 'Open published link' %>
                 <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
               </a>
             </p>
@@ -138,6 +174,25 @@
                 Contact for details
               </a>
             </p>
+            <% } %>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('../partials/structured-edit-trigger', {
+              editKind: 'giving_method',
+              editEntityKey: method.id || ('method-' + (method.label || 'new')),
+              editLabel: 'Edit giving method',
+              editPayload: {
+                methodType: method.methodType || 'other',
+                label: method.label || '',
+                description: method.description || '',
+                accountDetails: method.accountDetails || '',
+                instructions: method.instructions || '',
+                externalUrl: method.externalUrl || '',
+                buttonLabel: method.buttonLabel || 'Open published link',
+                qrImageUrl: method.qrImageUrl || '',
+                visible: true,
+                sortOrder: method.sortOrder != null ? method.sortOrder : 10
+              }
+            }) %>
             <% } %>
           </div>
         </li>

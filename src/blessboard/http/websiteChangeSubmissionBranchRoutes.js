@@ -20,9 +20,27 @@ const {
 } = require("../services/authorizeBlessBoardTenantAccess");
 const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
 const svc = require("../services/websiteChangeSubmissionService");
+const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+const { EDIT_QUERY } = require("./attachWebsiteAdminChrome");
 
 function renderView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
+}
+
+/**
+ * Canonical Branch Admin visual-editor entry for the session-resolved church.
+ * Org key comes from tenant context only — never from client input.
+ * @param {object} tenant
+ * @returns {string|null}
+ */
+function resolveBranchWebsiteEditorPath(tenant) {
+  const org =
+    tenant && tenant.organization
+      ? tenant.organization.key || tenant.organization.organizationKey || null
+      : null;
+  const home = publicChurchHomePath(org);
+  if (!home) return null;
+  return `${home}?${EDIT_QUERY}=1`;
 }
 
 function escapeHtml(value) {
@@ -118,7 +136,8 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     if (!sessionOk) {
       const wantsHtml = String(req.get("accept") || "").includes("text/html");
       if (wantsHtml) {
-        return res.redirect(303, "/login?next=/branch-admin/website/submissions");
+        const nextUrl = encodeURIComponent(req.originalUrl || "/branch-admin/website");
+        return res.redirect(303, `/login?next=${nextUrl}`);
       }
       return sendControlled(req, res, 401, "Sign-in is required.");
     }
@@ -216,8 +235,8 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     });
   }
 
-  function editorPath() {
-    return "/branch-admin/content";
+  function editorPath(tenant) {
+    return resolveBranchWebsiteEditorPath(tenant) || "/branch-admin/content";
   }
 
   function draftFieldsFromBody(body) {
@@ -235,7 +254,27 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     };
   }
 
+  /**
+   * Canonical Website nav entry: open the church public site in authenticated edit mode.
+   * Overview hub lives at /branch-admin/website/overview; change requests stay under /submissions.
+   */
   router.get("/branch-admin/website", rejectApex, gateBranch, async (req, res) => {
+    const tenant = requireBranchTenant(req, res);
+    if (!tenant) return;
+
+    const editorHref = resolveBranchWebsiteEditorPath(tenant);
+    if (!editorHref) {
+      return sendControlled(
+        req,
+        res,
+        503,
+        "Website editor is temporarily unavailable."
+      );
+    }
+    return res.redirect(303, editorHref);
+  });
+
+  router.get("/branch-admin/website/overview", rejectApex, gateBranch, async (req, res) => {
     const tenant = requireBranchTenant(req, res);
     if (!tenant) return;
 
@@ -263,7 +302,6 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
       );
     }
 
-    // Prefer assigned branch display name from overview
     const html = renderView(
       "branch-admin/phase4-branch-website-overview.ejs",
       await Promise.resolve(
@@ -303,7 +341,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
         pageKeys: result.pageKeys,
         filters: result.filters,
         statusLabels: svc.STATUS_LABELS,
-        editorPath: editorPath(),
+        editorPath: editorPath(tenant),
         notice: String((req.query && req.query.notice) || "") || null,
       })
     );
@@ -342,7 +380,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
           statusLabels: svc.STATUS_LABELS,
           eventLabels: svc.EVENT_LABELS,
           listPath: "/branch-admin/website/submissions",
-          editorPath: editorPath(),
+          editorPath: editorPath(tenant),
           notice: String((req.query && req.query.notice) || "") || null,
           formError: String((req.query && req.query.error) || "") || null,
         })
@@ -384,7 +422,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
         model,
         statusLabels: svc.STATUS_LABELS,
         priorities: svc.PRIORITIES,
-        editorPath: editorPath(),
+        editorPath: editorPath(tenant),
         listPath: "/branch-admin/website/submissions",
         formError: String((req.query && req.query.error) || "") || null,
         notice: String((req.query && req.query.notice) || "") || null,

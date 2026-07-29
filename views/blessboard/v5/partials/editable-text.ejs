@@ -33,7 +33,27 @@
   var _id = typeof editId !== 'undefined' && editId ? String(editId) : '';
   var _multiline = typeof editMultiline !== 'undefined' ? Boolean(editMultiline) : (_type === 'paragraph');
   var _href = typeof editHref !== 'undefined' && editHref ? String(editHref) : '';
-  var _label = 'Edit ' + (_type === 'heading' ? 'heading' : (_type === 'buttonText' ? 'button text' : (_type === 'buttonUrl' ? 'button link' : (_type === 'contactText' ? 'contact text' : 'text'))));
+  var _label = 'Edit text';
+  if (_fieldKey === 'heading' && _sectionKey === 'hero') _label = 'Edit hero heading';
+  else if (_fieldKey === 'bodyText' && _sectionKey === 'hero') _label = 'Edit hero supporting text';
+  else if (_fieldKey === 'buttonText') _label = 'Edit button label';
+  else if (_fieldKey === 'buttonUrl') _label = 'Edit button link';
+  else if (_fieldKey === 'phone') _label = 'Edit church phone number';
+  else if (_fieldKey === 'email') _label = 'Edit church email';
+  else if (_fieldKey === 'address') _label = 'Edit church address';
+  else if (_fieldKey === 'heading' && _sectionKey === 'welcome') _label = 'Edit welcome heading';
+  else if (_fieldKey === 'bodyText' && _sectionKey === 'welcome') _label = 'Edit welcome body';
+  else if (_fieldKey === 'heading' && _sectionKey === 'story') _label = 'Edit story heading';
+  else if (_fieldKey === 'bodyText' && _sectionKey === 'story') _label = 'Edit story body';
+  else if (_fieldKey === 'heading' && _sectionKey === 'mission') _label = 'Edit mission heading';
+  else if (_fieldKey === 'bodyText' && _sectionKey === 'mission') _label = 'Edit mission text';
+  else if (_fieldKey === 'heading' && _sectionKey === 'vision') _label = 'Edit vision heading';
+  else if (_fieldKey === 'bodyText' && _sectionKey === 'vision') _label = 'Edit vision text';
+  else if (_type === 'heading') _label = 'Edit heading';
+  else if (_type === 'buttonText') _label = 'Edit button text';
+  else if (_type === 'buttonUrl') _label = 'Edit button link';
+  else if (_type === 'contactText') _label = 'Edit contact text';
+  else _label = 'Edit text';
   function _escAttr(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')

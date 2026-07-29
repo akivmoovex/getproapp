@@ -579,6 +579,10 @@ async function loadBranchWebsiteOverview(db, opts) {
 
     const orgKey = opts.organizationKey || null;
     const publicPath = orgKey ? publicChurchHomePath(orgKey) : "/";
+    const visualEditPath =
+      publicPath && publicPath !== "/"
+        ? `${publicPath}?website_edit=1`
+        : "/branch-admin/content";
 
     let primaryState = "none";
     if (activeDraft && activeDraft.status === "changes_requested") primaryState = "changes_requested";
@@ -594,9 +598,10 @@ async function loadBranchWebsiteOverview(db, opts) {
       title: "Branch Website",
       branchName: branch.display_name || opts.branchDisplayName || "Branch",
       subtitle: "Update information shown for your branch",
-      editPath: "/branch-admin/content",
+      editPath: visualEditPath,
       previewPath: "/branch-admin/content/preview/home",
       submitPath: "/branch-admin/website/submit",
+      overviewPath: "/branch-admin/website/overview",
       publicPath,
       branchPage: {
         statusLabel: branch.status === "active" ? "Active" : String(branch.status || "—"),

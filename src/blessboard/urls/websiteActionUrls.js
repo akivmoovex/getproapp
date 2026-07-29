@@ -90,13 +90,17 @@ function resolveWebsiteActionUrls(input) {
   }
 
   if (actor === "branch_admin") {
+    const visualEdit =
+      publicPath && publicPath !== "/"
+        ? `${publicPath}?website_edit=1`
+        : "/branch-admin/website";
     return {
       serviceTimesUrl: "/branch-admin/website",
-      serviceTimesLabel: "Branch website updates",
+      serviceTimesLabel: "Edit branch website",
       editWebsiteUrl: "/branch-admin/website",
-      editWebsiteLabel: "Website updates",
-      previewUrl: "/branch-admin/website",
-      previewLabel: "Branch website overview",
+      editWebsiteLabel: "Edit website",
+      previewUrl: visualEdit,
+      previewLabel: "Open website editor",
       publishedWebsiteUrl: publicPath,
       publishedWebsiteLabel: publicPath ? "View published website" : null,
       publishWorkflowUrl: "/branch-admin/website/submit",

@@ -1,0 +1,178 @@
+{
+  "generatedAt": "2026-07-29T18:00:23.725Z",
+  "organizationKey": "p7vis-de1cd2",
+  "viewports": {
+    "desktop": "1440x900",
+    "mobile": "390x844"
+  },
+  "results": [
+    {
+      "page": "home",
+      "device": "desktop",
+      "capture": "tests/__screenshots__/phase7-public/home-desktop-1440x900.png",
+      "stitch": "01-public-home-desktop/01-public-home-desktop.png",
+      "ok": false,
+      "classification": "CODE_DEFECT",
+      "ratio": 0.6642,
+      "note": "diffRatio=0.6642"
+    },
+    {
+      "page": "home",
+      "device": "mobile",
+      "capture": "tests/__screenshots__/phase7-public/home-mobile-390x844.png",
+      "stitch": "01-public-home-mobile/01-public-home-mobile.png",
+      "ok": false,
+      "classification": "CODE_DEFECT",
+      "ratio": 0.9081,
+      "note": "diffRatio=0.9081"
+    },
+    {
+      "page": "about",
+      "device": "desktop",
+      "capture": "tests/__screenshots__/phase7-public/about-desktop-1440x900.png",
+      "stitch": "02-public-about-desktop/02-public-about-desktop.png",
+      "ok": false,
+      "classification": "PRODUCT_DECISION",
+      "ratio": 0.3432,
+      "note": "diffRatio=0.3432"
+    },
+    {
+      "page": "about",
+      "device": "mobile",
+      "capture": "tests/__screenshots__/phase7-public/about-mobile-390x844.png",
+      "stitch": "02-public-about-mobile/02-public-about-mobile.png",
+      "ok": false,
+      "classification": "PRODUCT_DECISION",
+      "ratio": 0.3375,
+      "note": "diffRatio=0.3375"
+    },
+    {
+      "page": "leadership",
+      "device": "desktop",
+      "capture": "tests/__screenshots__/phase7-public/leadership-desktop-1440x900.png",
+      "stitch": "03-public-leadership-desktop/03-public-leadership-desktop.png",
+      "ok": true,
+      "classification": "CONTENT_DIFFERENCE",
+      "ratio": 0.1669,
+      "note": "diffRatio=0.1669"
+    },
+    {
+      "page": "leadership",
+      "device": "mobile",
+      "capture": "tests/__screenshots__/phase7-public/leadership-mobile-390x844.png",
+      "stitch": "03-public-leadership-mobile/03-public-leadership-mobile.png",
+      "ok": false,
+      "classification": "PRODUCT_DECISION",
+      "ratio": 0.3379,
+      "note": "diffRatio=0.3379"
+    },
+    {
+      "page": "ministries",
+      "device": "desktop",
+      "capture": "tests/__screenshots__/phase7-public/ministries-desktop-1440x900.png",
+      "stitch": "04-public-ministries-desktop/04-public-ministries-desktop.png",
+      "ok": false,
+      "classification": "CODE_DEFECT",
+      "ratio": 0.4241,
+      "note": "diffRatio=0.4241"
+    },
+    {
+      "page": "ministries",
+      "device": "mobile",
+      "capture": "tests/__screenshots__/phase7-public/ministries-mobile-390x844.png",
+      "stitch": "04-public-ministries-mobile/04-public-ministries-mobile.png",
+      "ok": false,
+      "classification": "PRODUCT_DECISION",
+      "ratio": 0.3463,
+      "note": "diffRatio=0.3463"
+    },
+    {
+      "page": "events",
+      "device": "desktop",
+      "capture": "tests/__screenshots__/phase7-public/events-desktop-1440x900.png",
+      "stitch": "05-public-events-calendar-desktop/05-public-events-calendar-desktop.png",
+      "ok": false,
+      "classification": "CODE_DEFECT",
+      "ratio": 0.369,
+      "note": "diffRatio=0.3690"
+    },
+    {
+      "page": "events",
+      "device": "mobile",
+      "capture": "tests/__screenshots__/phase7-public/events-mobile-390x844.png",
+      "stitch": "05-public-events-calendar-mobile/05-public-events-calendar-mobile.png",
+      "ok": false,
+      "classification": "PRODUCT_DECISION",
+      "ratio": 0.3052,
+      "note": "diffRatio=0.3052"
+    },
+    {
+      "page": "sermons",
+      "device": "desktop",
+      "capture": "tests/__screenshots__/phase7-public/sermons-desktop-1440x900.png",
+      "stitch": "06-public-sermons-desktop/06-public-sermons-desktop.png",
+      "ok": false,
+      "classification": "CODE_DEFECT",
+      "ratio": 0.6946,
+      "note": "diffRatio=0.6946"
+    },
+    {
+      "page": "sermons",
+      "device": "mobile",
+      "capture": "tests/__screenshots__/phase7-public/sermons-mobile-390x844.png",
+      "stitch": "06-public-sermons-mobile/06-public-sermons-mobile.png",
+      "ok": false,
+      "classification": "CODE_DEFECT",
+      "ratio": 0.3672,
+      "note": "diffRatio=0.3672"
+    },
+    {
+      "page": "giving",
+      "device": "desktop",
+      "capture": "tests/__screenshots__/phase7-public/giving-desktop-1440x900.png",
+      "stitch": "07-public-giving-desktop/07-public-giving-desktop.png",
+      "ok": false,
+      "classification": "PRODUCT_DECISION",
+      "ratio": 0.2891,
+      "note": "diffRatio=0.2891"
+    },
+    {
+      "page": "giving",
+      "device": "mobile",
+      "capture": "tests/__screenshots__/phase7-public/giving-mobile-390x844.png",
+      "stitch": "07-public-giving-mobile/07-public-giving-mobile.png",
+      "ok": false,
+      "classification": "PRODUCT_DECISION",
+      "ratio": 0.3344,
+      "note": "diffRatio=0.3344"
+    },
+    {
+      "page": "contact",
+      "device": "desktop",
+      "capture": "tests/__screenshots__/phase7-public/contact-desktop-1440x900.png",
+      "stitch": "08-public-contact-desktop/08-public-contact-desktop.png",
+      "ok": true,
+      "classification": "CONTENT_DIFFERENCE",
+      "ratio": 0.1211,
+      "note": "diffRatio=0.1211"
+    },
+    {
+      "page": "contact",
+      "device": "mobile",
+      "capture": "tests/__screenshots__/phase7-public/contact-mobile-390x844.png",
+      "stitch": "08-public-contact-mobile/08-public-contact-mobile.png",
+      "ok": true,
+      "classification": "CONTENT_DIFFERENCE",
+      "ratio": 0.1586,
+      "note": "diffRatio=0.1586"
+    },
+    {
+      "page": "home",
+      "device": "mobile-drawer",
+      "capture": "tests/__screenshots__/phase7-public/home-mobile-drawer-open.png",
+      "classification": "ACCEPTED",
+      "ratio": 0,
+      "note": "drawerLinkHeight=44"
+    }
+  ]
+}

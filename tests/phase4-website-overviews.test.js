@@ -518,7 +518,7 @@ describe("phase4 website overviews", () => {
     skipIfNeeded();
     const res = await authedGet(
       HOST_A,
-      "/branch-admin/website",
+      "/branch-admin/website/overview",
       users.branchA.rawToken
     );
     assert.equal(res.status, 200);
@@ -535,7 +535,7 @@ describe("phase4 website overviews", () => {
     skipIfNeeded();
     const hqRes = await authedGet(
       HOST_A,
-      "/branch-admin/website",
+      "/branch-admin/website/overview",
       users.branchA.rawToken
     );
     assert.equal(hqRes.status, 200);
@@ -543,7 +543,7 @@ describe("phase4 website overviews", () => {
 
     const northRes = await authedGet(
       HOST_A,
-      "/branch-admin/website",
+      "/branch-admin/website/overview",
       users.branchNorth.rawToken
     );
     assert.equal(northRes.status, 200);
@@ -566,7 +566,7 @@ describe("phase4 website overviews", () => {
 
     const res = await authedGet(
       HOST_A,
-      "/branch-admin/website",
+      "/branch-admin/website/overview",
       users.branchA.rawToken
     );
     assert.equal(res.status, 200);
@@ -578,7 +578,7 @@ describe("phase4 website overviews", () => {
     skipIfNeeded();
     const res = await authedGet(
       HOST_A,
-      "/branch-admin/website",
+      "/branch-admin/website/overview",
       users.branchB.rawToken
     );
     assert.ok(res.status === 403 || res.status === 404);

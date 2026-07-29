@@ -257,7 +257,7 @@ describe("tenant context apex HQ and branch-admin", () => {
     assert.doesNotMatch(res.text, /This page is not yet available/i);
   });
 
-  it("branch-admin website workflow does not open HQ editor", async () => {
+  it("branch-admin website entry opens visual editor, not HQ editor", async () => {
     requireDb();
     const cookie = await cookieFor(
       fixtures.branchUserId,
@@ -266,11 +266,14 @@ describe("tenant context apex HQ and branch-admin", () => {
     );
     const res = await request(app)
       .get("/branch-admin/website")
+      .redirects(0)
       .set("Cookie", cookie)
       .set("Host", APEX);
-    assert.ok(res.status === 200 || res.status === 403);
-    if (res.status === 200) {
-      assert.doesNotMatch(res.text, /href="\/hq\/content\/pages\/home"/);
+    assert.ok([302, 303, 403].includes(res.status));
+    if (res.status === 302 || res.status === 303) {
+      assert.match(String(res.headers.location || ""), /\/c\/[^?]+\?website_edit=1/);
+      assert.doesNotMatch(String(res.headers.location || ""), /\/hq\//);
+      assert.doesNotMatch(String(res.headers.location || ""), /\/submissions/);
     }
   });
 

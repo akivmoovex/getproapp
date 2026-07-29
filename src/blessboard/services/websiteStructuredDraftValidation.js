@@ -19,6 +19,18 @@ const DRAFT_KINDS = Object.freeze([
   "ministry",
   "event",
   "sermon",
+  "giving_method",
+  "social_link",
+]);
+
+const SOCIAL_LINK_TYPES = Object.freeze([
+  "facebook",
+  "instagram",
+  "youtube",
+  "twitter",
+  "x",
+  "linkedin",
+  "social",
 ]);
 
 const DEMO_IMAGE_PATHS = Object.freeze(
@@ -429,6 +441,85 @@ function validateStructuredPayload(kind, payload, op) {
     };
   }
 
+  if (kind === "giving_method") {
+    const qr = validateImageUrl(body.qrImageUrl || body.qrImage || "");
+    if (!qr.ok) return qr;
+    const built = contentAdmin.buildGivingFields(
+      {
+        methodType: body.methodType || body.type || "other",
+        label: body.label || body.name || body.methodName,
+        description: body.description,
+        accountDetails: body.accountDetails || body.accountOrPaymentDetails,
+        instructions: body.instructions,
+        externalUrl: body.externalUrl || body.paymentUrl,
+        buttonLabel: body.buttonLabel || body.ctaLabel,
+        qrImageUrl: qr.value || null,
+        sortOrder: body.sortOrder != null ? body.sortOrder : body.displayOrder,
+        status:
+          body.visible === false || body.hidden === true
+            ? "archived"
+            : body.status || "draft",
+      },
+      { partial: false }
+    );
+    if (!built.ok) {
+      return { ok: false, error: "Check the giving method fields and try again." };
+    }
+    return {
+      ok: true,
+      payload: {
+        ...built.fields,
+        qrImageUrl: qr.value || null,
+        visible: !(body.visible === false || body.hidden === true),
+      },
+    };
+  }
+
+  if (kind === "social_link") {
+    const channelType = String(body.channelType || body.platformType || body.platform || "social")
+      .trim()
+      .toLowerCase();
+    if (!SOCIAL_LINK_TYPES.includes(channelType) && !/^[a-z][a-z0-9_-]{0,31}$/.test(channelType)) {
+      return { ok: false, error: "Choose a supported social platform." };
+    }
+    const label =
+      sanitizePlain(body.label || body.platformLabel || channelType, 120).value || channelType;
+    const rawUrl = String(body.value || body.url || body.href || "").trim();
+    if (!rawUrl) {
+      return { ok: false, error: "Enter a social profile URL." };
+    }
+    let href = "";
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        return { ok: false, error: "Social links must use http or https." };
+      }
+      if (parsed.protocol === "http:") {
+        return { ok: false, error: "Social links must use https." };
+      }
+      href = parsed.toString();
+    } catch {
+      return { ok: false, error: "Enter a valid https social URL." };
+    }
+    if (href.length > 500) {
+      return { ok: false, error: "That link is too long." };
+    }
+    return {
+      ok: true,
+      payload: {
+        channelType,
+        label,
+        value: href,
+        sortOrder: body.sortOrder != null ? Number(body.sortOrder) : 10,
+        status:
+          body.visible === false || body.hidden === true
+            ? "archived"
+            : body.status || "draft",
+        visible: !(body.visible === false || body.hidden === true),
+      },
+    };
+  }
+
   return { ok: false, error: "Unknown editor type." };
 }
 
@@ -458,6 +549,7 @@ module.exports = {
   DRAFT_KINDS,
   DEMO_IMAGE_PATHS,
   VIDEO_HOST_ALLOWLIST,
+  SOCIAL_LINK_TYPES,
   validateImageUrl,
   validateVideoUrl,
   validateFocal,

@@ -337,7 +337,7 @@ html {
 .bb-tp-drawer__nav {
   display: flex;
   flex-direction: column;
-  padding: 0.75rem 0;
+  padding: 0.75rem 0 1rem;
   overflow: auto;
   flex: 1 1 auto;
   min-height: 0;
@@ -346,7 +346,8 @@ html {
 .bb-tp-drawer__list {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  /* Phase 7 density: ordinary nav rows stack without apartment-sized gaps */
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -359,7 +360,8 @@ html {
 }
 
 .bb-tp-drawer__link {
-  padding: 0.75rem 1.25rem;
+  /* ~10–12px vertical padding · 44px touch target (audit §4.2) */
+  padding: 0.625rem 1.15rem;
   min-height: var(--bb-touch-min, 2.75rem);
   width: 100%;
   box-sizing: border-box;
@@ -1552,7 +1554,13 @@ html {
 }
 
 .bb-tp-about-values {
-  padding: 2.5rem 0 3rem;
+  padding: 2.5rem 0; /* 40px compact · desktop bumped below */
+}
+
+@media (min-width: 900px) {
+  .bb-tp-about-values {
+    padding: 3.5rem 0; /* 56px standard band */
+  }
 }
 
 .bb-tp-about-values__heading {
@@ -4278,7 +4286,8 @@ html {
 
 .bb-tp-hero--phase7 {
   position: relative;
-  min-height: min(72vh, 40rem);
+  /* Density pass: keep full-bleed hero dominant without consuming most of the first viewport */
+  min-height: min(52vh, 28rem);
   display: flex;
   align-items: flex-end;
   overflow: hidden;
@@ -4314,7 +4323,7 @@ html {
   width: 100%;
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 3.5rem var(--bb-gutter-mobile, 1rem) 3rem;
+  padding: 2.75rem var(--bb-gutter-mobile, 1rem) 2.5rem;
   display: block;
 }
 
@@ -4437,7 +4446,17 @@ html {
 .bb-tp-home-teaser,
 .bb-tp-home-about-preview,
 .bb-tp-home-contact {
+  /* Compact/standard section rhythm: 44px mobile · 56–64px desktop via media below */
   padding: 2.75rem 0;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-home-welcome,
+  .bb-tp-home-teaser,
+  .bb-tp-home-about-preview,
+  .bb-tp-home-contact {
+    padding: 3.5rem 0; /* 56px — within 56–72px standard band */
+  }
 }
 
 .bb-tp-home-welcome__grid {
@@ -4651,9 +4670,15 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-cta-band {
-  padding: 2.75rem 0;
+  padding: 2.5rem 0;
   background: linear-gradient(135deg, #2d2463 0%, #6c5ce7 100%);
   color: #fff;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-cta-band {
+    padding: 3.25rem 0; /* ~52px — compact call-to-action band */
+  }
 }
 
 .bb-tp-cta-band__inner {
@@ -4818,7 +4843,11 @@ a.bb-tp-content-card:hover {
 
 @media (max-width: 767px) {
   .bb-tp-hero--phase7 {
-    min-height: min(68vh, 34rem);
+    min-height: min(48vh, 24rem);
+  }
+
+  .bb-tp-hero__inner--overlay {
+    padding: 2.25rem var(--bb-gutter-mobile, 1rem) 2rem;
   }
 
   .bb-tp-hero__media-plane .bb-tp-hero__img {

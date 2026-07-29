@@ -385,6 +385,55 @@
     );
   }
 
+  function buildGivingMethodForm(p) {
+    return (
+      field("Method type", "methodType", p.methodType || "bank_transfer", {
+        type: "select",
+        options: [
+          { value: "bank_transfer", label: "Bank transfer" },
+          { value: "mobile_money", label: "Mobile money" },
+          { value: "cash", label: "In person / cash" },
+          { value: "online", label: "External / online" },
+          { value: "other", label: "Other" },
+        ],
+      }) +
+      field("Method name", "label", p.label || "") +
+      field("Description", "description", p.description || "", { type: "textarea", rows: 2 }) +
+      field("Payment / account details", "accountDetails", p.accountDetails || "", {
+        type: "textarea",
+        rows: 3,
+      }) +
+      field("Instructions", "instructions", p.instructions || "", { type: "textarea", rows: 3 }) +
+      field("External payment URL", "externalUrl", p.externalUrl || "", { type: "url" }) +
+      field("Button label", "buttonLabel", p.buttonLabel || "Open published link") +
+      field("QR image URL (optional)", "qrImageUrl", p.qrImageUrl || "") +
+      '<p class="bb-tp-se-hint">Use an uploaded media path, demo image path, or https image URL for QR.</p>' +
+      field("Visible on website", "visible", p.visible !== false, { type: "checkbox" }) +
+      field("Display order", "sortOrder", p.sortOrder != null ? p.sortOrder : 10, { type: "number" })
+    );
+  }
+
+  function buildSocialLinkForm(p) {
+    return (
+      field("Platform", "channelType", p.channelType || "facebook", {
+        type: "select",
+        options: [
+          { value: "facebook", label: "Facebook" },
+          { value: "instagram", label: "Instagram" },
+          { value: "youtube", label: "YouTube" },
+          { value: "twitter", label: "Twitter" },
+          { value: "x", label: "X" },
+          { value: "linkedin", label: "LinkedIn" },
+          { value: "social", label: "Other" },
+        ],
+      }) +
+      field("Display label", "label", p.label || "") +
+      field("Profile URL (https)", "value", p.value || p.href || "", { type: "url" }) +
+      field("Visible on website", "visible", p.visible !== false, { type: "checkbox" }) +
+      field("Display order", "sortOrder", p.sortOrder != null ? p.sortOrder : 10, { type: "number" })
+    );
+  }
+
   function titleFor(kind) {
     return (
       {
@@ -395,6 +444,8 @@
         ministry: "Edit ministry",
         event: "Edit event",
         sermon: "Edit sermon",
+        giving_method: "Edit giving method",
+        social_link: "Edit social link",
       }[kind] || "Edit"
     );
   }
@@ -407,6 +458,8 @@
     if (kind === "ministry") return buildMinistryForm(payload);
     if (kind === "event") return buildEventForm(payload);
     if (kind === "sermon") return buildSermonForm(payload);
+    if (kind === "giving_method") return buildGivingMethodForm(payload);
+    if (kind === "social_link") return buildSocialLinkForm(payload);
     return "<p>Unsupported editor.</p>";
   }
 
@@ -514,6 +567,29 @@
         imageUrl: val("imageUrl"),
         featured: Boolean(val("featured")),
         visible: Boolean(val("visible")),
+      };
+    }
+    if (kind === "giving_method") {
+      return {
+        methodType: val("methodType") || "other",
+        label: val("label"),
+        description: val("description"),
+        accountDetails: val("accountDetails"),
+        instructions: val("instructions"),
+        externalUrl: val("externalUrl"),
+        buttonLabel: val("buttonLabel"),
+        qrImageUrl: val("qrImageUrl") || val("imageUrl"),
+        visible: Boolean(val("visible")),
+        sortOrder: Number(val("sortOrder") || 10),
+      };
+    }
+    if (kind === "social_link") {
+      return {
+        channelType: val("channelType") || "social",
+        label: val("label"),
+        value: val("value"),
+        visible: Boolean(val("visible")),
+        sortOrder: Number(val("sortOrder") || 10),
       };
     }
     return {};

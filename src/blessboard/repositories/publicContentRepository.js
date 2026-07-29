@@ -141,8 +141,12 @@ function mapGivingMethod(row) {
     branchId: row.branch_id,
     methodType: row.method_type,
     label: row.label,
+    description: row.description != null ? row.description : null,
+    accountDetails: row.account_details != null ? row.account_details : null,
     instructions: row.instructions,
     externalUrl: row.external_url,
+    buttonLabel: row.button_label != null ? row.button_label : null,
+    qrImageUrl: row.qr_image_url != null ? row.qr_image_url : null,
     sortOrder: row.sort_order,
     status: row.status,
     createdAt: row.created_at,
@@ -175,7 +179,8 @@ const SERMON_COLS = `id, church_id, branch_id, title, speaker_name, preached_at,
                      media_url, resource_url, status, created_at, updated_at`;
 const CONTACT_COLS = `id, church_id, branch_id, channel_type, label, value, sort_order,
                       status, created_at, updated_at`;
-const GIVING_COLS = `id, church_id, branch_id, method_type, label, instructions, external_url,
+const GIVING_COLS = `id, church_id, branch_id, method_type, label, description, account_details,
+                     instructions, external_url, button_label, qr_image_url,
                      sort_order, status, created_at, updated_at`;
 
 /**
@@ -859,16 +864,21 @@ async function findContactChannelById(client, id) {
 async function insertGivingMethod(client, fields) {
   const r = await client.query(
     `INSERT INTO blessboard.giving_methods
-       (church_id, branch_id, method_type, label, instructions, external_url, sort_order, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (church_id, branch_id, method_type, label, description, account_details,
+        instructions, external_url, button_label, qr_image_url, sort_order, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING ${GIVING_COLS}`,
     [
       fields.churchId,
       fields.branchId,
       fields.methodType,
       fields.label,
+      fields.description != null ? fields.description : null,
+      fields.accountDetails != null ? fields.accountDetails : null,
       fields.instructions,
       fields.externalUrl,
+      fields.buttonLabel != null ? fields.buttonLabel : null,
+      fields.qrImageUrl != null ? fields.qrImageUrl : null,
       fields.sortOrder != null ? fields.sortOrder : 0,
       fields.status || "draft",
     ]
@@ -883,15 +893,23 @@ async function updateGivingMethod(client, id, patch) {
     id,
     setClause: `method_type = COALESCE($2, method_type),
             label = COALESCE($3, label),
-            instructions = COALESCE($4, instructions),
-            external_url = COALESCE($5, external_url),
-            sort_order = COALESCE($6, sort_order),
-            status = COALESCE($7, status)`,
+            description = COALESCE($4, description),
+            account_details = COALESCE($5, account_details),
+            instructions = COALESCE($6, instructions),
+            external_url = COALESCE($7, external_url),
+            button_label = COALESCE($8, button_label),
+            qr_image_url = COALESCE($9, qr_image_url),
+            sort_order = COALESCE($10, sort_order),
+            status = COALESCE($11, status)`,
     values: [
       patch.methodType != null ? patch.methodType : null,
       patch.label != null ? patch.label : null,
+      patch.description !== undefined ? patch.description : null,
+      patch.accountDetails !== undefined ? patch.accountDetails : null,
       patch.instructions !== undefined ? patch.instructions : null,
       patch.externalUrl !== undefined ? patch.externalUrl : null,
+      patch.buttonLabel !== undefined ? patch.buttonLabel : null,
+      patch.qrImageUrl !== undefined ? patch.qrImageUrl : null,
       patch.sortOrder != null ? patch.sortOrder : null,
       patch.status != null ? patch.status : null,
     ],

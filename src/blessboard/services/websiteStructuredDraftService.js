@@ -136,6 +136,8 @@ function applyStructuredDraftsToModel(model, drafts) {
     ministry: [],
     event: [],
     sermon: [],
+    giving_method: [],
+    social_link: [],
   };
   for (const d of drafts) {
     if (byKind[d.draftKind]) byKind[d.draftKind].push(d);
@@ -345,6 +347,38 @@ function applyStructuredDraftsToModel(model, drafts) {
         sermons: applyCollection(model.homeTeasers.sermons, byKind.sermon, mapS),
       };
     }
+  }
+
+  if (model.pageKey === "giving") {
+    model.entities = applyCollection(model.entities, byKind.giving_method, (p, key) => ({
+      id: key,
+      methodType: p.methodType,
+      label: p.label,
+      description: p.description || null,
+      accountDetails: p.accountDetails || null,
+      instructions: p.instructions || null,
+      externalUrl: p.externalUrl || null,
+      buttonLabel: p.buttonLabel || null,
+      qrImageUrl: p.qrImageUrl || null,
+      sortOrder: p.sortOrder || 0,
+      status: p.status,
+      visible: p.visible !== false,
+      icon: null,
+    }));
+  }
+
+  if (byKind.social_link.length) {
+    model.socialLinks = applyCollection(model.socialLinks, byKind.social_link, (p, key) => ({
+      id: key,
+      channelType: p.channelType,
+      label: p.label,
+      value: p.value,
+      href: p.visible === false ? null : p.value,
+      icon: null,
+      sortOrder: p.sortOrder || 0,
+      visible: p.visible !== false,
+      _draftKey: key,
+    })).filter((link) => link && link.href);
   }
 
   return model;
