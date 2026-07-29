@@ -25,6 +25,12 @@
   } else if (_wa && _wa.overrides && _wa.overrides[_sectionKey + '::' + _fieldKey] != null) {
     _value = String(_wa.overrides[_sectionKey + '::' + _fieldKey]);
   }
+  var _published = _fallback;
+  if (_wa && typeof _wa.publishedValue === 'function') {
+    _published = _wa.publishedValue(_sectionKey, _fieldKey, '');
+  } else if (_wa && _wa.publishedBaselines && Object.prototype.hasOwnProperty.call(_wa.publishedBaselines, _sectionKey + '::' + _fieldKey)) {
+    _published = String(_wa.publishedBaselines[_sectionKey + '::' + _fieldKey] || '');
+  }
   var _tag = typeof editTag !== 'undefined' && editTag ? String(editTag) : 'p';
   var _class = typeof editClass !== 'undefined' && editClass ? String(editClass) : '';
   var _type = typeof editType !== 'undefined' && editType ? String(editType) : 'paragraph';
@@ -61,6 +67,18 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
   }
+  function _escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function _nl2brEscaped(s) {
+    return _escHtml(s).replace(/\r\n|\r|\n/g, '<br />');
+  }
+  var _publishedTrim = String(_published || '').trim();
+  var _unchanged = String(_value || '') === String(_published || '');
 %>
 <% if (_editing) { %>
 <span
@@ -73,6 +91,7 @@
   data-bb-max="<%= _max %>"
   data-bb-multiline="<%= _multiline ? '1' : '0' %>"
   data-bb-value="<%= _escAttr(_value) %>"
+  data-bb-published-value="<%= _escAttr(_published) %>"
   data-bb-stitch-screen-mobile="Phase 7 - Inline Text Editing - Mobile"
 >
   <span class="bb-tp-inline-edit__display" data-bb-inline-display="1">
@@ -100,6 +119,23 @@
   </span>
   <span class="bb-tp-inline-edit__editor" data-bb-inline-editor="1" hidden>
     <span class="bb-tp-inline-edit__field-label"><%= _label %></span>
+    <div class="bb-tp-inline-edit__compare" data-bb-inline-compare="1">
+      <div class="bb-tp-inline-edit__compare-col" data-bb-inline-current="1">
+        <span class="bb-tp-inline-edit__compare-label">Current website text</span>
+        <% if (_publishedTrim) { %>
+        <span class="bb-tp-inline-edit__compare-body" data-bb-inline-published-text="1"><%- _nl2brEscaped(_published) %></span>
+        <% } else { %>
+        <span class="bb-tp-inline-edit__compare-body bb-tp-inline-edit__compare-body--empty" data-bb-inline-published-text="1">No published text</span>
+        <% } %>
+      </div>
+      <div class="bb-tp-inline-edit__compare-col" data-bb-inline-proposed="1">
+        <span class="bb-tp-inline-edit__compare-label">Proposed new text</span>
+        <span
+          class="bb-tp-inline-edit__compare-body<%= _unchanged ? ' bb-tp-inline-edit__compare-body--unchanged' : '' %>"
+          data-bb-inline-proposed-text="1"
+        ><% if (_unchanged) { %>No change<% } else { %><%- _nl2brEscaped(_value) %><% } %></span>
+      </div>
+    </div>
     <% if (_multiline) { %>
     <textarea
       class="bb-tp-inline-edit__input"
@@ -127,8 +163,11 @@
     <span class="bb-tp-inline-edit__guidance" data-bb-inline-guidance="1">Up to <%= _max %> characters</span>
     <% } %>
     <span class="bb-tp-inline-edit__actions">
-      <button type="button" class="bb-tp-inline-edit__check" data-bb-inline-save="1" aria-label="Save changes">
+      <button type="button" class="bb-tp-inline-edit__check" data-bb-inline-save="1" aria-label="Save draft">
         <span class="material-symbols-outlined" aria-hidden="true">check</span>
+      </button>
+      <button type="button" class="bb-tp-inline-edit__publish" data-bb-inline-save-publish="1" aria-label="Save and Publish">
+        Save and Publish
       </button>
       <button type="button" class="bb-tp-inline-edit__cancel" data-bb-inline-cancel="1" aria-label="Discard changes">
         <span class="material-symbols-outlined" aria-hidden="true">close</span>

@@ -151,7 +151,7 @@ function resolvePublishCapability(opts) {
     }
     return {
       action: "publish",
-      label: "Publish Changes",
+      label: "Save and Publish",
       reason: null,
       message: null,
     };
@@ -170,7 +170,7 @@ function resolvePublishCapability(opts) {
     if (resolved.trustedActive) {
       return {
         action: "publish",
-        label: "Publish Changes",
+        label: "Save and Publish",
         reason: "trusted_branch_publish",
         message: null,
       };
@@ -677,7 +677,7 @@ async function loadWebsiteDraftPublishReview(db, opts) {
       (review.capability && review.capability.label) ||
       (review.capability.action === "submit_for_approval"
         ? "Submit for Approval"
-        : "Publish Changes"),
+        : "Save and Publish"),
     primaryAction:
       review.capability && review.capability.action === "submit_for_approval"
         ? "submit"

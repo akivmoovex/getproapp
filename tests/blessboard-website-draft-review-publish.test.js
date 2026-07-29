@@ -434,6 +434,47 @@ describe("blessboard website draft review publish", () => {
       .expect(403);
   });
 
+  it("HTTP Save and Publish succeeds without client-supplied deferServiceTimes", async (t) => {
+    skipIfNeeded(t);
+    await seedTextDraft("HTTP Save And Publish Headline");
+
+    const csrf = issueCsrfToken(baseEnv());
+    const review = await request(app)
+      .get("/hq/content/draft-changes/publish-review")
+      .set("Host", HOST_A)
+      .set("Cookie", sidCookie(users.hqA.rawToken))
+      .expect(200);
+    assert.match(review.text, /Current website text|Proposed new text|Save and Publish|data-bb-save-and-publish/);
+    assert.match(review.text, /data-bb-website-publish-review="1"/);
+
+    const published = await request(app)
+      .post("/hq/content/draft-changes/publish")
+      .set("Host", HOST_A)
+      .set(
+        "Cookie",
+        cookieHeader(sidCookie(users.hqA.rawToken), `${CSRF_COOKIE}=${csrf}`)
+      )
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        confirm_publish: "1",
+        acknowledge_public: "1",
+      })
+      .expect(303);
+
+    assert.match(String(published.headers.location || ""), /notice=published/);
+
+    const after = await request(app).get("/").set("Host", HOST_A).expect(200);
+    assert.match(after.text, /HTTP Save And Publish Headline/);
+
+    const list = await request(app)
+      .get("/hq/content/draft-changes?notice=published")
+      .set("Host", HOST_A)
+      .set("Cookie", sidCookie(users.hqA.rawToken))
+      .expect(200);
+    assert.match(list.text, /Changes published successfully/);
+  });
+
   it("failed publication leaves public version unchanged", async (t) => {
     skipIfNeeded(t);
     await seedTextDraft("Should Not Go Live");
@@ -477,7 +518,10 @@ describe("blessboard website draft review publish", () => {
     assert.ok(discarded.discarded >= 1);
 
     const publicHtml = await request(app).get("/").set("Host", HOST_A).expect(200);
-    assert.match(publicHtml.text, /Draft Sacred Headline|Live Headline/);
+    assert.match(
+      publicHtml.text,
+      /Draft Sacred Headline|Live Headline|HTTP Save And Publish Headline/
+    );
     assert.doesNotMatch(publicHtml.text, /Discard Me Draft/);
 
     const empty = await loadWebsiteDraftChangesReview(pool, {

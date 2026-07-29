@@ -447,13 +447,28 @@ async function publishChurchWebsite(db, input) {
     };
   }
   if (!readiness.ready) {
-    return {
-      ok: false,
-      status: STATUS.NOT_READY,
-      reason: "not_ready",
-      gaps: readiness.gaps,
-      readiness,
-    };
+    // Phase 7 draft republish onto an already-published website should not re-block
+    // on first-publish advisory gaps (contact, service times, hostname polish, etc.).
+    const forcePublishVersion = Boolean(input && input.forcePublishVersion);
+    const alreadyPublished = String(readiness.websiteStatus || "") === "published";
+    const fatalGaps = (readiness.gaps || []).filter(
+      (g) =>
+        g === GAP.WEBSITE_SUSPENDED ||
+        g === GAP.ORGANIZATION_NAME ||
+        g === GAP.FIRST_BRANCH ||
+        g === GAP.CUSTOM_DOMAIN_ENTITLEMENT
+    );
+    const allowDraftRepublish =
+      forcePublishVersion && alreadyPublished && fatalGaps.length === 0;
+    if (!allowDraftRepublish) {
+      return {
+        ok: false,
+        status: STATUS.NOT_READY,
+        reason: "not_ready",
+        gaps: allowDraftRepublish ? fatalGaps : readiness.gaps,
+        readiness,
+      };
+    }
   }
 
   if (readiness.organizationId) {
@@ -464,6 +479,12 @@ async function publishChurchWebsite(db, input) {
       actorUserId: input.actorUserId || null,
       deferServiceTimes: Boolean(input && input.deferServiceTimes),
       mobilePreviewConfirmed: Boolean(input && input.mobilePreviewConfirmed),
+      relaxPreviewRequirement: Boolean(input && input.relaxPreviewRequirement),
+      relaxReadinessGaps: Boolean(
+        input &&
+          input.forcePublishVersion &&
+          String(readiness.websiteStatus || "") === "published"
+      ),
       env: input && input.env,
     });
     if (!validation.ok || !validation.publishable) {
@@ -486,12 +507,25 @@ async function publishChurchWebsite(db, input) {
         deferServiceTimes: Boolean(input && input.deferServiceTimes),
       });
       if (!inner.ok || !inner.ready) {
-        return {
-          ok: false,
-          status: inner.ok ? STATUS.NOT_READY : inner.status,
-          reason: "not_ready",
-          gaps: inner.gaps || [],
-        };
+        const forcePublishVersion = Boolean(input && input.forcePublishVersion);
+        const alreadyPublished = String(inner.websiteStatus || "") === "published";
+        const fatalGaps = (inner.gaps || []).filter(
+          (g) =>
+            g === GAP.WEBSITE_SUSPENDED ||
+            g === GAP.ORGANIZATION_NAME ||
+            g === GAP.FIRST_BRANCH ||
+            g === GAP.CUSTOM_DOMAIN_ENTITLEMENT
+        );
+        const allowDraftRepublish =
+          forcePublishVersion && alreadyPublished && fatalGaps.length === 0;
+        if (!allowDraftRepublish) {
+          return {
+            ok: false,
+            status: inner.ok ? STATUS.NOT_READY : inner.status,
+            reason: "not_ready",
+            gaps: inner.gaps || [],
+          };
+        }
       }
 
       // Narrow idempotency: rapid duplicate POSTs only when nothing new is waiting.

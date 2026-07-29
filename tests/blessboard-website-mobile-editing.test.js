@@ -280,5 +280,10 @@ describe("blessboard website mobile editing stage 7", () => {
       "utf8"
     );
     assert.match(css, /\.bb-tp-body--editing[\s\S]*overflow-x:\s*clip/);
+    assert.match(css, /\.bb-tp-inline-edit__compare[\s\S]*grid-template-columns:\s*1fr 1fr/);
+    assert.match(
+      css,
+      /@media \(max-width: 767px\)[\s\S]*\.bb-tp-inline-edit__compare[\s\S]*grid-template-columns:\s*1fr/
+    );
   });
 });

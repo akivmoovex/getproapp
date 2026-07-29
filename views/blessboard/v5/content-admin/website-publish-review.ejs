@@ -123,8 +123,8 @@
         I understand public visitors will see this new content after publication.
       </label>
       <% } %>
-      <button type="submit" class="bb-hq-btn bb-hq-btn--primary" data-bb-primary-submit="1">
-        <%= r.primaryActionLabel || 'Publish Changes' %>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary" data-bb-primary-submit="1" data-bb-save-and-publish="1">
+        <%= primaryAction === 'submit' ? (r.primaryActionLabel || 'Submit for Approval') : 'Save and Publish' %>
       </button>
     </form>
     <% } else { %>

@@ -1380,6 +1380,182 @@ function createContentAdminRouter(deps) {
     });
 
     /**
+     * Phase 7 — save one inline field draft, then publish all drafts for this scope.
+     */
+    router.post(
+      `${p}/api/inline-field/publish`,
+      rejectApex,
+      gateContent,
+      express.json({ limit: "32kb" }),
+      async (req, res) => {
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+
+        const submitted =
+          (req.body && req.body[CSRF_FIELD]) ||
+          (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
+        if (!validateCsrf(req, submitted, env)) {
+          return res.status(403).json({
+            ok: false,
+            reason: "csrf_failed",
+            code: "csrf_failed",
+            error: "Invalid or missing CSRF token.",
+            message: "Invalid or missing CSRF token.",
+            published: false,
+          });
+        }
+
+        const body = req.body && typeof req.body === "object" ? req.body : {};
+        const pageKey = String(body.pageKey || "").trim();
+        const sectionKey = String(body.sectionKey || "").trim();
+        const fieldKey = String(body.fieldKey || "").trim();
+        const newValue = body.value != null ? String(body.value) : "";
+
+        if (body.organizationId || body.churchId || body.organization_id || body.church_id) {
+          return res.status(400).json({
+            ok: false,
+            reason: "invalid_scope",
+            error: "Organization scope is determined by the signed-in session.",
+            published: false,
+          });
+        }
+
+        const tenant = resolveTenantForAuthorization(req);
+        if (!tenant || !tenant.organization || !tenant.church) {
+          return res.status(403).json({
+            ok: false,
+            reason: "forbidden",
+            error: "Access denied.",
+            published: false,
+          });
+        }
+
+        const session = req.v5Session && req.v5Session.session;
+        if (!session || !session.userId) {
+          return res.status(401).json({
+            ok: false,
+            reason: "auth",
+            error: "Sign-in is required.",
+            published: false,
+          });
+        }
+
+        const authzCtx = req.blessBoardAuthorizationContext;
+        const roleKeys = new Set(
+          ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
+        );
+        const allowed =
+          (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
+          (variant === "branch" &&
+            (roleKeys.has("branch_admin") ||
+              roleKeys.has("church_hq_admin") ||
+              roleKeys.has("platform_admin")));
+        if (!allowed) {
+          return res.status(403).json({
+            ok: false,
+            reason: "forbidden",
+            error: "Access denied.",
+            published: false,
+          });
+        }
+
+        const actorRole = roleKeys.has("platform_admin")
+          ? "platform_admin"
+          : roleKeys.has("church_hq_admin")
+            ? "church_hq_admin"
+            : "branch_admin";
+
+        const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
+        const { publishWebsiteDrafts } = require("../services/websiteDraftPublishService");
+
+        let saveResult;
+        try {
+          saveResult = await saveInlineFieldDraft(getPool(), {
+            organizationId: tenant.organization.id,
+            churchId: scope.churchId,
+            branchId: scope.branchId,
+            editorUserId: session.userId,
+            actorRole,
+            pageKey,
+            sectionKey,
+            fieldKey,
+            newValue,
+          });
+        } catch (err) {
+          const status = err && err.status ? Number(err.status) : 500;
+          const isClientError = status >= 400 && status < 500;
+          const message =
+            isClientError && err && err.message
+              ? String(err.message)
+              : "Could not save this change. Please try again.";
+          const reason =
+            err && err.code ? String(err.code).toLowerCase() : "save_failed";
+          return res.status(status >= 400 && status < 600 ? status : 500).json({
+            ok: false,
+            reason: reason === "validation" ? "validation_failed" : reason,
+            code: reason === "validation" ? "validation_failed" : reason,
+            error: message,
+            message,
+            published: false,
+          });
+        }
+
+        const publishResult = await publishWebsiteDrafts(getPool(), {
+          organizationId: tenant.organization.id,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          actorUserId: session.userId,
+          actorRole,
+          confirmPublish: true,
+          mobilePreviewConfirmed: true,
+          deferServiceTimes: true,
+          env,
+        });
+
+        if (!publishResult.ok) {
+          const reason = String(publishResult.reason || "publish_failed");
+          const statusCode =
+            publishResult.status === "forbidden"
+              ? 403
+              : publishResult.status === "not_ready" || reason === "no_changes"
+                ? 409
+                : 500;
+          const message =
+            reason === "approval_required"
+              ? "These changes require approval before publication."
+              : reason === "no_changes"
+                ? "There are no draft changes to publish."
+                : reason === "not_ready" || publishResult.status === "not_ready"
+                  ? "Website is not ready to publish. Review draft changes for blocking issues."
+                  : "We could not publish these changes. Please try again.";
+          return res.status(statusCode).json({
+            ok: false,
+            reason,
+            code: reason,
+            error: message,
+            message,
+            saved: true,
+            published: false,
+            value: saveResult.value,
+            previousValue: saveResult.previousValue,
+            gaps: publishResult.gaps || null,
+          });
+        }
+
+        return res.status(200).json({
+          ok: true,
+          saved: true,
+          published: true,
+          status: "published",
+          message: "Changes published successfully.",
+          fieldKey: `${pageKey}::${sectionKey}::${fieldKey}`,
+          value: saveResult.value,
+          previousValue: saveResult.previousValue,
+        });
+      }
+    );
+
+    /**
      * Phase 7 Stage 5 — save/cancel structured drafts (media + collections). Does not publish.
      */
     router.post(
@@ -1580,7 +1756,7 @@ function createContentAdminRouter(deps) {
               : notice === "submitted"
                 ? "Changes were submitted for approval."
                 : notice === "published"
-                  ? "Website changes were published."
+                  ? "Changes published successfully."
                   : null,
         })
       );
@@ -1613,16 +1789,18 @@ function createContentAdminRouter(deps) {
           review,
           error:
             errQ === "publish_failed"
-              ? "Publication failed. Drafts were preserved and the public website was not changed."
+              ? "We could not publish these changes. Please try again. Drafts were preserved and the public website was not changed."
               : errQ === "submit_failed"
                 ? "Approval submission failed. Drafts were preserved — try again."
                 : errQ === "csrf"
                   ? "Invalid or missing security token. Refresh and try again."
                   : errQ === "not_ready"
-                    ? "Website is not ready to publish. Review the issues below."
-                    : errQ === "forbidden"
-                      ? "You do not have permission for that action."
-                      : null,
+                    ? "Website is not ready to publish. Review the issues below, then try Save and Publish again."
+                    : errQ === "confirm"
+                      ? "Confirm publication before continuing."
+                      : errQ === "forbidden"
+                        ? "You do not have permission for that action."
+                        : null,
         })
       );
       return res.status(200).type("html").send(html);
@@ -1679,8 +1857,15 @@ function createContentAdminRouter(deps) {
         actorUserId: session.userId,
         actorRole: resolveActorRole(req),
         confirmPublish: req.body && req.body.confirm_publish,
+        // Phase 7 draft republish: incremental text/media changes must not re-block
+        // on first-publish service-time gaps that the review UI only treats as warnings.
+        deferServiceTimes: true,
         mobilePreviewConfirmed: Boolean(
-          req.body && (req.body.mobile_preview_confirmed === "1" || req.body.mobile_preview_confirmed === "on")
+          req.body &&
+            (req.body.mobile_preview_confirmed === "1" ||
+              req.body.mobile_preview_confirmed === "on" ||
+              req.body.acknowledge_public === "1" ||
+              req.body.acknowledge_public === "on")
         ),
         env,
       });
@@ -1688,9 +1873,11 @@ function createContentAdminRouter(deps) {
         const code =
           result.reason === "cross_org" || result.status === "forbidden"
             ? "forbidden"
-            : result.reason === "no_changes" || result.status === "not_ready"
-              ? "not_ready"
-              : "publish_failed";
+            : result.reason === "confirm_publish"
+              ? "confirm"
+              : result.reason === "no_changes" || result.status === "not_ready"
+                ? "not_ready"
+                : "publish_failed";
         return res.redirect(303, `${scope.basePath}/draft-changes/publish-review?error=${code}`);
       }
       return res.redirect(303, `${scope.basePath}/draft-changes?notice=published`);
@@ -1806,7 +1993,7 @@ function createContentAdminRouter(deps) {
       }
 
       model.websiteAdmin = null;
-      model.cssHref = "/blessboard/v5/tenant-public.css?v=44";
+      model.cssHref = "/blessboard/v5/tenant-public.css?v=45";
       const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });

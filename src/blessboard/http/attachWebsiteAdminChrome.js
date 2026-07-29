@@ -17,7 +17,9 @@ const {
   applyDraftsToSections,
   resolveWebsiteAdminStatus,
   displayWithDraft,
+  readPublishedFieldValue,
 } = require("../services/websiteInlineDraftService");
+const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
 const {
   countAllWebsiteDrafts,
   listStructuredDrafts,
@@ -26,6 +28,31 @@ const {
 } = require("../services/websiteStructuredDraftService");
 
 const EDIT_QUERY = "website_edit";
+
+const SECTION_BASELINE_FIELDS = ["heading", "bodyText", "buttonText", "buttonUrl"];
+const CONTACT_BASELINE_FIELDS = ["email", "phone", "address"];
+
+/**
+ * Snapshot visitor-visible field values before draft overlays are applied.
+ * @param {object[]} sections
+ * @param {object|null|undefined} publicContact
+ */
+function buildDisplayBaselineMap(sections, publicContact) {
+  const map = Object.create(null);
+  for (const section of sections || []) {
+    const sectionKey = String(section.sectionKey || "");
+    if (!sectionKey) continue;
+    for (const fieldKey of SECTION_BASELINE_FIELDS) {
+      map[`${sectionKey}::${fieldKey}`] = readPublishedFieldValue(section, fieldKey, null);
+    }
+  }
+  if (publicContact && typeof publicContact === "object") {
+    for (const fieldKey of CONTACT_BASELINE_FIELDS) {
+      map[`details::${fieldKey}`] = readPublishedFieldValue(null, fieldKey, publicContact);
+    }
+  }
+  return map;
+}
 
 /**
  * @param {object|null|undefined} authz
@@ -131,12 +158,32 @@ async function attachWebsiteAdminChrome(opts) {
   let draftCount = 0;
   let overlayMap = new Map();
   let structuredDrafts = [];
+  /** @type {Record<string, string>} */
+  let publishedBaselines = Object.create(null);
   try {
     draftCount = await countAllWebsiteDrafts(db, {
       churchId,
       branchId: draftBranchId,
     });
     if (editingMode) {
+      // Capture visitor-visible text before draft overlays mutate the model.
+      publishedBaselines = buildDisplayBaselineMap(model.sections, model.publicContact);
+      try {
+        const activeDrafts = await fieldDraftRepo.listDrafts(db, {
+          churchId,
+          branchId: draftBranchId,
+          pageKey: model.pageKey,
+          status: "draft",
+        });
+        for (const draft of activeDrafts) {
+          const key = `${draft.sectionKey}::${draft.fieldKey}`;
+          publishedBaselines[key] =
+            draft.previousValue != null ? String(draft.previousValue) : "";
+        }
+      } catch {
+        // Baselines remain visitor-visible snapshot.
+      }
+
       overlayMap = await loadDraftOverlayMap(db, {
         churchId,
         branchId: draftBranchId,
@@ -169,6 +216,7 @@ async function attachWebsiteAdminChrome(opts) {
     draftCount = 0;
     overlayMap = new Map();
     structuredDrafts = [];
+    publishedBaselines = Object.create(null);
   }
 
   const hasDraftChanges = draftCount > 0;
@@ -203,6 +251,9 @@ async function attachWebsiteAdminChrome(opts) {
   const reviewHref = capability.isHqEditor
     ? "/hq/content/draft-changes"
     : "/branch-admin/content/draft-changes";
+  const publishUrl = capability.isHqEditor
+    ? "/hq/content/api/inline-field/publish"
+    : "/branch-admin/content/api/inline-field/publish";
   const draftPreviewHref = capability.isHqEditor
     ? "/hq/content/draft-preview/home"
     : "/branch-admin/content/draft-preview/home";
@@ -243,6 +294,7 @@ async function attachWebsiteAdminChrome(opts) {
     draftCount,
     csrfToken,
     saveUrl,
+    publishUrl,
     structuredSaveUrl,
     mediaUploadUrl,
     mediaListUrl,
@@ -253,6 +305,7 @@ async function attachWebsiteAdminChrome(opts) {
     branchId: draftBranchId,
     actorRole: capability.actorRole,
     overrides,
+    publishedBaselines,
     structuredDrafts: editingMode
       ? structuredDrafts.map((d) => ({
           draftKind: d.draftKind,
@@ -265,9 +318,16 @@ async function attachWebsiteAdminChrome(opts) {
     displayValue(sectionKey, fieldKey, fallback) {
       return displayWithDraft(overrides, sectionKey, fieldKey, fallback);
     },
+    publishedValue(sectionKey, fieldKey, fallback) {
+      const key = `${sectionKey}::${fieldKey}`;
+      if (Object.prototype.hasOwnProperty.call(publishedBaselines, key)) {
+        return publishedBaselines[key];
+      }
+      return fallback != null ? String(fallback) : "";
+    },
   };
 
-  model.cssHref = "/blessboard/v5/tenant-public.css?v=44";
+  model.cssHref = "/blessboard/v5/tenant-public.css?v=45";
 
   return model;
 }
@@ -277,4 +337,5 @@ module.exports = {
   attachWebsiteAdminChrome,
   resolveWebsiteEditCapability,
   withEditQuery,
+  buildDisplayBaselineMap,
 };

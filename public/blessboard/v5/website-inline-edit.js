@@ -1,6 +1,7 @@
 /**
  * Phase 7 Stage 4 — inline text field editor (no framework).
  * Requires editing toolbar with data-bb-save-url + data-bb-csrf.
+ * Optional data-bb-publish-url enables Save and Publish.
  */
 (function () {
   "use strict";
@@ -21,6 +22,33 @@
     el.hidden = false;
     el.textContent = message || "";
     el.setAttribute("data-bb-status-kind", kind || "");
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function nl2brEscaped(value) {
+    return escapeHtml(value).replace(/\r\n|\r|\n/g, "<br />");
+  }
+
+  function updateProposedPreview(root) {
+    var input = qs(root, "[data-bb-inline-input='1']");
+    var proposed = qs(root, "[data-bb-inline-proposed-text='1']");
+    if (!input || !proposed) return;
+    var published = root.getAttribute("data-bb-published-value") || "";
+    var next = String(input.value);
+    if (next === published) {
+      proposed.textContent = "No change";
+      proposed.classList.add("bb-tp-inline-edit__compare-body--unchanged");
+      return;
+    }
+    proposed.classList.remove("bb-tp-inline-edit__compare-body--unchanged");
+    proposed.innerHTML = nl2brEscaped(next);
   }
 
   function parseSaveResponse(res) {
@@ -80,6 +108,7 @@
     display.hidden = true;
     editor.hidden = false;
     setStatus(root, "", "");
+    updateProposedPreview(root);
     input.focus();
     if (typeof input.select === "function") input.select();
     try {
@@ -117,6 +146,7 @@
       if (textHost) textHost.textContent = restoreValue;
       root.setAttribute("data-bb-value", restoreValue);
     }
+    updateProposedPreview(root);
     editor.hidden = true;
     display.hidden = false;
     setStatus(root, "", "");
@@ -127,7 +157,8 @@
     }
   }
 
-  function applySaved(root, value) {
+  function applySaved(root, value, opts) {
+    var options = opts || {};
     var display = qs(root, "[data-bb-inline-display='1']");
     var input = qs(root, "[data-bb-inline-input='1']");
     if (input) input.value = value;
@@ -136,19 +167,63 @@
       if (textHost) textHost.textContent = value;
     }
     root.setAttribute("data-bb-value", value);
+    if (options.published) {
+      root.setAttribute("data-bb-published-value", value);
+      var publishedText = qs(root, "[data-bb-inline-published-text='1']");
+      if (publishedText) {
+        if (String(value || "").trim()) {
+          publishedText.classList.remove("bb-tp-inline-edit__compare-body--empty");
+          publishedText.innerHTML = nl2brEscaped(value);
+        } else {
+          publishedText.classList.add("bb-tp-inline-edit__compare-body--empty");
+          publishedText.textContent = "No published text";
+        }
+      }
+    }
     exitEdit(root, null);
-    setStatus(root, "Changes saved as a draft", "ok");
+    var okMessage = options.published
+      ? "Changes published successfully."
+      : "Changes saved as a draft";
+    setStatus(root, okMessage, "ok");
     var status = qs(root, "[data-bb-inline-status='1']");
     if (status) {
       status.hidden = false;
       window.setTimeout(function () {
-        if (status.textContent === "Changes saved as a draft") status.textContent = "";
-      }, 1800);
+        if (status.textContent === okMessage) status.textContent = "";
+      }, 2200);
     }
     var displayEl = qs(root, "[data-bb-inline-display='1']");
     var editorEl = qs(root, "[data-bb-inline-editor='1']");
     if (displayEl) displayEl.hidden = false;
     if (editorEl) editorEl.hidden = true;
+  }
+
+  function setButtonsDisabled(root, disabled) {
+    var checkBtn = qs(root, "[data-bb-inline-save='1']");
+    var publishBtn = qs(root, "[data-bb-inline-save-publish='1']");
+    var cancelBtn = qs(root, "[data-bb-inline-cancel='1']");
+    if (checkBtn) checkBtn.disabled = disabled;
+    if (publishBtn) publishBtn.disabled = disabled;
+    if (cancelBtn) cancelBtn.disabled = disabled;
+  }
+
+  function postField(url, root, csrf, value) {
+    return fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-CSRF-Token": csrf,
+      },
+      body: JSON.stringify({
+        _csrf: csrf,
+        pageKey: root.getAttribute("data-bb-page"),
+        sectionKey: root.getAttribute("data-bb-section"),
+        fieldKey: root.getAttribute("data-bb-field"),
+        value: value,
+      }),
+    }).then(parseSaveResponse);
   }
 
   function saveField(root, opts) {
@@ -169,35 +244,14 @@
 
     var value = input.value;
     setStatus(root, "Saving…", "pending");
-    var checkBtn = qs(root, "[data-bb-inline-save='1']");
-    var cancelBtn = qs(root, "[data-bb-inline-cancel='1']");
-    if (checkBtn) checkBtn.disabled = true;
-    if (cancelBtn) cancelBtn.disabled = true;
+    setButtonsDisabled(root, true);
     saveInFlight = root;
 
-    var request = fetch(saveUrl, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-CSRF-Token": csrf,
-      },
-      body: JSON.stringify({
-        _csrf: csrf,
-        pageKey: root.getAttribute("data-bb-page"),
-        sectionKey: root.getAttribute("data-bb-section"),
-        fieldKey: root.getAttribute("data-bb-field"),
-        value: value,
-      }),
-    })
-      .then(parseSaveResponse)
+    var request = postField(saveUrl, root, csrf, value)
       .then(function (result) {
         saveInFlight = null;
-        if (checkBtn) checkBtn.disabled = false;
-        if (cancelBtn) cancelBtn.disabled = false;
+        setButtonsDisabled(root, false);
         if (!result.okHttp || !result.data.ok) {
-          // Keep editor open and preserve the user's unsaved text for retry.
           setStatus(root, errorMessageFromResult(result), "error");
           input.focus();
           return false;
@@ -212,8 +266,7 @@
       })
       .catch(function () {
         saveInFlight = null;
-        if (checkBtn) checkBtn.disabled = false;
-        if (cancelBtn) cancelBtn.disabled = false;
+        setButtonsDisabled(root, false);
         setStatus(root, "Could not save this change. Please try again.", "error");
         input.focus();
         return false;
@@ -222,12 +275,70 @@
     return options.fromGuard ? request : undefined;
   }
 
+  function saveAndPublishField(root) {
+    var bar = toolbar();
+    if (!bar) return;
+    var publishUrl = bar.getAttribute("data-bb-publish-url") || "";
+    var csrf = bar.getAttribute("data-bb-csrf") || "";
+    var input = qs(root, "[data-bb-inline-input='1']");
+    if (!publishUrl || !input) {
+      setStatus(
+        root,
+        "We could not publish these changes. Please try again.",
+        "error"
+      );
+      return;
+    }
+    if (saveInFlight === root) return;
+
+    var value = input.value;
+    setStatus(root, "Saving and publishing…", "pending");
+    setButtonsDisabled(root, true);
+    saveInFlight = root;
+
+    postField(publishUrl, root, csrf, value)
+      .then(function (result) {
+        saveInFlight = null;
+        setButtonsDisabled(root, false);
+        if (!result.okHttp || !result.data.ok) {
+          setStatus(
+            root,
+            errorMessageFromResult(result) ||
+              "We could not publish these changes. Please try again.",
+            "error"
+          );
+          input.focus();
+          return;
+        }
+        applySaved(root, result.data.value != null ? String(result.data.value) : value, {
+          published: true,
+        });
+      })
+      .catch(function () {
+        saveInFlight = null;
+        setButtonsDisabled(root, false);
+        setStatus(
+          root,
+          "We could not publish these changes. Please try again.",
+          "error"
+        );
+        input.focus();
+      });
+  }
+
   function onClick(event) {
     var start = event.target.closest("[data-bb-inline-start='1']");
     if (start) {
       event.preventDefault();
       var root = start.closest("[data-bb-inline-edit='1']");
       if (root) enterEdit(root);
+      return;
+    }
+    var savePublish = event.target.closest("[data-bb-inline-save-publish='1']");
+    if (savePublish) {
+      event.preventDefault();
+      var publishRoot = savePublish.closest("[data-bb-inline-edit='1']");
+      if (publishRoot) saveAndPublishField(publishRoot);
       return;
     }
     var save = event.target.closest("[data-bb-inline-save='1']");
@@ -264,6 +375,14 @@
     }
   }
 
+  function onInput(event) {
+    var root = event.target.closest("[data-bb-inline-edit='1']");
+    if (!root) return;
+    if (!event.target.matches("[data-bb-inline-input='1']")) return;
+    updateProposedPreview(root);
+  }
+
   document.addEventListener("click", onClick);
   document.addEventListener("keydown", onKeydown);
+  document.addEventListener("input", onInput);
 })();

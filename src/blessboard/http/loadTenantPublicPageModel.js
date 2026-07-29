@@ -1240,7 +1240,7 @@ async function loadTenantPublicPageModel(db, input) {
     portalLabel: null,
     apexHref: "https://blessboard.org/",
     visitHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=44",
+    cssHref: "/blessboard/v5/tenant-public.css?v=45",
     pathPrefix,
     homeHref: pathPrefix || "/",
     hrefFor(pagePath) {

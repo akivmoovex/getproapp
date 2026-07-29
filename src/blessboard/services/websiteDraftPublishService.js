@@ -203,8 +203,13 @@ async function publishWebsiteDrafts(db, opts) {
         churchId,
         actorUserId,
         confirmPublish: true,
-        deferServiceTimes: Boolean(opts.deferServiceTimes),
-        mobilePreviewConfirmed: Boolean(opts.mobilePreviewConfirmed),
+        // Draft republish defaults to deferring service-times (first-publish gap).
+        // Callers may still force false for full readiness checks.
+        deferServiceTimes: opts.deferServiceTimes !== false,
+        mobilePreviewConfirmed:
+          Boolean(opts.mobilePreviewConfirmed) ||
+          Boolean(opts.confirmPublish === true || opts.confirmPublish === "1"),
+        relaxPreviewRequirement: true,
         publicationNote: opts.publicationNote || "Published from website draft review",
         sourceType: opts.sourceType || "hq_edit",
         forcePublishVersion: true,

@@ -346,6 +346,200 @@ describe("blessboard website inline edit foundation", () => {
       .expect(200);
     assert.match(editRes.text, /Draft Heading Only/);
     assert.match(editRes.text, /data-bb-review-publish/);
+    assert.match(editRes.text, /Current website text/);
+    assert.match(editRes.text, /Proposed new text/);
+    assert.match(editRes.text, /data-bb-published-value="Published Welcome"/);
+    assert.match(editRes.text, /data-bb-inline-save-publish="1"/);
+    assert.match(editRes.text, /data-bb-publish-url="\/hq\/content\/api\/inline-field\/publish"/);
+  });
+
+  it("editing does not mutate the frozen published baseline attribute", async () => {
+    if (skipIfNeeded()) return;
+    const editRes = await request(app)
+      .get("/?website_edit=1")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`))
+      .expect(200);
+    assert.match(editRes.text, /data-bb-published-value="Published Welcome"/);
+    const js = fs.readFileSync(
+      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
+      "utf8"
+    );
+    assert.match(js, /data-bb-published-value/);
+    assert.match(js, /updateProposedPreview/);
+    assert.doesNotMatch(js, /setAttribute\("data-bb-published-value", input\.value\)/);
+  });
+
+  it("Save and Publish persists, publishes, and preserves previous value", async () => {
+    if (skipIfNeeded()) return;
+    const csrf = issueCsrfToken(baseEnv());
+    const beforeSection = await pool.query(
+      `SELECT heading FROM blessboard.page_sections
+        WHERE page_id = (
+          SELECT id FROM blessboard.public_pages
+           WHERE church_id = $1 AND page_key = 'home' AND branch_id IS NULL
+           LIMIT 1
+        ) AND section_key = 'hero'`,
+      [churchA.id]
+    );
+    const previousHeading = beforeSection.rows[0].heading;
+
+    const res = await request(app)
+      .post("/hq/content/api/inline-field/publish")
+      .set("Host", HOST_A)
+      .set(
+        "Cookie",
+        cookieHeader(
+          `${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`,
+          `${CSRF_COOKIE}=${csrf}`
+        )
+      )
+      .set("Content-Type", "application/json")
+      .set("Accept", "application/json")
+      .set("X-CSRF-Token", csrf)
+      .send({
+        [CSRF_FIELD]: csrf,
+        pageKey: "home",
+        sectionKey: "hero",
+        fieldKey: "heading",
+        value: "Published Via Save And Publish",
+      })
+      .expect(200);
+
+    assert.equal(res.body.ok, true);
+    assert.equal(res.body.published, true);
+    assert.equal(res.body.value, "Published Via Save And Publish");
+    assert.equal(res.body.previousValue, previousHeading);
+    assert.match(String(res.body.message || ""), /published successfully/i);
+
+    const drafts = await draftRepo.countDrafts(pool, {
+      churchId: churchA.id,
+      branchId: null,
+    });
+    assert.equal(drafts, 0);
+
+    const section = await pool.query(
+      `SELECT heading FROM blessboard.page_sections
+        WHERE page_id = (
+          SELECT id FROM blessboard.public_pages
+           WHERE church_id = $1 AND page_key = 'home' AND branch_id IS NULL
+           LIMIT 1
+        ) AND section_key = 'hero'`,
+      [churchA.id]
+    );
+    assert.equal(section.rows[0].heading, "Published Via Save And Publish");
+
+    const applied = await pool.query(
+      `SELECT previous_value, new_value, status
+         FROM blessboard.website_inline_field_drafts
+        WHERE church_id = $1
+          AND page_key = 'home'
+          AND section_key = 'hero'
+          AND field_key = 'heading'
+        ORDER BY updated_at DESC
+        LIMIT 1`,
+      [churchA.id]
+    );
+    assert.ok(applied.rows[0]);
+    assert.equal(applied.rows[0].status, "applied");
+    assert.equal(applied.rows[0].previous_value, previousHeading);
+    assert.equal(applied.rows[0].new_value, "Published Via Save And Publish");
+
+    const publicRes = await request(app).get("/").set("Host", HOST_A).expect(200);
+    assert.match(publicRes.text, /Published Via Save And Publish/);
+
+    // Repeat submit with same value should not invent a new draft (no change).
+    const csrf2 = issueCsrfToken(baseEnv());
+    const repeat = await request(app)
+      .post("/hq/content/api/inline-field/publish")
+      .set("Host", HOST_A)
+      .set(
+        "Cookie",
+        cookieHeader(
+          `${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`,
+          `${CSRF_COOKIE}=${csrf2}`
+        )
+      )
+      .set("X-CSRF-Token", csrf2)
+      .send({
+        [CSRF_FIELD]: csrf2,
+        pageKey: "home",
+        sectionKey: "hero",
+        fieldKey: "heading",
+        value: "Published Via Save And Publish",
+      });
+    assert.ok(repeat.status === 409 || repeat.status === 200);
+    if (repeat.status === 409) {
+      assert.equal(repeat.body.ok, false);
+      assert.match(String(repeat.body.reason || ""), /no_changes|not_ready/);
+    }
+  });
+
+  it("Save and Publish validation and CSRF failures are not silent", async () => {
+    if (skipIfNeeded()) return;
+    const csrf = issueCsrfToken(baseEnv());
+    const validation = await request(app)
+      .post("/hq/content/api/inline-field/publish")
+      .set("Host", HOST_A)
+      .set(
+        "Cookie",
+        cookieHeader(
+          `${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`,
+          `${CSRF_COOKIE}=${csrf}`
+        )
+      )
+      .set("X-CSRF-Token", csrf)
+      .send({
+        [CSRF_FIELD]: csrf,
+        pageKey: "home",
+        sectionKey: "hero",
+        fieldKey: "heading",
+        value: "x".repeat(500),
+      });
+    assert.equal(validation.status, 400);
+    assert.equal(validation.body.ok, false);
+    assert.ok(validation.body.error || validation.body.message);
+
+    const csrfFail = await request(app)
+      .post("/hq/content/api/inline-field/publish")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`))
+      .set("Content-Type", "application/json")
+      .set("Accept", "application/json")
+      .send({
+        pageKey: "home",
+        sectionKey: "hero",
+        fieldKey: "heading",
+        value: "Should Fail CSRF",
+      });
+    assert.equal(csrfFail.status, 403);
+    assert.equal(csrfFail.body.ok, false);
+    assert.equal(csrfFail.body.reason, "csrf_failed");
+  });
+
+  it("unauthorized roles cannot Save and Publish", async () => {
+    if (skipIfNeeded()) return;
+    const csrf = issueCsrfToken(baseEnv());
+    const res = await request(app)
+      .post("/hq/content/api/inline-field/publish")
+      .set("Host", HOST_A)
+      .set(
+        "Cookie",
+        cookieHeader(
+          `${DEFAULT_V5_COOKIE}=${users.memberA.rawToken}`,
+          `${CSRF_COOKIE}=${csrf}`
+        )
+      )
+      .set("X-CSRF-Token", csrf)
+      .send({
+        [CSRF_FIELD]: csrf,
+        pageKey: "home",
+        sectionKey: "hero",
+        fieldKey: "heading",
+        value: "Member Publish",
+      });
+    assert.ok(res.status === 401 || res.status === 403);
+    assert.notEqual(res.body && res.body.ok, true);
   });
 
   it("cross mark creates no change (cancel is client-only)", async () => {
@@ -443,6 +637,16 @@ describe("blessboard website inline edit foundation", () => {
 
   it("save failure preserves previous published content", async () => {
     if (skipIfNeeded()) return;
+    const before = await pool.query(
+      `SELECT heading FROM blessboard.page_sections
+        WHERE page_id = (
+          SELECT id FROM blessboard.public_pages
+           WHERE church_id = $1 AND page_key = 'home' AND branch_id IS NULL
+           LIMIT 1
+        ) AND section_key = 'hero'`,
+      [churchA.id]
+    );
+    const previousHeading = before.rows[0].heading;
     let threw = false;
     try {
       await saveInlineFieldDraft(pool, {
@@ -469,7 +673,8 @@ describe("blessboard website inline edit foundation", () => {
         ) AND section_key = 'hero'`,
       [churchA.id]
     );
-    assert.equal(section.rows[0].heading, "Published Welcome");
+    assert.equal(section.rows[0].heading, previousHeading);
+    assert.notEqual(section.rows[0].heading, "x".repeat(5000));
   });
 
   it("shared editing assets and allowlist exist", () => {

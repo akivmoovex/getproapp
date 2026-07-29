@@ -117,16 +117,16 @@
           <% } %>
           <dl class="bb-draft-review__diff">
             <div>
-              <dt>Previous</dt>
+              <dt>Current website text</dt>
               <dd>
-                <span><%= item.previousValue || '—' %></span>
+                <span><%= item.previousValue || 'No published text' %></span>
                 <% if (item.previousTruncated) { %>
                 <details><summary>Expand</summary><p><%= item.previousValueFull %></p></details>
                 <% } %>
               </dd>
             </div>
             <div>
-              <dt>New draft</dt>
+              <dt>Proposed new text</dt>
               <dd>
                 <span><%= item.newValue || '—' %></span>
                 <% if (item.newTruncated) { %>

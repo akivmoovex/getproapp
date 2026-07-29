@@ -5190,9 +5190,74 @@ a.bb-tp-content-card:hover {
   color: #5b6472;
 }
 
+.bb-tp-inline-edit__compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-bottom: 0.15rem;
+}
+
+.bb-tp-inline-edit__compare-col {
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  border-radius: 8px;
+  background: #f7f6fb;
+}
+
+.bb-tp-inline-edit__compare-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #5b6472;
+}
+
+.bb-tp-inline-edit__compare-body {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: #1f2430;
+}
+
+.bb-tp-inline-edit__compare-body--empty,
+.bb-tp-inline-edit__compare-body--unchanged {
+  color: #5b6472;
+  font-style: italic;
+}
+
 .bb-tp-inline-edit__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
+  align-items: center;
+}
+
+.bb-tp-inline-edit__publish {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: #6c5ce7;
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bb-tp-inline-edit__publish:hover,
+.bb-tp-inline-edit__publish:focus-visible {
+  background: #5a4bd1;
+}
+
+.bb-tp-inline-edit__publish:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .bb-tp-inline-edit__status {
@@ -5219,6 +5284,10 @@ a.bb-tp-content-card:hover {
 
   .bb-tp-inline-edit__editor {
     min-width: 100%;
+  }
+
+  .bb-tp-inline-edit__compare {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -5503,6 +5572,13 @@ a.bb-tp-content-card:hover {
     gap: 0.55rem;
     padding-top: 0.35rem;
     background: linear-gradient(180deg, transparent, #fff 40%);
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bb-tp-inline-edit__publish {
+    min-height: 2.75rem;
+    width: 100%;
   }
 
   .bb-tp-body--editing .bb-tp-hero .bb-tp-inline-edit__editor {

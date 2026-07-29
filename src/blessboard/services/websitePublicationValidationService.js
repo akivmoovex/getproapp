@@ -28,6 +28,8 @@ const STATUS = Object.freeze({
  *   actorUserId?: string|null,
  *   deferServiceTimes?: boolean,
  *   mobilePreviewConfirmed?: boolean,
+ *   relaxPreviewRequirement?: boolean,
+ *   relaxReadinessGaps?: boolean,
  *   env?: object,
  * }} opts
  */
@@ -80,7 +82,20 @@ async function validateWebsitePublication(db, opts) {
     const warnings = [];
     const checks = [];
 
-    const readyOk = Boolean(readiness && readiness.ok && readiness.ready);
+    const fatalGapKeys = new Set([
+      "website_suspended",
+      "organization_name",
+      "first_branch",
+      "custom_domain_entitlement",
+    ]);
+    const hasFatalReadinessGap = (readiness.gaps || []).some((g) =>
+      fatalGapKeys.has(String(g))
+    );
+    const readyOk = Boolean(
+      readiness &&
+        readiness.ok &&
+        (readiness.ready || (opts.relaxReadinessGaps && !hasFatalReadinessGap))
+    );
     checks.push({
       key: "required_content",
       label: "Required content complete",
@@ -89,7 +104,9 @@ async function validateWebsitePublication(db, opts) {
     checks.push({
       key: "contact",
       label: "Contact information present",
-      ok: readyOk && !(readiness.gaps || []).includes("contact_method"),
+      ok:
+        (readyOk && !(readiness.gaps || []).includes("contact_method")) ||
+        Boolean(opts.relaxReadinessGaps),
     });
     checks.push({
       key: "tenant_active",
@@ -111,6 +128,7 @@ async function validateWebsitePublication(db, opts) {
       errors.push("Publish readiness could not be evaluated.");
     } else if (!readiness.ready) {
       for (const gap of readiness.gaps || []) {
+        if (opts.relaxReadinessGaps && !fatalGapKeys.has(String(gap))) continue;
         errors.push(`Readiness gap: ${gap}`);
       }
     }
@@ -143,7 +161,10 @@ async function validateWebsitePublication(db, opts) {
     const requirePreview = settingsPersisted
       ? settings.requirePreviewBeforePublish !== false
       : false;
-    const previewOk = !requirePreview || Boolean(readiness.previewAcknowledged);
+    const previewOk =
+      Boolean(opts.relaxPreviewRequirement) ||
+      !requirePreview ||
+      Boolean(readiness.previewAcknowledged);
     checks.push({
       key: "preview",
       label: "Preview acknowledged before publication",
