@@ -132,8 +132,8 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     assert.equal(counts.domains, 0);
     assert.equal(counts.subs, 1);
     assert.equal(counts.onboarding, 1);
-    assert.equal(counts.draft_pages, 8);
-    assert.equal(counts.published_pages, 0);
+    assert.equal(counts.draft_pages, 0);
+    assert.equal(counts.published_pages, 8);
 
     const appRow = await appRepo.findApplicationById(pool, app.id);
     assert.equal(appRow.application_status, "closed");

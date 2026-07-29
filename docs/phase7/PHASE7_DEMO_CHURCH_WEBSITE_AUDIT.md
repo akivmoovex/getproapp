@@ -3,9 +3,12 @@
 **Date:** 2026-07-29  
 **Surface:** `/c/:organizationKey` V5 path-public  
 **Prior verdict:** `CLOSE` (density P0)  
-**Current verdict:** `CLOSE`
+**Current verdict:** `CLOSE` (exact Stitch reference alignment — see `PHASE7_EXACT_STITCH_REFERENCE_MAP.md`)
 
-Screenshot comparison against church-flow Stitch PNGs completed for all 16 viewport captures. High pixel ratios are largely **content / composition / crop mismatches** versus the older church-flow PNG set (Phase 7 live soft-fill + 1440/390 viewport crops ≠ full-page Stitch exports). Do **not** claim `MATCHED`.
+Exact screen IDs, artboard normalization, and mobile MISSING coverage:  
+[`docs/phase7/PHASE7_EXACT_STITCH_REFERENCE_MAP.md`](./PHASE7_EXACT_STITCH_REFERENCE_MAP.md)
+
+Older `church-flow/01-public-website` PNG comparisons are **WRONG_REFERENCE** and removed from the visual suite.
 
 ---
 
@@ -14,37 +17,25 @@ Screenshot comparison against church-flow Stitch PNGs completed for all 16 viewp
 | Gate | Status |
 |------|--------|
 | 8 pages × desktop/mobile captured | Pass (16) |
-| Mobile drawer open capture | Pass |
-| Giving-method editor | Implemented |
-| Leadership intro editor | Implemented |
-| Footer social editor | Implemented |
-| Branding colours | Documented only — **not implemented** |
-| Pixel `MATCHED` vs Stitch | Fail (see matrix) |
+| Exact desktop Stitch IDs | **8/8 CONFIRMED** |
+| Exact mobile Stitch IDs | **1/8 CONFIRMED** (Home); **7 MISSING** |
+| Mobile drawer open capture | Pass (44px touch retained) |
+| Giving-method / leadership intro / footer social editors | Implemented |
+| Branding colours | **PLATFORM_CONTROLLED / PRODUCT_BLOCKED** |
+| Pixel `MATCHED` vs exact Phase 7 Stitch | Not claimed (mobile refs missing + MEDIA_BLOCKED) |
 
 ---
 
-## 2. Eight-page desktop/mobile Stitch comparison matrix
+## 2. Exact-reference comparison (replaces church-flow matrix)
 
 Baselines: `tests/__screenshots__/phase7-public/`  
-Report: `tests/__screenshots__/phase7-public/stitch-comparison-report.json`
+References: `design-reference/stitch-screens/phase7-exact/*/viewport-*.png`  
+Report: `tests/__screenshots__/phase7-public/stitch-comparison-report.json`  
+Viewports: desktop **1280×900** (2560@2x), mobile **390×844**
 
-| Page | Desktop 1440×900 | Mobile 390×844 | Stitch desktop PNG | Stitch mobile PNG |
-|------|------------------|----------------|--------------------|-------------------|
-| Home | CODE_DEFECT (0.66) | CODE_DEFECT (0.91) | `01-public-home-desktop/...` | `01-public-home-mobile/...` |
-| About | PRODUCT_DECISION (0.34) | PRODUCT_DECISION (0.34) | `02-public-about-desktop/...` | `02-public-about-mobile/...` |
-| Leadership | CONTENT_DIFFERENCE (0.17) | PRODUCT_DECISION (0.34) | `03-public-leadership-desktop/...` | `03-public-leadership-mobile/...` |
-| Ministries | CODE_DEFECT (0.42) | PRODUCT_DECISION (0.35) | `04-public-ministries-desktop/...` | `04-public-ministries-mobile/...` |
-| Events | CODE_DEFECT (0.37) | PRODUCT_DECISION (0.31) | `05-public-events-calendar-desktop/...` | `05-public-events-calendar-mobile/...` |
-| Sermons | CODE_DEFECT (0.69) | *(see report)* | `06-public-sermons-desktop/...` | `06-public-sermons-mobile/...` |
-| Giving | *(see report)* | *(see report)* | `07-public-giving-desktop/...` | `07-public-giving-mobile/...` |
-| Contact | *(see report)* | *(see report)* | `08-public-contact-desktop/...` | `08-public-contact-mobile/...` |
-| Home drawer | ACCEPTED | — | n/a | `home-mobile-drawer-open.png` |
-
-**Interpretation notes (not spacing regressions from P0):**
-
-- Auto-classifier uses raw pixel ratio after cover-crop resize; it over-labels `CODE_DEFECT` when demo copy, hero media, and full-page Stitch exports differ.
-- Preferred reclassification for most high-ratio rows: **CONTENT_DIFFERENCE** (demo seed vs Stitch church) + **PRODUCT_DECISION** (Phase 7 full-bleed home vs older mesh hero PNG).
-- Mobile drawer row height measured ~44–48px band → **ACCEPTED**.
+Former auto `CODE_DEFECT` (6) vs church-flow PNGs → reclassified **WRONG_REFERENCE**.  
+Exact-map manual classes: content / media / product / `STITCH_REFERENCE_BLOCKED` for missing mobiles.  
+**No `CONFIRMED_CODE_DEFECT`** pending full mobile artboards.
 
 ---
 
@@ -54,9 +45,8 @@ Report: `tests/__screenshots__/phase7-public/stitch-comparison-report.json`
 |------|------:|
 | Public page viewport captures | 16 |
 | Mobile drawer open | 1 |
-| Total PNG baselines written | 17 |
+| Exact Phase 7 HTML-rendered refs | 9 (8 desktop + home mobile) |
 | Comparison rows in report | 17 |
-| Updated snapshots this run | 17 (first write) |
 
 ---
 
@@ -67,6 +57,7 @@ Report: `tests/__screenshots__/phase7-public/stitch-comparison-report.json`
 - UI pencils + add control on `giving.ejs`
 - Migration `049_giving_method_editor_fields.sql` for extended columns
 - Migration `050_…` expands `wsd_kind_check`
+- Drag-and-drop ordering: **PRODUCT_ENHANCEMENT** (move-up/down retained)
 
 ---
 
@@ -137,20 +128,83 @@ NODE_ENV=test node --test \
 # → 43 pass / 0 fail
 
 NODE_ENV=test node --test tests/blessboard-phase7-visual-stitch.test.js
-# → 2 pass / 0 fail (16 captures + drawer)
+# → 5 pass / 0 fail (exact Phase 7 references)
 ```
 
 ---
 
-## 10. Remaining gaps
+## 10. Remaining gaps (parity only — not release blockers)
 
 | Gap | Classification |
 |-----|----------------|
-| Pixel parity vs church-flow Stitch PNG set | CONTENT_DIFFERENCE / PRODUCT_DECISION (crop + demo content + Phase 7 home composition) |
-| Human-reviewed visual QA against Phase 7 Stitch screen IDs in templates | PRODUCT_DECISION (map to newer Stitch project screens, not only church-flow folder) |
-| Branding colour editors | PRODUCT_BLOCKED |
-| Leadership eyebrow CMS field | PRODUCT_DECISION (template-only today) |
-| Drag-and-drop reorder UI (API reorder exists) | PRODUCT_DECISION / PARTIAL |
-| Playwright `toHaveScreenshot` in main `playwright.config.cjs` | ACCEPTED alternative: node:test + Chromium harness |
+| Seven missing Phase 7 mobile artboards | `STITCH_REFERENCE_BLOCKED` |
+| MCP full-resolution PNG exports unavailable (HTML-rendered refs used) | `STITCH_REFERENCE_BLOCKED` |
+| Stitch remote photography vs same-site demo media | `MEDIA_BLOCKED` |
+| Branding colour editors | `PRODUCT_BLOCKED` |
+| Drag-and-drop reorder UI | `PRODUCT_ENHANCEMENT` |
+| Drawer-open vs drawer-closed compare | `INTENTIONALLY_ACCEPTED` |
 
-**Next to reach `MATCHED`:** align capture crop to Stitch artboard, seed content to match Stitch copy/media, and compare against the Phase 7 screen IDs referenced in each EJS template—not only the older church-flow PNG folders.
+**Verdict remains `CLOSE`.** Pixel `MATCHED` is not claimable while mobile refs and media blocks remain.
+
+---
+
+## 11. Release readiness (2026-07-29)
+
+### 1. Final code review outcome — **PASS (with one security harden)**
+
+Reviewed migrations `049`/`050`, giving-method schema/repo, leadership intro allowlist, footer social drafts, inline/structured authz, draft-vs-published separation, tenant scoping, CSRF on editor POSTs, HTTPS URL validation, QR/media path handling, empty-state templates, and nullable new columns.
+
+**Fix applied this pass:** `saveStructuredDraft` now returns **404** when a UUID `entityKey` (or reorder id) belongs to another church — cross-org giving/social IDs no longer soft-save under the caller’s church.
+
+Trusted tenant context supplies `churchId` / `organizationId` from session; client org/branch IDs are not accepted as authority.
+
+### 2. Migration verification — **PASS**
+
+| Path | Result |
+|------|--------|
+| Clean migrate (all modules) | Columns `description`, `account_details`, `button_label`, `qr_image_url` nullable; length CHECKs present; `wsd_kind_check` includes `giving_method` + `social_link`; provision works |
+| Upgrade from pre-049 | Re-apply `049`/`050` after stripping cols/constraint; legacy giving row preserved; new cols null; no data loss |
+| Idempotency | `ADD COLUMN IF NOT EXISTS` + constraint existence guards; remigrate no-op via `schema_migrations` |
+| Rollback | No destructive down migrations (intentional) |
+
+### 3. Focused Phase 7 totals
+
+`43 pass / 0 fail` (density + assets + drawer + editors)  
+`5 pass / 0 fail` (visual exact-ref)  
+Combined focused+visual: `48 pass / 0 fail`
+
+### 4. Broader regression totals
+
+18 relevant suites (public pages, inline/structured editors, draft/publish, CSRF audit, tenant auth, authorization, branch/HQ shells, provision orchestrator, public content schema, content admin, service times, demo seed, …):
+
+**`231 pass / 0 fail / 0 skipped`**
+
+Stale assertions updated to match shipping product (CSS `?v=44`, initial website **published** not draft, CSRF audit recognizes conflict/approval handlers, schema table inventory).
+
+### 5. Smoke-test results — **PASS**
+
+`/c/demo-10-church` (+ 7 routes): anonymous `200`, no editor JS, `tenant-public.css?v=44`, no horizontal overflow, mobile drawer **44px**, density CSS retained.
+
+Admin path (service-level trusted context): giving method draft → public unchanged → publish → visible; leadership heading publish; HTTPS social reject; publication versions incremented; cross-org giving/social UUID → **404**.
+
+### 6. Asset version decision
+
+| Item | Value |
+|------|-------|
+| Public CSS | `tenant-public.css?v=44` |
+| Public assets changed after bump? | **No** (no dirty CSS/JS vs release baseline this pass) |
+| Version bump required? | **No** |
+| Anonymous editor JS | Not loaded |
+| Editor JS | Only when `websiteAdmin.editingMode` |
+
+### 7. Remaining non-code blockers
+
+`STITCH_REFERENCE_BLOCKED` · `MEDIA_BLOCKED` · `PRODUCT_BLOCKED` · `PRODUCT_ENHANCEMENT` · `INTENTIONALLY_ACCEPTED`
+
+### 8. Deployment recommendation
+
+**`READY_TO_DEPLOY`** for release safety.
+
+Parity remains **`CLOSE`** (not `MATCHED`) because seven Phase 7 mobile artboards are unavailable and media/MCP export limits remain. Those are evidence/media blockers, not confirmed implementation defects.
+
+**Deployment status:** `NOT_DEPLOYED` (do not deploy from this session).

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Leadership | BlessBoard - Sacred Modernity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "background": "#f4fafd",
+                    "tertiary-fixed": "#ffdcc3",
+                    "outline-variant": "#c8c4d7",
+                    "primary": "#5341cd",
+                    "surface-tint": "#5847d2",
+                    "surface-container": "#e8eff1",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "secondary-fixed-dim": "#c5c0ff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#e4dfff",
+                    "on-tertiary-fixed": "#2f1500",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-tertiary-container": "#fff5f1",
+                    "on-primary": "#ffffff",
+                    "on-background": "#161d1f",
+                    "inverse-on-surface": "#ebf2f4",
+                    "secondary": "#5952af",
+                    "on-error": "#ffffff",
+                    "tertiary": "#884800",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-primary-container": "#faf6ff",
+                    "surface-variant": "#dde4e6",
+                    "outline": "#787586",
+                    "tertiary-container": "#ac5d00",
+                    "inverse-primary": "#c6bfff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#474554",
+                    "surface": "#f4fafd",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "on-secondary-container": "#352c8a",
+                    "on-secondary-fixed": "#140067",
+                    "surface-container-low": "#eef5f7",
+                    "secondary-fixed": "#e3dfff",
+                    "on-primary-fixed": "#160066",
+                    "surface-container-high": "#e2e9ec",
+                    "on-surface": "#161d1f",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#dde4e6",
+                    "on-secondary-fixed-variant": "#413996",
+                    "inverse-surface": "#2b3234",
+                    "surface-bright": "#f4fafd",
+                    "secondary-container": "#a19afd",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#d4dbdd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "max-width-center": "1200px",
+                    "stack-tight": "0.25rem",
+                    "gutter": "1rem",
+                    "container-padding": "2rem",
+                    "component-gap": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "label-caps": ["Hanken Grotesk"],
+                    "label-status": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "label-status": ["11px", {"lineHeight": "1", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; background-color: #f4fafd; color: #161d1f; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.08);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav { border-bottom: 2px solid #5341cd; color: #5341cd; font-weight: 700; }
+        .transition-soft { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md border-b border-outline-variant/30 docked full-width top-0 sticky z-50 shadow-sm">
+<nav class="flex justify-between items-center px-gutter py-3 max-w-max-width-center mx-auto w-full">
+<div class="font-headline-md text-headline-md font-bold text-primary">BlessBoard</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors py-2" href="#">Home</a>
+<a class="font-label-caps text-label-caps text-primary font-bold border-b-2 border-primary py-2" href="#">Leadership</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors py-2" href="#">Ministries</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors py-2" href="#">Events</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors py-2" href="#">Sermons</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors py-2" href="#">Giving</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-label-caps text-label-caps hover:bg-primary/90 transition-soft active:scale-95 shadow-lg shadow-primary/20">
+                    Plan Your Visit
+                </button>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">edit</span>
+</div>
+</nav>
+</header>
+<main class="flex-grow">
+<!-- Hero Introduction -->
+<section class="relative py-24 overflow-hidden">
+
+<div class="relative max-w-max-width-center mx-auto px-gutter text-center">
+<span class="font-label-caps text-label-caps text-primary bg-primary/10 px-4 py-1 rounded-full mb-6 inline-block">OUR HEART FOR SERVICE</span>
+<h1 class="font-headline-lg text-headline-lg md:text-[48px] mb-6 max-w-2xl mx-auto leading-tight">Composed Focus, Sacred Leadership</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto leading-relaxed">
+                    At BlessBoard, we believe leadership is an act of intentional presence. We are committed to fostering a space where every individual feels seen, valued, and empowered to fulfill their divine purpose.
+                </p>
+</div>
+</section>
+<!-- Senior Pastor Feature -->
+<section class="py-12 bg-surface">
+<div class="max-w-max-width-center mx-auto px-gutter">
+<div class="glass-card rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 items-center">
+<div class="h-[400px] lg:h-[600px] relative">
+<img class="w-full h-full object-cover" data-alt="A portrait of Pastor John Banda, a middle-aged man with a warm, welcoming smile and intelligent eyes. He is standing in a brightly lit, modern architectural space with high ceilings and natural light streaming through large windows. The style is professional yet approachable, reflecting the Sacred Modernity aesthetic with clean lines and soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXz4JCeoTpHI0soq5KWoclQzPWiLxCY9IlvoD2GuYTJ-0Wr2YsYw2sf0Ic45-TIYcAP-HtI8dFYy6WdYCCRxhyewvnvs9Kn9470iWzfcYo7-FB0AX84ZomKTi30dge_yFd_BymFhB2okGlwrzb2jBpz5SsJL4jcQPdlOU5gv7bgeMlRaDTyF02GTm-FS7Z5_jrO8brq2oEwDJUKfrURrMu5GTTABOOz4v7CoUw79qUvMG8f5A6W10bKQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+</div>
+<div class="p-12 lg:p-20">
+<span class="font-label-caps text-label-caps text-tertiary-container mb-4 block">SENIOR PASTOR</span>
+<h2 class="font-headline-lg text-headline-lg mb-6">Pastor John Banda</h2>
+<div class="w-12 h-1 bg-primary mb-8"></div>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8 leading-relaxed">
+                            With over two decades of ministry experience, Pastor John leads with a heart of compassion and a mind for strategic spiritual growth. His vision for BlessBoard is rooted in the belief that modern life, though fast-paced, can be lived with profound intentionality and sacred peace. 
+                        </p>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-10 italic">
+                            "Our goal isn't just to fill seats, but to fill hearts with the enduring clarity that comes from a life focused on what truly matters."
+                        </p>
+<button class="border border-outline text-primary px-8 py-3 rounded-xl font-label-caps text-label-caps hover:bg-primary hover:text-on-primary hover:border-primary transition-soft">
+                            Read Full Bio
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Leadership Team Grid -->
+<section class="py-24 bg-surface-container-low">
+<div class="max-w-max-width-center mx-auto px-gutter">
+<div class="flex justify-between items-end mb-12">
+<div>
+<span class="font-label-caps text-label-caps text-primary mb-2 block">EXECUTIVE TEAM</span>
+<h2 class="font-headline-lg text-headline-lg">Collaborative Vision</h2>
+</div>
+<div class="hidden md:block w-1/3 h-[1px] bg-outline-variant/30"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-component-gap">
+<!-- Leader 1 -->
+<div class="glass-card p-6 rounded-2xl group hover:-translate-y-2 transition-soft">
+<div class="aspect-square rounded-xl overflow-hidden mb-6 relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-soft" data-alt="A professional portrait of a female leader, Sarah Chen, in a modern, minimal office setting. She has a confident and serene expression. The lighting is soft and high-key, maintaining the clean, light-mode palette of the design system with subtle lavender and white tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-KVTElM_Mf1f-TnTF01DXH_NIZyFmO43OHry8QKsfS0NMy1WHWjym1Nb9MflME4Osl_QnDHLE8ulPMZjqJb-1eyHaY-VtkBxHO44AmQeh3ZnnSF82IJJ2lTvGLkw6fjdjokDCse45sBIy7cWnVkjG01UuVreOLUDcdXuD4ad66uuS-3gPcpFDmS4WfVnwWti06y1z-30pjQnQhRiSB2Clt98jn-rXHEoTfHV0PuI1JaMll1B--oxwLw"/>
+<div class="absolute bottom-4 right-4 flex gap-2">
+<span class="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-primary cursor-pointer hover:bg-primary hover:text-white transition-soft shadow-sm">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</span>
+</div>
+</div>
+<h3 class="font-headline-md text-headline-md mb-1">Sarah Chen</h3>
+<p class="font-label-caps text-label-caps text-tertiary-container mb-4 uppercase">Director of Ministries</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Focusing on operational excellence and heart-centered outreach across all church departments.</p>
+</div>
+<!-- Leader 2 -->
+<div class="glass-card p-6 rounded-2xl group hover:-translate-y-2 transition-soft">
+<div class="aspect-square rounded-xl overflow-hidden mb-6 relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-soft" data-alt="A portrait of David Miller, an executive pastor with a warm demeanor. He is photographed in a high-tech studio with soft ambient purple lighting in the background, reinforcing the Sacred Modernity theme. The image is crisp, modern, and trustworthy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAanlX8gGvCbVv8WqiGVPDW5WdRRp2dd7BzbqVysLUe3m3aq8Zt6GySmuawV1TsaOFJrDr4zPa9ZtI7tqTY6771JrypAF3bxEfQl3LmhwFTPtZtDYSNPa22D7V7wycGVTtmOWMuL9tPyJJboC1rhEIROAy_sQn1L1IhfCy-AhSpiFSB8r5vFYo_Fx6VEwd_wvMVtVuS5ZE6VOCaJY-ag91X3EcsrjAnQiimadbcSW7dgon8SfG-Y8OKuw"/>
+<div class="absolute bottom-4 right-4 flex gap-2">
+<span class="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-primary cursor-pointer hover:bg-primary hover:text-white transition-soft shadow-sm">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</span>
+</div>
+</div>
+<h3 class="font-headline-md text-headline-md mb-1">David Miller</h3>
+<p class="font-label-caps text-label-caps text-tertiary-container mb-4 uppercase">Executive Pastor</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Overseeing the daily spiritual rhythm and long-term strategic planning of our community.</p>
+</div>
+<!-- Leader 3 -->
+<div class="glass-card p-6 rounded-2xl group hover:-translate-y-2 transition-soft">
+<div class="aspect-square rounded-xl overflow-hidden mb-6 relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-soft" data-alt="A portrait of Elena Rodriguez, Creative Arts Director. She is in a minimalist space with subtle glass textures and a soft light-mode background. Her expression is creative and focused. The overall aesthetic is clean, clinical yet warm." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIVd9qBHUo1sNpgeYz5C-KU181njSS8mhvmvFXK5HslNXcytS3cyTBXHoqM6Vmus1mtivQeEabb1--rQ9ZrYmYpWJOwJVyX_ZI-6JHuUHbX5_epTeZ9rqTrMRCXWCnQvP81HkVIe3LalPMpFbmme2Dcd6F7R-8OFKlfyGG0UcC7k8TlMpmm88_SQgQ0JBJGoK_agCg6WKazj5W-st4LKueqOI1MphVANAMKAG-_E6reEW5r26EviYkUg"/>
+<div class="absolute bottom-4 right-4 flex gap-2">
+<span class="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-primary cursor-pointer hover:bg-primary hover:text-white transition-soft shadow-sm">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</span>
+</div>
+</div>
+<h3 class="font-headline-md text-headline-md mb-1">Elena Rodriguez</h3>
+<p class="font-label-caps text-label-caps text-tertiary-container mb-4 uppercase">Creative Director</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Curating worship experiences that blend ancient tradition with modern aesthetic precision.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Staff & Ministry Leaders Bento List -->
+<section class="py-24">
+<div class="max-w-max-width-center mx-auto px-gutter">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-headline-lg mb-4">Operational Support</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">The dedicated hands behind the scenes.</p>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Staff Item -->
+<div class="bg-white p-6 rounded-2xl border border-outline-variant/30 flex items-center gap-4 hover:bg-surface-container transition-soft">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold">MW</div>
+<div>
+<h4 class="font-headline-md text-[16px] leading-none mb-1">Marcus Wright</h4>
+<p class="font-label-status text-label-status text-on-surface-variant">Youth Ministry Lead</p>
+</div>
+</div>
+<!-- Staff Item -->
+<div class="bg-white p-6 rounded-2xl border border-outline-variant/30 flex items-center gap-4 hover:bg-surface-container transition-soft">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold">LL</div>
+<div>
+<h4 class="font-headline-md text-[16px] leading-none mb-1">Linda Lawson</h4>
+<p class="font-label-status text-label-status text-on-surface-variant">Administration</p>
+</div>
+</div>
+<!-- Staff Item -->
+<div class="bg-white p-6 rounded-2xl border border-outline-variant/30 flex items-center gap-4 hover:bg-surface-container transition-soft">
+<div class="w-12 h-12 rounded-full bg-tertiary-container/20 flex items-center justify-center text-tertiary-container font-bold">JK</div>
+<div>
+<h4 class="font-headline-md text-[16px] leading-none mb-1">James Kim</h4>
+<p class="font-label-status text-label-status text-on-surface-variant">Technical Arts</p>
+</div>
+</div>
+<!-- Staff Item -->
+<div class="bg-white p-6 rounded-2xl border border-outline-variant/30 flex items-center gap-4 hover:bg-surface-container transition-soft">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">SP</div>
+<div>
+<h4 class="font-headline-md text-[16px] leading-none mb-1">Sarah Peters</h4>
+<p class="font-label-status text-label-status text-on-surface-variant">Community Outreach</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Leadership Message -->
+<section class="py-24 bg-primary text-on-primary relative overflow-hidden">
+
+<div class="relative max-w-max-width-center mx-auto px-gutter text-center">
+<span class="material-symbols-outlined text-[64px] mb-8 opacity-40" style="font-variation-settings: 'FILL' 1;">format_quote</span>
+<h2 class="font-headline-lg text-headline-lg mb-8 italic font-light max-w-3xl mx-auto">
+                    "We lead not as lords over those entrusted to us, but as examples to the flock, serving with a spirit of quiet strength and focused purpose."
+                </h2>
+<p class="font-label-caps text-label-caps tracking-widest">— THE ELDER BOARD</p>
+</div>
+</section>
+<!-- Contact CTA -->
+<section class="py-24 bg-surface">
+<div class="max-w-max-width-center mx-auto px-gutter">
+<div class="glass-card p-12 md:p-20 rounded-[40px] text-center relative overflow-hidden">
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-24 -left-24 w-64 h-64 bg-tertiary/5 rounded-full blur-3xl"></div>
+<h2 class="font-headline-lg text-headline-lg mb-6">Connect with Leadership</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto mb-10 leading-relaxed">
+                        Have a question, a prayer request, or simply want to learn more about our vision? Our doors and hearts are open.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button class="bg-primary text-on-primary px-10 py-4 rounded-xl font-label-caps text-label-caps hover:shadow-xl hover:shadow-primary/20 transition-soft active:scale-95">
+                            Reach Out via Email
+                        </button>
+<button class="bg-white border border-outline-variant text-on-surface px-10 py-4 rounded-xl font-label-caps text-label-caps hover:bg-surface-container transition-soft active:scale-95">
+                            Schedule a Conversation
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-high dark:bg-inverse-surface border-t border-outline-variant/50 w-full py-12">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-gutter max-w-max-width-center mx-auto">
+<div class="flex flex-col gap-4">
+<div class="font-headline-md text-headline-md font-bold text-on-surface">BlessBoard</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Sacred Modernity Church. A place for composed focus and intentional community.</p>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-label-caps text-label-caps text-primary">Quick Links</h4>
+<div class="flex flex-col gap-2">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Service Times</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all underline" href="#">Give Now</a>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-label-caps text-label-caps text-primary">Location</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                    123 Sacred Way<br/>
+                    Modernity Heights, CA 90210
+                </p>
+<div class="w-full h-32 rounded-lg overflow-hidden grayscale opacity-50 hover:grayscale-0 transition-soft">
+<img class="w-full h-full object-cover" data-location="Los Angeles" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWTeOUjmguIH4lFdeXne0wpPxk_Yf_M17DNBCPmuSV7xHbqP38owx-oaf-IQ8vzGHQ88x4Zxn-8lXHfnjWUTClWmfUVkeBhAKAPtRcwT2tsjXtPLBQuWL3V_Hn5c23iaRqJdtwh58B1rC8jX0OcutkoU-8KFkzFV4n6VGnSoJLowX2cnPPUfOcmLuYdOAgv7quVT63oFplo-2bo0uyq0kT37O53g7iDK1l0ovnSBcxGF9puUERBOTNLA"/>
+</div>
+</div>
+</div>
+<div class="max-w-max-width-center mx-auto px-gutter mt-12 pt-8 border-t border-outline-variant/20 text-center">
+<p class="font-body-sm text-body-sm text-on-surface-variant/70">© 2024 Sacred Modernity Church. Built with BlessBoard.</p>
+</div>
+</footer>
+<script>
+        // Micro-interactions and effects
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // Simple scroll reveal for cards
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-8');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.glass-card, section h2').forEach(el => {
+            el.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-8');
+            observer.observe(el);
+        });
+    </script>
+</body></html>

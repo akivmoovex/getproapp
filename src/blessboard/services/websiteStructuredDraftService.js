@@ -6,6 +6,7 @@
 
 const draftRepo = require("../repositories/websiteStructuredDraftRepository");
 const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
+const contentRepo = require("../repositories/publicContentRepository");
 const {
   DRAFT_KINDS,
   validateStructuredPayload,
@@ -13,6 +14,43 @@ const {
   listDemoImages,
 } = require("./websiteStructuredDraftValidation");
 const auditSvc = require("./websiteAuditService");
+
+const ENTITY_FINDERS = Object.freeze({
+  leader: contentRepo.findLeaderById,
+  ministry: contentRepo.findMinistryById,
+  event: contentRepo.findEventById,
+  sermon: contentRepo.findSermonById,
+  giving_method: contentRepo.findGivingMethodById,
+  social_link: contentRepo.findContactChannelById,
+});
+
+/**
+ * When entityKey is a UUID that already exists, it must belong to the session church.
+ * Cross-organization IDs return 404 (no leak). Unknown UUIDs are allowed (create path).
+ * @param {import('pg').Pool} db
+ * @param {{ draftKind: string, entityKey: string, churchId: string, payload?: object, op?: string }} input
+ */
+async function assertEntityKeysInChurch(db, input) {
+  const finder = ENTITY_FINDERS[input.draftKind];
+  if (!finder) return;
+
+  const keys = new Set();
+  if (fieldDraftRepo.isUuid(input.entityKey)) {
+    keys.add(String(input.entityKey).trim());
+  }
+  const order = input.payload && Array.isArray(input.payload.order) ? input.payload.order : [];
+  for (const id of order) {
+    if (fieldDraftRepo.isUuid(id)) keys.add(String(id).trim());
+  }
+
+  for (const id of keys) {
+    const existing = await finder(db, id);
+    if (!existing) continue;
+    if (String(existing.churchId) !== String(input.churchId)) {
+      throw mapError("NOT_FOUND", "Item not found.", 404);
+    }
+  }
+}
 
 /**
  * @param {import('pg').Pool} db
@@ -50,6 +88,14 @@ async function saveStructuredDraft(db, input) {
   if (!validated.ok) {
     throw mapError("VALIDATION", validated.error || "Invalid content.", 400);
   }
+
+  await assertEntityKeysInChurch(db, {
+    draftKind: kind,
+    entityKey,
+    churchId: input.churchId,
+    payload: validated.payload,
+    op,
+  });
 
   const draft = await draftRepo.upsertStructuredDraft(db, {
     organizationId: input.organizationId,

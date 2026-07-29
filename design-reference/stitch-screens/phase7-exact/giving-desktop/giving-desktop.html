@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Giving | BlessBoard - Sacred Modernity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "background": "#f4fafd",
+                    "tertiary-fixed": "#ffdcc3",
+                    "outline-variant": "#c8c4d7",
+                    "primary": "#5341cd",
+                    "surface-tint": "#5847d2",
+                    "surface-container": "#e8eff1",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "secondary-fixed-dim": "#c5c0ff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#e4dfff",
+                    "on-tertiary-fixed": "#2f1500",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-tertiary-container": "#fff5f1",
+                    "on-primary": "#ffffff",
+                    "on-background": "#161d1f",
+                    "inverse-on-surface": "#ebf2f4",
+                    "secondary": "#5952af",
+                    "on-error": "#ffffff",
+                    "tertiary": "#884800",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-primary-container": "#faf6ff",
+                    "surface-variant": "#dde4e6",
+                    "outline": "#787586",
+                    "tertiary-container": "#ac5d00",
+                    "inverse-primary": "#c6bfff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#474554",
+                    "surface": "#f4fafd",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "on-secondary-container": "#352c8a",
+                    "on-secondary-fixed": "#140067",
+                    "surface-container-low": "#eef5f7",
+                    "secondary-fixed": "#e3dfff",
+                    "on-primary-fixed": "#160066",
+                    "surface-container-high": "#e2e9ec",
+                    "on-surface": "#161d1f",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#dde4e6",
+                    "on-secondary-fixed-variant": "#413996",
+                    "inverse-surface": "#2b3234",
+                    "surface-bright": "#f4fafd",
+                    "secondary-container": "#a19afd",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#d4dbdd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "max-width-center": "1200px",
+                    "stack-tight": "0.25rem",
+                    "gutter": "1rem",
+                    "container-padding": "2rem",
+                    "component-gap": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "label-caps": ["Hanken Grotesk"],
+                    "label-status": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "label-status": ["11px", {"lineHeight": "1", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 12px 32px -4px rgba(83, 65, 205, 0.08);
+        }
+        .unread-glow {
+            background: rgba(108, 92, 231, 0.05);
+            border-left: 4px solid #6C5CE7;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .animate-subtle-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container/30">
+<!-- TopNavBar -->
+<header class="bg-surface/80 backdrop-blur-md sticky top-0 z-50 border-b border-outline-variant/30 shadow-sm">
+<div class="flex justify-between items-center px-gutter py-3 max-w-max-width-center mx-auto w-full">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md font-bold text-primary">BlessBoard</span>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Home</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Leadership</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Ministries</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Events</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Sermons</a>
+<a class="text-primary font-bold border-b-2 border-primary font-label-caps text-label-caps" href="#">Giving</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="hidden lg:block bg-primary text-on-primary px-6 py-2 rounded-full font-label-caps text-label-caps hover:bg-primary-container transition-all active:scale-95 shadow-md">
+                    Plan Your Visit
+                </button>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">edit</span>
+</div>
+</div>
+</header>
+<main class="max-w-max-width-center mx-auto px-gutter py-12 space-y-24">
+<!-- Giving Introduction & Hero -->
+<section class="grid lg:grid-cols-2 gap-12 items-center">
+<div class="space-y-6">
+<span class="font-label-caps text-label-caps text-primary tracking-widest">A CULTURE OF GENEROSITY</span>
+<h1 class="font-headline-lg text-headline-lg lg:text-[48px] leading-tight text-on-background">Investing in Sacred Space and Community.</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">
+                    "Every man shall give as he is able, according to the blessing of the Lord your God which He has given you." — Deuteronomy 16:17. 
+                    Giving is an act of worship that aligns our hearts with God's mission for BlessBoard.
+                </p>
+<div class="flex gap-4 pt-4">
+<button class="bg-primary text-on-primary px-8 py-3 rounded-xl font-label-caps text-label-caps hover:translate-y-[-2px] transition-all shadow-lg">
+                        GIVE ONLINE NOW
+                    </button>
+<button class="border border-outline-variant text-on-surface px-8 py-3 rounded-xl font-label-caps text-label-caps hover:bg-surface-variant/20 transition-all">
+                        VIEW MISSIONS
+                    </button>
+</div>
+</div>
+<div class="relative group">
+<div class="absolute -inset-4 bg-primary/5 blur-3xl rounded-full group-hover:bg-primary/10 transition-all duration-1000"></div>
+<div class="relative glass-card rounded-[2rem] overflow-hidden shadow-2xl aspect-video">
+<img class="w-full h-full object-cover" data-alt="A serene, sun-drenched sanctuary with minimal wooden architecture and large windows looking out onto a peaceful forest. The lighting is warm and golden, reflecting a modern sacred aesthetic with clean lines and soft shadows. The atmosphere is quiet, contemplative, and professional, embodying the Sacred Modernity theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwgnI4hdO9fr3Dzwlh2CxbT-u0JnoTaNASZ4piHLUnWbPUOglMmD_3MOTBS2127uAHZltQwTAjim1QPpGgE_3nrtVuXll10GF-GGTG7kr4drB9744dz0prLpjiKKcDIe3GHEVtYR_Q6xzwlgNABmYOunDkVxgdWouwqJXQn0C3UVEe2lwOhMEi2JxB-aNZRtm-ae59QtYQy5xilbkqTCI6qmuYSe3McQZyb8HXRXGmVQKXwT4V75VOXA"/>
+</div>
+</div>
+</section>
+<!-- Why We Give -->
+<section class="text-center space-y-8 max-w-3xl mx-auto">
+<h2 class="font-headline-lg text-headline-lg">Why We Give</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                Generosity is the engine of our ministry. It allows us to maintain our sacred spaces, support our local communities, and reach global missions. When we give, we release the hold that material things have on our lives and trust in a provider greater than ourselves.
+            </p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
+<div class="p-6 space-y-3">
+<span class="material-symbols-outlined text-primary text-4xl">volunteer_activism</span>
+<h3 class="font-headline-md text-headline-md">Impact</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Your gifts directly fund local outreach and global change.</p>
+</div>
+<div class="p-6 space-y-3">
+<span class="material-symbols-outlined text-primary text-4xl">favorite</span>
+<h3 class="font-headline-md text-headline-md">Worship</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Giving is a joyful response to the grace we have received.</p>
+</div>
+<div class="p-6 space-y-3">
+<span class="material-symbols-outlined text-primary text-4xl">auto_awesome</span>
+<h3 class="font-headline-md text-headline-md">Stewardship</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">We manage every gift with the highest level of integrity.</p>
+</div>
+</div>
+</section>
+<!-- Ways to Give Grid -->
+<section class="space-y-12">
+<div class="flex justify-between items-end">
+<h2 class="font-headline-lg text-headline-lg">Ways to Give</h2>
+<span class="font-label-caps text-label-caps text-on-surface-variant">3 OPTIONS AVAILABLE</span>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<!-- Give Online -->
+<div class="glass-card p-8 rounded-3xl flex flex-col items-start gap-4 hover:border-primary/40 transition-colors group">
+<div class="w-12 h-12 rounded-2xl bg-primary-fixed flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">language</span>
+</div>
+<h3 class="font-headline-md text-headline-md">Give Online</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Secure, fast, and easy giving through our digital platform using your card.</p>
+<button class="mt-auto text-primary font-bold font-label-caps text-label-caps flex items-center gap-2 group-hover:gap-3 transition-all">
+                        PROCEED <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Bank Transfer -->
+<div class="glass-card p-8 rounded-3xl flex flex-col items-start gap-4 hover:border-primary/40 transition-colors group">
+<div class="w-12 h-12 rounded-2xl bg-secondary-fixed flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">account_balance</span>
+</div>
+<h3 class="font-headline-md text-headline-md">Bank Transfer</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Direct deposit or wire transfer to our ministry operations account.</p>
+<button class="mt-auto text-secondary font-bold font-label-caps text-label-caps flex items-center gap-2 group-hover:gap-3 transition-all">
+                        GET DETAILS <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Mobile Money -->
+<div class="glass-card p-8 rounded-3xl flex flex-col items-start gap-4 hover:border-primary/40 transition-colors group">
+<div class="w-12 h-12 rounded-2xl bg-tertiary-fixed flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">send_to_mobile</span>
+</div>
+<h3 class="font-headline-md text-headline-md">Mobile Money</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Quick and efficient giving via your mobile wallet (M-Pesa/Airtel).</p>
+<button class="mt-auto text-tertiary font-bold font-label-caps text-label-caps flex items-center gap-2 group-hover:gap-3 transition-all">
+                        SHOW CODE <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Online Giving CTA (Peaceful Card) -->
+<section class="relative overflow-hidden rounded-[2.5rem] bg-primary h-[400px] flex items-center">
+
+<div class="relative z-10 p-12 lg:p-24 w-full md:w-2/3 space-y-6">
+<h2 class="font-headline-lg text-headline-lg text-on-primary">Simple, Secure Giving.</h2>
+<p class="font-body-lg text-body-lg text-on-primary/80">
+                    Experience a moment of peace as you give. Our platform is designed to be a distraction-free space for your generosity.
+                </p>
+<div class="flex items-center gap-6">
+<button class="bg-surface text-primary px-10 py-4 rounded-xl font-bold font-label-caps text-label-caps hover:scale-105 transition-all shadow-xl">
+                        START GIVING
+                    </button>
+<div class="flex -space-x-2">
+<div class="w-10 h-10 rounded-full border-2 border-primary bg-surface-container-high flex items-center justify-center text-xs">🔒</div>
+<div class="px-3 py-1 bg-on-primary/10 rounded-full text-on-primary text-[10px] uppercase tracking-widest font-bold self-center ml-4">SSL SECURED</div>
+</div>
+</div>
+</div>
+<div class="hidden md:block absolute right-0 bottom-0 w-1/2 h-full opacity-20 pointer-events-none">
+<span class="material-symbols-outlined text-[300px] text-white">volunteer_activism</span>
+</div>
+</section>
+<!-- Giving Categories -->
+<section class="space-y-12">
+<div class="text-center">
+<h2 class="font-headline-lg text-headline-lg">Giving Categories</h2>
+<p class="text-on-surface-variant font-body-lg mt-2">Direct your gift to a specific area of our mission.</p>
+</div>
+<div class="grid lg:grid-cols-3 gap-8">
+<!-- General Fund -->
+<div class="relative p-1 rounded-3xl bg-gradient-to-br from-outline-variant/20 to-transparent">
+<div class="bg-white p-8 rounded-[22px] h-full space-y-6 shadow-sm border border-outline-variant/10">
+<span class="inline-block px-3 py-1 rounded-full bg-primary-fixed text-primary font-label-status text-label-status">DAILY OPERATIONS</span>
+<h3 class="font-headline-md text-headline-md">General Fund</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Supports the daily running of the church, staff, and core liturgical programs.</p>
+<div class="pt-4 border-t border-outline-variant/20">
+<button class="w-full text-center py-3 rounded-lg border border-primary text-primary font-bold hover:bg-primary hover:text-on-primary transition-all">GIVE TO GENERAL</button>
+</div>
+</div>
+</div>
+<!-- Building -->
+<div class="relative p-1 rounded-3xl bg-gradient-to-br from-secondary/20 to-transparent">
+<div class="bg-white p-8 rounded-[22px] h-full space-y-6 shadow-sm border border-outline-variant/10">
+<span class="inline-block px-3 py-1 rounded-full bg-secondary-fixed text-secondary font-label-status text-label-status">EXPANSION</span>
+<h3 class="font-headline-md text-headline-md">Building Fund</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Invest in our physical home—maintaining our sanctuary and future campus growth.</p>
+<div class="pt-4 border-t border-outline-variant/20">
+<button class="w-full text-center py-3 rounded-lg border border-secondary text-secondary font-bold hover:bg-secondary hover:text-on-primary transition-all">GIVE TO BUILDING</button>
+</div>
+</div>
+</div>
+<!-- Missions -->
+<div class="relative p-1 rounded-3xl bg-gradient-to-br from-tertiary/20 to-transparent">
+<div class="bg-white p-8 rounded-[22px] h-full space-y-6 shadow-sm border border-outline-variant/10">
+<span class="inline-block px-3 py-1 rounded-full bg-tertiary-fixed text-tertiary font-label-status text-label-status">GLOBAL IMPACT</span>
+<h3 class="font-headline-md text-headline-md">Missions</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Reaching beyond our walls to support global missionary work and crisis relief.</p>
+<div class="pt-4 border-t border-outline-variant/20">
+<button class="w-full text-center py-3 rounded-lg border border-tertiary text-tertiary font-bold hover:bg-tertiary hover:text-on-primary transition-all">GIVE TO MISSIONS</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Payment Instructions & Support -->
+<section class="grid lg:grid-cols-2 gap-16">
+<div class="space-y-8">
+<h2 class="font-headline-lg text-headline-lg">Payment Instructions</h2>
+<div class="space-y-6">
+<div class="flex gap-4 items-start">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm shrink-0">1</div>
+<div class="space-y-1">
+<h4 class="font-headline-md text-[18px]">Select Your Method</h4>
+<p class="font-body-sm text-on-surface-variant">Choose from Online, Bank, or Mobile Money options above.</p>
+</div>
+</div>
+<div class="flex gap-4 items-start">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm shrink-0">2</div>
+<div class="space-y-1">
+<h4 class="font-headline-md text-[18px]">Include Your Reference</h4>
+<p class="font-body-sm text-on-surface-variant">Clearly state the giving category (e.g., 'Missions' or 'General') in the memo field.</p>
+</div>
+</div>
+<div class="flex gap-4 items-start">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm shrink-0">3</div>
+<div class="space-y-1">
+<h4 class="font-headline-md text-[18px]">Confirmation</h4>
+<p class="font-body-sm text-on-surface-variant">A receipt will be sent to your registered email for all digital transactions.</p>
+</div>
+</div>
+</div>
+<!-- Financial Accountability -->
+<div class="p-6 bg-surface-container/50 rounded-2xl border border-outline-variant/20 flex items-center gap-6">
+<div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div>
+<h4 class="font-bold text-sm uppercase tracking-widest text-primary">STEWARDSHIP PROMISE</h4>
+<p class="font-body-sm text-on-surface-variant">We are a registered 501(c)(3) nonprofit. Annual financial audits are available to all members upon request.</p>
+</div>
+</div>
+</div>
+<!-- Support / Contact -->
+<div class="glass-card p-12 rounded-[2.5rem] flex flex-col justify-center items-center text-center space-y-6">
+<div class="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-2">
+<span class="material-symbols-outlined text-3xl">contact_support</span>
+</div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile">Need Assistance?</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                    If you have questions regarding your giving history or need help with a payment method, our finance team is here to help.
+                </p>
+<div class="w-full max-w-sm pt-4">
+<a class="block w-full py-4 rounded-xl bg-primary text-on-primary font-bold hover:shadow-xl transition-all" href="#">Contact Finance Team</a>
+<p class="text-[12px] mt-4 text-on-surface-variant">Expected response time: 24-48 business hours.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-high dark:bg-inverse-surface border-t border-outline-variant/50 w-full py-12">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-gutter max-w-max-width-center mx-auto">
+<div class="space-y-4">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">BlessBoard</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Sacred Modernity Church. A space for high-precision spiritual focus and tranquil community growth.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 Sacred Modernity Church. Built with BlessBoard.</p>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-label-caps text-label-caps text-on-surface font-bold">RESOURCES</h4>
+<a class="text-on-surface-variant hover:text-primary underline transition-all font-body-sm text-body-sm" href="#">Service Times</a>
+<a class="text-on-surface-variant hover:text-primary underline transition-all font-body-sm text-body-sm" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary underline transition-all font-body-sm text-body-sm" href="#">Terms of Service</a>
+<a class="text-primary underline font-body-sm text-body-sm" href="#">Give Now</a>
+</div>
+<div class="space-y-4">
+<h4 class="font-label-caps text-label-caps text-on-surface font-bold">CONNECT</h4>
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all cursor-pointer">
+<span class="material-symbols-outlined text-sm">mail</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all cursor-pointer">
+<span class="material-symbols-outlined text-sm">phone</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all cursor-pointer">
+<span class="material-symbols-outlined text-sm">location_on</span>
+</div>
+</div>
+<div class="pt-4">
+<span class="font-label-status text-label-status px-3 py-1 rounded-full bg-outline-variant/20">LIVE: 10:00 AM SUN</span>
+</div>
+</div>
+</div>
+</footer>
+<!-- FAB -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[60]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</button>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('mousedown', () => {
+                el.classList.add('scale-95');
+                setTimeout(() => el.classList.remove('scale-95'), 150);
+            });
+        });
+
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('transition-all', 'duration-1000', 'opacity-0', 'translate-y-10');
+            observer.observe(section);
+        });
+    </script>
+</body></html>

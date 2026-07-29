@@ -43,7 +43,11 @@ function extractMutations(fileRel) {
     const next = rest.search(/\n\s*(router|app)\.(get|post|put|patch|delete)\(/);
     const window = next > 0 ? rest.slice(0, next) : rest.slice(0, 3500);
     const csrfProtected =
-      /validateCsrf(Post)?\s*\(/.test(window) || /postDecision\s*\(/.test(window);
+      /validateCsrf(Post)?\s*\(/.test(window) ||
+      /postDecision\s*\(/.test(window) ||
+      // Thin wrappers that call validateCsrf(Post) inside the named handler body.
+      /handleConflictResolution\s*\(/.test(window) ||
+      /handleApprovalSettingsPost\s*\(/.test(window);
     out.push({ file: fileRel, method, path: routePath, csrfProtected, window });
   }
   return out;

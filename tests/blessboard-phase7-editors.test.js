@@ -593,9 +593,7 @@ describe("blessboard phase7 editors — giving, leadership intro, social", () =>
       },
       users.hqA
     );
-    // Save is scoped to session church — draft may save under A with foreign UUID,
-    // but apply must not mutate B. Assert public B unchanged and A does not own the row.
-    assert.ok([200, 400, 403, 404].includes(cross.status));
+    assert.equal(cross.status, 404, `expected 404, got ${cross.status}: ${JSON.stringify(cross.body)}`);
     const stillB = await contentRepo.findGivingMethodById(pool, foreign.id);
     assert.equal(stillB.label, "Beta Cash");
     assert.equal(String(stillB.churchId), String(churchB.id));
@@ -608,7 +606,6 @@ describe("blessboard phase7 editors — giving, leadership intro, social", () =>
       [404, 403, 302, 303, 503].includes(crossGet.status),
       `status ${crossGet.status}`
     );
-    // 503/404 both acceptable when foreign entity is not entitlement-visible.
   });
 
   it("publication failure preserves draft and public content", async () => {

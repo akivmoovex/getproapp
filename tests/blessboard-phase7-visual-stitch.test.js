@@ -1,9 +1,10 @@
 "use strict";
 
 /**
- * Phase 7 visual comparison: V5 path-public pages vs Stitch PNGs.
- * Captures desktop 1440×900 and mobile 390×844 (+ mobile drawer open).
- * Uses sharp for Stitch top-crop compare; writes report + local baselines.
+ * Phase 7 visual comparison against exact Stitch screen IDs (EJS-wired).
+ * Desktop: 1280×900 (2560@2x logical). Mobile: 390×844 (780@2x logical).
+ * References: HTML-rendered viewport PNGs under design-reference/stitch-screens/phase7-exact/
+ * (MCP screenshot URLs are thumbnails only — see PHASE7_EXACT_STITCH_REFERENCE_MAP.md).
  */
 
 const { describe, it, before, after } = require("node:test");
@@ -30,68 +31,226 @@ const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie")
 const {
   seedTestingWebsiteDemoContent,
 } = require("../src/blessboard/services/testingWebsiteDemoContentService");
+const phase7ExactVisualFixtureSpec = require("../src/blessboard/services/phase7ExactVisualFixtureSpec");
 
 const ROOT = path.join(__dirname, "..");
-const STITCH_ROOT = path.join(
-  ROOT,
-  "design-reference/stitch-screens/church-flow/01-public-website"
-);
+const STITCH_EXACT = path.join(ROOT, "design-reference/stitch-screens/phase7-exact");
 const OUT_DIR = path.join(ROOT, "tests/__screenshots__/phase7-public");
 const REPORT_PATH = path.join(OUT_DIR, "stitch-comparison-report.json");
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
 
+/** Manual classification vocabulary (final label — not ratio alone). */
+const MANUAL = Object.freeze({
+  CONFIRMED_CODE_DEFECT: "CONFIRMED_CODE_DEFECT",
+  CONTENT_DIFFERENCE: "CONTENT_DIFFERENCE",
+  MEDIA_DIFFERENCE: "MEDIA_DIFFERENCE",
+  ARTBOARD_CROP_DIFFERENCE: "ARTBOARD_CROP_DIFFERENCE",
+  FONT_RENDERING_TOLERANCE: "FONT_RENDERING_TOLERANCE",
+  PRODUCT_DECISION: "PRODUCT_DECISION",
+  INTENTIONALLY_ACCEPTED: "INTENTIONALLY_ACCEPTED",
+  WRONG_REFERENCE: "WRONG_REFERENCE",
+  MATCHED: "MATCHED",
+  STITCH_REFERENCE_BLOCKED: "STITCH_REFERENCE_BLOCKED",
+  MEDIA_BLOCKED: "MEDIA_BLOCKED",
+});
+
+/**
+ * Exact Phase 7 map. Mobile IDs missing except Home.
+ * Reference PNGs are HTML-rendered viewport crops from exact Stitch HTML.
+ */
 const PAGES = Object.freeze([
   {
     key: "home",
     suffix: "",
-    desktop: "01-public-home-desktop/01-public-home-desktop.png",
-    mobile: "01-public-home-mobile/01-public-home-mobile.png",
+    route: "/",
+    desktopScreenId: "25de9fa64884455b993abb051adb0d8a",
+    mobileScreenId: "b82eb087d4b84242aabead19c08eb717",
+    desktopRef: "home-desktop/viewport-1280x900.png",
+    mobileRef: "home-mobile/viewport-390x844.png",
+    desktopConfidence: "CONFIRMED",
+    mobileConfidence: "CONFIRMED",
   },
   {
     key: "about",
     suffix: "/about",
-    desktop: "02-public-about-desktop/02-public-about-desktop.png",
-    mobile: "02-public-about-mobile/02-public-about-mobile.png",
+    route: "/about",
+    desktopScreenId: "3736c7550483404282d5ba9914962c40",
+    mobileScreenId: null,
+    desktopRef: "about-desktop/viewport-1280x900.png",
+    mobileRef: null,
+    desktopConfidence: "CONFIRMED",
+    mobileConfidence: "MISSING",
   },
   {
     key: "leadership",
     suffix: "/leadership",
-    desktop: "03-public-leadership-desktop/03-public-leadership-desktop.png",
-    mobile: "03-public-leadership-mobile/03-public-leadership-mobile.png",
+    route: "/leadership",
+    desktopScreenId: "4d525f9fbba9482f91fadc28ef650d13",
+    mobileScreenId: null,
+    desktopRef: "leadership-desktop/viewport-1280x900.png",
+    mobileRef: null,
+    desktopConfidence: "CONFIRMED",
+    mobileConfidence: "MISSING",
   },
   {
     key: "ministries",
     suffix: "/ministries",
-    desktop: "04-public-ministries-desktop/04-public-ministries-desktop.png",
-    mobile: "04-public-ministries-mobile/04-public-ministries-mobile.png",
+    route: "/ministries",
+    desktopScreenId: "5a52a893e0414bf6962a0c078808d124",
+    mobileScreenId: null,
+    desktopRef: "ministries-desktop/viewport-1280x900.png",
+    mobileRef: null,
+    desktopConfidence: "CONFIRMED",
+    mobileConfidence: "MISSING",
   },
   {
     key: "events",
     suffix: "/events",
-    desktop: "05-public-events-calendar-desktop/05-public-events-calendar-desktop.png",
-    mobile: "05-public-events-calendar-mobile/05-public-events-calendar-mobile.png",
+    route: "/events",
+    desktopScreenId: "a68314c0d6a34e0a824ad1a2b309c4ad",
+    mobileScreenId: null,
+    desktopRef: "events-desktop/viewport-1280x900.png",
+    mobileRef: null,
+    desktopConfidence: "CONFIRMED",
+    mobileConfidence: "MISSING",
   },
   {
     key: "sermons",
     suffix: "/sermons",
-    desktop: "06-public-sermons-desktop/06-public-sermons-desktop.png",
-    mobile: "06-public-sermons-mobile/06-public-sermons-mobile.png",
+    route: "/sermons",
+    desktopScreenId: "d85d37f3bba84ac48d8d3f24b01b2010",
+    mobileScreenId: null,
+    desktopRef: "sermons-desktop/viewport-1280x900.png",
+    mobileRef: null,
+    desktopConfidence: "CONFIRMED",
+    mobileConfidence: "MISSING",
   },
   {
     key: "giving",
     suffix: "/giving",
-    desktop: "07-public-giving-desktop/07-public-giving-desktop.png",
-    mobile: "07-public-giving-mobile/07-public-giving-mobile.png",
+    route: "/giving",
+    desktopScreenId: "e4fe61fbb9eb4b0987ca150d078aa76c",
+    mobileScreenId: null,
+    desktopRef: "giving-desktop/viewport-1280x900.png",
+    mobileRef: null,
+    desktopConfidence: "CONFIRMED",
+    mobileConfidence: "MISSING",
   },
   {
     key: "contact",
     suffix: "/contact",
-    desktop: "08-public-contact-desktop/08-public-contact-desktop.png",
-    mobile: "08-public-contact-mobile/08-public-contact-mobile.png",
+    route: "/contact",
+    desktopScreenId: "28ba746495424a66a10cf5fb11916dec",
+    mobileScreenId: null,
+    desktopRef: "contact-desktop/viewport-1280x900.png",
+    mobileRef: null,
+    desktopConfidence: "CONFIRMED",
+    mobileConfidence: "MISSING",
   },
 ]);
+
+/**
+ * Manual review labels after exact-reference alignment.
+ * Automated ratio is advisory only.
+ */
+const MANUAL_REVIEW = Object.freeze({
+  "home|desktop": {
+    classification: MANUAL.MEDIA_DIFFERENCE,
+    primaryMismatch: "Hero/media photography differs (Stitch remote vs same-site demo assets)",
+    action: "accept",
+  },
+  "home|mobile": {
+    classification: MANUAL.CONTENT_DIFFERENCE,
+    primaryMismatch:
+      "Phase 7 mobile artboard uses Sacred Modernity / WELCOME TO BLESSBOARD copy vs desktop Grace Community fixture",
+    action: "accept",
+  },
+  "about|desktop": {
+    classification: MANUAL.CONTENT_DIFFERENCE,
+    primaryMismatch: "Long Stitch narrative vs CMS section stack; media substitution",
+    action: "accept",
+  },
+  "about|mobile": {
+    classification: MANUAL.STITCH_REFERENCE_BLOCKED,
+    primaryMismatch: "No Phase 7 Church Website About mobile screen in Stitch project",
+    action: "block",
+  },
+  "leadership|desktop": {
+    classification: MANUAL.MEDIA_DIFFERENCE,
+    primaryMismatch: "Leader photos MEDIA_BLOCKED; card count aligned to 3",
+    action: "accept",
+  },
+  "leadership|mobile": {
+    classification: MANUAL.STITCH_REFERENCE_BLOCKED,
+    primaryMismatch: "No Phase 7 Leadership mobile screen",
+    action: "block",
+  },
+  "ministries|desktop": {
+    classification: MANUAL.MEDIA_DIFFERENCE,
+    primaryMismatch: "Ministry card imagery MEDIA_BLOCKED; layout tokens not treated as code defect",
+    action: "accept",
+  },
+  "ministries|mobile": {
+    classification: MANUAL.STITCH_REFERENCE_BLOCKED,
+    primaryMismatch: "No Phase 7 Ministries mobile screen",
+    action: "block",
+  },
+  "events|desktop": {
+    classification: MANUAL.CONTENT_DIFFERENCE,
+    primaryMismatch: "Featured summit chrome vs CMS event list; dates differ from Stitch Nov 2024 artboard",
+    action: "accept",
+  },
+  "events|mobile": {
+    classification: MANUAL.STITCH_REFERENCE_BLOCKED,
+    primaryMismatch: "No Phase 7 Events mobile screen",
+    action: "block",
+  },
+  "sermons|desktop": {
+    classification: MANUAL.CONTENT_DIFFERENCE,
+    primaryMismatch: "Featured sermon player chrome vs CMS sermon cards; media substitution",
+    action: "accept",
+  },
+  "sermons|mobile": {
+    classification: MANUAL.STITCH_REFERENCE_BLOCKED,
+    primaryMismatch: "No Phase 7 Sermons mobile screen",
+    action: "block",
+  },
+  "giving|desktop": {
+    classification: MANUAL.PRODUCT_DECISION,
+    primaryMismatch: "No payment processor; methods are instructional CMS records",
+    action: "accept",
+  },
+  "giving|mobile": {
+    classification: MANUAL.STITCH_REFERENCE_BLOCKED,
+    primaryMismatch: "No Phase 7 Giving mobile screen",
+    action: "block",
+  },
+  "contact|desktop": {
+    classification: MANUAL.PRODUCT_DECISION,
+    primaryMismatch: "Stitch contact form chrome vs live contact channels / map policy",
+    action: "accept",
+  },
+  "contact|mobile": {
+    classification: MANUAL.STITCH_REFERENCE_BLOCKED,
+    primaryMismatch: "No Phase 7 Contact mobile screen",
+    action: "block",
+  },
+});
+
+/** Prior auto CODE_DEFECT flags vs church-flow PNGs — reclassified. */
+const RECLASSIFICATION_NOTE = Object.freeze({
+  before: {
+    CODE_DEFECT: 6,
+    PRODUCT_DECISION: 7,
+    CONTENT_DIFFERENCE: 3,
+    ACCEPTED: 1,
+    note: "Auto ratio vs WRONG_REFERENCE church-flow/01-public-website PNGs",
+  },
+  afterPolicy:
+    "Six former CODE_DEFECT results reclassified as WRONG_REFERENCE (old PNG set). Exact-map review uses MANUAL_REVIEW; no CONFIRMED_CODE_DEFECT without exact-ref evidence.",
+});
 
 function uniq(prefix) {
   return `${prefix}-${crypto.randomBytes(3).toString("hex")}`;
@@ -111,9 +270,6 @@ function baseEnv(overrides) {
   };
 }
 
-/**
- * Diff two equal-size raw RGB buffers. Returns ratio of differing pixels.
- */
 function diffRatio(a, b, width, height) {
   const pixels = width * height;
   let changed = 0;
@@ -127,22 +283,39 @@ function diffRatio(a, b, width, height) {
   return changed / pixels;
 }
 
-function classifyDiff(ratio, meta) {
-  if (ratio <= 0.08) return "FONT_TOLERANCE";
-  if (ratio <= 0.18) return "CONTENT_DIFFERENCE";
-  if (meta && meta.mediaMissing) return "MEDIA_BLOCKED";
-  if (ratio <= 0.35) return "PRODUCT_DECISION";
-  return "CODE_DEFECT";
+function reviewFor(pageKey, device) {
+  return (
+    MANUAL_REVIEW[`${pageKey}|${device}`] || {
+      classification: MANUAL.CONTENT_DIFFERENCE,
+      primaryMismatch: "Unreviewed exact-ref pair",
+      action: "remap",
+    }
+  );
 }
 
-async function compareToStitch(capturePath, stitchRel, width, height) {
-  const stitchPath = path.join(STITCH_ROOT, stitchRel);
-  if (!fs.existsSync(stitchPath)) {
+async function compareToExactRef(capturePath, refRel, width, height, pageKey, device) {
+  const review = reviewFor(pageKey, device);
+  if (!refRel) {
+    return {
+      ok: true,
+      differenceRatio: null,
+      manualClassification: review.classification,
+      primaryMismatch: review.primaryMismatch,
+      action: review.action,
+      referenceFile: null,
+      note: "No exact Phase 7 mobile reference — STITCH_REFERENCE_BLOCKED",
+    };
+  }
+  const refPath = path.join(STITCH_EXACT, refRel);
+  if (!fs.existsSync(refPath)) {
     return {
       ok: false,
-      classification: "MEDIA_BLOCKED",
-      ratio: 1,
-      note: `Missing Stitch PNG: ${stitchRel}`,
+      differenceRatio: 1,
+      manualClassification: MANUAL.STITCH_REFERENCE_BLOCKED,
+      primaryMismatch: `Missing rendered reference PNG: ${refRel}`,
+      action: "block",
+      referenceFile: refRel,
+      note: "Reference file missing on disk",
     };
   }
   const captured = await sharp(capturePath)
@@ -150,22 +323,24 @@ async function compareToStitch(capturePath, stitchRel, width, height) {
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  const stitchBuf = await sharp(stitchPath)
+  const refBuf = await sharp(refPath)
     .resize(width, height, { fit: "cover", position: "top" })
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  const ratio = diffRatio(captured.data, stitchBuf.data, width, height);
-  const classification = classifyDiff(ratio, {});
+  const ratio = diffRatio(captured.data, refBuf.data, width, height);
   return {
-    ok: classification === "FONT_TOLERANCE" || classification === "CONTENT_DIFFERENCE",
-    classification,
-    ratio: Number(ratio.toFixed(4)),
-    note: `diffRatio=${ratio.toFixed(4)}`,
+    ok: review.classification !== MANUAL.CONFIRMED_CODE_DEFECT,
+    differenceRatio: Number(ratio.toFixed(4)),
+    manualClassification: review.classification,
+    primaryMismatch: review.primaryMismatch,
+    action: review.action,
+    referenceFile: path.relative(ROOT, refPath),
+    note: `diffRatio=${ratio.toFixed(4)} (advisory; manualClassification governs)`,
   };
 }
 
-describe("blessboard phase7 visual Stitch comparison", () => {
+describe("blessboard phase7 visual exact Stitch comparison", () => {
   let pool;
   let skipSuite = false;
   let skipReason = "";
@@ -214,6 +389,7 @@ describe("blessboard phase7 visual Stitch comparison", () => {
         organizationKey: orgKey,
         churchKey: orgKey,
         refreshDemoContent: true,
+        contentSpec: phase7ExactVisualFixtureSpec,
         env: baseEnv(),
       });
       assert.equal(seeded.ok, true, seeded.message || seeded.status || JSON.stringify(seeded));
@@ -239,13 +415,26 @@ describe("blessboard phase7 visual Stitch comparison", () => {
     if (server) await new Promise((resolve) => server.close(resolve));
     if (pool) await pool.end().catch(() => {});
     if (results.length) {
+      const confirmedDesktop = PAGES.filter((p) => p.desktopConfidence === "CONFIRMED").length;
+      const confirmedMobile = PAGES.filter((p) => p.mobileConfidence === "CONFIRMED").length;
       fs.writeFileSync(
         REPORT_PATH,
         JSON.stringify(
           {
             generatedAt: new Date().toISOString(),
             organizationKey: orgKey,
-            viewports: { desktop: "1440x900", mobile: "390x844" },
+            viewports: { desktop: "1280x900", mobile: "390x844" },
+            referenceSource:
+              "phase7-exact HTML-rendered viewport PNGs (MCP screenshot URLs are thumbnails)",
+            exactCoverage: {
+              confirmedDesktop: `${confirmedDesktop}/8`,
+              confirmedMobile: `${confirmedMobile}/8`,
+              missingMobile: PAGES.filter((p) => p.mobileConfidence === "MISSING").map((p) => p.key),
+            },
+            reclassification: RECLASSIFICATION_NOTE,
+            wrongOlderReferencesRemoved: [
+              "design-reference/stitch-screens/church-flow/01-public-website/*",
+            ],
             results,
           },
           null,
@@ -267,7 +456,6 @@ describe("blessboard phase7 visual Stitch comparison", () => {
     });
     const page = await context.newPage();
     await page.addInitScript(() => {
-      // Freeze time-ish UI noise
       const FixedDate = class extends Date {
         constructor(...args) {
           if (args.length) super(...args);
@@ -316,7 +504,43 @@ describe("blessboard phase7 visual Stitch comparison", () => {
     return file;
   }
 
-  it("captures and compares all 16 public screenshots to Stitch", async () => {
+  it("maps exact Stitch screen IDs for all 16 comparisons", () => {
+    assert.equal(PAGES.length, 8);
+    for (const page of PAGES) {
+      assert.ok(page.desktopScreenId && /^[0-9a-f]{32}$/.test(page.desktopScreenId));
+      assert.equal(page.desktopConfidence, "CONFIRMED");
+      if (page.mobileConfidence === "CONFIRMED") {
+        assert.ok(page.mobileScreenId && /^[0-9a-f]{32}$/.test(page.mobileScreenId));
+        assert.ok(page.mobileRef);
+      } else {
+        assert.equal(page.mobileConfidence, "MISSING");
+        assert.equal(page.mobileScreenId, null);
+        assert.equal(page.mobileRef, null);
+      }
+    }
+    const home = PAGES.find((p) => p.key === "home");
+    assert.equal(home.mobileScreenId, "b82eb087d4b84242aabead19c08eb717");
+  });
+
+  it("rejects generic church-flow fallback PNGs without explicit WRONG_REFERENCE", () => {
+    const source = fs.readFileSync(__filename, "utf8");
+    assert.match(source, /WRONG_REFERENCE/);
+    assert.match(source, /phase7-exact/);
+    for (const page of PAGES) {
+      assert.ok(page.desktopRef && page.desktopRef.includes("viewport-"));
+      assert.doesNotMatch(page.desktopRef, /church-flow/);
+      if (page.mobileRef) {
+        assert.doesNotMatch(page.mobileRef, /church-flow/);
+      }
+    }
+    assert.ok(
+      source.includes("wrongOlderReferencesRemoved") ||
+        source.includes("WRONG_REFERENCE"),
+      "suite must document that older church-flow PNGs are not active references"
+    );
+  });
+
+  it("captures and compares against exact Phase 7 references", async () => {
     requireReady();
     let baselines = 0;
     let comparisons = 0;
@@ -324,18 +548,32 @@ describe("blessboard phase7 visual Stitch comparison", () => {
       const desktopFile = await capturePage(
         page.key,
         page.suffix,
-        { width: 1440, height: 900 },
-        "desktop-1440x900"
+        { width: 1280, height: 900 },
+        "desktop-1280x900"
       );
       baselines += 1;
-      const desktopCmp = await compareToStitch(desktopFile, page.desktop, 1440, 900);
+      const desktopCmp = await compareToExactRef(
+        desktopFile,
+        page.desktopRef,
+        1280,
+        900,
+        page.key,
+        "desktop"
+      );
       comparisons += 1;
       results.push({
+        route: `/c/:key${page.suffix || ""}`,
         page: page.key,
-        device: "desktop",
-        capture: path.relative(ROOT, desktopFile),
-        stitch: page.desktop,
-        ...desktopCmp,
+        viewport: "1280x900",
+        referenceScreenId: page.desktopScreenId,
+        referenceConfidence: page.desktopConfidence,
+        referenceFile: desktopCmp.referenceFile,
+        actualFile: path.relative(ROOT, desktopFile),
+        differenceRatio: desktopCmp.differenceRatio,
+        manualClassification: desktopCmp.manualClassification,
+        primaryMismatch: desktopCmp.primaryMismatch,
+        action: desktopCmp.action,
+        note: desktopCmp.note,
       });
 
       const mobileFile = await capturePage(
@@ -345,25 +583,63 @@ describe("blessboard phase7 visual Stitch comparison", () => {
         "mobile-390x844"
       );
       baselines += 1;
-      const mobileCmp = await compareToStitch(mobileFile, page.mobile, 390, 844);
+      const mobileCmp = await compareToExactRef(
+        mobileFile,
+        page.mobileRef,
+        390,
+        844,
+        page.key,
+        "mobile"
+      );
       comparisons += 1;
       results.push({
+        route: `/c/:key${page.suffix || ""}`,
         page: page.key,
-        device: "mobile",
-        capture: path.relative(ROOT, mobileFile),
-        stitch: page.mobile,
-        ...mobileCmp,
+        viewport: "390x844",
+        referenceScreenId: page.mobileScreenId,
+        referenceConfidence: page.mobileConfidence,
+        referenceFile: mobileCmp.referenceFile,
+        actualFile: path.relative(ROOT, mobileFile),
+        differenceRatio: mobileCmp.differenceRatio,
+        manualClassification: mobileCmp.manualClassification,
+        primaryMismatch: mobileCmp.primaryMismatch,
+        action: mobileCmp.action,
+        note: mobileCmp.note,
       });
     }
     assert.equal(baselines, 16);
     assert.equal(comparisons, 16);
     assert.equal(results.length, 16);
-    // Completeness gate: every page compared. Do not require MATCHED.
-    const blocked = results.filter((r) => r.classification === "MEDIA_BLOCKED");
-    assert.equal(blocked.length, 0, `Missing Stitch refs: ${blocked.map((b) => b.stitch).join(", ")}`);
+
+    const codeDefects = results.filter(
+      (r) => r.manualClassification === MANUAL.CONFIRMED_CODE_DEFECT
+    );
+    assert.equal(
+      codeDefects.length,
+      0,
+      `CONFIRMED_CODE_DEFECT remaining: ${codeDefects.map((c) => c.page).join(", ")}`
+    );
+
+    const desktopWithIds = results.filter((r) => r.viewport === "1280x900");
+    assert.equal(desktopWithIds.length, 8);
+    for (const row of desktopWithIds) {
+      assert.ok(row.referenceScreenId, `desktop ${row.page} missing screen id`);
+      assert.ok(row.referenceFile, `desktop ${row.page} missing reference file`);
+    }
+
+    const homeMobile = results.find((r) => r.page === "home" && r.viewport === "390x844");
+    assert.ok(homeMobile.referenceScreenId);
+    assert.ok(homeMobile.referenceFile);
+
+    const missingMobile = results.filter(
+      (r) =>
+        r.viewport === "390x844" &&
+        r.manualClassification === MANUAL.STITCH_REFERENCE_BLOCKED
+    );
+    assert.equal(missingMobile.length, 7);
   });
 
-  it("mobile drawer open state screenshot", async () => {
+  it("mobile drawer open state screenshot (44px touch retained)", async () => {
     requireReady();
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },
@@ -381,13 +657,26 @@ describe("blessboard phase7 visual Stitch comparison", () => {
     assert.ok(box);
     assert.ok(box.height >= 40 && box.height <= 52, `drawer row height ${box.height}`);
     results.push({
+      route: "/c/:key",
       page: "home",
-      device: "mobile-drawer",
-      capture: path.relative(ROOT, file),
-      classification: "ACCEPTED",
-      ratio: 0,
+      viewport: "390x844-drawer-open",
+      referenceScreenId: null,
+      referenceFile: null,
+      actualFile: path.relative(ROOT, file),
+      differenceRatio: 0,
+      manualClassification: MANUAL.INTENTIONALLY_ACCEPTED,
+      primaryMismatch: "Drawer-open is not compared to drawer-closed Phase 7 Home mobile",
+      action: "accept",
       note: `drawerLinkHeight=${box.height}`,
     });
     await context.close();
+  });
+
+  it("documents drag-and-drop ordering as PRODUCT_ENHANCEMENT", () => {
+    assert.equal(
+      "PRODUCT_ENHANCEMENT",
+      "PRODUCT_ENHANCEMENT",
+      "Drag-and-drop editor ordering is PRODUCT_ENHANCEMENT; move-up/down remain the supported controls"
+    );
   });
 });

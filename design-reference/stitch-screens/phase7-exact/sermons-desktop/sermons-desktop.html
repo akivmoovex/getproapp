@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sermons | BlessBoard - Sacred Modernity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .text-glow-primary {
+            text-shadow: 0 0 15px rgba(108, 92, 231, 0.3);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .active-nav-indicator {
+            position: relative;
+        }
+        .active-nav-indicator::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #5341cd;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "background": "#f4fafd",
+                        "tertiary-fixed": "#ffdcc3",
+                        "outline-variant": "#c8c4d7",
+                        "primary": "#5341cd",
+                        "surface-tint": "#5847d2",
+                        "surface-container": "#e8eff1",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "secondary-fixed-dim": "#c5c0ff",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "on-tertiary-fixed": "#2f1500",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-tertiary-container": "#fff5f1",
+                        "on-primary": "#ffffff",
+                        "on-background": "#161d1f",
+                        "inverse-on-surface": "#ebf2f4",
+                        "secondary": "#5952af",
+                        "on-error": "#ffffff",
+                        "tertiary": "#884800",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary-container": "#faf6ff",
+                        "surface-variant": "#dde4e6",
+                        "outline": "#787586",
+                        "tertiary-container": "#ac5d00",
+                        "inverse-primary": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#474554",
+                        "surface": "#f4fafd",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-secondary-container": "#352c8a",
+                        "on-secondary-fixed": "#140067",
+                        "surface-container-low": "#eef5f7",
+                        "secondary-fixed": "#e3dfff",
+                        "on-primary-fixed": "#160066",
+                        "surface-container-high": "#e2e9ec",
+                        "on-surface": "#161d1f",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#dde4e6",
+                        "on-secondary-fixed-variant": "#413996",
+                        "inverse-surface": "#2b3234",
+                        "surface-bright": "#f4fafd",
+                        "secondary-container": "#a19afd",
+                        "primary-container": "#6c5ce7",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d4dbdd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width-center": "1200px",
+                        "stack-tight": "0.25rem",
+                        "gutter": "1rem",
+                        "container-padding": "2rem",
+                        "component-gap": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "label-status": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "label-status": ["11px", {"lineHeight": "1", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-lg">
+<!-- TopNavBar -->
+<header class="docked full-width top-0 sticky z-50 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md border-b border-outline-variant/30 shadow-sm transition-all duration-300">
+<div class="flex justify-between items-center px-gutter py-3 max-w-max-width-center mx-auto w-full">
+<a class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim" href="#">BlessBoard</a>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Home</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Leadership</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Ministries</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Events</a>
+<a class="text-primary dark:text-primary-fixed-dim font-bold border-b-2 border-primary font-label-caps text-label-caps" href="#">Sermons</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps" href="#">Giving</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:bg-primary-container/10 p-2 rounded-lg transition-colors">edit</button>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-label-caps text-label-caps shadow-sm active:scale-95 transition-all">Plan Your Visit</button>
+</div>
+</div>
+</header>
+<main class="w-full">
+<!-- Page Introduction -->
+<section class="relative pt-16 pb-12 px-gutter max-w-max-width-center mx-auto text-center">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-container/20 text-on-secondary-container mb-6">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span class="font-label-status text-label-status uppercase tracking-wider">Spiritual Nourishment</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg md:text-[48px] text-on-surface mb-4 leading-tight">Sacred Teachings for Modern Souls</h1>
+<p class="max-w-2xl mx-auto text-on-surface-variant font-body-lg text-body-lg">
+                Explore our collection of recent sermons, designed to provide clarity and focus in an increasingly chaotic world. Join us in the pursuit of intentional faith.
+            </p>
+</section>
+<!-- Search and Filters (Floating Bento Bar) -->
+<section class="px-gutter max-w-max-width-center mx-auto mb-12">
+<div class="glass-card rounded-2xl p-4 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+<div class="relative md:col-span-2">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-3 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-body-sm font-body-sm" placeholder="Search sermons, keywords, or scriptures..." type="text"/>
+</div>
+<div>
+<select class="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-body-sm font-body-sm appearance-none">
+<option>All Speakers</option>
+<option>Pastor Elias Vance</option>
+<option>Dr. Sarah Chen</option>
+<option>Rev. Marcus Thorne</option>
+</select>
+</div>
+<div>
+<select class="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-body-sm font-body-sm appearance-none">
+<option>All Series</option>
+<option>The Architecture of Peace</option>
+<option>Digital Stewardship</option>
+<option>Foundations of Focus</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Featured Sermon -->
+<section class="px-gutter max-w-max-width-center mx-auto mb-20">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-component-gap items-center bg-surface-container-high rounded-3xl overflow-hidden shadow-md">
+<!-- Video Player Visual -->
+<div class="lg:col-span-7 relative aspect-video group cursor-pointer overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A cinematic wide shot of a modern church stage featuring a diverse worship band with vocalists and musicians. The lighting is ethereal with soft purple and blue glows against a clean minimalist architectural background. The atmosphere is serene and highly professional, reflecting the Sacred Modernity style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB986VhPuLv_xQ2w8FQTfzYGnPOs75SR2BLP6EoKRFMk-genMlzlgkJw3_dX2pyXSt46YcyaKMK4Tld2dI6lb47paYXwJ_TrNK3PLSMOtrBgBInPYquOEIsfvqxdijb6EKCE2KapOsYnnrnicGrxLkOu2goj2JV8nYGeFCV2uRu9StuI71lMmVakezPt80EBUYQz6TFiRI_vAglj7KZeZC3dmMqtKgYkvpjdylwDaSX5IR4c7memV95IA"/>
+<div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 group-hover:bg-black/20 transition-all">
+<div class="w-20 h-20 bg-primary/90 text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[48px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-4 left-4 bg-white/10 backdrop-blur-md px-3 py-1 rounded-lg text-white font-label-status text-label-status border border-white/20">
+                        NOW FEATURING: THE ARCHITECTURE OF PEACE
+                    </div>
+</div>
+<!-- Content Section -->
+<div class="lg:col-span-5 p-8 md:p-12">
+<div class="flex items-center gap-2 mb-4">
+<span class="px-2 py-0.5 rounded bg-primary text-on-primary font-label-status text-[10px] uppercase">New Release</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">Oct 27, 2024</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-6 leading-tight">Finding Stillness in a High-Performance World</h2>
+<div class="space-y-4 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged man with a kind, focused expression, wearing a minimalist grey linen shirt. The background is a soft, out-of-focus modern office space with natural lighting. This is Pastor Elias Vance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEue0mx82CXX2Gfhtp3hCC-2AKOUtWQ6qur01J974kNx6cziw57pfQnmUK1HTMpYKAiOzFV2Aow7fQ1BCWXubbCoE5r7u_ae3ze54Vgzb_1nVMFwl3xI5hDr48cP5mbZr8DgAMqZj-3IDbm6qSCaAj5e6qc3XBNykHLLFg89zZonTKnV7rR6rzqTxjqn0a3UwIltorE-aaLcEzER88Jxzvq1Lm7TmjHzC3M0HAOFyn_whQlUBv3dAZTA"/>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface">Pastor Elias Vance</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">Philippians 4:6-7</p>
+</div>
+</div>
+<p class="text-on-surface-variant font-body-lg text-body-lg">
+                            In this concluding message of "The Architecture of Peace" series, Pastor Elias explores how to build internal sanctuaries that withstand the pressures of modern professional life.
+                        </p>
+</div>
+<div class="flex flex-wrap gap-4">
+<button class="bg-primary text-on-primary px-8 py-3 rounded-xl font-label-caps text-label-caps flex items-center gap-2 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-[20px]">play_circle</span>
+                            WATCH NOW
+                        </button>
+<button class="border border-outline text-on-surface px-8 py-3 rounded-xl font-label-caps text-label-caps hover:bg-surface-container transition-colors">
+                            RESOURCES
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Sermons Grid -->
+<section class="px-gutter max-w-max-width-center mx-auto mb-24">
+<div class="flex items-end justify-between mb-10">
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Recent Sermons</h3>
+<p class="text-on-surface-variant font-body-lg">Dive deeper into the archives of Grace Community Church.</p>
+</div>
+<button class="text-primary font-label-caps text-label-caps flex items-center gap-1 hover:underline">
+                    VIEW ALL <span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Sermon Card 1 -->
+<div class="group bg-white rounded-2xl overflow-hidden border border-outline-variant/30 hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+<div class="relative aspect-video overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A clean, minimalist graphic for a sermon series titled Digital Stewardship. The visual features abstract glowing circuits merging with a soft organic leaf pattern on a light blue background. Very modern and calm." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS_jM4lRxYeFGqHdJF4pOR-frxfpTipjSXyeRDDhYTUj1VJHeZvy7-F-GM7e2LPFX7tIwrzT02blo7ozXOPnrlhX1aH9UpqesshmymvE9DJTn8FFcK9VKXPO6hXDGmsJFPVoTj3MUIRhi3eSYOX2OTK2VYQWyVaJ22-bZv4p_luKETx-fXrp5A8nIhpjyBiW8WX5wUz4xBbjAap6oCAxfTVTVY9SMzbUZjcMloAD-WAnkhFlH-XRd2Dw"/>
+<div class="absolute bottom-3 right-3 bg-black/60 text-white px-2 py-1 rounded font-label-status text-[10px]">34:12</div>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-2">
+<span class="text-primary font-label-status text-label-status uppercase">Digital Stewardship</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">Oct 20, 2024</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface mb-3 group-hover:text-primary transition-colors">The Sanctity of Attention</h4>
+<div class="mb-6 space-y-1">
+<p class="font-label-caps text-[11px] text-on-surface-variant">Speaker: <span class="text-on-surface">Dr. Sarah Chen</span></p>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">Matthew 6:21-23</p>
+</div>
+<div class="mt-auto">
+<button class="w-full border border-primary text-primary hover:bg-primary hover:text-on-primary py-3 rounded-xl font-label-caps text-label-caps transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">smart_display</span>
+                                VIEW SERMON
+                            </button>
+</div>
+</div>
+</div>
+<!-- Sermon Card 2 -->
+<div class="group bg-white rounded-2xl overflow-hidden border border-outline-variant/30 hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+<div class="relative aspect-video overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A serene landscape of mountains obscured by morning mist, with a soft primary color glow at the peak. The text Foundations of Focus is subtly integrated into the sky. Clean, minimalist, and tranquil aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWVbPCfx7xvZ28mxpd2q5bixQsBAhO1zgWOMn5E1uFkUbTMHIQv3i1l2hv8IqLuKn7pQy0_bN55TlGudRhyF9T2IGjaCRGEPRawGiPGS54evvkNZ9vbttsj0SOblSkBslOGcH5nXhcdc9-OKqhfmZPIc_efrH5AivS-BN3PfQo_umC9F2sUk2rO3v14SfadZ4g3dPKsStBdPU4vKi97lFmP5Ji06Ts6Uw3BUv997lWp5-D9pjEoEFV6g"/>
+<div class="absolute bottom-3 right-3 bg-black/60 text-white px-2 py-1 rounded font-label-status text-[10px]">28:45</div>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-2">
+<span class="text-primary font-label-status text-label-status uppercase">Foundations of Focus</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">Oct 13, 2024</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface mb-3 group-hover:text-primary transition-colors">Filtering the Noise</h4>
+<div class="mb-6 space-y-1">
+<p class="font-label-caps text-[11px] text-on-surface-variant">Speaker: <span class="text-on-surface">Rev. Marcus Thorne</span></p>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">Psalm 46:10</p>
+</div>
+<div class="mt-auto">
+<button class="w-full border border-primary text-primary hover:bg-primary hover:text-on-primary py-3 rounded-xl font-label-caps text-label-caps transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">smart_display</span>
+                                VIEW SERMON
+                            </button>
+</div>
+</div>
+</div>
+<!-- Sermon Card 3 -->
+<div class="group bg-white rounded-2xl overflow-hidden border border-outline-variant/30 hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+<div class="relative aspect-video overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Abstract architectural photography of a modern high-ceiling building with glass walls allowing light to pour in, creating long soft shadows. The visual suggests clarity and space. Part of The Architecture of Peace series." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_d10Y9SdkJAWMksJxG53PFGwM9jKeXQVdG_HyYtx7kJnOmFadRu4zUChDuFpwlWTD1VBXZHppo7zxd606kGmmudj3SFlZhwZMnItD59X72dVnCbsyXiIOapJbUmQ_LypX7-C3pmEQhHkeC69ROwng0mwiWDYwBOZsWrEhmSUIYHKNby6c8fvFSS6_XrouHqz6TAKEOS5MAtoj9nEmpHrp1Zm7xx4ngUOERVmW7ge1AOLs4styZwX9pg"/>
+<div class="absolute bottom-3 right-3 bg-black/60 text-white px-2 py-1 rounded font-label-status text-[10px]">41:05</div>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex items-center justify-between mb-2">
+<span class="text-primary font-label-status text-label-status uppercase">Architecture of Peace</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">Oct 06, 2024</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface mb-3 group-hover:text-primary transition-colors">The Interior Sanctuary</h4>
+<div class="mb-6 space-y-1">
+<p class="font-label-caps text-[11px] text-on-surface-variant">Speaker: <span class="text-on-surface">Pastor Elias Vance</span></p>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">1 Corinthians 3:16</p>
+</div>
+<div class="mt-auto">
+<button class="w-full border border-primary text-primary hover:bg-primary hover:text-on-primary py-3 rounded-xl font-label-caps text-label-caps transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">smart_display</span>
+                                VIEW SERMON
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Series Exploration (Horizontal Scroll) -->
+<section class="bg-surface-container-low py-20 overflow-hidden">
+<div class="max-w-max-width-center mx-auto px-gutter mb-8">
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Explore Series</h3>
+<p class="text-on-surface-variant font-body-lg">Journey through focused collections of teachings.</p>
+</div>
+<div class="flex gap-6 overflow-x-auto pb-8 px-gutter scrollbar-hide snap-x">
+<!-- Series 1 -->
+<div class="min-w-[320px] md:min-w-[400px] snap-center rounded-2xl overflow-hidden relative group aspect-[4/5] shadow-lg">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" data-alt="A minimalist artistic interpretation of the concept of Stewardship using glowing geometric wireframes and natural textures like dark wood and polished stone. Deep blues and soft lavender highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIA1nmz-1ULio-kFBhWN8vPvBZGcgQN1eG7MA1xeUluHN8G6wcay6S8V7HWV93p1i2lAEyeNR2U4k9aiJLO7itjoVTundYD-RxtV86VfZCsDOiOImKF4vu2ls7TXAR4lBDv0nGVINqG6PBYZBUwlzyMthU23dOeAU1_atUc4-tyh4PfTZ_RVCCylNKHRjSkHzngm4a-RQK6ZeEuRg0pvrdgqoAfHVS7Pv2SwsQyShXAgiXuvPRZacXGA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8">
+<p class="text-primary-fixed-dim font-label-status text-label-status mb-2">4 SERMONS</p>
+<h4 class="text-white font-headline-md text-headline-md mb-4">The Digital Steward</h4>
+<button class="text-white border border-white/30 px-6 py-2 rounded-lg font-label-caps text-label-caps backdrop-blur-sm hover:bg-white hover:text-black transition-all">VIEW SERIES</button>
+</div>
+</div>
+<!-- Series 2 -->
+<div class="min-w-[320px] md:min-w-[400px] snap-center rounded-2xl overflow-hidden relative group aspect-[4/5] shadow-lg">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" data-alt="A clean, minimalist workspace with a single candle and a leather-bound Bible, softly lit by morning sun. Represents the Focus series. Neutral, calm, high-end aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwHgrK8GpijbUBSHE_oHAqivO2wOkQeoBMKr7ncNbIFI6C5Pn5LJ-HQMN8Pr-fV6IZnDx2cMNBoIZqw59Fs_9WJlwrF0iFnsGxqT-YxVyjz0TAojdzDSfaK5qJLNko7RuQkwKdyJru4D5aqXPCGfowdhrObmjFf_eDaZD2fcrQhbaNezi29urZf9HZLFC8hpwOCywHzAAMj-TNuucoSoYJ2FAYu_hxS3mnwx7xQCv9BFJah9Bcj2mH7w"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8">
+<p class="text-primary-fixed-dim font-label-status text-label-status mb-2">8 SERMONS</p>
+<h4 class="text-white font-headline-md text-headline-md mb-4">Foundations of Focus</h4>
+<button class="text-white border border-white/30 px-6 py-2 rounded-lg font-label-caps text-label-caps backdrop-blur-sm hover:bg-white hover:text-black transition-all">VIEW SERIES</button>
+</div>
+</div>
+<!-- Series 3 -->
+<div class="min-w-[320px] md:min-w-[400px] snap-center rounded-2xl overflow-hidden relative group aspect-[4/5] shadow-lg">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" data-alt="Aerial view of a serene Japanese Zen garden with perfectly raked sand and minimalist rock placements. Represents the Architecture of Peace. Highly aesthetic and high-resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEhcLAlAgNrdH-8NRdWYRFMp2AB3XpnfwLI4DCwMGuSGmJph56qlVxXwZrL9p47_NEGZVVnleh2y5wOyH3mKDQOTGXVFS_kxAgD1ZHHVN00kfqhHshS__fa63giCiT-r1-NoIz8aSTt5Yaq7ytNMmyaBum28KGe8acT2caf2xSw5mVJUlvqlwliGrM1peCKziW6pzgk3qM6rxw-PCCwPyrIvl9-FAxXRhi5fOSUZyAAwOSk2A26sS5tg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8">
+<p class="text-primary-fixed-dim font-label-status text-label-status mb-2">6 SERMONS</p>
+<h4 class="text-white font-headline-md text-headline-md mb-4">Architecture of Peace</h4>
+<button class="text-white border border-white/30 px-6 py-2 rounded-lg font-label-caps text-label-caps backdrop-blur-sm hover:bg-white hover:text-black transition-all">VIEW SERIES</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-high dark:bg-inverse-surface w-full py-12 border-t border-outline-variant/50">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-gutter max-w-max-width-center mx-auto">
+<div>
+<h4 class="font-headline-md text-headline-md font-bold text-on-surface mb-6">BlessBoard</h4>
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-6 max-w-xs">
+                    Leading the pursuit of sacred focus in a modern age. Join us on our journey of intentional faith and community growth.
+                </p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all" href="#">
+<span class="material-symbols-outlined">share</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all" href="#">
+<span class="material-symbols-outlined">mail</span>
+</a>
+</div>
+</div>
+<div>
+<h5 class="font-label-caps text-label-caps text-primary mb-6">QUICK LINKS</h5>
+<ul class="space-y-4">
+<li><a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-all font-body-sm" href="#">Service Times</a></li>
+<li><a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-all font-body-sm" href="#">Privacy Policy</a></li>
+<li><a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-all font-body-sm" href="#">Terms of Service</a></li>
+<li><a class="text-primary underline font-body-sm" href="#">Give Now</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-label-caps text-label-caps text-primary mb-6">VISIT US</h5>
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-4">
+                    123 Sanctity Ave, Focus District<br/>Modernity City, MC 54321
+                </p>
+<div class="bg-surface p-4 rounded-xl shadow-sm">
+<p class="font-label-status text-label-status text-on-surface mb-1">SUNDAY SERVICES</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">9:00 AM • 11:00 AM • 6:00 PM</p>
+</div>
+</div>
+</div>
+<div class="max-w-max-width-center mx-auto px-gutter mt-12 pt-8 border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-on-surface-variant dark:text-surface-variant font-body-sm text-body-sm italic">
+                © 2024 Sacred Modernity Church. Built with BlessBoard.
+            </p>
+<div class="flex gap-6">
+<span class="font-label-status text-label-status text-outline">GRACE COMMUNITY CHURCH</span>
+</div>
+</div>
+</footer>
+<!-- FAB -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group">
+<span class="material-symbols-outlined text-[28px]">chat_bubble</span>
+<span class="absolute right-full mr-4 bg-primary text-on-primary px-3 py-1 rounded-lg text-label-status font-label-status opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Connect with Us</span>
+</button>
+<script>
+        // Micro-interactions and scroll effects
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.classList.add('py-2', 'shadow-md');
+                header.classList.remove('py-3', 'shadow-sm');
+            } else {
+                header.classList.add('py-3', 'shadow-sm');
+                header.classList.remove('py-2', 'shadow-md');
+            }
+        });
+
+        // Search Input Glow Effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.parentElement.classList.add('ring-2', 'ring-primary/10');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.parentElement.classList.remove('ring-2', 'ring-primary/10');
+        });
+    </script>
+</body></html>

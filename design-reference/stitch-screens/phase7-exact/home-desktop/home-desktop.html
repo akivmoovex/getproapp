@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BlessBoard | Grace Community Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .hero-gradient {
+            background: linear-gradient(to bottom, rgba(244, 250, 253, 0) 0%, rgba(244, 250, 253, 1) 100%);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "background": "#f4fafd",
+                        "tertiary-fixed": "#ffdcc3",
+                        "outline-variant": "#c8c4d7",
+                        "primary": "#5341cd",
+                        "surface-tint": "#5847d2",
+                        "surface-container": "#e8eff1",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "secondary-fixed-dim": "#c5c0ff",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "on-tertiary-fixed": "#2f1500",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-tertiary-container": "#fff5f1",
+                        "on-primary": "#ffffff",
+                        "on-background": "#161d1f",
+                        "inverse-on-surface": "#ebf2f4",
+                        "secondary": "#5952af",
+                        "on-error": "#ffffff",
+                        "tertiary": "#884800",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary-container": "#faf6ff",
+                        "surface-variant": "#dde4e6",
+                        "outline": "#787586",
+                        "tertiary-container": "#ac5d00",
+                        "inverse-primary": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#474554",
+                        "surface": "#f4fafd",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-secondary-container": "#352c8a",
+                        "on-secondary-fixed": "#140067",
+                        "surface-container-low": "#eef5f7",
+                        "secondary-fixed": "#e3dfff",
+                        "on-primary-fixed": "#160066",
+                        "surface-container-high": "#e2e9ec",
+                        "on-surface": "#161d1f",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#dde4e6",
+                        "on-secondary-fixed-variant": "#413996",
+                        "inverse-surface": "#2b3234",
+                        "surface-bright": "#f4fafd",
+                        "secondary-container": "#a19afd",
+                        "primary-container": "#6c5ce7",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d4dbdd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width-center": "1200px",
+                        "stack-tight": "0.25rem",
+                        "gutter": "1rem",
+                        "container-padding": "2rem",
+                        "component-gap": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "label-status": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "label-status": ["11px", {"lineHeight": "1", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-lg">
+<!-- TopNavBar -->
+<nav class="bg-surface/80 backdrop-blur-md sticky top-0 z-50 border-b border-outline-variant/30 shadow-sm w-full">
+<div class="flex justify-between items-center px-gutter py-3 max-w-max-width-center mx-auto w-full">
+<a class="font-headline-md text-headline-md font-bold text-primary" href="#">BlessBoard</a>
+<div class="hidden md:flex items-center gap-6">
+<a class="font-label-caps text-label-caps text-primary border-b-2 border-primary py-1" href="#">Home</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Leadership</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Ministries</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Events</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Sermons</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Giving</a>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-caps text-label-caps hover:bg-primary-container transition-all active:scale-95">
+                Plan Your Visit
+            </button>
+</div>
+</nav>
+<!-- Hero Section -->
+<header class="relative h-[870px] flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover" data-alt="A grand church entrance with modern glass architecture and warm wooden beams, bathed in the golden light of a late afternoon sun. The scene is welcoming and serene, featuring a clean minimalist aesthetic with a soft atmospheric glow. High-quality architectural photography style capturing the intersection of sacred tradition and contemporary design, using the brand's soft primary purple as a subtle accent." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-6gU2e0-FTPayTSbNSATc8CC2tBufT_a3cyqboHodRwWOhvsCMzITBXzhq0sY7Rrpav-Pf13w73vg0P1rGyMRGunKYccvPnyItb7NnW05T5IrMt0dy-Cub0zLqTMtrxaPflL3pfDebUTMr3YsR55tiFoeDOpD0PgaMxdi2o1oalS6-bTIRIYmNVaVeEEHVddf34W2CCKdmizcbHOnT8RZuYTqbz293Ud89YuwAT6q_54_eiwvfaM4Hw"/>
+<div class="absolute inset-0 bg-black/30"></div>
+<div class="absolute inset-0 hero-gradient"></div>
+</div>
+<div class="relative z-10 text-center max-w-3xl px-gutter">
+<p class="font-label-caps text-label-caps text-white mb-4 tracking-widest uppercase">Faith, Community and Hope</p>
+<h1 class="font-headline-lg text-headline-lg text-white mb-6 md:text-6xl lg:text-7xl font-bold">Grace Community Church</h1>
+<p class="font-body-lg text-body-lg text-white/90 mb-10 leading-relaxed">A place where everyone belongs, purpose is discovered, and lives are transformed through the love of Christ.</p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button class="bg-primary-container text-on-primary-container px-8 py-4 rounded-xl font-headline-md text-headline-md shadow-lg transition-transform hover:scale-105 active:scale-95">
+                    Plan Your Visit
+                </button>
+<button class="glass-card text-white px-8 py-4 rounded-xl font-headline-md text-headline-md border border-white/40 hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">play_circle</span>
+                    Watch Latest Sermon
+                </button>
+</div>
+</div>
+</header>
+<main class="max-w-max-width-center mx-auto px-gutter -mt-20 relative z-20 pb-20">
+<!-- Service Times Card -->
+<section class="glass-card rounded-3xl p-8 md:p-12 shadow-xl mb-24 flex flex-col md:flex-row items-center gap-12">
+<div class="flex-1">
+<h2 class="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-3">
+<span class="material-symbols-outlined">schedule</span>
+                    Service Times
+                </h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Sunday Worship</p>
+<p class="font-headline-md text-headline-md">9:00 AM &amp; 11:00 AM</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Wednesday Midweek</p>
+<p class="font-headline-md text-headline-md">6:30 PM</p>
+</div>
+</div>
+</div>
+<div class="w-px h-24 bg-outline-variant/30 hidden md:block"></div>
+<div class="flex-1">
+<h2 class="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-3">
+<span class="material-symbols-outlined">location_on</span>
+                    Location
+                </h2>
+<p class="font-body-lg text-body-lg mb-6">123 Sacred Way, Modern Heights, ST 54321</p>
+<button class="bg-surface-container-highest text-on-surface hover:bg-surface-variant transition-colors px-6 py-3 rounded-full font-label-caps text-label-caps inline-flex items-center gap-2">
+                    Get Directions
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</section>
+<!-- Welcome Section (Asymmetric) -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center mb-32">
+<div>
+<span class="font-label-caps text-label-caps text-tertiary mb-4 block">Welcome Home</span>
+<h2 class="font-headline-lg text-headline-lg mb-8">We're so glad you're here</h2>
+<div class="space-y-6 text-on-surface-variant leading-relaxed">
+<p class="font-body-lg text-body-lg">At Grace Community Church, we believe faith is a journey best taken together. Whether you're just starting to explore who Jesus is or have been following Him for years, there's a place for you in our family.</p>
+<p class="font-body-lg text-body-lg">Our community is built on the pillars of authentic worship, deep connection, and selfless service. We strive to create an atmosphere of "Sacred Modernity"—where timeless truth meets contemporary life.</p>
+</div>
+<div class="mt-10">
+<a class="text-primary font-bold inline-flex items-center gap-2 group" href="#">
+                        Learn More Our Story
+                        <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">trending_flat</span>
+</a>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -top-10 -right-10 w-64 h-64 bg-primary-container/10 rounded-full blur-3xl"></div>
+<div class="rounded-3xl overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-700">
+<img class="w-full h-full object-cover" data-alt="A candid, warm photograph of a diverse church congregation laughing and talking in a sunlit lobby. The lighting is soft and natural, emphasizing a feeling of belonging and genuine community. The interior features clean lines, white walls, and light wood accents, consistent with the sacred modernity aesthetic. High-quality lifestyle photography with a shallow depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFp3a0O8UoLiIiS0zVCCZeI39aG1DdcgwTducf9WN7MCn-oLSD7xkuahAAjW3FO6Xhku1Pu-vVAU9ufZBQJKd7wv808AiZSOsvLYHmwS8Fhu9_xp61y_YfQHvoQCT2a0XFdmrEMctObESjZJrXyiZnprYRRPdQw1rD52DZrazfiMvkaPER6MFGDvzICn8yaaWqjQyTo0suBj-d1GqELGKO_udmpCERe2boLQS9qRdlxfyvHRPSz0hKzA"/>
+</div>
+</div>
+</section>
+<!-- Featured Ministries (Bento Grid) -->
+<section class="mb-32">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-headline-lg mb-4">Find Your Place</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto">Explore the different ways you can grow in your faith and serve others through our core ministries.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-component-gap">
+<!-- Worship -->
+<div class="group relative overflow-hidden rounded-3xl h-[400px] bg-primary">
+<img class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" data-alt="A dynamic shot of a contemporary worship band on a stage illuminated with soft purple and blue stage lights. The atmosphere is filled with energy and reverence, showing diverse musicians playing with focus and passion. The visual style is crisp and modern, emphasizing the vibrancy of the church's creative ministry." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8DY9PN4im8TNumHpveh7dIP8dbm1zwGdHods5zJgYziELIXhov17Gp4qM7Pxg_h5vfp_N8GMTFD3SOazUBseMJzv2gCHUiskGWTXxI_Im7gMzWOXd4pwwS7gNcYf1Dfk8CN8d1awGGzhEuYSGLfShoA1v5u8NgWC5q76vyADQDWove2CpJbL0T-De1JbIWohadD6E6cLQ9Hn3wWVkq5sFD2NoqQLLc5zK0xDxUeJVBIMUSxDezC2s6w"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent"></div>
+<div class="absolute bottom-0 p-8">
+<h3 class="font-headline-md text-headline-md text-white mb-2">Worship</h3>
+<p class="text-white/80 font-body-sm text-body-sm mb-6">Creating an atmosphere where heaven meets earth through creative expression.</p>
+<button class="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-lg font-label-caps text-label-caps hover:bg-white/40 transition-all">Explore Worship</button>
+</div>
+</div>
+<!-- Youth -->
+<div class="group relative overflow-hidden rounded-3xl h-[400px] bg-secondary">
+<img class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" data-alt="A group of enthusiastic teenagers engaged in a collaborative project in a vibrant, modern youth center. The space is filled with colorful furniture, collaborative workstations, and bright natural light. The mood is energetic, creative, and inclusive, showcasing the church's commitment to the next generation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqoe5_9uRFoBkOoTdcHg5moqBNlGDI-dzGiaNQit2XosNnwh205f1UR0sDHRaxc5vsSC2x-Z0Fwa4ZlIiQ3ytgfdMfkNg1E5sXYnCWC1-Syjn4gm56SN-d3jmJavPq_auyU85IkIV7eX7Sxc7vlsB6OeTtb9Go95LHbyTobGkALETfIUDxBB-SqTC-QWWUKT1141ZyOTZVYNwyJg2EmkpDUa-dmU6kpK8LudK_EdgatwRr4mQ7f7M_GQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-secondary/90 to-transparent"></div>
+<div class="absolute bottom-0 p-8">
+<h3 class="font-headline-md text-headline-md text-white mb-2">Youth</h3>
+<p class="text-white/80 font-body-sm text-body-sm mb-6">Empowering the next generation to lead with faith, courage, and integrity.</p>
+<button class="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-lg font-label-caps text-label-caps hover:bg-white/40 transition-all">Explore Youth</button>
+</div>
+</div>
+<!-- Outreach -->
+<div class="group relative overflow-hidden rounded-3xl h-[400px] bg-tertiary">
+<img class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" data-alt="Church volunteers serving at a local community garden, showing hands-on engagement and compassionate service. The lighting is warm and natural, capturing a sense of purposeful community impact. The composition is clean and focused, reflecting the heart of outreach in a modern urban context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDm1llfNW3XPrzIhE0964UoUOa7l_7IZ9AFp2XRBUvMq_4NYOqvrlNiLBWOv_Mibp2d--ciyrhbJTIk2Bq3eMk7wRdALVXL6BWVQrct9-41GgkBEpaHz-7TgohszO7WxXuEjxt-h0wO8jW9vWKL3fk4y_fM4eNLL9LoyPaq1Um-ZKvpOPCVB7CkCTd20VIw8OE1RMKBMg0eAu8OwST6yU_jmgbu4UXk2L1tjsPzGwdNZwQjdd7bwE_Z-A"/>
+<div class="absolute inset-0 bg-gradient-to-t from-tertiary/90 to-transparent"></div>
+<div class="absolute bottom-0 p-8">
+<h3 class="font-headline-md text-headline-md text-white mb-2">Outreach</h3>
+<p class="text-white/80 font-body-sm text-body-sm mb-6">Being the hands and feet of Jesus in our local community and beyond.</p>
+<button class="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-lg font-label-caps text-label-caps hover:bg-white/40 transition-all">Explore Outreach</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Events & Latest Sermon -->
+<section class="grid grid-cols-1 lg:grid-cols-5 gap-12 mb-32">
+<!-- Upcoming Events -->
+<div class="lg:col-span-2">
+<div class="flex items-center justify-between mb-8">
+<h2 class="font-headline-md text-headline-md">Upcoming Events</h2>
+<a class="font-label-caps text-label-caps text-primary hover:underline" href="#">View All</a>
+</div>
+<div class="space-y-4">
+<div class="bg-white rounded-2xl p-6 border border-outline-variant/30 hover:shadow-md transition-shadow cursor-pointer group">
+<div class="flex gap-6 items-start">
+<div class="bg-primary-container/10 text-primary rounded-xl px-4 py-3 text-center min-w-[70px]">
+<span class="font-bold text-2xl block">14</span>
+<span class="font-label-caps text-label-caps uppercase">OCT</span>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md mb-1 group-hover:text-primary transition-colors">Men's Breakfast</h4>
+<p class="text-on-surface-variant font-body-sm text-body-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">schedule</span> 8:00 AM - 10:00 AM
+                                </p>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-6 border border-outline-variant/30 hover:shadow-md transition-shadow cursor-pointer group">
+<div class="flex gap-6 items-start">
+<div class="bg-tertiary-container/10 text-tertiary rounded-xl px-4 py-3 text-center min-w-[70px]">
+<span class="font-bold text-2xl block">22</span>
+<span class="font-label-caps text-label-caps uppercase">OCT</span>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md mb-1 group-hover:text-tertiary transition-colors">Fall Festival</h4>
+<p class="text-on-surface-variant font-body-sm text-body-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">schedule</span> 4:00 PM - 7:00 PM
+                                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Latest Sermon -->
+<div class="lg:col-span-3">
+<div class="flex items-center justify-between mb-8">
+<h2 class="font-headline-md text-headline-md">Latest Sermon</h2>
+<a class="font-label-caps text-label-caps text-primary hover:underline" href="#">Full Library</a>
+</div>
+<div class="relative group rounded-3xl overflow-hidden shadow-lg bg-surface-container">
+<div class="aspect-video relative">
+<img class="w-full h-full object-cover" data-alt="A high-resolution video thumbnail of a pastor speaking on a minimalist stage. The background features soft, out-of-focus lighting and large digital screens with peaceful nature imagery. The pastor is captured in an engaging moment, conveying clarity and focus. The aesthetic is clean, professional, and tranquil, using the church's color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDklKPtpLGQiAuhnOj-ZNBJJjHRKmO-kRuv4UwK5xMHVNsS8vBxe4teKaG94ru40NTOpfo1rMRUolodmXbfsdTia5OJxB-t35p3QUdmtkUYfmg16Cqd-BUP0OX6lK3nP8MjoaZqFSoBdM4YjVO1qJWW70WngVuHhz3gkkalLHV1pE3n2BpQr75YP6h_eWo6lbPHp-DbB-y_uPKDiumoUHecbQk9Zd7xshiHNElUH5FOp1yccBulKVzyFQ"/>
+<div class="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/40 transition-all">
+<div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline-md text-headline-md mb-2">Finding Peace in the Noise</h3>
+<p class="text-on-surface-variant font-body-sm text-body-sm">Dr. David Miller • Series: Walking in Grace</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Leadership Preview -->
+<section class="mb-32">
+<h2 class="font-headline-lg text-headline-lg text-center mb-16">Meet Our Pastors</h2>
+<div class="flex flex-wrap justify-center gap-12">
+<div class="text-center group max-w-[280px]">
+<div class="w-64 h-64 mx-auto rounded-full overflow-hidden border-4 border-white shadow-lg mb-6 group-hover:scale-105 transition-transform duration-500">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a male Senior Pastor in his late 40s, with a warm and approachable expression. He is wearing a casual yet sharp button-down shirt. The background is a softly blurred office with books and warm lighting, conveying a sense of wisdom and modern leadership. High-key lighting for a clean, professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbl2hnqqxrCiggSUzGy_QPnhnpN8N7sX5sJEaztM1l09Y757SkQiVJUc8SfQRkk9IXl1aeRmpIhhQq2z38vQAgdEdi3l0txESmdFG7PZVs7DU_CuZZhf3o5ykxRVxhsVkCgGxfv4G-ufI_TMNos__j-zJgFWaf4a05KRtcLPHF1dKh-IsdMfzB2HQFS7EgH_s7uqq7cyCQtwz5HHtzNgbP929tNFOGUhbFQXpn-GyWNMNIDgfWDRJkTA"/>
+</div>
+<h4 class="font-headline-md text-headline-md mb-1">Dr. David Miller</h4>
+<p class="text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">Senior Pastor</p>
+</div>
+<div class="text-center group max-w-[280px]">
+<div class="w-64 h-64 mx-auto rounded-full overflow-hidden border-4 border-white shadow-lg mb-6 group-hover:scale-105 transition-transform duration-500">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a female Associate Pastor in her mid 30s, smiling warmly. She has a look of empathetic focus and is dressed in contemporary professional attire. The setting is a bright, modern church lobby with soft natural light, reflecting the church's tranquil and welcoming brand personality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHQh58VZKwLqeOu2pZ2tP8EL4iEBYy23vqQkxj3Rc9CwOs9FpuM9WnE9K3HXrlAsPuQQIomsEufFvqFIvaxt1Y2_zzyC3rjV9GNGVdRLNXUWGEKljwIwtP6j4WsKKcofMo6lszPENOzXQRT88kBL_g0Ej5YIXAEz358hE4YFeErFnAdGV_OGtmCVsosVpjJxc1OWcSDit0j6Owly2LJY6sRffhdVTPdrWwFT8PfRRQj8YJdW0s8Rh49A"/>
+</div>
+<h4 class="font-headline-md text-headline-md mb-1">Pastor Sarah Chen</h4>
+<p class="text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">Associate Pastor</p>
+</div>
+</div>
+</section>
+<!-- Giving CTA -->
+<section class="bg-primary rounded-[40px] p-12 md:p-20 text-center relative overflow-hidden text-white mb-32">
+<div class="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-secondary-container/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
+<div class="relative z-10 max-w-2xl mx-auto">
+<span class="material-symbols-outlined text-5xl mb-6" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<h2 class="font-headline-lg text-headline-lg mb-6">Stewardship with Purpose</h2>
+<p class="font-body-lg text-body-lg text-white/80 mb-10 leading-relaxed">Your generosity allows us to continue building a sacred space for our community and reaching those in need. Every gift, large or small, makes a difference.</p>
+<button class="bg-white text-primary px-10 py-4 rounded-full font-headline-md text-headline-md hover:shadow-xl transition-all active:scale-95">Give Now</button>
+</div>
+</section>
+<!-- Contact Preview -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
+<div class="bg-surface-container-low rounded-3xl p-10 flex flex-col justify-between">
+<div>
+<h2 class="font-headline-lg text-headline-lg mb-8">Get in Touch</h2>
+<div class="space-y-8">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary">phone</span>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Phone</p>
+<p class="font-body-lg text-body-lg">(555) 123-4567</p>
+</div>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary">mail</span>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Email</p>
+<p class="font-body-lg text-body-lg">hello@gracecommunity.org</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-12 flex gap-4">
+<a class="w-10 h-10 rounded-full bg-white border border-outline-variant/30 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">public</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-white border border-outline-variant/30 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</a>
+</div>
+</div>
+<div class="rounded-3xl overflow-hidden shadow-inner h-[400px] lg:h-auto min-h-[400px]">
+<img class="w-full h-full object-cover" data-alt="A stylized, clean map view showing the church's location in a modern urban grid. The map uses a soft palette of greys and purples, consistent with the brand's aesthetic. A clear pin marks the church location, surrounded by green spaces and clean architectural lines." data-location="Chicago" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi92qWejmwMkZ1KJMheW8ZSM4LcuIJRXXv_1MWPt98xDIweaNgVmE2gpVVT6juTqFv6wzaVPWu7x6TCQu3SbECSUY9NalT2wlHvO89aa80vd1qqENz-ftmrs9md7cEwrZ1Nv1i34qzlo-kLAAtKpRENGsiOujJyJLOmj4e-bfIDLaROG-hyIBIXkBoczIl_ivz3I9O75O-Sb349DLb8QF45-tuw8Umv_1HYTOy1rZBC1xffGEPEZ-qMg"/>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-high border-t border-outline-variant/50 pt-20 pb-12 w-full">
+<div class="max-w-max-width-center mx-auto px-gutter">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+<div class="col-span-1 md:col-span-2">
+<a class="font-headline-md text-headline-md font-bold text-on-surface block mb-6" href="#">BlessBoard</a>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm mb-6">Building a community where faith finds a modern home. Join us as we navigate life together through grace and hope.</p>
+</div>
+<div>
+<h4 class="font-label-caps text-label-caps text-on-surface mb-6 uppercase tracking-widest">Quick Links</h4>
+<ul class="space-y-3">
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all underline" href="#">Service Times</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Privacy Policy</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Terms of Service</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Give Now</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-caps text-label-caps text-on-surface mb-6 uppercase tracking-widest">Visit</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                        123 Sacred Way<br/>
+                        Modern Heights, ST 54321<br/>
+                        Sunday: 9AM &amp; 11AM
+                    </p>
+</div>
+</div>
+<div class="border-t border-outline-variant/30 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 Sacred Modernity Church. Built with BlessBoard.</p>
+<div class="flex gap-6">
+<a class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" href="#">facebook</a>
+<a class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" href="#">camera</a>
+<a class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" href="#">smart_display</a>
+</div>
+</div>
+</div>
+</footer>
+<!-- FAB -->
+<button class="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-primary text-on-primary shadow-2xl flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl">chat_bubble</span>
+</button>
+<script>
+        // Micro-interactions and effects
+        document.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 100) {
+                nav.classList.add('shadow-md');
+            } else {
+                nav.classList.remove('shadow-md');
+            }
+        });
+    </script>
+</body></html>

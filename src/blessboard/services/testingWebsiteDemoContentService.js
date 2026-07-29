@@ -438,19 +438,24 @@ async function seedTestingWebsiteDemoContent(db, input) {
   const dryRun = Boolean(raw.dryRun);
   const refresh = Boolean(raw.refreshDemoContent);
   const diagnose = Boolean(raw.diagnose);
+  /** Optional override (e.g. Phase 7 exact visual fixture). Must export the same surface as testingWebsiteDemoContentSpec. */
+  const contentSpec =
+    raw.contentSpec && typeof raw.contentSpec === "object" ? raw.contentSpec : spec;
   const organizationKey = String(
-    raw.organizationKey || spec.DEFAULT_ORGANIZATION_KEY
+    raw.organizationKey || contentSpec.DEFAULT_ORGANIZATION_KEY
   )
     .trim()
     .toLowerCase();
-  const churchKey = String(raw.churchKey || organizationKey || spec.DEFAULT_CHURCH_KEY)
+  const churchKey = String(
+    raw.churchKey || organizationKey || contentSpec.DEFAULT_CHURCH_KEY
+  )
     .trim()
     .toLowerCase();
-  const actorEmail = String(raw.actorEmail || spec.DEFAULT_ACTOR_EMAIL)
+  const actorEmail = String(raw.actorEmail || contentSpec.DEFAULT_ACTOR_EMAIL)
     .trim()
     .toLowerCase();
   const actions = [];
-  const dates = spec.relativeDates(raw.d0 ? new Date(raw.d0) : undefined);
+  const dates = contentSpec.relativeDates(raw.d0 ? new Date(raw.d0) : undefined);
 
   const envCheck = evaluateTestingDemoContentEnvironment(raw.env || process.env);
   if (!envCheck.ok) {
@@ -467,7 +472,9 @@ async function seedTestingWebsiteDemoContent(db, input) {
   }
 
   // Financial safety on seed copy
-  const givingOk = spec.assertNoRealFinancialDetails(spec.GIVING.method.instructions);
+  const givingOk = contentSpec.assertNoRealFinancialDetails(
+    contentSpec.GIVING.method.instructions
+  );
   if (!givingOk) {
     return {
       ok: false,
@@ -554,14 +561,14 @@ async function seedTestingWebsiteDemoContent(db, input) {
         act(
           "settings.church_contact",
           canFillChurchContact ? STATUS.PLANNED : STATUS.SKIPPED,
-          spec.HQ_CONTACT.email
+          contentSpec.HQ_CONTACT.email
         )
       );
       actions.push(
         act(
           "settings.branch_address",
           canFillBranchAddress ? STATUS.PLANNED : STATUS.SKIPPED,
-          spec.HQ_CONTACT.addressLine1
+          contentSpec.HQ_CONTACT.addressLine1
         )
       );
     } else if (canFillChurchContact) {
@@ -573,10 +580,10 @@ async function seedTestingWebsiteDemoContent(db, input) {
             : "published";
       await withClient(db, (c) =>
         settingsRepo.upsertChurchSettings(c, churchId, {
-          publicName: spec.IDENTITY.displayName,
+          publicName: contentSpec.IDENTITY.displayName,
           denomination: (churchSettings && churchSettings.denomination) || null,
-          primaryEmail: spec.HQ_CONTACT.email,
-          primaryPhone: spec.HQ_CONTACT.phone,
+          primaryEmail: contentSpec.HQ_CONTACT.email,
+          primaryPhone: contentSpec.HQ_CONTACT.phone,
           defaultTimezone: (churchSettings && churchSettings.defaultTimezone) || "UTC",
           defaultCountryCode: (churchSettings && churchSettings.defaultCountryCode) || "US",
           websiteStatus: nextWebsite,
@@ -584,14 +591,14 @@ async function seedTestingWebsiteDemoContent(db, input) {
       );
       await withClient(db, (c) =>
         settingsRepo.updateChurchCatalogueNames(c, churchId, {
-          displayName: spec.IDENTITY.displayName,
+          displayName: contentSpec.IDENTITY.displayName,
         })
       );
       actions.push(
         act(
           "settings.church_contact",
           refresh ? STATUS.REFRESHED : STATUS.APPLIED,
-          spec.HQ_CONTACT.email
+          contentSpec.HQ_CONTACT.email
         )
       );
     } else {
@@ -603,24 +610,24 @@ async function seedTestingWebsiteDemoContent(db, input) {
         settingsRepo.upsertBranchSettings(c, branchId, {
           publicName:
             (branchSettings && branchSettings.publicName) || "Headquarters",
-          email: spec.HQ_CONTACT.email,
-          phone: spec.HQ_CONTACT.phone,
+          email: contentSpec.HQ_CONTACT.email,
+          phone: contentSpec.HQ_CONTACT.phone,
           timezone: (branchSettings && branchSettings.timezone) || "UTC",
           countryCode: (branchSettings && branchSettings.countryCode) || "US",
-          addressLine1: spec.HQ_CONTACT.addressLine1,
-          addressLine2: spec.HQ_CONTACT.addressLine2,
-          city: spec.HQ_CONTACT.city,
-          provinceState: spec.HQ_CONTACT.provinceState,
-          postalCode: spec.HQ_CONTACT.postalCode,
-          latitude: spec.HQ_CONTACT.latitude,
-          longitude: spec.HQ_CONTACT.longitude,
+          addressLine1: contentSpec.HQ_CONTACT.addressLine1,
+          addressLine2: contentSpec.HQ_CONTACT.addressLine2,
+          city: contentSpec.HQ_CONTACT.city,
+          provinceState: contentSpec.HQ_CONTACT.provinceState,
+          postalCode: contentSpec.HQ_CONTACT.postalCode,
+          latitude: contentSpec.HQ_CONTACT.latitude,
+          longitude: contentSpec.HQ_CONTACT.longitude,
         })
       );
       actions.push(
         act(
           "settings.branch_address",
           refresh ? STATUS.REFRESHED : STATUS.APPLIED,
-          spec.HQ_CONTACT.addressLine1
+          contentSpec.HQ_CONTACT.addressLine1
         )
       );
     } else if (!canFillBranchAddress) {
@@ -631,7 +638,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
     const homePage = await ensurePagePublished(db, {
       churchId,
       pageKey: "home",
-      title: spec.PAGE_TITLES.home,
+      title: contentSpec.PAGE_TITLES.home,
       dryRun,
       refresh,
       actions,
@@ -644,11 +651,11 @@ async function seedTestingWebsiteDemoContent(db, input) {
       let r = await ensureSection(db, {
         pageId: homePage.page.id,
         pageKey: "home",
-        sectionKey: spec.HERO.sectionKey,
-        sectionType: spec.HERO.sectionType,
-        heading: spec.HERO.heading,
-        bodyText: spec.HERO.bodyText,
-        mediaUrl: spec.HERO.mediaUrl,
+        sectionKey: contentSpec.HERO.sectionKey,
+        sectionType: contentSpec.HERO.sectionType,
+        heading: contentSpec.HERO.heading,
+        bodyText: contentSpec.HERO.bodyText,
+        mediaUrl: contentSpec.HERO.mediaUrl,
         sortOrder: 1,
         dryRun,
         refresh,
@@ -664,7 +671,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
         sectionKey: "welcome",
         sectionType: "body",
         heading: "Welcome",
-        bodyText: `${spec.IDENTITY.welcomeMessage} ${spec.IDENTITY.tagline}`,
+        bodyText: `${contentSpec.IDENTITY.welcomeMessage} ${contentSpec.IDENTITY.tagline}`,
         mediaUrl: null,
         sortOrder: 20,
         dryRun,
@@ -680,8 +687,8 @@ async function seedTestingWebsiteDemoContent(db, input) {
         pageKey: "home",
         sectionKey: "announcement_highlight",
         sectionType: "announcement",
-        heading: spec.HOME_ANNOUNCEMENT.heading,
-        bodyText: spec.HOME_ANNOUNCEMENT.bodyText,
+        heading: contentSpec.HOME_ANNOUNCEMENT.heading,
+        bodyText: contentSpec.HOME_ANNOUNCEMENT.bodyText,
         mediaUrl: null,
         sortOrder: 15,
         dryRun,
@@ -701,7 +708,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
 
     // Service times
     if (dryRun) {
-      actions.push(act("service_times", STATUS.PLANNED, `${spec.SERVICE_TIMES.length} entries`));
+      actions.push(act("service_times", STATUS.PLANNED, `${contentSpec.SERVICE_TIMES.length} entries`));
     } else {
       await withClient(db, (c) =>
         ensureCanonicalServiceTimesSection(c, { churchId, branchId: null })
@@ -717,9 +724,9 @@ async function seedTestingWebsiteDemoContent(db, input) {
       const stEmpty = !stEntries.length;
       const stDemo =
         existingSt &&
-        (spec.isDemoMetadata(stMeta) ||
+        (contentSpec.isDemoMetadata(stMeta) ||
           (stEntries.length &&
-            stEntries.every((e) => String(e.name || "").includes(spec.DEMO_TAG))));
+            stEntries.every((e) => String(e.name || "").includes(contentSpec.DEMO_TAG))));
 
       if (!stEmpty && !stDemo && !refresh) {
         actions.push(act("service_times", STATUS.SKIPPED, "user_service_times_preserved"));
@@ -729,7 +736,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
         const saved = await saveHomeServiceTimes(db, {
           churchId,
           branchId: null,
-          entries: spec.SERVICE_TIMES,
+          entries: contentSpec.SERVICE_TIMES,
           confirmPublish: true,
         });
         if (!saved.ok) {
@@ -750,8 +757,8 @@ async function seedTestingWebsiteDemoContent(db, input) {
                   ? saved.section.layoutMetadata
                   : {}) || {}),
                 schema: "service_times_v1",
-                entries: spec.SERVICE_TIMES,
-                ...spec.demoLayoutMetadata("section:home:service_times"),
+                entries: contentSpec.SERVICE_TIMES,
+                ...contentSpec.demoLayoutMetadata("section:home:service_times"),
               },
             })
           );
@@ -760,7 +767,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
           act(
             "service_times",
             refresh ? STATUS.REFRESHED : STATUS.APPLIED,
-            `${spec.SERVICE_TIMES.length} entries`
+            `${contentSpec.SERVICE_TIMES.length} entries`
           )
         );
       }
@@ -769,7 +776,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
     const aboutPage = await ensurePagePublished(db, {
       churchId,
       pageKey: "about",
-      title: spec.PAGE_TITLES.about,
+      title: contentSpec.PAGE_TITLES.about,
       dryRun,
       refresh,
       actions,
@@ -778,7 +785,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
       return fail(STATUS.ERROR, "about_page_failed", { dryRun, actions, dates, organizationKey, churchKey });
     }
     if (aboutPage.page) {
-      for (const sec of spec.ABOUT_SECTIONS) {
+      for (const sec of contentSpec.ABOUT_SECTIONS) {
         const r = await ensureSection(db, {
           pageId: aboutPage.page.id,
           pageKey: "about",
@@ -808,7 +815,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
       const pg = await ensurePagePublished(db, {
         churchId,
         pageKey,
-        title: spec.PAGE_TITLES[pageKey],
+        title: contentSpec.PAGE_TITLES[pageKey],
         dryRun,
         refresh,
         actions,
@@ -835,15 +842,15 @@ async function seedTestingWebsiteDemoContent(db, input) {
         {
           sectionKey: "contact_intro",
           sectionType: "body",
-          heading: spec.CONTACT.introHeading,
-          bodyText: spec.CONTACT.introBody,
+          heading: contentSpec.CONTACT.introHeading,
+          bodyText: contentSpec.CONTACT.introBody,
           sortOrder: 5,
         },
         {
           sectionKey: "office_hours",
           sectionType: "body",
-          heading: spec.CONTACT.officeHoursHeading,
-          bodyText: spec.CONTACT.officeHoursBody,
+          heading: contentSpec.CONTACT.officeHoursHeading,
+          bodyText: contentSpec.CONTACT.officeHoursBody,
           sortOrder: 15,
         },
       ]) {
@@ -879,8 +886,8 @@ async function seedTestingWebsiteDemoContent(db, input) {
         pageKey: "giving",
         sectionKey: "giving_intro",
         sectionType: "body",
-        heading: spec.GIVING.introHeading,
-        bodyText: spec.GIVING.introBody,
+        heading: contentSpec.GIVING.introHeading,
+        bodyText: contentSpec.GIVING.introBody,
         mediaUrl: null,
         sortOrder: 5,
         dryRun,
@@ -899,7 +906,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
     }
 
     // —— Leaders ——
-    for (const leader of spec.LEADERS) {
+    for (const leader of contentSpec.LEADERS) {
       const r = await ensureNamedEntity(db, {
         record: `leader.${leader.demoKey}`,
         listFn: () => content.listAdminLeaders(db, { churchId }),
@@ -937,7 +944,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
     }
 
     // —— Ministries ——
-    for (const ministry of spec.MINISTRIES) {
+    for (const ministry of contentSpec.MINISTRIES) {
       const r = await ensureNamedEntity(db, {
         record: `ministry.${ministry.demoKey}`,
         listFn: () => content.listAdminMinistries(db, { churchId, branchId }),
@@ -1052,14 +1059,14 @@ async function seedTestingWebsiteDemoContent(db, input) {
     }
 
     // —— Contact channels (incl. social placeholders) ——
-    for (const ch of spec.CONTACT.channels) {
+    for (const ch of contentSpec.CONTACT.channels) {
       const listed = await content.listAdminContactChannels(db, { churchId });
       const existing = (listed.items || []).find(
         (it) => String(it.label) === ch.label || String(it.value) === ch.value
       );
       if (existing) {
         const owned =
-          spec.isDemoMarkedText(existing.label) || String(existing.value || "").includes("example.test");
+          contentSpec.isDemoMarkedText(existing.label) || String(existing.value || "").includes("example.test");
         if (!owned) {
           actions.push(act(`contact.${ch.demoKey}`, STATUS.SKIPPED, "user_channel_preserved"));
         } else if (!refresh) {
@@ -1110,7 +1117,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
 
     // —— Giving method ——
     {
-      const gm = spec.GIVING.method;
+      const gm = contentSpec.GIVING.method;
       const r = await ensureNamedEntity(db, {
         record: `giving.${gm.demoKey}`,
         listFn: () => content.listAdminGivingMethods(db, { churchId }),
@@ -1163,7 +1170,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
 
     const productPolicy = resolveAnnouncementProductPolicy(raw.env || process.env);
 
-    for (const ann of spec.ANNOUNCEMENTS) {
+    for (const ann of contentSpec.ANNOUNCEMENTS) {
       if (!actorUserId) {
         actions.push(
           act(`announcement.${ann.demoKey}`, dryRun ? STATUS.PLANNED : STATUS.SKIPPED, ann.title)
@@ -1234,7 +1241,7 @@ async function seedTestingWebsiteDemoContent(db, input) {
       act(
         "cta.note",
         STATUS.ALREADY_PRESENT,
-        `Primary CTA ${spec.HERO.primaryCta.label}; secondary ${spec.HERO.secondaryCta.label} (template)`
+        `Primary CTA ${contentSpec.HERO.primaryCta.label}; secondary ${contentSpec.HERO.secondaryCta.label} (template)`
       )
     );
 

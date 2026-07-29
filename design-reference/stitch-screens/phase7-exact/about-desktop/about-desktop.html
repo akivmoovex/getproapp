@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Our Story | BlessBoard - Sacred Modernity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "background": "#f4fafd",
+                        "tertiary-fixed": "#ffdcc3",
+                        "outline-variant": "#c8c4d7",
+                        "primary": "#5341cd",
+                        "surface-tint": "#5847d2",
+                        "surface-container": "#e8eff1",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "secondary-fixed-dim": "#c5c0ff",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "on-tertiary-fixed": "#2f1500",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-tertiary-container": "#fff5f1",
+                        "on-primary": "#ffffff",
+                        "on-background": "#161d1f",
+                        "inverse-on-surface": "#ebf2f4",
+                        "secondary": "#5952af",
+                        "on-error": "#ffffff",
+                        "tertiary": "#884800",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary-container": "#faf6ff",
+                        "surface-variant": "#dde4e6",
+                        "outline": "#787586",
+                        "tertiary-container": "#ac5d00",
+                        "inverse-primary": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#474554",
+                        "surface": "#f4fafd",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-secondary-container": "#352c8a",
+                        "on-secondary-fixed": "#140067",
+                        "surface-container-low": "#eef5f7",
+                        "secondary-fixed": "#e3dfff",
+                        "on-primary-fixed": "#160066",
+                        "surface-container-high": "#e2e9ec",
+                        "on-surface": "#161d1f",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#dde4e6",
+                        "on-secondary-fixed-variant": "#413996",
+                        "inverse-surface": "#2b3234",
+                        "surface-bright": "#f4fafd",
+                        "secondary-container": "#a19afd",
+                        "primary-container": "#6c5ce7",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d4dbdd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width-center": "1200px",
+                        "stack-tight": "0.25rem",
+                        "gutter": "1rem",
+                        "container-padding": "2rem",
+                        "component-gap": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "label-status": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "label-status": ["11px", {"lineHeight": "1", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .hero-glow {
+            background: radial-gradient(circle at center, rgba(108, 92, 231, 0.08) 0%, transparent 70%);
+        }
+        .left-accent {
+            border-left: 4px solid #5341cd;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg">
+<!-- TopNavBar -->
+<nav class="bg-surface/80 backdrop-blur-md sticky top-0 z-50 border-b border-outline-variant/30 shadow-sm transition-all duration-300">
+<div class="flex justify-between items-center px-gutter py-3 max-w-max-width-center mx-auto w-full">
+<a class="font-headline-md text-headline-md font-bold text-primary" href="#">BlessBoard</a>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Leadership</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Ministries</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Events</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Sermons</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Giving</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden md:block bg-primary text-on-primary px-6 py-2 rounded-full font-label-caps text-label-caps hover:opacity-90 active:scale-95 transition-all">
+                    Plan Your Visit
+                </button>
+<span class="material-symbols-outlined text-primary cursor-pointer">edit</span>
+</div>
+</div>
+</nav>
+<main>
+<!-- Hero Section -->
+<section class="relative h-[614px] flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 z-0">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-[10s] hover:scale-105" data-alt="A serene and tranquil interior of a modern church space during the golden hour. Warm sunlight streams through large wooden-framed windows, illuminating dust motes in the air. The room is filled with soft textiles and lush green indoor plants, creating a peaceful 'Sacred Modernity' atmosphere. The aesthetic is clean, spacious, and inviting, reflecting a high-performance yet composed focus." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA-U5Tek_GT29ATwyQL_sBfy2qW9aTQdqZQHuBjsmx2RIJimqhg45S7tZsC9IgxTPCR2XUWNlEFMjTzR0zjdepOMIWG_axoTy1VenDNxJagZB1UwjJmywa83TM5NPLKsyq3kxynFvB6jmisdT7lh4v_zkADQhz8QS4Hp6uW8uPo-TtrtNLqHndfkWLjz5JV5o2Y-bK5uvCsWT2fqUqvqpCG4TYs_BjM-Ni_9N9ZicnR0fiFHNCgjRiFmQ')">
+</div>
+<div class="absolute inset-0 bg-primary/10 backdrop-brightness-75"></div>
+</div>
+<div class="relative z-10 text-center text-white px-gutter">
+<span class="font-label-caps text-label-caps tracking-[0.2em] mb-4 block uppercase opacity-90">Sacred Modernity</span>
+<h1 class="font-headline-lg text-[48px] md:text-[64px] mb-6 drop-shadow-lg">Our Story</h1>
+<div class="w-24 h-1 bg-primary mx-auto rounded-full"></div>
+</div>
+</section>
+<!-- Church Story Section -->
+<section class="py-24 px-gutter max-w-[900px] mx-auto text-center">
+<h2 class="font-headline-lg text-headline-lg mb-8 text-on-surface">Roots of Connection</h2>
+<div class="space-y-6 text-on-surface-variant font-body-lg">
+<p>Founded in 1994, BlessBoard began as a small gathering of families seeking a deeper, more intentional connection with the divine in an increasingly chaotic world. We believe that spiritual growth shouldn't be noisy—it should be a composed focus, a steady rhythm that grounds us.</p>
+<p>Over three decades, we have evolved into a community that bridges the gap between ancient wisdom and modern precision. Our journey is defined not just by the walls of our sanctuary, but by the quiet revolutions of kindness sparked in our neighborhoods every single day.</p>
+</div>
+</section>
+<!-- Mission, Vision, Core Values (Bento-ish Grid) -->
+<section class="py-16 bg-surface-container-low px-gutter">
+<div class="max-w-max-width-center mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-component-gap">
+<!-- Mission -->
+<div class="glass-card p-10 rounded-xl left-accent flex flex-col items-start shadow-sm">
+<div class="bg-primary-container/10 p-3 rounded-lg mb-6">
+<span class="material-symbols-outlined text-primary text-3xl">flag</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-4">Mission</h3>
+<p class="text-on-surface-variant font-body-sm italic">"To cultivate a space of sacred clarity where high-performance lives find divine purpose."</p>
+</div>
+<!-- Vision -->
+<div class="glass-card p-10 rounded-xl left-accent flex flex-col items-start shadow-sm">
+<div class="bg-primary-container/10 p-3 rounded-lg mb-6">
+<span class="material-symbols-outlined text-primary text-3xl">visibility</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-4">Vision</h3>
+<p class="text-on-surface-variant font-body-sm italic">"A global network of intentional communities operating with precision and grace."</p>
+</div>
+<!-- Core Values -->
+<div class="glass-card p-10 rounded-xl left-accent flex flex-col items-start shadow-sm">
+<div class="bg-primary-container/10 p-3 rounded-lg mb-6">
+<span class="material-symbols-outlined text-primary text-3xl">verified</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-4">Values</h3>
+<ul class="text-on-surface-variant font-body-sm space-y-2 list-none">
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Radical Presence</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Intellectual Integrity</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Proactive Compassion</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<!-- What We Believe -->
+<section class="py-24 px-gutter max-w-max-width-center mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<div>
+<h2 class="font-headline-lg text-headline-lg mb-6 text-on-surface">The Foundation</h2>
+<p class="text-on-surface-variant mb-8 font-body-lg">Our theology is rooted in the historic Christian faith, expressed through the lens of modern intellectual discovery. We believe that truth is not afraid of questions, and that the Spirit moves in both the silence of prayer and the data of science.</p>
+<div class="space-y-4">
+<details class="group border-b border-outline-variant py-4 cursor-pointer">
+<summary class="flex justify-between items-center font-headline-md text-on-surface">
+                                Biblical Authority
+                                <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<p class="mt-4 text-on-surface-variant font-body-sm">We view the scriptures as a living dialogue between God and humanity, offering a blueprint for flourishing.</p>
+</details>
+<details class="group border-b border-outline-variant py-4 cursor-pointer">
+<summary class="flex justify-between items-center font-headline-md text-on-surface">
+                                Holistic Salvation
+                                <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<p class="mt-4 text-on-surface-variant font-body-sm">Restoration is for the mind, the body, and the community—not just the soul.</p>
+</details>
+</div>
+</div>
+<div class="relative rounded-2xl overflow-hidden aspect-square md:aspect-video lg:aspect-square">
+<img class="w-full h-full object-cover" data-alt="A macro shot of an open, well-worn leather Bible resting on a clean white linen surface. Beside it is a modern glass of water and a single green leaf. The lighting is bright and clinical but softened by a warm color glow from the side. The image captures the 'composed focus' and 'sacred modernity' theme with high-end photographic quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjvLRbQw-smxauERRjmkFZVNsLcsfs4tx9itdysRU5FlDLaJFj6k5PbSoAelVdtiysDazKmURAj7Az6m2GleSyH7_VntPi4C201ghle8ENSIzOH_pTYgWg_UUP7t5G3aGy5d3CncH_ANNU3metA4vA5GrPpUJyi3t8fw2leHMU3W3vd5hAsN0zWuFckx4gAwv7LK7sJN3kmEF6llRn6m37oOC4rr3CfpAke58ma3A9FvZPZi3PDJVdQg"/>
+<div class="absolute bottom-6 left-6 right-6 glass-card p-6 rounded-xl">
+<p class="text-on-surface-variant font-body-sm italic">"Precision in practice, boundless in love."</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Community Involvement -->
+<section class="py-24 bg-surface-container-highest px-gutter">
+<div class="max-w-max-width-center mx-auto text-center mb-16">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">Beyond the Sanctuary</h2>
+<p class="text-on-surface-variant max-w-2xl mx-auto">We are an active participant in the city's growth, investing our resources and time where they are needed most.</p>
+</div>
+<div class="max-w-max-width-center mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
+<div class="flex gap-6 items-start">
+<div class="bg-primary text-on-primary p-4 rounded-2xl">
+<span class="material-symbols-outlined text-3xl">school</span>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md mb-2">The Scholars Fund</h4>
+<p class="text-on-surface-variant font-body-sm">Providing mentorship and educational grants to underprivileged youth in our tech corridors.</p>
+</div>
+</div>
+<div class="flex gap-6 items-start">
+<div class="bg-primary text-on-primary p-4 rounded-2xl">
+<span class="material-symbols-outlined text-3xl">eco</span>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md mb-2">Green Initiative</h4>
+<p class="text-on-surface-variant font-body-sm">A collective commitment to urban reforestation and sustainable food systems within the city limits.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Image Gallery Grid -->
+<section class="py-24 px-gutter max-w-max-width-center mx-auto">
+<h2 class="font-headline-lg text-headline-lg text-center mb-16">Life at BlessBoard</h2>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+<div class="aspect-square rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A wide-angle shot of a diverse modern congregation sitting in minimalist, ergonomic seating within a bright, high-ceilinged hall. Soft purple and blue lighting accents the clean white walls. The atmosphere is one of profound, quiet focus and communal unity. High-end architectural photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjoAlTzuy3GZwE-a7FPpOVLoOX38yuFuc1LWbqQt_urCpR4CTlEVLOtSGda2EihtNZm7J4YVsyt4_krXCjMyEjW-vSQAYZGYQcIMJ1U95VLM02R0kNL7H9d-p1fP5ZdTI8S0tkgV9E4LbPsiXw3Jd7IDx_44wYIYg1eD1kAkZilPoWKOEU9vP0c6UyTtgfCbwDzKkelwYGckb-jEZd6NVzMbaiRaZ-JLJbJVYS6eJhHkQRlSklcMLPJA"/>
+</div>
+<div class="aspect-square rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A close-up of hands working together to plant a young sapling in a community garden. The hands are of different ages and ethnicities, representing a diverse community working toward a shared ecological goal. Bright daylight, crisp focus on the soil and the plant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7-0UF014R2pTVtRuIB1cSDGUAgJUBP3gb0VgpDZC7UwrMBtpiwCkPhOfwMK17Bn7KBIcUQDpLgxIsOTpQbnxSUR5GLVaJ0rZnAp97fEzzt_67dR8cbFVRXiZsbm2Qj_QQ28SZcFu1-mTJwgYpJynyS0lT2QfZB24xhtVNDHTZXm8SGi3snfcM5Lmv2YMz3_iK_SNYGVi1C2BEltlj1_EjqZujK5If2XO8G4vwzhgoE_GS6vFBCu2dJQ"/>
+</div>
+<div class="aspect-square rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A group of people engaged in a thoughtful discussion around a circular glass table in a modern lounge area. They have notebooks and digital tablets, looking focused and collaborative. The setting is clean with plenty of white space and soft, natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMT8vkCdt04SWp4hVTsQfSgjfFrZl8psURHksNXvg8r_fFs9v45keJJhcyTSEzfLRRZFo-rPtgpV2s0XNtymQXT7gxvvGGnBOEQM0mOuqSWoj2pc9MzfBYsApoBu5xe-bSnVR4bQz01e1c0QZR2iUf77-PXpraqC2EIaOgIHa3WX0i_EgXi4PsMsRRFG2HXISHMJ7_EZ2ejR9yT9ub_tvdF7D7TZzKKuAv8lMrCReXDv-7d_-Bgq84cw"/>
+</div>
+<div class="aspect-square rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A modern worship band playing on a minimalist stage. The lead singer is illuminated by a single warm spotlight. There are no distracting screens, just a clean, atmospheric background with subtle smoke effects. The aesthetic is sophisticated and high-tech yet reverent." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKGQdu5uHx387G1-elM9p_YflZzVAX34m8zv_nokmkfhRrlnM7E9GPCn_rAIeIB_8I6Y5DUbv2syi6ehsddHkQQA8vPEx0-s6CBlZSx1DtUiX5TeAUOC2m8IML9tgoxTKf_2YHZDcB5Ba4HaPEHO770-2kV-5NrtFk4NP4NQE64H5BKRxLPOt-NJff7ya-kxqXTkajWEaL-1OFF3Ykgsjj5GThg-AJ6cki81QlpWIcLqfkRL0rIUum6Q"/>
+</div>
+<div class="aspect-square rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Children playing in a brightly colored, safe, and modern church nursery. The space is filled with high-quality wooden toys and soft play mats. Large windows bring in natural light, creating a joyful and secure environment for the youngest members of the community." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDM6-bNRbV7POqhzrJAWKi1_An29MM0RupgQtB-Kt-BfV2_VZT8flzCQCj2XRpOCMhg_GOGV1sIls76nBGzgaIe2laoX9_xUlk1l16aL25uUNyR0emHkX66TwzhWjHMoXaVy4925AIuuIGLFsNgtvjiE40TgGWqlgg1KGRrdCtFifMRPyiC-OwGjLV9kv2XRkZ01jWsAdOfxNx26AzUjI7Ud7IEYMGI_uNJkDDy--s0F4fXWXlUxAb1BA"/>
+</div>
+<div class="aspect-square rounded-xl overflow-hidden shadow-sm group">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A portrait of a church leader speaking warmly to a newcomer in a spacious, light-filled lobby. The background is slightly blurred, showing a coffee bar and lounge area. The colors are warm and inviting, emphasizing a 'Sacred Modernity' vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKDRl-tJeD9YaYeUagnwLXkfWbvNX2h44HlVvipMUDU0KaWS8uvfFZxb1r1FKj6JiBn8ZXmuMkkkLN1ToAkWno-ACk74ZQRLflEyXGbO9OTWhzYPbt2Ugf6HtfhMxv4o4KwQSKwq9FEsspcMB1_rXWbau3i-bHc965xL7drEY44lCwHSsxqG6vMd2gKBbchl6C8l0UqS_9GbQXNRx-sP4I9rOUuFCknWG7Ml0-TjPPjG2ooZrpocLbrQ"/>
+</div>
+</div>
+</section>
+<!-- Visit/Contact CTA -->
+<section class="py-24 px-gutter">
+<div class="max-w-max-width-center mx-auto bg-primary-container rounded-[2rem] p-12 md:p-24 text-center text-on-primary-container relative overflow-hidden">
+<div class="absolute inset-0 opacity-20">
+
+</div>
+<div class="relative z-10">
+<h2 class="font-headline-lg text-[40px] mb-6">Experience Sacred Modernity</h2>
+<p class="text-on-primary-container/80 max-w-xl mx-auto mb-10 font-body-lg">Whether you are a skeptic, a seeker, or a long-time believer, there is a seat for you at our table. Join us this Sunday.</p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button class="bg-on-primary-container text-primary-container px-10 py-4 rounded-full font-label-caps text-label-caps hover:shadow-xl transition-all active:scale-95">
+                            Plan Your Visit
+                        </button>
+<button class="border border-on-primary-container/30 text-on-primary-container px-10 py-4 rounded-full font-label-caps text-label-caps hover:bg-white/10 transition-all active:scale-95">
+                            Get Directions
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-high dark:bg-inverse-surface border-t border-outline-variant/50 w-full py-12">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-gutter max-w-max-width-center mx-auto">
+<div class="space-y-4">
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">BlessBoard</h3>
+<p class="font-body-sm text-on-surface-variant max-w-xs">Building a culture of composed focus and divine purpose in the heart of the modern world.</p>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer hover:opacity-70">mail</span>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:opacity-70">share</span>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:opacity-70">pin_drop</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-3">
+<h4 class="font-label-caps text-label-caps text-on-surface">Navigation</h4>
+<ul class="space-y-2 list-none">
+<li><a class="font-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Service Times</a></li>
+<li><a class="font-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Ministries</a></li>
+<li><a class="font-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Giving</a></li>
+<li><a class="font-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Contact</a></li>
+</ul>
+</div>
+<div class="space-y-3">
+<h4 class="font-label-caps text-label-caps text-on-surface">Legal</h4>
+<ul class="space-y-2 list-none">
+<li><a class="font-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Privacy Policy</a></li>
+<li><a class="font-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Terms of Service</a></li>
+</ul>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="font-label-caps text-label-caps text-on-surface">Weekly Inspiration</h4>
+<div class="flex gap-2">
+<input class="flex-grow bg-surface dark:bg-surface-dim border-outline-variant rounded-lg px-4 py-2 font-body-sm focus:ring-2 focus:ring-primary outline-none" placeholder="Your email" type="email"/>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+<p class="font-body-sm text-on-surface-variant/60">© 2024 Sacred Modernity Church. Built with BlessBoard.</p>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interactions and subtle scroll effects
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 20) {
+                nav.classList.add('py-2', 'shadow-md');
+                nav.classList.remove('py-3', 'shadow-sm');
+            } else {
+                nav.classList.add('py-3', 'shadow-sm');
+                nav.classList.remove('py-2', 'shadow-md');
+            }
+        });
+
+        // Simple animation for numbers or features could go here
+    </script>
+</body></html>

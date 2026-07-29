@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Events | BlessBoard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Hanken Grotesk -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "background": "#f4fafd",
+                    "tertiary-fixed": "#ffdcc3",
+                    "outline-variant": "#c8c4d7",
+                    "primary": "#5341cd",
+                    "surface-tint": "#5847d2",
+                    "surface-container": "#e8eff1",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "secondary-fixed-dim": "#c5c0ff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#e4dfff",
+                    "on-tertiary-fixed": "#2f1500",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-tertiary-container": "#fff5f1",
+                    "on-primary": "#ffffff",
+                    "on-background": "#161d1f",
+                    "inverse-on-surface": "#ebf2f4",
+                    "secondary": "#5952af",
+                    "on-error": "#ffffff",
+                    "tertiary": "#884800",
+                    "primary-fixed-dim": "#ffb77d",
+                    "on-primary-container": "#faf6ff",
+                    "surface-variant": "#dde4e6",
+                    "outline": "#787586",
+                    "tertiary-container": "#ac5d00",
+                    "inverse-primary": "#c6bfff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#474554",
+                    "surface": "#f4fafd",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "on-secondary-container": "#352c8a",
+                    "on-secondary-fixed": "#140067",
+                    "surface-container-low": "#eef5f7",
+                    "secondary-fixed": "#e3dfff",
+                    "on-primary-fixed": "#160066",
+                    "surface-container-high": "#e2e9ec",
+                    "on-surface": "#161d1f",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#dde4e6",
+                    "on-secondary-fixed-variant": "#413996",
+                    "inverse-surface": "#2b3234",
+                    "surface-bright": "#f4fafd",
+                    "secondary-container": "#a19afd",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#d4dbdd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "max-width-center": "1200px",
+                    "stack-tight": "0.25rem",
+                    "gutter": "1rem",
+                    "container-padding": "2rem",
+                    "component-gap": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "label-caps": ["Hanken Grotesk"],
+                    "label-status": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "label-status": ["11px", {"lineHeight": "1", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .active-tab-indicator {
+            view-transition-name: active-tab;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+        .shadow-soft {
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.08);
+        }
+        .left-accent {
+            border-left: 4px solid #5341cd;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="bg-surface/80 backdrop-blur-md sticky top-0 z-50 border-b border-outline-variant/30 shadow-sm">
+<div class="flex justify-between items-center px-gutter py-3 max-w-max-width-center mx-auto w-full">
+<div class="font-headline-md text-headline-md font-bold text-primary">BlessBoard</div>
+<div class="hidden md:flex items-center gap-6">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Leadership</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Ministries</a>
+<a class="font-label-caps text-label-caps text-primary font-bold border-b-2 border-primary" href="#">Events</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Sermons</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Giving</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary p-2 hover:bg-primary-container/10 rounded-lg transition-all active:scale-95" data-icon="edit">edit</button>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-caps text-label-caps transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95">Plan Your Visit</button>
+</div>
+</div>
+</nav>
+<main class="max-w-max-width-center mx-auto px-gutter py-12 space-y-16">
+<!-- Page Introduction -->
+<section class="text-center space-y-4">
+<span class="font-label-caps text-label-caps text-primary tracking-[0.2em] uppercase">Connect &amp; Grow</span>
+<h1 class="font-headline-lg text-headline-lg md:text-[48px] text-on-surface leading-tight">Kingdom Gatherings</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+                Join us for intentional fellowship and spiritual growth. From community builds to global conferences, there is a place for you in every season.
+            </p>
+</section>
+<!-- Featured Event -->
+<section class="relative group rounded-3xl overflow-hidden shadow-2xl shadow-primary/5 bg-surface-container border border-outline-variant/20">
+<div class="grid grid-cols-1 lg:grid-cols-2 min-h-[500px]">
+<div class="relative overflow-hidden">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A warm, cinematic wide shot of a diverse group of community members gathered around a large wooden table outdoors, reviewing architectural blueprints for a new church community center. The lighting is golden hour, soft and inspiring, with lush green trees in the background and a modern, minimalist church building structure visible. The atmosphere is one of collaborative sacred modernity and focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8AB6RWFSl9ci-k4GTcDJIOUrMvhm_ubRVE-9FK96J3PmmZRGe93DrgTwR3AmPuUtYe9-MvfQGq2cRIHWjpAmpSmc9CKP0MqmBoYD72hU3WPlTepWD8mCjtZVpJOyj6JdOElF8HiJ0853WNDLpxPuMY7sEMvBUUPj67c4_oTgku05aGntstXyb-akcVLOIGMHTgbOvI8xCYVVuJgnU4nHGcy6uyqcF4To0OjrVNt32VslIfLxTncLxjA"/>
+<div class="absolute inset-0 bg-gradient-to-r from-transparent to-surface-container/10 hidden lg:block"></div>
+</div>
+<div class="p-8 md:p-12 lg:p-16 flex flex-col justify-center space-y-6 bg-surface-container-lowest">
+<div class="flex items-center gap-3">
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-status text-label-status">FEATURED EVENT</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+                            Nov 15-17, 2024
+                        </span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Grace Leaders Global Summit</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                        A three-day immersive experience designed for high-performance ministry leaders. Discover sustainable leadership strategies through the lens of Sacred Modernity.
+                    </p>
+<div class="flex flex-col gap-4 sm:flex-row pt-4">
+<button class="bg-primary text-on-primary px-8 py-4 rounded-xl font-label-caps text-label-caps hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-2 active:scale-95">
+                            Register Now
+                            <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="border border-outline-variant text-on-surface px-8 py-4 rounded-xl font-label-caps text-label-caps hover:bg-surface-variant transition-all active:scale-95">
+                            View Schedule
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Filter / Toggle Section -->
+<section class="flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex bg-surface-container-low p-1 rounded-2xl border border-outline-variant/30">
+<button class="px-6 py-2 rounded-xl bg-white shadow-sm font-label-caps text-label-caps text-primary flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                    Grid View
+                </button>
+<button class="px-6 py-2 rounded-xl font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-all flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+                    Calendar
+                </button>
+</div>
+<div class="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 custom-scrollbar">
+<span class="font-label-caps text-label-caps text-on-surface-variant whitespace-nowrap">Filter by:</span>
+<button class="px-4 py-2 rounded-full border border-primary bg-primary/5 text-primary font-label-status text-label-status whitespace-nowrap">All Events</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:border-primary font-label-status text-label-status whitespace-nowrap">Workshops</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:border-primary font-label-status text-label-status whitespace-nowrap">Community</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:border-primary font-label-status text-label-status whitespace-nowrap">Conferences</button>
+</div>
+</section>
+<!-- Upcoming Events Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-component-gap">
+<!-- Card 1 -->
+<div class="group bg-surface-container-lowest rounded-2xl border border-outline-variant/30 overflow-hidden flex flex-col shadow-soft hover:-translate-y-1 transition-all duration-300">
+<div class="h-48 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A clean and minimal indoor church foyer space with high ceilings and expansive windows. People are casually interacting in small groups, holding coffee in eco-friendly cups. The interior design features light wood, neutral textiles, and a touch of modern spiritual iconography. Bright, airy, and inviting morning light fills the frame." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjIb71XZky-gZLk3X9JpjzlHUkXBn5FJWKC6MIV41uzgJx9W_GMun698ha1MLoviztRfPAFCFXkrZo8zN0Dz5HHOSPAFyl7kCrg-xbZC2-XNohPmjtn8pB07J_Bms5uv-1vKssrcaBtggKoAQSGBFmSx84Iu8E-AFbeRp_euZA4xXnXQl9JTJhmsBu2pEvO6rPWDyHDvZqsxQigrpR3TABSvvnk5qBWmpQkoWv_kzv5I5VksyTYpSmrA"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md rounded-lg p-2 text-center min-w-[50px] border border-white/50">
+<div class="font-bold text-primary text-headline-md leading-none">24</div>
+<div class="text-[10px] font-label-caps text-on-surface-variant">NOV</div>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-grow space-y-4">
+<div class="flex items-center gap-2 text-tertiary font-label-status text-label-status uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px]" data-icon="handshake">handshake</span>
+                        Community
+                    </div>
+<h3 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors">Sunday Morning Connection</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                        A focused networking hour before service for those looking to find their place in our various local ministries.
+                    </p>
+<div class="space-y-2 pt-2">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+                            9:00 AM — 10:15 AM
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span>
+                            The Grace Commons
+                        </div>
+</div>
+<div class="pt-4 flex items-center justify-between border-t border-outline-variant/20 mt-auto">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary font-bold text-xs uppercase">ML</div>
+<span class="font-body-sm text-body-sm font-semibold">Min. Lee</span>
+</div>
+<button class="text-primary font-label-caps text-label-caps hover:underline flex items-center gap-1">
+                            Join
+                            <span class="material-symbols-outlined text-[14px]" data-icon="arrow_outward">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group bg-surface-container-lowest rounded-2xl border border-outline-variant/30 overflow-hidden flex flex-col shadow-soft hover:-translate-y-1 transition-all duration-300">
+<div class="h-48 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A professional studio shot of an open Bible next to a modern tablet and a sleek black pen on a minimalist grey workspace. Subtle blue lighting glows from the screen, contrasting with the warm paper of the Bible. The setting suggests deep study, focus, and the intersection of sacred tradition with modern productivity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbUqtokqCb5uo6AlP6046v5sb18tGfrPlsHgbGDlKQmmYInHO0nkMtYylDBmES3D3Fn-sg4Dj4iNVurcWU3ujrK-jEiuO9GZXGorI6InwAp1ulpMOoDg3Z5iMoEW8d0yHcL-20LzQ_5nQhBWhIZvBvVN0zM9KOwoQ4872mVKEll37iMxSgXRr9E64vxj5diWdkFe33lAqfSpe9WPKEcnAWjUobfoVVy_SIEUmV6lJJVhiz9LpZQGpM5g"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md rounded-lg p-2 text-center min-w-[50px] border border-white/50">
+<div class="font-bold text-primary text-headline-md leading-none">01</div>
+<div class="text-[10px] font-label-caps text-on-surface-variant">DEC</div>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-grow space-y-4">
+<div class="flex items-center gap-2 text-secondary font-label-status text-label-status uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px]" data-icon="school">school</span>
+                        Workshop
+                    </div>
+<h3 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors">Digital Hermeneutics</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                        Learn how to leverage modern research tools for deep biblical study in a fast-paced digital world.
+                    </p>
+<div class="space-y-2 pt-2">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+                            6:30 PM — 8:30 PM
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="laptop_chromebook">laptop_chromebook</span>
+                            Learning Lab / Hybrid
+                        </div>
+</div>
+<div class="pt-4 flex items-center justify-between border-t border-outline-variant/20 mt-auto">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary font-bold text-xs uppercase">DR</div>
+<span class="font-body-sm text-body-sm font-semibold">Dr. Rivers</span>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-caps text-label-caps active:scale-95 transition-all">Sign Up</button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group bg-surface-container-lowest rounded-2xl border border-outline-variant/30 overflow-hidden flex flex-col shadow-soft hover:-translate-y-1 transition-all duration-300">
+<div class="h-48 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A festive, elegant community dinner setup in a modern hall with long wooden tables, soft ambient lighting, and minimalist floral arrangements. The atmosphere is warm, sophisticated, and celebratory. The style is contemporary minimalism, using a palette of creams, warm wood, and soft indigo accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2-Bp2lgKqE0TA5iSWWkUDfjpN3GLPpuKTXIWB0sCwPm13MIL1XSQixrQHce4uFSzs1Qm4tiZO9UCbtY-WApLF_r0l3GCMsdvwmUL49jpYsJGdDW93P0R24CbiZvAD3uyZNGqVNTKOOuwGfde8jhPmjQcqzf0E5HDXEQZFFAoYRULbn5AQrd3dPtEu9Q0hpdxNoUl47RHSbqhpmhuhzrTnor2savBA_dm4JamKz4FAK7Hepj3BIqY44A"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md rounded-lg p-2 text-center min-w-[50px] border border-white/50">
+<div class="font-bold text-primary text-headline-md leading-none">12</div>
+<div class="text-[10px] font-label-caps text-on-surface-variant">DEC</div>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-grow space-y-4">
+<div class="flex items-center gap-2 text-tertiary font-label-status text-label-status uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px]" data-icon="celebration">celebration</span>
+                        Festival
+                    </div>
+<h3 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors">Annual Winter Gala</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                        A night of reflection and celebration as we look back on what God has done through our community this year.
+                    </p>
+<div class="space-y-2 pt-2">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+                            7:00 PM — 10:00 PM
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="home_filled">home_filled</span>
+                            Grand Hall
+                        </div>
+</div>
+<div class="pt-4 flex items-center justify-between border-t border-outline-variant/20 mt-auto">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-tertiary-container/20 flex items-center justify-center text-tertiary font-bold text-xs uppercase">BC</div>
+<span class="font-body-sm text-body-sm font-semibold">Board Com.</span>
+</div>
+<span class="font-label-status text-label-status bg-error-container text-on-error-container px-2 py-1 rounded">ALMOST FULL</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Past Events Highlights -->
+<section class="space-y-8">
+<div class="flex items-end justify-between">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Recent Highlights</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Moments of connection and impact from the last month.</p>
+</div>
+<button class="text-primary font-label-caps text-label-caps flex items-center gap-1 hover:underline">
+                    View Archive
+                    <span class="material-symbols-outlined text-[18px]" data-icon="history">history</span>
+</button>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer border border-outline-variant/30 shadow-sm">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 group-hover:rotate-1" data-alt="A candid, high-detail photo of diverse church members painting a vibrant mural in an urban park. High contrast, saturated colors, focusing on the joy of community service. Contemporary documentary style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaCBv8tyZGa-QGfL5HUZuRsF3NpXUDqW0MATULhtoRJJaFNvCLPezx6ZpOEixd_xnPk_CIVORnGveP7RrEnWmMGWEVavkSjC4G3nYdZB5jLdXTJRzNkOYsgSRKxZ45mBPbMc1puWaIdGTF9GtGYo08WuqRPyyIlQy-r-o10JxCY7xXfyOzvqEVmfgMLJ73vvKI-lNWK3t9S0ZjD1mkwfP4kFa2QXFOWPk6Rj5Jgz-E8bOXwFypVxE0KQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+<span class="text-white font-label-caps text-[10px]">Urban Outreach Oct 20</span>
+</div>
+</div>
+<div class="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer border border-outline-variant/30 shadow-sm">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-1" data-alt="Close up of a speaker gesturing with passion on a modern, dark-lit stage with subtle purple and white accent lighting. Professional photography, sharp focus, capturing an emotional moment of spiritual teaching." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrY4RiksTOBDXO-YrIvDOmhoINc1Sd-GHwPeFwqKJg6BhPkFHILY3tu3R5eWSAAg4StcbFDSepc4deii7Do2IrIJf1eHT6iCc5XRmgfCm_a8fvxsUaG_KtrIyVrws05jCNzt4gAKuklWvOd-HdU59GJZmJwqObD8tG8y4ySAwDg1EzJSaFRmykotaGi5-JuZk30WEFZXJFqX2VKhlceFEOnaSFnxd0w7MgEOaVoEg7jEN1IwO-2dLEZg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+<span class="text-white font-label-caps text-[10px]">Fall Retreat Oct 12</span>
+</div>
+</div>
+<div class="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer border border-outline-variant/30 shadow-sm">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 group-hover:rotate-1" data-alt="A bird's eye view of a large outdoor gathering on a pristine green lawn, people are sitting on modern blankets in a structured yet casual layout. Minimalist aesthetic, soft morning light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMmIGEo1qioLdVYn53DCWIfZ6L_p_DoCjQF6q5TSFZSKywkDwpB2XVEZ_weuZu9BI9_nSPI_9djof50UVTaantZl_tHDpXqh4Up02GI7zhDdwNHDsvwFjLj-ZGZouqpGXfbZDQj8fEu1e2wDgOO_28Y2EmvDPLsl67_ZaYWiyz78PgtWiIb0BD6JJHe6Z8lw4yXwZ7rcVL1QEYMcwcGENJ2M_uwoORns8zTW80tEeXsUVlcmVNJvNopA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+<span class="text-white font-label-caps text-[10px]">Park Praise Oct 05</span>
+</div>
+</div>
+<div class="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer border border-outline-variant/30 shadow-sm">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-1" data-alt="Interior shot of a sleek modern kitchen where church volunteers are preparing food for a local shelter. Focus on high-end stainless steel appliances and fresh, colorful vegetables." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6QGEMRptz9rzs5Z-YXPxeH129Dg2A1jxJYWJJ6D1LhEq655ga7fV0EYbIhkJehc1Ct21SygRlYJ-SSCHAebYAqYY8UiGuIp0x8-gZzqXxlEQasfFkJU_GZFcx9gd3M7rPbusHKbRaJH946OObcas0IOTOOy8xAnfgtArsg1TZZChjqoA1cydrHRoMWLnVtGDdTqDJkMY6i4At-5nFNlX1t5CuZ0IHLvr74-mqWEPfNiLmNkLD7pKcWw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+<span class="text-white font-label-caps text-[10px]">Serve Night Sept 28</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Newsletter / CTA -->
+<section class="glass-card rounded-[40px] p-8 md:p-16 text-center space-y-6 relative overflow-hidden">
+<!-- Subtle atmospheric glow -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-primary/10 blur-[120px] -z-10 rounded-full"></div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Never miss a moment.</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto">
+                Get weekly updates on new events, workshops, and community gatherings sent straight to your inbox.
+            </p>
+<div class="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto pt-4">
+<input class="flex-grow bg-white border border-outline-variant/50 px-6 py-4 rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all shadow-sm" placeholder="Enter your email" type="email"/>
+<button class="bg-primary text-on-primary px-8 py-4 rounded-2xl font-label-caps text-label-caps active:scale-95 transition-all shadow-md">Stay Informed</button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-high border-t border-outline-variant/50 w-full py-12">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-gutter max-w-max-width-center mx-auto">
+<div class="space-y-4">
+<div class="font-headline-md text-headline-md font-bold text-on-surface">BlessBoard</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs leading-relaxed">
+                    Sacred Modernity in every interaction. We are a community focused on intentional growth and spiritual depth.
+                </p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-3">
+<div class="font-label-caps text-label-caps text-primary">Explore</div>
+<ul class="space-y-2">
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Ministries</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Sermons</a></li>
+<li><a class="font-body-sm text-body-sm text-primary underline" href="#">Events</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Service Times</a></li>
+</ul>
+</div>
+<div class="space-y-3">
+<div class="font-label-caps text-label-caps text-primary">Support</div>
+<ul class="space-y-2">
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Give Now</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Privacy Policy</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Terms of Service</a></li>
+</ul>
+</div>
+</div>
+<div class="space-y-4 flex flex-col justify-between">
+<div class="font-label-caps text-label-caps text-primary">Contact</div>
+<div class="space-y-2">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span>
+                        123 Grace Way, Metropolis, NY
+                    </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="mail">mail</span>
+                        hello@blessboard.church
+                    </div>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant pt-4 border-t border-outline-variant/30">
+                    © 2024 Sacred Modernity Church. Built with BlessBoard.
+                </div>
+</div>
+</div>
+</footer>
+<!-- FAB for New Event Action (Contextual Context - Suppressed for Non-Admin but here as UI demonstration for Events) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group">
+<span class="material-symbols-outlined text-[28px]" data-icon="add">add</span>
+<span class="absolute right-full mr-4 bg-inverse-surface text-inverse-on-surface px-3 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Submit Event</span>
+</button>
+<script>
+        // Micro-interactions and subtle scroll effects
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 20) {
+                nav.classList.add('shadow-md');
+            } else {
+                nav.classList.remove('shadow-md');
+            }
+        });
+
+        // Toggle Active State for Grid/Calendar
+        const toggles = document.querySelectorAll('.filter-toggle');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                // In a real app, this would trigger a view change
+                console.log('Switching views...');
+            });
+        });
+    </script>
+</body></html>

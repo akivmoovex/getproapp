@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ministries | BlessBoard - Sacred Modernity Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "background": "#f4fafd",
+                    "tertiary-fixed": "#ffdcc3",
+                    "outline-variant": "#c8c4d7",
+                    "primary": "#5341cd",
+                    "surface-tint": "#5847d2",
+                    "surface-container": "#e8eff1",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "secondary-fixed-dim": "#c5c0ff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#e4dfff",
+                    "on-tertiary-fixed": "#2f1500",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-tertiary-container": "#fff5f1",
+                    "on-primary": "#ffffff",
+                    "on-background": "#161d1f",
+                    "inverse-on-surface": "#ebf2f4",
+                    "secondary": "#5952af",
+                    "on-error": "#ffffff",
+                    "tertiary": "#884800",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-primary-container": "#faf6ff",
+                    "surface-variant": "#dde4e6",
+                    "outline": "#787586",
+                    "tertiary-container": "#ac5d00",
+                    "inverse-primary": "#c6bfff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#474554",
+                    "surface": "#f4fafd",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "on-secondary-container": "#352c8a",
+                    "on-secondary-fixed": "#140067",
+                    "surface-container-low": "#eef5f7",
+                    "secondary-fixed": "#e3dfff",
+                    "on-primary-fixed": "#160066",
+                    "surface-container-high": "#e2e9ec",
+                    "on-surface": "#161d1f",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#dde4e6",
+                    "on-secondary-fixed-variant": "#413996",
+                    "inverse-surface": "#2b3234",
+                    "surface-bright": "#f4fafd",
+                    "secondary-container": "#a19afd",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#d4dbdd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "max-width-center": "1200px",
+                    "stack-tight": "0.25rem",
+                    "gutter": "1rem",
+                    "container-padding": "2rem",
+                    "component-gap": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-sm": ["Hanken Grotesk"],
+                    "label-caps": ["Hanken Grotesk"],
+                    "label-status": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "label-status": ["11px", {"lineHeight": "1", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+        }
+        .ministry-card:hover .hover-overlay {
+            opacity: 1;
+        }
+        .left-accent { border-left: 4px solid #6C5CE7; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<header class="bg-surface/80 backdrop-blur-md sticky top-0 z-50 border-b border-outline-variant/30 shadow-sm">
+<div class="flex justify-between items-center px-gutter py-3 max-w-max-width-center mx-auto w-full">
+<div class="font-headline-md text-headline-md font-bold text-primary">BlessBoard</div>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps uppercase" href="#">Home</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps uppercase" href="#">Leadership</a>
+<a class="text-primary font-bold border-b-2 border-primary font-label-caps text-label-caps uppercase" href="#">Ministries</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps uppercase" href="#">Events</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps uppercase" href="#">Sermons</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-caps text-label-caps uppercase" href="#">Giving</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-caps text-label-caps uppercase hover:bg-primary-container transition-all active:scale-95 shadow-sm">
+                    Plan Your Visit
+                </button>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container rounded-full p-2">edit</span>
+</div>
+</div>
+</header>
+<main class="min-h-screen pb-20">
+<!-- Page Introduction -->
+<section class="max-w-max-width-center mx-auto px-gutter pt-16 pb-12 text-center">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-primary-container/10 text-primary rounded-full mb-6">
+<span class="material-symbols-outlined text-[16px]">volunteer_activism</span>
+<span class="font-label-status text-label-status uppercase tracking-wider">Our Community Ecosystem</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-background mb-4">A Space to Belong and Grow</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto opacity-80">
+                At Sacred Modernity Church, our ministries are the lifeblood of our community. We provide intentional spaces for connection, spiritual development, and outward service across all life stages.
+            </p>
+</section>
+<!-- Featured Ministries (Bento Style) -->
+<section class="max-w-max-width-center mx-auto px-gutter mb-20">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-component-gap">
+<!-- Worship: Large Card -->
+<div class="md:col-span-7 relative group overflow-hidden rounded-3xl h-[450px] shadow-lg">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A serene modern worship sanctuary with high ceilings, minimalist wooden architecture, and soft ambient light glowing from hidden panels. A small group of musicians is seen in soft focus on a platform, creating an atmosphere of deep spiritual focus and composed tranquility in a high-tech yet organic space." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBXsRalLFAwJC_wn6FfTlj2hScvpfTf2SVxCnItoE_k8NR9cp7hmcC_MvyAKreK3x56pniGqHtr2Z5ygyEsXYaOsDRJsXjPz4s9KTPxbSGBpU3KtV92X900lcOt4JQ27vJQaRTFl20WNhyHGeXewb45n5IDF7q4PKBX7x9pDq4mtphmQIWVjZmWSgm6Zg5656BSiraGRsuqa_3SCVuZT8lZxox7S6RbfSst0eZQ5n2W79T1sa9UbzRJCg')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 w-full">
+<span class="bg-primary/20 backdrop-blur-md text-white border border-white/20 px-4 py-1 rounded-full font-label-status text-label-status uppercase mb-4 inline-block">Weekly Gatherings</span>
+<h2 class="text-white font-headline-lg text-headline-lg mb-2">Sacred Worship</h2>
+<p class="text-white/80 font-body-lg text-body-lg max-w-lg">Immersive experiences blending liturgical depth with modern clarity. Join us for Sunday services and mid-week vespers.</p>
+<button class="mt-6 flex items-center gap-2 text-white font-bold group/btn">
+                            Explore Worship <span class="material-symbols-outlined transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="md:col-span-5 flex flex-col gap-component-gap h-[450px]">
+<!-- Children: Half Card -->
+<div class="flex-1 relative group overflow-hidden rounded-3xl shadow-lg">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A bright and vibrant children's learning center with modular furniture and soft floor mats. A group of diverse children are engaged in a creative block-building activity under the guidance of a smiling teacher. The room is flooded with natural daylight through large floor-to-ceiling windows, emphasizing a safe and joyful educational environment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDhYIIsPjv0pvi6FQ0YO9iof0uuhqE2mlHq7W5FKA6N1aJSq-ANXBTA1Q3-I4G62ieUFfhA4ORmq3HVMwGvk1UYauXVaRs9m6UZAVQrtXgd7CW-TIFV9SNjmPG2arY9VwwqSubExuIHwl81wObHn1XblOVW8uRKvwXBteWiosBkEO5OYxxf75mhgsoVmpZ6mUglO_k9DByS-qZ-m7Xa_gjvyaBw6HfFtCRbBwbrQ64H6_xjhvHSXfojvw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-6">
+<h2 class="text-white font-headline-md text-headline-md">Children’s Discovery</h2>
+<p class="text-white/80 font-body-sm text-body-sm">A safe, high-engagement environment for young faith explorers.</p>
+</div>
+</div>
+<!-- Outreach: Half Card -->
+<div class="flex-1 relative group overflow-hidden rounded-3xl shadow-lg">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A community service event in a modern neighborhood square. Volunteers wearing 'Community Care' shirts are organizing boxes of fresh local produce and supplies. The mood is energetic and purposeful, set against a backdrop of clean suburban architecture under a soft overcast sky, representing the church's commitment to outward local impact." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAVh_NvX-66UVZM80gnso1ofE59Wy1-43s716TJ2lW65TZo2w032i8hT69H4de1cVtxAoNqknTgcXFi7ooDtpQFv5miwZUfHc7dF5m1LTXI8tzI7jw41YvpKmfOltRwQqGrWA4eWgoO2PTagRDcjdUIROEs9B-Tw0jy7rOClDId5CPfC-ZtWrHwmgZJ5gxMhDcw5awkFl8npzpSkcfHdAMM4d5A8QFuWqudoDC-WsB78IaTc9w0W5G8pw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-6">
+<h2 class="text-white font-headline-md text-headline-md">Impact Outreach</h2>
+<p class="text-white/80 font-body-sm text-body-sm">Leveraging resources to serve our city with precision and love.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Ministry Categories Filter -->
+<section class="max-w-max-width-center mx-auto px-gutter mb-8">
+<div class="flex flex-wrap items-center justify-center gap-4 bg-surface-container-low p-2 rounded-2xl w-fit mx-auto">
+<button class="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold shadow-md">All Ministries</button>
+<button class="px-6 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-variant transition-all font-medium">Adults</button>
+<button class="px-6 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-variant transition-all font-medium">Youth</button>
+<button class="px-6 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-variant transition-all font-medium">Kids</button>
+<button class="px-6 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-variant transition-all font-medium">Community</button>
+</div>
+</section>
+<!-- Ministry Cards Grid -->
+<section class="max-w-max-width-center mx-auto px-gutter grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Card 1 -->
+<div class="glass-card rounded-[32px] overflow-hidden flex flex-col group ministry-card transition-all hover:-translate-y-2">
+<div class="h-56 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A group of young professionals sitting in a minimalist living room with large windows. They are engaged in a deep conversation with open books and tablets on their laps. The atmosphere is warm, intellectual, and focused, reflecting a modern small group setting with soft daylight and clean interior design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7dFkt2eEolgFmAUpGpjoD8_BZELYqmhM86h12_YtsuPuaD5VSz8fXEGsNGPPOQjJ9Q17adpeVsqzizxNFzrVatvEY-cGkQxLmY9vMAXMlCAokuJNWAOkdXMSlcG5LUgxm8pHbmEvLkZuwhlGrgmuhMlIrDxD9jaOuMOlLuLOgp4GbFm-YZ9jasl8w--FNWQX6uYo_XUeaU3sYR9vOZQfYegUuUb1ZJMkJOj0P6pKoyTDSk0fZRSQn0w"/>
+<div class="absolute top-4 right-4 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-primary font-label-status text-label-status uppercase shadow-sm">Adults</div>
+</div>
+<div class="p-8 flex flex-col flex-1">
+<h3 class="font-headline-md text-headline-md mb-2">Young Professional Hub</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-1">A collaborative community for high-performance professionals seeking to integrate spiritual depth with career excellence.</p>
+<div class="space-y-3 mb-8 border-t border-outline-variant/30 pt-6">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary opacity-70">calendar_month</span>
+<span class="font-body-sm text-body-sm">Every Tuesday • 7:00 PM</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary opacity-70">account_circle</span>
+<span class="font-body-sm text-body-sm">Leader: David Chen</span>
+</div>
+</div>
+<button class="w-full py-3 rounded-xl border border-primary text-primary font-bold hover:bg-primary hover:text-on-primary transition-all">Learn More</button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="glass-card rounded-[32px] overflow-hidden flex flex-col group ministry-card transition-all hover:-translate-y-2">
+<div class="h-56 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A group of energetic teenagers in a high-tech media lab within a church youth center. They are collaborating on a digital project with neon accent lighting in the background. The scene is dynamic and expressive, showcasing modern youth ministry that embraces technology and creativity in a vibrant social setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUfd0Nr2vSy2LUxzstNi8eXw3M8KqPJs6qzX2bvf8ASBOrkWDrmk1XxphkoqmOzyl48G1c-yg1sQqdfk-ZuLqKEpkNdlSUUAV9wEZHJ5am6oOllmFsFiSoVIKXsYXvXSjhe5tZtcMIk3ZJHCN_mZunrAxHjziiOSUCxkh65PgavJOWb3mtrC_cw-lWklAuFANCteOCeulsFJNS3JDR5rSKDVdzTre9hUHKLcyGyo3lhAXWSJiexRU1pA"/>
+<div class="absolute top-4 right-4 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-primary font-label-status text-label-status uppercase shadow-sm">Youth</div>
+</div>
+<div class="p-8 flex flex-col flex-1">
+<h3 class="font-headline-md text-headline-md mb-2">Elevate Youth Collective</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-1">High-energy environments where students explore identity and purpose through creative expression and mentorship.</p>
+<div class="space-y-3 mb-8 border-t border-outline-variant/30 pt-6">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary opacity-70">calendar_month</span>
+<span class="font-body-sm text-body-sm">Fridays • 6:30 PM</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary opacity-70">account_circle</span>
+<span class="font-body-sm text-body-sm">Leader: Sarah Miller</span>
+</div>
+</div>
+<button class="w-full py-3 rounded-xl border border-primary text-primary font-bold hover:bg-primary hover:text-on-primary transition-all">Learn More</button>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="glass-card rounded-[32px] overflow-hidden flex flex-col group ministry-card transition-all hover:-translate-y-2">
+<div class="h-56 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A peaceful neighborhood park scene where church volunteers are helping elderly residents in a community garden. The lighting is soft morning sun. The visual style is serene and respectful, focusing on intergenerational connection and quiet service in a clean, green urban environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXBw5EoYIP6RpWH3yqMe27E8haihmsa4nCaXbs5VIULN9XPTK-Wmnz6pFvh_mbXRxUDylJ5wEGod3Zka4FdVJgzyZQq63cfCswDr6PyJsqzUgf0UqRHX0avThxX43p4KLMVFNO66KEJGlUo4tnhRm5eEChOYSPp9wXE9ygpq2651pXvtuJ1sTILKVUA4vJF0FfYEomej4gXp2Cm_-Ehm2VohWoKZ4lvwehcGjb7fyOt_2nYfdaneiQmw"/>
+<div class="absolute top-4 right-4 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-primary font-label-status text-label-status uppercase shadow-sm">Community</div>
+</div>
+<div class="p-8 flex flex-col flex-1">
+<h3 class="font-headline-md text-headline-md mb-2">Neighbor Care Network</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-1">A grassroots initiative providing practical assistance and emotional support to vulnerable members of our local area.</p>
+<div class="space-y-3 mb-8 border-t border-outline-variant/30 pt-6">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary opacity-70">calendar_month</span>
+<span class="font-body-sm text-body-sm">Monthly Outreach</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary opacity-70">account_circle</span>
+<span class="font-body-sm text-body-sm">Leader: James Wilson</span>
+</div>
+</div>
+<button class="w-full py-3 rounded-xl border border-primary text-primary font-bold hover:bg-primary hover:text-on-primary transition-all">Learn More</button>
+</div>
+</div>
+</section>
+<!-- Join/Volunteer CTA Section -->
+<section class="max-w-max-width-center mx-auto px-gutter mt-24">
+<div class="relative overflow-hidden rounded-[48px] bg-primary-container text-on-primary-container p-12 md:p-20 flex flex-col items-center text-center">
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/20 rounded-full blur-3xl"></div>
+<h2 class="font-headline-lg text-headline-lg text-white mb-6">Find Your Place in the Mission</h2>
+<p class="font-body-lg text-body-lg text-white/90 max-w-xl mb-10">
+                    Growth happens best in community. Whether you want to lead, serve, or simply belong, there is a space curated specifically for you at BlessBoard.
+                </p>
+<div class="flex flex-col md:flex-row gap-4 w-full justify-center">
+<button class="bg-white text-primary px-10 py-4 rounded-2xl font-bold hover:bg-surface-container transition-all shadow-xl active:scale-95">
+                        Start Volunteering
+                    </button>
+<button class="bg-transparent border-2 border-white/30 text-white px-10 py-4 rounded-2xl font-bold hover:bg-white/10 transition-all active:scale-95">
+                        Ask a Question
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-high py-12 border-t border-outline-variant/50">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-gutter max-w-max-width-center mx-auto">
+<div class="space-y-4">
+<div class="font-headline-md text-headline-md font-bold text-on-surface">BlessBoard</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm opacity-80">
+                    © 2024 Sacred Modernity Church. Built with BlessBoard. Pursuing clarity, focus, and spiritual depth in the modern age.
+                </p>
+</div>
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-label-caps text-primary mb-2 uppercase tracking-widest">Connect</span>
+<a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary underline transition-all" href="#">Service Times</a>
+<a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary underline transition-all" href="#">Give Now</a>
+<a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary underline transition-all" href="#">Volunteer Portal</a>
+</div>
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-label-caps text-primary mb-2 uppercase tracking-widest">Resources</span>
+<a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary underline transition-all" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary underline transition-all" href="#">Terms of Service</a>
+<a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary underline transition-all" href="#">Admin Dashboard</a>
+</div>
+</div>
+</footer>
+<!-- FAB -->
+<button class="fixed bottom-8 right-8 bg-primary text-on-primary w-16 h-16 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all z-40">
+<span class="material-symbols-outlined text-[28px]">message</span>
+</button>
+</body></html>

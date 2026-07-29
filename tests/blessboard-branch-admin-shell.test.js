@@ -378,7 +378,11 @@ describe("blessboard branch-admin shell", () => {
     requireDb();
     const res = await request(app).get("/branch-admin").set("Host", HOST_A).set("Accept", "text/html");
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/login?next=/branch-admin");
+    const loc = String(res.headers.location || "");
+    assert.ok(
+      loc === "/login?next=/branch-admin" || loc === "/login?next=%2Fbranch-admin",
+      `unexpected redirect ${loc}`
+    );
   });
 
   it("unauthenticated non-HTML receives 401", async () => {
