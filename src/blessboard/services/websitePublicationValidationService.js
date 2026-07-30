@@ -65,16 +65,19 @@ async function validateWebsitePublication(db, opts) {
       branchId
     );
     const nextNumber = await versionRepo.getNextVersionNumber(db, organizationId);
+    // Church-wide: omit branchId so listSubmissions returns all org submissions
+    // (including branch pending that must block HQ publish). Branch scope filters.
+    const submissionScope = branchId ? { branchId } : {};
     const approvedList = await submissionRepo.listSubmissions(db, {
       organizationId,
       status: "approved",
-      branchId,
+      ...submissionScope,
       limit: 50,
     });
     const pendingList = await submissionRepo.listSubmissions(db, {
       organizationId,
       status: "pending_review",
-      branchId,
+      ...submissionScope,
       limit: 20,
     });
 
@@ -304,6 +307,11 @@ async function validateWebsitePublication(db, opts) {
       checks,
       readiness,
       settings,
+      scope: {
+        organizationId,
+        churchId,
+        branchId,
+      },
       summary: {
         pagesChanged,
         pageCount: pagesChanged.length,
@@ -321,14 +329,23 @@ async function validateWebsitePublication(db, opts) {
       },
       publishStatus: PUBLISH_STATUS,
     };
-  } catch {
+  } catch (err) {
+    const code = err && err.code ? String(err.code) : null;
+    const message = err && err.message ? String(err.message).slice(0, 160) : "lookup_failed";
+    const schemaGap =
+      code === "42703" || /column .* does not exist/i.test(message)
+        ? "Website publication schema is incomplete. Apply pending BlessBoard migrations (branch-scoped publication versions) and retry."
+        : null;
     return {
       ok: false,
       status: STATUS.LOOKUP_ERROR,
       publishable: false,
-      errors: ["Publication validation failed."],
+      errors: [schemaGap || "Publication validation failed. Review website details and try again."],
       warnings: [],
       checks: [],
+      reason: schemaGap ? "schema_incomplete" : "lookup_failed",
+      errorCode: code,
+      errorDetail: schemaGap ? null : message,
     };
   }
 }

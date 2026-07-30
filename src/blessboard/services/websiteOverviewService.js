@@ -23,6 +23,7 @@ const { PUBLIC_PAGE_KEYS } = require("./publicContentConstants");
 const {
   publicChurchHomePath,
   hqPreviewPagePath,
+  hqWebsitePublishReviewPath,
 } = require("../urls/churchUrlHelper");
 
 const STATUS = Object.freeze({
@@ -261,6 +262,10 @@ async function loadFoundationWebsiteOverview(db, opts) {
       publishReady,
       canPublish: publishReady && hasDraft,
       showFixDetails: !publishReady,
+      publishReviewPath: hqWebsitePublishReviewPath(null),
+      fixDetailsPath: !publishReady
+        ? hqWebsitePublishReviewPath(null)
+        : hqWebsitePublishReviewPath(null),
       checklist: mapFoundationChecklist(onboarding && onboarding.summary),
       undoLastPublish: {
         eligible: undoEligible,
@@ -404,7 +409,7 @@ async function loadGrowthWebsiteOverview(db, opts) {
         type: "validation",
         label: "Missing required website information",
         meta: "",
-        href: "/hq/website/publish/review",
+        href: hqWebsitePublishReviewPath(null),
         actionLabel: "Fix Details",
       });
     }

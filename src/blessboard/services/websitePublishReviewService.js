@@ -14,7 +14,15 @@ const { PAGE_KEY_TITLES } = require("./publicContentConstants");
 const versionRepo = require("../repositories/websitePublicationVersionRepository");
 const {
   publicChurchHomePath,
+  publicBranchHomePath,
   hqPreviewPagePath,
+  hqContentPagePath,
+  hqWebsitePublishReviewPath,
+  hqWebsitePublishPath,
+  hqWebsiteBranchDetailsPath,
+  hqBranchPreviewPagePath,
+  hqBranchContentPagePath,
+  hqWebsiteBranchBasePath,
 } = require("../urls/churchUrlHelper");
 
 function normalizePlanKey(planKey) {
@@ -38,6 +46,8 @@ const STATUS = Object.freeze({
   OK: "ok",
   INVALID_INPUT: "invalid_input",
   LOOKUP_ERROR: "lookup_error",
+  NOT_FOUND: "not_found",
+  EMPTY: "empty",
 });
 
 const CHECK_STATE = Object.freeze({
@@ -62,6 +72,9 @@ const FRIENDLY_ERROR_BY_CODE = Object.freeze({
   confirm: "Confirm publishing before continuing.",
   validation: "Website information needs attention before publishing",
   not_ready: "Website information is incomplete",
+  schema_incomplete:
+    "Website publication schema is incomplete. Apply pending migrations and retry.",
+  lookup_error: "Publication review could not load website readiness. Try again shortly.",
 });
 
 const GAP_TO_CODE = Object.freeze({
@@ -71,6 +84,110 @@ const GAP_TO_CODE = Object.freeze({
   organization_name: "incomplete",
   first_branch: "incomplete",
   website_suspended: "org_inactive",
+  lookup_error: "lookup_error",
+  public_hostname: "incomplete",
+  custom_domain_entitlement: "incomplete",
+});
+
+const ISSUE_META = Object.freeze({
+  contact: {
+    title: "Missing contact details",
+    explanation: "Add a public email or phone number so visitors can reach this church.",
+    fieldKey: "contact",
+    sectionKey: "details",
+  },
+  service_times: {
+    title: "Missing service times",
+    explanation: "Add at least one service time before publishing.",
+    fieldKey: "service_times",
+    sectionKey: "home",
+    pageKey: "home",
+  },
+  images: {
+    title: "Invalid image reference",
+    explanation: "A required image is missing or empty.",
+    fieldKey: "media",
+    sectionKey: null,
+  },
+  incomplete: {
+    title: "Incomplete website details",
+    explanation: "Required website information is missing.",
+    fieldKey: "details",
+    sectionKey: null,
+  },
+  preview: {
+    title: "Preview confirmation required",
+    explanation: "Review the website preview, then confirm before publishing.",
+    fieldKey: "preview",
+    sectionKey: null,
+  },
+  mobile_preview: {
+    title: "Mobile preview confirmation required",
+    explanation: "Confirm you have checked the mobile preview.",
+    fieldKey: "mobile_preview",
+    sectionKey: null,
+  },
+  pending_review: {
+    title: "Branch update awaiting approval",
+    explanation: "A branch change must be approved before it can be published.",
+    fieldKey: "approval",
+    sectionKey: null,
+  },
+  conflict: {
+    title: "Unresolved edit conflict",
+    explanation: "Resolve conflicting drafts before publishing.",
+    fieldKey: "conflict",
+    sectionKey: null,
+  },
+  org_inactive: {
+    title: "Organization not active",
+    explanation: "This website cannot be published while the organization is suspended.",
+    fieldKey: "status",
+    sectionKey: null,
+  },
+  schema_incomplete: {
+    title: "Publication schema incomplete",
+    explanation:
+      "Branch-scoped publication versions are not available. Apply pending BlessBoard migrations and retry.",
+    fieldKey: "schema",
+    sectionKey: null,
+  },
+  lookup_error: {
+    title: "Readiness check unavailable",
+    explanation: "Website readiness could not be evaluated. Try again shortly.",
+    fieldKey: "readiness",
+    sectionKey: null,
+  },
+  validation: {
+    title: "Website details need attention",
+    explanation: "Review the blocking issues below, then try publishing again.",
+    fieldKey: "details",
+    sectionKey: null,
+  },
+  not_ready: {
+    title: "Website is not ready to publish",
+    explanation: "Resolve the listed issues before publishing.",
+    fieldKey: "details",
+    sectionKey: null,
+  },
+  draft: {
+    title: "Draft unavailable",
+    explanation: "The draft to publish is no longer available.",
+    fieldKey: "draft",
+    sectionKey: null,
+  },
+  permission: {
+    title: "Publishing permission changed",
+    explanation: "You no longer have permission to publish this website.",
+    fieldKey: "permission",
+    sectionKey: null,
+  },
+  confirm: {
+    title: "Confirmation required",
+    explanation: "Confirm publishing before continuing.",
+    fieldKey: "confirm",
+    sectionKey: null,
+  },
 });
 
 /**
@@ -80,6 +197,12 @@ const GAP_TO_CODE = Object.freeze({
 function classifyErrorCode(text) {
   const t = String(text || "").toLowerCase();
   if (!t) return null;
+  if (/schema is incomplete|branch-scoped publication|column .* does not exist/.test(t)) {
+    return "schema_incomplete";
+  }
+  if (/publication review could not load|could not be evaluated|lookup/.test(t)) {
+    return "lookup_error";
+  }
   if (/preview confirmation|preview is required|reviewed the website preview/.test(t)) {
     return "preview";
   }
@@ -130,20 +253,185 @@ function collectErrorCodes(input) {
     codes.push(code);
   }
   for (const gap of (input && input.gaps) || []) {
-    push(GAP_TO_CODE[gap] || "incomplete");
+    push(GAP_TO_CODE[gap] || (gap === "lookup_error" ? "lookup_error" : "incomplete"));
   }
   for (const err of (input && input.errors) || []) {
     push(classifyErrorCode(err));
   }
   if (input && input.reason === "confirm_publish") push("confirm");
   if (input && input.reason === "not_ready") push("not_ready");
+  if (input && input.reason === "schema_incomplete") push("schema_incomplete");
   if (!codes.length && input && (input.errors || []).length) push("validation");
   return codes;
 }
 
 /**
+ * @param {{
+ *   code: string,
+ *   message?: string|null,
+ *   branchKey?: string|null,
+ *   branchName?: string|null,
+ *   pageKey?: string|null,
+ *   sectionKey?: string|null,
+ *   fieldKey?: string|null,
+ *   severity?: string,
+ * }} input
+ */
+function buildBlockingIssue(input) {
+  const code = String((input && input.code) || "validation");
+  const meta = ISSUE_META[code] || ISSUE_META.validation;
+  const branchKey = input.branchKey || null;
+  const pageKey = input.pageKey || meta.pageKey || null;
+  const sectionKey =
+    input.sectionKey != null ? input.sectionKey : meta.sectionKey;
+  const fieldKey = input.fieldKey || meta.fieldKey || null;
+
+  let editUrl = "/hq/settings";
+  if (code === "service_times") {
+    editUrl = branchKey
+      ? `/hq/website/branches/${encodeURIComponent(branchKey)}/service-times`
+      : hqContentPagePath("home");
+  } else if (code === "contact" || code === "incomplete" || code === "not_ready") {
+    editUrl = branchKey
+      ? hqWebsiteBranchDetailsPath(branchKey) || hqContentPagePath("home")
+      : "/hq/settings";
+  } else if (code === "images" || code === "draft") {
+    editUrl = branchKey
+      ? hqBranchContentPagePath(branchKey, pageKey || "home") || hqContentPagePath("home")
+      : hqContentPagePath(pageKey || "home");
+  } else if (code === "preview" || code === "mobile_preview") {
+    editUrl = branchKey
+      ? hqBranchPreviewPagePath(branchKey, "home") || hqPreviewPagePath("home")
+      : hqPreviewPagePath("home");
+  } else if (code === "pending_review" || code === "conflict") {
+    editUrl = "/hq/website/change-submissions";
+  } else if (branchKey) {
+    editUrl = hqWebsiteBranchDetailsPath(branchKey) || hqWebsiteBranchBasePath(branchKey);
+  }
+
+  return {
+    code,
+    severity: input.severity || "blocking",
+    title: meta.title,
+    explanation: input.message || meta.explanation,
+    message: input.message || FRIENDLY_ERROR_BY_CODE[code] || meta.explanation,
+    pageKey,
+    pageTitle: pageKey ? PAGE_KEY_TITLES[pageKey] || pageKey : null,
+    sectionKey,
+    fieldKey,
+    branchKey,
+    branchName: input.branchName || null,
+    editUrl,
+    currentValue: null,
+    missing: true,
+  };
+}
+
+/**
+ * Build actionable blocking issues from validation + readiness (single source of truth).
+ * @param {{
+ *   validation?: object|null,
+ *   readiness?: object|null,
+ *   branchKey?: string|null,
+ *   branchName?: string|null,
+ * }} opts
+ */
+function buildBlockingIssues(opts) {
+  const validation = (opts && opts.validation) || {};
+  const readiness = (opts && opts.readiness) || {};
+  const branchKey = opts && opts.branchKey ? String(opts.branchKey) : null;
+  const branchName = opts && opts.branchName ? String(opts.branchName) : null;
+  const issues = [];
+  const seen = new Set();
+
+  function pushIssue(partial) {
+    const code = String(partial.code || "validation");
+    if (seen.has(code)) return;
+    seen.add(code);
+    issues.push(
+      buildBlockingIssue({
+        ...partial,
+        code,
+        branchKey,
+        branchName,
+      })
+    );
+  }
+
+  if (validation.reason === "schema_incomplete") {
+    pushIssue({
+      code: "schema_incomplete",
+      message: (validation.errors && validation.errors[0]) || null,
+    });
+  }
+
+  const publishable = Boolean(validation.publishable);
+
+  // Readiness gaps only block when publication itself is not publishable.
+  // Warnings / deferred gaps must not invent blockers against a ready validator.
+  if (!publishable || readiness.ready === false) {
+    for (const gap of readiness.gaps || []) {
+      const code = GAP_TO_CODE[gap] || (gap === "lookup_error" ? "lookup_error" : "incomplete");
+      pushIssue({ code, message: FRIENDLY_ERROR_BY_CODE[code] || `Readiness gap: ${gap}` });
+    }
+  }
+
+  for (const err of validation.errors || []) {
+    pushIssue({
+      code: classifyErrorCode(err) || "validation",
+      message: String(err),
+    });
+  }
+
+  // Failed checks that correspond to hard errors only (skip advisory image warnings).
+  const blockingCheckKeys = new Set([
+    "contact",
+    "required_content",
+    "preview",
+    "mobile_preview",
+    "conflicts",
+    "unapproved_submissions",
+    "tenant_active",
+    "hq_direct_publish",
+  ]);
+  for (const check of validation.checks || []) {
+    if (check && check.ok === false && check.key && blockingCheckKeys.has(check.key)) {
+      const keyMap = {
+        contact: "contact",
+        required_content: "incomplete",
+        preview: "preview",
+        mobile_preview: "mobile_preview",
+        conflicts: "conflict",
+        unapproved_submissions: "pending_review",
+        tenant_active: "org_inactive",
+        hq_direct_publish: "permission",
+      };
+      const code = keyMap[check.key] || "validation";
+      pushIssue({
+        code,
+        message: check.label || FRIENDLY_ERROR_BY_CODE[code],
+      });
+    }
+  }
+
+  if (!publishable && issues.length === 0) {
+    pushIssue({
+      code: "not_ready",
+      message: "Website is not ready to publish. Review draft changes for blocking issues.",
+    });
+  }
+  if (readiness.ok === false && issues.length === 0) {
+    pushIssue({ code: "lookup_error" });
+  }
+  if (readiness.ready === false && issues.length === 0) {
+    pushIssue({ code: "not_ready" });
+  }
+
+  return issues;
+}
+
+/**
  * @param {object} validation
- * @returns {{ items: object[], fallbackMessage: string|null, pagesChanged: string[], sectionsChanged: number, imagesChanged: boolean, branchesAffected: string[] }}
  */
 function buildChangeSummary(validation) {
   const summary = (validation && validation.summary) || {};
@@ -261,6 +549,9 @@ function buildReadinessChecks(validation) {
  * @param {{
  *   organizationId: string,
  *   churchId: string,
+ *   branchId?: string|null,
+ *   branchKey?: string|null,
+ *   branchName?: string|null,
  *   actorUserId?: string|null,
  *   deferServiceTimes?: boolean,
  *   mobilePreviewConfirmed?: boolean,
@@ -271,29 +562,124 @@ function buildReadinessChecks(validation) {
 async function prepareWebsitePublishReview(db, opts) {
   const organizationId = opts && opts.organizationId;
   const churchId = opts && opts.churchId;
+  const branchId =
+    opts && opts.branchId != null && String(opts.branchId).trim()
+      ? String(opts.branchId).trim()
+      : null;
+  const branchKey =
+    opts && opts.branchKey != null && String(opts.branchKey).trim()
+      ? String(opts.branchKey).trim()
+      : null;
+  const branchName =
+    opts && opts.branchName != null && String(opts.branchName).trim()
+      ? String(opts.branchName).trim()
+      : null;
+
   if (!versionRepo.isUuid(organizationId) || !versionRepo.isUuid(churchId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "tenant" };
   }
+  if (branchId && !versionRepo.isUuid(branchId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "branch_id" };
+  }
+
+  const reviewPath = hqWebsitePublishReviewPath(branchKey);
+  const publishPath = hqWebsitePublishPath(branchKey);
+  const overviewPath = branchKey
+    ? hqWebsiteBranchBasePath(branchKey) || "/hq/website"
+    : "/hq/website";
+  const editPath = branchKey
+    ? hqWebsiteBranchDetailsPath(branchKey) || hqContentPagePath("home")
+    : "/hq/content";
+  const detailsPath = branchKey
+    ? hqWebsiteBranchDetailsPath(branchKey) || editPath
+    : "/hq/settings";
+  const previewPath = branchKey
+    ? hqBranchPreviewPagePath(branchKey, "home") || hqPreviewPagePath("home")
+    : hqPreviewPagePath("home");
 
   try {
-    const [validation, readiness] = await Promise.all([
-      validateWebsitePublication(db, {
-        organizationId,
-        churchId,
-        actorUserId: opts.actorUserId || null,
-        deferServiceTimes: Boolean(opts.deferServiceTimes),
-        mobilePreviewConfirmed: Boolean(opts.mobilePreviewConfirmed),
-        env: opts.env,
-      }),
-      evaluatePublishReadiness(db, {
-        churchId,
-        deferServiceTimes: Boolean(opts.deferServiceTimes),
-        env: opts.env,
-      }),
-    ]);
+    // Sequential: avoid interleaved queries if a shared client is passed.
+    const validation = await validateWebsitePublication(db, {
+      organizationId,
+      churchId,
+      branchId,
+      actorUserId: opts.actorUserId || null,
+      deferServiceTimes: Boolean(opts.deferServiceTimes),
+      mobilePreviewConfirmed: Boolean(opts.mobilePreviewConfirmed),
+      env: opts.env,
+    });
+    const readiness = await evaluatePublishReadiness(db, {
+      churchId,
+      deferServiceTimes: Boolean(opts.deferServiceTimes),
+      env: opts.env,
+    });
 
+    // Schema / infra failure: still render a review shell with actionable blockers
+    // instead of an empty 503 page.
     if (!validation.ok && validation.status === "lookup_error") {
-      return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "validation" };
+      const blockingIssues = buildBlockingIssues({
+        validation: {
+          ...validation,
+          publishable: false,
+          reason: validation.reason || "lookup_error",
+        },
+        readiness: { ok: false, ready: false, gaps: ["lookup_error"] },
+        branchKey,
+        branchName,
+      });
+      return {
+        ok: true,
+        status: STATUS.OK,
+        stitchScreen: "Phase4 - Publish Website Review",
+        title: branchKey ? "Publish Branch Website Changes?" : "Publish Website Changes?",
+        subtitle: branchKey
+          ? `Review what will become visible on ${branchName || "this branch"} website`
+          : "Review what will become visible on your public website",
+        publishable: false,
+        draftStatusLabel: "Needs attention",
+        changeSummary: {
+          items: [],
+          fallbackMessage: "Publication review could not finish loading.",
+          pagesChanged: [],
+          sectionsChanged: 0,
+          imagesChanged: false,
+          branchesAffected: branchName ? [branchName] : [],
+          pageCount: 0,
+        },
+        readinessChecks: [],
+        blockingIssues,
+        approvedSubmissions: [],
+        affectedBranches: branchName ? [branchName] : [],
+        currentPublication: null,
+        proposedPublication: { hasDraft: false },
+        warnings: [],
+        errors: blockingIssues.map((i) => i.message),
+        errorCodes: blockingIssues.map((i) => i.code),
+        previewAcknowledged: false,
+        requirePreviewCheckbox: false,
+        requireMobileCheckbox: false,
+        previewPath,
+        publicPath: branchKey
+          ? publicBranchHomePath(opts.organizationKey, branchKey)
+          : publicChurchHomePath(opts.organizationKey),
+        overviewPath,
+        editPath,
+        detailsPath,
+        reviewPath,
+        publishPath,
+        planKey: "unknown",
+        scope: {
+          organizationId,
+          churchId,
+          branchId,
+          branchKey,
+          branchName,
+          scopeType: branchId ? "branch" : "church",
+        },
+        emptyState: null,
+        validation,
+        readiness,
+      };
     }
 
     const summary = (validation && validation.summary) || {};
@@ -306,7 +692,16 @@ async function prepareWebsitePublishReview(db, opts) {
       errors: validation.errors || [],
       gaps: (readiness && readiness.gaps) || [],
     });
-    const humanErrors = messagesForCodes(errorCodes);
+    const blockingIssues = buildBlockingIssues({
+      validation,
+      readiness,
+      branchKey,
+      branchName,
+    });
+    const humanErrors =
+      blockingIssues.length > 0
+        ? blockingIssues.map((i) => i.message)
+        : messagesForCodes(errorCodes);
     const current = summary.currentLiveVersion || null;
     const orgKey =
       (readiness && readiness.organizationKey) || opts.organizationKey || null;
@@ -320,22 +715,45 @@ async function prepareWebsitePublishReview(db, opts) {
     );
     const planKey = normalizePlanKey(readiness && readiness.planKey);
 
-    const draftStatusLabel = validation.publishable
+    const publishable = Boolean(validation.publishable);
+    const draftStatusLabel = publishable
       ? "Ready to publish"
       : humanErrors.length
         ? "Needs attention"
         : "Draft changes";
 
+    const hasDraftSignal = Boolean(
+      changeSummary.pageCount ||
+        approved.length ||
+        (summary.proposedVersionNumber != null && summary.currentLiveVersion)
+    );
+
+    let emptyState = null;
+    if (!hasDraftSignal && publishable) {
+      emptyState = {
+        type: "empty",
+        heading: "No reviewable draft changes",
+        body: branchKey
+          ? "There is no unpublished branch website draft to review for this scope."
+          : "There is no unpublished church website draft to review right now.",
+        primaryHref: overviewPath,
+        primaryLabel: "Return to Website",
+      };
+    }
+
     return {
       ok: true,
       status: STATUS.OK,
       stitchScreen: "Phase4 - Publish Website Review",
-      title: "Publish Website Changes?",
-      subtitle: "Review what will become visible on your public website",
-      publishable: Boolean(validation.publishable),
+      title: branchKey ? "Publish Branch Website Changes?" : "Publish Website Changes?",
+      subtitle: branchKey
+        ? `Review what will become visible on ${branchName || "this branch"} website`
+        : "Review what will become visible on your public website",
+      publishable,
       draftStatusLabel,
       changeSummary,
       readinessChecks,
+      blockingIssues,
       approvedSubmissions: approved.map((s) => ({
         id: s.id,
         title: s.title,
@@ -345,7 +763,11 @@ async function prepareWebsitePublishReview(db, opts) {
         areasAffected: s.pageKey ? [PAGE_KEY_TITLES[s.pageKey] || s.pageKey] : [],
         href: `/hq/website/change-submissions/${s.id}`,
       })),
-      affectedBranches: changeSummary.branchesAffected,
+      affectedBranches: changeSummary.branchesAffected.length
+        ? changeSummary.branchesAffected
+        : branchName
+          ? [branchName]
+          : [],
       currentPublication: current
         ? {
             publishedAt: current.publishedAt,
@@ -360,15 +782,31 @@ async function prepareWebsitePublishReview(db, opts) {
         return FRIENDLY_ERROR_BY_CODE[code] || String(w);
       }),
       errors: humanErrors,
-      errorCodes,
+      errorCodes: blockingIssues.map((i) => i.code).length
+        ? blockingIssues.map((i) => i.code)
+        : errorCodes,
       previewAcknowledged: Boolean(readiness && readiness.previewAcknowledged),
       requirePreviewCheckbox: requirePreview,
       requireMobileCheckbox: requireMobile,
-      previewPath: hqPreviewPagePath("home"),
-      publicPath: publicChurchHomePath(orgKey),
-      overviewPath: "/hq/website",
-      editPath: "/hq/content",
+      previewPath,
+      publicPath: branchKey
+        ? publicBranchHomePath(orgKey, branchKey)
+        : publicChurchHomePath(orgKey),
+      overviewPath,
+      editPath,
+      detailsPath,
+      reviewPath,
+      publishPath,
       planKey,
+      scope: {
+        organizationId,
+        churchId,
+        branchId,
+        branchKey,
+        branchName,
+        scopeType: branchId ? "branch" : "church",
+      },
+      emptyState,
       validation,
       readiness,
     };
@@ -385,6 +823,7 @@ async function prepareWebsitePublishReview(db, opts) {
  *   organizationKey?: string|null,
  *   planKey?: string|null,
  *   publishedByName?: string|null,
+ *   branchKey?: string|null,
  * }} opts
  */
 async function prepareWebsitePublishSuccess(db, opts) {
@@ -398,7 +837,7 @@ async function prepareWebsitePublishSuccess(db, opts) {
     version = await versionRepo.getVersionByOrgAndId(db, organizationId, versionId);
   }
   if (!version) {
-    version = await versionRepo.getCurrentPublishedVersion(db, organizationId);
+    version = await versionRepo.getCurrentPublishedVersion(db, organizationId, null);
   }
   const summary = (version && version.changeSummary) || {};
   const pageCount =
@@ -414,21 +853,30 @@ async function prepareWebsitePublishSuccess(db, opts) {
   const planKey = normalizePlanKey(opts.planKey);
   const historyExists = Boolean(version);
   const orgKey = opts.organizationKey || null;
+  const branchKey = opts.branchKey || null;
 
   return {
     ok: true,
     status: STATUS.OK,
     stitchScreen: "Phase4 - Website Published",
-    title: "Your church website has been published.",
+    title: branchKey
+      ? "Your branch website has been published."
+      : "Your church website has been published.",
     publishedAt: version && version.publishedAt,
     publishedByName:
       (version && version.publishedByName) || opts.publishedByName || null,
     pagesUpdated: pageCount != null && Number.isFinite(pageCount) ? pageCount : null,
     branchesAffected: branches,
     publicationNote: summary.publicationNote || null,
-    publicPath: publicChurchHomePath(orgKey),
-    overviewPath: "/hq/website",
-    editPath: "/hq/content",
+    publicPath: branchKey
+      ? publicBranchHomePath(orgKey, branchKey)
+      : publicChurchHomePath(orgKey),
+    overviewPath: branchKey
+      ? hqWebsiteBranchBasePath(branchKey) || "/hq/website"
+      : "/hq/website",
+    editPath: branchKey
+      ? hqWebsiteBranchDetailsPath(branchKey) || "/hq/content"
+      : "/hq/content",
     recentChangesPath:
       planKey === "growth" ? "/hq/website/recent-changes" : null,
     showGrowthRecoveryNote: planKey === "growth" && historyExists,
@@ -438,10 +886,11 @@ async function prepareWebsitePublishSuccess(db, opts) {
 }
 
 /**
- * @param {{ codes?: string[], liveUnchanged?: boolean }} opts
+ * @param {{ codes?: string[], liveUnchanged?: boolean, branchKey?: string|null }} opts
  */
 function prepareWebsitePublishError(opts) {
   const codes = Array.isArray(opts && opts.codes) ? opts.codes : [];
+  const branchKey = opts && opts.branchKey ? String(opts.branchKey) : null;
   const problems = messagesForCodes(codes.length ? codes : ["validation"]);
   const needsEdit = codes.some((c) =>
     ["contact", "service_times", "images", "incomplete", "draft", "conflict", "pending_review"].includes(
@@ -462,10 +911,19 @@ function prepareWebsitePublishError(opts) {
     errorCodes: codes,
     showFixProblems: needsEdit || !retrySafe,
     showTryAgain: retrySafe,
-    previewPath: hqPreviewPagePath("home"),
-    overviewPath: "/hq/website",
-    reviewPath: "/hq/website/publish/review",
-    editPath: "/hq/content",
+    previewPath: branchKey
+      ? hqBranchPreviewPagePath(branchKey, "home") || hqPreviewPagePath("home")
+      : hqPreviewPagePath("home"),
+    overviewPath: branchKey
+      ? hqWebsiteBranchBasePath(branchKey) || "/hq/website"
+      : "/hq/website",
+    reviewPath: hqWebsitePublishReviewPath(branchKey),
+    editPath: branchKey
+      ? hqWebsiteBranchDetailsPath(branchKey) || "/hq/content"
+      : "/hq/content",
+    detailsPath: branchKey
+      ? hqWebsiteBranchDetailsPath(branchKey)
+      : "/hq/settings",
   };
 }
 
@@ -479,4 +937,6 @@ module.exports = {
   collectErrorCodes,
   messagesForCodes,
   classifyErrorCode,
+  buildBlockingIssues,
+  buildBlockingIssue,
 };

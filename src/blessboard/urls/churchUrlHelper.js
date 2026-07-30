@@ -167,6 +167,75 @@ function hqDashboardPath() {
   return "/hq";
 }
 
+/**
+ * HQ branch mini-website editor base: /hq/website/branches/:branchKey
+ * @param {unknown} branchKey
+ * @returns {string | null}
+ */
+function hqWebsiteBranchBasePath(branchKey) {
+  const bKey = normalizeBranchKey(branchKey);
+  if (!bKey) return null;
+  return `/hq/website/branches/${bKey}`;
+}
+
+/**
+ * Church-wide or branch-scoped publish review.
+ * @param {unknown} [branchKey]
+ * @returns {string}
+ */
+function hqWebsitePublishReviewPath(branchKey) {
+  const base = hqWebsiteBranchBasePath(branchKey);
+  return base ? `${base}/publish/review` : "/hq/website/publish/review";
+}
+
+/**
+ * Church-wide or branch-scoped publish POST target.
+ * @param {unknown} [branchKey]
+ * @returns {string}
+ */
+function hqWebsitePublishPath(branchKey) {
+  const base = hqWebsiteBranchBasePath(branchKey);
+  return base ? `${base}/publish` : "/hq/website/publish";
+}
+
+/**
+ * Branch website details / identity editor (canonical Stage 5 page editor).
+ * @param {unknown} branchKey
+ * @returns {string | null}
+ */
+function hqWebsiteBranchDetailsPath(branchKey) {
+  const base = hqWebsiteBranchBasePath(branchKey);
+  return base ? `${base}/pages/home` : null;
+}
+
+/**
+ * @param {unknown} branchKey
+ * @param {string} [pageKey]
+ * @returns {string | null}
+ */
+function hqBranchPreviewPagePath(branchKey, pageKey) {
+  const base = hqWebsiteBranchBasePath(branchKey);
+  if (!base) return null;
+  const key = String(pageKey == null ? "home" : pageKey)
+    .trim()
+    .toLowerCase();
+  return `${base}/preview/${key || "home"}`;
+}
+
+/**
+ * @param {unknown} branchKey
+ * @param {string} [pageKey]
+ * @returns {string | null}
+ */
+function hqBranchContentPagePath(branchKey, pageKey) {
+  const base = hqWebsiteBranchBasePath(branchKey);
+  if (!base) return null;
+  const key = String(pageKey == null ? "home" : pageKey)
+    .trim()
+    .toLowerCase();
+  return `${base}/pages/${key || "home"}`;
+}
+
 module.exports = {
   publicChurchHomePath,
   publicChurchPagePath,
@@ -179,4 +248,10 @@ module.exports = {
   hqPreviewPagePath,
   hqWebsitePath,
   hqDashboardPath,
+  hqWebsiteBranchBasePath,
+  hqWebsitePublishReviewPath,
+  hqWebsitePublishPath,
+  hqWebsiteBranchDetailsPath,
+  hqBranchPreviewPagePath,
+  hqBranchContentPagePath,
 };

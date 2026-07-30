@@ -1866,17 +1866,54 @@ function createContentAdminRouter(deps) {
                 : reason === "not_ready" || publishResult.status === "not_ready"
                   ? "Website is not ready to publish. Review draft changes for blocking issues."
                   : "We could not publish these changes. Please try again.";
+          const validationErrors =
+            (publishResult.publishResult && publishResult.publishResult.validationErrors) ||
+            (publishResult.publishResult &&
+              publishResult.publishResult.validation &&
+              publishResult.publishResult.validation.errors) ||
+            [];
+          const {
+            buildBlockingIssues,
+          } = require("../services/websitePublishReviewService");
+          const blockingIssues = buildBlockingIssues({
+            validation: (publishResult.publishResult && publishResult.publishResult.validation) || {
+              publishable: false,
+              errors: validationErrors,
+            },
+            readiness: {
+              ready: false,
+              gaps: publishResult.gaps || [],
+            },
+            branchKey: scope.branchKey || null,
+            branchName:
+              (scope.branch && scope.branch.displayName) || scope.branchKey || null,
+          });
+          const issueSummary = blockingIssues
+            .slice(0, 3)
+            .map((i) => i.title || i.message)
+            .filter(Boolean)
+            .join("; ");
           return res.status(statusCode).json({
             ok: false,
             reason,
             code: reason,
-            error: message,
-            message,
+            error: issueSummary ? `${message} ${issueSummary}` : message,
+            message: issueSummary ? `${message} ${issueSummary}` : message,
             saved: true,
             published: false,
             value: saveResult.value,
             previousValue: saveResult.previousValue,
             gaps: publishResult.gaps || null,
+            validationErrors,
+            blockingIssues,
+            reviewPath: scope.branchKey
+              ? `/hq/website/branches/${encodeURIComponent(scope.branchKey)}/publish/review`
+              : `${scope.basePath}/draft-changes/publish-review`,
+            fixDetailsPath:
+              (blockingIssues[0] && blockingIssues[0].editUrl) ||
+              (scope.branchKey
+                ? `/hq/website/branches/${encodeURIComponent(scope.branchKey)}/details`
+                : "/hq/settings"),
           });
         }
 

@@ -340,7 +340,8 @@ async function evaluatePublishReadiness(db, input) {
       ok: false,
       status: STATUS.LOOKUP_ERROR,
       ready: false,
-      gaps: [],
+      // Contract: ready === false always includes at least one gap/issue code.
+      gaps: ["lookup_error"],
       reason: "lookup_error",
     };
   }
@@ -608,8 +609,7 @@ async function publishChurchWebsite(db, input) {
               `SELECT COUNT(*)::int AS n
                  FROM blessboard.website_change_submissions
                 WHERE organization_id = $1
-                  AND status = 'approved'
-                  AND branch_id IS NULL`,
+                  AND status = 'approved'`,
               [inner.organizationId]
             );
         const approvedN = approvedRes.rows[0] ? Number(approvedRes.rows[0].n) : 0;

@@ -6,6 +6,10 @@
   var approved = r.approvedSubmissions || [];
   var errors = r.errors || [];
   var warnings = r.warnings || [];
+  var blockers = r.blockingIssues || [];
+  var emptyState = r.emptyState || null;
+  var scope = r.scope || {};
+  var publishAction = r.publishPath || '/hq/website/publish';
   function formatWhen(value) {
     if (!value) return '—';
     var d = value instanceof Date ? value : new Date(value);
@@ -23,6 +27,8 @@
   data-bb-phase3-publication-confirmation="1"
   data-bb-stitch-screen="Phase4 - Publish Website Review"
   data-bb-viewport="responsive"
+  data-bb-website-scope="<%= scope.scopeType || 'church' %>"
+  <% if (scope.branchKey) { %>data-bb-branch-key="<%= scope.branchKey %>"<% } %>
   aria-label="Publish Website Review"
 >
   <header class="bb-hq-page-head bb-hq-page-head--split">
@@ -38,6 +44,9 @@
       <p class="bb-hq-lede"><%= r.subtitle || 'Review what will become visible on your public website' %></p>
       <p class="bb-phase4-publish__draft-status">
         <span class="bb-phase4-publish__chip"><%= r.draftStatusLabel || 'Draft changes' %></span>
+        <% if (scope.branchName || scope.branchKey) { %>
+        <span class="bb-hq-muted"> · <%= scope.branchName || scope.branchKey %></span>
+        <% } %>
       </p>
     </div>
     <p class="bb-hq-page-head__actions bb-phase4-publish__actions-top">
@@ -52,6 +61,18 @@
   <% if (notice === 'preview_ack') { %>
   <div class="bb-hq-alert bb-hq-alert--ok" role="status">Preview acknowledged.</div>
   <% } %>
+
+  <% if (emptyState) { %>
+  <article class="bb-hq-card" data-bb-publish-review-empty="1">
+    <h2 class="bb-hq-section-title"><%= emptyState.heading || 'Nothing to review' %></h2>
+    <p><%= emptyState.body || 'There is no reviewable draft for this website scope.' %></p>
+    <p>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= emptyState.primaryHref || r.overviewPath || '/hq/website' %>">
+        <%= emptyState.primaryLabel || 'Return to Website' %>
+      </a>
+    </p>
+  </article>
+  <% } else { %>
 
   <div class="bb-phase4-publish__grid">
     <article class="bb-hq-card bb-phase4-publish__summary" data-bb-phase4-publish-change-summary="1">
@@ -86,7 +107,31 @@
 
     <article class="bb-hq-card" data-bb-phase4-publish-readiness="1">
       <h2 class="bb-hq-section-title">Readiness Checklist</h2>
-      <% if (errors.length) { %>
+      <% if (blockers.length) { %>
+      <ul class="bb-phase4-publish__problems" role="alert" data-bb-blocking-issues="1">
+        <% blockers.forEach(function (issue) { %>
+        <li data-bb-issue-code="<%= issue.code %>" data-bb-issue-severity="<%= issue.severity || 'blocking' %>">
+          <strong><%= issue.title || issue.message %></strong>
+          <% if (issue.explanation) { %><span class="bb-hq-muted"> — <%= issue.explanation %></span><% } %>
+          <% if (issue.pageTitle || issue.pageKey) { %>
+          <span class="bb-hq-muted"> · Page: <%= issue.pageTitle || issue.pageKey %></span>
+          <% } %>
+          <% if (issue.sectionKey) { %>
+          <span class="bb-hq-muted"> · Section: <%= issue.sectionKey %></span>
+          <% } %>
+          <% if (issue.fieldKey) { %>
+          <span class="bb-hq-muted"> · Field: <%= issue.fieldKey %></span>
+          <% } %>
+          <% if (issue.branchName || issue.branchKey) { %>
+          <span class="bb-hq-muted"> · Branch: <%= issue.branchName || issue.branchKey %></span>
+          <% } %>
+          <% if (issue.editUrl) { %>
+          <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= issue.editUrl %>" data-bb-fix-issue="1">Fix</a>
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <% } else if (errors.length) { %>
       <ul class="bb-phase4-publish__problems" role="alert">
         <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
       </ul>
@@ -107,6 +152,9 @@
         </li>
         <% }) %>
       </ul>
+      <% if (!blockers.length && !errors.length && !checks.length) { %>
+      <p data-bb-publish-review-no-checks="1">No readiness checks were returned for this scope.</p>
+      <% } %>
     </article>
   </div>
 
@@ -134,7 +182,7 @@
     <form
       id="phase4-publish-form"
       method="post"
-      action="/hq/website/publish"
+      action="<%= publishAction %>"
       class="bb-hq-form bb-phase4-publish__form"
       data-bb-phase4-publish-form="1"
       data-bb-phase3-publish-form="1"
@@ -189,7 +237,7 @@
         <% if (r.publishable) { %>
         <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Publish Website</button>
         <% } else { %>
-        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.editPath || '/hq/content' %>">Fix Problems</a>
+        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= (blockers[0] && blockers[0].editUrl) || r.detailsPath || r.editPath || '/hq/content' %>" data-bb-fix-website-details="1">Fix Website Details</a>
         <% } %>
       </div>
     </form>
@@ -199,9 +247,11 @@
     <% if (r.publishable) { %>
     <button type="submit" form="phase4-publish-form" class="bb-hq-btn bb-hq-btn--primary bb-phase4-publish__sticky-btn">Publish Website</button>
     <% } else { %>
-    <a class="bb-hq-btn bb-hq-btn--primary bb-phase4-publish__sticky-btn" href="<%= r.editPath || '/hq/content' %>">Fix Problems</a>
+    <a class="bb-hq-btn bb-hq-btn--primary bb-phase4-publish__sticky-btn" href="<%= (blockers[0] && blockers[0].editUrl) || r.detailsPath || r.editPath || '/hq/content' %>" data-bb-fix-website-details="1">Fix Website Details</a>
     <% } %>
   </div>
+
+  <% } %>
 </section>
 
 <%- include('../partials/hq-shell-end') %>

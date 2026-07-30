@@ -626,7 +626,10 @@ async function listEvents(db, organizationId, submissionId, opts) {
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
  * @param {string|null} actorUserId
- * @param {string|null|undefined} [branchId] null = church-wide (branch_id IS NULL)
+ * @param {string|null|undefined} [branchId]
+ *   - set: mark approved submissions for that branch only
+ *   - null/omitted: church-wide publish includes all approved org submissions
+ *     (HQ + approved branch updates shown on the publish review)
  */
 async function markApprovedSubmissionsPublished(db, organizationId, actorUserId, branchId) {
   if (!isUuid(organizationId)) return [];
@@ -649,7 +652,6 @@ async function markApprovedSubmissionsPublished(db, organizationId, actorUserId,
                 updated_at = now()
           WHERE organization_id = $1
             AND status = 'approved'
-            AND branch_id IS NULL
           RETURNING id`,
         [organizationId]
       );

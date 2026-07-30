@@ -76,9 +76,9 @@
       <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.editPath %>">Continue Editing</a>
       <% if (o.canPublish) { %>
-      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Publish Changes</a>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.publishReviewPath || '/hq/website/publish/review' %>">Publish Changes</a>
       <% } else if (o.showFixDetails) { %>
-      <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Fix Website Details</a>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.fixDetailsPath || o.publishReviewPath || '/hq/website/publish/review' %>" data-bb-fix-website-details="1">Fix Website Details</a>
       <% } %>
     </p>
   </div>
@@ -113,9 +113,9 @@
         <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.editPath %>">Edit Website</a>
         <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
         <% if (o.canPublish) { %>
-        <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Publish Changes</a>
+        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.publishReviewPath || '/hq/website/publish/review' %>">Publish Changes</a>
         <% } else if (o.showFixDetails) { %>
-        <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/publish/review">Fix Website Details</a>
+        <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.fixDetailsPath || o.publishReviewPath || '/hq/website/publish/review' %>" data-bb-fix-website-details="1">Fix Website Details</a>
         <% } %>
       </p>
     </article>
