@@ -13,6 +13,10 @@ const {
   authorizeBlessBoardTenantAccess,
 } = require("../services/authorizeBlessBoardTenantAccess");
 const {
+  resolveWebsiteScope,
+  SCOPE_TYPE,
+} = require("../services/resolveWebsiteScope");
+const {
   loadDraftOverlayMap,
   applyDraftsToSections,
   resolveWebsiteAdminStatus,
@@ -121,16 +125,47 @@ async function attachWebsiteAdminChrome(opts) {
       ? req.v5Session.session
       : null;
 
-  // Re-authorize against the page tenant (required for /c/:org path sites).
+  /** @type {string|null} */
+  let draftBranchId = null;
+  /** @type {boolean} */
+  let isHqEditor = false;
+  /** @type {string|null} */
+  let actorRole = null;
+
+  // Resolve website edit scope from trusted tenant + session (never primaryBranch for Branch Admin).
   if (session && tenant && tenant.resolved) {
     try {
-      const result = await authorizeBlessBoardTenantAccess(db, {
-        userId: session.userId,
+      const websiteScope = await resolveWebsiteScope(db, {
         tenant,
-        branchId: tenant.primaryBranch ? tenant.primaryBranch.id : null,
+        authenticatedUser: session.userId,
+        requestedBranchKey: null,
+        organizationId: tenant.organization ? tenant.organization.id : null,
+        churchId: tenant.church ? tenant.church.id : null,
       });
-      authz = result.context || authz;
-      req.blessBoardAuthorizationContext = authz;
+      if (websiteScope.ok) {
+        isHqEditor = websiteScope.scopeType === SCOPE_TYPE.CHURCH;
+        draftBranchId =
+          websiteScope.scopeType === SCOPE_TYPE.BRANCH ? websiteScope.branchId : null;
+        if (isHqEditor) {
+          actorRole = "church_hq_admin";
+        } else if (websiteScope.scopeType === SCOPE_TYPE.BRANCH) {
+          actorRole = "branch_admin";
+        }
+
+        const authzBranchId =
+          websiteScope.scopeType === SCOPE_TYPE.BRANCH
+            ? websiteScope.branchId
+            : tenant.primaryBranch
+              ? tenant.primaryBranch.id
+              : null;
+        const result = await authorizeBlessBoardTenantAccess(db, {
+          userId: session.userId,
+          tenant,
+          branchId: authzBranchId,
+        });
+        authz = result.context || authz;
+        req.blessBoardAuthorizationContext = authz;
+      }
     } catch {
       // keep prior fail-soft context
     }
@@ -142,16 +177,22 @@ async function attachWebsiteAdminChrome(opts) {
     return model;
   }
 
+  // Prefer resolver outcome; fall back to role capability for HQ/platform.
+  if (capability.isHqEditor) {
+    isHqEditor = true;
+    draftBranchId = null;
+    actorRole = capability.actorRole;
+  } else if (capability.isBranchEditor && draftBranchId == null) {
+    // Resolver failed soft — do not fall back to primaryBranch.
+    model.websiteAdmin = null;
+    return model;
+  } else if (!isHqEditor && draftBranchId) {
+    actorRole = capability.actorRole || actorRole;
+  }
+
   const churchId = tenant && tenant.church ? tenant.church.id : authz.churchId;
   const organizationId =
     tenant && tenant.organization ? tenant.organization.id : authz.organizationId;
-
-  // HQ / platform editors work on church-wide drafts (branch_id null).
-  // Branch admins store drafts scoped to their authorized branch.
-  const draftBranchId = capability.isHqEditor
-    ? null
-    : authz.branchId ||
-      (tenant && tenant.primaryBranch ? tenant.primaryBranch.id : null);
 
   const editingMode = String(req.query[EDIT_QUERY] || "") === "1";
 
@@ -235,26 +276,26 @@ async function attachWebsiteAdminChrome(opts) {
   });
 
   const currentPath = String(model.path || "/");
-  const manageHref = capability.isHqEditor ? "/hq/website" : "/branch-admin/content";
-  const saveUrl = capability.isHqEditor
+  const manageHref = isHqEditor ? "/hq/website" : "/branch-admin/content";
+  const saveUrl = isHqEditor
     ? "/hq/content/api/inline-field"
     : "/branch-admin/content/api/inline-field";
-  const structuredSaveUrl = capability.isHqEditor
+  const structuredSaveUrl = isHqEditor
     ? "/hq/content/api/structured-draft"
     : "/branch-admin/content/api/structured-draft";
-  const mediaUploadUrl = capability.isHqEditor
+  const mediaUploadUrl = isHqEditor
     ? "/hq/content/media/upload"
     : "/branch-admin/content/media/upload";
-  const mediaListUrl = capability.isHqEditor
+  const mediaListUrl = isHqEditor
     ? "/hq/content/media"
     : "/branch-admin/content/media";
-  const reviewHref = capability.isHqEditor
+  const reviewHref = isHqEditor
     ? "/hq/content/draft-changes"
     : "/branch-admin/content/draft-changes";
-  const publishUrl = capability.isHqEditor
+  const publishUrl = isHqEditor
     ? "/hq/content/api/inline-field/publish"
     : "/branch-admin/content/api/inline-field/publish";
-  const draftPreviewHref = capability.isHqEditor
+  const draftPreviewHref = isHqEditor
     ? "/hq/content/draft-preview/home"
     : "/branch-admin/content/draft-preview/home";
 
@@ -303,7 +344,8 @@ async function attachWebsiteAdminChrome(opts) {
     organizationId,
     churchId,
     branchId: draftBranchId,
-    actorRole: capability.actorRole,
+    scopeType: isHqEditor ? SCOPE_TYPE.CHURCH : SCOPE_TYPE.BRANCH,
+    actorRole: actorRole || capability.actorRole,
     overrides,
     publishedBaselines,
     structuredDrafts: editingMode
@@ -327,7 +369,7 @@ async function attachWebsiteAdminChrome(opts) {
     },
   };
 
-  model.cssHref = "/blessboard/v5/tenant-public.css?v=45";
+  model.cssHref = "/blessboard/v5/tenant-public.css?v=46";
 
   return model;
 }

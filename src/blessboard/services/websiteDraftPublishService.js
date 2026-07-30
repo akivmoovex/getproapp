@@ -200,7 +200,9 @@ async function publishWebsiteDrafts(db, opts) {
 
       // Existing site publish engine (joins this client TX — no nested BEGIN).
       const published = await publishChurchWebsite(client, {
+        organizationId,
         churchId,
+        branchId,
         actorUserId,
         confirmPublish: true,
         // Draft republish defaults to deferring service-times (first-publish gap).

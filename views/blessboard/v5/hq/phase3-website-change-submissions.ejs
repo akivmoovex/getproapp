@@ -83,6 +83,8 @@
   <% } %>
   <% if (notice === 'approved') { %>
   <p class="bb-hq-ok" role="status">Submission approved.</p>
+  <% } else if (notice === 'approved_and_published') { %>
+  <p class="bb-hq-ok" role="status">Submission approved and applied to the branch website.</p>
   <% } else if (notice === 'changes_requested') { %>
   <p class="bb-hq-ok" role="status">Changes requested. The branch administrator can revise and resubmit.</p>
   <% } else if (notice === 'rejected') { %>

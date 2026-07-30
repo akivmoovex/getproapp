@@ -42,7 +42,27 @@ async function findBranchByChurchIdAndKey(client, churchId, branchKey) {
   return r.rows[0] || null;
 }
 
+/**
+ * Active branch by UUID scoped to a church (website scope resolution).
+ * @param {{ query: Function }} client
+ * @param {string} branchId
+ * @param {string} churchId
+ */
+async function findActiveBranchByIdForChurch(client, branchId, churchId) {
+  const r = await client.query(
+    `SELECT id, church_id, branch_key, display_name, branch_type, is_primary, status
+       FROM blessboard.branches
+      WHERE id = $1
+        AND church_id = $2
+        AND status = 'active'
+      LIMIT 1`,
+    [branchId, churchId]
+  );
+  return r.rows[0] || null;
+}
+
 module.exports = {
   listActiveBranchesByChurchId,
   findBranchByChurchIdAndKey,
+  findActiveBranchByIdForChurch,
 };

@@ -208,6 +208,9 @@ function entriesFromFormBody(body) {
   const enabledFlags = [].concat(
     raw["enabled[]"] != null ? raw["enabled[]"] : raw.enabled || []
   );
+  const sortOrders = [].concat(
+    raw["sort_order[]"] != null ? raw["sort_order[]"] : raw.sort_order || []
+  );
 
   const len = Math.max(
     names.length,
@@ -223,6 +226,11 @@ function entriesFromFormBody(body) {
     const day = String(days[i] != null ? days[i] : "").trim();
     const startTime = String(starts[i] != null ? starts[i] : "").trim();
     if (!name && !day && !startTime) continue;
+    const sortRaw = sortOrders[i];
+    const sortOrder =
+      sortRaw != null && String(sortRaw).trim() !== "" && Number.isFinite(Number(sortRaw))
+        ? Number(sortRaw)
+        : i;
     entries.push({
       name,
       day,
@@ -234,7 +242,7 @@ function entriesFromFormBody(body) {
         enabledFlags.length === 0
           ? true
           : String(enabledFlags[i] != null ? enabledFlags[i] : "1") !== "0",
-      sortOrder: i,
+      sortOrder,
     });
   }
   return entries;
@@ -391,26 +399,34 @@ async function saveHomeServiceTimes(db, input) {
         }
 
         const bodyText = bodyTextFromEntries(validated.entries);
-        const heading = validated.entries.length ? "Service Times" : "";
+        const heading = validated.entries.length ? "Service Times" : null;
         const layoutMetadata = {
           schema: SERVICE_TIMES_SCHEMA,
           entries: validated.entries,
         };
 
-        let nextStatus = ensured.section.status;
-        if (ensured.section.status === "archived") nextStatus = "draft";
-        const publishRequested =
-          input &&
-          (input.confirmPublish === true ||
-            input.confirmPublish === "1" ||
-            input.confirmPublish === "on");
-        if (validated.entries.length && publishRequested) {
+        const action = String((input && input.action) || "").trim();
+        let nextStatus;
+        if (action === "save_publish") {
           nextStatus = "published";
+        } else if (action === "save_draft") {
+          nextStatus = "draft";
+        } else {
+          // Legacy content-admin checkbox flow.
+          nextStatus = ensured.section.status === "archived" ? "draft" : ensured.section.status;
+          const publishRequested =
+            input &&
+            (input.confirmPublish === true ||
+              input.confirmPublish === "1" ||
+              input.confirmPublish === "on");
+          if (validated.entries.length && publishRequested) {
+            nextStatus = "published";
+          }
         }
 
         const updated = await repo.updateSection(client, ensured.section.id, {
           heading,
-          bodyText: bodyText || "",
+          bodyText: bodyText || null,
           sectionType: SERVICE_TIMES_SECTION_TYPE,
           layoutMetadata,
           status: nextStatus,
@@ -424,7 +440,7 @@ async function saveHomeServiceTimes(db, input) {
           await recordBlessBoardAudit(client, {
             churchId,
             organizationId: input.organizationId,
-            branchId: null,
+            branchId,
             actorUserId: input.actorUserId,
             actionKey: "content.service_times_saved",
             entityType: "page_section",
@@ -434,9 +450,26 @@ async function saveHomeServiceTimes(db, input) {
               status: "ok",
               entity_key: SERVICE_TIMES_SECTION_KEY,
               count: validated.entries.length,
-              source: "hq_content",
+              scope: branchId ? "branch" : "church",
+              published: nextStatus === "published",
+              source: branchId ? "branch_service_times" : "hq_content",
             },
           });
+        }
+
+        // Publishing service times must publish the scoped home page so public reads can see it.
+        // Branch publish never touches church-wide (branch_id IS NULL) rows.
+        if (nextStatus === "published" && ensured.page && ensured.page.id) {
+          await client.query(
+            `UPDATE blessboard.public_pages
+                SET status = 'published',
+                    published_at = COALESCE(published_at, now()),
+                    updated_at = now()
+              WHERE id = $1
+                AND church_id = $2
+                AND branch_id IS NOT DISTINCT FROM $3::uuid`,
+            [ensured.page.id, churchId, branchId]
+          );
         }
 
         await client.query("COMMIT");
@@ -447,6 +480,8 @@ async function saveHomeServiceTimes(db, input) {
           page: ensured.page,
           createdSection: Boolean(ensured.created),
           entryCount: validated.entries.length,
+          published: nextStatus === "published",
+          branchId,
         };
       } catch (err) {
         try {
@@ -525,6 +560,124 @@ async function repairHomeContentFoundation(db, input) {
   }
 }
 
+/**
+ * Load service times for the editor (draft or published section).
+ * @param {{ connect?: Function, query?: Function }} db
+ * @param {{ churchId: string, branchId?: string|null }} input
+ */
+async function loadAdminServiceTimes(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  if (!churchId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "church_id", entries: [], section: null, page: null };
+  }
+  const branchId =
+    input && input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
+  try {
+    return await withClient(db, async (client) => {
+      const ensured = await ensureCanonicalServiceTimesSection(client, { churchId, branchId });
+      if (!ensured.ok || !ensured.section) {
+        return {
+          ok: false,
+          status: ensured.status || STATUS.LOOKUP_ERROR,
+          reason: "section_prepare_failed",
+          entries: [],
+          section: null,
+          page: null,
+        };
+      }
+      return {
+        ok: true,
+        status: STATUS.OK,
+        page: ensured.page,
+        section: ensured.section,
+        entries: entriesFromSection(ensured.section),
+        created: Boolean(ensured.created),
+        branchId,
+      };
+    });
+  } catch {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reason: "lookup_error",
+      entries: [],
+      section: null,
+      page: null,
+    };
+  }
+}
+
+/**
+ * Public service-times resolution for a branch mini website (or church-wide when branchId null).
+ * Order: published branch section → published church-wide section → empty.
+ * Never invents demo entries.
+ * @param {{ connect?: Function, query?: Function }} db
+ * @param {{ churchId: string, branchId?: string|null }} input
+ */
+async function resolvePublicServiceTimesEntries(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  if (!churchId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, entries: [], source: null };
+  }
+  const branchId =
+    input && input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
+
+  try {
+    return await withClient(db, async (client) => {
+      async function publishedEntriesForScope(scopeBranchId) {
+        const page = await repo.findPageByScope(client, {
+          churchId,
+          branchId: scopeBranchId,
+          pageKey: "home",
+        });
+        if (!page || page.status !== "published") {
+          return [];
+        }
+        const sections = await repo.listSectionsForPage(client, page.id, { status: "published" });
+        for (const section of sections || []) {
+          if (String(section.sectionKey || "") !== SERVICE_TIMES_SECTION_KEY) continue;
+          const entries = entriesFromSection(section)
+            .filter((e) => e && e.enabled !== false && (e.name || e.startTime))
+            .slice()
+            .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+          return entries;
+        }
+        return [];
+      }
+
+      if (branchId) {
+        const branchEntries = await publishedEntriesForScope(branchId);
+        if (branchEntries.length) {
+          return {
+            ok: true,
+            status: STATUS.OK,
+            entries: branchEntries,
+            source: "branch",
+          };
+        }
+      }
+
+      const churchEntries = await publishedEntriesForScope(null);
+      if (churchEntries.length) {
+        return {
+          ok: true,
+          status: STATUS.OK,
+          entries: churchEntries,
+          source: "church",
+        };
+      }
+
+      return { ok: true, status: STATUS.OK, entries: [], source: null };
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, entries: [], source: null };
+  }
+}
+
 module.exports = {
   STATUS,
   SERVICE_TIMES_SECTION_KEY,
@@ -540,6 +693,8 @@ module.exports = {
   ensureCanonicalServiceTimesSection,
   saveHomeServiceTimes,
   repairHomeContentFoundation,
+  loadAdminServiceTimes,
+  resolvePublicServiceTimesEntries,
   dayLabel,
   formatTimeLabel,
 };

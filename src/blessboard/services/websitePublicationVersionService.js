@@ -118,13 +118,15 @@ async function withTransaction(db, fn) {
  * Build a structured publication snapshot (no private management data).
  * @param {import('pg').PoolClient} client
  * @param {string} churchId
+ * @param {string|null} [branchId]
  */
-async function buildPublicationSnapshot(client, churchId) {
+async function buildPublicationSnapshot(client, churchId, branchId) {
   const pages = [];
+  const scopedBranchId = branchId != null && String(branchId).trim() ? String(branchId).trim() : null;
   for (const pageKey of PUBLIC_PAGE_KEYS) {
     const page = await publicContentRepo.findPageByScope(client, {
       churchId,
-      branchId: null,
+      branchId: scopedBranchId,
       pageKey,
     });
     if (!page) continue;
@@ -146,6 +148,7 @@ async function buildPublicationSnapshot(client, churchId) {
   }
   return {
     themeKey: "default",
+    branchId: scopedBranchId,
     pageKeys: pages.map((p) => p.pageKey),
     pages,
     navigation: [],
@@ -184,11 +187,22 @@ function buildChangeSummary(snapshot, sourceType) {
 async function recordPublishVersionInTransaction(client, input) {
   const organizationId = input.organizationId;
   const churchId = input.churchId;
+  const branchId =
+    input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
   if (!versionRepo.isUuid(organizationId) || !versionRepo.isUuid(churchId)) {
     throw Object.assign(new Error("invalid_version_scope"), { code: "INVALID_VERSION_SCOPE" });
   }
+  if (branchId && !versionRepo.isUuid(branchId)) {
+    throw Object.assign(new Error("invalid_version_scope"), { code: "INVALID_VERSION_SCOPE" });
+  }
 
-  const pendingRestore = await versionRepo.getLatestDraftRestoration(client, organizationId);
+  const pendingRestore = await versionRepo.getLatestDraftRestoration(
+    client,
+    organizationId,
+    branchId
+  );
   let sourceType = input.sourceType || "hq_edit";
   let sourceVersionId = null;
   let restorationReason = null;
@@ -200,9 +214,9 @@ async function recordPublishVersionInTransaction(client, input) {
     restoredBy = pendingRestore.restoredBy || input.actorUserId || null;
   }
 
-  await versionRepo.supersedePublishedVersions(client, organizationId);
+  await versionRepo.supersedePublishedVersions(client, organizationId, branchId);
   const versionNumber = await versionRepo.getNextVersionNumber(client, organizationId);
-  const snapshot = await buildPublicationSnapshot(client, churchId);
+  const snapshot = await buildPublicationSnapshot(client, churchId, branchId);
   const changeSummary = {
     ...buildChangeSummary(snapshot, sourceType),
     publicationNote: input.publicationNote || null,
@@ -211,11 +225,13 @@ async function recordPublishVersionInTransaction(client, input) {
     publishedSubmissionIds: Array.isArray(input.publishedSubmissionIds)
       ? input.publishedSubmissionIds
       : [],
+    branchId,
   };
 
   const version = await versionRepo.insertPublishedVersion(client, {
     organizationId,
     churchId,
+    branchId,
     versionNumber,
     themeKey: snapshot.themeKey || "default",
     sourceType,
@@ -238,6 +254,7 @@ async function recordPublishVersionInTransaction(client, input) {
     const auditSvc = require("./websiteAuditService");
     await auditSvc.recordWebsiteAuditEventInTransaction(client, {
       organizationId,
+      branchId,
       actorUserId: input.actorUserId || null,
       actorRole: "church_hq_admin",
       actionType:
@@ -248,6 +265,7 @@ async function recordPublishVersionInTransaction(client, input) {
       metadata: {
         versionNumber: version && version.versionNumber,
         sourceType,
+        branchId,
       },
     });
   } catch (auditErr) {
@@ -862,14 +880,16 @@ async function prepareVersionRestore(db, opts) {
  * @param {import('pg').PoolClient} client
  * @param {string} churchId
  * @param {object} snapshotPage
+ * @param {string|null} [branchId]
  */
-async function applySnapshotPageToDraft(client, churchId, snapshotPage) {
+async function applySnapshotPageToDraft(client, churchId, snapshotPage, branchId) {
   const pageKey = snapshotPage.pageKey;
   if (!pageKey) return;
   const title = snapshotPage.title || PAGE_KEY_TITLES[pageKey] || pageKey;
+  const scopedBranchId = branchId != null && String(branchId).trim() ? String(branchId).trim() : null;
   const ensured = await publicContentRepo.ensureDraftPage(client, {
     churchId,
-    branchId: null,
+    branchId: scopedBranchId,
     pageKey,
     title,
   });
@@ -993,6 +1013,11 @@ async function createRestoredDraft(db, opts) {
       if (historical.organizationId !== organizationId) {
         return { ok: false, status: STATUS.NOT_FOUND, reason: "version" };
       }
+      if (String(historical.churchId) !== String(churchId)) {
+        return { ok: false, status: STATUS.NOT_FOUND, reason: "version" };
+      }
+
+      const restoreBranchId = historical.branchId || null;
 
       // Re-load snapshot only; never mutate the historical row.
       const snapshotBefore = JSON.stringify(historical.snapshot || {});
@@ -1005,7 +1030,7 @@ async function createRestoredDraft(db, opts) {
       }
 
       for (const page of pagesToRestore) {
-        await applySnapshotPageToDraft(client, churchId, page);
+        await applySnapshotPageToDraft(client, churchId, page, restoreBranchId);
       }
 
       const restoredSnapshot = {
@@ -1015,6 +1040,7 @@ async function createRestoredDraft(db, opts) {
             : opts.restoreTheme !== false
               ? historical.themeKey || snap.themeKey || "default"
               : opts.currentThemeKey || "default",
+        branchId: restoreBranchId,
         pageKeys: pagesToRestore.map((p) => p.pageKey),
         pages: pagesToRestore,
         navigation: opts.restoreNavigation ? snap.navigation || [] : [],
@@ -1026,6 +1052,7 @@ async function createRestoredDraft(db, opts) {
       const draftVersion = await versionRepo.insertDraftRestorationVersion(client, {
         organizationId,
         churchId,
+        branchId: restoreBranchId,
         versionNumber,
         themeKey: restoredSnapshot.themeKey,
         sourceVersionId: historical.id,
@@ -1041,6 +1068,7 @@ async function createRestoredDraft(db, opts) {
           ),
           sourceType: "content_restoration",
           sourceVersionNumber: historical.versionNumber,
+          branchId: restoreBranchId,
         },
       });
 
@@ -1058,6 +1086,7 @@ async function createRestoredDraft(db, opts) {
       const auditSvc = require("./websiteAuditService");
       await auditSvc.recordWebsiteAuditEventInTransaction(client, {
         organizationId,
+        branchId: restoreBranchId,
         actorUserId,
         actorRole: "church_hq_admin",
         actionType: "version_restored",
@@ -1067,6 +1096,7 @@ async function createRestoredDraft(db, opts) {
         metadata: {
           sourceVersionId: historical.id,
           restoredPageKeys: restoredSnapshot.pageKeys,
+          branchId: restoreBranchId,
         },
       });
 
@@ -1076,6 +1106,7 @@ async function createRestoredDraft(db, opts) {
         draftVersion,
         historical,
         restoredPageKeys: restoredSnapshot.pageKeys,
+        branchId: restoreBranchId,
         message: "A restored draft has been created. Review it before publishing.",
       };
     });

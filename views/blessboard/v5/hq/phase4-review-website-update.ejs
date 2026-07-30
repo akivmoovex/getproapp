@@ -90,6 +90,10 @@
   <p class="bb-hq-error" role="alert">This request cannot be reviewed in its current status.</p>
   <% } else if (formError === 'self_approval_blocked') { %>
   <p class="bb-hq-error" role="alert">Self-approval is blocked by network approval settings.</p>
+  <% } else if (formError === 'approve_publish_failed') { %>
+  <p class="bb-hq-error" role="alert">Approval failed while publishing branch drafts. No changes were applied.</p>
+  <% } else if (formError === 'approve_apply_failed') { %>
+  <p class="bb-hq-error" role="alert">Approval failed because the submission had no draft content to apply.</p>
   <% } else if (formError) { %>
   <p class="bb-hq-error" role="alert">The review could not be completed. Check your input and try again.</p>
   <% } %>

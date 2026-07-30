@@ -17,6 +17,7 @@ function mapSubmission(row) {
   return {
     id: row.id,
     organizationId: row.organization_id,
+    churchId: row.church_id || row.branch_church_id || null,
     branchId: row.branch_id,
     branchName: row.branch_display_name || null,
     branchKey: row.branch_key || null,
@@ -66,6 +67,7 @@ function mapEvent(row) {
 const LIST_SELECT = `
   SELECT
     s.*,
+    b.church_id AS church_id,
     b.display_name AS branch_display_name,
     b.branch_key,
     su.display_name AS submitter_display_name,
@@ -114,10 +116,14 @@ async function listSubmissions(db, filters) {
     i += 1;
   }
 
-  if (filters.branchId && isUuid(filters.branchId)) {
-    where.push(`s.branch_id = $${i}`);
-    params.push(filters.branchId);
-    i += 1;
+  if (Object.prototype.hasOwnProperty.call(filters, "branchId")) {
+    if (filters.branchId && isUuid(filters.branchId)) {
+      where.push(`s.branch_id = $${i}`);
+      params.push(filters.branchId);
+      i += 1;
+    } else {
+      where.push(`s.branch_id IS NULL`);
+    }
   }
 
   if (filters.pageKey && String(filters.pageKey).trim()) {
@@ -616,22 +622,37 @@ async function listEvents(db, organizationId, submissionId, opts) {
 }
 
 /**
- * Mark all approved submissions published (called inside publish TX).
+ * Mark approved submissions published for one website scope (called inside publish TX).
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
  * @param {string|null} actorUserId
+ * @param {string|null|undefined} [branchId] null = church-wide (branch_id IS NULL)
  */
-async function markApprovedSubmissionsPublished(db, organizationId, actorUserId) {
+async function markApprovedSubmissionsPublished(db, organizationId, actorUserId, branchId) {
   if (!isUuid(organizationId)) return [];
-  const res = await db.query(
-    `UPDATE blessboard.website_change_submissions
-        SET status = 'published',
-            updated_at = now()
-      WHERE organization_id = $1
-        AND status = 'approved'
-      RETURNING id`,
-    [organizationId]
-  );
+  const scopedBranchId =
+    branchId != null && String(branchId).trim() ? String(branchId).trim() : null;
+  const res = scopedBranchId
+    ? await db.query(
+        `UPDATE blessboard.website_change_submissions
+            SET status = 'published',
+                updated_at = now()
+          WHERE organization_id = $1
+            AND status = 'approved'
+            AND branch_id = $2
+          RETURNING id`,
+        [organizationId, scopedBranchId]
+      )
+    : await db.query(
+        `UPDATE blessboard.website_change_submissions
+            SET status = 'published',
+                updated_at = now()
+          WHERE organization_id = $1
+            AND status = 'approved'
+            AND branch_id IS NULL
+          RETURNING id`,
+        [organizationId]
+      );
   const rows = res.rows || [];
   for (const row of rows) {
     await appendEvent(db, {

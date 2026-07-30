@@ -497,7 +497,9 @@ function createChurchWebsiteAdminRouter(deps) {
     }
 
     const result = await publishChurchWebsite(getPool(), {
+      organizationId: tenant.organization && tenant.organization.id,
       churchId: tenant.church.id,
+      branchId: null,
       actorUserId: await actorUserId(req),
       deferServiceTimes,
       confirmPublish: body.confirm_publish,

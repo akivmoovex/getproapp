@@ -1,7 +1,7 @@
 <%#
   BlessBoard V5 tenant public shell — document start + sticky header + mobile drawer.
-  Phase 7 church website foundation.
-  Locals: seo, publicName, primaryBranchDisplayName, showEnvBadge, dataEnvironment,
+  Stage 4: branch mini-site identity + switcher; Stitch public home shell tokens.
+  Locals: seo, publicName, church, branch, websiteScope, branchSwitcher, churchHomeHref,
           navItems, activeNav, loginHref, visitHref, cssHref (optional)
 %>
 <!DOCTYPE html>
@@ -18,13 +18,25 @@
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=45' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=46' %>" />
 </head>
+<%
+  var _isBranchMini =
+    typeof websiteScope !== 'undefined' &&
+    websiteScope &&
+    String(websiteScope.scopeType || '') === 'branch';
+  var _bodyClass = 'bb-tp-body';
+  if (typeof isPreview !== 'undefined' && isPreview) _bodyClass += ' bb-tp-body--preview';
+  if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) _bodyClass += ' bb-tp-body--admin';
+  if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) _bodyClass += ' bb-tp-body--editing';
+  if (_isBranchMini) _bodyClass += ' bb-tp-body--branch';
+%>
 <body
-  class="bb-tp-body<%= typeof isPreview !== 'undefined' && isPreview ? ' bb-tp-body--preview' : '' %><%= typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit ? ' bb-tp-body--admin' : '' %><%= typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode ? ' bb-tp-body--editing' : '' %>"
+  class="<%= _bodyClass %>"
   data-bb-shell="tenant-public"
   data-bb-product="blessboard-v5"
   data-bb-page="<%= pageKey %>"
+  <% if (_isBranchMini) { %>data-bb-website-scope="branch"<% } else { %>data-bb-website-scope="church"<% } %>
   <% if (typeof isPreview !== 'undefined' && isPreview) { %>data-bb-preview="1"<% } %>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>data-bb-website-editing="1"<% } %>
 >
@@ -52,34 +64,16 @@
 
   <header class="bb-tp-header" data-bb-header="1" id="bb-tp-header">
     <div class="bb-tp-header__inner">
-      <a class="bb-tp-brand" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>" aria-label="<%= publicName %> home" title="<%= publicName %>">
-        <img
-          class="bb-tp-brand__mark"
-          src="/church/images/brand/blessboard-small-church-logo.png"
-          alt=""
-          width="30"
-          height="30"
-          decoding="async"
-        />
-        <span class="bb-tp-brand__text">
-          <span class="bb-tp-brand__name"><%= publicName %></span>
-          <% if (primaryBranchDisplayName) { %>
-          <span class="bb-tp-brand__branch"><%= primaryBranchDisplayName %></span>
-          <% } %>
-        </span>
-      </a>
+      <%- include('../public/partials/shell-brand', { brandVariant: 'header' }) %>
 
-      <nav class="bb-tp-nav bb-tp-nav--desktop" data-bb-nav="desktop" aria-label="Primary">
-        <% navItems.forEach(function (item) { %>
-        <a
-          href="<%= item.href %>"
-          class="bb-tp-nav__link<%= activeNav === item.key ? ' is-active' : '' %>"
-          <% if (activeNav === item.key) { %>aria-current="page"<% } %>
-        ><%= item.label %></a>
-        <% }) %>
-      </nav>
+      <%- include('../public/partials/shell-nav', {
+        navClass: 'bb-tp-nav bb-tp-nav--desktop',
+        navDataAttr: 'desktop',
+        navAriaLabel: 'Primary'
+      }) %>
 
       <div class="bb-tp-header__actions" data-bb-header-actions="1">
+        <%- include('../public/partials/branch-switcher', { switcherPlacement: 'header' }) %>
         <% if (showEnvBadge) { %>
         <span class="bb-tp-env"><%= dataEnvironment %></span>
         <% } %>
@@ -132,28 +126,22 @@
     inert
   >
     <div class="bb-tp-drawer__head">
-      <a class="bb-tp-brand bb-tp-brand--drawer" href="<%= typeof homeHref !== 'undefined' && homeHref ? homeHref : '/' %>" aria-label="<%= publicName %> home" title="<%= publicName %>">
-        <img
-          class="bb-tp-brand__mark"
-          src="/church/images/brand/blessboard-small-church-logo.png"
-          alt=""
-          width="24"
-          height="24"
-          decoding="async"
-        />
-        <span class="bb-tp-brand__name"><%= publicName %></span>
-      </a>
+      <%- include('../public/partials/shell-brand', { brandVariant: 'drawer' }) %>
       <button type="button" class="bb-tp-drawer__close" id="bb-tp-drawer-close" aria-label="Close navigation">
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </button>
     </div>
+    <div class="bb-tp-drawer__switcher">
+      <%- include('../public/partials/branch-switcher', { switcherPlacement: 'drawer' }) %>
+    </div>
     <nav class="bb-tp-drawer__nav" aria-label="Primary">
-      <ul class="bb-tp-drawer__list">
-        <% navItems.forEach(function (item) { %>
+      <ul class="bb-tp-drawer__list" data-bb-nav="mobile">
+        <% (navItems || []).forEach(function (item) { %>
         <li class="bb-tp-drawer__item">
           <a
             href="<%= item.href %>"
             class="bb-tp-drawer__link<%= activeNav === item.key ? ' is-active' : '' %>"
+            data-bb-nav-link="<%= item.key %>"
             <% if (activeNav === item.key) { %>aria-current="page"<% } %>
           ><%= item.label %></a>
         </li>
@@ -182,4 +170,4 @@
     </div>
   </aside>
 
-  <main id="bb-tp-main" class="bb-tp-main" tabindex="-1">
+  <main id="bb-tp-main" class="bb-tp-main" tabindex="-1" data-bb-main="1">

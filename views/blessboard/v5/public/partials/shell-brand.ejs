@@ -1,0 +1,50 @@
+<%#
+  Shared public brand lockup — church identity (+ branch on mini sites).
+  Stitch: 01-public-home-*-v2 (Refined) header lockup; Stage 4 branch mini-site shell.
+  Locals: publicName, church, branch, websiteScope, homeHref, primaryBranchDisplayName
+%>
+<%
+  var _isBranchMini =
+    typeof websiteScope !== 'undefined' &&
+    websiteScope &&
+    String(websiteScope.scopeType || '') === 'branch';
+  var _churchName =
+    (typeof publicName !== 'undefined' && publicName)
+      ? String(publicName)
+      : ((typeof church !== 'undefined' && church && church.displayName)
+        ? String(church.displayName)
+        : 'Church');
+  var _branchName = '';
+  if (_isBranchMini && typeof branch !== 'undefined' && branch && branch.displayName) {
+    _branchName = String(branch.displayName);
+  } else if (!_isBranchMini && typeof primaryBranchDisplayName !== 'undefined' && primaryBranchDisplayName) {
+    _branchName = String(primaryBranchDisplayName);
+  }
+  var _home = typeof homeHref !== 'undefined' && homeHref ? homeHref : '/';
+  var _variant = typeof brandVariant !== 'undefined' && brandVariant ? String(brandVariant) : 'header';
+  var _brandClass = 'bb-tp-brand' + (_variant === 'drawer' ? ' bb-tp-brand--drawer' : '') + (_isBranchMini ? ' bb-tp-brand--branch' : '');
+  var _markSize = _variant === 'drawer' ? 24 : 30;
+%>
+<a
+  class="<%= _brandClass %>"
+  href="<%= _home %>"
+  aria-label="<%= _churchName %><%= _branchName ? (' — ' + _branchName) : '' %> home"
+  title="<%= _churchName %><%= _branchName ? (' — ' + _branchName) : '' %>"
+  data-bb-shell-brand="1"
+  <% if (_isBranchMini) { %>data-bb-branch-mini="1"<% } %>
+>
+  <img
+    class="bb-tp-brand__mark"
+    src="/church/images/brand/blessboard-small-church-logo.png"
+    alt=""
+    width="<%= _markSize %>"
+    height="<%= _markSize %>"
+    decoding="async"
+  />
+  <span class="bb-tp-brand__text">
+    <span class="bb-tp-brand__name" data-bb-church-name="1"><%= _churchName %></span>
+    <% if (_branchName) { %>
+    <span class="bb-tp-brand__branch" data-bb-branch-name="1"><%= _branchName %></span>
+    <% } %>
+  </span>
+</a>

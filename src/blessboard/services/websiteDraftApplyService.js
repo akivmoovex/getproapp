@@ -525,8 +525,88 @@ async function applyWebsiteDraftsInTransaction(client, opts) {
   };
 }
 
+/**
+ * Apply Phase 7 draft payloads embedded in a change submission (approval path).
+ * Used when live draft rows were already cleared or as a fallback after submit.
+ * @param {import('pg').PoolClient} client
+ * @param {{
+ *   organizationId: string,
+ *   churchId: string,
+ *   branchId?: string|null,
+ *   proposedContent: object,
+ * }} opts
+ */
+async function applyProposedPhase7DraftsInTransaction(client, opts) {
+  const organizationId = opts.organizationId;
+  const churchId = opts.churchId;
+  const branchId = opts.branchId === undefined ? null : opts.branchId;
+  const proposed = opts.proposedContent || {};
+
+  if (!fieldDraftRepo.isUuid(organizationId) || !fieldDraftRepo.isUuid(churchId)) {
+    throw mapError("INVALID_SCOPE", "Invalid organization scope.");
+  }
+
+  const orgCheck = await client.query(
+    `SELECT organization_id FROM blessboard.churches WHERE id = $1 LIMIT 1`,
+    [churchId]
+  );
+  const row = orgCheck.rows[0];
+  if (!row || String(row.organization_id) !== String(organizationId)) {
+    throw mapError("CROSS_ORG", "Organization scope mismatch.");
+  }
+
+  const fieldDrafts = Array.isArray(proposed.fieldDrafts) ? proposed.fieldDrafts : [];
+  const structuredDrafts = Array.isArray(proposed.structuredDrafts)
+    ? proposed.structuredDrafts
+    : [];
+  if (!fieldDrafts.length && !structuredDrafts.length) {
+    return { applied: 0, fieldCount: 0, structuredCount: 0 };
+  }
+
+  const ctx = { churchId, branchId: branchId || null };
+  let fieldCount = 0;
+  let structuredCount = 0;
+  for (const d of fieldDrafts) {
+    await applyFieldDraft(
+      client,
+      {
+        ...d,
+        organizationId,
+        churchId,
+        branchId: branchId || null,
+        newValue: d.newValue,
+        fieldKey: d.fieldKey,
+        pageKey: d.pageKey,
+        sectionKey: d.sectionKey,
+      },
+      ctx
+    );
+    fieldCount += 1;
+  }
+  for (const d of structuredDrafts) {
+    await applyStructuredDraft(
+      client,
+      {
+        ...d,
+        organizationId,
+        churchId,
+        branchId: branchId || null,
+      },
+      ctx
+    );
+    structuredCount += 1;
+  }
+
+  return {
+    applied: fieldCount + structuredCount,
+    fieldCount,
+    structuredCount,
+  };
+}
+
 module.exports = {
   applyWebsiteDraftsInTransaction,
+  applyProposedPhase7DraftsInTransaction,
   ensurePage,
   ensureSection,
 };

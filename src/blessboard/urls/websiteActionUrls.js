@@ -77,7 +77,7 @@ function resolveWebsiteActionUrls(input) {
   if (actor === "hq") {
     return {
       serviceTimesUrl: hqContentPagePath("home"),
-      serviceTimesLabel: "Edit home content",
+      serviceTimesLabel: "Edit church-wide service times",
       editWebsiteUrl: hqContentPagePath("home"),
       editWebsiteLabel: "Edit website",
       previewUrl: hqPreviewPagePath("home"),
@@ -95,8 +95,8 @@ function resolveWebsiteActionUrls(input) {
         ? `${publicPath}?website_edit=1`
         : "/branch-admin/website";
     return {
-      serviceTimesUrl: "/branch-admin/website",
-      serviceTimesLabel: "Edit branch website",
+      serviceTimesUrl: "/branch-admin/website/service-times",
+      serviceTimesLabel: "Edit service times",
       editWebsiteUrl: "/branch-admin/website",
       editWebsiteLabel: "Edit website",
       previewUrl: visualEdit,

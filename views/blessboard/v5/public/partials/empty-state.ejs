@@ -1,0 +1,24 @@
+<%#
+  Public empty-state component (tenant public design system).
+  Locals: emptyHeadline / title, emptyMessage / body, icon (optional)
+%>
+<%
+  var _title =
+    typeof emptyHeadline !== 'undefined' && emptyHeadline
+      ? emptyHeadline
+      : (typeof title !== 'undefined' && title ? title : 'Content coming soon');
+  var _body =
+    typeof emptyMessage !== 'undefined' && emptyMessage
+      ? emptyMessage
+      : (typeof body !== 'undefined' ? body : '');
+  var _icon = typeof icon !== 'undefined' && icon ? icon : 'hourglass_empty';
+%>
+<div class="bb-tp-empty" role="status" data-bb-empty-state="1">
+  <div class="bb-tp-empty__icon" aria-hidden="true">
+    <span class="material-symbols-outlined"><%= _icon %></span>
+  </div>
+  <h2><%= _title %></h2>
+  <% if (_body) { %>
+  <p><%= _body %></p>
+  <% } %>
+</div>

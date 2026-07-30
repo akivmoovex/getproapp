@@ -76,14 +76,26 @@
   <%- include('../partials/form-errors', { errors: [error], id: 'bb-ca-page-errors' }) %>
   <% } %>
   <% if (typeof saved !== 'undefined' && saved) { %>
+  <%
+    var _inhNotice = typeof inheritanceNotice !== 'undefined' ? String(inheritanceNotice || '') : '';
+    var _successMsg = (typeof serviceTimesSaved !== 'undefined' && serviceTimesSaved)
+      ? 'Service times saved.'
+      : (_inhNotice === 'override'
+        ? 'Branch override is ready. Edit and publish this page when ready.'
+        : (_inhNotice === 'removed'
+          ? 'Branch override removed. Church-wide content is visible again when published.'
+          : (_inhNotice === 'published'
+            ? 'Branch page published. Other branches and the church-wide site were not changed.'
+            : 'Page saved.')));
+  %>
   <%- include('../partials/flash-message', {
     type: 'success',
     title: 'Saved',
-    message: (typeof serviceTimesSaved !== 'undefined' && serviceTimesSaved)
-      ? 'Service times saved.'
-      : 'Page saved.'
+    message: _successMsg
   }) %>
   <% } %>
+
+  <%- include('./partials/inheritance-banner') %>
 
   <% if (typeof showServiceTimesEditor !== 'undefined' && showServiceTimesEditor) { %>
   <%

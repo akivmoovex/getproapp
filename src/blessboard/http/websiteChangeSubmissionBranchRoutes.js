@@ -18,7 +18,10 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("../services/authorizeBlessBoardTenantAccess");
-const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
+const {
+  resolveWebsiteScope,
+  SCOPE_TYPE,
+} = require("../services/resolveWebsiteScope");
 const svc = require("../services/websiteChangeSubmissionService");
 const { publicChurchHomePath } = require("../urls/churchUrlHelper");
 const { EDIT_QUERY } = require("./attachWebsiteAdminChrome");
@@ -105,28 +108,38 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
   });
 
   /**
-   * Prefer the caller's branch_admin assignment; HQ/platform fall back to primary branch.
+   * Prefer the caller's assigned branch_admin branch via resolveWebsiteScope.
+   * HQ/platform fall back to an explicit primary branch key (not Branch Admin identity).
    * @param {import('express').Request} req
    * @param {object} tenant
    */
   async function resolveActorBranchId(req, tenant) {
     const session = req.v5Session && req.v5Session.session;
-    if (!session || !session.userId || !tenant || !tenant.organization || !tenant.church) {
+    if (!session || !session.userId || !tenant) {
       return null;
     }
-    const roles = await authzRepo.listActiveAuthorizationRoles(getPool(), session.userId);
-    const orgId = String(tenant.organization.id);
-    const churchId = String(tenant.church.id);
-    const branchRole = (roles || []).find(
-      (r) =>
-        r.roleKey === "branch_admin" &&
-        String(r.organizationId) === orgId &&
-        String(r.churchId) === churchId &&
-        r.branchId
-    );
-    if (branchRole && branchRole.branchId) return String(branchRole.branchId);
-    if (tenant.primaryBranch && tenant.primaryBranch.id) {
-      return String(tenant.primaryBranch.id);
+    const base = {
+      tenant,
+      authenticatedUser: session.userId,
+      organizationId: tenant.organization ? tenant.organization.id : null,
+      churchId: tenant.church ? tenant.church.id : null,
+    };
+    const assignedOrChurch = await resolveWebsiteScope(getPool(), {
+      ...base,
+      requestedBranchKey: null,
+    });
+    if (assignedOrChurch.ok && assignedOrChurch.scopeType === SCOPE_TYPE.BRANCH && assignedOrChurch.branchId) {
+      return String(assignedOrChurch.branchId);
+    }
+    if (assignedOrChurch.ok && assignedOrChurch.scopeType === SCOPE_TYPE.CHURCH) {
+      const primaryKey =
+        tenant.primaryBranch && tenant.primaryBranch.key ? tenant.primaryBranch.key : null;
+      if (!primaryKey) return null;
+      const primaryScope = await resolveWebsiteScope(getPool(), {
+        ...base,
+        requestedBranchKey: primaryKey,
+      });
+      if (primaryScope.ok && primaryScope.branchId) return String(primaryScope.branchId);
     }
     return null;
   }

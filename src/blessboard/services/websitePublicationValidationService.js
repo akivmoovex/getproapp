@@ -25,6 +25,7 @@ const STATUS = Object.freeze({
  * @param {{
  *   organizationId: string,
  *   churchId: string,
+ *   branchId?: string|null,
  *   actorUserId?: string|null,
  *   deferServiceTimes?: boolean,
  *   mobilePreviewConfirmed?: boolean,
@@ -36,6 +37,10 @@ const STATUS = Object.freeze({
 async function validateWebsitePublication(db, opts) {
   const organizationId = opts && opts.organizationId;
   const churchId = opts && opts.churchId;
+  const branchId =
+    opts && opts.branchId != null && String(opts.branchId).trim()
+      ? String(opts.branchId).trim()
+      : null;
   if (!versionRepo.isUuid(organizationId) || !versionRepo.isUuid(churchId)) {
     return {
       ok: false,
@@ -48,27 +53,30 @@ async function validateWebsitePublication(db, opts) {
   }
 
   try {
-    const [readiness, settingsResult, currentVersion, nextNumber, approvedList, pendingList] =
-      await Promise.all([
-        evaluatePublishReadiness(db, {
-          churchId,
-          deferServiceTimes: Boolean(opts.deferServiceTimes),
-          env: opts.env,
-        }),
-        approvalSettingsSvc.loadEffectiveSettings(db, organizationId),
-        versionRepo.getCurrentPublishedVersion(db, organizationId),
-        versionRepo.getNextVersionNumber(db, organizationId),
-        submissionRepo.listSubmissions(db, {
-          organizationId,
-          status: "approved",
-          limit: 50,
-        }),
-        submissionRepo.listSubmissions(db, {
-          organizationId,
-          status: "pending_review",
-          limit: 20,
-        }),
-      ]);
+    const readiness = await evaluatePublishReadiness(db, {
+      churchId,
+      deferServiceTimes: Boolean(opts.deferServiceTimes),
+      env: opts.env,
+    });
+    const settingsResult = await approvalSettingsSvc.loadEffectiveSettings(db, organizationId);
+    const currentVersion = await versionRepo.getCurrentPublishedVersion(
+      db,
+      organizationId,
+      branchId
+    );
+    const nextNumber = await versionRepo.getNextVersionNumber(db, organizationId);
+    const approvedList = await submissionRepo.listSubmissions(db, {
+      organizationId,
+      status: "approved",
+      branchId,
+      limit: 50,
+    });
+    const pendingList = await submissionRepo.listSubmissions(db, {
+      organizationId,
+      status: "pending_review",
+      branchId,
+      limit: 20,
+    });
 
     const settings =
       settingsResult && settingsResult.ok
@@ -137,7 +145,7 @@ async function validateWebsitePublication(db, opts) {
     for (const pageKey of PUBLIC_PAGE_KEYS.slice(0, 3)) {
       const page = await publicContentRepo.findPageByScope(db, {
         churchId,
-        branchId: null,
+        branchId,
         pageKey,
       });
       if (!page) continue;
@@ -250,7 +258,7 @@ async function validateWebsitePublication(db, opts) {
     for (const pageKey of PUBLIC_PAGE_KEYS) {
       const page = await publicContentRepo.findPageByScope(db, {
         churchId,
-        branchId: null,
+        branchId,
         pageKey,
       });
       if (!page) continue;

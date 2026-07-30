@@ -21,10 +21,7 @@
     <h1 class="bb-tp-legacy-page__title"><%= pageTitle %></h1>
 
     <% if (showEmptyState) { %>
-    <div class="bb-tp-empty" role="status">
-      <h2><%= emptyHeadline %></h2>
-      <p><%= emptyMessage %></p>
-    </div>
+    <%- include('./partials/empty-state') %>
     <% } %>
 
     <% if (sections && sections.length) { %>

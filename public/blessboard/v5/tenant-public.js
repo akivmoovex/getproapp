@@ -108,3 +108,39 @@
     }
   });
 })();
+
+/**
+ * Branch switcher: close other open switchers; close on outside click / Escape.
+ * Does not cover main content permanently — panel is absolutely positioned with max-height.
+ */
+(function () {
+  "use strict";
+
+  var switchers = Array.prototype.slice.call(
+    document.querySelectorAll("[data-bb-branch-switcher='1']")
+  );
+  if (!switchers.length) return;
+
+  function closeAll(except) {
+    switchers.forEach(function (el) {
+      if (el !== except && el.open) el.open = false;
+    });
+  }
+
+  switchers.forEach(function (el) {
+    el.addEventListener("toggle", function () {
+      if (el.open) closeAll(el);
+    });
+  });
+
+  document.addEventListener("click", function (e) {
+    var target = e.target;
+    if (!target || !target.closest) return;
+    if (target.closest("[data-bb-branch-switcher='1']")) return;
+    closeAll(null);
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeAll(null);
+  });
+})();

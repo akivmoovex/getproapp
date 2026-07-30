@@ -399,14 +399,23 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
         return res.redirect(303, `${detailPath}?error=${encodeURIComponent(err)}`);
       }
       if (result.status === svc.STATUS.CONFLICT) {
-        return res.redirect(303, `${detailPath}?error=invalid_transition`);
+        const conflictErr =
+          result.reason === "approve_apply_empty"
+            ? "approve_apply_failed"
+            : "invalid_transition";
+        return res.redirect(303, `${detailPath}?error=${encodeURIComponent(conflictErr)}`);
+      }
+      if (result.reason === "approve_publish_failed") {
+        return res.redirect(303, `${detailPath}?error=approve_publish_failed`);
       }
       return sendControlled(req, res, 503, "The review decision could not be saved.");
     }
 
     const notice =
       action === "approve"
-        ? "approved"
+        ? result.published
+          ? "approved_and_published"
+          : "approved"
         : action === "request-changes"
           ? "changes_requested"
           : "rejected";

@@ -164,14 +164,16 @@ async function hasServiceTimesContent(client, churchId) {
 /**
  * @param {{ query: Function }} client
  * @param {string} churchId
+ * @param {string|null} [branchId]
  */
-async function listRequiredPagePresence(client, churchId) {
+async function listRequiredPagePresence(client, churchId, branchId) {
   const pages = [];
   const missing = [];
+  const scopedBranchId = branchId != null && String(branchId).trim() ? String(branchId).trim() : null;
   for (const pageKey of PUBLIC_PAGE_KEYS) {
     const page = await publicContentRepo.findPageByScope(client, {
       churchId,
-      branchId: null,
+      branchId: scopedBranchId,
       pageKey,
     });
     if (page) pages.push(page);
@@ -395,16 +397,18 @@ async function acknowledgeWebsitePreview(db, input) {
 }
 
 /**
- * Ensure church-wide draft shells exist (idempotent).
+ * Ensure draft shells exist for the publish scope (idempotent).
  * @param {{ query: Function }} client
  * @param {string} churchId
+ * @param {string|null} [branchId]
  */
-async function ensureRequiredDraftPages(client, churchId) {
+async function ensureRequiredDraftPages(client, churchId, branchId) {
   let createdCount = 0;
+  const scopedBranchId = branchId != null && String(branchId).trim() ? String(branchId).trim() : null;
   for (const pageKey of PUBLIC_PAGE_KEYS) {
     const result = await publicContentRepo.ensureDraftPage(client, {
       churchId,
-      branchId: null,
+      branchId: scopedBranchId,
       pageKey,
       title: PAGE_KEY_TITLES[pageKey] || pageKey,
     });
@@ -414,10 +418,13 @@ async function ensureRequiredDraftPages(client, churchId) {
 }
 
 /**
- * Publish all required church-wide pages + website_status in one transaction.
+ * Publish required pages + version history for one website scope.
+ * branchId null = church-wide; set = one branch mini website.
  * @param {{ connect?: Function, query?: Function }} db
  * @param {{
+ *   organizationId?: string|null,
  *   churchId: string,
+ *   branchId?: string|null,
  *   actorUserId?: string|null,
  *   deferServiceTimes?: boolean,
  *   confirmPublish?: unknown,
@@ -428,6 +435,21 @@ async function publishChurchWebsite(db, input) {
   const churchId = String((input && input.churchId) || "").trim();
   if (!UUID_RE.test(churchId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "church_id" };
+  }
+  const rawBranchId = input && input.branchId;
+  let branchId = null;
+  if (rawBranchId != null && String(rawBranchId).trim() !== "") {
+    branchId = String(rawBranchId).trim();
+    if (!UUID_RE.test(branchId)) {
+      return { ok: false, status: STATUS.INVALID_INPUT, reason: "branch_id" };
+    }
+  }
+  const requestedOrganizationId =
+    input && input.organizationId != null && String(input.organizationId).trim()
+      ? String(input.organizationId).trim()
+      : null;
+  if (requestedOrganizationId && !UUID_RE.test(requestedOrganizationId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "organization_id" };
   }
   if (!(input && (input.confirmPublish === true || input.confirmPublish === "1" || input.confirmPublish === "on"))) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "confirm_publish" };
@@ -446,9 +468,13 @@ async function publishChurchWebsite(db, input) {
       gaps: readiness.gaps || [],
     };
   }
+  if (requestedOrganizationId && String(readiness.organizationId) !== requestedOrganizationId) {
+    return { ok: false, status: STATUS.FORBIDDEN, reason: "organization_mismatch" };
+  }
   if (!readiness.ready) {
     // Phase 7 draft republish onto an already-published website should not re-block
     // on first-publish advisory gaps (contact, service times, hostname polish, etc.).
+    // Branch publishes also allow when church website is already live.
     const forcePublishVersion = Boolean(input && input.forcePublishVersion);
     const alreadyPublished = String(readiness.websiteStatus || "") === "published";
     const fatalGaps = (readiness.gaps || []).filter(
@@ -460,12 +486,14 @@ async function publishChurchWebsite(db, input) {
     );
     const allowDraftRepublish =
       forcePublishVersion && alreadyPublished && fatalGaps.length === 0;
-    if (!allowDraftRepublish) {
+    const allowBranchOntoPublishedChurch =
+      Boolean(branchId) && alreadyPublished && fatalGaps.length === 0;
+    if (!allowDraftRepublish && !allowBranchOntoPublishedChurch) {
       return {
         ok: false,
         status: STATUS.NOT_READY,
         reason: "not_ready",
-        gaps: allowDraftRepublish ? fatalGaps : readiness.gaps,
+        gaps: readiness.gaps,
         readiness,
       };
     }
@@ -476,13 +504,14 @@ async function publishChurchWebsite(db, input) {
     const validation = await validateWebsitePublication(db, {
       organizationId: readiness.organizationId,
       churchId,
+      branchId,
       actorUserId: input.actorUserId || null,
       deferServiceTimes: Boolean(input && input.deferServiceTimes),
       mobilePreviewConfirmed: Boolean(input && input.mobilePreviewConfirmed),
       relaxPreviewRequirement: Boolean(input && input.relaxPreviewRequirement),
       relaxReadinessGaps: Boolean(
         input &&
-          input.forcePublishVersion &&
+          (input.forcePublishVersion || branchId) &&
           String(readiness.websiteStatus || "") === "published"
       ),
       env: input && input.env,
@@ -501,6 +530,18 @@ async function publishChurchWebsite(db, input) {
 
   try {
     return await withTransaction(db, async (client) => {
+      if (branchId) {
+        const branchCheck = await client.query(
+          `SELECT id FROM blessboard.branches
+            WHERE id = $1 AND church_id = $2 AND status = 'active'
+            LIMIT 1`,
+          [branchId, churchId]
+        );
+        if (!branchCheck.rows[0]) {
+          return { ok: false, status: STATUS.NOT_FOUND, reason: "branch_not_found" };
+        }
+      }
+
       // Re-check inside TX to avoid races leaving partial publishes.
       const inner = await evaluatePublishReadiness(client, {
         churchId,
@@ -518,7 +559,9 @@ async function publishChurchWebsite(db, input) {
         );
         const allowDraftRepublish =
           forcePublishVersion && alreadyPublished && fatalGaps.length === 0;
-        if (!allowDraftRepublish) {
+        const allowBranchOntoPublishedChurch =
+          Boolean(branchId) && alreadyPublished && fatalGaps.length === 0;
+        if (!allowDraftRepublish && !allowBranchOntoPublishedChurch) {
           return {
             ok: false,
             status: inner.ok ? STATUS.NOT_READY : inner.status,
@@ -532,36 +575,70 @@ async function publishChurchWebsite(db, input) {
       // Phase 7 draft apply always forces a version even when CMS page rows stay published.
       const forcePublishVersion = Boolean(input && input.forcePublishVersion === true);
       if (!forcePublishVersion && inner.organizationId && input.actorUserId) {
-        const draftRes = await client.query(
-          `SELECT COUNT(*)::int AS n
-             FROM blessboard.public_pages
-            WHERE church_id = $1
-              AND branch_id IS NULL
-              AND status = 'draft'
-              AND page_key = ANY($2::text[])`,
-          [churchId, PUBLIC_PAGE_KEYS.slice()]
-        );
+        const draftRes = branchId
+          ? await client.query(
+              `SELECT COUNT(*)::int AS n
+                 FROM blessboard.public_pages
+                WHERE church_id = $1
+                  AND branch_id = $2
+                  AND status = 'draft'
+                  AND page_key = ANY($3::text[])`,
+              [churchId, branchId, PUBLIC_PAGE_KEYS.slice()]
+            )
+          : await client.query(
+              `SELECT COUNT(*)::int AS n
+                 FROM blessboard.public_pages
+                WHERE church_id = $1
+                  AND branch_id IS NULL
+                  AND status = 'draft'
+                  AND page_key = ANY($2::text[])`,
+              [churchId, PUBLIC_PAGE_KEYS.slice()]
+            );
         const draftN = draftRes.rows[0] ? Number(draftRes.rows[0].n) : 0;
-        const approvedRes = await client.query(
-          `SELECT COUNT(*)::int AS n
-             FROM blessboard.website_change_submissions
-            WHERE organization_id = $1
-              AND status = 'approved'`,
-          [inner.organizationId]
-        );
+        const approvedRes = branchId
+          ? await client.query(
+              `SELECT COUNT(*)::int AS n
+                 FROM blessboard.website_change_submissions
+                WHERE organization_id = $1
+                  AND status = 'approved'
+                  AND branch_id = $2`,
+              [inner.organizationId, branchId]
+            )
+          : await client.query(
+              `SELECT COUNT(*)::int AS n
+                 FROM blessboard.website_change_submissions
+                WHERE organization_id = $1
+                  AND status = 'approved'
+                  AND branch_id IS NULL`,
+              [inner.organizationId]
+            );
         const approvedN = approvedRes.rows[0] ? Number(approvedRes.rows[0].n) : 0;
         if (draftN === 0 && approvedN === 0) {
-          const recentRes = await client.query(
-            `SELECT id, version_number, published_at, published_by
-               FROM blessboard.website_publication_versions
-              WHERE organization_id = $1
-                AND published_by = $2
-                AND status = 'published'
-                AND published_at > now() - interval '15 seconds'
-              ORDER BY published_at DESC
-              LIMIT 1`,
-            [inner.organizationId, input.actorUserId]
-          );
+          const recentRes = branchId
+            ? await client.query(
+                `SELECT id, version_number, published_at, published_by
+                   FROM blessboard.website_publication_versions
+                  WHERE organization_id = $1
+                    AND branch_id = $2
+                    AND published_by = $3
+                    AND status = 'published'
+                    AND published_at > now() - interval '15 seconds'
+                  ORDER BY published_at DESC
+                  LIMIT 1`,
+                [inner.organizationId, branchId, input.actorUserId]
+              )
+            : await client.query(
+                `SELECT id, version_number, published_at, published_by
+                   FROM blessboard.website_publication_versions
+                  WHERE organization_id = $1
+                    AND branch_id IS NULL
+                    AND published_by = $2
+                    AND status = 'published'
+                    AND published_at > now() - interval '15 seconds'
+                  ORDER BY published_at DESC
+                  LIMIT 1`,
+                [inner.organizationId, input.actorUserId]
+              );
           const recent = recentRes.rows[0];
           if (recent && recent.id) {
             return {
@@ -573,6 +650,9 @@ async function publishChurchWebsite(db, input) {
               pageCount: PUBLIC_PAGE_KEYS.length,
               publicPath: inner.publicPath,
               organizationKey: inner.organizationKey,
+              organizationId: inner.organizationId,
+              churchId,
+              branchId,
               alreadyPublished: true,
               idempotent: true,
               publicationVersionId: recent.id,
@@ -583,21 +663,34 @@ async function publishChurchWebsite(db, input) {
         }
       }
 
-      await ensureRequiredDraftPages(client, churchId);
+      await ensureRequiredDraftPages(client, churchId, branchId);
 
       const publishedAt = new Date();
-      const pageUpdate = await client.query(
-        `UPDATE blessboard.public_pages
-            SET status = 'published',
-                published_at = COALESCE(published_at, $2::timestamptz),
-                updated_at = now()
-          WHERE church_id = $1
-            AND branch_id IS NULL
-            AND page_key = ANY($3::text[])
-            AND status <> 'archived'
-        RETURNING id, page_key, status`,
-        [churchId, publishedAt.toISOString(), PUBLIC_PAGE_KEYS.slice()]
-      );
+      const pageUpdate = branchId
+        ? await client.query(
+            `UPDATE blessboard.public_pages
+                SET status = 'published',
+                    published_at = COALESCE(published_at, $3::timestamptz),
+                    updated_at = now()
+              WHERE church_id = $1
+                AND branch_id = $2
+                AND page_key = ANY($4::text[])
+                AND status <> 'archived'
+            RETURNING id, page_key, status`,
+            [churchId, branchId, publishedAt.toISOString(), PUBLIC_PAGE_KEYS.slice()]
+          )
+        : await client.query(
+            `UPDATE blessboard.public_pages
+                SET status = 'published',
+                    published_at = COALESCE(published_at, $2::timestamptz),
+                    updated_at = now()
+              WHERE church_id = $1
+                AND branch_id IS NULL
+                AND page_key = ANY($3::text[])
+                AND status <> 'archived'
+            RETURNING id, page_key, status`,
+            [churchId, publishedAt.toISOString(), PUBLIC_PAGE_KEYS.slice()]
+          );
 
       if (pageUpdate.rowCount !== PUBLIC_PAGE_KEYS.length) {
         throw Object.assign(new Error("partial_page_publish"), {
@@ -607,31 +700,34 @@ async function publishChurchWebsite(db, input) {
         });
       }
 
-      const displayName = await settingsRepo.findChurchDisplayName(client, churchId);
-      await settingsRepo.ensureChurchSettingsRow(client, {
-        churchId,
-        publicName: displayName || "Church",
-      });
-      const existing = await settingsRepo.findChurchSettings(client, churchId);
-      await settingsRepo.upsertChurchSettings(client, churchId, {
-        publicName: (existing && existing.publicName) || displayName || "Church",
-        denomination: existing ? existing.denomination : null,
-        primaryEmail: existing ? existing.primaryEmail : null,
-        primaryPhone: existing ? existing.primaryPhone : null,
-        defaultTimezone: existing ? existing.defaultTimezone : null,
-        defaultCountryCode: existing ? existing.defaultCountryCode : null,
-        websiteStatus: "published",
-      });
+      // Church-wide publish flips site flag; branch publish must not mutate main website status.
+      if (!branchId) {
+        const displayName = await settingsRepo.findChurchDisplayName(client, churchId);
+        await settingsRepo.ensureChurchSettingsRow(client, {
+          churchId,
+          publicName: displayName || "Church",
+        });
+        const existing = await settingsRepo.findChurchSettings(client, churchId);
+        await settingsRepo.upsertChurchSettings(client, churchId, {
+          publicName: (existing && existing.publicName) || displayName || "Church",
+          denomination: existing ? existing.denomination : null,
+          primaryEmail: existing ? existing.primaryEmail : null,
+          primaryPhone: existing ? existing.primaryPhone : null,
+          defaultTimezone: existing ? existing.defaultTimezone : null,
+          defaultCountryCode: existing ? existing.defaultCountryCode : null,
+          websiteStatus: "published",
+        });
 
-      await appRepo.ensureOrganizationOnboardingRow(client, {
-        organizationId: inner.organizationId,
-      });
-      await appRepo.updateOrganizationOnboarding(client, inner.organizationId, {
-        previewAcknowledged: true,
-        onboardingStatus: "in_progress",
-        onboardingStartedAt: publishedAt.toISOString(),
-        lastActivityAt: publishedAt.toISOString(),
-      });
+        await appRepo.ensureOrganizationOnboardingRow(client, {
+          organizationId: inner.organizationId,
+        });
+        await appRepo.updateOrganizationOnboarding(client, inner.organizationId, {
+          previewAcknowledged: true,
+          onboardingStatus: "in_progress",
+          onboardingStartedAt: publishedAt.toISOString(),
+          lastActivityAt: publishedAt.toISOString(),
+        });
+      }
 
       const fieldKeys = [];
       if (input && input.deferServiceTimes) fieldKeys.push("service_times_deferred");
@@ -640,19 +736,21 @@ async function publishChurchWebsite(db, input) {
         deploymentCode: deploymentCode(input && input.env),
         organizationId: inner.organizationId,
         churchId,
-        branchId: null,
+        branchId,
         actorUserId: input.actorUserId || null,
         actionKey: "website.published",
-        entityType: "church",
-        entityId: churchId,
+        entityType: branchId ? "branch" : "church",
+        entityId: branchId || churchId,
         outcome: "success",
         metadata: {
           from_status: inner.websiteStatus || "draft",
-          to_status: "published",
+          to_status: branchId ? inner.websiteStatus || "draft" : "published",
           count: pageUpdate.rowCount,
           field_keys: fieldKeys.length ? fieldKeys : undefined,
           source: "hq_website",
           plan_key: inner.planKey || undefined,
+          website_scope: branchId ? "branch" : "church",
+          branch_id: branchId || undefined,
         },
       });
 
@@ -662,13 +760,15 @@ async function publishChurchWebsite(db, input) {
         const publishedSubmissionIds = await submissionRepo.markApprovedSubmissionsPublished(
           client,
           inner.organizationId,
-          input.actorUserId || null
+          input.actorUserId || null,
+          branchId
         );
 
         const versionSvc = require("./websitePublicationVersionService");
         publicationVersion = await versionSvc.recordPublishVersionInTransaction(client, {
           organizationId: inner.organizationId,
           churchId,
+          branchId,
           actorUserId: input.actorUserId || null,
           publishedAt: publishedAt.toISOString(),
           sourceType: (input && input.sourceType) || "hq_edit",
@@ -694,6 +794,9 @@ async function publishChurchWebsite(db, input) {
         pageCount: pageUpdate.rowCount,
         publicPath: inner.publicPath,
         organizationKey: inner.organizationKey,
+        organizationId: inner.organizationId,
+        churchId,
+        branchId,
         alreadyPublished: inner.websiteStatus === "published",
         publicationVersionId: publicationVersion && publicationVersion.id,
         publicationVersionNumber:

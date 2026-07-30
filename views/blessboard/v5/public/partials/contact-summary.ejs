@@ -1,0 +1,56 @@
+<%#
+  Contact summary — address / phone / email for shell footer and contact bands.
+  Locals: publicContact, primaryEmail, primaryPhone, visitHref
+%>
+<%
+  var _email = (typeof publicContact !== 'undefined' && publicContact && publicContact.email)
+    ? publicContact.email
+    : (typeof primaryEmail !== 'undefined' ? primaryEmail : '');
+  var _phone = (typeof publicContact !== 'undefined' && publicContact && publicContact.phone)
+    ? publicContact.phone
+    : (typeof primaryPhone !== 'undefined' ? primaryPhone : '');
+  var _emailHref = (typeof publicContact !== 'undefined' && publicContact && publicContact.emailHref)
+    ? publicContact.emailHref
+    : (_email ? ('mailto:' + _email) : null);
+  var _phoneHref = (typeof publicContact !== 'undefined' && publicContact && publicContact.phoneHref)
+    ? publicContact.phoneHref
+    : null;
+  if (!_phoneHref && _phone) {
+    _phoneHref = 'tel:' + String(_phone).replace(/[^\d+]/g, '');
+  }
+  var _address = (typeof publicContact !== 'undefined' && publicContact && publicContact.addressText)
+    ? publicContact.addressText
+    : '';
+  var _visit = typeof visitHref !== 'undefined' && visitHref
+    ? visitHref
+    : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact');
+  var _hasAny = Boolean(_address || _phone || _email);
+%>
+<div class="bb-tp-contact-summary" data-bb-contact-summary="1">
+  <% if (_hasAny) { %>
+  <ul class="bb-tp-contact-summary__list">
+    <% if (_address) { %>
+    <li>
+      <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+      <span><%= _address %></span>
+    </li>
+    <% } %>
+    <% if (_phone && _phoneHref) { %>
+    <li>
+      <span class="material-symbols-outlined" aria-hidden="true">phone</span>
+      <a href="<%= _phoneHref %>"><%= _phone %></a>
+    </li>
+    <% } %>
+    <% if (_email && _emailHref) { %>
+    <li>
+      <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+      <a href="<%= _emailHref %>"><%= _email %></a>
+    </li>
+    <% } %>
+  </ul>
+  <% } else { %>
+  <p class="bb-tp-contact-summary__empty">
+    <a href="<%= _visit %>">See visit details</a>
+  </p>
+  <% } %>
+</div>

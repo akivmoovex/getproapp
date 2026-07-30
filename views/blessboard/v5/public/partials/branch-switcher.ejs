@@ -1,0 +1,77 @@
+<%#
+  Public branch switcher — active branches only.
+  Stitch cues: 01-platform-branch-selector-* list pattern; public shell from 01-public-home-*-v2.
+  Locals: branchSwitcher, churchHomeHref, websiteScope, organizationKey (optional)
+%>
+<%
+  var _items = (typeof branchSwitcher !== 'undefined' && Array.isArray(branchSwitcher))
+    ? branchSwitcher
+    : [];
+  var _show = _items.length >= 1;
+  var _churchHome =
+    typeof churchHomeHref !== 'undefined' && churchHomeHref
+      ? churchHomeHref
+      : '/';
+  var _isBranchMini =
+    typeof websiteScope !== 'undefined' &&
+    websiteScope &&
+    String(websiteScope.scopeType || '') === 'branch';
+  var _placement = typeof switcherPlacement !== 'undefined' ? String(switcherPlacement) : 'header';
+  var _showViewAll = _items.length >= 2;
+%>
+<% if (_show) { %>
+<details
+  class="bb-tp-branch-switcher bb-tp-branch-switcher--<%= _placement %>"
+  data-bb-branch-switcher="1"
+  data-bb-branch-switcher-placement="<%= _placement %>"
+>
+  <summary class="bb-tp-branch-switcher__summary" aria-label="Choose a branch location">
+    <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+    <span class="bb-tp-branch-switcher__summary-text">
+      <%= _isBranchMini ? 'Locations' : 'Branches' %>
+    </span>
+    <span class="material-symbols-outlined bb-tp-branch-switcher__chevron" aria-hidden="true">expand_more</span>
+  </summary>
+  <div class="bb-tp-branch-switcher__panel" role="group" aria-label="Church and branch websites">
+    <a
+      class="bb-tp-branch-switcher__link bb-tp-branch-switcher__link--church<%= !_isBranchMini ? ' is-current' : '' %>"
+      href="<%= _churchHome %>"
+      data-bb-branch-switcher-church="1"
+      <% if (!_isBranchMini) { %>aria-current="page"<% } %>
+    >
+      <span class="bb-tp-branch-switcher__link-label">Main church website</span>
+    </a>
+
+    <% if (_items.length) { %>
+    <p class="bb-tp-branch-switcher__heading">Branches</p>
+    <ul class="bb-tp-branch-switcher__list">
+      <% _items.forEach(function (item) { %>
+      <li>
+        <a
+          class="bb-tp-branch-switcher__link<%= item.isCurrent ? ' is-current' : '' %>"
+          href="<%= item.href %>"
+          data-bb-branch-switcher-item="<%= item.key %>"
+          <% if (item.isCurrent) { %>aria-current="page"<% } %>
+        >
+          <span class="bb-tp-branch-switcher__link-label"><%= item.displayName %></span>
+          <% if (item.isCurrent) { %>
+          <span class="bb-tp-branch-switcher__current-tag">Current</span>
+          <% } else if (item.isPrimary) { %>
+          <span class="bb-tp-branch-switcher__meta-tag">Primary</span>
+          <% } %>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+
+    <% if (_showViewAll) { %>
+    <a
+      class="bb-tp-branch-switcher__link bb-tp-branch-switcher__link--all"
+      href="<%= _churchHome %>"
+      data-bb-branch-switcher-all="1"
+    >View all branches</a>
+    <% } %>
+  </div>
+</details>
+<% } %>

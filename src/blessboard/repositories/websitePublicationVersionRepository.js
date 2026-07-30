@@ -17,6 +17,7 @@ function mapVersion(row) {
     id: row.id,
     organizationId: row.organization_id,
     churchId: row.church_id,
+    branchId: row.branch_id || null,
     versionNumber: Number(row.version_number),
     status: row.status,
     themeKey: row.theme_key,
@@ -53,6 +54,7 @@ const LIST_SELECT_SUMMARY = `
     v.id,
     v.organization_id,
     v.church_id,
+    v.branch_id,
     v.version_number,
     v.status,
     v.theme_key,
@@ -76,6 +78,18 @@ const LIST_SELECT_SUMMARY = `
 `;
 
 /**
+ * @param {string|null|undefined} branchId
+ * @param {number} startIndex 1-based SQL param index for branch clause
+ * @returns {{ sql: string, params: string[] }}
+ */
+function branchScopeFilter(branchId, startIndex) {
+  if (branchId == null || branchId === "") {
+    return { sql: "v.branch_id IS NULL", params: [] };
+  }
+  return { sql: `v.branch_id = $${startIndex}`, params: [String(branchId)] };
+}
+
+/**
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
  */
@@ -93,17 +107,45 @@ async function getNextVersionNumber(db, organizationId) {
 /**
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
+ * @param {string|null|undefined} [branchId] null = church-wide only; undefined = all scopes
  */
-async function supersedePublishedVersions(db, organizationId) {
+async function supersedePublishedVersions(db, organizationId, branchId) {
   if (!isUuid(organizationId)) return 0;
+  if (branchId === undefined) {
+    const res = await db.query(
+      `UPDATE blessboard.website_publication_versions
+          SET status = 'superseded',
+              superseded_at = now()
+        WHERE organization_id = $1
+          AND status = 'published'
+        RETURNING id`,
+      [organizationId]
+    );
+    return res.rowCount || 0;
+  }
+  if (branchId == null || branchId === "") {
+    const res = await db.query(
+      `UPDATE blessboard.website_publication_versions
+          SET status = 'superseded',
+              superseded_at = now()
+        WHERE organization_id = $1
+          AND branch_id IS NULL
+          AND status = 'published'
+        RETURNING id`,
+      [organizationId]
+    );
+    return res.rowCount || 0;
+  }
+  if (!isUuid(branchId)) return 0;
   const res = await db.query(
     `UPDATE blessboard.website_publication_versions
         SET status = 'superseded',
             superseded_at = now()
       WHERE organization_id = $1
+        AND branch_id = $2
         AND status = 'published'
       RETURNING id`,
-    [organizationId]
+    [organizationId, branchId]
   );
   return res.rowCount || 0;
 }
@@ -115,22 +157,27 @@ async function supersedePublishedVersions(db, organizationId) {
 async function insertPublishedVersion(db, input) {
   const sourceType = input.sourceType || "hq_edit";
   const isRestore = sourceType === "content_restoration";
+  const branchId =
+    input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
   const res = await db.query(
     `INSERT INTO blessboard.website_publication_versions (
-       organization_id, church_id, version_number, status, theme_key, source_type,
+       organization_id, church_id, branch_id, version_number, status, theme_key, source_type,
        source_submission_id, source_version_id, restoration_reason, restored_by,
        snapshot_json, change_summary_json,
        created_by, published_by, published_at
      ) VALUES (
-       $1, $2, $3, 'published', $4, $5,
-       $6, $7, $8, $9,
-       $10::jsonb, $11::jsonb,
-       $12, $13, $14::timestamptz
+       $1, $2, $3, $4, 'published', $5, $6,
+       $7, $8, $9, $10,
+       $11::jsonb, $12::jsonb,
+       $13, $14, $15::timestamptz
      )
      RETURNING *`,
     [
       input.organizationId,
       input.churchId,
+      branchId,
       input.versionNumber,
       input.themeKey || null,
       sourceType,
@@ -155,6 +202,7 @@ async function insertPublishedVersion(db, input) {
  *   status?: string|null,
  *   publishedBy?: string|null,
  *   themeKey?: string|null,
+ *   branchId?: string|null,
  *   from?: string|null,
  *   to?: string|null,
  *   limit?: number,
@@ -168,6 +216,15 @@ async function listVersions(db, filters) {
   const where = ["v.organization_id = $1"];
   const params = [organizationId];
   let i = 2;
+
+  if (Object.prototype.hasOwnProperty.call(filters, "branchId")) {
+    const scope = branchScopeFilter(filters.branchId, i);
+    where.push(scope.sql);
+    for (const p of scope.params) {
+      params.push(p);
+      i += 1;
+    }
+  }
 
   if (filters.status) {
     where.push(`v.status = $${i}`);
@@ -238,15 +295,19 @@ async function getVersionByOrgAndId(db, organizationId, versionId) {
 /**
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
+ * @param {string|null|undefined} [branchId] null/omit = church-wide published version
  */
-async function getCurrentPublishedVersion(db, organizationId) {
+async function getCurrentPublishedVersion(db, organizationId, branchId) {
   if (!isUuid(organizationId)) return null;
+  const scope = branchScopeFilter(branchId == null ? null : branchId, 2);
   const res = await db.query(
     `${LIST_SELECT}
-      WHERE v.organization_id = $1 AND v.status = 'published'
+      WHERE v.organization_id = $1
+        AND v.status = 'published'
+        AND ${scope.sql}
       ORDER BY v.version_number DESC
       LIMIT 1`,
-    [organizationId]
+    [organizationId].concat(scope.params)
   );
   return mapVersion(res.rows[0] || null);
 }
@@ -328,20 +389,25 @@ async function loadPreviousPublishedVersion(db, organizationId, beforeVersionNum
  * @param {object} input
  */
 async function insertDraftRestorationVersion(db, input) {
+  const branchId =
+    input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
   const res = await db.query(
     `INSERT INTO blessboard.website_publication_versions (
-       organization_id, church_id, version_number, status, theme_key, source_type,
+       organization_id, church_id, branch_id, version_number, status, theme_key, source_type,
        source_submission_id, source_version_id, restoration_reason, restored_by,
        snapshot_json, change_summary_json, created_by
      ) VALUES (
-       $1, $2, $3, 'draft', $4, 'content_restoration',
-       NULL, $5, $6, $7,
-       $8::jsonb, $9::jsonb, $7
+       $1, $2, $3, $4, 'draft', $5, 'content_restoration',
+       NULL, $6, $7, $8,
+       $9::jsonb, $10::jsonb, $8
      )
      RETURNING *`,
     [
       input.organizationId,
       input.churchId,
+      branchId,
       input.versionNumber,
       input.themeKey || null,
       input.sourceVersionId,
@@ -357,17 +423,20 @@ async function insertDraftRestorationVersion(db, input) {
 /**
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
+ * @param {string|null|undefined} [branchId] null/omit = church-wide draft restoration
  */
-async function getLatestDraftRestoration(db, organizationId) {
+async function getLatestDraftRestoration(db, organizationId, branchId) {
   if (!isUuid(organizationId)) return null;
+  const scope = branchScopeFilter(branchId == null ? null : branchId, 2);
   const res = await db.query(
     `${LIST_SELECT}
       WHERE v.organization_id = $1
         AND v.status = 'draft'
         AND v.source_type = 'content_restoration'
+        AND ${scope.sql}
       ORDER BY v.created_at DESC
       LIMIT 1`,
-    [organizationId]
+    [organizationId].concat(scope.params)
   );
   return mapVersion(res.rows[0] || null);
 }
@@ -396,6 +465,7 @@ async function archiveDraftVersion(db, organizationId, versionId) {
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {{
  *   organizationId: string,
+ *   branchId?: string|null,
  *   sourceType?: string|null,
  *   publishedBy?: string|null,
  *   themeKey?: string|null,
@@ -415,6 +485,15 @@ async function listPublishingHistory(db, filters) {
   ];
   const params = [organizationId];
   let i = 2;
+
+  if (Object.prototype.hasOwnProperty.call(filters, "branchId")) {
+    const scope = branchScopeFilter(filters.branchId, i);
+    where.push(scope.sql);
+    for (const p of scope.params) {
+      params.push(p);
+      i += 1;
+    }
+  }
 
   if (filters.sourceType) {
     where.push(`v.source_type = $${i}`);
@@ -467,15 +546,19 @@ async function listPublishingHistory(db, filters) {
  * Current live publication without loading full snapshot JSON.
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
+ * @param {string|null|undefined} [branchId] null/omit = church-wide
  */
-async function loadCurrentWebsitePublication(db, organizationId) {
+async function loadCurrentWebsitePublication(db, organizationId, branchId) {
   if (!isUuid(organizationId)) return null;
+  const scope = branchScopeFilter(branchId == null ? null : branchId, 2);
   const res = await db.query(
     `${LIST_SELECT_SUMMARY}
-      WHERE v.organization_id = $1 AND v.status = 'published'
+      WHERE v.organization_id = $1
+        AND v.status = 'published'
+        AND ${scope.sql}
       ORDER BY v.published_at DESC NULLS LAST, v.version_number DESC
       LIMIT 1`,
-    [organizationId]
+    [organizationId].concat(scope.params)
   );
   return mapVersion(res.rows[0] || null);
 }
@@ -483,7 +566,7 @@ async function loadCurrentWebsitePublication(db, organizationId) {
 /**
  * Recent published/superseded publications (newest first), summary fields only.
  * @param {import('pg').Pool|import('pg').PoolClient} db
- * @param {{ organizationId: string, limit?: number, excludeId?: string|null }} filters
+ * @param {{ organizationId: string, branchId?: string|null, limit?: number, excludeId?: string|null }} filters
  */
 async function listRecentWebsitePublications(db, filters) {
   const organizationId = filters && filters.organizationId;
@@ -494,6 +577,11 @@ async function listRecentWebsitePublications(db, filters) {
     v.organization_id = $1
     AND v.status IN ('published', 'superseded')
     AND v.published_at IS NOT NULL`;
+  if (Object.prototype.hasOwnProperty.call(filters, "branchId")) {
+    const scope = branchScopeFilter(filters.branchId, params.length + 1);
+    where += ` AND ${scope.sql}`;
+    for (const p of scope.params) params.push(p);
+  }
   if (filters.excludeId && isUuid(filters.excludeId)) {
     params.push(filters.excludeId);
     where += ` AND v.id <> $${params.length}`;
@@ -531,12 +619,14 @@ async function loadHistoricalPublicationPreview(db, organizationId, publicationI
  * Previous published website relative to current (summary only).
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} organizationId
+ * @param {string|null|undefined} [branchId]
  */
-async function loadPreviousWebsitePublication(db, organizationId) {
-  const current = await loadCurrentWebsitePublication(db, organizationId);
+async function loadPreviousWebsitePublication(db, organizationId, branchId) {
+  const current = await loadCurrentWebsitePublication(db, organizationId, branchId);
   if (!current) return null;
   const listed = await listRecentWebsitePublications(db, {
     organizationId,
+    branchId: branchId == null ? null : branchId,
     limit: 1,
     excludeId: current.id,
   });

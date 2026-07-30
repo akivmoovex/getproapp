@@ -61,6 +61,9 @@ const { createTenantPublicRouter } = require("../../blessboard/http/tenantPublic
 const { createPathPublicRouter } = require("../../blessboard/http/pathPublicRoutes");
 const { createChurchWebsiteAdminRouter } = require("../../blessboard/http/churchWebsiteAdminRoutes");
 const {
+  createWebsiteServiceTimesAdminRouter,
+} = require("../../blessboard/http/websiteServiceTimesAdminRoutes");
+const {
   createWebsiteChangeSubmissionAdminRouter,
 } = require("../../blessboard/http/websiteChangeSubmissionAdminRoutes");
 const {
@@ -534,6 +537,13 @@ function createV5FoundationApp(options) {
   );
   app.use(
     createChurchWebsiteAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
+    createWebsiteServiceTimesAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       env,

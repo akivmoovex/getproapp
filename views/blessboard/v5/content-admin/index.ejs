@@ -31,13 +31,43 @@
   ];
   var unavailableModules = [
     { key: 'branding', label: 'Main site branding', reason: 'Church name and lockup are managed outside this overview.' },
-    { key: 'service-times', label: 'Service times', reason: 'No dedicated service-times module in V5 yet.' },
     { key: 'theme', label: 'Theme & appearance', reason: 'Theme controls are not available in V5.' },
     { key: 'domain', label: 'Custom domain', reason: 'Hostname and DNS are platform-managed.' },
     { key: 'seo', label: 'SEO tools', reason: 'SEO analytics and SEO settings are not available in V5.' },
     { key: 'builder', label: 'Drag-and-drop website builder', reason: 'Use page and section editors instead.' },
     { key: 'templates', label: 'Organization templates', reason: 'Org-wide template libraries are not available in V5.' }
   ];
+  if (isHqChurchWide) {
+    entityModules = [
+      {
+        key: 'service-times-church',
+        label: 'Church-wide service times',
+        href: scope.basePath + '/pages/home',
+        icon: 'schedule',
+        blurb: 'Shared schedule on the church-wide home page.'
+      }
+    ].concat(entityModules);
+  } else if (isHqBranchScoped && scope.branchKey) {
+    entityModules = [
+      {
+        key: 'service-times-branch',
+        label: 'Service times',
+        href: '/hq/website/branches/' + scope.branchKey + '/service-times',
+        icon: 'schedule',
+        blurb: 'Structured times for this branch mini website.'
+      }
+    ].concat(entityModules);
+  } else if (isBranchShell) {
+    entityModules = [
+      {
+        key: 'service-times-branch',
+        label: 'Service times',
+        href: '/branch-admin/website/service-times',
+        icon: 'schedule',
+        blurb: 'Structured times for this branch mini website.'
+      }
+    ].concat(entityModules);
+  }
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'draft') return 'Draft';
@@ -205,6 +235,7 @@
             <td><% if (branch.isPrimary) { %><span class="bb-ca-pill">Primary</span><% } else { %>—<% } %></td>
             <td>
               <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/hq/content/b/<%= branch.key %>" data-bb-content-action="open-branch">Open</a>
+              <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/hq/website/branches/<%= branch.key %>/service-times" data-bb-content-action="branch-service-times">Service times</a>
             </td>
           </tr>
           <% }) %>
@@ -223,6 +254,7 @@
           </p>
         </div>
         <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/hq/content/b/<%= branch.key %>" data-bb-content-action="open-branch">Open</a>
+        <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/hq/website/branches/<%= branch.key %>/service-times" data-bb-content-action="branch-service-times">Service times</a>
       </li>
       <% }) %>
     </ul>

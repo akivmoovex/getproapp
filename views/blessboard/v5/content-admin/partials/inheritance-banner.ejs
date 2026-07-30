@@ -1,0 +1,70 @@
+<%#
+  Stage 5 — branch page inheritance controls.
+  Locals: inheritance, scope, page, csrfToken, CSRF_FIELD (or csrfField)
+%>
+<%
+  var _inh = typeof inheritance !== 'undefined' && inheritance ? inheritance : null;
+  var _isBranch = scope && scope.branchId;
+  var _mode = _inh && _inh.mode ? String(_inh.mode) : '';
+  var _csrfName = typeof CSRF_FIELD !== 'undefined' ? CSRF_FIELD : (typeof csrfField !== 'undefined' ? csrfField : '_csrf');
+  var _csrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<% if (_isBranch && _inh) { %>
+<section
+  class="bb-ba-content-block bb-ca-inheritance"
+  data-bb-content-inheritance="1"
+  data-bb-inheritance-mode="<%= _mode %>"
+>
+  <% if (_mode === 'override') { %>
+  <div class="bb-ba-content-block__head">
+    <h2 class="bb-ba-section-title">Branch override</h2>
+  </div>
+  <p class="bb-ba-lede">
+    This page uses <strong>branch-specific</strong> content for
+    <strong><%= scope.scopeLabel %></strong>. Church-wide content stays available as a fallback
+    after you remove the override.
+  </p>
+  <form
+    method="post"
+    action="<%= scope.basePath %>/pages/<%= page.pageKey %>/inheritance/remove"
+    class="bb-ca-inheritance__actions"
+    data-bb-inheritance-action="remove"
+  >
+    <input type="hidden" name="<%= _csrfName %>" value="<%= _csrf %>" />
+    <button type="submit" class="bb-ba-btn bb-ba-btn--ghost" data-bb-inheritance-remove="1">
+      Remove branch override
+    </button>
+  </form>
+  <% } else { %>
+  <div class="bb-ba-content-block__head">
+    <h2 class="bb-ba-section-title">Inherited from church website</h2>
+  </div>
+  <p class="bb-ba-lede">
+    Visitors currently see the <strong>church-wide</strong> published content for this page
+    (when available). Create a branch override to customize
+    <strong><%= scope.scopeLabel %></strong> without changing the main church website.
+  </p>
+  <% if (_inh.churchPage && _inh.churchPage.status === 'published') { %>
+  <p class="bb-ba-meta" data-bb-inheritance-church-title="1">
+    Church page: <strong><%= _inh.churchPage.title %></strong>
+    <span class="bb-ba-chip bb-ba-chip--ok">Published</span>
+  </p>
+  <% } else { %>
+  <p class="bb-ba-meta" data-bb-inheritance-church-empty="1">
+    No published church-wide page yet — overriding will create branch-only content.
+  </p>
+  <% } %>
+  <form
+    method="post"
+    action="<%= scope.basePath %>/pages/<%= page.pageKey %>/inheritance/override"
+    class="bb-ca-inheritance__actions"
+    data-bb-inheritance-action="override"
+  >
+    <input type="hidden" name="<%= _csrfName %>" value="<%= _csrf %>" />
+    <button type="submit" class="bb-ba-btn bb-ba-btn--primary" data-bb-inheritance-override="1">
+      Override for this branch
+    </button>
+  </form>
+  <% } %>
+</section>
+<% } %>

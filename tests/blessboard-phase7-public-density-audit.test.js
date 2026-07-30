@@ -36,7 +36,7 @@ const ROOT = path.join(__dirname, "..");
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
-const CSS_VERSION = "44";
+const CSS_VERSION = "46";
 
 const PUBLIC_PAGES = Object.freeze([
   { key: "home", suffix: "", stitch: "phase7-v1", headingHint: /Welcome|Church|Home/i },
@@ -271,7 +271,7 @@ describe("Phase 7 density audit — path-public /c/:key HTTP", () => {
       assert.match(res.text, new RegExp(churchNameA.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
       assert.match(res.text, /bb-tp-header/);
       assert.match(res.text, /bb-tp-footer|bb-tp-footer__/);
-      assert.match(res.text, /tenant-public\.css\?v=44/);
+      assert.match(res.text, new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
       assert.doesNotMatch(res.text, /data-bb-inline-edit/);
       assert.doesNotMatch(res.text, /website-inline-edit\.js/);
       assert.doesNotMatch(res.text, /website-structured-edit\.js/);

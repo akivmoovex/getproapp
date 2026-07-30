@@ -18,9 +18,12 @@ const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const {
   listBlessBoardBranches,
-  resolveBlessBoardBranchForChurch,
-  STATUS: BRANCH_STATUS,
 } = require("../services/listBlessBoardBranches");
+const {
+  resolveWebsiteScope,
+  STATUS: WEBSITE_SCOPE_STATUS,
+  SCOPE_TYPE: WEBSITE_SCOPE_TYPE,
+} = require("../services/resolveWebsiteScope");
 const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
@@ -71,6 +74,14 @@ const {
   repairHomeContentFoundation,
   STATUS: SERVICE_TIMES_STATUS,
 } = require("../services/homeServiceTimesService");
+const {
+  getBranchPageInheritanceState,
+  createBranchPageOverride,
+  removeBranchPageOverride,
+  publishBranchScopedPage,
+  INHERITANCE_MODE,
+  STATUS: INHERITANCE_STATUS,
+} = require("../services/websiteBranchPageInheritanceService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -336,6 +347,69 @@ function createContentAdminRouter(deps) {
     if (!tenant || tenant.resolved !== true) {
       return sendMissingContentTenantContext(req, res);
     }
+
+    // Branch Admin surfaces must authorize against the assigned website branch,
+    // not the catalogue primaryBranch used by global middleware.
+    if (variant === "branch") {
+      return (async () => {
+        try {
+          const session = req.v5Session && req.v5Session.session;
+          const websiteScope = await resolveWebsiteScope(getPool(), {
+            tenant,
+            authenticatedUser: session && session.userId,
+            requestedBranchKey: null,
+            organizationId: tenant.organization ? tenant.organization.id : null,
+            churchId: tenant.church ? tenant.church.id : null,
+          });
+          let authzBranchId = null;
+          if (
+            websiteScope.ok &&
+            websiteScope.scopeType === WEBSITE_SCOPE_TYPE.BRANCH &&
+            websiteScope.branchId
+          ) {
+            authzBranchId = websiteScope.branchId;
+          } else if (
+            websiteScope.ok &&
+            websiteScope.scopeType === WEBSITE_SCOPE_TYPE.CHURCH
+          ) {
+            authzBranchId =
+              tenant.primaryBranch && tenant.primaryBranch.id
+                ? tenant.primaryBranch.id
+                : null;
+          } else {
+            return sendWebsiteScopeFailure(req, res, websiteScope);
+          }
+          const authz = await authorizeBlessBoardTenantAccess(getPool(), {
+            userId: session && session.userId,
+            tenant,
+            branchId: authzBranchId,
+          });
+          if (authz.status === AUTHZ_STATUS.LOOKUP_ERROR) {
+            return sendControlled(
+              req,
+              res,
+              503,
+              "Access check is temporarily unavailable.",
+              shellKind
+            );
+          }
+          req.blessBoardAuthorizationContext = {
+            ...authz.context,
+            reason: authz.status,
+          };
+          return requireAccess(req, res, next);
+        } catch {
+          return sendControlled(
+            req,
+            res,
+            503,
+            "Access check is temporarily unavailable.",
+            shellKind
+          );
+        }
+      })();
+    }
+
     return requireAccess(req, res, next);
   }
 
@@ -377,86 +451,173 @@ function createContentAdminRouter(deps) {
   }
 
   /**
+   * Map resolveWebsiteScope failure to an HTTP response. Returns null for callers.
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {object} resolved
+   */
+  function sendWebsiteScopeFailure(req, res, resolved) {
+    const status = resolved && resolved.httpStatus ? resolved.httpStatus : 403;
+    if (status === 401) {
+      sendControlled(req, res, 401, "Sign-in is required.", shellKind);
+      return null;
+    }
+    if (status === 503 || (resolved && resolved.status === WEBSITE_SCOPE_STATUS.LOOKUP_ERROR)) {
+      sendControlled(req, res, 503, "Website scope is temporarily unavailable.", shellKind);
+      return null;
+    }
+    if (status === 404 || (resolved && resolved.status === WEBSITE_SCOPE_STATUS.NOT_FOUND)) {
+      sendControlled(req, res, 404, "This branch could not be found.", shellKind);
+      return null;
+    }
+    sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
+    return null;
+  }
+
+  /**
+   * @param {import('express').Request} req
+   * @param {object} websiteScope
+   * @param {string} basePath
+   * @param {string} scopeLabel
+   */
+  function toContentAdminScope(websiteScope, basePath, scopeLabel) {
+    return {
+      organizationId: websiteScope.organizationId,
+      churchId: websiteScope.churchId,
+      branchId: websiteScope.branchId,
+      branchKey: websiteScope.branchKey,
+      branch: websiteScope.branch,
+      scopeType: websiteScope.scopeType,
+      basePath,
+      scopeLabel,
+    };
+  }
+
+  /**
+   * HQ church-wide website editor (branchId = null).
    * @param {import('express').Request} req
    * @param {import('express').Response} res
    */
   async function resolveChurchWideScope(req, res) {
     const tenant = resolveTenantForAuthorization(req);
-    if (!tenant || !tenant.church || !tenant.church.id) {
-      sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
-      return null;
+    const session = req.v5Session && req.v5Session.session;
+    const resolved = await resolveWebsiteScope(getPool(), {
+      tenant,
+      authenticatedUser: session && session.userId,
+      requestedBranchKey: null,
+      organizationId: tenant && tenant.organization ? tenant.organization.id : null,
+      churchId: tenant && tenant.church ? tenant.church.id : null,
+    });
+    if (!resolved.ok || resolved.scopeType !== "church") {
+      return sendWebsiteScopeFailure(req, res, resolved);
     }
-    return {
-      churchId: tenant.church.id,
-      branchId: null,
-      branchKey: null,
-      basePath: "/hq/content",
-      scopeLabel: "Church-wide",
-    };
+    return toContentAdminScope(resolved, "/hq/content", "Church-wide");
   }
 
   /**
+   * HQ branch mini-website editor / preview for an explicit branch key.
    * @param {import('express').Request} req
    * @param {import('express').Response} res
    */
   async function resolveHqBranchScope(req, res) {
     const tenant = resolveTenantForAuthorization(req);
-    if (!tenant || !tenant.church || !tenant.church.id) {
-      sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
-      return null;
-    }
-    const resolved = await resolveBlessBoardBranchForChurch(
-      getPool(),
-      tenant.church.id,
-      req.params.branchKey
-    );
-    if (!resolved.ok) {
-      if (resolved.status === BRANCH_STATUS.LOOKUP_ERROR) {
-        sendControlled(req, res, 503, "Branch lookup is temporarily unavailable.", shellKind);
-        return null;
-      }
-      sendControlled(req, res, 404, "This branch could not be found.", shellKind);
-      return null;
-    }
     const session = req.v5Session && req.v5Session.session;
-    const authz = await authorizeBlessBoardTenantAccess(getPool(), {
-      userId: session && session.userId,
+    const resolved = await resolveWebsiteScope(getPool(), {
       tenant,
-      branchId: resolved.branch.id,
+      authenticatedUser: session && session.userId,
+      requestedBranchKey: req.params.branchKey,
+      organizationId: tenant && tenant.organization ? tenant.organization.id : null,
+      churchId: tenant && tenant.church ? tenant.church.id : null,
     });
-    if (authz.status === AUTHZ_STATUS.LOOKUP_ERROR) {
-      sendControlled(req, res, 503, "Access check is temporarily unavailable.", shellKind);
-      return null;
+    if (!resolved.ok || resolved.scopeType !== "branch") {
+      return sendWebsiteScopeFailure(req, res, resolved);
     }
-    if (!authz.ok) {
-      sendControlled(req, res, 403, "You do not have access to this branch.", shellKind);
-      return null;
-    }
-    return {
-      churchId: tenant.church.id,
-      branchId: resolved.branch.id,
-      branchKey: resolved.branch.key,
-      basePath: `/hq/content/b/${resolved.branch.key}`,
-      scopeLabel: resolved.branch.displayName,
-    };
+    return toContentAdminScope(
+      resolved,
+      `/hq/content/b/${resolved.branchKey}`,
+      (resolved.branch && resolved.branch.displayName) || resolved.branchKey || "Branch"
+    );
   }
 
   /**
+   * Branch Admin website editor — assigned branch only (never tenant.primaryBranch).
+   * HQ/platform on this surface explicitly resolves the primary branch mini-site by key
+   * (not used as Branch Admin identity).
    * @param {import('express').Request} req
    * @param {import('express').Response} res
    */
   async function resolveBranchAdminScope(req, res) {
     const tenant = resolveTenantForAuthorization(req);
-    if (!tenant || !tenant.church || !tenant.church.id || !tenant.primaryBranch) {
-      sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
-      return null;
+    const session = req.v5Session && req.v5Session.session;
+    const userId = session && session.userId;
+    const baseInput = {
+      tenant,
+      authenticatedUser: userId,
+      organizationId: tenant && tenant.organization ? tenant.organization.id : null,
+      churchId: tenant && tenant.church ? tenant.church.id : null,
+    };
+
+    const assignedOrChurch = await resolveWebsiteScope(getPool(), {
+      ...baseInput,
+      requestedBranchKey: null,
+    });
+
+    if (assignedOrChurch.ok && assignedOrChurch.scopeType === "branch" && assignedOrChurch.branchId) {
+      return toContentAdminScope(
+        assignedOrChurch,
+        "/branch-admin/content",
+        (assignedOrChurch.branch && assignedOrChurch.branch.displayName) ||
+          assignedOrChurch.branchKey ||
+          "Branch"
+      );
     }
+
+    if (assignedOrChurch.ok && assignedOrChurch.scopeType === "church") {
+      const primaryKey =
+        tenant && tenant.primaryBranch && tenant.primaryBranch.key
+          ? tenant.primaryBranch.key
+          : null;
+      if (!primaryKey) {
+        return sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
+      }
+      const resolved = await resolveWebsiteScope(getPool(), {
+        ...baseInput,
+        requestedBranchKey: primaryKey,
+      });
+      if (!resolved.ok || resolved.scopeType !== "branch" || !resolved.branchId) {
+        return sendWebsiteScopeFailure(req, res, resolved);
+      }
+      return toContentAdminScope(
+        resolved,
+        "/branch-admin/content",
+        (resolved.branch && resolved.branch.displayName) || resolved.branchKey || "Branch"
+      );
+    }
+
+    return sendWebsiteScopeFailure(req, res, assignedOrChurch);
+  }
+
+  /**
+   * HQ branch mini-website editor under /hq/website/branches/:branchKey (Stage 5).
+   */
+  async function resolveHqWebsiteBranchScope(req, res) {
+    const scope = await resolveHqBranchScope(req, res);
+    if (!scope) return null;
     return {
-      churchId: tenant.church.id,
-      branchId: tenant.primaryBranch.id,
-      branchKey: tenant.primaryBranch.key || null,
-      basePath: "/branch-admin/content",
-      scopeLabel: tenant.primaryBranch.displayName || "Branch",
+      ...scope,
+      basePath: `/hq/website/branches/${scope.branchKey}`,
+    };
+  }
+
+  /**
+   * Branch Admin website pages under /branch-admin/website (Stage 5).
+   */
+  async function resolveBranchAdminWebsitePagesScope(req, res) {
+    const scope = await resolveBranchAdminScope(req, res);
+    if (!scope) return null;
+    return {
+      ...scope,
+      basePath: "/branch-admin/website",
     };
   }
 
@@ -684,6 +845,9 @@ function createContentAdminRouter(deps) {
           branchId: null,
         });
       }
+      if (scope.branchId) {
+        await provisionEmptyPublicPages(getPool(), scopeInput(scope));
+      }
       const bundle = await getAdminPageBundle(getPool(), {
         ...scopeInput(scope),
         pageKey,
@@ -693,6 +857,27 @@ function createContentAdminRouter(deps) {
       }
       if (!verifyPageScope(bundle.page, scope)) {
         return sendControlled(req, res, 403, "You do not have access to this page.", shellKind);
+      }
+      let inheritance = null;
+      if (scope.branchId) {
+        const inh = await getBranchPageInheritanceState(getPool(), {
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          pageKey,
+        });
+        if (inh.ok) {
+          inheritance = {
+            mode: inh.mode,
+            isOverride: inh.isOverride,
+            churchPage: inh.churchPage
+              ? {
+                  title: inh.churchPage.title,
+                  status: inh.churchPage.status,
+                  pageKey: inh.churchPage.pageKey,
+                }
+              : null,
+          };
+        }
       }
       const serviceTimesSection = isChurchWideHome
         ? (bundle.sections || []).find((s) => s.sectionKey === SERVICE_TIMES_SECTION_KEY) || null
@@ -706,10 +891,13 @@ function createContentAdminRouter(deps) {
           scope,
           page: bundle.page,
           sections: bundle.sections || [],
+          inheritance,
+          CSRF_FIELD,
           error: null,
           conflict: false,
           submitted: null,
           saved: String((req.query && req.query.saved) || "") === "1",
+          inheritanceNotice: String((req.query && req.query.inheritance) || ""),
           serviceTimesSaved: String((req.query && req.query.service_times) || "") === "1",
           showServiceTimesEditor: isChurchWideHome,
           serviceTimesSection,
@@ -720,6 +908,159 @@ function createContentAdminRouter(deps) {
       );
       return res.status(200).type("html").send(html);
     });
+
+    router.post(
+      `${p}/pages/:pageKey/inheritance/override`,
+      rejectApex,
+      gateContent,
+      async (req, res) => {
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        if (!validateCsrfPost(req, res)) return;
+        if (!scope.branchId) {
+          return sendControlled(
+            req,
+            res,
+            400,
+            "Church-wide pages are not inherited overrides.",
+            shellKind
+          );
+        }
+        const pageKey = String(req.params.pageKey || "").trim();
+        const session = req.v5Session && req.v5Session.session;
+        const created = await createBranchPageOverride(getPool(), {
+          organizationId: scope.organizationId,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          pageKey,
+          actorUserId: session && session.userId,
+        });
+        if (!created.ok) {
+          const code =
+            created.status === INHERITANCE_STATUS.INVALID_INPUT
+              ? 400
+              : created.status === INHERITANCE_STATUS.NOT_FOUND
+                ? 404
+                : 503;
+          return sendControlled(
+            req,
+            res,
+            code,
+            "Could not create a branch override for this page.",
+            shellKind
+          );
+        }
+        return res.redirect(
+          303,
+          `${scope.basePath}/pages/${encodeURIComponent(pageKey)}?saved=1&inheritance=override`
+        );
+      }
+    );
+
+    router.post(
+      `${p}/pages/:pageKey/inheritance/remove`,
+      rejectApex,
+      gateContent,
+      async (req, res) => {
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        if (!validateCsrfPost(req, res)) return;
+        if (!scope.branchId) {
+          return sendControlled(
+            req,
+            res,
+            400,
+            "Church-wide pages cannot be removed as overrides.",
+            shellKind
+          );
+        }
+        const pageKey = String(req.params.pageKey || "").trim();
+        const session = req.v5Session && req.v5Session.session;
+        const removed = await removeBranchPageOverride(getPool(), {
+          organizationId: scope.organizationId,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          pageKey,
+          actorUserId: session && session.userId,
+        });
+        if (!removed.ok) {
+          const code =
+            removed.status === INHERITANCE_STATUS.NOT_FOUND
+              ? 404
+              : removed.status === INHERITANCE_STATUS.FORBIDDEN
+                ? 403
+                : removed.status === INHERITANCE_STATUS.INVALID_INPUT
+                  ? 400
+                  : 503;
+          return sendControlled(
+            req,
+            res,
+            code,
+            removed.status === INHERITANCE_STATUS.FORBIDDEN
+              ? "Church-wide content is protected."
+              : "Could not remove the branch override.",
+            shellKind
+          );
+        }
+        return res.redirect(
+          303,
+          `${scope.basePath}/pages/${encodeURIComponent(pageKey)}?saved=1&inheritance=removed`
+        );
+      }
+    );
+
+    router.post(
+      `${p}/pages/:pageKey/publish-branch`,
+      rejectApex,
+      gateContent,
+      async (req, res) => {
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        if (!validateCsrfPost(req, res)) return;
+        if (!scope.branchId) {
+          return sendControlled(
+            req,
+            res,
+            400,
+            "Use church website publish for church-wide pages.",
+            shellKind
+          );
+        }
+        const pageKey = String(req.params.pageKey || "").trim();
+        const session = req.v5Session && req.v5Session.session;
+        const body = req.body || {};
+        const published = await publishBranchScopedPage(getPool(), {
+          organizationId: scope.organizationId,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          pageKey,
+          actorUserId: session && session.userId,
+          confirmPublish: body.confirm_publish,
+        });
+        if (!published.ok) {
+          const code =
+            published.reason === "confirm_publish" ||
+            published.status === INHERITANCE_STATUS.INVALID_INPUT
+              ? 400
+              : published.status === INHERITANCE_STATUS.NOT_FOUND
+                ? 404
+                : 503;
+          return sendControlled(
+            req,
+            res,
+            code,
+            published.reason === "confirm_publish"
+              ? "Confirm publish to continue."
+              : "Could not publish this branch page.",
+            shellKind
+          );
+        }
+        return res.redirect(
+          303,
+          `${scope.basePath}/pages/${encodeURIComponent(pageKey)}?saved=1&inheritance=published`
+        );
+      }
+    );
 
     router.post(`${p}/pages/home/service-times`, rejectApex, gateContent, async (req, res) => {
       const scope = await resolveScope(req, res);
@@ -1009,7 +1350,7 @@ function createContentAdminRouter(deps) {
               submitted,
               conflictActionBase,
               cancelPath: `${scope.basePath}/pages/${req.params.pageKey}/sections/${req.params.sectionKey}`,
-              canSaveAsDraft: Boolean(scope.branchId || (tenant && tenant.primaryBranch && tenant.primaryBranch.id)),
+              canSaveAsDraft: Boolean(scope.churchId),
               organizationId: orgId,
             })
           );
@@ -1080,10 +1421,7 @@ function createContentAdminRouter(deps) {
 
       const conflictSvc = require("../services/websiteEditConflictService");
       const body = req.body || {};
-      const branchId =
-        scope.branchId ||
-        (tenant.primaryBranch && tenant.primaryBranch.id) ||
-        null;
+      const branchId = scope.branchId || null;
 
       const result = await conflictSvc.resolveWebsiteEditConflict(getPool(), {
         organizationId: tenant.organization.id,
@@ -1942,6 +2280,7 @@ function createContentAdminRouter(deps) {
         hostname: String(req.hostname || ""),
         preview: true,
         previewBranchId: scope.branchId,
+        selectedBranch: scope.branch || null,
         previewMeta: {
           backHref: `${scope.basePath}/draft-changes`,
           editHref: null,
@@ -1993,7 +2332,7 @@ function createContentAdminRouter(deps) {
       }
 
       model.websiteAdmin = null;
-      model.cssHref = "/blessboard/v5/tenant-public.css?v=45";
+      model.cssHref = "/blessboard/v5/tenant-public.css?v=46";
       const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });
@@ -2028,6 +2367,7 @@ function createContentAdminRouter(deps) {
         hostname: String(req.hostname || ""),
         preview: true,
         previewBranchId: scope.branchId,
+        selectedBranch: scope.branch || null,
         previewMeta: {
           backHref: scope.basePath,
           editHref: `${scope.basePath}/pages/${pageKey}`,
@@ -2050,8 +2390,11 @@ function createContentAdminRouter(deps) {
   if (variant === "hq") {
     registerRoutes("/hq/content", resolveChurchWideScope);
     registerRoutes("/hq/content/b/:branchKey", resolveHqBranchScope);
+    // Stage 5 canonical website branch page editors
+    registerRoutes("/hq/website/branches/:branchKey", resolveHqWebsiteBranchScope);
   } else {
     registerRoutes("/branch-admin/content", resolveBranchAdminScope);
+    registerRoutes("/branch-admin/website", resolveBranchAdminWebsitePagesScope);
   }
 
   return router;

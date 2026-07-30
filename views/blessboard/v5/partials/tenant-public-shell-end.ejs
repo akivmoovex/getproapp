@@ -1,26 +1,22 @@
 <%#
   BlessBoard V5 tenant public shell — footer + scripts.
-  Phase 7: brand, description, address/phone/email, service times, social, quick links, Giving, Powered by BlessBoard.
+  Stage 4: branch identity, contact summary, branch-aware quick links.
 %>
 <%
-  var footerEmail = (typeof publicContact !== 'undefined' && publicContact && publicContact.email)
-    ? publicContact.email
-    : (typeof primaryEmail !== 'undefined' ? primaryEmail : '');
-  var footerPhone = (typeof publicContact !== 'undefined' && publicContact && publicContact.phone)
-    ? publicContact.phone
-    : (typeof primaryPhone !== 'undefined' ? primaryPhone : '');
-  var footerEmailHref = (typeof publicContact !== 'undefined' && publicContact && publicContact.emailHref)
-    ? publicContact.emailHref
-    : (footerEmail ? ('mailto:' + footerEmail) : null);
-  var footerPhoneHref = (typeof publicContact !== 'undefined' && publicContact && publicContact.phoneHref)
-    ? publicContact.phoneHref
-    : null;
-  if (!footerPhoneHref && footerPhone) {
-    footerPhoneHref = 'tel:' + String(footerPhone).replace(/[^\d+]/g, '');
-  }
-  var footerAddress = (typeof publicContact !== 'undefined' && publicContact && publicContact.addressText)
-    ? publicContact.addressText
-    : '';
+  var _isBranchMini =
+    typeof websiteScope !== 'undefined' &&
+    websiteScope &&
+    String(websiteScope.scopeType || '') === 'branch';
+  var _churchName =
+    (typeof publicName !== 'undefined' && publicName)
+      ? String(publicName)
+      : ((typeof church !== 'undefined' && church && church.displayName)
+        ? String(church.displayName)
+        : 'Church');
+  var _branchName =
+    _isBranchMini && typeof branch !== 'undefined' && branch && branch.displayName
+      ? String(branch.displayName)
+      : '';
   var footerNavItems = (typeof navItems !== 'undefined' && navItems && navItems.length)
     ? navItems
     : [
@@ -66,34 +62,16 @@
               decoding="async"
             />
             <div class="bb-tp-footer__brand-text">
-              <p class="bb-tp-footer__name"><%= publicName %></p>
+              <p class="bb-tp-footer__name" data-bb-church-name="1"><%= _churchName %></p>
+              <% if (_branchName) { %>
+              <p class="bb-tp-footer__branch" data-bb-branch-name="1"><%= _branchName %></p>
+              <% } %>
               <% if (typeof footerTagline !== 'undefined' && footerTagline) { %>
               <p class="bb-tp-footer__tagline"><%= footerTagline %></p>
               <% } %>
             </div>
           </div>
-          <% if (footerAddress || footerPhone || footerEmail) { %>
-          <ul class="bb-tp-footer__list bb-tp-footer__list--contact">
-            <% if (footerAddress) { %>
-            <li>
-              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
-              <span><%= footerAddress %></span>
-            </li>
-            <% } %>
-            <% if (footerPhone && footerPhoneHref) { %>
-            <li>
-              <span class="material-symbols-outlined" aria-hidden="true">phone</span>
-              <a href="<%= footerPhoneHref %>"><%= footerPhone %></a>
-            </li>
-            <% } %>
-            <% if (footerEmail && footerEmailHref) { %>
-            <li>
-              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-              <a href="<%= footerEmailHref %>"><%= footerEmail %></a>
-            </li>
-            <% } %>
-          </ul>
-          <% } %>
+          <%- include('../public/partials/contact-summary') %>
           <% if (typeof socialLinks !== 'undefined' && socialLinks && socialLinks.length) { %>
           <ul class="bb-tp-footer__social" aria-label="Social links" data-bb-footer-social="1">
             <% socialLinks.forEach(function (link) { %>
@@ -139,15 +117,14 @@
 
         <div class="bb-tp-footer__col">
           <h2 class="bb-tp-footer__heading">Quick Links</h2>
-          <ul class="bb-tp-footer__list">
+          <ul class="bb-tp-footer__list" data-bb-footer-nav="1">
             <% footerNavItems.forEach(function (item) { %>
-            <li><a href="<%= item.href %>"><%= item.label %></a></li>
+            <li><a href="<%= item.href %>" data-bb-nav-link="<%= item.key || '' %>"><%= item.label %></a></li>
             <% }) %>
-            <li><a href="<%= typeof hrefFor === 'function' ? hrefFor('/giving') : '/giving' %>">Giving</a></li>
           </ul>
         </div>
 
-        <div class="bb-tp-footer__col">
+        <div class="bb-tp-footer__col" data-bb-footer-service-times="1">
           <h2 class="bb-tp-footer__heading">Service Times</h2>
           <% if (footerServices.length) { %>
           <ul class="bb-tp-footer__list bb-tp-footer__list--services">
@@ -169,7 +146,7 @@
       </div>
 
       <div class="bb-tp-footer__bar">
-        <p class="bb-tp-footer__copy">&copy; <%= publicName %>. Powered by BlessBoard</p>
+        <p class="bb-tp-footer__copy">&copy; <%= _churchName %><% if (_branchName) { %> · <%= _branchName %><% } %>. Powered by BlessBoard</p>
         <p class="bb-tp-footer__bar-links">
           <a href="<%= typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact' %>">Contact Us</a>
           <span aria-hidden="true"> · </span>
@@ -182,7 +159,7 @@
   </footer>
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
-  <script src="/blessboard/v5/tenant-public.js?v=7" defer></script>
+  <script src="/blessboard/v5/tenant-public.js?v=8" defer></script>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
   <%- include('./structured-editor-host') %>
   <%- include('./unsaved-changes-dialog') %>

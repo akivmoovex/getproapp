@@ -1,17 +1,10 @@
 "use strict";
 
-/**
- * Path-based public church website: /c/:organizationKey(+ page suffixes).
- * Resolves via organization_key + catalogue context. Draft → setup page.
- * Never exposes UUIDs or draft CMS content.
- */
-
 const express = require("express");
-
 const { findOrganizationByKey } = require("../repositories/blessBoardCatalogueRepository");
 const { getBlessBoardCatalogueContext, STATUS: CTX_STATUS } = require("../services/getBlessBoardCatalogueContext");
 const { buildBlessBoardTenantContext } = require("./buildBlessBoardTenantContext");
-const { pageKeyFromPath, isTenantPublicPagePath } = require("./tenantPublicPaths");
+const { pageKeyFromPath, isTenantPublicPagePath, PAGE_SUFFIXES } = require("./tenantPublicPaths");
 const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel");
 const { renderTenantPublicPage } = require("./renderTenantPublicPage");
 const { renderControlledErrorPage } = require("./renderTenantLandingPage");
@@ -19,17 +12,11 @@ const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
 const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../services/organizationKey");
 const { resolveHostname } = require("../../platform/host");
 const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
-
-const PAGE_SUFFIXES = Object.freeze([
-  "",
-  "/about",
-  "/leadership",
-  "/ministries",
-  "/events",
-  "/sermons",
-  "/contact",
-  "/giving",
-]);
+const {
+  resolvePublicWebsiteBranch,
+  STATUS: PUBLIC_BRANCH_STATUS,
+} = require("../services/resolvePublicWebsiteBranch");
+const { publicBranchHomePath } = require("../urls/churchUrlHelper");
 
 /**
  * @param {{
@@ -43,64 +30,53 @@ function createPathPublicRouter(deps) {
   const getEnv =
     typeof deps.getEnv === "function" ? deps.getEnv : () => process.env;
 
-  async function handlePathPublic(req, res) {
-    const rawKey = String((req.params && req.params.organizationKey) || "").trim().toLowerCase();
-    const suffix = String(req.params[0] || "");
-    const pathOnly = suffix ? `/${suffix.replace(/^\//, "")}` : "/";
-    const normalizedPath =
-      pathOnly.length > 1 && pathOnly.endsWith("/") ? pathOnly.slice(0, -1) : pathOnly;
-
+  async function resolvePathTenant(req, res, organizationKeyRaw) {
+    const rawKey = String(organizationKeyRaw || "").trim().toLowerCase();
     if (!rawKey || isReservedOrganizationKey(rawKey)) {
-      return res
+      res
         .status(404)
         .type("html")
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+      return null;
     }
 
     const keyNorm = normalizeOrganizationKey(rawKey);
     if (!keyNorm.ok || keyNorm.key !== rawKey) {
-      return res
+      res
         .status(404)
         .type("html")
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+      return null;
     }
-
-    if (!isTenantPublicPagePath(normalizedPath)) {
-      return res
-        .status(404)
-        .type("html")
-        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
-    }
-
-    const pageKey = pageKeyFromPath(normalizedPath);
-    const pathPrefix = `/c/${keyNorm.key}`;
-    const hostname = resolveHostname(req) || String(req.hostname || "");
 
     let org;
     try {
       org = await findOrganizationByKey(getPool(), keyNorm.key);
     } catch {
-      return res
+      res
         .status(503)
         .type("html")
         .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      return null;
     }
 
     if (!org || String(org.status || "") === "retired" || String(org.status || "") === "inactive") {
-      return res
+      res
         .status(404)
         .type("html")
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+      return null;
     }
 
     let catalogue;
     try {
       catalogue = await getBlessBoardCatalogueContext(getPool(), org.id);
     } catch {
-      return res
+      res
         .status(503)
         .type("html")
         .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      return null;
     }
 
     if (!catalogue.ok || !catalogue.context) {
@@ -108,15 +84,17 @@ function createPathPublicRouter(deps) {
         catalogue.status === CTX_STATUS.ORGANIZATION_NOT_FOUND ||
         catalogue.status === CTX_STATUS.CHURCH_MISSING
       ) {
-        return res
+        res
           .status(404)
           .type("html")
           .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+        return null;
       }
-      return res
+      res
         .status(503)
         .type("html")
         .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      return null;
     }
 
     const tenant = buildBlessBoardTenantContext({
@@ -149,11 +127,19 @@ function createPathPublicRouter(deps) {
     });
 
     if (!tenant) {
-      return res
+      res
         .status(503)
         .type("html")
         .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      return null;
     }
+
+    return { tenant, organizationKey: keyNorm.key };
+  }
+
+  async function renderPublicModel(req, res, opts) {
+    const { tenant, pageKey, pathPrefix, selectedBranch, routingMode } = opts;
+    const hostname = resolveHostname(req) || String(req.hostname || "");
 
     let model;
     try {
@@ -162,6 +148,8 @@ function createPathPublicRouter(deps) {
         pageKey,
         hostname,
         pathPrefix,
+        selectedBranch: selectedBranch || null,
+        routingMode: routingMode || "path",
       });
     } catch {
       return res
@@ -201,7 +189,6 @@ function createPathPublicRouter(deps) {
         db: getPool(),
         model,
         tenant,
-        // Must match content-admin CSRF validation secret (app env, not a divergent process.env).
         env: getEnv(),
       });
     } catch {
@@ -220,7 +207,9 @@ function createPathPublicRouter(deps) {
           userId: req.v5Session.session.userId,
           organizationId: tenant.organization.id,
           churchId: tenant.church.id,
-          branchId: tenant.primaryBranch && tenant.primaryBranch.id,
+          branchId:
+            (selectedBranch && selectedBranch.id) ||
+            (tenant.primaryBranch && tenant.primaryBranch.id),
           organizationStatus: tenant.organization && tenant.organization.status,
           branchStatus: tenant.primaryBranch && tenant.primaryBranch.status,
         });
@@ -243,10 +232,97 @@ function createPathPublicRouter(deps) {
     return res.status(200).type("html").send(html);
   }
 
+  async function handlePathPublic(req, res) {
+    const suffix = String(req.params[0] || "");
+    const pathOnly = suffix ? `/${suffix.replace(/^\//, "")}` : "/";
+    const normalizedPath =
+      pathOnly.length > 1 && pathOnly.endsWith("/") ? pathOnly.slice(0, -1) : pathOnly;
+
+    if (!isTenantPublicPagePath(normalizedPath)) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+    if (!resolved) return;
+
+    const pageKey = pageKeyFromPath(normalizedPath);
+    return renderPublicModel(req, res, {
+      tenant: resolved.tenant,
+      pageKey,
+      pathPrefix: `/c/${resolved.organizationKey}`,
+      selectedBranch: null,
+      routingMode: "path",
+    });
+  }
+
+  async function handlePathBranchPublic(req, res) {
+    const suffix = String(req.params[0] || "");
+    const pathOnly = suffix ? `/${suffix.replace(/^\//, "")}` : "/";
+    const normalizedPath =
+      pathOnly.length > 1 && pathOnly.endsWith("/") ? pathOnly.slice(0, -1) : pathOnly;
+
+    if (!isTenantPublicPagePath(normalizedPath)) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+    if (!resolved) return;
+
+    const branchResolved = await resolvePublicWebsiteBranch(getPool(), {
+      churchId: resolved.tenant.church.id,
+      branchKey: req.params.branchKey,
+    });
+    if (!branchResolved.ok || !branchResolved.branch) {
+      if (branchResolved.status === PUBLIC_BRANCH_STATUS.LOOKUP_ERROR) {
+        return res
+          .status(503)
+          .type("html")
+          .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+      }
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    const pageKey = pageKeyFromPath(normalizedPath);
+    const pathPrefix = publicBranchHomePath(
+      resolved.organizationKey,
+      branchResolved.branch.key
+    );
+    return renderPublicModel(req, res, {
+      tenant: resolved.tenant,
+      pageKey,
+      pathPrefix,
+      selectedBranch: branchResolved.branch,
+      routingMode: "path",
+    });
+  }
+
+  // Branch mini websites first (more specific than church-wide suffixes).
+  for (const suffix of PAGE_SUFFIXES) {
+    const routePath = suffix
+      ? `/c/:organizationKey/branches/:branchKey${suffix}`
+      : "/c/:organizationKey/branches/:branchKey";
+    router.get(routePath, (req, res, next) => {
+      if (suffix) {
+        req.params[0] = suffix.replace(/^\//, "");
+      } else {
+        req.params[0] = "";
+      }
+      Promise.resolve(handlePathBranchPublic(req, res)).catch(next);
+    });
+  }
+
   for (const suffix of PAGE_SUFFIXES) {
     const routePath = suffix ? `/c/:organizationKey${suffix}` : "/c/:organizationKey";
     router.get(routePath, (req, res, next) => {
-      // Express :organizationKey only — suffix routes don't use splat; set params[0] from path.
       if (suffix) {
         req.params[0] = suffix.replace(/^\//, "");
       } else {

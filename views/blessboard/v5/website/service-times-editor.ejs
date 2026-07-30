@@ -1,0 +1,290 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+<%
+  var stEntries = Array.isArray(entries) ? entries.slice() : [];
+  stEntries.sort(function (a, b) {
+    return Number(a.sortOrder || 0) - Number(b.sortOrder || 0);
+  });
+  var stDays = Array.isArray(serviceTimeDays) ? serviceTimeDays : ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  var stSection = typeof section !== 'undefined' ? section : null;
+  function statusLabel(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'draft') return 'Draft';
+    if (key === 'published') return 'Published';
+    if (key === 'archived') return 'Archived';
+    return s || '—';
+  }
+%>
+
+<section
+  class="bb-ba-content-block bb-ca-service-times"
+  data-bb-service-times-editor="1"
+  data-bb-branch-service-times="1"
+  aria-labelledby="bb-st-heading"
+>
+  <div class="bb-ba-content-block__head">
+    <p class="bb-ba-eyebrow"><a href="<%= scope.backHref %>">Website</a> · <%= scope.scopeLabel %></p>
+    <h1 id="bb-st-heading" class="bb-ba-page-title">Service times</h1>
+    <p class="bb-ba-hint">
+      These times belong to <strong><%= scope.scopeLabel %></strong>.
+      <% if (stSection) { %>Current status: <strong><%= statusLabel(stSection.status) %></strong>.<% } %>
+      Draft times are not visible on the public website until you publish.
+    </p>
+  </div>
+
+  <% if (notice) { %>
+  <div class="bb-ba-banner bb-ba-banner--success" role="status" data-bb-service-times-notice="1">
+    <p><%= notice %></p>
+  </div>
+  <% } %>
+
+  <% if (error) { %>
+  <%- include('../partials/form-errors', { errors: [error], id: 'bb-st-errors' }) %>
+  <% } %>
+
+  <form
+    method="post"
+    action="<%= scope.formAction %>"
+    class="<%= formClass %> bb-ca-form bb-ca-service-times__form"
+    data-bb-service-times-form="1"
+  >
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <% /* Never accept a writable branch id from the client. Scope is server-resolved. */ %>
+
+    <div data-bb-service-times-list="1">
+      <% if (!stEntries.length) { %>
+      <div class="bb-ba-content-empty" data-bb-service-times-empty="1" role="status">
+        <%- include('../partials/empty-state', {
+          title: 'No service times yet',
+          body: 'Add weekly gathering times for this branch. Visitors see them after you publish.',
+          icon: 'schedule'
+        }) %>
+      </div>
+      <% } else { %>
+      <div class="bb-ba-content-empty" data-bb-service-times-empty="1" role="status" hidden></div>
+      <% } %>
+
+      <ul class="bb-ca-service-times__rows" data-bb-service-times-rows="1">
+        <% stEntries.forEach(function (entry, idx) { %>
+        <li class="bb-ca-service-times__row bb-ba-panel" data-bb-service-times-row="1">
+          <input type="hidden" name="sort_order[]" value="<%= entry.sortOrder != null ? entry.sortOrder : idx %>" data-bb-service-times-sort />
+          <div class="bb-ba-page-editor__grid">
+            <div class="bb-ba-field">
+              <label>Service name</label>
+              <input name="name[]" type="text" required maxlength="120" value="<%= entry.name || '' %>" autocomplete="off" />
+            </div>
+            <div class="bb-ba-field">
+              <label>Day</label>
+              <select name="day[]" required>
+                <% stDays.forEach(function (d) { %>
+                <option value="<%= d %>" <%= entry.day === d ? 'selected' : '' %>><%= d.charAt(0).toUpperCase() + d.slice(1) %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="bb-ba-field">
+              <label>Start time</label>
+              <input name="start_time[]" type="time" required value="<%= entry.startTime || '' %>" />
+            </div>
+            <div class="bb-ba-field">
+              <label>End time (optional)</label>
+              <input name="end_time[]" type="time" value="<%= entry.endTime || '' %>" />
+            </div>
+            <div class="bb-ba-field">
+              <label>Location (optional)</label>
+              <input name="location[]" type="text" maxlength="120" value="<%= entry.location || '' %>" autocomplete="off" />
+            </div>
+            <div class="bb-ba-field">
+              <label>Note (optional)</label>
+              <input name="note[]" type="text" maxlength="240" value="<%= entry.note || '' %>" autocomplete="off" />
+            </div>
+          </div>
+          <div class="bb-ca-service-times__row-meta">
+            <div class="bb-ba-field">
+              <label>Visibility</label>
+              <select name="enabled[]">
+                <option value="1" <%= entry.enabled === false ? '' : 'selected' %>>Enabled</option>
+                <option value="0" <%= entry.enabled === false ? 'selected' : '' %>>Disabled</option>
+              </select>
+            </div>
+            <div class="bb-ca-service-times__reorder">
+              <button type="button" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" data-bb-service-times-up aria-label="Move up">Up</button>
+              <button type="button" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" data-bb-service-times-down aria-label="Move down">Down</button>
+              <button type="button" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" data-bb-service-times-remove>Remove</button>
+            </div>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+
+    <template data-bb-service-times-template>
+      <li class="bb-ca-service-times__row bb-ba-panel" data-bb-service-times-row="1">
+        <input type="hidden" name="sort_order[]" value="0" data-bb-service-times-sort />
+        <div class="bb-ba-page-editor__grid">
+          <div class="bb-ba-field">
+            <label>Service name</label>
+            <input name="name[]" type="text" required maxlength="120" value="" autocomplete="off" />
+          </div>
+          <div class="bb-ba-field">
+            <label>Day</label>
+            <select name="day[]" required>
+              <% stDays.forEach(function (d) { %>
+              <option value="<%= d %>" <%= d === 'sunday' ? 'selected' : '' %>><%= d.charAt(0).toUpperCase() + d.slice(1) %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="bb-ba-field">
+            <label>Start time</label>
+            <input name="start_time[]" type="time" required value="" />
+          </div>
+          <div class="bb-ba-field">
+            <label>End time (optional)</label>
+            <input name="end_time[]" type="time" value="" />
+          </div>
+          <div class="bb-ba-field">
+            <label>Location (optional)</label>
+            <input name="location[]" type="text" maxlength="120" value="" autocomplete="off" />
+          </div>
+          <div class="bb-ba-field">
+            <label>Note (optional)</label>
+            <input name="note[]" type="text" maxlength="240" value="" autocomplete="off" />
+          </div>
+        </div>
+        <div class="bb-ca-service-times__row-meta">
+          <div class="bb-ba-field">
+            <label>Visibility</label>
+            <select name="enabled[]">
+              <option value="1" selected>Enabled</option>
+              <option value="0">Disabled</option>
+            </select>
+          </div>
+          <div class="bb-ca-service-times__reorder">
+            <button type="button" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" data-bb-service-times-up aria-label="Move up">Up</button>
+            <button type="button" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" data-bb-service-times-down aria-label="Move down">Down</button>
+            <button type="button" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" data-bb-service-times-remove>Remove</button>
+          </div>
+        </div>
+      </li>
+    </template>
+
+    <div class="bb-ba-decision__actions bb-ca-service-times__actions">
+      <button type="button" class="bb-ba-btn bb-ba-btn--ghost" data-bb-service-times-add>
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        Add service
+      </button>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= scope.backHref %>">Cancel</a>
+      <button
+        type="submit"
+        name="action"
+        value="save_draft"
+        class="bb-ba-btn bb-ba-btn--ghost"
+        data-bb-service-times-save="draft"
+      >
+        Save draft
+      </button>
+      <button
+        type="submit"
+        name="action"
+        value="save_publish"
+        class="bb-ba-btn bb-ba-btn--primary"
+        data-bb-service-times-save="publish"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">publish</span>
+        Save and publish
+      </button>
+    </div>
+  </form>
+</section>
+
+<script>
+(function () {
+  var editor = document.querySelector("[data-bb-service-times-editor]");
+  if (!editor) return;
+  var form = editor.querySelector("[data-bb-service-times-form]");
+  var rows = editor.querySelector("[data-bb-service-times-rows]");
+  var empty = editor.querySelector("[data-bb-service-times-empty]");
+  var tpl = editor.querySelector("[data-bb-service-times-template]");
+  var addBtn = editor.querySelector("[data-bb-service-times-add]");
+  var saving = false;
+
+  function syncSortOrders() {
+    if (!rows) return;
+    Array.prototype.forEach.call(rows.querySelectorAll("[data-bb-service-times-row]"), function (row, idx) {
+      var sort = row.querySelector("[data-bb-service-times-sort]");
+      if (sort) sort.value = String(idx);
+    });
+  }
+
+  function syncEmpty() {
+    if (!empty || !rows) return;
+    empty.hidden = rows.children.length > 0;
+  }
+
+  function bindRow(row) {
+    var remove = row.querySelector("[data-bb-service-times-remove]");
+    if (remove) {
+      remove.addEventListener("click", function () {
+        row.remove();
+        syncSortOrders();
+        syncEmpty();
+      });
+    }
+    var up = row.querySelector("[data-bb-service-times-up]");
+    if (up) {
+      up.addEventListener("click", function () {
+        if (row.previousElementSibling) {
+          rows.insertBefore(row, row.previousElementSibling);
+          syncSortOrders();
+        }
+      });
+    }
+    var down = row.querySelector("[data-bb-service-times-down]");
+    if (down) {
+      down.addEventListener("click", function () {
+        if (row.nextElementSibling) {
+          rows.insertBefore(row.nextElementSibling, row);
+          syncSortOrders();
+        }
+      });
+    }
+  }
+
+  if (rows) {
+    Array.prototype.forEach.call(rows.querySelectorAll("[data-bb-service-times-row]"), bindRow);
+  }
+  if (addBtn && tpl && rows) {
+    addBtn.addEventListener("click", function () {
+      var node = tpl.content.cloneNode(true);
+      var row = node.querySelector("[data-bb-service-times-row]");
+      rows.appendChild(node);
+      if (row) bindRow(row);
+      syncSortOrders();
+      syncEmpty();
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", function () {
+      if (saving) return false;
+      saving = true;
+      syncSortOrders();
+      Array.prototype.forEach.call(form.querySelectorAll("[data-bb-service-times-save]"), function (btn) {
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
+      });
+    });
+  }
+
+  syncSortOrders();
+  syncEmpty();
+})();
+</script>
+
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

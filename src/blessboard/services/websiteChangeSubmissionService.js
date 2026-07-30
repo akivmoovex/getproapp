@@ -346,6 +346,10 @@ async function loadSubmissionReview(db, opts) {
       submission.proposedContent
     );
     const reviewable = submission.status === "pending_review";
+    const proposed =
+      submission.proposedContent && typeof submission.proposedContent === "object"
+        ? submission.proposedContent
+        : {};
     return {
       ok: true,
       status: STATUS.OK,
@@ -355,8 +359,8 @@ async function loadSubmissionReview(db, opts) {
       reviewable,
       /** Proposed content is not served by existing preview routes. */
       proposedPreviewSupported: false,
-      /** Site publish is separate; no atomic apply+publish path. */
-      approveAndPublishNowSupported: false,
+      /** Phase 7 branch drafts are applied and published on approve. */
+      approveAndPublishNowSupported: proposed.source === "phase7_website_drafts",
     };
   } catch {
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "review" };
@@ -465,9 +469,123 @@ async function approveSubmission(db, opts) {
         entityId: submissionId,
         result: "success",
       });
-      return { ok: true, status: STATUS.OK, submission: updated };
+
+      const proposed =
+        updated.proposedContent && typeof updated.proposedContent === "object"
+          ? updated.proposedContent
+          : {};
+      let applied = null;
+      let published = null;
+      if (proposed.source === "phase7_website_drafts") {
+        const {
+          applyWebsiteDraftsInTransaction,
+          applyProposedPhase7DraftsInTransaction,
+        } = require("./websiteDraftApplyService");
+        const { publishChurchWebsite } = require("./churchWebsitePublishService");
+
+        let churchId = updated.churchId;
+        if (!churchId && updated.branchId) {
+          const churchRes = await client.query(
+            `SELECT church_id FROM blessboard.branches WHERE id = $1 LIMIT 1`,
+            [updated.branchId]
+          );
+          churchId = churchRes.rows[0] ? churchRes.rows[0].church_id : null;
+        }
+        if (!repo.isUuid(churchId)) {
+          const err = new Error("approve_missing_church");
+          err.code = "INVALID_SCOPE";
+          throw err;
+        }
+
+        applied = await applyWebsiteDraftsInTransaction(client, {
+          organizationId,
+          churchId,
+          branchId: updated.branchId,
+        });
+        if (!applied.applied) {
+          applied = await applyProposedPhase7DraftsInTransaction(client, {
+            organizationId,
+            churchId,
+            branchId: updated.branchId,
+            proposedContent: proposed,
+          });
+        }
+        if (!applied.applied) {
+          const err = new Error("approve_apply_empty");
+          err.code = "APPROVE_APPLY_EMPTY";
+          throw err;
+        }
+
+        published = await publishChurchWebsite(client, {
+          organizationId,
+          churchId,
+          branchId: updated.branchId,
+          actorUserId: reviewerUserId,
+          confirmPublish: true,
+          deferServiceTimes: true,
+          relaxPreviewRequirement: true,
+          forcePublishVersion: true,
+          sourceType: "branch_submission",
+          sourceSubmissionId: submissionId,
+          publicationNote: "Published from approved branch website draft submission",
+          env: opts.env,
+        });
+        if (!published || !published.ok) {
+          const err = new Error("approve_publish_failed");
+          err.code = "APPROVE_PUBLISH_FAILED";
+          err.publishResult = published;
+          throw err;
+        }
+
+        await auditSvc.recordWebsiteAuditEventInTransaction(client, {
+          organizationId,
+          branchId: updated.branchId,
+          actorUserId: reviewerUserId,
+          actorRole: "church_hq_admin",
+          actionType: "approved_drafts_published",
+          entityType: "website_change_submission",
+          entityId: submissionId,
+          result: "success",
+          metadata: {
+            applied: applied.applied,
+            publication_version_id: published.publicationVersionId || null,
+            publication_version_number: published.publicationVersionNumber || null,
+          },
+        });
+      }
+
+      return {
+        ok: true,
+        status: STATUS.OK,
+        submission: updated,
+        applied,
+        published,
+        message: published
+          ? "Submission approved and applied to the branch website."
+          : "Submission approved.",
+      };
     });
-  } catch {
+  } catch (err) {
+    if (err && err.code === "APPROVE_PUBLISH_FAILED") {
+      return {
+        ok: false,
+        status: STATUS.LOOKUP_ERROR,
+        reason: "approve_publish_failed",
+        publishResult: err.publishResult || null,
+        message: "Approval could not publish the approved branch drafts.",
+      };
+    }
+    if (err && err.code === "APPROVE_APPLY_EMPTY") {
+      return {
+        ok: false,
+        status: STATUS.CONFLICT,
+        reason: "approve_apply_empty",
+        message: "Approved submission had no draft content to apply.",
+      };
+    }
+    if (err && (err.code === "CROSS_ORG" || err.code === "INVALID_SCOPE")) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "cross_org" };
+    }
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "approve" };
   }
 }
