@@ -199,7 +199,7 @@ async function previewTestingDataReset(db, input) {
       preserveOrgIds: preserve.orgIds,
       preserveUserIds: preserve.userIds,
     });
-    const targetOrgs = await repo.listResettableOrganizationIds(db, preserve.orgIds);
+    const targetOrgs = await repo.listResettableOrganizations(db, preserve.orgIds);
     const orphans = await repo.countOrphanTenantIdentities(db, preserve.userIds);
 
     const wouldDelete = summarizeWouldDelete(previewAction, counts);
@@ -230,15 +230,22 @@ async function previewTestingDataReset(db, input) {
       counts,
       wouldDelete,
       targetOrganizationCount: targetOrgs.length,
+      targetOrganizations: targetOrgs.map((o) => ({
+        id: o.id,
+        organizationKey: o.organizationKey,
+        displayName: o.displayName,
+      })),
       preservedPlatformAdminUsers: preserve.userIds.length,
       preservedPlatformAdminOrganizations: preserve.orgIds.length,
       orphanTenantIdentities: orphans,
+      transactionMode: "separate_per_organization",
       blockers: preserve.userIds.length
         ? []
         : ["no_active_platform_admin_to_preserve"],
       ambiguousNotDeleted: [
         "platform_admin_users_and_roles",
         "organizations_holding_platform_admin_roles",
+        "organizations_without_test_cleanup_eligible_marker",
         "apex_domains_with_null_organization_id",
         "canonical_plans_plan_features_deployments_products",
         "database_identity_and_schema_migrations",
@@ -368,6 +375,14 @@ async function executeTestingDataReset(db, input) {
   let locked = false;
   let mediaObjects = [];
   const deleted = {};
+  /** @type {{ found: number, deleted: number, skipped: number, failed: number, results: object[] }} */
+  let organizationPurgeSummary = {
+    found: 0,
+    deleted: 0,
+    skipped: 0,
+    failed: 0,
+    results: [],
+  };
 
   try {
     const lock = await client.query(`SELECT pg_try_advisory_lock($1) AS ok`, [ADVISORY_LOCK_KEY]);
@@ -376,18 +391,14 @@ async function executeTestingDataReset(db, input) {
     }
     locked = true;
 
-    await client.query("BEGIN");
-
-    // Re-check identity inside the transaction connection.
+    // Re-check identity on the locked connection before any mutation.
     const idAgain = await assertDatabaseTestingIdentity(client, env);
     if (!idAgain.ok) {
-      await client.query("ROLLBACK");
       return idAgain;
     }
 
     const preserve = await repo.listPlatformAdminPreserveSet(client);
     if (!preserve.userIds.length) {
-      await client.query("ROLLBACK");
       return {
         ok: false,
         status: STATUS.FORBIDDEN,
@@ -400,28 +411,97 @@ async function executeTestingDataReset(db, input) {
       preserveUserIds: preserve.userIds,
     });
 
+    // Behavior: separate transaction per category / organization so one malformed
+    // test tenant cannot roll back successful deletes of others.
     if (action === "clear_registrations" || action === "clear_all") {
-      deleted.registrations = await repo.deleteRegistrationApplications(client);
+      await client.query("BEGIN");
+      try {
+        deleted.registrations = await repo.deleteRegistrationApplications(client);
+        await client.query("COMMIT");
+      } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+      }
     }
 
     if (action === "clear_organizations" || action === "clear_all") {
-      const orgIds = await repo.listResettableOrganizationIds(client, preserve.orgIds);
-      const orgResult = await repo.deleteOrganizationTrees(client, {
-        organizationIds: orgIds,
-        preserveUserIds: preserve.userIds,
-        keepSessionId: input.keepSessionId || null,
-      });
+      const targets = await repo.listResettableOrganizations(client, preserve.orgIds);
+      organizationPurgeSummary.found = targets.length;
+      const orgResults = [];
+
+      for (const target of targets) {
+        await client.query("BEGIN");
+        try {
+          const result = await repo.purgeOrganizationTree(client, {
+            organizationId: target.id,
+            preserveOrgIds: preserve.orgIds,
+            preserveUserIds: preserve.userIds,
+            keepSessionId: input.keepSessionId || null,
+          });
+          if (!result.ok) {
+            await client.query("ROLLBACK");
+            organizationPurgeSummary.skipped += 1;
+            orgResults.push({
+              id: target.id,
+              organizationKey: target.organizationKey,
+              displayName: target.displayName,
+              status: "skipped",
+              reason: result.reason || "skipped",
+            });
+            continue;
+          }
+          await client.query("COMMIT");
+          organizationPurgeSummary.deleted += 1;
+          if (result.mediaObjects && result.mediaObjects.length) {
+            mediaObjects.push(...result.mediaObjects);
+          }
+          orgResults.push({
+            id: target.id,
+            organizationKey: target.organizationKey,
+            displayName: target.displayName,
+            status: "deleted",
+            churches: result.churches || 0,
+          });
+        } catch (err) {
+          try {
+            await client.query("ROLLBACK");
+          } catch {
+            /* ignore */
+          }
+          organizationPurgeSummary.failed += 1;
+          orgResults.push({
+            id: target.id,
+            organizationKey: target.organizationKey,
+            displayName: target.displayName,
+            status: "failed",
+            reason: safeErrorReason(err),
+            code: err && err.code ? String(err.code) : null,
+          });
+        }
+      }
+
+      organizationPurgeSummary.results = orgResults;
       deleted.organizations = {
-        organizations: orgResult.organizations,
-        churches: orgResult.churches,
-        auditEvents: orgResult.auditEvents,
-        mediaListed: orgResult.mediaListed,
+        found: organizationPurgeSummary.found,
+        deleted: organizationPurgeSummary.deleted,
+        skipped: organizationPurgeSummary.skipped,
+        failed: organizationPurgeSummary.failed,
+        organizations: organizationPurgeSummary.deleted,
+        failedOrganizations: orgResults.filter((r) => r.status === "failed"),
+        skippedOrganizations: orgResults.filter((r) => r.status === "skipped"),
+        results: orgResults,
       };
-      mediaObjects = orgResult.mediaObjects || [];
     }
 
     if (action === "clear_invitations" || action === "clear_all") {
-      deleted.invitations = await repo.deleteAllInvitations(client);
+      await client.query("BEGIN");
+      try {
+        deleted.invitations = await repo.deleteAllInvitations(client);
+        await client.query("COMMIT");
+      } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+      }
     }
 
     const verify = await repo.verifyPreservedFoundation(client, {
@@ -429,12 +509,12 @@ async function executeTestingDataReset(db, input) {
       preserveOrgIds: preserve.orgIds,
     });
     if (!verify.ok) {
-      await client.query("ROLLBACK");
       return {
         ok: false,
         status: STATUS.VERIFY_FAILED,
         reason: "post_delete_verify_failed",
         failures: verify.failures,
+        organizationPurge: organizationPurgeSummary,
       };
     }
 
@@ -447,31 +527,51 @@ async function executeTestingDataReset(db, input) {
     // Audit against a preserved platform-admin organization (required NOT NULL org_id).
     const auditOrgId = preserve.orgIds[0] || null;
     if (auditOrgId && input.deploymentCode) {
-      await recordAuditEventSafe(client, {
-        deploymentCode: input.deploymentCode,
-        organizationId: auditOrgId,
-        actorUserId: input.actorUserId,
-        actionKey: "maintenance.testing_data_reset",
-        entityType: "testing_data_reset",
-        outcome: "success",
-        metadata: {
-          action,
-          pre: summarizeSafeCounts(preCounts),
-          deleted: summarizeDeleted(deleted),
-          orphan_tenant_identities: orphans,
-        },
-      });
+      await client.query("BEGIN");
+      try {
+        await recordAuditEventSafe(client, {
+          deploymentCode: input.deploymentCode,
+          organizationId: auditOrgId,
+          actorUserId: input.actorUserId,
+          actionKey: "maintenance.testing_data_reset",
+          entityType: "testing_data_reset",
+          outcome: organizationPurgeSummary.failed > 0 ? "failure" : "success",
+          metadata: {
+            action,
+            pre: summarizeSafeCounts(preCounts),
+            deleted: summarizeDeleted(deleted),
+            organization_purge: {
+              found: organizationPurgeSummary.found,
+              deleted: organizationPurgeSummary.deleted,
+              skipped: organizationPurgeSummary.skipped,
+              failed: organizationPurgeSummary.failed,
+              failed_ids: (deleted.organizations &&
+                deleted.organizations.failedOrganizations) ||
+                [],
+            },
+            orphan_tenant_identities: orphans,
+          },
+        });
+        await client.query("COMMIT");
+      } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+      }
     }
-
-    await client.query("COMMIT");
 
     const fileCleanup = await cleanupMediaFiles(env, mediaObjects);
 
+    const hasOrgFailures =
+      (action === "clear_organizations" || action === "clear_all") &&
+      organizationPurgeSummary.failed > 0;
+
     return {
-      ok: true,
-      status: STATUS.OK,
+      ok: !hasOrgFailures,
+      status: hasOrgFailures ? STATUS.MUTATION_ERROR : STATUS.OK,
+      reason: hasOrgFailures ? "organization_purge_partial_failure" : undefined,
       action,
       deleted: summarizeDeleted(deleted),
+      organizationPurge: organizationPurgeSummary,
       preCounts: summarizeSafeCounts(preCounts),
       postCounts: summarizeSafeCounts(postCounts),
       preservedPlatformAdminUsers: preserve.userIds.length,
@@ -493,6 +593,7 @@ async function executeTestingDataReset(db, input) {
       reason: "mutation_failed",
       message: err && err.message ? String(err.message).slice(0, 160) : "mutation_failed",
       code: err && err.code ? String(err.code) : null,
+      organizationPurge: organizationPurgeSummary,
     };
   } finally {
     if (locked) {
@@ -504,6 +605,15 @@ async function executeTestingDataReset(db, input) {
     }
     client.release();
   }
+}
+
+function safeErrorReason(err) {
+  const msg = err && err.message ? String(err.message) : "mutation_failed";
+  // Strip connection strings / secrets if ever present.
+  return msg
+    .replace(/postgres(ql)?:\/\/\S+/gi, "[redacted-db-url]")
+    .replace(/password[=:]\S+/gi, "password=[redacted]")
+    .slice(0, 200);
 }
 
 function summarizeSafeCounts(counts) {
@@ -584,6 +694,7 @@ module.exports = {
   EXPECTED_DB_ENV,
   CATEGORY_ACTIONS,
   ALLOWLISTED_ACTIONS: repo.ALLOWLISTED_ACTIONS,
+  ORGANIZATION_SCOPED_TABLES: repo.ORGANIZATION_SCOPED_TABLES,
   isTestingDataMaintenanceAllowed,
   assertRuntimeTestingGate,
   assertDatabaseTestingIdentity,

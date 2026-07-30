@@ -3645,7 +3645,12 @@ function createPlatformAdminRouter(deps) {
         dryRun: false,
       });
 
-      if (!result.ok) {
+      const isPartialOrgFailure =
+        result.reason === "organization_purge_partial_failure" &&
+        result.organizationPurge &&
+        result.organizationPurge.deleted > 0;
+
+      if (!result.ok && !isPartialOrgFailure) {
         let error = "reset_failed";
         if (result.status === MAINT_STATUS.INVALID_INPUT) error = "confirm_invalid";
         else if (result.status === MAINT_STATUS.PREVIEW_REQUIRED) error = "preview_required";
@@ -3664,8 +3669,8 @@ function createPlatformAdminRouter(deps) {
           maintenance: model.ok ? model : null,
           confirmPhraseFull: FULL_RESET_CONFIRM_PHRASE,
           categoryActions: CATEGORY_ACTIONS,
-          notice: "reset_complete",
-          error: null,
+          notice: isPartialOrgFailure ? "reset_partial" : "reset_complete",
+          error: isPartialOrgFailure ? "reset_partial" : null,
           resetResult: result,
           previewResult: null,
         })

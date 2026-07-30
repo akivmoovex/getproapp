@@ -41,7 +41,8 @@ async function findDeploymentByCode(client, deploymentCode) {
  */
 async function findOrganizationByKey(client, organizationKey) {
   const r = await client.query(
-    `SELECT id, organization_key, display_name, legal_name, status, data_environment
+    `SELECT id, organization_key, display_name, legal_name, status, data_environment,
+            test_cleanup_eligible
        FROM platform.organizations
       WHERE organization_key = $1
       LIMIT 1`,
@@ -51,16 +52,38 @@ async function findOrganizationByKey(client, organizationKey) {
 }
 
 /**
+ * @param {string} dataEnvironment
+ * @returns {boolean}
+ */
+function isTestCleanupEligibleEnvironment(dataEnvironment) {
+  const env = String(dataEnvironment || "")
+    .trim()
+    .toLowerCase();
+  return env === "testing" || env === "demo" || env === "pilot";
+}
+
+/**
  * @param {{ query: Function }} client
- * @param {{ organizationKey: string, displayName: string, legalName: string | null, dataEnvironment: string }} fields
+ * @param {{ organizationKey: string, displayName: string, legalName: string | null, dataEnvironment: string, testCleanupEligible?: boolean }} fields
  */
 async function insertOrganization(client, fields) {
+  const eligible =
+    typeof fields.testCleanupEligible === "boolean"
+      ? fields.testCleanupEligible
+      : isTestCleanupEligibleEnvironment(fields.dataEnvironment);
   const r = await client.query(
     `INSERT INTO platform.organizations
-       (organization_key, display_name, legal_name, status, data_environment)
-     VALUES ($1, $2, $3, 'active', $4)
-     RETURNING id, organization_key, display_name, legal_name, status, data_environment`,
-    [fields.organizationKey, fields.displayName, fields.legalName, fields.dataEnvironment]
+       (organization_key, display_name, legal_name, status, data_environment, test_cleanup_eligible)
+     VALUES ($1, $2, $3, 'active', $4, $5)
+     RETURNING id, organization_key, display_name, legal_name, status, data_environment,
+               test_cleanup_eligible`,
+    [
+      fields.organizationKey,
+      fields.displayName,
+      fields.legalName,
+      fields.dataEnvironment,
+      eligible,
+    ]
   );
   return r.rows[0];
 }
@@ -165,6 +188,7 @@ module.exports = {
   findDeploymentByCode,
   findOrganizationByKey,
   insertOrganization,
+  isTestCleanupEligibleEnvironment,
   findEnrolmentByOrgProduct,
   findEnrolmentByProductTenantKey,
   insertEnrolment,

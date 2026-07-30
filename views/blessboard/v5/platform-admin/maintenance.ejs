@@ -44,6 +44,8 @@
     <p class="bb-pa-banner bb-pa-banner--ok" role="status">Dry-run preview ready. Review counts, then confirm a reset.</p>
   <% } else if (notice === 'reset_complete') { %>
     <p class="bb-pa-banner bb-pa-banner--ok" role="status">Reset completed. Platform-admin access was preserved.</p>
+  <% } else if (notice === 'reset_partial') { %>
+    <p class="bb-pa-banner bb-pa-banner--warn" role="status">Reset finished with some organization failures. Review the result details below.</p>
   <% } %>
   <% if (error === 'csrf') { %>
     <p class="bb-pa-banner bb-pa-banner--err" role="alert">Invalid or missing CSRF token. Reload and try again.</p>
@@ -55,6 +57,8 @@
     <p class="bb-pa-banner bb-pa-banner--err" role="alert">Database identity gate blocked this action.</p>
   <% } else if (error === 'busy') { %>
     <p class="bb-pa-banner bb-pa-banner--err" role="alert">Another reset is in progress. Try again shortly.</p>
+  <% } else if (error === 'reset_partial') { %>
+    <p class="bb-pa-banner bb-pa-banner--err" role="alert">One or more organizations failed to purge. Successful deletes were committed.</p>
   <% } else if (error) { %>
     <p class="bb-pa-banner bb-pa-banner--err" role="alert">The maintenance action could not be completed.</p>
   <% } %>
@@ -126,19 +130,33 @@
     </div>
   <% } %>
 
-  <% if (reset && reset.ok) { %>
+  <% if (reset) { %>
     <div class="bb-pa-panel" data-bb-pa-maintenance-result="1">
       <div class="bb-pa-panel__head">
         <h2 class="bb-pa-section-title">Last reset result</h2>
       </div>
       <p>Action: <code class="bb-pa-key"><%= esc(reset.action) %></code></p>
-      <pre class="bb-pa-pre"><%= esc(JSON.stringify(reset.deleted || {}, null, 2)) %></pre>
+      <% var op = reset.organizationPurge || null; %>
+      <% if (op) { %>
+        <ul class="bb-pa-stat-list" data-bb-pa-org-purge-summary="1">
+          <li>Organizations found: <strong><%= Number(op.found || 0) %></strong></li>
+          <li>Organizations deleted: <strong><%= Number(op.deleted || 0) %></strong></li>
+          <li>Organizations skipped: <strong><%= Number(op.skipped || 0) %></strong></li>
+          <li>Organizations failed: <strong><%= Number(op.failed || 0) %></strong></li>
+        </ul>
+      <% } %>
+      <pre class="bb-pa-pre"><%= esc(JSON.stringify({
+        deleted: reset.deleted || {},
+        organizationPurge: reset.organizationPurge || null,
+        reason: reset.reason || null
+      }, null, 2)) %></pre>
       <% if (reset.fileCleanup && reset.fileCleanup.failed) { %>
         <p class="bb-pa-banner bb-pa-banner--warn" role="status">
           Partial file cleanup: <%= Number(reset.fileCleanup.failed) %> file(s) could not be removed.
         </p>
       <% } %>
       <p>Orphan tenant identities remaining: <strong><%= Number(reset.orphanTenantIdentities || 0) %></strong></p>
+      <p class="bb-pa-hint">Organization deletes use a separate transaction per organization.</p>
     </div>
   <% } %>
 

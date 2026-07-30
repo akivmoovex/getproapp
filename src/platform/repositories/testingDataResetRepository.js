@@ -15,6 +15,36 @@ const ALLOWLISTED_ACTIONS = Object.freeze([
   "clear_all",
 ]);
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Tables that must have zero rows for a deleted organization_id after purge.
+ * Used by verification helpers / tests.
+ */
+const ORGANIZATION_SCOPED_TABLES = Object.freeze([
+  "blessboard.churches",
+  "blessboard.organization_growth_trial_offers",
+  "blessboard.organization_onboarding",
+  "blessboard.organization_support_contacts",
+  "blessboard.user_invitations",
+  "blessboard.user_roles",
+  "blessboard.website_approval_settings",
+  "blessboard.website_audit_events",
+  "blessboard.website_change_submission_events",
+  "blessboard.website_change_submissions",
+  "blessboard.website_inline_field_drafts",
+  "blessboard.website_publication_versions",
+  "blessboard.website_structured_drafts",
+  "platform.audit_events",
+  "platform.auth_transfers",
+  "platform.deployment_sessions",
+  "platform.domains",
+  "platform.organization_entitlements",
+  "platform.organization_products",
+  "platform.organization_subscriptions",
+]);
+
 /**
  * @param {{ query: Function }} client
  */
@@ -34,18 +64,82 @@ async function listPlatformAdminPreserveSet(client) {
 }
 
 /**
+ * Eligible orgs: test_cleanup_eligible marker AND not in platform-admin preserve set.
+ * @param {{ query: Function }} client
+ * @param {string[]} preserveOrgIds
+ * @returns {Promise<Array<{ id: string, organizationKey: string, displayName: string }>>}
+ */
+async function listResettableOrganizations(client, preserveOrgIds) {
+  const r = await client.query(
+    `SELECT id, organization_key, display_name
+       FROM platform.organizations
+      WHERE test_cleanup_eligible = true
+        AND NOT (id = ANY($1::uuid[]))
+      ORDER BY created_at ASC`,
+    [preserveOrgIds]
+  );
+  return r.rows.map((row) => ({
+    id: String(row.id),
+    organizationKey: String(row.organization_key),
+    displayName: String(row.display_name),
+  }));
+}
+
+/**
  * @param {{ query: Function }} client
  * @param {string[]} preserveOrgIds
  */
 async function listResettableOrganizationIds(client, preserveOrgIds) {
+  const rows = await listResettableOrganizations(client, preserveOrgIds);
+  return rows.map((r) => r.id);
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} organizationId
+ * @param {string[]} preserveOrgIds
+ */
+async function getOrganizationPurgeEligibility(client, organizationId, preserveOrgIds) {
+  if (!UUID_RE.test(String(organizationId || ""))) {
+    return { ok: false, reason: "invalid_organization_id" };
+  }
   const r = await client.query(
-    `SELECT id
+    `SELECT id, organization_key, display_name, status, data_environment, test_cleanup_eligible
        FROM platform.organizations
-      WHERE NOT (id = ANY($1::uuid[]))
-      ORDER BY created_at ASC`,
-    [preserveOrgIds]
+      WHERE id = $1
+      LIMIT 1`,
+    [organizationId]
   );
-  return r.rows.map((row) => String(row.id));
+  const row = r.rows[0];
+  if (!row) {
+    return { ok: false, reason: "organization_not_found" };
+  }
+  if (preserveOrgIds.includes(String(row.id))) {
+    return {
+      ok: false,
+      reason: "preserved_platform_admin_organization",
+      organization: mapOrgRow(row),
+    };
+  }
+  if (!row.test_cleanup_eligible) {
+    return {
+      ok: false,
+      reason: "not_test_cleanup_eligible",
+      organization: mapOrgRow(row),
+    };
+  }
+  return { ok: true, organization: mapOrgRow(row) };
+}
+
+function mapOrgRow(row) {
+  return {
+    id: String(row.id),
+    organizationKey: String(row.organization_key),
+    displayName: String(row.display_name),
+    status: String(row.status),
+    dataEnvironment: String(row.data_environment),
+    testCleanupEligible: Boolean(row.test_cleanup_eligible),
+  };
 }
 
 /**
@@ -70,72 +164,75 @@ async function countResettableCategories(client, preserve) {
   const preserveOrgIds = preserve.preserveOrgIds || [];
   const preserveUserIds = preserve.preserveUserIds || [];
 
-  const [
-    registrations,
-    supportContactsApp,
-    orgs,
-    churches,
-    invitations,
-    tenantRoles,
-    media,
-    domains,
-    subscriptions,
-    sessionsTenant,
-    auditForOrgs,
-  ] = await Promise.all([
-    client.query(`SELECT COUNT(*)::int AS n FROM blessboard.platform_church_registration_applications`),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.organization_support_contacts
-        WHERE registration_application_id IS NOT NULL`
-    ),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM platform.organizations
-        WHERE NOT (id = ANY($1::uuid[]))`,
-      [preserveOrgIds]
-    ),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.churches
-        WHERE NOT (organization_id = ANY($1::uuid[]))`,
-      [preserveOrgIds]
-    ),
-    client.query(`SELECT COUNT(*)::int AS n FROM blessboard.user_invitations`),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles
-        WHERE role_key <> 'platform_admin'
-          AND organization_id = ANY(
-            SELECT id FROM platform.organizations WHERE NOT (id = ANY($1::uuid[]))
-          )`,
-      [preserveOrgIds]
-    ),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.media_assets m
-        INNER JOIN blessboard.churches c ON c.id = m.church_id
-       WHERE NOT (c.organization_id = ANY($1::uuid[]))`,
-      [preserveOrgIds]
-    ),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM platform.domains
-        WHERE organization_id IS NOT NULL
-          AND NOT (organization_id = ANY($1::uuid[]))`,
-      [preserveOrgIds]
-    ),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM platform.organization_subscriptions
-        WHERE NOT (organization_id = ANY($1::uuid[]))`,
-      [preserveOrgIds]
-    ),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM platform.deployment_sessions
-        WHERE organization_id IS NOT NULL
-          AND NOT (organization_id = ANY($1::uuid[]))`,
-      [preserveOrgIds]
-    ),
-    client.query(
-      `SELECT COUNT(*)::int AS n FROM platform.audit_events
-        WHERE NOT (organization_id = ANY($1::uuid[]))`,
-      [preserveOrgIds]
-    ),
-  ]);
+  const registrations = await client.query(
+    `SELECT COUNT(*)::int AS n FROM blessboard.platform_church_registration_applications`
+  );
+  const supportContactsApp = await client.query(
+    `SELECT COUNT(*)::int AS n FROM blessboard.organization_support_contacts
+      WHERE registration_application_id IS NOT NULL`
+  );
+  const orgs = await client.query(
+    `SELECT COUNT(*)::int AS n FROM platform.organizations
+      WHERE test_cleanup_eligible = true
+        AND NOT (id = ANY($1::uuid[]))`,
+    [preserveOrgIds]
+  );
+  const churches = await client.query(
+    `SELECT COUNT(*)::int AS n FROM blessboard.churches c
+      INNER JOIN platform.organizations o ON o.id = c.organization_id
+     WHERE o.test_cleanup_eligible = true
+       AND NOT (c.organization_id = ANY($1::uuid[]))`,
+    [preserveOrgIds]
+  );
+  const invitations = await client.query(
+    `SELECT COUNT(*)::int AS n FROM blessboard.user_invitations`
+  );
+  const tenantRoles = await client.query(
+    `SELECT COUNT(*)::int AS n FROM blessboard.user_roles ur
+      INNER JOIN platform.organizations o ON o.id = ur.organization_id
+     WHERE ur.role_key <> 'platform_admin'
+       AND o.test_cleanup_eligible = true
+       AND NOT (ur.organization_id = ANY($1::uuid[]))`,
+    [preserveOrgIds]
+  );
+  const media = await client.query(
+    `SELECT COUNT(*)::int AS n FROM blessboard.media_assets m
+      INNER JOIN blessboard.churches c ON c.id = m.church_id
+      INNER JOIN platform.organizations o ON o.id = c.organization_id
+     WHERE o.test_cleanup_eligible = true
+       AND NOT (c.organization_id = ANY($1::uuid[]))`,
+    [preserveOrgIds]
+  );
+  const domains = await client.query(
+    `SELECT COUNT(*)::int AS n FROM platform.domains d
+      INNER JOIN platform.organizations o ON o.id = d.organization_id
+     WHERE d.organization_id IS NOT NULL
+       AND o.test_cleanup_eligible = true
+       AND NOT (d.organization_id = ANY($1::uuid[]))`,
+    [preserveOrgIds]
+  );
+  const subscriptions = await client.query(
+    `SELECT COUNT(*)::int AS n FROM platform.organization_subscriptions s
+      INNER JOIN platform.organizations o ON o.id = s.organization_id
+     WHERE o.test_cleanup_eligible = true
+       AND NOT (s.organization_id = ANY($1::uuid[]))`,
+    [preserveOrgIds]
+  );
+  const sessionsTenant = await client.query(
+    `SELECT COUNT(*)::int AS n FROM platform.deployment_sessions s
+      INNER JOIN platform.organizations o ON o.id = s.organization_id
+     WHERE s.organization_id IS NOT NULL
+       AND o.test_cleanup_eligible = true
+       AND NOT (s.organization_id = ANY($1::uuid[]))`,
+    [preserveOrgIds]
+  );
+  const auditForOrgs = await client.query(
+    `SELECT COUNT(*)::int AS n FROM platform.audit_events a
+      INNER JOIN platform.organizations o ON o.id = a.organization_id
+     WHERE o.test_cleanup_eligible = true
+       AND NOT (a.organization_id = ANY($1::uuid[]))`,
+    [preserveOrgIds]
+  );
 
   const preservedAdmins = await client.query(
     `SELECT COUNT(*)::int AS n FROM blessboard.users WHERE id = ANY($1::uuid[])`,
@@ -197,12 +294,109 @@ async function listMediaObjectsForChurches(client, churchIds) {
 }
 
 /**
+ * Website / draft / submission dependents keyed by organization.
+ * Must run before church deletion (publication versions RESTRICT church_id).
+ * @param {{ query: Function }} client
+ * @param {string} organizationId
+ */
+async function deleteOrganizationWebsiteRecords(client, organizationId) {
+  // Break self-FK on publication versions before delete.
+  await client.query(
+    `UPDATE blessboard.website_publication_versions
+        SET source_version_id = NULL
+      WHERE organization_id = $1
+        AND source_version_id IS NOT NULL`,
+    [organizationId]
+  );
+  await client.query(
+    `UPDATE blessboard.website_publication_versions
+        SET source_submission_id = NULL
+      WHERE organization_id = $1
+        AND source_submission_id IS NOT NULL`,
+    [organizationId]
+  );
+
+  await client.query(
+    `DELETE FROM blessboard.website_change_submission_events
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+  await client.query(
+    `DELETE FROM blessboard.website_publication_versions
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+  await client.query(
+    `DELETE FROM blessboard.website_change_submissions
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+  await client.query(
+    `DELETE FROM blessboard.website_audit_events
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+  await client.query(
+    `DELETE FROM blessboard.website_inline_field_drafts
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+  await client.query(
+    `DELETE FROM blessboard.website_structured_drafts
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+  await client.query(
+    `DELETE FROM blessboard.website_approval_settings
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+}
+
+/**
+ * Messaging / notification tables that RESTRICT church deletion.
+ * @param {{ query: Function }} client
+ * @param {string[]} churchIds
+ */
+async function deleteChurchMessaging(client, churchIds) {
+  if (!churchIds.length) return;
+  await client.query(
+    `DELETE FROM blessboard.message_delivery_attempts
+      WHERE church_id = ANY($1::uuid[])`,
+    [churchIds]
+  );
+  await client.query(
+    `DELETE FROM blessboard.member_notifications
+      WHERE church_id = ANY($1::uuid[])`,
+    [churchIds]
+  );
+  await client.query(
+    `DELETE FROM blessboard.message_audiences
+      WHERE message_id IN (
+        SELECT id FROM blessboard.messages WHERE church_id = ANY($1::uuid[])
+      )`,
+    [churchIds]
+  );
+  await client.query(
+    `DELETE FROM blessboard.messages WHERE church_id = ANY($1::uuid[])`,
+    [churchIds]
+  );
+  await client.query(
+    `DELETE FROM blessboard.member_notification_preferences
+      WHERE church_id = ANY($1::uuid[])`,
+    [churchIds]
+  );
+}
+
+/**
  * Delete church-scoped catalogue content for the given church ids.
  * @param {{ query: Function }} client
  * @param {string[]} churchIds
  */
 async function deleteChurchScopedContent(client, churchIds) {
   if (!churchIds.length) return { deletedChurches: 0 };
+
+  await deleteChurchMessaging(client, churchIds);
 
   // Announcement children cascade from announcements; delete parents.
   await client.query(
@@ -343,26 +537,38 @@ async function deleteAuditEventsForOrganizations(client, organizationIds) {
 }
 
 /**
+ * Purge one eligible organization and all organization-scoped dependents.
+ * Caller owns the transaction.
+ *
  * @param {{ query: Function }} client
  * @param {{
- *   organizationIds: string[],
+ *   organizationId: string,
+ *   preserveOrgIds: string[],
  *   preserveUserIds: string[],
  *   keepSessionId?: string|null,
  * }} opts
  */
-async function deleteOrganizationTrees(client, opts) {
-  const organizationIds = opts.organizationIds || [];
+async function purgeOrganizationTree(client, opts) {
+  const organizationId = String(opts.organizationId || "");
+  const preserveOrgIds = opts.preserveOrgIds || [];
   const preserveUserIds = opts.preserveUserIds || [];
-  if (!organizationIds.length) {
+  const keepSessionId = opts.keepSessionId || null;
+
+  const eligibility = await getOrganizationPurgeEligibility(
+    client,
+    organizationId,
+    preserveOrgIds
+  );
+  if (!eligibility.ok) {
     return {
-      organizations: 0,
-      churches: 0,
-      auditEvents: 0,
-      mediaListed: 0,
-      mediaObjects: [],
+      ok: false,
+      status: "skipped",
+      reason: eligibility.reason,
+      organization: eligibility.organization || { id: organizationId },
     };
   }
 
+  const organizationIds = [organizationId];
   const churchIds = await listChurchIdsForOrganizations(client, organizationIds);
   const mediaObjects = await listMediaObjectsForChurches(client, churchIds);
 
@@ -370,13 +576,27 @@ async function deleteOrganizationTrees(client, opts) {
     `DELETE FROM platform.auth_transfers WHERE organization_id = ANY($1::uuid[])`,
     [organizationIds]
   );
-  await client.query(
-    `DELETE FROM platform.deployment_sessions
-      WHERE organization_id = ANY($1::uuid[])`,
-    [organizationIds]
-  );
+
+  if (keepSessionId) {
+    await client.query(
+      `DELETE FROM platform.deployment_sessions
+        WHERE organization_id = ANY($1::uuid[])
+          AND id <> $2::uuid`,
+      [organizationIds, keepSessionId]
+    );
+  } else {
+    await client.query(
+      `DELETE FROM platform.deployment_sessions
+        WHERE organization_id = ANY($1::uuid[])`,
+      [organizationIds]
+    );
+  }
 
   const auditEvents = await deleteAuditEventsForOrganizations(client, organizationIds);
+
+  // Website records before churches (publication versions RESTRICT church_id).
+  await deleteOrganizationWebsiteRecords(client, organizationId);
+
   const churchResult = await deleteChurchScopedContent(client, churchIds);
 
   await client.query(
@@ -386,13 +606,26 @@ async function deleteOrganizationTrees(client, opts) {
   await client.query(
     `DELETE FROM blessboard.user_roles
       WHERE organization_id = ANY($1::uuid[])
+        AND role_key <> 'platform_admin'
+        AND NOT (user_id = ANY($2::uuid[]))`,
+    [organizationIds, preserveUserIds]
+  );
+  // Platform-admin roles should never live on cleanup-eligible orgs; remove any leftover tenant roles.
+  await client.query(
+    `DELETE FROM blessboard.user_roles
+      WHERE organization_id = ANY($1::uuid[])
         AND role_key <> 'platform_admin'`,
     [organizationIds]
   );
 
   await client.query(
     `UPDATE blessboard.platform_church_registration_applications
-        SET organization_id = NULL
+        SET organization_id = NULL,
+            provisioned_at = NULL,
+            provisioning_status = CASE
+              WHEN provisioning_status = 'provisioned' THEN 'not_started'
+              ELSE provisioning_status
+            END
       WHERE organization_id = ANY($1::uuid[])`,
     [organizationIds]
   );
@@ -435,12 +668,88 @@ async function deleteOrganizationTrees(client, opts) {
     [organizationIds]
   );
 
+  if ((orgDel.rowCount || 0) !== 1) {
+    const err = new Error("organization_delete_rowcount_mismatch");
+    err.code = "PURGE_VERIFY";
+    throw err;
+  }
+
   return {
-    organizations: orgDel.rowCount || 0,
+    ok: true,
+    status: "deleted",
+    organization: eligibility.organization,
     churches: churchResult.deletedChurches,
     auditEvents,
     mediaListed: mediaObjects.length,
     mediaObjects,
+  };
+}
+
+/**
+ * Batch helper retained for callers that already hold a transaction over many orgs.
+ * Prefer per-organization transactions via purgeOrganizationTree in the service layer.
+ *
+ * @param {{ query: Function }} client
+ * @param {{
+ *   organizationIds: string[],
+ *   preserveOrgIds: string[],
+ *   preserveUserIds: string[],
+ *   keepSessionId?: string|null,
+ * }} opts
+ */
+async function deleteOrganizationTrees(client, opts) {
+  const organizationIds = opts.organizationIds || [];
+  const preserveOrgIds = opts.preserveOrgIds || [];
+  const preserveUserIds = opts.preserveUserIds || [];
+  if (!organizationIds.length) {
+    return {
+      organizations: 0,
+      churches: 0,
+      auditEvents: 0,
+      mediaListed: 0,
+      mediaObjects: [],
+      results: [],
+    };
+  }
+
+  const results = [];
+  let churches = 0;
+  let auditEvents = 0;
+  let mediaListed = 0;
+  const mediaObjects = [];
+  let organizations = 0;
+
+  for (const organizationId of organizationIds) {
+    const result = await purgeOrganizationTree(client, {
+      organizationId,
+      preserveOrgIds,
+      preserveUserIds,
+      keepSessionId: opts.keepSessionId || null,
+    });
+    results.push(result);
+    if (result.ok) {
+      organizations += 1;
+      churches += result.churches || 0;
+      auditEvents += result.auditEvents || 0;
+      mediaListed += result.mediaListed || 0;
+      if (result.mediaObjects && result.mediaObjects.length) {
+        mediaObjects.push(...result.mediaObjects);
+      }
+    } else if (result.status !== "skipped") {
+      const err = new Error(result.reason || "organization_purge_failed");
+      err.code = "PURGE_FAILED";
+      err.organizationId = organizationId;
+      throw err;
+    }
+  }
+
+  return {
+    organizations,
+    churches,
+    auditEvents,
+    mediaListed,
+    mediaObjects,
+    results,
   };
 }
 
@@ -526,6 +835,17 @@ async function verifyPreservedFoundation(client, preserve) {
     if (roles.rows[0].n < 1) failures.push("platform_admin_role_missing");
   }
 
+  if (preserve.preserveOrgIds.length) {
+    const orgs = await client.query(
+      `SELECT COUNT(*)::int AS n FROM platform.organizations
+        WHERE id = ANY($1::uuid[])`,
+      [preserve.preserveOrgIds]
+    );
+    if (orgs.rows[0].n !== preserve.preserveOrgIds.length) {
+      failures.push("platform_admin_organization_missing");
+    }
+  }
+
   return { ok: failures.length === 0, failures };
 }
 
@@ -547,18 +867,45 @@ async function countOrphanTenantIdentities(client, preserveUserIds) {
   return r.rows[0].n;
 }
 
+/**
+ * Assert no organization-scoped rows remain for a deleted org id.
+ * @param {{ query: Function }} client
+ * @param {string} organizationId
+ */
+async function countOrganizationScopedResiduals(client, organizationId) {
+  const residuals = [];
+  for (const table of ORGANIZATION_SCOPED_TABLES) {
+    const r = await client.query(
+      `SELECT COUNT(*)::int AS n FROM ${table} WHERE organization_id = $1`,
+      [organizationId]
+    );
+    if (r.rows[0].n > 0) {
+      residuals.push({ table, count: r.rows[0].n });
+    }
+  }
+  // Registration applications may remain unlinked (organization_id NULL) — only count linked.
+  return residuals;
+}
+
 module.exports = {
   ALLOWLISTED_ACTIONS,
+  ORGANIZATION_SCOPED_TABLES,
   listPlatformAdminPreserveSet,
+  listResettableOrganizations,
   listResettableOrganizationIds,
+  getOrganizationPurgeEligibility,
   listChurchIdsForOrganizations,
   countResettableCategories,
   listMediaObjectsForChurches,
+  deleteOrganizationWebsiteRecords,
+  deleteChurchMessaging,
   deleteChurchScopedContent,
   deleteAuditEventsForOrganizations,
+  purgeOrganizationTree,
   deleteOrganizationTrees,
   deleteRegistrationApplications,
   deleteAllInvitations,
   verifyPreservedFoundation,
   countOrphanTenantIdentities,
+  countOrganizationScopedResiduals,
 };
