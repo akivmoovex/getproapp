@@ -5,22 +5,25 @@
 **Surface:** BlessBoard V5 tenant public websites + HQ / Branch Admin editors  
 **Related:** `docs/migrations/STAGE7_BRANCH_MINI_WEBSITES_MIGRATION.md`, `resolveWebsiteScope.js`, `websiteBranchPageInheritanceService.js`, `loadTenantPublicPageModel.js`
 
-**Verdict:** `REQUIRES_PRODUCT_DECISION` (see §K). Do **not** ship broad schema migrations until the open decisions below are confirmed.
+**Verdict:** `READY_FOR_IMPLEMENTATION` — §K product decisions approved 2026-07-30. Implement Prompt 7 in **eight staged passes** (do not combine).
 
-### Prompt 7 gate (2026-07-30)
+### Prompt 7 Stage 1 (2026-07-30) — foundation landed (local)
 
-Prompt 7 (branch website desktop/mobile Stitch parity + inheritance editor UX) is **blocked** until §K is reviewed.
+| Deliverable | Status |
+|-------------|--------|
+| Migration `052_branch_website_governance_and_scope_settings.sql` | Additive |
+| Org `allow_branch_giving_methods` / `allow_branch_urgent_updates` (default false) | Done |
+| `branch_website_governance` + backfill defaults | Done |
+| `website_scope_settings` (override/hidden; empty = inherit) | Done |
+| Church-wide URL ≠ primary branch mirror | Done in `loadTenantPublicPageModel` |
+| Primary fallback for contact + service times only | Done |
+| Stages 2–8 | **Not started** |
 
-| Already shipped (do not re-architect) | Blocked on §K decisions |
-|---------------------------------------|-------------------------|
-| Public `/c/:org/branches/:branchKey/*` + host `/branches/:branchKey/*` | Field-level inherit/override/hidden UI + schema |
-| HQ `/hq/website/branches/:branchKey/*` editors | Giving linked-inherit + HQ permission gate |
-| Page-level override/remove inheritance service | Collection merge vs replace policy |
-| Branch selector + shell | Brand tokens / custom CSS ownership |
-| Publication versions per branch (`051`) | Trusted branch publish activation |
-| STAGE7: no bulk CMS copy on branch create | Urgent contact/service-time path |
+See `docs/migrations/PROMPT7_STAGE1_BRANCH_WEBSITE_GOVERNANCE.md`.
 
-**Stitch note:** Phase 7 Stitch screens are **church-wide** public pages. Dedicated branch public homepage artboards are not in the Phase 7 set; closest refs are Phase 4 Branch Website Overview (+ older church-flow branch editor screens). Do not treat church-wide Phase 7 PNGs as branch mini-site source of truth without product confirmation.
+### Prompt 7 gate (superseded)
+
+~~Prompt 7 blocked until §K~~ — product decisions approved; proceed stage-by-stage.
 
 ---
 
@@ -343,17 +346,19 @@ Each stage: tests for scope 404, CSRF, audit, inheritance non-clobber, cross-org
 
 ## K. Architecture verdict
 
-### `REQUIRES_PRODUCT_DECISION`
+### `READY_FOR_IMPLEMENTATION`
 
-Open decisions that block “READY_FOR_IMPLEMENTATION”:
+§K product decisions were approved 2026-07-30 (church-wide ≠ primary mirror; three inheritance models; collection policies; giving governance; branding ownership; nav visibility; publish modes; urgent path). Implement Prompt 7 stages 1→8 sequentially.
 
-1. **Church-wide URL content:** Keep preferring primary-branch overrides, or force true church-wide (`branch_id IS NULL`) only?
-2. **Collections:** Keep replace-if-non-empty, or move to merge / church-wide+local / featured subsets?
-3. **Field-level inheritance:** Confirm settings need field-level states now, or page/record-level is enough for v1?
-4. **Giving:** Confirm HQ permission gate for branch methods + linked inherit (vs today’s replace list).
-5. **Branding:** When do church logo/color/font become editable CMS fields?
-6. **Trusted branch publish:** Keep forced off, or schedule activation criteria?
-7. **Urgent contact/service-time path:** Bypass full approval or still submit with expedited HQ?
+Open decisions that previously blocked “READY_FOR_IMPLEMENTATION” (historical):
+
+1. **Church-wide URL content:** ~~Keep preferring primary-branch overrides~~ → **Approved:** church-wide only; primary contact/service-time fallback only.
+2. **Collections:** ~~replace vs merge~~ → **Approved:** per-collection rules in product decisions §3.
+3. **Field-level inheritance:** ~~now vs later~~ → **Approved:** field-level for settings catalog; page-level for structured pages; record-level for collections.
+4. **Giving:** ~~HQ gate + linked inherit~~ → **Approved:** `allow_branch_giving_methods` default false.
+5. **Branding:** HQ owns global brand; branch limited local treatments.
+6. **Trusted branch publish:** per-branch `branch_publish_mode`, default `hq_approval`.
+7. **Urgent contact/service-time path:** HQ-enabled, audited, scoped.
 
 ### What is already sound (do not undo)
 

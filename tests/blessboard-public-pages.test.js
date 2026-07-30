@@ -273,10 +273,20 @@ describe("blessboard public pages", () => {
 
     const res = await request(app).get("/").set("Host", HOST_A);
     assert.equal(res.status, 200);
-    assert.match(res.text, /Branch hero/);
-    assert.match(res.text, /Branch override copy/);
-    assert.doesNotMatch(res.text, /Church-wide hero/);
-    assert.doesNotMatch(res.text, /Church scope copy/);
+    // Church-wide URL must not mirror primary-branch page content.
+    assert.match(res.text, /Church-wide hero/);
+    assert.match(res.text, /Church scope copy/);
+    assert.doesNotMatch(res.text, /Branch hero/);
+    assert.doesNotMatch(res.text, /Branch override copy/);
+
+    const branchRes = await request(app)
+      .get(`/branches/${branchA.branch_key || branchA.branchKey || "hq"}`)
+      .set("Host", HOST_A);
+    // Primary branch remains an explicit branch-scoped website.
+    if (branchRes.status === 200) {
+      assert.match(branchRes.text, /Branch hero/);
+      assert.match(branchRes.text, /Branch override copy/);
+    }
   });
 
   it("soft-fills sermons demo when church has no published sermons", async () => {
@@ -938,6 +948,11 @@ describe("blessboard public pages", () => {
     assert.match(contact.mapEmbedUrl, /openstreetmap\.org\/export\/embed/);
     assert.match(contact.directionsUrl, /openstreetmap\.org/);
 
+    const churchFirst = buildPublicContact(church, branch, { preferChurch: true });
+    assert.equal(churchFirst.email, "church@example.org");
+    assert.equal(churchFirst.phone, "+260111111111");
+    assert.match(churchFirst.addressText, /12 Faith Lane/);
+
     const churchOnly = buildPublicContact(church, null);
     assert.equal(churchOnly.email, "church@example.org");
     assert.equal(churchOnly.phone, "+260111111111");
@@ -1018,15 +1033,17 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /WhatsApp Line/);
     assert.match(res.text, /https:\/\/example\.org\/wa/);
     assert.doesNotMatch(res.text, /Draft Inbox|draft-only@example\.org/);
-    // Branch overrides church for settings cards when channel type not already published.
-    assert.match(res.text, /hq-branch@example\.org/);
-    assert.match(res.text, /\+260900000099/);
+    // Church-wide contact prefers church email/phone; address/map may fall back to primary branch.
+    assert.match(res.text, /church-office@example\.org/);
+    assert.match(res.text, /\+260900000001/);
     assert.match(res.text, /12 Faith Lane/);
     assert.match(res.text, /data-bb-contact-map="1"/);
     assert.match(res.text, /openstreetmap\.org\/export\/embed/);
     assert.match(res.text, /Get Directions/);
-    assert.match(res.text, /aria-label="Email hq-branch@example\.org"/);
-    assert.match(res.text, /aria-label="Call \+260900000099"/);
+    assert.match(res.text, /aria-label="Email church-office@example\.org"/);
+    assert.match(res.text, /aria-label="Call \+260900000001"/);
+    assert.doesNotMatch(res.text, /hq-branch@example\.org/);
+    assert.doesNotMatch(res.text, /\+260900000099/);
     assert.match(res.text, /bb-tp-contact-main/);
     assert.match(res.text, /Send a Message/);
     assert.doesNotMatch(res.text, /<form|name="full_name"|name="message"|name="_csrf"|csrfField/i);
@@ -1250,12 +1267,11 @@ describe("blessboard public pages", () => {
       [churchA.id]
     );
 
-    // Prefer branch-scoped home (authoritative override) so teaser fixtures land on the live page.
-    const branchPages = await provisionEmptyPublicPages(pool, {
+    // Church-wide home fixtures (do not put content on primary branch and expect it on /).
+    const churchPages = await provisionEmptyPublicPages(pool, {
       churchId: churchA.id,
-      branchId: branchA.id,
     });
-    const home = branchPages.pages.find((p) => p.pageKey === "home");
+    const home = churchPages.pages.find((p) => p.pageKey === "home");
     await updatePublicPage(pool, home.id, { status: "published", title: "Home" });
     await pool.query(`UPDATE blessboard.page_sections SET status = 'draft' WHERE page_id = $1`, [
       home.id,
@@ -1457,11 +1473,10 @@ describe("blessboard public pages", () => {
       `UPDATE blessboard.sermons SET status = 'draft' WHERE church_id = $1 AND status = 'published'`,
       [churchA.id]
     );
-    const branchPages = await provisionEmptyPublicPages(pool, {
+    const churchPages = await provisionEmptyPublicPages(pool, {
       churchId: churchA.id,
-      branchId: branchA.id,
     });
-    const home = branchPages.pages.find((p) => p.pageKey === "home");
+    const home = churchPages.pages.find((p) => p.pageKey === "home");
     await updatePublicPage(pool, home.id, { status: "published" });
     await pool.query(
       `UPDATE blessboard.page_sections SET status = 'draft' WHERE page_id = $1 AND status = 'published'`,
@@ -1515,11 +1530,10 @@ describe("blessboard public pages", () => {
 
   it("PHASE2_086 home: escapes section copy; CMS wins over demo fallback", async () => {
     requireDb();
-    const branchPages = await provisionEmptyPublicPages(pool, {
+    const churchPages = await provisionEmptyPublicPages(pool, {
       churchId: churchA.id,
-      branchId: branchA.id,
     });
-    const home = branchPages.pages.find((p) => p.pageKey === "home");
+    const home = churchPages.pages.find((p) => p.pageKey === "home");
     await updatePublicPage(pool, home.id, { status: "published" });
     await pool.query(`DELETE FROM blessboard.page_sections WHERE page_id = $1`, [home.id]);
     await pool.query(
@@ -1565,11 +1579,10 @@ describe("blessboard public pages", () => {
 
   it("PHASE2_086 home: draft sections stay off public; preview shares home markers", async () => {
     requireDb();
-    const branchPages = await provisionEmptyPublicPages(pool, {
+    const churchPages = await provisionEmptyPublicPages(pool, {
       churchId: churchA.id,
-      branchId: branchA.id,
     });
-    const home = branchPages.pages.find((p) => p.pageKey === "home");
+    const home = churchPages.pages.find((p) => p.pageKey === "home");
     await updatePublicPage(pool, home.id, { status: "published" });
     await pool.query(`DELETE FROM blessboard.page_sections WHERE page_id = $1`, [home.id]);
     await pool.query(
@@ -2098,7 +2111,7 @@ describe("blessboard public pages", () => {
       if (branchPage) await updatePublicPage(pool, branchPage.id, { status: "published" });
     }
 
-    const home = branchPages.pages.find((p) => p.pageKey === "home");
+    const home = churchPages.pages.find((p) => p.pageKey === "home");
     await pool.query(`DELETE FROM blessboard.page_sections WHERE page_id = $1`, [home.id]);
     await pool.query(
       `INSERT INTO blessboard.page_sections
@@ -2129,7 +2142,7 @@ describe("blessboard public pages", () => {
     const soon = new Date(Date.now() + 4 * 86400000).toISOString();
     const event = await createEvent(pool, {
       churchId: churchA.id,
-      branchId: branchA.id,
+      branchId: null,
       title: "[Demo] Sunday Worship Gathering",
       summary: "Demo event for image soft-fill",
       startsAt: soon,

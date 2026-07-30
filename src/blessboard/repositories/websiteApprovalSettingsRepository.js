@@ -38,6 +38,8 @@ const DEFAULTS = Object.freeze({
   trustedBranchPublishEnabled: false,
   requireRestoreApproval: false,
   hqDirectPublishEnabled: true,
+  allowBranchGivingMethods: false,
+  allowBranchUrgentUpdates: false,
 });
 
 function mapSettings(row) {
@@ -65,6 +67,16 @@ function mapSettings(row) {
       row.hq_direct_publish_enabled == null
         ? DEFAULTS.hqDirectPublishEnabled
         : Boolean(row.hq_direct_publish_enabled),
+    allowBranchGivingMethods: Boolean(
+      row.allow_branch_giving_methods != null
+        ? row.allow_branch_giving_methods
+        : DEFAULTS.allowBranchGivingMethods
+    ),
+    allowBranchUrgentUpdates: Boolean(
+      row.allow_branch_urgent_updates != null
+        ? row.allow_branch_urgent_updates
+        : DEFAULTS.allowBranchUrgentUpdates
+    ),
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
   };
@@ -98,9 +110,10 @@ async function upsertSettings(db, input) {
        prevent_self_approval, require_request_changes_comment, require_rejection_reason,
        review_notification_preferences_json, approval_content_types_json,
        trusted_branch_publish_enabled, require_restore_approval, hq_direct_publish_enabled,
+       allow_branch_giving_methods, allow_branch_urgent_updates,
        updated_by, updated_at
      ) VALUES (
-       $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10, $11, $12, $13, now()
+       $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10, $11, $12, $13, $14, $15, now()
      )
      ON CONFLICT (organization_id) DO UPDATE SET
        branch_edit_mode = EXCLUDED.branch_edit_mode,
@@ -114,6 +127,8 @@ async function upsertSettings(db, input) {
        trusted_branch_publish_enabled = EXCLUDED.trusted_branch_publish_enabled,
        require_restore_approval = EXCLUDED.require_restore_approval,
        hq_direct_publish_enabled = EXCLUDED.hq_direct_publish_enabled,
+       allow_branch_giving_methods = EXCLUDED.allow_branch_giving_methods,
+       allow_branch_urgent_updates = EXCLUDED.allow_branch_urgent_updates,
        updated_by = EXCLUDED.updated_by,
        updated_at = now()
      RETURNING *`,
@@ -130,6 +145,8 @@ async function upsertSettings(db, input) {
       Boolean(input.trustedBranchPublishEnabled),
       Boolean(input.requireRestoreApproval),
       input.hqDirectPublishEnabled !== false,
+      Boolean(input.allowBranchGivingMethods),
+      Boolean(input.allowBranchUrgentUpdates),
       input.updatedBy || null,
     ]
   );

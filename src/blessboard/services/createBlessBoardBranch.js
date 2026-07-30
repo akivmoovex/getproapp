@@ -24,6 +24,9 @@ const {
 } = require("./settingsValidation");
 const repo = require("../repositories/blessBoardSettingsRepository");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
+const {
+  ensureBranchWebsiteGovernance,
+} = require("./branchWebsiteGovernanceService");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -232,6 +235,13 @@ async function createBlessBoardBranch(db, input) {
       });
       return { ok: false, status: STATUS.LOOKUP_ERROR, branch: null, reason: "settings" };
     }
+
+    await ensureBranchWebsiteGovernance(client, {
+      organizationId,
+      churchId,
+      branchId: branch.id,
+      updatedBy: actorUserId || null,
+    });
 
     const limitSource = maxBranchesSource(gate);
     await recordBlessBoardAudit(client, {

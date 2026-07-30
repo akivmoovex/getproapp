@@ -122,6 +122,8 @@ async function saveSettings(db, opts) {
         mode === "trusted_branch_publish" && boolFromBody(opts.trustedBranchPublishEnabled, false),
       requireRestoreApproval: boolFromBody(opts.requireRestoreApproval, false),
       hqDirectPublishEnabled: boolFromBody(opts.hqDirectPublishEnabled, true),
+      allowBranchGivingMethods: boolFromBody(opts.allowBranchGivingMethods, false),
+      allowBranchUrgentUpdates: boolFromBody(opts.allowBranchUrgentUpdates, false),
       updatedBy: actorUserId,
     });
 

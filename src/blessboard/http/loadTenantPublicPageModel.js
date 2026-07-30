@@ -45,20 +45,30 @@ const KIND = Object.freeze({
 });
 
 /**
- * Prefer content-branch published page; fall back to church-wide.
+ * Prefer content-branch published page when an explicit branch is in scope;
+ * otherwise church-wide only (never silently mirror the primary branch).
  * @param {{ query?: Function, connect?: Function }} db
- * @param {{ churchId: string, primaryBranchId: string, pageKey: string }} scope
- *   `primaryBranchId` is the content branch id (selected branch or church primary).
+ * @param {{ churchId: string, contentBranchId?: string|null, pageKey: string }} scope
  */
 async function resolvePublishedPage(db, scope) {
-  const branchPage = await getPublishedPage(db, {
-    churchId: scope.churchId,
-    branchId: scope.primaryBranchId,
-    pageKey: scope.pageKey,
-  });
-  if (branchPage.ok && branchPage.page) {
-    return { ...branchPage, contentScope: "branch" };
+  const contentBranchId =
+    scope.contentBranchId != null && String(scope.contentBranchId).trim()
+      ? String(scope.contentBranchId).trim()
+      : scope.primaryBranchId != null && String(scope.primaryBranchId).trim()
+        ? String(scope.primaryBranchId).trim()
+        : null;
+
+  if (contentBranchId) {
+    const branchPage = await getPublishedPage(db, {
+      churchId: scope.churchId,
+      branchId: contentBranchId,
+      pageKey: scope.pageKey,
+    });
+    if (branchPage.ok && branchPage.page) {
+      return { ...branchPage, contentScope: "branch" };
+    }
   }
+
   const churchPage = await getPublishedPage(db, {
     churchId: scope.churchId,
     branchId: null,
@@ -77,13 +87,16 @@ async function resolvePublishedPage(db, scope) {
 }
 
 /**
- * Prefer branch-scoped published entities; if none, church-wide.
+ * Prefer branch-scoped published entities when a branch is in scope; if none, church-wide.
+ * When contentBranchId is null (church-wide site), list church-wide only.
  * @param {(db: *, input: object) => Promise<{ ok: boolean, items: object[] }>} listFn
  */
-async function resolvePublishedList(db, listFn, churchId, primaryBranchId) {
-  const branchList = await listFn(db, { churchId, branchId: primaryBranchId });
-  if (branchList.ok && branchList.items && branchList.items.length > 0) {
-    return { ok: true, items: branchList.items, contentScope: "branch" };
+async function resolvePublishedList(db, listFn, churchId, contentBranchId) {
+  if (contentBranchId) {
+    const branchList = await listFn(db, { churchId, branchId: contentBranchId });
+    if (branchList.ok && branchList.items && branchList.items.length > 0) {
+      return { ok: true, items: branchList.items, contentScope: "branch" };
+    }
   }
   const churchList = await listFn(db, { churchId, branchId: null });
   if (churchList.ok) {
@@ -513,20 +526,24 @@ function formatPublicAddress(branchSettings) {
 }
 
 /**
- * Public contact chrome from church + primary-branch settings.
+ * Public contact chrome from church + branch settings.
  * @param {object|null} churchSettings
  * @param {object|null} branchSettings
+ * @param {{ preferChurch?: boolean }} [options]
+ *   preferChurch=true for church-wide URLs: church values first, branch only as fallback.
+ *   preferChurch=false (default) for branch mini-sites: branch first, then church.
  */
-function buildPublicContact(churchSettings, branchSettings) {
+function buildPublicContact(churchSettings, branchSettings, options) {
+  const preferChurch = Boolean(options && options.preferChurch);
   const branchEmail = branchSettings && branchSettings.email ? String(branchSettings.email).trim() : "";
   const churchEmail =
     churchSettings && churchSettings.primaryEmail ? String(churchSettings.primaryEmail).trim() : "";
-  const email = branchEmail || churchEmail;
+  const email = preferChurch ? churchEmail || branchEmail : branchEmail || churchEmail;
 
   const branchPhone = branchSettings && branchSettings.phone ? String(branchSettings.phone).trim() : "";
   const churchPhone =
     churchSettings && churchSettings.primaryPhone ? String(churchSettings.primaryPhone).trim() : "";
-  const phone = branchPhone || churchPhone;
+  const phone = preferChurch ? churchPhone || branchPhone : branchPhone || churchPhone;
 
   const address = formatPublicAddress(branchSettings);
   const coords = validCoordinates(
@@ -570,29 +587,31 @@ function buildPublicContact(churchSettings, branchSettings) {
 }
 
 /**
- * Load church + branch settings with one connection when possible.
+ * Load church + optional branch settings with one connection when possible.
  * @param {{ query?: Function, connect?: Function }} db
  * @param {string} churchId
- * @param {string} branchId
+ * @param {string|null} branchId
  */
 async function loadPublicSettings(db, churchId, branchId) {
+  const resolvedBranchId =
+    branchId != null && String(branchId).trim() ? String(branchId).trim() : null;
   try {
     if (db && typeof db.connect === "function") {
       const client = await db.connect();
       try {
-        const [churchSettings, branchSettings] = await Promise.all([
-          repo.findChurchSettings(client, churchId),
-          repo.findBranchSettings(client, branchId),
-        ]);
+        const churchSettings = await repo.findChurchSettings(client, churchId);
+        const branchSettings = resolvedBranchId
+          ? await repo.findBranchSettings(client, resolvedBranchId)
+          : null;
         return { churchSettings, branchSettings };
       } finally {
         if (typeof client.release === "function") client.release();
       }
     }
-    const [churchSettings, branchSettings] = await Promise.all([
-      repo.findChurchSettings(db, churchId),
-      repo.findBranchSettings(db, branchId),
-    ]);
+    const churchSettings = await repo.findChurchSettings(db, churchId);
+    const branchSettings = resolvedBranchId
+      ? await repo.findBranchSettings(db, resolvedBranchId)
+      : null;
     return { churchSettings, branchSettings };
   } catch {
     return { churchSettings: null, branchSettings: null };
@@ -652,13 +671,15 @@ async function resolvePreviewPage(db, scope) {
   };
 }
 
-async function resolvePreviewList(db, listFn, churchId, primaryBranchId) {
-  const branchList = await listFn(db, { churchId, branchId: primaryBranchId });
-  const branchItems = ((branchList && branchList.items) || []).filter(
-    (item) => item.status === "draft" || item.status === "published"
-  );
-  if (branchItems.length > 0) {
-    return { ok: true, items: branchItems, contentScope: "branch" };
+async function resolvePreviewList(db, listFn, churchId, contentBranchId) {
+  if (contentBranchId) {
+    const branchList = await listFn(db, { churchId, branchId: contentBranchId });
+    const branchItems = ((branchList && branchList.items) || []).filter(
+      (item) => item.status === "draft" || item.status === "published"
+    );
+    if (branchItems.length > 0) {
+      return { ok: true, items: branchItems, contentScope: "branch" };
+    }
   }
   const churchList = await listFn(db, { churchId, branchId: null });
   const churchItems = ((churchList && churchList.items) || []).filter(
@@ -718,21 +739,24 @@ async function loadTenantPublicPageModel(db, input) {
       : null;
   const explicitBranchSelected = Boolean(selectedBranch);
   // Explicit branch mini sites / preview branch never silently use primary for content.
+  // Church-wide public site uses church-scoped content only (not primary-branch mirror).
   const previewBranchActive = Boolean(isPreview && previewBranchId);
   const contentBranchId = explicitBranchSelected
     ? selectedBranch.id
     : previewBranchActive
       ? previewBranchId
-      : primaryBranchId;
+      : null;
   const scopedBranchActive = explicitBranchSelected || previewBranchActive;
   const routingMode = input.routingMode === "tenant" ? "tenant" : "path";
   const organizationKey =
     tenant.organization && tenant.organization.key ? String(tenant.organization.key) : null;
 
+  // Contact / address: branch mini-site uses that branch; church-wide may fall back to primary.
+  const contactSettingsBranchId = scopedBranchActive ? contentBranchId : primaryBranchId;
   const { churchSettings: settings, branchSettings } = await loadPublicSettings(
     db,
     churchId,
-    contentBranchId
+    contactSettingsBranchId
   );
   const websiteStatus = settings ? settings.websiteStatus : "draft";
   const publicName = publicDemo.resolveCanonicalChurchName({
@@ -775,7 +799,9 @@ async function loadTenantPublicPageModel(db, input) {
     };
   }
 
-  const publicContact = buildPublicContact(settings, branchSettings);
+  const publicContact = buildPublicContact(settings, branchSettings, {
+    preferChurch: !scopedBranchActive,
+  });
   const canonicalTimezone =
     (settings && settings.defaultTimezone) ||
     (branchSettings && branchSettings.timezone) ||
@@ -789,7 +815,7 @@ async function loadTenantPublicPageModel(db, input) {
       })
     : await resolvePublishedPage(db, {
         churchId,
-        primaryBranchId: contentBranchId,
+        contentBranchId,
         pageKey,
       });
 
@@ -883,12 +909,34 @@ async function loadTenantPublicPageModel(db, input) {
   };
   let socialLinks = [];
 
-  // Branch mini website service times: published branch → church-wide → empty.
-  // Never soft-fill demo service times for provisioned churches.
-  const serviceTimesResolved = await resolvePublicServiceTimesEntries(db, {
+  // Branch mini website: published branch → church-wide → empty.
+  // Church-wide site: church-wide → primary branch fallback for service times only → empty.
+  let serviceTimesResolved = await resolvePublicServiceTimesEntries(db, {
     churchId,
     branchId: contentBranchId,
   });
+  if (
+    !scopedBranchActive &&
+    serviceTimesResolved &&
+    serviceTimesResolved.ok &&
+    (!serviceTimesResolved.entries || serviceTimesResolved.entries.length === 0)
+  ) {
+    const primaryFallback = await resolvePublicServiceTimesEntries(db, {
+      churchId,
+      branchId: primaryBranchId,
+    });
+    if (
+      primaryFallback &&
+      primaryFallback.ok &&
+      primaryFallback.entries &&
+      primaryFallback.entries.length
+    ) {
+      serviceTimesResolved = {
+        ...primaryFallback,
+        source: "primary_fallback",
+      };
+    }
+  }
   let serviceTimesEntries =
     serviceTimesResolved && Array.isArray(serviceTimesResolved.entries)
       ? serviceTimesResolved.entries
