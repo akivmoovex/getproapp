@@ -112,7 +112,11 @@
         <li class="bb-tp-item">
           <p class="bb-ca-preview-meta"><%= method.status %></p>
           <h2><%= method.label %></h2>
+          <% if (method.description) { %><p><%= method.description %></p><% } %>
+          <% if (method.accountDetails) { %><p><%= method.accountDetails %></p><% } %>
           <% if (method.instructions) { %><p><%= method.instructions %></p><% } %>
+          <% if (method.buttonLabel && method.externalUrl) { %><p><%= method.buttonLabel %></p><% } %>
+          <% if (method.qrImageUrl) { %><p><img src="<%= method.qrImageUrl %>" alt="" width="80" height="80" /></p><% } %>
         </li>
         <% }) %>
       </ul>

@@ -57,6 +57,13 @@
     if (kind === 'download') return { icon: 'download', text: 'Download' };
     return { icon: 'menu_book', text: 'Resources' };
   }
+
+  var summaryMax = 140;
+  function sermonSummary(text) {
+    var raw = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return '';
+    return raw.length <= summaryMax ? raw : (raw.slice(0, summaryMax - 1) + '…');
+  }
 %>
 
 <section
@@ -157,8 +164,9 @@
             <% } %>
           </p>
           <% } %>
-          <% if (featured.summary) { %>
-          <p class="bb-tp-body"><%= featured.summary %></p>
+          <% var featuredSermonSummary = sermonSummary(featured.summary); %>
+          <% if (featuredSermonSummary) { %>
+          <p class="bb-tp-body bb-tp-featured-sermon__summary"><%= featuredSermonSummary %></p>
           <% } %>
           <% if (featured.mediaUrl || featured.resourceUrl) { %>
           <div class="bb-tp-page-hero__cta bb-tp-featured-sermon__actions">
@@ -259,8 +267,9 @@
               <% } %>
             </p>
             <% } %>
-            <% if (sermon.summary) { %>
-            <p class="bb-tp-sermon-card__summary"><%= sermon.summary %></p>
+            <% var cardSermonSummary = sermonSummary(sermon.summary); %>
+            <% if (cardSermonSummary) { %>
+            <p class="bb-tp-sermon-card__summary"><%= cardSermonSummary %></p>
             <% } %>
             <% if (sermon.mediaUrl || sermon.resourceUrl) { %>
             <p class="bb-tp-sermon-card__actions">

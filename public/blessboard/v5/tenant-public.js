@@ -144,3 +144,76 @@
     if (e.key === "Escape") closeAll(null);
   });
 })();
+
+/**
+ * Giving page: copy published payment references (account/wallet numbers only).
+ * Announces result via aria-live region; never copies scrubbed/redacted secrets UI text as a special case.
+ */
+(function () {
+  "use strict";
+
+  var root = document.querySelector("[data-bb-giving='1']");
+  if (!root) return;
+
+  var statusEl = root.querySelector("[data-bb-copy-status='1']");
+
+  function setStatus(message) {
+    if (!statusEl) return;
+    statusEl.textContent = message || "";
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (ok) resolve();
+        else reject(new Error("copy failed"));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  root.addEventListener("click", function (event) {
+    var btn = event.target && event.target.closest
+      ? event.target.closest("[data-bb-copy-ref='1']")
+      : null;
+    if (!btn || !root.contains(btn)) return;
+
+    var wrap = btn.closest(".bb-tp-giving-card__ref-value") || btn.parentElement;
+    var textEl = wrap ? wrap.querySelector("[data-bb-giving-ref='1']") : null;
+    var value = textEl ? String(textEl.textContent || "").trim() : "";
+    if (!value || /\[redacted\]/i.test(value)) {
+      setStatus("Nothing to copy");
+      return;
+    }
+
+    copyText(value)
+      .then(function () {
+        btn.classList.add("is-copied");
+        var label = btn.querySelector(".bb-tp-giving-card__copy-text");
+        var prev = label ? label.textContent : "";
+        if (label) label.textContent = "Copied";
+        setStatus("Copied payment reference to clipboard");
+        window.setTimeout(function () {
+          btn.classList.remove("is-copied");
+          if (label) label.textContent = prev || "Copy";
+          setStatus("");
+        }, 1600);
+      })
+      .catch(function () {
+        setStatus("Could not copy. Select the reference and copy manually.");
+      });
+  });
+})();

@@ -22,6 +22,9 @@ body.bb-tp-body {
   display: flex;
   flex-direction: column;
   overflow-x: clip;
+  /* Prose class `.bb-tp-body` also matches this element — keep shell whitespace normal
+     so template newlines do not inflate the sticky header or open a gap above the hero. */
+  white-space: normal;
 }
 
 html {
@@ -65,6 +68,8 @@ html {
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(228, 223, 236, 0.85);
   box-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.08));
+  /* Closed branch-switcher panels are position:absolute; keep header box = inner height. */
+  overflow: visible;
 }
 
 .bb-tp-header__inner {
@@ -343,6 +348,13 @@ html {
   min-height: 0;
 }
 
+.bb-tp-drawer__item {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
 .bb-tp-drawer__list {
   display: flex;
   flex-direction: column;
@@ -351,12 +363,7 @@ html {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.bb-tp-drawer__item {
-  margin: 0;
-  padding: 0;
-  min-width: 0;
+  flex: 0 0 auto;
 }
 
 .bb-tp-drawer__link {
@@ -464,7 +471,8 @@ html {
   color: var(--bb-ink);
 }
 
-.bb-tp-body {
+/* Prose/body copy — must NOT target body.bb-tp-body (shell class collision). */
+.bb-tp-body:not(body) {
   margin: 0 0 1rem;
   color: var(--bb-muted);
   line-height: 1.6;
@@ -1554,13 +1562,17 @@ html {
 }
 
 .bb-tp-about-values {
-  padding: 2.5rem 0; /* 40px compact · desktop bumped below */
+  padding: 1.75rem 0;
 }
 
 @media (min-width: 900px) {
   .bb-tp-about-values {
-    padding: 3.5rem 0; /* 56px standard band */
+    padding: 2.25rem 0;
   }
+}
+
+.bb-tp-prose-narrow {
+  max-width: 40rem;
 }
 
 .bb-tp-about-values__heading {
@@ -1784,7 +1796,7 @@ html {
 .bb-tp-footer__inner {
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 2.5rem var(--bb-gutter-mobile, 1rem) 1.5rem;
+  padding: 1.35rem var(--bb-gutter-mobile, 1rem) 0.85rem;
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
@@ -1792,8 +1804,34 @@ html {
 
 .bb-tp-footer__grid {
   display: grid;
-  gap: 1.75rem;
+  gap: 1rem;
   grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.bb-tp-footer__tagline {
+  margin: 0.35rem 0 0;
+  color: var(--bb-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bb-tp-footer__heading {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+  color: var(--bb-ink);
+}
+
+.bb-tp-footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.2rem;
 }
 
 .bb-tp-footer__brand-lockup {
@@ -1816,38 +1854,17 @@ html {
 }
 
 .bb-tp-footer__name {
-  margin: 0 0 0.45rem;
+  margin: 0 0 0.35rem;
   font-weight: 700;
   color: var(--bb-violet);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   overflow-wrap: anywhere;
   word-break: break-word;
-}
-
-.bb-tp-footer__tagline {
-  margin: 0;
-  color: var(--bb-muted);
-  font-size: 0.95rem;
-  line-height: 1.55;
 }
 
 .bb-tp-footer__powered {
   margin: 0;
   font-size: 0.9rem;
-}
-
-.bb-tp-footer__heading {
-  margin: 0 0 0.85rem;
-  font-size: 1rem;
-  color: var(--bb-ink);
-}
-
-.bb-tp-footer__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.35rem;
 }
 
 .bb-tp-footer__list a {
@@ -1856,7 +1873,21 @@ html {
   font-size: 0.95rem;
   display: inline-flex;
   align-items: center;
-  min-height: var(--bb-touch-min, 2.75rem);
+  min-height: 2.25rem;
+  padding: 0.15rem 0;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-footer__list a {
+    min-height: 1.65rem;
+    padding: 0.05rem 0;
+  }
+}
+
+@media (max-width: 899px) {
+  .bb-tp-footer__list a {
+    min-height: var(--bb-touch-min, 2.75rem);
+  }
 }
 
 .bb-tp-footer__list a:hover {
@@ -2121,6 +2152,12 @@ html {
     min-height: 20rem;
   }
 
+  .bb-tp-hero.bb-tp-hero--phase7 .bb-tp-hero__media-plane .bb-tp-hero__img,
+  .bb-tp-hero.bb-tp-hero--phase7 .bb-tp-hero__media-plane .bb-tp-hero__fallback {
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+
   .bb-tp-shortcuts__grid {
     grid-template-columns: repeat(4, 1fr);
   }
@@ -2231,7 +2268,7 @@ html {
 }
 
 @media (max-width: 320px) {
-  .bb-tp-body {
+  body.bb-tp-body {
     overflow-x: hidden;
   }
 
@@ -2716,16 +2753,18 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 10rem;
+  min-height: 0;
+  aspect-ratio: 16 / 10;
   background: linear-gradient(145deg, #efeaff, #dfeaef);
   min-width: 0;
+  overflow: hidden;
 }
 
 .bb-tp-ministry-card__media img {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 10rem;
+  min-height: 0;
   aspect-ratio: 16 / 10;
   object-fit: cover;
 }
@@ -2743,11 +2782,12 @@ html {
 }
 
 .bb-tp-ministry-card__body {
-  padding: 1.15rem 1.2rem 1.35rem;
+  padding: 0.95rem 1.05rem 1.15rem;
   display: grid;
-  gap: 0.5rem;
-  flex: 1 1 auto;
+  gap: 0.4rem;
+  flex: 0 1 auto;
   min-width: 0;
+  align-content: start;
 }
 
 .bb-tp-ministry-card__title {
@@ -2761,10 +2801,11 @@ html {
 .bb-tp-ministry-card__summary {
   margin: 0;
   color: var(--bb-muted);
-  line-height: 1.55;
-  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: 0.95rem;
+  white-space: normal;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -2860,7 +2901,7 @@ html {
 }
 
 .bb-tp-featured-event {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .bb-tp-events-hero__eyebrow-desktop {
@@ -2915,13 +2956,16 @@ html {
 }
 
 .bb-tp-featured-event__media {
-  min-height: 12rem;
+  min-height: 10rem;
+  max-height: 18rem;
+  aspect-ratio: 16 / 10;
   background: linear-gradient(145deg, #efeaff, #dfeaef);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   min-width: 0;
+  overflow: hidden;
 }
 
 .bb-tp-featured-event__media.is-fallback {
@@ -2933,7 +2977,8 @@ html {
 .bb-tp-featured-event__media img {
   width: 100%;
   height: 100%;
-  min-height: 12rem;
+  min-height: 0;
+  max-height: 18rem;
   object-fit: cover;
   display: block;
 }
@@ -2962,8 +3007,16 @@ html {
 }
 
 .bb-tp-featured-event__copy {
-  padding: 1.35rem 1.35rem 1.5rem;
+  padding: 1.15rem 1.2rem 1.35rem;
   min-width: 0;
+}
+
+.bb-tp-featured-event__summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
 }
 
 .bb-tp-featured-event__title {
@@ -2983,11 +3036,13 @@ html {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 1.15rem;
+  gap: 1rem;
   grid-template-columns: 1fr;
+  align-items: start;
 }
 
 .bb-tp-event-card {
+  position: relative; /* contain absolute date badge (must not escape to viewport) */
   display: flex;
   flex-direction: column;
   background: var(--bb-surface);
@@ -3000,11 +3055,13 @@ html {
 
 .bb-tp-event-card__media {
   position: relative;
-  min-height: 9rem;
+  min-height: 0;
+  aspect-ratio: 16 / 10;
   background: linear-gradient(145deg, #efeaff, #e8eef5);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .bb-tp-event-card__media.is-fallback .material-symbols-outlined {
@@ -3016,8 +3073,9 @@ html {
 .bb-tp-event-card__media img {
   width: 100%;
   height: 100%;
-  min-height: 9rem;
-  max-height: 11rem;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 16 / 10;
   object-fit: cover;
   display: block;
 }
@@ -3052,11 +3110,12 @@ html {
 }
 
 .bb-tp-event-card__body {
+  position: relative; /* date badge is absolute inside body when media is absent */
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  padding: 1.1rem 1.15rem 1.25rem;
-  flex: 1;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem 1.05rem;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
@@ -3069,12 +3128,17 @@ html {
 .bb-tp-event-card__summary {
   margin: 0;
   color: var(--bb-muted);
-  font-size: 0.95rem;
-  white-space: pre-wrap;
+  font-size: 0.92rem;
+  white-space: normal;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.bb-tp-event-card__facts {
+  display: grid;
+  gap: 0.25rem;
 }
 
 .bb-tp-event-card__body .bb-tp-btn {
@@ -3167,7 +3231,41 @@ html {
 }
 
 .bb-tp-featured-sermon {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.bb-tp-featured-sermon__copy {
+  padding: 1.25rem 1.2rem 1.4rem;
+  min-width: 0;
+}
+
+.bb-tp-featured-sermon__summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.bb-tp-sermon-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bb-tp-sermon-card__summary {
+  margin: 0.15rem 0 0.35rem;
+  color: var(--bb-muted);
+  font-size: 0.92rem;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .bb-tp-featured-sermon__label {
@@ -3226,7 +3324,7 @@ html {
 }
 
 .bb-tp-featured-sermon__copy {
-  padding: 1.65rem 1.4rem 1.75rem;
+  padding: 1.25rem 1.2rem 1.4rem;
   min-width: 0;
 }
 
@@ -3382,6 +3480,10 @@ html {
   margin: 0;
   font-size: 1.05rem;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .bb-tp-sermon-card__meta {
@@ -3392,8 +3494,8 @@ html {
 .bb-tp-sermon-card__summary {
   margin: 0.15rem 0 0.35rem;
   color: var(--bb-muted);
-  font-size: 0.95rem;
-  white-space: pre-wrap;
+  font-size: 0.92rem;
+  white-space: normal;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -3474,57 +3576,60 @@ html {
     display: none;
   }
 
-  .bb-tp-leader-card {
+  .bb-tp-leader-card:not(.bb-tp-leader-card--featured) {
     grid-template-columns: 1fr;
     text-align: center;
     padding: 0;
     overflow: hidden;
+    align-items: start;
   }
 
-  .bb-tp-leader-card__media {
+  .bb-tp-leader-card:not(.bb-tp-leader-card--featured) .bb-tp-leader-card__media {
     width: 100%;
     height: auto;
-    min-height: 12rem;
-    aspect-ratio: 4 / 5;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
     margin: 0;
     border-radius: 0;
   }
 
-  .bb-tp-leader-card__media.is-fallback {
+  .bb-tp-leader-card:not(.bb-tp-leader-card--featured) .bb-tp-leader-card__media.is-fallback {
     border-radius: 0;
-    min-height: 12rem;
+    min-height: 0;
   }
 
-  .bb-tp-leader-card__media .bb-tp-avatar {
+  .bb-tp-leader-card:not(.bb-tp-leader-card--featured) .bb-tp-leader-card__media .bb-tp-avatar {
     width: 5.5rem;
     height: 5.5rem;
     font-size: 1.35rem;
   }
 
-  .bb-tp-leader-card__body {
-    padding: 1.1rem 1.15rem 1.25rem;
+  .bb-tp-leader-card:not(.bb-tp-leader-card--featured) .bb-tp-leader-card__body {
+    padding: 0.95rem 1rem 1.1rem;
+  }
+
+  .bb-tp-leader-grid {
+    align-items: start;
   }
 
   .bb-tp-ministry-grid {
     grid-template-columns: 1fr 1fr;
+    align-items: start;
   }
 
+  /* Equal ministry cards — no full-bleed featured span (Stitch card rhythm) */
   .bb-tp-ministry-card--featured {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    align-items: stretch;
+    grid-column: auto;
+    display: flex;
+    flex-direction: column;
   }
 
   .bb-tp-ministry-card--featured .bb-tp-ministry-card__media {
-    min-height: 14rem;
+    min-height: 0;
   }
 
   .bb-tp-ministry-card--featured .bb-tp-ministry-card__body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 1.5rem;
+    padding: 1rem 1.1rem 1.2rem;
   }
 
   .bb-tp-featured-event__card {
@@ -3542,7 +3647,7 @@ html {
   }
 
   .bb-tp-featured-event__copy {
-    padding: 1.75rem 1.75rem 1.75rem 1.5rem;
+    padding: 1.25rem 1.35rem 1.4rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -3550,10 +3655,12 @@ html {
 
   .bb-tp-event-grid {
     grid-template-columns: 1fr 1fr;
+    align-items: start;
   }
 
   .bb-tp-sermon-grid {
     grid-template-columns: 1fr 1fr;
+    align-items: start;
   }
 
   .bb-tp-sermon-card {
@@ -3561,19 +3668,25 @@ html {
   }
 
   .bb-tp-sermon-card__media {
-    min-height: 9.5rem;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+
+  .bb-tp-sermon-card__media img {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
   }
 
   .bb-tp-sermon-card__body {
-    padding: 1.15rem 1.2rem 1.35rem;
+    padding: 0.95rem 1.05rem 1.15rem;
   }
 
   .bb-tp-sermon-card__summary {
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
   }
 
   .bb-tp-featured-sermon__card {
-    padding: 2rem 2.25rem;
+    padding: 0;
   }
 
   .bb-tp-featured-sermon__label--desktop {
@@ -3603,11 +3716,11 @@ html {
 
 @media (min-width: 900px) {
   .bb-tp-leader-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .bb-tp-ministry-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .bb-tp-sermon-grid {
@@ -3659,12 +3772,12 @@ html {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.75rem;
   background: var(--bb-surface);
   border: 1px solid var(--bb-line);
   border-radius: var(--bb-radius);
   box-shadow: var(--bb-shadow);
-  padding: 1.1rem 1.15rem;
+  padding: 0.95rem 1rem;
   text-align: left;
   min-width: 0;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
@@ -3744,12 +3857,23 @@ html {
   border: 1px solid var(--bb-line);
   border-radius: var(--bb-radius);
   box-shadow: var(--bb-shadow);
-  padding: 1.35rem 1.2rem 1.45rem;
+  padding: 1.15rem 1.1rem 1.25rem;
   min-width: 0;
 }
 
 .bb-tp-contact-message .bb-tp-section-title {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.bb-tp-contact-message__status {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--bb-radius-sm);
+  background: color-mix(in srgb, var(--bb-violet, #6c5ce7) 8%, #fff);
+  border: 1px solid color-mix(in srgb, var(--bb-violet, #6c5ce7) 18%, transparent);
+  color: var(--bb-ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .bb-tp-contact-message .bb-tp-body {
@@ -3891,7 +4015,7 @@ html {
   .bb-tp-contact-card {
     grid-template-columns: 1fr;
     text-align: center;
-    padding: 1.5rem 1.25rem 1.6rem;
+    padding: 1.15rem 1.05rem 1.25rem;
     justify-items: center;
   }
 
@@ -3922,11 +4046,11 @@ html {
   }
 
   .bb-tp-contact-message {
-    padding: 1.75rem 1.65rem 1.85rem;
+    padding: 1.25rem 1.2rem 1.35rem;
   }
 
   .bb-tp-contact-map__frame iframe {
-    height: 320px;
+    height: 260px;
   }
 }
 
@@ -3936,7 +4060,7 @@ html {
   }
 }
 
-/* —— Batch 06B: Giving (Stitch 07) —— */
+/* —— Batch 06B: Giving (Stitch Phase 7 e4fe61fb + method-card detail) —— */
 .bb-tp-giving-hero__eyebrow-desktop {
   display: none;
 }
@@ -3947,10 +4071,25 @@ html {
   gap: 0.35rem;
 }
 
-.bb-tp-giving-hero .bb-tp-dir-hero__title {
+.bb-tp-giving .bb-tp-page-hero,
+.bb-tp-giving-hero.bb-tp-page-hero,
+.bb-tp-giving-hero.bb-tp-dir-hero {
+  padding: 1.15rem 0 0.85rem;
+}
+
+.bb-tp-giving-hero .bb-tp-dir-hero__title,
+.bb-tp-giving-hero .bb-tp-page-hero__title {
   max-width: 22ch;
-  margin-left: auto;
-  margin-right: auto;
+}
+
+.bb-tp-giving-hero .bb-tp-page-hero__lead,
+.bb-tp-giving-hero .bb-tp-dir-hero__lead {
+  max-width: 38rem;
+  margin-bottom: 1rem;
+}
+
+.bb-tp-giving__body.bb-tp-directory__body {
+  padding: 0.5rem 0 2rem;
 }
 
 .bb-tp-giving-hero__title-accent {
@@ -3979,13 +4118,13 @@ html {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  margin: 0 0 1.25rem;
-  padding: 1rem 1.15rem;
+  margin: 0 0 1.15rem;
+  padding: 0.85rem 1rem;
   background: #efeaff;
   border: 1px solid rgba(108, 92, 231, 0.22);
   border-radius: var(--bb-radius);
   color: var(--bb-ink);
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
   line-height: 1.45;
 }
 
@@ -3998,20 +4137,58 @@ html {
   margin: 0;
 }
 
+.bb-tp-giving-editor-bar {
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed rgba(108, 92, 231, 0.45);
+  border-radius: var(--bb-radius);
+  background: rgba(108, 92, 231, 0.06);
+}
+
+.bb-tp-giving-editor-bar__title {
+  margin: 0;
+  font-weight: 700;
+  color: var(--bb-violet);
+  font-size: 0.95rem;
+}
+
+.bb-tp-giving-editor-bar__hint {
+  margin: 0.25rem 0 0.65rem;
+  color: var(--bb-muted);
+  font-size: 0.875rem;
+}
+
 .bb-tp-giving-methods {
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .bb-tp-giving-methods__head {
   text-align: left;
-  margin-bottom: 1.35rem;
+  margin-bottom: 1.1rem;
+}
+
+.bb-tp-giving-methods__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.bb-tp-giving-methods__count {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bb-muted);
 }
 
 .bb-tp-giving-methods__note {
-  margin: 0.65rem 0 0;
+  margin: 0.55rem 0 0;
   max-width: 40rem;
   color: var(--bb-muted);
-  font-size: 0.98rem;
+  font-size: 0.95rem;
 }
 
 .bb-tp-giving-grid {
@@ -4021,25 +4198,34 @@ html {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+  align-items: start; /* content-height cards — do not stretch short methods */
 }
 
 .bb-tp-giving-card {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  gap: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   background: var(--bb-surface);
-  border: 1px solid var(--bb-line);
-  border-radius: var(--bb-radius);
-  box-shadow: var(--bb-shadow);
+  border: 1px solid rgba(228, 223, 236, 0.95);
+  border-radius: 1.25rem;
+  box-shadow: var(--bb-shadow-sm, 0 1px 2px rgba(26, 22, 37, 0.06));
   padding: 1.15rem 1.1rem;
   min-width: 0;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  min-height: 0;
+  height: auto;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .bb-tp-giving-card:hover {
-  box-shadow: 0 6px 24px rgba(108, 92, 231, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.1);
+  border-color: rgba(108, 92, 231, 0.28);
+}
+
+.bb-tp-giving-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .bb-tp-giving-card__icon {
@@ -4048,23 +4234,25 @@ html {
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: var(--bb-radius-sm);
+  border-radius: 0.85rem;
   background: rgba(108, 92, 231, 0.1);
   color: var(--bb-violet);
   margin: 0;
   flex-shrink: 0;
 }
 
-.bb-tp-giving-card__body {
-  display: flex;
-  flex-direction: column;
+.bb-tp-giving-card__icon .material-symbols-outlined {
+  font-size: 1.35rem;
+}
+
+.bb-tp-giving-card__titles {
   min-width: 0;
-  gap: 0.35rem;
+  flex: 1 1 auto;
 }
 
 .bb-tp-giving-card__type {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -4072,42 +4260,201 @@ html {
 }
 
 .bb-tp-giving-card__label {
-  margin: 0;
-  font-size: 1.15rem;
+  margin: 0.15rem 0 0;
+  font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
-.bb-tp-giving-card__instructions {
-  margin: 0.35rem 0 0;
-  padding: 0.75rem 0.85rem;
+.bb-tp-giving-card__scope {
+  margin: 0.2rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
   background: var(--bb-surface-low);
-  border-radius: var(--bb-radius-sm);
-  border-left: 3px solid var(--bb-violet);
-  min-width: 0;
+  color: var(--bb-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
+.bb-tp-giving-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.bb-tp-giving-card__description {
+  margin: 0;
+  color: var(--bb-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.bb-tp-giving-card__block-label,
 .bb-tp-giving-card__instructions-label {
-  margin: 0 0 0.25rem;
-  font-size: 0.72rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--bb-muted);
 }
 
+.bb-tp-giving-card__account,
+.bb-tp-giving-card__instructions {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  background: var(--bb-surface-low);
+  border-radius: var(--bb-radius-sm);
+  border-left: 3px solid var(--bb-violet);
+  min-width: 0;
+}
+
+.bb-tp-giving-card__refs {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.bb-tp-giving-card__ref {
+  min-width: 0;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(209, 220, 224, 0.7);
+}
+
+.bb-tp-giving-card__ref:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.bb-tp-giving-card__ref-label {
+  margin: 0 0 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-muted);
+}
+
+.bb-tp-giving-card__ref-label--sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.bb-tp-giving-card__ref-value {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.bb-tp-giving-card__ref-text,
 .bb-tp-giving-card__instructions-body {
   margin: 0;
   color: var(--bb-ink);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  word-break: break-word;
+  user-select: text;
+  -webkit-user-select: text;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.bb-tp-giving-card__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex: 0 0 auto;
+  min-height: var(--bb-touch-min, 2.75rem);
+  min-width: var(--bb-touch-min, 2.75rem);
+  padding: 0.35rem 0.55rem;
+  border: 0;
+  border-radius: var(--bb-radius-sm);
+  background: transparent;
+  color: var(--bb-violet);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.bb-tp-giving-card__copy:hover,
+.bb-tp-giving-card__copy:focus-visible {
+  background: rgba(108, 92, 231, 0.1);
+  outline: none;
+}
+
+.bb-tp-giving-card__copy:focus-visible {
+  box-shadow: var(--bb-shadow-focus, 0 0 0 4px rgba(108, 92, 231, 0.35));
+}
+
+.bb-tp-giving-card__copy .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.bb-tp-giving-card__copy.is-copied {
+  color: var(--bb-ok, #0f766e);
+}
+
+.bb-tp-giving-card__qr {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border-radius: var(--bb-radius);
+  background: rgba(108, 92, 231, 0.06);
+  text-align: center;
+}
+
+.bb-tp-giving-card__qr img {
+  width: 9rem;
+  height: 9rem;
+  max-width: 100%;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 0.65rem;
+  padding: 0.4rem;
+  display: block;
+}
+
+.bb-tp-giving-card__qr-caption {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--bb-muted);
 }
 
 .bb-tp-giving-card__action {
-  margin: 0.65rem 0 0;
+  margin: 0;
+  padding-top: 0.15rem;
+}
+
+.bb-tp-giving-card__edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed var(--bb-line);
+  margin-top: 0.15rem;
 }
 
 .bb-tp-btn--block {
@@ -4116,26 +4463,35 @@ html {
 }
 
 .bb-tp-giving-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .bb-tp-giving-disclaimer {
-  margin: 1.25rem 0 0;
-  padding: 1rem 1.15rem;
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
   background: var(--bb-surface-low);
   border-radius: var(--bb-radius-sm);
   color: var(--bb-muted);
   font-size: 0.9rem;
   line-height: 1.45;
+  max-width: 48rem;
+}
+
+.bb-tp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .bb-tp-giving-card {
     transition: none;
-  }
-
-  .bb-tp-giving-card:hover {
-    transform: none;
   }
 }
 
@@ -4145,27 +4501,16 @@ html {
   }
 
   .bb-tp-giving-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
   }
 
   .bb-tp-giving-card {
-    grid-template-columns: 1fr;
-    padding: 1.5rem 1.35rem;
-  }
-
-  .bb-tp-giving-card__icon {
-    width: 3rem;
-    height: 3rem;
-    margin-bottom: 0.35rem;
+    padding: 1.35rem 1.25rem;
   }
 
   .bb-tp-giving-methods__head {
-    text-align: center;
-  }
-
-  .bb-tp-giving-methods__note {
-    margin-left: auto;
-    margin-right: auto;
+    text-align: left;
   }
 }
 
@@ -4191,7 +4536,27 @@ html {
   }
 
   .bb-tp-giving-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.35rem;
+  }
+
+  .bb-tp-giving-methods__title-row {
+    align-items: flex-end;
+  }
+}
+
+@media (max-width: 390px) {
+  .bb-tp-giving-card {
+    padding: 1rem 0.9rem;
+  }
+
+  .bb-tp-giving-card__copy-text {
+    display: none;
+  }
+
+  .bb-tp-giving-card__qr img {
+    width: 7.5rem;
+    height: 7.5rem;
   }
 }
 
@@ -4248,21 +4613,22 @@ html {
 
 .bb-tp-footer__grid--phase7 {
   grid-template-columns: 1fr;
-  gap: 2rem;
+  gap: 1rem;
+  align-items: start;
 }
 
 @media (min-width: 900px) {
   .bb-tp-footer__grid--phase7 {
     grid-template-columns: 1.4fr 1fr 1fr;
-    gap: 2.5rem;
+    gap: 1.25rem;
   }
 }
 
 .bb-tp-footer__list--services li {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  margin-bottom: 0.65rem;
+  gap: 0.1rem;
+  margin-bottom: 0.4rem;
 }
 
 .bb-tp-footer__list--services strong {
@@ -4286,13 +4652,17 @@ html {
 
 .bb-tp-hero--phase7 {
   position: relative;
-  /* Density pass: keep full-bleed hero dominant without consuming most of the first viewport */
+  /* Phase 7 Stitch: full-bleed hero that keeps CTAs in the first viewport */
   min-height: min(52vh, 28rem);
+  max-height: min(68vh, 34rem);
   display: flex;
   align-items: flex-end;
+  justify-content: center;
   overflow: hidden;
   margin: 0;
   padding: 0;
+  /* Override legacy mesh padding hero background — media plane owns the surface */
+  background: #121028;
 }
 
 .bb-tp-hero__media-plane {
@@ -4305,6 +4675,8 @@ html {
 .bb-tp-hero__media-plane .bb-tp-hero__fallback {
   width: 100%;
   height: 100%;
+  min-height: 0;
+  aspect-ratio: auto; /* do not let 4/3 intrinsic size inflate full-bleed hero */
   object-fit: cover;
   object-position: center 30%;
   display: block;
@@ -4314,7 +4686,7 @@ html {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(18, 16, 40, 0.25) 0%, rgba(18, 16, 40, 0.72) 72%, rgba(18, 16, 40, 0.88) 100%);
+    linear-gradient(180deg, rgba(18, 16, 40, 0.28) 0%, rgba(18, 16, 40, 0.62) 55%, rgba(18, 16, 40, 0.88) 100%);
 }
 
 .bb-tp-hero__inner--overlay {
@@ -4323,21 +4695,37 @@ html {
   width: 100%;
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 2.75rem var(--bb-gutter-mobile, 1rem) 2.5rem;
+  padding: 2.25rem var(--bb-gutter-mobile, 1rem) 2rem;
   display: block;
+  text-align: center;
+}
+
+.bb-tp-hero--phase7 .bb-tp-hero__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto;
+  max-width: 44rem;
 }
 
 .bb-tp-hero--phase7 .bb-tp-hero__title {
   color: #fff;
   max-width: 18ch;
-  font-size: clamp(2.1rem, 5vw, 3.6rem);
+  font-size: clamp(2rem, 4.8vw, 3.35rem);
   line-height: 1.08;
   letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
 }
 
 .bb-tp-hero--phase7 .bb-tp-hero__lead {
   color: rgba(255, 255, 255, 0.9);
-  max-width: 38rem;
+  max-width: 36rem;
+  margin: 0 0 1.25rem;
+  white-space: normal;
+}
+
+.bb-tp-hero--phase7 .bb-tp-hero__cta {
+  justify-content: center;
 }
 
 .bb-tp-eyebrow--on-dark {
@@ -4360,7 +4748,7 @@ html {
 .bb-tp-service-times--band {
   background: var(--bb-violet, #6c5ce7);
   color: #fff;
-  padding: 1.75rem 0;
+  padding: 1.35rem 0;
 }
 
 .bb-tp-service-times__inner {
@@ -4373,8 +4761,8 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  margin: 0 0 1rem;
-  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
   color: #fff;
 }
 
@@ -4383,24 +4771,24 @@ html {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.85rem;
+  gap: 0.65rem;
 }
 
 @media (min-width: 768px) {
   .bb-tp-service-times__list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem 1.5rem;
+    gap: 0.75rem 1.25rem;
   }
 }
 
 .bb-tp-service-times__item {
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 1rem;
-  padding: 1rem 1.1rem;
+  border-radius: 0.85rem;
+  padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .bb-tp-service-times__name {
@@ -4446,8 +4834,8 @@ html {
 .bb-tp-home-teaser,
 .bb-tp-home-about-preview,
 .bb-tp-home-contact {
-  /* Compact/standard section rhythm: 44px mobile · 56–64px desktop via media below */
-  padding: 2.75rem 0;
+  /* Stitch denser section rhythm: ~32px mobile · ~44–48px desktop */
+  padding: 2rem 0;
 }
 
 @media (min-width: 900px) {
@@ -4455,20 +4843,20 @@ html {
   .bb-tp-home-teaser,
   .bb-tp-home-about-preview,
   .bb-tp-home-contact {
-    padding: 3.5rem 0; /* 56px — within 56–72px standard band */
+    padding: 2.75rem 0;
   }
 }
 
 .bb-tp-home-welcome__grid {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.15rem;
 }
 
 @media (min-width: 900px) {
   .bb-tp-home-welcome__grid.has-media {
     grid-template-columns: 1.1fr 0.9fr;
     align-items: center;
-    gap: 2.5rem;
+    gap: 2rem;
   }
 }
 
@@ -4477,14 +4865,28 @@ html {
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 0.75rem 1.25rem;
-  margin-bottom: 1.35rem;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
 }
 
 .bb-tp-section-head__lead {
-  margin: 0.45rem 0 0;
-  max-width: 42rem;
+  margin: 0.35rem 0 0;
+  max-width: 40rem;
   color: var(--bb-muted, #5b6472);
+}
+
+.bb-tp-home-welcome .bb-tp-section-title,
+.bb-tp-home-teaser .bb-tp-section-title,
+.bb-tp-home-about-preview .bb-tp-section-title,
+.bb-tp-home-contact .bb-tp-section-title {
+  margin: 0 0 0.35rem;
+}
+
+.bb-tp-home-welcome .bb-tp-body,
+.bb-tp-home-teaser .bb-tp-body,
+.bb-tp-cta-band .bb-tp-body {
+  margin: 0 0 0.85rem;
+  white-space: normal;
 }
 
 .bb-tp-section-head__link {
@@ -4670,14 +5072,14 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-cta-band {
-  padding: 2.5rem 0;
+  padding: 2rem 0;
   background: linear-gradient(135deg, #2d2463 0%, #6c5ce7 100%);
   color: #fff;
 }
 
 @media (min-width: 900px) {
   .bb-tp-cta-band {
-    padding: 3.25rem 0; /* ~52px — compact call-to-action band */
+    padding: 2.5rem 0;
   }
 }
 
@@ -4773,7 +5175,15 @@ a.bb-tp-content-card:hover {
 .bb-tp-about-beliefs,
 .bb-tp-about-community,
 .bb-tp-about-gallery {
-  padding: 2.5rem 0;
+  padding: 1.75rem 0;
+}
+
+@media (min-width: 900px) {
+  .bb-tp-about-beliefs,
+  .bb-tp-about-community,
+  .bb-tp-about-gallery {
+    padding: 2.25rem 0;
+  }
 }
 
 .bb-tp-page-hero__title-accent {
@@ -4799,13 +5209,27 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-leader-card--featured .bb-tp-leader-card__media {
-  min-height: 18rem;
+  min-height: 14rem;
+  max-height: 22rem;
+  width: 100%;
+  height: auto;
   margin: 0;
   border-radius: 0;
+  aspect-ratio: 4 / 5;
+}
+
+.bb-tp-leader-card--featured .bb-tp-leader-card__media img {
+  aspect-ratio: 4 / 5;
+  max-height: 22rem;
 }
 
 .bb-tp-leader-card--featured .bb-tp-leader-card__body {
-  padding: 1.5rem 1.5rem 1.75rem;
+  padding: 1.25rem 1.35rem 1.5rem;
+}
+
+.bb-tp-leader-card--featured .bb-tp-leader-card__bio {
+  -webkit-line-clamp: 5;
+  white-space: normal;
 }
 
 .bb-tp-leader-card__eyebrow {
@@ -4842,12 +5266,16 @@ a.bb-tp-content-card:hover {
 }
 
 @media (max-width: 767px) {
-  .bb-tp-hero--phase7 {
-    min-height: min(48vh, 24rem);
+  .bb-tp-hero.bb-tp-hero--phase7 {
+    min-height: min(46vh, 22rem);
+    max-height: min(62vh, 28rem);
+    padding: 0;
+    text-align: center;
+    align-items: flex-end;
   }
 
   .bb-tp-hero__inner--overlay {
-    padding: 2.25rem var(--bb-gutter-mobile, 1rem) 2rem;
+    padding: 1.75rem var(--bb-gutter-mobile, 1rem) 1.5rem;
   }
 
   .bb-tp-hero__media-plane .bb-tp-hero__img {
@@ -5755,7 +6183,7 @@ a.bb-tp-content-card:hover {
 }
 
 .bb-tp-contact-summary {
-  margin-top: 0.85rem;
+  margin-top: 0.55rem;
 }
 
 .bb-tp-contact-summary__list {
@@ -5763,7 +6191,7 @@ a.bb-tp-content-card:hover {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.3rem;
 }
 
 .bb-tp-contact-summary__list li {
@@ -5857,6 +6285,11 @@ a.bb-tp-content-card:hover {
   border: 1px solid var(--bb-line);
   border-radius: var(--bb-radius);
   box-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.12));
+}
+
+/* Closed <details> still exposes panel content to overflow/hit-testing in some engines. */
+.bb-tp-branch-switcher:not([open]) > .bb-tp-branch-switcher__panel {
+  display: none;
 }
 
 .bb-tp-branch-switcher--drawer {
@@ -6001,5 +6434,148 @@ a.bb-tp-content-card:hover {
 
   .bb-tp-brand__name {
     font-size: 0.9375rem;
+  }
+}
+
+/* —— Prompt 4: About / Leadership / Ministries density —— */
+.bb-tp-about-purpose {
+  padding: 1.5rem 0 1.75rem;
+}
+
+.bb-tp-about__story-wrap {
+  padding: 1.15rem 0 1.5rem;
+}
+
+.bb-tp-about-story__copy .bb-tp-body,
+.bb-tp-about-beliefs .bb-tp-body,
+.bb-tp-about-community .bb-tp-body {
+  max-width: 40rem;
+}
+
+.bb-tp-about__join {
+  padding: 2rem 0;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-about-hero .bb-tp-page-hero__visual,
+  .bb-tp-about-hero .bb-tp-page-hero__img {
+    min-height: 9rem;
+  }
+
+  .bb-tp-leadership-hero .bb-tp-page-hero__visual,
+  .bb-tp-leadership-hero .bb-tp-page-hero__img,
+  .bb-tp-ministries-hero .bb-tp-page-hero__visual,
+  .bb-tp-ministries-hero .bb-tp-page-hero__img {
+    min-height: 9rem;
+    aspect-ratio: 16 / 9;
+  }
+
+  .bb-tp-featured-leader {
+    margin-bottom: 1.25rem;
+  }
+
+  .bb-tp-leader-card--featured .bb-tp-leader-card__media {
+    min-height: 12rem;
+    max-height: 16rem;
+  }
+
+  .bb-tp-ministry-featured {
+    margin-bottom: 1.5rem;
+  }
+
+  .bb-tp-ministry-card--featured {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+  }
+
+  .bb-tp-ministry-card--featured .bb-tp-ministry-card__media {
+    aspect-ratio: 1 / 1;
+    min-height: 100%;
+  }
+
+  .bb-tp-ministry-card--featured .bb-tp-ministry-card__media img {
+    aspect-ratio: 1 / 1;
+    min-height: 100%;
+    height: 100%;
+  }
+
+  .bb-tp-ministry-card--featured .bb-tp-ministry-card__body {
+    padding: 0.9rem 1rem;
+  }
+
+  .bb-tp-ministry-card--featured .bb-tp-ministry-card__summary {
+    -webkit-line-clamp: 2;
+  }
+}
+
+@media (min-width: 860px) {
+  .bb-tp-leader-card--featured .bb-tp-leader-card__media {
+    min-height: 16rem;
+    max-height: 26rem;
+  }
+}
+
+/* —— Prompt 5: Events / Sermons / Contact / nav / footer density —— */
+.bb-tp-events-hero .bb-tp-page-hero__visual,
+.bb-tp-sermons-hero .bb-tp-page-hero__visual,
+.bb-tp-contact-hero .bb-tp-page-hero__visual {
+  min-height: 10rem;
+}
+
+.bb-tp-events-hero .bb-tp-page-hero__img,
+.bb-tp-sermons-hero .bb-tp-page-hero__img {
+  min-height: 10rem;
+  aspect-ratio: 16 / 9;
+}
+
+.bb-tp-contact-map__frame {
+  min-height: 200px;
+}
+
+.bb-tp-contact-map__frame iframe {
+  height: 240px;
+}
+
+.bb-tp-footer__bar {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+}
+
+.bb-tp-nav--desktop {
+  flex-wrap: nowrap;
+}
+
+.bb-tp-header__inner {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-event-card__media {
+    aspect-ratio: auto;
+    min-height: 100%;
+  }
+
+  .bb-tp-event-card__media img {
+    aspect-ratio: auto;
+    min-height: 100%;
+    height: 100%;
+  }
+
+  .bb-tp-featured-event__media {
+    max-height: 14rem;
+  }
+
+  .bb-tp-featured-sermon__media img {
+    min-height: 10rem;
+  }
+
+  .bb-tp-contact-message__status {
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .bb-tp-contact-map__frame iframe {
+    height: 260px;
   }
 }

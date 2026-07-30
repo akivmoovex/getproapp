@@ -81,6 +81,7 @@ describe("blessboard phase7 editors — giving, leadership intro, social", () =>
   let app;
   let orgA;
   let churchA;
+  let branchA;
   let orgB;
   let churchB;
   let users = {};
@@ -119,6 +120,7 @@ describe("blessboard phase7 editors — giving, leadership intro, social", () =>
       });
       assert.equal(chA.ok, true, chA.message);
       churchA = chA.records.church;
+      branchA = chA.records.hqBranch;
 
       orgB = await provisionPlatformTenant(pool, {
         organizationKey: "p7ed-b",
@@ -463,6 +465,375 @@ describe("blessboard phase7 editors — giving, leadership intro, social", () =>
     assert.match(publicPage.text, /Live Bank Method/);
     assert.match(publicPage.text, /Bank details/);
     assert.doesNotMatch(publicPage.text, /data-bb-inline-edit/);
+  });
+
+  it("mobile-money and bank-transfer methods persist all fields through publish", async () => {
+    if (skipIfNeeded()) return;
+
+    const momoKey = "new-give-momo-fields";
+    const bankKey = "new-give-bank-fields";
+
+    const momoSave = await postDraft(
+      {
+        draftKind: "giving_method",
+        pageKey: "giving",
+        entityKey: momoKey,
+        payload: {
+          methodType: "mobile_money",
+          label: "MTN MoMo Field Pack",
+          description: "Mobile wallet for Sunday gifts",
+          accountDetails: "Wallet 0244123456 · Name: Demo Church",
+          instructions: "Dial *170# and send to the wallet above.",
+          externalUrl: "https://example.org/momo-give",
+          buttonLabel: "Open MoMo guide",
+          qrImageUrl: "/church/images/tenant-public/home-desktop-hero.jpg",
+          visible: true,
+          sortOrder: 11,
+        },
+      },
+      users.hqA
+    );
+    assert.equal(momoSave.status, 200, momoSave.text);
+    assert.equal(momoSave.body.ok, true);
+
+    const bankSave = await postDraft(
+      {
+        draftKind: "giving_method",
+        pageKey: "giving",
+        entityKey: bankKey,
+        payload: {
+          methodType: "bank_transfer",
+          label: "Primary Bank Field Pack",
+          description: "Church operating account",
+          accountDetails: "IBAN DE89370400440532013000 · Account Demo Church",
+          instructions: "Use reference SUNDAY-GIFT on the transfer.",
+          externalUrl: "",
+          buttonLabel: "",
+          qrImageUrl: "",
+          visible: true,
+          sortOrder: 12,
+        },
+      },
+      users.hqA
+    );
+    assert.equal(bankSave.status, 200, bankSave.text);
+
+    const editReload = await request(app)
+      .get("/giving?website_edit=1")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`))
+      .expect(200);
+    assert.match(editReload.text, /MTN MoMo Field Pack/);
+    assert.match(editReload.text, /Wallet 0244123456/);
+    assert.match(editReload.text, /Primary Bank Field Pack/);
+    assert.match(editReload.text, /DE89370400440532013000/);
+    assert.match(editReload.text, /Open MoMo guide/);
+
+    const publicBefore = await request(app).get("/giving").set("Host", HOST_A).expect(200);
+    assert.doesNotMatch(publicBefore.text, /MTN MoMo Field Pack/);
+    assert.doesNotMatch(publicBefore.text, /Primary Bank Field Pack/);
+
+    const published = await publishWebsiteDrafts(pool, {
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      branchId: null,
+      actorUserId: users.hqA.user.id,
+      actorRole: "church_hq_admin",
+      confirmPublish: true,
+      deferServiceTimes: true,
+      env: baseEnv(),
+    });
+    assert.equal(published.ok, true, published.reason || JSON.stringify(published));
+
+    const rows = await pool.query(
+      `SELECT label, description, account_details, instructions, external_url, button_label, qr_image_url, sort_order, status
+         FROM blessboard.giving_methods
+        WHERE church_id = $1 AND label = ANY($2::text[])
+        ORDER BY sort_order ASC`,
+      [churchA.id, ["MTN MoMo Field Pack", "Primary Bank Field Pack"]]
+    );
+    assert.equal(rows.rows.length, 2);
+    const momoRow = rows.rows.find((r) => r.label === "MTN MoMo Field Pack");
+    const bankRow = rows.rows.find((r) => r.label === "Primary Bank Field Pack");
+    assert.ok(momoRow);
+    assert.ok(bankRow);
+    assert.equal(momoRow.description, "Mobile wallet for Sunday gifts");
+    assert.equal(momoRow.account_details, "Wallet 0244123456 · Name: Demo Church");
+    assert.equal(momoRow.instructions, "Dial *170# and send to the wallet above.");
+    assert.equal(momoRow.external_url, "https://example.org/momo-give");
+    assert.equal(momoRow.button_label, "Open MoMo guide");
+    assert.equal(momoRow.qr_image_url, "/church/images/tenant-public/home-desktop-hero.jpg");
+    assert.equal(momoRow.status, "published");
+    assert.equal(bankRow.account_details, "IBAN DE89370400440532013000 · Account Demo Church");
+    assert.equal(bankRow.instructions, "Use reference SUNDAY-GIFT on the transfer.");
+    assert.equal(bankRow.external_url, null);
+    assert.equal(bankRow.button_label, null);
+    assert.equal(bankRow.qr_image_url, null);
+
+    const publicAfter = await request(app).get("/giving").set("Host", HOST_A).expect(200);
+    assert.match(publicAfter.text, /MTN MoMo Field Pack/);
+    assert.match(publicAfter.text, /Wallet 0244123456/);
+    assert.match(publicAfter.text, /Dial \*170#/);
+    assert.match(publicAfter.text, /Open MoMo guide/);
+    assert.match(publicAfter.text, /Primary Bank Field Pack/);
+    assert.match(publicAfter.text, /DE89370400440532013000/);
+    assert.match(publicAfter.text, /SUNDAY-GIFT/);
+    const bankCardStart = publicAfter.text.indexOf("Primary Bank Field Pack");
+    const bankCardSlice = publicAfter.text.slice(bankCardStart, bankCardStart + 1200);
+    assert.doesNotMatch(bankCardSlice, /Contact for details/);
+
+    const editAfterPublish = await request(app)
+      .get("/giving?website_edit=1")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`))
+      .expect(200);
+    assert.match(editAfterPublish.text, /Wallet 0244123456/);
+    assert.match(editAfterPublish.text, /DE89370400440532013000/);
+  });
+
+  it("editing a published giving method updates instead of duplicating", async () => {
+    if (skipIfNeeded()) return;
+    const created = await contentRepo.insertGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      methodType: "cash",
+      label: "Cash Box Original",
+      description: "Lobby desk",
+      accountDetails: "Ask usher for envelope",
+      instructions: "Place cash in the offering box.",
+      externalUrl: null,
+      buttonLabel: null,
+      qrImageUrl: null,
+      sortOrder: 40,
+      status: "published",
+    });
+    assert.ok(created && created.id);
+
+    const edit = await postDraft(
+      {
+        draftKind: "giving_method",
+        pageKey: "giving",
+        entityKey: created.id,
+        payload: {
+          methodType: "cash",
+          label: "Cash Box Updated",
+          description: "Lobby desk — updated",
+          accountDetails: "Usher station B",
+          instructions: "Use envelopes at station B.",
+          visible: true,
+          sortOrder: 40,
+        },
+      },
+      users.hqA
+    );
+    assert.equal(edit.status, 200, edit.text);
+
+    const published = await publishWebsiteDrafts(pool, {
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      branchId: null,
+      actorUserId: users.hqA.user.id,
+      actorRole: "church_hq_admin",
+      confirmPublish: true,
+      deferServiceTimes: true,
+      env: baseEnv(),
+    });
+    assert.equal(published.ok, true, published.reason || JSON.stringify(published));
+
+    const listed = await pool.query(
+      `SELECT id, label, account_details, status
+         FROM blessboard.giving_methods
+        WHERE church_id = $1 AND (id = $2 OR label LIKE 'Cash Box%')`,
+      [churchA.id, created.id]
+    );
+    const active = listed.rows.filter((r) => r.status === "published");
+    assert.equal(active.length, 1);
+    assert.equal(active[0].id, created.id);
+    assert.equal(active[0].label, "Cash Box Updated");
+    assert.equal(active[0].account_details, "Usher station B");
+
+    const publicPage = await request(app).get("/giving").set("Host", HOST_A).expect(200);
+    assert.match(publicPage.text, /Cash Box Updated/);
+    assert.match(publicPage.text, /Usher station B/);
+    assert.doesNotMatch(publicPage.text, /Cash Box Original/);
+  });
+
+  it("deactivating a giving method archives it and hides publicly", async () => {
+    if (skipIfNeeded()) return;
+    const created = await contentRepo.insertGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      methodType: "online",
+      label: "Hide Me Online",
+      description: "Will archive",
+      accountDetails: "Portal details",
+      instructions: "Temporary link method",
+      externalUrl: "https://example.org/hide-me",
+      buttonLabel: "Give now",
+      sortOrder: 55,
+      status: "published",
+    });
+
+    const hide = await postDraft(
+      {
+        draftKind: "giving_method",
+        pageKey: "giving",
+        entityKey: created.id,
+        payload: {
+          methodType: "online",
+          label: "Hide Me Online",
+          instructions: "Temporary link method",
+          externalUrl: "https://example.org/hide-me",
+          visible: false,
+          sortOrder: 55,
+        },
+      },
+      users.hqA
+    );
+    assert.equal(hide.status, 200);
+
+    const published = await publishWebsiteDrafts(pool, {
+      organizationId: orgA.records.organization.id,
+      churchId: churchA.id,
+      branchId: null,
+      actorUserId: users.hqA.user.id,
+      actorRole: "church_hq_admin",
+      confirmPublish: true,
+      deferServiceTimes: true,
+      env: baseEnv(),
+    });
+    assert.equal(published.ok, true, published.reason || JSON.stringify(published));
+
+    const row = await contentRepo.findGivingMethodById(pool, created.id);
+    assert.equal(row.status, "archived");
+    const publicPage = await request(app).get("/giving").set("Host", HOST_A).expect(200);
+    assert.doesNotMatch(publicPage.text, /Hide Me Online/);
+  });
+
+  it("display order is respected for published giving methods", async () => {
+    if (skipIfNeeded()) return;
+    await contentRepo.insertGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      methodType: "cash",
+      label: "Order Zeta",
+      instructions: "zeta",
+      sortOrder: 90,
+      status: "published",
+    });
+    await contentRepo.insertGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      methodType: "cash",
+      label: "Order Alpha",
+      instructions: "alpha",
+      sortOrder: 10,
+      status: "published",
+    });
+    const publicPage = await request(app).get("/giving").set("Host", HOST_A).expect(200);
+    const alphaIdx = publicPage.text.indexOf("Order Alpha");
+    const zetaIdx = publicPage.text.indexOf("Order Zeta");
+    assert.ok(alphaIdx > 0 && zetaIdx > 0);
+    assert.ok(alphaIdx < zetaIdx, "lower sort_order should render first");
+  });
+
+  it("branch-scoped giving methods stay on their branch", async () => {
+    if (skipIfNeeded()) return;
+    assert.ok(branchA && branchA.id);
+
+    await contentRepo.insertGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      methodType: "mobile_money",
+      label: "Branch Only MoMo",
+      accountDetails: "Branch wallet 0555000111",
+      instructions: "Branch campus only",
+      sortOrder: 3,
+      status: "published",
+    });
+    await contentRepo.insertGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      methodType: "bank_transfer",
+      label: "Church Wide Bank",
+      accountDetails: "Church IBAN DE00CHURCH",
+      instructions: "Church-wide only",
+      sortOrder: 4,
+      status: "published",
+    });
+
+    const branchListed = await contentRepo.listGivingMethods(pool, {
+      churchId: churchA.id,
+      branchId: branchA.id,
+      status: "published",
+    });
+    assert.ok(branchListed.some((m) => m.label === "Branch Only MoMo"));
+    assert.ok(!branchListed.some((m) => m.label === "Church Wide Bank"));
+
+    const churchListed = await contentRepo.listGivingMethods(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      status: "published",
+    });
+    assert.ok(churchListed.some((m) => m.label === "Church Wide Bank"));
+    assert.ok(!churchListed.some((m) => m.label === "Branch Only MoMo"));
+  });
+
+  it("empty optional giving fields do not render placeholders or generic fallback copy", async () => {
+    if (skipIfNeeded()) return;
+    // Prefer church-wide listing: archive branch rows that would otherwise shadow it.
+    await pool.query(
+      `UPDATE blessboard.giving_methods
+          SET status = 'archived'
+        WHERE church_id = $1 AND branch_id IS NOT NULL AND status = 'published'`,
+      [churchA.id]
+    );
+    await contentRepo.insertGivingMethod(pool, {
+      churchId: churchA.id,
+      branchId: null,
+      methodType: "other",
+      label: "Sparse Method",
+      description: null,
+      accountDetails: "Account REF-7788",
+      instructions: null,
+      externalUrl: null,
+      buttonLabel: null,
+      qrImageUrl: null,
+      sortOrder: 8,
+      status: "published",
+    });
+    const publicPage = await request(app).get("/giving").set("Host", HOST_A).expect(200);
+    assert.match(publicPage.text, /Sparse Method/);
+    assert.match(publicPage.text, /Account REF-7788/);
+    const start = publicPage.text.indexOf("Sparse Method");
+    const slice = publicPage.text.slice(start, start + 900);
+    assert.doesNotMatch(slice, /Contact for details/);
+    assert.doesNotMatch(slice, /Open published link/);
+  });
+
+  it("content-admin giving create maps extended fields", async () => {
+    if (skipIfNeeded()) return;
+    const { buildGivingFields } = require("../src/blessboard/services/publicContentAdminService");
+    const built = buildGivingFields(
+      {
+        methodType: "online",
+        label: "Admin Path Link",
+        description: "Online giving",
+        accountDetails: "Use the secure portal",
+        instructions: "Follow the church portal steps.",
+        externalUrl: "https://example.org/give-admin",
+        buttonLabel: "Give online",
+        qrImageUrl: "/church/images/tenant-public/home-desktop-hero.jpg",
+        sortOrder: 7,
+        status: "published",
+      },
+      { partial: false }
+    );
+    assert.equal(built.ok, true, built.reason);
+    assert.equal(built.fields.description, "Online giving");
+    assert.equal(built.fields.accountDetails, "Use the secure portal");
+    assert.equal(built.fields.buttonLabel, "Give online");
+    assert.equal(built.fields.qrImageUrl, "/church/images/tenant-public/home-desktop-hero.jpg");
   });
 
   it("leadership introduction save and cancel", async () => {

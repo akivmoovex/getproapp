@@ -262,7 +262,7 @@ describe("blessboard branch mini website shell (stage 4)", () => {
     assert.match(res.text, /id="bb-tp-menu-btn"/);
     assert.match(res.text, /id="bb-tp-drawer"/);
     assert.match(res.text, /data-bb-nav="mobile"/);
-    assert.match(res.text, /tenant-public\.js\?v=8/);
+    assert.match(res.text, /tenant-public\.js\?v=9/);
     assert.match(res.text, /aria-controls="bb-tp-drawer"/);
     const contactMobile = hrefsFor(res.text, "data-bb-nav-link", "contact");
     assert.ok(

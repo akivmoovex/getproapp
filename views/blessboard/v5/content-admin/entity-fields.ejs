@@ -182,11 +182,31 @@
 <% if (entityKind === 'giving') { %>
   <div class="bb-ba-field">
     <label for="<%= mode %>_method_type">Method type</label>
-    <input id="<%= mode %>_method_type" name="method_type" type="text" required maxlength="32" pattern="[a-z][a-z0-9_-]*" value="<%= val('method_type', 'methodType', 'online') %>" autocomplete="off" />
+    <select id="<%= mode %>_method_type" name="method_type" required>
+      <% var methodTypeOpts = [
+        { value: 'bank_transfer', label: 'Bank transfer' },
+        { value: 'mobile_money', label: 'Mobile money' },
+        { value: 'cash', label: 'Cash / in person' },
+        { value: 'online', label: 'Online giving link' },
+        { value: 'other', label: 'Other / QR' }
+      ];
+      var currentMethodType = val('method_type', 'methodType', 'bank_transfer');
+      methodTypeOpts.forEach(function (opt) { %>
+      <option value="<%= opt.value %>" <%= currentMethodType === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+      <% }) %>
+    </select>
   </div>
   <div class="bb-ba-field">
     <label for="<%= mode %>_label">Label</label>
     <input id="<%= mode %>_label" name="label" type="text" required maxlength="120" value="<%= val('label', 'label', '') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_description">Description</label>
+    <textarea id="<%= mode %>_description" name="description" rows="2" maxlength="2000"><%= val('description', 'description', '') %></textarea>
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_account_details">Payment / account details</label>
+    <textarea id="<%= mode %>_account_details" name="account_details" rows="3" maxlength="2000"><%= val('account_details', 'accountDetails', '') %></textarea>
   </div>
   <div class="bb-ba-field">
     <label for="<%= mode %>_instructions">Instructions</label>
@@ -195,6 +215,14 @@
   <div class="bb-ba-field">
     <label for="<%= mode %>_external_url">External URL (HTTPS)</label>
     <input id="<%= mode %>_external_url" name="external_url" type="url" maxlength="2000" value="<%= val('external_url', 'externalUrl', '') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_button_label">Button label</label>
+    <input id="<%= mode %>_button_label" name="button_label" type="text" maxlength="48" value="<%= val('button_label', 'buttonLabel', '') %>" autocomplete="off" />
+  </div>
+  <div class="bb-ba-field">
+    <label for="<%= mode %>_qr_image_url">QR image URL</label>
+    <input id="<%= mode %>_qr_image_url" name="qr_image_url" type="text" maxlength="2000" value="<%= val('qr_image_url', 'qrImageUrl', '') %>" autocomplete="off" />
   </div>
 <% } %>
 

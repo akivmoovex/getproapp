@@ -16,7 +16,7 @@ const VERSIONS = {
   designSystem: "6",
   apex: "14",
   apexAuth: "6",
-  tenantPublic: "44",
+  tenantPublic: "51",
   tenantAuth: "13",
   memberPortal: "22",
   branchAdmin: "38",
@@ -26,7 +26,7 @@ const VERSIONS = {
   mediaPickerJs: "6",
   designSystemJs: "3",
   shellNav: "3",
-  tenantPublicJs: "7",
+  tenantPublicJs: "9",
 };
 
 describe("blessboard v5 frontend assets — includes and cache busting", () => {
@@ -115,7 +115,7 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(routes, /renderTenantPublicPage/);
     assert.match(routes, /preview:\s*true/);
     const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=44"/);
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=51"/);
   });
 
   it("PHASE2_092 P0/P1 guards: nav nowrap, brand, hero AR, dir-hero density, media soft-fill, contact honesty", () => {
@@ -153,7 +153,7 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
 
     assert.match(model, /softFillDemoEventImages/);
     assert.match(model, /softFillDemoSermonImages/);
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=44"/);
+    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=51"/);
     assert.match(spec, /eventFeatured:\s*"\/church\/images\/events\//);
     assert.match(spec, /sermonFeatured:\s*"\/church\/images\/sermons\//);
     assert.match(service, /kind === "event"/);
@@ -169,10 +169,36 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(home, /25de9fa64884455b993abb051adb0d8a/);
     assert.match(home, /b82eb087d4b84242aabead19c08eb717/);
     assert.match(home, /partials\/service-times-block/);
+    assert.match(home, /showHomeAbout/);
+    assert.match(home, /teasers\.ministries\.slice\(0, 3\)/);
+    assert.match(home, /teasers\.events\.slice\(0, 2\)/);
     assert.match(css, /\.bb-tp-hero--phase7/);
+    assert.match(css, /\.bb-tp-hero\.bb-tp-hero--phase7|\.bb-tp-hero--phase7[\s\S]*?max-height:\s*min\(/);
+    assert.match(css, /aspect-ratio:\s*auto/);
     assert.match(css, /\.bb-tp-service-times--band/);
     assert.match(css, /\.bb-tp-card-grid/);
     assert.match(css, /overflow-x:\s*clip/);
+    assert.match(css, /\.bb-tp-nav--desktop[\s\S]*?flex-wrap:\s*nowrap/);
+    assert.match(css, /\.bb-tp-drawer__item[\s\S]*?flex:\s*0 0 auto/);
+  });
+
+  it("Phase 7 home density: compact sections, footer, and hidden public edit chrome", () => {
+    const css = read("public/blessboard/v5/tenant-public.css");
+    const home = read("views/blessboard/v5/public/home.ejs");
+    const shellStart = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
+    assert.match(css, /\.bb-tp-home-welcome[\s\S]*?padding:\s*2rem 0/);
+    assert.match(css, /\.bb-tp-footer__inner[\s\S]*?padding:\s*1\.75rem/);
+    assert.match(css, /\.bb-tp-cta-band[\s\S]*?padding:\s*2rem 0/);
+    assert.match(home, /websiteAdmin && websiteAdmin\.editingMode/);
+    assert.match(shellStart, /bb-tp-nav--desktop/);
+    assert.match(shellStart, /data-bb-nav="mobile-drawer"/);
+    assert.doesNotMatch(home, /data-bb-inline-edit(?![^<]*websiteAdmin)/);
+    // Shell class `body.bb-tp-body` must not inherit prose `white-space: pre-wrap`
+    // (that preserved template newlines and inflated sticky header / hero gap).
+    assert.match(css, /body\.bb-tp-body\s*\{[^}]*white-space:\s*normal/);
+    assert.match(css, /\.bb-tp-body:not\(body\)\s*\{[^}]*white-space:\s*pre-wrap/);
+    assert.match(css, /\.bb-tp-branch-switcher:not\(\[open\]\)\s*>\s*\.bb-tp-branch-switcher__panel/);
+    assert.match(css, /\.bb-tp-event-card\s*\{[^}]*position:\s*relative/);
   });
 
   it("PHASE2_087 about/leadership CSS: story media, purpose cards, portrait grid", () => {
@@ -181,13 +207,19 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     const leadership = read("views/blessboard/v5/public/leadership.ejs");
     assert.match(about, /3736c7550483404282d5ba9914962c40/);
     assert.match(about, /aboutDemoFallback/);
+    assert.match(about, /bb-tp-prose-narrow/);
+    assert.match(about, /genericSections\.filter/);
     assert.match(leadership, /4d525f9fbba9482f91fadc28ef650d13/);
     assert.match(leadership, /leadershipDemoFallback/);
     assert.match(leadership, /Join a Ministry/);
+    assert.match(leadership, /featuredBioMax|teamBioMax/);
     assert.match(css, /\.bb-tp-about-story__media|\.bb-tp-about-gallery/);
     assert.match(css, /\.bb-tp-purpose-card--accent|\.bb-tp-cta-band/);
     assert.match(css, /\.bb-tp-leader-card--featured|\.bb-tp-leader-card__media/);
     assert.match(css, /\.bb-tp-leadership-grid__title-mobile/);
+    assert.match(css, /\.bb-tp-prose-narrow/);
+    assert.match(css, /aspect-ratio:\s*1\s*\/\s*1/);
+    assert.match(css, /\.bb-tp-leader-grid[\s\S]*?repeat\(3,/);
   });
 
   it("PHASE2_088 remaining public pages: Stitch IDs, soft-fill hooks, giving safety", () => {
@@ -200,6 +232,8 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     const css = read("public/blessboard/v5/tenant-public.css");
     assert.match(ministries, /5a52a893e0414bf6962a0c078808d124/);
     assert.match(ministries, /phase7-v1/);
+    assert.match(ministries, /ministrySummary/);
+    assert.doesNotMatch(ministries, /bb-tp-ministry-card--featured/);
     assert.match(events, /a68314c0d6a34e0a824ad1a2b309c4ad/);
     assert.match(sermons, /d85d37f3bba84ac48d8d3f24b01b2010/);
     assert.match(contact, /28ba746495424a66a10cf5fb11916dec/);
@@ -209,12 +243,48 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(model, /sermonsDemoFallback/);
     assert.match(model, /contactDemoFallback/);
     assert.match(model, /givingDemoFallback/);
-    assert.match(model, /Contact the church office for published giving instructions/);
+    assert.match(model, /scrubGivingSecrets/);
     assert.match(giving, /data-bb-giving-testing/);
+    assert.match(giving, /data-bb-giving-scope-label/);
+    assert.match(giving, /data-bb-copy-ref/);
+    assert.match(giving, /data-bb-giving-disclaimer/);
+    assert.match(giving, /parseAccountRows|isCopyableReference/);
+    assert.match(model, /scope:\s*branchId \? "branch" : "church"/);
     assert.match(contact, /data-bb-contact-hours/);
     assert.match(css, /\.bb-tp-contact-hours/);
     assert.match(css, /\.bb-tp-giving-why__grid/);
+    assert.match(css, /\.bb-tp-giving-grid[\s\S]*?repeat\(3,/);
+    assert.match(css, /\.bb-tp-giving-card__copy/);
+    assert.match(css, /\.bb-tp-giving-card__qr img/);
     assert.match(css, /overflow-x:\s*clip/);
+    assert.match(css, /\.bb-tp-ministry-card__summary[\s\S]*?-webkit-line-clamp:\s*3/);
+  });
+
+  it("Prompt 4 shared ALM density: equal ministry cards, square portraits, shell v50", () => {
+    const shell = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
+    const css = read("public/blessboard/v5/tenant-public.css");
+    const leaderCard = read("views/blessboard/v5/public/partials/leader-card.ejs");
+    assert.match(shell, /tenant-public\.css\?v=51/);
+    assert.match(css, /Prompt 4: About \/ Leadership \/ Ministries density/);
+    assert.match(leaderCard, /bioMax/);
+    assert.match(css, /\.bb-tp-leader-card:not\(\.bb-tp-leader-card--featured\)[\s\S]*?aspect-ratio:\s*1\s*\/\s*1/);
+  });
+
+  it("Prompt 5 ESC density: event/sermon clamps, contact form state, compact footer", () => {
+    const css = read("public/blessboard/v5/tenant-public.css");
+    const events = read("views/blessboard/v5/public/events.ejs");
+    const sermons = read("views/blessboard/v5/public/sermons.ejs");
+    const contact = read("views/blessboard/v5/public/contact.ejs");
+    const js = read("public/blessboard/v5/tenant-public.js");
+    assert.match(css, /Prompt 5: Events \/ Sermons \/ Contact \/ nav \/ footer density/);
+    assert.match(css, /\.bb-tp-event-card__facts|\.bb-tp-event-card__summary/);
+    assert.match(css, /\.bb-tp-contact-message__status/);
+    assert.match(css, /\.bb-tp-footer__tagline[\s\S]*?-webkit-line-clamp:\s*2/);
+    assert.match(events, /eventSummary/);
+    assert.match(sermons, /sermonSummary/);
+    assert.match(contact, /bb-tp-contact-message__status|data-bb-contact-form="unavailable"/);
+    assert.match(js, /Escape/);
+    assert.match(js, /focusableInDrawer|bb-tp-drawer-open/);
   });
 });
 

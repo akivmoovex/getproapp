@@ -221,6 +221,9 @@
     </div>
   </section>
 
+  <%# Stitch home uses a single welcome intro — skip about preview when welcome is populated. %>
+  <% var showHomeAbout = Boolean(aboutBody) && !welcomeBody; %>
+  <% if (showHomeAbout) { %>
   <section class="bb-tp-home-about-preview" data-bb-home-about="1" aria-labelledby="bb-tp-home-about-heading">
     <div class="bb-tp-container">
       <%- include('./partials/section-heading', {
@@ -232,6 +235,7 @@
       }) %>
     </div>
   </section>
+  <% } %>
 
   <% if (teasers.ministries && teasers.ministries.length) { %>
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-ministries="1" aria-labelledby="bb-tp-home-ministries-heading">
@@ -244,7 +248,7 @@
       sectionRuled: true
     }) %>
     <div class="bb-tp-card-grid bb-tp-card-grid--3">
-      <% teasers.ministries.forEach(function (m) { %>
+      <% teasers.ministries.slice(0, 3).forEach(function (m) { %>
       <%- include('./partials/content-card', {
         cardTitle: m.name,
         cardSummary: m.summary,
@@ -270,7 +274,7 @@
       sectionRuled: true
     }) %>
     <div class="bb-tp-card-grid bb-tp-card-grid--2">
-      <% teasers.events.forEach(function (event) { %>
+      <% teasers.events.slice(0, 2).forEach(function (event) { %>
       <% var parts = formatEventParts(event.startsAt, event.timezone, event.endsAt); %>
       <article class="bb-tp-event-card bb-tp-event-card--media">
         <% if (event.imageUrl) { %>
@@ -337,7 +341,7 @@
       sectionRuled: true
     }) %>
     <div class="bb-tp-card-grid bb-tp-card-grid--3">
-      <% teasers.leaders.forEach(function (leader) { %>
+      <% teasers.leaders.slice(0, 3).forEach(function (leader) { %>
       <%- include('./partials/leader-card', { leader: leader, featured: false, bioMax: 120 }) %>
       <% }) %>
     </div>

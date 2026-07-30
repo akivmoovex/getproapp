@@ -26,6 +26,11 @@
     staff = leaders.slice(4);
   }
 
+  /* Compact previews — full bios stay in CMS; public cards truncate. */
+  var featuredBioMax = 280;
+  var teamBioMax = 120;
+  var staffBioMax = 90;
+
   var intro =
     pageSections.find(function (s) { return String(s.sectionKey || '') === 'hero'; }) ||
     (pageSections.length ? pageSections[0] : null);
@@ -78,7 +83,7 @@
     <% if (featured) { %>
     <section class="bb-tp-featured-leader" aria-label="Senior leader" data-bb-leadership-featured="1">
       <p class="bb-tp-featured-leader__label"><%= featured.roleTitle || 'Senior Leader' %></p>
-      <%- include('./partials/leader-card', { leader: featured, featured: true, bioMax: 480 }) %>
+      <%- include('./partials/leader-card', { leader: featured, featured: true, bioMax: featuredBioMax }) %>
     </section>
     <% } %>
 
@@ -91,7 +96,7 @@
       <ul class="bb-tp-leader-grid">
         <% team.forEach(function (leader) { %>
         <li>
-          <%- include('./partials/leader-card', { leader: leader, featured: false, bioMax: 160 }) %>
+          <%- include('./partials/leader-card', { leader: leader, featured: false, bioMax: teamBioMax }) %>
         </li>
         <% }) %>
       </ul>
@@ -107,7 +112,7 @@
       <ul class="bb-tp-leader-grid bb-tp-leader-grid--compact">
         <% staff.forEach(function (leader) { %>
         <li>
-          <%- include('./partials/leader-card', { leader: leader, featured: false, bioMax: 120 }) %>
+          <%- include('./partials/leader-card', { leader: leader, featured: false, bioMax: staffBioMax }) %>
         </li>
         <% }) %>
       </ul>

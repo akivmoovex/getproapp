@@ -32,6 +32,13 @@
     (demoFb && demoFb.introMediaUrl) ||
     null;
 
+  var summaryMax = 160;
+  function ministrySummary(m) {
+    var raw = String((m && (m.summary || m.description)) || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return '';
+    return raw.length <= summaryMax ? raw : (raw.slice(0, summaryMax - 1) + '…');
+  }
+
   var audienceGroups = [];
   var audienceSeen = {};
   ministries.forEach(function (m) {
@@ -79,7 +86,7 @@
       </h2>
       <ul class="bb-tp-ministry-grid bb-tp-ministry-grid--featured">
         <% featured.forEach(function (ministry, index) { %>
-        <li class="bb-tp-ministry-card<%= index === 0 ? ' bb-tp-ministry-card--featured' : '' %>" data-bb-ministry-card="1">
+        <li class="bb-tp-ministry-card" data-bb-ministry-card="1">
           <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
             <% if (ministry.imageUrl) { %>
             <img
@@ -114,10 +121,9 @@
               }) %>
               <% } %>
             </h3>
-            <% if (ministry.summary) { %>
-            <p class="bb-tp-ministry-card__summary"><%= ministry.summary %></p>
-            <% } else if (ministry.description) { %>
-            <p class="bb-tp-ministry-card__summary"><%= ministry.description %></p>
+            <% var featuredSummary = ministrySummary(ministry); %>
+            <% if (featuredSummary) { %>
+            <p class="bb-tp-ministry-card__summary"><%= featuredSummary %></p>
             <% } %>
             <% if (ministry.meetingDay) { %>
             <p class="bb-tp-meta">
@@ -192,8 +198,9 @@
               }) %>
               <% } %>
             </h3>
-            <% if (ministry.summary || ministry.description) { %>
-            <p class="bb-tp-ministry-card__summary"><%= ministry.summary || ministry.description %></p>
+            <% var moreSummary = ministrySummary(ministry); %>
+            <% if (moreSummary) { %>
+            <p class="bb-tp-ministry-card__summary"><%= moreSummary %></p>
             <% } %>
             <% if (ministry.meetingDay) { %>
             <p class="bb-tp-meta">

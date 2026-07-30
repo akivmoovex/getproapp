@@ -2369,7 +2369,7 @@ function createContentAdminRouter(deps) {
       }
 
       model.websiteAdmin = null;
-      model.cssHref = "/blessboard/v5/tenant-public.css?v=46";
+      model.cssHref = "/blessboard/v5/tenant-public.css?v=51";
       const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });
@@ -2502,8 +2502,12 @@ function entityPatchFromBody(routeKey, body) {
         ...base,
         methodType: body.method_type,
         label: body.label,
+        description: body.description,
+        accountDetails: body.account_details,
         instructions: body.instructions,
         externalUrl: body.external_url,
+        buttonLabel: body.button_label,
+        qrImageUrl: body.qr_image_url,
       };
     default:
       return base;

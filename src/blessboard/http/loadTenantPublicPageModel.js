@@ -415,37 +415,39 @@ function mapContact(row) {
   };
 }
 
+/**
+ * Scrub private auth/credential material from published giving copy.
+ * Legitimate payment instructions (IBAN, account numbers, mobile-money wallets,
+ * SWIFT/BIC, routing numbers) must remain visible — that is the point of this page.
+ * Only strip PINs, passwords, card PANs / CVV, and login credentials.
+ * @param {string} text
+ * @returns {string}
+ */
+function scrubGivingSecrets(text) {
+  if (!text) return "";
+  let out = String(text);
+  out = out.replace(
+    /\b((?:pin|password|passwd|passcode|cvv|cvc|cid|security\s*code)\b\s*[:=]?\s*)\S+/gi,
+    "$1[redacted]"
+  );
+  out = out.replace(/\b((?:login|username|user\s*name)\b\s*[:=]\s*)\S+/gi, "$1[redacted]");
+  out = out.replace(
+    /\b((?:card\s*(?:number|#|no\.?)\b|visa|mastercard|amex)\b[^\d\n]{0,24})(?:\d[ -]*){13,19}/gi,
+    "$1[redacted]"
+  );
+  return out;
+}
+
 function mapGiving(row) {
-  let instructions = row.instructions != null ? String(row.instructions) : "";
-  let accountDetails =
+  const instructionsRaw = row.instructions != null ? String(row.instructions) : "";
+  const accountDetailsRaw =
     row.accountDetails != null
       ? String(row.accountDetails)
       : row.account_details != null
         ? String(row.account_details)
         : "";
-  const markedDemo =
-    /\[Demo\]/i.test(instructions) ||
-    /\bDEMO\b/.test(instructions) ||
-    /TEST ONLY/i.test(instructions) ||
-    /fictional/i.test(instructions) ||
-    /\[Demo\]/i.test(accountDetails) ||
-    /\bDEMO\b/.test(accountDetails);
-  const looksSensitive = (text) =>
-    Boolean(
-      text &&
-        (/\bIBAN\b/i.test(text) ||
-          /\bSWIFT\b/i.test(text) ||
-          /\brouting\s*#?\s*\d{9}\b/i.test(text) ||
-          /\b\d{8,17}\b/.test(text.replace(/DEMO[-0-9]*/gi, "")))
-    );
-  // Never surface credential-like strings that are not clearly demo/test copy.
-  if (instructions && !markedDemo && looksSensitive(instructions)) {
-    instructions =
-      "Contact the church office for published giving instructions. Account details are not shown on this page.";
-  }
-  if (accountDetails && !markedDemo && looksSensitive(accountDetails)) {
-    accountDetails = "";
-  }
+  const instructions = scrubGivingSecrets(instructionsRaw);
+  const accountDetails = scrubGivingSecrets(accountDetailsRaw);
   const qrRaw = row.qrImageUrl || row.qr_image_url || null;
   let qrImageUrl = null;
   if (qrRaw) {
@@ -456,6 +458,12 @@ function mapGiving(row) {
       qrImageUrl = safeExternalUrl(asPath);
     }
   }
+  const branchId =
+    row.branchId != null
+      ? row.branchId
+      : row.branch_id != null
+        ? row.branch_id
+        : null;
   return {
     id: row.id || null,
     methodType: row.methodType,
@@ -468,6 +476,9 @@ function mapGiving(row) {
     qrImageUrl,
     sortOrder: row.sortOrder != null ? row.sortOrder : 0,
     icon: methodIcon(row.methodType),
+    branchId: branchId || null,
+    /** Per-method scope when the row carries a branch; else church-wide. */
+    scope: branchId ? "branch" : "church",
   };
 }
 
@@ -908,7 +919,8 @@ async function loadTenantPublicPageModel(db, input) {
       contentAdmin.listAdminMinistries,
       mapMinistry
     );
-    homeTeasers.ministries = (ministries.items || []).slice(0, 4);
+    // Homepage teasers: featured subsets only (Stitch Phase 7 density).
+    homeTeasers.ministries = (ministries.items || []).slice(0, 3);
 
     const leaders = await loadEntityList(
       listPublishedLeaders,
@@ -923,14 +935,14 @@ async function loadTenantPublicPageModel(db, input) {
       (row) => mapEvent(row, canonicalTimezone),
       (items) => preparePublicEvents(items)
     );
-    homeTeasers.events = (events.items || []).slice(0, 3);
+    homeTeasers.events = (events.items || []).slice(0, 2);
 
     const sermons = await loadEntityList(
       listPublishedSermons,
       contentAdmin.listAdminSermons,
       mapSermon
     );
-    homeTeasers.sermons = (sermons.items || []).slice(0, 3);
+    homeTeasers.sermons = (sermons.items || []).slice(0, 1);
   }
 
   const dataEnvironment = tenant.church.dataEnvironment || null;
@@ -1183,7 +1195,11 @@ async function loadTenantPublicPageModel(db, input) {
       assistanceContact: demoPack.givingPage.assistanceContact,
     });
     if (!entities.length) {
-      entities = demoPack.givingMethods.slice();
+      entities = demoPack.givingMethods.map((m) => ({
+        ...m,
+        scope: "church",
+        branchId: null,
+      }));
       usedPublicDemoFill = true;
     }
     showEmptyState = false;
@@ -1360,7 +1376,7 @@ async function loadTenantPublicPageModel(db, input) {
     portalLabel: null,
     apexHref: "https://blessboard.org/",
     visitHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=46",
+    cssHref: "/blessboard/v5/tenant-public.css?v=51",
     pathPrefix,
     homeHref: pathPrefix || "/",
     churchHomeHref,

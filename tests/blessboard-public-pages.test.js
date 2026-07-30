@@ -186,7 +186,7 @@ describe("blessboard public pages", () => {
       assert.match(res.text, /bb-tp-nav/);
       assert.match(res.text, /bb-tp-footer/);
       assert.match(res.text, /href="\/login"/);
-      assert.doesNotMatch(res.text, /\/hq|\/branch-admin|\/admin/i);
+      assert.doesNotMatch(res.text, /href="\/hq(?:\/[^"]*)?"|href="\/branch-admin|href="\/admin(?:\/[^"]*)?"/i);
       assert.doesNotMatch(res.text, new RegExp(churchA.id, "i"));
     }
   });
@@ -504,7 +504,9 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /Youth Ministry/);
     assert.match(res.text, /Music Ministry/);
     assert.match(res.text, /Fridays/);
-    assert.match(res.text, /bb-tp-ministry-card--featured/);
+    assert.match(res.text, /bb-tp-ministry-card/);
+    assert.match(res.text, /bb-tp-ministry-grid--featured/);
+    assert.doesNotMatch(res.text, /bb-tp-ministry-card--featured/);
     assert.match(res.text, /Find Your Place in the Mission|Still looking for your place\?/);
     assert.doesNotMatch(res.text, /Draft Choir|Hidden draft ministry/);
     assert.doesNotMatch(res.text, /download|View Schedule|Contact Leader|Learn More|Join Team/i);
@@ -1117,7 +1119,42 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /data-bb-giving-accountability="1"/);
     assert.match(res.text, /Instructions/);
     assert.match(res.text, /Open published link/);
-    assert.match(res.text, /Contact for details/);
+    // Sunday Offering has instructions but no usable URL — do not swap in generic CTA copy.
+    assert.doesNotMatch(res.text, /Contact for details/);
+    assert.match(res.text, /data-bb-giving-scope-label="1"/);
+    assert.match(res.text, /Church-wide|This branch/);
+    assert.match(res.text, /data-bb-giving-disclaimer="1"/);
+    assert.match(res.text, /option(?:s)? available/i);
+    assert.doesNotMatch(res.text, /data-bb-giving-editor=/);
+    assert.doesNotMatch(res.text, /data-bb-giving-card-edit=/);
+    assert.doesNotMatch(res.text, /data-bb-copy-ref=/);
+
+    const bankDetailed = await createGivingMethod(pool, {
+      churchId: churchA.id,
+      methodType: "bank_transfer",
+      label: "Zanaco Transfer",
+      description: "Direct deposit to the church operations account.",
+      accountDetails: "Account Name: Demo Church\nAccount Number: 582100004567890",
+      instructions: "Include your name in the transfer memo.",
+      qrImageUrl: "/church/images/giving/giving-qr-demo.png",
+      buttonLabel: "",
+      status: "published",
+    });
+    assert.equal(bankDetailed.ok, true, bankDetailed.reason);
+    const detailed = await request(app).get("/giving").set("Host", HOST_A);
+    assert.equal(detailed.status, 200);
+    assert.match(detailed.text, /Zanaco Transfer/);
+    assert.match(detailed.text, /data-bb-giving-account="1"/);
+    assert.match(detailed.text, /Account Name/);
+    assert.match(detailed.text, /582100004567890/);
+    assert.match(detailed.text, /data-bb-copy-ref="1"/);
+    assert.match(detailed.text, /data-bb-giving-qr="1"/);
+    assert.match(detailed.text, /alt="QR code for Zanaco Transfer"/);
+    assert.match(detailed.text, /Direct deposit to the church operations account/);
+    assert.doesNotMatch(detailed.text, /data-bb-giving-editor=/);
+    // Long refs must remain selectable / wrappable — no fixed card height lock-in.
+    assert.match(detailed.text, /bb-tp-giving-card__ref-text/);
+
     assert.doesNotMatch(res.text, /Draft Bank|Hidden draft account/);
     assert.doesNotMatch(res.text, /javascript:alert/);
     assert.doesNotMatch(res.text, /<form|card number|cvv|iban|account number|donate now amount|Give Online|Donate Now/i);
@@ -1377,6 +1414,8 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /Get in Touch|data-bb-home-contact/);
     assert.match(res.text, /Plan Your Visit/);
     assert.match(res.text, /bb-tp-hero--phase7|data-bb-home-hero="1"/);
+    assert.doesNotMatch(res.text, /data-bb-inline-edit/);
+    assert.doesNotMatch(res.text, /website-inline-edit\.js|website-structured-edit\.js/);
     const orderKeys = [
       "data-bb-home-hero=",
       "data-bb-home-service-times=",
@@ -1385,6 +1424,7 @@ describe("blessboard public pages", () => {
       "data-bb-home-events=",
       "data-bb-home-sermons=",
       "data-bb-home-leadership=",
+      "data-bb-cta-band=",
       "data-bb-home-contact=",
     ];
     let lastIdx = -1;
@@ -1393,6 +1433,8 @@ describe("blessboard public pages", () => {
       assert.ok(idx > lastIdx, `home section order: ${key}`);
       lastIdx = idx;
     }
+    // Welcome + about both populated would duplicate intro; about should stay off.
+    assert.doesNotMatch(res.text, /data-bb-home-about="1"/);
     assert.doesNotMatch(res.text, /data-bb-preview-banner/);
     assert.doesNotMatch(res.text, /1\.2k\+|Active Members|\d+\+\s*Ministries/i);
   });
@@ -1901,14 +1943,31 @@ describe("blessboard public pages", () => {
     assert.match(giveRes.text, /DEMO-00-0000/);
     assert.doesNotMatch(giveRes.text, /\bcheckout\b|\bcard number\b/i);
 
-    const redacted = mapGiving({
+    const publishedBank = mapGiving({
       methodType: "bank_transfer",
       label: "Bank",
+      description: "Sunday offering account",
+      accountDetails: "IBAN DE89370400440532013000 · routing 123456789",
       instructions: "Send to IBAN DE89370400440532013000 routing 123456789",
       externalUrl: null,
     });
-    assert.match(redacted.instructions, /Contact the church office/);
-    assert.doesNotMatch(redacted.instructions, /DE89370400440532013000/);
+    assert.equal(publishedBank.description, "Sunday offering account");
+    assert.match(publishedBank.accountDetails, /DE89370400440532013000/);
+    assert.match(publishedBank.instructions, /DE89370400440532013000/);
+    assert.doesNotMatch(publishedBank.instructions, /Contact the church office/);
+
+    const scrubbedSecrets = mapGiving({
+      methodType: "online",
+      label: "Portal",
+      accountDetails: "PIN: 1234 password: secretlogin",
+      instructions: "Login: admin password: hunter2 card number 4111111111111111",
+      externalUrl: null,
+    });
+    assert.match(scrubbedSecrets.accountDetails, /\[redacted\]/);
+    assert.doesNotMatch(scrubbedSecrets.accountDetails, /1234/);
+    assert.match(scrubbedSecrets.instructions, /\[redacted\]/);
+    assert.doesNotMatch(scrubbedSecrets.instructions, /hunter2/);
+    assert.doesNotMatch(scrubbedSecrets.instructions, /4111111111111111/);
 
     await pool.query(
       `UPDATE blessboard.ministries SET status = 'draft' WHERE church_id = $1 AND status = 'published'`,
@@ -1988,7 +2047,7 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /Plan Your Visit/);
     assert.match(home.text, /Quick Links/);
     assert.match(home.text, /Powered by BlessBoard/);
-    assert.match(home.text, /tenant-public\.css\?v=46/);
+    assert.match(home.text, /tenant-public\.css\?v=51/);
     assert.doesNotMatch(home.text, /data-bb-preview-banner/);
     assert.doesNotMatch(home.text, /Back to content admin|Edit page/);
     assert.doesNotMatch(home.text, /href="\/hq"|href="\/admin"|bb-ca-preview/);
@@ -2055,7 +2114,7 @@ describe("blessboard public pages", () => {
     const homeRes = await request(app).get("/").set("Host", HOST_A);
     assert.equal(homeRes.status, 200);
     assert.match(homeRes.text, /Faith, Community and Hope|A Place for Growth/);
-    assert.match(homeRes.text, /tenant-public\.css\?v=44/);
+    assert.match(homeRes.text, /tenant-public\.css\?v=51/);
     assert.doesNotMatch(homeRes.text, /A Place for Growth & Community/);
 
     await pool.query(

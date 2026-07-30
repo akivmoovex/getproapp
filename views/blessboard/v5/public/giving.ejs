@@ -2,6 +2,7 @@
   Phase 7 — Church Website Giving (Desktop; responsive).
   Stitch: e4fe61fbb9eb4b0987ca150d078aa76c
   Published methods only. No payment processing, checkout, or fabricated credentials.
+  Method-card detail states also follow church-flow giving-information (account rows + QR).
 %>
 <%
   var demoFb =
@@ -34,6 +35,8 @@
   var stewardshipHeading = (demoFb && demoFb.stewardshipHeading) || 'Stewardship and Support';
   var stewardshipBody = (demoFb && demoFb.stewardshipBody) || '';
   var assistanceContact = (demoFb && demoFb.assistanceContact) || '';
+  var editing =
+    typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
 
   function methodTypeLabel(type) {
     var t = String(type || '').toLowerCase();
@@ -44,6 +47,76 @@
     if (t.indexOf('cash') >= 0 || t.indexOf('offering') >= 0 || t.indexOf('person') >= 0) return 'In person';
     if (t.indexOf('online') >= 0 || t.indexOf('card') >= 0 || t.indexOf('pay') >= 0) return 'External link';
     return 'Giving method';
+  }
+
+  function methodScopeLabel(method) {
+    if (method && method.scope === 'branch') return 'This branch';
+    if (method && method.branchId) return 'This branch';
+    return 'Church-wide';
+  }
+
+  /** Prefer copying short payment references; skip long prose. */
+  function isCopyableReference(value) {
+    var s = String(value || '').trim();
+    if (s.length < 4 || s.length > 96) return false;
+    if (s.split(/\s+/).length > 8) return false;
+    if (/\[redacted\]/i.test(s)) return false;
+    return /[0-9]{4,}/.test(s) || /^[A-Z]{2}\d{2}/i.test(s) || /@/.test(s);
+  }
+
+  function parseAccountRows(text) {
+    var rows = [];
+    String(text || '')
+      .split(/\n+/)
+      .forEach(function (line) {
+        line = String(line || '').trim();
+        if (!line) return;
+        var m = line.match(/^([^:：|]{1,48})\s*[:：|]\s*(.+)$/);
+        if (m) {
+          rows.push({
+            label: String(m[1] || '').trim(),
+            value: String(m[2] || '').trim(),
+            copyable: isCopyableReference(m[2])
+          });
+          return;
+        }
+        var parts = line.split(/\s*·\s*/).filter(Boolean);
+        if (parts.length > 1 && parts.length <= 4) {
+          parts.forEach(function (part) {
+            var pm = String(part).match(/^([^:：]{1,32})\s*[:：]\s*(.+)$/);
+            if (pm) {
+              rows.push({
+                label: String(pm[1] || '').trim(),
+                value: String(pm[2] || '').trim(),
+                copyable: isCopyableReference(pm[2])
+              });
+            } else {
+              rows.push({
+                label: null,
+                value: String(part).trim(),
+                copyable: isCopyableReference(part)
+              });
+            }
+          });
+          return;
+        }
+        rows.push({
+          label: null,
+          value: line,
+          copyable: isCopyableReference(line)
+        });
+      });
+    return rows;
+  }
+
+  function methodHasPublicDetail(method) {
+    return Boolean(
+      (method && method.accountDetails) ||
+        (method && method.instructions) ||
+        (method && method.qrImageUrl) ||
+        (method && method.description) ||
+        (method && method.externalUrl)
+    );
   }
 %>
 
@@ -69,7 +142,7 @@
   }) %>
   <div class="bb-tp-giving-hero-marker" data-bb-giving-hero="1" hidden></div>
 
-  <div class="bb-tp-container bb-tp-directory__body">
+  <div class="bb-tp-container bb-tp-directory__body bb-tp-giving__body">
     <aside class="bb-tp-giving-notice" role="note" data-bb-giving-notice="1">
       <span class="material-symbols-outlined" aria-hidden="true">info</span>
       <p>
@@ -95,87 +168,157 @@
     </section>
     <% } %>
 
-    <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-    <p class="bb-tp-edit-collection-actions">
-      <%- include('../partials/structured-edit-trigger', {
-        editKind: 'giving_method',
-        editEntityKey: 'new-' + Date.now(),
-        editLabel: 'Add giving method',
-        editPayload: {
-          methodType: 'bank_transfer',
-          label: '',
-          description: '',
-          accountDetails: '',
-          instructions: '',
-          externalUrl: '',
-          buttonLabel: 'Open published link',
-          qrImageUrl: '',
-          visible: true,
-          sortOrder: 100
-        }
-      }) %>
-      <span class="bb-tp-se-hint">Add giving method</span>
-    </p>
+    <% if (editing) { %>
+    <div class="bb-tp-giving-editor-bar" data-bb-giving-editor="1" role="region" aria-label="Giving method editor">
+      <p class="bb-tp-giving-editor-bar__title">Edit giving methods</p>
+      <p class="bb-tp-giving-editor-bar__hint">Add, edit, or reorder published methods. Visitors never see these controls.</p>
+      <p class="bb-tp-edit-collection-actions">
+        <%- include('../partials/structured-edit-trigger', {
+          editKind: 'giving_method',
+          editEntityKey: 'new-' + Date.now(),
+          editLabel: 'Add giving method',
+          editPayload: {
+            methodType: 'bank_transfer',
+            label: '',
+            description: '',
+            accountDetails: '',
+            instructions: '',
+            externalUrl: '',
+            buttonLabel: 'Open published link',
+            qrImageUrl: '',
+            visible: true,
+            sortOrder: 100
+          }
+        }) %>
+        <span class="bb-tp-se-hint">Add giving method</span>
+      </p>
+    </div>
     <% } %>
+
     <% if (methods.length) { %>
     <section id="ways-to-give" class="bb-tp-giving-methods" aria-labelledby="ways-to-give-heading" data-bb-giving-methods="1">
       <div class="bb-tp-giving-methods__head">
-        <h2 id="ways-to-give-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Ways to Give</h2>
+        <div class="bb-tp-giving-methods__title-row">
+          <h2 id="ways-to-give-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Ways to Give</h2>
+          <p class="bb-tp-giving-methods__count" data-bb-giving-method-count="<%= methods.length %>">
+            <%= methods.length %> option<%= methods.length === 1 ? '' : 's' %> available
+          </p>
+        </div>
         <p class="bb-tp-giving-methods__note">
           Methods published by <%= publicName %>. Follow the instructions below, or contact the church office if you need help.
         </p>
       </div>
       <ul class="bb-tp-giving-grid">
         <% methods.forEach(function (method) { %>
-        <li class="bb-tp-giving-card" data-bb-giving-method="<%= method.methodType || 'other' %>" data-bb-giving-id="<%= method.id || '' %>">
-          <span class="bb-tp-giving-card__icon" aria-hidden="true">
-            <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
-          </span>
+        <%
+          var accountRows = method.accountDetails ? parseAccountRows(method.accountDetails) : [];
+          var scopeLabel = methodScopeLabel(method);
+          var showContactFallback = !methodHasPublicDetail(method);
+        %>
+        <li
+          class="bb-tp-giving-card<%= method.qrImageUrl ? ' bb-tp-giving-card--has-qr' : '' %><%= method.accountDetails ? ' bb-tp-giving-card--has-account' : '' %>"
+          data-bb-giving-method="<%= method.methodType || 'other' %>"
+          data-bb-giving-id="<%= method.id || '' %>"
+          data-bb-giving-scope="<%= method.scope || (method.branchId ? 'branch' : 'church') %>"
+        >
+          <header class="bb-tp-giving-card__head">
+            <span class="bb-tp-giving-card__icon" aria-hidden="true">
+              <span class="material-symbols-outlined"><%= method.icon || 'payments' %></span>
+            </span>
+            <div class="bb-tp-giving-card__titles">
+              <p class="bb-tp-giving-card__type"><%= methodTypeLabel(method.methodType) %></p>
+              <h3 class="bb-tp-giving-card__label"><%= method.label %></h3>
+              <p class="bb-tp-giving-card__scope" data-bb-giving-scope-label="1"><%= scopeLabel %></p>
+            </div>
+          </header>
+
           <div class="bb-tp-giving-card__body">
-            <p class="bb-tp-giving-card__type"><%= methodTypeLabel(method.methodType) %></p>
-            <h3 class="bb-tp-giving-card__label"><%= method.label %></h3>
             <% if (method.description) { %>
-            <p class="bb-tp-giving-card__description"><%= method.description %></p>
+            <p class="bb-tp-giving-card__description" data-bb-giving-description="1"><%= method.description %></p>
             <% } %>
-            <% if (method.accountDetails) { %>
+
+            <% if (accountRows.length) { %>
             <div class="bb-tp-giving-card__account" data-bb-giving-account="1">
-              <p class="bb-tp-giving-card__instructions-label">Payment details</p>
-              <p class="bb-tp-giving-card__instructions-body"><%= method.accountDetails %></p>
+              <p class="bb-tp-giving-card__block-label">Payment details</p>
+              <dl class="bb-tp-giving-card__refs">
+                <% accountRows.forEach(function (row, rowIdx) { %>
+                <div class="bb-tp-giving-card__ref">
+                  <% if (row.label) { %>
+                  <dt class="bb-tp-giving-card__ref-label"><%= row.label %></dt>
+                  <% } else { %>
+                  <dt class="bb-tp-giving-card__ref-label bb-tp-giving-card__ref-label--sr">Reference <%= rowIdx + 1 %></dt>
+                  <% } %>
+                  <dd class="bb-tp-giving-card__ref-value">
+                    <span class="bb-tp-giving-card__ref-text" data-bb-giving-ref="1"><%= row.value %></span>
+                    <% if (row.copyable) { %>
+                    <button
+                      type="button"
+                      class="bb-tp-giving-card__copy"
+                      data-bb-copy-ref="1"
+                      aria-label="Copy <%= row.label || 'payment reference' %>"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+                      <span class="bb-tp-giving-card__copy-text">Copy</span>
+                    </button>
+                    <% } %>
+                  </dd>
+                </div>
+                <% }) %>
+              </dl>
+            </div>
+            <% } else if (method.accountDetails) { %>
+            <div class="bb-tp-giving-card__account" data-bb-giving-account="1">
+              <p class="bb-tp-giving-card__block-label">Payment details</p>
+              <p class="bb-tp-giving-card__instructions-body" data-bb-giving-ref="1"><%= method.accountDetails %></p>
             </div>
             <% } %>
+
             <% if (method.instructions) { %>
             <div class="bb-tp-giving-card__instructions" data-bb-giving-instructions="1">
-              <p class="bb-tp-giving-card__instructions-label">Instructions</p>
+              <p class="bb-tp-giving-card__block-label">Instructions</p>
               <p class="bb-tp-giving-card__instructions-body"><%= method.instructions %></p>
             </div>
             <% } %>
+
             <% if (method.qrImageUrl) { %>
-            <p class="bb-tp-giving-card__qr">
-              <img src="<%= method.qrImageUrl %>" alt="QR code for <%= method.label %>" width="160" height="160" loading="lazy" decoding="async" />
-            </p>
+            <figure class="bb-tp-giving-card__qr" data-bb-giving-qr="1">
+              <img
+                src="<%= method.qrImageUrl %>"
+                alt="QR code for <%= method.label %>"
+                width="144"
+                height="144"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption class="bb-tp-giving-card__qr-caption">Scan to open this method</figcaption>
+            </figure>
             <% } %>
-            <% if (method.externalUrl) { %>
-            <p class="bb-tp-giving-card__action">
-              <a
-                class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block"
-                href="<%= method.externalUrl %>"
-                rel="noopener noreferrer"
-                target="_blank"
-                data-bb-giving-link="1"
-                aria-label="<%= method.buttonLabel || 'Open published link' %> for <%= method.label %> (opens in a new tab)"
-              >
-                <%= method.buttonLabel || 'Open published link' %>
-                <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-              </a>
-            </p>
-            <% } else { %>
-            <p class="bb-tp-giving-card__action">
-              <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="<%= hrefFor('/contact') %>">
-                Contact for details
-              </a>
-            </p>
-            <% } %>
-            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          </div>
+
+          <% if (method.externalUrl) { %>
+          <p class="bb-tp-giving-card__action">
+            <a
+              class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block"
+              href="<%= method.externalUrl %>"
+              rel="noopener noreferrer"
+              target="_blank"
+              data-bb-giving-link="1"
+              aria-label="<%= method.buttonLabel || 'Open published link' %> for <%= method.label %> (opens in a new tab)"
+            >
+              <%= method.buttonLabel || 'Open published link' %>
+              <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+            </a>
+          </p>
+          <% } else if (showContactFallback) { %>
+          <p class="bb-tp-giving-card__action">
+            <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block" href="<%= hrefFor('/contact') %>">
+              Contact for details
+            </a>
+          </p>
+          <% } %>
+
+          <% if (editing) { %>
+          <div class="bb-tp-giving-card__edit" data-bb-giving-card-edit="1">
             <%- include('../partials/structured-edit-trigger', {
               editKind: 'giving_method',
               editEntityKey: method.id || ('method-' + (method.label || 'new')),
@@ -193,11 +336,13 @@
                 sortOrder: method.sortOrder != null ? method.sortOrder : 10
               }
             }) %>
-            <% } %>
+            <span class="bb-tp-se-hint">Edit method</span>
           </div>
+          <% } %>
         </li>
         <% }) %>
       </ul>
+      <div class="bb-tp-sr-only" aria-live="polite" data-bb-copy-status="1"></div>
     </section>
     <% } else if (entitiesEmptyMessage) { %>
     <p class="bb-tp-lead" role="status"><%= entitiesEmptyMessage %></p>
@@ -222,7 +367,7 @@
       <% } %>
     </section>
 
-    <p class="bb-tp-giving-disclaimer" role="note">
+    <p class="bb-tp-giving-disclaimer" role="note" data-bb-giving-disclaimer="1">
       BlessBoard does not process payments or collect financial account details on this page. Use only the published methods above, or contact the church office for help.
     </p>
 

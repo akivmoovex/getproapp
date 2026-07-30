@@ -32,6 +32,13 @@
   var featuredParts = featured
     ? formatEventParts(featured.startsAt, featured.timezone, featured.endsAt)
     : null;
+
+  var summaryMax = 140;
+  function eventSummary(text) {
+    var raw = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return '';
+    return raw.length <= summaryMax ? raw : (raw.slice(0, summaryMax - 1) + '…');
+  }
 %>
 
 <section
@@ -114,8 +121,9 @@
             }) %>
             <% } %>
           </h3>
-          <% if (featured.summary) { %>
-          <p class="bb-tp-body"><%= featured.summary %></p>
+          <% var featuredSummary = eventSummary(featured.summary); %>
+          <% if (featuredSummary) { %>
+          <p class="bb-tp-body bb-tp-featured-event__summary"><%= featuredSummary %></p>
           <% } %>
           <% if (featured.location) { %>
           <p class="bb-tp-meta">
@@ -183,9 +191,12 @@
           </div>
           <div class="bb-tp-event-card__body">
             <h3 class="bb-tp-event-card__title"><%= event.title %></h3>
-            <% if (event.summary) { %>
-            <p class="bb-tp-event-card__summary"><%= event.summary %></p>
+            <% var cardSummary = eventSummary(event.summary); %>
+            <% if (cardSummary) { %>
+            <p class="bb-tp-event-card__summary"><%= cardSummary %></p>
             <% } %>
+            <% if (parts.timeRange || parts.full || event.location) { %>
+            <div class="bb-tp-event-card__facts">
             <% if (parts.timeRange || parts.full) { %>
             <p class="bb-tp-meta" data-bb-event-when="1">
               <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
@@ -197,6 +208,8 @@
               <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
               <%= event.location %>
             </p>
+            <% } %>
+            </div>
             <% } %>
             <% if (event.organizer) { %>
             <p class="bb-tp-meta">

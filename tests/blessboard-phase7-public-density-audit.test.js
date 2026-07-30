@@ -36,7 +36,7 @@ const ROOT = path.join(__dirname, "..");
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
-const CSS_VERSION = "46";
+const CSS_VERSION = "51";
 
 const PUBLIC_PAGES = Object.freeze([
   { key: "home", suffix: "", stitch: "phase7-v1", headingHint: /Welcome|Church|Home/i },
@@ -70,7 +70,7 @@ function baseEnv(overrides) {
 }
 
 describe("Phase 7 density audit — CSS and inventory contracts", () => {
-  it("cache-bust version is 44 after density pass", () => {
+  it("cache-bust version is 51 after Prompt 5 density pass", () => {
     assert.match(read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
     assert.match(read("src/blessboard/http/loadTenantPublicPageModel.js"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
     assert.match(read("src/blessboard/http/attachWebsiteAdminChrome.js"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
@@ -103,18 +103,17 @@ describe("Phase 7 density audit — CSS and inventory contracts", () => {
     assert.match(css, /\.bb-tp-hero--phase7[\s\S]*?min-height:\s*min\(52vh,\s*28rem\)/);
     assert.doesNotMatch(css, /min-height:\s*min\(72vh,\s*40rem\)/);
     assert.doesNotMatch(css, /min-height:\s*min\(68vh,\s*34rem\)/);
-    assert.match(css, /min-height:\s*min\(48vh,\s*24rem\)/);
   });
 
-  it("home section bands use controlled desktop padding (3.5rem / 56px)", () => {
+  it("home section bands use controlled desktop padding (2.75rem denser rhythm)", () => {
     const css = read("public/blessboard/v5/tenant-public.css");
     assert.match(
       css,
-      /\.bb-tp-home-welcome,[\s\S]*?\.bb-tp-home-contact\s*\{[\s\S]*?padding:\s*2\.75rem\s+0/
+      /\.bb-tp-home-welcome,[\s\S]*?\.bb-tp-home-contact\s*\{[\s\S]*?padding:\s*2rem\s+0/
     );
     assert.match(
       css,
-      /@media \(min-width: 900px\)\s*\{[\s\S]*?\.bb-tp-home-welcome,[\s\S]*?padding:\s*3\.5rem\s+0/
+      /@media \(min-width: 900px\)\s*\{[\s\S]*?\.bb-tp-home-welcome,[\s\S]*?padding:\s*2\.75rem\s+0/
     );
   });
 

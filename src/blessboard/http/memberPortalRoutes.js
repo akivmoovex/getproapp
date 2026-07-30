@@ -27,13 +27,13 @@ const {
   STATUS: PORTAL_STATUS,
 } = require("../services/memberPortalService");
 const { listPublishedGivingMethods } = require("../services/publicContentReadService");
+const { mapGiving } = require("./loadTenantPublicPageModel");
 const { listMemberAnnouncements } = require("../services/announcementsService");
 const {
   listMemberEvents,
   listMemberMinistries,
 } = require("../services/participationService");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
-const { safeExternalUrl } = require("./tenantPublicSafe");
 const {
   buildMemberShellLocals,
   PORTAL_MODULES,
@@ -216,14 +216,21 @@ function givingMethodTypeLabel(methodType) {
  * @param {object[]} items
  */
 function mapMemberGivingMethods(items) {
-  return (items || []).map((row) => ({
-    methodType: row.methodType,
-    typeLabel: givingMethodTypeLabel(row.methodType),
-    label: row.label,
-    instructions: row.instructions,
-    externalUrl: safeExternalUrl(row.externalUrl),
-    icon: givingMethodIcon(row.methodType),
-  }));
+  return (items || []).map((row) => {
+    const mapped = mapGiving(row);
+    return {
+      methodType: mapped.methodType,
+      typeLabel: givingMethodTypeLabel(mapped.methodType),
+      label: mapped.label,
+      description: mapped.description,
+      accountDetails: mapped.accountDetails,
+      instructions: mapped.instructions,
+      externalUrl: mapped.externalUrl,
+      buttonLabel: mapped.buttonLabel,
+      qrImageUrl: mapped.qrImageUrl,
+      icon: mapped.icon || givingMethodIcon(mapped.methodType),
+    };
+  });
 }
 
 /**

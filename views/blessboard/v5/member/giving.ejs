@@ -58,11 +58,25 @@
           <p class="bb-mp-giving-card__type"><%= method.typeLabel %></p>
           <% } %>
           <h3 class="bb-mp-giving-card__label"><%= method.label %></h3>
+          <% if (method.description) { %>
+          <p class="bb-mp-giving-card__description"><%= method.description %></p>
+          <% } %>
+          <% if (method.accountDetails) { %>
+          <div class="bb-mp-giving-card__account" data-bb-giving-account="1">
+            <p class="bb-mp-giving-card__instructions-label">Payment details</p>
+            <p class="bb-mp-giving-card__instructions-body"><%= method.accountDetails %></p>
+          </div>
+          <% } %>
           <% if (method.instructions) { %>
           <div class="bb-mp-giving-card__instructions" data-bb-giving-instructions="1">
             <p class="bb-mp-giving-card__instructions-label">Instructions</p>
             <p class="bb-mp-giving-card__instructions-body"><%= method.instructions %></p>
           </div>
+          <% } %>
+          <% if (method.qrImageUrl) { %>
+          <p class="bb-mp-giving-card__qr">
+            <img src="<%= method.qrImageUrl %>" alt="QR code for <%= method.label %>" width="160" height="160" loading="lazy" decoding="async" />
+          </p>
           <% } %>
           <% if (method.externalUrl) { %>
           <p class="bb-mp-giving-card__action">
@@ -72,9 +86,9 @@
               rel="noopener noreferrer"
               target="_blank"
               data-bb-giving-link="1"
-              aria-label="Open published giving link for <%= method.label %> (opens in a new tab)"
+              aria-label="<%= method.buttonLabel || 'Open published link' %> for <%= method.label %> (opens in a new tab)"
             >
-              Open published link
+              <%= method.buttonLabel || 'Open published link' %>
               <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
             </a>
           </p>
