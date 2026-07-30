@@ -554,6 +554,9 @@ describe("registration approval without password (Prompt 49)", () => {
       .set("Host", APEX);
     assert.equal(page.status, 200);
     assert.match(page.text, /password|Choose a password/i);
+    assert.match(page.text, /Set password &amp; join/);
+    assert.doesNotMatch(page.text, /Set password &amp;amp; join/);
+    assert.doesNotMatch(page.text, /Set password & join/);
   });
 
   it("19–20. Maintenance phrase still present; self-service still requires password", async () => {
