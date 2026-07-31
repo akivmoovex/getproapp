@@ -237,13 +237,6 @@ async function createBlessBoardBranch(db, input) {
       return { ok: false, status: STATUS.LOOKUP_ERROR, branch: null, reason: "settings" };
     }
 
-    await ensureBranchWebsiteGovernance(client, {
-      organizationId,
-      churchId,
-      branchId: branch.id,
-      updatedBy: actorUserId || null,
-    });
-
     const limitSource = maxBranchesSource(gate);
     await recordBlessBoardAudit(client, {
       churchId,
@@ -264,6 +257,46 @@ async function createBlessBoardBranch(db, input) {
     });
 
     await client.query("COMMIT");
+
+    // Defense against aborted-transaction false success: node-pg can report COMMIT
+    // success after an earlier statement error while PostgreSQL has rolled back.
+    const persisted = await db.query(
+      `SELECT id FROM blessboard.branches WHERE id = $1 AND church_id = $2 LIMIT 1`,
+      [branch.id, churchId]
+    );
+    if (!persisted.rows[0]) {
+      await auditBranchCreateOutcome(db, {
+        churchId,
+        organizationId,
+        actorUserId,
+        branchKey,
+        outcome: "failure",
+        reasonCode: "branch_not_persisted",
+        statusCode: STATUS.LOOKUP_ERROR,
+      });
+      return {
+        ok: false,
+        status: STATUS.LOOKUP_ERROR,
+        branch: null,
+        reason: "branch_not_persisted",
+        message: "The branch could not be saved. Please try again.",
+      };
+    }
+
+    // Optional website governance must not run inside the create transaction.
+    // A missing/unavailable governance table previously aborted the TX; COMMIT then
+    // rolled back the branch while this service still returned ok:true (false success).
+    try {
+      await ensureBranchWebsiteGovernance(db, {
+        organizationId,
+        churchId,
+        branchId: branch.id,
+        updatedBy: actorUserId || null,
+      });
+    } catch {
+      /* best-effort — branch row already committed and must remain listable */
+    }
+
     const previousActiveCount =
       gate.current != null ? Number(gate.current) : null;
     const nextActiveCount =

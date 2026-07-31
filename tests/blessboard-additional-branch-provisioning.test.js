@@ -287,6 +287,82 @@ describe("blessboard additional branch provisioning", () => {
     );
     assert.equal(audit.rowCount, 1);
     assert.equal(audit.rows[0].outcome, "success");
+
+    const listPage = await request(app)
+      .get("/hq/branches?created=north")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(listPage.status, 200);
+    assert.match(listPage.text, /data-bb-branch-created="north"/);
+    assert.match(listPage.text, /data-bb-branch-key="north"/);
+    assert.match(listPage.text, /North Campus/);
+    assert.match(listPage.text, /data-bb-branch-key="hq"/);
+  });
+
+  it("1b. create persists and lists when governance table is missing (hosted lag)", async () => {
+    requireDb();
+    const growth = await assignOrganizationPlan(pool, {
+      organizationId: orgA.id,
+      planKey: "growth",
+    });
+    assert.equal(growth.ok, true, growth.reason);
+
+    await pool.query(`DROP TABLE IF EXISTS blessboard.branch_website_governance CASCADE`);
+
+    const created = await createBlessBoardBranch(pool, {
+      churchId: churchA.id,
+      organizationId: orgA.id,
+      branchKey: "demo-kitwe-branch",
+      displayName: "Demo Kitwe Branch",
+      email: "kitwe@example.org",
+      city: "Kitwe",
+      countryCode: "ZM",
+      timezone: "Africa/Lusaka",
+    });
+    assert.equal(created.ok, true, created.reason || created.message);
+    assert.equal(created.branch.branch_key, "demo-kitwe-branch");
+    assert.equal(created.branch.status, "active");
+
+    const row = await pool.query(
+      `SELECT b.id, b.branch_key, b.status, b.branch_type, b.is_primary, s.city
+         FROM blessboard.branches b
+         LEFT JOIN blessboard.branch_settings s ON s.branch_id = b.id
+        WHERE b.church_id = $1 AND b.branch_key = 'demo-kitwe-branch'`,
+      [churchA.id]
+    );
+    assert.equal(row.rowCount, 1, "branch must persist even without governance table");
+    assert.equal(row.rows[0].status, "active");
+    assert.equal(row.rows[0].branch_type, "branch");
+    assert.equal(row.rows[0].is_primary, false);
+
+    const { listBlessBoardBranches } = require("../src/blessboard/services/listBlessBoardBranches");
+    const listed = await listBlessBoardBranches(pool, churchA.id);
+    assert.equal(listed.ok, true);
+    assert.ok(listed.branches.some((b) => b.key === "demo-kitwe-branch"));
+    assert.ok(listed.branches.some((b) => b.key === "hq"));
+
+    const foreign = await listBlessBoardBranches(pool, churchB.id);
+    assert.ok(!foreign.branches.some((b) => b.key === "demo-kitwe-branch"));
+
+    const dup = await createBlessBoardBranch(pool, {
+      churchId: churchA.id,
+      organizationId: orgA.id,
+      branchKey: "demo-kitwe-branch",
+      displayName: "Demo Kitwe Branch Dup",
+    });
+    assert.equal(dup.ok, false);
+    assert.equal(dup.status, CREATE_STATUS.CONFLICT);
+
+    // Restore governance table for later tests (ledger still marks 052 applied after DROP).
+    await pool.query(
+      `DELETE FROM platform.schema_migrations
+        WHERE filename IN (
+          '052_branch_website_governance_and_scope_settings.sql',
+          '053_website_scope_settings_dotted_keys.sql'
+        )`
+    );
+    await migrate({ pool });
   });
 
   it("2. Foundation limit is enforced", async () => {
