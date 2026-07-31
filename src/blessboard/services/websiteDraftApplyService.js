@@ -153,7 +153,13 @@ async function applyFieldDraft(client, draft, ctx) {
     patch.layoutMetadata = mergeLayoutMetadata(section.layoutMetadata, {
       tagline: draft.newValue,
     });
-  } else if (draft.fieldKey === "buttonText" || draft.fieldKey === "buttonUrl") {
+  } else if (
+    draft.fieldKey === "buttonText" ||
+    draft.fieldKey === "buttonUrl" ||
+    draft.fieldKey === "eyebrow" ||
+    draft.fieldKey === "secondaryButtonText" ||
+    draft.fieldKey === "secondaryButtonUrl"
+  ) {
     patch.layoutMetadata = mergeLayoutMetadata(section.layoutMetadata, {
       [draft.fieldKey]: draft.newValue,
     });

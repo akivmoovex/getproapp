@@ -33,7 +33,16 @@ const {
 
 const EDIT_QUERY = "website_edit";
 
-const SECTION_BASELINE_FIELDS = ["heading", "bodyText", "buttonText", "buttonUrl", "tagline"];
+const SECTION_BASELINE_FIELDS = [
+  "heading",
+  "bodyText",
+  "buttonText",
+  "buttonUrl",
+  "tagline",
+  "eyebrow",
+  "secondaryButtonText",
+  "secondaryButtonUrl",
+];
 const CONTACT_BASELINE_FIELDS = ["email", "phone", "address"];
 
 /**

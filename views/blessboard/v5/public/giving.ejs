@@ -186,12 +186,13 @@
     heroBody: introBody,
     heroMedia: introMedia,
     heroMediaAlt: 'Giving at ' + publicName,
-    heroEyebrow: 'A Culture of Generosity',
+    heroEyebrow: (intro && intro.layoutMetadata && intro.layoutMetadata.eyebrow) || 'A Culture of Generosity',
     heroClass: 'bb-tp-giving-hero',
     heroCtaPrimary: methods.length
       ? { href: '#ways-to-give', label: 'Explore Ways to Give' }
       : { href: hrefFor('/contact'), label: 'Contact Church' },
     heroCtaSecondary: { href: hrefFor('/contact'), label: 'Contact Church' },
+    heroLayoutMetadata: (intro && intro.layoutMetadata) || null,
     editPageKey: 'giving',
     editSectionKey: 'hero'
   }) %>

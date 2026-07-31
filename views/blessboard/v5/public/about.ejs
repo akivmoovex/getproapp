@@ -107,10 +107,11 @@
     heroBody: heroBody,
     heroMedia: heroMedia,
     heroMediaAlt: publicName + ' building',
-    heroEyebrow: 'About Us',
+    heroEyebrow: (hero && hero.layoutMetadata && hero.layoutMetadata.eyebrow) || 'About Us',
     heroClass: 'bb-tp-about-hero',
     heroCtaPrimary: { href: hrefFor('/contact'), label: 'Plan Your Visit' },
     heroCtaSecondary: { href: hrefFor('/leadership'), label: 'Meet Leadership' },
+    heroLayoutMetadata: (hero && hero.layoutMetadata) || null,
     editPageKey: 'about',
     editSectionKey: 'hero'
   }) %>

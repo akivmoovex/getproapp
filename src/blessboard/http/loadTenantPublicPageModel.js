@@ -122,6 +122,13 @@ function sanitizeLayoutMetadata(meta) {
   if (meta.buttonText != null) out.buttonText = String(meta.buttonText).slice(0, 48);
   if (meta.buttonUrl != null) out.buttonUrl = String(meta.buttonUrl).slice(0, 500);
   if (meta.tagline != null) out.tagline = String(meta.tagline).slice(0, 200);
+  if (meta.eyebrow != null) out.eyebrow = String(meta.eyebrow).slice(0, 80);
+  if (meta.secondaryButtonText != null) {
+    out.secondaryButtonText = String(meta.secondaryButtonText).slice(0, 48);
+  }
+  if (meta.secondaryButtonUrl != null) {
+    out.secondaryButtonUrl = String(meta.secondaryButtonUrl).slice(0, 500);
+  }
   if (meta.altText != null) out.altText = String(meta.altText).slice(0, 200);
   if (meta.focal != null) out.focal = String(meta.focal).slice(0, 32);
   if (meta.fit != null) out.fit = String(meta.fit).slice(0, 32);

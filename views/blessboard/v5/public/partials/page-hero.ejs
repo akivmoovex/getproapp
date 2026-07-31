@@ -14,9 +14,27 @@
   var _canInline = Boolean(_wa && _wa.editingMode && typeof editPageKey !== 'undefined' && editPageKey && typeof editSectionKey !== 'undefined' && editSectionKey);
   var _pageKey = _canInline ? String(editPageKey) : '';
   var _sectionKey = _canInline ? String(editSectionKey) : '';
+  var _meta = {};
+  if (typeof heroLayoutMetadata !== 'undefined' && heroLayoutMetadata && typeof heroLayoutMetadata === 'object') {
+    _meta = heroLayoutMetadata;
+  }
+  var _primaryLabel = typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary ? (heroCtaPrimary.label || '') : '';
+  var _primaryHref = typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary ? (heroCtaPrimary.href || '') : '';
+  var _secondaryLabel = typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary ? (heroCtaSecondary.label || '') : '';
+  var _secondaryHref = typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary ? (heroCtaSecondary.href || '') : '';
+  if (_meta.buttonText) _primaryLabel = _meta.buttonText;
+  if (_meta.buttonUrl) _primaryHref = _meta.buttonUrl;
+  if (_meta.secondaryButtonText) _secondaryLabel = _meta.secondaryButtonText;
+  if (_meta.secondaryButtonUrl) _secondaryHref = _meta.secondaryButtonUrl;
+  if (_meta.eyebrow) _eyebrow = _meta.eyebrow;
   if (_canInline && typeof _wa.displayValue === 'function') {
     _heading = _wa.displayValue(_sectionKey, 'heading', _heading);
     _body = _wa.displayValue(_sectionKey, 'bodyText', _body);
+    _eyebrow = _wa.displayValue(_sectionKey, 'eyebrow', _eyebrow);
+    _primaryLabel = _wa.displayValue(_sectionKey, 'buttonText', _primaryLabel);
+    _primaryHref = _wa.displayValue(_sectionKey, 'buttonUrl', _primaryHref);
+    _secondaryLabel = _wa.displayValue(_sectionKey, 'secondaryButtonText', _secondaryLabel);
+    _secondaryHref = _wa.displayValue(_sectionKey, 'secondaryButtonUrl', _secondaryHref);
   }
   var _accentBefore = _heading;
   var _accentPhrase = '';
@@ -27,12 +45,28 @@
       _accentPhrase = _words.slice(-2).join(' ');
     }
   }
+  var _showPrimary = Boolean(_primaryLabel || (_canInline && typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary));
+  var _showSecondary = Boolean(_secondaryLabel || (_canInline && typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary));
 %>
 <header class="bb-tp-page-hero<%= typeof heroClass !== 'undefined' && heroClass ? ' ' + heroClass : '' %>" data-bb-page-hero="1">
   <div class="bb-tp-page-hero__inner">
     <div class="bb-tp-page-hero__copy">
-      <% if (_eyebrow) { %>
-      <p class="bb-tp-eyebrow bb-tp-eyebrow--pill"><%= _eyebrow %></p>
+      <% if (_canInline || _eyebrow) { %>
+        <% if (_canInline) { %>
+        <%- include('../../partials/editable-text', {
+          editPageKey: _pageKey,
+          editSectionKey: _sectionKey,
+          editFieldKey: 'eyebrow',
+          editValue: _eyebrow,
+          editTag: 'p',
+          editClass: 'bb-tp-eyebrow bb-tp-eyebrow--pill',
+          editType: 'label',
+          editMaxLength: 80,
+          editMultiline: false
+        }) %>
+        <% } else { %>
+        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill"><%= _eyebrow %></p>
+        <% } %>
       <% } %>
       <% if (_canInline) { %>
       <%- include('../../partials/editable-text', {
@@ -74,16 +108,70 @@
         <p class="bb-tp-page-hero__lead"><%= _body %></p>
         <% } %>
       <% } %>
-      <% if ((typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary) || (typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary)) { %>
+      <% if (_showPrimary || _showSecondary) { %>
       <div class="bb-tp-page-hero__cta">
-        <% if (typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary) { %>
-        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= heroCtaPrimary.href %>">
-          <%= heroCtaPrimary.label %>
-          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-        </a>
+        <% if (_showPrimary) { %>
+          <% if (_canInline) { %>
+          <%- include('../../partials/editable-text', {
+            editPageKey: _pageKey,
+            editSectionKey: _sectionKey,
+            editFieldKey: 'buttonText',
+            editValue: _primaryLabel || (heroCtaPrimary && heroCtaPrimary.label) || 'Learn more',
+            editTag: 'a',
+            editClass: 'bb-tp-btn bb-tp-btn--primary',
+            editHref: _primaryHref || (heroCtaPrimary && heroCtaPrimary.href) || '#',
+            editType: 'buttonText',
+            editMaxLength: 48,
+            editMultiline: false
+          }) %>
+          <%- include('../../partials/editable-text', {
+            editPageKey: _pageKey,
+            editSectionKey: _sectionKey,
+            editFieldKey: 'buttonUrl',
+            editValue: _primaryHref || (heroCtaPrimary && heroCtaPrimary.href) || '',
+            editTag: 'span',
+            editClass: 'bb-tp-se-hint',
+            editType: 'buttonUrl',
+            editMaxLength: 500,
+            editGuidance: 'Primary button link',
+            editMultiline: false
+          }) %>
+          <% } else { %>
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= _primaryHref %>">
+            <%= _primaryLabel %>
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </a>
+          <% } %>
         <% } %>
-        <% if (typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary) { %>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= heroCtaSecondary.href %>"><%= heroCtaSecondary.label %></a>
+        <% if (_showSecondary) { %>
+          <% if (_canInline) { %>
+          <%- include('../../partials/editable-text', {
+            editPageKey: _pageKey,
+            editSectionKey: _sectionKey,
+            editFieldKey: 'secondaryButtonText',
+            editValue: _secondaryLabel || (heroCtaSecondary && heroCtaSecondary.label) || 'Learn more',
+            editTag: 'a',
+            editClass: 'bb-tp-btn bb-tp-btn--ghost',
+            editHref: _secondaryHref || (heroCtaSecondary && heroCtaSecondary.href) || '#',
+            editType: 'buttonText',
+            editMaxLength: 48,
+            editMultiline: false
+          }) %>
+          <%- include('../../partials/editable-text', {
+            editPageKey: _pageKey,
+            editSectionKey: _sectionKey,
+            editFieldKey: 'secondaryButtonUrl',
+            editValue: _secondaryHref || (heroCtaSecondary && heroCtaSecondary.href) || '',
+            editTag: 'span',
+            editClass: 'bb-tp-se-hint',
+            editType: 'buttonUrl',
+            editMaxLength: 500,
+            editGuidance: 'Secondary button link',
+            editMultiline: false
+          }) %>
+          <% } else { %>
+          <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= _secondaryHref %>"><%= _secondaryLabel %></a>
+          <% } %>
         <% } %>
       </div>
       <% } %>
@@ -114,6 +202,17 @@
             imageUrl: _media || '',
             altText: typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '',
             focal: 'center'
+          }
+        }) %>
+        <%- include('../../partials/structured-edit-trigger', {
+          editKind: 'video',
+          editEntityKey: _pageKey + '-' + _sectionKey + '-video',
+          editSectionKey: _sectionKey,
+          editLabel: 'Edit section video',
+          editPayload: {
+            videoUrl: (_meta && _meta.videoUrl) || '',
+            title: (_meta && _meta.videoTitle) || '',
+            thumbnailUrl: _media || ''
           }
         }) %>
       </div>

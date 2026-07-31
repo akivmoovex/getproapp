@@ -59,10 +59,11 @@
     heroBody: introBody,
     heroMedia: introMedia,
     heroMediaAlt: 'Leadership at ' + publicName,
-    heroEyebrow: 'Our Heart for Service',
+    heroEyebrow: (intro && intro.layoutMetadata && intro.layoutMetadata.eyebrow) || 'Our Heart for Service',
     heroClass: 'bb-tp-leadership-hero',
     heroCtaPrimary: { href: hrefFor('/contact'), label: 'Connect with Leadership' },
     heroCtaSecondary: { href: hrefFor('/ministries'), label: 'Explore Ministries' },
+    heroLayoutMetadata: (intro && intro.layoutMetadata) || null,
     editPageKey: 'leadership',
     editSectionKey: 'hero'
   }) %>
@@ -73,7 +74,7 @@
     <p class="bb-tp-edit-collection-actions">
       <%- include('../partials/structured-edit-trigger', {
         editKind: 'leader',
-        editEntityKey: 'new-' + Date.now(),
+        editEntityKey: 'new-leader',
         editLabel: 'Add leadership member',
         editPayload: { displayName: '', roleTitle: '', biography: '', imageUrl: '', visible: true, sortOrder: 100 }
       }) %>

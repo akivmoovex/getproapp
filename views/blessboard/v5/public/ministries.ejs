@@ -62,16 +62,28 @@
     heroBody: introBody,
     heroMedia: introMedia,
     heroMediaAlt: 'Ministries at ' + publicName,
-    heroEyebrow: 'Our Community Ecosystem',
+    heroEyebrow: (intro && intro.layoutMetadata && intro.layoutMetadata.eyebrow) || 'Our Community Ecosystem',
     heroClass: 'bb-tp-ministries-hero',
     heroCtaPrimary: { href: hrefFor('/contact'), label: 'Join a Ministry' },
     heroCtaSecondary: { href: hrefFor('/events'), label: 'View Events' },
+    heroLayoutMetadata: (intro && intro.layoutMetadata) || null,
     editPageKey: 'ministries',
     editSectionKey: 'hero'
   }) %>
   <div class="bb-tp-ministries-hero-marker" data-bb-ministries-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
+    <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && !featured.length) { %>
+    <p class="bb-tp-edit-collection-actions">
+      <%- include('../partials/structured-edit-trigger', {
+        editKind: 'ministry',
+        editEntityKey: 'new-ministry',
+        editLabel: 'Add ministry',
+        editPayload: { name: '', summary: '', description: '', visible: true, featured: false }
+      }) %>
+      <span class="bb-tp-se-hint">Add ministry</span>
+    </p>
+    <% } %>
     <% if (featured.length) { %>
     <section class="bb-tp-ministry-featured" aria-label="Featured ministries" data-bb-ministries-featured="1" data-bb-ministries-grid="1">
       <h2 class="bb-tp-section-title bb-tp-section-title--ruled">Weekly Gatherings

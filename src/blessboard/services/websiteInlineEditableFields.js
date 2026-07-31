@@ -44,17 +44,29 @@ function fieldsFor(pageKey, sectionKey, specs) {
   }));
 }
 
+/** Standard hero chrome: eyebrow + primary/secondary CTA label+URL */
+function heroChromeFields(pageKey) {
+  return fieldsFor(pageKey, "hero", [
+    ["eyebrow", FIELD_TYPES.label, 80, { guidance: "Short eyebrow label" }],
+    ["buttonText", FIELD_TYPES.buttonText, 48, { guidance: "Primary button label" }],
+    ["buttonUrl", FIELD_TYPES.buttonUrl, 500, { guidance: "Primary button link" }],
+    ["secondaryButtonText", FIELD_TYPES.buttonText, 48, { guidance: "Secondary button label" }],
+    ["secondaryButtonUrl", FIELD_TYPES.buttonUrl, 500, { guidance: "Secondary button link" }],
+  ]);
+}
+
 /** @type {EditableFieldDef[]} */
 const EDITABLE_FIELDS = [
   ...fieldsFor("home", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true, guidance: "Up to 120 characters" }],
     ["bodyText", FIELD_TYPES.paragraph, 500, { guidance: "Up to 500 characters" }],
-    ["buttonText", FIELD_TYPES.buttonText, 48, { guidance: "Short button label" }],
-    ["buttonUrl", FIELD_TYPES.buttonUrl, 500, { guidance: "Relative path or https URL" }],
   ]),
+  ...heroChromeFields("home"),
   ...fieldsFor("home", "welcome", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 2000],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+    ["buttonUrl", FIELD_TYPES.buttonUrl, 500],
   ]),
   ...fieldsFor("home", "ministries_intro", [
     ["heading", FIELD_TYPES.heading, 120],
@@ -80,6 +92,9 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 800],
     ["buttonText", FIELD_TYPES.buttonText, 48],
+    ["buttonUrl", FIELD_TYPES.buttonUrl, 500],
+    ["secondaryButtonText", FIELD_TYPES.buttonText, 48],
+    ["secondaryButtonUrl", FIELD_TYPES.buttonUrl, 500],
   ]),
   ...fieldsFor("home", "contact_intro", [
     ["heading", FIELD_TYPES.heading, 120],
@@ -94,6 +109,7 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroChromeFields("about"),
   ...fieldsFor("about", "story", [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 4000],
@@ -143,29 +159,37 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 800],
     ["buttonText", FIELD_TYPES.buttonText, 48],
+    ["buttonUrl", FIELD_TYPES.buttonUrl, 500],
+    ["secondaryButtonText", FIELD_TYPES.buttonText, 48],
+    ["secondaryButtonUrl", FIELD_TYPES.buttonUrl, 500],
   ]),
 
   ...fieldsFor("leadership", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroChromeFields("leadership"),
   ...fieldsFor("ministries", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroChromeFields("ministries"),
   ...fieldsFor("events", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroChromeFields("events"),
   ...fieldsFor("sermons", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroChromeFields("sermons"),
 
   ...fieldsFor("contact", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroChromeFields("contact"),
   ...fieldsFor("contact", "details", [
     ["email", FIELD_TYPES.contactText, 254, { guidance: "Contact email" }],
     ["phone", FIELD_TYPES.contactText, 40, { guidance: "Phone number" }],
@@ -196,6 +220,7 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120, { required: true }],
     ["bodyText", FIELD_TYPES.paragraph, 500],
   ]),
+  ...heroChromeFields("giving"),
   ...fieldsFor("giving", "why", [
     ["heading", FIELD_TYPES.heading, 120],
   ]),
@@ -227,6 +252,9 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 800],
     ["buttonText", FIELD_TYPES.buttonText, 48],
+    ["buttonUrl", FIELD_TYPES.buttonUrl, 500],
+    ["secondaryButtonText", FIELD_TYPES.buttonText, 48],
+    ["secondaryButtonUrl", FIELD_TYPES.buttonUrl, 500],
   ]),
   ...fieldsFor("giving", "cta", [
     ["heading", FIELD_TYPES.heading, 120],

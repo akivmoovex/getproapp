@@ -55,6 +55,15 @@ function readPublishedFieldValue(sectionRow, fieldKey, publicContact) {
   if (fieldKey === "buttonUrl") {
     return meta.buttonUrl != null ? String(meta.buttonUrl) : "";
   }
+  if (fieldKey === "eyebrow") {
+    return meta.eyebrow != null ? String(meta.eyebrow) : "";
+  }
+  if (fieldKey === "secondaryButtonText") {
+    return meta.secondaryButtonText != null ? String(meta.secondaryButtonText) : "";
+  }
+  if (fieldKey === "secondaryButtonUrl") {
+    return meta.secondaryButtonUrl != null ? String(meta.secondaryButtonUrl) : "";
+  }
   return "";
 }
 
@@ -250,12 +259,18 @@ function applyDraftsToSections(sections, overlayMap) {
     const buttonText = overlayMap.get(`${key}::buttonText`);
     const buttonUrl = overlayMap.get(`${key}::buttonUrl`);
     const tagline = overlayMap.get(`${key}::tagline`);
+    const eyebrow = overlayMap.get(`${key}::eyebrow`);
+    const secondaryButtonText = overlayMap.get(`${key}::secondaryButtonText`);
+    const secondaryButtonUrl = overlayMap.get(`${key}::secondaryButtonUrl`);
     if (
       heading === undefined &&
       bodyText === undefined &&
       buttonText === undefined &&
       buttonUrl === undefined &&
-      tagline === undefined
+      tagline === undefined &&
+      eyebrow === undefined &&
+      secondaryButtonText === undefined &&
+      secondaryButtonUrl === undefined
     ) {
       return s;
     }
@@ -265,6 +280,9 @@ function applyDraftsToSections(sections, overlayMap) {
     if (buttonText !== undefined) layoutMetadata.buttonText = buttonText;
     if (buttonUrl !== undefined) layoutMetadata.buttonUrl = buttonUrl;
     if (tagline !== undefined) layoutMetadata.tagline = tagline;
+    if (eyebrow !== undefined) layoutMetadata.eyebrow = eyebrow;
+    if (secondaryButtonText !== undefined) layoutMetadata.secondaryButtonText = secondaryButtonText;
+    if (secondaryButtonUrl !== undefined) layoutMetadata.secondaryButtonUrl = secondaryButtonUrl;
     return {
       ...s,
       heading: heading !== undefined ? heading : s.heading,

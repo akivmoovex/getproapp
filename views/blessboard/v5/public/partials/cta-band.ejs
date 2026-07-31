@@ -1,7 +1,8 @@
 <%#
   Shared CTA band.
   Locals: ctaTitle, ctaBody, ctaPrimary, ctaSecondary (optional), ctaClass (optional),
-          editPageKey / editSectionKey (optional — enables inline text editing)
+          editPageKey / editSectionKey (optional — enables inline text editing),
+          ctaLayoutMetadata (optional)
 %>
 <%
   var _canEditCta =
@@ -16,13 +17,32 @@
   var _sectionKey = _canEditCta ? String(editSectionKey) : '';
   var _title = typeof ctaTitle !== 'undefined' ? ctaTitle : '';
   var _body = typeof ctaBody !== 'undefined' ? ctaBody : '';
+  var _meta =
+    typeof ctaLayoutMetadata !== 'undefined' && ctaLayoutMetadata && typeof ctaLayoutMetadata === 'object'
+      ? ctaLayoutMetadata
+      : {};
   var _primaryLabel =
     typeof ctaPrimary !== 'undefined' && ctaPrimary && ctaPrimary.label ? ctaPrimary.label : '';
+  var _primaryHref =
+    typeof ctaPrimary !== 'undefined' && ctaPrimary && ctaPrimary.href ? ctaPrimary.href : '';
+  var _secondaryLabel =
+    typeof ctaSecondary !== 'undefined' && ctaSecondary && ctaSecondary.label ? ctaSecondary.label : '';
+  var _secondaryHref =
+    typeof ctaSecondary !== 'undefined' && ctaSecondary && ctaSecondary.href ? ctaSecondary.href : '';
+  if (_meta.buttonText) _primaryLabel = _meta.buttonText;
+  if (_meta.buttonUrl) _primaryHref = _meta.buttonUrl;
+  if (_meta.secondaryButtonText) _secondaryLabel = _meta.secondaryButtonText;
+  if (_meta.secondaryButtonUrl) _secondaryHref = _meta.secondaryButtonUrl;
   if (_canEditCta && typeof websiteAdmin.displayValue === 'function') {
     _title = websiteAdmin.displayValue(_sectionKey, 'heading', _title);
     _body = websiteAdmin.displayValue(_sectionKey, 'bodyText', _body);
-    if (_primaryLabel) {
+    if (_primaryLabel || _canEditCta) {
       _primaryLabel = websiteAdmin.displayValue(_sectionKey, 'buttonText', _primaryLabel);
+      _primaryHref = websiteAdmin.displayValue(_sectionKey, 'buttonUrl', _primaryHref);
+    }
+    if (_secondaryLabel || (typeof ctaSecondary !== 'undefined' && ctaSecondary)) {
+      _secondaryLabel = websiteAdmin.displayValue(_sectionKey, 'secondaryButtonText', _secondaryLabel);
+      _secondaryHref = websiteAdmin.displayValue(_sectionKey, 'secondaryButtonUrl', _secondaryHref);
     }
   }
 %>
@@ -64,25 +84,62 @@
     </div>
     <div class="bb-tp-cta-band__actions">
       <% if (typeof ctaPrimary !== 'undefined' && ctaPrimary) { %>
-        <% if (_canEditCta && _primaryLabel) { %>
+        <% if (_canEditCta) { %>
         <%- include('../../partials/editable-text', {
           editPageKey: _pageKey,
           editSectionKey: _sectionKey,
           editFieldKey: 'buttonText',
-          editValue: _primaryLabel,
+          editValue: _primaryLabel || ctaPrimary.label,
           editTag: 'a',
           editClass: 'bb-tp-btn bb-tp-btn--primary',
-          editHref: ctaPrimary.href,
+          editHref: _primaryHref || ctaPrimary.href,
           editType: 'buttonText',
           editMaxLength: 48,
           editMultiline: false
         }) %>
+        <%- include('../../partials/editable-text', {
+          editPageKey: _pageKey,
+          editSectionKey: _sectionKey,
+          editFieldKey: 'buttonUrl',
+          editValue: _primaryHref || ctaPrimary.href || '',
+          editTag: 'span',
+          editClass: 'bb-tp-se-hint',
+          editType: 'buttonUrl',
+          editMaxLength: 500,
+          editMultiline: false
+        }) %>
         <% } else { %>
-        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= ctaPrimary.href %>"><%= ctaPrimary.label %></a>
+        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= _primaryHref || ctaPrimary.href %>"><%= _primaryLabel || ctaPrimary.label %></a>
         <% } %>
       <% } %>
       <% if (typeof ctaSecondary !== 'undefined' && ctaSecondary) { %>
-      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="<%= ctaSecondary.href %>"><%= ctaSecondary.label %></a>
+        <% if (_canEditCta) { %>
+        <%- include('../../partials/editable-text', {
+          editPageKey: _pageKey,
+          editSectionKey: _sectionKey,
+          editFieldKey: 'secondaryButtonText',
+          editValue: _secondaryLabel || ctaSecondary.label,
+          editTag: 'a',
+          editClass: 'bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark',
+          editHref: _secondaryHref || ctaSecondary.href,
+          editType: 'buttonText',
+          editMaxLength: 48,
+          editMultiline: false
+        }) %>
+        <%- include('../../partials/editable-text', {
+          editPageKey: _pageKey,
+          editSectionKey: _sectionKey,
+          editFieldKey: 'secondaryButtonUrl',
+          editValue: _secondaryHref || ctaSecondary.href || '',
+          editTag: 'span',
+          editClass: 'bb-tp-se-hint',
+          editType: 'buttonUrl',
+          editMaxLength: 500,
+          editMultiline: false
+        }) %>
+        <% } else { %>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="<%= _secondaryHref || ctaSecondary.href %>"><%= _secondaryLabel || ctaSecondary.label %></a>
+        <% } %>
       <% } %>
     </div>
   </div>

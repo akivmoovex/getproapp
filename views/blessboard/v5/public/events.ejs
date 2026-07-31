@@ -52,18 +52,40 @@
     heroBody: introBody,
     heroMedia: introMedia,
     heroMediaAlt: 'Events at ' + publicName,
-    heroEyebrow: 'Connect & Grow',
+    heroEyebrow: (intro && intro.layoutMetadata && intro.layoutMetadata.eyebrow) || 'Connect & Grow',
     heroClass: 'bb-tp-events-hero',
     heroCtaPrimary: featured && featured.registrationUrl
       ? { href: featured.registrationUrl, label: 'Register for Featured Event' }
       : { href: hrefFor('/contact'), label: 'Ask About Events' },
     heroCtaSecondary: { href: hrefFor('/ministries'), label: 'Explore Ministries' },
+    heroLayoutMetadata: (intro && intro.layoutMetadata) || null,
     editPageKey: 'events',
     editSectionKey: 'hero'
   }) %>
   <div class="bb-tp-events-hero-marker" data-bb-events-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
+    <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+    <p class="bb-tp-edit-collection-actions">
+      <%- include('../partials/structured-edit-trigger', {
+        editKind: 'event',
+        editEntityKey: 'new-event',
+        editLabel: 'Add event',
+        editPayload: {
+          title: '',
+          summary: '',
+          startsAt: '',
+          endsAt: '',
+          location: '',
+          registrationUrl: '',
+          imageUrl: '',
+          featured: false,
+          visible: true
+        }
+      }) %>
+      <span class="bb-tp-se-hint">Add event</span>
+    </p>
+    <% } %>
     <% if (featured) { %>
     <section class="bb-tp-featured-event" aria-label="Featured event" data-bb-event-featured="1">
       <h2 class="bb-tp-featured-event__label bb-tp-section-title--ruled">Featured Gathering</h2>
@@ -190,7 +212,28 @@
             <% } %>
           </div>
           <div class="bb-tp-event-card__body">
-            <h3 class="bb-tp-event-card__title"><%= event.title %></h3>
+            <h3 class="bb-tp-event-card__title">
+              <%= event.title %>
+              <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+              <%- include('../partials/structured-edit-trigger', {
+                editKind: 'event',
+                editEntityKey: String(event.id || ('event-' + event.title)),
+                editLabel: 'Edit ' + event.title,
+                editPayload: {
+                  title: event.title,
+                  summary: event.summary,
+                  startsAt: event.startsAt,
+                  endsAt: event.endsAt,
+                  location: event.location,
+                  registrationUrl: event.registrationUrl,
+                  imageUrl: event.imageUrl,
+                  timezone: event.timezone,
+                  featured: false,
+                  visible: true
+                }
+              }) %>
+              <% } %>
+            </h3>
             <% var cardSummary = eventSummary(event.summary); %>
             <% if (cardSummary) { %>
             <p class="bb-tp-event-card__summary"><%= cardSummary %></p>

@@ -77,16 +77,38 @@
     heroBody: introBody,
     heroMedia: introMedia,
     heroMediaAlt: 'Sermons at ' + publicName,
-    heroEyebrow: 'Spiritual Nourishment',
+    heroEyebrow: (intro && intro.layoutMetadata && intro.layoutMetadata.eyebrow) || 'Spiritual Nourishment',
     heroClass: 'bb-tp-sermons-hero',
     heroCtaPrimary: { href: hrefFor('/events'), label: 'View Events' },
     heroCtaSecondary: { href: hrefFor('/contact'), label: 'Contact Us' },
+    heroLayoutMetadata: (intro && intro.layoutMetadata) || null,
     editPageKey: 'sermons',
     editSectionKey: 'hero'
   }) %>
   <div class="bb-tp-sermons-hero-marker" data-bb-sermons-hero="1" hidden></div>
 
   <div class="bb-tp-container bb-tp-directory__body">
+    <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+    <p class="bb-tp-edit-collection-actions">
+      <%- include('../partials/structured-edit-trigger', {
+        editKind: 'sermon',
+        editEntityKey: 'new-sermon',
+        editLabel: 'Add sermon',
+        editPayload: {
+          title: '',
+          speakerName: '',
+          preachedAt: '',
+          summary: '',
+          scripture: '',
+          mediaUrl: '',
+          imageUrl: '',
+          featured: false,
+          visible: true
+        }
+      }) %>
+      <span class="bb-tp-se-hint">Add sermon</span>
+    </p>
+    <% } %>
     <% if (featured) { %>
     <%
       var featuredKind = featured.mediaUrl ? sermonMediaKind(featured.mediaUrl) : null;
@@ -241,7 +263,27 @@
             <% } %>
           </div>
           <div class="bb-tp-sermon-card__body">
-            <h3 class="bb-tp-sermon-card__title"><%= sermon.title %></h3>
+            <h3 class="bb-tp-sermon-card__title">
+              <%= sermon.title %>
+              <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+              <%- include('../partials/structured-edit-trigger', {
+                editKind: 'sermon',
+                editEntityKey: String(sermon.id || ('sermon-' + sermon.title)),
+                editLabel: 'Edit ' + sermon.title,
+                editPayload: {
+                  title: sermon.title,
+                  speakerName: sermon.speakerName,
+                  preachedAt: sermon.preachedAt,
+                  summary: sermon.summary,
+                  scripture: sermon.scripture,
+                  mediaUrl: sermon.mediaUrl,
+                  imageUrl: sermon.imageUrl,
+                  featured: false,
+                  visible: true
+                }
+              }) %>
+              <% } %>
+            </h3>
             <% if (sermon.category) { %>
             <p class="bb-tp-sermon-card__category"><%= sermon.category %></p>
             <% } %>

@@ -146,7 +146,17 @@
     </div>
     <div class="bb-tp-hero__inner bb-tp-hero__inner--overlay">
       <div class="bb-tp-hero__copy">
-        <p class="bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-eyebrow--on-dark"><%= heroEyebrow %></p>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'home',
+          editSectionKey: 'hero',
+          editFieldKey: 'eyebrow',
+          editValue: (hero && hero.layoutMetadata && hero.layoutMetadata.eyebrow) || heroEyebrow,
+          editTag: 'p',
+          editClass: 'bb-tp-eyebrow bb-tp-eyebrow--pill bb-tp-eyebrow--on-dark',
+          editType: 'label',
+          editMaxLength: 80,
+          editMultiline: false
+        }) %>
         <%- include('../partials/editable-text', {
           editPageKey: 'home',
           editSectionKey: 'hero',
@@ -187,7 +197,46 @@
             editGuidance: 'Short button label',
             editMultiline: false
           }) %>
-          <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="<%= hrefFor('/sermons') %>">Watch Latest Sermon</a>
+          <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'home',
+            editSectionKey: 'hero',
+            editFieldKey: 'buttonUrl',
+            editValue: (hero && hero.layoutMetadata && hero.layoutMetadata.buttonUrl) || hrefFor('/contact'),
+            editTag: 'span',
+            editClass: 'bb-tp-se-hint',
+            editType: 'buttonUrl',
+            editMaxLength: 500,
+            editGuidance: 'Primary button link',
+            editMultiline: false
+          }) %>
+          <% } %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'home',
+            editSectionKey: 'hero',
+            editFieldKey: 'secondaryButtonText',
+            editValue: (hero && hero.layoutMetadata && hero.layoutMetadata.secondaryButtonText) || 'Watch Latest Sermon',
+            editTag: 'a',
+            editClass: 'bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark',
+            editHref: (hero && hero.layoutMetadata && hero.layoutMetadata.secondaryButtonUrl) || hrefFor('/sermons'),
+            editType: 'buttonText',
+            editMaxLength: 48,
+            editMultiline: false
+          }) %>
+          <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'home',
+            editSectionKey: 'hero',
+            editFieldKey: 'secondaryButtonUrl',
+            editValue: (hero && hero.layoutMetadata && hero.layoutMetadata.secondaryButtonUrl) || hrefFor('/sermons'),
+            editTag: 'span',
+            editClass: 'bb-tp-se-hint',
+            editType: 'buttonUrl',
+            editMaxLength: 500,
+            editGuidance: 'Secondary button link',
+            editMultiline: false
+          }) %>
+          <% } %>
         </div>
       </div>
     </div>
@@ -229,7 +278,31 @@
           editMultiline: true
         }) %>
         <% } %>
-        <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/about') %>">Learn More About Our Story</a>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'home',
+          editSectionKey: 'welcome',
+          editFieldKey: 'buttonText',
+          editValue: (welcomeSection && welcomeSection.layoutMetadata && welcomeSection.layoutMetadata.buttonText) || 'Learn More About Our Story',
+          editTag: 'a',
+          editClass: 'bb-tp-btn bb-tp-btn--ghost',
+          editHref: (welcomeSection && welcomeSection.layoutMetadata && welcomeSection.layoutMetadata.buttonUrl) || hrefFor('/about'),
+          editType: 'buttonText',
+          editMaxLength: 48,
+          editMultiline: false
+        }) %>
+        <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'home',
+          editSectionKey: 'welcome',
+          editFieldKey: 'buttonUrl',
+          editValue: (welcomeSection && welcomeSection.layoutMetadata && welcomeSection.layoutMetadata.buttonUrl) || hrefFor('/about'),
+          editTag: 'span',
+          editClass: 'bb-tp-se-hint',
+          editType: 'buttonUrl',
+          editMaxLength: 500,
+          editMultiline: false
+        }) %>
+        <% } %>
       </div>
   <% if (welcomeMedia || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-home-welcome__media">

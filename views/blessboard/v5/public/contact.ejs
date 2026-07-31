@@ -138,12 +138,13 @@
     heroHeading: introHeading,
     heroBody: introBody,
     heroMedia: null,
-    heroEyebrow: 'Get In Touch',
+    heroEyebrow: (intro && intro.layoutMetadata && intro.layoutMetadata.eyebrow) || 'Get In Touch',
     heroClass: 'bb-tp-contact-hero',
     heroCtaPrimary: messageEmailHref
       ? { href: messageEmailHref, label: 'Email Us' }
       : { href: hrefFor('/about'), label: 'About Us' },
     heroCtaSecondary: { href: hrefFor('/events'), label: 'View Events' },
+    heroLayoutMetadata: (intro && intro.layoutMetadata) || null,
     editPageKey: 'contact',
     editSectionKey: 'hero'
   }) %>
