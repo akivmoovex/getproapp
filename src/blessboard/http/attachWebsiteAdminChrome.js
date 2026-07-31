@@ -92,6 +92,54 @@ function resolveWebsiteEditCapability(authz) {
 }
 
 /**
+ * @param {string | null | undefined} a
+ * @param {string | null | undefined} b
+ */
+function uuidEqual(a, b) {
+  if (a == null || b == null) return false;
+  return String(a).toLowerCase() === String(b).toLowerCase();
+}
+
+/**
+ * Whether the authenticated editor may show edit chrome on this public page.
+ * HQ/platform: any church-wide or branch page in the tenant.
+ * Branch admin (multi-site): only the public page for their assigned branch.
+ * Branch admin (single-site): church-wide shared site only — never another branch
+ * path such as /branches/hq or /branches/other (matches save-scope product rule).
+ *
+ * @param {{
+ *   isHqEditor: boolean,
+ *   draftBranchId: string|null,
+ *   model: object,
+ * }} input
+ */
+function canShowWebsiteEditChrome(input) {
+  if (input && input.isHqEditor) return true;
+  const draftBranchId = input && input.draftBranchId ? String(input.draftBranchId) : null;
+  if (!draftBranchId) return false;
+
+  const model = input.model || {};
+  const pageScope = model.websiteScope || {};
+  const scopeType = String(pageScope.scopeType || "");
+  const websiteMode = String(model.websiteMode || "");
+
+  if (scopeType === "church" || scopeType === "") {
+    // Canonical shared-site edit surface for branch admins in SINGLE_SITE only.
+    return websiteMode === "single_site";
+  }
+
+  if (scopeType !== "branch") return false;
+
+  const pageBranchId =
+    pageScope.branchId != null
+      ? String(pageScope.branchId)
+      : model.branch && model.branch.id != null
+        ? String(model.branch.id)
+        : null;
+  return uuidEqual(pageBranchId, draftBranchId);
+}
+
+/**
  * @param {string} path
  * @param {boolean} editing
  */
@@ -200,6 +248,17 @@ async function attachWebsiteAdminChrome(opts) {
     return model;
   } else if (!isHqEditor && draftBranchId) {
     actorRole = capability.actorRole || actorRole;
+  }
+
+  if (
+    !canShowWebsiteEditChrome({
+      isHqEditor,
+      draftBranchId,
+      model,
+    })
+  ) {
+    model.websiteAdmin = null;
+    return model;
   }
 
   const churchId = tenant && tenant.church ? tenant.church.id : authz.churchId;
@@ -559,6 +618,7 @@ module.exports = {
   EDIT_QUERY,
   attachWebsiteAdminChrome,
   resolveWebsiteEditCapability,
+  canShowWebsiteEditChrome,
   withEditQuery,
   buildDisplayBaselineMap,
 };

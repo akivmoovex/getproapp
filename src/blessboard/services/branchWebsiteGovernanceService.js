@@ -39,10 +39,12 @@ async function assertBranchBelongsToOrg(db, scope) {
   );
   const row = res.rows[0];
   if (!row) return { ok: false, status: STATUS.NOT_FOUND };
-  if (String(row.church_id) !== String(scope.churchId)) {
-    return { ok: false, status: STATUS.FORBIDDEN };
-  }
-  if (String(row.organization_id) !== String(scope.organizationId)) {
+  const churchMatch =
+    String(row.church_id || "").toLowerCase() === String(scope.churchId || "").toLowerCase();
+  const orgMatch =
+    String(row.organization_id || "").toLowerCase() ===
+    String(scope.organizationId || "").toLowerCase();
+  if (!churchMatch || !orgMatch) {
     return { ok: false, status: STATUS.FORBIDDEN };
   }
   return { ok: true, status: STATUS.OK };

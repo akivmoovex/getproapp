@@ -99,6 +99,19 @@ async function loadBranchRow(db, branchId) {
 }
 
 /**
+ * Active scope overrides for a branch. Missing table / read errors → inherit (empty).
+ * @param {{ query: Function }} db
+ * @param {{ churchId: string, branchId: string }} scope
+ */
+async function loadActiveScopeRows(db, scope) {
+  try {
+    return await scopeRepo.listActiveForBranch(db, scope);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Resolve one Stage 2 key for a branch using loaded context.
  */
 function resolveOneKey(key, ctx) {
@@ -391,7 +404,7 @@ async function resolveBranchWebsiteSettings(db, input) {
     const [churchSettings, branchSettings, activeRows, serviceTimes] = await Promise.all([
       loadChurchSettings(db, churchId),
       loadBranchSettings(db, branchId),
-      scopeRepo.listActiveForBranch(db, { churchId, branchId }),
+      loadActiveScopeRows(db, { churchId, branchId }),
       resolvePublicServiceTimesEntries(db, { churchId, branchId }),
     ]);
 
@@ -401,7 +414,7 @@ async function resolveBranchWebsiteSettings(db, input) {
     }
 
     const ctx = {
-      lockedKeys,
+      lockedKeys: Array.isArray(lockedKeys) ? lockedKeys : [],
       hideAllowed,
       allowAccent,
       activeByKey,
@@ -436,7 +449,14 @@ async function resolveBranchWebsiteSettings(db, input) {
         });
         continue;
       }
-      values[key] = resolveOneKey(key, ctx);
+      try {
+        values[key] = resolveOneKey(key, ctx);
+      } catch {
+        values[key] = resolvedField(null, SOURCE.MISSING, {
+          locked: ctx.lockedKeys.includes(key),
+          resettable: false,
+        });
+      }
     }
 
     let serviceTimesMeta = {

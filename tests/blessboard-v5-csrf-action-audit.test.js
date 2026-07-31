@@ -4,6 +4,12 @@
  * Static audit: every V5 POST/PUT/PATCH/DELETE registration validates CSRF
  * via validateCsrf / validateCsrfPost / postDecision (registration helper).
  * Also: V5 EJS POST forms include CSRF fields; media-picker sends CSRF.
+ *
+ * Non-writing compatibility stubs that always return 404/not_found without
+ * touching the database may be classified as noopNotFoundStub (CSRF N/A).
+ *
+ * Scanner is handler-aware: thin route wrappers that call a same-file named
+ * handler include that handler body when checking for validateCsrf.
  */
 
 const assert = require("node:assert/strict");
@@ -29,8 +35,91 @@ function listRouteFiles() {
   ];
 }
 
+/**
+ * Extract named function bodies from a route module (same-file helpers).
+ * @param {string} text
+ * @returns {Map<string, string>}
+ */
+function extractNamedFunctionBodies(text) {
+  const map = new Map();
+  const re =
+    /(?:async\s+)?function\s+([A-Za-z_][\w]*)\s*\([^)]*\)\s*\{|(?:const|let|var)\s+([A-Za-z_][\w]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{/g;
+  let m;
+  while ((m = re.exec(text))) {
+    const name = m[1] || m[2];
+    const startBrace = text.indexOf("{", m.index);
+    if (startBrace < 0) continue;
+    let depth = 0;
+    let i = startBrace;
+    for (; i < text.length; i += 1) {
+      const ch = text[i];
+      if (ch === "{") depth += 1;
+      else if (ch === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          map.set(name, text.slice(startBrace, i + 1));
+          break;
+        }
+      }
+    }
+  }
+  return map;
+}
+
+/**
+ * Expand a route registration window with same-file handlers it invokes.
+ * @param {string} window
+ * @param {Map<string, string>} fnBodies
+ */
+function expandHandlerWindow(window, fnBodies) {
+  let expanded = window;
+  const called = new Set();
+  const callRe = /\b([A-Za-z_][\w]*)\s*\(/g;
+  let cm;
+  while ((cm = callRe.exec(window))) {
+    const name = cm[1];
+    if (
+      name === "validateCsrf" ||
+      name === "validateCsrfPost" ||
+      name === "postDecision" ||
+      name === "if" ||
+      name === "for" ||
+      name === "while" ||
+      name === "switch" ||
+      name === "catch" ||
+      name === "function" ||
+      name === "async" ||
+      name === "return" ||
+      name === "await" ||
+      name === "Promise" ||
+      name === "Boolean" ||
+      name === "String" ||
+      name === "Number" ||
+      name === "Array" ||
+      name === "Object" ||
+      name === "encodeURIComponent" ||
+      name === "setTimeout"
+    ) {
+      continue;
+    }
+    if (fnBodies.has(name)) called.add(name);
+  }
+  for (const name of called) {
+    expanded += `\n/* handler:${name} */\n${fnBodies.get(name)}`;
+  }
+  return expanded;
+}
+
+function hasCsrfProtection(scanText) {
+  return (
+    /validateCsrf(Post)?\s*\(/.test(scanText) ||
+    /postDecision\s*\(/.test(scanText)
+  );
+}
+
 function extractMutations(fileRel) {
   const text = read(fileRel);
+  const fnBodies = extractNamedFunctionBodies(text);
   const out = [];
   const re =
     /(app|router)\.(post|put|patch|delete)\(\s*((?:`[^`]+`|'[^']+'|"[^"]+"|[A-Za-z_][\w.]*))/g;
@@ -41,14 +130,22 @@ function extractMutations(fileRel) {
     if (/^[`'"]/.test(routePath)) routePath = routePath.slice(1, -1);
     const rest = text.slice(m.index);
     const next = rest.search(/\n\s*(router|app)\.(get|post|put|patch|delete)\(/);
-    const window = next > 0 ? rest.slice(0, next) : rest.slice(0, 3500);
-    const csrfProtected =
-      /validateCsrf(Post)?\s*\(/.test(window) ||
-      /postDecision\s*\(/.test(window) ||
-      // Thin wrappers that call validateCsrf(Post) inside the named handler body.
-      /handleConflictResolution\s*\(/.test(window) ||
-      /handleApprovalSettingsPost\s*\(/.test(window);
-    out.push({ file: fileRel, method, path: routePath, csrfProtected, window });
+    const window = next > 0 ? rest.slice(0, next) : rest.slice(0, rest.length);
+    const scanText = expandHandlerWindow(window, fnBodies);
+    const csrfProtected = hasCsrfProtection(scanText);
+    // Deliberate non-writing compatibility stubs (always 404 / not_found; no mutation).
+    const noopNotFoundStub =
+      /status\s*\(\s*404\s*\)/.test(window) &&
+      /not_found/.test(window) &&
+      !/\b(getPool|query\s*\(|insert|update|delete|save|publish|override)\b/i.test(window);
+    out.push({
+      file: fileRel,
+      method,
+      path: routePath,
+      csrfProtected,
+      noopNotFoundStub,
+      window: scanText,
+    });
   }
   return out;
 }
@@ -101,8 +198,38 @@ describe("blessboard v5 CSRF action audit", () => {
   });
 
   it("every V5 POST registration validates CSRF before mutating", () => {
-    const missing = mutations.filter((m) => !m.csrfProtected).map((m) => `${m.method} ${m.path} (${m.file})`);
+    const missing = mutations
+      .filter((m) => !m.csrfProtected && !m.noopNotFoundStub)
+      .map((m) => `${m.method} ${m.path} (${m.file})`);
     assert.deepEqual(missing, []);
+  });
+
+  it("classifies deliberate public website settings POST as a non-writing 404 stub", () => {
+    const stub = mutations.find(
+      (m) =>
+        m.file === "src/blessboard/http/websiteScopeSettingsAdminRoutes.js" &&
+        m.path === "/public/website/settings" &&
+        m.method === "POST"
+    );
+    assert.ok(stub, "expected POST /public/website/settings registration");
+    assert.equal(stub.noopNotFoundStub, true);
+    assert.equal(stub.csrfProtected, false);
+    assert.match(stub.window, /status\s*\(\s*404\s*\)/);
+    assert.match(stub.window, /not_found/);
+  });
+
+  it("noopNotFoundStub is not applied to real write routes", () => {
+    const writes = mutations.filter(
+      (m) =>
+        m.path.includes("/hq/website/publish") ||
+        m.path.includes("service-times") ||
+        m.path.includes("approval-settings")
+    );
+    assert.ok(writes.length >= 4);
+    for (const w of writes) {
+      assert.equal(w.noopNotFoundStub, false, `${w.method} ${w.path} must not be a stub`);
+      assert.equal(w.csrfProtected, true, `${w.method} ${w.path} must validate CSRF`);
+    }
   });
 
   it("every V5 EJS POST form includes a CSRF field", () => {

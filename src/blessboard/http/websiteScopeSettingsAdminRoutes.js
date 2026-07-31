@@ -24,6 +24,7 @@ const {
 const {
   resolveBranchWebsiteSettings,
   SOURCE,
+  STATUS,
 } = require("../services/resolveBranchWebsiteSettings");
 const {
   setWebsiteScopeOverride,
@@ -123,12 +124,35 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
           ? 404
           : resolved.status === WEBSITE_SCOPE_STATUS.FORBIDDEN
             ? 403
-            : 400;
+            : resolved.status === WEBSITE_SCOPE_STATUS.LOOKUP_ERROR
+              ? 503
+              : resolved.status === WEBSITE_SCOPE_STATUS.UNAUTHENTICATED
+                ? 401
+                : 400;
+      const error =
+        status === 404
+          ? "not_found"
+          : status === 403
+            ? "forbidden"
+            : status === 503
+              ? "unavailable"
+              : resolved.status || "scope";
       if (wantsJson(req) || !wantsHtmlForm(req)) {
-        res.status(status).json({ ok: false, error: resolved.status || "scope" });
+        res.status(status).json({ ok: false, error });
         return null;
       }
-      res.status(status).type("text").send(status === 404 ? "Not found" : "Forbidden");
+      res
+        .status(status)
+        .type("text")
+        .send(
+          status === 404
+            ? "Not found"
+            : status === 503
+              ? "Unavailable"
+              : status === 401
+                ? "Sign-in is required."
+                : "Forbidden"
+        );
       return null;
     }
     return resolved;
@@ -149,11 +173,55 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
     });
   }
 
+  /**
+   * Map resolveBranchWebsiteSettings failure → HTTP.
+   * Cross-org / forbidden branch → 404 (non-disclosure). Infra → 503.
+   */
+  function httpStatusForSettingsFailure(resolved) {
+    const status = resolved && resolved.status;
+    if (status === STATUS.NOT_FOUND || status === STATUS.FORBIDDEN) return 404;
+    if (status === STATUS.INVALID_INPUT) return 400;
+    if (status === STATUS.LOOKUP_ERROR) return 503;
+    return 404;
+  }
+
+  function sendSettingsFailure(req, res, resolved) {
+    const code = httpStatusForSettingsFailure(resolved);
+    const error =
+      code === 503
+        ? "unavailable"
+        : code === 400
+          ? "invalid_input"
+          : "not_found";
+    if (wantsJson(req)) return res.status(code).json({ ok: false, error });
+    if (code === 503) return res.status(503).type("text").send("Unavailable");
+    if (code === 400) return res.status(400).type("text").send("Bad request");
+    return res.status(404).type("text").send("Not found");
+  }
+
+  const ALLOWED_SECTIONS = new Set([
+    "identity",
+    "contact",
+    "social",
+    "seo",
+    "presentation",
+    "service-times",
+  ]);
+
+  function normalizeFocusSection(raw) {
+    const section = String(raw || "identity")
+      .trim()
+      .toLowerCase();
+    if (!section) return { ok: true, section: "identity" };
+    if (!ALLOWED_SECTIONS.has(section)) return { ok: false, section: null };
+    return { ok: true, section };
+  }
+
   async function renderHtmlEditor(req, res, scope, extras) {
     const tenant = req.blessBoardTenant;
     const resolved = await loadResolved(scope, tenant);
     if (!resolved.ok) {
-      return res.status(404).type("text").send("Not found");
+      return sendSettingsFailure(req, res, resolved);
     }
     const editor = buildEditorViewModel(resolved, { allowGovernanceControlled: true });
     const orgKey = tenant.organization && tenant.organization.key ? tenant.organization.key : null;
@@ -178,7 +246,14 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
     const errorSummary = (extras && extras.errorSummary) || null;
     const notice = (extras && extras.notice) || String((req.query && req.query.notice) || "");
     const error = (extras && extras.error) || String((req.query && req.query.error) || "");
-    const focusSection = (extras && extras.section) || String((req.query && req.query.section) || "identity");
+    const sectionRaw =
+      (extras && extras.section) || (req.query && req.query.section) || "identity";
+    const sectionNorm = normalizeFocusSection(sectionRaw);
+    if (!sectionNorm.ok) {
+      if (wantsJson(req)) return res.status(400).json({ ok: false, error: "invalid_section" });
+      return res.status(400).type("text").send("Bad request");
+    }
+    const focusSection = sectionNorm.section;
     const returnParsed = parseSafePublicWebsiteReturnTo(
       (extras && extras.returnTo) || (req.query && req.query.return_to) || (req.body && req.body.return_to)
     );
@@ -227,7 +302,7 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
         if (wantsJson(req)) {
           const resolved = await loadResolved(scope, req.blessBoardTenant);
           if (!resolved.ok) {
-            return res.status(404).json({ ok: false, error: resolved.status });
+            return sendSettingsFailure(req, res, resolved);
           }
           return res.json({
             ok: true,
@@ -240,8 +315,8 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
         }
         return renderHtmlEditor(req, res, scope, {});
       } catch {
-        if (wantsJson(req)) return res.status(500).json({ ok: false, error: "lookup_error" });
-        return res.status(500).type("text").send("Unavailable");
+        if (wantsJson(req)) return res.status(503).json({ ok: false, error: "unavailable" });
+        return res.status(503).type("text").send("Unavailable");
       }
     }
   );
@@ -424,9 +499,9 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
         );
       } catch {
         if (wantsJson(req) || !wantsHtmlForm(req)) {
-          return res.status(500).json({ ok: false, error: "lookup_error" });
+          return res.status(503).json({ ok: false, error: "unavailable" });
         }
-        return res.status(500).type("text").send("Unavailable");
+        return res.status(503).type("text").send("Unavailable");
       }
     }
   );
