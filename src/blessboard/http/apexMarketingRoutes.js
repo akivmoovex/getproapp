@@ -9,7 +9,7 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
-const directoryRepo = require("../../db/pg/church/publicChurchDirectoryRepo");
+const directoryRepo = require("../repositories/publicChurchDirectoryRepository");
 const {
   renderFeaturesPage,
   renderForChurchesPage,
@@ -697,7 +697,13 @@ function createApexMarketingRouter(deps) {
       } else {
         directoryUnavailable = true;
       }
-    } catch (_err) {
+    } catch (err) {
+      // Safe visitor fallback — log code/message only (no SQL, params, or stack).
+      // eslint-disable-next-line no-console
+      console.error("[apex] directory lookup failed", {
+        code: err && err.code ? String(err.code).slice(0, 40) : null,
+        message: err && err.message ? String(err.message).slice(0, 120) : "unknown",
+      });
       directoryUnavailable = true;
       results = { items: [], total: 0, page: 1, limit: directoryRepo.DEFAULT_PAGE_SIZE, totalPages: 0, q };
     }

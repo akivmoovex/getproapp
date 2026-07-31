@@ -94,7 +94,9 @@ describe("blessboard apex marketing batch 2b", () => {
       assert.match(plan.ctaLabel, /Register Your Church/);
     }
     assert.equal(buildApexPartnerPlan(), null);
-    assert.equal(mapDirectoryVisitUrl({ is_single_branch: false, branch_slug: "x" }), null);
+    assert.equal(mapDirectoryVisitUrl({ slug: "grace-community" }), "/c/grace-community");
+    assert.equal(mapDirectoryVisitUrl({ is_single_branch: true, branch_slug: "x" }), null);
+    assert.equal(mapDirectoryVisitUrl(null), null);
   });
 
   it("GET marketing pages render on apex with nav + no dead checkout", async () => {
@@ -135,7 +137,7 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(features.text, /Operational Excellence/);
     assert.match(features.text, /Enterprise Scaling/);
     assert.match(features.text, /no payment gateway in V5/i);
-    assert.match(features.text, /apex\.css\?v=12/);
+    assert.match(features.text, /apex\.css\?v=\d+/);
     assert.match(features.text, /data-bb-apex-page="features"/);
     assert.match(features.text, /bb-apex-features-page/);
     assert.match(features.text, /Advanced attendance/);
@@ -156,10 +158,8 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /method="get" action="\/directory"/);
     assert.match(res.text, /name="q"/);
-    assert.match(
-      res.text,
-      /data-bb-directory-state="(?:empty|unavailable)"|data-bb-directory-count=/
-    );
+    assert.match(res.text, /data-bb-directory-state="empty"/);
+    assert.doesNotMatch(res.text, /Directory temporarily unavailable/);
     assert.doesNotMatch(res.text, /Grace Community|St\. Jude|Covenant Life/);
   });
 
