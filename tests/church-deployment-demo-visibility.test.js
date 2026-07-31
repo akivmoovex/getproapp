@@ -174,16 +174,21 @@ test("public directory environment helpers respect DEPLOYMENT_ENV", () => {
   withEnv({ DEPLOYMENT_ENV: "production" }, () => {
     assert.equal(isPublicDirectoryEnvironment("production"), true);
     assert.equal(isPublicDirectoryEnvironment("demo"), false);
+    assert.equal(isPublicDirectoryEnvironment("testing"), false);
     assert.equal(isPublicDirectoryEnvironment("test"), false);
     assert.match(sqlPublicDirectoryEnvironmentFilter("o"), /production.*pilot/);
     assert.doesNotMatch(sqlPublicDirectoryEnvironmentFilter("o"), /'demo'/);
+    assert.doesNotMatch(sqlPublicDirectoryEnvironmentFilter("o"), /'testing'/);
   });
   withEnv({ DEPLOYMENT_ENV: "testing" }, () => {
     assert.equal(isPublicDirectoryEnvironment("demo"), true);
-    assert.equal(isPublicDirectoryEnvironment("test"), false);
+    assert.equal(isPublicDirectoryEnvironment("testing"), true);
+    assert.equal(isPublicDirectoryEnvironment("test"), true);
     assert.match(sqlPublicDirectoryEnvironmentFilter("o"), /'demo'/);
+    assert.match(sqlPublicDirectoryEnvironmentFilter("o"), /'testing'/);
   });
   assert.equal(isBillableEnvironment("demo"), false);
+  assert.equal(isBillableEnvironment("testing"), false);
   assert.equal(isBillableEnvironment("test"), false);
 });
 

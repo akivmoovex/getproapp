@@ -89,7 +89,9 @@ async function searchPublicOrganizations(pool, opts = {}) {
     `o.status = 'active'`,
     `c.status = 'active'`,
     sqlPublicDirectoryEnvironmentFilter("o"),
-    `COALESCE(cs.website_status, 'draft') = 'published'`,
+    // Missing church_settings is not an explicit unpublish (provisioning may omit the row).
+    // Explicit draft/suspended remain hidden.
+    `(cs.website_status IS NULL OR cs.website_status = 'published')`,
     `EXISTS (
       SELECT 1 FROM blessboard.branches b_active
       WHERE b_active.church_id = c.id AND b_active.status = 'active'

@@ -2,16 +2,19 @@
 
 /**
  * BlessBoard organisation data-environment classification.
- * Distinguishes production, pilot, demo, and automated test tenants.
+ * Distinguishes production, pilot, demo, and testing tenants.
+ *
+ * V5 schema / platform.organizations use `testing` (not legacy `test`).
+ * Legacy `test` is normalized to `testing` for JS helpers; SQL filters accept both.
  */
 
-const DATA_ENVIRONMENTS = Object.freeze(["production", "pilot", "demo", "test"]);
+const DATA_ENVIRONMENTS = Object.freeze(["production", "pilot", "demo", "testing"]);
 
 const DATA_ENVIRONMENT_LABELS = Object.freeze({
   production: "Production",
   pilot: "Pilot",
   demo: "Demo",
-  test: "Test",
+  testing: "Testing",
 });
 
 /** Environments that may appear in public directory on production deployments. */
@@ -19,9 +22,15 @@ const PUBLIC_DIRECTORY_ENVIRONMENTS = Object.freeze(["production", "pilot"]);
 
 /**
  * Environments that may appear in public directory on testing deployments.
- * Includes catalogue demo tenants (data_environment=demo); automated `test` stays hidden.
+ * Includes V5 testing tenants (`testing`), catalogue demos (`demo`), and production/pilot.
+ * Legacy SQL value `test` is also accepted so transitional rows remain visible on testing hosts.
  */
-const PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING = Object.freeze(["production", "pilot", "demo"]);
+const PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING = Object.freeze([
+  "production",
+  "pilot",
+  "demo",
+  "testing",
+]);
 
 /** Environments included in production analytics / cross-tenant report aggregates. */
 const REPORT_AGGREGATE_ENVIRONMENTS = Object.freeze(["production", "pilot"]);
@@ -30,22 +39,23 @@ const REPORT_AGGREGATE_ENVIRONMENTS = Object.freeze(["production", "pilot"]);
 const BILLABLE_ENVIRONMENTS = Object.freeze(["production"]);
 
 /** Environments allowed to receive fabricated public demo content. */
-const FABRICATED_CONTENT_ENVIRONMENTS = Object.freeze(["demo", "test"]);
+const FABRICATED_CONTENT_ENVIRONMENTS = Object.freeze(["demo", "testing"]);
 
 function normalizeDataEnvironment(raw) {
   const v = String(raw || "")
     .trim()
     .toLowerCase();
+  if (v === "test") return "testing";
   if (DATA_ENVIRONMENTS.includes(v)) return v;
   return "production";
 }
 
 function isValidDataEnvironment(raw) {
-  return DATA_ENVIRONMENTS.includes(
-    String(raw || "")
-      .trim()
-      .toLowerCase()
-  );
+  const v = String(raw || "")
+    .trim()
+    .toLowerCase();
+  if (v === "test") return true;
+  return DATA_ENVIRONMENTS.includes(v);
 }
 
 function getDataEnvironment(orgOrEnv) {
@@ -92,7 +102,7 @@ function isDemoEnvironment(orgOrEnv) {
 }
 
 function isTestEnvironment(orgOrEnv) {
-  return getDataEnvironment(orgOrEnv) === "test";
+  return getDataEnvironment(orgOrEnv) === "testing";
 }
 
 function isNonProductionEnvironment(orgOrEnv) {
@@ -101,13 +111,16 @@ function isNonProductionEnvironment(orgOrEnv) {
 
 /**
  * SQL fragment: organisation alias must be `o` (or pass alias).
- * Production deployments: production + pilot only.
- * Testing deployments: also include data_environment=demo (catalogue demos).
+ * Production deployments: production + pilot only (never testing/demo).
+ * Testing deployments: production + pilot + demo + testing (+ legacy `test`).
  */
 function sqlPublicDirectoryEnvironmentFilter(alias = "o") {
-  const list = publicDirectoryEnvironmentsForDeployment()
-    .map((e) => `'${e}'`)
-    .join(", ");
+  const envs = [...publicDirectoryEnvironmentsForDeployment()];
+  // Accept legacy V4 SQL value `test` wherever `testing` is allowed.
+  if (envs.includes("testing") && !envs.includes("test")) {
+    envs.push("test");
+  }
+  const list = envs.map((e) => `'${e}'`).join(", ");
   return `${alias}.data_environment IN (${list})`;
 }
 

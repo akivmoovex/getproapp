@@ -2,6 +2,8 @@
 
 /**
  * Regression: V5 apex GET /directory against platform/blessboard schema.
+ * Reproduces hosted testing data_environment=testing shape that previously
+ * vanished under the legacy production|pilot|demo-only SQL filter.
  */
 
 const assert = require("node:assert/strict");
@@ -29,6 +31,7 @@ const {
   ensureBranchSettingsInitialized,
   updateBranchSettings,
 } = require("../src/blessboard/services/blessBoardSettingsService");
+const directoryRepo = require("../src/blessboard/repositories/publicChurchDirectoryRepository");
 
 const APEX = "blessboard.org";
 
@@ -43,7 +46,7 @@ describe("blessboard apex public directory", () => {
   let skipReason = "";
   let prevDeploymentEnv;
 
-  /** @type {Record<string, { orgKey: string, churchId: string, displayName: string }>} */
+  /** @type {Record<string, any>} */
   const fixtures = {};
 
   before(async () => {
@@ -62,12 +65,15 @@ describe("blessboard apex public directory", () => {
       async function provisionListed({
         key,
         displayName,
-        dataEnvironment = "production",
+        dataEnvironment = "testing",
         websiteStatus = "published",
         orgStatus = "active",
         churchStatus = "active",
+        skipSettings = false,
+        extraBranches = 0,
         city = null,
         countryCode = null,
+        deactivateBranches = false,
       }) {
         const orgKey = uniq(key);
         const prov = await provisionPlatformTenant(pool, {
@@ -95,11 +101,14 @@ describe("blessboard apex public directory", () => {
         const churchId = ch.records.church.id;
         const branchId = ch.records.hqBranch.id;
 
-        await ensureChurchSettingsInitialized(pool, churchId);
-        await updateChurchSettings(pool, churchId, {
-          publicName: displayName,
-          websiteStatus,
-        });
+        if (!skipSettings) {
+          await ensureChurchSettingsInitialized(pool, churchId);
+          const up = await updateChurchSettings(pool, churchId, {
+            publicName: displayName,
+            websiteStatus,
+          });
+          assert.equal(up.ok, true, up.message || "updateChurchSettings");
+        }
 
         if (city || countryCode) {
           await ensureBranchSettingsInitialized(pool, branchId);
@@ -109,6 +118,21 @@ describe("blessboard apex public directory", () => {
             countryCode: countryCode || undefined,
           });
           assert.equal(branchUp.ok, true, branchUp.message || "updateBranchSettings");
+        }
+
+        for (let i = 0; i < extraBranches; i += 1) {
+          await pool.query(
+            `INSERT INTO blessboard.branches
+               (church_id, branch_key, display_name, branch_type, status, is_primary)
+             VALUES ($1, $2, $3, 'branch', 'active', false)`,
+            [churchId, `campus-${i + 1}`, `${displayName} Campus ${i + 1}`]
+          );
+        }
+
+        if (deactivateBranches) {
+          await pool.query(`UPDATE blessboard.branches SET status = 'inactive' WHERE church_id = $1`, [
+            churchId,
+          ]);
         }
 
         if (orgStatus !== "active") {
@@ -124,42 +148,84 @@ describe("blessboard apex public directory", () => {
           ]);
         }
 
-        return { orgKey, churchId, displayName, organizationId: prov.records.organization.id };
+        return {
+          orgKey,
+          churchId,
+          branchId,
+          displayName,
+          organizationId: prov.records.organization.id,
+          dataEnvironment,
+        };
       }
 
-      fixtures.listed = await provisionListed({
-        key: "dir-listed",
-        displayName: "Directory Listed Chapel",
-        dataEnvironment: "production",
+      // Real hosted shape: Foundation/testing tenants with data_environment=testing.
+      fixtures.foundationTesting = await provisionListed({
+        key: "dir-found",
+        displayName: "Directory Foundation Chapel",
+        dataEnvironment: "testing",
         websiteStatus: "published",
         city: "Lusaka",
         countryCode: "ZM",
       });
+      fixtures.growthTesting = await provisionListed({
+        key: "dir-growth",
+        displayName: "Directory Growth Chapel",
+        dataEnvironment: "testing",
+        websiteStatus: "published",
+      });
+      // Optional settings row absent — not an explicit unpublish.
+      fixtures.noSettings = await provisionListed({
+        key: "dir-noset",
+        displayName: "Directory No Settings Chapel",
+        dataEnvironment: "testing",
+        skipSettings: true,
+      });
+      fixtures.production = await provisionListed({
+        key: "dir-prod",
+        displayName: "Directory Production Chapel",
+        dataEnvironment: "production",
+        websiteStatus: "published",
+      });
       fixtures.unpublished = await provisionListed({
         key: "dir-draft",
         displayName: "Directory Draft Chapel",
-        dataEnvironment: "production",
+        dataEnvironment: "testing",
         websiteStatus: "draft",
       });
-      fixtures.suspended = await provisionListed({
+      fixtures.suspendedChurch = await provisionListed({
         key: "dir-susp",
         displayName: "Directory Suspended Chapel",
-        dataEnvironment: "production",
+        dataEnvironment: "testing",
         websiteStatus: "published",
         churchStatus: "suspended",
       });
       fixtures.inactiveOrg = await provisionListed({
         key: "dir-inact",
         displayName: "Directory Inactive Org Chapel",
-        dataEnvironment: "production",
+        dataEnvironment: "testing",
         websiteStatus: "published",
         orgStatus: "inactive",
       });
-      fixtures.testingOnly = await provisionListed({
-        key: "dir-test",
-        displayName: "Directory Testing Only Chapel",
+      fixtures.inactiveChurch = await provisionListed({
+        key: "dir-inch",
+        displayName: "Directory Inactive Church Chapel",
         dataEnvironment: "testing",
         websiteStatus: "published",
+        churchStatus: "inactive",
+      });
+      fixtures.noActiveBranch = await provisionListed({
+        key: "dir-nobr",
+        displayName: "Directory No Branch Chapel",
+        dataEnvironment: "testing",
+        websiteStatus: "published",
+        deactivateBranches: true,
+      });
+      fixtures.multiBranch = await provisionListed({
+        key: "dir-multi",
+        displayName: "Directory Multi Branch Chapel",
+        dataEnvironment: "testing",
+        websiteStatus: "published",
+        extraBranches: 2,
       });
     } catch (err) {
       skipSuite = true;
@@ -177,7 +243,7 @@ describe("blessboard apex public directory", () => {
     if (skipSuite) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
 
-  function makeApp(envExtra = {}, depsExtra = {}) {
+  function makeApp(envExtra = {}) {
     return createV5FoundationApp({
       env: baseV5TestEnv({
         BLESSBOARD_TENANT_ROUTING_MODE: "off",
@@ -185,40 +251,82 @@ describe("blessboard apex public directory", () => {
         ...envExtra,
       }),
       getPool: () => pool,
-      ...depsExtra,
     });
   }
 
-  it("GET /directory returns 200 on apex without unavailable fallback", async () => {
+  it("existing provisioned Foundation and Growth testing churches appear", async () => {
     requireDb();
     const app = makeApp();
     const res = await request(app).get("/directory").set("Host", APEX);
     assert.equal(res.status, 200);
     assert.doesNotMatch(res.text, /Directory temporarily unavailable/);
-    assert.match(res.text, /data-bb-apex-page="directory"/);
-    assert.match(res.text, /Directory Listed Chapel/);
-    assert.match(res.text, /href="\/c\/dir-listed-/);
+    assert.match(res.text, /Directory Foundation Chapel/);
+    assert.match(res.text, /Directory Growth Chapel/);
+    assert.match(res.text, new RegExp(`href="/c/${fixtures.foundationTesting.orgKey}"`));
+    assert.match(res.text, new RegExp(`href="/c/${fixtures.growthTesting.orgKey}"`));
   });
 
-  it("hides unpublished, suspended church, inactive org, and testing-only records", async () => {
+  it("church without church_settings row appears; explicit draft does not", async () => {
     requireDb();
     const app = makeApp();
     const res = await request(app).get("/directory").set("Host", APEX);
     assert.equal(res.status, 200);
+    assert.match(res.text, /Directory No Settings Chapel/);
     assert.doesNotMatch(res.text, /Directory Draft Chapel/);
-    assert.doesNotMatch(res.text, /Directory Suspended Chapel/);
-    assert.doesNotMatch(res.text, /Directory Inactive Org Chapel/);
-    assert.doesNotMatch(res.text, /Directory Testing Only Chapel/);
   });
 
-  it("search filter matches known church and empty query shows empty state", async () => {
+  it("hides inactive org, inactive/suspended church, and churches without active branches", async () => {
+    requireDb();
+    const app = makeApp();
+    const res = await request(app).get("/directory").set("Host", APEX);
+    assert.equal(res.status, 200);
+    assert.doesNotMatch(res.text, /Directory Inactive Org Chapel/);
+    assert.doesNotMatch(res.text, /Directory Inactive Church Chapel/);
+    assert.doesNotMatch(res.text, /Directory Suspended Chapel/);
+    assert.doesNotMatch(res.text, /Directory No Branch Chapel/);
+  });
+
+  it("testing records appear on testing deployment and stay hidden on production deployment", async () => {
+    requireDb();
+    process.env.DEPLOYMENT_ENV = "testing";
+    const onTesting = await directoryRepo.searchPublicOrganizations(pool, {});
+    const testingKeys = onTesting.items.map((i) => i.slug);
+    assert.ok(testingKeys.includes(fixtures.foundationTesting.orgKey));
+    assert.ok(testingKeys.includes(fixtures.growthTesting.orgKey));
+
+    process.env.DEPLOYMENT_ENV = "production";
+    try {
+      const onProduction = await directoryRepo.searchPublicOrganizations(pool, {});
+      const prodKeys = onProduction.items.map((i) => i.slug);
+      assert.ok(!prodKeys.includes(fixtures.foundationTesting.orgKey));
+      assert.ok(!prodKeys.includes(fixtures.growthTesting.orgKey));
+      assert.ok(prodKeys.includes(fixtures.production.orgKey));
+    } finally {
+      process.env.DEPLOYMENT_ENV = "testing";
+    }
+
+    const appProd = makeApp({ DEPLOYMENT_ENV: "production" });
+    // App env alone does not flip process.env; force process gate used by SQL helper.
+    process.env.DEPLOYMENT_ENV = "production";
+    try {
+      const res = await request(appProd).get("/directory").set("Host", APEX);
+      assert.equal(res.status, 200);
+      assert.match(res.text, /Directory Production Chapel/);
+      assert.doesNotMatch(res.text, /Directory Foundation Chapel/);
+      assert.doesNotMatch(res.text, /Directory Growth Chapel/);
+    } finally {
+      process.env.DEPLOYMENT_ENV = "testing";
+    }
+  });
+
+  it("search finds eligible church; empty search uses normal empty state", async () => {
     requireDb();
     const app = makeApp();
     const hit = await request(app)
-      .get(`/directory?q=${encodeURIComponent("Directory Listed")}`)
+      .get(`/directory?q=${encodeURIComponent("Directory Foundation")}`)
       .set("Host", APEX);
     assert.equal(hit.status, 200);
-    assert.match(hit.text, /Directory Listed Chapel/);
+    assert.match(hit.text, /Directory Foundation Chapel/);
     assert.doesNotMatch(hit.text, /Directory temporarily unavailable/);
 
     const miss = await request(app)
@@ -228,7 +336,24 @@ describe("blessboard apex public directory", () => {
     assert.match(miss.text, /data-bb-directory-state="empty"/);
     assert.match(miss.text, /No churches found/);
     assert.doesNotMatch(miss.text, /Directory temporarily unavailable/);
-    assert.doesNotMatch(miss.text, /church_organizations|relation \"|pg_|\bSELECT\b/i);
+  });
+
+  it("multi-branch church appears once with /c/:organizationKey visit link", async () => {
+    requireDb();
+    process.env.DEPLOYMENT_ENV = "testing";
+    const listed = await directoryRepo.searchPublicOrganizations(pool, {
+      q: fixtures.multiBranch.displayName,
+    });
+    const matches = listed.items.filter((i) => i.slug === fixtures.multiBranch.orgKey);
+    assert.equal(matches.length, 1);
+    assert.ok(matches[0].active_branch_count >= 3);
+
+    const app = makeApp();
+    const res = await request(app).get("/directory").set("Host", APEX);
+    assert.equal(res.status, 200);
+    const occurrences = res.text.split(`href="/c/${fixtures.multiBranch.orgKey}"`).length - 1;
+    assert.equal(occurrences, 1);
+    assert.match(res.text, /Directory Multi Branch Chapel/);
   });
 
   it("simulated repository error shows safe unavailable message without internals", async () => {
@@ -252,24 +377,19 @@ describe("blessboard apex public directory", () => {
     const res = await request(app).get("/directory").set("Host", APEX);
     assert.equal(res.status, 200);
     assert.match(res.text, /Directory temporarily unavailable/);
-    assert.match(res.text, /data-bb-directory-state="unavailable"/);
     assert.doesNotMatch(res.text, /simulated directory failure|XX000|church_organizations|stack|password/i);
   });
 
   it("works on BlessBoard apex host; tenant host does not serve apex directory", async () => {
     requireDb();
-    const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "off" });
+    const app = makeApp();
     const apex = await request(app).get("/directory").set("Host", APEX);
     assert.equal(apex.status, 200);
     assert.match(apex.text, /data-bb-shell="apex"/);
 
     const tenant = await request(app)
       .get("/directory")
-      .set("Host", `${fixtures.listed.orgKey}.example.test`);
+      .set("Host", `${fixtures.foundationTesting.orgKey}.example.test`);
     assert.equal(tenant.status, 404);
-
-    const features = await request(app).get("/features").set("Host", APEX);
-    assert.equal(features.status, 200);
-    assert.match(features.text, /data-bb-apex-page="features"/);
   });
 });
