@@ -596,6 +596,31 @@ async function loadBranchWebsiteOverview(db, opts) {
     else if (approved) primaryState = "approved";
     else if (published) primaryState = "published";
 
+    let websiteInitialization = {
+      status: "not_started",
+      autonomous: false,
+      initializedAt: null,
+    };
+    try {
+      const govRes = await db.query(
+        `SELECT website_initialization_status, initialized_at
+           FROM blessboard.branch_website_governance
+          WHERE branch_id = $1
+          LIMIT 1`,
+        [branchId]
+      );
+      const govRow = govRes.rows[0];
+      if (govRow) {
+        websiteInitialization = {
+          status: govRow.website_initialization_status || "not_started",
+          autonomous: govRow.website_initialization_status === "completed",
+          initializedAt: govRow.initialized_at || null,
+        };
+      }
+    } catch {
+      /* governance / migration may be absent */
+    }
+
     return {
       ok: true,
       status: STATUS.OK,
@@ -605,6 +630,10 @@ async function loadBranchWebsiteOverview(db, opts) {
       subtitle: "Update information shown for your branch",
       editPath: visualEditPath,
       previewPath: "/branch-admin/content/preview/home",
+      websiteAutonomyMessage: websiteInitialization.autonomous
+        ? "This branch website was initialized from the HQ website and is now independently editable."
+        : null,
+      websiteInitialization,
       submitPath: "/branch-admin/website/submit",
       overviewPath: "/branch-admin/website/overview",
       publicPath,

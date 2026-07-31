@@ -379,7 +379,7 @@ describe("blessboard website mode transition (integration)", () => {
     assert.equal(await countChurchWidePages(), churchWideBefore);
     assert.equal(await countBranchPages(eastBranch.id), eastPagesBefore);
 
-    // Creating a third campus does not copy HQ collections into the new branch.
+    // Creating a third campus snapshots HQ into a branch-owned draft (post-commit).
     const created = await createBlessBoardBranch(pool, {
       churchId: church.id,
       organizationId: org.id,
@@ -391,11 +391,13 @@ describe("blessboard website mode transition (integration)", () => {
       countryCode: "US",
     });
     assert.equal(created.ok, true, created.message || created.reason);
-    assert.equal(created.cmsContentCopied, false);
+    assert.equal(created.cmsContentCopied, true);
     assert.equal(created.websiteModeTransition.crossed, false);
-    assert.equal(await countBranchPages(created.branch.id), 0);
+    assert.ok(await countBranchPages(created.branch.id) > 0);
     assert.equal(await countChurchWidePages(), churchWideBefore);
     assert.equal((await readSection(hqSectionId)).heading, "HQ UNIQUE HEADING PRESERVE");
+    // HQ content must remain untouched after branch snapshot.
+    assert.equal((await readSection(eastSectionId)).heading, "EAST UNIQUE HEADING PRESERVE");
   });
 
   it("HQ notice renders after multi_site transition query", async () => {

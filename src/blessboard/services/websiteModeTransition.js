@@ -3,12 +3,13 @@
 /**
  * Website-mode transitions when active branch count crosses the single/multi boundary.
  *
- * Policy (smallest safe behavior — no conversion wizard, no bulk copy, no CMS merge):
+ * Policy (smallest safe behavior — no conversion wizard, no CMS merge on mode flip):
  *
  *   single_site → multi_site (active count 0|1 → 2+)
  *     - Church-wide CMS remains the HQ website (unchanged).
  *     - Existing branch-scoped rows stay untouched.
- *     - New/activated branches use existing provisioning only (no HQ content copy).
+ *     - New branches receive a post-commit HQ website snapshot (draft) via
+ *       initializeBranchWebsiteFromChurch — failure does not roll back the branch.
  *     - Do not auto-publish branch websites.
  *
  *   multi_site → single_site (active count 2+ → 0|1)
@@ -38,7 +39,7 @@ const NOTICE = Object.freeze({
 
 const NOTICE_MESSAGES = Object.freeze({
   [NOTICE.BRANCH_WEBSITES_AVAILABLE]:
-    "Independent branch websites are now available. Your church-wide site remains the HQ website — existing HQ content was not copied. Open Branch Websites from the Website menu to manage each campus.",
+    "Independent branch websites are now available. New branches receive a draft copy of the current HQ website and become independently editable. Open Branch Websites from the Website menu to review or publish each campus.",
   [NOTICE.SINGLE_SITE_RESTORED]:
     "Your public website is again a single church-wide site. Existing branch website content was preserved and is not shown publicly.",
 });

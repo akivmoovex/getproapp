@@ -39,6 +39,10 @@ const {
   saveHomeServiceTimes,
 } = require("../services/homeServiceTimesService");
 const {
+  initializeBranchWebsiteFromChurch,
+  STATUS: INIT_STATUS_CODES,
+} = require("../services/initializeBranchWebsiteFromChurch");
+const {
   publicBranchHomePath,
   publicBranchPagePath,
 } = require("../urls/churchUrlHelper");
@@ -269,6 +273,10 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
       parentChurchLabel: resolved.parentChurchLabel,
       editor,
       governance: resolved.governance,
+      websiteInitialization: resolved.websiteInitialization || {
+        status: "not_started",
+        autonomous: false,
+      },
       previewHref,
       previewAboutHref,
       serviceTimesHref: `/hq/website/branches/${encodeURIComponent(branchKey)}/service-times`,
@@ -361,6 +369,47 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
           : cleared.message || "Could not clear service times.",
         section: "service-times",
         notice: cleared.ok ? "service_times_cleared" : null,
+      };
+    }
+
+    if (action === "initialize_website") {
+      const currentGov = await resolveBranchWebsiteSettings(getPool(), {
+        organizationId: scope.organizationId,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+      });
+      const currentStatus =
+        (currentGov &&
+          currentGov.websiteInitialization &&
+          currentGov.websiteInitialization.status) ||
+        "not_started";
+      const init = await initializeBranchWebsiteFromChurch(getPool(), {
+        organizationId: scope.organizationId,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        actorUserId,
+        forceRetry: currentStatus === "failed" || currentStatus === "initializing",
+      });
+      if (init.ok && init.status === INIT_STATUS_CODES.OK) {
+        return { ok: true, notice: "initialized", section: "identity" };
+      }
+      if (init.ok && init.status === INIT_STATUS_CODES.ALREADY_INITIALIZED) {
+        return { ok: true, notice: "already_initialized", section: "identity" };
+      }
+      if (init.status === INIT_STATUS_CODES.PARTIALLY_EDITED) {
+        return {
+          ok: false,
+          status: SCOPE_STATUS.INVALID_INPUT,
+          message:
+            "This branch already has website edits. Initialization was skipped to avoid overwriting them.",
+          section: "identity",
+        };
+      }
+      return {
+        ok: false,
+        status: SCOPE_STATUS.LOOKUP_ERROR,
+        message: "Website initialization failed. You can retry without affecting the branch.",
+        section: "identity",
       };
     }
 

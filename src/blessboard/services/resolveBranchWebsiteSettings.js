@@ -150,12 +150,21 @@ function resolveOneKey(key, ctx) {
     });
   }
 
+  // After HQ→branch initialization, design/SEO/social must not live-inherit from HQ.
+  // Operational contact (phone/email) may still fall back to church contact.
   const churchValue = churchValueForKey(key, ctx);
   if (churchValue != null) {
-    return resolvedField(churchValue, SOURCE.CHURCH_DEFAULT, {
-      locked,
-      resettable: false,
-    });
+    const allowLiveChurch =
+      !ctx.websiteInitialized ||
+      key === "contact.phone" ||
+      key === "contact.email" ||
+      key === "presentation.parent_church_label";
+    if (allowLiveChurch) {
+      return resolvedField(churchValue, SOURCE.CHURCH_DEFAULT, {
+        locked,
+        resettable: false,
+      });
+    }
   }
 
   const platformValue = platformFallbackForKey(key, ctx);
@@ -401,11 +410,20 @@ async function resolveBranchWebsiteSettings(db, input) {
     const allowAccent =
       gov.ok && gov.effective ? Boolean(gov.effective.allowAccentTreatment) : false;
 
+    const websiteInitialized =
+      gov.ok &&
+      gov.governance &&
+      gov.governance.websiteInitializationStatus === "completed";
+
     const [churchSettings, branchSettings, activeRows, serviceTimes] = await Promise.all([
       loadChurchSettings(db, churchId),
       loadBranchSettings(db, branchId),
       loadActiveScopeRows(db, { churchId, branchId }),
-      resolvePublicServiceTimesEntries(db, { churchId, branchId }),
+      resolvePublicServiceTimesEntries(db, {
+        churchId,
+        branchId,
+        allowChurchFallback: !websiteInitialized,
+      }),
     ]);
 
     const activeByKey = new Map();
@@ -421,6 +439,7 @@ async function resolveBranchWebsiteSettings(db, input) {
       churchSettings,
       branchSettings,
       branchRow,
+      websiteInitialized: Boolean(websiteInitialized),
       churchDisplayName: input.churchDisplayName || null,
       churchTagline: input.churchTagline || null,
       churchHeroTitle: input.churchHeroTitle || null,
@@ -507,6 +526,21 @@ async function resolveBranchWebsiteSettings(db, input) {
           values["presentation.parent_church_label"].value) ||
         input.churchDisplayName ||
         null,
+      websiteInitialization: {
+        status:
+          (gov.ok &&
+            gov.governance &&
+            gov.governance.websiteInitializationStatus) ||
+          "not_started",
+        initializedAt:
+          (gov.ok && gov.governance && gov.governance.initializedAt) || null,
+        initializedFromVersionId:
+          (gov.ok && gov.governance && gov.governance.initializedFromVersionId) ||
+          null,
+        initializationError:
+          (gov.ok && gov.governance && gov.governance.initializationError) || null,
+        autonomous: Boolean(websiteInitialized),
+      },
     };
   } catch {
     return {

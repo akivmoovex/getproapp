@@ -611,10 +611,11 @@ async function loadAdminServiceTimes(db, input) {
 
 /**
  * Public service-times resolution for a branch mini website (or church-wide when branchId null).
- * Order: published branch section → published church-wide section → empty.
+ * Order: published branch section → (optional) published church-wide section → empty.
+ * After branch website initialization, church-wide fallback must be disabled.
  * Never invents demo entries.
  * @param {{ connect?: Function, query?: Function }} db
- * @param {{ churchId: string, branchId?: string|null }} input
+ * @param {{ churchId: string, branchId?: string|null, allowChurchFallback?: boolean }} input
  */
 async function resolvePublicServiceTimesEntries(db, input) {
   const churchId = String((input && input.churchId) || "").trim();
@@ -625,6 +626,7 @@ async function resolvePublicServiceTimesEntries(db, input) {
     input && input.branchId != null && String(input.branchId).trim()
       ? String(input.branchId).trim()
       : null;
+  const allowChurchFallback = !input || input.allowChurchFallback !== false;
 
   try {
     return await withClient(db, async (client) => {
@@ -658,6 +660,9 @@ async function resolvePublicServiceTimesEntries(db, input) {
             entries: branchEntries,
             source: "branch",
           };
+        }
+        if (!allowChurchFallback) {
+          return { ok: true, status: STATUS.OK, entries: [], source: "branch" };
         }
       }
 

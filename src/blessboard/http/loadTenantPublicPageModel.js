@@ -59,6 +59,7 @@ async function resolvePublishedPage(db, scope) {
       : scope.primaryBranchId != null && String(scope.primaryBranchId).trim()
         ? String(scope.primaryBranchId).trim()
         : null;
+  const allowChurchFallback = scope.allowChurchContentFallback !== false;
 
   if (contentBranchId) {
     const branchPage = await getPublishedPage(db, {
@@ -68,6 +69,15 @@ async function resolvePublishedPage(db, scope) {
     });
     if (branchPage.ok && branchPage.page) {
       return { ...branchPage, contentScope: "branch" };
+    }
+    if (!allowChurchFallback) {
+      return {
+        ok: false,
+        status: "not_found",
+        page: null,
+        sections: [],
+        contentScope: "branch",
+      };
     }
   }
 
@@ -91,13 +101,19 @@ async function resolvePublishedPage(db, scope) {
 /**
  * Prefer branch-scoped published entities when a branch is in scope; if none, church-wide.
  * When contentBranchId is null (church-wide site), list church-wide only.
+ * When allowChurchContentFallback is false (initialized branch site), branch-only.
  * @param {(db: *, input: object) => Promise<{ ok: boolean, items: object[] }>} listFn
  */
-async function resolvePublishedList(db, listFn, churchId, contentBranchId) {
+async function resolvePublishedList(db, listFn, churchId, contentBranchId, options) {
+  const allowChurchFallback =
+    !options || options.allowChurchContentFallback !== false;
   if (contentBranchId) {
     const branchList = await listFn(db, { churchId, branchId: contentBranchId });
     if (branchList.ok && branchList.items && branchList.items.length > 0) {
       return { ok: true, items: branchList.items, contentScope: "branch" };
+    }
+    if (!allowChurchFallback) {
+      return { ok: true, items: [], contentScope: "branch" };
     }
   }
   const churchList = await listFn(db, { churchId, branchId: null });
@@ -752,7 +768,7 @@ async function loadTenantPublicPageModel(db, input) {
   }
 
   const isPreview = Boolean(input.preview);
-  const allowChurchContentFallback = input.allowChurchContentFallback !== false;
+  let allowChurchContentFallback = input.allowChurchContentFallback !== false;
   const churchId = tenant.church.id;
   const primaryBranchId = tenant.primaryBranch.id;
   const pageKey = String(input.pageKey || "home");
@@ -814,6 +830,17 @@ async function loadTenantPublicPageModel(db, input) {
     tenant.organization && tenant.organization.id ? String(tenant.organization.id) : null;
 
   if (scopedBranchActive && organizationId && contentBranchId) {
+    try {
+      const {
+        isBranchWebsiteInitialized,
+      } = require("../services/initializeBranchWebsiteFromChurch");
+      if (await isBranchWebsiteInitialized(db, contentBranchId)) {
+        // Initialized branch sites are autonomous: no live HQ content fallback.
+        allowChurchContentFallback = false;
+      }
+    } catch {
+      /* keep prior fallback policy */
+    }
     try {
       websiteResolved = await resolveBranchWebsiteSettings(db, {
         organizationId,
@@ -917,6 +944,7 @@ async function loadTenantPublicPageModel(db, input) {
         churchId,
         contentBranchId,
         pageKey,
+        allowChurchContentFallback,
       });
 
   let pageSections = isPreview
@@ -939,7 +967,9 @@ async function loadTenantPublicPageModel(db, input) {
       if (prepare) items = prepare(items);
       return { items, contentScope: list.contentScope };
     }
-    const list = await resolvePublishedList(db, publishedFn, churchId, contentBranchId);
+    const list = await resolvePublishedList(db, publishedFn, churchId, contentBranchId, {
+      allowChurchContentFallback,
+    });
     let items = (list.items || []).map(mapper);
     if (prepare) items = prepare(items);
     return { items, contentScope: list.contentScope };
@@ -1023,6 +1053,7 @@ async function loadTenantPublicPageModel(db, input) {
       const serviceTimesResolved = await resolvePublicServiceTimesEntries(db, {
         churchId,
         branchId: contentBranchId,
+        allowChurchFallback: allowChurchContentFallback,
       });
       serviceTimesEntries =
         serviceTimesResolved && Array.isArray(serviceTimesResolved.entries)
@@ -1053,9 +1084,11 @@ async function loadTenantPublicPageModel(db, input) {
           contentAdmin.listAdminContactChannels,
           churchId,
           contentBranchId,
-          { allowChurchContentFallback: true }
+          { allowChurchContentFallback }
         )
-      : await resolvePublishedList(db, listPublishedContactChannels, churchId, contentBranchId);
+      : await resolvePublishedList(db, listPublishedContactChannels, churchId, contentBranchId, {
+          allowChurchContentFallback,
+        });
     const allChannels = (contactList.items || []).map(mapContact);
     socialLinks = allChannels.filter((ch) => isSocialChannel(ch.channelType) && ch.href);
   }
@@ -1236,6 +1269,7 @@ async function loadTenantPublicPageModel(db, input) {
             churchId,
             contentBranchId,
             pageKey: "home",
+            allowChurchContentFallback,
           });
       const homeSections = ((homePage && homePage.sections) || []).map(mapSection);
       const homeFooter = homeSections.find(

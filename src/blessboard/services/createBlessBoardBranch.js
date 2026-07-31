@@ -27,6 +27,9 @@ const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
 const {
   ensureBranchWebsiteGovernance,
 } = require("./branchWebsiteGovernanceService");
+const {
+  initializeBranchWebsiteFromChurch,
+} = require("./initializeBranchWebsiteFromChurch");
 const { detectWebsiteModeTransition } = require("./websiteModeTransition");
 
 const STATUS = Object.freeze({
@@ -297,6 +300,25 @@ async function createBlessBoardBranch(db, input) {
       /* best-effort — branch row already committed and must remain listable */
     }
 
+    // Website initialization is post-commit and best-effort. Failure must never
+    // imply the branch was not created; admins can retry from HQ settings.
+    let websiteInitialization = null;
+    try {
+      websiteInitialization = await initializeBranchWebsiteFromChurch(db, {
+        organizationId,
+        churchId,
+        branchId: branch.id,
+        actorUserId: actorUserId || null,
+      });
+    } catch (err) {
+      websiteInitialization = {
+        ok: false,
+        status: "failed",
+        reason: "initialization_failed",
+        errorCode: err && err.message ? String(err.message).slice(0, 120) : "unknown",
+      };
+    }
+
     const previousActiveCount =
       gate.current != null ? Number(gate.current) : null;
     const nextActiveCount =
@@ -315,8 +337,13 @@ async function createBlessBoardBranch(db, input) {
       nextActiveCount,
       limit: gate.limit,
       websiteModeTransition,
-      /** Create never seeds or copies public CMS pages into the new branch. */
-      cmsContentCopied: false,
+      websiteInitialization,
+      /** True only when HQ→branch snapshot completed in this create call. */
+      cmsContentCopied: Boolean(
+        websiteInitialization &&
+          websiteInitialization.ok &&
+          websiteInitialization.status === "ok"
+      ),
     };
   } catch (err) {
     try {

@@ -22,6 +22,13 @@ const DEFAULTS = Object.freeze({
   lockedSettingKeys: Object.freeze([]),
 });
 
+const INIT_STATUS = Object.freeze({
+  NOT_STARTED: "not_started",
+  INITIALIZING: "initializing",
+  COMPLETED: "completed",
+  FAILED: "failed",
+});
+
 function mapRow(row) {
   if (!row) return null;
   return {
@@ -43,6 +50,11 @@ function mapRow(row) {
     lockedSettingKeys: Array.isArray(row.locked_setting_keys_json)
       ? row.locked_setting_keys_json.slice()
       : [],
+    websiteInitializationStatus:
+      row.website_initialization_status || INIT_STATUS.NOT_STARTED,
+    initializedFromVersionId: row.initialized_from_version_id || null,
+    initializedAt: row.initialized_at || null,
+    initializationError: row.initialization_error || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
@@ -160,11 +172,79 @@ async function upsert(db, input) {
   return mapRow(res.rows[0]);
 }
 
+/**
+ * Update branch website initialization lifecycle fields only.
+ * @param {{ query: Function }} db
+ * @param {{
+ *   branchId: string,
+ *   websiteInitializationStatus: string,
+ *   initializedFromVersionId?: string|null,
+ *   initializedAt?: string|Date|null,
+ *   initializationError?: string|null,
+ *   updatedBy?: string|null,
+ * }} input
+ */
+async function updateInitialization(db, input) {
+  if (!isUuid(input.branchId)) return null;
+  const status = String(input.websiteInitializationStatus || "").trim();
+  if (
+    status !== INIT_STATUS.NOT_STARTED &&
+    status !== INIT_STATUS.INITIALIZING &&
+    status !== INIT_STATUS.COMPLETED &&
+    status !== INIT_STATUS.FAILED
+  ) {
+    return null;
+  }
+  const errorText =
+    input.initializationError == null
+      ? null
+      : String(input.initializationError).trim().slice(0, 500) || null;
+  const fromVersion =
+    input.initializedFromVersionId != null && isUuid(input.initializedFromVersionId)
+      ? input.initializedFromVersionId
+      : null;
+  const res = await db.query(
+    `UPDATE blessboard.branch_website_governance
+        SET website_initialization_status = $2,
+            initialized_from_version_id = CASE
+              WHEN $2 = 'completed' THEN COALESCE($3::uuid, initialized_from_version_id)
+              WHEN $2 = 'not_started' THEN NULL
+              ELSE initialized_from_version_id
+            END,
+            initialized_at = CASE
+              WHEN $2 = 'completed' THEN COALESCE($4::timestamptz, now())
+              WHEN $2 = 'not_started' THEN NULL
+              ELSE initialized_at
+            END,
+            initialization_error = CASE
+              WHEN $2 = 'failed' THEN $5
+              WHEN $2 = 'completed' THEN NULL
+              WHEN $2 = 'initializing' THEN NULL
+              ELSE initialization_error
+            END,
+            updated_by = COALESCE($6, updated_by),
+            updated_at = now()
+      WHERE branch_id = $1
+      RETURNING *`,
+    [
+      input.branchId,
+      status,
+      fromVersion,
+      input.initializedAt != null ? input.initializedAt : null,
+      errorText,
+      input.updatedBy || null,
+    ]
+  );
+  return mapRow(res.rows[0] || null);
+}
+
 module.exports = {
   isUuid,
   DEFAULTS,
+  INIT_STATUS,
   mapRow,
   findByBranchId,
   ensureDefaults,
   upsert,
+  updateInitialization,
 };

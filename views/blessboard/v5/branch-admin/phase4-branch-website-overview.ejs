@@ -35,6 +35,11 @@
         <strong><%= o.branchName || 'Branch' %></strong>
         — <%= o.subtitle || 'Update information shown for your branch' %>
       </p>
+      <% if (o.websiteAutonomyMessage) { %>
+      <p class="bb-ba-lede" data-bb-branch-website-autonomy="1"><%= o.websiteAutonomyMessage %></p>
+      <% } else if (o.websiteInitialization && o.websiteInitialization.status === 'failed') { %>
+      <p class="bb-ba-lede" data-bb-branch-website-init-failed="1">Website initialization needs HQ attention. Your branch record is unaffected.</p>
+      <% } %>
     </div>
     <p class="bb-ba-page-head__actions">
       <a class="bb-ba-btn bb-ba-btn--primary" href="<%= o.editPath || '/branch-admin/website' %>">Edit Branch Website</a>

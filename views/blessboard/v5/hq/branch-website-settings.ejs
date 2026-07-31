@@ -4,6 +4,9 @@
   var sections = Array.isArray(ed.sections) ? ed.sections : [];
   var st = ed.serviceTimes || {};
   var gov = typeof governance !== 'undefined' && governance ? governance : null;
+  var initMeta = typeof websiteInitialization !== 'undefined' && websiteInitialization
+    ? websiteInitialization
+    : { status: 'not_started', autonomous: false };
   var fErr = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
   var fVals = typeof formValues !== 'undefined' && formValues ? formValues : {};
   var noticeKey = String(typeof notice !== 'undefined' ? notice : '');
@@ -13,6 +16,10 @@
   else if (noticeKey === 'restored') noticeText = 'Hidden state cleared. Inherited value restored.';
   else if (noticeKey === 'hidden') noticeText = 'Field hidden on this branch website.';
   else if (noticeKey === 'service_times_cleared') noticeText = 'Branch-local service times cleared. Church fallback will show when available.';
+  else if (noticeKey === 'initialized') noticeText = 'This branch website was initialized from the HQ website and is now independently editable.';
+  else if (noticeKey === 'already_initialized') noticeText = 'This branch website is already initialized and independently editable.';
+  else if (noticeKey === 'init_failed') noticeText = 'Website initialization failed. You can retry without affecting the branch record.';
+  else if (noticeKey === 'partially_edited') noticeText = 'This branch already has website edits. Initialization was skipped to avoid overwriting them.';
   else if (noticeKey) noticeText = noticeKey;
 
   function esc(v) {
@@ -81,6 +88,61 @@
   <% if (noticeText) { %>
   <p class="bb-hq-ok" role="status" data-bb-branch-settings-notice="1"><%= esc(noticeText) %></p>
   <% } %>
+
+  <section class="bb-hq-panel bb-hq-branch-settings__section" id="initialization" aria-labelledby="bb-bws-init-title" data-bb-website-init="1">
+    <h2 id="bb-bws-init-title" class="bb-hq-panel__title">Website initialization</h2>
+    <%
+      var initStatus = String(initMeta.status || 'not_started');
+      var initLabel = initStatus === 'completed' ? 'Completed'
+        : initStatus === 'failed' ? 'Failed — retry available'
+        : initStatus === 'initializing' ? 'In progress'
+        : initStatus === 'partially_edited' ? 'Needs review'
+        : 'Not started';
+    %>
+    <dl class="bb-hq-branch-settings__gov">
+      <div>
+        <dt>Status</dt>
+        <dd data-bb-init-status="<%= esc(initStatus) %>"><%= esc(initLabel) %></dd>
+      </div>
+      <div>
+        <dt>Initialized</dt>
+        <dd data-bb-init-at="1"><%= initMeta.initializedAt ? esc(String(initMeta.initializedAt)) : '—' %></dd>
+      </div>
+      <div>
+        <dt>Source</dt>
+        <dd data-bb-init-source="1"><%= initStatus === 'completed' ? 'HQ website snapshot' : '—' %></dd>
+      </div>
+      <div>
+        <dt>Autonomy</dt>
+        <dd data-bb-init-autonomy="1"><%= initMeta.autonomous ? 'Independent branch website (HQ edits do not overwrite this site)' : 'Uses live HQ fallback until initialized' %></dd>
+      </div>
+    </dl>
+    <% if (initStatus === 'completed') { %>
+    <p class="bb-hq-hint" data-bb-init-complete-msg="1">
+      This branch website was initialized from the HQ website and is now independently editable.
+    </p>
+    <p class="bb-hq-branch-settings__field-actions">
+      <a class="bb-hq-btn" href="<%= websiteHomeHref %>" data-bb-open-branch-editor="1">Open branch editor</a>
+    </p>
+    <% } else if (initStatus === 'failed' || initStatus === 'not_started' || initStatus === 'initializing') { %>
+    <p class="bb-hq-hint">
+      Initialization copies the current HQ website into a branch-owned draft. It does not publish automatically.
+      <% if (initMeta.initializationError) { %> Last error: <%= esc(initMeta.initializationError) %>.<% } %>
+    </p>
+    <form method="post" action="<%= formAction %>" class="bb-hq-form" data-bb-setting-action="initialize_website">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <input type="hidden" name="action" value="initialize_website" />
+      <input type="hidden" name="section" value="identity" />
+      <% if (safeReturnTo) { %><input type="hidden" name="return_to" value="<%= esc(safeReturnTo) %>" /><% } %>
+      <button type="submit" class="bb-hq-btn" data-bb-init-retry="1">
+        <%= initStatus === 'failed' ? 'Retry website initialization' : 'Initialize website from HQ' %>
+      </button>
+    </form>
+    <% } else { %>
+    <p class="bb-hq-hint">This branch already has website content. Review it in the editor instead of re-initializing.</p>
+    <p><a class="bb-hq-btn bb-hq-btn--ghost" href="<%= websiteHomeHref %>">Open branch editor</a></p>
+    <% } %>
+  </section>
 
   <% if (error || errorSummary) { %>
   <div class="bb-hq-error bb-hq-branch-settings__error-summary" role="alert" tabindex="-1" id="bb-bws-error-summary" data-bb-branch-settings-errors="1">
