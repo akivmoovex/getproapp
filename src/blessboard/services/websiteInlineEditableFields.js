@@ -27,257 +27,211 @@ const FIELD_TYPES = Object.freeze({
  * }} EditableFieldDef
  */
 
+/**
+ * @param {string} pageKey
+ * @param {string} sectionKey
+ * @param {Array<[string, string, number, object?]>} specs fieldKey, type, maxLength, extras
+ * @returns {EditableFieldDef[]}
+ */
+function fieldsFor(pageKey, sectionKey, specs) {
+  return specs.map(([fieldKey, type, maxLength, extras]) => ({
+    pageKey,
+    sectionKey,
+    fieldKey,
+    type,
+    maxLength,
+    ...(extras || {}),
+  }));
+}
+
 /** @type {EditableFieldDef[]} */
 const EDITABLE_FIELDS = [
-  {
-    pageKey: "home",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    minLength: 1,
-    required: true,
-    guidance: "Up to 120 characters",
-  },
-  {
-    pageKey: "home",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-    guidance: "Up to 500 characters",
-  },
-  {
-    pageKey: "home",
-    sectionKey: "hero",
-    fieldKey: "buttonText",
-    type: FIELD_TYPES.buttonText,
-    maxLength: 48,
-    guidance: "Short button label",
-  },
-  {
-    pageKey: "home",
-    sectionKey: "hero",
-    fieldKey: "buttonUrl",
-    type: FIELD_TYPES.buttonUrl,
-    maxLength: 500,
-    guidance: "Relative path or https URL",
-  },
-  {
-    pageKey: "home",
-    sectionKey: "welcome",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "home",
-    sectionKey: "welcome",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 2000,
-  },
-  {
-    pageKey: "about",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "about",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-  },
-  {
-    pageKey: "about",
-    sectionKey: "story",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-  },
-  {
-    pageKey: "about",
-    sectionKey: "story",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 4000,
-  },
-  {
-    pageKey: "about",
-    sectionKey: "mission",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-  },
-  {
-    pageKey: "about",
-    sectionKey: "mission",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 2000,
-  },
-  {
-    pageKey: "about",
-    sectionKey: "vision",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-  },
-  {
-    pageKey: "about",
-    sectionKey: "vision",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 2000,
-  },
-  {
-    pageKey: "leadership",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "leadership",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-  },
-  {
-    pageKey: "leadership",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "leadership",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-  },
-  {
-    pageKey: "ministries",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "ministries",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-  },
-  {
-    pageKey: "events",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "events",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-  },
-  {
-    pageKey: "sermons",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "sermons",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-  },
-  {
-    pageKey: "contact",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "contact",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-  },
-  {
-    pageKey: "contact",
-    sectionKey: "details",
-    fieldKey: "email",
-    type: FIELD_TYPES.contactText,
-    maxLength: 254,
-    guidance: "Contact email",
-  },
-  {
-    pageKey: "contact",
-    sectionKey: "details",
-    fieldKey: "phone",
-    type: FIELD_TYPES.contactText,
-    maxLength: 40,
-    guidance: "Phone number",
-  },
-  {
-    pageKey: "contact",
-    sectionKey: "details",
-    fieldKey: "address",
-    type: FIELD_TYPES.contactText,
-    maxLength: 300,
-    guidance: "Street address",
-  },
-  {
-    pageKey: "giving",
-    sectionKey: "hero",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-    required: true,
-  },
-  {
-    pageKey: "giving",
-    sectionKey: "hero",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 500,
-  },
-  {
-    pageKey: "giving",
-    sectionKey: "cta",
-    fieldKey: "heading",
-    type: FIELD_TYPES.heading,
-    maxLength: 120,
-  },
-  {
-    pageKey: "giving",
-    sectionKey: "cta",
-    fieldKey: "bodyText",
-    type: FIELD_TYPES.paragraph,
-    maxLength: 800,
-  },
+  ...fieldsFor("home", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true, guidance: "Up to 120 characters" }],
+    ["bodyText", FIELD_TYPES.paragraph, 500, { guidance: "Up to 500 characters" }],
+    ["buttonText", FIELD_TYPES.buttonText, 48, { guidance: "Short button label" }],
+    ["buttonUrl", FIELD_TYPES.buttonUrl, 500, { guidance: "Relative path or https URL" }],
+  ]),
+  ...fieldsFor("home", "welcome", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+  ]),
+  ...fieldsFor("home", "ministries_intro", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+  ]),
+  ...fieldsFor("home", "events_intro", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+  ]),
+  ...fieldsFor("home", "sermons_intro", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+  ]),
+  ...fieldsFor("home", "leadership_intro", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+  ]),
+  ...fieldsFor("home", "giving_cta", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 800],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+  ]),
+  ...fieldsFor("home", "contact_intro", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+  ]),
+  ...fieldsFor("home", "footer", [
+    ["tagline", FIELD_TYPES.paragraph, 200, { guidance: "Footer tagline (up to 200 characters)" }],
+  ]),
+
+  ...fieldsFor("about", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("about", "story", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 4000],
+  ]),
+  ...fieldsFor("about", "mission", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+  ]),
+  ...fieldsFor("about", "vision", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+  ]),
+  ...fieldsFor("about", "values", [
+    ["heading", FIELD_TYPES.heading, 120],
+  ]),
+  ...fieldsFor("about", "value_presence", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+  ]),
+  ...fieldsFor("about", "value_integrity", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+  ]),
+  ...fieldsFor("about", "value_compassion", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+  ]),
+  ...fieldsFor("about", "value_discipleship", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+  ]),
+  ...fieldsFor("about", "beliefs", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 4000],
+  ]),
+  ...fieldsFor("about", "community", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+  ]),
+  ...fieldsFor("about", "gallery", [
+    ["heading", FIELD_TYPES.heading, 120],
+  ]),
+  ...fieldsFor("about", "gallery_1", [["heading", FIELD_TYPES.label, 120]]),
+  ...fieldsFor("about", "gallery_2", [["heading", FIELD_TYPES.label, 120]]),
+  ...fieldsFor("about", "gallery_3", [["heading", FIELD_TYPES.label, 120]]),
+  ...fieldsFor("about", "visitor_cta", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 800],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+  ]),
+
+  ...fieldsFor("leadership", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("ministries", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("events", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("sermons", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+
+  ...fieldsFor("contact", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("contact", "details", [
+    ["email", FIELD_TYPES.contactText, 254, { guidance: "Contact email" }],
+    ["phone", FIELD_TYPES.contactText, 40, { guidance: "Phone number" }],
+    ["address", FIELD_TYPES.contactText, 300, { guidance: "Street address" }],
+  ]),
+  ...fieldsFor("contact", "visitor_guidance", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+  ]),
+  ...fieldsFor("contact", "directions", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+  ]),
+  ...fieldsFor("contact", "service_reminder", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+  ]),
+  ...fieldsFor("contact", "office_hours", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("contact", "message", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 1000],
+  ]),
+
+  ...fieldsFor("giving", "hero", [
+    ["heading", FIELD_TYPES.heading, 120, { required: true }],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("giving", "why", [
+    ["heading", FIELD_TYPES.heading, 120],
+  ]),
+  ...fieldsFor("giving", "why_impact", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("giving", "why_stewardship", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("giving", "why_accountability", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 500],
+  ]),
+  ...fieldsFor("giving", "ways", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 800],
+  ]),
+  ...fieldsFor("giving", "accountability", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+  ]),
+  ...fieldsFor("giving", "stewardship", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+  ]),
+  ...fieldsFor("giving", "assistance", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 800],
+    ["buttonText", FIELD_TYPES.buttonText, 48],
+  ]),
+  ...fieldsFor("giving", "cta", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 800],
+  ]),
 ];
 
 const FIELD_INDEX = new Map(

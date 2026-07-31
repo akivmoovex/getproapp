@@ -219,27 +219,141 @@
     <p class="bb-tp-lead" role="status"><%= entitiesEmptyMessage %></p>
     <% } %>
 
-    <% if (demoFb && demoFb.visitorGuidance) { %>
+    <%
+      var visitorGuidanceHeading =
+        (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.displayValue
+          ? websiteAdmin.displayValue('visitor_guidance', 'heading', (demoFb && demoFb.visitorGuidanceHeading) || 'First Visit Guidance')
+          : (demoFb && demoFb.visitorGuidanceHeading) || 'First Visit Guidance');
+      var visitorGuidanceBody =
+        (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.displayValue
+          ? websiteAdmin.displayValue('visitor_guidance', 'bodyText', (demoFb && demoFb.visitorGuidance) || '')
+          : (demoFb && demoFb.visitorGuidance) || '');
+      var officeHoursHeadingResolved =
+        (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.displayValue
+          ? websiteAdmin.displayValue('office_hours', 'heading', officeHoursHeading)
+          : officeHoursHeading);
+      var officeHoursBodyResolved =
+        (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.displayValue
+          ? websiteAdmin.displayValue('office_hours', 'bodyText', officeHoursBody || '')
+          : officeHoursBody);
+      var messageHeading =
+        (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.displayValue
+          ? websiteAdmin.displayValue('message', 'heading', (demoFb && demoFb.messageHeading) || 'Send a Message')
+          : (demoFb && demoFb.messageHeading) || 'Send a Message');
+      var messageBody =
+        (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.displayValue
+          ? websiteAdmin.displayValue(
+              'message',
+              'bodyText',
+              (demoFb && demoFb.messageBody) ||
+                ('Online message forms are not available on this site. Use the published contact details above' +
+                  (messageEmailHref ? ', or email us directly' : '') +
+                  '.')
+            )
+          : (demoFb && demoFb.messageBody) || null);
+    %>
+
+    <% if ((demoFb && demoFb.visitorGuidance) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
     <section class="bb-tp-contact-guidance" data-bb-contact-guidance="1" aria-labelledby="bb-tp-contact-guidance-heading">
-      <h2 id="bb-tp-contact-guidance-heading" class="bb-tp-section-title bb-tp-section-title--ruled">First Visit Guidance</h2>
-      <p class="bb-tp-body"><%= demoFb.visitorGuidance %></p>
-      <% if (demoFb.directionsHeading && demoFb.directionsBody) { %>
-      <h3 class="bb-tp-subsection-title"><%= demoFb.directionsHeading %></h3>
-      <p class="bb-tp-body"><%= demoFb.directionsBody %></p>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'contact',
+        editSectionKey: 'visitor_guidance',
+        editFieldKey: 'heading',
+        editValue: visitorGuidanceHeading,
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title bb-tp-section-title--ruled',
+        editType: 'heading',
+        editId: 'bb-tp-contact-guidance-heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'contact',
+        editSectionKey: 'visitor_guidance',
+        editFieldKey: 'bodyText',
+        editValue: visitorGuidanceBody,
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 2000,
+        editMultiline: true
+      }) %>
+      <% if ((demoFb && demoFb.directionsHeading && demoFb.directionsBody) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'contact',
+        editSectionKey: 'directions',
+        editFieldKey: 'heading',
+        editValue: (demoFb && demoFb.directionsHeading) || 'Address and Directions',
+        editTag: 'h3',
+        editClass: 'bb-tp-subsection-title',
+        editType: 'heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'contact',
+        editSectionKey: 'directions',
+        editFieldKey: 'bodyText',
+        editValue: (demoFb && demoFb.directionsBody) || '',
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 1000,
+        editMultiline: true
+      }) %>
       <% } %>
-      <% if (demoFb.serviceReminderHeading && demoFb.serviceReminderBody) { %>
-      <h3 class="bb-tp-subsection-title"><%= demoFb.serviceReminderHeading %></h3>
-      <p class="bb-tp-body"><%= demoFb.serviceReminderBody %></p>
+      <% if ((demoFb && demoFb.serviceReminderHeading && demoFb.serviceReminderBody) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'contact',
+        editSectionKey: 'service_reminder',
+        editFieldKey: 'heading',
+        editValue: (demoFb && demoFb.serviceReminderHeading) || 'Service-Time Reminder',
+        editTag: 'h3',
+        editClass: 'bb-tp-subsection-title',
+        editType: 'heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'contact',
+        editSectionKey: 'service_reminder',
+        editFieldKey: 'bodyText',
+        editValue: (demoFb && demoFb.serviceReminderBody) || '',
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 1000,
+        editMultiline: true
+      }) %>
       <% } %>
     </section>
     <% } %>
 
-    <% if (officeHoursHeading && officeHoursBody) { %>
+    <% if ((officeHoursHeading && officeHoursBody) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
     <section class="bb-tp-contact-hours" data-bb-contact-hours="1" aria-labelledby="bb-tp-contact-hours-heading">
-      <h2 id="bb-tp-contact-hours-heading" class="bb-tp-section-title bb-tp-section-title--ruled">
-        <%= officeHoursHeading %>
-      </h2>
-      <p class="bb-tp-body"><%= officeHoursBody %></p>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'contact',
+        editSectionKey: 'office_hours',
+        editFieldKey: 'heading',
+        editValue: officeHoursHeadingResolved || 'Office Hours',
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title bb-tp-section-title--ruled',
+        editType: 'heading',
+        editId: 'bb-tp-contact-hours-heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'contact',
+        editSectionKey: 'office_hours',
+        editFieldKey: 'bodyText',
+        editValue: officeHoursBodyResolved || '',
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 500,
+        editMultiline: true
+      }) %>
     </section>
     <% } %>
 
@@ -249,10 +363,29 @@
         aria-labelledby="bb-tp-contact-message-heading"
         data-bb-contact-message="unavailable"
       >
-        <h2 id="bb-tp-contact-message-heading" class="bb-tp-section-title">Send a Message</h2>
-        <p class="bb-tp-contact-message__status" role="status" data-bb-contact-form="unavailable">
-          Online message forms are not available on this site. Use the published contact details above<% if (messageEmailHref) { %>, or email us directly<% } %>.
-        </p>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'contact',
+          editSectionKey: 'message',
+          editFieldKey: 'heading',
+          editValue: messageHeading,
+          editTag: 'h2',
+          editClass: 'bb-tp-section-title',
+          editType: 'heading',
+          editId: 'bb-tp-contact-message-heading',
+          editMaxLength: 120,
+          editMultiline: false
+        }) %>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'contact',
+          editSectionKey: 'message',
+          editFieldKey: 'bodyText',
+          editValue: messageBody || ('Online message forms are not available on this site. Use the published contact details above' + (messageEmailHref ? ', or email us directly' : '') + '.'),
+          editTag: 'p',
+          editClass: 'bb-tp-contact-message__status',
+          editType: 'paragraph',
+          editMaxLength: 1000,
+          editMultiline: true
+        }) %>
         <div class="bb-tp-page-hero__cta">
           <% if (messageEmailHref) { %>
           <a

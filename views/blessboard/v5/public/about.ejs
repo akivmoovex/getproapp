@@ -153,9 +153,22 @@
           </div>
           <% }) %>
         </div>
-        <% if (storyMedia.length) { %>
+        <% if (storyMedia.length || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
         <div class="bb-tp-about-story__media">
+          <% if (storyMedia.length) { %>
           <img class="bb-tp-media" src="<%= storyMedia[0] %>" alt="Life at <%= publicName %>" width="960" height="720" loading="lazy" decoding="async" />
+          <% } %>
+          <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <div class="bb-tp-edit-media-wrap">
+            <%- include('../partials/structured-edit-trigger', {
+              editKind: 'image',
+              editEntityKey: 'about-story',
+              editSectionKey: 'story',
+              editLabel: 'Edit story image',
+              editPayload: { imageUrl: storyMedia[0] || '', altText: 'Life at ' + publicName, focal: 'center' }
+            }) %>
+          </div>
+          <% } %>
         </div>
         <% } %>
       </div>
@@ -229,18 +242,49 @@
   </section>
   <% } %>
 
-  <% if (valueSections.length) { %>
+  <% if (valueSections.length || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && demoFb && demoFb.values)) { %>
   <section class="bb-tp-about-values" aria-label="Core values" data-bb-about-values="1">
     <div class="bb-tp-container">
-      <h2 class="bb-tp-section-title bb-tp-about-values__heading">Core Values</h2>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'about',
+        editSectionKey: 'values',
+        editFieldKey: 'heading',
+        editValue: (demoFb && demoFb.valuesHeading) || 'Core Values',
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title bb-tp-about-values__heading',
+        editType: 'heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
       <ul class="bb-tp-about-values__list">
         <% valueSections.forEach(function (section, idx) { %>
-        <% if (!sectionHasContent(section)) return; %>
-        <li class="bb-tp-about-values__item" data-section="<%= section.sectionKey || ('values-' + idx) %>">
+        <% if (!sectionHasContent(section) && !(typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) return; %>
+        <% var valueKey = section.sectionKey || ('value_' + idx); %>
+        <li class="bb-tp-about-values__item" data-section="<%= valueKey %>">
           <span class="bb-tp-about-values__icon material-symbols-outlined" aria-hidden="true"><%= VALUE_ICONS[idx % VALUE_ICONS.length] %></span>
           <div>
-            <% if (section.heading) { %><h3 class="bb-tp-about-values__title"><%= section.heading %></h3><% } %>
-            <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+            <%- include('../partials/editable-text', {
+              editPageKey: 'about',
+              editSectionKey: valueKey,
+              editFieldKey: 'heading',
+              editValue: section.heading || '',
+              editTag: 'h3',
+              editClass: 'bb-tp-about-values__title',
+              editType: 'heading',
+              editMaxLength: 120,
+              editMultiline: false
+            }) %>
+            <%- include('../partials/editable-text', {
+              editPageKey: 'about',
+              editSectionKey: valueKey,
+              editFieldKey: 'bodyText',
+              editValue: section.bodyText || '',
+              editTag: 'p',
+              editClass: 'bb-tp-body',
+              editType: 'paragraph',
+              editMaxLength: 1000,
+              editMultiline: true
+            }) %>
           </div>
         </li>
         <% }) %>
@@ -249,29 +293,115 @@
   </section>
   <% } %>
 
-  <% if (beliefsSection && sectionHasContent(beliefsSection)) { %>
+  <% if ((beliefsSection && sectionHasContent(beliefsSection)) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && beliefsSection)) { %>
   <section class="bb-tp-container bb-tp-about-beliefs" data-bb-about-beliefs="1" aria-labelledby="bb-tp-about-beliefs-heading">
-    <h2 id="bb-tp-about-beliefs-heading" class="bb-tp-section-title"><%= beliefsSection.heading || 'Beliefs' %></h2>
-    <% if (beliefsSection.bodyText) { %><p class="bb-tp-body bb-tp-prose-narrow"><%= beliefsSection.bodyText %></p><% } %>
+    <%- include('../partials/editable-text', {
+      editPageKey: 'about',
+      editSectionKey: 'beliefs',
+      editFieldKey: 'heading',
+      editValue: (beliefsSection && beliefsSection.heading) || 'Beliefs',
+      editTag: 'h2',
+      editClass: 'bb-tp-section-title',
+      editType: 'heading',
+      editId: 'bb-tp-about-beliefs-heading',
+      editMaxLength: 120,
+      editMultiline: false
+    }) %>
+    <%- include('../partials/editable-text', {
+      editPageKey: 'about',
+      editSectionKey: 'beliefs',
+      editFieldKey: 'bodyText',
+      editValue: (beliefsSection && beliefsSection.bodyText) || '',
+      editTag: 'p',
+      editClass: 'bb-tp-body bb-tp-prose-narrow',
+      editType: 'paragraph',
+      editMaxLength: 4000,
+      editMultiline: true
+    }) %>
   </section>
   <% } %>
 
-  <% if (communitySection && sectionHasContent(communitySection)) { %>
+  <% if ((communitySection && sectionHasContent(communitySection)) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && communitySection)) { %>
   <section class="bb-tp-about-community" data-bb-about-community="1" aria-labelledby="bb-tp-about-community-heading">
     <div class="bb-tp-container">
-      <h2 id="bb-tp-about-community-heading" class="bb-tp-section-title"><%= communitySection.heading || 'Community involvement' %></h2>
-      <% if (communitySection.bodyText) { %><p class="bb-tp-body bb-tp-prose-narrow"><%= communitySection.bodyText %></p><% } %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'about',
+        editSectionKey: 'community',
+        editFieldKey: 'heading',
+        editValue: (communitySection && communitySection.heading) || 'Community involvement',
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title',
+        editType: 'heading',
+        editId: 'bb-tp-about-community-heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'about',
+        editSectionKey: 'community',
+        editFieldKey: 'bodyText',
+        editValue: (communitySection && communitySection.bodyText) || '',
+        editTag: 'p',
+        editClass: 'bb-tp-body bb-tp-prose-narrow',
+        editType: 'paragraph',
+        editMaxLength: 2000,
+        editMultiline: true
+      }) %>
+      <% if ((communitySection && communitySection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
+      <div class="bb-tp-about-community__media">
+        <% if (communitySection && communitySection.mediaUrl) { %>
+        <img class="bb-tp-media" src="<%= communitySection.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
+        <% } %>
+        <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+        <div class="bb-tp-edit-media-wrap">
+          <%- include('../partials/structured-edit-trigger', {
+            editKind: 'image',
+            editEntityKey: 'about-community',
+            editSectionKey: 'community',
+            editLabel: 'Edit neighbourhood image',
+            editPayload: { imageUrl: (communitySection && communitySection.mediaUrl) || '', altText: '', focal: 'center' }
+          }) %>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
     </div>
   </section>
   <% } %>
 
-  <% if (galleryUrls.length) { %>
+  <% if (galleryUrls.length || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
   <section class="bb-tp-container bb-tp-about-gallery" data-bb-about-gallery="1" aria-label="Image gallery">
-    <h2 class="bb-tp-section-title">Life at <%= publicName %></h2>
+    <%- include('../partials/editable-text', {
+      editPageKey: 'about',
+      editSectionKey: 'gallery',
+      editFieldKey: 'heading',
+      editValue: (demoFb && demoFb.galleryHeading) || ('Life at ' + publicName),
+      editTag: 'h2',
+      editClass: 'bb-tp-section-title',
+      editType: 'heading',
+      editMaxLength: 120,
+      editMultiline: false
+    }) %>
     <ul class="bb-tp-about-gallery__grid">
-      <% galleryUrls.slice(0, 6).forEach(function (url, idx) { %>
+      <% var gallerySlots = galleryUrls.slice(0, 6); %>
+      <% if (!gallerySlots.length && typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { gallerySlots = ['', '', '']; } %>
+      <% gallerySlots.forEach(function (url, idx) { %>
+      <% var galleryKey = 'gallery_' + (idx + 1); %>
       <li>
+        <% if (url) { %>
         <img src="<%= url %>" alt="Community moment <%= idx + 1 %> at <%= publicName %>" width="640" height="480" loading="lazy" decoding="async" />
+        <% } %>
+        <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+        <div class="bb-tp-edit-media-wrap">
+          <%- include('../partials/structured-edit-trigger', {
+            editKind: 'image',
+            editEntityKey: 'about-' + galleryKey,
+            editSectionKey: galleryKey,
+            editLabel: 'Edit gallery image ' + (idx + 1),
+            editPayload: { imageUrl: url || '', altText: 'Community moment ' + (idx + 1) + ' at ' + publicName, focal: 'center' }
+          }) %>
+        </div>
+        <% } %>
       </li>
       <% }) %>
     </ul>
@@ -283,9 +413,22 @@
     <% genericSections.forEach(function (section) { %>
     <% if (!sectionHasContent(section)) return; %>
     <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
-      <% if (section.mediaUrl) { %>
+      <% if (section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-content-block__media">
+        <% if (section.mediaUrl) { %>
         <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
+        <% } %>
+        <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+        <div class="bb-tp-edit-media-wrap">
+          <%- include('../partials/structured-edit-trigger', {
+            editKind: 'image',
+            editEntityKey: 'about-' + (section.sectionKey || 'block'),
+            editSectionKey: section.sectionKey || 'generic',
+            editLabel: 'Edit section image',
+            editPayload: { imageUrl: section.mediaUrl || '', altText: '', focal: 'center' }
+          }) %>
+        </div>
+        <% } %>
       </div>
       <% } %>
       <div class="bb-tp-content-block__copy">
@@ -302,8 +445,13 @@
     ctaClass: 'bb-tp-cta-band--visit',
     ctaTitle: (demoFb && demoFb.visitorCtaHeading) || ('Experience ' + publicName),
     ctaBody: (demoFb && demoFb.visitorCtaBody) || ('Whether you are a seeker or a long-time believer, there is a seat for you at ' + publicName + '. Join us this Sunday.'),
-    ctaPrimary: { href: hrefFor('/contact'), label: 'Plan Your Visit' },
-    ctaSecondary: { href: hrefFor('/contact'), label: 'Get Directions' }
+    ctaPrimary: {
+      href: hrefFor('/contact'),
+      label: (demoFb && demoFb.visitorCtaButtonText) || 'Plan Your Visit'
+    },
+    ctaSecondary: { href: hrefFor('/contact'), label: 'Get Directions' },
+    editPageKey: 'about',
+    editSectionKey: 'visitor_cta'
   }) %>
   </div>
 </section>

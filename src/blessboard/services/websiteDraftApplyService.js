@@ -135,16 +135,25 @@ async function applyFieldDraft(client, draft, ctx) {
     return;
   }
 
+  // Footer tagline is shared chrome: always persist on the home page footer section
+  // so church-wide and branch scopes resolve the same way as the rest of the site.
+  const pageKey =
+    draft.sectionKey === "footer" && draft.fieldKey === "tagline" ? "home" : draft.pageKey;
   const page = await ensurePage(client, {
     churchId,
     branchId,
-    pageKey: draft.pageKey,
+    pageKey,
   });
   const section = await ensureSection(client, page, draft.sectionKey, draft.sectionKey);
   const patch = { status: "published" };
   if (draft.fieldKey === "heading") patch.heading = draft.newValue;
   else if (draft.fieldKey === "bodyText") patch.bodyText = draft.newValue;
-  else if (draft.fieldKey === "buttonText" || draft.fieldKey === "buttonUrl") {
+  else if (draft.fieldKey === "tagline") {
+    patch.bodyText = draft.newValue;
+    patch.layoutMetadata = mergeLayoutMetadata(section.layoutMetadata, {
+      tagline: draft.newValue,
+    });
+  } else if (draft.fieldKey === "buttonText" || draft.fieldKey === "buttonUrl") {
     patch.layoutMetadata = mergeLayoutMetadata(section.layoutMetadata, {
       [draft.fieldKey]: draft.newValue,
     });
@@ -406,7 +415,7 @@ async function applyEntityDraft(client, draft, ctx) {
       buttonLabel: payload.buttonLabel || null,
       qrImageUrl: payload.qrImageUrl || null,
       sortOrder: payload.sortOrder != null ? Number(payload.sortOrder) : 0,
-      status: "published",
+      status: payload.visible === false ? "archived" : "published",
     };
     if (isExisting) {
       const existing = await findFns.giving_method(client, entityKey);
@@ -416,6 +425,26 @@ async function applyEntityDraft(client, draft, ctx) {
       }
       // Cross-org or missing → treat as not found (no leak)
       return;
+    }
+    // Soft-fill / stable demo keys: update the matching church method if one already
+    // exists so repeat publishes do not insert duplicates.
+    const stableSoftKey =
+      entityKey.startsWith("demo-giving-") || entityKey.startsWith("method-");
+    if (stableSoftKey) {
+      const items = await contentRepo.listGivingMethods(client, {
+        churchId,
+        branchId: branchId || null,
+      });
+      const match = (items || []).find(
+        (m) =>
+          m &&
+          String(m.methodType || "").toLowerCase() === String(fields.methodType).toLowerCase() &&
+          String(m.label || "").trim().toLowerCase() === String(fields.label).trim().toLowerCase()
+      );
+      if (match && match.id) {
+        await updateFns.giving_method(client, match.id, fields);
+        return;
+      }
     }
     await insertFns.giving_method(client, {
       churchId,

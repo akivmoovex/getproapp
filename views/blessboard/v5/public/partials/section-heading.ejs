@@ -1,21 +1,87 @@
 <%#
   Shared section heading row.
-  Locals: sectionTitle, sectionLead (optional), sectionHref (optional), sectionLinkLabel (optional), sectionId (optional)
+  Locals: sectionTitle, sectionLead (optional), sectionHref (optional), sectionLinkLabel (optional),
+          sectionId (optional), sectionEyebrow (optional), sectionRuled (optional),
+          editPageKey / editSectionKey (optional — enables inline text editing)
+%>
+<%
+  var _canEditHead =
+    typeof websiteAdmin !== 'undefined' &&
+    websiteAdmin &&
+    websiteAdmin.editingMode &&
+    typeof editPageKey !== 'undefined' &&
+    editPageKey &&
+    typeof editSectionKey !== 'undefined' &&
+    editSectionKey;
+  var _pageKey = _canEditHead ? String(editPageKey) : '';
+  var _sectionKey = _canEditHead ? String(editSectionKey) : '';
+  var _title = typeof sectionTitle !== 'undefined' ? sectionTitle : '';
+  var _lead = typeof sectionLead !== 'undefined' ? sectionLead : '';
+  var _linkLabel = typeof sectionLinkLabel !== 'undefined' ? sectionLinkLabel : 'View all';
+  if (_canEditHead && typeof websiteAdmin.displayValue === 'function') {
+    _title = websiteAdmin.displayValue(_sectionKey, 'heading', _title);
+    _lead = websiteAdmin.displayValue(_sectionKey, 'bodyText', _lead);
+    _linkLabel = websiteAdmin.displayValue(_sectionKey, 'buttonText', _linkLabel);
+  }
 %>
 <header class="bb-tp-section-head">
   <div class="bb-tp-section-head__copy">
     <% if (typeof sectionEyebrow !== 'undefined' && sectionEyebrow) { %>
     <p class="bb-tp-eyebrow"><%= sectionEyebrow %></p>
     <% } %>
+    <% if (_canEditHead) { %>
+    <%- include('../../partials/editable-text', {
+      editPageKey: _pageKey,
+      editSectionKey: _sectionKey,
+      editFieldKey: 'heading',
+      editValue: _title,
+      editTag: 'h2',
+      editClass: 'bb-tp-section-title' + (typeof sectionRuled !== 'undefined' && sectionRuled ? ' bb-tp-section-title--ruled' : ''),
+      editType: 'heading',
+      editId: typeof sectionId !== 'undefined' && sectionId ? sectionId : '',
+      editMaxLength: 120,
+      editMultiline: false
+    }) %>
+    <% } else { %>
     <h2
       class="bb-tp-section-title<%= typeof sectionRuled !== 'undefined' && sectionRuled ? ' bb-tp-section-title--ruled' : '' %>"
       <% if (typeof sectionId !== 'undefined' && sectionId) { %>id="<%= sectionId %>"<% } %>
-    ><%= sectionTitle %></h2>
-    <% if (typeof sectionLead !== 'undefined' && sectionLead) { %>
-    <p class="bb-tp-section-head__lead"><%= sectionLead %></p>
+    ><%= _title %></h2>
+    <% } %>
+    <% if (_canEditHead || _lead) { %>
+      <% if (_canEditHead) { %>
+      <%- include('../../partials/editable-text', {
+        editPageKey: _pageKey,
+        editSectionKey: _sectionKey,
+        editFieldKey: 'bodyText',
+        editValue: _lead,
+        editTag: 'p',
+        editClass: 'bb-tp-section-head__lead',
+        editType: 'paragraph',
+        editMaxLength: 1000,
+        editMultiline: true
+      }) %>
+      <% } else { %>
+      <p class="bb-tp-section-head__lead"><%= _lead %></p>
+      <% } %>
     <% } %>
   </div>
   <% if (typeof sectionHref !== 'undefined' && sectionHref) { %>
-  <a class="bb-tp-section-head__link" href="<%= sectionHref %>"><%= sectionLinkLabel || 'View all' %></a>
+    <% if (_canEditHead) { %>
+    <%- include('../../partials/editable-text', {
+      editPageKey: _pageKey,
+      editSectionKey: _sectionKey,
+      editFieldKey: 'buttonText',
+      editValue: _linkLabel,
+      editTag: 'a',
+      editClass: 'bb-tp-section-head__link',
+      editHref: sectionHref,
+      editType: 'buttonText',
+      editMaxLength: 48,
+      editMultiline: false
+    }) %>
+    <% } else { %>
+    <a class="bb-tp-section-head__link" href="<%= sectionHref %>"><%= _linkLabel %></a>
+    <% } %>
   <% } %>
 </header>

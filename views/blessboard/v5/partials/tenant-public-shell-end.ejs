@@ -66,8 +66,19 @@
               <% if (_branchName) { %>
               <p class="bb-tp-footer__branch" data-bb-branch-name="1"><%= _branchName %></p>
               <% } %>
-              <% if (typeof footerTagline !== 'undefined' && footerTagline) { %>
-              <p class="bb-tp-footer__tagline"><%= footerTagline %></p>
+              <% if ((typeof footerTagline !== 'undefined' && footerTagline) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
+              <%- include('./editable-text', {
+                editPageKey: 'home',
+                editSectionKey: 'footer',
+                editFieldKey: 'tagline',
+                editValue: (typeof footerTagline !== 'undefined' && footerTagline) ? footerTagline : '',
+                editTag: 'p',
+                editClass: 'bb-tp-footer__tagline',
+                editType: 'paragraph',
+                editMaxLength: 200,
+                editGuidance: 'Footer tagline (up to 200 characters)',
+                editMultiline: true
+              }) %>
               <% } %>
             </div>
           </div>

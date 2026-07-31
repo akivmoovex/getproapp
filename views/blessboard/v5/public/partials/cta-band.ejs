@@ -1,18 +1,85 @@
 <%#
   Shared CTA band.
-  Locals: ctaTitle, ctaBody, ctaPrimary, ctaSecondary (optional), ctaClass (optional)
+  Locals: ctaTitle, ctaBody, ctaPrimary, ctaSecondary (optional), ctaClass (optional),
+          editPageKey / editSectionKey (optional — enables inline text editing)
+%>
+<%
+  var _canEditCta =
+    typeof websiteAdmin !== 'undefined' &&
+    websiteAdmin &&
+    websiteAdmin.editingMode &&
+    typeof editPageKey !== 'undefined' &&
+    editPageKey &&
+    typeof editSectionKey !== 'undefined' &&
+    editSectionKey;
+  var _pageKey = _canEditCta ? String(editPageKey) : '';
+  var _sectionKey = _canEditCta ? String(editSectionKey) : '';
+  var _title = typeof ctaTitle !== 'undefined' ? ctaTitle : '';
+  var _body = typeof ctaBody !== 'undefined' ? ctaBody : '';
+  var _primaryLabel =
+    typeof ctaPrimary !== 'undefined' && ctaPrimary && ctaPrimary.label ? ctaPrimary.label : '';
+  if (_canEditCta && typeof websiteAdmin.displayValue === 'function') {
+    _title = websiteAdmin.displayValue(_sectionKey, 'heading', _title);
+    _body = websiteAdmin.displayValue(_sectionKey, 'bodyText', _body);
+    if (_primaryLabel) {
+      _primaryLabel = websiteAdmin.displayValue(_sectionKey, 'buttonText', _primaryLabel);
+    }
+  }
 %>
 <section class="bb-tp-cta-band<%= typeof ctaClass !== 'undefined' && ctaClass ? ' ' + ctaClass : '' %>" data-bb-cta-band="1">
   <div class="bb-tp-container bb-tp-cta-band__inner">
     <div class="bb-tp-cta-band__copy">
-      <h2 class="bb-tp-section-title"><%= ctaTitle %></h2>
-      <% if (typeof ctaBody !== 'undefined' && ctaBody) { %>
-      <p class="bb-tp-body"><%= ctaBody %></p>
+      <% if (_canEditCta) { %>
+      <%- include('../../partials/editable-text', {
+        editPageKey: _pageKey,
+        editSectionKey: _sectionKey,
+        editFieldKey: 'heading',
+        editValue: _title,
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title',
+        editType: 'heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <% } else { %>
+      <h2 class="bb-tp-section-title"><%= _title %></h2>
+      <% } %>
+      <% if (_canEditCta || _body) { %>
+        <% if (_canEditCta) { %>
+        <%- include('../../partials/editable-text', {
+          editPageKey: _pageKey,
+          editSectionKey: _sectionKey,
+          editFieldKey: 'bodyText',
+          editValue: _body,
+          editTag: 'p',
+          editClass: 'bb-tp-body',
+          editType: 'paragraph',
+          editMaxLength: 800,
+          editMultiline: true
+        }) %>
+        <% } else { %>
+        <p class="bb-tp-body"><%= _body %></p>
+        <% } %>
       <% } %>
     </div>
     <div class="bb-tp-cta-band__actions">
       <% if (typeof ctaPrimary !== 'undefined' && ctaPrimary) { %>
-      <a class="bb-tp-btn bb-tp-btn--primary" href="<%= ctaPrimary.href %>"><%= ctaPrimary.label %></a>
+        <% if (_canEditCta && _primaryLabel) { %>
+        <%- include('../../partials/editable-text', {
+          editPageKey: _pageKey,
+          editSectionKey: _sectionKey,
+          editFieldKey: 'buttonText',
+          editValue: _primaryLabel,
+          editTag: 'a',
+          editClass: 'bb-tp-btn bb-tp-btn--primary',
+          editHref: ctaPrimary.href,
+          editType: 'buttonText',
+          editMaxLength: 48,
+          editMultiline: false
+        }) %>
+        <% } else { %>
+        <a class="bb-tp-btn bb-tp-btn--primary" href="<%= ctaPrimary.href %>"><%= ctaPrimary.label %></a>
+        <% } %>
       <% } %>
       <% if (typeof ctaSecondary !== 'undefined' && ctaSecondary) { %>
       <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--on-dark" href="<%= ctaSecondary.href %>"><%= ctaSecondary.label %></a>

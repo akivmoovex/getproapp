@@ -60,12 +60,30 @@
   var heroEyebrow = (demoFb && demoFb.heroEyebrow) || ('Welcome to ' + publicName);
   var heroMedia =
     (hero && hero.mediaUrl) ||
+    (typeof _draftHeroMediaUrl !== 'undefined' && _draftHeroMediaUrl) ||
     (demoFb && demoFb.heroMediaUrl) ||
     null;
 
   var teasers = typeof homeTeasers !== 'undefined' && homeTeasers ? homeTeasers : {
     ministries: [], leaders: [], events: [], sermons: [], announcement: null
   };
+
+  function findHomeSection(key) {
+    for (var i = 0; i < (sections || []).length; i++) {
+      if (String(sections[i].sectionKey || '') === key) return sections[i];
+    }
+    return null;
+  }
+  var ministriesIntroSec = findHomeSection('ministries_intro');
+  var eventsIntroSec = findHomeSection('events_intro');
+  var sermonsIntroSec = findHomeSection('sermons_intro');
+  var leadershipIntroSec = findHomeSection('leadership_intro');
+  var givingCtaSec = findHomeSection('giving_cta');
+  var contactIntroSec = findHomeSection('contact_intro');
+  var footerSec = findHomeSection('footer');
+  if (footerSec && footerSec.bodyText && typeof footerTagline !== 'undefined' && !footerTagline) {
+    // Template-level fallback when model missed the section.
+  }
 
   var welcomeHeading =
     (welcomeSection && welcomeSection.heading) ||
@@ -213,9 +231,22 @@
         <% } %>
         <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/about') %>">Learn More About Our Story</a>
       </div>
-      <% if (welcomeMedia) { %>
+  <% if (welcomeMedia || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-home-welcome__media">
+        <% if (welcomeMedia) { %>
         <img class="bb-tp-media" src="<%= welcomeMedia %>" alt="" width="800" height="600" loading="lazy" decoding="async" />
+        <% } %>
+        <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+        <div class="bb-tp-edit-media-wrap">
+          <%- include('../partials/structured-edit-trigger', {
+            editKind: 'image',
+            editEntityKey: 'home-welcome',
+            editSectionKey: 'welcome',
+            editLabel: 'Edit welcome image',
+            editPayload: { imageUrl: welcomeMedia || '', altText: '', focal: 'center' }
+          }) %>
+        </div>
+        <% } %>
       </div>
       <% } %>
     </div>
@@ -241,11 +272,13 @@
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-ministries="1" aria-labelledby="bb-tp-home-ministries-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-ministries-heading',
-      sectionTitle: (demoFb && demoFb.ministriesIntroHeading) || 'Find Your Place',
-      sectionLead: (demoFb && demoFb.ministriesIntroBody) || 'Explore the different ways you can grow in your faith and serve others through our core ministries.',
+      sectionTitle: (ministriesIntroSec && ministriesIntroSec.heading) || (demoFb && demoFb.ministriesIntroHeading) || 'Find Your Place',
+      sectionLead: (ministriesIntroSec && ministriesIntroSec.bodyText) || (demoFb && demoFb.ministriesIntroBody) || 'Explore the different ways you can grow in your faith and serve others through our core ministries.',
       sectionHref: hrefFor('/ministries'),
-      sectionLinkLabel: 'View all',
-      sectionRuled: true
+      sectionLinkLabel: (ministriesIntroSec && ministriesIntroSec.layoutMetadata && ministriesIntroSec.layoutMetadata.buttonText) || 'View all',
+      sectionRuled: true,
+      editPageKey: 'home',
+      editSectionKey: 'ministries_intro'
     }) %>
     <div class="bb-tp-card-grid bb-tp-card-grid--3">
       <% teasers.ministries.slice(0, 3).forEach(function (m) { %>
@@ -267,11 +300,13 @@
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-events="1" aria-labelledby="bb-tp-home-events-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-events-heading',
-      sectionTitle: (demoFb && demoFb.eventsIntroHeading) || 'Upcoming Events',
-      sectionLead: (demoFb && demoFb.eventsIntroBody) || '',
+      sectionTitle: (eventsIntroSec && eventsIntroSec.heading) || (demoFb && demoFb.eventsIntroHeading) || 'Upcoming Events',
+      sectionLead: (eventsIntroSec && eventsIntroSec.bodyText) || (demoFb && demoFb.eventsIntroBody) || '',
       sectionHref: hrefFor('/events'),
-      sectionLinkLabel: 'View all',
-      sectionRuled: true
+      sectionLinkLabel: (eventsIntroSec && eventsIntroSec.layoutMetadata && eventsIntroSec.layoutMetadata.buttonText) || 'View all',
+      sectionRuled: true,
+      editPageKey: 'home',
+      editSectionKey: 'events_intro'
     }) %>
     <div class="bb-tp-card-grid bb-tp-card-grid--2">
       <% teasers.events.slice(0, 2).forEach(function (event) { %>
@@ -303,11 +338,13 @@
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-sermons="1" aria-labelledby="bb-tp-home-sermons-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-sermons-heading',
-      sectionTitle: (demoFb && demoFb.sermonIntroHeading) || 'Latest Sermon',
-      sectionLead: (demoFb && demoFb.sermonIntroBody) || '',
+      sectionTitle: (sermonsIntroSec && sermonsIntroSec.heading) || (demoFb && demoFb.sermonIntroHeading) || 'Latest Sermon',
+      sectionLead: (sermonsIntroSec && sermonsIntroSec.bodyText) || (demoFb && demoFb.sermonIntroBody) || '',
       sectionHref: hrefFor('/sermons'),
-      sectionLinkLabel: 'Full library',
-      sectionRuled: true
+      sectionLinkLabel: (sermonsIntroSec && sermonsIntroSec.layoutMetadata && sermonsIntroSec.layoutMetadata.buttonText) || 'Full library',
+      sectionRuled: true,
+      editPageKey: 'home',
+      editSectionKey: 'sermons_intro'
     }) %>
     <% var sermon = teasers.sermons[0]; %>
     <article class="bb-tp-sermon-feature">
@@ -334,11 +371,13 @@
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-leadership="1" aria-labelledby="bb-tp-home-leadership-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-leadership-heading',
-      sectionTitle: (demoFb && demoFb.leadershipIntroHeading) || 'Meet Our Pastors',
-      sectionLead: (demoFb && demoFb.leadershipIntroBody) || '',
+      sectionTitle: (leadershipIntroSec && leadershipIntroSec.heading) || (demoFb && demoFb.leadershipIntroHeading) || 'Meet Our Pastors',
+      sectionLead: (leadershipIntroSec && leadershipIntroSec.bodyText) || (demoFb && demoFb.leadershipIntroBody) || '',
       sectionHref: hrefFor('/leadership'),
-      sectionLinkLabel: 'Meet our team',
-      sectionRuled: true
+      sectionLinkLabel: (leadershipIntroSec && leadershipIntroSec.layoutMetadata && leadershipIntroSec.layoutMetadata.buttonText) || 'Meet our team',
+      sectionRuled: true,
+      editPageKey: 'home',
+      editSectionKey: 'leadership_intro'
     }) %>
     <div class="bb-tp-card-grid bb-tp-card-grid--3">
       <% teasers.leaders.slice(0, 3).forEach(function (leader) { %>
@@ -350,19 +389,26 @@
 
   <%- include('./partials/cta-band', {
     ctaClass: 'bb-tp-cta-band--giving',
-    ctaTitle: (demoFb && demoFb.givingHeading) || 'Stewardship with Purpose',
-    ctaBody: (demoFb && demoFb.givingBody) || 'Your generosity fuels worship, discipleship, and outreach.',
-    ctaPrimary: { href: hrefFor('/giving'), label: 'Give Now' },
-    ctaSecondary: { href: hrefFor('/contact'), label: 'Ask a question' }
+    ctaTitle: (givingCtaSec && givingCtaSec.heading) || (demoFb && demoFb.givingHeading) || 'Stewardship with Purpose',
+    ctaBody: (givingCtaSec && givingCtaSec.bodyText) || (demoFb && demoFb.givingBody) || 'Your generosity fuels worship, discipleship, and outreach.',
+    ctaPrimary: {
+      href: hrefFor('/giving'),
+      label: (givingCtaSec && givingCtaSec.layoutMetadata && givingCtaSec.layoutMetadata.buttonText) || (demoFb && demoFb.givingButtonText) || 'Give Now'
+    },
+    ctaSecondary: { href: hrefFor('/contact'), label: 'Ask a question' },
+    editPageKey: 'home',
+    editSectionKey: 'giving_cta'
   }) %>
 
   <section class="bb-tp-container bb-tp-home-contact" data-bb-home-contact="1" aria-labelledby="bb-tp-home-contact-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-contact-heading',
-      sectionTitle: (demoFb && demoFb.contactHeading) || 'Get in Touch',
-      sectionLead: (demoFb && demoFb.contactBody) || '',
+      sectionTitle: (contactIntroSec && contactIntroSec.heading) || (demoFb && demoFb.contactHeading) || 'Get in Touch',
+      sectionLead: (contactIntroSec && contactIntroSec.bodyText) || (demoFb && demoFb.contactBody) || '',
       sectionHref: hrefFor('/contact'),
-      sectionLinkLabel: 'Contact'
+      sectionLinkLabel: (contactIntroSec && contactIntroSec.layoutMetadata && contactIntroSec.layoutMetadata.buttonText) || 'Contact',
+      editPageKey: 'home',
+      editSectionKey: 'contact_intro'
     }) %>
     <div class="bb-tp-home-contact__grid">
       <% if (contact && contact.addressText) { %>

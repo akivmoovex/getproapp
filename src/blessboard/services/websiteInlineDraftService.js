@@ -45,6 +45,10 @@ function readPublishedFieldValue(sectionRow, fieldKey, publicContact) {
     sectionRow.layoutMetadata && typeof sectionRow.layoutMetadata === "object"
       ? sectionRow.layoutMetadata
       : {};
+  if (fieldKey === "tagline") {
+    if (meta.tagline != null) return String(meta.tagline);
+    return sectionRow.bodyText != null ? String(sectionRow.bodyText) : "";
+  }
   if (fieldKey === "buttonText") {
     return meta.buttonText != null ? String(meta.buttonText) : "";
   }
@@ -92,7 +96,14 @@ async function resolveContentPage(db, opts) {
  * }} input
  */
 async function saveInlineFieldDraft(db, input) {
-  const field = resolveEditableField(input.pageKey, input.sectionKey, input.fieldKey);
+  let pageKey = input.pageKey;
+  let sectionKey = input.sectionKey;
+  let fieldKey = input.fieldKey;
+  // Shared footer chrome always persists under the home page key.
+  if (sectionKey === "footer" && fieldKey === "tagline") {
+    pageKey = "home";
+  }
+  const field = resolveEditableField(pageKey, sectionKey, fieldKey);
   if (!field) {
     throw mapError("INVALID_FIELD", "That field cannot be edited.", 400);
   }
@@ -106,26 +117,26 @@ async function saveInlineFieldDraft(db, input) {
     const page = await resolveContentPage(db, {
       churchId: input.churchId,
       branchId: input.branchId || null,
-      pageKey: input.pageKey,
+      pageKey,
     });
     // Page may be missing when soft-fill demo is showing; drafts are still allowed.
     let section = null;
     if (page) {
-      section = await contentRepo.findSectionByPageAndKey(db, page.id, input.sectionKey);
+      section = await contentRepo.findSectionByPageAndKey(db, page.id, sectionKey);
     }
 
     const previousValue = readPublishedFieldValue(
       section,
-      input.fieldKey,
+      fieldKey,
       input.publicContact || null
     );
 
     const existing = await draftRepo.findActiveDraft(db, {
       churchId: input.churchId,
       branchId: input.branchId || null,
-      pageKey: input.pageKey,
-      sectionKey: input.sectionKey,
-      fieldKey: input.fieldKey,
+      pageKey,
+      sectionKey,
+      fieldKey,
     });
     const baselinePrevious =
       existing && existing.previousValue != null ? existing.previousValue : previousValue;
@@ -147,9 +158,9 @@ async function saveInlineFieldDraft(db, input) {
       organizationId: input.organizationId,
       churchId: input.churchId,
       branchId: input.branchId || null,
-      pageKey: input.pageKey,
-      sectionKey: input.sectionKey,
-      fieldKey: input.fieldKey,
+      pageKey,
+      sectionKey,
+      fieldKey,
       previousValue: baselinePrevious,
       newValue: validated.value,
       editorUserId: input.editorUserId,
@@ -162,13 +173,13 @@ async function saveInlineFieldDraft(db, input) {
         actorUserId: input.editorUserId,
         actorRole: input.actorRole || null,
         actionType: "draft_saved",
-        pageKey: input.pageKey,
-        sectionKey: input.sectionKey,
+        pageKey,
+        sectionKey,
         entityType: "inline_field",
         entityId: draft.id,
         result: "success",
-        before: { fieldKey: input.fieldKey, value: baselinePrevious },
-        after: { fieldKey: input.fieldKey, value: draft.newValue },
+        before: { fieldKey, value: baselinePrevious },
+        after: { fieldKey, value: draft.newValue },
         metadata: { source: "inline_text_edit", published: false },
       });
     } catch {
@@ -238,11 +249,13 @@ function applyDraftsToSections(sections, overlayMap) {
     const bodyText = overlayMap.get(`${key}::bodyText`);
     const buttonText = overlayMap.get(`${key}::buttonText`);
     const buttonUrl = overlayMap.get(`${key}::buttonUrl`);
+    const tagline = overlayMap.get(`${key}::tagline`);
     if (
       heading === undefined &&
       bodyText === undefined &&
       buttonText === undefined &&
-      buttonUrl === undefined
+      buttonUrl === undefined &&
+      tagline === undefined
     ) {
       return s;
     }
@@ -251,10 +264,16 @@ function applyDraftsToSections(sections, overlayMap) {
     };
     if (buttonText !== undefined) layoutMetadata.buttonText = buttonText;
     if (buttonUrl !== undefined) layoutMetadata.buttonUrl = buttonUrl;
+    if (tagline !== undefined) layoutMetadata.tagline = tagline;
     return {
       ...s,
       heading: heading !== undefined ? heading : s.heading,
-      bodyText: bodyText !== undefined ? bodyText : s.bodyText,
+      bodyText:
+        bodyText !== undefined
+          ? bodyText
+          : tagline !== undefined && key === "footer"
+            ? tagline
+            : s.bodyText,
       layoutMetadata,
     };
   });

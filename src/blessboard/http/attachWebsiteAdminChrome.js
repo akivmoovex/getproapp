@@ -33,7 +33,7 @@ const {
 
 const EDIT_QUERY = "website_edit";
 
-const SECTION_BASELINE_FIELDS = ["heading", "bodyText", "buttonText", "buttonUrl"];
+const SECTION_BASELINE_FIELDS = ["heading", "bodyText", "buttonText", "buttonUrl", "tagline"];
 const CONTACT_BASELINE_FIELDS = ["email", "phone", "address"];
 
 /**
@@ -230,7 +230,31 @@ async function attachWebsiteAdminChrome(opts) {
         branchId: draftBranchId,
         pageKey: model.pageKey,
       });
+      // Footer tagline is stored against the home page so shared chrome resolves
+      // consistently from any public page in edit mode.
+      if (model.pageKey !== "home") {
+        try {
+          const homeFooterDrafts = await fieldDraftRepo.listDrafts(db, {
+            churchId,
+            branchId: draftBranchId,
+            pageKey: "home",
+            status: "draft",
+          });
+          for (const draft of homeFooterDrafts || []) {
+            if (String(draft.sectionKey) !== "footer") continue;
+            const key = `${draft.sectionKey}::${draft.fieldKey}`;
+            overlayMap.set(key, draft.newValue);
+            publishedBaselines[key] =
+              draft.previousValue != null ? String(draft.previousValue) : "";
+          }
+        } catch {
+          // Non-fatal — page-local drafts still apply.
+        }
+      }
       model.sections = applyDraftsToSections(model.sections, overlayMap);
+      if (overlayMap.has("footer::tagline")) {
+        model.footerTagline = overlayMap.get("footer::tagline");
+      }
       if (model.pageKey === "contact" && model.publicContact) {
         const email = overlayMap.get("details::email");
         const phone = overlayMap.get("details::phone");
@@ -252,6 +276,124 @@ async function attachWebsiteAdminChrome(opts) {
         status: "draft",
       });
       applyStructuredDraftsToModel(model, structuredDrafts);
+      if (model._draftHeroMediaUrl) {
+        if (model.homeDemoFallback) {
+          model.homeDemoFallback = {
+            ...model.homeDemoFallback,
+            heroMediaUrl: model._draftHeroMediaUrl,
+          };
+        }
+        const hasHero = (model.sections || []).some(
+          (s) => s && String(s.sectionKey || "") === "hero"
+        );
+        if (!hasHero) {
+          model.sections = [
+            ...(model.sections || []),
+            {
+              sectionKey: "hero",
+              sectionType: "hero",
+              heading: null,
+              bodyText: null,
+              mediaUrl: model._draftHeroMediaUrl,
+              sortOrder: 0,
+              status: "draft",
+              layoutMetadata: null,
+            },
+          ];
+        }
+      }
+      // Soft-fill section overlays for demo-backed copy (no CMS section yet).
+      if (overlayMap.size) {
+        const applySoftSection = (fallbackObj, sectionKey, headingKey, bodyKey) => {
+          if (!fallbackObj) return;
+          const h = overlayMap.get(`${sectionKey}::heading`);
+          const b = overlayMap.get(`${sectionKey}::bodyText`);
+          if (h !== undefined && headingKey) fallbackObj[headingKey] = h;
+          if (b !== undefined && bodyKey) fallbackObj[bodyKey] = b;
+        };
+        if (model.homeDemoFallback) {
+          applySoftSection(model.homeDemoFallback, "ministries_intro", "ministriesIntroHeading", "ministriesIntroBody");
+          applySoftSection(model.homeDemoFallback, "events_intro", "eventsIntroHeading", "eventsIntroBody");
+          applySoftSection(model.homeDemoFallback, "sermons_intro", "sermonIntroHeading", "sermonIntroBody");
+          applySoftSection(model.homeDemoFallback, "leadership_intro", "leadershipIntroHeading", "leadershipIntroBody");
+          applySoftSection(model.homeDemoFallback, "giving_cta", "givingHeading", "givingBody");
+          applySoftSection(model.homeDemoFallback, "contact_intro", "contactHeading", "contactBody");
+          const giveBtn = overlayMap.get("giving_cta::buttonText");
+          if (giveBtn !== undefined) model.homeDemoFallback.givingButtonText = giveBtn;
+        }
+        if (model.contactDemoFallback) {
+          applySoftSection(model.contactDemoFallback, "visitor_guidance", null, "visitorGuidance");
+          const vgHeading = overlayMap.get("visitor_guidance::heading");
+          if (vgHeading !== undefined) model.contactDemoFallback.visitorGuidanceHeading = vgHeading;
+          applySoftSection(model.contactDemoFallback, "office_hours", "officeHoursHeading", "officeHoursBody");
+          applySoftSection(model.contactDemoFallback, "directions", "directionsHeading", "directionsBody");
+          applySoftSection(model.contactDemoFallback, "service_reminder", "serviceReminderHeading", "serviceReminderBody");
+          applySoftSection(model.contactDemoFallback, "message", "messageHeading", "messageBody");
+        }
+        if (model.givingDemoFallback) {
+          applySoftSection(model.givingDemoFallback, "why", "whyHeading", null);
+          applySoftSection(model.givingDemoFallback, "ways", "waysHeading", "waysBody");
+          applySoftSection(model.givingDemoFallback, "accountability", "accountabilityHeading", null);
+          const accBody = overlayMap.get("accountability::bodyText");
+          if (accBody !== undefined) model.givingDemoFallback.accountability = accBody;
+          applySoftSection(model.givingDemoFallback, "stewardship", "stewardshipHeading", "stewardshipBody");
+          applySoftSection(model.givingDemoFallback, "assistance", "assistanceHeading", null);
+          const assistBody = overlayMap.get("assistance::bodyText");
+          if (assistBody !== undefined) model.givingDemoFallback.assistanceContact = assistBody;
+          const assistBtn = overlayMap.get("assistance::buttonText");
+          if (assistBtn !== undefined) model.givingDemoFallback.assistanceButtonText = assistBtn;
+          if (Array.isArray(model.givingDemoFallback.whyItems)) {
+            model.givingDemoFallback.whyItems = model.givingDemoFallback.whyItems.map((item) => {
+              const key = item.sectionKey || "";
+              if (!key) return item;
+              const title = overlayMap.get(`${key}::heading`);
+              const body = overlayMap.get(`${key}::bodyText`);
+              if (title === undefined && body === undefined) return item;
+              return {
+                ...item,
+                title: title !== undefined ? title : item.title,
+                body: body !== undefined ? body : item.body,
+              };
+            });
+          }
+        }
+        if (model.aboutDemoFallback) {
+          const valuesHeading = overlayMap.get("values::heading");
+          if (valuesHeading !== undefined) model.aboutDemoFallback.valuesHeading = valuesHeading;
+          const galleryHeading = overlayMap.get("gallery::heading");
+          if (galleryHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryHeading;
+          applySoftSection(model.aboutDemoFallback, "visitor_cta", "visitorCtaHeading", "visitorCtaBody");
+          const visitorBtn = overlayMap.get("visitor_cta::buttonText");
+          if (visitorBtn !== undefined) model.aboutDemoFallback.visitorCtaButtonText = visitorBtn;
+          ["beliefs", "community", "mission", "vision", "story"].forEach((key) => {
+            const block = model.aboutDemoFallback[key];
+            if (!block || typeof block !== "object") return;
+            const h = overlayMap.get(`${key}::heading`);
+            const b = overlayMap.get(`${key}::bodyText`);
+            if (h !== undefined || b !== undefined) {
+              model.aboutDemoFallback[key] = {
+                ...block,
+                heading: h !== undefined ? h : block.heading,
+                bodyText: b !== undefined ? b : block.bodyText,
+              };
+            }
+          });
+          if (Array.isArray(model.aboutDemoFallback.values)) {
+            model.aboutDemoFallback.values = model.aboutDemoFallback.values.map((item) => {
+              const key = item.sectionKey || "";
+              if (!key) return item;
+              const h = overlayMap.get(`${key}::heading`);
+              const b = overlayMap.get(`${key}::bodyText`);
+              if (h === undefined && b === undefined) return item;
+              return {
+                ...item,
+                heading: h !== undefined ? h : item.heading,
+                bodyText: b !== undefined ? b : item.bodyText,
+              };
+            });
+          }
+        }
+      }
     }
   } catch {
     draftCount = 0;

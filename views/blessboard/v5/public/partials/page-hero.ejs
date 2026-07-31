@@ -88,8 +88,9 @@
       </div>
       <% } %>
     </div>
-    <% if (_media) { %>
+    <% if (_media || _canInline) { %>
     <div class="bb-tp-page-hero__visual">
+      <% if (_media) { %>
       <img
         class="bb-tp-page-hero__img"
         src="<%= _media %>"
@@ -99,6 +100,24 @@
         loading="eager"
         decoding="async"
       />
+      <% } else { %>
+      <div class="bb-tp-page-hero__fallback"></div>
+      <% } %>
+      <% if (_canInline) { %>
+      <div class="bb-tp-edit-media-wrap">
+        <%- include('../../partials/structured-edit-trigger', {
+          editKind: 'image',
+          editEntityKey: _pageKey + '-' + _sectionKey + '-image',
+          editSectionKey: _sectionKey,
+          editLabel: 'Edit section image',
+          editPayload: {
+            imageUrl: _media || '',
+            altText: typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '',
+            focal: 'center'
+          }
+        }) %>
+      </div>
+      <% } %>
     </div>
     <% } else { %>
     <div class="bb-tp-page-hero__visual" aria-hidden="true">

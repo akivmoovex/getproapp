@@ -465,27 +465,33 @@ function buildPublicDemoPack(opts) {
 
   const givingMethods = Object.freeze([
     Object.freeze({
+      id: "demo-giving-bank_transfer",
       methodType: "bank_transfer",
       label: "Bank Transfer",
       instructions:
         "Contact the church office for published bank transfer instructions. Sensitive payment details are shared privately so they stay accurate and secure.",
       externalUrl: null,
       icon: "account_balance",
+      sortOrder: 10,
     }),
     Object.freeze({
+      id: "demo-giving-mobile_money",
       methodType: "mobile_money",
       label: "Mobile Money",
       instructions:
         "Ask the office for the current published mobile-money details for this congregation. BlessBoard does not process mobile payments on this page.",
       externalUrl: null,
       icon: "smartphone",
+      sortOrder: 20,
     }),
     Object.freeze({
+      id: "demo-giving-in_person",
       methodType: "in_person",
       label: "In-Person Offering",
       instructions: "Give during Sunday worship or visit the church office during published office hours.",
       externalUrl: null,
       icon: "volunteer_activism",
+      sortOrder: 30,
     }),
   ]);
 
@@ -527,16 +533,19 @@ function buildPublicDemoPack(opts) {
     whyHeading: "Why We Give",
     whyItems: Object.freeze([
       Object.freeze({
+        sectionKey: "why_impact",
         icon: "volunteer_activism",
         title: "Community Impact",
         body: "Gifts support local outreach, pastoral care, and the daily work of this congregation.",
       }),
       Object.freeze({
+        sectionKey: "why_stewardship",
         icon: "favorite",
         title: "Worshipful Stewardship",
         body: "Giving is a joyful response to the grace we have received, practised with wisdom and freedom.",
       }),
       Object.freeze({
+        sectionKey: "why_accountability",
         icon: "verified",
         title: "Accountable Care",
         body: "Leaders manage published gifts with clear communication and care for designations.",

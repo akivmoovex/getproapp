@@ -407,6 +407,10 @@
       field("External payment URL", "externalUrl", p.externalUrl || "", { type: "url" }) +
       field("Button label", "buttonLabel", p.buttonLabel || "Open published link") +
       field("QR image URL (optional)", "qrImageUrl", p.qrImageUrl || "") +
+      '<div class="bb-tp-se-actions-row">' +
+      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Upload QR image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="qrImageUrl" hidden /></label>' +
+      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="qrImageUrl">Media library</button>' +
+      "</div>" +
       '<p class="bb-tp-se-hint">Use an uploaded media path, demo image path, or https image URL for QR.</p>' +
       field("Visible on website", "visible", p.visible !== false, { type: "checkbox" }) +
       field("Display order", "sortOrder", p.sortOrder != null ? p.sortOrder : 10, { type: "number" })
@@ -717,13 +721,69 @@
     closeEditor();
   }
 
-  function applySelectedMedia(url) {
+  function applySelectedMedia(url, fieldName) {
     if (!host || !url) return;
-    var input = host.querySelector('[name="imageUrl"]');
+    var name = fieldName || "imageUrl";
+    var input = host.querySelector('[name="' + name + '"]') || host.querySelector('[name="imageUrl"]');
     if (input) input.value = url;
-    host.querySelectorAll("[data-bb-se-preview], [data-bb-se-preview-mobile]").forEach(function (img) {
-      img.src = url;
-    });
+    if (name === "imageUrl" || name === "thumbnailUrl") {
+      host.querySelectorAll("[data-bb-se-preview], [data-bb-se-preview-mobile]").forEach(function (img) {
+        img.src = url;
+      });
+    }
+  }
+
+  var pendingUploadTarget = "imageUrl";
+
+  function uploadFile(file, fieldName) {
+    if (!host || !file) return;
+    pendingUploadTarget = fieldName || "imageUrl";
+    var uploadUrl = host.getAttribute("data-bb-media-upload");
+    var csrf = host.getAttribute("data-bb-csrf");
+    var fd = new FormData();
+    fd.append("file", file);
+    fd.append("_csrf", csrf);
+    setStatus("Uploading…", "pending");
+    var progress = host.querySelector("[data-bb-upload-progress='1']");
+    if (!progress) {
+      progress = document.createElement("p");
+      progress.className = "bb-tp-se-hint";
+      progress.setAttribute("data-bb-upload-progress", "1");
+      progress.setAttribute("role", "status");
+      var bodyEl = $("[data-bb-structured-body='1']", host);
+      if (bodyEl) bodyEl.insertBefore(progress, bodyEl.firstChild);
+    }
+    progress.hidden = false;
+    progress.textContent = "Upload in progress…";
+    fetch(uploadUrl, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF-Token": csrf, Accept: "application/json" },
+      body: fd,
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          return { okHttp: res.ok, data: data || {} };
+        });
+      })
+      .then(function (result) {
+        if (!result.okHttp || !result.data.ok) {
+          progress.textContent = "Upload failed — previous image kept.";
+          setStatus(
+            (result.data && result.data.reason) || "Upload failed. Previous image kept.",
+            "error"
+          );
+          return;
+        }
+        var path = result.data.deliveryPath || "";
+        applySelectedMedia(path, pendingUploadTarget);
+        progress.textContent = "Upload complete — save draft to keep it.";
+        setStatus("Upload ready — save draft to keep it.", "ok");
+      })
+      .catch(function () {
+        progress.textContent = "Upload failed — previous image kept.";
+        setStatus("Upload failed. Previous image kept.", "error");
+      });
   }
 
   function loadMediaLibrary() {
@@ -780,56 +840,6 @@
       .catch(function () {
         panel.innerHTML = '<p class="bb-tp-se-hint">Could not load media library.</p>';
         setStatus("Could not load media library.", "error");
-      });
-  }
-
-  function uploadFile(file) {
-    if (!host || !file) return;
-    var uploadUrl = host.getAttribute("data-bb-media-upload");
-    var csrf = host.getAttribute("data-bb-csrf");
-    var fd = new FormData();
-    fd.append("file", file);
-    fd.append("_csrf", csrf);
-    setStatus("Uploading…", "pending");
-    var progress = host.querySelector("[data-bb-upload-progress='1']");
-    if (!progress) {
-      progress = document.createElement("p");
-      progress.className = "bb-tp-se-hint";
-      progress.setAttribute("data-bb-upload-progress", "1");
-      progress.setAttribute("role", "status");
-      var bodyEl = $("[data-bb-structured-body='1']", host);
-      if (bodyEl) bodyEl.insertBefore(progress, bodyEl.firstChild);
-    }
-    progress.hidden = false;
-    progress.textContent = "Upload in progress…";
-    fetch(uploadUrl, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "X-CSRF-Token": csrf, Accept: "application/json" },
-      body: fd,
-    })
-      .then(function (res) {
-        return res.json().then(function (data) {
-          return { okHttp: res.ok, data: data || {} };
-        });
-      })
-      .then(function (result) {
-        if (!result.okHttp || !result.data.ok) {
-          progress.textContent = "Upload failed — previous image kept.";
-          setStatus(
-            (result.data && result.data.reason) || "Upload failed. Previous image kept.",
-            "error"
-          );
-          return;
-        }
-        var path = result.data.deliveryPath || "";
-        applySelectedMedia(path);
-        progress.textContent = "Upload complete — save draft to keep it.";
-        setStatus("Upload ready — save draft to keep it.", "ok");
-      })
-      .catch(function () {
-        progress.textContent = "Upload failed — previous image kept.";
-        setStatus("Upload failed. Previous image kept.", "error");
       });
   }
 
@@ -951,7 +961,8 @@
   document.addEventListener("change", function (event) {
     var upload = event.target.closest("[data-bb-se-upload='1']");
     if (upload && upload.files && upload.files[0]) {
-      uploadFile(upload.files[0]);
+      var target = upload.getAttribute("data-bb-se-upload-target") || "imageUrl";
+      uploadFile(upload.files[0], target);
     }
   });
 

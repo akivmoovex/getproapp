@@ -8,13 +8,26 @@
   var demoFb =
     typeof givingDemoFallback !== 'undefined' && givingDemoFallback ? givingDemoFallback : null;
   var pageSections = (sections || []).filter(function (s) {
-    return s && (s.heading || s.bodyText || s.mediaUrl);
+    return s && (s.heading || s.bodyText || s.mediaUrl || s.sectionKey);
   });
   var methods = (entities || []).filter(function (m) {
     return m && String(m.label || '').trim();
   });
-  var intro = pageSections.length ? pageSections[0] : null;
-  var moreSections = pageSections.length > 1 ? pageSections.slice(1) : [];
+  function findGivingSection(key) {
+    for (var i = 0; i < pageSections.length; i++) {
+      if (String(pageSections[i].sectionKey || '') === key) return pageSections[i];
+    }
+    return null;
+  }
+  var intro = findGivingSection('hero') || (pageSections.length ? pageSections[0] : null);
+  var moreSections = pageSections.filter(function (s) {
+    if (!s) return false;
+    if (s === intro) return false;
+    var key = String(s.sectionKey || '');
+    if (key === 'hero' || key === 'why' || key === 'ways' || key === 'accountability' || key === 'stewardship' || key === 'assistance') return false;
+    if (key.indexOf('why_') === 0) return false;
+    return Boolean(s.heading || s.bodyText || s.mediaUrl);
+  });
   var introHeading =
     (intro && intro.heading) ||
     (demoFb && demoFb.introHeading) ||
@@ -24,7 +37,10 @@
     (intro && intro.bodyText) ||
     (demoFb && demoFb.introBody) ||
     '';
-  var introMedia = intro && intro.mediaUrl ? intro.mediaUrl : null;
+  var introMedia =
+    (intro && intro.mediaUrl) ||
+    (demoFb && demoFb.introMediaUrl) ||
+    null;
   var isTestingEnv =
     typeof showEnvBadge !== 'undefined' && showEnvBadge;
   var whyHeading = (demoFb && demoFb.whyHeading) || 'Why We Give';
@@ -32,11 +48,50 @@
   var accountability =
     (demoFb && demoFb.accountability) ||
     'For questions about designations or receipts, contact the church office. BlessBoard never collects card, bank, or wallet credentials on this page.';
+  var accountabilityHeading = (demoFb && demoFb.accountabilityHeading) || 'Financial Accountability';
   var stewardshipHeading = (demoFb && demoFb.stewardshipHeading) || 'Stewardship and Support';
   var stewardshipBody = (demoFb && demoFb.stewardshipBody) || '';
   var assistanceContact = (demoFb && demoFb.assistanceContact) || '';
+  var assistanceHeading = (demoFb && demoFb.assistanceHeading) || 'Need Assistance?';
+  var assistanceButtonText = (demoFb && demoFb.assistanceButtonText) || 'Contact Finance Team';
+  var waysHeading = (demoFb && demoFb.waysHeading) || 'Ways to Give';
+  var waysBody =
+    (demoFb && demoFb.waysBody) ||
+    ('Methods published by ' + publicName + '. Follow the instructions below, or contact the church office if you need help.');
   var editing =
     typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
+
+  var whySec = findGivingSection('why');
+  var waysSec = findGivingSection('ways');
+  var accountabilitySec = findGivingSection('accountability');
+  var stewardshipSec = findGivingSection('stewardship');
+  var assistanceSec = findGivingSection('assistance');
+  if (whySec && whySec.heading) whyHeading = whySec.heading;
+  if (waysSec && waysSec.heading) waysHeading = waysSec.heading;
+  if (waysSec && waysSec.bodyText) waysBody = waysSec.bodyText;
+  if (accountabilitySec && accountabilitySec.heading) accountabilityHeading = accountabilitySec.heading;
+  if (accountabilitySec && accountabilitySec.bodyText) accountability = accountabilitySec.bodyText;
+  if (stewardshipSec && stewardshipSec.heading) stewardshipHeading = stewardshipSec.heading;
+  if (stewardshipSec && stewardshipSec.bodyText) stewardshipBody = stewardshipSec.bodyText;
+  if (assistanceSec && assistanceSec.heading) assistanceHeading = assistanceSec.heading;
+  if (assistanceSec && assistanceSec.bodyText) assistanceContact = assistanceSec.bodyText;
+  if (assistanceSec && assistanceSec.layoutMetadata && assistanceSec.layoutMetadata.buttonText) {
+    assistanceButtonText = assistanceSec.layoutMetadata.buttonText;
+  }
+  // Merge CMS why_* cards when present
+  var whyFromCms = pageSections.filter(function (s) {
+    return s && String(s.sectionKey || '').indexOf('why_') === 0;
+  });
+  if (whyFromCms.length) {
+    whyItems = whyFromCms.map(function (s) {
+      return {
+        sectionKey: s.sectionKey,
+        icon: 'volunteer_activism',
+        title: s.heading || '',
+        body: s.bodyText || ''
+      };
+    });
+  }
 
   function methodTypeLabel(type) {
     var t = String(type || '').toLowerCase();
@@ -153,15 +208,47 @@
       </p>
     </aside>
 
-    <% if (whyItems.length) { %>
+    <% if (whyItems.length || editing) { %>
     <section class="bb-tp-giving-why" aria-labelledby="bb-tp-giving-why-heading" data-bb-giving-why="1">
-      <h2 id="bb-tp-giving-why-heading" class="bb-tp-section-title bb-tp-section-title--ruled"><%= whyHeading %></h2>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'giving',
+        editSectionKey: 'why',
+        editFieldKey: 'heading',
+        editValue: whyHeading,
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title bb-tp-section-title--ruled',
+        editType: 'heading',
+        editId: 'bb-tp-giving-why-heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
       <ul class="bb-tp-giving-why__grid">
         <% whyItems.forEach(function (item) { %>
-        <li class="bb-tp-giving-why__card">
+        <% var whyKey = item.sectionKey || ('why_' + String(item.title || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '_')); %>
+        <li class="bb-tp-giving-why__card" data-section="<%= whyKey %>">
           <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon || 'volunteer_activism' %></span>
-          <h3><%= item.title %></h3>
-          <p><%= item.body %></p>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'giving',
+            editSectionKey: whyKey,
+            editFieldKey: 'heading',
+            editValue: item.title || '',
+            editTag: 'h3',
+            editClass: '',
+            editType: 'heading',
+            editMaxLength: 120,
+            editMultiline: false
+          }) %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'giving',
+            editSectionKey: whyKey,
+            editFieldKey: 'bodyText',
+            editValue: item.body || '',
+            editTag: 'p',
+            editClass: '',
+            editType: 'paragraph',
+            editMaxLength: 500,
+            editMultiline: true
+          }) %>
         </li>
         <% }) %>
       </ul>
@@ -171,11 +258,11 @@
     <% if (editing) { %>
     <div class="bb-tp-giving-editor-bar" data-bb-giving-editor="1" role="region" aria-label="Giving method editor">
       <p class="bb-tp-giving-editor-bar__title">Edit giving methods</p>
-      <p class="bb-tp-giving-editor-bar__hint">Add, edit, or reorder published methods. Visitors never see these controls.</p>
+      <p class="bb-tp-giving-editor-bar__hint">Add, edit, or hide published methods. Visitors never see these controls.</p>
       <p class="bb-tp-edit-collection-actions">
         <%- include('../partials/structured-edit-trigger', {
           editKind: 'giving_method',
-          editEntityKey: 'new-' + Date.now(),
+          editEntityKey: 'new-giving-method',
           editLabel: 'Add giving method',
           editPayload: {
             methodType: 'bank_transfer',
@@ -199,14 +286,33 @@
     <section id="ways-to-give" class="bb-tp-giving-methods" aria-labelledby="ways-to-give-heading" data-bb-giving-methods="1">
       <div class="bb-tp-giving-methods__head">
         <div class="bb-tp-giving-methods__title-row">
-          <h2 id="ways-to-give-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Ways to Give</h2>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'giving',
+            editSectionKey: 'ways',
+            editFieldKey: 'heading',
+            editValue: waysHeading,
+            editTag: 'h2',
+            editClass: 'bb-tp-section-title bb-tp-section-title--ruled',
+            editType: 'heading',
+            editId: 'ways-to-give-heading',
+            editMaxLength: 120,
+            editMultiline: false
+          }) %>
           <p class="bb-tp-giving-methods__count" data-bb-giving-method-count="<%= methods.length %>">
             <%= methods.length %> option<%= methods.length === 1 ? '' : 's' %> available
           </p>
         </div>
-        <p class="bb-tp-giving-methods__note">
-          Methods published by <%= publicName %>. Follow the instructions below, or contact the church office if you need help.
-        </p>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'giving',
+          editSectionKey: 'ways',
+          editFieldKey: 'bodyText',
+          editValue: waysBody,
+          editTag: 'p',
+          editClass: 'bb-tp-giving-methods__note',
+          editType: 'paragraph',
+          editMaxLength: 800,
+          editMultiline: true
+        }) %>
       </div>
       <ul class="bb-tp-giving-grid">
         <% methods.forEach(function (method) { %>
@@ -359,11 +465,52 @@
     <% }) %>
 
     <section class="bb-tp-giving-accountability" data-bb-giving-accountability="1" aria-labelledby="bb-tp-giving-accountability-heading">
-      <h2 id="bb-tp-giving-accountability-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Financial Accountability</h2>
-      <p class="bb-tp-body"><%= accountability %></p>
-      <% if (stewardshipBody) { %>
-      <h3 class="bb-tp-subsection-title"><%= stewardshipHeading || 'Stewardship and Support' %></h3>
-      <p class="bb-tp-body"><%= stewardshipBody %></p>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'giving',
+        editSectionKey: 'accountability',
+        editFieldKey: 'heading',
+        editValue: accountabilityHeading,
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title bb-tp-section-title--ruled',
+        editType: 'heading',
+        editId: 'bb-tp-giving-accountability-heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'giving',
+        editSectionKey: 'accountability',
+        editFieldKey: 'bodyText',
+        editValue: accountability,
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 2000,
+        editMultiline: true
+      }) %>
+      <% if (stewardshipBody || editing) { %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'giving',
+        editSectionKey: 'stewardship',
+        editFieldKey: 'heading',
+        editValue: stewardshipHeading || 'Stewardship and Support',
+        editTag: 'h3',
+        editClass: 'bb-tp-subsection-title',
+        editType: 'heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'giving',
+        editSectionKey: 'stewardship',
+        editFieldKey: 'bodyText',
+        editValue: stewardshipBody || '',
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 2000,
+        editMultiline: true
+      }) %>
       <% } %>
     </section>
 
@@ -374,10 +521,12 @@
     <div data-bb-giving-support="1">
     <%- include('./partials/cta-band', {
       ctaClass: 'bb-tp-cta-band--giving',
-      ctaTitle: 'Need Assistance?',
+      ctaTitle: assistanceHeading,
       ctaBody: assistanceContact || 'If you have questions about designations or published payment instructions, contact the church office.',
-      ctaPrimary: { href: hrefFor('/contact'), label: 'Contact Finance Team' },
-      ctaSecondary: { href: hrefFor('/about'), label: 'About Our Church' }
+      ctaPrimary: { href: hrefFor('/contact'), label: assistanceButtonText },
+      ctaSecondary: { href: hrefFor('/about'), label: 'About Our Church' },
+      editPageKey: 'giving',
+      editSectionKey: 'assistance'
     }) %>
     </div>
   </div>

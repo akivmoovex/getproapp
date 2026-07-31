@@ -119,6 +119,14 @@ function sanitizeLayoutMetadata(meta) {
   if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
   const out = {};
   if (meta.schema != null) out.schema = String(meta.schema).slice(0, 64);
+  if (meta.buttonText != null) out.buttonText = String(meta.buttonText).slice(0, 48);
+  if (meta.buttonUrl != null) out.buttonUrl = String(meta.buttonUrl).slice(0, 500);
+  if (meta.tagline != null) out.tagline = String(meta.tagline).slice(0, 200);
+  if (meta.altText != null) out.altText = String(meta.altText).slice(0, 200);
+  if (meta.focal != null) out.focal = String(meta.focal).slice(0, 32);
+  if (meta.fit != null) out.fit = String(meta.fit).slice(0, 32);
+  if (meta.videoUrl != null) out.videoUrl = String(meta.videoUrl).slice(0, 500);
+  if (meta.videoTitle != null) out.videoTitle = String(meta.videoTitle).slice(0, 120);
   if (Array.isArray(meta.entries)) {
     out.entries = meta.entries
       .filter((e) => e && typeof e === "object")
@@ -1090,7 +1098,7 @@ async function loadTenantPublicPageModel(db, input) {
       } else if (pageKey === "home") {
         pageSections = pageSections.concat([
           {
-            sectionKey: "identity-hero",
+            sectionKey: "hero",
             sectionType: "hero",
             heading: flat["identity.hero_title"] || publicName,
             bodyText: flat["identity.hero_description"] || "",
@@ -1194,7 +1202,54 @@ async function loadTenantPublicPageModel(db, input) {
   const footerFromResolved =
     (seoOverrides["identity.tagline"] && String(seoOverrides["identity.tagline"])) ||
     "";
-  const footerTagline = footerFromResolved || firstSectionDescription(pageSections) || "";
+  let footerFromCms = "";
+  const footerSectionOnPage = (pageSections || []).find(
+    (s) => s && String(s.sectionKey || "") === "footer"
+  );
+  if (footerSectionOnPage) {
+    const meta =
+      footerSectionOnPage.layoutMetadata && typeof footerSectionOnPage.layoutMetadata === "object"
+        ? footerSectionOnPage.layoutMetadata
+        : {};
+    footerFromCms =
+      (meta.tagline && String(meta.tagline).trim()) ||
+      (footerSectionOnPage.bodyText && String(footerSectionOnPage.bodyText).trim()) ||
+      "";
+  }
+  if (!footerFromCms && pageKey !== "home") {
+    try {
+      const homePage = isPreview
+        ? await resolvePreviewPage(db, {
+            churchId,
+            branchId: contentBranchId,
+            pageKey: "home",
+            allowChurchContentFallback,
+          })
+        : await resolvePublishedPage(db, {
+            churchId,
+            contentBranchId,
+            pageKey: "home",
+          });
+      const homeSections = ((homePage && homePage.sections) || []).map(mapSection);
+      const homeFooter = homeSections.find(
+        (s) => s && String(s.sectionKey || "") === "footer"
+      );
+      if (homeFooter) {
+        const meta =
+          homeFooter.layoutMetadata && typeof homeFooter.layoutMetadata === "object"
+            ? homeFooter.layoutMetadata
+            : {};
+        footerFromCms =
+          (meta.tagline && String(meta.tagline).trim()) ||
+          (homeFooter.bodyText && String(homeFooter.bodyText).trim()) ||
+          "";
+      }
+    } catch {
+      // Keep footer fallbacks below.
+    }
+  }
+  const footerTagline =
+    footerFromResolved || footerFromCms || firstSectionDescription(pageSections) || "";
 
   const seo = buildTenantPublicSeo({
     hostname,

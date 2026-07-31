@@ -199,6 +199,12 @@ function applyStructuredDraftsToModel(model, drafts) {
         if (model.pageKey === "home" && model.homeDemoFallback) {
           model.homeDemoFallback = { ...model.homeDemoFallback, heroMediaUrl: null };
         }
+        if (model.pageKey === "about" && model.aboutDemoFallback) {
+          model.aboutDemoFallback = { ...model.aboutDemoFallback, heroMediaUrl: null };
+        }
+        if (model.pageKey === "giving" && model.givingDemoFallback) {
+          model.givingDemoFallback = { ...model.givingDemoFallback, introMediaUrl: null };
+        }
       }
       model.sections = (model.sections || []).map((s) => {
         if (String(s.sectionKey) !== sectionKey) return s;
@@ -208,8 +214,10 @@ function applyStructuredDraftsToModel(model, drafts) {
     }
     const mediaUrl =
       payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || null;
+    let matched = false;
     model.sections = (model.sections || []).map((s) => {
       if (String(s.sectionKey) !== sectionKey) return s;
+      matched = true;
       return {
         ...s,
         mediaUrl: mediaUrl || s.mediaUrl,
@@ -221,9 +229,56 @@ function applyStructuredDraftsToModel(model, drafts) {
         },
       };
     });
+    if (!matched && mediaUrl) {
+      model.sections = [
+        ...(model.sections || []),
+        {
+          sectionKey,
+          sectionType: sectionKey,
+          heading: null,
+          bodyText: null,
+          mediaUrl,
+          sortOrder: 50,
+          status: "draft",
+          layoutMetadata:
+            d.draftKind === "image"
+              ? { altText: payload.altText, focal: payload.focal, fit: payload.fit }
+              : { videoUrl: payload.videoUrl, videoTitle: payload.title },
+        },
+      ];
+    }
     // Soft-fill heroes when no CMS section
-    if (model.pageKey === "home" && sectionKey === "hero" && mediaUrl) {
+    if (sectionKey === "hero" && mediaUrl) {
       model._draftHeroMediaUrl = mediaUrl;
+      if (model.pageKey === "home" && model.homeDemoFallback) {
+        model.homeDemoFallback = { ...model.homeDemoFallback, heroMediaUrl: mediaUrl };
+      }
+      if (model.pageKey === "about" && model.aboutDemoFallback) {
+        model.aboutDemoFallback = { ...model.aboutDemoFallback, heroMediaUrl: mediaUrl };
+      }
+      if (model.pageKey === "giving" && model.givingDemoFallback) {
+        model.givingDemoFallback = { ...model.givingDemoFallback, introMediaUrl: mediaUrl };
+      }
+    }
+    if (model.pageKey === "about" && sectionKey === "story" && mediaUrl && model.aboutDemoFallback) {
+      model.aboutDemoFallback = {
+        ...model.aboutDemoFallback,
+        storyMediaUrl: mediaUrl,
+        story: model.aboutDemoFallback.story
+          ? { ...model.aboutDemoFallback.story, mediaUrl }
+          : model.aboutDemoFallback.story,
+      };
+    }
+    if (model.pageKey === "about" && /^gallery_\d+$/.test(sectionKey) && mediaUrl && model.aboutDemoFallback) {
+      const idx = Number(String(sectionKey).replace("gallery_", "")) - 1;
+      if (idx >= 0) {
+        const gallery = Array.isArray(model.aboutDemoFallback.gallery)
+          ? model.aboutDemoFallback.gallery.slice()
+          : [];
+        while (gallery.length <= idx) gallery.push("");
+        gallery[idx] = mediaUrl;
+        model.aboutDemoFallback = { ...model.aboutDemoFallback, gallery };
+      }
     }
   }
 
