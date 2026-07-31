@@ -81,6 +81,19 @@
   </p>
   <% } %>
 
+  <% if (typeof websiteModeNoticeMessage !== 'undefined' && websiteModeNoticeMessage) { %>
+  <p
+    class="bb-hq-ok"
+    role="status"
+    data-bb-website-mode-notice="<%= typeof websiteModeNoticeCode !== 'undefined' && websiteModeNoticeCode ? websiteModeNoticeCode : '' %>"
+  >
+    <%= websiteModeNoticeMessage %>
+    <% if (typeof websiteModeNoticeCode !== 'undefined' && websiteModeNoticeCode === 'branch_websites_available') { %>
+    <a href="/hq/website">Open HQ Website</a>
+    <% } %>
+  </p>
+  <% } %>
+
   <% if (!allRows.length) { %>
   <div class="bb-hq-empty" data-bb-empty="branches" role="status">
     No active branches are available for this church.

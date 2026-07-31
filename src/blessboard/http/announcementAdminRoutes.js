@@ -206,6 +206,7 @@ function createAnnouncementAdminRouter(deps) {
     };
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
+      getPool,
         env,
         isProduction,
         activeNav: "announcements",

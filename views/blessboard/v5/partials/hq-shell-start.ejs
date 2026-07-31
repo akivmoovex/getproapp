@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=72" />
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=74" />
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=8" />
   <% } %>
@@ -90,14 +90,19 @@
 
       <nav class="bb-hq-sidebar__nav" aria-label="HQ desktop" data-bb-nav="desktop">
         <% hqNav.forEach(function (item) { %>
+        <% if (item.navHeading || !item.href) { %>
+        <p class="bb-hq-nav-heading" data-bb-nav-heading="1"><%= item.label %></p>
+        <% } else { %>
         <a
           href="<%= item.href %>"
           class="bb-hq-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
           <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+          data-bb-nav-key="<%= item.key %>"
         >
           <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
           <span><%= item.label %></span>
         </a>
+        <% } %>
         <% }) %>
       </nav>
 

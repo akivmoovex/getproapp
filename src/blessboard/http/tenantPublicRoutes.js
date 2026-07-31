@@ -27,10 +27,14 @@ const { renderControlledErrorPage, renderFoundationHome } = require("./renderTen
 const { resolveHostname } = require("../../platform/host");
 const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
 const {
-  resolvePublicWebsiteBranch,
-  STATUS: PUBLIC_BRANCH_STATUS,
-} = require("../services/resolvePublicWebsiteBranch");
+  resolveWebsiteMode,
+  WEBSITE_MODE,
+  STATUS: WEBSITE_MODE_STATUS,
+} = require("../services/resolveWebsiteMode");
 const { tenantBranchHomePath } = require("../urls/churchUrlHelper");
+const {
+  redirectSingleSiteBranchToChurchWide,
+} = require("./singleSiteBranchPublicRedirect");
 
 /**
  * @param {{
@@ -245,12 +249,23 @@ function createTenantPublicRouter(deps) {
     }
 
     const tenant = req.blessBoardTenantContext;
-    const branchResolved = await resolvePublicWebsiteBranch(getPool(), {
-      churchId: tenant.church.id,
-      branchKey: parsed.branchKey,
-    });
-    if (!branchResolved.ok || !branchResolved.branch) {
-      if (branchResolved.status === PUBLIC_BRANCH_STATUS.LOOKUP_ERROR) {
+    let websiteMode;
+    try {
+      websiteMode = await resolveWebsiteMode(getPool(), {
+        churchId: tenant.church.id,
+        branchKey: parsed.branchKey,
+      });
+    } catch {
+      return res
+        .status(503)
+        .type("html")
+        .send(
+          renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable.")
+        );
+    }
+
+    if (!websiteMode.ok) {
+      if (websiteMode.status === WEBSITE_MODE_STATUS.LOOKUP_ERROR) {
         return res
           .status(503)
           .type("html")
@@ -264,11 +279,38 @@ function createTenantPublicRouter(deps) {
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
     }
 
-    const pathPrefix = tenantBranchHomePath(branchResolved.branch.key);
+    const activeBranch = (websiteMode.activeBranches || []).find(
+      (b) => b.key === parsed.branchKey
+    );
+    // Unknown / inactive / foreign keys are never in the active list → 404 (no HQ redirect).
+    if (!activeBranch) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    // Single-site: only the church-wide CMS is public; collapse branch URLs permanently.
+    if (
+      websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE ||
+      !websiteMode.requestedBranchMayHaveIndependentPublicWebsite
+    ) {
+      const redirected = redirectSingleSiteBranchToChurchWide(req, res, {
+        routingMode: "tenant",
+        pageKey: parsed.pageKey,
+      });
+      if (redirected) return res;
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    const pathPrefix = tenantBranchHomePath(activeBranch.key);
     return renderTenantModel(req, res, {
       pageKey: parsed.pageKey,
       pathPrefix,
-      selectedBranch: branchResolved.branch,
+      selectedBranch: activeBranch,
     });
   }
 
@@ -314,6 +356,61 @@ function createTenantPublicRouter(deps) {
         .catch(next);
     });
   }
+
+  async function handleTenantSitemap(req, res) {
+    const gate = foundationOrNull(req, res, "/sitemap.xml");
+    if (gate !== "ready") return gate;
+
+    const tenant = req.blessBoardTenantContext;
+    const hostname = resolveHostname(req) || String(req.hostname || "");
+    let websiteMode;
+    try {
+      websiteMode = await resolveWebsiteMode(getPool(), {
+        churchId: tenant.church.id,
+      });
+    } catch {
+      return res
+        .status(503)
+        .type("html")
+        .send(
+          renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable.")
+        );
+    }
+    if (!websiteMode.ok) {
+      return res
+        .status(503)
+        .type("html")
+        .send(
+          renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable.")
+        );
+    }
+
+    const {
+      buildTenantPublicDiscoveryUrls,
+      buildTenantPublicSitemapXml,
+    } = require("./tenantPublicDiscovery");
+    const urls = buildTenantPublicDiscoveryUrls({
+      hostname,
+      routingMode: "tenant",
+      organizationKey:
+        tenant.organization && tenant.organization.key
+          ? tenant.organization.key
+          : null,
+      websiteMode: websiteMode.websiteMode,
+      activeBranches: websiteMode.activeBranches || [],
+    });
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    return res.status(200).send(buildTenantPublicSitemapXml(urls));
+  }
+
+  router.get("/sitemap.xml", (req, res, next) => {
+    Promise.resolve(handleTenantSitemap(req, res))
+      .then((handled) => {
+        if (handled === null) return next();
+        return undefined;
+      })
+      .catch(next);
+  });
 
   return router;
 }

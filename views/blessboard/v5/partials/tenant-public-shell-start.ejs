@@ -17,6 +17,9 @@
   <meta property="og:title" content="<%= seo.ogTitle %>" />
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
+  <% if (seo.ogImageUrl) { %>
+  <meta property="og:image" content="<%= seo.ogImageUrl %>" />
+  <% } %>
   <%- include('./head-design-system') %>
   <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=51' %>" />
 </head>

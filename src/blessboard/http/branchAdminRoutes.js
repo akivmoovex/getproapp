@@ -168,8 +168,9 @@ function createBranchAdminRouter(deps) {
    * @param {string} activeNav
    * @param {object} [extra]
    */
-  function shellLocals(req, res, activeNav, extra) {
+  async function shellLocals(req, res, activeNav, extra) {
     return buildBranchAdminShellLocals(req, res, {
+      getPool,
       env,
       isProduction,
       activeNav,
@@ -177,14 +178,14 @@ function createBranchAdminRouter(deps) {
     });
   }
 
-  router.get("/branch-admin", rejectApex, gateAccess, (req, res) => {
-    const locals = shellLocals(req, res, "home");
+  router.get("/branch-admin", rejectApex, gateAccess, async (req, res) => {
+    const locals = await shellLocals(req, res, "home");
     const html = renderBranchAdminView("branch-admin/dashboard.ejs", locals);
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/branch-admin/account", rejectApex, gateAccess, (req, res) => {
-    const locals = shellLocals(req, res, "account");
+  router.get("/branch-admin/account", rejectApex, gateAccess, async (req, res) => {
+    const locals = await shellLocals(req, res, "account");
     const html = renderBranchAdminView("branch-admin/account.ejs", locals);
     return res.status(200).type("html").send(html);
   });
@@ -206,7 +207,7 @@ function createBranchAdminRouter(deps) {
     }
     const html = renderBranchAdminView(
       "branch-admin/settings.ejs",
-      shellLocals(req, res, "settings", {
+      await shellLocals(req, res, "settings", {
         settings: loaded.model.settings,
         catalogue: loaded.model.catalogue,
         error: null,
@@ -253,7 +254,7 @@ function createBranchAdminRouter(deps) {
         const loaded = await getBranchSettingsPageModel(getPool(), branchId);
         const html = renderBranchAdminView(
           "branch-admin/settings.ejs",
-          shellLocals(req, res, "settings", {
+          await shellLocals(req, res, "settings", {
             settings: (loaded.model && loaded.model.settings) || {
               publicName: String(body.publicName || ""),
               email: body.email || null,

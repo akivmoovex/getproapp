@@ -7,6 +7,33 @@
 
 **Verdict:** `READY_FOR_IMPLEMENTATION` — §K product decisions approved 2026-07-30. Implement Prompt 7 in **eight staged passes** (do not combine).
 
+### Prompt 7 Stage 3 (2026-07-30) — HQ branch settings editor
+
+| Deliverable | Status |
+|-------------|--------|
+| Server-rendered editor at `/hq/website/branches/:branchKey/settings` | Done |
+| Explicit source-state labels + field actions (override/reset/hide/restore) | Done |
+| Service-times section (structured; links to existing editor) | Done |
+| Governance read-only panel + preview link | Done |
+| Functional mobile layout (not Stitch parity) | Done |
+| Stages 4–8 | **Not started** |
+
+See `docs/migrations/PROMPT7_STAGE3_BRANCH_WEBSITE_SETTINGS_EDITOR.md`. Verdict: `STAGE_3_READY_FOR_REVIEW`.
+
+### Prompt 7 Stage 2 (2026-07-30) — identity / contact / service-time / SEO
+
+| Deliverable | Status |
+|-------------|--------|
+| Setting key registry + typed validation | Done |
+| `resolveBranchWebsiteSettings` central resolver | Done |
+| Public chrome + SEO integration (functional) | Done |
+| HQ JSON settings API (CSRF) | Done |
+| Migration `053` dotted keys | Additive |
+| Stage 3 editor | Done (see above) |
+| Stages 4–8 | **Not started** |
+
+See `docs/migrations/PROMPT7_STAGE2_WEBSITE_SETTINGS_INHERITANCE.md`.
+
 ### Prompt 7 Stage 1 (2026-07-30) — foundation landed (local)
 
 | Deliverable | Status |
@@ -17,7 +44,8 @@
 | `website_scope_settings` (override/hidden; empty = inherit) | Done |
 | Church-wide URL ≠ primary branch mirror | Done in `loadTenantPublicPageModel` |
 | Primary fallback for contact + service times only | Done |
-| Stages 2–8 | **Not started** |
+| Stages 2–3 | Done |
+| Stages 4–8 | **Not started** |
 
 See `docs/migrations/PROMPT7_STAGE1_BRANCH_WEBSITE_GOVERNANCE.md`.
 

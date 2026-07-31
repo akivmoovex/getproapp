@@ -258,6 +258,7 @@ function createWebsiteServiceTimesAdminRouter(deps) {
       });
     }
     return buildBranchAdminShellLocals(req, res, {
+      getPool,
       env,
       isProduction,
       activeNav: "website_submissions",

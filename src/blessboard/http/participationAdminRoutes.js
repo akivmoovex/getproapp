@@ -116,6 +116,7 @@ function createParticipationAdminRouter(deps) {
   async function shellLocals(req, res, extra) {
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
+      getPool,
         env,
         isProduction,
         activeNav: "participation",

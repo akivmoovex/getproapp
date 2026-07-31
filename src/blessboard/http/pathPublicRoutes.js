@@ -13,10 +13,15 @@ const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../serv
 const { resolveHostname } = require("../../platform/host");
 const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
 const {
-  resolvePublicWebsiteBranch,
-  STATUS: PUBLIC_BRANCH_STATUS,
-} = require("../services/resolvePublicWebsiteBranch");
+  resolveWebsiteMode,
+  WEBSITE_MODE,
+  STATUS: WEBSITE_MODE_STATUS,
+} = require("../services/resolveWebsiteMode");
+const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
 const { publicBranchHomePath } = require("../urls/churchUrlHelper");
+const {
+  redirectSingleSiteBranchToChurchWide,
+} = require("./singleSiteBranchPublicRedirect");
 
 /**
  * @param {{
@@ -274,12 +279,30 @@ function createPathPublicRouter(deps) {
     const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
     if (!resolved) return;
 
-    const branchResolved = await resolvePublicWebsiteBranch(getPool(), {
-      churchId: resolved.tenant.church.id,
-      branchKey: req.params.branchKey,
-    });
-    if (!branchResolved.ok || !branchResolved.branch) {
-      if (branchResolved.status === PUBLIC_BRANCH_STATUS.LOOKUP_ERROR) {
+    const pageKey = pageKeyFromPath(normalizedPath);
+    const branchKey = normalizeBranchKey(req.params.branchKey);
+    if (!branchKey) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    let websiteMode;
+    try {
+      websiteMode = await resolveWebsiteMode(getPool(), {
+        churchId: resolved.tenant.church.id,
+        branchKey,
+      });
+    } catch {
+      return res
+        .status(503)
+        .type("html")
+        .send(renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable."));
+    }
+
+    if (!websiteMode.ok) {
+      if (websiteMode.status === WEBSITE_MODE_STATUS.LOOKUP_ERROR) {
         return res
           .status(503)
           .type("html")
@@ -291,16 +314,40 @@ function createPathPublicRouter(deps) {
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
     }
 
-    const pageKey = pageKeyFromPath(normalizedPath);
+    const activeBranch = (websiteMode.activeBranches || []).find((b) => b.key === branchKey);
+    // Unknown / inactive / cross-org keys are never in this church's active list → 404.
+    if (!activeBranch) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
+    if (
+      websiteMode.websiteMode === WEBSITE_MODE.SINGLE_SITE ||
+      !websiteMode.requestedBranchMayHaveIndependentPublicWebsite
+    ) {
+      const redirected = redirectSingleSiteBranchToChurchWide(req, res, {
+        routingMode: "path",
+        organizationKey: resolved.organizationKey,
+        pageKey,
+      });
+      if (redirected) return res;
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+    }
+
     const pathPrefix = publicBranchHomePath(
       resolved.organizationKey,
-      branchResolved.branch.key
+      activeBranch.key
     );
     return renderPublicModel(req, res, {
       tenant: resolved.tenant,
       pageKey,
       pathPrefix,
-      selectedBranch: branchResolved.branch,
+      selectedBranch: activeBranch,
       routingMode: "path",
     });
   }
@@ -331,6 +378,52 @@ function createPathPublicRouter(deps) {
       Promise.resolve(handlePathPublic(req, res)).catch(next);
     });
   }
+
+  router.get("/c/:organizationKey/sitemap.xml", (req, res, next) => {
+    Promise.resolve(
+      (async () => {
+        const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+        if (!resolved) return;
+
+        const hostname = resolveHostname(req) || String(req.hostname || "");
+        let websiteMode;
+        try {
+          websiteMode = await resolveWebsiteMode(getPool(), {
+            churchId: resolved.tenant.church.id,
+          });
+        } catch {
+          return res
+            .status(503)
+            .type("html")
+            .send(
+              renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable.")
+            );
+        }
+        if (!websiteMode.ok) {
+          return res
+            .status(503)
+            .type("html")
+            .send(
+              renderControlledErrorPage(503, "This BlessBoard site is temporarily unavailable.")
+            );
+        }
+
+        const {
+          buildTenantPublicDiscoveryUrls,
+          buildTenantPublicSitemapXml,
+        } = require("./tenantPublicDiscovery");
+        const urls = buildTenantPublicDiscoveryUrls({
+          hostname,
+          routingMode: "path",
+          organizationKey: resolved.organizationKey,
+          websiteMode: websiteMode.websiteMode,
+          activeBranches: websiteMode.activeBranches || [],
+        });
+        res.setHeader("Content-Type", "application/xml; charset=utf-8");
+        return res.status(200).send(buildTenantPublicSitemapXml(urls));
+      })()
+    ).catch(next);
+  });
 
   return router;
 }

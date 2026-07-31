@@ -15,6 +15,8 @@ const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorization
 const { formatRoleLabel } = require("./renderTenantLandingPage");
 const { HQ_ADMIN_NAV, HQ_ADMIN_MOBILE_TABS } = require("./hqAdminNav");
 const { buildHqMobileNav } = require("./adminMobileNavGroups");
+const { resolveWebsiteMode, WEBSITE_MODE } = require("../services/resolveWebsiteMode");
+const { applyHqWebsiteModeNav } = require("./websiteModeAdminNav");
 
 /**
  * @param {import('express').Request} req
@@ -91,6 +93,32 @@ async function resolveHqNavEntitlements(req, getPool) {
 }
 
 /**
+ * Cached website mode for shell nav (one list query per request).
+ * @param {import('express').Request} req
+ * @param {() => { query: Function }} [getPool]
+ * @param {string|null} churchId
+ */
+async function resolveHqWebsiteModeForShell(req, getPool, churchId) {
+  if (!churchId) return null;
+  if (
+    req &&
+    req.blessBoardWebsiteMode &&
+    req.blessBoardWebsiteMode.ok &&
+    String(req.blessBoardWebsiteMode.churchId || "") === String(churchId)
+  ) {
+    return req.blessBoardWebsiteMode;
+  }
+  if (!getPool) return null;
+  try {
+    const mode = await resolveWebsiteMode(getPool(), { churchId });
+    if (req) req.blessBoardWebsiteMode = mode;
+    return mode;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {{
@@ -100,13 +128,13 @@ async function resolveHqNavEntitlements(req, getPool) {
  *   pageTitle?: string,
  *   getPool?: () => { query: Function },
  *   entitledFeatures?: Record<string, boolean>,
+ *   websiteMode?: object,
  *   extra?: object,
  * }} opts
  */
 async function buildHqAdminShellLocals(req, res, opts) {
   const env = opts.env || process.env;
   const isProduction = Boolean(opts.isProduction);
-  const activeNav = String(opts.activeNav || "home");
   const tenant = resolveTenantForAuthorization(req);
   const csrfToken = issueCsrfToken(env);
   setCsrfCookie(res, csrfToken, { secure: isProduction });
@@ -115,12 +143,26 @@ async function buildHqAdminShellLocals(req, res, opts) {
   const entitledFeatures =
     opts.entitledFeatures ||
     (await resolveHqNavEntitlements(req, opts.getPool));
-  const navItems = filterHqNavItems(HQ_ADMIN_NAV, entitledFeatures);
+  let navItems = filterHqNavItems(HQ_ADMIN_NAV, entitledFeatures);
+
+  const churchId = tenant && tenant.church ? tenant.church.id : null;
+  const websiteMode =
+    opts.websiteMode ||
+    (await resolveHqWebsiteModeForShell(req, opts.getPool, churchId));
+  const composed = applyHqWebsiteModeNav(navItems, websiteMode, {
+    requestPath: req && (req.path || req.url),
+    activeNav: String(opts.activeNav || "home"),
+  });
+  navItems = composed.navItems;
+  const activeNav = composed.activeNav;
+
   const mobileNav = buildHqMobileNav(navItems, activeNav);
   const mobileTabs = HQ_ADMIN_MOBILE_TABS.map((key) =>
     navItems.find((item) => item.key === key)
   ).filter(Boolean);
 
+  const multi =
+    websiteMode && websiteMode.ok && websiteMode.websiteMode === WEBSITE_MODE.MULTI_SITE;
   const defaultTitles = {
     home: "Church HQ",
     branches: "Branches",
@@ -129,7 +171,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
     roles: "Staff permissions",
     settings: "Church settings",
     account: "Account",
-    content: "Website",
+    content: multi ? "HQ Website" : "Website",
     broadcasts: "Broadcast Center",
     announcements: "Announcements",
     participation: "Participation",
@@ -145,7 +187,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
   };
 
   return {
-    pageTitle: opts.pageTitle || defaultTitles[activeNav] || "Church HQ",
+    pageTitle: opts.pageTitle || defaultTitles[activeNav] || defaultTitles.content || "Church HQ",
     activeNav,
     shellKind: "hq",
     csrfToken,
@@ -158,6 +200,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
     mobileNav,
     mobileTabs,
     entitledFeatures,
+    websiteMode: websiteMode || null,
     ...(opts.extra || {}),
   };
 }
@@ -167,6 +210,7 @@ module.exports = {
   primaryHqRoleLabel,
   filterHqNavItems,
   resolveHqNavEntitlements,
+  resolveHqWebsiteModeForShell,
   HQ_ADMIN_NAV,
   HQ_ADMIN_MOBILE_TABS,
 };

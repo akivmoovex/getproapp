@@ -25,6 +25,13 @@ const {
   SCOPE_TYPE: WEBSITE_SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
 const {
+  resolveWebsiteMode,
+  WEBSITE_MODE,
+} = require("../services/resolveWebsiteMode");
+const {
+  canonicalChurchWideHqContentPath,
+} = require("./singleSiteHqContentCanonical");
+const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("../services/authorizeBlessBoardTenantAccess");
@@ -436,6 +443,7 @@ function createContentAdminRouter(deps) {
     return buildBranchAdminShellLocals(req, res, {
       env,
       isProduction,
+      getPool,
       activeNav: "content",
       pageTitle: (extra && extra.pageTitle) || "Website content",
       extra: {
@@ -532,6 +540,41 @@ function createContentAdminRouter(deps) {
     if (!resolved.ok || resolved.scopeType !== "branch") {
       return sendWebsiteScopeFailure(req, res, resolved);
     }
+
+    // Single-site: no independent branch editor/preview — canonicalize to church-wide CMS.
+    try {
+      const mode = await resolveWebsiteMode(getPool(), {
+        churchId: resolved.churchId,
+        branchKey: resolved.branchKey,
+      });
+      if (
+        mode.ok &&
+        (mode.websiteMode === WEBSITE_MODE.SINGLE_SITE ||
+          !mode.requestedBranchMayHaveIndependentPublicWebsite)
+      ) {
+        const target = canonicalChurchWideHqContentPath(req.path || req.url || "");
+        if (target) {
+          res.redirect(303, target);
+          return null;
+        }
+        return sendControlled(
+          req,
+          res,
+          404,
+          "This branch could not be found.",
+          shellKind
+        );
+      }
+    } catch {
+      return sendControlled(
+        req,
+        res,
+        503,
+        "Website scope is temporarily unavailable.",
+        shellKind
+      );
+    }
+
     return toContentAdminScope(
       resolved,
       `/hq/content/b/${resolved.branchKey}`,
@@ -801,9 +844,28 @@ function createContentAdminRouter(deps) {
       await provisionEmptyPublicPages(getPool(), scopeInput(scope));
       const listed = await listAdminPages(getPool(), scopeInput(scope));
       let branches = [];
+      let websiteMode = null;
+      let websiteModeNoticeCode = null;
+      let websiteModeNoticeMessage = null;
       if (variant === "hq" && !scope.branchId) {
-        const listResult = await listBlessBoardBranches(getPool(), scope.churchId);
-        branches = (listResult && listResult.branches) || [];
+        const { resolveWebsiteMode, WEBSITE_MODE } = require("../services/resolveWebsiteMode");
+        const {
+          parseWebsiteModeNoticeCode,
+          websiteModeNoticeMessage: noticeMessageFor,
+        } = require("../services/websiteModeTransition");
+        websiteMode = await resolveWebsiteMode(getPool(), { churchId: scope.churchId });
+        websiteModeNoticeCode = parseWebsiteModeNoticeCode(
+          req.query && req.query.website_mode_notice
+        );
+        websiteModeNoticeMessage = noticeMessageFor(websiteModeNoticeCode);
+        if (
+          websiteMode &&
+          websiteMode.ok &&
+          websiteMode.websiteMode === WEBSITE_MODE.MULTI_SITE
+        ) {
+          const listResult = await listBlessBoardBranches(getPool(), scope.churchId);
+          branches = (listResult && listResult.branches) || [];
+        }
       }
       const rawStatus = String((req.query && req.query.status) || "")
         .trim()
@@ -825,6 +887,9 @@ function createContentAdminRouter(deps) {
           pages: (listed && listed.pages) || [],
           pageTitles: PAGE_KEY_TITLES,
           branches,
+          websiteMode,
+          websiteModeNoticeCode,
+          websiteModeNoticeMessage,
           statusFilter,
           q,
           error: null,
@@ -2311,13 +2376,35 @@ function createContentAdminRouter(deps) {
         applyStructuredDraftsToModel,
       } = require("../services/websiteStructuredDraftService");
 
+      let previewBranchId = scope.branchId;
+      let selectedBranch = scope.branch || null;
+      let allowChurchContentFallback = true;
+      try {
+        const mode = await resolveWebsiteMode(getPool(), {
+          churchId: scope.churchId,
+          branchKey: scope.branchKey,
+        });
+        if (mode.ok && mode.websiteMode === WEBSITE_MODE.SINGLE_SITE) {
+          // Shared church-wide website preview (no independent branch site).
+          previewBranchId = null;
+          selectedBranch = null;
+          allowChurchContentFallback = true;
+        } else if (mode.ok && scope.branchId) {
+          // Multi-site branch preview: branch pages/lists only (contact/service-time fallbacks elsewhere).
+          allowChurchContentFallback = false;
+        }
+      } catch {
+        /* keep scope defaults */
+      }
+
       const model = await loadTenantPublicPageModel(getPool(), {
         tenant,
         pageKey,
         hostname: String(req.hostname || ""),
         preview: true,
-        previewBranchId: scope.branchId,
-        selectedBranch: scope.branch || null,
+        previewBranchId,
+        selectedBranch,
+        allowChurchContentFallback,
         previewMeta: {
           backHref: `${scope.basePath}/draft-changes`,
           editHref: null,
@@ -2382,14 +2469,42 @@ function createContentAdminRouter(deps) {
       if (!tenant || !tenant.church || !tenant.primaryBranch) {
         return sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
       }
+
+      let previewBranchId = scope.branchId;
+      let selectedBranch = scope.branch || null;
+      let allowChurchContentFallback = true;
+      let pageScope = scope;
+      try {
+        const mode = await resolveWebsiteMode(getPool(), {
+          churchId: scope.churchId,
+          branchKey: scope.branchKey,
+        });
+        if (mode.ok && mode.websiteMode === WEBSITE_MODE.SINGLE_SITE) {
+          previewBranchId = null;
+          selectedBranch = null;
+          pageScope = {
+            ...scope,
+            branchId: null,
+            branchKey: null,
+            branch: null,
+            scopeType: "church",
+          };
+          allowChurchContentFallback = true;
+        } else if (mode.ok && scope.branchId) {
+          allowChurchContentFallback = false;
+        }
+      } catch {
+        /* keep scope defaults */
+      }
+
       const bundle = await getAdminPageBundle(getPool(), {
-        ...scopeInput(scope),
+        ...scopeInput(pageScope),
         pageKey,
       });
       if (!bundle.ok || !bundle.page) {
         return sendControlled(req, res, 404, "Page not found.", shellKind);
       }
-      if (!verifyPageScope(bundle.page, scope)) {
+      if (!verifyPageScope(bundle.page, pageScope)) {
         return sendControlled(req, res, 403, "You do not have access to this page.", shellKind);
       }
       if (bundle.page.status === "archived") {
@@ -2403,8 +2518,9 @@ function createContentAdminRouter(deps) {
         pageKey,
         hostname: String(req.hostname || ""),
         preview: true,
-        previewBranchId: scope.branchId,
-        selectedBranch: scope.branch || null,
+        previewBranchId,
+        selectedBranch,
+        allowChurchContentFallback,
         previewMeta: {
           backHref: scope.basePath,
           editHref: `${scope.basePath}/pages/${pageKey}`,

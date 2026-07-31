@@ -1,0 +1,333 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var ed = typeof editor !== 'undefined' && editor ? editor : { sections: [], serviceTimes: {} };
+  var sections = Array.isArray(ed.sections) ? ed.sections : [];
+  var st = ed.serviceTimes || {};
+  var gov = typeof governance !== 'undefined' && governance ? governance : null;
+  var fErr = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
+  var fVals = typeof formValues !== 'undefined' && formValues ? formValues : {};
+  var noticeKey = String(typeof notice !== 'undefined' ? notice : '');
+  var noticeText = '';
+  if (noticeKey === 'override_saved' || noticeKey === 'saved') noticeText = 'Branch override saved.';
+  else if (noticeKey === 'reset') noticeText = 'Override reset. This field now inherits again.';
+  else if (noticeKey === 'restored') noticeText = 'Hidden state cleared. Inherited value restored.';
+  else if (noticeKey === 'hidden') noticeText = 'Field hidden on this branch website.';
+  else if (noticeKey === 'service_times_cleared') noticeText = 'Branch-local service times cleared. Church fallback will show when available.';
+  else if (noticeKey) noticeText = noticeKey;
+
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function inputFor(field) {
+    if (Object.prototype.hasOwnProperty.call(fVals, field.key)) return fVals[field.key];
+    return field.inputValue;
+  }
+  var focus = String(typeof focusSection !== 'undefined' ? focusSection : 'identity');
+%>
+
+<section
+  class="bb-hq-branch-settings"
+  data-bb-branch-website-settings="1"
+  data-bb-branch-key="<%= esc(branchKey) %>"
+  aria-labelledby="bb-bws-heading"
+>
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/website">Website</a>
+        <span aria-hidden="true">›</span>
+        <a href="<%= websiteHomeHref %>"><%= esc(branchLabel) %></a>
+        <span aria-hidden="true">›</span>
+        <span>Settings</span>
+      </p>
+      <h1 id="bb-bws-heading" class="bb-hq-page-head__title">Branch website settings</h1>
+      <p class="bb-hq-lede">
+        Manage identity, contact, social, SEO and service-time inheritance for
+        <strong><%= esc(branchLabel) %></strong>
+        under <strong><%= esc(parentChurchLabel || churchDisplayName) %></strong>.
+        Inherited values are not saved as overrides unless you choose Override.
+      </p>
+    </div>
+    <p class="bb-hq-page-head__actions bb-hq-branch-settings__actions">
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= previewHref %>" data-bb-branch-preview="1" target="_blank" rel="noopener noreferrer">Preview branch site</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= serviceTimesHref %>">Edit service times</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= branchDetailsHref %>">Branch details</a>
+    </p>
+  </header>
+
+  <nav class="bb-hq-branch-settings__toc" aria-label="Settings sections">
+    <% sections.forEach(function (sec) { %>
+    <a href="#<%= esc(sec.id) %>"<%= focus === sec.id ? ' aria-current="true"' : '' %>><%= esc(sec.title) %></a>
+    <% }) %>
+    <a href="#service-times"<%= focus === 'service-times' ? ' aria-current="true"' : '' %>>Service times</a>
+    <a href="#governance"<%= focus === 'governance' ? ' aria-current="true"' : '' %>>Governance</a>
+  </nav>
+
+  <% if (noticeText) { %>
+  <p class="bb-hq-ok" role="status" data-bb-branch-settings-notice="1"><%= esc(noticeText) %></p>
+  <% } %>
+
+  <% if (error || errorSummary) { %>
+  <div class="bb-hq-error bb-hq-branch-settings__error-summary" role="alert" tabindex="-1" id="bb-bws-error-summary" data-bb-branch-settings-errors="1">
+    <p><strong>Could not save</strong></p>
+    <p><%= esc(errorSummary || error) %></p>
+  </div>
+  <script>
+    (function () {
+      var el = document.getElementById('bb-bws-error-summary');
+      if (el && typeof el.focus === 'function') el.focus();
+    })();
+  </script>
+  <% } %>
+
+  <% sections.forEach(function (sec) { %>
+  <section class="bb-hq-panel bb-hq-branch-settings__section" id="<%= esc(sec.id) %>" aria-labelledby="bb-bws-<%= esc(sec.id) %>-title">
+    <h2 id="bb-bws-<%= esc(sec.id) %>-title" class="bb-hq-panel__title"><%= esc(sec.title) %></h2>
+
+    <% sec.fields.forEach(function (field) { %>
+    <article
+      class="bb-hq-branch-settings__field"
+      data-bb-setting-key="<%= esc(field.key) %>"
+      data-bb-setting-state="<%= esc(field.state) %>"
+      aria-labelledby="bb-bws-label-<%= esc(field.key.replace(/\./g, '-')) %>"
+    >
+      <div class="bb-hq-branch-settings__field-head">
+        <h3 id="bb-bws-label-<%= esc(field.key.replace(/\./g, '-')) %>" class="bb-hq-branch-settings__field-title">
+          <%= esc(field.label) %>
+        </h3>
+        <p class="bb-hq-branch-settings__state" data-bb-setting-state-label="1">
+          <span class="bb-hq-branch-settings__badge"><%= esc(field.stateLabel) %></span>
+          <span class="bb-hq-branch-settings__detail"><%= esc(field.detail) %></span>
+        </p>
+      </div>
+
+      <p class="bb-hq-branch-settings__resolved" data-bb-setting-resolved="1">
+        <span class="bb-hq-branch-settings__resolved-label">Current value</span>
+        <% if (field.display) { %>
+        <span class="bb-hq-branch-settings__resolved-value"><%= esc(field.display) %></span>
+        <% } else { %>
+        <span class="bb-hq-branch-settings__resolved-value is-empty">None</span>
+        <% } %>
+      </p>
+
+      <% if (fErr[field.key]) { %>
+      <p class="bb-hq-error" id="err-<%= esc(field.key.replace(/\./g, '-')) %>" role="alert"><%= esc(fErr[field.key]) %></p>
+      <% } %>
+
+      <% if (field.state === 'locked') { %>
+      <p class="bb-hq-hint">No write or reset action is available. Controlled by HQ policy.</p>
+      <% } %>
+
+      <% if (field.showBranchRecordLink) { %>
+      <p class="bb-hq-hint">
+        This value comes from the branch record.
+        <a href="<%= branchDetailsHref %>">Edit branch details</a>
+        instead of copying it into a website override unless you need a website-only change.
+      </p>
+      <% } %>
+
+      <% if (field.canOverride) { %>
+      <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__form" data-bb-setting-action="override">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <input type="hidden" name="action" value="override" />
+        <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
+        <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
+
+        <% if (field.key === 'social.links') { %>
+        <div class="bb-hq-branch-settings__social">
+          <% (socialPlatforms || []).forEach(function (platform) { %>
+          <%
+            var existing = '';
+            if (Array.isArray(field.value)) {
+              field.value.forEach(function (item) {
+                if (item && item.platform === platform) existing = item.href || '';
+              });
+            }
+          %>
+          <div class="bb-hq-field">
+            <label for="social-<%= esc(platform) %>"><%= esc(platform) %></label>
+            <input
+              id="social-<%= esc(platform) %>"
+              name="social_<%= esc(platform) %>"
+              type="url"
+              inputmode="url"
+              maxlength="500"
+              value="<%= esc(existing) %>"
+              autocomplete="off"
+            />
+          </div>
+          <% }) %>
+        </div>
+        <% } else if (field.type === 'boolean') { %>
+        <div class="bb-hq-field">
+          <label for="val-<%= esc(field.key.replace(/\./g, '-')) %>"><%= esc(field.label) %> override</label>
+          <select
+            id="val-<%= esc(field.key.replace(/\./g, '-')) %>"
+            name="value"
+            <%= fErr[field.key] ? ' aria-invalid="true" aria-describedby="err-' + esc(field.key.replace(/\./g, '-')) + '"' : '' %>
+          >
+            <option value="false"<%= String(inputFor(field)) !== 'true' ? ' selected' : '' %>>No (indexable when otherwise allowed)</option>
+            <option value="true"<%= String(inputFor(field)) === 'true' ? ' selected' : '' %>>Yes (force noindex)</option>
+          </select>
+        </div>
+        <% } else if (field.type === 'enum') { %>
+        <div class="bb-hq-field">
+          <label for="val-<%= esc(field.key.replace(/\./g, '-')) %>"><%= esc(field.label) %> override</label>
+          <select
+            id="val-<%= esc(field.key.replace(/\./g, '-')) %>"
+            name="value"
+            <%= fErr[field.key] ? ' aria-invalid="true" aria-describedby="err-' + esc(field.key.replace(/\./g, '-')) + '"' : '' %>
+          >
+            <% (field.enumValues || []).forEach(function (opt) { %>
+            <option value="<%= esc(opt) %>"<%= String(inputFor(field)) === opt ? ' selected' : '' %>><%= esc(opt) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <% } else if (field.type === 'long_text') { %>
+        <div class="bb-hq-field">
+          <label for="val-<%= esc(field.key.replace(/\./g, '-')) %>"><%= esc(field.label) %> override</label>
+          <textarea
+            id="val-<%= esc(field.key.replace(/\./g, '-')) %>"
+            name="value"
+            rows="3"
+            maxlength="<%= field.maxLen || 800 %>"
+            <%= fErr[field.key] ? ' aria-invalid="true" aria-describedby="err-' + esc(field.key.replace(/\./g, '-')) + '"' : '' %>
+          ><%= esc(inputFor(field)) %></textarea>
+        </div>
+        <% } else { %>
+        <div class="bb-hq-field">
+          <label for="val-<%= esc(field.key.replace(/\./g, '-')) %>"><%= esc(field.label) %> override</label>
+          <input
+            id="val-<%= esc(field.key.replace(/\./g, '-')) %>"
+            name="value"
+            type="<%= field.type === 'email' ? 'email' : (field.type === 'url' || field.type === 'image_url' ? 'url' : 'text') %>"
+            maxlength="<%= field.maxLen || 200 %>"
+            value="<%= esc(inputFor(field)) %>"
+            autocomplete="off"
+            <%= fErr[field.key] ? ' aria-invalid="true" aria-describedby="err-' + esc(field.key.replace(/\./g, '-')) + '"' : '' %>
+          />
+        </div>
+        <% } %>
+
+        <div class="bb-hq-branch-settings__field-actions">
+          <button type="submit" class="bb-hq-btn" data-bb-setting-submit="override">
+            <%= field.state === 'overridden' ? 'Save override' : 'Override for this branch' %>
+          </button>
+        </div>
+      </form>
+      <% } %>
+
+      <div class="bb-hq-branch-settings__field-actions">
+        <% if (field.canReset && field.state === 'overridden') { %>
+        <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__inline-form" data-bb-setting-action="reset" onsubmit="return confirm('Reset this override and inherit the church default again?');">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <input type="hidden" name="action" value="reset" />
+          <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
+          <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
+          <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-setting-submit="reset">Reset to church default</button>
+        </form>
+        <% } %>
+
+        <% if (field.canHide) { %>
+        <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__inline-form" data-bb-setting-action="hide" onsubmit="return confirm('Hide this field on the branch website?');">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <input type="hidden" name="action" value="hide" />
+          <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
+          <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
+          <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-setting-submit="hide">Hide on branch website</button>
+        </form>
+        <% } %>
+
+        <% if (field.canRestore) { %>
+        <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__inline-form" data-bb-setting-action="restore">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <input type="hidden" name="action" value="restore" />
+          <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
+          <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
+          <button type="submit" class="bb-hq-btn" data-bb-setting-submit="restore">Restore inherited value</button>
+        </form>
+        <% } %>
+      </div>
+    </article>
+    <% }) %>
+  </section>
+  <% }) %>
+
+  <section class="bb-hq-panel bb-hq-branch-settings__section" id="service-times" aria-labelledby="bb-bws-service-times-title">
+    <h2 id="bb-bws-service-times-title" class="bb-hq-panel__title">Service times</h2>
+    <p class="bb-hq-branch-settings__state" data-bb-service-times-state="1">
+      <span class="bb-hq-branch-settings__badge"><%= esc(st.stateLabel || 'No value available') %></span>
+      <span class="bb-hq-branch-settings__detail"><%= esc(st.detail || '') %></span>
+    </p>
+
+    <% if (st.entries && st.entries.length) { %>
+    <ul class="bb-hq-branch-settings__times" data-bb-service-times-preview="1">
+      <% st.entries.forEach(function (entry) { %>
+      <li>
+        <strong><%= esc(entry.name || 'Service') %></strong>
+        — <%= esc(entry.day || '') %>
+        <%= esc(entry.startTime || '') %><%= entry.endTime ? '–' + esc(entry.endTime) : '' %>
+        <% if (entry.location) { %> · <%= esc(entry.location) %><% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } else { %>
+    <p class="bb-hq-empty">No service times to display.</p>
+    <% } %>
+
+    <p class="bb-hq-hint">
+      Service times stay as structured records. Adding branch-local times stops using the church fallback for this branch.
+      Clearing branch-local times restores the church fallback without changing church-wide rows.
+    </p>
+
+    <div class="bb-hq-branch-settings__field-actions">
+      <a class="bb-hq-btn" href="<%= serviceTimesHref %>" data-bb-service-times-edit="1">
+        <%= st.hasBranchLocal ? 'Edit branch-local service times' : 'Create branch-local service times' %>
+      </a>
+      <% if (st.hasBranchLocal) { %>
+      <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__inline-form" data-bb-setting-action="clear_service_times" onsubmit="return confirm('Clear branch-local service times and return to church fallback? Church-wide times will not be deleted.');">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <input type="hidden" name="action" value="clear_service_times" />
+        <input type="hidden" name="section" value="service-times" />
+        <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-service-times-clear="1">Clear branch-local times</button>
+      </form>
+      <% } %>
+    </div>
+  </section>
+
+  <section class="bb-hq-panel bb-hq-branch-settings__section" id="governance" aria-labelledby="bb-bws-governance-title">
+    <h2 id="bb-bws-governance-title" class="bb-hq-panel__title">Governance (read-only here)</h2>
+    <p class="bb-hq-hint">Edit org-wide approval rules on the approval settings page. This panel does not write governance.</p>
+    <dl class="bb-hq-branch-settings__gov">
+      <div>
+        <dt>Publish mode</dt>
+        <dd data-bb-gov="publish-mode"><%= esc((gov && gov.branchPublishMode) || 'hq_approval') %></dd>
+      </div>
+      <div>
+        <dt>Local giving methods</dt>
+        <dd data-bb-gov="local-giving"><%= gov && gov.allowLocalGivingMethods ? 'Allowed for this branch (org must also allow)' : 'Not allowed' %></dd>
+      </div>
+      <div>
+        <dt>Hide optional fields/pages</dt>
+        <dd data-bb-gov="hide"><%= gov && gov.allowHideOptionalPages ? 'Permitted' : 'Not permitted' %></dd>
+      </div>
+      <div>
+        <dt>Urgent contact updates</dt>
+        <dd data-bb-gov="urgent"><%= gov && gov.allowUrgentContactUpdates ? 'Permitted' : 'Not permitted' %></dd>
+      </div>
+      <div>
+        <dt>Locked setting keys</dt>
+        <dd data-bb-gov="locked-keys"><%= gov && gov.lockedSettingKeys && gov.lockedSettingKeys.length ? esc(gov.lockedSettingKeys.join(', ')) : 'None configured' %></dd>
+      </div>
+    </dl>
+    <p><a class="bb-hq-btn bb-hq-btn--ghost" href="<%= approvalSettingsHref %>">Open approval settings</a></p>
+  </section>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

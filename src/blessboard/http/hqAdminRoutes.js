@@ -40,6 +40,11 @@ const {
   STATUS: CREATE_BRANCH_STATUS,
 } = require("../services/createBlessBoardBranch");
 const {
+  appendWebsiteModeNoticeQuery,
+  parseWebsiteModeNoticeCode,
+  websiteModeNoticeMessage,
+} = require("../services/websiteModeTransition");
+const {
   assertCanCreateBranch,
   getLimit,
   FEATURE_KEYS,
@@ -299,6 +304,9 @@ function createHqAdminRouter(deps) {
       .toLowerCase();
     const typeFilter = typeRaw === "hq" || typeRaw === "branch" ? typeRaw : "";
     const created = String((req.query && req.query.created) || "").trim();
+    const websiteModeNoticeCode = parseWebsiteModeNoticeCode(
+      req.query && req.query.website_mode_notice
+    );
     const html = renderHqView(
       "hq/branches.ejs",
       await shellLocals(req, res, "branches", {
@@ -308,6 +316,8 @@ function createHqAdminRouter(deps) {
         typeFilter,
         capacity,
         createdKey: created,
+        websiteModeNoticeCode,
+        websiteModeNoticeMessage: websiteModeNoticeMessage(websiteModeNoticeCode),
       })
     );
     return res.status(200).type("html").send(html);
@@ -417,7 +427,10 @@ function createHqAdminRouter(deps) {
 
     return res.redirect(
       303,
-      `/hq/branches?created=${encodeURIComponent(created.branch.branch_key)}`
+      appendWebsiteModeNoticeQuery(
+        `/hq/branches?created=${encodeURIComponent(created.branch.branch_key)}`,
+        created.websiteModeTransition
+      )
     );
   });
 

@@ -209,10 +209,18 @@
   </aside>
   <% } %>
 
-  <% if (isHqChurchWide && branchList.length) { %>
+  <% if (typeof websiteModeNoticeMessage !== 'undefined' && websiteModeNoticeMessage) { %>
+  <p
+    class="bb-ba-ok"
+    role="status"
+    data-bb-website-mode-notice="<%= typeof websiteModeNoticeCode !== 'undefined' && websiteModeNoticeCode ? websiteModeNoticeCode : '' %>"
+  ><%= websiteModeNoticeMessage %></p>
+  <% } %>
+
+  <% if (isHqChurchWide && websiteMode && websiteMode.websiteMode === 'multi_site' && branchList.length) { %>
   <section class="bb-ba-panel bb-ba-content-panel bb-hq-content-branches" data-bb-hq-content-branches="1" aria-labelledby="hq-content-branch-heading">
     <div class="bb-ba-content-panel__head">
-      <h2 id="hq-content-branch-heading" class="bb-ba-section-title">Branch content</h2>
+      <h2 id="hq-content-branch-heading" class="bb-ba-section-title">Branch Websites</h2>
       <span class="bb-ba-content__count" data-bb-content-branch-total="<%= branchList.length %>"><%= branchList.length %></span>
     </div>
     <p class="bb-ba-hint">Open a branch to manage pages and modules scoped to that campus only. Church-wide editing stays on this page.</p>
@@ -259,9 +267,9 @@
       <% }) %>
     </ul>
   </section>
-  <% } else if (isHqChurchWide) { %>
+  <% } else if (isHqChurchWide && websiteMode && websiteMode.websiteMode === 'multi_site') { %>
   <section class="bb-ba-panel bb-ba-content-panel" data-bb-hq-content-branches="1" data-bb-content-branch-empty="1" aria-labelledby="hq-content-branch-heading">
-    <h2 id="hq-content-branch-heading" class="bb-ba-section-title">Branch content</h2>
+    <h2 id="hq-content-branch-heading" class="bb-ba-section-title">Branch Websites</h2>
     <p class="bb-ba-hint">No active branches are listed for this church yet. Church-wide pages below remain editable here.</p>
   </section>
   <% } %>

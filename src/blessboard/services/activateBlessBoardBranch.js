@@ -9,6 +9,7 @@ const {
   evaluateBranchCreateLimit,
   STATUS: ENTITLEMENT_STATUS,
 } = require("../../platform/services/entitlementService");
+const { detectWebsiteModeTransition } = require("./websiteModeTransition");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -62,9 +63,36 @@ async function activateBlessBoardBranch(db, input) {
       return { ok: false, status: STATUS.NOT_FOUND, branch: null, reason: "branch" };
     }
     if (String(branch.status) === "active") {
+      const countRes = await client.query(
+        `SELECT COUNT(*)::int AS n
+           FROM blessboard.branches
+          WHERE church_id = $1 AND status = 'active'`,
+        [churchId]
+      );
+      const activeCount = Number(countRes.rows[0].n || 0);
       await client.query("COMMIT");
-      return { ok: true, status: STATUS.OK, branch, alreadyActive: true };
+      return {
+        ok: true,
+        status: STATUS.OK,
+        branch,
+        alreadyActive: true,
+        previousActiveCount: activeCount,
+        nextActiveCount: activeCount,
+        websiteModeTransition: detectWebsiteModeTransition({
+          previousActiveCount: activeCount,
+          nextActiveCount: activeCount,
+        }),
+        cmsContentCopied: false,
+      };
     }
+
+    const countBefore = await client.query(
+      `SELECT COUNT(*)::int AS n
+         FROM blessboard.branches
+        WHERE church_id = $1 AND status = 'active'`,
+      [churchId]
+    );
+    const previousActiveCount = Number(countBefore.rows[0].n || 0);
 
     const gate = await evaluateBranchCreateLimit(client, {
       organizationId,
@@ -87,6 +115,7 @@ async function activateBlessBoardBranch(db, input) {
         reason: gate.reason,
         current: gate.current,
         limit: gate.limit,
+        websiteModeTransition: null,
       };
     }
 
@@ -97,8 +126,23 @@ async function activateBlessBoardBranch(db, input) {
         RETURNING id, church_id, branch_key, display_name, branch_type, status, is_primary`,
       [branchId, churchId]
     );
+    const nextActiveCount = previousActiveCount + 1;
     await client.query("COMMIT");
-    return { ok: true, status: STATUS.OK, branch: rows[0], alreadyActive: false };
+    return {
+      ok: true,
+      status: STATUS.OK,
+      branch: rows[0],
+      alreadyActive: false,
+      previousActiveCount,
+      nextActiveCount,
+      websiteModeTransition: detectWebsiteModeTransition({
+        previousActiveCount,
+        nextActiveCount,
+      }),
+      /** Activate never copies HQ CMS into the branch. */
+      cmsContentCopied: false,
+      contentPreserved: true,
+    };
   } catch (err) {
     try {
       if (client) await client.query("ROLLBACK");

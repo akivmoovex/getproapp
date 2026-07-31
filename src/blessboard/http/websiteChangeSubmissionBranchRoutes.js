@@ -238,8 +238,9 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     return true;
   }
 
-  function shellLocals(req, res, extras) {
+  async function shellLocals(req, res, extras) {
     return buildBranchAdminShellLocals(req, res, {
+      getPool,
       env,
       isProduction,
       activeNav: (extras && extras.activeNav) || "website_submissions",
@@ -318,7 +319,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     const html = renderView(
       "branch-admin/phase4-branch-website-overview.ejs",
       await Promise.resolve(
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: "Branch Website",
           activeNav: "website",
           overview,
@@ -346,7 +347,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
 
     const html = renderView(
       "branch-admin/phase3-branch-website-submissions.ejs",
-      shellLocals(req, res, {
+      await shellLocals(req, res, {
         pageTitle: "My Website Submissions",
         items: result.items,
         total: result.total,
@@ -384,7 +385,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
 
       const html = renderView(
         "branch-admin/phase3-branch-website-submission-detail.ejs",
-        shellLocals(req, res, {
+        await shellLocals(req, res, {
           pageTitle: result.submission.title || "Submission",
           submission: result.submission,
           events: result.events,
@@ -430,7 +431,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
 
     const html = renderView(
       "branch-admin/phase4-submit-branch-website-update.ejs",
-      shellLocals(req, res, {
+      await shellLocals(req, res, {
         pageTitle: "Submit Branch Website Update",
         model,
         statusLabels: svc.STATUS_LABELS,

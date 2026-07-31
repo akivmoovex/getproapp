@@ -109,6 +109,15 @@ body.bb-hq-drawer-open { overflow: hidden; }
   text-decoration: none;
   font-size: 0.95rem;
 }
+.bb-hq-nav-heading {
+  margin: 0.65rem 0 0.15rem;
+  padding: 0.35rem 0.7rem 0.1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-muted);
+}
 .bb-hq-nav-link .material-symbols-outlined {
   font-size: 1.25rem;
   color: var(--bb-muted);
@@ -5967,5 +5976,178 @@ body.bb-hq-drawer-open { overflow: hidden; }
     min-height: 2.5rem;
     display: flex;
     align-items: center;
+  }
+}
+
+/* Prompt 7 Stage 3 — branch website settings editor (functional responsive) */
+.bb-hq-branch-settings {
+  display: grid;
+  gap: 1rem;
+  max-width: 52rem;
+}
+.bb-hq-branch-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.bb-hq-branch-settings__toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--bb-surface, #fff);
+  border: 1px solid var(--bb-line, rgba(31, 36, 48, 0.12));
+  border-radius: 0.55rem;
+}
+.bb-hq-branch-settings__toc a {
+  font-size: 0.92rem;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.bb-hq-branch-settings__toc a[aria-current="true"] {
+  font-weight: 700;
+  color: var(--bb-violet, #6c5ce7);
+}
+.bb-hq-branch-settings__section {
+  display: grid;
+  gap: 1rem;
+}
+.bb-hq-branch-settings__field {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--bb-line, rgba(31, 36, 48, 0.1));
+}
+.bb-hq-branch-settings__field:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.bb-hq-branch-settings__field-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 650;
+}
+.bb-hq-branch-settings__state {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.bb-hq-branch-settings__badge {
+  display: inline-block;
+  width: fit-content;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  background: rgba(108, 92, 231, 0.1);
+  color: var(--bb-ink, #1f2430);
+  border: 1px solid rgba(108, 92, 231, 0.25);
+}
+.bb-hq-branch-settings__field[data-bb-setting-state="locked"] .bb-hq-branch-settings__badge {
+  background: rgba(31, 36, 48, 0.08);
+  border-color: rgba(31, 36, 48, 0.2);
+}
+.bb-hq-branch-settings__field[data-bb-setting-state="overridden"] .bb-hq-branch-settings__badge {
+  background: rgba(46, 125, 50, 0.1);
+  border-color: rgba(46, 125, 50, 0.28);
+}
+.bb-hq-branch-settings__field[data-bb-setting-state="hidden"] .bb-hq-branch-settings__badge {
+  background: rgba(183, 110, 0, 0.12);
+  border-color: rgba(183, 110, 0, 0.3);
+}
+.bb-hq-branch-settings__detail {
+  font-size: 0.9rem;
+  color: rgba(31, 36, 48, 0.78);
+  overflow-wrap: anywhere;
+}
+.bb-hq-branch-settings__resolved {
+  margin: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.bb-hq-branch-settings__resolved-label {
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgba(31, 36, 48, 0.62);
+}
+.bb-hq-branch-settings__resolved-value {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bb-hq-branch-settings__resolved-value.is-empty {
+  color: rgba(31, 36, 48, 0.5);
+  font-style: italic;
+}
+.bb-hq-branch-settings__field-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.bb-hq-branch-settings__inline-form {
+  display: inline-flex;
+  margin: 0;
+}
+.bb-hq-branch-settings__form .bb-hq-field input,
+.bb-hq-branch-settings__form .bb-hq-field textarea,
+.bb-hq-branch-settings__form .bb-hq-field select {
+  width: 100%;
+  max-width: 100%;
+}
+.bb-hq-branch-settings__social {
+  display: grid;
+  gap: 0.65rem;
+}
+.bb-hq-branch-settings__times {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.bb-hq-branch-settings__gov {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 0.85rem;
+}
+.bb-hq-branch-settings__gov > div {
+  display: grid;
+  gap: 0.15rem;
+}
+.bb-hq-branch-settings__gov dt {
+  font-weight: 650;
+  font-size: 0.86rem;
+}
+.bb-hq-branch-settings__gov dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.bb-hq-branch-settings__error-summary:focus {
+  outline: 2px solid var(--bb-violet, #6c5ce7);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .bb-hq-branch-settings__actions {
+    width: 100%;
+  }
+  .bb-hq-branch-settings__actions .bb-hq-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+  .bb-hq-branch-settings__field-actions .bb-hq-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+  .bb-hq-branch-settings__inline-form {
+    width: 100%;
+  }
+  .bb-hq-branch-settings__inline-form .bb-hq-btn {
+    width: 100%;
   }
 }

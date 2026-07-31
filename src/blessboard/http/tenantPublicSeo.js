@@ -3,11 +3,12 @@
 /**
  * Host-aware SEO for V5 tenant public pages.
  * Never include tenant UUIDs in metadata.
+ * Stage 2: accepts branch-resolved SEO overrides + og image.
  */
 
 const { PAGE_KEY_TITLES } = require("../services/publicContentConstants");
 const { PAGE_KEY_TO_PATH } = require("./tenantPublicPaths");
-const { plainMetaText, escapeAttr } = require("./tenantPublicSafe");
+const { plainMetaText, escapeAttr, safeExternalUrl } = require("./tenantPublicSafe");
 
 /**
  * @param {{
@@ -18,6 +19,14 @@ const { plainMetaText, escapeAttr } = require("./tenantPublicSafe");
  *   description?: string|null,
  *   dataEnvironment?: string|null,
  *   websiteStatus?: string|null,
+ *   pathPrefix?: string,
+ *   titleOverride?: string|null,
+ *   descriptionOverride?: string|null,
+ *   ogTitleOverride?: string|null,
+ *   ogDescriptionOverride?: string|null,
+ *   ogImageUrl?: string|null,
+ *   forceNoindex?: boolean|null,
+ *   branchInactive?: boolean,
  * }} input
  */
 function buildTenantPublicSeo(input) {
@@ -40,21 +49,36 @@ function buildTenantPublicSeo(input) {
   const env = String(input.dataEnvironment || "").toLowerCase();
   const websiteStatus = String(input.websiteStatus || "draft").toLowerCase();
 
-  const noindex =
+  const titleOverride = plainMetaText(input.titleOverride, 80);
+  const descriptionOverride = plainMetaText(input.descriptionOverride, 160);
+  const ogTitleOverride = plainMetaText(input.ogTitleOverride, 80);
+  const ogDescriptionOverride = plainMetaText(input.ogDescriptionOverride, 160);
+  const ogImageUrl = input.ogImageUrl ? safeExternalUrl(input.ogImageUrl) : null;
+
+  let noindex =
     env === "testing" ||
     env === "demo" ||
-    websiteStatus !== "published";
+    websiteStatus !== "published" ||
+    Boolean(input.branchInactive);
+
+  if (input.forceNoindex === true) {
+    noindex = true;
+  }
 
   const title =
-    pageKey === "home" ? `${publicName}` : `${pageLabel} · ${publicName}`;
+    titleOverride ||
+    (pageKey === "home" ? `${publicName}` : `${pageLabel} · ${publicName}`);
 
-  let description = plainMetaText(input.description, 160);
+  let description = descriptionOverride || plainMetaText(input.description, 160);
   if (!description) {
     description =
       pageKey === "home"
         ? `${publicName} — welcome.`
         : `${pageLabel} at ${publicName}.`;
   }
+
+  const ogTitle = ogTitleOverride || title;
+  const ogDescription = ogDescriptionOverride || description;
 
   const scheme = "https";
   const canonicalUrl = hostname ? `${scheme}://${hostname}${path}` : path;
@@ -63,13 +87,13 @@ function buildTenantPublicSeo(input) {
     title,
     description,
     canonicalUrl,
-    ogTitle: title,
-    ogDescription: description,
+    ogTitle,
+    ogDescription,
     ogUrl: canonicalUrl,
+    ogImageUrl: ogImageUrl || null,
     ogType: "website",
     robots: noindex ? "noindex, nofollow" : "index, follow",
     noindex,
-    // Pre-escaped attribute-safe strings for templates that need them.
     titleAttr: escapeAttr(title),
     descriptionAttr: escapeAttr(description),
     canonicalAttr: escapeAttr(canonicalUrl),

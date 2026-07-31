@@ -64,6 +64,9 @@ const {
   createWebsiteServiceTimesAdminRouter,
 } = require("../../blessboard/http/websiteServiceTimesAdminRoutes");
 const {
+  createWebsiteScopeSettingsAdminRouter,
+} = require("../../blessboard/http/websiteScopeSettingsAdminRoutes");
+const {
   createWebsiteChangeSubmissionAdminRouter,
 } = require("../../blessboard/http/websiteChangeSubmissionAdminRoutes");
 const {
@@ -544,6 +547,13 @@ function createV5FoundationApp(options) {
   );
   app.use(
     createWebsiteServiceTimesAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
+    createWebsiteScopeSettingsAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       env,

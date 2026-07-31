@@ -105,6 +105,14 @@ describe("blessboard content admin", () => {
       churchA = chA.records.church;
       branchA = chA.records.hqBranch;
 
+      // Second active campus → multi_site so HQ branch website editors remain available.
+      await pool.query(
+        `INSERT INTO blessboard.branches
+           (church_id, branch_key, display_name, branch_type, status, is_primary, timezone, country_code)
+         VALUES ($1, 'campus-east', 'Campus East', 'branch', 'active', false, 'UTC', 'US')`,
+        [churchA.id]
+      );
+
       const orgB = await provisionPlatformTenant(pool, {
         organizationKey: "ca-b",
         displayName: "Content Admin B",

@@ -1,12 +1,12 @@
 "use strict";
 
 /**
- * Field-level website scope inheritance (Prompt 7 Stage 1 foundation).
- * resolve: branch override → church default → platform fallback (caller supplies defaults).
- * Reset deactivates override; does not copy church values into the branch row.
+ * Field-level website scope inheritance (Prompt 7 Stage 1–2).
+ * Stage 2: typed validation via registry; explicit audit action keys.
  */
 
 const scopeRepo = require("../repositories/websiteScopeSettingsRepository");
+const registry = require("./websiteSettingKeyRegistry");
 const {
   assertBranchBelongsToOrg,
   getBranchWebsiteGovernance,
@@ -19,10 +19,20 @@ const STATUS = Object.freeze({
   NOT_FOUND: "not_found",
   FORBIDDEN: "forbidden",
   LOCKED: "locked",
+  UNKNOWN_KEY: "unknown_key",
   LOOKUP_ERROR: "lookup_error",
 });
 
-const { INHERITANCE_STATE, SETTING_KEYS } = scopeRepo;
+const INHERITANCE_STATE = scopeRepo.INHERITANCE_STATE;
+const SETTING_KEYS = scopeRepo.SETTING_KEYS;
+const STAGE2_SETTING_KEYS = scopeRepo.STAGE2_SETTING_KEYS;
+
+const AUDIT = Object.freeze({
+  OVERRIDDEN: "branch_website_setting_overridden",
+  RESET: "branch_website_setting_reset",
+  HIDDEN: "branch_website_setting_hidden",
+  UNHIDDEN: "branch_website_setting_unhidden",
+});
 
 /**
  * @param {string} settingKey
@@ -32,7 +42,8 @@ const { INHERITANCE_STATE, SETTING_KEYS } = scopeRepo;
  */
 function classifyFieldState(settingKey, activeRow, lockedKeys, hideAllowed) {
   const key = String(settingKey || (activeRow && activeRow.settingKey) || "");
-  if (key && Array.isArray(lockedKeys) && lockedKeys.includes(key)) {
+  const def = registry.getKeyDef(key);
+  if ((key && Array.isArray(lockedKeys) && lockedKeys.includes(key)) || (def && def.readOnly)) {
     return INHERITANCE_STATE.LOCKED;
   }
   if (!activeRow || !activeRow.isActive) {
@@ -44,22 +55,15 @@ function classifyFieldState(settingKey, activeRow, lockedKeys, hideAllowed) {
   return INHERITANCE_STATE.OVERRIDE;
 }
 
-/**
- * Resolve one field for a branch with inheritance metadata.
- * @param {{ query: Function }} db
- * @param {{
- *   organizationId: string,
- *   churchId: string,
- *   branchId: string,
- *   settingKey: string,
- *   churchDefault?: *,
- *   platformFallback?: *,
- * }} input
- */
 async function resolveWebsiteScopeField(db, input) {
   const settingKey = scopeRepo.normalizeSettingKey(input.settingKey);
   if (!settingKey) {
-    return { ok: false, status: STATUS.INVALID_INPUT, state: null, value: null };
+    return {
+      ok: false,
+      status: STATUS.UNKNOWN_KEY,
+      state: null,
+      value: null,
+    };
   }
 
   const check = await assertBranchBelongsToOrg(db, input);
@@ -70,7 +74,10 @@ async function resolveWebsiteScopeField(db, input) {
   try {
     const gov = await getBranchWebsiteGovernance(db, input);
     const lockedKeys =
-      gov.ok && gov.effective ? gov.effective.lockedSettingKeys : [];
+      gov.ok && gov.effective ? gov.effective.lockedSettingKeys.slice() : [];
+    if (!lockedKeys.includes("presentation.parent_church_label")) {
+      lockedKeys.push("presentation.parent_church_label");
+    }
     const hideAllowed =
       gov.ok && gov.effective ? Boolean(gov.effective.allowHideOptionalPages) : false;
 
@@ -96,9 +103,9 @@ async function resolveWebsiteScopeField(db, input) {
         ok: true,
         status: STATUS.OK,
         state,
-        value: active.valueJson,
+        value: registry.fromValueJson(active.valueJson),
         source: "branch_override",
-        resettable: state !== INHERITANCE_STATE.LOCKED,
+        resettable: true,
       };
     }
     if (state === INHERITANCE_STATE.LOCKED && active && active.isActive) {
@@ -106,7 +113,7 @@ async function resolveWebsiteScopeField(db, input) {
         ok: true,
         status: STATUS.OK,
         state,
-        value: active.valueJson,
+        value: registry.fromValueJson(active.valueJson),
         source: "locked",
         resettable: false,
       };
@@ -137,91 +144,213 @@ async function resolveWebsiteScopeField(db, input) {
 }
 
 /**
+ * Write a typed override (or empty → reset).
  * @param {{ query: Function }} db
  * @param {object} input
  */
 async function setWebsiteScopeOverride(db, input) {
   const settingKey = scopeRepo.normalizeSettingKey(input.settingKey);
-  if (!settingKey) return { ok: false, status: STATUS.INVALID_INPUT, row: null };
+  if (!settingKey) {
+    return { ok: false, status: STATUS.UNKNOWN_KEY, row: null, message: "Unsupported setting key." };
+  }
+
+  const def = registry.getKeyDef(settingKey);
+  if (def && def.readOnly) {
+    return { ok: false, status: STATUS.LOCKED, row: null, message: "Setting is read-only." };
+  }
+  if (def && def.hqOnly && !input.allowGovernanceControlled) {
+    return {
+      ok: false,
+      status: STATUS.FORBIDDEN,
+      row: null,
+      message: "Setting requires HQ governance permission.",
+    };
+  }
 
   const check = await assertBranchBelongsToOrg(db, input);
   if (!check.ok) return { ok: false, status: check.status, row: null };
 
   const gov = await getBranchWebsiteGovernance(db, input);
   const lockedKeys =
-    gov.ok && gov.effective ? gov.effective.lockedSettingKeys : [];
+    gov.ok && gov.effective ? gov.effective.lockedSettingKeys.slice() : [];
+  if (!lockedKeys.includes("presentation.parent_church_label")) {
+    lockedKeys.push("presentation.parent_church_label");
+  }
   if (lockedKeys.includes(settingKey)) {
     return { ok: false, status: STATUS.LOCKED, row: null };
   }
-  if (input.inheritanceState === "hidden") {
+
+  if (settingKey === "presentation.accent_key") {
+    const allowAccent =
+      gov.ok && gov.effective ? Boolean(gov.effective.allowAccentTreatment) : false;
+    if (!allowAccent) {
+      return { ok: false, status: STATUS.FORBIDDEN, row: null, message: "Accent not permitted." };
+    }
+  }
+
+  const hideRequested = input.inheritanceState === "hidden";
+  if (hideRequested) {
     const hideAllowed =
       gov.ok && gov.effective ? Boolean(gov.effective.allowHideOptionalPages) : false;
     if (!hideAllowed) return { ok: false, status: STATUS.FORBIDDEN, row: null };
+    if (def && def.hideable === false) {
+      return { ok: false, status: STATUS.FORBIDDEN, row: null, message: "Field cannot be hidden." };
+    }
+  }
+
+  const validated = hideRequested
+    ? { ok: true, value: null }
+    : (() => {
+        if (def && def.group === "legacy") {
+          const blob =
+            input.valueJson && typeof input.valueJson === "object"
+              ? input.valueJson
+              : input.value != null
+                ? { value: input.value }
+                : {};
+          return { ok: true, value: blob, legacyBlob: true };
+        }
+        return registry.validateSettingValue(
+          settingKey,
+          input.value != null ? input.value : input.valueJson
+        );
+      })();
+
+  if (!validated.ok) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      row: null,
+      reason: validated.reason,
+      message: validated.message || "Invalid value.",
+    };
+  }
+
+  // Empty normalized value → reset rather than store a blank override.
+  if (!hideRequested && !validated.legacyBlob && validated.value == null) {
+    return resetWebsiteScopeField(db, input);
   }
 
   try {
+    const previous = await scopeRepo.findActive(db, {
+      churchId: input.churchId,
+      branchId: input.branchId,
+      settingKey,
+    });
+    const previousState = previous
+      ? previous.inheritanceState
+      : INHERITANCE_STATE.INHERIT;
+    const previousValue = previous ? registry.fromValueJson(previous.valueJson) : null;
+
+    const storedJson = hideRequested
+      ? {}
+      : validated.legacyBlob
+        ? validated.value
+        : registry.toValueJson(validated.value);
+
     const row = await scopeRepo.upsertActive(db, {
       organizationId: input.organizationId,
       churchId: input.churchId,
       branchId: input.branchId,
       settingKey,
-      inheritanceState: input.inheritanceState === "hidden" ? "hidden" : "override",
-      valueJson: input.valueJson || {},
-      previousValueJson: input.previousValueJson || null,
-      updatedBy: input.updatedBy || null,
+      inheritanceState: hideRequested ? "hidden" : "override",
+      valueJson: storedJson,
+      previousValueJson: previous
+        ? previous.valueJson
+        : previousValue != null
+          ? registry.toValueJson(previousValue)
+          : null,
+      updatedBy: input.updatedBy || input.actorUserId || null,
     });
+
     if (input.actorUserId) {
       await recordBlessBoardAudit(db, {
         organizationId: input.organizationId,
         churchId: input.churchId,
         branchId: input.branchId,
         actorUserId: input.actorUserId,
-        actionKey: "website_scope_settings.override",
+        actionKey: hideRequested ? AUDIT.HIDDEN : AUDIT.OVERRIDDEN,
         entityType: "website_scope_settings",
         entityId: row && row.id,
-        metadata: { settingKey, inheritanceState: row && row.inheritanceState },
+        metadata: {
+          setting_key: settingKey,
+          previous_state: previousState,
+          previous_value: previousValue,
+          new_state: hideRequested ? "hidden" : "override",
+          new_value: hideRequested
+            ? null
+            : validated.legacyBlob
+              ? validated.value
+              : validated.value,
+        },
       });
     }
-    return { ok: true, status: STATUS.OK, row };
+    return {
+      ok: true,
+      status: STATUS.OK,
+      row,
+      value: validated.legacyBlob ? validated.value : validated.value,
+    };
   } catch {
     return { ok: false, status: STATUS.LOOKUP_ERROR, row: null };
   }
 }
 
-/**
- * Reset field override → inherit church default immediately.
- */
 async function resetWebsiteScopeField(db, input) {
   const settingKey = scopeRepo.normalizeSettingKey(input.settingKey);
-  if (!settingKey) return { ok: false, status: STATUS.INVALID_INPUT, deactivated: 0 };
+  if (!settingKey) {
+    return { ok: false, status: STATUS.UNKNOWN_KEY, deactivated: 0 };
+  }
 
   const check = await assertBranchBelongsToOrg(db, input);
   if (!check.ok) return { ok: false, status: check.status, deactivated: 0 };
 
   const gov = await getBranchWebsiteGovernance(db, input);
   const lockedKeys =
-    gov.ok && gov.effective ? gov.effective.lockedSettingKeys : [];
+    gov.ok && gov.effective ? gov.effective.lockedSettingKeys.slice() : [];
+  if (!lockedKeys.includes("presentation.parent_church_label")) {
+    lockedKeys.push("presentation.parent_church_label");
+  }
   if (lockedKeys.includes(settingKey)) {
     return { ok: false, status: STATUS.LOCKED, deactivated: 0 };
   }
 
   try {
+    const previous = await scopeRepo.findActive(db, {
+      churchId: input.churchId,
+      branchId: input.branchId,
+      settingKey,
+    });
+    const previousState = previous
+      ? previous.inheritanceState
+      : INHERITANCE_STATE.INHERIT;
+    const previousValue = previous ? registry.fromValueJson(previous.valueJson) : null;
+    const wasHidden = previous && previous.inheritanceState === "hidden";
+
     const result = await scopeRepo.deactivateOverride(db, {
       churchId: input.churchId,
       branchId: input.branchId,
       settingKey,
-      updatedBy: input.updatedBy || null,
+      updatedBy: input.updatedBy || input.actorUserId || null,
     });
-    if (input.actorUserId) {
+
+    if (input.actorUserId && result.deactivated > 0) {
       await recordBlessBoardAudit(db, {
         organizationId: input.organizationId,
         churchId: input.churchId,
         branchId: input.branchId,
         actorUserId: input.actorUserId,
-        actionKey: "website_scope_settings.reset",
+        actionKey: wasHidden ? AUDIT.UNHIDDEN : AUDIT.RESET,
         entityType: "website_scope_settings",
-        entityId: null,
-        metadata: { settingKey, deactivated: result.deactivated },
+        entityId: previous && previous.id,
+        metadata: {
+          setting_key: settingKey,
+          previous_state: previousState,
+          previous_value: previousValue,
+          new_state: "inherit",
+          new_value: null,
+          deactivated: result.deactivated,
+        },
       });
     }
     return { ok: true, status: STATUS.OK, deactivated: result.deactivated };
@@ -231,8 +360,16 @@ async function resetWebsiteScopeField(db, input) {
 }
 
 /**
- * Editor-facing states for known setting keys (Stage 3 will render these).
+ * Hide a field where governance permits.
  */
+async function hideWebsiteScopeField(db, input) {
+  return setWebsiteScopeOverride(db, {
+    ...input,
+    inheritanceState: "hidden",
+    value: null,
+  });
+}
+
 async function listWebsiteScopeFieldStates(db, input) {
   const check = await assertBranchBelongsToOrg(db, input);
   if (!check.ok) return { ok: false, status: check.status, fields: [] };
@@ -240,7 +377,10 @@ async function listWebsiteScopeFieldStates(db, input) {
   try {
     const gov = await getBranchWebsiteGovernance(db, input);
     const lockedKeys =
-      gov.ok && gov.effective ? gov.effective.lockedSettingKeys : [];
+      gov.ok && gov.effective ? gov.effective.lockedSettingKeys.slice() : [];
+    if (!lockedKeys.includes("presentation.parent_church_label")) {
+      lockedKeys.push("presentation.parent_church_label");
+    }
     const hideAllowed =
       gov.ok && gov.effective ? Boolean(gov.effective.allowHideOptionalPages) : false;
     const activeRows = await scopeRepo.listActiveForBranch(db, {
@@ -248,9 +388,10 @@ async function listWebsiteScopeFieldStates(db, input) {
       branchId: input.branchId,
     });
     const byKey = new Map(activeRows.map((r) => [r.settingKey, r]));
-    const keys = Array.isArray(input.settingKeys) && input.settingKeys.length
-      ? input.settingKeys.map(scopeRepo.normalizeSettingKey).filter(Boolean)
-      : SETTING_KEYS.slice();
+    const keys =
+      Array.isArray(input.settingKeys) && input.settingKeys.length
+        ? input.settingKeys.map(scopeRepo.normalizeSettingKey).filter(Boolean)
+        : STAGE2_SETTING_KEYS.slice();
 
     const fields = keys.map((settingKey) => {
       const row = byKey.get(settingKey) || null;
@@ -260,6 +401,7 @@ async function listWebsiteScopeFieldStates(db, input) {
         state,
         resettable: state === INHERITANCE_STATE.OVERRIDE || state === INHERITANCE_STATE.HIDDEN,
         locked: state === INHERITANCE_STATE.LOCKED,
+        value: row && state !== INHERITANCE_STATE.INHERIT ? registry.fromValueJson(row.valueJson) : null,
         valueJson: row && state !== INHERITANCE_STATE.INHERIT ? row.valueJson : null,
       };
     });
@@ -271,13 +413,15 @@ async function listWebsiteScopeFieldStates(db, input) {
 
 module.exports = {
   STATUS,
+  AUDIT,
   INHERITANCE_STATE,
   SETTING_KEYS,
+  STAGE2_SETTING_KEYS,
   classifyFieldState,
   resolveWebsiteScopeField,
   setWebsiteScopeOverride,
   resetWebsiteScopeField,
+  hideWebsiteScopeField,
   listWebsiteScopeFieldStates,
-  // re-export for tests / callers that only need the catalog
-  isKnownSettingKey: (key) => SETTING_KEYS.includes(scopeRepo.normalizeSettingKey(key)),
+  isKnownSettingKey: registry.isKnownSettingKey,
 };

@@ -28,13 +28,15 @@ const {
   resolvePublicServiceTimesEntries,
 } = require("../services/homeServiceTimesService");
 const {
-  listPublicWebsiteBranches,
-} = require("../services/resolvePublicWebsiteBranch");
+  resolveBranchWebsiteSettings,
+  resolveChurchWideServiceTimes,
+  SOURCE: WEBSITE_SETTING_SOURCE,
+} = require("../services/resolveBranchWebsiteSettings");
+const { resolveWebsiteMode, WEBSITE_MODE } = require("../services/resolveWebsiteMode");
+const { buildPublicBranchDiscovery } = require("./tenantPublicDiscovery");
 const {
   buildPublicWebsitePaths,
   publicChurchHomePath,
-  publicBranchHomePath,
-  tenantBranchHomePath,
 } = require("../urls/churchUrlHelper");
 
 const KIND = Object.freeze({
@@ -636,6 +638,7 @@ async function resolvePreviewPage(db, scope) {
     scope.branchId != null && String(scope.branchId).trim()
       ? String(scope.branchId).trim()
       : null;
+  const allowChurchFallback = scope.allowChurchContentFallback !== false;
 
   async function loadBundle(branchId) {
     const bundle = await contentAdmin.getAdminPageBundle(db, {
@@ -659,6 +662,15 @@ async function resolvePreviewPage(db, scope) {
   if (preferredBranchId) {
     const branch = await loadBundle(preferredBranchId);
     if (branch) return branch;
+    if (!allowChurchFallback) {
+      return {
+        ok: false,
+        status: "not_found",
+        page: null,
+        sections: [],
+        contentScope: null,
+      };
+    }
   }
   const church = await loadBundle(null);
   if (church) return church;
@@ -671,7 +683,9 @@ async function resolvePreviewPage(db, scope) {
   };
 }
 
-async function resolvePreviewList(db, listFn, churchId, contentBranchId) {
+async function resolvePreviewList(db, listFn, churchId, contentBranchId, options) {
+  const allowChurchFallback =
+    !options || options.allowChurchContentFallback !== false;
   if (contentBranchId) {
     const branchList = await listFn(db, { churchId, branchId: contentBranchId });
     const branchItems = ((branchList && branchList.items) || []).filter(
@@ -679,6 +693,9 @@ async function resolvePreviewList(db, listFn, churchId, contentBranchId) {
     );
     if (branchItems.length > 0) {
       return { ok: true, items: branchItems, contentScope: "branch" };
+    }
+    if (!allowChurchFallback) {
+      return { ok: true, items: [], contentScope: "branch" };
     }
   }
   const churchList = await listFn(db, { churchId, branchId: null });
@@ -710,6 +727,7 @@ async function resolvePreviewList(db, listFn, churchId, contentBranchId) {
  *     isPrimary?: boolean,
  *   }|null,
  *   routingMode?: 'path'|'tenant',
+ *   allowChurchContentFallback?: boolean,
  * }} input
  */
 async function loadTenantPublicPageModel(db, input) {
@@ -719,6 +737,7 @@ async function loadTenantPublicPageModel(db, input) {
   }
 
   const isPreview = Boolean(input.preview);
+  const allowChurchContentFallback = input.allowChurchContentFallback !== false;
   const churchId = tenant.church.id;
   const primaryBranchId = tenant.primaryBranch.id;
   const pageKey = String(input.pageKey || "home");
@@ -759,7 +778,7 @@ async function loadTenantPublicPageModel(db, input) {
     contactSettingsBranchId
   );
   const websiteStatus = settings ? settings.websiteStatus : "draft";
-  const publicName = publicDemo.resolveCanonicalChurchName({
+  let publicName = publicDemo.resolveCanonicalChurchName({
     publicName: settings && settings.publicName,
     churchDisplayName: tenant.church.displayName,
     organizationDisplayName:
@@ -773,6 +792,49 @@ async function loadTenantPublicPageModel(db, input) {
       : tenant.primaryBranch.displayName,
     branchSpecific: scopedBranchActive,
   });
+
+  /** @type {object|null} */
+  let websiteResolved = null;
+  const organizationId =
+    tenant.organization && tenant.organization.id ? String(tenant.organization.id) : null;
+
+  if (scopedBranchActive && organizationId && contentBranchId) {
+    try {
+      websiteResolved = await resolveBranchWebsiteSettings(db, {
+        organizationId,
+        churchId,
+        branchId: contentBranchId,
+        churchDisplayName: tenant.church.displayName || (settings && settings.publicName) || null,
+        churchSeoDescription: firstSectionDescription(
+          // church home description is resolved later; keep null here
+          []
+        ),
+      });
+      if (websiteResolved && websiteResolved.ok) {
+        const displayOverride =
+          websiteResolved.flat && websiteResolved.flat["identity.branch_display_name"];
+        const labelOverride =
+          websiteResolved.flat && websiteResolved.flat["presentation.branch_display_label"];
+        const branchLabel = displayOverride || labelOverride;
+        if (branchLabel) {
+          publicName = publicDemo.resolveCanonicalChurchName({
+            publicName: settings && settings.publicName,
+            churchDisplayName: tenant.church.displayName,
+            organizationDisplayName:
+              tenant.organization && tenant.organization.displayName
+                ? tenant.organization.displayName
+                : null,
+            branchDisplayName: String(branchLabel),
+            branchSpecific: true,
+          });
+        }
+      } else {
+        websiteResolved = null;
+      }
+    } catch {
+      websiteResolved = null;
+    }
+  }
 
   if (websiteStatus === "suspended" && !isPreview) {
     return { kind: KIND.UNAVAILABLE, reason: "website_suspended" };
@@ -799,9 +861,31 @@ async function loadTenantPublicPageModel(db, input) {
     };
   }
 
-  const publicContact = buildPublicContact(settings, branchSettings, {
+  let publicContact = buildPublicContact(settings, branchSettings, {
     preferChurch: !scopedBranchActive,
   });
+  if (websiteResolved && websiteResolved.contact) {
+    const rc = websiteResolved.contact;
+    // Prefer resolver contact for branch mini-sites (includes override + branch record + church).
+    publicContact = {
+      ...publicContact,
+      email: rc.email || publicContact.email,
+      phone: rc.phone || publicContact.phone,
+      addressLines: rc.addressLines.length ? rc.addressLines : publicContact.addressLines,
+      addressText: rc.addressText || publicContact.addressText,
+      hasAny: rc.hasAny || publicContact.hasAny,
+      directionsUrl: rc.mapUrl || publicContact.directionsUrl,
+      sources: rc.sources || null,
+    };
+    if (rc.email) {
+      const emailHref = safeExternalUrl(`mailto:${rc.email}`);
+      publicContact.emailHref = emailHref;
+    }
+    if (rc.phone) {
+      const phoneDigits = String(rc.phone).replace(/[^\d+]/g, "");
+      publicContact.phoneHref = phoneDigits ? safeExternalUrl(`tel:${phoneDigits}`) : null;
+    }
+  }
   const canonicalTimezone =
     (settings && settings.defaultTimezone) ||
     (branchSettings && branchSettings.timezone) ||
@@ -812,6 +896,7 @@ async function loadTenantPublicPageModel(db, input) {
         churchId,
         branchId: contentBranchId,
         pageKey,
+        allowChurchContentFallback,
       })
     : await resolvePublishedPage(db, {
         churchId,
@@ -819,7 +904,7 @@ async function loadTenantPublicPageModel(db, input) {
         pageKey,
       });
 
-  const pageSections = isPreview
+  let pageSections = isPreview
     ? pageResult.sections || []
     : (pageResult.sections || []).map(mapSection);
 
@@ -832,7 +917,9 @@ async function loadTenantPublicPageModel(db, input) {
 
   async function loadEntityList(publishedFn, adminFn, mapper, prepare) {
     if (isPreview) {
-      const list = await resolvePreviewList(db, adminFn, churchId, contentBranchId);
+      const list = await resolvePreviewList(db, adminFn, churchId, contentBranchId, {
+        allowChurchContentFallback,
+      });
       let items = (list.items || []).map(mapper);
       if (prepare) items = prepare(items);
       return { items, contentScope: list.contentScope };
@@ -910,41 +997,39 @@ async function loadTenantPublicPageModel(db, input) {
   let socialLinks = [];
 
   // Branch mini website: published branch → church-wide → empty.
-  // Church-wide site: church-wide → primary branch fallback for service times only → empty.
-  let serviceTimesResolved = await resolvePublicServiceTimesEntries(db, {
-    churchId,
-    branchId: contentBranchId,
-  });
-  if (
-    !scopedBranchActive &&
-    serviceTimesResolved &&
-    serviceTimesResolved.ok &&
-    (!serviceTimesResolved.entries || serviceTimesResolved.entries.length === 0)
-  ) {
-    const primaryFallback = await resolvePublicServiceTimesEntries(db, {
-      churchId,
-      branchId: primaryBranchId,
-    });
-    if (
-      primaryFallback &&
-      primaryFallback.ok &&
-      primaryFallback.entries &&
-      primaryFallback.entries.length
-    ) {
-      serviceTimesResolved = {
-        ...primaryFallback,
-        source: "primary_fallback",
-      };
+  // Church-wide site: church-wide → primary branch fallback only when absent → empty.
+  let serviceTimesEntries = [];
+  let serviceTimesSource = null;
+  if (scopedBranchActive) {
+    if (websiteResolved && websiteResolved.serviceTimes) {
+      serviceTimesEntries = websiteResolved.serviceTimes.entries || [];
+      serviceTimesSource = websiteResolved.serviceTimes.source || null;
+    } else {
+      const serviceTimesResolved = await resolvePublicServiceTimesEntries(db, {
+        churchId,
+        branchId: contentBranchId,
+      });
+      serviceTimesEntries =
+        serviceTimesResolved && Array.isArray(serviceTimesResolved.entries)
+          ? serviceTimesResolved.entries
+          : [];
+      serviceTimesSource =
+        serviceTimesResolved && serviceTimesResolved.source === "branch"
+          ? WEBSITE_SETTING_SOURCE.BRANCH_OVERRIDE
+          : serviceTimesResolved && serviceTimesResolved.source === "church"
+            ? WEBSITE_SETTING_SOURCE.CHURCH_DEFAULT
+            : serviceTimesResolved && serviceTimesResolved.source
+              ? serviceTimesResolved.source
+              : null;
     }
+  } else {
+    const churchWideTimes = await resolveChurchWideServiceTimes(db, {
+      churchId,
+      primaryBranchId,
+    });
+    serviceTimesEntries = churchWideTimes.entries || [];
+    serviceTimesSource = churchWideTimes.source || null;
   }
-  let serviceTimesEntries =
-    serviceTimesResolved && Array.isArray(serviceTimesResolved.entries)
-      ? serviceTimesResolved.entries
-      : [];
-  let serviceTimesSource =
-    serviceTimesResolved && serviceTimesResolved.source
-      ? serviceTimesResolved.source
-      : null;
 
   {
     const contactList = isPreview
@@ -952,11 +1037,71 @@ async function loadTenantPublicPageModel(db, input) {
           db,
           contentAdmin.listAdminContactChannels,
           churchId,
-          contentBranchId
+          contentBranchId,
+          { allowChurchContentFallback: true }
         )
       : await resolvePublishedList(db, listPublishedContactChannels, churchId, contentBranchId);
     const allChannels = (contactList.items || []).map(mapContact);
     socialLinks = allChannels.filter((ch) => isSocialChannel(ch.channelType) && ch.href);
+  }
+
+  if (
+    websiteResolved &&
+    websiteResolved.flat &&
+    websiteResolved.flat["social.links"] &&
+    Array.isArray(websiteResolved.flat["social.links"]) &&
+    websiteResolved.flat["social.links"].length
+  ) {
+    socialLinks = websiteResolved.flat["social.links"].map((link) => ({
+      channelType: link.platform,
+      label: link.label || link.platform,
+      href: link.href,
+      value: link.href,
+    }));
+  }
+
+  // Apply Stage 2 identity hero overrides onto the first hero section (no layout redesign).
+  if (websiteResolved && websiteResolved.flat) {
+    const flat = websiteResolved.flat;
+    const heroIdx = pageSections.findIndex(
+      (s) =>
+        s &&
+        (String(s.sectionType || "").toLowerCase() === "hero" ||
+          String(s.sectionKey || "")
+            .toLowerCase()
+            .includes("hero"))
+    );
+    if (
+      flat["identity.hero_title"] ||
+      flat["identity.hero_description"] ||
+      flat["identity.hero_image_url"]
+    ) {
+      if (heroIdx >= 0) {
+        const hero = { ...pageSections[heroIdx] };
+        if (flat["identity.hero_title"]) hero.heading = String(flat["identity.hero_title"]);
+        if (flat["identity.hero_description"]) {
+          hero.bodyText = String(flat["identity.hero_description"]);
+        }
+        if (flat["identity.hero_image_url"]) {
+          hero.mediaUrl = String(flat["identity.hero_image_url"]);
+        }
+        pageSections = pageSections.slice();
+        pageSections[heroIdx] = hero;
+      } else if (pageKey === "home") {
+        pageSections = pageSections.concat([
+          {
+            sectionKey: "identity-hero",
+            sectionType: "hero",
+            heading: flat["identity.hero_title"] || publicName,
+            bodyText: flat["identity.hero_description"] || "",
+            mediaUrl: flat["identity.hero_image_url"] || null,
+            sortOrder: 0,
+            status: "published",
+            layoutMetadata: null,
+          },
+        ]);
+      }
+    }
   }
 
   if (pageKey === "home") {
@@ -998,18 +1143,78 @@ async function loadTenantPublicPageModel(db, input) {
   const showEnvBadge = env === "testing" || env === "demo";
   const primaryEmail = settings && settings.primaryEmail ? String(settings.primaryEmail) : "";
   const primaryPhone = settings && settings.primaryPhone ? String(settings.primaryPhone) : "";
-  const footerTagline = firstSectionDescription(pageSections) || "";
   const pathPrefix = String(input.pathPrefix || "").replace(/\/$/, "");
+
+  const churchHomeHref =
+    routingMode === "tenant"
+      ? "/"
+      : publicChurchHomePath(organizationKey) || pathPrefix || "/";
+
+  let websiteModeResult = null;
+  let branchSwitcher = [];
+  let branchLocations = [];
+  try {
+    websiteModeResult = await resolveWebsiteMode(db, { churchId });
+    const discovery = buildPublicBranchDiscovery({
+      websiteMode: websiteModeResult,
+      routingMode,
+      organizationKey,
+      churchHomeHref,
+      currentBranchKey: explicitBranchSelected ? selectedBranch.key : null,
+    });
+    branchSwitcher = discovery.branchSwitcher;
+    branchLocations = discovery.branchLocations;
+  } catch {
+    websiteModeResult = null;
+    branchSwitcher = [];
+    branchLocations = [];
+  }
+
+  const discoverySingleSite =
+    !websiteModeResult ||
+    !websiteModeResult.ok ||
+    websiteModeResult.websiteMode === WEBSITE_MODE.SINGLE_SITE;
+
+  // Church-wide public prefix: tenant host "" / path mode "/c/:org".
+  // Single-site must never keep a branch mini-site prefix, but must keep path-mode church prefix.
+  const churchWidePathPrefix =
+    routingMode === "tenant"
+      ? ""
+      : String(publicChurchHomePath(organizationKey) || "").replace(/\/$/, "");
+
+  const seoPathPrefix = discoverySingleSite ? churchWidePathPrefix : pathPrefix;
+
+  const seoOverrides =
+    websiteResolved && websiteResolved.flat ? websiteResolved.flat : {};
+  const branchInactive =
+    websiteResolved &&
+    websiteResolved.branchStatus &&
+    String(websiteResolved.branchStatus).toLowerCase() !== "active";
+
+  const footerFromResolved =
+    (seoOverrides["identity.tagline"] && String(seoOverrides["identity.tagline"])) ||
+    "";
+  const footerTagline = footerFromResolved || firstSectionDescription(pageSections) || "";
 
   const seo = buildTenantPublicSeo({
     hostname,
     pageKey,
     publicName,
     pageTitle,
-    description: firstSectionDescription(pageSections),
+    description:
+      seoOverrides["seo.description"] ||
+      footerFromResolved ||
+      firstSectionDescription(pageSections),
     dataEnvironment: isPreview ? "testing" : dataEnvironment,
     websiteStatus: isPreview ? "draft" : websiteStatus,
-    pathPrefix,
+    pathPrefix: seoPathPrefix,
+    titleOverride: seoOverrides["seo.title"] || null,
+    descriptionOverride: seoOverrides["seo.description"] || null,
+    ogTitleOverride: seoOverrides["seo.og_title"] || null,
+    ogDescriptionOverride: seoOverrides["seo.og_description"] || null,
+    ogImageUrl: seoOverrides["seo.og_image_url"] || null,
+    forceNoindex: seoOverrides["seo.noindex"] === true ? true : null,
+    branchInactive: Boolean(branchInactive),
   });
 
   const hasPage = Boolean(pageResult.page);
@@ -1272,11 +1477,13 @@ async function loadTenantPublicPageModel(db, input) {
 
   const resolvedFooterTagline = footerTagline || demoPack.footer.description;
 
-  const navItems = pathPrefix
+  const navPathPrefix = discoverySingleSite ? churchWidePathPrefix : pathPrefix;
+
+  const navItems = navPathPrefix
     ? NAV_ITEMS.map((item) =>
         Object.freeze({
           key: item.key,
-          href: item.href === "/" ? pathPrefix || "/" : `${pathPrefix}${item.href}`,
+          href: item.href === "/" ? navPathPrefix || "/" : `${navPathPrefix}${item.href}`,
           label: item.label,
         })
       )
@@ -1305,39 +1512,15 @@ async function loadTenantPublicPageModel(db, input) {
       }
     : null;
 
-  const visitHref = pathPrefix
-    ? `${pathPrefix}/contact`
-    : "/contact";
+  const visitHref = navPathPrefix ? `${navPathPrefix}/contact` : "/contact";
 
+  // Discovery: single-site never advertises branch website paths in nav/share maps.
   const publicPaths = buildPublicWebsitePaths({
     organizationKey,
-    branchKey: explicitBranchSelected ? selectedBranch.key : null,
+    branchKey:
+      !discoverySingleSite && explicitBranchSelected ? selectedBranch.key : null,
     mode: routingMode,
   });
-
-  let branchSwitcher = [];
-  try {
-    const listed = await listPublicWebsiteBranches(db, churchId);
-    if (listed.ok) {
-      branchSwitcher = (listed.branches || []).map((b) => {
-        const href =
-          routingMode === "tenant"
-            ? tenantBranchHomePath(b.key)
-            : publicBranchHomePath(organizationKey, b.key);
-        return {
-          key: b.key,
-          displayName: b.displayName,
-          isPrimary: Boolean(b.isPrimary),
-          isCurrent: explicitBranchSelected
-            ? b.key === selectedBranch.key
-            : Boolean(b.isPrimary),
-          href,
-        };
-      });
-    }
-  } catch {
-    branchSwitcher = [];
-  }
 
   const websiteScope = {
     scopeType: scopedBranchActive ? "branch" : "church",
@@ -1382,18 +1565,13 @@ async function loadTenantPublicPageModel(db, input) {
           isPrimary: true,
         };
 
-  const churchHomeHref =
-    routingMode === "tenant"
-      ? "/"
-      : publicChurchHomePath(organizationKey) || pathPrefix || "/";
-
   return {
     kind: KIND.OK,
     pageKey,
-    path: pathPrefix
+    path: navPathPrefix
       ? pageKey === "home"
-        ? pathPrefix || "/"
-        : `${pathPrefix}${PAGE_KEY_TO_PATH[pageKey] || ""}`
+        ? navPathPrefix || "/"
+        : `${navPathPrefix}${PAGE_KEY_TO_PATH[pageKey] || ""}`
       : PAGE_KEY_TO_PATH[pageKey] || "/",
     publicName,
     pageTitle,
@@ -1407,6 +1585,28 @@ async function loadTenantPublicPageModel(db, input) {
     socialLinks,
     serviceTimesEntries,
     serviceTimesSource,
+    websiteResolved: websiteResolved
+      ? {
+          branchId: websiteResolved.branchId,
+          branchKey: websiteResolved.branchKey,
+          values: websiteResolved.values,
+          flat: websiteResolved.flat,
+          parentChurchLabel: websiteResolved.parentChurchLabel,
+          serviceTimes: websiteResolved.serviceTimes,
+        }
+      : null,
+    identityHero: websiteResolved && websiteResolved.flat
+      ? {
+          title: websiteResolved.flat["identity.hero_title"] || null,
+          description: websiteResolved.flat["identity.hero_description"] || null,
+          imageUrl: websiteResolved.flat["identity.hero_image_url"] || null,
+          primaryLabel: websiteResolved.flat["identity.hero_primary_action_label"] || null,
+          primaryUrl: websiteResolved.flat["identity.hero_primary_action_url"] || null,
+          secondaryLabel: websiteResolved.flat["identity.hero_secondary_action_label"] || null,
+          secondaryUrl: websiteResolved.flat["identity.hero_secondary_action_url"] || null,
+          tagline: websiteResolved.flat["identity.tagline"] || null,
+        }
+      : null,
     homeTeasers,
     homeDemoFallback,
     aboutDemoFallback,
@@ -1425,14 +1625,14 @@ async function loadTenantPublicPageModel(db, input) {
     apexHref: "https://blessboard.org/",
     visitHref,
     cssHref: "/blessboard/v5/tenant-public.css?v=51",
-    pathPrefix,
-    homeHref: pathPrefix || "/",
+    pathPrefix: navPathPrefix,
+    homeHref: navPathPrefix || "/",
     churchHomeHref,
     hrefFor(pagePath) {
       const raw = String(pagePath || "/");
-      if (!pathPrefix) return raw;
-      if (raw === "/") return pathPrefix;
-      return `${pathPrefix}${raw.startsWith("/") ? raw : `/${raw}`}`;
+      if (!navPathPrefix) return raw;
+      if (raw === "/") return navPathPrefix;
+      return `${navPathPrefix}${raw.startsWith("/") ? raw : `/${raw}`}`;
     },
     navItems,
     activeNav: pageKey,
@@ -1463,7 +1663,12 @@ async function loadTenantPublicPageModel(db, input) {
     church: churchView,
     branch: branchView,
     websiteScope,
+    websiteMode:
+      websiteModeResult && websiteModeResult.ok
+        ? websiteModeResult.websiteMode
+        : WEBSITE_MODE.SINGLE_SITE,
     branchSwitcher,
+    branchLocations,
     canonicalUrl: seo && seo.canonicalUrl ? seo.canonicalUrl : null,
     publicPaths,
   };

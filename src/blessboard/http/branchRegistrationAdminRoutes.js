@@ -110,8 +110,9 @@ function createBranchRegistrationAdminRouter(deps) {
     return requireAccess(req, res, next);
   }
 
-  function shellLocals(req, res, activeNav, extra) {
+  async function shellLocals(req, res, activeNav, extra) {
     return buildBranchAdminShellLocals(req, res, {
+      getPool,
       env,
       isProduction,
       activeNav,
@@ -186,7 +187,7 @@ function createBranchRegistrationAdminRouter(deps) {
     const totalPages = Math.max(1, Math.ceil(listed.total / limit));
     const html = renderBranchAdminView(
       "branch-admin/registrations.ejs",
-      shellLocals(req, res, "registrations", {
+      await shellLocals(req, res, "registrations", {
         pageTitle: "Verification queue",
         items: listed.items,
         total: listed.total,
@@ -234,7 +235,7 @@ function createBranchRegistrationAdminRouter(deps) {
 
       const html = renderBranchAdminView(
         "branch-admin/registration-detail.ejs",
-        shellLocals(req, res, "registrations", {
+        await shellLocals(req, res, "registrations", {
           pageTitle: "Registration review",
           registration: loaded.registration,
           hostBranchId: scope.branchId,
@@ -297,7 +298,7 @@ function createBranchRegistrationAdminRouter(deps) {
     if (!result.ok) {
       const html = renderBranchAdminView(
         "branch-admin/registration-detail.ejs",
-        shellLocals(req, res, "registrations", {
+        await shellLocals(req, res, "registrations", {
           pageTitle: "Registration review",
           registration: loaded.registration,
           hostBranchId: scope.branchId,
@@ -372,7 +373,7 @@ function createBranchRegistrationAdminRouter(deps) {
     const totalPages = Math.max(1, Math.ceil(listed.total / limit));
     const html = renderBranchAdminView(
       "branch-admin/members.ejs",
-      shellLocals(req, res, "members", {
+      await shellLocals(req, res, "members", {
         pageTitle: "Member directory",
         items: listed.items,
         total: listed.total,
@@ -418,7 +419,7 @@ function createBranchRegistrationAdminRouter(deps) {
 
     const html = renderBranchAdminView(
       "branch-admin/member-detail.ejs",
-      shellLocals(req, res, "members", {
+      await shellLocals(req, res, "members", {
         pageTitle: "Member profile",
         member: loaded.member,
       })

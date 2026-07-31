@@ -27,6 +27,7 @@ const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
 const {
   ensureBranchWebsiteGovernance,
 } = require("./branchWebsiteGovernanceService");
+const { detectWebsiteModeTransition } = require("./websiteModeTransition");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -263,13 +264,26 @@ async function createBlessBoardBranch(db, input) {
     });
 
     await client.query("COMMIT");
+    const previousActiveCount =
+      gate.current != null ? Number(gate.current) : null;
+    const nextActiveCount =
+      previousActiveCount != null ? previousActiveCount + 1 : null;
+    const websiteModeTransition = detectWebsiteModeTransition({
+      previousActiveCount: previousActiveCount != null ? previousActiveCount : 0,
+      nextActiveCount: nextActiveCount != null ? nextActiveCount : 1,
+    });
     return {
       ok: true,
       status: STATUS.OK,
       branch,
       settings: settingsRow,
-      current: gate.current != null ? Number(gate.current) + 1 : null,
+      current: nextActiveCount,
+      previousActiveCount,
+      nextActiveCount,
       limit: gate.limit,
+      websiteModeTransition,
+      /** Create never seeds or copies public CMS pages into the new branch. */
+      cmsContentCopied: false,
     };
   } catch (err) {
     try {

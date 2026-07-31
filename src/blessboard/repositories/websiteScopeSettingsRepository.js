@@ -1,9 +1,11 @@
 "use strict";
 
 /**
- * Field-level website scope settings (Prompt 7 Stage 1 foundation).
+ * Field-level website scope settings persistence (Prompt 7 Stage 1–2).
  * No active row = inherit. Reset deactivates the override without copying church values.
  */
+
+const registry = require("../services/websiteSettingKeyRegistry");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -12,27 +14,19 @@ function isUuid(value) {
   return typeof value === "string" && UUID_RE.test(value);
 }
 
-const SETTING_KEY_RE = /^[a-z][a-z0-9_]{0,63}$/;
-
-/** Canonical field-level setting keys (Stage 1 catalog; Stage 2+ consume values). */
-const SETTING_KEYS = Object.freeze([
-  "branch_display_identity",
-  "hero_content",
-  "contact_details",
-  "address_and_map",
-  "service_times",
-  "social_links",
-  "seo",
-  "page_visibility",
-  "website_presentation",
-]);
-
 const INHERITANCE_STATE = Object.freeze({
   INHERIT: "inherit",
   OVERRIDE: "override",
   HIDDEN: "hidden",
   LOCKED: "locked",
 });
+
+const SETTING_KEYS = registry.SETTING_KEYS;
+const STAGE2_SETTING_KEYS = registry.STAGE2_SETTING_KEYS;
+
+function normalizeSettingKey(raw) {
+  return registry.normalizeSettingKey(raw);
+}
 
 function mapRow(row) {
   if (!row) return null;
@@ -53,14 +47,6 @@ function mapRow(row) {
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
   };
-}
-
-function normalizeSettingKey(raw) {
-  const key = String(raw || "")
-    .trim()
-    .toLowerCase();
-  if (!SETTING_KEY_RE.test(key)) return null;
-  return key;
 }
 
 /**
@@ -117,7 +103,6 @@ async function upsertActive(db, input) {
       ? input.previousValueJson
       : null;
 
-  // Deactivate any prior active row for this key, then insert (preserves history).
   await db.query(
     `UPDATE blessboard.website_scope_settings
         SET is_active = false, updated_at = now(), updated_by = $4
@@ -168,6 +153,7 @@ async function deactivateOverride(db, input) {
 module.exports = {
   isUuid,
   SETTING_KEYS,
+  STAGE2_SETTING_KEYS,
   INHERITANCE_STATE,
   normalizeSettingKey,
   mapRow,

@@ -11,7 +11,7 @@
  */
 async function listActiveBranchesByChurchId(client, churchId) {
   const r = await client.query(
-    `SELECT branch_key, display_name, branch_type, is_primary, status
+    `SELECT id, branch_key, display_name, branch_type, is_primary, status
        FROM blessboard.branches
       WHERE church_id = $1
         AND status = 'active'

@@ -5,6 +5,8 @@
  * Desktop sidebars stay flat; this model is mobile-drawer only.
  */
 
+const { hqBranchWebsiteNavKeys } = require("./websiteModeAdminNav");
+
 /** @typedef {{ key: string, label: string, href: string, icon?: string }} AdminNavItem */
 
 /**
@@ -187,7 +189,25 @@ function buildAdminMobileNavModel(navItems, activeNav, config) {
  * @returns {AdminMobileNavModel}
  */
 function buildHqMobileNav(navItems, activeNav) {
-  return buildAdminMobileNavModel(navItems, activeNav, HQ_MOBILE_NAV_CONFIG);
+  const linkItems = (Array.isArray(navItems) ? navItems : []).filter(
+    (item) => item && item.key && item.href && !item.navHeading
+  );
+  const branchKeys = hqBranchWebsiteNavKeys(linkItems);
+  if (!branchKeys.length) {
+    return buildAdminMobileNavModel(linkItems, activeNav, HQ_MOBILE_NAV_CONFIG);
+  }
+  return buildAdminMobileNavModel(linkItems, activeNav, {
+    pinnedKeys: HQ_MOBILE_NAV_CONFIG.pinnedKeys,
+    accountKeys: HQ_MOBILE_NAV_CONFIG.accountKeys,
+    groups: [
+      ...HQ_MOBILE_NAV_CONFIG.groups,
+      Object.freeze({
+        id: "branch_websites",
+        label: "Branch Websites",
+        keys: Object.freeze(branchKeys),
+      }),
+    ],
+  });
 }
 
 /**
@@ -196,7 +216,10 @@ function buildHqMobileNav(navItems, activeNav) {
  * @returns {AdminMobileNavModel}
  */
 function buildBranchMobileNav(navItems, activeNav) {
-  return buildAdminMobileNavModel(navItems, activeNav, BRANCH_MOBILE_NAV_CONFIG);
+  const linkItems = (Array.isArray(navItems) ? navItems : []).filter(
+    (item) => item && item.key && item.href && !item.navHeading
+  );
+  return buildAdminMobileNavModel(linkItems, activeNav, BRANCH_MOBILE_NAV_CONFIG);
 }
 
 /**

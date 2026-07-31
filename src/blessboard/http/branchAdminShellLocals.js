@@ -17,6 +17,11 @@ const {
   BRANCH_ADMIN_MOBILE_TABS,
 } = require("./branchAdminNav");
 const { buildBranchMobileNav } = require("./adminMobileNavGroups");
+const { resolveWebsiteMode } = require("../services/resolveWebsiteMode");
+const {
+  applyBranchWebsiteModeNav,
+  applyBranchWebsiteModeModules,
+} = require("./websiteModeAdminNav");
 
 /**
  * @param {import('express').Request} req
@@ -38,16 +43,43 @@ function primaryRoleLabel(req) {
 
 /**
  * @param {import('express').Request} req
+ * @param {() => { query: Function }} [getPool]
+ * @param {string|null} churchId
+ */
+async function resolveBranchWebsiteModeForShell(req, getPool, churchId) {
+  if (!churchId) return null;
+  if (
+    req &&
+    req.blessBoardWebsiteMode &&
+    req.blessBoardWebsiteMode.ok &&
+    String(req.blessBoardWebsiteMode.churchId || "") === String(churchId)
+  ) {
+    return req.blessBoardWebsiteMode;
+  }
+  if (!getPool) return null;
+  try {
+    const mode = await resolveWebsiteMode(getPool(), { churchId });
+    if (req) req.blessBoardWebsiteMode = mode;
+    return mode;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {{
  *   env: NodeJS.ProcessEnv,
  *   isProduction: boolean,
  *   activeNav: string,
  *   pageTitle?: string,
+ *   getPool?: () => { query: Function },
+ *   websiteMode?: object,
  *   extra?: object,
  * }} opts
  */
-function buildBranchAdminShellLocals(req, res, opts) {
+async function buildBranchAdminShellLocals(req, res, opts) {
   const env = opts.env || process.env;
   const isProduction = Boolean(opts.isProduction);
   const activeNav = String(opts.activeNav || "home");
@@ -55,12 +87,24 @@ function buildBranchAdminShellLocals(req, res, opts) {
   const csrfToken = issueCsrfToken(env);
   setCsrfCookie(res, csrfToken, { secure: isProduction });
   const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
-  const navItems = BRANCH_ADMIN_NAV.filter((item) => item.nav && item.enabled);
+
+  const churchId = tenant && tenant.church ? tenant.church.id : null;
+  const websiteMode =
+    opts.websiteMode ||
+    (await resolveBranchWebsiteModeForShell(req, opts.getPool, churchId));
+
+  const navItems = applyBranchWebsiteModeNav(
+    BRANCH_ADMIN_NAV.filter((item) => item.nav && item.enabled),
+    websiteMode
+  );
+  const portalModules = applyBranchWebsiteModeModules(BRANCH_ADMIN_MODULES, websiteMode);
   const mobileNav = buildBranchMobileNav(navItems, activeNav);
   const mobileTabs = BRANCH_ADMIN_MOBILE_TABS.map((key) =>
     navItems.find((item) => item.key === key)
   ).filter(Boolean);
 
+  const multi =
+    websiteMode && websiteMode.ok && websiteMode.websiteMode === "multi_site";
   const defaultTitles = {
     home: "Branch admin",
     account: "Account",
@@ -75,7 +119,7 @@ function buildBranchAdminShellLocals(req, res, opts) {
     forms: "Forms",
     requests: "Requests",
     content: "Content",
-    website: "Branch Website",
+    website: multi ? "My Branch Website" : "Branch Website",
     website_submissions: "Change requests",
   };
 
@@ -91,7 +135,8 @@ function buildBranchAdminShellLocals(req, res, opts) {
     navItems,
     mobileNav,
     mobileTabs,
-    portalModules: BRANCH_ADMIN_MODULES,
+    portalModules,
+    websiteMode: websiteMode || null,
     ...(opts.extra || {}),
   };
 }
@@ -99,6 +144,7 @@ function buildBranchAdminShellLocals(req, res, opts) {
 module.exports = {
   buildBranchAdminShellLocals,
   primaryRoleLabel,
+  resolveBranchWebsiteModeForShell,
   BRANCH_ADMIN_NAV,
   BRANCH_ADMIN_MODULES,
   BRANCH_ADMIN_MOBILE_TABS,

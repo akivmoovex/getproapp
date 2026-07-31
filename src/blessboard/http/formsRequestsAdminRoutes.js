@@ -238,6 +238,7 @@ function createFormsRequestsAdminRouter(deps) {
     };
     if (variant === "branch") {
       return buildBranchAdminShellLocals(req, res, {
+      getPool,
         env,
         isProduction,
         activeNav,
