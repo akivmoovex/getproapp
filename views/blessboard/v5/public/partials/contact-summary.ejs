@@ -27,6 +27,13 @@
   var _hasAny = Boolean(_address || _phone || _email);
 %>
 <div class="bb-tp-contact-summary" data-bb-contact-summary="1">
+  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+  <%- include('../../partials/settings-edit-trigger', {
+    settingsLinkId: 'contact',
+    settingsLabel: 'Edit contact details',
+    settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
+  }) %>
+  <% } %>
   <% if (_hasAny) { %>
   <ul class="bb-tp-contact-summary__list">
     <% if (_address) { %>

@@ -1,0 +1,49 @@
+<%#
+  Settings-surface edit trigger — deep-links to Stage 2 editors (no new storage).
+  Locals: settingsLinkId (catalog id), settingsLabel (optional), settingsClass (optional)
+%>
+<%
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _id = typeof settingsLinkId !== 'undefined' ? String(settingsLinkId) : '';
+  var _link =
+    _wa && _wa.settingsLinks && _id && _wa.settingsLinks[_id]
+      ? _wa.settingsLinks[_id]
+      : (_wa && _wa.settingsCatalog && _wa.settingsCatalog.byId && _id
+        ? _wa.settingsCatalog.byId[_id]
+        : null);
+  var _label =
+    typeof settingsLabel !== 'undefined' && settingsLabel
+      ? String(settingsLabel)
+      : (_link && _link.label ? String(_link.label) : 'Edit settings');
+  var _class =
+    typeof settingsClass !== 'undefined' && settingsClass
+      ? String(settingsClass)
+      : 'bb-tp-settings-pencil';
+%>
+<% if (_wa && _wa.editingMode && _link && _link.available && _link.href) { %>
+<a
+  class="<%= _class %>"
+  href="<%= _link.href %>"
+  data-bb-settings-edit="1"
+  data-bb-settings-id="<%= _id || _link.id %>"
+  data-bb-settings-scope="<%= _link.scopeKind || '' %>"
+  data-bb-settings-canonical="<%= _link.canonical || '' %>"
+  aria-label="<%= _label %><%= _link.scope ? (' (' + _link.scope + ')') : '' %>"
+  title="<%= _label %><%= _link.scope ? (' — ' + _link.scope) : '' %>"
+  onclick="event.stopPropagation();"
+>
+  <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+  <span class="bb-tp-settings-pencil__text"><%= _label %></span>
+</a>
+<% } else if (_wa && _wa.editingMode && _link && !_link.available) { %>
+<span
+  class="<%= _class %> <%= _class %>--locked"
+  data-bb-settings-edit="1"
+  data-bb-settings-id="<%= _id || (_link && _link.id) || '' %>"
+  data-bb-settings-locked="1"
+  title="<%= (_link && _link.reason) || 'Not editable here' %>"
+>
+  <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+  <span class="bb-tp-settings-pencil__text"><%= (_link && _link.label) || _label %></span>
+</span>
+<% } %>

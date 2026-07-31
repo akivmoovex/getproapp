@@ -27,6 +27,10 @@
     return field.inputValue;
   }
   var focus = String(typeof focusSection !== 'undefined' ? focusSection : 'identity');
+  var safeReturnTo =
+    typeof returnTo !== 'undefined' && returnTo
+      ? String(returnTo)
+      : '';
 %>
 
 <section
@@ -53,6 +57,11 @@
         under <strong><%= esc(parentChurchLabel || churchDisplayName) %></strong>.
         Inherited values are not saved as overrides unless you choose Override.
       </p>
+      <% if (safeReturnTo) { %>
+      <p class="bb-hq-lede">
+        <a href="<%= esc(safeReturnTo) %>" data-bb-settings-return="1">← Back to website editor</a>
+      </p>
+      <% } %>
     </div>
     <p class="bb-hq-page-head__actions bb-hq-branch-settings__actions">
       <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= previewHref %>" data-bb-branch-preview="1" target="_blank" rel="noopener noreferrer">Preview branch site</a>
@@ -138,6 +147,7 @@
         <input type="hidden" name="action" value="override" />
         <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
         <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
+        <% if (safeReturnTo) { %><input type="hidden" name="return_to" value="<%= esc(safeReturnTo) %>" /><% } %>
 
         <% if (field.key === 'social.links') { %>
         <div class="bb-hq-branch-settings__social">
@@ -230,6 +240,7 @@
           <input type="hidden" name="action" value="reset" />
           <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
           <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
+          <% if (safeReturnTo) { %><input type="hidden" name="return_to" value="<%= esc(safeReturnTo) %>" /><% } %>
           <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-setting-submit="reset">Reset to church default</button>
         </form>
         <% } %>
@@ -240,6 +251,7 @@
           <input type="hidden" name="action" value="hide" />
           <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
           <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
+          <% if (safeReturnTo) { %><input type="hidden" name="return_to" value="<%= esc(safeReturnTo) %>" /><% } %>
           <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-setting-submit="hide">Hide on branch website</button>
         </form>
         <% } %>
@@ -250,6 +262,7 @@
           <input type="hidden" name="action" value="restore" />
           <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
           <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
+          <% if (safeReturnTo) { %><input type="hidden" name="return_to" value="<%= esc(safeReturnTo) %>" /><% } %>
           <button type="submit" class="bb-hq-btn" data-bb-setting-submit="restore">Restore inherited value</button>
         </form>
         <% } %>
@@ -295,6 +308,7 @@
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
         <input type="hidden" name="action" value="clear_service_times" />
         <input type="hidden" name="section" value="service-times" />
+        <% if (safeReturnTo) { %><input type="hidden" name="return_to" value="<%= esc(safeReturnTo) %>" /><% } %>
         <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-service-times-clear="1">Clear branch-local times</button>
       </form>
       <% } %>

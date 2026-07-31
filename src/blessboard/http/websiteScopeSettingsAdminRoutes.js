@@ -42,6 +42,9 @@ const {
   publicBranchPagePath,
 } = require("../urls/churchUrlHelper");
 const registry = require("../services/websiteSettingKeyRegistry");
+const {
+  parseSafePublicWebsiteReturnTo,
+} = require("../services/websitePublicEditSettingsLinks");
 
 function wantsJson(req) {
   if (String((req.query && req.query.format) || "").toLowerCase() === "json") return true;
@@ -176,6 +179,10 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
     const notice = (extras && extras.notice) || String((req.query && req.query.notice) || "");
     const error = (extras && extras.error) || String((req.query && req.query.error) || "");
     const focusSection = (extras && extras.section) || String((req.query && req.query.section) || "identity");
+    const returnParsed = parseSafePublicWebsiteReturnTo(
+      (extras && extras.returnTo) || (req.query && req.query.return_to) || (req.body && req.body.return_to)
+    );
+    const returnTo = returnParsed.ok ? returnParsed.path : null;
 
     const html = renderV5Ejs("hq/branch-website-settings.ejs", {
       ...shell,
@@ -201,6 +208,7 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
       fieldErrors,
       formValues,
       focusSection,
+      returnTo,
       socialPlatforms: registry.SOCIAL_PLATFORMS,
       SOURCE,
     });
@@ -395,6 +403,8 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
         }
 
         const section = result.section || "identity";
+        const returnParsed = parseSafePublicWebsiteReturnTo(req.body && req.body.return_to);
+        const returnTo = returnParsed.ok ? returnParsed.path : null;
         if (!result.ok) {
           return renderHtmlEditor(req, res, scope, {
             error: result.message || "Could not save changes.",
@@ -402,7 +412,11 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
             fieldErrors: result.fieldErrors || {},
             formValues: result.formValues || {},
             section,
+            returnTo,
           });
+        }
+        if (returnTo) {
+          return res.redirect(303, returnTo);
         }
         return res.redirect(
           303,

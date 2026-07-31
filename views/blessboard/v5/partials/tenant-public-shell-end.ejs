@@ -50,6 +50,35 @@
 
   <footer class="bb-tp-footer" data-bb-footer="1">
     <div class="bb-tp-footer__inner">
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <div class="bb-tp-footer__edit-bar" data-bb-footer-edits="1">
+        <%- include('./settings-edit-trigger', {
+          settingsLinkId: 'footer',
+          settingsLabel: 'Edit footer',
+          settingsClass: 'bb-tp-settings-pencil'
+        }) %>
+        <%- include('./settings-edit-trigger', {
+          settingsLinkId: 'contact',
+          settingsLabel: 'Edit contact details',
+          settingsClass: 'bb-tp-settings-pencil'
+        }) %>
+        <%- include('./settings-edit-trigger', {
+          settingsLinkId: 'service_times',
+          settingsLabel: 'Edit service times',
+          settingsClass: 'bb-tp-settings-pencil'
+        }) %>
+        <%- include('./settings-edit-trigger', {
+          settingsLinkId: 'social',
+          settingsLabel: 'Edit social links',
+          settingsClass: 'bb-tp-settings-pencil'
+        }) %>
+        <%- include('./settings-edit-trigger', {
+          settingsLinkId: 'announcement',
+          settingsLabel: 'Edit announcement',
+          settingsClass: 'bb-tp-settings-pencil'
+        }) %>
+      </div>
+      <% } %>
       <div class="bb-tp-footer__grid bb-tp-footer__grid--phase7">
         <div class="bb-tp-footer__brand">
           <div class="bb-tp-footer__brand-lockup">
@@ -60,6 +89,7 @@
               width="28"
               height="28"
               decoding="async"
+              data-bb-platform-logo="1"
             />
             <div class="bb-tp-footer__brand-text">
               <p class="bb-tp-footer__name" data-bb-church-name="1"><%= _churchName %></p>
@@ -81,6 +111,13 @@
               }) %>
               <% } %>
             </div>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('./settings-edit-trigger', {
+              settingsLinkId: 'identity',
+              settingsLabel: 'Edit identity',
+              settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
+            }) %>
+            <% } %>
           </div>
           <%- include('../public/partials/contact-summary') %>
           <% if (typeof socialLinks !== 'undefined' && socialLinks && socialLinks.length) { %>
@@ -128,6 +165,13 @@
 
         <div class="bb-tp-footer__col">
           <h2 class="bb-tp-footer__heading">Quick Links</h2>
+          <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <%- include('./settings-edit-trigger', {
+            settingsLinkId: 'navigation',
+            settingsLabel: 'Edit navigation',
+            settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
+          }) %>
+          <% } %>
           <ul class="bb-tp-footer__list" data-bb-footer-nav="1">
             <% footerNavItems.forEach(function (item) { %>
             <li><a href="<%= item.href %>" data-bb-nav-link="<%= item.key || '' %>"><%= item.label %></a></li>
@@ -136,7 +180,16 @@
         </div>
 
         <div class="bb-tp-footer__col" data-bb-footer-service-times="1">
-          <h2 class="bb-tp-footer__heading">Service Times</h2>
+          <div class="bb-tp-footer__heading-row">
+            <h2 class="bb-tp-footer__heading">Service Times</h2>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('./settings-edit-trigger', {
+              settingsLinkId: 'service_times',
+              settingsLabel: 'Edit service times',
+              settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
+            }) %>
+            <% } %>
+          </div>
           <% if (footerServices.length) { %>
           <ul class="bb-tp-footer__list bb-tp-footer__list--services">
             <% footerServices.forEach(function (entry) { %>
@@ -177,6 +230,7 @@
   <script src="/blessboard/v5/website-unsaved-guard.js?v=2" defer></script>
   <script src="/blessboard/v5/website-inline-edit.js?v=5" defer></script>
   <script src="/blessboard/v5/website-structured-edit.js?v=5" defer></script>
+  <script src="/blessboard/v5/website-features-panel.js?v=1" defer></script>
   <% } %>
 </body>
 </html>

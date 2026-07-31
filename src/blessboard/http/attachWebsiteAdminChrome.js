@@ -30,6 +30,9 @@ const {
   applyStructuredDraftsToModel,
   listDemoImages,
 } = require("../services/websiteStructuredDraftService");
+const {
+  buildWebsitePublicEditSettingsCatalog,
+} = require("../services/websitePublicEditSettingsLinks");
 
 const EDIT_QUERY = "website_edit";
 
@@ -472,6 +475,31 @@ async function attachWebsiteAdminChrome(opts) {
     };
   }
 
+  const publicBranchKey =
+    (model.websiteScope && model.websiteScope.branchKey) ||
+    (model.branch && model.branch.key) ||
+    null;
+  const primaryBranchKey =
+    (tenant && tenant.primaryBranch && tenant.primaryBranch.key) ||
+    (model.church && model.church.primaryBranchKey) ||
+    null;
+  const websiteScopeType =
+    (model.websiteScope && model.websiteScope.scopeType) ||
+    (publicBranchKey ? "branch" : "church");
+
+  const settingsCatalog = editingMode
+    ? buildWebsitePublicEditSettingsCatalog({
+        isHqEditor,
+        isBranchEditor: !isHqEditor && capability.isBranchEditor,
+        pageKey: model.pageKey,
+        currentPath,
+        websiteScopeType,
+        publicBranchKey,
+        primaryBranchKey,
+        contentBasePath: isHqEditor ? "/hq/content" : "/branch-admin/content",
+      })
+    : null;
+
   model.websiteAdmin = {
     canEdit: true,
     editingMode,
@@ -497,6 +525,8 @@ async function attachWebsiteAdminChrome(opts) {
     branchId: draftBranchId,
     scopeType: isHqEditor ? SCOPE_TYPE.CHURCH : SCOPE_TYPE.BRANCH,
     actorRole: actorRole || capability.actorRole,
+    settingsCatalog,
+    settingsLinks: settingsCatalog ? settingsCatalog.links : null,
     overrides,
     publishedBaselines,
     structuredDrafts: editingMode
@@ -520,7 +550,7 @@ async function attachWebsiteAdminChrome(opts) {
     },
   };
 
-  model.cssHref = "/blessboard/v5/tenant-public.css?v=51";
+  model.cssHref = "/blessboard/v5/tenant-public.css?v=52";
 
   return model;
 }

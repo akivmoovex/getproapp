@@ -7,13 +7,22 @@
   var _navClass = typeof navClass !== 'undefined' && navClass ? navClass : 'bb-tp-nav bb-tp-nav--desktop';
   var _label = typeof navAriaLabel !== 'undefined' && navAriaLabel ? navAriaLabel : 'Primary';
 %>
-<nav class="<%= _navClass %>" data-bb-nav="<%= typeof navDataAttr !== 'undefined' && navDataAttr ? navDataAttr : 'desktop' %>" aria-label="<%= _label %>">
-  <% _nav.forEach(function (item) { %>
-  <a
-    href="<%= item.href %>"
-    class="bb-tp-nav__link<%= _active === item.key ? ' is-active' : '' %>"
-    data-bb-nav-link="<%= item.key %>"
-    <% if (_active === item.key) { %>aria-current="page"<% } %>
-  ><%= item.label %></a>
-  <% }) %>
-</nav>
+<div class="bb-tp-nav-wrap" data-bb-nav-wrap="1">
+  <nav class="<%= _navClass %>" data-bb-nav="<%= typeof navDataAttr !== 'undefined' && navDataAttr ? navDataAttr : 'desktop' %>" aria-label="<%= _label %>">
+    <% _nav.forEach(function (item) { %>
+    <a
+      href="<%= item.href %>"
+      class="bb-tp-nav__link<%= _active === item.key ? ' is-active' : '' %>"
+      data-bb-nav-link="<%= item.key %>"
+      <% if (_active === item.key) { %>aria-current="page"<% } %>
+    ><%= item.label %></a>
+    <% }) %>
+  </nav>
+  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+  <%- include('../../partials/settings-edit-trigger', {
+    settingsLinkId: 'navigation',
+    settingsLabel: 'Edit navigation',
+    settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--nav'
+  }) %>
+  <% } %>
+</div>

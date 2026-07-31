@@ -1,10 +1,12 @@
 <%#
-  Admin website chrome — Stage 4.
+  Admin website chrome — Stage 4 + Stage 2 settings discovery panel.
   Admin view: status + Edit Website (+ demo notice). No pencils.
-  Editing mode: compact toolbar with Exit / Review and Publish.
+  Editing mode: toolbar with Exit / Review / Website features / Edit SEO.
 %>
 <%
   var wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var catalog = wa && wa.settingsCatalog ? wa.settingsCatalog : null;
+  var seoLink = wa && wa.settingsLinks && wa.settingsLinks.seo ? wa.settingsLinks.seo : null;
 %>
 <% if (wa && wa.canEdit) { %>
   <% if (wa.showDemoNotice && !wa.editingMode) { %>
@@ -51,8 +53,39 @@
           <span class="bb-tp-edit-toolbar__hint-full">Editing website — changes save as drafts until published</span>
           <span class="bb-tp-edit-toolbar__hint-short">Editing website</span>
         </span>
+        <% if (catalog && catalog.scopeLabel) { %>
+        <span class="bb-tp-edit-toolbar__scope" data-bb-edit-scope="<%= catalog.scopeType || '' %>">
+          <%= catalog.scopeLabel %>
+        </span>
+        <% } %>
       </div>
       <div class="bb-tp-edit-toolbar__right">
+        <button
+          type="button"
+          class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm"
+          data-bb-features-toggle="1"
+          aria-expanded="false"
+          aria-controls="bb-tp-features-panel"
+        >
+          <span class="bb-tp-btn__label-full">Website features</span>
+          <span class="bb-tp-btn__label-short">Features</span>
+        </button>
+        <% if (seoLink && seoLink.available && seoLink.href) { %>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= seoLink.href %>" data-bb-edit-seo="1">
+          <span class="bb-tp-btn__label-full">Edit SEO</span>
+          <span class="bb-tp-btn__label-short">SEO</span>
+        </a>
+        <% } else if (seoLink && !seoLink.available) { %>
+        <span
+          class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--disabled"
+          data-bb-edit-seo="1"
+          data-bb-settings-locked="1"
+          title="<%= seoLink.reason || 'SEO is HQ-managed' %>"
+        >
+          <span class="bb-tp-btn__label-full">SEO (HQ-managed)</span>
+          <span class="bb-tp-btn__label-short">SEO</span>
+        </span>
+        <% } %>
         <% if (wa.hasDraftChanges) { %>
         <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= wa.reviewHref %>" data-bb-review-publish="1">
           <span class="bb-tp-btn__label-full">Review and Publish</span>
@@ -66,5 +99,56 @@
       </div>
     </div>
   </div>
+
+  <% if (catalog) { %>
+  <div
+    id="bb-tp-features-panel"
+    class="bb-tp-features-panel"
+    data-bb-features-panel="1"
+    hidden
+  >
+    <div class="bb-tp-features-panel__inner">
+      <div class="bb-tp-features-panel__head">
+        <h2 class="bb-tp-features-panel__title">Website features</h2>
+        <p class="bb-tp-features-panel__lede">
+          Opens the existing settings editors for this
+          <%= catalog.scopeLabel || 'website' %>.
+          Hidden or empty features stay reachable here.
+        </p>
+        <button type="button" class="bb-tp-features-panel__close" data-bb-features-close="1" aria-label="Close features panel">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div class="bb-tp-features-panel__grid">
+        <% (catalog.categories || []).forEach(function (cat) { %>
+        <section class="bb-tp-features-panel__section" data-bb-features-category="<%= cat.id %>">
+          <h3 class="bb-tp-features-panel__section-title"><%= cat.title %></h3>
+          <ul class="bb-tp-features-panel__list">
+            <% (cat.items || []).forEach(function (item) { %>
+            <li
+              class="bb-tp-features-panel__item<%= item.available ? '' : ' is-locked' %>"
+              data-bb-features-item="<%= item.id %>"
+              data-bb-settings-canonical="<%= item.canonical || '' %>"
+            >
+              <% if (item.available && item.href) { %>
+              <a href="<%= item.href %>" data-bb-settings-edit="1" data-bb-settings-id="<%= item.id %>">
+                <span class="bb-tp-features-panel__item-label"><%= item.label %></span>
+                <span class="bb-tp-features-panel__item-scope"><%= item.scope || '' %></span>
+              </a>
+              <% } else { %>
+              <span class="bb-tp-features-panel__item-static">
+                <span class="bb-tp-features-panel__item-label"><%= item.label %></span>
+                <span class="bb-tp-features-panel__item-scope"><%= item.reason || item.scope || 'Not available' %></span>
+              </span>
+              <% } %>
+            </li>
+            <% }) %>
+          </ul>
+        </section>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  <% } %>
   <% } %>
 <% } %>

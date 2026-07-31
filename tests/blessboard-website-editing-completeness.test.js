@@ -37,7 +37,7 @@ function collectEjsFiles(dir) {
 
 function readAllTemplates() {
   return collectEjsFiles(PUBLIC_VIEWS)
-    .concat(collectEjsFiles(PARTIALS).filter((f) => /editable-text|structured-edit|tenant-public-shell|cta-band|page-hero|section-heading|leader-card|service-times/.test(f)))
+    .concat(collectEjsFiles(PARTIALS).filter((f) => /editable-text|structured-edit|settings-edit|website-admin-chrome|tenant-public-shell|cta-band|page-hero|section-heading|leader-card|service-times/.test(f)))
     .map((f) => fs.readFileSync(f, "utf8"))
     .join("\n");
 }
@@ -226,11 +226,138 @@ describe("website editing completeness — giving methods", () => {
 });
 
 describe("website editing completeness — unsupported public-edit surfaces", () => {
-  it("documents SEO as settings-editor only (not public website_edit)", () => {
+  it("SEO is settings-surface from public edit mode (not inline field drafts)", () => {
     const registry = require("../src/blessboard/services/websiteSettingKeyRegistry");
     assert.ok(typeof registry.getKeyDef === "function" || registry.SETTING_KEYS);
     const corpus = readAllTemplates();
     assert.doesNotMatch(corpus, /editFieldKey:\s*'seo\.title'/);
     assert.doesNotMatch(corpus, /editSectionKey:\s*'seo'/);
+    assert.match(corpus, /data-bb-edit-seo|settingsLinkId:\s*'seo'|Edit SEO/);
+  });
+});
+
+describe("website editing completeness — settings-surface discovery", () => {
+  const {
+    buildWebsitePublicEditSettingsCatalog,
+    parseSafePublicWebsiteReturnTo,
+  } = require("../src/blessboard/services/websitePublicEditSettingsLinks");
+
+  const chrome = fs.readFileSync(
+    path.join(PARTIALS, "website-admin-chrome.ejs"),
+    "utf8"
+  );
+  const corpus = readAllTemplates();
+
+  it("edit toolbar exposes features panel and SEO control", () => {
+    assert.match(chrome, /data-bb-features-panel/);
+    assert.match(chrome, /data-bb-features-toggle/);
+    assert.match(chrome, /data-bb-edit-seo/);
+    assert.match(chrome, /Website features/);
+  });
+
+  it("templates expose settings triggers for identity, nav, contact, footer, CTA", () => {
+    assert.match(corpus, /settingsLinkId:\s*'identity'/);
+    assert.match(corpus, /settingsLinkId:\s*'navigation'/);
+    assert.match(corpus, /settingsLinkId:\s*'contact'/);
+    assert.match(corpus, /settingsLinkId:\s*'footer'/);
+    assert.match(corpus, /settingsLinkId:\s*'header_cta'/);
+    assert.match(corpus, /settingsLinkId:\s*'service_times'/);
+    assert.match(corpus, /settingsLinkId:\s*'social'/);
+    assert.match(corpus, /settingsLinkId:\s*'announcement'/);
+    assert.match(corpus, /settingsLinkId:\s*'logo'/);
+  });
+
+  it("non-edit chrome has no features panel markup when not editing", () => {
+    // Panel is nested under editingMode branch in chrome partial.
+    const editingBlock = chrome.split("wa.editingMode")[2] || chrome;
+    assert.match(editingBlock, /data-bb-features-panel/);
+    assert.match(chrome, /!wa\.editingMode/);
+  });
+
+  it("HQ branch catalog resolves Stage 2 settings paths with return_to", () => {
+    const catalog = buildWebsitePublicEditSettingsCatalog({
+      isHqEditor: true,
+      isBranchEditor: false,
+      pageKey: "about",
+      currentPath: "/branches/east/about",
+      websiteScopeType: "branch",
+      publicBranchKey: "east",
+      primaryBranchKey: "hq",
+    });
+    assert.equal(catalog.settingsBranchKey, "east");
+    assert.ok(catalog.byId.identity.available);
+    assert.match(catalog.byId.identity.href, /\/hq\/website\/branches\/east\/settings/);
+    assert.match(catalog.byId.identity.href, /return_to=/);
+    assert.match(catalog.byId.seo.href, /section=seo/);
+    assert.match(catalog.byId.navigation.href, /\/hq\/content/);
+    assert.equal(catalog.byId.logo.available, false);
+    assert.match(catalog.byId.logo.reason || "", /platform/i);
+  });
+
+  it("HQ church-wide catalog uses primary branch for SEO settings", () => {
+    const catalog = buildWebsitePublicEditSettingsCatalog({
+      isHqEditor: true,
+      isBranchEditor: false,
+      pageKey: "home",
+      currentPath: "/",
+      websiteScopeType: "church",
+      publicBranchKey: null,
+      primaryBranchKey: "main",
+    });
+    assert.equal(catalog.settingsBranchKey, "main");
+    assert.ok(catalog.byId.seo.available);
+    assert.match(catalog.byId.seo.href, /\/hq\/website\/branches\/main\/settings/);
+    assert.match(catalog.byId.identity.href, /\/hq\/settings/);
+    assert.match(catalog.byId.page_visibility.href, /websiteStatus|\/hq\/settings/);
+  });
+
+  it("branch admin cannot open HQ SEO settings from catalog", () => {
+    const catalog = buildWebsitePublicEditSettingsCatalog({
+      isHqEditor: false,
+      isBranchEditor: true,
+      pageKey: "home",
+      currentPath: "/branches/east",
+      websiteScopeType: "branch",
+      publicBranchKey: "east",
+      primaryBranchKey: "hq",
+    });
+    assert.equal(catalog.byId.seo.available, false);
+    assert.match(catalog.byId.identity.href, /\/branch-admin\/settings/);
+    assert.match(catalog.byId.service_times.href, /\/branch-admin\/website\/service-times/);
+    assert.match(catalog.byId.contact.href, /\/branch-admin\/settings/);
+  });
+
+  it("rejects off-site and unsafe return URLs", () => {
+    assert.equal(parseSafePublicWebsiteReturnTo("https://evil.example/").ok, false);
+    assert.equal(parseSafePublicWebsiteReturnTo("//evil.example").ok, false);
+    assert.equal(parseSafePublicWebsiteReturnTo("/hq/settings").ok, false);
+    assert.equal(parseSafePublicWebsiteReturnTo("/../etc/passwd").ok, false);
+    assert.equal(parseSafePublicWebsiteReturnTo("/about?next=https://x").ok, false);
+    const ok = parseSafePublicWebsiteReturnTo("/branches/east/about?website_edit=1");
+    assert.equal(ok.ok, true);
+    assert.equal(ok.path, "/branches/east/about?website_edit=1");
+    assert.equal(parseSafePublicWebsiteReturnTo("/about").ok, true);
+  });
+
+  it("hidden features remain listed in the catalog categories", () => {
+    const catalog = buildWebsitePublicEditSettingsCatalog({
+      isHqEditor: true,
+      isBranchEditor: false,
+      pageKey: "giving",
+      currentPath: "/giving",
+      websiteScopeType: "church",
+      primaryBranchKey: "main",
+    });
+    const ids = catalog.items.map((i) => i.id);
+    for (const id of [
+      "announcement",
+      "seo",
+      "logo",
+      "navigation",
+      "page_visibility",
+      "header_cta",
+    ]) {
+      assert.ok(ids.includes(id), id);
+    }
   });
 });

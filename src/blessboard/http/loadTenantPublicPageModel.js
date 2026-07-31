@@ -1686,7 +1686,7 @@ async function loadTenantPublicPageModel(db, input) {
     portalLabel: null,
     apexHref: "https://blessboard.org/",
     visitHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=51",
+    cssHref: "/blessboard/v5/tenant-public.css?v=52",
     pathPrefix: navPathPrefix,
     homeHref: navPathPrefix || "/",
     churchHomeHref,

@@ -6579,3 +6579,221 @@ a.bb-tp-content-card:hover {
     height: 260px;
   }
 }
+
+/* —— Public edit mode: Stage 2 settings discovery —— */
+.bb-tp-edit-toolbar__scope {
+  font-size: 0.75rem;
+  color: #c4b5fd;
+  border: 1px solid rgba(196, 181, 253, 0.35);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
+
+.bb-tp-btn--disabled {
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.bb-tp-features-panel {
+  position: sticky;
+  top: 0;
+  z-index: 59;
+  background: #2a2340;
+  color: #f5f3ff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  max-height: min(70vh, 32rem);
+  overflow: auto;
+}
+
+.bb-tp-features-panel__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0.85rem 1.25rem 1.1rem;
+}
+
+.bb-tp-features-panel__head {
+  position: relative;
+  padding-right: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.bb-tp-features-panel__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.bb-tp-features-panel__lede {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: #d7d0ff;
+  max-width: 42rem;
+}
+
+.bb-tp-features-panel__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 0;
+  background: transparent;
+  color: #f5f3ff;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 0.35rem;
+}
+
+.bb-tp-features-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.bb-tp-features-panel__section-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #c4b5fd;
+}
+
+.bb-tp-features-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.bb-tp-features-panel__item a,
+.bb-tp-features-panel__item-static {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.bb-tp-features-panel__item a:hover,
+.bb-tp-features-panel__item a:focus-visible {
+  background: rgba(108, 92, 231, 0.45);
+  outline: none;
+}
+
+.bb-tp-features-panel__item.is-locked .bb-tp-features-panel__item-static {
+  opacity: 0.7;
+}
+
+.bb-tp-features-panel__item-scope {
+  font-size: 0.72rem;
+  color: #c4b5fd;
+}
+
+.bb-tp-settings-pencil {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.15rem 0.25rem 0.15rem 0;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  border: 1px dashed rgba(108, 92, 231, 0.55);
+  background: rgba(108, 92, 231, 0.08);
+  color: #4c3db8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  line-height: 1.2;
+  z-index: 2;
+}
+
+.bb-tp-settings-pencil .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.bb-tp-settings-pencil:hover,
+.bb-tp-settings-pencil:focus-visible {
+  background: rgba(108, 92, 231, 0.16);
+  outline: 2px solid #6c5ce7;
+  outline-offset: 1px;
+}
+
+.bb-tp-settings-pencil--compact .bb-tp-settings-pencil__text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.bb-tp-settings-pencil--locked {
+  opacity: 0.65;
+  cursor: help;
+  border-style: solid;
+}
+
+.bb-tp-brand-wrap,
+.bb-tp-nav-wrap,
+.bb-tp-header__visit-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.bb-tp-brand-wrap__edits,
+.bb-tp-footer__edit-bar,
+.bb-tp-drawer__nav-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.bb-tp-footer__edit-bar {
+  margin-bottom: 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed rgba(108, 92, 231, 0.35);
+}
+
+.bb-tp-footer__heading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.bb-tp-contact-summary {
+  position: relative;
+}
+
+.bb-tp-body--editing .bb-tp-nav-wrap {
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  .bb-tp-features-panel__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bb-tp-edit-toolbar__scope {
+    display: none;
+  }
+
+  .bb-tp-settings-pencil--nav .bb-tp-settings-pencil__text {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    clip: auto;
+    overflow: visible;
+  }
+}

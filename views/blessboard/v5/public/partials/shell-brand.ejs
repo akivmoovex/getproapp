@@ -25,26 +25,43 @@
   var _brandClass = 'bb-tp-brand' + (_variant === 'drawer' ? ' bb-tp-brand--drawer' : '') + (_isBranchMini ? ' bb-tp-brand--branch' : '');
   var _markSize = _variant === 'drawer' ? 24 : 30;
 %>
-<a
-  class="<%= _brandClass %>"
-  href="<%= _home %>"
-  aria-label="<%= _churchName %><%= _branchName ? (' — ' + _branchName) : '' %> home"
-  title="<%= _churchName %><%= _branchName ? (' — ' + _branchName) : '' %>"
-  data-bb-shell-brand="1"
-  <% if (_isBranchMini) { %>data-bb-branch-mini="1"<% } %>
->
-  <img
-    class="bb-tp-brand__mark"
-    src="/church/images/brand/blessboard-small-church-logo.png"
-    alt=""
-    width="<%= _markSize %>"
-    height="<%= _markSize %>"
-    decoding="async"
-  />
-  <span class="bb-tp-brand__text">
-    <span class="bb-tp-brand__name" data-bb-church-name="1"><%= _churchName %></span>
-    <% if (_branchName) { %>
-    <span class="bb-tp-brand__branch" data-bb-branch-name="1"><%= _branchName %></span>
-    <% } %>
-  </span>
-</a>
+<div class="bb-tp-brand-wrap" data-bb-brand-wrap="1">
+  <a
+    class="<%= _brandClass %>"
+    href="<%= _home %>"
+    aria-label="<%= _churchName %><%= _branchName ? (' — ' + _branchName) : '' %> home"
+    title="<%= _churchName %><%= _branchName ? (' — ' + _branchName) : '' %>"
+    data-bb-shell-brand="1"
+    <% if (_isBranchMini) { %>data-bb-branch-mini="1"<% } %>
+  >
+    <img
+      class="bb-tp-brand__mark"
+      src="/church/images/brand/blessboard-small-church-logo.png"
+      alt=""
+      width="<%= _markSize %>"
+      height="<%= _markSize %>"
+      decoding="async"
+      data-bb-platform-logo="1"
+    />
+    <span class="bb-tp-brand__text">
+      <span class="bb-tp-brand__name" data-bb-church-name="1"><%= _churchName %></span>
+      <% if (_branchName) { %>
+      <span class="bb-tp-brand__branch" data-bb-branch-name="1"><%= _branchName %></span>
+      <% } %>
+    </span>
+  </a>
+  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+  <div class="bb-tp-brand-wrap__edits" data-bb-brand-edits="1">
+    <%- include('../../partials/settings-edit-trigger', {
+      settingsLinkId: 'identity',
+      settingsLabel: 'Edit identity',
+      settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
+    }) %>
+    <%- include('../../partials/settings-edit-trigger', {
+      settingsLinkId: 'logo',
+      settingsLabel: 'Change logo',
+      settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
+    }) %>
+  </div>
+  <% } %>
+</div>

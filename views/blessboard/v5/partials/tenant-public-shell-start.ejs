@@ -21,7 +21,7 @@
   <meta property="og:image" content="<%= seo.ogImageUrl %>" />
   <% } %>
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=51' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=52' %>" />
 </head>
 <%
   var _isBranchMini =
@@ -93,10 +93,19 @@
           data-bb-public-login="1"
         >Login</a>
         <% } %>
-        <a
-          class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-header__visit"
-          href="<%= typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact') %>"
-        >Plan Your Visit</a>
+        <span class="bb-tp-header__visit-wrap" data-bb-header-cta="1">
+          <a
+            class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-header__visit"
+            href="<%= typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact') %>"
+          >Plan Your Visit</a>
+          <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <%- include('./settings-edit-trigger', {
+            settingsLinkId: 'header_cta',
+            settingsLabel: 'Edit header CTA',
+            settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
+          }) %>
+          <% } %>
+        </span>
         <button
           type="button"
           class="bb-tp-menu-btn bb-shell-burger"
@@ -138,6 +147,15 @@
       <%- include('../public/partials/branch-switcher', { switcherPlacement: 'drawer' }) %>
     </div>
     <nav class="bb-tp-drawer__nav" aria-label="Primary">
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <div class="bb-tp-drawer__nav-edit">
+        <%- include('./settings-edit-trigger', {
+          settingsLinkId: 'navigation',
+          settingsLabel: 'Edit navigation',
+          settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--nav'
+        }) %>
+      </div>
+      <% } %>
       <ul class="bb-tp-drawer__list" data-bb-nav="mobile">
         <% (navItems || []).forEach(function (item) { %>
         <li class="bb-tp-drawer__item">
