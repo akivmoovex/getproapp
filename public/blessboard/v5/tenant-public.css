@@ -184,6 +184,101 @@ html {
   border-bottom-color: var(--bb-violet);
 }
 
+.bb-tp-nav-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.bb-tp-nav-dropdown__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font: inherit;
+  font-family: inherit;
+  color: var(--bb-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.25rem 0;
+  white-space: nowrap;
+}
+
+.bb-tp-nav-dropdown__trigger:hover {
+  color: var(--bb-violet);
+}
+
+.bb-tp-nav-dropdown__trigger.is-active,
+.bb-tp-nav-dropdown.is-section-active .bb-tp-nav-dropdown__trigger {
+  color: var(--bb-violet);
+  font-weight: 700;
+  border-bottom-color: var(--bb-violet);
+}
+
+.bb-tp-nav-dropdown__chevron {
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.bb-tp-nav-dropdown.is-open .bb-tp-nav-dropdown__chevron {
+  transform: rotate(180deg);
+}
+
+.bb-tp-nav-dropdown__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 12.5rem;
+  max-width: min(18rem, calc(100vw - 2rem));
+  max-height: min(70vh, 24rem);
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid rgba(200, 196, 215, 0.55);
+  border-radius: var(--bb-radius-sm, 0.5rem);
+  box-shadow: 0 10px 28px rgba(28, 25, 41, 0.12);
+  z-index: 40;
+}
+
+.bb-tp-nav-dropdown__menu[hidden] {
+  display: none;
+}
+
+.bb-tp-nav-dropdown__link {
+  display: block;
+  padding: 0.55rem 0.9rem;
+  color: var(--bb-ink);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.bb-tp-nav-dropdown__link:hover,
+.bb-tp-nav-dropdown__link:focus-visible {
+  background: var(--bb-surface-low, #f5f3ff);
+  color: var(--bb-violet);
+  outline: none;
+}
+
+.bb-tp-nav-dropdown__link.is-active {
+  color: var(--bb-violet);
+  font-weight: 700;
+}
+
+.bb-tp-drawer__link--cta {
+  font-weight: 700;
+  color: var(--bb-violet);
+}
+
 .bb-tp-header__actions {
   display: flex;
   align-items: center;
@@ -4581,6 +4676,8 @@ html {
 }
 
 .bb-tp-nav__link:focus-visible,
+.bb-tp-nav-dropdown__trigger:focus-visible,
+.bb-tp-nav-dropdown__link:focus-visible,
 .bb-tp-drawer__link:focus-visible,
 .bb-tp-menu-btn:focus-visible,
 .bb-tp-drawer__close:focus-visible,

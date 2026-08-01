@@ -17,18 +17,17 @@
     _isBranchMini && typeof branch !== 'undefined' && branch && branch.displayName
       ? String(branch.displayName)
       : '';
-  var footerNavItems = (typeof navItems !== 'undefined' && navItems && navItems.length)
-    ? navItems
-    : [
-        { href: '/', label: 'Home' },
-        { href: '/about', label: 'About' },
-        { href: '/leadership', label: 'Leadership' },
-        { href: '/ministries', label: 'Ministries' },
-        { href: '/events', label: 'Events' },
-        { href: '/sermons', label: 'Sermons' },
-        { href: '/contact', label: 'Contact' },
-        { href: '/giving', label: 'Giving' }
-      ];
+  var _footerNav = (typeof footerNavItems !== 'undefined' && footerNavItems && footerNavItems.length)
+    ? footerNavItems
+    : ((typeof navigation !== 'undefined' && navigation && navigation.footerItems && navigation.footerItems.length)
+      ? navigation.footerItems
+      : ((typeof navItems !== 'undefined' && navItems && navItems.length)
+        ? navItems
+        : [
+            { href: '/', label: 'Home', key: 'home' },
+            { href: '/about', label: 'About', key: 'about' },
+            { href: '/contact', label: 'Contact', key: 'contact' }
+          ]));
   function footerDayLabel(day) {
     var d = String(day || '');
     if (!d) return '';
@@ -173,7 +172,7 @@
           }) %>
           <% } %>
           <ul class="bb-tp-footer__list" data-bb-footer-nav="1">
-            <% footerNavItems.forEach(function (item) { %>
+            <% _footerNav.forEach(function (item) { %>
             <li><a href="<%= item.href %>" data-bb-nav-link="<%= item.key || '' %>"><%= item.label %></a></li>
             <% }) %>
           </ul>
@@ -223,7 +222,7 @@
   </footer>
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
-  <script src="/blessboard/v5/tenant-public.js?v=9" defer></script>
+  <script src="/blessboard/v5/tenant-public.js?v=10" defer></script>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
   <%- include('./structured-editor-host') %>
   <%- include('./unsaved-changes-dialog') %>

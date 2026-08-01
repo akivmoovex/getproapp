@@ -527,11 +527,44 @@ async function attachWebsiteAdminChrome(opts) {
       model.visitHref || `${model.pathPrefix || ""}/contact`,
       true
     );
+    if (model.giveHref) {
+      model.giveHref = withEditQuery(model.giveHref, true);
+    }
     const priorHrefFor = typeof model.hrefFor === "function" ? model.hrefFor.bind(model) : null;
     model.hrefFor = function hrefForEdit(pagePath) {
       const base = priorHrefFor ? priorHrefFor(pagePath) : String(pagePath || "/");
       return withEditQuery(base, true);
     };
+
+    function mapNavTree(items) {
+      if (!Array.isArray(items)) return items;
+      return items.map((item) => {
+        const next = {
+          ...item,
+          href: item.href ? withEditQuery(item.href, true) : item.href,
+        };
+        if (Array.isArray(item.children)) {
+          next.children = mapNavTree(item.children);
+        }
+        return next;
+      });
+    }
+    if (model.navigation) {
+      model.navigation = {
+        ...model.navigation,
+        primaryItems: mapNavTree(model.navigation.primaryItems),
+        mobileItems: mapNavTree(model.navigation.mobileItems),
+        footerItems: mapNavTree(model.navigation.footerItems),
+        navItems: mapNavTree(model.navigation.navItems),
+        ctaItem: model.navigation.ctaItem
+          ? {
+              ...model.navigation.ctaItem,
+              href: withEditQuery(model.navigation.ctaItem.href, true),
+            }
+          : null,
+      };
+      model.footerNavItems = model.navigation.footerItems;
+    }
   }
 
   const publicBranchKey =
@@ -609,7 +642,7 @@ async function attachWebsiteAdminChrome(opts) {
     },
   };
 
-  model.cssHref = "/blessboard/v5/tenant-public.css?v=52";
+  model.cssHref = "/blessboard/v5/tenant-public.css?v=53";
 
   return model;
 }

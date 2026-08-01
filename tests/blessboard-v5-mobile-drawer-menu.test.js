@@ -63,7 +63,8 @@ describe("blessboard v5 mobile drawer menu item styling (Prompt 51)", () => {
     assert.match(start, /bb-tp-drawer__list/);
     assert.match(start, /bb-tp-drawer__item/);
     assert.match(start, /bb-tp-drawer__link/);
-    assert.match(start, /<% if \(activeNav === item\.key\) \{ %>aria-current="page"<% \} %>/);
+    assert.match(start, /item\.isActive \|\| activeNav === item\.key/);
+    assert.match(start, /aria-current="page"/);
     assert.doesNotMatch(start, /<%= activeNav === item\.key \? 'aria-current=/);
     const css = read("public/blessboard/v5/tenant-public.css");
     assert.match(css, /\.bb-tp-drawer__list\s*\{[\s\S]*?flex-direction:\s*column/);

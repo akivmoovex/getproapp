@@ -21,7 +21,7 @@
   <meta property="og:image" content="<%= seo.ogImageUrl %>" />
   <% } %>
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=52' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=53' %>" />
 </head>
 <%
   var _isBranchMini =
@@ -93,11 +93,36 @@
           data-bb-public-login="1"
         >Login</a>
         <% } %>
+        <%
+          var _cta = (typeof navigation !== 'undefined' && navigation && navigation.ctaItem)
+            ? navigation.ctaItem
+            : null;
+          var _ctaHref = _cta && _cta.href
+            ? _cta.href
+            : (typeof giveHref !== 'undefined' && giveHref
+              ? giveHref
+              : (typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact')));
+          var _ctaLabel = _cta && _cta.label ? _cta.label : (_cta ? 'Give' : 'Plan Your Visit');
+          var _ctaKey = _cta && _cta.key ? _cta.key : (_cta ? 'giving' : 'visit');
+          var _ctaActive = _cta ? Boolean(_cta.isActive) : (typeof activeNav !== 'undefined' && activeNav === 'contact');
+          if (!_cta && typeof navigation !== 'undefined' && navigation && navigation.ctaItem === null) {
+            // Giving intentionally hidden — fall back to visit CTA only when no Give.
+            _ctaLabel = 'Plan Your Visit';
+            _ctaKey = 'visit';
+            _ctaHref = typeof visitHref !== 'undefined' && visitHref
+              ? visitHref
+              : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact');
+            _ctaActive = typeof activeNav !== 'undefined' && activeNav === 'contact';
+          }
+        %>
         <span class="bb-tp-header__visit-wrap" data-bb-header-cta="1">
           <a
-            class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-header__visit"
-            href="<%= typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact') %>"
-          >Plan Your Visit</a>
+            class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-header__visit<%= _ctaActive ? ' is-active' : '' %>"
+            href="<%= _ctaHref %>"
+            data-bb-nav-link="<%= _ctaKey %>"
+            data-bb-header-cta-link="1"
+            <% if (_ctaActive) { %>aria-current="page"<% } %>
+          ><%= _ctaLabel %></a>
           <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
           <%- include('./settings-edit-trigger', {
             settingsLinkId: 'header_cta',
@@ -157,23 +182,38 @@
       </div>
       <% } %>
       <ul class="bb-tp-drawer__list" data-bb-nav="mobile">
-        <% (navItems || []).forEach(function (item) { %>
+        <%
+          var _mobileNav = (typeof navigation !== 'undefined' && navigation && navigation.mobileItems && navigation.mobileItems.length)
+            ? navigation.mobileItems
+            : (navItems || []);
+        %>
+        <% _mobileNav.forEach(function (item) { %>
         <li class="bb-tp-drawer__item">
           <a
             href="<%= item.href %>"
-            class="bb-tp-drawer__link<%= activeNav === item.key ? ' is-active' : '' %>"
+            class="bb-tp-drawer__link<%= (item.isActive || activeNav === item.key) ? ' is-active' : '' %><%= item.emphasized ? ' bb-tp-drawer__link--cta' : '' %>"
             data-bb-nav-link="<%= item.key %>"
-            <% if (activeNav === item.key) { %>aria-current="page"<% } %>
+            <% if (item.isActive || activeNav === item.key) { %>aria-current="page"<% } %>
           ><%= item.label %></a>
         </li>
         <% }) %>
       </ul>
     </nav>
     <div class="bb-tp-drawer__actions">
+      <%
+        var _drawerCta = (typeof navigation !== 'undefined' && navigation && navigation.ctaItem)
+          ? navigation.ctaItem
+          : null;
+        var _drawerCtaHref = _drawerCta && _drawerCta.href
+          ? _drawerCta.href
+          : (typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact'));
+        var _drawerCtaLabel = _drawerCta && _drawerCta.label ? _drawerCta.label : 'Plan Your Visit';
+      %>
       <a
         class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--block"
-        href="<%= typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact') %>"
-      >Plan Your Visit</a>
+        href="<%= _drawerCtaHref %>"
+        data-bb-nav-link="<%= _drawerCta && _drawerCta.key ? _drawerCta.key : 'visit' %>"
+      ><%= _drawerCtaLabel %></a>
       <% if (typeof portalHref !== 'undefined' && portalHref) { %>
       <a
         class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--block"

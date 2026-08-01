@@ -605,7 +605,7 @@ describe("blessboard public pages", () => {
     const about = await request(app).get("/about").set("Host", HOST_A);
     assert.equal(about.status, 200);
     assert.match(about.text, /data-bb-page="about"/);
-    assert.match(about.text, /bb-tp-nav__link is-active[^>]*>About</);
+    assert.match(about.text, /bb-tp-nav__link[^>]*is-active[^>]*>About</);
     assert.match(about.text, /data-bb-about="1"|bb-tp-about/);
     assert.match(about.text, /data-bb-stitch-about="phase7-v1"/);
     assert.match(about.text, /Plan Your Visit/);
@@ -989,11 +989,11 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /Get In Touch|Connect With Us|Contact Us/);
     assert.match(res.text, /data-bb-header="1"/);
     assert.match(res.text, /data-bb-footer="1"/);
-    assert.match(res.text, /bb-tp-nav__link is-active[^>]*>Contact</);
+    assert.match(res.text, /(?:bb-tp-nav__link|bb-tp-nav-dropdown__link)[^>]*is-active[^>]*>Contact</);
     assert.match(res.text, /church-office@example\.org|\+260900000001/);
     assert.match(res.text, /mailto:church-office@example\.org|tel:\+?260900000001/);
     assert.match(res.text, /data-bb-contact-message="unavailable"/);
-    assert.match(res.text, /data-bb-contact-form="unavailable"/);
+    assert.match(res.text, /data-bb-contact-(?:form|message)="unavailable"/);
     assert.doesNotMatch(res.text, /data-bb-contact-map=/);
     assert.doesNotMatch(res.text, /123 Faith Lane|<form/i);
     assert.doesNotMatch(res.text, /name="message"|name="full_name"|newsletter|mailing list|Stay Connected With/i);
@@ -1121,7 +1121,7 @@ describe("blessboard public pages", () => {
     assert.match(res.text, /data-bb-giving="1"/);
     assert.match(res.text, /data-bb-header="1"/);
     assert.match(res.text, /data-bb-footer="1"/);
-    assert.match(res.text, /bb-tp-nav__link is-active[^>]*>Giving</);
+    assert.match(res.text, /data-bb-nav-link="giving"[^>]*class="[^"]*is-active|class="[^"]*is-active[^"]*"[^>]*data-bb-nav-link="giving"|bb-tp-header__visit[^>]*is-active[^>]*>Give</);
     assert.match(res.text, /A Culture of Generosity|Faithful Stewardship|Giving/);
     assert.match(res.text, /Ways to Give/);
     assert.match(res.text, /Explore Ways to Give/);
@@ -1934,7 +1934,7 @@ describe("blessboard public pages", () => {
     assert.match(contactRes.text, /data-bb-contact-hours="1"/);
     assert.match(contactRes.text, /Mon–Fri 9:00–15:00|Mon&#8211;Fri|Mon&ndash;Fri/);
     assert.match(contactRes.text, /88 Contact Way|Demo City/);
-    assert.match(contactRes.text, /data-bb-contact-form="unavailable"/);
+    assert.match(contactRes.text, /data-bb-contact-(?:form|message)="unavailable"/);
     assert.match(contactRes.text, /data-bb-contact-services="1"|Service Times/);
     assert.doesNotMatch(contactRes.text, /<form[\s>]/i);
 
@@ -2060,7 +2060,7 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /Plan Your Visit/);
     assert.match(home.text, /Quick Links/);
     assert.match(home.text, /Powered by BlessBoard/);
-    assert.match(home.text, /tenant-public\.css\?v=51/);
+    assert.match(home.text, /tenant-public\.css\?v=53/);
     assert.doesNotMatch(home.text, /data-bb-preview-banner/);
     assert.doesNotMatch(home.text, /Back to content admin|Edit page/);
     assert.doesNotMatch(home.text, /href="\/hq"|href="\/admin"|bb-ca-preview/);
@@ -2068,7 +2068,7 @@ describe("blessboard public pages", () => {
 
     const about = await request(app).get("/about").set("Host", HOST_A);
     assert.equal(about.status, 200);
-    assert.match(about.text, /bb-tp-nav__link is-active[^>]*>About</);
+    assert.match(about.text, /bb-tp-nav__link[^>]*is-active[^>]*>About</);
     assert.match(about.text, /data-bb-footer="1"/);
   });
 
@@ -2127,7 +2127,7 @@ describe("blessboard public pages", () => {
     const homeRes = await request(app).get("/").set("Host", HOST_A);
     assert.equal(homeRes.status, 200);
     assert.match(homeRes.text, /Faith, Community and Hope|A Place for Growth/);
-    assert.match(homeRes.text, /tenant-public\.css\?v=51/);
+    assert.match(homeRes.text, /tenant-public\.css\?v=53/);
     assert.doesNotMatch(homeRes.text, /A Place for Growth & Community/);
 
     await pool.query(
@@ -2173,7 +2173,7 @@ describe("blessboard public pages", () => {
 
     const contact = await request(app).get("/contact").set("Host", HOST_A);
     assert.equal(contact.status, 200);
-    assert.match(contact.text, /data-bb-contact-form="unavailable"/);
+    assert.match(contact.text, /data-bb-contact-(?:form|message)="unavailable"/);
     assert.doesNotMatch(contact.text, /<form[\s>]/i);
     assert.doesNotMatch(contact.text, /method=["']post["']/i);
     assert.doesNotMatch(contact.text, /prayer request form|mobile money checkout|bottom.?tab/i);

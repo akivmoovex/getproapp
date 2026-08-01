@@ -411,7 +411,7 @@
 
       <div class="bb-tp-contact-aside">
         <% if (contact.hasMap && contact.mapEmbedUrl) { %>
-        <section class="bb-tp-contact-map" aria-label="Map" data-bb-contact-map="1">
+        <section class="bb-tp-contact-map" id="bb-tp-directions" aria-label="Map" data-bb-contact-map="1">
           <% if (contact.addressText) { %>
           <div class="bb-tp-contact-map__address">
             <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
@@ -479,7 +479,7 @@
         <% } %>
 
         <% if (contactServiceEntries.length) { %>
-        <section class="bb-tp-contact-services bb-tp-contact-services--aside" data-bb-contact-services="1" aria-labelledby="bb-tp-contact-services-heading">
+        <section class="bb-tp-contact-services bb-tp-contact-services--aside" id="bb-tp-service-times" data-bb-contact-services="1" aria-labelledby="bb-tp-contact-services-heading">
           <h2 id="bb-tp-contact-services-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Service Times</h2>
           <ul class="bb-tp-service-times-list">
             <% contactServiceEntries.forEach(function (entry) { %>

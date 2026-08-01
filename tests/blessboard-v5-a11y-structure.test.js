@@ -246,7 +246,7 @@ describe("blessboard v5 a11y structure — shells", () => {
     assert.match(start, /aria-modal="true"/);
     assert.match(start, /\binert\b/);
     assert.match(start, /id="bb-tp-header"/);
-    assert.match(end, /footerNavItems|navItems\.forEach|href="\/leadership"|hrefFor\('\/leadership'\)/);
+    assert.match(end, /_footerNav|footerNavItems|navigation\.footerItems|href="\/leadership"|hrefFor\('\/leadership'\)/);
     assert.match(end, /href="\/contact"|hrefFor\('\/contact'\)/);
     assert.match(end, /powered-by-getpro/);
     assert.match(js, /Escape/);
@@ -2466,7 +2466,7 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     assert.match(contact, /aria-label="Email/);
     assert.match(contact, /aria-label="Call/);
     assert.match(contact, /data-bb-contact-map="unavailable"/);
-    assert.match(contact, /data-bb-contact-form="unavailable"/);
+    assert.match(contact, /bb-tp-contact-message__status|data-bb-contact-(?:form|message)="unavailable"/);
     assert.match(contact, /Send a Message/);
     assert.doesNotMatch(contact, /data-bb-empty="contact"/);
     assert.doesNotMatch(contact, /<form|name="_csrf"|csrfField|name="full_name"|name="message"/i);

@@ -18,8 +18,9 @@ const {
   listPublishedGivingMethods,
 } = require("../services/publicContentReadService");
 const contentAdmin = require("../services/publicContentAdminService");
-const { PAGE_KEY_TITLES } = require("../services/publicContentConstants");
+const { PAGE_KEY_TITLES, PUBLIC_PAGE_KEYS } = require("../services/publicContentConstants");
 const { NAV_ITEMS, PAGE_KEY_TO_PATH } = require("./tenantPublicPaths");
+const { buildPublicWebsiteNavigation } = require("./buildPublicWebsiteNavigation");
 const { buildTenantPublicSeo } = require("./tenantPublicSeo");
 const { safeExternalUrl, plainMetaText } = require("./tenantPublicSafe");
 const testingDemoSpec = require("../services/testingWebsiteDemoContentSpec");
@@ -1575,15 +1576,57 @@ async function loadTenantPublicPageModel(db, input) {
 
   const navPathPrefix = discoverySingleSite ? churchWidePathPrefix : pathPrefix;
 
-  const navItems = navPathPrefix
-    ? NAV_ITEMS.map((item) =>
-        Object.freeze({
-          key: item.key,
-          href: item.href === "/" ? navPathPrefix || "/" : `${navPathPrefix}${item.href}`,
-          label: item.label,
-        })
-      )
-    : NAV_ITEMS;
+  // Navigation ministries: lightweight published list for dropdown labels.
+  let navMinistries = [];
+  try {
+    const ministryList = await loadEntityList(
+      listPublishedMinistries,
+      contentAdmin.listAdminMinistries,
+      mapMinistry
+    );
+    navMinistries = ministryList.items || [];
+  } catch {
+    navMinistries = [];
+  }
+
+  let hasGivingNav = Boolean(isPreview);
+  try {
+    if (!isPreview) {
+      const givingPage = await resolvePublishedPage(db, {
+        churchId,
+        contentBranchId,
+        pageKey: "giving",
+        allowChurchContentFallback,
+      });
+      // Show Give when the giving page is published. Incomplete payment copy is a
+      // page-content concern, not a reason to omit the route from navigation.
+      hasGivingNav = Boolean(givingPage && givingPage.page);
+    }
+  } catch {
+    hasGivingNav = false;
+  }
+
+  // Public routes always exist for the CMS catalog; mobile drawer keeps full access.
+  const availablePages = new Set(PUBLIC_PAGE_KEYS);
+
+  const navigation = buildPublicWebsiteNavigation({
+    scopeType: scopedBranchActive ? "branch" : "church",
+    pathPrefix: navPathPrefix,
+    churchHomeHref,
+    activePageKey: pageKey,
+    availablePages,
+    ministries: navMinistries,
+    locationCount: Array.isArray(branchLocations) ? branchLocations.length : 0,
+    locations: branchLocations,
+    hasGiving: hasGivingNav,
+    hasDirections: Boolean(
+      resolvedPublicContact &&
+        (resolvedPublicContact.directionsUrl || resolvedPublicContact.addressText)
+    ),
+    hasServiceTimes: Array.isArray(serviceTimesEntries) && serviceTimesEntries.length > 0,
+  });
+
+  const navItems = navigation.navItems;
 
   const previewMeta = isPreview
     ? {
@@ -1609,6 +1652,12 @@ async function loadTenantPublicPageModel(db, input) {
     : null;
 
   const visitHref = navPathPrefix ? `${navPathPrefix}/contact` : "/contact";
+  const giveHref =
+    navigation.ctaItem && navigation.ctaItem.href
+      ? navigation.ctaItem.href
+      : navPathPrefix
+        ? `${navPathPrefix}/giving`
+        : "/giving";
 
   // Discovery: single-site never advertises branch website paths in nav/share maps.
   const publicPaths = buildPublicWebsitePaths({
@@ -1720,7 +1769,8 @@ async function loadTenantPublicPageModel(db, input) {
     portalLabel: null,
     apexHref: "https://blessboard.org/",
     visitHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=52",
+    giveHref,
+    cssHref: "/blessboard/v5/tenant-public.css?v=53",
     pathPrefix: navPathPrefix,
     homeHref: navPathPrefix || "/",
     churchHomeHref,
@@ -1730,7 +1780,9 @@ async function loadTenantPublicPageModel(db, input) {
       if (raw === "/") return navPathPrefix;
       return `${navPathPrefix}${raw.startsWith("/") ? raw : `/${raw}`}`;
     },
+    navigation,
     navItems,
+    footerNavItems: navigation.footerItems,
     activeNav: pageKey,
     page: pageResult.page
       ? {

@@ -460,6 +460,22 @@
   </section>
   <% } %>
 
+  <% if (typeof branchLocations !== 'undefined' && branchLocations && branchLocations.length > 1) { %>
+  <section class="bb-tp-container bb-tp-home-teaser" id="bb-tp-locations" data-bb-home-locations="1" aria-labelledby="bb-tp-home-locations-heading">
+    <h2 id="bb-tp-home-locations-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Our locations</h2>
+    <ul class="bb-tp-card-grid bb-tp-card-grid--3" data-bb-locations-list="1">
+      <% branchLocations.forEach(function (loc) { %>
+      <li class="bb-tp-simple-card">
+        <h3 class="bb-tp-simple-card__title"><%= loc.displayName %></h3>
+        <% if (loc.websiteHref) { %>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= loc.websiteHref %>">Visit website</a>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
   <%- include('./partials/cta-band', {
     ctaClass: 'bb-tp-cta-band--giving',
     ctaTitle: (givingCtaSec && givingCtaSec.heading) || (demoFb && demoFb.givingHeading) || 'Stewardship with Purpose',

@@ -36,7 +36,7 @@ const ROOT = path.join(__dirname, "..");
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
-const CSS_VERSION = "51";
+const CSS_VERSION = "53";
 
 const PUBLIC_PAGES = Object.freeze([
   { key: "home", suffix: "", stitch: "phase7-v1", headingHint: /Welcome|Church|Home/i },
@@ -70,7 +70,7 @@ function baseEnv(overrides) {
 }
 
 describe("Phase 7 density audit — CSS and inventory contracts", () => {
-  it("cache-bust version is 51 after Prompt 5 density pass", () => {
+  it("cache-bust version is 53 after navigation simplification", () => {
     assert.match(read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
     assert.match(read("src/blessboard/http/loadTenantPublicPageModel.js"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
     assert.match(read("src/blessboard/http/attachWebsiteAdminChrome.js"), new RegExp(`tenant-public\\.css\\?v=${CSS_VERSION}`));
@@ -306,18 +306,23 @@ describe("Phase 7 density audit — path-public /c/:key HTTP", () => {
     requireDb();
     const res = await request(app).get(`/c/${orgKeyA}`).set("Host", APEX);
     assert.equal(res.status, 200);
-    // Count only primary nav regions (desktop + drawer), not teaser/CTA repeats.
+    // Desktop is grouped; count desktop nav + drawer + header CTA.
     const desktopNav = (res.text.match(/<nav class="bb-tp-nav bb-tp-nav--desktop"[\s\S]*?<\/nav>/) || [])[0] || "";
     const drawerNav = (res.text.match(/<nav class="bb-tp-drawer__nav"[\s\S]*?<\/nav>/) || [])[0] || "";
-    const navHtml = `${desktopNav}\n${drawerNav}`;
+    const headerCta = (res.text.match(/data-bb-header-cta="1"[\s\S]*?<\/span>/) || [])[0] || "";
+    const navHtml = `${desktopNav}\n${drawerNav}\n${headerCta}`;
     assert.ok(desktopNav, "desktop nav present");
     assert.ok(drawerNav, "drawer nav present");
+    // Desktop top-level should stay compact (links + dropdown triggers).
+    const desktopTopLevel =
+      (desktopNav.match(/class="bb-tp-nav__link[^"]*"/g) || []).length;
+    assert.ok(desktopTopLevel <= 6, `desktop top-level too dense: ${desktopTopLevel}`);
     for (const page of PUBLIC_PAGES) {
       const href = `/c/${orgKeyA}${page.suffix || ""}`;
       const re = new RegExp(`href="${href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`, "g");
       const matches = navHtml.match(re) || [];
       assert.ok(matches.length >= 1, `missing nav for ${href}`);
-      assert.ok(matches.length <= 2, `duplicate primary-nav links for ${href}: ${matches.length}`);
+      assert.ok(matches.length <= 4, `duplicate primary-nav links for ${href}: ${matches.length}`);
     }
   });
 

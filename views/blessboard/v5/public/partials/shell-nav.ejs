@@ -1,21 +1,68 @@
 <%#
-  Desktop / shared primary nav — branch-aware hrefs from navItems / publicPaths.
+  Desktop primary nav — grouped dropdowns from navigation.primaryItems.
 %>
 <%
-  var _nav = (typeof navItems !== 'undefined' && navItems && navItems.length) ? navItems : [];
+  var _navModel = (typeof navigation !== 'undefined' && navigation) ? navigation : null;
+  var _nav = (_navModel && _navModel.primaryItems && _navModel.primaryItems.length)
+    ? _navModel.primaryItems
+    : ((typeof navItems !== 'undefined' && navItems && navItems.length) ? navItems : []);
   var _active = typeof activeNav !== 'undefined' ? activeNav : '';
   var _navClass = typeof navClass !== 'undefined' && navClass ? navClass : 'bb-tp-nav bb-tp-nav--desktop';
   var _label = typeof navAriaLabel !== 'undefined' && navAriaLabel ? navAriaLabel : 'Primary';
+  function _navItemActive(item) {
+    if (!item) return false;
+    if (item.isActive) return true;
+    if (item.key && _active === item.key) return true;
+    return false;
+  }
 %>
 <div class="bb-tp-nav-wrap" data-bb-nav-wrap="1">
   <nav class="<%= _navClass %>" data-bb-nav="<%= typeof navDataAttr !== 'undefined' && navDataAttr ? navDataAttr : 'desktop' %>" aria-label="<%= _label %>">
     <% _nav.forEach(function (item) { %>
-    <a
-      href="<%= item.href %>"
-      class="bb-tp-nav__link<%= _active === item.key ? ' is-active' : '' %>"
-      data-bb-nav-link="<%= item.key %>"
-      <% if (_active === item.key) { %>aria-current="page"<% } %>
-    ><%= item.label %></a>
+      <% if (item.children && item.children.length) { %>
+      <div
+        class="bb-tp-nav-dropdown<%= _navItemActive(item) ? ' is-section-active' : '' %>"
+        data-bb-nav-dropdown="1"
+        data-bb-nav-group="<%= item.key %>"
+      >
+        <button
+          type="button"
+          class="bb-tp-nav__link bb-tp-nav-dropdown__trigger<%= _navItemActive(item) ? ' is-active' : '' %>"
+          aria-expanded="false"
+          aria-haspopup="true"
+          aria-controls="bb-tp-nav-menu-<%= item.key %>"
+          id="bb-tp-nav-trigger-<%= item.key %>"
+          data-bb-nav-trigger="<%= item.key %>"
+        ><%= item.label %><span class="material-symbols-outlined bb-tp-nav-dropdown__chevron" aria-hidden="true">expand_more</span></button>
+        <ul
+          class="bb-tp-nav-dropdown__menu"
+          id="bb-tp-nav-menu-<%= item.key %>"
+          role="menu"
+          aria-labelledby="bb-tp-nav-trigger-<%= item.key %>"
+          hidden
+        >
+          <% item.children.forEach(function (child) { %>
+          <li role="none">
+            <a
+              role="menuitem"
+              href="<%= child.href %>"
+              class="bb-tp-nav-dropdown__link<%= _navItemActive(child) ? ' is-active' : '' %>"
+              data-bb-nav-link="<%= child.key %>"
+              <% if (_navItemActive(child)) { %>aria-current="page"<% } %>
+              <% if (child.external) { %>target="_blank" rel="noopener noreferrer"<% } %>
+            ><%= child.label %></a>
+          </li>
+          <% }) %>
+        </ul>
+      </div>
+      <% } else if (item.href) { %>
+      <a
+        href="<%= item.href %>"
+        class="bb-tp-nav__link<%= _navItemActive(item) ? ' is-active' : '' %>"
+        data-bb-nav-link="<%= item.key %>"
+        <% if (_navItemActive(item)) { %>aria-current="page"<% } %>
+      ><%= item.label %></a>
+      <% } %>
     <% }) %>
   </nav>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
