@@ -100,7 +100,7 @@ describe("blessboard branch website publish review", () => {
         productTenantKey: "pub-review-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true, provA.message);
@@ -115,7 +115,7 @@ describe("blessboard branch website publish review", () => {
         productTenantKey: "pub-review-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
 
@@ -179,7 +179,7 @@ describe("blessboard branch website publish review", () => {
         true
       );
       const session = await createV5Session(pool, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         userId: created.user.id,
         organizationId: orgA.id,
       });

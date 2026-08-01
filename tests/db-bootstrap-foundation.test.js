@@ -145,7 +145,7 @@ describe("db bootstrap foundation", () => {
     );
     assert.deepEqual(
       deployments.rows.map((r) => r.deployment_code),
-      ["blessboard-com-v4", "blessboard-org-v5"]
+      ["blessboard-com-production", "blessboard-org-staging"]
     );
 
     const products = await pool.query(

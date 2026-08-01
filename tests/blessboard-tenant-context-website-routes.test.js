@@ -35,7 +35,7 @@ const {
   loadActiveBranchForChurch,
 } = require("../src/blessboard/http/loadSessionScopedTenantContext");
 
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
 

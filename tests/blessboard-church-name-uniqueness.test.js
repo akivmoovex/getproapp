@@ -27,7 +27,7 @@ const {
 const { slugifyBranchKey, normalizeBranchKey } = require("../src/blessboard/services/branchKey");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 
 describe("blessboard church name uniqueness + branch key slugify", () => {
   let pool;

@@ -98,7 +98,7 @@ describe("blessboard prompt7 stage1 website governance foundation", () => {
         productTenantKey: "stage1-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true, provA.message);
@@ -139,7 +139,7 @@ describe("blessboard prompt7 stage1 website governance foundation", () => {
         productTenantKey: "stage1-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provB.ok, true, provB.message);

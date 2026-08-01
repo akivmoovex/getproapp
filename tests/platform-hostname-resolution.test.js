@@ -42,7 +42,7 @@ describe("platform hostname resolution", () => {
         `SELECT id FROM platform.products WHERE product_key = 'blessboard'`
       );
       productId = product.rows[0].id;
-      deploymentCode = "blessboard-com-v4";
+      deploymentCode = "blessboard-com-production";
 
       const org = await pool.query(
         `INSERT INTO platform.organizations

@@ -168,7 +168,7 @@ describe("loadPlatformHostContext middleware", () => {
         type: RESULT_TYPES.RESOLVED_TENANT,
         hostname: "tenant.example.test",
         domain: { id: "d1", type: "canonical", status: "active", isPrimary: true },
-        deployment: { code: "blessboard-com-v4", status: "active", jobsEnabled: true },
+        deployment: { code: "blessboard-com-production", status: "active", jobsEnabled: true },
         product: { id: "p1", key: "blessboard", displayName: "BlessBoard", status: "active" },
         organization: {
           id: "o1",
@@ -188,7 +188,7 @@ describe("loadPlatformHostContext middleware", () => {
     assert.equal(req.platformHostContext.mode, "diagnostic");
     assert.equal(req.platformHostContext.resultType, "resolved_tenant");
     assert.equal(req.platformHostContext.resolution.organization.key, "acme");
-    assert.equal(req.platformHostContext.resolution.deployment.code, "blessboard-com-v4");
+    assert.equal(req.platformHostContext.resolution.deployment.code, "blessboard-com-production");
   });
 
   it("diagnostic mode attaches resolved_apex context", async () => {
@@ -199,7 +199,7 @@ describe("loadPlatformHostContext middleware", () => {
         type: RESULT_TYPES.RESOLVED_APEX,
         hostname: "apex.example.test",
         domain: { id: "d2", type: "apex", status: "active", isPrimary: true },
-        deployment: { code: "blessboard-com-v4", status: "active", jobsEnabled: true },
+        deployment: { code: "blessboard-com-production", status: "active", jobsEnabled: true },
         product: { id: "p1", key: "blessboard", displayName: "BlessBoard", status: "active" },
         organization: null,
         organizationProduct: null,
@@ -425,14 +425,14 @@ describe("loadPlatformHostContext middleware", () => {
     const mw = createLoadPlatformHostContext({
       getMode: () => MODE_DIAGNOSTIC,
       getPool: () => ({ query: async () => ({ rows: [] }) }),
-      getDeploymentIdentity: () => ({ ok: true, status: "ok", code: "blessboard-org-v5" }),
+      getDeploymentIdentity: () => ({ ok: true, status: "ok", code: "blessboard-org-staging" }),
       resolveHostname: async (_db, _host, options) => {
         seenOptions = options;
         return {
           type: RESULT_TYPES.RESOLVED_TENANT,
           hostname: "tenant.example.test",
           domain: null,
-          deployment: { code: "blessboard-org-v5", status: "active", jobsEnabled: false },
+          deployment: { code: "blessboard-org-staging", status: "active", jobsEnabled: false },
           product: { id: "p", key: "blessboard", displayName: "BlessBoard", status: "active" },
           organization: { id: "o", key: "acme", displayName: "Acme", status: "active", dataEnvironment: "testing" },
           organizationProduct: { id: "op", status: "active", productTenantKey: "acme" },
@@ -443,8 +443,8 @@ describe("loadPlatformHostContext middleware", () => {
     });
     const req = makeReq({});
     await runMiddleware(mw, req, makeRes());
-    assert.deepEqual(seenOptions, { expectedDeploymentCode: "blessboard-org-v5" });
-    assert.equal(req.platformHostContext.expectedDeploymentCode, "blessboard-org-v5");
+    assert.deepEqual(seenOptions, { expectedDeploymentCode: "blessboard-org-staging" });
+    assert.equal(req.platformHostContext.expectedDeploymentCode, "blessboard-org-staging");
     assert.equal(req.platformHostContext.deploymentComparisonAvailable, true);
     assert.equal(req.platformHostContext.resultType, "resolved_tenant");
   });
@@ -453,14 +453,14 @@ describe("loadPlatformHostContext middleware", () => {
     const mw = createLoadPlatformHostContext({
       getMode: () => MODE_DIAGNOSTIC,
       getPool: () => ({ query: async () => ({ rows: [] }) }),
-      getDeploymentIdentity: () => ({ ok: true, status: "ok", code: "blessboard-com-v4" }),
+      getDeploymentIdentity: () => ({ ok: true, status: "ok", code: "blessboard-com-production" }),
       resolveHostname: async (_db, _host, options) => {
-        assert.equal(options.expectedDeploymentCode, "blessboard-com-v4");
+        assert.equal(options.expectedDeploymentCode, "blessboard-com-production");
         return {
           type: RESULT_TYPES.RESOLVED_TENANT,
           hostname: "tenant.example.test",
           domain: null,
-          deployment: { code: "blessboard-com-v4", status: "active", jobsEnabled: true },
+          deployment: { code: "blessboard-com-production", status: "active", jobsEnabled: true },
           product: null,
           organization: { id: "o", key: "acme", displayName: "Acme", status: "active", dataEnvironment: "testing" },
           organizationProduct: null,
@@ -478,12 +478,12 @@ describe("loadPlatformHostContext middleware", () => {
     const mw = createLoadPlatformHostContext({
       getMode: () => MODE_DIAGNOSTIC,
       getPool: () => ({ query: async () => ({ rows: [] }) }),
-      getDeploymentIdentity: () => ({ ok: true, status: "ok", code: "blessboard-org-v5" }),
+      getDeploymentIdentity: () => ({ ok: true, status: "ok", code: "blessboard-org-staging" }),
       resolveHostname: async () => ({
         type: RESULT_TYPES.DEPLOYMENT_MISMATCH,
         hostname: "tenant.example.test",
         domain: null,
-        deployment: { code: "blessboard-com-v4", status: "active", jobsEnabled: true },
+        deployment: { code: "blessboard-com-production", status: "active", jobsEnabled: true },
         product: null,
         organization: null,
         organizationProduct: null,
@@ -509,7 +509,7 @@ describe("loadPlatformHostContext middleware", () => {
           type: RESULT_TYPES.RESOLVED_TENANT,
           hostname: "tenant.example.test",
           domain: null,
-          deployment: { code: "blessboard-com-v4", status: "active", jobsEnabled: true },
+          deployment: { code: "blessboard-com-production", status: "active", jobsEnabled: true },
           product: null,
           organization: { id: "o", key: "acme", displayName: "A", status: "active", dataEnvironment: "testing" },
           organizationProduct: null,

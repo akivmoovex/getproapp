@@ -119,7 +119,7 @@ describe("registration risk review (Prompt 18)", () => {
           type: "test",
           source: "prompt18",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(provisioned.ok, true, provisioned.message || provisioned.status);
@@ -158,7 +158,7 @@ describe("registration risk review (Prompt 18)", () => {
       env: {
         NODE_ENV: "test",
         BLESSBOARD_TENANT_ROUTING_MODE: "off",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         ...envExtra,
@@ -213,7 +213,7 @@ describe("registration risk review (Prompt 18)", () => {
     assert.equal(validation.ok, true);
     const result = await submitInstantFreeChurchRegistration(pool, { ip: "203.0.113.10" }, validation, {
       dataEnvironment: "testing",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true, result.error || result.code);
     assert.equal(result.riskDecision, RISK_DECISIONS.ALLOW);
@@ -364,7 +364,7 @@ describe("registration risk review (Prompt 18)", () => {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
       organizationKey: key,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       dataEnvironment: "testing",
     });
     assert.equal(approved.ok, true, approved.message || approved.status);
@@ -375,7 +375,7 @@ describe("registration risk review (Prompt 18)", () => {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
       organizationKey: key,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(again.ok, true);
     assert.equal(again.alreadyProvisioned, true);
@@ -519,7 +519,7 @@ describe("registration risk review (Prompt 18)", () => {
 
     const session = await createV5Session(pool, {
       userId: platformAdmin.userId,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       organizationId: platformAdmin.organizationId,
       churchId: null,
       branchId: null,

@@ -47,7 +47,7 @@ const PLATFORM_ARGS = [
   "--domain-type",
   "canonical",
   "--deployment",
-  "blessboard-org-v5",
+  "blessboard-org-staging",
 ];
 
 function runPlatformCli(args, envExtra = {}) {
@@ -193,7 +193,7 @@ describe("platform tenant provision CLI safety", () => {
   it("wrong deployment is rejected", async () => {
     requireDb();
     const before = await orgCount();
-    const args = PLATFORM_ARGS.map((v) => (v === "blessboard-org-v5" ? "missing-deployment-code" : v));
+    const args = PLATFORM_ARGS.map((v) => (v === "blessboard-org-staging" ? "missing-deployment-code" : v));
     const result = runPlatformCli([...args, "--confirm"], {
       DATABASE_URL: databaseUrl,
       DATABASE_IDENTITY_EXPECTED: IDENTITY_KEY,
@@ -266,7 +266,7 @@ describe("platform tenant provision CLI safety", () => {
         "--domain-type",
         "canonical",
         "--deployment",
-        "blessboard-org-v5",
+        "blessboard-org-staging",
         "--confirm",
       ],
       {
@@ -291,7 +291,7 @@ describe("platform tenant provision CLI safety", () => {
       productTenantKey: "rollback-org",
       hostname: "rollback.blessboard.test",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
       dryRun: true,
     });
@@ -307,7 +307,7 @@ describe("platform tenant provision CLI safety", () => {
       productTenantKey: "safety-org",
       hostname: "safety-mismatch.blessboard.test",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     assert.equal(bad.ok, false);

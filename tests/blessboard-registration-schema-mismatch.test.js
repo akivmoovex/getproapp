@@ -145,7 +145,7 @@ describe("public registration schema mismatch (Prompt 073)", () => {
       pool,
       { ip: "203.0.113.73" },
       validation,
-      { dataEnvironment: "testing", deploymentCode: "blessboard-org-v5" }
+      { dataEnvironment: "testing", deploymentCode: "blessboard-org-staging" }
     );
     assert.equal(result.ok, true, result.error || result.code);
     assert.ok(result.application && result.application.id);

@@ -51,7 +51,7 @@ describe("blessboard branch-list", () => {
         productTenantKey: "bl-a",
         hostname: "bl-a.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);
@@ -65,7 +65,7 @@ describe("blessboard branch-list", () => {
         productTenantKey: "bl-b",
         hostname: "bl-b.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgB.ok, true, orgB.message);

@@ -93,7 +93,7 @@ describe("media uploads kill switch", () => {
 });
 
 describe("V5 jobs kill switch fail-closed", () => {
-  it("blessboard-org-v5 unset disables without foundation testing pairing", () => {
+  it("blessboard-org-staging unset disables without foundation testing pairing", () => {
     const parsed = parseBlessBoardJobsEnabled({
       PLATFORM_DEPLOYMENT_CODE: V5_FOUNDATION_DEPLOYMENT_CODE,
       DEPLOYMENT_ENV: "production",
@@ -105,13 +105,13 @@ describe("V5 jobs kill switch fail-closed", () => {
   it("V4 unset remains enabled; V4 unsupported still enables", () => {
     assert.equal(
       parseBlessBoardJobsEnabled({
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-com-v4",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-com-production",
         DEPLOYMENT_ENV: "production",
       }).enabled,
       true
     );
     const bad = parseBlessBoardJobsEnabled({
-      PLATFORM_DEPLOYMENT_CODE: "blessboard-com-v4",
+      PLATFORM_DEPLOYMENT_CODE: "blessboard-com-production",
       DEPLOYMENT_ENV: "production",
       BLESSBOARD_JOBS_ENABLED: "maybe",
     });

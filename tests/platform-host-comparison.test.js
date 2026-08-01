@@ -75,7 +75,7 @@ function platformCtx(partial) {
   return {
     enabled: true,
     mode: "diagnostic",
-    expectedDeploymentCode: partial.expectedDeploymentCode != null ? partial.expectedDeploymentCode : "blessboard-com-v4",
+    expectedDeploymentCode: partial.expectedDeploymentCode != null ? partial.expectedDeploymentCode : "blessboard-com-production",
     deploymentComparisonAvailable: partial.deploymentComparisonAvailable !== false,
     hostname: partial.hostname || "demo.blessboard.com",
     resultType: partial.resultType,
@@ -91,7 +91,7 @@ describe("platform deployment code config", () => {
   it("valid deployment code is normalized", () => {
     const r = getPlatformDeploymentCode({ PLATFORM_DEPLOYMENT_CODE: " BlessBoard-Com-V4 " });
     assert.equal(r.ok, true);
-    assert.equal(r.code, "blessboard-com-v4");
+    assert.equal(r.code, "blessboard-com-production");
   });
 
   it("missing deployment code is unavailable", () => {
@@ -153,7 +153,7 @@ describe("platform vs legacy host comparison", () => {
           type: "resolved_tenant",
           organization: { key: "acme", dataEnvironment: "testing" },
           product: { key: "blessboard" },
-          deployment: { code: "blessboard-com-v4" },
+          deployment: { code: "blessboard-com-production" },
         },
       }),
       legacy
@@ -178,7 +178,7 @@ describe("platform vs legacy host comparison", () => {
           type: "resolved_tenant",
           organization: { key: "acme" },
           product: { key: "blessboard" },
-          deployment: { code: "blessboard-com-v4" },
+          deployment: { code: "blessboard-com-production" },
         },
       }),
       { kind: "none", tenantKey: null, productHint: null }
@@ -194,7 +194,7 @@ describe("platform vs legacy host comparison", () => {
           type: "resolved_tenant",
           organization: { key: "alpha" },
           product: { key: "blessboard" },
-          deployment: { code: "blessboard-com-v4" },
+          deployment: { code: "blessboard-com-production" },
         },
       }),
       { kind: "tenant", tenantKey: "beta", productHint: "blessboard" }
@@ -210,7 +210,7 @@ describe("platform vs legacy host comparison", () => {
           type: "resolved_tenant",
           organization: { key: "acme" },
           product: { key: "getpro" },
-          deployment: { code: "blessboard-com-v4" },
+          deployment: { code: "blessboard-com-production" },
         },
       }),
       { kind: "tenant", tenantKey: "acme", productHint: "blessboard" }
@@ -294,7 +294,7 @@ describe("platform vs legacy host comparison", () => {
           type: "resolved_tenant",
           organization: { key: "acme" },
           product: { key: "blessboard" },
-          deployment: { code: "blessboard-com-v4" },
+          deployment: { code: "blessboard-com-production" },
         },
       }),
       isChurchHost: true,
@@ -345,7 +345,7 @@ describe("platform vs legacy host comparison", () => {
           type: "resolved_tenant",
           organization: { key: "acme", dataEnvironment: "testing" },
           product: { key: "blessboard" },
-          deployment: { code: "blessboard-com-v4" },
+          deployment: { code: "blessboard-com-production" },
         },
       }),
       isChurchHost: true,
@@ -376,7 +376,7 @@ describe("platform vs legacy host comparison", () => {
           type: "resolved_tenant",
           organization: { key: "acme" },
           product: { key: "blessboard" },
-          deployment: { code: "blessboard-com-v4" },
+          deployment: { code: "blessboard-com-production" },
         },
       }),
       isChurchHost: true,
@@ -428,7 +428,7 @@ describe("loader + deployment identity integration", () => {
     const load = createLoadPlatformHostContext({
       getMode: () => MODE_OFF,
       getPool: () => ({ query: async () => ({ rows: [] }) }),
-      getDeploymentIdentity: () => ({ ok: true, status: "ok", code: "blessboard-com-v4" }),
+      getDeploymentIdentity: () => ({ ok: true, status: "ok", code: "blessboard-com-production" }),
       resolveHostname: async () => {
         resolveCalls += 1;
         return { type: RESULT_TYPES.RESOLVED_TENANT };

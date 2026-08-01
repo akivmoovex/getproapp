@@ -308,7 +308,7 @@ describe("v4 to v5 migration tooling", () => {
         runConfig: {
           dataEnvironmentDefault: "pilot",
           canonicalDomainSuffix: "blessboard.org",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
         idMap,
       }

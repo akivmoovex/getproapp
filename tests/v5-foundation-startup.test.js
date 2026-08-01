@@ -168,7 +168,7 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
       enableDiagnosticHostContext: false,
       env: {
         NODE_ENV: "test",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
       },
     });
@@ -268,7 +268,7 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
       productTenantKey: "foundation-tenant",
       hostname: "foundation-tenant.blessboard.org",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     await provisionBlessBoardChurch(pool, {
@@ -335,7 +335,7 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
           dataEnvironment: "testing",
         },
         domain: null,
-        deployment: { code: "blessboard-org-v5" },
+        deployment: { code: "blessboard-org-staging" },
         organizationProduct: null,
       }),
     });

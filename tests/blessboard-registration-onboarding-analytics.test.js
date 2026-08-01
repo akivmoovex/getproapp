@@ -101,7 +101,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
           type: "test",
           source: "prompt27",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(bootProv.ok, true, bootProv.message || bootProv.status);
@@ -240,14 +240,14 @@ describe("registration onboarding analytics (Prompt 27)", () => {
           type: "test",
           source: "prompt27",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(growthProv.ok, true, growthProv.message || growthProv.status);
       fixtures.growthOrgId = growthProv.records.organizationId;
 
       await recordAuditEvent(pool, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         organizationId: fixtures.growthOrgId,
         actorUserId: users.platform.id,
         outcome: "success",
@@ -263,7 +263,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
       });
 
       await recordAuditEvent(pool, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         organizationId: fixtures.organizationId,
         actorUserId: users.platform.id,
         outcome: "success",
@@ -304,7 +304,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
         getPool: () => pool,
         env: {
           NODE_ENV: "test",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
           SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
           SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
           BLESSBOARD_TENANT_ROUTING_MODE: "off",
@@ -332,7 +332,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
 
   async function sessionCookieFor(user) {
     const session = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: user.id,
       organizationId: fixtures.organizationId,
       churchId: null,

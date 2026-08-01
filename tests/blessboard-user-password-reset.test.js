@@ -33,7 +33,7 @@ const authRepo = require("../src/blessboard/repositories/blessBoardAuthRepositor
 
 const ROOT = path.resolve(__dirname, "..");
 const IDENTITY_KEY = "blessboard-platform-v5";
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const OLD_PASSWORD = "old-password-ten";
 const NEW_PASSWORD = "new-password-twelve";
 const WEAK_PASSWORD = "short";

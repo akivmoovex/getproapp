@@ -98,7 +98,7 @@ describe("hq broadcast center v2", () => {
         productTenantKey: "msg-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);
@@ -141,7 +141,7 @@ describe("hq broadcast center v2", () => {
         productTenantKey: "msg-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgB.ok, true, orgB.message);
@@ -169,7 +169,7 @@ describe("hq broadcast center v2", () => {
           assert.equal(assigned.ok, true, assigned.message || assigned.reason);
         }
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId: orgRec.records.organization.id,
         });

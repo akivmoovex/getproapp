@@ -111,7 +111,7 @@ describe("authoritative host allow-list http", () => {
         productTenantKey: "pilot-org",
         hostname: PILOT_HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(pilot.ok, true, pilot.message);
@@ -137,7 +137,7 @@ describe("authoritative host allow-list http", () => {
         productTenantKey: "other-org",
         hostname: OTHER_HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(other.ok, true, other.message);
@@ -161,7 +161,7 @@ describe("authoritative host allow-list http", () => {
       await pool.query(
         `INSERT INTO platform.domains
            (organization_id, product_id, deployment_id, hostname, domain_type, status, is_primary)
-         VALUES ($1, $2, 'blessboard-org-v5', $3, 'custom', 'active', false)`,
+         VALUES ($1, $2, 'blessboard-org-staging', $3, 'custom', 'active', false)`,
         [org.rows[0].id, productBlessboardId, CUSTOM_HOST]
       );
     } catch (err) {
@@ -184,7 +184,7 @@ describe("authoritative host allow-list http", () => {
       getPool: () => pool,
       env: {
         NODE_ENV: "test",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -263,7 +263,7 @@ describe("authoritative host allow-list http", () => {
       assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
     } finally {
       await pool.query(
-        `UPDATE platform.domains SET deployment_id = 'blessboard-org-v5' WHERE hostname = $1`,
+        `UPDATE platform.domains SET deployment_id = 'blessboard-org-staging' WHERE hostname = $1`,
         [PILOT_HOST]
       );
     }

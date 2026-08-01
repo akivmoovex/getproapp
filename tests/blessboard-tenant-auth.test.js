@@ -167,7 +167,7 @@ describe("blessboard tenant-auth transfer http", () => {
         productTenantKey: "ta-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true, provA.message);
@@ -203,7 +203,7 @@ describe("blessboard tenant-auth transfer http", () => {
         productTenantKey: "ta-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provB.ok, true);
@@ -259,7 +259,7 @@ describe("blessboard tenant-auth transfer http", () => {
 
       const env = {
         NODE_ENV: "test",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -479,7 +479,7 @@ describe("blessboard tenant-auth transfer http", () => {
       [churchA.id]
     );
     const created2 = await createTenantLoginTransferRequest(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       hostname: HOST_A,
       organizationId: orgA.id,
       churchId: churchA.id,
@@ -495,7 +495,7 @@ describe("blessboard tenant-auth transfer http", () => {
     );
     const loaded = await loadAuthTransferByRawToken(pool, {
       rawToken: created2.rawToken,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(loaded.ok, false);
     assert.equal(loaded.status, "expired");
@@ -573,7 +573,7 @@ describe("blessboard tenant-auth transfer http", () => {
       [churchA.id]
     );
     const created = await createTenantLoginTransferRequest(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       hostname: HOST_A,
       organizationId: orgA.id,
       churchId: churchA.id,
@@ -582,14 +582,14 @@ describe("blessboard tenant-auth transfer http", () => {
     assert.equal(created.ok, true);
     const issued = await issueTenantLoginRedeemCode(pool, {
       rawRequestToken: created.rawToken,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: users.hq.id,
       tenant: tenantFromTransfer(created.transfer),
     });
     assert.equal(issued.ok, true);
     const wrongHost = await redeemTenantLoginTransfer(pool, {
       rawToken: issued.rawToken,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       hostname: HOST_B,
       organizationId: orgA.id,
       churchId: churchA.id,
@@ -600,7 +600,7 @@ describe("blessboard tenant-auth transfer http", () => {
 
     const wrongDeploy = await redeemTenantLoginTransfer(pool, {
       rawToken: issued.rawToken,
-      deploymentCode: "blessboard-com-v4",
+      deploymentCode: "blessboard-com-production",
       hostname: HOST_A,
       organizationId: orgA.id,
       churchId: churchA.id,

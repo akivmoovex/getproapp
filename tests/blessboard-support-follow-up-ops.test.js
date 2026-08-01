@@ -126,7 +126,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
           type: "test",
           source: "prompt26",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(bootProv.ok, true, bootProv.message || bootProv.status);
@@ -169,7 +169,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
         getPool: () => pool,
         env: {
           NODE_ENV: "test",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
           SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
           SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
           BLESSBOARD_TENANT_ROUTING_MODE: "off",
@@ -197,7 +197,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
 
   async function sessionCookieFor(user) {
     const session = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: user.id,
       organizationId: fixtures.organizationId || null,
       churchId: null,
@@ -253,7 +253,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
       applicationId: fixtures.networkAppId,
       supportUserId: users.platform2.id,
       actorUserId: users.platform.id,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(assigned.ok, true, assigned.message);
     assert.equal(assigned.scope, "application");
@@ -278,7 +278,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
       note: noteText,
       followUpStatus: "contacted",
       nextFollowUpAt: next,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(contact.ok, true, contact.message);
     assert.equal(contact.scope, "application");
@@ -315,7 +315,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
       applicationId: fixtures.reviewAppId,
       actorUserId: users.platform.id,
       organizationKey: key,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       dataEnvironment: "testing",
     });
     assert.equal(first.ok, true, first.message);
@@ -326,7 +326,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
       applicationId: fixtures.reviewAppId,
       actorUserId: users.platform.id,
       organizationKey: key,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       dataEnvironment: "testing",
     });
     assert.equal(second.ok, true);
@@ -362,7 +362,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
       applicationId: held.id,
       actorUserId: users.platform.id,
       reason: "Unable to verify church identity after review.",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(rejected.ok, true, rejected.message);
     const row = await appRepo.findApplicationById(pool, held.id);
@@ -405,7 +405,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
       applicationId: held.id,
       actorUserId: users.platform.id,
       organizationKey: key,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       dataEnvironment: "testing",
     });
     assert.equal(retry.ok, true, retry.message);
@@ -416,7 +416,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
       applicationId: held.id,
       actorUserId: users.platform.id,
       organizationKey: key,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       dataEnvironment: "testing",
     });
     assert.equal(again.ok, true);

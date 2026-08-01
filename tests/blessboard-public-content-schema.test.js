@@ -99,7 +99,7 @@ async function seedChurch(pool, key) {
     productTenantKey: key,
     hostname: `${key}.blessboard.test`,
     domainType: "canonical",
-    deploymentCode: "blessboard-org-v5",
+    deploymentCode: "blessboard-org-staging",
     isPrimary: true,
   });
   assert.equal(org.ok, true, org.message);

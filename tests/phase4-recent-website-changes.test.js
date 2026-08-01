@@ -113,7 +113,7 @@ describe("phase4 recent website changes", () => {
           productTenantKey: key,
           hostname: host,
           domainType: "canonical",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           isPrimary: true,
         });
         assert.equal(prov.ok, true, prov.message);
@@ -161,7 +161,7 @@ describe("phase4 recent website changes", () => {
         assert.equal(created.ok, true, created.message);
         assert.equal((await assignBlessBoardRole(pool, role)).ok, true);
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId: orgId,
         });

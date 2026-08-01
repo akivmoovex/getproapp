@@ -109,7 +109,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       env: {
         NODE_ENV: "test",
         BLESSBOARD_TENANT_ROUTING_MODE: "off",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         // Enquiry-only suite: disable automatic Foundation provisioning.
@@ -536,7 +536,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       env: {
         NODE_ENV: "test",
         BLESSBOARD_TENANT_ROUTING_MODE: "off",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED: "0",

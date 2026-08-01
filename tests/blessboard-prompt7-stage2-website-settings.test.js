@@ -62,7 +62,7 @@ const HOST = "stage2-a.blessboard.org";
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -119,7 +119,7 @@ describe("blessboard prompt7 stage2 website settings inheritance", () => {
         productTenantKey: "stage2-a",
         hostname: HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true, provA.message);
@@ -171,7 +171,7 @@ describe("blessboard prompt7 stage2 website settings inheritance", () => {
         productTenantKey: "stage2-b",
         hostname: "stage2-b.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provB.ok, true, provB.message);

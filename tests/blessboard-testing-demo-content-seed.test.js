@@ -34,7 +34,7 @@ const IDENTITY_KEY = "blessboard-platform-v5";
 const ORG = "demo-church";
 const CHURCH = "demo-church";
 const HOST = "demo-church.blessboard.test";
-const DEPLOY = "blessboard-org-v5";
+const DEPLOY = "blessboard-org-staging";
 const ACTOR = "church-hq-admin@example.test";
 
 function runCli(args, envExtra = {}) {

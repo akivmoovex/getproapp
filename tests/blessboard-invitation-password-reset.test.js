@@ -137,7 +137,7 @@ describe("invitation delivery and password reset", () => {
           type: "test",
           source: "auth-fix",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(provisioned.ok, true, provisioned.message);
@@ -180,7 +180,7 @@ describe("invitation delivery and password reset", () => {
           NODE_ENV: "test",
           SESSION_SECRET: "test-session-secret-for-csrf-32chars",
           BLESSBOARD_APEX_ORIGIN: "https://blessboard.org",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         },
       });
     } catch (err) {
@@ -412,7 +412,7 @@ describe("invitation delivery and password reset", () => {
 
     const session = await createV5Session(pool, {
       userId: platformAdmin.id,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       organizationId: org.id,
     });
     assert.equal(session.ok, true, session.code);

@@ -236,7 +236,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
       productTenantKey: key,
       hostname: `${key}.blessboard.test`,
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
 
     const app = await insertApplication({ church_name: key });
@@ -371,7 +371,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
       dataEnvironment: "testing",
       productKey: "blessboard",
       productTenantKey: key,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       skipDomain: true,
     });
     assert.equal(result.ok, true);

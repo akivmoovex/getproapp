@@ -34,7 +34,7 @@ const BASE_INPUT = {
   productTenantKey: "demo-church",
   hostname: "demo.blessboard.test",
   domainType: "canonical",
-  deploymentCode: "blessboard-org-v5",
+  deploymentCode: "blessboard-org-staging",
   isPrimary: true,
 };
 
@@ -84,7 +84,7 @@ describe("platform tenant provisioning", () => {
     assert.equal(result.created.domain, true);
     assert.equal(result.records.organization.key, "demo-church");
     assert.equal(result.records.domain.hostname, "demo.blessboard.test");
-    assert.equal(result.records.domain.deploymentCode, "blessboard-org-v5");
+    assert.equal(result.records.domain.deploymentCode, "blessboard-org-staging");
     const after = await counts();
     assert.equal(after.organizations, before.organizations + 1);
     assert.equal(after.enrolments, before.enrolments + 1);
@@ -241,7 +241,7 @@ describe("platform tenant provisioning", () => {
     await pool.query(
       `INSERT INTO platform.domains
          (organization_id, product_id, deployment_id, hostname, domain_type, status, is_primary)
-       VALUES ($1, $2, 'blessboard-org-v5', 'cross-product.blessboard.test', 'canonical', 'active', true)`,
+       VALUES ($1, $2, 'blessboard-org-staging', 'cross-product.blessboard.test', 'canonical', 'active', true)`,
       [org.rows[0].id, product.rows[0].id]
     );
     const conflict = await provisionPlatformTenant(pool, {
@@ -260,7 +260,7 @@ describe("platform tenant provisioning", () => {
     const conflict = await provisionPlatformTenant(pool, {
       ...BASE_INPUT,
       hostname: "demo.blessboard.test",
-      deploymentCode: "blessboard-com-v4",
+      deploymentCode: "blessboard-com-production",
     });
     assert.equal(conflict.status, STATUS.HOSTNAME_CONFLICT);
   });

@@ -7,10 +7,10 @@
  * Password required only for --confirm (prefer --password-stdin).
  */
 
-const { Pool } = require("pg");
 const {
   parseWriteMode,
   resolveDatabaseUrlSafe,
+  createProvisionPool,
   requireMatchedIdentity,
   assertNoLegacyPublicTables,
   buildProvisionReport,
@@ -156,7 +156,7 @@ async function main() {
     process.exit(exitCode);
   }
 
-  const pool = new Pool({ connectionString: dbResolved.connectionString, max: 2 });
+  const pool = createProvisionPool(dbResolved.connectionString, { max: 2 });
   try {
     const identity = await requireMatchedIdentity(pool);
     if (!identity.ok) {

@@ -36,7 +36,7 @@ const { authenticateBlessBoardUser } = require("../src/blessboard/services/authe
 const { hashSessionToken } = require("../src/platform/session/sessionToken");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const PASSWORD = "correct-horse-battery-staple";
 const HOST = "invite-a.blessboard.org";
 

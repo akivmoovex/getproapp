@@ -6,10 +6,10 @@
  * Dry-run is the default. Writes require --confirm.
  */
 
-const { Pool } = require("pg");
 const {
   parseWriteMode,
   resolveDatabaseUrlSafe,
+  createProvisionPool,
   requireMatchedIdentity,
   assertNoLegacyPublicTables,
   buildProvisionReport,
@@ -111,7 +111,7 @@ async function main() {
     process.exit(exitCode);
   }
 
-  const pool = new Pool({ connectionString: dbResolved.connectionString, max: 2 });
+  const pool = createProvisionPool(dbResolved.connectionString, { max: 2 });
   try {
     const identity = await requireMatchedIdentity(pool);
     if (!identity.ok) {

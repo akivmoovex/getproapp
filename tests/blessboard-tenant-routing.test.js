@@ -60,7 +60,7 @@ function cookieHeader(...pairs) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "off",
@@ -109,7 +109,7 @@ describe("blessboard tenant routing http", () => {
         productTenantKey: "route-tenant",
         hostname: TENANT_HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provisioned.ok, true, provisioned.message);
@@ -232,7 +232,7 @@ describe("blessboard tenant routing http", () => {
     assert.match(res.text, /testing/i);
     assert.doesNotMatch(res.text, new RegExp(orgId || "never", "i"));
     assert.doesNotMatch(res.text, new RegExp(churchId || "never", "i"));
-    assert.doesNotMatch(res.text, /blessboard-org-v5/);
+    assert.doesNotMatch(res.text, /blessboard-org-staging/);
     assert.doesNotMatch(res.text, /church_missing|resolved_tenant|inactive_/);
   });
 
@@ -287,7 +287,7 @@ describe("blessboard tenant routing http", () => {
       assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
     } finally {
       await pool.query(
-        `UPDATE platform.domains SET deployment_id = 'blessboard-org-v5' WHERE hostname = $1`,
+        `UPDATE platform.domains SET deployment_id = 'blessboard-org-staging' WHERE hostname = $1`,
         [TENANT_HOST]
       );
     }
@@ -464,7 +464,7 @@ describe("blessboard tenant routing http", () => {
       productTenantKey: "no-church-org",
       hostname: "no-church.blessboard.org",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     const app = makeApp({ BLESSBOARD_TENANT_ROUTING_MODE: "authoritative" });
@@ -565,7 +565,7 @@ describe("blessboard tenant routing http", () => {
     assert.match(html, /Safe Branch/);
     assert.match(html, /testing/);
     assert.doesNotMatch(html, /[0-9a-f]{8}-[0-9a-f]{4}-/i);
-    assert.doesNotMatch(html, /blessboard-org-v5/);
+    assert.doesNotMatch(html, /blessboard-org-staging/);
   });
 
   it("production data environment does not show env badge", () => {

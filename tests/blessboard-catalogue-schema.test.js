@@ -25,7 +25,7 @@ async function seedOrgWithEnrolment(pool, overrides = {}) {
     productTenantKey: organizationKey,
     hostname: `${organizationKey}.blessboard.test`,
     domainType: "canonical",
-    deploymentCode: "blessboard-org-v5",
+    deploymentCode: "blessboard-org-staging",
     isPrimary: true,
   });
   assert.equal(result.ok, true, result.message);

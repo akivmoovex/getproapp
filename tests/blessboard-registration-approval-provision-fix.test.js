@@ -36,7 +36,7 @@ const {
   sanitizeRegistrationTraceFields,
 } = require("../src/blessboard/services/registrationTraceLog");
 
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const PASSWORD = "TestPassword99!";
 
 function uniq(prefix) {

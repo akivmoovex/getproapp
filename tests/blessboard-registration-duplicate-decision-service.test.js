@@ -192,7 +192,7 @@ describe("registrationDuplicateReviewDecisionService (Prompt 052)", () => {
         reason: "Operator confirmed same church after documents review",
         actorUserId: ADMIN_ID,
         now: NOW,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
       },
       {
         getRegistrationDuplicateMatchById: async () => baseMatch({ risk_level: "strong" }),

@@ -7,9 +7,9 @@
  * Dry-run / no writes. Does not fall back to GETPRO_DATABASE_URL.
  */
 
-const { Pool } = require("pg");
 const {
   resolveDatabaseUrlSafe,
+  createProvisionPool,
   requireMatchedIdentity,
   assertNoLegacyPublicTables,
   assertNoSecretsInText,
@@ -36,7 +36,7 @@ async function main() {
     process.exit(1);
   }
 
-  const pool = new Pool({ connectionString: dbResolved.connectionString, max: 2 });
+  const pool = createProvisionPool(dbResolved.connectionString, { max: 2 });
   try {
     await pool.query("SELECT 1 AS ok");
 

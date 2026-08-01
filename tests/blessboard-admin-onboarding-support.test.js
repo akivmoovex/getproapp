@@ -113,7 +113,7 @@ describe("platform-admin organization onboarding support (Phase 6)", () => {
           type: "test",
           source: "phase6",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(provisioned.ok, true, provisioned.message);
@@ -131,7 +131,7 @@ describe("platform-admin organization onboarding support (Phase 6)", () => {
         productTenantKey: otherKey,
         planKey: "free",
         skipDomain: true,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
       });
       assert.equal(plain.ok, true, plain.message || JSON.stringify(plain));
       fixtures.plainOrganizationKey = otherKey;
@@ -169,7 +169,7 @@ describe("platform-admin organization onboarding support (Phase 6)", () => {
         env: {
           ...process.env,
           NODE_ENV: "test",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
           BLESSBOARD_INSTANT_FREE_PROVISIONING: "0",
         },
       });
@@ -193,7 +193,7 @@ describe("platform-admin organization onboarding support (Phase 6)", () => {
 
   async function sessionCookie(user) {
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: user.id,
       organizationId: fixtures.organizationId,
       churchId: null,

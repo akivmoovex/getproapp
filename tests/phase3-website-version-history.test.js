@@ -45,7 +45,7 @@ const HOST_B = "wvh-b.blessboard.org";
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -109,7 +109,7 @@ describe("phase3 website version history", () => {
           productTenantKey: key,
           hostname: host,
           domainType: "canonical",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           isPrimary: true,
         });
         assert.equal(prov.ok, true, prov.message);
@@ -154,7 +154,7 @@ describe("phase3 website version history", () => {
         assert.equal(created.ok, true, created.message);
         assert.equal((await assignBlessBoardRole(pool, role)).ok, true);
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId: orgId,
         });

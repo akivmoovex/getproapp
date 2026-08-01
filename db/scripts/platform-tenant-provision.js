@@ -17,16 +17,16 @@
  *     --tenant-key diagnostic-church \
  *     --hostname diagnostic.blessboard.org \
  *     --domain-type canonical \
- *     --deployment blessboard-org-v5
+ *     --deployment blessboard-org-staging
  *
  * Usage (write):
  *   … same args … --confirm
  */
 
-const { Pool } = require("pg");
 const {
   parseWriteMode,
   resolveDatabaseUrlSafe,
+  createProvisionPool,
   requireMatchedIdentity,
   assertNoLegacyPublicTables,
   assertDeploymentTarget,
@@ -158,7 +158,7 @@ async function main() {
     process.exit(exitCode);
   }
 
-  const pool = new Pool({ connectionString: dbResolved.connectionString, max: 2 });
+  const pool = createProvisionPool(dbResolved.connectionString, { max: 2 });
 
   try {
     const identity = await requireMatchedIdentity(pool);

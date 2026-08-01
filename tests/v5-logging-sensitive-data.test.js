@@ -150,7 +150,7 @@ describe("V5 audit metadata + db failure reasons", () => {
       }),
     };
     const result = await recordAuditEvent(db, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       organizationId: UUID,
       actionKey: "member.approve",
       entityType: "member",
@@ -252,7 +252,7 @@ describe("V5 diagnostic logs use keys not UUIDs / secrets", () => {
           type: "resolved_tenant",
           organization: { key: "acme", id: UUID, dataEnvironment: "testing" },
           product: { key: "blessboard" },
-          deployment: { code: "blessboard-org-v5" },
+          deployment: { code: "blessboard-org-staging" },
         },
       },
       blessBoardCatalogueContext: {

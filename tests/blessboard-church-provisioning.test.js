@@ -34,7 +34,7 @@ const BASE_PLATFORM = {
   productTenantKey: "demo-church",
   hostname: "demo.blessboard.test",
   domainType: "canonical",
-  deploymentCode: "blessboard-org-v5",
+  deploymentCode: "blessboard-org-staging",
   isPrimary: true,
 };
 
@@ -330,7 +330,7 @@ describe("blessboard church provisioning", () => {
         "--country-code",
         "ZM",
         "--deployment",
-        "blessboard-org-v5",
+        "blessboard-org-staging",
         "--confirm",
       ],
       { DATABASE_URL: databaseUrl, DATABASE_IDENTITY_EXPECTED: IDENTITY_KEY }

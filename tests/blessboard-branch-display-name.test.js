@@ -33,7 +33,7 @@ const {
 const { assignOrganizationPlan } = require("../src/platform/services/entitlementService");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const ROOT = path.join(__dirname, "..");
 
 describe("normalizeBranchDisplayName", () => {

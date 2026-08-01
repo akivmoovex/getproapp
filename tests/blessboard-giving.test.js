@@ -93,7 +93,7 @@ describe("blessboard giving", () => {
         productTenantKey: "giv-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);
@@ -127,7 +127,7 @@ describe("blessboard giving", () => {
         productTenantKey: "giv-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       await provisionBlessBoardChurch(pool, {
@@ -149,7 +149,7 @@ describe("blessboard giving", () => {
         const assigned = await assignBlessBoardRole(pool, role);
         assert.equal(assigned.ok, true, assigned.message || assigned.reason);
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId: orgA.records.organization.id,
         });

@@ -70,7 +70,7 @@ function extractCsrfToken(html) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -141,7 +141,7 @@ describe("blessboard church website preview and publish", () => {
     const created = await createV5Session(pool, {
       userId,
       organizationId: organizationId || null,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userAgent: "website-publish-test",
       ipAddress: "127.0.0.1",
     });
@@ -205,7 +205,7 @@ describe("blessboard church website preview and publish", () => {
         await pool.query(
           `INSERT INTO platform.domains
              (organization_id, product_id, deployment_id, hostname, domain_type, status, is_primary)
-           VALUES ($1, $2, 'blessboard-org-v5', $3, 'canonical', 'active', true)`,
+           VALUES ($1, $2, 'blessboard-org-staging', $3, 'canonical', 'active', true)`,
           [rec.organizationId, prod.rows[0].id, host]
         );
       }
@@ -224,7 +224,7 @@ describe("blessboard church website preview and publish", () => {
     requireDb();
     const a = await provisionPlan("foundation");
     const b = await provisionPlan("foundation");
-    const depCode = "blessboard-org-v5";
+    const depCode = "blessboard-org-staging";
     const prod = await pool.query(
       `SELECT id FROM platform.products WHERE product_key = 'blessboard' LIMIT 1`
     );
@@ -440,7 +440,7 @@ describe("blessboard church website preview and publish", () => {
     await pool.query(
       `INSERT INTO platform.domains
          (organization_id, product_id, deployment_id, hostname, domain_type, status, is_primary)
-       VALUES ($1, $2, 'blessboard-org-v5', $3, 'canonical', 'active', true)`,
+       VALUES ($1, $2, 'blessboard-org-staging', $3, 'canonical', 'active', true)`,
       [rec.organizationId, prod.rows[0].id, host]
     );
 
@@ -454,7 +454,7 @@ describe("blessboard church website preview and publish", () => {
     await pool.query(
       `INSERT INTO platform.domains
          (organization_id, product_id, deployment_id, hostname, domain_type, status, is_primary)
-       VALUES ($1, $2, 'blessboard-org-v5', $3, 'custom', 'active', false)`,
+       VALUES ($1, $2, 'blessboard-org-staging', $3, 'custom', 'active', false)`,
       [rec.organizationId, prod.rows[0].id, `www.${rec.organizationKey}.example`]
     );
 

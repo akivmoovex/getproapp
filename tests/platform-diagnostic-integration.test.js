@@ -63,7 +63,7 @@ describe("platform diagnostic integration", () => {
       productTenantKey: "demo-church",
       hostname: "demo.blessboard.test",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     assert.equal(provisioned.ok, true);
@@ -72,11 +72,11 @@ describe("platform diagnostic integration", () => {
     );
 
     const resolved = await resolveHostname(pool, "demo.blessboard.test", {
-      expectedDeploymentCode: "blessboard-org-v5",
+      expectedDeploymentCode: "blessboard-org-staging",
     });
     assert.equal(resolved.type, RESULT_TYPES.RESOLVED_TENANT);
     assert.equal(resolved.organization.key, "demo-church");
-    assert.equal(resolved.deployment.code, "blessboard-org-v5");
+    assert.equal(resolved.deployment.code, "blessboard-org-staging");
 
     const compare = createCompareLegacyHostContext({
       getMode: () => MODE_DIAGNOSTIC,
@@ -88,7 +88,7 @@ describe("platform diagnostic integration", () => {
       platformHostContext: {
         enabled: true,
         mode: "diagnostic",
-        expectedDeploymentCode: "blessboard-org-v5",
+        expectedDeploymentCode: "blessboard-org-staging",
         deploymentComparisonAvailable: true,
         hostname: resolved.hostname,
         resultType: resolved.type,
@@ -105,7 +105,7 @@ describe("platform diagnostic integration", () => {
     assert.equal(matchReq.platformHostComparison.category, COMPARISON_CATEGORIES.MATCH);
 
     const mismatch = await resolveHostname(pool, "demo.blessboard.test", {
-      expectedDeploymentCode: "blessboard-com-v4",
+      expectedDeploymentCode: "blessboard-com-production",
     });
     assert.equal(mismatch.type, RESULT_TYPES.DEPLOYMENT_MISMATCH);
 
@@ -143,7 +143,7 @@ describe("platform diagnostic integration", () => {
       platformHostContext: {
         enabled: true,
         mode: "diagnostic",
-        expectedDeploymentCode: "blessboard-org-v5",
+        expectedDeploymentCode: "blessboard-org-staging",
         deploymentComparisonAvailable: true,
         hostname: resolved.hostname,
         resultType: resolved.type,

@@ -56,7 +56,7 @@ function blessboardResolution(overrides) {
       dataEnvironment: "testing",
       ...(overrides.organization || {}),
     },
-    deployment: { code: "blessboard-org-v5" },
+    deployment: { code: "blessboard-org-staging" },
     ...(overrides.extra || {}),
   };
 }
@@ -513,7 +513,7 @@ describe("UUID-first comparison with catalogue context", () => {
         type: "resolved_tenant",
         organization: { id: orgId, key },
         product: { key: "blessboard" },
-        deployment: { code: "blessboard-org-v5" },
+        deployment: { code: "blessboard-org-staging" },
       },
     });
 
@@ -629,7 +629,7 @@ describe("blessboard catalogue http context — live lookup write check", () => 
         productTenantKey: "http-ctx-church",
         hostname: "http-ctx.blessboard.test",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       organizationId = platform.records.organization.id;

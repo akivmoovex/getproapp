@@ -51,7 +51,7 @@ const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
 const ADMIN_PASSWORD = "TestPassword99!";
 const HOST = "svc-times.blessboard.org";
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 
 function uniq(prefix) {
   return `${prefix}-${crypto.randomBytes(3).toString("hex")}`;

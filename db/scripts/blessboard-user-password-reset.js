@@ -7,10 +7,10 @@
  * Password must be supplied via --password-stdin only (never --password argv).
  */
 
-const { Pool } = require("pg");
 const {
   parseWriteMode,
   resolveDatabaseUrlSafe,
+  createProvisionPool,
   requireMatchedIdentity,
   assertNoLegacyPublicTables,
   buildProvisionReport,
@@ -163,7 +163,7 @@ async function main() {
   const deploy = getPlatformDeploymentCode(process.env);
   const deploymentCode = deploy && deploy.ok ? deploy.code : "blessboard-org-v5";
 
-  const pool = new Pool({ connectionString: dbResolved.connectionString, max: 2 });
+  const pool = createProvisionPool(dbResolved.connectionString, { max: 2 });
   try {
     // Connectivity probe (no secrets).
     await pool.query("SELECT 1 AS ok");

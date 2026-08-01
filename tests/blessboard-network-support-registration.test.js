@@ -119,7 +119,7 @@ describe("Network support-contact registration", () => {
           type: "test",
           source: "prompt09",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(provisioned.ok, true, provisioned.message || provisioned.status);
@@ -137,7 +137,7 @@ describe("Network support-contact registration", () => {
 
       const session = await createV5Session(pool, {
         userId: admin.user.id,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         organizationId: fixtures.organizationId,
         churchId: null,
         branchId: null,
@@ -163,7 +163,7 @@ describe("Network support-contact registration", () => {
       env: {
         NODE_ENV: "test",
         BLESSBOARD_TENANT_ROUTING_MODE: "off",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         ...envExtra,
@@ -404,7 +404,7 @@ describe("Network support-contact registration", () => {
     assert.equal(hqRole.ok, true, hqRole.message);
     const tenantSession = await createV5Session(pool, {
       userId: tenantUser.user.id,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       organizationId: fixtures.organizationId,
       churchId: fixtures.churchId,
       branchId: fixtures.branchId,

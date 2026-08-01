@@ -60,7 +60,7 @@ function extractLocationQuery(location, key) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -102,7 +102,7 @@ describe("blessboard custom-domain routing http", () => {
         productTenantKey: "cd-org",
         hostname: FALLBACK_HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provisioned.ok, true, provisioned.message);
@@ -184,7 +184,7 @@ describe("blessboard custom-domain routing http", () => {
       [
         opts.organizationId || orgId,
         opts.productId || productBlessboardId,
-        opts.deploymentId || "blessboard-org-v5",
+        opts.deploymentId || "blessboard-org-staging",
         opts.hostname,
         opts.domainType || "custom",
         opts.status || "active",
@@ -255,7 +255,7 @@ describe("blessboard custom-domain routing http", () => {
     assert.match(res.text, new RegExp(CHURCH_NAME));
     assert.match(res.text, new RegExp(BRANCH_NAME));
     assert.doesNotMatch(res.text, new RegExp(orgId || "never", "i"));
-    assert.doesNotMatch(res.text, /blessboard-org-v5/);
+    assert.doesNotMatch(res.text, /blessboard-org-staging/);
   });
 
   it("custom alias domain renders same tenant without inventing redirect", async () => {
@@ -330,7 +330,7 @@ describe("blessboard custom-domain routing http", () => {
       assert.doesNotMatch(res.text, new RegExp(CHURCH_NAME));
     } finally {
       await pool.query(
-        `UPDATE platform.domains SET deployment_id = 'blessboard-org-v5' WHERE hostname = $1`,
+        `UPDATE platform.domains SET deployment_id = 'blessboard-org-staging' WHERE hostname = $1`,
         [CUSTOM_HOST]
       );
     }

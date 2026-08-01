@@ -32,7 +32,7 @@ const CHURCH_B = "HQ Shell Church B";
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -83,7 +83,7 @@ describe("blessboard hq shell", () => {
         productTenantKey: "hq-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true, provA.message);
@@ -98,7 +98,7 @@ describe("blessboard hq shell", () => {
         productTenantKey: "hq-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provB.ok, true, provB.message);
@@ -211,7 +211,7 @@ describe("blessboard hq shell", () => {
 
   async function cookieFor(user) {
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: user.id,
       organizationId: orgA.id,
       churchId: churchA.id,

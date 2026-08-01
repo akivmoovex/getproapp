@@ -44,7 +44,7 @@ const {
 } = require("../src/platform/services/growthTrialExpiryService");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const PASSWORD = "correct-horse-battery-staple";
 const HOST = "bill-a.blessboard.org";
 const APEX = "blessboard.org";

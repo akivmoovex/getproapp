@@ -130,7 +130,7 @@ describe("Foundation Growth trial offer lifecycle", () => {
         productTenantKey: orgKey,
         hostname: `${orgKey}.blessboard.org`,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
         subscriptionPlanKey: "free",
         subscriptionStatus: "active",
@@ -208,7 +208,7 @@ describe("Foundation Growth trial offer lifecycle", () => {
       );
 
       const hqSession = await createV5Session(pool, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         userId: hqUser.id,
         organizationId: orgId,
         churchId,
@@ -217,7 +217,7 @@ describe("Foundation Growth trial offer lifecycle", () => {
       hqCookie = `${DEFAULT_V5_COOKIE}=${hqSession.rawToken}`;
 
       const branchSession = await createV5Session(pool, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         userId: branchUser.id,
         organizationId: orgId,
         churchId,
@@ -229,7 +229,7 @@ describe("Foundation Growth trial offer lifecycle", () => {
         env: {
           NODE_ENV: "test",
           DEPLOYMENT_ENV: "testing",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
           SESSION_SECRET,
           SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
           BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -283,7 +283,7 @@ describe("Foundation Growth trial offer lifecycle", () => {
     const offered = await createGrowthTrialOffer(pool, {
       organizationId: orgId,
       actorUserId: paUser.id,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(offered.ok, true, JSON.stringify(offered));
 
@@ -335,7 +335,7 @@ describe("Foundation Growth trial offer lifecycle", () => {
     const again = await acceptGrowthTrialOffer(pool, {
       organizationId: orgId,
       actorUserId: hqUser.id,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(again.ok, true);
     assert.equal(again.alreadyAccepted, true);
@@ -387,7 +387,7 @@ describe("Foundation Growth trial offer lifecycle", () => {
       organizationId: orgId,
       actorUserId: paUser.id,
       reason: "",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(noReason.ok, false);
 
@@ -395,7 +395,7 @@ describe("Foundation Growth trial offer lifecycle", () => {
       organizationId: orgId,
       actorUserId: paUser.id,
       reason: "support approved re-offer after provisioning issue",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(granted.ok, true, JSON.stringify(granted));
 

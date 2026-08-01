@@ -59,7 +59,7 @@ const HOST_B = "stage6-b.blessboard.org";
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
     BLESSBOARD_AUTHORITATIVE_HOST_ALLOWLIST: "*",
@@ -101,7 +101,7 @@ describe("blessboard branch website publish (stage 6)", () => {
         productTenantKey: "stage6-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true, provA.message);
@@ -116,7 +116,7 @@ describe("blessboard branch website publish (stage 6)", () => {
         productTenantKey: "stage6-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provB.ok, true, provB.message);

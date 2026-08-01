@@ -58,7 +58,7 @@ const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServ
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
-const DEPLOY = "blessboard-org-v5";
+const DEPLOY = "blessboard-org-staging";
 const HOST = "demo-church-cfg.blessboard.test";
 const PASSWORD = "TestPassword123!";
 

@@ -43,7 +43,7 @@ const CHURCH_B_NAME = "Authz Church B";
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -186,7 +186,7 @@ describe("blessboard tenant authorization http", () => {
         productTenantKey: "authz-a",
         hostname: TENANT_A_HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true, provA.message);
@@ -201,7 +201,7 @@ describe("blessboard tenant authorization http", () => {
         productTenantKey: "authz-b",
         hostname: TENANT_B_HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provB.ok, true, provB.message);
@@ -373,7 +373,7 @@ describe("blessboard tenant authorization http", () => {
 
   async function sessionCookieFor(user, opts) {
     const created = await createV5Session(pool, {
-      deploymentCode: (opts && opts.deploymentCode) || "blessboard-org-v5",
+      deploymentCode: (opts && opts.deploymentCode) || "blessboard-org-staging",
       userId: user.id,
       organizationId: (opts && opts.organizationId) || orgA.id,
       churchId: (opts && opts.churchId) || churchA.id,
@@ -448,7 +448,7 @@ describe("blessboard tenant authorization http", () => {
     requireDb();
     // Session create still inserts; loader/read must reject inactive user as unauthenticated.
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: users.inactive.id,
       organizationId: orgA.id,
       churchId: churchA.id,
@@ -744,7 +744,7 @@ describe("blessboard tenant authorization http", () => {
   it("matrix: revoked session cannot access protected tenant routes", async () => {
     requireDb();
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: users.hq.id,
       organizationId: orgA.id,
       churchId: churchA.id,
@@ -752,7 +752,7 @@ describe("blessboard tenant authorization http", () => {
     });
     assert.equal(created.ok, true, created.code);
     const revoked = await revokeV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       rawToken: created.rawToken,
     });
     assert.equal(revoked.ok, true);

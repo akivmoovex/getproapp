@@ -29,7 +29,7 @@ function ctx(runConfig = {}) {
     runConfig: {
       dataEnvironmentDefault: "pilot",
       canonicalDomainSuffix: "blessboard.org",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       includeSampleContent: false,
       ...runConfig,
     },

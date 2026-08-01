@@ -97,7 +97,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
           type: "test",
           source: "prompt19",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(foundationProv.ok, true, foundationProv.status);
@@ -148,7 +148,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
           type: "test",
           source: "prompt19",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(growthProv.ok, true, growthProv.status);
@@ -194,7 +194,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
           type: "test",
           source: "prompt19",
           dataEnvironment: "testing",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
         },
       });
       assert.equal(graceProv.ok, true, graceProv.status);
@@ -217,7 +217,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
 
       // Downgrade audit event.
       const down = await recordAuditEvent(pool, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         organizationId: fixtures.foundationOrgId,
         outcome: "success",
         actionKey: "subscription.trial_downgraded_to_foundation",
@@ -230,7 +230,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
       // Repeated trial-expiry failures.
       for (let i = 0; i < 2; i += 1) {
         const fail = await recordAuditEvent(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           organizationId: fixtures.growthOrgId,
           outcome: "failure",
           actionKey: "subscription.trial_expiry_failed",
@@ -297,7 +297,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
         env: {
           NODE_ENV: "test",
           BLESSBOARD_TENANT_ROUTING_MODE: "off",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
           SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
           SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         },
@@ -319,7 +319,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
 
   async function cookieFor(user) {
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: user.id,
       organizationId: fixtures.foundationOrgId,
       churchId: null,

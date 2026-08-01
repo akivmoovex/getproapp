@@ -32,7 +32,7 @@ const {
 } = require("../src/blessboard/http/branchAdminNav");
 const { buildBranchMobileNav } = require("../src/blessboard/http/adminMobileNavGroups");
 
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
 const ROOT = path.join(__dirname, "..");

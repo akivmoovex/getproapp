@@ -10,7 +10,7 @@
 
 const { DEFAULT_V5_COOKIE } = require("../../src/platform/session/v5SessionCookie");
 
-const V5_DEPLOYMENT_CODE = "blessboard-org-v5";
+const V5_DEPLOYMENT_CODE = "blessboard-org-staging";
 const V5_IDENTITY_KEY = "blessboard-platform-v5";
 const V5_DATA_ENVIRONMENT = "testing";
 /** Matches v5EnvValidation session-secret floor used by foundation apps. */
@@ -35,7 +35,7 @@ function assertUuidId(value, label) {
 }
 
 /**
- * Standard env bag for createV5FoundationApp / session tests under blessboard-org-v5.
+ * Standard env bag for createV5FoundationApp / session tests under blessboard-org-staging.
  * Pairing with DEPLOYMENT_ENV=testing is required by V5 env validation for this deployment.
  * @param {Record<string, string | undefined>} [overrides]
  */

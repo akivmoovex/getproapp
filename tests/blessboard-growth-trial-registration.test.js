@@ -99,7 +99,7 @@ describe("automatic Growth trial registration", () => {
       env: {
         NODE_ENV: "test",
         BLESSBOARD_TENANT_ROUTING_MODE: "off",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         ...envExtra,
@@ -500,7 +500,7 @@ describe("automatic Growth trial registration", () => {
     );
     const session = await createV5Session(pool, {
       userId: paUser.user.id,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       organizationId: provisioned.records.organizationId,
     });
     assert.equal(session.ok, true, session.message || session.code);

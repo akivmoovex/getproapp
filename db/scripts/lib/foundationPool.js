@@ -68,8 +68,15 @@ function getFoundationPoolOptions(connectionString) {
     ssl = { rejectUnauthorized: true };
     sslLabel = "strict";
   } else if (mode === "no-verify") {
-    ssl = { rejectUnauthorized: false };
-    sslLabel = "no-verify";
+    // Local Postgres often has no TLS; do not force SSL for localhost even when
+    // GETPRO_PG_SSL=no-verify is set in a developer shell / .env.
+    if (local) {
+      ssl = undefined;
+      sslLabel = "no-verify-ignored-local";
+    } else {
+      ssl = { rejectUnauthorized: false };
+      sslLabel = "no-verify";
+    }
   } else if (local) {
     ssl = undefined;
     sslLabel = "default-local";

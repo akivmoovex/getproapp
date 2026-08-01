@@ -25,7 +25,7 @@ const SECRET = "test-session-secret-at-least-32-chars!!";
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     DEPLOYMENT_ENV: "testing",
     SESSION_SECRET: SECRET,
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
@@ -68,7 +68,7 @@ describe("write maintenance — parse", () => {
 
   it("forces jobs off while write maintenance is on", () => {
     const parsed = parseBlessBoardJobsEnabled({
-      PLATFORM_DEPLOYMENT_CODE: "blessboard-com-v4",
+      PLATFORM_DEPLOYMENT_CODE: "blessboard-com-production",
       DEPLOYMENT_ENV: "production",
       BLESSBOARD_JOBS_ENABLED: "1",
       BLESSBOARD_WRITE_MAINTENANCE: "1",

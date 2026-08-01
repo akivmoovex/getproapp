@@ -143,7 +143,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
         productTenantKey: "ann076-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);
@@ -168,7 +168,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
         productTenantKey: "ann076-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgB.ok, true, orgB.message);
@@ -195,7 +195,7 @@ describe("announcement platform-admin testing writes (076 pg)", () => {
           assert.equal(assigned.ok, true, assigned.message || assigned.reason);
         }
         const session = await createV5Session(pool, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           userId: created.user.id,
           organizationId: orgRec.records.organization.id,
         });

@@ -64,7 +64,7 @@ describe("blessboard apex legal pages (BB-LEGAL-001)", () => {
       env: {
         NODE_ENV: "test",
         BLESSBOARD_TENANT_ROUTING_MODE: "off",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
       },

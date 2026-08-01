@@ -39,7 +39,7 @@ const TENANT_HOST = "pa-org.blessboard.org";
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -105,7 +105,7 @@ describe("blessboard platform-admin shell", () => {
         productTenantKey: "pa-demo",
         hostname: TENANT_HOST,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provisioned.ok, true, provisioned.message);
@@ -135,7 +135,7 @@ describe("blessboard platform-admin shell", () => {
           productTenantKey: key,
           hostname: `${key}.blessboard.org`,
           domainType: "canonical",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           isPrimary: true,
         });
         assert.equal(extra.ok, true, extra.message);
@@ -209,7 +209,7 @@ describe("blessboard platform-admin shell", () => {
 
   async function cookieFor(user) {
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: user.id,
       organizationId: org.id,
       churchId: church.id,
@@ -291,7 +291,7 @@ describe("blessboard platform-admin shell", () => {
     assert.match(home.text, /data-bb-quick-action="plans"/);
     assert.match(home.text, /data-bb-pa-logout="1"/);
     assert.match(home.text, /Platform admin/);
-    assert.match(home.text, /blessboard-org-v5/);
+    assert.match(home.text, /blessboard-org-staging/);
     assert.doesNotMatch(
       home.text,
       /\bMRR\b|projectedGrowth|\+12%|\+5\.2%|12\.8k|99\.8%|fake metric|New Organization|Export Report/i
@@ -311,7 +311,7 @@ describe("blessboard platform-admin shell", () => {
     assert.match(list.text, /pa-demo/);
     assert.match(list.text, /Platform Admin Demo/);
     assert.match(list.text, /data-bb-table="organizations"/);
-    assert.match(list.text, /blessboard-org-v5/);
+    assert.match(list.text, /blessboard-org-staging/);
     assert.match(list.text, /data-bb-stitch-shell="62-platform-admin-dashboard"/);
     assert.doesNotMatch(list.text, new RegExp(org.id, "i"));
     assert.doesNotMatch(list.text, /password|session_token|DATABASE_URL/i);
@@ -331,7 +331,7 @@ describe("blessboard platform-admin shell", () => {
     assert.match(account.text, /data-bb-pa-account-identity="1"/);
     assert.match(account.text, /data-bb-pa-logout="1"/);
     assert.match(account.text, /name="_csrf"/);
-    assert.match(account.text, /blessboard-org-v5/);
+    assert.match(account.text, /blessboard-org-staging/);
     assert.doesNotMatch(account.text, new RegExp(org.id, "i"));
     assert.doesNotMatch(account.text, /password|session_token/i);
 
@@ -508,7 +508,7 @@ describe("blessboard platform-admin shell", () => {
     assert.match(list.text, /name="limit"/);
     assert.match(list.text, /pa-demo/);
     assert.match(list.text, /Platform Admin Demo/);
-    assert.match(list.text, /blessboard-org-v5/);
+    assert.match(list.text, /blessboard-org-staging/);
     assert.doesNotMatch(list.text, /Create New Organization|Monthly Revenue|Pending Verifications|\$142k|Export CSV/i);
     assert.doesNotMatch(list.text, new RegExp(org.id, "i"));
     assert.doesNotMatch(list.text, /password|session_token|DATABASE_URL/i);
@@ -683,7 +683,7 @@ describe("blessboard platform-admin shell", () => {
     assert.match(deployments.text, /data-bb-pa-unavailable="log-stream"/);
     assert.match(deployments.text, /data-bb-count="deployments-total"/);
     assert.match(deployments.text, /data-bb-pa-current-deployment="1"/);
-    assert.match(deployments.text, /data-bb-deployment="blessboard-org-v5"/);
+    assert.match(deployments.text, /data-bb-deployment="blessboard-org-staging"/);
     assert.match(deployments.text, /data-bb-deployment-status=/);
     assert.match(deployments.text, /data-bb-deployment-environment=/);
     assert.match(deployments.text, /data-bb-deployment-host=/);
@@ -691,19 +691,19 @@ describe("blessboard platform-admin shell", () => {
     assert.match(deployments.text, /data-bb-status-badge=/);
     assert.match(deployments.text, /BlessBoard/);
     assert.match(deployments.text, /href="\/admin\/settings"/);
-    assert.match(deployments.text, /href="\/admin\/deployments\/blessboard-org-v5"/);
+    assert.match(deployments.text, /href="\/admin\/deployments\/blessboard-org-staging"/);
     assert.doesNotMatch(deployments.text, /session_cookie|SESSION_SECRET|DATABASE_URL|password|credential/i);
     assert.doesNotMatch(deployments.text, /Force Sync|Export Reports|Support Tickets|99\.98%|Critical Error Rate/i);
     assert.doesNotMatch(deployments.text, /Retire deployment|Delete deployment|Manual Failover|Rollback now|Restart process/i);
 
     const deployDetail = await request(app)
-      .get("/admin/deployments/blessboard-org-v5")
+      .get("/admin/deployments/blessboard-org-staging")
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(deployDetail.status, 200);
     assert.match(deployDetail.text, /data-bb-pa-deployment-detail="1"/);
     assert.match(deployDetail.text, /data-bb-stitch-deployment-detail="68-platform-support-monitoring"/);
-    assert.match(deployDetail.text, /data-bb-deployment="blessboard-org-v5"/);
+    assert.match(deployDetail.text, /data-bb-deployment="blessboard-org-staging"/);
     assert.match(deployDetail.text, /data-bb-current="1"/);
     assert.match(deployDetail.text, /data-bb-pa-deploy-summary-panel="1"/);
     assert.match(deployDetail.text, /data-bb-pa-deploy-environment="1"/);
@@ -750,7 +750,7 @@ describe("blessboard platform-admin shell", () => {
     assert.equal(hqDeploy.status, 403);
 
     const hqDeployDetail = await request(app)
-      .get("/admin/deployments/blessboard-org-v5")
+      .get("/admin/deployments/blessboard-org-staging")
       .set("Host", "blessboard.org")
       .set("Cookie", await cookieFor(users.hq))
       .set("Accept", "text/html");

@@ -74,7 +74,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       organizationKey: key,
       displayName: `Trial Org ${key}`,
       dataEnvironment: "testing",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       productKey: "blessboard",
       productTenantKey: key,
       hostname: `${key}.blessboard.org`,
@@ -163,7 +163,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       dryRun: true,
       at,
       limit: 50,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(dry.ok, true);
     assert.equal(dry.summary.wouldEnterGrace, 0);
@@ -178,7 +178,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       dryRun: false,
       at,
       limit: 50,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(apply.ok, true);
     assert.equal(apply.summary.enteredGrace, 0);
@@ -201,7 +201,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       at,
       graceDays: 7,
       limit: 50,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(first.ok, true);
     assert.equal(first.summary.enteredGrace, 1);
@@ -228,7 +228,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       at,
       graceDays: 7,
       limit: 50,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(second.summary.enteredGrace, 0);
     assert.equal(await auditCount(orgId, ACTION.ENTERED_GRACE), 1);
@@ -251,7 +251,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       dryRun: false,
       at: enterAt,
       graceDays: 7,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
 
     const graceEnds = addCalendarDaysUtc(trialEnds, 7);
@@ -264,7 +264,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       dryRun: true,
       at: downgradeAt,
       graceDays: 7,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(dry.summary.wouldDowngrade >= 1, true);
 
@@ -275,7 +275,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       dryRun: false,
       at: downgradeAt,
       graceDays: 7,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(done.summary.downgraded, 1);
     assert.equal(await auditCount(orgId, ACTION.DOWNGRADED), 1);
@@ -307,7 +307,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       dryRun: false,
       at: downgradeAt,
       graceDays: 7,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(again.summary.downgraded, 0);
     assert.equal(await auditCount(orgId, ACTION.DOWNGRADED), 1);
@@ -341,7 +341,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       dryRun: false,
       at: late,
       limit: 50,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true);
 
@@ -367,7 +367,7 @@ describe("V5 Growth trial expiry maintenance", () => {
       at,
       limit: 2,
       graceDays: 7,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(limited.ok, true);
     assert.ok(limited.summary.candidates <= 2);
@@ -388,13 +388,13 @@ describe("V5 Growth trial expiry maintenance", () => {
         dryRun: false,
         at,
         graceDays: 7,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
       }),
       runGrowthTrialExpiryBatch(pool, {
         dryRun: false,
         at,
         graceDays: 7,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
       }),
     ]);
     assert.equal(a.ok, true);

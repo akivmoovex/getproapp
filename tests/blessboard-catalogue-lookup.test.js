@@ -42,7 +42,7 @@ describe("blessboard catalogue lookup", () => {
         productTenantKey: "lookup-church",
         hostname: "lookup.blessboard.test",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(platform.ok, true);
@@ -97,7 +97,7 @@ describe("blessboard catalogue lookup", () => {
       productTenantKey: "no-church-org",
       hostname: "no-church.blessboard.test",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     const result = await getBlessBoardCatalogueContext(pool, platform.records.organization.id);
@@ -188,7 +188,7 @@ describe("blessboard catalogue lookup", () => {
       productTenantKey: "no-hq-org",
       hostname: "no-hq.blessboard.test",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     await pool.query(

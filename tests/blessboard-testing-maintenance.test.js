@@ -42,7 +42,7 @@ function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
     DEPLOYMENT_ENV: "testing",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET,
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "off",
@@ -123,7 +123,7 @@ describe("blessboard testing maintenance http + reset", () => {
         productTenantKey: "pa-fixture",
         hostname: "pa-fixture.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
 
@@ -136,7 +136,7 @@ describe("blessboard testing maintenance http + reset", () => {
         productTenantKey: "wipe-me-org",
         hostname: "wipe-me.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       await provisionBlessBoardChurch(pool, {
@@ -193,7 +193,7 @@ describe("blessboard testing maintenance http + reset", () => {
       });
 
       const session = await createV5Session(pool, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         userId: paUser.id,
         organizationId: paOrg.records.organization.id,
       });
@@ -350,7 +350,7 @@ describe("blessboard testing maintenance http + reset", () => {
       confirmChecked: true,
       previewToken: "x",
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(wrongEnv.ok, false);
     assert.equal(wrongEnv.status, STATUS.FORBIDDEN);
@@ -369,7 +369,7 @@ describe("blessboard testing maintenance http + reset", () => {
         confirmChecked: true,
         previewToken: "x",
         sessionSecret: SESSION_SECRET,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
       });
       assert.equal(wrongDb.ok, false);
       assert.equal(wrongDb.status, STATUS.IDENTITY_BLOCKED);
@@ -421,7 +421,7 @@ describe("blessboard testing maintenance http + reset", () => {
       confirmChecked: true,
       previewToken: preview.previewToken,
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true, JSON.stringify(result));
     const apps = await pool.query(
@@ -468,7 +468,7 @@ describe("blessboard testing maintenance http + reset", () => {
       confirmChecked: true,
       previewToken: preview.previewToken,
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true, JSON.stringify(result));
 
@@ -593,7 +593,7 @@ describe("blessboard testing maintenance http + reset", () => {
         confirmChecked: true,
         previewToken: preview.previewToken,
         sessionSecret: SESSION_SECRET,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
       });
       assert.equal(second.ok, false);
       assert.equal(second.status, STATUS.LOCK_BUSY);
@@ -647,7 +647,7 @@ describe("blessboard testing maintenance http + reset", () => {
       confirmChecked: true,
       previewToken: "x",
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(unknown.ok, false);
     assert.equal(unknown.status, STATUS.INVALID_INPUT);

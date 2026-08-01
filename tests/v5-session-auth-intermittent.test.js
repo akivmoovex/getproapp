@@ -49,7 +49,7 @@ describe("v5 session auth intermittent loss", () => {
   it("survives last_seen touch failure without failing the session read", async () => {
     const row = {
       id: "sess-1",
-      deployment_code: "blessboard-org-v5",
+      deployment_code: "blessboard-org-staging",
       user_id: "user-1",
       organization_id: "org-1",
       church_id: "ch-1",
@@ -81,7 +81,7 @@ describe("v5 session auth intermittent loss", () => {
 
     const result = await readV5Session(client, {
       rawToken: "tok-touch-fail",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       touch: true,
     });
     assert.equal(result.ok, true);
@@ -94,7 +94,7 @@ describe("v5 session auth intermittent loss", () => {
   it("loadV5Session retries once then surfaces lookup_error without clearing cookie state", async () => {
     let attempts = 0;
     const load = createLoadV5Session({
-      getDeploymentCode: () => ({ ok: true, code: "blessboard-org-v5" }),
+      getDeploymentCode: () => ({ ok: true, code: "blessboard-org-staging" }),
       getPool: () => ({ query: async () => ({ rows: [] }) }),
       readSession: async () => {
         attempts += 1;
@@ -246,7 +246,7 @@ describe("v5 session auth intermittent loss", () => {
   it("session remains valid across repeated loadV5Session calls (shared store)", async () => {
     const sessionPayload = {
       id: "s1",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: "u1",
       organizationId: "o1",
       churchId: "c1",
@@ -255,7 +255,7 @@ describe("v5 session auth intermittent loss", () => {
     };
     let reads = 0;
     const load = createLoadV5Session({
-      getDeploymentCode: () => ({ ok: true, code: "blessboard-org-v5" }),
+      getDeploymentCode: () => ({ ok: true, code: "blessboard-org-staging" }),
       getPool: () => ({ query: async () => ({ rows: [] }) }),
       readSession: async () => {
         reads += 1;

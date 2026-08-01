@@ -104,7 +104,7 @@ describe("blessboard platform-admin login diagnosis (prompt 43)", () => {
         productTenantKey: "pa-login-org",
         hostname: "pa-login.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       await provisionBlessBoardChurch(pool, {
@@ -145,7 +145,7 @@ describe("blessboard platform-admin login diagnosis (prompt 43)", () => {
 
       const env = {
         NODE_ENV: "test",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
       };

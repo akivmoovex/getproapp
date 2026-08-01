@@ -99,7 +99,7 @@ describe("blessboard branch website initialization autonomy", () => {
         productTenantKey: "bw-init-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true, provA.message);
@@ -160,7 +160,7 @@ describe("blessboard branch website initialization autonomy", () => {
         productTenantKey: "bw-init-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provB.ok, true, provB.message);

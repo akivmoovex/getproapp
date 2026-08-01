@@ -44,7 +44,7 @@ function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
     DEPLOYMENT_ENV: "testing",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET,
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "off",
@@ -66,7 +66,7 @@ async function seedWebsiteBearingOrg(pool, opts) {
     productTenantKey: key,
     hostname,
     domainType: "canonical",
-    deploymentCode: "blessboard-org-v5",
+    deploymentCode: "blessboard-org-staging",
     isPrimary: true,
   });
   assert.equal(tenant.ok, true, JSON.stringify(tenant));
@@ -236,7 +236,7 @@ describe("blessboard testing organization purge", () => {
         productTenantKey: "pa-fixture",
         hostname: "pa-fixture.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       paOrgId = paOrg.records.organization.id;
@@ -256,7 +256,7 @@ describe("blessboard testing organization purge", () => {
       assert.equal(role.ok, true, role.message);
 
       const session = await createV5Session(pool, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         userId: paUser.id,
         organizationId: paOrgId,
       });
@@ -306,7 +306,7 @@ describe("blessboard testing organization purge", () => {
       confirmChecked: true,
       previewToken: preview.previewToken,
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true, JSON.stringify(result));
     assert.ok(result.organizationPurge.deleted >= 1);
@@ -352,7 +352,7 @@ describe("blessboard testing organization purge", () => {
       confirmChecked: true,
       previewToken: preview.previewToken,
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true, JSON.stringify(result));
 
@@ -415,7 +415,7 @@ describe("blessboard testing organization purge", () => {
       confirmChecked: true,
       previewToken: preview.previewToken,
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true, JSON.stringify(result));
 
@@ -474,7 +474,7 @@ describe("blessboard testing organization purge", () => {
         confirmChecked: true,
         previewToken: preview.previewToken,
         sessionSecret: SESSION_SECRET,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
       });
 
       assert.equal(result.ok, false);
@@ -535,7 +535,7 @@ describe("blessboard testing organization purge", () => {
         confirmChecked: true,
         previewToken: "x",
         sessionSecret: SESSION_SECRET,
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
       });
       assert.equal(blocked.ok, false);
       assert.equal(blocked.status, STATUS.IDENTITY_BLOCKED);
@@ -559,7 +559,7 @@ describe("blessboard testing organization purge", () => {
       productTenantKey: "production-like-org",
       hostname: "production-like.blessboard.org",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     assert.equal(protectedTenant.ok, true);
@@ -595,7 +595,7 @@ describe("blessboard testing organization purge", () => {
       confirmChecked: true,
       previewToken: preview.previewToken,
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true, JSON.stringify(result));
 
@@ -642,7 +642,7 @@ describe("blessboard testing organization purge", () => {
       confirmChecked: true,
       previewToken: preview.previewToken,
       sessionSecret: SESSION_SECRET,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(result.ok, true, JSON.stringify(result));
 

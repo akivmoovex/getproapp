@@ -24,7 +24,7 @@ const CAMPUS = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 
 describe("blessboard V5 fixtures helper", () => {
   it("exports stable deployment / identity constants", () => {
-    assert.equal(V5_DEPLOYMENT_CODE, "blessboard-org-v5");
+    assert.equal(V5_DEPLOYMENT_CODE, "blessboard-org-staging");
     assert.equal(V5_IDENTITY_KEY, "blessboard-platform-v5");
     assert.equal(V5_DATA_ENVIRONMENT, "testing");
   });

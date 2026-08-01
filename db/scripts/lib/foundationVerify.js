@@ -25,7 +25,10 @@ const REQUIRED_PLATFORM_TABLES = Object.freeze([
   "products",
   "schema_migrations",
 ]);
-const REQUIRED_DEPLOYMENTS = Object.freeze(["blessboard-com-v4", "blessboard-org-v5"]);
+const REQUIRED_DEPLOYMENTS = Object.freeze([
+  "blessboard-com-production",
+  "blessboard-org-staging",
+]);
 const REQUIRED_PRODUCTS = Object.freeze(["blessboard", "getpro", "ngo"]);
 const FORBIDDEN_PUBLIC_TABLES = Object.freeze(["tenants", "session"]);
 const PRODUCT_SCHEMAS = Object.freeze(["blessboard", "getpro", "ngo"]);

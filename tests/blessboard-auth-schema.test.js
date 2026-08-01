@@ -39,7 +39,7 @@ describe("blessboard auth schema", () => {
         productTenantKey: "auth-schema-org",
         hostname: "auth-schema.blessboard.test",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       org = platform.records.organization;
@@ -103,7 +103,7 @@ describe("blessboard auth schema", () => {
     await pool.query(
       `INSERT INTO platform.deployment_sessions
          (session_token_hash, deployment_code, user_id, expires_at)
-       VALUES ($1, 'blessboard-org-v5', $2, now() + interval '1 hour')`,
+       VALUES ($1, 'blessboard-org-staging', $2, now() + interval '1 hour')`,
       [hash, user.rows[0].id]
     );
     await assert.rejects(
@@ -111,7 +111,7 @@ describe("blessboard auth schema", () => {
         pool.query(
           `INSERT INTO platform.deployment_sessions
              (session_token_hash, deployment_code, user_id, expires_at)
-           VALUES ($1, 'blessboard-org-v5', $2, now() + interval '1 hour')`,
+           VALUES ($1, 'blessboard-org-staging', $2, now() + interval '1 hour')`,
           [hash, user.rows[0].id]
         ),
       /unique|duplicate/i
@@ -131,7 +131,7 @@ describe("blessboard auth schema", () => {
         pool.query(
           `INSERT INTO platform.deployment_sessions
              (session_token_hash, deployment_code, user_id, created_at, expires_at)
-           VALUES ($1, 'blessboard-org-v5', $2, now(), now() - interval '1 minute')`,
+           VALUES ($1, 'blessboard-org-staging', $2, now(), now() - interval '1 minute')`,
           ["c".repeat(64), user.rows[0].id]
         ),
       /check|violates|expires/i
@@ -249,7 +249,7 @@ describe("blessboard auth schema", () => {
       productTenantKey: "other-auth-org",
       hostname: "other-auth.blessboard.test",
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     await assert.rejects(

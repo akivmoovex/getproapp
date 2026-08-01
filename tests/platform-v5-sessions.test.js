@@ -62,7 +62,7 @@ describe("platform v5 sessions", () => {
   it("creates hashed session scoped to deployment", async () => {
     requireDb();
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId,
       ip: "203.0.113.10",
       userAgent: "test-agent",
@@ -76,17 +76,17 @@ describe("platform v5 sessions", () => {
     );
     assert.equal(row.rows[0].session_token_hash, hashSessionToken(created.rawToken));
     assert.notEqual(row.rows[0].ip_hash, "203.0.113.10");
-    assert.equal(row.rows[0].deployment_code, "blessboard-org-v5");
+    assert.equal(row.rows[0].deployment_code, "blessboard-org-staging");
 
     const ok = await readV5Session(pool, {
       rawToken: created.rawToken,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(ok.ok, true);
 
     const mismatch = await readV5Session(pool, {
       rawToken: created.rawToken,
-      deploymentCode: "blessboard-com-v4",
+      deploymentCode: "blessboard-com-production",
     });
     assert.equal(mismatch.ok, false);
     assert.equal(mismatch.code, "deployment_mismatch");
@@ -95,7 +95,7 @@ describe("platform v5 sessions", () => {
   it("rejects expired and revoked sessions", async () => {
     requireDb();
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId,
     });
     await pool.query(
@@ -108,21 +108,21 @@ describe("platform v5 sessions", () => {
     );
     const expired = await readV5Session(pool, {
       rawToken: created.rawToken,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(expired.code, "expired");
 
     const created2 = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId,
     });
     await revokeV5Session(pool, {
       rawToken: created2.rawToken,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     const revoked = await readV5Session(pool, {
       rawToken: created2.rawToken,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
     });
     assert.equal(revoked.code, "revoked");
   });
@@ -130,16 +130,16 @@ describe("platform v5 sessions", () => {
   it("inactive deployment cannot create sessions", async () => {
     requireDb();
     await pool.query(
-      `UPDATE platform.deployments SET status = 'inactive' WHERE deployment_code = 'blessboard-org-v5'`
+      `UPDATE platform.deployments SET status = 'inactive' WHERE deployment_code = 'blessboard-org-staging'`
     );
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId,
     });
     assert.equal(created.ok, false);
     assert.equal(created.code, "inactive_deployment");
     await pool.query(
-      `UPDATE platform.deployments SET status = 'active' WHERE deployment_code = 'blessboard-org-v5'`
+      `UPDATE platform.deployments SET status = 'active' WHERE deployment_code = 'blessboard-org-staging'`
     );
   });
 

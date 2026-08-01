@@ -124,7 +124,7 @@ describe("blessboard provisioning transaction composability", () => {
       productTenantKey: key,
       hostname: `${key}.blessboard.test`,
       domainType: "canonical",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       isPrimary: true,
     });
     assert.equal(result.ok, true);
@@ -154,7 +154,7 @@ describe("blessboard provisioning transaction composability", () => {
           productTenantKey: key,
           hostname: `${key}.blessboard.test`,
           domainType: "canonical",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           isPrimary: true,
         },
         { manageTransaction: false }
@@ -196,7 +196,7 @@ describe("blessboard provisioning transaction composability", () => {
       assert.equal(role.ok, true);
 
       const audit = await recordAuditEvent(client, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         organizationId: org.records.organization.id,
         churchId: church.records.church.id,
         actionKey: "provision.tx_composability_probe",
@@ -248,7 +248,7 @@ describe("blessboard provisioning transaction composability", () => {
           productTenantKey: key,
           hostname: `${key}.blessboard.test`,
           domainType: "canonical",
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           isPrimary: true,
         },
         { manageTransaction: false }
@@ -291,7 +291,7 @@ describe("blessboard provisioning transaction composability", () => {
       assert.equal(role.ok, true);
 
       const audit = await recordAuditEvent(client, {
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         organizationId: orgId,
         churchId: church.records.church.id,
         actionKey: "provision.tx_chain_commit",
@@ -346,7 +346,7 @@ describe("blessboard provisioning transaction composability", () => {
             productTenantKey: key,
             hostname: `${key}.blessboard.test`,
             domainType: "canonical",
-            deploymentCode: "blessboard-org-v5",
+            deploymentCode: "blessboard-org-staging",
             isPrimary: true,
           },
           { manageTransaction: false }
@@ -386,7 +386,7 @@ describe("blessboard provisioning transaction composability", () => {
         );
 
         await recordAuditEvent(client, {
-          deploymentCode: "blessboard-org-v5",
+          deploymentCode: "blessboard-org-staging",
           organizationId: org.records.organization.id,
           actionKey: "provision.tx_chain_rollback",
           entityType: "organization",

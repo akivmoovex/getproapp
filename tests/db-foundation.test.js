@@ -248,7 +248,7 @@ describe("db foundation (empty PostgreSQL)", () => {
     assert.match(wrongKey.stderr, /identity_key|does not match|overwrite/i);
   });
 
-  it("deployment seed rows: V4/V5 coexistence and job flags", async () => {
+  it("deployment seed rows: production/staging coexistence and job flags", async () => {
     requireDb();
     const r = await pool.query(
       `SELECT deployment_code, application_code, release_version, canonical_domain,
@@ -258,28 +258,28 @@ describe("db foundation (empty PostgreSQL)", () => {
     );
     assert.equal(r.rowCount, 2);
 
-    const v4 = r.rows.find((row) => row.deployment_code === "blessboard-com-v4");
-    const v5 = r.rows.find((row) => row.deployment_code === "blessboard-org-v5");
-    assert.ok(v4);
-    assert.ok(v5);
+    const com = r.rows.find((row) => row.deployment_code === "blessboard-com-production");
+    const org = r.rows.find((row) => row.deployment_code === "blessboard-org-staging");
+    assert.ok(com);
+    assert.ok(org);
 
-    assert.equal(v4.application_code, "blessboard");
-    assert.equal(v4.release_version, "v4");
-    assert.equal(v4.canonical_domain, "blessboard.com");
-    assert.equal(v4.environment_code, "production");
-    assert.equal(v4.status, "active");
-    assert.equal(v4.jobs_enabled, true);
-    assert.equal(v4.database_access_mode, "read_write");
-    assert.equal(v4.session_cookie_name, "blessboard_com_sid");
+    assert.equal(com.application_code, "blessboard");
+    assert.equal(com.release_version, "v5");
+    assert.equal(com.canonical_domain, "blessboard.com");
+    assert.equal(com.environment_code, "production");
+    assert.equal(com.status, "active");
+    assert.equal(com.jobs_enabled, true);
+    assert.equal(com.database_access_mode, "read_write");
+    assert.equal(com.session_cookie_name, "blessboard_com_sid");
 
-    assert.equal(v5.application_code, "blessboard");
-    assert.equal(v5.release_version, "v5");
-    assert.equal(v5.canonical_domain, "blessboard.org");
-    assert.equal(v5.environment_code, "testing");
-    assert.equal(v5.status, "active");
-    assert.equal(v5.jobs_enabled, false);
-    assert.equal(v5.database_access_mode, "read_write");
-    assert.equal(v5.session_cookie_name, "blessboard_org_sid");
+    assert.equal(org.application_code, "blessboard");
+    assert.equal(org.release_version, "v5");
+    assert.equal(org.canonical_domain, "blessboard.org");
+    assert.equal(org.environment_code, "testing");
+    assert.equal(org.status, "active");
+    assert.equal(org.jobs_enabled, false);
+    assert.equal(org.database_access_mode, "read_write");
+    assert.equal(org.session_cookie_name, "blessboard_org_sid");
   });
 
   it("unique canonical domains and session cookie names", async () => {
@@ -412,7 +412,7 @@ describe("db foundation (empty PostgreSQL)", () => {
     const inserted = await pool.query(
       `INSERT INTO platform.domains
          (product_id, hostname, domain_type, status, is_primary, deployment_id)
-       VALUES ($1, 'Example.Church.', 'canonical', 'active', true, 'blessboard-com-v4')
+       VALUES ($1, 'Example.Church.', 'canonical', 'active', true, 'blessboard-com-production')
        RETURNING hostname`,
       [productId]
     );

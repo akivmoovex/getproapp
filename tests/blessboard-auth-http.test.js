@@ -74,7 +74,7 @@ describe("blessboard v5 auth http", () => {
         productTenantKey: "auth-http-org",
         hostname: "auth-http.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       await provisionBlessBoardChurch(pool, {
@@ -118,7 +118,7 @@ describe("blessboard v5 auth http", () => {
         enableDiagnosticHostContext: false,
         env: {
           NODE_ENV: "test",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
           SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
           SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         },
@@ -188,7 +188,7 @@ describe("blessboard v5 auth http", () => {
       [hash]
     );
     assert.equal(row.rowCount, 1);
-    assert.equal(row.rows[0].deployment_code, "blessboard-org-v5");
+    assert.equal(row.rows[0].deployment_code, "blessboard-org-staging");
     assert.equal(row.rows[0].revoked_at, null);
     assert.notEqual(row.rows[0].session_token_hash, sid);
 
@@ -381,7 +381,7 @@ describe("blessboard v5 auth http", () => {
     const sid = extractCookie(post, DEFAULT_V5_COOKIE);
     await pool.query(
       `UPDATE platform.deployment_sessions
-          SET deployment_code = 'blessboard-com-v4'
+          SET deployment_code = 'blessboard-com-production'
         WHERE session_token_hash = $1`,
       [hashSessionToken(sid)]
     );

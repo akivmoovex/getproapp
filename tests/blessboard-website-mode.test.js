@@ -149,7 +149,7 @@ describe("blessboard website mode resolver (db)", () => {
         productTenantKey: "wm-a",
         hostname: "wm-a.blessboard.org",
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(orgA.ok, true, orgA.message);

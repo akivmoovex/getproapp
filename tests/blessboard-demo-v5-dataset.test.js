@@ -34,7 +34,7 @@ const WRONG_IDENTITY = "wrong-platform-identity";
 const ORG = "demo-v5-org";
 const CHURCH = "demo-v5-church";
 const HOST = "demo-v5.blessboard.test";
-const DEPLOY = "blessboard-org-v5";
+const DEPLOY = "blessboard-org-staging";
 
 const BASE_ARGS = [
   "--organization-key",

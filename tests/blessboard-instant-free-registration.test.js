@@ -97,7 +97,7 @@ describe("automatic Foundation registration", () => {
       env: {
         NODE_ENV: "test",
         BLESSBOARD_TENANT_ROUTING_MODE: "off",
-        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
         SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
         ...envExtra,
@@ -349,7 +349,7 @@ describe("automatic Foundation registration", () => {
 
     const sessions = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.deployment_sessions
-        WHERE deployment_code = 'blessboard-org-v5' AND revoked_at IS NULL`
+        WHERE deployment_code = 'blessboard-org-staging' AND revoked_at IS NULL`
     );
     assert.ok(sessions.rows[0].n >= 1);
 
@@ -812,7 +812,7 @@ describe("automatic Foundation registration", () => {
 
     const session = await createV5Session(pool, {
       userId: paUser.user.id,
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       organizationId: orgRow.id,
       churchId: null,
       branchId: null,

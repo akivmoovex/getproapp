@@ -44,7 +44,7 @@ const {
 const { normalizeBranchKey } = require("../src/blessboard/services/branchKey");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const PASSWORD = "correct-horse-battery-staple";
 const HOST_A = "br-create-a.blessboard.org";
 const HOST_B = "br-create-b.blessboard.org";

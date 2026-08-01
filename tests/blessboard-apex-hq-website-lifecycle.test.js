@@ -66,7 +66,7 @@ function extractCsrfToken(html) {
 function baseEnv(overrides) {
   return {
     NODE_ENV: "test",
-    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+    PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
     SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
     SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
     BLESSBOARD_TENANT_ROUTING_MODE: "off",
@@ -142,7 +142,7 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
 
   async function sessionCookie(userId, organizationId, churchId) {
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId,
       organizationId: organizationId || null,
       churchId: churchId || null,

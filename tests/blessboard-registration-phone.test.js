@@ -100,7 +100,7 @@ describe("blessboard registration phone uniqueness", () => {
         enableDiagnosticHostContext: false,
         env: {
           NODE_ENV: "test",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
           SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
           BLESSBOARD_INSTANT_FREE_PROVISIONING_ENABLED: "0",
         },

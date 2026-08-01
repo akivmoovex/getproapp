@@ -47,7 +47,7 @@ const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServ
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { KIND } = require("../src/blessboard/http/loadTenantPublicPageModel");
 
-const DEPLOYMENT = "blessboard-org-v5";
+const DEPLOYMENT = "blessboard-org-staging";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
 

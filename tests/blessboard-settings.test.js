@@ -101,7 +101,7 @@ describe("blessboard settings http", () => {
         productTenantKey: "set-a",
         hostname: HOST_A,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       assert.equal(provA.ok, true);
@@ -129,7 +129,7 @@ describe("blessboard settings http", () => {
         productTenantKey: "set-b",
         hostname: HOST_B,
         domainType: "canonical",
-        deploymentCode: "blessboard-org-v5",
+        deploymentCode: "blessboard-org-staging",
         isPrimary: true,
       });
       await provisionBlessBoardChurch(pool, {
@@ -178,7 +178,7 @@ describe("blessboard settings http", () => {
         getPool: () => pool,
         env: {
           NODE_ENV: "test",
-          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+          PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
           SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
           SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
           BLESSBOARD_TENANT_ROUTING_MODE: "authoritative",
@@ -201,7 +201,7 @@ describe("blessboard settings http", () => {
 
   async function cookieFor(user, opts) {
     const created = await createV5Session(pool, {
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       userId: user.id,
       organizationId: (opts && opts.organizationId) || orgA.id,
       churchId: (opts && opts.churchId) || churchA.id,

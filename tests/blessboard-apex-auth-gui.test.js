@@ -111,7 +111,7 @@ describe("blessboard apex auth gui states", () => {
     const html = renderAccountPage({
       displayName: "Administrator",
       userId: "11111111-1111-4111-8111-111111111111",
-      deploymentCode: "blessboard-org-v5",
+      deploymentCode: "blessboard-org-staging",
       organizationId: "22222222-2222-4222-8222-222222222222",
       roles: ["church_hq_admin"],
       csrfToken: "csrf-token",
@@ -125,7 +125,7 @@ describe("blessboard apex auth gui states", () => {
     assert.match(html, /name="_csrf" value="csrf-token"/);
     assert.doesNotMatch(html, /11111111-1111-4111-8111-111111111111/);
     assert.doesNotMatch(html, /22222222-2222-4222-8222-222222222222/);
-    assert.doesNotMatch(html, /blessboard-org-v5|session_token|password_hash/);
+    assert.doesNotMatch(html, /blessboard-org-staging|session_token|password_hash/);
     assert.doesNotMatch(html, /Forgot password|Change password|Billing|Notification/i);
     assert.doesNotMatch(html, /data-bb-platform-admin-link|Open Platform Admin/);
   });
