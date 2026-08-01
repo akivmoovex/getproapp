@@ -59,6 +59,9 @@ const { createFormsRequestsMemberRouter } = require("../../blessboard/http/forms
 const { createHqReportsRouter } = require("../../blessboard/http/hqReportsRoutes");
 const { createTenantPublicRouter } = require("../../blessboard/http/tenantPublicRoutes");
 const { createPathPublicRouter } = require("../../blessboard/http/pathPublicRoutes");
+const {
+  createVanityChurchPublicRouter,
+} = require("../../blessboard/http/vanityChurchPublicRoutes");
 const { createChurchWebsiteAdminRouter } = require("../../blessboard/http/churchWebsiteAdminRoutes");
 const {
   createWebsiteServiceTimesAdminRouter,
@@ -853,6 +856,16 @@ function createV5FoundationApp(options) {
       ...(opts.apexMarketingDeps && typeof opts.apexMarketingDeps === "object"
         ? opts.apexMarketingDeps
         : {}),
+    })
+  );
+
+  // 8e2. Allowlisted vanity church URLs (/demo-church → /c/demo-church).
+  // Mounted after apex marketing so reserved marketing paths win first.
+  // Unknown / reserved first segments call next() and keep existing 404 behaviour.
+  app.use(
+    createVanityChurchPublicRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
     })
   );
 

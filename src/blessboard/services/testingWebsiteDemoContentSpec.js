@@ -9,9 +9,9 @@ const DEMO_TAG = "[Demo]";
 const DEMO_TOOL = "testing-website-demo";
 const DEMO_REFERENCE_PREFIX = "bb-testing-demo:";
 
-const DEFAULT_ORGANIZATION_KEY = "automated-test-church";
-const DEFAULT_CHURCH_KEY = "automated-test-church";
-const DEFAULT_DISPLAY_NAME = "BlessBoard Automated Test Church";
+const DEFAULT_ORGANIZATION_KEY = "demo-church";
+const DEFAULT_CHURCH_KEY = "demo-church";
+const DEFAULT_DISPLAY_NAME = "Demo Church";
 const DEFAULT_ACTOR_EMAIL = "church-hq-admin@example.test";
 
 /** Safe static assets already in the repo (public renderer allows same-site paths). */

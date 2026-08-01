@@ -75,17 +75,17 @@ const UNSUPPORTED_LOGIN_ROLES = Object.freeze([
 ]);
 
 const FIXTURE = Object.freeze({
-  organizationKey: "automated-test-church",
-  organizationDisplayName: "BlessBoard Automated Test Church",
-  churchKey: "automated-test-church",
-  churchDisplayName: "BlessBoard Automated Test Church",
+  organizationKey: "demo-church",
+  organizationDisplayName: "Demo Church",
+  churchKey: "demo-church",
+  churchDisplayName: "Demo Church",
   dataEnvironment: "testing",
   hqBranchKey: "hq",
   hqBranchName: "Headquarters",
-  campusBranchKey: "test-main",
-  campusBranchName: "Test Main Branch",
-  hostname: "automated-test.blessboard.test",
-  productTenantKey: "automated-test-church",
+  campusBranchKey: "lusaka",
+  campusBranchName: "Lusaka Branch",
+  hostname: "demo-church.blessboard.test",
+  productTenantKey: "demo-church",
   deploymentCode: "blessboard-org-v5",
   planKey: "growth",
 });
@@ -115,7 +115,7 @@ const PERSONAS = Object.freeze([
     roleKey: "branch_admin",
     email: "branch-admin@example.test",
     displayName: "Branch Admin Test",
-    portal: "Tenant /branch-admin (test-main)",
+    portal: "Tenant /branch-admin (lusaka)",
     scope: { churchKey: FIXTURE.churchKey, branchKey: FIXTURE.campusBranchKey },
   },
   {

@@ -10,6 +10,9 @@ const { renderTenantPublicPage } = require("./renderTenantPublicPage");
 const { renderControlledErrorPage } = require("./renderTenantLandingPage");
 const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
 const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../services/organizationKey");
+const {
+  legacyOrganizationKeyRedirectTarget,
+} = require("../services/organizationKeyCompat");
 const { resolveHostname } = require("../../platform/host");
 const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
 const {
@@ -18,7 +21,7 @@ const {
   STATUS: WEBSITE_MODE_STATUS,
 } = require("../services/resolveWebsiteMode");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
-const { publicBranchHomePath } = require("../urls/churchUrlHelper");
+const { publicBranchHomePath, publicChurchHomePath } = require("../urls/churchUrlHelper");
 const {
   redirectSingleSiteBranchToChurchWide,
 } = require("./singleSiteBranchPublicRedirect");
@@ -42,6 +45,18 @@ function createPathPublicRouter(deps) {
         .status(404)
         .type("html")
         .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
+      return null;
+    }
+
+    const legacyTarget = legacyOrganizationKeyRedirectTarget(rawKey);
+    if (legacyTarget) {
+      const rest = String(req.originalUrl || req.url || "")
+        .split("?")[0]
+        .replace(/^\/c\/[^/]+/i, "");
+      const queryIdx = String(req.originalUrl || "").indexOf("?");
+      const query = queryIdx >= 0 ? String(req.originalUrl).slice(queryIdx) : "";
+      const destination = `${publicChurchHomePath(legacyTarget)}${rest || ""}${query}`;
+      res.redirect(301, destination);
       return null;
     }
 

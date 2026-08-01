@@ -457,7 +457,7 @@ describe("blessboard test-users seed service + access", () => {
     assert.equal(unrelatedPost.password_hash, unrelatedPre.password_hash);
   });
 
-  it("org and branch isolation: fixture emails scoped to automated-test-church", async () => {
+  it("org and branch isolation: fixture emails scoped to demo-church", async () => {
     requireDb();
     const pa = await authRepo.findUserByEmail(pool, "platform-admin@example.test");
     const roles = await authRepo.listActiveRolesForUser(pool, pa.id);

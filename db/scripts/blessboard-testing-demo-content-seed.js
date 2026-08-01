@@ -12,12 +12,12 @@
  * Diagnose:
  *   DEPLOYMENT_ENV=testing DATABASE_URL=… DATABASE_IDENTITY_EXPECTED=… \
  *     node db/scripts/blessboard-testing-demo-content-seed.js --diagnose \
- *     --organization-key=automated-test-church
+ *     --organization-key=demo-church
  *
  * Apply (Hostinger testing):
  *   DEPLOYMENT_ENV=testing DATABASE_IDENTITY_EXPECTED='blessboard-platform-v5' \
  *     <NODE_BINARY> db/scripts/blessboard-testing-demo-content-seed.js --apply \
- *     --organization-key=automated-test-church
+ *     --organization-key=demo-church
  */
 
 const { Pool } = require("pg");
