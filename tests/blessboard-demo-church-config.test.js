@@ -44,11 +44,12 @@ const {
   TO_KEY,
   DISPLAY_NAME,
   LUSAKA,
-  KITWE,
+  NDOLA,
   HQ_CONTENT,
 } = require("../src/blessboard/services/configureDemoChurch");
 const {
   legacyOrganizationKeyRedirectTarget,
+  legacyBranchKeyRedirectTarget,
   normalizeVanityOrganizationKey,
   VANITY_ORGANIZATION_KEYS,
 } = require("../src/blessboard/services/organizationKeyCompat");
@@ -76,8 +77,22 @@ function baseEnv(overrides) {
 }
 
 describe("organization key compat (pure)", () => {
-  it("maps automated-test-church → demo-church", () => {
+  it("maps automated-test-church and demo → demo-church", () => {
     assert.equal(legacyOrganizationKeyRedirectTarget("automated-test-church"), "demo-church");
+    assert.equal(legacyOrganizationKeyRedirectTarget("demo"), "demo-church");
+  });
+
+  it("maps legacy branch keys for demo-church only", () => {
+    assert.equal(
+      legacyBranchKeyRedirectTarget("demo-church", "lusaka"),
+      "demo-church-lusaka"
+    );
+    assert.equal(
+      legacyBranchKeyRedirectTarget("demo-church", "kitwe"),
+      "demo-church-ndola"
+    );
+    assert.equal(legacyBranchKeyRedirectTarget("demo-church", "test-main"), null);
+    assert.equal(legacyBranchKeyRedirectTarget("other-org", "lusaka"), null);
   });
 
   it("allowlists demo-church vanity and rejects reserved keys", () => {
@@ -274,10 +289,10 @@ describe("configure demo church (foundation db)", () => {
     assert.equal(activeOps.length, 2);
     assert.deepEqual(
       activeOps.map((b) => b.branch_key).sort(),
-      ["kitwe", "lusaka"]
+      ["demo-church-lusaka", "demo-church-ndola"]
     );
     assert.equal(result.branches.lusaka.key, LUSAKA.branchKey);
-    assert.equal(result.branches.kitwe.key, KITWE.branchKey);
+    assert.equal(result.branches.ndola.key, NDOLA.branchKey);
 
     const dup = await pool.query(
       `SELECT branch_key, COUNT(*)::int AS n
@@ -290,13 +305,13 @@ describe("configure demo church (foundation db)", () => {
     const otherOrg = await pool.query(
       `SELECT COUNT(*)::int AS n FROM blessboard.branches b
          JOIN blessboard.churches c ON c.id = b.church_id
-        WHERE b.branch_key IN ('lusaka','kitwe') AND c.organization_id <> $1`,
+        WHERE b.branch_key IN ('demo-church-lusaka','demo-church-ndola') AND c.organization_id <> $1`,
       [organizationId]
     );
     assert.equal(otherOrg.rows[0].n, 0);
   });
 
-  it("publishes independent HQ/Lusaka/Kitwe heroes and service times", async (t) => {
+  it("publishes independent HQ/Lusaka/Ndola heroes and service times", async (t) => {
     if (requireDb(t)) return;
     async function hero(branchId) {
       const page = await contentRepo.findPageByScope(pool, {
@@ -310,22 +325,22 @@ describe("configure demo church (foundation db)", () => {
 
     const hq = await hero(null);
     const lusakaBranch = await pool.query(
-      `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'lusaka'`,
+      `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'demo-church-lusaka'`,
       [churchId]
     );
-    const kitweBranch = await pool.query(
-      `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'kitwe'`,
+    const ndolaBranch = await pool.query(
+      `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'demo-church-ndola'`,
       [churchId]
     );
     const lusaka = await hero(lusakaBranch.rows[0].id);
-    const kitwe = await hero(kitweBranch.rows[0].id);
+    const ndola = await hero(ndolaBranch.rows[0].id);
 
     assert.equal(hq.heading, HQ_CONTENT.heroTitle);
     assert.equal(lusaka.heading, LUSAKA.heroTitle);
-    assert.equal(kitwe.heading, KITWE.heroTitle);
+    assert.equal(ndola.heading, NDOLA.heroTitle);
     assert.notEqual(hq.mediaUrl, lusaka.mediaUrl);
-    assert.notEqual(hq.mediaUrl, kitwe.mediaUrl);
-    assert.notEqual(lusaka.mediaUrl, kitwe.mediaUrl);
+    assert.notEqual(hq.mediaUrl, ndola.mediaUrl);
+    assert.notEqual(lusaka.mediaUrl, ndola.mediaUrl);
 
     const versions = await pool.query(
       `SELECT branch_id, status
@@ -335,13 +350,13 @@ describe("configure demo church (foundation db)", () => {
     );
     assert.ok(versions.rows.some((r) => r.branch_id == null));
     assert.ok(versions.rows.some((r) => r.branch_id === lusakaBranch.rows[0].id));
-    assert.ok(versions.rows.some((r) => r.branch_id === kitweBranch.rows[0].id));
+    assert.ok(versions.rows.some((r) => r.branch_id === ndolaBranch.rows[0].id));
 
     const gov = await pool.query(
       `SELECT branch_id, website_initialization_status
          FROM blessboard.branch_website_governance
         WHERE branch_id = ANY($1::uuid[])`,
-      [[lusakaBranch.rows[0].id, kitweBranch.rows[0].id]]
+      [[lusakaBranch.rows[0].id, ndolaBranch.rows[0].id]]
     );
     assert.equal(gov.rows.length, 2);
     assert.ok(gov.rows.every((r) => r.website_initialization_status === "completed"));
@@ -363,13 +378,13 @@ describe("configure demo church (foundation db)", () => {
 
     const lusakaId = (
       await pool.query(
-        `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'lusaka'`,
+        `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'demo-church-lusaka'`,
         [churchId]
       )
     ).rows[0].id;
-    const kitweId = (
+    const ndolaId = (
       await pool.query(
-        `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'kitwe'`,
+        `SELECT id FROM blessboard.branches WHERE church_id = $1 AND branch_key = 'demo-church-ndola'`,
         [churchId]
       )
     ).rows[0].id;
@@ -378,19 +393,19 @@ describe("configure demo church (foundation db)", () => {
       branchId: lusakaId,
       pageKey: "home",
     });
-    const kitwePage = await contentRepo.findPageByScope(pool, {
+    const ndolaPage = await contentRepo.findPageByScope(pool, {
       churchId,
-      branchId: kitweId,
+      branchId: ndolaId,
       pageKey: "home",
     });
     const lusakaHero = (await contentRepo.listSectionsForPage(pool, lusakaPage.id)).find(
       (s) => s.sectionKey === "hero"
     );
-    const kitweHero = (await contentRepo.listSectionsForPage(pool, kitwePage.id)).find(
+    const ndolaHero = (await contentRepo.listSectionsForPage(pool, ndolaPage.id)).find(
       (s) => s.sectionKey === "hero"
     );
     assert.equal(lusakaHero.heading, LUSAKA.heroTitle);
-    assert.equal(kitweHero.heading, KITWE.heroTitle);
+    assert.equal(ndolaHero.heading, NDOLA.heroTitle);
   });
 
   it("HTTP: legacy redirect, vanity, canonical, reserved routes, unknown vanity", async (t) => {
@@ -413,14 +428,29 @@ describe("configure demo church (foundation db)", () => {
     assert.ok([200, 503].includes(canonical.status), String(canonical.status));
 
     const lusaka = await request(app)
-      .get(`/c/${TO_KEY}/branches/lusaka`)
+      .get(`/c/${TO_KEY}/branches/demo-church-lusaka`)
       .set("Host", "blessboard.org");
     assert.ok([200, 301, 302, 503].includes(lusaka.status), String(lusaka.status));
 
-    const kitwe = await request(app)
-      .get(`/c/${TO_KEY}/branches/kitwe`)
+    const ndola = await request(app)
+      .get(`/c/${TO_KEY}/branches/demo-church-ndola`)
       .set("Host", "blessboard.org");
-    assert.ok([200, 301, 302, 503].includes(kitwe.status), String(kitwe.status));
+    assert.ok([200, 301, 302, 503].includes(ndola.status), String(ndola.status));
+
+    const legacyDemo = await request(app).get("/c/demo").set("Host", "blessboard.org");
+    assert.equal(legacyDemo.status, 301);
+    assert.match(String(legacyDemo.headers.location || ""), /\/c\/demo-church/);
+
+    const legacyLusaka = await request(app)
+      .get(`/c/${TO_KEY}/branches/lusaka`)
+      .set("Host", "blessboard.org");
+    assert.equal(legacyLusaka.status, 301);
+    assert.match(String(legacyLusaka.headers.location || ""), /demo-church-lusaka/);
+
+    const staleTestMain = await request(app)
+      .get(`/c/${TO_KEY}/branches/test-main`)
+      .set("Host", "blessboard.org");
+    assert.equal(staleTestMain.status, 404);
 
     for (const path of ["/login", "/pricing", "/directory", "/features"]) {
       const res = await request(app).get(path).set("Host", "blessboard.org");

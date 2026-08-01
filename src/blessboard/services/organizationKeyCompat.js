@@ -1,15 +1,28 @@
 "use strict";
 
 /**
- * Compatibility redirects and vanity allowlist for organization keys.
+ * Compatibility redirects and vanity allowlist for organization / branch keys.
  * Kept explicit (no catch-all first-path resolver) to protect reserved apex routes.
  */
 
 const { isReservedOrganizationKey, normalizeOrganizationKey } = require("./organizationKey");
+const { normalizeBranchKey } = require("./branchKey");
 
 /** Old public keys → canonical organization_key after controlled rename. */
 const LEGACY_ORGANIZATION_KEY_REDIRECTS = Object.freeze({
   "automated-test-church": "demo-church",
+  demo: "demo-church",
+});
+
+/**
+ * Org-scoped legacy branch key redirects for the Demo Church testing tenant.
+ * test-main is intentionally omitted — it was a generic fixture, not proven Lusaka/Ndola.
+ */
+const LEGACY_BRANCH_KEY_REDIRECTS = Object.freeze({
+  "demo-church": Object.freeze({
+    lusaka: "demo-church-lusaka",
+    kitwe: "demo-church-ndola",
+  }),
 });
 
 /**
@@ -34,6 +47,27 @@ function legacyOrganizationKeyRedirectTarget(rawKey) {
 }
 
 /**
+ * @param {string} organizationKey
+ * @param {string} branchKeyRaw
+ * @returns {string|null}
+ */
+function legacyBranchKeyRedirectTarget(organizationKey, branchKeyRaw) {
+  const org = String(organizationKey || "")
+    .trim()
+    .toLowerCase();
+  const branch = String(branchKeyRaw || "")
+    .trim()
+    .toLowerCase();
+  if (!org || !branch) return null;
+  const map = LEGACY_BRANCH_KEY_REDIRECTS[org];
+  if (!map) return null;
+  const target = map[branch];
+  if (!target) return null;
+  const norm = normalizeBranchKey(target);
+  return norm.ok ? norm.key : null;
+}
+
+/**
  * @param {string} rawKey
  * @returns {{ ok: true, key: string } | { ok: false, reason: string }}
  */
@@ -51,7 +85,9 @@ function normalizeVanityOrganizationKey(rawKey) {
 
 module.exports = {
   LEGACY_ORGANIZATION_KEY_REDIRECTS,
+  LEGACY_BRANCH_KEY_REDIRECTS,
   VANITY_ORGANIZATION_KEYS,
   legacyOrganizationKeyRedirectTarget,
+  legacyBranchKeyRedirectTarget,
   normalizeVanityOrganizationKey,
 };

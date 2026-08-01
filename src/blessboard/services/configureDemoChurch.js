@@ -2,8 +2,8 @@
 
 /**
  * Configure the V5 testing Demo Church tenant:
- * rename automated-test-church → demo-church, ensure Lusaka + Kitwe branches,
- * distinct HQ/branch websites, publish independently.
+ * rename automated-test-church → demo-church, ensure Demo Church Lusaka + Ndola
+ * branches with autonomous websites, and publish independently.
  *
  * Testing identity database only. Idempotent where practical.
  */
@@ -13,6 +13,9 @@ const {
   renameBlessBoardOrganizationKey,
   EXPECTED_IDENTITY_KEY,
 } = require("./renameBlessBoardOrganizationKey");
+const {
+  renameBlessBoardBranchKey,
+} = require("./renameBlessBoardBranchKey");
 const { createBlessBoardBranch } = require("./createBlessBoardBranch");
 const { deactivateBlessBoardBranch } = require("./deactivateBlessBoardBranch");
 const {
@@ -47,28 +50,28 @@ const HOSTNAME = "demo-church.blessboard.test";
 const MEDIA = Object.freeze({
   hqHero: "/church/images/homepage/apex-feature-multibranch.jpg",
   lusakaHero: "/church/images/homepage/desktop-hero-auditorium.jpg",
-  kitweHero: "/church/images/homepage/mobile-hero-sanctuary.jpg",
+  ndolaHero: "/church/images/homepage/mobile-hero-sanctuary.jpg",
   hqAbout: "/church/images/tenant-public/about-hero-building.jpg",
   lusakaAbout: "/church/images/homepage/mobile-ministry-worship.jpg",
-  kitweAbout: "/church/images/homepage/mobile-ministry-children.jpg",
+  ndolaAbout: "/church/images/homepage/mobile-ministry-children.jpg",
 });
 
 const LUSAKA = Object.freeze({
-  branchKey: "lusaka",
-  displayName: "Lusaka Branch",
+  branchKey: "demo-church-lusaka",
+  legacyKeys: Object.freeze(["lusaka"]),
+  displayName: "Demo Church Lusaka",
   publicName: "Demo Church Lusaka",
   city: "Lusaka",
   countryCode: "ZM",
   timezone: "Africa/Lusaka",
-  tagline: "Faith, family and service in the heart of Lusaka.",
+  tagline: "Faith, community and service in Zambia's capital.",
   addressLine1: "12 Independence Demo Avenue",
   addressLine2: "Ridgeway Demo District",
   phone: "+260-211-010001",
   email: "lusaka@demo-church.example.test",
   heroTitle: "Welcome to Demo Church Lusaka",
-  heroSubtitle:
-    "A vibrant community of faith, hope and service in Zambia's capital.",
-  aboutHeading: "Growing faith in Lusaka",
+  heroSubtitle: "Faith, community and service in Zambia's capital.",
+  aboutHeading: "Growing together in Lusaka",
   aboutText:
     "Demo Church Lusaka brings families, students and professionals together for worship, discipleship and community service.",
   ministryName: "Lusaka Community Outreach",
@@ -115,62 +118,62 @@ const LUSAKA = Object.freeze({
   ],
 });
 
-const KITWE = Object.freeze({
-  branchKey: "kitwe",
-  displayName: "Kitwe Branch",
-  publicName: "Demo Church Kitwe",
-  city: "Kitwe",
+const NDOLA = Object.freeze({
+  branchKey: "demo-church-ndola",
+  legacyKeys: Object.freeze(["kitwe"]),
+  displayName: "Demo Church Ndola",
+  publicName: "Demo Church Ndola",
+  city: "Ndola",
   countryCode: "ZM",
   timezone: "Africa/Lusaka",
-  tagline: "Growing together and serving the Copperbelt.",
-  addressLine1: "45 Freedom Demo Road",
-  addressLine2: "Nkana Demo Area",
-  phone: "+260-212-020002",
-  email: "kitwe@demo-church.example.test",
-  heroTitle: "Welcome to Demo Church Kitwe",
-  heroSubtitle:
-    "Building strong families and serving communities across the Copperbelt.",
-  aboutHeading: "Faith and community in Kitwe",
+  tagline: "Building faith and strengthening families on the Copperbelt.",
+  addressLine1: "88 Independence Demo Crescent",
+  addressLine2: "Northrise Demo Area",
+  phone: "+260-212-030003",
+  email: "ndola@demo-church.example.test",
+  heroTitle: "Welcome to Demo Church Ndola",
+  heroSubtitle: "Building faith and strengthening families on the Copperbelt.",
+  aboutHeading: "Serving the Ndola community",
   aboutText:
-    "Demo Church Kitwe is a welcoming community focused on spiritual growth, family life and practical service.",
-  ministryName: "Copperbelt Family Ministry",
+    "Demo Church Ndola is a welcoming community focused on spiritual growth, family life and practical service across the Copperbelt.",
+  ministryName: "Ndola Family Ministry",
   ministryDescription:
     "Supporting children, young people and families through teaching, fellowship and local outreach.",
-  contactHeading: "Visit us in Kitwe",
-  websiteName: "Demo Church Kitwe",
-  heroMedia: MEDIA.kitweHero,
-  aboutMedia: MEDIA.kitweAbout,
+  contactHeading: "Visit us in Ndola",
+  websiteName: "Demo Church Ndola",
+  heroMedia: MEDIA.ndolaHero,
+  aboutMedia: MEDIA.ndolaAbout,
   serviceTimes: [
     {
-      id: "kitwe-sunday",
+      id: "ndola-sunday",
       name: "Sunday Worship",
       day: "sunday",
       startTime: "10:00",
       endTime: "11:30",
-      location: "Kitwe Sanctuary (demo)",
+      location: "Ndola Sanctuary (demo)",
       note: "Fictional demo service",
       enabled: true,
       sortOrder: 10,
     },
     {
-      id: "kitwe-tue",
+      id: "ndola-tue",
       name: "Tuesday Prayer Meeting",
       day: "tuesday",
       startTime: "18:00",
       endTime: "19:00",
-      location: "Kitwe Prayer Room (demo)",
+      location: "Ndola Prayer Room (demo)",
       note: "Fictional demo prayer",
       enabled: true,
       sortOrder: 20,
     },
     {
-      id: "kitwe-sat",
-      name: "Saturday Children's Ministry",
+      id: "ndola-sat",
+      name: "Saturday Family Fellowship",
       day: "saturday",
       startTime: "10:00",
       endTime: "11:30",
-      location: "Kitwe Kids Hall (demo)",
-      note: "Fictional demo children",
+      location: "Ndola Family Hall (demo)",
+      note: "Fictional demo fellowship",
       enabled: true,
       sortOrder: 30,
     },
@@ -186,7 +189,7 @@ const HQ_CONTENT = Object.freeze({
     "Demo Church is a growing community committed to worship, discipleship and practical service.",
   locationsHeading: "Our locations",
   locationsText:
-    "Join us in Lusaka and Kitwe — two distinct congregations, one Demo Church family.",
+    "Join us in Lusaka and Ndola — two distinct congregations, one Demo Church family.",
   heroMedia: MEDIA.hqHero,
   aboutMedia: MEDIA.hqAbout,
 });
@@ -253,15 +256,38 @@ async function listBranches(db, churchId) {
 }
 
 async function ensureBranch(db, { organizationId, churchId, actorUserId, spec }) {
+  const lookupKeys = [spec.branchKey, ...((spec.legacyKeys && [...spec.legacyKeys]) || [])];
   const existing = await db.query(
     `SELECT id, church_id, branch_key, display_name, branch_type, status, is_primary
        FROM blessboard.branches
-      WHERE church_id = $1 AND branch_key = $2
+      WHERE church_id = $1 AND branch_key = ANY($2::text[])
+      ORDER BY CASE branch_key WHEN $3 THEN 0 ELSE 1 END
       LIMIT 1`,
-    [churchId, spec.branchKey]
+    [churchId, lookupKeys, spec.branchKey]
   );
   if (existing.rows[0]) {
-    const branch = existing.rows[0];
+    let branch = existing.rows[0];
+    let renameResult = null;
+    if (String(branch.branch_key) !== spec.branchKey) {
+      renameResult = await renameBlessBoardBranchKey(db, {
+        organizationId,
+        churchId,
+        branchId: branch.id,
+        fromKey: branch.branch_key,
+        toKey: spec.branchKey,
+        displayName: spec.displayName,
+        actorUserId,
+      });
+      if (!renameResult.ok) {
+        return { ok: false, created: renameResult, branch: null, reason: "branch_rename_failed" };
+      }
+      branch = {
+        ...branch,
+        branch_key: spec.branchKey,
+        display_name: spec.displayName,
+      };
+    }
+
     if (String(branch.status) !== "active") {
       await db.query(
         `UPDATE blessboard.branches
@@ -303,8 +329,10 @@ async function ensureBranch(db, { organizationId, churchId, actorUserId, spec })
     });
     return {
       ok: true,
-      branch: { ...branch, display_name: spec.displayName, status: "active" },
+      branch: { ...branch, display_name: spec.displayName, status: "active", branch_key: spec.branchKey },
       created: false,
+      renamed: Boolean(renameResult && !renameResult.alreadyRenamed),
+      rename: renameResult,
       init,
     };
   }
@@ -694,32 +722,34 @@ async function configureDemoChurch(db, input) {
       id: lusaka.branch.id,
       key: LUSAKA.branchKey,
       created: lusaka.created,
+      renamed: lusaka.renamed || false,
       init: lusaka.init,
     };
 
-    const kitwe = await ensureBranch(db, {
+    const ndola = await ensureBranch(db, {
       organizationId: org.id,
       churchId: church.id,
       actorUserId,
-      spec: KITWE,
+      spec: NDOLA,
     });
-    if (kitwe.ok === false) {
+    if (ndola.ok === false) {
       report.status = STATUS.FAILED;
-      report.reason = "kitwe_branch_failed";
-      report.branches.kitwe = kitwe.created;
+      report.reason = "ndola_branch_failed";
+      report.branches.ndola = ndola.created;
       return report;
     }
-    report.branches.kitwe = {
-      id: kitwe.branch.id,
-      key: KITWE.branchKey,
-      created: kitwe.created,
-      init: kitwe.init,
+    report.branches.ndola = {
+      id: ndola.branch.id,
+      key: NDOLA.branchKey,
+      created: ndola.created,
+      renamed: ndola.renamed || false,
+      init: ndola.init,
     };
 
     // Re-init if create skipped init or previous status was not completed.
     for (const [label, branchId] of [
       ["lusaka", lusaka.branch.id],
-      ["kitwe", kitwe.branch.id],
+      ["ndola", ndola.branch.id],
     ]) {
       const gov = await db.query(
         `SELECT website_initialization_status FROM blessboard.branch_website_governance WHERE branch_id = $1`,
@@ -762,18 +792,14 @@ async function configureDemoChurch(db, input) {
         branchKey: "test-main",
         branchId: testMain.id,
         status: testMain.status,
-        note: "Already inactive; preserved.",
+        note: "Already inactive; preserved. No redirect — location not proven as Lusaka/Ndola.",
       });
     }
 
     const remaining = await listBranches(db, church.id);
+    const allowedOps = new Set([LUSAKA.branchKey, NDOLA.branchKey]);
     for (const b of remaining) {
-      if (
-        b.branch_type === "branch" &&
-        b.status === "active" &&
-        b.branch_key !== "lusaka" &&
-        b.branch_key !== "kitwe"
-      ) {
+      if (b.branch_type === "branch" && b.status === "active" && !allowedOps.has(b.branch_key)) {
         report.extras.push({
           branchKey: b.branch_key,
           branchId: b.id,
@@ -795,12 +821,12 @@ async function configureDemoChurch(db, input) {
       actorUserId,
       spec: LUSAKA,
     });
-    report.websites.kitwe = await applyBranchWebsiteContent(db, {
+    report.websites.ndola = await applyBranchWebsiteContent(db, {
       organizationId: org.id,
       churchId: church.id,
-      branchId: kitwe.branch.id,
+      branchId: ndola.branch.id,
       actorUserId,
-      spec: KITWE,
+      spec: NDOLA,
     });
 
     if (publish) {
@@ -816,10 +842,10 @@ async function configureDemoChurch(db, input) {
         branchId: lusaka.branch.id,
         actorUserId,
       });
-      report.publish.kitwe = await publishScope(db, {
+      report.publish.ndola = await publishScope(db, {
         organizationId: org.id,
         churchId: church.id,
-        branchId: kitwe.branch.id,
+        branchId: ndola.branch.id,
         actorUserId,
       });
     }
@@ -847,7 +873,7 @@ module.exports = {
   HOSTNAME,
   MEDIA,
   LUSAKA,
-  KITWE,
+  NDOLA,
   HQ_CONTENT,
   configureDemoChurch,
   assertTestingIdentity,

@@ -12,6 +12,7 @@ const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
 const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../services/organizationKey");
 const {
   legacyOrganizationKeyRedirectTarget,
+  legacyBranchKeyRedirectTarget,
 } = require("../services/organizationKeyCompat");
 const { resolveHostname } = require("../../platform/host");
 const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
@@ -295,6 +296,24 @@ function createPathPublicRouter(deps) {
     if (!resolved) return;
 
     const pageKey = pageKeyFromPath(normalizedPath);
+    const branchKeyRaw = String(req.params.branchKey || "")
+      .trim()
+      .toLowerCase();
+    const legacyBranchTarget = legacyBranchKeyRedirectTarget(
+      resolved.organizationKey,
+      branchKeyRaw
+    );
+    if (legacyBranchTarget) {
+      const rest = normalizedPath === "/" ? "" : normalizedPath;
+      const queryIdx = String(req.originalUrl || "").indexOf("?");
+      const query = queryIdx >= 0 ? String(req.originalUrl).slice(queryIdx) : "";
+      const destination = `${publicBranchHomePath(
+        resolved.organizationKey,
+        legacyBranchTarget
+      )}${rest}${query}`;
+      return res.redirect(301, destination);
+    }
+
     const branchKey = normalizeBranchKey(req.params.branchKey);
     if (!branchKey) {
       return res
