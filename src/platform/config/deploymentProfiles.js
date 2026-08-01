@@ -69,7 +69,7 @@ const OPTIONAL_HOSTINGER_KEYS = Object.freeze(["GETPRO_PG_SSL", "PORT"]);
 const PROFILE_COM_PRODUCTION = Object.freeze({
   deploymentCode: CODE_COM_PRODUCTION,
   deploymentEnvironment: "production",
-  runtimeMode: RUNTIME_PRODUCTION,
+  runtimeMode: RUNTIME_V5_FOUNDATION,
   authoritative: true,
   canonicalDomain: "blessboard.com",
   publicOrigin: "https://blessboard.com",

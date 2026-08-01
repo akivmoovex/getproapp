@@ -415,6 +415,16 @@ function isBlessBoardOrgTestingDeployment() {
 }
 
 /**
+ * True for any official BlessBoard V5-foundation profile (.com production or .org staging).
+ * These deployments require explicit DATABASE_URL and never use GETPRO_DATABASE_URL.
+ */
+function isBlessBoardV5PlatformDeployment() {
+  if (!hasAuthoritativeDeploymentProfile()) return false;
+  const profile = getDeploymentProfile();
+  return Boolean(profile && profile.runtimeMode === "v5-foundation");
+}
+
+/**
  * Optional EXPECTED_DATABASE_ENV — when set, must match effective deployment env.
  * Authoritative profiles derive expectedDatabaseEnvironment; an explicit matching
  * Hostinger value is allowed (deprecated). Conflicts fail closed.
@@ -492,6 +502,7 @@ module.exports = {
   DEPLOYMENT_ENV_TESTING,
   DEPLOYMENT_ENV_PRODUCTION,
   isBlessBoardOrgTestingDeployment,
+  isBlessBoardV5PlatformDeployment,
   validateExpectedDatabaseEnv,
   getBlessBoardDomainDiagnostics,
   parseApexDomainsFromEnv,

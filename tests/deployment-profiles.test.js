@@ -128,10 +128,10 @@ describe("deploymentProfiles registry", () => {
     resetDeploymentProfileWarningsForTests();
   });
 
-  it("registers blessboard-com-production as authoritative production runtime", () => {
+  it("registers blessboard-com-production as authoritative V5 foundation (production)", () => {
     const p = DEPLOYMENT_PROFILES[CODE_COM_PRODUCTION];
     assert.equal(p.authoritative, true);
-    assert.equal(p.runtimeMode, "production");
+    assert.equal(p.runtimeMode, "v5-foundation");
     assert.equal(p.deploymentEnvironment, "production");
     assert.equal(p.expectedDatabaseEnvironment, "production");
     assert.equal(p.canonicalDomain, "blessboard.com");
@@ -166,14 +166,14 @@ describe("deploymentProfiles registry", () => {
     assert.ok(warnings.some((w) => /DEPRECATED/.test(w)));
   });
 
-  it("maps deprecated blessboard-com-v4 alias to production", () => {
+  it("maps deprecated blessboard-com-v4 alias to production V5 foundation", () => {
     const r = resolveDeploymentProfileOrError({
       PLATFORM_DEPLOYMENT_CODE: CODE_COM_V4,
     });
     assert.equal(r.ok, true);
     assert.equal(r.aliased, true);
     assert.equal(r.profile.deploymentCode, CODE_COM_PRODUCTION);
-    assert.equal(r.profile.runtimeMode, "production");
+    assert.equal(r.profile.runtimeMode, "v5-foundation");
   });
 
   it("unknown PLATFORM_DEPLOYMENT_CODE fails closed", () => {
@@ -202,13 +202,13 @@ describe("deploymentProfiles registry", () => {
 describe("minimal production Hostinger env", () => {
   beforeEach(() => resetDeploymentProfileWarningsForTests());
 
-  it("selects production runtime and derives domains/jobs/cookie/env", () => {
+  it("selects V5 foundation runtime and derives domains/jobs/cookie/env", () => {
     withEnv(MINIMAL_PRODUCTION, () => {
       const deployment = resolveDeploymentConfiguration();
-      assert.equal(deployment.runtimeMode, "production");
+      assert.equal(deployment.runtimeMode, "v5-foundation");
       assert.equal(deployment.environment, "production");
       assert.equal(deployment.expectedDatabaseEnvironment, "production");
-      assert.equal(isV5FoundationMode(), false);
+      assert.equal(isV5FoundationMode(), true);
       assert.equal(hasAuthoritativeDeploymentProfile(), true);
       assert.equal(getDeploymentEnvMode(), "production");
       assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
@@ -444,16 +444,17 @@ describe("legacy production BASE_DOMAIN gate unchanged", () => {
     );
   });
 
-  it("blessboard-com-v4 alias does not enter foundation mode", () => {
+  it("blessboard-com-v4 alias maps to production V5 foundation (not legacy)", () => {
     withEnv(
       {
         PLATFORM_DEPLOYMENT_CODE: CODE_COM_V4,
         DEPLOYMENT_ENV: "production",
       },
       () => {
-        assert.equal(isV5FoundationMode(), false);
+        assert.equal(isV5FoundationMode(), true);
         assert.equal(hasAuthoritativeDeploymentProfile(), true);
-        assert.equal(getDeploymentProfile().runtimeMode, "production");
+        assert.equal(getDeploymentProfile().runtimeMode, "v5-foundation");
+        assert.equal(getDeploymentProfile().deploymentEnvironment, "production");
       }
     );
   });
@@ -499,6 +500,35 @@ describe("www and cross-TLD redirects under profiles", () => {
     });
   });
 
+  it("www.blessboard.com redirects to blessboard.com under production profile", () => {
+    withEnv(MINIMAL_PRODUCTION, () => {
+      let status = null;
+      let location = null;
+      foundationWwwToApexRedirect(
+        {
+          headers: { host: "www.blessboard.com", "x-forwarded-proto": "https" },
+          originalUrl: "/pricing",
+          protocol: "http",
+          get(name) {
+            const key = String(name || "").toLowerCase();
+            if (key === "host") return this.headers.host;
+            if (key === "x-forwarded-proto") return this.headers["x-forwarded-proto"];
+            return undefined;
+          },
+        },
+        {
+          redirect(code, url) {
+            status = code;
+            location = url;
+          },
+        },
+        () => {}
+      );
+      assert.equal(status, 301);
+      assert.equal(location, "https://blessboard.com/pricing");
+    });
+  });
+
   it("production apex never treats blessboard.org as alias", () => {
     withEnv(MINIMAL_PRODUCTION, () => {
       assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
@@ -518,7 +548,7 @@ describe("session cookie isolation under profile", () => {
     });
   });
 
-  it("production uses blessboard_com_sid", () => {
+  it("production uses blessboard_com_sid and enables jobs", () => {
     withEnv(MINIMAL_PRODUCTION, () => {
       assert.equal(getSessionCookieName(), COOKIE_COM);
       assert.equal(parseBlessBoardJobsEnabled().enabled, true);

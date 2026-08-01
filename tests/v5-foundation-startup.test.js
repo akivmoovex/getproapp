@@ -85,7 +85,7 @@ describe("v5 foundation mode detection", () => {
       isV5FoundationMode({
         PLATFORM_DEPLOYMENT_CODE: "blessboard-com-production",
       }),
-      false
+      true
     );
   });
 
@@ -146,6 +146,8 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
     assert.equal(health.status, 200);
     assert.equal(health.body.ok, true);
     assert.equal(health.body.mode, "v5-foundation");
+    // Without an authoritative profile in this suite env, environment may be null.
+    assert.ok(health.body.environment === null || typeof health.body.environment === "string");
     await assertNoPublicLegacyTables();
   });
 
