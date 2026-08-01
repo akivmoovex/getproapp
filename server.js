@@ -70,19 +70,18 @@ logPgStartupDiagnostics({
 
 const { isV5FoundationMode } = require("./src/platform/config/v5FoundationMode");
 const {
-  assertV5FoundationDeploymentPairingOrExit,
+  assertAuthoritativeProfileRuntimePairingOrExit,
 } = require("./src/platform/config/v5EnvValidation");
 const {
   assertDeploymentProfileOrExit,
   resolveDeploymentConfiguration,
   hasAuthoritativeDeploymentProfile,
-  RUNTIME_PRODUCTION,
   RUNTIME_V5_FOUNDATION,
 } = require("./src/platform/config/deploymentProfiles");
 // Refuse unknown PLATFORM_DEPLOYMENT_CODE and security-sensitive legacy conflicts before other gates.
 assertDeploymentProfileOrExit();
 // Refuse silent fall-through when a V5-foundation profile has a conflicting DEPLOYMENT_ENV.
-assertV5FoundationDeploymentPairingOrExit();
+assertAuthoritativeProfileRuntimePairingOrExit();
 
 const { assertProductionRequiredEnvOrExit } = require("./src/startup/productionEnvGate");
 assertProductionRequiredEnvOrExit(boot);
@@ -102,7 +101,8 @@ const deployment = resolveDeploymentConfiguration();
 const runtimeMode = deployment.runtimeMode;
 
 if (runtimeMode === RUNTIME_V5_FOUNDATION || (!runtimeMode && isV5FoundationMode())) {
-  // Staging / V5 foundation: platform DB — no legacy public.tenants / session / ensure*Schema.
+  // Official BlessBoard profiles (.com production + .org staging): platform DB —
+  // no legacy public.tenants / session / ensure*Schema.
   void require("./src/platform/http/v5FoundationServer")
     .startV5FoundationServer({ boot })
     .catch((err) => {
@@ -110,8 +110,8 @@ if (runtimeMode === RUNTIME_V5_FOUNDATION || (!runtimeMode && isV5FoundationMode
       console.error("[blessboard] V5 foundation startup error:", err && err.message ? err.message : err);
       process.exit(1);
     });
-} else if (runtimeMode === RUNTIME_PRODUCTION || !runtimeMode) {
-  // Production profile or unset (legacy GetPro / transitional): full application.
+} else if (!runtimeMode) {
+  // Unprofiled GetPro / transitional: full legacy application.
   require("./server.legacy");
 } else {
   // eslint-disable-next-line no-console

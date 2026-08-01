@@ -158,7 +158,41 @@ const { sha256Hex } = require("../session/sessionToken");
 const UNAVAILABLE_STATUS = 503;
 const UNAVAILABLE_MESSAGE = "This page is not yet available in BlessBoard V5.";
 
+/** @deprecated Prefer resolveApexHosts() — org-only default for unprofiled tests. */
 const APEX_HOSTS = new Set(["blessboard.org", "www.blessboard.org"]);
+
+/**
+ * Apex hosts from the active deployment profile, or the org-only fallback.
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {Set<string>}
+ */
+function resolveApexHosts(env) {
+  try {
+    const { getBlessBoardApexDomainSet } = require("../../church/blessBoardEnv");
+    const fromProfile = getBlessBoardApexDomainSet();
+    if (fromProfile && fromProfile.size) return fromProfile;
+  } catch {
+    /* fall through */
+  }
+  void env;
+  return new Set(APEX_HOSTS);
+}
+
+/**
+ * Canonical apex hostname (no www) for redirects and absolute URLs.
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function resolveCanonicalApexHost(env) {
+  try {
+    const { getAuthoritativeDomainConfig } = require("../config/deploymentProfiles");
+    const fromProfile = getAuthoritativeDomainConfig(env);
+    if (fromProfile && fromProfile.canonicalDomain) return fromProfile.canonicalDomain;
+    const { getBlessBoardCanonicalDomain } = require("../../church/blessBoardEnv");
+    return getBlessBoardCanonicalDomain();
+  } catch {
+    return "blessboard.org";
+  }
+}
 
 /**
  * @param {import('express').Request} req
@@ -235,8 +269,12 @@ function parseCookies(req) {
  * @param {import('express').Request} req
  * @param {{ apexHosts?: Set<string> }} [opts]
  */
+/**
+ * @param {import('express').Request} req
+ * @param {{ apexHosts?: Set<string>, env?: NodeJS.ProcessEnv }} [opts]
+ */
 function isApexHost(req, opts) {
-  const hosts = (opts && opts.apexHosts) || APEX_HOSTS;
+  const hosts = (opts && opts.apexHosts) || resolveApexHosts((opts && opts.env) || process.env);
   const host = String(resolveHostname(req) || "")
     .trim()
     .toLowerCase()
@@ -248,9 +286,9 @@ function isApexHost(req, opts) {
 }
 
 /**
- * Foundation-only: www.blessboard.org → https://blessboard.org (path+query preserved).
+ * Foundation-only: www.{canonical} → https://{canonical} (path+query preserved).
+ * Uses the active deployment profile so .com and .org never cross-redirect.
  * Runs before Set-Cookie so host-only CSRF cookies are never issued on www.
- * Does not apply V4 defaults that remap .org → blessboard.com.
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
@@ -260,10 +298,12 @@ function foundationWwwToApexRedirect(req, res, next) {
     .trim()
     .toLowerCase()
     .split(":")[0];
-  if (host !== "www.blessboard.org") {
+  const canonical = resolveCanonicalApexHost(process.env);
+  const wwwCanonical = `www.${canonical}`;
+  if (host !== wwwCanonical) {
     return next();
   }
-  return res.redirect(301, `https://blessboard.org${req.originalUrl || "/"}`);
+  return res.redirect(301, `https://${canonical}${req.originalUrl || "/"}`);
 }
 
 /**
@@ -474,17 +514,29 @@ function createV5FoundationApp(options) {
   // Health is independent of tenant DB state and of write maintenance (GET only).
   app.get("/healthz", (req, res) => {
     const writeMaintenance = isWriteMaintenanceEnabled(env);
+    let environment = null;
+    try {
+      const { resolveDeploymentConfiguration } = require("../config/deploymentProfiles");
+      const deployment = resolveDeploymentConfiguration(env);
+      environment = deployment.environment || null;
+    } catch {
+      environment = null;
+    }
+    const body = {
+      ok: true,
+      mode: "v5-foundation",
+      environment,
+      writeMaintenance,
+    };
     if (env.DEBUG_HOST === "1") {
       return res.json({
-        ok: true,
-        mode: "v5-foundation",
-        writeMaintenance,
+        ...body,
         resolvedHost: resolveHostname(req),
         xForwardedHost: req.headers["x-forwarded-host"] || null,
         hostHeader: req.headers.host || null,
       });
     }
-    return res.json({ ok: true, mode: "v5-foundation", writeMaintenance });
+    return res.json(body);
   });
 
   // 6. Temporary protected diagnostic (tenant hosts only; not linked from nav)
@@ -965,7 +1017,7 @@ function createV5FoundationApp(options) {
           status === 400 ? "This BlessBoard site could not start sign-in." : "Sign-in is temporarily unavailable."
         );
       }
-      const apexOrigin = getApexOrigin(env, "blessboard.org");
+      const apexOrigin = getApexOrigin(env, resolveCanonicalApexHost(env));
       return res.redirect(303, `${apexOrigin}/login?tr=${encodeURIComponent(created.rawToken)}`);
     } catch {
       return sendAuthError(req, res, 503, "Sign-in is temporarily unavailable.");
@@ -1524,7 +1576,10 @@ async function startV5FoundationServer(opts) {
   const jobsParsed = parseBlessBoardJobsEnabled();
   // eslint-disable-next-line no-console
   console.log(
-    `[blessboard] BLESSBOARD_JOBS_ENABLED=${jobsParsed.enabled ? "1" : "0"} (${jobsParsed.reason}); no job workers started in foundation process`
+    `[blessboard] BLESSBOARD_JOBS_ENABLED=${jobsParsed.enabled ? "1" : "0"} (${jobsParsed.reason}); ` +
+      (jobsParsed.enabled
+        ? "HTTP process does not start in-process workers — cron/ops scripts use profile jobsEnabled"
+        : "scheduled job scripts will no-op")
   );
   // eslint-disable-next-line no-console
   console.log(`[blessboard] ${formatMediaUploadsEnabledLog()}`);
@@ -1542,7 +1597,12 @@ async function startV5FoundationServer(opts) {
   const pool = getPgPool();
   await verifyFoundationPool(pool);
 
-  const app = createV5FoundationApp({ getPool: () => pool });
+  const {
+    assertPlatformDatabaseIdentityOrExit,
+  } = require("../../startup/blessBoardOrgDbGate");
+  await assertPlatformDatabaseIdentityOrExit(pool);
+
+  const app = createV5FoundationApp({ getPool: () => pool, env: process.env });
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   const { resolveListenHost } = require("../config/deploymentProfiles");
   const host = resolveListenHost(process.env);
@@ -1565,6 +1625,8 @@ module.exports = {
   UNAVAILABLE_STATUS,
   UNAVAILABLE_MESSAGE,
   APEX_HOSTS,
+  resolveApexHosts,
+  resolveCanonicalApexHost,
   isUnavailableAppPath,
   isApexHost,
   foundationWwwToApexRedirect,

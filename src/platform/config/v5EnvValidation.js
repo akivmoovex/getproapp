@@ -236,15 +236,15 @@ function summarizeV5DatabaseEnv(env) {
 }
 
 /**
- * Pairing rule: V5-foundation profiles must not silently fall through to the legacy server
- * when DEPLOYMENT_ENV explicitly conflicts. Unset DEPLOYMENT_ENV is derived from the profile.
+ * Pairing rule: authoritative V5-foundation profiles must not silently fall through
+ * to the legacy server when DEPLOYMENT_ENV explicitly conflicts.
+ * Unset DEPLOYMENT_ENV is derived from the profile (production or testing).
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {{ ok: true } | { ok: false, code: string, message: string }}
  */
-function checkV5FoundationDeploymentPairing(env) {
+function checkAuthoritativeProfileRuntimePairing(env) {
   const source = env || process.env;
   const {
-    getDeploymentProfile,
     resolveDeploymentProfileOrError,
     RUNTIME_V5_FOUNDATION,
   } = require("./deploymentProfiles");
@@ -253,6 +253,15 @@ function checkV5FoundationDeploymentPairing(env) {
   const profile = resolved.profile;
   if (!profile || profile.runtimeMode !== RUNTIME_V5_FOUNDATION) {
     return { ok: true };
+  }
+  if (profile.deploymentEnvironment !== profile.expectedDatabaseEnvironment) {
+    return {
+      ok: false,
+      code: "profile_env_identity_mismatch",
+      message:
+        `Profile ${profile.deploymentCode} has deploymentEnvironment=${profile.deploymentEnvironment} ` +
+        `but expectedDatabaseEnvironment=${profile.expectedDatabaseEnvironment}. Refusing to start.`,
+    };
   }
   const depEnv = String(source.DEPLOYMENT_ENV || "")
     .trim()
@@ -270,17 +279,23 @@ function checkV5FoundationDeploymentPairing(env) {
   };
 }
 
+/** @deprecated Prefer checkAuthoritativeProfileRuntimePairing */
+const checkV5FoundationDeploymentPairing = checkAuthoritativeProfileRuntimePairing;
+
 /**
  * @param {NodeJS.ProcessEnv} [env]
  * @param {(msg: string) => void} [errorFn]
  */
-function assertV5FoundationDeploymentPairingOrExit(env, errorFn) {
-  const check = checkV5FoundationDeploymentPairing(env);
+function assertAuthoritativeProfileRuntimePairingOrExit(env, errorFn) {
+  const check = checkAuthoritativeProfileRuntimePairing(env);
   if (check.ok) return;
   const out = typeof errorFn === "function" ? errorFn : (msg) => console.error(msg);
   out(`[blessboard] FATAL: ${check.message}`);
   process.exit(1);
 }
+
+/** @deprecated Prefer assertAuthoritativeProfileRuntimePairingOrExit */
+const assertV5FoundationDeploymentPairingOrExit = assertAuthoritativeProfileRuntimePairingOrExit;
 
 /**
  * Production V5 CSRF/session require a long secret. Non-production may use shorter/dev secrets.
@@ -345,6 +360,8 @@ module.exports = {
   validateEnvironmentCode,
   getPlatformDeploymentCode,
   isV5FoundationMode,
+  checkAuthoritativeProfileRuntimePairing,
+  assertAuthoritativeProfileRuntimePairingOrExit,
   checkV5FoundationDeploymentPairing,
   assertV5FoundationDeploymentPairingOrExit,
   checkV5SessionSecretPolicy,

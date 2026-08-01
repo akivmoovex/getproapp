@@ -78,16 +78,29 @@ function logBlessBoardOrgDbIsolationDiagnostics() {
  * @param {object} [boot]
  */
 function assertBlessBoardOrgDbIsolationOrExit(boot) {
-  if (!isBlessBoardOrgTestingDeployment()) return;
+  const {
+    isBlessBoardV5PlatformDeployment,
+  } = require("../church/blessBoardEnv");
+  const enforce =
+    isBlessBoardOrgTestingDeployment() || isBlessBoardV5PlatformDeployment();
+  if (!enforce) return;
 
-  logBlessBoardOrgDbIsolationDiagnostics(boot);
+  if (isBlessBoardOrgTestingDeployment()) {
+    logBlessBoardOrgDbIsolationDiagnostics(boot);
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[blessboard] V5 platform DB isolation check: deployment environment=${getDeploymentEnv()} ` +
+        `canonical=${getBlessBoardCanonicalDomain()} DATABASE_URL=${envStringIsSet(process.env.DATABASE_URL) ? "yes" : "no"}`
+    );
+  }
 
   const expectedCheck = validateExpectedDatabaseEnv();
   if (!expectedCheck.ok) {
     // eslint-disable-next-line no-console
     console.error(
       `[blessboard] FATAL: EXPECTED_DATABASE_ENV=${expectedCheck.expected} does not match DEPLOYMENT_ENV=${expectedCheck.actual}. ` +
-        `BlessBoard.org testing deployments require these markers to agree (application environment marker).`
+        `BlessBoard V5 deployments require these markers to agree (application environment marker).`
     );
     process.exit(1);
   }
@@ -96,17 +109,174 @@ function assertBlessBoardOrgDbIsolationOrExit(boot) {
     const getproPresent = envStringIsSet(process.env.GETPRO_DATABASE_URL);
     // eslint-disable-next-line no-console
     console.error(
-      "[blessboard] FATAL: BlessBoard.org testing deployment requires an explicit DATABASE_URL. " +
-        "GETPRO_DATABASE_URL fallback is disabled for this deployment to protect the production database. " +
+      "[blessboard] FATAL: BlessBoard V5 deployment requires an explicit DATABASE_URL. " +
+        "GETPRO_DATABASE_URL fallback is disabled for this deployment to protect the wrong database. " +
         `GETPRO_DATABASE_URL present: ${getproPresent ? "yes" : "no"} (ignored). ` +
-        "Set DATABASE_URL to the dedicated testing database for blessboard.org / V5."
+        "Set DATABASE_URL to the dedicated database for this deployment profile."
     );
     process.exit(1);
   }
 }
 
 /**
- * Verify the singleton database identity row matches the deployment environment.
+ * Verify platform.database_identity.environment_code matches the active profile
+ * (or explicit DEPLOYMENT_ENV) for V5 foundation HTTP startup.
+ * Pure logic + DB read — no process.exit (see assertPlatformDatabaseIdentityOrExit).
+ * @param {import("pg").Pool|null} pool
+ * @param {{ expectedEnvironment?: string }} [opts]
+ * @returns {Promise<{ status: "skip"|"ok"|"fatal", reason: string, sanitizedMessage: string, expectedEnvironment?: string, identity?: object|null }>}
+ */
+async function verifyPlatformDatabaseIdentity(pool, opts = {}) {
+  const {
+    getDeploymentProfile,
+    hasAuthoritativeDeploymentProfile,
+  } = require("../platform/config/deploymentProfiles");
+  const { isV5FoundationMode } = require("../platform/config/v5FoundationMode");
+
+  let expected =
+    opts.expectedEnvironment != null
+      ? String(opts.expectedEnvironment).trim().toLowerCase()
+      : "";
+  if (!expected && hasAuthoritativeDeploymentProfile()) {
+    const profile = getDeploymentProfile();
+    expected = profile && profile.expectedDatabaseEnvironment
+      ? String(profile.expectedDatabaseEnvironment).trim().toLowerCase()
+      : "";
+  }
+  if (!expected) {
+    expected = explicitDeploymentEnv();
+  }
+
+  if (!isV5FoundationMode() && !hasAuthoritativeDeploymentProfile()) {
+    return {
+      status: "skip",
+      reason: "not-v5-foundation",
+      sanitizedMessage: "[blessboard] Platform DB identity check skipped (not V5 foundation).",
+    };
+  }
+
+  if (!IDENTITY_ENFORCED_ENVS.includes(expected)) {
+    return {
+      status: "skip",
+      reason: "deployment-env-not-enforced",
+      expectedEnvironment: expected,
+      sanitizedMessage: `[blessboard] Platform DB identity check skipped (expected env=${expected || "(unset)"}).`,
+    };
+  }
+
+  if (!pool) {
+    return {
+      status: "fatal",
+      reason: "no-pool",
+      expectedEnvironment: expected,
+      sanitizedMessage:
+        `[blessboard] FATAL: V5 foundation requires a verified platform.database_identity ` +
+        `(expected environment_code=${expected}), but no PostgreSQL pool is configured.`,
+    };
+  }
+
+  const hostFingerprint = redactDatabaseHostFingerprint(getDatabaseUrl());
+  const { readIdentityRow, identityTableExists } = require("../../db/scripts/lib/databaseIdentity");
+
+  try {
+    if (!(await identityTableExists(pool))) {
+      return {
+        status: "fatal",
+        reason: "identity-table-missing",
+        expectedEnvironment: expected,
+        sanitizedMessage:
+          `[blessboard] FATAL: platform.database_identity is missing (host ${hostFingerprint}). ` +
+          `Expected environment_code=${expected}. Run foundation migrations / identity init before serving traffic.`,
+      };
+    }
+  } catch (err) {
+    const code = err && err.code ? String(err.code) : "unknown";
+    return {
+      status: "fatal",
+      reason: "read-error",
+      expectedEnvironment: expected,
+      sanitizedMessage:
+        `[blessboard] FATAL: could not inspect platform.database_identity ` +
+        `(host ${hostFingerprint}, error code ${code}). Refusing to start unverified.`,
+    };
+  }
+
+  let row;
+  try {
+    row = await readIdentityRow(pool);
+  } catch (err) {
+    const code = err && err.code ? String(err.code) : "unknown";
+    return {
+      status: "fatal",
+      reason: "read-error",
+      expectedEnvironment: expected,
+      sanitizedMessage:
+        `[blessboard] FATAL: could not read platform.database_identity ` +
+        `(host ${hostFingerprint}, error code ${code}). Refusing to start unverified.`,
+    };
+  }
+
+  if (!row) {
+    return {
+      status: "fatal",
+      reason: "missing",
+      expectedEnvironment: expected,
+      identity: null,
+      sanitizedMessage:
+        `[blessboard] FATAL: no platform.database_identity row (host ${hostFingerprint}). ` +
+        `Expected environment_code=${expected}. Run: npm run db:identity:init.`,
+    };
+  }
+
+  const actual = String(row.environment_code || "")
+    .trim()
+    .toLowerCase();
+  if (actual !== expected) {
+    return {
+      status: "fatal",
+      reason: "mismatch",
+      expectedEnvironment: expected,
+      identity: row,
+      sanitizedMessage:
+        `[blessboard] FATAL: platform database identity mismatch (host ${hostFingerprint}). ` +
+        `This database is marked environment_code=${actual}, but the deployment profile expects ${expected}. ` +
+        "Refusing to start against the wrong database.",
+    };
+  }
+
+  return {
+    status: "ok",
+    reason: "verified",
+    expectedEnvironment: expected,
+    identity: row,
+    sanitizedMessage:
+      `[blessboard] Platform database identity verified: environment_code=${actual} ` +
+      `host=${hostFingerprint}.`,
+  };
+}
+
+/**
+ * Enforce {@link verifyPlatformDatabaseIdentity} at V5 foundation startup.
+ * @param {import("pg").Pool|null} pool
+ * @param {{ expectedEnvironment?: string, exit?: (code:number)=>void, logger?: { log: Function, error: Function } }} [opts]
+ */
+async function assertPlatformDatabaseIdentityOrExit(pool, opts = {}) {
+  const exit = typeof opts.exit === "function" ? opts.exit : (code) => process.exit(code);
+  const logger = opts.logger || console;
+  const result = await verifyPlatformDatabaseIdentity(pool, opts);
+  if (result.status === "fatal") {
+    logger.error(result.sanitizedMessage);
+    exit(1);
+    return result;
+  }
+  if (result.status === "ok") {
+    logger.log(result.sanitizedMessage);
+  }
+  return result;
+}
+
+/**
+ * Verify the singleton church_database_identity row matches the deployment environment.
  *
  * Only enforced when DEPLOYMENT_ENV is explicitly "testing" or "production".
  * Fails closed: a missing identity, a mismatched identity, or a database that cannot
@@ -225,4 +395,6 @@ module.exports = {
   assertBlessBoardOrgDbIsolationOrExit,
   verifyDatabaseIdentity,
   assertBlessBoardDatabaseIdentityOrExit,
+  verifyPlatformDatabaseIdentity,
+  assertPlatformDatabaseIdentityOrExit,
 };

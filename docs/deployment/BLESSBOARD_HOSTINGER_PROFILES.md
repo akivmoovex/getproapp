@@ -51,7 +51,7 @@ GETPRO_PG_SSL=no-verify
 
 | Setting | Production | Staging |
 | --- | --- | --- |
-| Runtime | full application (`server.legacy`) | V5 foundation |
+| Runtime | V5 foundation (`v5FoundationServer`) | V5 foundation |
 | Deployment environment | `production` | `testing` |
 | Canonical domain | `blessboard.com` | `blessboard.org` |
 | Apex domains | `.com` + `www` only | `.org` + `www` only |

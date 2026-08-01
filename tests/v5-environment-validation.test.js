@@ -129,10 +129,14 @@ describe("V5 DEPLOYMENT_ENV / foundation pairing", () => {
 
   it("server.js wires pairing assert before runtime selector", () => {
     const src = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
-    assert.match(src, /assertV5FoundationDeploymentPairingOrExit/);
+    assert.match(src, /assertAuthoritativeProfileRuntimePairingOrExit|assertV5FoundationDeploymentPairingOrExit/);
     assert.match(src, /RUNTIME_V5_FOUNDATION/);
     assert.match(src, /resolveDeploymentConfiguration/);
-    const pairingIdx = src.indexOf("assertV5FoundationDeploymentPairingOrExit");
+    assert.doesNotMatch(src, /RUNTIME_PRODUCTION/);
+    const pairingIdx = Math.max(
+      src.indexOf("assertAuthoritativeProfileRuntimePairingOrExit"),
+      src.indexOf("assertV5FoundationDeploymentPairingOrExit")
+    );
     const runtimeIdx = src.indexOf("RUNTIME_V5_FOUNDATION");
     assert.ok(pairingIdx > 0 && runtimeIdx > pairingIdx);
   });
