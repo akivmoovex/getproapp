@@ -52,7 +52,7 @@ describe("v5 foundation mode detection", () => {
     }
   });
 
-  it("requires blessboard-org-v5 and DEPLOYMENT_ENV=testing", () => {
+  it("requires V5-foundation profile (staging or deprecated org-v5 alias)", () => {
     assert.equal(isV5FoundationMode({}), false);
     assert.equal(
       isV5FoundationMode({
@@ -74,6 +74,18 @@ describe("v5 foundation mode detection", () => {
         DEPLOYMENT_ENV: "testing",
       }),
       true
+    );
+    assert.equal(
+      isV5FoundationMode({
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
+      }),
+      true
+    );
+    assert.equal(
+      isV5FoundationMode({
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-com-production",
+      }),
+      false
     );
   });
 
@@ -358,7 +370,8 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
 describe("v5 foundation vs V4 wiring (source)", () => {
   it("server.js branches to V5 foundation or server.legacy", () => {
     const dispatcher = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
-    assert.match(dispatcher, /isV5FoundationMode/);
+    assert.match(dispatcher, /RUNTIME_V5_FOUNDATION|isV5FoundationMode/);
+    assert.match(dispatcher, /resolveDeploymentConfiguration/);
     assert.match(dispatcher, /v5FoundationServer/);
     assert.match(dispatcher, /server\.legacy/);
     assert.equal(dispatcher.includes("ensureChurchSchema"), false);

@@ -7,7 +7,7 @@
 
 const crypto = require("crypto");
 
-const CSRF_COOKIE = "blessboard_org_v5_csrf";
+const CSRF_COOKIE = "blessboard_org_csrf";
 const CSRF_PREFIX = "v5c1";
 const CSRF_FIELD = "_csrf";
 

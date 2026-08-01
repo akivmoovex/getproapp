@@ -1,22 +1,28 @@
 "use strict";
 
 /**
- * Deployment profile registry + minimal V5 Hostinger env surface.
+ * Unified BlessBoard deployment profiles — identical Hostinger keys for .com and .org.
  */
 
-const { describe, it, beforeEach, afterEach } = require("node:test");
+const { describe, it, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
   DEPLOYMENT_PROFILES,
+  CODE_COM_PRODUCTION,
+  CODE_ORG_STAGING,
   CODE_ORG_V5,
   CODE_COM_V4,
-  V5_SESSION_COOKIE,
+  COOKIE_COM,
+  COOKIE_ORG,
   PRODUCTION_SESSION_COOKIE,
+  requiredHostingerKeys,
+  optionalHostingerKeys,
   getDeploymentProfile,
   hasAuthoritativeDeploymentProfile,
   getDeploymentSetting,
   getAuthoritativeDomainConfig,
+  resolveDeploymentConfiguration,
   resolveDeploymentProfileOrError,
   validateAuthoritativeProfileCompatibility,
   resolveTrustProxy,
@@ -86,11 +92,35 @@ function withEnv(overrides, fn) {
   }
 }
 
-const MINIMAL_V5 = Object.freeze({
+const MINIMAL_PRODUCTION = Object.freeze({
   NODE_ENV: "production",
-  PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5,
-  DATABASE_URL: "postgres://test-user:test-pass@127.0.0.1:5432/blessboard_v5_test",
-  SESSION_SECRET: "t".repeat(40),
+  PLATFORM_DEPLOYMENT_CODE: CODE_COM_PRODUCTION,
+  DATABASE_URL: "postgres://prod-user:prod-pass@127.0.0.1:5432/blessboard_prod_test",
+  SESSION_SECRET: "p".repeat(40),
+});
+
+const MINIMAL_STAGING = Object.freeze({
+  NODE_ENV: "production",
+  PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING,
+  DATABASE_URL: "postgres://test-user:test-pass@127.0.0.1:5432/blessboard_staging_test",
+  SESSION_SECRET: "s".repeat(40),
+});
+
+describe("required Hostinger keys are identical", () => {
+  it("requiredHostingerKeys(production) equals requiredHostingerKeys(staging)", () => {
+    assert.deepEqual(
+      [...requiredHostingerKeys(CODE_COM_PRODUCTION)],
+      [...requiredHostingerKeys(CODE_ORG_STAGING)]
+    );
+    assert.deepEqual([...requiredHostingerKeys(CODE_COM_PRODUCTION)], [
+      "NODE_ENV",
+      "PLATFORM_DEPLOYMENT_CODE",
+      "DATABASE_URL",
+      "SESSION_SECRET",
+    ]);
+    assert.ok(optionalHostingerKeys(CODE_COM_PRODUCTION).includes("GETPRO_PG_SSL"));
+    assert.ok(optionalHostingerKeys(CODE_ORG_STAGING).includes("GETPRO_PG_SSL"));
+  });
 });
 
 describe("deploymentProfiles registry", () => {
@@ -98,22 +128,52 @@ describe("deploymentProfiles registry", () => {
     resetDeploymentProfileWarningsForTests();
   });
 
-  it("registers blessboard-org-v5 as authoritative V5 foundation", () => {
-    const p = DEPLOYMENT_PROFILES[CODE_ORG_V5];
+  it("registers blessboard-com-production as authoritative production runtime", () => {
+    const p = DEPLOYMENT_PROFILES[CODE_COM_PRODUCTION];
+    assert.equal(p.authoritative, true);
+    assert.equal(p.runtimeMode, "production");
+    assert.equal(p.deploymentEnvironment, "production");
+    assert.equal(p.expectedDatabaseEnvironment, "production");
+    assert.equal(p.canonicalDomain, "blessboard.com");
+    assert.equal(p.sessionCookieName, COOKIE_COM);
+    assert.equal(p.jobsEnabled, true);
+    assert.equal(p.allowTestUsersByDefault, false);
+    assert.ok(!p.apexDomains.includes("blessboard.org"));
+  });
+
+  it("registers blessboard-org-staging as authoritative V5 foundation", () => {
+    const p = DEPLOYMENT_PROFILES[CODE_ORG_STAGING];
     assert.equal(p.authoritative, true);
     assert.equal(p.runtimeMode, "v5-foundation");
     assert.equal(p.deploymentEnvironment, "testing");
+    assert.equal(p.expectedDatabaseEnvironment, "testing");
     assert.equal(p.canonicalDomain, "blessboard.org");
-    assert.equal(p.publicOrigin, "https://blessboard.org");
-    assert.equal(p.sessionCookieName, V5_SESSION_COOKIE);
+    assert.equal(p.sessionCookieName, COOKIE_ORG);
     assert.equal(p.jobsEnabled, false);
     assert.equal(p.allowTestUsersByDefault, false);
+    assert.ok(!p.apexDomains.includes("blessboard.com"));
   });
 
-  it("registers blessboard-com-v4 as non-authoritative legacy", () => {
-    const p = DEPLOYMENT_PROFILES[CODE_COM_V4];
-    assert.equal(p.authoritative, false);
-    assert.equal(p.runtimeMode, "legacy");
+  it("maps deprecated blessboard-org-v5 alias to staging with warning", () => {
+    const warnings = [];
+    const r = resolveDeploymentProfileOrError(
+      { PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5 },
+      { warnFn: (m) => warnings.push(m) }
+    );
+    assert.equal(r.ok, true);
+    assert.equal(r.aliased, true);
+    assert.equal(r.profile.deploymentCode, CODE_ORG_STAGING);
+    assert.ok(warnings.some((w) => /DEPRECATED/.test(w)));
+  });
+
+  it("maps deprecated blessboard-com-v4 alias to production", () => {
+    const r = resolveDeploymentProfileOrError({
+      PLATFORM_DEPLOYMENT_CODE: CODE_COM_V4,
+    });
+    assert.equal(r.ok, true);
+    assert.equal(r.aliased, true);
+    assert.equal(r.profile.deploymentCode, CODE_COM_PRODUCTION);
+    assert.equal(r.profile.runtimeMode, "production");
   });
 
   it("unknown PLATFORM_DEPLOYMENT_CODE fails closed", () => {
@@ -139,11 +199,63 @@ describe("deploymentProfiles registry", () => {
   });
 });
 
-describe("minimal V5 Hostinger env", () => {
+describe("minimal production Hostinger env", () => {
   beforeEach(() => resetDeploymentProfileWarningsForTests());
 
-  it("selects foundation runtime and derives domains/jobs/cookie/env", () => {
-    withEnv(MINIMAL_V5, () => {
+  it("selects production runtime and derives domains/jobs/cookie/env", () => {
+    withEnv(MINIMAL_PRODUCTION, () => {
+      const deployment = resolveDeploymentConfiguration();
+      assert.equal(deployment.runtimeMode, "production");
+      assert.equal(deployment.environment, "production");
+      assert.equal(deployment.expectedDatabaseEnvironment, "production");
+      assert.equal(isV5FoundationMode(), false);
+      assert.equal(hasAuthoritativeDeploymentProfile(), true);
+      assert.equal(getDeploymentEnvMode(), "production");
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
+      assert.equal(getBlessBoardPublicUrl(), "https://blessboard.com");
+      assert.equal(getBlessBoardAdminUrl(), "https://blessboard.com");
+      assert.equal(getChurchHostDomain(), "blessboard.com");
+      assert.deepEqual([...getBlessBoardApexDomainSet()].sort(), [
+        "blessboard.com",
+        "www.blessboard.com",
+      ]);
+      assert.equal(areBlessBoardJobsEnabled(), true);
+      assert.equal(getSessionCookieName(), COOKIE_COM);
+      assert.ok(!getBlessBoardApexDomainSet().has("blessboard.org"));
+      assert.equal(getDeploymentSetting("trustProxy"), 1);
+      assert.equal(resolveListenHost(), "0.0.0.0");
+      assert.equal(resolveTrustProxy(), 1);
+    });
+  });
+
+  it("allows missing BASE_DOMAIN for production profile", () => {
+    withEnv({ ...MINIMAL_PRODUCTION, BASE_DOMAIN: undefined }, () => {
+      assert.deepEqual(getProductionMissingRequiredEnv(), []);
+    });
+  });
+
+  it("requires DATABASE_URL for production profile", () => {
+    withEnv({ ...MINIMAL_PRODUCTION, DATABASE_URL: undefined }, () => {
+      assert.deepEqual(getProductionMissingRequiredEnv(), ["DATABASE_URL"]);
+    });
+  });
+
+  it("requires SESSION_SECRET for production profile", () => {
+    withEnv({ ...MINIMAL_PRODUCTION, SESSION_SECRET: undefined }, () => {
+      assert.deepEqual(getProductionMissingRequiredEnv(), ["SESSION_SECRET"]);
+    });
+  });
+});
+
+describe("minimal staging Hostinger env", () => {
+  beforeEach(() => resetDeploymentProfileWarningsForTests());
+
+  it("selects V5 foundation runtime and derives domains/jobs/cookie/env", () => {
+    withEnv(MINIMAL_STAGING, () => {
+      const deployment = resolveDeploymentConfiguration();
+      assert.equal(deployment.runtimeMode, "v5-foundation");
+      assert.equal(deployment.environment, "testing");
+      assert.equal(deployment.expectedDatabaseEnvironment, "testing");
       assert.equal(isV5FoundationMode(), true);
       assert.equal(hasAuthoritativeDeploymentProfile(), true);
       assert.equal(getDeploymentEnvMode(), "testing");
@@ -156,37 +268,36 @@ describe("minimal V5 Hostinger env", () => {
         "www.blessboard.org",
       ]);
       assert.equal(areBlessBoardJobsEnabled(), false);
-      assert.equal(getSessionCookieName(), V5_SESSION_COOKIE);
-      assert.equal(getV5SessionCookieName(), V5_SESSION_COOKIE);
+      assert.equal(getSessionCookieName(), COOKIE_ORG);
+      assert.equal(getV5SessionCookieName(), COOKIE_ORG);
       assert.equal(isBlessBoardOrgTestingDeployment(), true);
-      assert.equal(getDeploymentSetting("trustProxy"), 1);
-      assert.equal(resolveListenHost(), "0.0.0.0");
-      assert.equal(resolveTrustProxy(), 1);
-
-      const domain = getAuthoritativeDomainConfig();
-      assert.equal(domain.canonicalDomain, "blessboard.org");
-      assert.ok(!domain.apexDomains.includes("blessboard.com"));
+      assert.ok(!getBlessBoardApexDomainSet().has("blessboard.com"));
     });
   });
 
-  it("allows missing BASE_DOMAIN in V5 foundation production gate", () => {
-    withEnv({ ...MINIMAL_V5, BASE_DOMAIN: undefined }, () => {
+  it("allows missing BASE_DOMAIN for staging profile", () => {
+    withEnv({ ...MINIMAL_STAGING, BASE_DOMAIN: undefined }, () => {
       assert.deepEqual(getProductionMissingRequiredEnv(), []);
     });
   });
 
-  it("still requires SESSION_SECRET in V5 production", () => {
-    withEnv({ ...MINIMAL_V5, SESSION_SECRET: undefined }, () => {
+  it("requires DATABASE_URL for staging profile", () => {
+    withEnv({ ...MINIMAL_STAGING, DATABASE_URL: undefined }, () => {
+      assert.deepEqual(getProductionMissingRequiredEnv(), ["DATABASE_URL"]);
+    });
+  });
+
+  it("requires SESSION_SECRET for staging profile", () => {
+    withEnv({ ...MINIMAL_STAGING, SESSION_SECRET: undefined }, () => {
       assert.deepEqual(getProductionMissingRequiredEnv(), ["SESSION_SECRET"]);
     });
   });
 
-  it("pairing allows unset DEPLOYMENT_ENV for blessboard-org-v5", () => {
-    withEnv({ PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5 }, () => {
-      assert.equal(checkV5FoundationDeploymentPairing({}).ok, true);
+  it("pairing allows unset DEPLOYMENT_ENV for staging", () => {
+    withEnv({ PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING }, () => {
       assert.equal(
         checkV5FoundationDeploymentPairing({
-          PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5,
+          PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING,
         }).ok,
         true
       );
@@ -194,48 +305,97 @@ describe("minimal V5 Hostinger env", () => {
   });
 });
 
+describe("production and staging cookie names differ", () => {
+  it("com and org profiles use distinct host-only cookie names", () => {
+    assert.notEqual(COOKIE_COM, COOKIE_ORG);
+    withEnv(MINIMAL_PRODUCTION, () => {
+      assert.equal(getSessionCookieName(), COOKIE_COM);
+    });
+    withEnv(MINIMAL_STAGING, () => {
+      assert.equal(getSessionCookieName(), COOKIE_ORG);
+      assert.equal(getV5SessionCookieName(), COOKIE_ORG);
+    });
+  });
+});
+
 describe("authoritative profile conflicts", () => {
   beforeEach(() => resetDeploymentProfileWarningsForTests());
 
-  it("DEPLOYMENT_ENV=production is fatal", () => {
+  it("staging DEPLOYMENT_ENV=production is fatal", () => {
     const r = validateAuthoritativeProfileCompatibility({
-      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5,
+      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING,
       DEPLOYMENT_ENV: "production",
     });
     assert.equal(r.ok, false);
     assert.equal(r.code, "deployment_env_conflict");
   });
 
-  it("BLESSBOARD_CANONICAL_DOMAIN=blessboard.com is fatal", () => {
+  it("production DEPLOYMENT_ENV=testing is fatal", () => {
     const r = validateAuthoritativeProfileCompatibility({
-      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5,
+      PLATFORM_DEPLOYMENT_CODE: CODE_COM_PRODUCTION,
+      DEPLOYMENT_ENV: "testing",
+    });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, "deployment_env_conflict");
+  });
+
+  it("staging BLESSBOARD_CANONICAL_DOMAIN=blessboard.com is fatal", () => {
+    const r = validateAuthoritativeProfileCompatibility({
+      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING,
       BLESSBOARD_CANONICAL_DOMAIN: "blessboard.com",
     });
     assert.equal(r.ok, false);
     assert.equal(r.code, "canonical_domain_conflict");
   });
 
-  it("BLESSBOARD_APEX_DOMAINS containing blessboard.com is fatal", () => {
+  it("production BLESSBOARD_CANONICAL_DOMAIN=blessboard.org is fatal", () => {
     const r = validateAuthoritativeProfileCompatibility({
-      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5,
+      PLATFORM_DEPLOYMENT_CODE: CODE_COM_PRODUCTION,
+      BLESSBOARD_CANONICAL_DOMAIN: "blessboard.org",
+    });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, "canonical_domain_conflict");
+  });
+
+  it("staging apex list containing .com is fatal", () => {
+    const r = validateAuthoritativeProfileCompatibility({
+      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING,
       BLESSBOARD_APEX_DOMAINS: "blessboard.org,www.blessboard.org,blessboard.com",
     });
     assert.equal(r.ok, false);
     assert.equal(r.code, "apex_domains_conflict");
   });
 
-  it("BLESSBOARD_JOBS_ENABLED=1 is fatal", () => {
+  it("production apex list containing .org is fatal", () => {
     const r = validateAuthoritativeProfileCompatibility({
-      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5,
+      PLATFORM_DEPLOYMENT_CODE: CODE_COM_PRODUCTION,
+      BLESSBOARD_APEX_DOMAINS: "blessboard.com,www.blessboard.com,blessboard.org",
+    });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, "apex_domains_conflict");
+  });
+
+  it("staging jobs enabled is fatal", () => {
+    const r = validateAuthoritativeProfileCompatibility({
+      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING,
       BLESSBOARD_JOBS_ENABLED: "1",
     });
     assert.equal(r.ok, false);
     assert.equal(r.code, "jobs_enabled_conflict");
   });
 
-  it("SESSION_COOKIE_NAME=getpro_sid is fatal", () => {
+  it("production BASE_DOMAIN=blessboard.org is fatal", () => {
     const r = validateAuthoritativeProfileCompatibility({
-      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5,
+      PLATFORM_DEPLOYMENT_CODE: CODE_COM_PRODUCTION,
+      BASE_DOMAIN: "blessboard.org",
+    });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, "base_domain_conflict");
+  });
+
+  it("SESSION_COOKIE_NAME=getpro_sid on staging is fatal", () => {
+    const r = validateAuthoritativeProfileCompatibility({
+      PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING,
       SESSION_COOKIE_NAME: PRODUCTION_SESSION_COOKIE,
     });
     assert.equal(r.ok, false);
@@ -246,14 +406,14 @@ describe("authoritative profile conflicts", () => {
     const warnings = [];
     const r = validateAuthoritativeProfileCompatibility(
       {
-        PLATFORM_DEPLOYMENT_CODE: CODE_ORG_V5,
+        PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING,
         DEPLOYMENT_ENV: "testing",
         BLESSBOARD_CANONICAL_DOMAIN: "blessboard.org",
         BLESSBOARD_APEX_DOMAINS: "blessboard.org,www.blessboard.org",
         BLESSBOARD_PUBLIC_URL: "https://blessboard.org",
         BLESSBOARD_ADMIN_URL: "https://blessboard.org",
         CHURCH_HOST_DOMAIN: "blessboard.org",
-        SESSION_COOKIE_NAME: V5_SESSION_COOKIE,
+        SESSION_COOKIE_NAME: COOKIE_ORG,
         BLESSBOARD_JOBS_ENABLED: "0",
         EXPECTED_DATABASE_ENV: "testing",
       },
@@ -266,7 +426,7 @@ describe("authoritative profile conflicts", () => {
 });
 
 describe("legacy production BASE_DOMAIN gate unchanged", () => {
-  it("requires BASE_DOMAIN when not on V5 profile", () => {
+  it("requires BASE_DOMAIN when no profile", () => {
     withEnv(
       {
         NODE_ENV: "production",
@@ -284,7 +444,7 @@ describe("legacy production BASE_DOMAIN gate unchanged", () => {
     );
   });
 
-  it("blessboard-com-v4 does not enter foundation mode", () => {
+  it("blessboard-com-v4 alias does not enter foundation mode", () => {
     withEnv(
       {
         PLATFORM_DEPLOYMENT_CODE: CODE_COM_V4,
@@ -292,15 +452,16 @@ describe("legacy production BASE_DOMAIN gate unchanged", () => {
       },
       () => {
         assert.equal(isV5FoundationMode(), false);
-        assert.equal(hasAuthoritativeDeploymentProfile(), false);
+        assert.equal(hasAuthoritativeDeploymentProfile(), true);
+        assert.equal(getDeploymentProfile().runtimeMode, "production");
       }
     );
   });
 });
 
-describe("www and cross-TLD redirects under V5 profile", () => {
-  it("www.blessboard.org redirects to blessboard.org", () => {
-    withEnv(MINIMAL_V5, () => {
+describe("www and cross-TLD redirects under profiles", () => {
+  it("www.blessboard.org redirects to blessboard.org under staging", () => {
+    withEnv(MINIMAL_STAGING, () => {
       let status = null;
       let location = null;
       const req = {
@@ -330,38 +491,37 @@ describe("www and cross-TLD redirects under V5 profile", () => {
     });
   });
 
-  it("blessboard.org apex does not redirect to blessboard.com", () => {
-    withEnv(MINIMAL_V5, () => {
+  it("staging apex never treats blessboard.com as alias", () => {
+    withEnv(MINIMAL_STAGING, () => {
       assert.equal(getBlessBoardCanonicalDomain(), "blessboard.org");
       assert.ok(!getBlessBoardApexDomainSet().has("blessboard.com"));
-      let redirected = false;
-      foundationWwwToApexRedirect(
-        {
-          headers: { host: "blessboard.org" },
-          originalUrl: "/",
-          get(name) {
-            if (String(name || "").toLowerCase() === "host") return this.headers.host;
-            return undefined;
-          },
-        },
-        {
-          redirect() {
-            redirected = true;
-          },
-        },
-        () => {}
-      );
-      assert.equal(redirected, false);
+      assert.ok(!getBlessBoardApexDomainSet().has("www.blessboard.com"));
+    });
+  });
+
+  it("production apex never treats blessboard.org as alias", () => {
+    withEnv(MINIMAL_PRODUCTION, () => {
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
+      assert.ok(!getBlessBoardApexDomainSet().has("blessboard.org"));
+      assert.ok(!getBlessBoardApexDomainSet().has("www.blessboard.org"));
+      assert.ok(getBlessBoardApexDomainSet().has("www.blessboard.com"));
     });
   });
 });
 
 describe("session cookie isolation under profile", () => {
-  it("uses blessboard_org_v5_sid and Secure in production", () => {
-    withEnv(MINIMAL_V5, () => {
-      assert.equal(getV5SessionCookieName(), V5_SESSION_COOKIE);
-      assert.equal(parseSessionCookieName().name, V5_SESSION_COOKIE);
+  it("staging uses blessboard_org_sid", () => {
+    withEnv(MINIMAL_STAGING, () => {
+      assert.equal(getV5SessionCookieName(), COOKIE_ORG);
+      assert.equal(parseSessionCookieName().name, COOKIE_ORG);
       assert.equal(parseBlessBoardJobsEnabled().enabled, false);
+    });
+  });
+
+  it("production uses blessboard_com_sid", () => {
+    withEnv(MINIMAL_PRODUCTION, () => {
+      assert.equal(getSessionCookieName(), COOKIE_COM);
+      assert.equal(parseBlessBoardJobsEnabled().enabled, true);
     });
   });
 });

@@ -3,9 +3,10 @@
 /**
  * Central BlessBoard deployment configuration (env-driven, V4-compatible defaults).
  *
- * V4 / blessboard.com defaults are preserved when these vars are unset.
- * Authoritative V5 profiles (PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5) derive
- * domains / deployment env / cookie / jobs from src/platform/config/deploymentProfiles.js.
+ * When an authoritative PLATFORM_DEPLOYMENT_CODE profile is active
+ * (blessboard-com-production or blessboard-org-staging, including deprecated aliases),
+ * domains / deployment env / cookie / jobs come from deploymentProfiles.js.
+ * Unprofiled hosts keep V4 env fallbacks (including legacy dual-TLD apex defaults).
  *
  * Values are read from process.env on each call (never captured at require-time).
  * Bootstrap / Hostinger env must be loaded before church domain middleware runs.
@@ -281,7 +282,7 @@ function isBlessBoardForceHttpsEnabled() {
 
 /**
  * express-session cookie name. Default getpro_sid (V4-compatible).
- * Authoritative V5 profile uses profile.sessionCookieName.
+ * Authoritative deployment profiles use profile.sessionCookieName.
  */
 function getSessionCookieName() {
   if (hasAuthoritativeDeploymentProfile()) {
@@ -317,8 +318,9 @@ function getUploadRootLogLabel() {
 
 /**
  * Master switch for BlessBoard scheduled/cron jobs.
- * V5 foundation mode and blessboard-org-v5 deployment code default to disabled.
- * V4-compatible deployments: unset remains enabled. Explicit 0|false|no|off disables.
+ * Authoritative staging / V5-foundation profiles default to disabled.
+ * Authoritative production profile defaults to enabled.
+ * Unprofiled V4-compatible deployments: unset remains enabled.
  * Manual web workflows are unaffected — only cron/ops entrypoints should check this.
  * @param {NodeJS.ProcessEnv} [env]
  */
@@ -397,7 +399,7 @@ function isProductionDeployment() {
 /**
  * True for BlessBoard.org V5 testing deployments that must use an explicit DATABASE_URL
  * (no silent GETPRO_DATABASE_URL fallback).
- * Trigger: authoritative org-v5 profile, or DEPLOYMENT_ENV=testing AND canonical blessboard.org
+ * Trigger: authoritative staging/org profile, or DEPLOYMENT_ENV=testing AND canonical blessboard.org
  */
 function isBlessBoardOrgTestingDeployment() {
   if (hasAuthoritativeDeploymentProfile()) {
