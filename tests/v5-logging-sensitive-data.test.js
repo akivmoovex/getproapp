@@ -72,7 +72,7 @@ describe("V5 request id + error handler", () => {
 
     const res = await request(app)
       .get("/boom")
-      .set("Cookie", "blessboard_org_v5_sid=raw-session-token")
+      .set("Cookie", "blessboard_org_sid=raw-session-token")
       .set("Authorization", "Bearer raw-bearer-token")
       .set("X-Request-Id", "req-audit-1");
 

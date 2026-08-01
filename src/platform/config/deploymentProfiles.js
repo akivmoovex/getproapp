@@ -1,14 +1,14 @@
 "use strict";
 
 /**
- * Authoritative deployment-profile registry.
+ * Unified BlessBoard deployment-profile registry.
  *
- * PLATFORM_DEPLOYMENT_CODE selects a profile. For authoritative profiles
- * (currently blessboard-org-v5), non-secret Hostinger settings are derived
- * from the profile so the permanent env surface can stay minimal.
+ * Official Hostinger apps use the same env KEYS; only VALUES differ:
+ *   PLATFORM_DEPLOYMENT_CODE=blessboard-com-production | blessboard-org-staging
  *
- * Legacy / unset PLATFORM_DEPLOYMENT_CODE keeps prior env-driven behaviour.
- * Unknown non-empty codes fail closed at startup.
+ * Authoritative profiles derive domains, deployment env, cookie, jobs, trust proxy,
+ * and listen host. Unknown non-empty codes fail closed. Unset code keeps legacy
+ * env-driven behaviour for non-BlessBoard / transitional hosts.
  */
 
 const {
@@ -17,19 +17,37 @@ const {
 } = require("./platformDeploymentCode");
 
 const RUNTIME_LEGACY = "legacy";
+const RUNTIME_PRODUCTION = "production";
 const RUNTIME_V5_FOUNDATION = "v5-foundation";
 
-const PRODUCTION_SESSION_COOKIE = "getpro_sid";
-const V5_SESSION_COOKIE = "blessboard_org_v5_sid";
-
+const CODE_COM_PRODUCTION = "blessboard-com-production";
+const CODE_ORG_STAGING = "blessboard-org-staging";
+/** @deprecated Prefer CODE_ORG_STAGING */
 const CODE_ORG_V5 = "blessboard-org-v5";
+/** @deprecated Prefer CODE_COM_PRODUCTION */
 const CODE_COM_V4 = "blessboard-com-v4";
+
+const COOKIE_COM = "blessboard_com_sid";
+const COOKIE_ORG = "blessboard_org_sid";
+/** @deprecated legacy express-session default */
+const PRODUCTION_SESSION_COOKIE = "getpro_sid";
+/** @deprecated alias of COOKIE_ORG */
+const V5_SESSION_COOKIE = COOKIE_ORG;
+
+const REQUIRED_HOSTINGER_KEYS = Object.freeze([
+  "NODE_ENV",
+  "PLATFORM_DEPLOYMENT_CODE",
+  "DATABASE_URL",
+  "SESSION_SECRET",
+]);
+
+const OPTIONAL_HOSTINGER_KEYS = Object.freeze(["GETPRO_PG_SSL", "PORT"]);
 
 /**
  * @typedef {Readonly<{
  *   deploymentCode: string,
  *   deploymentEnvironment: "testing"|"production",
- *   runtimeMode: "legacy"|"v5-foundation",
+ *   runtimeMode: "legacy"|"production"|"v5-foundation",
  *   authoritative: boolean,
  *   canonicalDomain: string,
  *   publicOrigin: string,
@@ -43,56 +61,62 @@ const CODE_COM_V4 = "blessboard-com-v4";
  *   listenHost: string,
  *   hostContextMode: "off"|"diagnostic",
  *   allowTestUsersByDefault: boolean,
- *   productionSessionCookieName: string,
+ *   foreignTlds: readonly string[],
  * }>} DeploymentProfile
  */
 
+/** @type {Readonly<DeploymentProfile>} */
+const PROFILE_COM_PRODUCTION = Object.freeze({
+  deploymentCode: CODE_COM_PRODUCTION,
+  deploymentEnvironment: "production",
+  runtimeMode: RUNTIME_PRODUCTION,
+  authoritative: true,
+  canonicalDomain: "blessboard.com",
+  publicOrigin: "https://blessboard.com",
+  adminOrigin: "https://blessboard.com",
+  apexDomains: Object.freeze(["blessboard.com", "www.blessboard.com"]),
+  churchHostDomain: "blessboard.com",
+  sessionCookieName: COOKIE_COM,
+  expectedDatabaseEnvironment: "production",
+  jobsEnabled: true,
+  trustProxy: 1,
+  listenHost: "0.0.0.0",
+  hostContextMode: "off",
+  allowTestUsersByDefault: false,
+  foreignTlds: Object.freeze(["blessboard.org", "www.blessboard.org"]),
+});
+
+/** @type {Readonly<DeploymentProfile>} */
+const PROFILE_ORG_STAGING = Object.freeze({
+  deploymentCode: CODE_ORG_STAGING,
+  deploymentEnvironment: "testing",
+  runtimeMode: RUNTIME_V5_FOUNDATION,
+  authoritative: true,
+  canonicalDomain: "blessboard.org",
+  publicOrigin: "https://blessboard.org",
+  adminOrigin: "https://blessboard.org",
+  apexDomains: Object.freeze(["blessboard.org", "www.blessboard.org"]),
+  churchHostDomain: "blessboard.org",
+  sessionCookieName: COOKIE_ORG,
+  expectedDatabaseEnvironment: "testing",
+  jobsEnabled: false,
+  trustProxy: 1,
+  listenHost: "0.0.0.0",
+  hostContextMode: "diagnostic",
+  allowTestUsersByDefault: false,
+  foreignTlds: Object.freeze(["blessboard.com", "www.blessboard.com"]),
+});
+
 /** @type {Readonly<Record<string, DeploymentProfile>>} */
 const DEPLOYMENT_PROFILES = Object.freeze({
-  [CODE_ORG_V5]: Object.freeze({
-    deploymentCode: CODE_ORG_V5,
-    deploymentEnvironment: "testing",
-    runtimeMode: RUNTIME_V5_FOUNDATION,
-    authoritative: true,
-    canonicalDomain: "blessboard.org",
-    publicOrigin: "https://blessboard.org",
-    adminOrigin: "https://blessboard.org",
-    apexDomains: Object.freeze(["blessboard.org", "www.blessboard.org"]),
-    churchHostDomain: "blessboard.org",
-    sessionCookieName: V5_SESSION_COOKIE,
-    expectedDatabaseEnvironment: "testing",
-    jobsEnabled: false,
-    trustProxy: 1,
-    listenHost: "0.0.0.0",
-    hostContextMode: "diagnostic",
-    allowTestUsersByDefault: false,
-    productionSessionCookieName: PRODUCTION_SESSION_COOKIE,
-  }),
-  // Known legacy code — not authoritative; preserves Hostinger env-driven V4 behaviour.
-  [CODE_COM_V4]: Object.freeze({
-    deploymentCode: CODE_COM_V4,
-    deploymentEnvironment: "production",
-    runtimeMode: RUNTIME_LEGACY,
-    authoritative: false,
-    canonicalDomain: "blessboard.com",
-    publicOrigin: "https://blessboard.com",
-    adminOrigin: "https://blessboard.com",
-    apexDomains: Object.freeze([
-      "blessboard.com",
-      "www.blessboard.com",
-      "blessboard.org",
-      "www.blessboard.org",
-    ]),
-    churchHostDomain: "blessboard.com",
-    sessionCookieName: PRODUCTION_SESSION_COOKIE,
-    expectedDatabaseEnvironment: "production",
-    jobsEnabled: true,
-    trustProxy: 1,
-    listenHost: "0.0.0.0",
-    hostContextMode: "off",
-    allowTestUsersByDefault: false,
-    productionSessionCookieName: PRODUCTION_SESSION_COOKIE,
-  }),
+  [CODE_COM_PRODUCTION]: PROFILE_COM_PRODUCTION,
+  [CODE_ORG_STAGING]: PROFILE_ORG_STAGING,
+});
+
+/** Deprecated PLATFORM_DEPLOYMENT_CODE values → canonical profile code */
+const DEPLOYMENT_CODE_ALIASES = Object.freeze({
+  [CODE_ORG_V5]: CODE_ORG_STAGING,
+  [CODE_COM_V4]: CODE_COM_PRODUCTION,
 });
 
 const JOBS_DISABLE = new Set(["0", "false", "no", "off"]);
@@ -159,20 +183,62 @@ function warnOnce(key, message, warnFn) {
 }
 
 /**
+ * Resolve raw PLATFORM_DEPLOYMENT_CODE (including aliases) to a registered profile.
+ * @param {NodeJS.ProcessEnv} [env]
+ * @param {{ warnFn?: Function }} [opts]
+ * @returns {{ ok: true, profile: DeploymentProfile|null, requestedCode: string|null, aliased: boolean } | { ok: false, code: string, message: string }}
+ */
+function resolveDeploymentProfileOrError(env, opts = {}) {
+  const source = env || process.env;
+  const raw = String(source.PLATFORM_DEPLOYMENT_CODE || "")
+    .trim()
+    .toLowerCase();
+  if (!raw) {
+    return { ok: true, profile: null, requestedCode: null, aliased: false };
+  }
+  if (!DEPLOYMENT_CODE_PATTERN.test(raw)) {
+    return {
+      ok: false,
+      code: "invalid_deployment_code",
+      message:
+        `PLATFORM_DEPLOYMENT_CODE=${JSON.stringify(raw)} is not a valid kebab-case deployment code. ` +
+        `Known codes: ${Object.keys(DEPLOYMENT_PROFILES).join(", ")}.`,
+    };
+  }
+  const aliasTarget = DEPLOYMENT_CODE_ALIASES[raw];
+  const canonical = aliasTarget || raw;
+  const profile = DEPLOYMENT_PROFILES[canonical];
+  if (!profile) {
+    return {
+      ok: false,
+      code: "unknown_deployment_code",
+      message:
+        `PLATFORM_DEPLOYMENT_CODE=${JSON.stringify(raw)} is not a registered deployment profile. ` +
+        `Known codes: ${Object.keys(DEPLOYMENT_PROFILES).join(", ")}. Refusing to start.`,
+    };
+  }
+  if (aliasTarget) {
+    warnOnce(
+      `alias:${raw}`,
+      `[blessboard] DEPRECATED: PLATFORM_DEPLOYMENT_CODE=${raw} is an alias for ${canonical}; ` +
+        `update Hostinger to PLATFORM_DEPLOYMENT_CODE=${canonical}.`,
+      opts.warnFn
+    );
+  }
+  return { ok: true, profile, requestedCode: raw, aliased: Boolean(aliasTarget) };
+}
+
+/**
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {DeploymentProfile|null}
  */
 function getDeploymentProfile(env) {
-  const source = env || process.env;
-  const deploy = getPlatformDeploymentCode(source);
-  if (!deploy.ok || !deploy.code) return null;
-  return DEPLOYMENT_PROFILES[deploy.code] || null;
+  const resolved = resolveDeploymentProfileOrError(env);
+  if (!resolved.ok) return null;
+  return resolved.profile;
 }
 
 /**
- * True when an authoritative profile is active and DEPLOYMENT_ENV is compatible
- * (unset or matches profile). Conflicting DEPLOYMENT_ENV disables derivation so
- * startup validation can fail closed without partially applying profile domains.
  * @param {NodeJS.ProcessEnv} [env]
  */
 function hasAuthoritativeDeploymentProfile(env) {
@@ -184,6 +250,94 @@ function hasAuthoritativeDeploymentProfile(env) {
     .toLowerCase();
   if (depEnv && depEnv !== profile.deploymentEnvironment) return false;
   return true;
+}
+
+/**
+ * Identical required Hostinger keys for every official BlessBoard profile.
+ * @param {string} [deploymentCode]
+ * @returns {readonly string[]}
+ */
+function requiredHostingerKeys(deploymentCode) {
+  void deploymentCode;
+  return REQUIRED_HOSTINGER_KEYS;
+}
+
+/**
+ * @param {string} [deploymentCode]
+ * @returns {readonly string[]}
+ */
+function optionalHostingerKeys(deploymentCode) {
+  void deploymentCode;
+  return OPTIONAL_HOSTINGER_KEYS;
+}
+
+/**
+ * Normalized deployment configuration consumed by startup / domain / session / jobs.
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{
+ *   code: string|null,
+ *   environment: string|null,
+ *   runtimeMode: string|null,
+ *   authoritative: boolean,
+ *   canonicalDomain: string|null,
+ *   publicOrigin: string|null,
+ *   adminOrigin: string|null,
+ *   apexDomains: string[],
+ *   churchHostDomain: string|null,
+ *   sessionCookieName: string|null,
+ *   expectedDatabaseEnvironment: string|null,
+ *   jobsEnabled: boolean|null,
+ *   trustProxy: number|false,
+ *   listenHost: string,
+ *   hostContextMode: string|null,
+ *   profile: DeploymentProfile|null,
+ * }}
+ */
+function resolveDeploymentConfiguration(env) {
+  const source = env || process.env;
+  const profile = hasAuthoritativeDeploymentProfile(source)
+    ? getDeploymentProfile(source)
+    : null;
+  const trustProxy = resolveTrustProxy(source);
+  const listenHost = resolveListenHost(source);
+  if (!profile) {
+    return {
+      code: null,
+      environment: null,
+      runtimeMode: null,
+      authoritative: false,
+      canonicalDomain: null,
+      publicOrigin: null,
+      adminOrigin: null,
+      apexDomains: [],
+      churchHostDomain: null,
+      sessionCookieName: null,
+      expectedDatabaseEnvironment: null,
+      jobsEnabled: null,
+      trustProxy,
+      listenHost,
+      hostContextMode: null,
+      profile: null,
+    };
+  }
+  return {
+    code: profile.deploymentCode,
+    environment: profile.deploymentEnvironment,
+    runtimeMode: profile.runtimeMode,
+    authoritative: true,
+    canonicalDomain: profile.canonicalDomain,
+    publicOrigin: profile.publicOrigin,
+    adminOrigin: profile.adminOrigin,
+    apexDomains: profile.apexDomains.slice(),
+    churchHostDomain: profile.churchHostDomain,
+    sessionCookieName: profile.sessionCookieName,
+    expectedDatabaseEnvironment: profile.expectedDatabaseEnvironment,
+    jobsEnabled: profile.jobsEnabled,
+    trustProxy,
+    listenHost,
+    hostContextMode: profile.hostContextMode,
+    profile,
+  };
 }
 
 /**
@@ -199,20 +353,12 @@ function getDeploymentSetting(key, env) {
 }
 
 /**
- * Domain config object for BlessBoard helpers.
  * @param {NodeJS.ProcessEnv} [env]
- * @returns {{
- *   canonicalDomain: string,
- *   publicOrigin: string,
- *   adminOrigin: string,
- *   apexDomains: string[],
- *   churchHostDomain: string,
- * }|null}
  */
 function getAuthoritativeDomainConfig(env) {
   if (!hasAuthoritativeDeploymentProfile(env)) return null;
   const profile = getDeploymentProfile(env);
-  if (!profile || !profile.authoritative) return null;
+  if (!profile) return null;
   return {
     canonicalDomain: profile.canonicalDomain,
     publicOrigin: profile.publicOrigin,
@@ -223,50 +369,12 @@ function getAuthoritativeDomainConfig(env) {
 }
 
 /**
- * Fail closed when PLATFORM_DEPLOYMENT_CODE is set but not in the registry
- * (or has an invalid format).
- * @param {NodeJS.ProcessEnv} [env]
- * @returns {{ ok: true, profile: DeploymentProfile|null } | { ok: false, code: string, message: string }}
- */
-function resolveDeploymentProfileOrError(env) {
-  const source = env || process.env;
-  const raw = String(source.PLATFORM_DEPLOYMENT_CODE || "")
-    .trim()
-    .toLowerCase();
-  if (!raw) {
-    return { ok: true, profile: null };
-  }
-  if (!DEPLOYMENT_CODE_PATTERN.test(raw)) {
-    return {
-      ok: false,
-      code: "invalid_deployment_code",
-      message:
-        `PLATFORM_DEPLOYMENT_CODE=${JSON.stringify(raw)} is not a valid kebab-case deployment code. ` +
-        `Known codes: ${Object.keys(DEPLOYMENT_PROFILES).join(", ")}.`,
-    };
-  }
-  const profile = DEPLOYMENT_PROFILES[raw];
-  if (!profile) {
-    return {
-      ok: false,
-      code: "unknown_deployment_code",
-      message:
-        `PLATFORM_DEPLOYMENT_CODE=${JSON.stringify(raw)} is not a registered deployment profile. ` +
-        `Known codes: ${Object.keys(DEPLOYMENT_PROFILES).join(", ")}. Refusing to start.`,
-    };
-  }
-  return { ok: true, profile };
-}
-
-/**
- * Validate legacy env overrides against an authoritative profile.
  * @param {NodeJS.ProcessEnv} [env]
  * @param {{ warnFn?: (msg: string) => void }} [opts]
- * @returns {{ ok: true, warnings: string[] } | { ok: false, code: string, message: string, warnings: string[] }}
  */
 function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   const source = env || process.env;
-  const resolved = resolveDeploymentProfileOrError(source);
+  const resolved = resolveDeploymentProfileOrError(source, opts);
   if (!resolved.ok) {
     return { ok: false, code: resolved.code, message: resolved.message, warnings: [] };
   }
@@ -286,7 +394,6 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     warnOnce(`match:${profile.deploymentCode}:${varName}`, msg, warnFn);
   }
 
-  // DEPLOYMENT_ENV
   {
     const raw = envTrim(source, "DEPLOYMENT_ENV").toLowerCase();
     if (raw) {
@@ -304,7 +411,6 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
-  // EXPECTED_DATABASE_ENV
   {
     const raw = envTrim(source, "EXPECTED_DATABASE_ENV").toLowerCase();
     if (raw) {
@@ -322,7 +428,6 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
-  // BLESSBOARD_CANONICAL_DOMAIN
   {
     const raw = normalizeHost(envTrim(source, "BLESSBOARD_CANONICAL_DOMAIN"));
     if (raw) {
@@ -340,16 +445,13 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
-  // BLESSBOARD_APEX_DOMAINS
   {
     const raw = envTrim(source, "BLESSBOARD_APEX_DOMAINS");
     if (raw) {
       const list = parseApexList(raw);
-      const hasForeignCom = list.some(
-        (h) => h === "blessboard.com" || h === "www.blessboard.com"
-      );
-      if (hasForeignCom || !apexSetsEqual(list, profile.apexDomains.slice())) {
-        // Foreign .com is always fatal for org-v5; any mismatch vs profile is fatal for security isolation.
+      const foreign = profile.foreignTlds || [];
+      const hasForeign = list.some((h) => foreign.includes(h));
+      if (hasForeign || !apexSetsEqual(list, profile.apexDomains.slice())) {
         return {
           ok: false,
           code: "apex_domains_conflict",
@@ -364,7 +466,6 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
-  // CHURCH_HOST_DOMAIN
   {
     const raw = normalizeHost(envTrim(source, "CHURCH_HOST_DOMAIN"));
     if (raw) {
@@ -382,7 +483,6 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
-  // BLESSBOARD_PUBLIC_URL / ADMIN_URL — security if wrong host; warn if match
   {
     const pub = envTrim(source, "BLESSBOARD_PUBLIC_URL").replace(/\/$/, "");
     if (pub) {
@@ -414,19 +514,22 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
-  // SESSION_COOKIE_NAME
   {
     const raw = envTrim(source, "SESSION_COOKIE_NAME");
     if (raw) {
-      if (raw === profile.productionSessionCookieName) {
-        return {
-          ok: false,
-          code: "session_cookie_conflict",
-          message:
-            `SESSION_COOKIE_NAME=${JSON.stringify(raw)} equals the production cookie name and conflicts ` +
-            `with profile ${profile.deploymentCode} (expected ${profile.sessionCookieName}). Refusing to start.`,
-          warnings,
-        };
+      const siblingCookie =
+        profile.deploymentCode === CODE_COM_PRODUCTION ? COOKIE_ORG : COOKIE_COM;
+      if (raw === siblingCookie || raw === PRODUCTION_SESSION_COOKIE) {
+        if (raw !== profile.sessionCookieName) {
+          return {
+            ok: false,
+            code: "session_cookie_conflict",
+            message:
+              `SESSION_COOKIE_NAME=${JSON.stringify(raw)} conflicts with profile ${profile.deploymentCode} ` +
+              `(expected ${profile.sessionCookieName}). Refusing to start.`,
+            warnings,
+          };
+        }
       }
       if (raw !== profile.sessionCookieName) {
         return {
@@ -442,36 +545,41 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
-  // BLESSBOARD_JOBS_ENABLED
   {
     const raw = envTrim(source, "BLESSBOARD_JOBS_ENABLED").toLowerCase();
     if (raw) {
-      if (JOBS_ENABLE.has(raw)) {
+      if (!JOBS_ENABLE.has(raw) && !JOBS_DISABLE.has(raw)) {
+        return {
+          ok: false,
+          code: "jobs_enabled_invalid",
+          message:
+            `BLESSBOARD_JOBS_ENABLED=${JSON.stringify(raw)} is unsupported for profile ${profile.deploymentCode}.`,
+          warnings,
+        };
+      }
+      const enabled = JOBS_ENABLE.has(raw);
+      if (profile.jobsEnabled === false && enabled) {
         return {
           ok: false,
           code: "jobs_enabled_conflict",
           message:
             `BLESSBOARD_JOBS_ENABLED=${JSON.stringify(raw)} is not allowed for profile ${profile.deploymentCode}. ` +
-            "Scheduled jobs must remain disabled. Refusing to start.",
+            "Scheduled jobs must remain disabled on staging. Refusing to start.",
           warnings,
         };
       }
-      if (JOBS_DISABLE.has(raw)) {
+      if (profile.jobsEnabled === true && !enabled) {
+        const msg =
+          `[blessboard] WARN: BLESSBOARD_JOBS_ENABLED=${raw} disables jobs on production profile ` +
+          `${profile.deploymentCode} (emergency override). Prefer removing this variable; profile default is enabled.`;
+        warnings.push(msg);
+        warnOnce(`jobs-override:${profile.deploymentCode}`, msg, warnFn);
+      } else if (enabled === profile.jobsEnabled) {
         noteMatch("BLESSBOARD_JOBS_ENABLED", raw);
-      } else {
-        return {
-          ok: false,
-          code: "jobs_enabled_invalid",
-          message:
-            `BLESSBOARD_JOBS_ENABLED=${JSON.stringify(raw)} is unsupported for profile ${profile.deploymentCode}. ` +
-            "Omit the variable (jobs stay disabled) or set 0/false. Refusing to start.",
-          warnings,
-        };
       }
     }
   }
 
-  // PLATFORM_HOST_CONTEXT_MODE — non-security: warn on match or soft mismatch
   {
     const raw = envTrim(source, "PLATFORM_HOST_CONTEXT_MODE").toLowerCase();
     if (raw) {
@@ -480,13 +588,12 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
       } else if (raw === "off" || raw === "diagnostic") {
         const msg =
           `[blessboard] DEPRECATED: PLATFORM_HOST_CONTEXT_MODE=${raw} differs from profile ` +
-          `${profile.deploymentCode} default (${profile.hostContextMode}); profile default will be used. ` +
-          "Remove this Hostinger variable.";
+          `${profile.deploymentCode} default (${profile.hostContextMode}); profile default will be used.`;
         warnings.push(msg);
         warnOnce(`soft:${profile.deploymentCode}:PLATFORM_HOST_CONTEXT_MODE`, msg, warnFn);
       } else {
         const msg =
-          `[blessboard] WARN: PLATFORM_HOST_CONTEXT_MODE=${JSON.stringify(raw)} is unsupported; ` +
+          `[blessboard] WARN: PLATFORM_HOST_CONTEXT_MODE=${JSON.stringify(raw)} unsupported; ` +
           `using profile default ${profile.hostContextMode}.`;
         warnings.push(msg);
         warnOnce(`soft-invalid:${profile.deploymentCode}:PLATFORM_HOST_CONTEXT_MODE`, msg, warnFn);
@@ -494,14 +601,12 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
-  // TRUST_PROXY / HOST — advanced overrides only
   {
     const raw = envTrim(source, "TRUST_PROXY");
     if (raw) {
       if (raw === "0" || raw.toLowerCase() === "false") {
         const msg =
-          `[blessboard] WARN: TRUST_PROXY=${raw} overrides profile default ${profile.trustProxy} ` +
-          `(advanced). Behind Hostinger/nginx this usually breaks client IP and HTTPS detection.`;
+          `[blessboard] WARN: TRUST_PROXY=${raw} overrides profile default ${profile.trustProxy} (advanced).`;
         warnings.push(msg);
         warnOnce(`soft:${profile.deploymentCode}:TRUST_PROXY`, msg, warnFn);
       } else {
@@ -510,13 +615,12 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
           return {
             ok: false,
             code: "trust_proxy_invalid",
-            message: `TRUST_PROXY=${JSON.stringify(raw)} is malformed. Use a non-negative number or omit for profile default.`,
+            message: `TRUST_PROXY=${JSON.stringify(raw)} is malformed.`,
             warnings,
           };
         }
-        if (n === profile.trustProxy) {
-          noteMatch("TRUST_PROXY", raw);
-        } else {
+        if (n === profile.trustProxy) noteMatch("TRUST_PROXY", raw);
+        else {
           const msg =
             `[blessboard] WARN: TRUST_PROXY=${raw} overrides profile default ${profile.trustProxy} (advanced).`;
           warnings.push(msg);
@@ -528,9 +632,8 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   {
     const raw = envTrim(source, "HOST");
     if (raw) {
-      if (raw === profile.listenHost) {
-        noteMatch("HOST", raw);
-      } else {
+      if (raw === profile.listenHost) noteMatch("HOST", raw);
+      else {
         const msg =
           `[blessboard] WARN: HOST=${raw} overrides profile listenHost ${profile.listenHost} (advanced).`;
         warnings.push(msg);
@@ -539,13 +642,27 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
     }
   }
 
+  {
+    const raw = normalizeHost(envTrim(source, "BASE_DOMAIN"));
+    if (raw) {
+      if (raw === profile.canonicalDomain) {
+        noteMatch("BASE_DOMAIN", raw);
+      } else {
+        return {
+          ok: false,
+          code: "base_domain_conflict",
+          message:
+            `BASE_DOMAIN=${JSON.stringify(raw)} conflicts with profile ${profile.deploymentCode} ` +
+            `(expected ${profile.canonicalDomain}). Refusing to start.`,
+          warnings,
+        };
+      }
+    }
+  }
+
   return { ok: true, warnings };
 }
 
-/**
- * @param {NodeJS.ProcessEnv} [env]
- * @param {{ warnFn?: Function, errorFn?: Function, exit?: Function }} [opts]
- */
 function assertDeploymentProfileOrExit(env, opts = {}) {
   const source = env || process.env;
   const result = validateAuthoritativeProfileCompatibility(source, {
@@ -559,11 +676,6 @@ function assertDeploymentProfileOrExit(env, opts = {}) {
   return result;
 }
 
-/**
- * Effective trust proxy setting (profile default with optional override).
- * @param {NodeJS.ProcessEnv} [env]
- * @returns {false|number}
- */
 function resolveTrustProxy(env) {
   const source = env || process.env;
   const raw = envTrim(source, "TRUST_PROXY");
@@ -575,14 +687,9 @@ function resolveTrustProxy(env) {
   if (hasAuthoritativeDeploymentProfile(source)) {
     return getDeploymentProfile(source).trustProxy;
   }
-  // Legacy default matches server.legacy / httpBootstrap
   return 1;
 }
 
-/**
- * Listen host bind address.
- * @param {NodeJS.ProcessEnv} [env]
- */
 function resolveListenHost(env) {
   const source = env || process.env;
   const raw = envTrim(source, "HOST");
@@ -593,28 +700,53 @@ function resolveListenHost(env) {
   return "0.0.0.0";
 }
 
-/** Test helper */
+/**
+ * Effective jobs flag for an authoritative profile (honors emergency production disable).
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function resolveJobsEnabled(env) {
+  const source = env || process.env;
+  if (!hasAuthoritativeDeploymentProfile(source)) return null;
+  const profile = getDeploymentProfile(source);
+  const raw = envTrim(source, "BLESSBOARD_JOBS_ENABLED").toLowerCase();
+  if (profile.jobsEnabled === false) return false;
+  if (raw && JOBS_DISABLE.has(raw)) return false;
+  return true;
+}
+
 function resetDeploymentProfileWarningsForTests() {
   deprecationWarned = new Set();
 }
 
 module.exports = {
   DEPLOYMENT_PROFILES,
+  DEPLOYMENT_CODE_ALIASES,
   RUNTIME_LEGACY,
+  RUNTIME_PRODUCTION,
   RUNTIME_V5_FOUNDATION,
+  CODE_COM_PRODUCTION,
+  CODE_ORG_STAGING,
   CODE_ORG_V5,
   CODE_COM_V4,
+  COOKIE_COM,
+  COOKIE_ORG,
   PRODUCTION_SESSION_COOKIE,
   V5_SESSION_COOKIE,
+  REQUIRED_HOSTINGER_KEYS,
+  OPTIONAL_HOSTINGER_KEYS,
+  requiredHostingerKeys,
+  optionalHostingerKeys,
   getDeploymentProfile,
   hasAuthoritativeDeploymentProfile,
   requireDeploymentProfile: getDeploymentProfile,
   getDeploymentSetting,
   getAuthoritativeDomainConfig,
+  resolveDeploymentConfiguration,
   resolveDeploymentProfileOrError,
   validateAuthoritativeProfileCompatibility,
   assertDeploymentProfileOrExit,
   resolveTrustProxy,
   resolveListenHost,
+  resolveJobsEnabled,
   resetDeploymentProfileWarningsForTests,
 };

@@ -44,7 +44,7 @@ const FORBIDDEN_LOG_PATTERNS = [
   /password_hash/i,
   /SESSION_SECRET/i,
   /DATABASE_URL/i,
-  /blessboard_org_v5_sid=/i,
+  /blessboard_org_sid=/i,
   /blessboard_org_v5_csrf=/i,
   /correct-horse-battery-staple/,
   /platform-admin@example\.org/,

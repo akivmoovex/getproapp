@@ -101,8 +101,8 @@ function buildPrivacyPolicyContent() {
       html: `
 <p>BlessBoard uses essential cookies and related mechanisms required for security and signed-in sessions, including:</p>
 <ul>
-  <li>Session cookies used to keep authenticated users signed in (default name <code>blessboard_org_v5_sid</code>, configurable).</li>
-  <li>CSRF protection cookies used to secure form submissions (default name <code>blessboard_org_v5_csrf</code>).</li>
+  <li>Session cookies used to keep authenticated users signed in (default name <code>blessboard_org_sid</code>, configurable).</li>
+  <li>CSRF protection cookies used to secure form submissions (default name <code>blessboard_org_csrf</code>).</li>
 </ul>
 <p>These cookies are necessary for core functionality and are not used for advertising. A separate cookie-consent banner for non-essential analytics is not required for the current apex implementation because third-party advertising analytics are not loaded there.</p>`,
     },

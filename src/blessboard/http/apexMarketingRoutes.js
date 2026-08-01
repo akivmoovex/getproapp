@@ -201,7 +201,7 @@ function logCsrfDiag(req, env, outcome) {
       path: REGISTER_PATH,
       host,
       secure: Boolean(req.secure),
-      sessionCookiePresent: Boolean(req.cookies && req.cookies.blessboard_org_v5_sid),
+      sessionCookiePresent: Boolean(req.cookies && req.cookies.blessboard_org_sid),
       csrfCookiePresent: cookiePresent,
       csrfBodyFieldPresent: bodyPresent,
       csrfFieldName: CSRF_FIELD,

@@ -139,7 +139,7 @@ describe("blessboard apex legal pages (BB-LEGAL-001)", () => {
     assert.match(res.text, /id="security"/);
     assert.match(res.text, /id="user-rights"/);
     assert.match(res.text, /id="contact"/);
-    assert.match(res.text, /blessboard_org_v5_sid|blessboard_org_v5_csrf/);
+    assert.match(res.text, /blessboard_org_sid|blessboard_org_csrf|blessboard_org_v5_sid|blessboard_org_v5_csrf/);
     assert.doesNotMatch(res.text, /targeted advertising tracker|Google Analytics|Meta Pixel/i);
   });
 

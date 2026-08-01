@@ -1,7 +1,6 @@
 "use strict";
 
 const os = require("os");
-const { isV5FoundationMode } = require("../platform/config/v5FoundationMode");
 const {
   hasAuthoritativeDeploymentProfile,
   getDeploymentProfile,
@@ -13,17 +12,18 @@ function envStringIsSet(value) {
 
 /**
  * Which required production variables are missing (names only — never values).
- * V5 foundation / authoritative org-v5 profile does not require BASE_DOMAIN
- * (canonical domain comes from the deployment profile).
+ * Any authoritative BlessBoard deployment profile supplies canonicalDomain —
+ * BASE_DOMAIN is not required; DATABASE_URL is required (no GETPRO fallback).
+ * Unprofiled legacy hosts still require BASE_DOMAIN.
  * @returns {string[]}
  */
 function getProductionMissingRequiredEnv() {
   if (process.env.NODE_ENV !== "production") return [];
   const missing = [];
   if (!envStringIsSet(process.env.SESSION_SECRET)) missing.push("SESSION_SECRET");
-  const skipBaseDomain =
-    isV5FoundationMode() || hasAuthoritativeDeploymentProfile();
-  if (!skipBaseDomain && !envStringIsSet(process.env.BASE_DOMAIN)) {
+  if (hasAuthoritativeDeploymentProfile()) {
+    if (!envStringIsSet(process.env.DATABASE_URL)) missing.push("DATABASE_URL");
+  } else if (!envStringIsSet(process.env.BASE_DOMAIN)) {
     missing.push("BASE_DOMAIN");
   }
   return missing;

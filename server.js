@@ -74,18 +74,22 @@ const {
 } = require("./src/platform/config/v5EnvValidation");
 const {
   assertDeploymentProfileOrExit,
+  resolveDeploymentConfiguration,
+  hasAuthoritativeDeploymentProfile,
+  RUNTIME_PRODUCTION,
+  RUNTIME_V5_FOUNDATION,
 } = require("./src/platform/config/deploymentProfiles");
 // Refuse unknown PLATFORM_DEPLOYMENT_CODE and security-sensitive legacy conflicts before other gates.
 assertDeploymentProfileOrExit();
-// Refuse silent fall-through to legacy when PLATFORM_DEPLOYMENT_CODE is V5 but DEPLOYMENT_ENV conflicts.
+// Refuse silent fall-through when a V5-foundation profile has a conflicting DEPLOYMENT_ENV.
 assertV5FoundationDeploymentPairingOrExit();
 
 const { assertProductionRequiredEnvOrExit } = require("./src/startup/productionEnvGate");
 assertProductionRequiredEnvOrExit(boot);
 
-// One-line diagnostics (no secrets). In production, Hostinger env first; optional production `.env.production` fills missing keys; locally, repo `.env` may be merged when NODE_ENV is not production.
-const adminPasswordDiag = isV5FoundationMode()
-  ? "n/a (V5 foundation)"
+// One-line diagnostics (no secrets). Official BlessBoard profiles do not use ADMIN_PASSWORD.
+const adminPasswordDiag = hasAuthoritativeDeploymentProfile()
+  ? "n/a (deployment profile)"
   : process.env.ADMIN_PASSWORD
     ? "set"
     : "MISSING";
@@ -94,8 +98,11 @@ console.log(
   `[getpro] cwd=${process.cwd()} | startup entry=${boot.startupEntry} | dotenvKeysMerged=${boot.dotenvKeyCount} (${boot.envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${adminPasswordDiag} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
 );
 
-if (isV5FoundationMode()) {
-  // V5 blessboard.org: platform foundation DB only — no legacy public.tenants / session / ensure*Schema.
+const deployment = resolveDeploymentConfiguration();
+const runtimeMode = deployment.runtimeMode;
+
+if (runtimeMode === RUNTIME_V5_FOUNDATION || (!runtimeMode && isV5FoundationMode())) {
+  // Staging / V5 foundation: platform DB — no legacy public.tenants / session / ensure*Schema.
   void require("./src/platform/http/v5FoundationServer")
     .startV5FoundationServer({ boot })
     .catch((err) => {
@@ -103,7 +110,13 @@ if (isV5FoundationMode()) {
       console.error("[blessboard] V5 foundation startup error:", err && err.message ? err.message : err);
       process.exit(1);
     });
-} else {
-  // V4 / legacy: unchanged path (ensure*Schema, tenants, sessions, full routes).
+} else if (runtimeMode === RUNTIME_PRODUCTION || !runtimeMode) {
+  // Production profile or unset (legacy GetPro / transitional): full application.
   require("./server.legacy");
+} else {
+  // eslint-disable-next-line no-console
+  console.error(
+    `[blessboard] FATAL: unsupported deployment runtimeMode=${JSON.stringify(runtimeMode)}.`
+  );
+  process.exit(1);
 }
