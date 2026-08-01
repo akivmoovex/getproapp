@@ -2,7 +2,8 @@
 
 /**
  * PLATFORM_HOST_CONTEXT_MODE feature flag.
- * Values: off | diagnostic. Default: off.
+ * Values: off | diagnostic. Default: off (legacy).
+ * Authoritative deployment profiles may supply hostContextMode.
  * Unsupported values are treated as off (safe fail-closed for the diagnostic path).
  */
 
@@ -18,10 +19,16 @@ let warnedUnsupported = false;
  */
 function getPlatformHostContextMode(env) {
   const source = env || process.env;
+  const { hasAuthoritativeDeploymentProfile, getDeploymentProfile } = require("./deploymentProfiles");
   const raw = String(source.PLATFORM_HOST_CONTEXT_MODE || "")
     .trim()
     .toLowerCase();
-  if (!raw) return MODE_OFF;
+  if (!raw) {
+    if (hasAuthoritativeDeploymentProfile(source)) {
+      return getDeploymentProfile(source).hostContextMode;
+    }
+    return MODE_OFF;
+  }
   if (raw === MODE_OFF) return MODE_OFF;
   if (raw === MODE_DIAGNOSTIC) return MODE_DIAGNOSTIC;
   if (!warnedUnsupported) {
@@ -30,6 +37,9 @@ function getPlatformHostContextMode(env) {
     console.warn(
       `[platform-host-context] Unsupported PLATFORM_HOST_CONTEXT_MODE=${JSON.stringify(raw)}; treating as "off".`
     );
+  }
+  if (hasAuthoritativeDeploymentProfile(source)) {
+    return getDeploymentProfile(source).hostContextMode;
   }
   return MODE_OFF;
 }

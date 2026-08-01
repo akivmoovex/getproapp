@@ -27,12 +27,20 @@ const { getDatabaseIdentity } = require("../db/pg/church/databaseIdentityRepo");
 const IDENTITY_ENFORCED_ENVS = Object.freeze(["testing", "production"]);
 
 /**
- * Explicit DEPLOYMENT_ENV (lowercased), or "" when unset.
- * Unlike getDeploymentEnvMode(), this never derives production from NODE_ENV — the
- * database-identity gate only enforces when DEPLOYMENT_ENV is literally testing/production,
- * so local dev (development) and NODE_ENV=test are left untouched.
+ * Explicit DEPLOYMENT_ENV (lowercased), or profile-derived environment when authoritative,
+ * or "" when unset (legacy). Unlike getDeploymentEnvMode(), local development without a
+ * profile leaves enforcement skipped when DEPLOYMENT_ENV is empty.
  */
 function explicitDeploymentEnv() {
+  const {
+    getDeploymentProfile,
+    hasAuthoritativeDeploymentProfile,
+  } = require("../platform/config/deploymentProfiles");
+  if (hasAuthoritativeDeploymentProfile()) {
+    const profile = getDeploymentProfile();
+    const raw = String(process.env.DEPLOYMENT_ENV || "").trim().toLowerCase();
+    return raw || profile.deploymentEnvironment;
+  }
   return String(process.env.DEPLOYMENT_ENV || "").trim().toLowerCase();
 }
 

@@ -305,13 +305,9 @@ function createV5FoundationApp(options) {
   });
 
   app.disable("x-powered-by");
-  if (env.TRUST_PROXY === "0" || env.TRUST_PROXY === "false") {
-    app.set("trust proxy", false);
-  } else if (env.TRUST_PROXY) {
-    const n = Number(env.TRUST_PROXY);
-    app.set("trust proxy", Number.isFinite(n) && n >= 0 ? n : 1);
-  } else {
-    app.set("trust proxy", 1);
+  {
+    const { resolveTrustProxy } = require("../config/deploymentProfiles");
+    app.set("trust proxy", resolveTrustProxy(env));
   }
 
   app.use(assignV5RequestId);
@@ -1548,7 +1544,8 @@ async function startV5FoundationServer(opts) {
 
   const app = createV5FoundationApp({ getPool: () => pool });
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
-  const host = process.env.HOST || "0.0.0.0";
+  const { resolveListenHost } = require("../config/deploymentProfiles");
+  const host = resolveListenHost(process.env);
 
   await new Promise((resolve, reject) => {
     try {

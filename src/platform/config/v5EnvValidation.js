@@ -101,19 +101,32 @@ function parsePublicScheme(env) {
 
 /**
  * Jobs master switch.
- * - V5 foundation mode: always disabled.
- * - PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5 (any pairing): unset/invalid → disabled (fail-closed).
+ * - Authoritative V5 profile / foundation mode: always disabled (explicit enable is a startup fatal elsewhere).
+ * - PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5: unset/invalid → disabled (fail-closed).
  * - Other deployments (V4): unset → enabled; invalid → enabled (legacy).
- * Explicit enable/disable tokens always honored outside foundation mode.
  * @param {NodeJS.ProcessEnv} [env]
  */
 function parseBlessBoardJobsEnabled(env) {
   const source = env || process.env;
   const { isWriteMaintenanceEnabled } = require("../../blessboard/config/writeMaintenance");
+  const {
+    getDeploymentProfile,
+    hasAuthoritativeDeploymentProfile,
+  } = require("./deploymentProfiles");
   if (isWriteMaintenanceEnabled(source)) {
     return { ok: true, enabled: false, reason: "write_maintenance" };
   }
-  if (isV5FoundationMode(source)) {
+  if (isV5FoundationMode(source) || hasAuthoritativeDeploymentProfile(source)) {
+    const profile = getDeploymentProfile(source);
+    if (profile && profile.jobsEnabled === false) {
+      const raw = String(source.BLESSBOARD_JOBS_ENABLED || "")
+        .trim()
+        .toLowerCase();
+      if (raw === "1" || raw === "true" || raw === "yes" || raw === "on") {
+        return { ok: false, reason: "profile_forbid_enable", raw, enabled: false };
+      }
+      return { ok: true, enabled: false, reason: "deployment_profile" };
+    }
     return { ok: true, enabled: false, reason: "v5_foundation_mode" };
   }
   const deploy = getPlatformDeploymentCode(source);
@@ -167,7 +180,23 @@ function parseSessionSecret(env) {
  */
 function parseSessionCookieName(env) {
   const source = env || process.env;
+  const {
+    getDeploymentProfile,
+    hasAuthoritativeDeploymentProfile,
+  } = require("./deploymentProfiles");
   const raw = String(source.SESSION_COOKIE_NAME || "").trim();
+  if (hasAuthoritativeDeploymentProfile(source)) {
+    const profile = getDeploymentProfile(source);
+    if (!raw) {
+      return { ok: true, name: profile.sessionCookieName, usedDefault: true, fromProfile: true };
+    }
+    return {
+      ok: raw === profile.sessionCookieName,
+      name: profile.sessionCookieName,
+      usedDefault: false,
+      fromProfile: true,
+    };
+  }
   return { ok: true, name: raw || DEFAULT_V5_SESSION_COOKIE, usedDefault: !raw };
 }
 
@@ -191,6 +220,8 @@ function summarizeV5DatabaseEnv(env) {
 
 /**
  * Pairing rule: blessboard-org-v5 must not silently fall through to the V4 legacy server.
+ * DEPLOYMENT_ENV may be omitted (derived as testing from the deployment profile).
+ * An explicit non-testing value is fatal.
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {{ ok: true } | { ok: false, code: string, message: string }}
  */
@@ -203,7 +234,7 @@ function checkV5FoundationDeploymentPairing(env) {
   const depEnv = String(source.DEPLOYMENT_ENV || "")
     .trim()
     .toLowerCase();
-  if (depEnv === DEPLOYMENT_ENV_TESTING) {
+  if (!depEnv || depEnv === DEPLOYMENT_ENV_TESTING) {
     return { ok: true };
   }
   return {
@@ -211,8 +242,8 @@ function checkV5FoundationDeploymentPairing(env) {
     code: "v5_deployment_pairing_mismatch",
     message:
       `PLATFORM_DEPLOYMENT_CODE=${V5_FOUNDATION_DEPLOYMENT_CODE} requires DEPLOYMENT_ENV=testing ` +
-      `(got ${depEnv ? JSON.stringify(depEnv) : "(unset)"}). Refusing legacy server path to avoid ` +
-      "confusing testing foundation with production/legacy runtime.",
+      `or unset (derived from deployment profile); got ${JSON.stringify(depEnv)}. ` +
+      "Refusing legacy server path to avoid confusing testing foundation with production/legacy runtime.",
   };
 }
 

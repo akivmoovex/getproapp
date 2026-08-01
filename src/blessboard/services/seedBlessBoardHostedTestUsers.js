@@ -70,9 +70,15 @@ const OPERATIONAL_POOL_MODULE = "src/db/pg/pool.js";
  */
 function evaluateHostedSeedSafety(env) {
   const e = env && typeof env === "object" ? env : process.env;
-  const deploymentEnv = String(e.DEPLOYMENT_ENV || "")
-    .trim()
-    .toLowerCase();
+  const {
+    getDeploymentProfile,
+  } = require("../../platform/config/deploymentProfiles");
+  const profile = getDeploymentProfile(e);
+  const deploymentEnv = profile && profile.authoritative
+    ? profile.deploymentEnvironment
+    : String(e.DEPLOYMENT_ENV || "")
+        .trim()
+        .toLowerCase();
   const allowTestUsers =
     String(e.BLESSBOARD_ALLOW_TEST_USERS || "")
       .trim()
@@ -94,7 +100,8 @@ function evaluateHostedSeedSafety(env) {
       ok: false,
       status: STATUS.REFUSED,
       message: "refused_deployment_env",
-      detail: "DEPLOYMENT_ENV=testing is required.",
+      detail:
+        "DEPLOYMENT_ENV=testing is required (or PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5).",
     };
   }
   if (!allowTestUsers) {

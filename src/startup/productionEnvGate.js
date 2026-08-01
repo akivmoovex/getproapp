@@ -1,6 +1,11 @@
 "use strict";
 
 const os = require("os");
+const { isV5FoundationMode } = require("../platform/config/v5FoundationMode");
+const {
+  hasAuthoritativeDeploymentProfile,
+  getDeploymentProfile,
+} = require("../platform/config/deploymentProfiles");
 
 function envStringIsSet(value) {
   return value != null && String(value).trim() !== "";
@@ -8,13 +13,19 @@ function envStringIsSet(value) {
 
 /**
  * Which required production variables are missing (names only — never values).
+ * V5 foundation / authoritative org-v5 profile does not require BASE_DOMAIN
+ * (canonical domain comes from the deployment profile).
  * @returns {string[]}
  */
 function getProductionMissingRequiredEnv() {
   if (process.env.NODE_ENV !== "production") return [];
   const missing = [];
   if (!envStringIsSet(process.env.SESSION_SECRET)) missing.push("SESSION_SECRET");
-  if (!envStringIsSet(process.env.BASE_DOMAIN)) missing.push("BASE_DOMAIN");
+  const skipBaseDomain =
+    isV5FoundationMode() || hasAuthoritativeDeploymentProfile();
+  if (!skipBaseDomain && !envStringIsSet(process.env.BASE_DOMAIN)) {
+    missing.push("BASE_DOMAIN");
+  }
   return missing;
 }
 
@@ -25,12 +36,20 @@ function getProductionMissingRequiredEnv() {
 function summarizeProductionEnvPresence() {
   const hasDb =
     envStringIsSet(process.env.DATABASE_URL) || envStringIsSet(process.env.GETPRO_DATABASE_URL);
+  const profile = getDeploymentProfile();
+  const baseDomainNote = hasAuthoritativeDeploymentProfile()
+    ? envStringIsSet(process.env.BASE_DOMAIN)
+      ? "yes (deprecated; profile supplies canonical domain)"
+      : `no (ok; profile ${profile && profile.canonicalDomain ? profile.canonicalDomain : "canonical"})`
+    : envStringIsSet(process.env.BASE_DOMAIN)
+      ? "yes"
+      : "no";
   return {
     DATABASE_URL: envStringIsSet(process.env.DATABASE_URL) ? "yes" : "no",
     GETPRO_DATABASE_URL: envStringIsSet(process.env.GETPRO_DATABASE_URL) ? "yes" : "no",
     effectiveDb: hasDb ? "yes" : "no",
     SESSION_SECRET: envStringIsSet(process.env.SESSION_SECRET) ? "yes" : "no",
-    BASE_DOMAIN: envStringIsSet(process.env.BASE_DOMAIN) ? "yes" : "no",
+    BASE_DOMAIN: baseDomainNote,
     PUBLIC_SCHEME: envStringIsSet(process.env.PUBLIC_SCHEME) ? "yes" : "no (defaults to https in code)",
   };
 }

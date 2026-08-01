@@ -68,21 +68,31 @@ logPgStartupDiagnostics({
   dbProvenanceLogLine: boot.dbProvenance.logLine,
 });
 
-const { assertProductionRequiredEnvOrExit } = require("./src/startup/productionEnvGate");
-assertProductionRequiredEnvOrExit(boot);
-
-// One-line diagnostics (no secrets). In production, Hostinger env first; optional production `.env.production` fills missing keys; locally, repo `.env` may be merged when NODE_ENV is not production.
-// eslint-disable-next-line no-console
-console.log(
-  `[getpro] cwd=${process.cwd()} | startup entry=${boot.startupEntry} | dotenvKeysMerged=${boot.dotenvKeyCount} (${boot.envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
-);
-
 const { isV5FoundationMode } = require("./src/platform/config/v5FoundationMode");
 const {
   assertV5FoundationDeploymentPairingOrExit,
 } = require("./src/platform/config/v5EnvValidation");
-// Refuse silent fall-through to legacy when PLATFORM_DEPLOYMENT_CODE is V5 but DEPLOYMENT_ENV is wrong.
+const {
+  assertDeploymentProfileOrExit,
+} = require("./src/platform/config/deploymentProfiles");
+// Refuse unknown PLATFORM_DEPLOYMENT_CODE and security-sensitive legacy conflicts before other gates.
+assertDeploymentProfileOrExit();
+// Refuse silent fall-through to legacy when PLATFORM_DEPLOYMENT_CODE is V5 but DEPLOYMENT_ENV conflicts.
 assertV5FoundationDeploymentPairingOrExit();
+
+const { assertProductionRequiredEnvOrExit } = require("./src/startup/productionEnvGate");
+assertProductionRequiredEnvOrExit(boot);
+
+// One-line diagnostics (no secrets). In production, Hostinger env first; optional production `.env.production` fills missing keys; locally, repo `.env` may be merged when NODE_ENV is not production.
+const adminPasswordDiag = isV5FoundationMode()
+  ? "n/a (V5 foundation)"
+  : process.env.ADMIN_PASSWORD
+    ? "set"
+    : "MISSING";
+// eslint-disable-next-line no-console
+console.log(
+  `[getpro] cwd=${process.cwd()} | startup entry=${boot.startupEntry} | dotenvKeysMerged=${boot.dotenvKeyCount} (${boot.envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${adminPasswordDiag} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
+);
 
 if (isV5FoundationMode()) {
   // V5 blessboard.org: platform foundation DB only — no legacy public.tenants / session / ensure*Schema.

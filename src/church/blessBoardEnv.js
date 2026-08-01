@@ -4,13 +4,19 @@
  * Central BlessBoard deployment configuration (env-driven, V4-compatible defaults).
  *
  * V4 / blessboard.com defaults are preserved when these vars are unset.
- * V5 / blessboard.org sets BLESSBOARD_CANONICAL_DOMAIN=blessboard.org (and related vars).
+ * Authoritative V5 profiles (PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5) derive
+ * domains / deployment env / cookie / jobs from src/platform/config/deploymentProfiles.js.
  *
  * Values are read from process.env on each call (never captured at require-time).
  * Bootstrap / Hostinger env must be loaded before church domain middleware runs.
  */
 
 const path = require("path");
+const {
+  getAuthoritativeDomainConfig,
+  getDeploymentProfile,
+  hasAuthoritativeDeploymentProfile,
+} = require("../platform/config/deploymentProfiles");
 
 const DEFAULT_CANONICAL_DOMAIN = "blessboard.com";
 const DEFAULT_SESSION_COOKIE_NAME = "getpro_sid";
@@ -91,8 +97,22 @@ function canonicalFromApexList(apexList) {
 }
 
 /**
+ * Normalized domain config when an authoritative deployment profile is active.
+ * @returns {{
+ *   canonicalDomain: string,
+ *   publicOrigin: string,
+ *   adminOrigin: string,
+ *   apexDomains: string[],
+ *   churchHostDomain: string,
+ * }|null}
+ */
+function getBlessBoardDomainConfig() {
+  return getAuthoritativeDomainConfig();
+}
+
+/**
  * Canonical BlessBoard public domain (no www).
- * Priority:
+ * Authoritative profile wins. Otherwise env fallback chain (V4-compatible):
  * 1. BLESSBOARD_CANONICAL_DOMAIN when it belongs to BLESSBOARD_APEX_DOMAINS (if apex is set)
  * 2. First non-www host from BLESSBOARD_APEX_DOMAINS (when explicitly set)
  * 3. BLESSBOARD_CANONICAL_DOMAIN (when apex list unset)
@@ -104,6 +124,9 @@ function canonicalFromApexList(apexList) {
  * .org is not treated as an alias of .com.
  */
 function getBlessBoardCanonicalDomain() {
+  const fromProfile = getAuthoritativeDomainConfig();
+  if (fromProfile) return fromProfile.canonicalDomain;
+
   const explicit = normalizeHost(envTrim("BLESSBOARD_CANONICAL_DOMAIN"));
   const apexFromEnv = parseApexDomainsFromEnv();
 
@@ -128,6 +151,9 @@ function getBlessBoardCanonicalDomain() {
  * does not include that host (leftover .com on a .org-only V5 app).
  */
 function getChurchHostDomain() {
+  const fromProfile = getAuthoritativeDomainConfig();
+  if (fromProfile) return fromProfile.churchHostDomain;
+
   const churchOnly = normalizeHost(envTrim("CHURCH_HOST_DOMAIN"));
   const canonical = getBlessBoardCanonicalDomain();
   if (!churchOnly) return canonical;
@@ -149,6 +175,9 @@ function getChurchHostDomain() {
  * Absolute public marketing URL (no trailing slash), e.g. https://blessboard.com
  */
 function getBlessBoardPublicUrl() {
+  const fromProfile = getAuthoritativeDomainConfig();
+  if (fromProfile) return fromProfile.publicOrigin;
+
   const fromEnv = envTrim("BLESSBOARD_PUBLIC_URL").replace(/\/$/, "");
   if (fromEnv) return fromEnv;
   return `https://${getBlessBoardCanonicalDomain()}`;
@@ -158,6 +187,9 @@ function getBlessBoardPublicUrl() {
  * Absolute platform-admin base URL (no trailing slash).
  */
 function getBlessBoardAdminUrl() {
+  const fromProfile = getAuthoritativeDomainConfig();
+  if (fromProfile) return fromProfile.adminOrigin;
+
   const fromEnv = envTrim("BLESSBOARD_ADMIN_URL").replace(/\/$/, "");
   if (fromEnv) return fromEnv;
   return getBlessBoardPublicUrl();
@@ -167,6 +199,9 @@ function getBlessBoardAdminUrl() {
  * @returns {string[]|null}
  */
 function parseApexDomainsFromEnv() {
+  const fromProfile = getAuthoritativeDomainConfig();
+  if (fromProfile) return fromProfile.apexDomains.slice();
+
   const raw = envTrim("BLESSBOARD_APEX_DOMAINS");
   if (!raw) return null;
   const list = raw
@@ -190,11 +225,17 @@ function defaultApexDomainsForCanonical(canonical) {
 
 /**
  * Apex hosts that serve BlessBoard platform marketing/admin (not tenants).
+ * Authoritative profile apex list wins (never adds foreign TLDs).
  * When BLESSBOARD_APEX_DOMAINS is set, that list is authoritative (plus www.{canonical}
  * only when canonical is already in the list). Never force-adds a foreign TLD.
  * @returns {Set<string>}
  */
 function getBlessBoardApexDomainSet() {
+  const fromProfile = getAuthoritativeDomainConfig();
+  if (fromProfile) {
+    return new Set(fromProfile.apexDomains.map(normalizeHost).filter(Boolean));
+  }
+
   const fromEnv = parseApexDomainsFromEnv();
   const canonical = getBlessBoardCanonicalDomain();
 
@@ -240,8 +281,13 @@ function isBlessBoardForceHttpsEnabled() {
 
 /**
  * express-session cookie name. Default getpro_sid (V4-compatible).
+ * Authoritative V5 profile uses profile.sessionCookieName.
  */
 function getSessionCookieName() {
+  if (hasAuthoritativeDeploymentProfile()) {
+    const profile = getDeploymentProfile();
+    if (profile) return profile.sessionCookieName;
+  }
   const name = envTrim("SESSION_COOKIE_NAME");
   return name || DEFAULT_SESSION_COOKIE_NAME;
 }
@@ -290,9 +336,15 @@ let deploymentEnvFallbackWarned = false;
 /**
  * Raw deployment label for diagnostics (e.g. production, staging, testing, v5-org).
  * Prefer {@link getDeploymentEnvMode} / {@link isTestingDeployment} for policy gates.
+ * Authoritative profiles derive deploymentEnvironment from PLATFORM_DEPLOYMENT_CODE.
  * Does not invent a production/testing mode from NODE_ENV alone for those gates.
  */
 function getDeploymentEnv() {
+  if (hasAuthoritativeDeploymentProfile()) {
+    const profile = getDeploymentProfile();
+    const explicit = envTrim("DEPLOYMENT_ENV");
+    return explicit || (profile && profile.deploymentEnvironment) || "testing";
+  }
   const fromEnv = envTrim("DEPLOYMENT_ENV");
   if (fromEnv) return fromEnv;
   const nodeEnv = envTrim("NODE_ENV");
@@ -301,11 +353,18 @@ function getDeploymentEnv() {
 
 /**
  * Authoritative deployment mode for demo visibility and seed safety.
- * Reads DEPLOYMENT_ENV only (case-insensitive, trimmed). Does not use NODE_ENV.
+ * Authoritative profile → profile.deploymentEnvironment.
+ * Otherwise reads DEPLOYMENT_ENV only (case-insensitive, trimmed). Does not use NODE_ENV.
  * Accepted: "testing" | "production". Missing or unknown → "production" (safe: hide demos).
  * @returns {"testing"|"production"}
  */
 function getDeploymentEnvMode() {
+  if (hasAuthoritativeDeploymentProfile()) {
+    const profile = getDeploymentProfile();
+    return profile && profile.deploymentEnvironment === DEPLOYMENT_ENV_TESTING
+      ? DEPLOYMENT_ENV_TESTING
+      : DEPLOYMENT_ENV_PRODUCTION;
+  }
   const raw = envTrim("DEPLOYMENT_ENV").toLowerCase();
   if (raw === DEPLOYMENT_ENV_TESTING) return DEPLOYMENT_ENV_TESTING;
   if (raw === DEPLOYMENT_ENV_PRODUCTION) return DEPLOYMENT_ENV_PRODUCTION;
@@ -338,20 +397,41 @@ function isProductionDeployment() {
 /**
  * True for BlessBoard.org V5 testing deployments that must use an explicit DATABASE_URL
  * (no silent GETPRO_DATABASE_URL fallback).
- * Trigger: DEPLOYMENT_ENV=testing AND effective canonical blessboard.org
+ * Trigger: authoritative org-v5 profile, or DEPLOYMENT_ENV=testing AND canonical blessboard.org
  */
 function isBlessBoardOrgTestingDeployment() {
+  if (hasAuthoritativeDeploymentProfile()) {
+    const profile = getDeploymentProfile();
+    return Boolean(
+      profile &&
+        profile.deploymentEnvironment === DEPLOYMENT_ENV_TESTING &&
+        profile.canonicalDomain === "blessboard.org"
+    );
+  }
   if (!isTestingDeployment()) return false;
   return getBlessBoardCanonicalDomain() === "blessboard.org";
 }
 
 /**
- * Optional EXPECTED_DATABASE_ENV — when set, must match DEPLOYMENT_ENV (application marker).
- * There is no whole-database environment row in schema; org-level data_environment is unrelated.
+ * Optional EXPECTED_DATABASE_ENV — when set, must match effective deployment env.
+ * Authoritative profiles derive expectedDatabaseEnvironment; an explicit matching
+ * Hostinger value is allowed (deprecated). Conflicts fail closed.
  * @returns {{ ok: true } | { ok: false, expected: string, actual: string }}
  */
 function validateExpectedDatabaseEnv() {
   const expected = envTrim("EXPECTED_DATABASE_ENV");
+  if (hasAuthoritativeDeploymentProfile()) {
+    const profile = getDeploymentProfile();
+    const want = profile.expectedDatabaseEnvironment;
+    const actual = getDeploymentEnv();
+    if (expected && expected.toLowerCase() !== want.toLowerCase()) {
+      return { ok: false, expected, actual: want };
+    }
+    if (actual.toLowerCase() !== want.toLowerCase()) {
+      return { ok: false, expected: want, actual };
+    }
+    return { ok: true };
+  }
   if (!expected) return { ok: true };
   const actual = getDeploymentEnv();
   if (expected.toLowerCase() === actual.toLowerCase()) return { ok: true };
@@ -389,6 +469,7 @@ module.exports = {
   normalizeHost,
   envTrim,
   isEnvFlagDisabled,
+  getBlessBoardDomainConfig,
   getBlessBoardCanonicalDomain,
   getChurchHostDomain,
   getBlessBoardPublicUrl,

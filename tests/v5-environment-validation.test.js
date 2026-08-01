@@ -97,11 +97,11 @@ describe("V5 DEPLOYMENT_ENV / foundation pairing", () => {
       }).ok,
       true
     );
-    const badUnset = checkV5FoundationDeploymentPairing({
+    // Unset DEPLOYMENT_ENV is allowed (derived from deployment profile).
+    const okUnset = checkV5FoundationDeploymentPairing({
       PLATFORM_DEPLOYMENT_CODE: V5_FOUNDATION_DEPLOYMENT_CODE,
     });
-    assert.equal(badUnset.ok, false);
-    assert.equal(badUnset.code, "v5_deployment_pairing_mismatch");
+    assert.equal(okUnset.ok, true);
 
     const badProd = checkV5FoundationDeploymentPairing({
       PLATFORM_DEPLOYMENT_CODE: V5_FOUNDATION_DEPLOYMENT_CODE,
@@ -114,6 +114,15 @@ describe("V5 DEPLOYMENT_ENV / foundation pairing", () => {
         PLATFORM_DEPLOYMENT_CODE: "blessboard-com-v4",
         DEPLOYMENT_ENV: "production",
       }).ok,
+      true
+    );
+  });
+
+  it("foundation mode allows unset DEPLOYMENT_ENV with blessboard-org-v5", () => {
+    assert.equal(
+      isV5FoundationMode({
+        PLATFORM_DEPLOYMENT_CODE: V5_FOUNDATION_DEPLOYMENT_CODE,
+      }),
       true
     );
   });
@@ -289,7 +298,10 @@ describe("V5 jobs gate", () => {
     delete process.env.BLESSBOARD_JOBS_ENABLED;
     assert.equal(areBlessBoardJobsEnabled(), false);
     assert.equal(parseBlessBoardJobsEnabled(process.env).enabled, false);
-    assert.equal(parseBlessBoardJobsEnabled(process.env).reason, "v5_foundation_mode");
+    assert.match(
+      parseBlessBoardJobsEnabled(process.env).reason,
+      /^(v5_foundation_mode|deployment_profile)$/
+    );
   });
 
   it("V4 unset still defaults enabled", () => {
