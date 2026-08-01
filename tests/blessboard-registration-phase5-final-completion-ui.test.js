@@ -215,7 +215,9 @@ describe("Phase 5 final completion screen markers", () => {
     assert.match(html, /data-bb-pa-reg-approved-open-public="1"/);
     assert.match(html, /href="\/c\/grace-community"/);
     assert.match(html, /data-bb-pa-invite-copy-once="1"/);
-    assert.match(html, /does not claim that a welcome email was sent/i);
+    assert.match(html, /data-bb-pa-reg-approved-email-note="1"/);
+    assert.match(html, /Transactional invitation email is attempted after provisioning/i);
+    assert.doesNotMatch(html, /data-bb-pa-reg-approved-no-email="1"/);
   });
 
   it("request information + information requested honest delivery", () => {

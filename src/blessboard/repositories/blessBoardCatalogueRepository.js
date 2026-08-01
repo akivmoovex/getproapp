@@ -81,15 +81,19 @@ async function findChurchByOrganizationId(client, organizationId) {
 async function insertChurch(client, fields) {
   const r = await client.query(
     `INSERT INTO blessboard.churches
-       (organization_id, church_key, display_name, legal_name, status, data_environment)
-     VALUES ($1, $2, $3, $4, 'active', $5)
-     RETURNING id, organization_id, church_key, display_name, legal_name, status, data_environment`,
+       (organization_id, church_key, display_name, legal_name, status, data_environment,
+        country_code, name_uniqueness_key)
+     VALUES ($1, $2, $3, $4, 'active', $5, $6, $7)
+     RETURNING id, organization_id, church_key, display_name, legal_name, status, data_environment,
+               country_code, name_uniqueness_key`,
     [
       fields.organizationId,
       fields.churchKey,
       fields.displayName,
       fields.legalName,
       fields.dataEnvironment,
+      fields.countryCode || null,
+      fields.nameUniquenessKey || null,
     ]
   );
   return r.rows[0];

@@ -184,7 +184,7 @@ function renderFoundationHome(opts) {
  * Apex continuation / password form.
  * Never embeds raw transfer tokens in HTML — when opened as GET /login?tr=…,
  * the form posts to the current URL so the query is preserved by the browser.
- * @param {{ error?: string, csrfToken: string, authenticated?: boolean, hostKind?: 'apex'|'tenant', churchDisplayName?: string, nextPath?: string | null, transferToken?: string | null, transferHostname?: string | null, emailValue?: string | null, loggedOut?: boolean }} opts
+ * @param {{ error?: string, csrfToken: string, authenticated?: boolean, hostKind?: 'apex'|'tenant', churchDisplayName?: string, nextPath?: string | null, transferToken?: string | null, transferHostname?: string | null, emailValue?: string | null, loggedOut?: boolean, passwordReset?: boolean }} opts
  */
 function renderLoginPage(opts) {
   const hostKind = opts.hostKind === "tenant" ? "tenant" : "apex";
@@ -219,6 +219,7 @@ function renderLoginPage(opts) {
     panelTitle,
     panelLead,
     loggedOut: Boolean(opts.loggedOut),
+    passwordReset: Boolean(opts.passwordReset),
   });
 }
 

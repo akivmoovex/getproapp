@@ -238,7 +238,7 @@ describe("Phase 5 church approved success UI (no Postgres)", () => {
     assert.match(html, /data-bb-pa-reg-approved-plan="1"/);
     assert.match(html, /data-bb-pa-reg-approved-branch="1"[^>]*>Central Campus</);
     assert.match(html, /data-bb-pa-reg-approved-admin="1"/);
-    assert.match(html, /Administrator invitation prepared/);
+    assert.match(html, /Invitation prepared — delivery attempted/i);
     assert.match(html, /data-bb-pa-reg-approved-invite="1"/);
     assert.match(html, /data-bb-pa-reg-approved-copy="1"/);
     assert.match(html, /data-bb-pa-reg-approved-open-profile="1"/);
@@ -251,8 +251,9 @@ describe("Phase 5 church approved success UI (no Postgres)", () => {
     assert.match(html, /href="\/admin\/organizations\/grace-test#pa-org-onboarding"/);
     assert.match(html, /data-bb-pa-reg-approved-return="1"/);
     assert.match(html, /href="\/admin\/registration-applications"/);
-    assert.match(html, /data-bb-pa-reg-approved-no-email="1"/);
-    assert.match(html, /External delivery is not yet connected/i);
+    assert.match(html, /data-bb-pa-reg-approved-email-note="1"/);
+    assert.match(html, /Transactional invitation email is attempted after provisioning/i);
+    assert.doesNotMatch(html, /data-bb-pa-reg-approved-no-email="1"/);
     assert.doesNotMatch(html, /Welcome Email Sent|Resend Welcome Email/i);
     assert.doesNotMatch(html, /href="[^"]*invite\/accept\?token=/);
     assert.match(html, /value="https:\/\/blessboard\.org\/invite\/accept\?token=copy-once-test"/);
@@ -273,7 +274,7 @@ describe("Phase 5 church approved success UI (no Postgres)", () => {
     assert.match(html, /data-bb-pa-reg-approved="1"/);
     assert.doesNotMatch(html, /data-bb-pa-reg-approved-invite="1"/);
     assert.doesNotMatch(html, /value="https:\/\/[^"]*invite\/accept/);
-    assert.match(html, /one-time copy link is no longer available on refresh/i);
+    assert.match(html, /Invitation pending/i);
   });
 
   it("shows already-provisioned messaging without regenerating invitation", () => {

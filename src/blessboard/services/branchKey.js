@@ -9,16 +9,24 @@ const BRANCH_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
 
 /** Exact-match reserved keys after normalization (HQ row, route collisions, system tokens). */
 const RESERVED_BRANCH_KEYS = Object.freeze([
+  "about",
   "admin",
   "api",
   "branch",
   "branches",
+  "contact",
   "create",
+  "edit",
+  "events",
+  "giving",
   "hq",
+  "leadership",
   "login",
   "logout",
   "me",
+  "ministries",
   "new",
+  "sermons",
   "settings",
   "www",
 ]);
@@ -33,6 +41,7 @@ function slugifyBranchKey(raw) {
   return String(raw || "")
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u2018\u2019\u201A\u2032`']/g, "")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9_-]+/g, "-")

@@ -298,6 +298,15 @@ describe("platform-admin registration applications (Phase 5)", () => {
   it("filters and search work; invalid filters are safe", async () => {
     requireDb();
     const cookie = await cookieFor(users.platform);
+    const reported =
+      "/admin/registration-applications?q=&visible_status=new&selected_plan=&limit=25&queue=&application_status=&provisioning_status=&follow_up_status=&from=&to=&support_requested=&requires_review=&overdue_follow_up=&linked=all";
+    const reportedRes = await request(app)
+      .get(reported)
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie);
+    assert.equal(reportedRes.status, 200);
+    assert.match(reportedRes.text, /data-bb-pa-registration-applications="1"/);
+
     const filtered = await request(app)
       .get("/admin/registration-applications?application_status=duplicate_review")
       .set("Host", "blessboard.org")

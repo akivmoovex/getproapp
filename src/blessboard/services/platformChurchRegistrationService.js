@@ -7,6 +7,11 @@ const {
 } = require("./provisionRegisteredBlessBoardChurch");
 const { DUPLICATE_PHONE_MESSAGE } = require("./normalizeRegistrationPhone");
 const {
+  DUPLICATE_CHURCH_NAME_MESSAGE,
+  resolveCountryCodeForUniqueness,
+} = require("./normalizeChurchIdentity");
+const { assertChurchNameAvailable } = require("./assertChurchNameAvailable");
+const {
   isNetworkPlanSelection,
   NETWORK_PLAN_CODE,
 } = require("./platformChurchRegistrationValidation");
@@ -219,6 +224,54 @@ function riskPersistFields(risk) {
 }
 
 /**
+ * Block new applications when a live church already owns the normalized name+country.
+ * Country must resolve to ISO-2 for a definitive check; unresolved free-text is deferred to provisioning.
+ * Idempotent retries that reuse an existing organization_key are allowed.
+ * @param {import('pg').Pool} pool
+ * @param {{ church_name?: string, country?: string, organization_key?: string }} data
+ */
+async function rejectIfChurchNameTaken(pool, data) {
+  const countryCode = resolveCountryCodeForUniqueness(data && data.country);
+  if (!countryCode) {
+    return null;
+  }
+  try {
+    let excludeOrganizationId = null;
+    const orgKey =
+      data && data.organization_key != null
+        ? String(data.organization_key).trim().toLowerCase()
+        : "";
+    if (orgKey) {
+      const org = await pool.query(
+        `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
+        [orgKey]
+      );
+      if (org.rows[0]) {
+        excludeOrganizationId = String(org.rows[0].id);
+      }
+    }
+    const check = await assertChurchNameAvailable(pool, {
+      churchName: data && data.church_name,
+      countryCode,
+      excludeOrganizationId,
+    });
+    if (check.ok) {
+      return null;
+    }
+    return {
+      ok: false,
+      error: check.message || DUPLICATE_CHURCH_NAME_MESSAGE,
+      field: "church_name",
+      code: "duplicate_church_name",
+      httpStatus: 400,
+    };
+  } catch {
+    // Fail open on transient lookup errors — provisioning still enforces.
+    return null;
+  }
+}
+
+/**
  * Persist a pending church-registration application (no provisioning).
  * DB failures return a friendly result — they must not throw to the browser.
  * @param {import('pg').Pool | null} pool
@@ -241,6 +294,10 @@ async function submitPlatformChurchRegistration(pool, req, validationResult) {
   }
 
   const data = validationResult.data;
+  const nameTaken = await rejectIfChurchNameTaken(pool, data);
+  if (nameTaken) {
+    return nameTaken;
+  }
   const clientMeta = clientMetaFromRequest(req);
 
   let risk;
@@ -402,6 +459,11 @@ async function submitInstantFreeChurchRegistration(pool, req, validationResult, 
       error: "Please complete the administrator password and organization key fields.",
       code: "invalid_input",
     };
+  }
+
+  const nameTaken = await rejectIfChurchNameTaken(pool, data);
+  if (nameTaken) {
+    return nameTaken;
   }
 
   const clientMeta = clientMetaFromRequest(req);

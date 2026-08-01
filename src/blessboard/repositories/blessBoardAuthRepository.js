@@ -260,6 +260,8 @@ async function listChurchStaffRoles(client, filters) {
     `SELECT ur.id, ur.user_id, ur.organization_id, ur.church_id, ur.branch_id,
             ur.role_key, ur.status, ur.created_at, ur.updated_at,
             u.email_display, u.email_normalized, u.display_name AS user_display_name, u.status AS user_status,
+            (u.password_hash IS NOT NULL) AS has_usable_password,
+            u.password_changed_at,
             b.branch_key, b.display_name AS branch_display_name,
             COUNT(*) OVER()::int AS total_count
        FROM blessboard.user_roles ur

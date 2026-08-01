@@ -27,14 +27,20 @@ function mapInvitation(row) {
     updatedAt: row.updated_at,
     branchKey: row.branch_key || null,
     branchDisplayName: row.branch_display_name || null,
+    deliveryStatus: row.delivery_status != null ? String(row.delivery_status) : null,
+    deliveryAttemptedAt: row.delivery_attempted_at || null,
+    deliveryErrorCode: row.delivery_error_code != null ? String(row.delivery_error_code) : null,
   };
 }
 
+const INVITATION_SELECT = `id, organization_id, church_id, branch_id, email_normalized, email_display,
+            display_name, role_key, token_hash, status, expires_at, invited_by_user_id,
+            accepted_user_id, accepted_at, revoked_at, revoked_by_user_id, created_at, updated_at,
+            delivery_status, delivery_attempted_at, delivery_error_code`;
+
 async function findPendingByScope(client, fields) {
   const r = await client.query(
-    `SELECT id, organization_id, church_id, branch_id, email_normalized, email_display,
-            display_name, role_key, token_hash, status, expires_at, invited_by_user_id,
-            accepted_user_id, accepted_at, revoked_at, revoked_by_user_id, created_at, updated_at
+    `SELECT ${INVITATION_SELECT}
        FROM blessboard.user_invitations
       WHERE organization_id = $1
         AND church_id = $2
@@ -58,9 +64,7 @@ async function findPendingByScope(client, fields) {
 async function findByTokenHash(client, tokenHash, { forUpdate } = {}) {
   const lock = forUpdate ? " FOR UPDATE" : "";
   const r = await client.query(
-    `SELECT id, organization_id, church_id, branch_id, email_normalized, email_display,
-            display_name, role_key, token_hash, status, expires_at, invited_by_user_id,
-            accepted_user_id, accepted_at, revoked_at, revoked_by_user_id, created_at, updated_at
+    `SELECT ${INVITATION_SELECT}
        FROM blessboard.user_invitations
       WHERE token_hash = $1
       LIMIT 1${lock}`,
@@ -72,9 +76,7 @@ async function findByTokenHash(client, tokenHash, { forUpdate } = {}) {
 async function findById(client, invitationId, { forUpdate } = {}) {
   const lock = forUpdate ? " FOR UPDATE" : "";
   const r = await client.query(
-    `SELECT id, organization_id, church_id, branch_id, email_normalized, email_display,
-            display_name, role_key, token_hash, status, expires_at, invited_by_user_id,
-            accepted_user_id, accepted_at, revoked_at, revoked_by_user_id, created_at, updated_at
+    `SELECT ${INVITATION_SELECT}
        FROM blessboard.user_invitations
       WHERE id = $1
       LIMIT 1${lock}`,
@@ -89,9 +91,7 @@ async function insertInvitation(client, fields) {
        (organization_id, church_id, branch_id, email_normalized, email_display, display_name,
         role_key, token_hash, status, expires_at, invited_by_user_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9::timestamptz, $10)
-     RETURNING id, organization_id, church_id, branch_id, email_normalized, email_display,
-               display_name, role_key, token_hash, status, expires_at, invited_by_user_id,
-               accepted_user_id, accepted_at, revoked_at, revoked_by_user_id, created_at, updated_at`,
+     RETURNING ${INVITATION_SELECT}`,
     [
       fields.organizationId,
       fields.churchId,
@@ -116,9 +116,7 @@ async function markRevoked(client, invitationId, revokedByUserId) {
             revoked_by_user_id = $2,
             updated_at = now()
       WHERE id = $1 AND status = 'pending'
-      RETURNING id, organization_id, church_id, branch_id, email_normalized, email_display,
-                display_name, role_key, token_hash, status, expires_at, invited_by_user_id,
-                accepted_user_id, accepted_at, revoked_at, revoked_by_user_id, created_at, updated_at`,
+      RETURNING ${INVITATION_SELECT}`,
     [invitationId, revokedByUserId || null]
   );
   return mapInvitation(r.rows[0] || null);
@@ -143,9 +141,7 @@ async function markAccepted(client, invitationId, userId) {
             accepted_at = now(),
             updated_at = now()
       WHERE id = $1 AND status = 'pending'
-      RETURNING id, organization_id, church_id, branch_id, email_normalized, email_display,
-                display_name, role_key, token_hash, status, expires_at, invited_by_user_id,
-                accepted_user_id, accepted_at, revoked_at, revoked_by_user_id, created_at, updated_at`,
+      RETURNING ${INVITATION_SELECT}`,
     [invitationId, userId]
   );
   return mapInvitation(r.rows[0] || null);
@@ -156,6 +152,7 @@ async function listPendingForChurch(client, fields) {
     `SELECT i.id, i.organization_id, i.church_id, i.branch_id, i.email_normalized, i.email_display,
             i.display_name, i.role_key, i.token_hash, i.status, i.expires_at, i.invited_by_user_id,
             i.accepted_user_id, i.accepted_at, i.revoked_at, i.revoked_by_user_id, i.created_at, i.updated_at,
+            i.delivery_status, i.delivery_attempted_at, i.delivery_error_code,
             b.branch_key, b.display_name AS branch_display_name
        FROM blessboard.user_invitations i
        LEFT JOIN blessboard.branches b ON b.id = i.branch_id

@@ -63,7 +63,9 @@ describe("blessboard apex auth gui states", () => {
     assert.doesNotMatch(html, /raw-transfer-token-SECRET-value/);
     assert.doesNotMatch(html, /name="tr"/);
     assert.doesNotMatch(html, /name="next"|name="return_to"|name="redirect"/i);
-    assert.doesNotMatch(html, /Forgot password/i);
+    assert.match(html, /Forgot password/i);
+    assert.match(html, /data-bb-auth-forgot="1"/);
+    assert.match(html, /href="\/forgot-password"/);
     assert.doesNotMatch(html, /Register as Member/i);
     assert.doesNotMatch(html, /Continue with (Google|Facebook)|Sign in with (Google|Facebook)|social.?login/i);
     assert.match(html, /name="email"/);

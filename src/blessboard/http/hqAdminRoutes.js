@@ -265,6 +265,7 @@ function createHqAdminRouter(deps) {
     return {
       displayName: String(b.displayName || "").trim(),
       branchKey: String(b.branchKey || "").trim().toLowerCase(),
+      branchKeyManuallyEdited: String(b.branchKeyManuallyEdited || "") === "1" ? "1" : "0",
       email: String(b.email || "").trim(),
       phone: String(b.phone || "").trim(),
       timezone: String(b.timezone || "").trim(),
@@ -329,6 +330,10 @@ function createHqAdminRouter(deps) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
     }
     const capacity = await loadBranchCapacity(tenant.organization.id);
+    const organizationKey =
+      (tenant.organization.key && String(tenant.organization.key)) ||
+      (tenant.organization.organizationKey && String(tenant.organization.organizationKey)) ||
+      "";
     const html = renderHqView(
       "hq/branch-new.ejs",
       await shellLocals(req, res, "branches", {
@@ -336,6 +341,7 @@ function createHqAdminRouter(deps) {
         form: emptyBranchForm(null),
         error: null,
         fieldErrors: {},
+        organizationKey,
       })
     );
     return res.status(200).type("html").send(html);
@@ -353,6 +359,10 @@ function createHqAdminRouter(deps) {
     const session = req.v5Session && req.v5Session.session;
     const form = emptyBranchForm(req.body);
     const capacity = await loadBranchCapacity(tenant.organization.id);
+    const organizationKey =
+      (tenant.organization.key && String(tenant.organization.key)) ||
+      (tenant.organization.organizationKey && String(tenant.organization.organizationKey)) ||
+      "";
 
     async function renderCreateForm(status, error, fieldErrors) {
       const html = renderHqView(
@@ -362,6 +372,7 @@ function createHqAdminRouter(deps) {
           form,
           error,
           fieldErrors: fieldErrors || {},
+          organizationKey,
         })
       );
       return res.status(status).type("html").send(html);
@@ -379,6 +390,7 @@ function createHqAdminRouter(deps) {
       );
     }
 
+    // Ignore client-supplied organization/church IDs — scope comes from session tenant only.
     const created = await createBlessBoardBranch(getPool(), {
       churchId: tenant.church.id,
       organizationId: tenant.organization.id,
@@ -408,6 +420,7 @@ function createHqAdminRouter(deps) {
               created.message ||
               "Your plan’s active branch limit has been reached. Upgrade to add another campus.",
             fieldErrors: {},
+            organizationKey,
           })
         );
         return res.status(403).type("html").send(html);
@@ -428,10 +441,37 @@ function createHqAdminRouter(deps) {
     return res.redirect(
       303,
       appendWebsiteModeNoticeQuery(
-        `/hq/branches?created=${encodeURIComponent(created.branch.branch_key)}`,
+        `/hq/branches/${encodeURIComponent(created.branch.branch_key)}/created`,
         created.websiteModeTransition
       )
     );
+  });
+
+  router.get("/hq/branches/:branchKey/created", rejectApex, gateHq, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    const resolved = await resolveBlessBoardBranchForChurch(
+      getPool(),
+      tenant.church.id,
+      req.params.branchKey
+    );
+    if (!resolved.ok || !resolved.branch) {
+      return sendControlled(req, res, 404, "This branch could not be found.");
+    }
+    const organizationKey =
+      (tenant.organization.key && String(tenant.organization.key)) ||
+      (tenant.organization.organizationKey && String(tenant.organization.organizationKey)) ||
+      "";
+    const html = renderHqView(
+      "hq/branch-created.ejs",
+      await shellLocals(req, res, "branches", {
+        createdBranch: resolved.branch,
+        organizationKey,
+      })
+    );
+    return res.status(200).type("html").send(html);
   });
 
   router.get("/hq/account", rejectApex, gateHq, async (req, res) => {

@@ -488,7 +488,7 @@ describe("blessboard hq shell", () => {
     assert.equal(byType.status, 200);
     assert.match(byType.text, /data-bb-branch-match-count="1"/);
     assert.match(byType.text, /Headquarters A/);
-    assert.doesNotMatch(byType.text, /Campus North/);
+    assert.doesNotMatch(byType.text, /data-bb-branch-key="campus-north"/);
     assert.match(byType.text, /data-bb-branch-type="hq"[^>]*aria-current="true"|data-bb-branch-type="hq" aria-current="true"/);
     assert.match(byType.text, /bb-hq-branches-chip is-active[^>]*data-bb-branch-type="hq"|data-bb-branch-type="hq"[^>]*is-active/);
 
@@ -500,7 +500,7 @@ describe("blessboard hq shell", () => {
     assert.match(noResults.text, /data-bb-empty="branch-no-results"/);
     assert.match(noResults.text, /data-bb-count="active-branches">2</);
     assert.doesNotMatch(noResults.text, /data-bb-branch-list="1"/);
-    assert.doesNotMatch(noResults.text, /Campus North/);
+    assert.doesNotMatch(noResults.text, /data-bb-branch-key="campus-north"/);
   });
 
   it("HQ list path performs no writes and never queries public.tenants", async () => {

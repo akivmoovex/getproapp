@@ -301,7 +301,8 @@ describe("automatic Foundation registration", () => {
     assert.equal(counts.rows[0].domains, 0);
     assert.equal(counts.rows[0].subs, 1);
     assert.equal(counts.rows[0].onboarding, 1);
-    assert.equal(counts.rows[0].published, 0);
+    // Initial Foundation publish seeds the standard public page set.
+    assert.equal(counts.rows[0].published, 8);
 
     const branch = await pool.query(
       `SELECT b.branch_key, b.display_name, b.display_name_normalized, b.branch_type, b.is_primary

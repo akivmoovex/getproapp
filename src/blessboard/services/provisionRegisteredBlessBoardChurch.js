@@ -34,6 +34,17 @@ const {
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const { generateInviteToken, INVITE_TTL_MS } = require("./inviteBlessBoardStaff");
 const { BCRYPT_ROUNDS, normalizeEmail } = userCreate;
+const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
+const {
+  resolveCountryCodeForUniqueness,
+  normalizeChurchDisplayNameForUniqueness,
+  DUPLICATE_CHURCH_NAME_MESSAGE,
+} = require("./normalizeChurchIdentity");
+const { assertChurchNameAvailable } = require("./assertChurchNameAvailable");
+const {
+  growthTrialEndsAtIso,
+} = require("../../platform/time/addGrowthTrialDurationUtc");
+
 const STATUS = Object.freeze({
   OK: "ok",
   ALREADY_PROVISIONED: "already_provisioned",
@@ -45,6 +56,7 @@ const STATUS = Object.freeze({
   RETRY_NOT_ALLOWED: "retry_not_allowed",
   DUPLICATE_EMAIL_REVIEW: "duplicate_email_review",
   IDENTITY_CONFLICT: "identity_conflict",
+  DUPLICATE_CHURCH_NAME: "duplicate_church_name",
   SLUG_UNAVAILABLE: "slug_unavailable",
   INVALID_PLAN: "invalid_plan",
   PLAN_CONFIGURATION_ERROR: "plan_configuration_error",
@@ -89,6 +101,11 @@ const ERROR_META = Object.freeze({
     retryable: false,
     severity: "info",
     publicMessage: "This registration needs review before it can continue.",
+  },
+  [STATUS.DUPLICATE_CHURCH_NAME]: {
+    retryable: false,
+    severity: "warn",
+    publicMessage: DUPLICATE_CHURCH_NAME_MESSAGE,
   },
   [STATUS.IDENTITY_CONFLICT]: {
     retryable: false,
@@ -145,11 +162,6 @@ const PROVISIONABLE_PLAN_KEYS = Object.freeze([PLAN_KEY_FREE, PLAN_KEY_GROWTH]);
 const PLAN_KEY = PLAN_KEY_FREE;
 const DEFAULT_DEPLOYMENT = "blessboard-org-v5";
 const HQ_BRANCH_KEY = "hq";
-
-const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
-const {
-  growthTrialEndsAtIso,
-} = require("../../platform/time/addGrowthTrialDurationUtc");
 
 class OrchestratorError extends Error {
   /**
@@ -781,6 +793,28 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
 
       const displayName = String(application.church_name || "").trim();
       const adminDisplayName = String(application.contact_name || displayName).trim() || displayName;
+      const nameUniquenessKey = normalizeChurchDisplayNameForUniqueness(displayName);
+      const countryCode =
+        resolveCountryCodeForUniqueness(application.country) ||
+        resolveCountryCodeForUniqueness(application.country_code) ||
+        null;
+
+      provisioningStage = "assert_church_name_available";
+      if (nameUniquenessKey && countryCode) {
+        const nameGate = await assertChurchNameAvailable(client, {
+          churchName: displayName,
+          countryCode,
+          linkedApplicationId: applicationId,
+          excludeOrganizationId:
+            application.organization_id != null ? String(application.organization_id) : null,
+        });
+        if (!nameGate.ok) {
+          throw new OrchestratorError(
+            STATUS.DUPLICATE_CHURCH_NAME,
+            nameGate.message || DUPLICATE_CHURCH_NAME_MESSAGE
+          );
+        }
+      }
 
       provisioningStage = "provision_platform_tenant";
       const tenant = await provisionPlatformTenant(
@@ -807,11 +841,6 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       provisioningStage = "organization_created";
       provisioningStage = "organization_key_created";
 
-      const countryRaw = String(application.country || "")
-        .trim()
-        .toUpperCase();
-      const countryCode = /^[A-Z]{2}$/.test(countryRaw) ? countryRaw : null;
-
       const hqNamePrepared = prepareBranchDisplayName(
         application.branch_name || "Headquarters",
         { field: "branch_name", required: true, emptyMessage: "Please enter a branch name." }
@@ -833,14 +862,17 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           hqBranchDisplayName,
           timezone: null,
           countryCode,
+          nameUniquenessKey,
         },
         { manageTransaction: false }
       );
       if (!church.ok) {
         throw new OrchestratorError(
-          church.status === "limit_exceeded"
-            ? STATUS.PLAN_CONFIGURATION_ERROR
-            : STATUS.DATABASE_CONFLICT,
+          church.status === "duplicate_church_name"
+            ? STATUS.DUPLICATE_CHURCH_NAME
+            : church.status === "limit_exceeded"
+              ? STATUS.PLAN_CONFIGURATION_ERROR
+              : STATUS.DATABASE_CONFLICT,
           church.message || church.status
         );
       }
@@ -852,6 +884,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       /** @type {string|null} raw invite token — returned once to caller; never logged */
       let invitationRawToken = null;
       let administratorLinkedExisting = false;
+      let administratorWasActive = false;
 
       if (administratorViaInvitation) {
         provisioningStage = "prepare_administrator_invitation";
@@ -866,6 +899,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           });
         } else {
           administratorLinkedExisting = true;
+          administratorWasActive = String(adminUser.status) === "active";
           // Never reset or overwrite an existing password hash.
         }
         if (!adminUser || !adminUser.id) {
@@ -1088,6 +1122,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           administratorUserId,
           administratorViaInvitation,
           administratorLinkedExisting,
+          administratorWasActive,
           invitationId,
           // Copy-once: caller may surface once; never persist or log.
           invitationRawToken,

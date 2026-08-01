@@ -11,6 +11,7 @@ const { planDisplayLabel } = require("./registrationPlanMapping");
 
 const QUEUES = Object.freeze({
   NEEDS_REVIEW: "needs_review",
+  PHASE5_NEW: "phase5_new",
   PROVISIONING_FAILED: "provisioning_failed",
   NETWORK_VALIDATION: "network_validation",
   NETWORK_READY: "network_ready",
@@ -362,6 +363,8 @@ function presentRegistrationOperatorView(row) {
 function queueFilterSpec(queue) {
   const key = String(queue || "").trim();
   if (!key) return null;
+  // phase5_new is a filter-only residual set (visible_status=new); not shown in operator queue chips.
+  if (key === QUEUES.PHASE5_NEW) return QUEUES.PHASE5_NEW;
   if (!Object.values(QUEUES).includes(key) || key === QUEUES.OTHER) return null;
   return key;
 }

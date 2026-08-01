@@ -2658,7 +2658,17 @@ async function approveAndProvisionRegistrationApplication(db, input) {
             ? {
                 id: provision.records.invitationId,
                 rawToken: provision.records.invitationRawToken || null,
-                delivery: "copy_once",
+                delivery: "pending_email",
+                existingActiveUser: Boolean(provision.records.administratorWasActive),
+                churchId: provision.records.churchId || null,
+                churchName:
+                  (appSnapshot && appSnapshot.church_name) ||
+                  (provision.records && provision.records.organizationKey) ||
+                  "Your church",
+                recipientEmail:
+                  (appSnapshot && appSnapshot.contact_email) || null,
+                administratorName:
+                  (appSnapshot && appSnapshot.contact_name) || null,
               }
             : null,
       };

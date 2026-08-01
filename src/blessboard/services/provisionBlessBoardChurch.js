@@ -29,6 +29,7 @@ const STATUS = Object.freeze({
   INACTIVE_BLESSBOARD_ENROLMENT: "inactive_blessboard_enrolment",
   ENVIRONMENT_MISMATCH: "environment_mismatch",
   CHURCH_CONFLICT: "church_conflict",
+  DUPLICATE_CHURCH_NAME: "duplicate_church_name",
   BRANCH_CONFLICT: "branch_conflict",
   LIMIT_EXCEEDED: "limit_exceeded",
   TRANSACTION_ERROR: "transaction_error",
@@ -94,6 +95,13 @@ function validateAndNormalizeInput(input) {
   const timezone = timezoneRaw ? timezoneRaw : null;
   const countryRaw = raw.countryCode != null ? String(raw.countryCode).trim().toUpperCase() : "";
   const countryCode = countryRaw ? countryRaw : null;
+  const {
+    normalizeChurchDisplayNameForUniqueness,
+  } = require("./normalizeChurchIdentity");
+  const nameUniquenessKey =
+    raw.nameUniquenessKey != null && String(raw.nameUniquenessKey).trim()
+      ? String(raw.nameUniquenessKey).trim().slice(0, 200)
+      : normalizeChurchDisplayNameForUniqueness(displayName);
 
   if (!organizationKey || !KEY_RE.test(organizationKey)) {
     return { ok: false, reason: "organizationKey" };
@@ -135,6 +143,7 @@ function validateAndNormalizeInput(input) {
       hqBranchDisplayName,
       timezone,
       countryCode,
+      nameUniquenessKey,
     },
   };
 }
@@ -270,6 +279,20 @@ async function provisionBlessBoardChurch(db, input, options) {
         return abort(fail(STATUS.CHURCH_CONFLICT, "church_conflict"));
       }
     } else if (!dryRun) {
+      if (req.countryCode && req.nameUniquenessKey) {
+        const { assertChurchNameAvailable } = require("./assertChurchNameAvailable");
+        const { DUPLICATE_CHURCH_NAME_MESSAGE } = require("./normalizeChurchIdentity");
+        const nameGate = await assertChurchNameAvailable(client, {
+          churchName: req.displayName,
+          countryCode: req.countryCode,
+          excludeOrganizationId: organization.id,
+        });
+        if (!nameGate.ok) {
+          return abort(
+            fail(STATUS.DUPLICATE_CHURCH_NAME, nameGate.message || DUPLICATE_CHURCH_NAME_MESSAGE)
+          );
+        }
+      }
       try {
         const inserted = await runInsertWithUniqueRecovery(client, "prov_church_insert", () =>
           repo.insertChurch(client, {
@@ -278,6 +301,8 @@ async function provisionBlessBoardChurch(db, input, options) {
             displayName: req.displayName,
             legalName: req.legalName,
             dataEnvironment: req.dataEnvironment,
+            countryCode: req.countryCode || null,
+            nameUniquenessKey: req.nameUniquenessKey || null,
           })
         );
         if (inserted.ok) {
@@ -289,10 +314,38 @@ async function provisionBlessBoardChurch(db, input, options) {
             church = await repo.findChurchByKey(client, req.churchKey);
           }
           if (!churchMatches(church, req, organization.id)) {
+            // Unique race on (country_code, name_uniqueness_key) → controlled conflict.
+            if (
+              req.countryCode &&
+              req.nameUniquenessKey &&
+              inserted.uniqueViolation &&
+              inserted.error &&
+              /name_uniqueness|country_name_uniqueness/i.test(
+                String(
+                  (inserted.error && inserted.error.constraint) ||
+                    inserted.error.message ||
+                    ""
+                )
+              )
+            ) {
+              const { DUPLICATE_CHURCH_NAME_MESSAGE } = require("./normalizeChurchIdentity");
+              return abort(
+                fail(STATUS.DUPLICATE_CHURCH_NAME, DUPLICATE_CHURCH_NAME_MESSAGE)
+              );
+            }
             return abort(fail(STATUS.CHURCH_CONFLICT, "church_conflict"));
           }
         }
       } catch (err) {
+        if (
+          repo.isUniqueViolation(err) &&
+          /name_uniqueness|country_name_uniqueness/i.test(
+            String((err && err.constraint) || err.message || "")
+          )
+        ) {
+          const { DUPLICATE_CHURCH_NAME_MESSAGE } = require("./normalizeChurchIdentity");
+          return abort(fail(STATUS.DUPLICATE_CHURCH_NAME, DUPLICATE_CHURCH_NAME_MESSAGE));
+        }
         if (!repo.isCheckOrTriggerViolation(err)) {
           return abort(fail(STATUS.TRANSACTION_ERROR, "church_insert_failed"));
         }

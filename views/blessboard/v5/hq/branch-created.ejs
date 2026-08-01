@@ -1,0 +1,67 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var branch = typeof createdBranch !== 'undefined' && createdBranch ? createdBranch : {};
+  var orgKey = typeof organizationKey !== 'undefined' && organizationKey ? String(organizationKey) : '';
+  var branchKey = branch.key || branch.branch_key || '';
+  var displayName = branch.displayName || branch.display_name || 'Branch';
+  var statusLabel = branch.status || 'active';
+  var publicPath = orgKey && branchKey
+    ? ('/c/' + encodeURIComponent(orgKey) + '/branches/' + encodeURIComponent(branchKey))
+    : null;
+  var websiteHref = branchKey
+    ? ('/hq/website/branches/' + encodeURIComponent(branchKey))
+    : '/hq/website';
+  var settingsHref = '/hq/settings';
+  var serviceTimesHref = branchKey
+    ? ('/hq/website/branches/' + encodeURIComponent(branchKey) + '/service-times')
+    : websiteHref;
+  var websiteReady = String(statusLabel).toLowerCase() === 'active';
+%>
+
+<section class="bb-hq-branch-created" data-bb-hq-branch-created="1" aria-label="Branch created">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/branches">Branches</a>
+      <span aria-hidden="true">›</span>
+      <span>Created</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Branch created</h1>
+    <p class="bb-hq-lede">
+      <strong><%= displayName %></strong> is ready for setup.
+      <% if (!websiteReady) { %>
+      The branch website is not publicly available while the branch is inactive.
+      <% } %>
+    </p>
+  </header>
+
+  <div class="bb-hq-panel" data-bb-branch-created-summary="1">
+    <dl class="bb-hq-settings-readonly">
+      <div><dt>Branch name</dt><dd data-bb-created-name="1"><%= displayName %></dd></div>
+      <div><dt>Branch key</dt><dd><code data-bb-created-key="1"><%= branchKey || '—' %></code></dd></div>
+      <div><dt>Status</dt><dd data-bb-created-status="1"><%= statusLabel %></dd></div>
+      <div>
+        <dt>Public path</dt>
+        <dd>
+          <% if (publicPath) { %>
+          <code data-bb-created-public-path="1"><%= publicPath %></code>
+          <% } else { %>—<% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Administrator</dt>
+        <dd data-bb-created-admin="1">HQ administrators retain access. Invite branch admins from Roles when ready.</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="bb-hq-form__actions" data-bb-branch-created-actions="1">
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= websiteHref %>" data-bb-created-website="1">Set up branch website</a>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= serviceTimesHref %>" data-bb-created-service-times="1">Service times</a>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= settingsHref %>" data-bb-created-contact="1">Contact settings</a>
+    <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/branches" data-bb-created-return="1">Return to branches</a>
+  </div>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

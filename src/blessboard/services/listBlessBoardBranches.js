@@ -124,6 +124,7 @@ async function resolveBlessBoardBranchForChurch(db, churchId, branchKeyRaw) {
         key: String(row.branch_key),
         displayName: String(row.display_name || ""),
         branchType: String(row.branch_type || ""),
+        status: String(row.status || ""),
         isPrimary: Boolean(row.is_primary),
       },
     };

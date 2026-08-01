@@ -170,6 +170,12 @@ const {
   inviteBlessBoardStaff,
   listPendingInvitations,
 } = require("../../blessboard/services/inviteBlessBoardStaff");
+const {
+  deliverChurchAdministratorInvitation,
+} = require("../../blessboard/services/deliverChurchAdministratorInvitation");
+const {
+  platformAdminRequestPasswordReset,
+} = require("../../blessboard/services/passwordResetService");
 
 const INVITE_ONCE_COOKIE = "bb_pa_invite_once";
 const INVITE_ONCE_MAX_AGE_MS = 5 * 60 * 1000;
@@ -256,12 +262,13 @@ function sendControlled(req, res, status, message) {
 
 /**
  * @param {import('express').Request} req
- * @returns {{ notice: string | null, error: string | null }}
+ * @returns {{ notice: string | null, error: string | null, email: string | null }}
  */
 function readFlash(req) {
   const notice = String((req.query && req.query.notice) || "").trim() || null;
   const error = String((req.query && req.query.error) || "").trim() || null;
-  return { notice, error };
+  const email = String((req.query && req.query.email) || "").trim() || null;
+  return { notice, error, email };
 }
 
 /**
@@ -2339,12 +2346,39 @@ function createPlatformAdminRouter(deps) {
             { secure: isProduction }
           );
         }
+        // After commit: attempt invitation/access email. Never roll back provisioning.
+        let emailNotice = "";
+        if (result.invitation && result.invitation.recipientEmail) {
+          try {
+            const emailResult = await deliverChurchAdministratorInvitation(
+              getPool(),
+              {
+                invitationId: result.invitation.id,
+                rawToken: result.invitation.rawToken,
+                churchName: result.invitation.churchName,
+                administratorName: result.invitation.administratorName,
+                recipientEmail: result.invitation.recipientEmail,
+                organizationId: result.organizationId,
+                churchId: result.invitation.churchId,
+                actorUserId: req.platformAdminContext.userId,
+                existingActiveUser: Boolean(result.invitation.existingActiveUser),
+                env,
+                idempotencyKey: `provision:${result.invitation.id}`,
+              }
+            );
+            if (!emailResult.ok) {
+              emailNotice = "&email=delivery_failed";
+            }
+          } catch {
+            emailNotice = "&email=delivery_failed";
+          }
+        }
         const notice = result.networkOrganizationCreated
           ? "network_organization_created"
           : "organization_provisioned";
         return res.redirect(
           303,
-          `/admin/organizations/${encodeURIComponent(orgKey)}?notice=${notice}#pa-org-invitation`
+          `/admin/organizations/${encodeURIComponent(orgKey)}?notice=${notice}${emailNotice}#pa-org-invitation`
         );
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -2779,6 +2813,7 @@ function createPlatformAdminRouter(deps) {
       );
       let pendingInvitations = [];
       let churchScope = null;
+      let organizationStaff = [];
       try {
         const scopeRow = await getPool().query(
           `SELECT o.id AS organization_id, c.id AS church_id
@@ -2804,6 +2839,77 @@ function createPlatformAdminRouter(deps) {
       } catch {
         pendingInvitations = [];
         churchScope = null;
+      }
+      if (churchScope) {
+        try {
+          const staffRows = await getPool().query(
+            `SELECT ur.user_id, ur.role_key, ur.status AS role_status,
+                    u.email_display, u.email_normalized, u.display_name,
+                    u.status AS user_status,
+                    (u.password_hash IS NOT NULL) AS has_usable_password,
+                    u.password_changed_at, u.last_login_at
+               FROM blessboard.user_roles ur
+               INNER JOIN blessboard.users u ON u.id = ur.user_id
+              WHERE ur.organization_id = $1
+                AND ur.church_id = $2
+                AND ur.status = 'active'
+                AND ur.role_key IN ('church_hq_admin', 'branch_admin')
+              ORDER BY ur.role_key ASC, u.display_name ASC NULLS LAST
+              LIMIT 50`,
+            [churchScope.organizationId, churchScope.churchId]
+          );
+          let resetByUser = new Map();
+          try {
+            const resetRows = await getPool().query(
+              `SELECT user_id, MAX(created_at) AS last_reset_requested_at
+                 FROM blessboard.user_action_tokens
+                WHERE purpose = 'password_reset'
+                  AND user_id = ANY($1::uuid[])
+                GROUP BY user_id`,
+              [(staffRows.rows || []).map((r) => r.user_id)]
+            );
+            resetByUser = new Map(
+              (resetRows.rows || []).map((r) => [String(r.user_id), r.last_reset_requested_at])
+            );
+          } catch {
+            resetByUser = new Map();
+          }
+          const pendingByEmail = new Map(
+            (pendingInvitations || []).map((inv) => [
+              String(inv.emailNormalized || "").toLowerCase(),
+              inv,
+            ])
+          );
+          organizationStaff = (staffRows.rows || []).map((row) => {
+            const emailNorm = String(row.email_normalized || "").toLowerCase();
+            const pendingInvite = pendingByEmail.get(emailNorm) || null;
+            const hasPassword = Boolean(row.has_usable_password);
+            const userStatus = String(row.user_status || "");
+            return {
+              userId: String(row.user_id),
+              displayName: row.display_name != null ? String(row.display_name) : "",
+              email: row.email_display != null ? String(row.email_display) : emailNorm,
+              emailNormalized: emailNorm,
+              roleKey: String(row.role_key || ""),
+              userStatus,
+              hasUsablePassword: hasPassword,
+              passwordChangedAt: row.password_changed_at || null,
+              lastLoginAt: row.last_login_at || null,
+              lastResetRequestedAt: resetByUser.get(String(row.user_id)) || null,
+              pendingInvitation: pendingInvite
+                ? {
+                    deliveryStatus: pendingInvite.deliveryStatus || null,
+                    deliveryAttemptedAt: pendingInvite.deliveryAttemptedAt || null,
+                    deliveryErrorCode: pendingInvite.deliveryErrorCode || null,
+                    expiresAt: pendingInvite.expiresAt || null,
+                  }
+                : null,
+              action: hasPassword && userStatus === "active" ? "password_reset" : "resend_invitation",
+            };
+          });
+        } catch {
+          organizationStaff = [];
+        }
       }
       let registrationApplicationId = null;
       let onboardingSummary = null;
@@ -2882,9 +2988,11 @@ function createPlatformAdminRouter(deps) {
           onboardingStatuses: ONBOARDING_STATUSES,
           inviteOnceLink: inviteOnceLink || null,
           pendingInvitations,
+          organizationStaff,
           churchScope,
           notice: flash.notice,
           error: flash.error,
+          emailFlash: flash.email,
         })
       );
       return res.status(200).type("html").send(html);
@@ -3065,7 +3173,7 @@ function createPlatformAdminRouter(deps) {
         .trim()
         .toLowerCase();
       const scopeRow = await getPool().query(
-        `SELECT o.id AS organization_id, c.id AS church_id
+        `SELECT o.id AS organization_id, c.id AS church_id, o.display_name
            FROM platform.organizations o
            JOIN blessboard.churches c ON c.organization_id = o.id
           WHERE o.organization_key = $1
@@ -3098,7 +3206,92 @@ function createPlatformAdminRouter(deps) {
           { secure: isProduction }
         );
       }
+      try {
+        await deliverChurchAdministratorInvitation(getPool(), {
+          invitationId: (result.invitation && result.invitation.id) || null,
+          rawToken: result.rawToken,
+          churchName: String(scopeRow.rows[0].display_name || organizationKey),
+          administratorName: displayName,
+          recipientEmail: email,
+          organizationId: String(scopeRow.rows[0].organization_id),
+          churchId: String(scopeRow.rows[0].church_id),
+          actorUserId: req.platformAdminContext.userId,
+          existingActiveUser: false,
+          forceResend: true,
+          env,
+          idempotencyKey: `resend:${(result.invitation && result.invitation.id) || email}`,
+        });
+      } catch {
+        /* copy-once cookie still set; email failure is non-fatal */
+      }
       return res.redirect(303, `${detailPath}?notice=invitation_resent#pa-org-invitation`);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/users/:userId/password-reset",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const userId = String(req.params.userId || "").trim();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf#pa-org-staff`);
+      }
+      const scopeRow = await getPool().query(
+        `SELECT o.id AS organization_id, c.id AS church_id, o.display_name
+           FROM platform.organizations o
+           JOIN blessboard.churches c ON c.organization_id = o.id
+          WHERE o.organization_key = $1
+          ORDER BY c.id ASC
+          LIMIT 1`,
+        [organizationKey]
+      );
+      if (!scopeRow.rows[0] || !userId) {
+        return res.redirect(303, `${detailPath}?error=not_found#pa-org-staff`);
+      }
+      const membership = await getPool().query(
+        `SELECT u.id, u.email_normalized, u.status, u.password_hash IS NOT NULL AS has_password
+           FROM blessboard.users u
+           INNER JOIN blessboard.user_roles ur ON ur.user_id = u.id
+          WHERE u.id = $1
+            AND ur.organization_id = $2
+            AND ur.church_id = $3
+            AND ur.status = 'active'
+            AND ur.role_key IN ('church_hq_admin', 'branch_admin')
+          LIMIT 1`,
+        [userId, String(scopeRow.rows[0].organization_id), String(scopeRow.rows[0].church_id)]
+      );
+      if (!membership.rows[0]) {
+        return res.redirect(303, `${detailPath}?error=not_found#pa-org-staff`);
+      }
+      const member = membership.rows[0];
+      if (!member.has_password || String(member.status) !== "active") {
+        return res.redirect(303, `${detailPath}?error=reset_unavailable#pa-org-staff`);
+      }
+      const result = await platformAdminRequestPasswordReset(
+        getPool(),
+        {
+          email: member.email_normalized,
+          actorUserId: req.platformAdminContext.userId,
+          organizationId: String(scopeRow.rows[0].organization_id),
+          churchId: String(scopeRow.rows[0].church_id),
+          requestIp: (req.headers && req.headers["x-forwarded-for"]) || req.ip,
+          env,
+          publicBaseUrl: getApexOrigin(env),
+        },
+        {}
+      );
+      if (!result.ok) {
+        return res.redirect(303, `${detailPath}?error=reset_failed#pa-org-staff`);
+      }
+      const notice = result.sent ? "password_reset_sent" : "password_reset_recorded";
+      return res.redirect(303, `${detailPath}?notice=${notice}#pa-org-staff`);
     }
   );
 

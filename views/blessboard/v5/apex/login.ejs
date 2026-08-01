@@ -2,9 +2,9 @@
   Apex login — Stitch 09-auth-member-login desktop/mobile.
   V5 keeps apex dual-pane + email/password fields (not tenant-centered Stitch mock).
   Locals: csrfToken, error, errorState, errorTitle, emailValue, transferHostname,
-          hostKind, subtitle, panelTitle, panelLead, loggedOut
+          hostKind, subtitle, panelTitle, panelLead, loggedOut, passwordReset
   Raw transfer tokens must never appear in HTML. Form posts to current URL so ?tr= is preserved by the browser.
-  No forgot-password, OAuth providers, or user-controlled redirect fields.
+  Forgot-password is available via /forgot-password. No OAuth providers or user-controlled redirect fields.
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -76,6 +76,11 @@
           <% if (loggedOut) { %>
           <p class="bb-auth-success" role="status" data-bb-auth-logged-out="1">
             You have been signed out.
+          </p>
+          <% } %>
+          <% if (typeof passwordReset !== 'undefined' && passwordReset) { %>
+          <p class="bb-auth-success" role="status" data-bb-auth-password-reset="1">
+            Your password was updated. Sign in with your new password.
           </p>
           <% } %>
 
@@ -182,6 +187,9 @@
               <% if (errorState === 'credentials') { %>
               <p class="bb-auth-field__error" id="password-error">Check your password and try again.</p>
               <% } %>
+              <p class="bb-auth-field__hint">
+                <a href="/forgot-password" data-bb-auth-forgot="1">Forgot password?</a>
+              </p>
             </div>
 
             <div class="bb-auth-actions">

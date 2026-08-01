@@ -263,7 +263,7 @@ describe("blessboard additional branch provisioning", () => {
         city: "Lusaka",
       });
     assert.equal(res.status, 303);
-    assert.match(res.headers.location, /\/hq\/branches\?created=north/);
+    assert.match(res.headers.location, /\/hq\/branches\/north\/created/);
 
     const row = await pool.query(
       `SELECT b.id, b.branch_key, b.status, s.email, s.phone, s.city
@@ -288,13 +288,23 @@ describe("blessboard additional branch provisioning", () => {
     assert.equal(audit.rowCount, 1);
     assert.equal(audit.rows[0].outcome, "success");
 
+    const createdPage = await request(app)
+      .get("/hq/branches/north/created")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(createdPage.status, 200);
+    assert.match(createdPage.text, /data-bb-hq-branch-created="1"/);
+    assert.match(createdPage.text, /data-bb-created-key="1"[^>]*>north</);
+    assert.match(createdPage.text, /Set up branch website/);
+    assert.match(createdPage.text, /Return to branches/);
+
     const listPage = await request(app)
-      .get("/hq/branches?created=north")
+      .get("/hq/branches")
       .set("Host", HOST_A)
       .set("Cookie", cookie)
       .set("Accept", "text/html");
     assert.equal(listPage.status, 200);
-    assert.match(listPage.text, /data-bb-branch-created="north"/);
     assert.match(listPage.text, /data-bb-branch-key="north"/);
     assert.match(listPage.text, /North Campus/);
     assert.match(listPage.text, /data-bb-branch-key="hq"/);
@@ -503,6 +513,63 @@ describe("blessboard additional branch provisioning", () => {
     });
     assert.equal(second.ok, false);
     assert.equal(second.reason, "duplicate_branch_key");
+    assert.match(second.message, /already in use/i);
+  });
+
+  it("6b. new branch form renders registration-aligned sections", async () => {
+    requireDb();
+    const growth = await assignOrganizationPlan(pool, {
+      organizationId: orgA.id,
+      planKey: "growth",
+    });
+    assert.equal(growth.ok, true, growth.reason);
+    const cookie = await sessionCookie(users.hqA.id);
+    const page = await request(app)
+      .get("/hq/branches/new")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(page.status, 200);
+    assert.match(page.text, /data-bb-branch-step="identity"/);
+    assert.match(page.text, /data-bb-branch-step="location"/);
+    assert.match(page.text, /data-bb-branch-step="review"/);
+    assert.match(page.text, /Branch display name/);
+    assert.match(page.text, /Regenerate from branch name/);
+    assert.match(page.text, /\/c\/br-create-a\/branches\//);
+    assert.match(page.text, /data-bb-capacity-current/);
+  });
+
+  it("6c. reserved and forged-scope create failures preserve form values", async () => {
+    requireDb();
+    const growth = await assignOrganizationPlan(pool, {
+      organizationId: orgA.id,
+      planKey: "growth",
+    });
+    assert.equal(growth.ok, true, growth.reason);
+    const cookie = await sessionCookie(users.hqA.id);
+    const csrf = await csrfPair(HOST_A, cookie);
+    const reserved = await request(app)
+      .post("/hq/branches")
+      .set("Host", HOST_A)
+      .set("Cookie", csrf.cookie)
+      .set("Accept", "text/html")
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf.token,
+        displayName: "Reserved Key Campus",
+        branchKey: "settings",
+        branchKeyManuallyEdited: "1",
+        organizationId: orgB.id,
+        churchId: churchB.id,
+        countryCode: "ZM",
+        city: "Ndola",
+      });
+    assert.equal(reserved.status, 400);
+    assert.match(reserved.text, /reserved/i);
+    assert.match(reserved.text, /value="Reserved Key Campus"/);
+    assert.match(reserved.text, /value="settings"/);
+    assert.match(reserved.text, /name="branchKeyManuallyEdited"[^>]*value="1"|value="1"[^>]*name="branchKeyManuallyEdited"/);
+    assert.match(reserved.text, /value="Ndola"/);
   });
 
   it("7. same name may exist in another organization", async () => {

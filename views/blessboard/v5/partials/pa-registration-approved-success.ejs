@@ -14,6 +14,8 @@
   var phase5AlreadyProvisioned = phase5NoticeCode === 'already_provisioned';
   var phase5InviteReady = typeof inviteOnceLink !== 'undefined' && inviteOnceLink;
   var phase5PendingInvite = typeof pendingInvitations !== 'undefined' && pendingInvitations && pendingInvitations.length;
+  var phase5EmailFlash = typeof emailFlash !== 'undefined' ? String(emailFlash || '') : '';
+  var phase5DeliveryFailed = phase5EmailFlash === 'delivery_failed';
   var phase5AdminLabel = null;
   if (phase5PendingInvite) {
     var firstInv = pendingInvitations[0];
@@ -79,7 +81,7 @@
       <% if (phase5AlreadyProvisioned) { %>
       This registration was already linked to an organization. Provisioning was not run again.
       <% } else { %>
-      Organization created. Administrator invitation prepared for you to copy when shown below.
+      Organization created. Administrator invitation delivery was attempted after provisioning committed.
       <% } %>
     </p>
   </header>
@@ -128,23 +130,33 @@
       <div>
         <dt>Invitation status</dt>
         <dd data-bb-pa-reg-approved-invite-status="1">
-          <% if (phase5InviteReady) { %>
-          Administrator invitation prepared — copy once below. It will not be shown again after you leave this page.
+          <% if (phase5DeliveryFailed) { %>
+          Provisioning succeeded, but invitation email delivery failed or is unavailable. Resend from the invitation section or copy the one-time link when shown.
+          <% } else if (phase5PendingInvite && pendingInvitations[0] && pendingInvitations[0].deliveryStatus === 'sent') { %>
+          Invitation email recorded as sent. The administrator can complete setup from that link.
+          <% } else if (phase5InviteReady) { %>
+          Invitation prepared — delivery attempted. Copy once below if needed. It will not be shown again after you leave this page.
           <% } else if (phase5PendingInvite) { %>
-          Administrator invitation prepared. The one-time copy link is no longer available on refresh; create a replacement invitation below if needed.
+          Invitation pending. Delivery status: <%= (pendingInvitations[0] && pendingInvitations[0].deliveryStatus) || 'pending' %>.
           <% } else if (phase5AlreadyProvisioned) { %>
           No new invitation was generated for this already-provisioned organization.
           <% } else { %>
-          Administrator invitation prepared. If a copy link is not shown, use the invitation section below when available.
+          Administrator invitation prepared. Use the invitation section below when available.
           <% } %>
         </dd>
       </div>
     </dl>
 
     <aside class="bb-pa-reg-approved__invite-card" data-bb-pa-reg-approved-invite-card="1">
-      <p class="bb-pa-hint" data-bb-pa-reg-approved-no-email="1">
-        BlessBoard does not claim that a welcome email was sent. External delivery is not yet connected — share the invitation out of band when you have copied it.
+      <% if (phase5DeliveryFailed) { %>
+      <p class="bb-pa-banner bb-pa-banner--warn" role="status" data-bb-pa-reg-approved-email-failed="1">
+        Invitation email delivery failed or is unavailable. Provisioning was not rolled back.
       </p>
+      <% } else { %>
+      <p class="bb-pa-hint" data-bb-pa-reg-approved-email-note="1">
+        Transactional invitation email is attempted after provisioning. Copy-once link remains available as a fallback when shown.
+      </p>
+      <% } %>
       <% if (phase5InviteReady) { %>
       <div class="bb-pa-field bb-pa-reg-approved__invite" data-bb-pa-reg-approved-invite="1">
         <label for="pa_phase5_invite_once_link">Copy invitation</label>

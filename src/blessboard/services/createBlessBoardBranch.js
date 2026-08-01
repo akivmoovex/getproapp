@@ -175,6 +175,25 @@ async function createBlessBoardBranch(db, input) {
       await client.query("ROLLBACK");
       return { ok: false, status: STATUS.NOT_FOUND, branch: null, reason: "church" };
     }
+    if (String(church.rows[0].status) !== "active") {
+      await client.query("ROLLBACK");
+      await auditBranchCreateOutcome(db, {
+        churchId,
+        organizationId,
+        actorUserId,
+        branchKey,
+        outcome: "denied",
+        reasonCode: "inactive_church",
+        statusCode: STATUS.FORBIDDEN,
+      });
+      return {
+        ok: false,
+        status: STATUS.FORBIDDEN,
+        branch: null,
+        reason: "inactive_church",
+        message: "This church cannot create branches right now.",
+      };
+    }
     const gate = await evaluateBranchCreateLimit(client, {
       organizationId,
       productKey: input.productKey,
@@ -385,9 +404,9 @@ async function createBlessBoardBranch(db, input) {
         status: STATUS.CONFLICT,
         branch: null,
         reason: "duplicate_branch_key",
-        message: "That branch key is already in use for this church. Please choose another.",
+        message: "This branch URL is already in use. Choose another branch key.",
         fieldErrors: {
-          branchKey: "That branch key is already in use for this church. Please choose another.",
+          branchKey: "This branch URL is already in use. Choose another branch key.",
         },
       };
     }

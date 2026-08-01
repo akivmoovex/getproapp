@@ -40,6 +40,7 @@ const { createBranchRegistrationAdminRouter } = require("../../blessboard/http/b
 const { createHqMembersAdminRouter } = require("../../blessboard/http/hqMembersAdminRoutes");
 const { createHqRoleAdminRouter } = require("../../blessboard/http/hqRoleAdminRoutes");
 const { createInviteAcceptRouter } = require("../../blessboard/http/inviteAcceptRoutes");
+const { createPasswordResetRouter } = require("../../blessboard/http/passwordResetRoutes");
 const { createHqAdminRouter } = require("../../blessboard/http/hqAdminRoutes");
 const { createContentAdminRouter } = require("../../blessboard/http/contentAdminRoutes");
 const { createPublicMediaRouter } = require("../../blessboard/http/publicMediaRoutes");
@@ -785,6 +786,13 @@ function createV5FoundationApp(options) {
     })
   );
   app.use(
+    createPasswordResetRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+    })
+  );
+  app.use(
     createContentAdminRouter({
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
@@ -927,6 +935,7 @@ function createV5FoundationApp(options) {
           hostKind: "apex",
           transferHostname,
           loggedOut: String((req.query && req.query.logged_out) || "") === "1",
+          passwordReset: String((req.query && req.query.reset) || "") === "1",
         })
       );
     }
