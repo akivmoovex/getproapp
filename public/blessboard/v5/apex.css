@@ -88,11 +88,25 @@ body.bb-apex-body {
   flex-shrink: 0;
 }
 
+.bb-apex-brand__lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  gap: 0.05rem;
+}
+
 .bb-apex-brand__name {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--bb-color-primary, #6c5ce7);
   font-size: 1.15rem;
+  line-height: 1.15;
+}
+
+.bb-apex-brand .bb-platform-brand__subtitle {
+  font-size: 0.625rem;
 }
 
 .bb-apex-nav {

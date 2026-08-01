@@ -1,0 +1,18 @@
+<%#
+  Apex marketing / platform header brand lockup with optional deployment subtitle.
+  Locals: brandHref (optional), deploymentBrand (injected).
+%>
+<a class="bb-apex-brand" href="<%= typeof brandHref !== 'undefined' && brandHref ? brandHref : '/' %>">
+  <img
+    class="bb-apex-brand__mark"
+    src="/church/images/brand/blessboard-small-church-logo.png"
+    alt=""
+    width="32"
+    height="32"
+    decoding="async"
+  />
+  <span class="bb-apex-brand__lockup bb-platform-brand__lockup">
+    <span class="bb-apex-brand__name">BlessBoard</span>
+    <%- include('./platform-brand-subtitle') %>
+  </span>
+</a>

@@ -1,1 +1,17 @@
+<%#
+  Platform attribution line. Profile-driven:
+  - blessboard-com-production → Powered by GetPro
+  - blessboard-org-staging → Demo Only
+  - unprofiled → Powered by GetPro (legacy default)
+  - authoritative without subtitle → nothing
+%>
+<%
+  var _db = typeof deploymentBrand !== 'undefined' && deploymentBrand ? deploymentBrand : null;
+  var _authoritative = !!( _db && _db.authoritative );
+  var _var = _db && _db.brandSubtitleVariant ? String(_db.brandSubtitleVariant) : '';
+%>
+<% if (_var === 'demo') { %>
+<span class="bb-powered-by bb-powered-by--demo" data-bb-brand-subtitle="1" data-bb-brand-subtitle-variant="demo">Demo Only</span>
+<% } else if (_var === 'production-partner' || !_authoritative) { %>
 <span class="bb-powered-by"><span class="bb-powered-by__label">Powered by</span> <span class="bb-powered-by__getpro">GetPro</span></span>
+<% } %>

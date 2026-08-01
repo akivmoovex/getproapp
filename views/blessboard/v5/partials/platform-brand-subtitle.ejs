@@ -1,0 +1,17 @@
+<%#
+  Deployment-profile brand subtitle under the BlessBoard platform logo.
+  Locals: deploymentBrand (injected by renderV5Ejs).
+  Renders nothing when the deployment is unprofiled or has no subtitle.
+%>
+<%
+  var _db = typeof deploymentBrand !== 'undefined' && deploymentBrand ? deploymentBrand : null;
+  var _sub = _db && _db.brandSubtitle ? String(_db.brandSubtitle) : '';
+  var _var = _db && _db.brandSubtitleVariant ? String(_db.brandSubtitleVariant) : '';
+%>
+<% if (_sub) { %>
+<span
+  class="bb-platform-brand__subtitle<% if (_var === 'production-partner') { %> bb-platform-brand__subtitle--production-partner<% } else if (_var === 'demo') { %> bb-platform-brand__subtitle--demo<% } %>"
+  data-bb-brand-subtitle="1"
+  data-bb-brand-subtitle-variant="<%= _var %>"
+><% if (_var === 'production-partner') { %><span class="bb-platform-brand__subtitle-label">Powered by</span> <span class="bb-platform-brand__subtitle-accent">GetPro</span><% } else { %><%= _sub %><% } %></span>
+<% } %>

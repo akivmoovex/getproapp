@@ -130,6 +130,14 @@
   min-width: 0;
 }
 
+.bb-auth-brand .bb-platform-brand__lockup {
+  gap: 0.05rem;
+}
+
+.bb-auth-brand .bb-platform-brand__subtitle {
+  font-size: 0.625rem;
+}
+
 .bb-auth-brand__mark {
   width: 2rem;
   height: 2rem;

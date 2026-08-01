@@ -8,6 +8,9 @@
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
+const {
+  resolveDeploymentBrand,
+} = require("../../platform/config/deploymentBrand");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const TEMPLATE_CACHE = new Map();
@@ -32,7 +35,11 @@ function loadV5Template(relativePath) {
  */
 function renderV5Ejs(relativePath, data) {
   const tpl = loadV5Template(relativePath);
-  return ejs.render(tpl.source, data, { filename: tpl.filename });
+  const locals = Object.assign(
+    { deploymentBrand: resolveDeploymentBrand() },
+    data || {}
+  );
+  return ejs.render(tpl.source, locals, { filename: tpl.filename });
 }
 
 module.exports = {
