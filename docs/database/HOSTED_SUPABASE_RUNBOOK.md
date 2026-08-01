@@ -51,6 +51,82 @@ Does **not** create:
 2. Supabase project created; copy the **Postgres connection string** (prefer **direct** or **session-mode** pooler for DDL; avoid transaction-mode pooler for migrations if you see lock/transaction errors).
 3. Confirm you are **not** pointing at the legacy V4 database.
 
+## Local testing vs production env files
+
+Cursor agent shells often inherit the workspace `.env` testing `DATABASE_URL`. Interactive `export DATABASE_URL=…` in another terminal does **not** reach those agent shells.
+
+Use separate **gitignored** files at the repo root:
+
+| File | Target |
+|------|--------|
+| `.env.testing.local` | blessboard.org testing Supabase |
+| `.env.production.local` | blessboard.com production Supabase |
+
+Copy from the tracked examples (placeholders only):
+
+```bash
+cp scripts/local/env.testing.local.example .env.testing.local
+cp scripts/local/env.production.local.example .env.production.local
+# Edit each file locally — never commit them. chmod 600 recommended.
+```
+
+Always select the database through the wrapper (overrides ambient `.env` pollution):
+
+```bash
+# Testing
+scripts/local/run-with-blessboard-env.sh testing \
+  npm run db:identity:check
+# expected: environment_code=testing
+
+# Production — mandatory before any production write
+scripts/local/run-with-blessboard-env.sh production \
+  npm run db:identity:check
+# expected: environment_code=production
+```
+
+Convenience npm scripts (same wrapper):
+
+```bash
+npm run db:identity:check:testing
+npm run db:identity:check:production
+npm run db:status:testing
+npm run db:status:production
+```
+
+Rules:
+
+- Do not flip a shared `.env` between testing and production URLs.
+- Production writes require a successful production identity check first.
+- Passwords for user CLIs go through stdin; never into env files or Git.
+- Hostinger is unchanged by this local workflow.
+
+### Production platform admin (operator)
+
+After `db:identity:check:production` returns `environment_code=production`:
+
+```bash
+# Create (or use blessboard:user:password-reset if the user already exists)
+printf '%s' '<TEMPORARY_PASSWORD>' | \
+scripts/local/run-with-blessboard-env.sh production \
+npm run blessboard:user:create -- \
+  --email 'akivs@moovex.org' \
+  --display-name 'Akiva Solomon' \
+  --password-stdin \
+  --confirm
+
+# platform_admin is organization-scoped — discover the production organization_key
+# with a read-only query against the confirmed production DB, then:
+scripts/local/run-with-blessboard-env.sh production \
+npm run blessboard:user:role:assign -- \
+  --email 'akivs@moovex.org' \
+  --organization-key '<PRODUCTION_ORG_KEY>' \
+  --role platform_admin \
+  --confirm
+
+scripts/local/run-with-blessboard-env.sh production \
+npm run blessboard:user:list-platform-admins
+```
+
 ## Exact commands
 
 Use placeholders only. Never commit real URLs or passwords.
@@ -58,6 +134,7 @@ Use placeholders only. Never commit real URLs or passwords.
 ```bash
 cd /path/to/getpro
 
+# Prefer the local env wrapper (see above). Manual export still works in an interactive shell:
 export DATABASE_URL='postgresql://USER:PASSWORD@HOST:PORT/postgres'
 export DATABASE_IDENTITY_EXPECTED='blessboard-platform-v5'
 # optional; defaults to testing
