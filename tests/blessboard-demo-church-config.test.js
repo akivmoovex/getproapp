@@ -362,7 +362,7 @@ describe("configure demo church (foundation db)", () => {
     assert.ok(gov.rows.every((r) => r.website_initialization_status === "completed"));
   });
 
-  it("autonomy: HQ edit does not change Lusaka or Kitwe", async (t) => {
+  it("autonomy: HQ edit does not change Lusaka or Ndola", async (t) => {
     if (requireDb(t)) return;
     const hqPage = await contentRepo.findPageByScope(pool, {
       churchId,

@@ -30,6 +30,8 @@ const {
 } = require("./publicContentAdminService");
 const contentRepo = require("../repositories/publicContentRepository");
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
+const scopeSettingsRepo = require("../repositories/websiteScopeSettingsRepository");
+const registry = require("./websiteSettingKeyRegistry");
 const { saveHomeServiceTimes } = require("./homeServiceTimesService");
 const { publishChurchWebsite } = require("./churchWebsitePublishService");
 const { updateChurchSettings } = require("./blessBoardSettingsService");
@@ -518,6 +520,39 @@ async function ensureMinistryHighlight(db, { churchId, branchId, name, descripti
   return { ok: Boolean(created.ok), id: created.item && created.item.id, created: true };
 }
 
+/**
+ * Keep branch website_scope_settings in sync after renames.
+ * Init seeds these once and skips existing rows, so rename alone can leave
+ * stale identity/SEO/contact values (e.g. Kitwe → Ndola).
+ */
+async function syncBranchScopeIdentity(db, { organizationId, churchId, branchId, actorUserId, spec }) {
+  const seed = {
+    "identity.branch_display_name": spec.publicName,
+    "presentation.branch_display_label": spec.publicName,
+    "seo.title": spec.publicName,
+    "seo.og_title": spec.publicName,
+    "contact.city": spec.city,
+    "contact.email": spec.email,
+    "contact.phone": spec.phone,
+    "contact.address_line_1": spec.addressLine1,
+    "contact.address_line_2": spec.addressLine2,
+    "contact.country": spec.countryCode,
+  };
+  for (const [settingKey, value] of Object.entries(seed)) {
+    if (value == null || value === "") continue;
+    if (!registry.normalizeSettingKey(settingKey)) continue;
+    await scopeSettingsRepo.upsertActive(db, {
+      organizationId,
+      churchId,
+      branchId,
+      settingKey,
+      inheritanceState: "override",
+      valueJson: registry.toValueJson(value),
+      updatedBy: actorUserId || null,
+    });
+  }
+}
+
 async function applyBranchWebsiteContent(db, { organizationId, churchId, branchId, actorUserId, spec }) {
   await ensureHomeHero(db, {
     churchId,
@@ -553,7 +588,13 @@ async function applyBranchWebsiteContent(db, { organizationId, churchId, branchI
     action: "save_publish",
     confirmPublish: true,
   });
-  // Store website display hint on branch public_name (already set).
+  await syncBranchScopeIdentity(db, {
+    organizationId,
+    churchId,
+    branchId,
+    actorUserId,
+    spec,
+  });
   return { ok: true };
 }
 
