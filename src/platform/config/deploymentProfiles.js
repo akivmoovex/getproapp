@@ -62,6 +62,8 @@ const OPTIONAL_HOSTINGER_KEYS = Object.freeze(["GETPRO_PG_SSL", "PORT"]);
  *   hostContextMode: "off"|"diagnostic",
  *   allowTestUsersByDefault: boolean,
  *   foreignTlds: readonly string[],
+ *   brandSubtitle: string|null,
+ *   brandSubtitleVariant: "production-partner"|"demo"|null,
  * }>} DeploymentProfile
  */
 
@@ -84,6 +86,8 @@ const PROFILE_COM_PRODUCTION = Object.freeze({
   hostContextMode: "off",
   allowTestUsersByDefault: false,
   foreignTlds: Object.freeze(["blessboard.org", "www.blessboard.org"]),
+  brandSubtitle: "Powered by GetPro",
+  brandSubtitleVariant: "production-partner",
 });
 
 /** @type {Readonly<DeploymentProfile>} */
@@ -105,6 +109,8 @@ const PROFILE_ORG_STAGING = Object.freeze({
   hostContextMode: "diagnostic",
   allowTestUsersByDefault: false,
   foreignTlds: Object.freeze(["blessboard.com", "www.blessboard.com"]),
+  brandSubtitle: "Demo Only",
+  brandSubtitleVariant: "demo",
 });
 
 /** @type {Readonly<Record<string, DeploymentProfile>>} */
@@ -317,6 +323,8 @@ function resolveDeploymentConfiguration(env) {
       trustProxy,
       listenHost,
       hostContextMode: null,
+      brandSubtitle: null,
+      brandSubtitleVariant: null,
       profile: null,
     };
   }
@@ -336,6 +344,8 @@ function resolveDeploymentConfiguration(env) {
     trustProxy,
     listenHost,
     hostContextMode: profile.hostContextMode,
+    brandSubtitle: profile.brandSubtitle || null,
+    brandSubtitleVariant: profile.brandSubtitleVariant || null,
     profile,
   };
 }

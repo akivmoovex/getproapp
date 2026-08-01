@@ -1196,6 +1196,82 @@ html.bb-ds-modal-open body {
   font-weight: var(--bb-font-weight-bold);
 }
 
+.bb-powered-by--demo {
+  color: var(--bb-color-warning);
+  font-weight: var(--bb-font-weight-bold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* —— Platform brand subtitle (deployment profile) —— */
+.bb-platform-brand__lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  gap: 0.05rem;
+}
+
+.bb-platform-brand__name {
+  display: block;
+  line-height: 1.15;
+}
+
+.bb-platform-brand__subtitle {
+  display: block;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bb-platform-brand__subtitle--production-partner {
+  color: var(--bb-color-muted);
+  font-weight: 500;
+  text-transform: none;
+}
+
+.bb-platform-brand__subtitle--production-partner .bb-platform-brand__subtitle-accent {
+  color: var(--bb-color-accent);
+  font-weight: 700;
+}
+
+.bb-platform-brand__subtitle--demo {
+  color: var(--bb-color-warning);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Dark admin sidebars — keep subtitle readable on violet/ink chrome */
+.bb-pa-sidebar .bb-platform-brand__subtitle--production-partner,
+.bb-hq-sidebar .bb-platform-brand__subtitle--production-partner,
+.bb-ba-sidebar .bb-platform-brand__subtitle--production-partner,
+.bb-mp-sidebar .bb-platform-brand__subtitle--production-partner {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.bb-pa-sidebar .bb-platform-brand__subtitle--production-partner .bb-platform-brand__subtitle-accent,
+.bb-hq-sidebar .bb-platform-brand__subtitle--production-partner .bb-platform-brand__subtitle-accent,
+.bb-ba-sidebar .bb-platform-brand__subtitle--production-partner .bb-platform-brand__subtitle-accent,
+.bb-mp-sidebar .bb-platform-brand__subtitle--production-partner .bb-platform-brand__subtitle-accent {
+  color: var(--bb-color-accent);
+}
+
+.bb-pa-sidebar .bb-platform-brand__subtitle--demo,
+.bb-hq-sidebar .bb-platform-brand__subtitle--demo,
+.bb-ba-sidebar .bb-platform-brand__subtitle--demo,
+.bb-mp-sidebar .bb-platform-brand__subtitle--demo {
+  color: #fcd34d;
+}
+
 /* —— Drawer panel uses token width —— */
 .bb-ds-drawer__panel {
   width: min(var(--bb-drawer-w), 88vw);
