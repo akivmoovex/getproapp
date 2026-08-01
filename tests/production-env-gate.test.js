@@ -24,10 +24,14 @@ test("getProductionMissingRequiredEnv: requires SESSION_SECRET and BASE_DOMAIN i
     n: process.env.NODE_ENV,
     s: process.env.SESSION_SECRET,
     b: process.env.BASE_DOMAIN,
+    p: process.env.PLATFORM_DEPLOYMENT_CODE,
+    d: process.env.DEPLOYMENT_ENV,
   };
   process.env.NODE_ENV = "production";
   delete process.env.SESSION_SECRET;
   delete process.env.BASE_DOMAIN;
+  delete process.env.PLATFORM_DEPLOYMENT_CODE;
+  delete process.env.DEPLOYMENT_ENV;
   try {
     const m = getProductionMissingRequiredEnv().sort();
     assert.deepEqual(m, ["BASE_DOMAIN", "SESSION_SECRET"]);
@@ -38,6 +42,39 @@ test("getProductionMissingRequiredEnv: requires SESSION_SECRET and BASE_DOMAIN i
     else delete process.env.SESSION_SECRET;
     if (prev.b !== undefined) process.env.BASE_DOMAIN = prev.b;
     else delete process.env.BASE_DOMAIN;
+    if (prev.p !== undefined) process.env.PLATFORM_DEPLOYMENT_CODE = prev.p;
+    else delete process.env.PLATFORM_DEPLOYMENT_CODE;
+    if (prev.d !== undefined) process.env.DEPLOYMENT_ENV = prev.d;
+    else delete process.env.DEPLOYMENT_ENV;
+  }
+});
+
+test("getProductionMissingRequiredEnv: V5 foundation skips BASE_DOMAIN", () => {
+  const prev = {
+    n: process.env.NODE_ENV,
+    s: process.env.SESSION_SECRET,
+    b: process.env.BASE_DOMAIN,
+    p: process.env.PLATFORM_DEPLOYMENT_CODE,
+    d: process.env.DEPLOYMENT_ENV,
+  };
+  process.env.NODE_ENV = "production";
+  process.env.PLATFORM_DEPLOYMENT_CODE = "blessboard-org-v5";
+  delete process.env.DEPLOYMENT_ENV;
+  process.env.SESSION_SECRET = "s".repeat(40);
+  delete process.env.BASE_DOMAIN;
+  try {
+    assert.deepEqual(getProductionMissingRequiredEnv(), []);
+  } finally {
+    if (prev.n !== undefined) process.env.NODE_ENV = prev.n;
+    else delete process.env.NODE_ENV;
+    if (prev.s !== undefined) process.env.SESSION_SECRET = prev.s;
+    else delete process.env.SESSION_SECRET;
+    if (prev.b !== undefined) process.env.BASE_DOMAIN = prev.b;
+    else delete process.env.BASE_DOMAIN;
+    if (prev.p !== undefined) process.env.PLATFORM_DEPLOYMENT_CODE = prev.p;
+    else delete process.env.PLATFORM_DEPLOYMENT_CODE;
+    if (prev.d !== undefined) process.env.DEPLOYMENT_ENV = prev.d;
+    else delete process.env.DEPLOYMENT_ENV;
   }
 });
 

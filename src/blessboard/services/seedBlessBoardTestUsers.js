@@ -157,28 +157,47 @@ function evaluateTestUserEnvironment(env) {
   const nodeEnv = String(e.NODE_ENV || "")
     .trim()
     .toLowerCase();
-  const deploymentEnv = String(e.DEPLOYMENT_ENV || "")
-    .trim()
-    .toLowerCase();
+  const {
+    getDeploymentProfile,
+  } = require("../../platform/config/deploymentProfiles");
+  const profile = getDeploymentProfile(e);
+  const deploymentEnv = profile && profile.authoritative
+    ? profile.deploymentEnvironment
+    : String(e.DEPLOYMENT_ENV || "")
+        .trim()
+        .toLowerCase();
   const allowTestUsers = String(e.BLESSBOARD_ALLOW_TEST_USERS || "")
     .trim()
     .toLowerCase() === "true";
-  const productionOverride =
+  // BLESSBOARD_ALLOW_TEST_USERS_IN_PRODUCTION is ignored on hosted NODE_ENV=production
+  // (impossible override — weak shared passwords must never land in production DBs).
+  const productionOverrideRequested =
     String(e[PRODUCTION_OVERRIDE_ENV] || "")
       .trim()
       .toLowerCase() === "true";
 
-  if (nodeEnv === "production" && !productionOverride) {
+  if (nodeEnv === "production") {
     return {
       ok: false,
       status: STATUS.REFUSED_PRODUCTION,
       message: "refused_production",
-      detail: `NODE_ENV=production requires ${PRODUCTION_OVERRIDE_ENV}=true (not enabled by default).`,
+      detail:
+        "NODE_ENV=production forbids test-user seeding. " +
+        `${PRODUCTION_OVERRIDE_ENV} is not honored on hosted deployments.`,
+    };
+  }
+
+  if (productionOverrideRequested) {
+    return {
+      ok: false,
+      status: STATUS.REFUSED_PRODUCTION,
+      message: "refused_production_override",
+      detail: `${PRODUCTION_OVERRIDE_ENV} is not supported; remove it and use DEPLOYMENT_ENV=testing or NODE_ENV=test.`,
     };
   }
 
   const nonProductionSignal =
-    nodeEnv === "test" || deploymentEnv === "testing" || allowTestUsers || productionOverride;
+    nodeEnv === "test" || deploymentEnv === "testing" || allowTestUsers;
 
   if (!nonProductionSignal) {
     return {
@@ -186,7 +205,7 @@ function evaluateTestUserEnvironment(env) {
       status: STATUS.REFUSED_ENVIRONMENT,
       message: "refused_environment",
       detail:
-        "Require NODE_ENV=test, DEPLOYMENT_ENV=testing, or BLESSBOARD_ALLOW_TEST_USERS=true.",
+        "Require NODE_ENV=test, DEPLOYMENT_ENV=testing (or PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5), or BLESSBOARD_ALLOW_TEST_USERS=true.",
     };
   }
 
@@ -195,7 +214,7 @@ function evaluateTestUserEnvironment(env) {
     nodeEnv,
     deploymentEnv,
     allowTestUsers,
-    productionOverride,
+    productionOverride: false,
   };
 }
 

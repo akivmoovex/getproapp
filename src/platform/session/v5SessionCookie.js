@@ -1,18 +1,25 @@
 "use strict";
 
 /**
- * V5 session cookie helpers. Cookie name from SESSION_COOKIE_NAME or deployment default.
+ * V5 session cookie helpers. Cookie name from deployment profile or SESSION_COOKIE_NAME.
+ * Cookies are host-only (no Domain=), HttpOnly, SameSite=Lax; Secure when NODE_ENV=production.
  */
 
 const { SESSION_TTL_MS } = require("../session/sessionToken");
+const { getDeploymentProfile, V5_SESSION_COOKIE } = require("../config/deploymentProfiles");
 
-const DEFAULT_V5_COOKIE = "blessboard_org_v5_sid";
+const DEFAULT_V5_COOKIE = V5_SESSION_COOKIE;
 
 /**
  * @param {NodeJS.ProcessEnv} [env]
  */
 function getV5SessionCookieName(env) {
   const source = env || process.env;
+  const { hasAuthoritativeDeploymentProfile, getDeploymentProfile } = require("../config/deploymentProfiles");
+  if (hasAuthoritativeDeploymentProfile(source)) {
+    const profile = getDeploymentProfile(source);
+    if (profile) return profile.sessionCookieName;
+  }
   const raw = String(source.SESSION_COOKIE_NAME || "").trim();
   return raw || DEFAULT_V5_COOKIE;
 }

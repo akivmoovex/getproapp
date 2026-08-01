@@ -80,11 +80,22 @@ describe("blessboard test-users seed helpers", () => {
     assert.equal(refused.ok, false);
     assert.equal(refused.status, STATUS.REFUSED_PRODUCTION);
 
-    const allowed = evaluateTestUserEnvironment({
+    // Hosted override flag is intentionally not honored.
+    const stillRefused = evaluateTestUserEnvironment({
       NODE_ENV: "production",
       [PRODUCTION_OVERRIDE_ENV]: "true",
     });
-    assert.equal(allowed.ok, true);
+    assert.equal(stillRefused.ok, false);
+    assert.equal(stillRefused.status, STATUS.REFUSED_PRODUCTION);
+  });
+
+  it("rejects BLESSBOARD_ALLOW_TEST_USERS_IN_PRODUCTION even outside production NODE_ENV", () => {
+    const refused = evaluateTestUserEnvironment({
+      NODE_ENV: "test",
+      [PRODUCTION_OVERRIDE_ENV]: "true",
+    });
+    assert.equal(refused.ok, false);
+    assert.equal(refused.message, "refused_production_override");
   });
 
   it("requires a non-production signal", () => {
