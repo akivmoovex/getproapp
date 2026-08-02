@@ -1,0 +1,73 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var department = typeof department !== 'undefined' ? department : null;
+  var members = typeof members !== 'undefined' && members ? members : [];
+%>
+<section class="bb-hq-page" data-bb-member-journey-department-detail="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/departments">Departments</a>
+      <span aria-hidden="true">›</span>
+      <span>Detail</span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= department ? department.displayName : 'Department' %></h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (!department) { %>
+    <p>Department not found.</p>
+  <% } else { %>
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Details</h2>
+      <ul class="bb-hq-list">
+        <li>Key: <%= department.departmentKey %></li>
+        <li>Status: <%= department.status %></li>
+        <% if (department.requirementsNotes) { %>
+          <li>Requirements: <%= department.requirementsNotes %></li>
+        <% } %>
+      </ul>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Add member</h2>
+      <form method="post" action="/hq/departments/<%= department.id %>/members" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <label>Member id <input name="memberId" required maxlength="36" placeholder="UUID"/></label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Add</button>
+      </form>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Members</h2>
+      <% if (!members.length) { %>
+        <p>No active members.</p>
+      <% } else { %>
+        <ul class="bb-hq-list">
+          <% members.forEach(function (m) { %>
+            <li>
+              <%= m.firstName %> <%= m.lastName %> · <%= m.status %>
+              <form method="post" action="/hq/departments/<%= department.id %>/members/remove" style="display:inline" class="bb-hq-form">
+                <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+                <input type="hidden" name="membershipId" value="<%= m.membershipId %>"/>
+                <input name="reason" maxlength="500" placeholder="Reason (optional)"/>
+                <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Remove</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  <% } %>
+  <p><a href="/hq/departments">Back to departments</a></p>
+</section>
+<%- include('../partials/hq-shell-end') %>

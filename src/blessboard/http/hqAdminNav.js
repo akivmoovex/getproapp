@@ -32,6 +32,14 @@ const HQ_ADMIN_NAV = Object.freeze([
     nav: true,
   },
   {
+    key: "member-journey",
+    label: "Member journey",
+    href: "/hq/member-journey",
+    icon: "route",
+    enabled: true,
+    nav: true,
+  },
+  {
     key: "roles",
     label: "Permissions",
     href: "/hq/roles",

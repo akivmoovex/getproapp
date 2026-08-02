@@ -24,6 +24,9 @@ const {
   STATUS,
 } = require("../services/memberRegistrationService");
 const {
+  getStaffMemberJourneySummary,
+} = require("../services/memberJourneyWorkflowService");
+const {
   listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
   STATUS: BRANCH_STATUS,
@@ -145,6 +148,7 @@ function createHqMembersAdminRouter(deps) {
     }
     return {
       churchId: tenant.church.id,
+      organizationId: tenant.organization && tenant.organization.id,
       actorUserId: session.userId,
       tenant,
     };
@@ -346,11 +350,21 @@ function createHqMembersAdminRouter(deps) {
       );
     }
 
+    const journey = await getStaffMemberJourneySummary(getPool(), {
+      actorUserId: scope.actorUserId,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      branchId: scope.tenant && scope.tenant.primaryBranch ? scope.tenant.primaryBranch.id : null,
+      memberId: id,
+      tenantContext: scope.tenant,
+    });
+
     const html = renderHqView(
       "hq/member-detail.ejs",
       await shellLocals(req, res, "members", {
         pageTitle: "Member profile",
         member: loaded.member,
+        journeySummary: journey.ok ? journey.summary : null,
       })
     );
     return res.status(200).type("html").send(html);

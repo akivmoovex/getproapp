@@ -11,6 +11,9 @@ const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
+const {
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -204,6 +207,7 @@ function createHqReportsRouter(deps) {
     getPool,
     allowedRoles: ["church_hq_admin", "platform_admin"],
   });
+  const requireAuditView = createRequireBlessBoardPermission("audit.view", null, { getPool });
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -522,7 +526,7 @@ function createHqReportsRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/hq/audit", rejectApex, gate, async (req, res) => {
+  router.get("/hq/audit", rejectApex, gate, requireAuditView, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     const session = req.v5Session && req.v5Session.session;
     if (!tenant || !tenant.church || !tenant.organization || !session || !session.userId) {

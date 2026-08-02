@@ -26,6 +26,9 @@ const {
   updateMemberPortalProfile,
   STATUS: PORTAL_STATUS,
 } = require("../services/memberPortalService");
+const {
+  getMemberPortalJourneySummary,
+} = require("../services/memberJourneyWorkflowService");
 const { listPublishedGivingMethods } = require("../services/publicContentReadService");
 const { mapGiving } = require("./loadTenantPublicPageModel");
 const { listMemberAnnouncements } = require("../services/announcementsService");
@@ -342,6 +345,22 @@ function createMemberPortalRouter(deps) {
         previewAnnouncements: announcements,
         previewEvents: events,
         previewMinistries: ministries,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/member/journey", rejectApex, requireMember, async (req, res) => {
+    const tenant = resolveTenantForAuthorization(req);
+    const access = req.blessBoardMemberAccess;
+    const summary = await getMemberPortalJourneySummary(getPool(), {
+      churchId: tenant.church.id,
+      memberId: access.member.id,
+    });
+    const html = renderMemberView(
+      "member/journey.ejs",
+      shellLocals(req, res, "journey", {
+        journey: summary.ok ? summary.summary : { cellName: null, classes: [], departments: [] },
       })
     );
     return res.status(200).type("html").send(html);

@@ -1,0 +1,51 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = typeof departments !== 'undefined' && departments ? departments : [];
+%>
+<section class="bb-hq-page" data-bb-member-journey-departments="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <span>Departments</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Departments</h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Create department</h2>
+    <form method="post" action="/hq/departments" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>Key <input name="departmentKey" required pattern="[a-z][a-z0-9_]{0,63}"/></label>
+      <label>Name <input name="displayName" required maxlength="200"/></label>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create</button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Branch departments</h2>
+    <% if (!rows.length) { %>
+      <p>No departments yet.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% rows.forEach(function (d) { %>
+          <li>
+            <a href="/hq/departments/<%= d.id %>"><%= d.displayName %></a>
+            (<%= d.departmentKey %>) · <%= d.status %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+  <p><a href="/hq/member-journey">Back to member journey</a></p>
+</section>
+<%- include('../partials/hq-shell-end') %>

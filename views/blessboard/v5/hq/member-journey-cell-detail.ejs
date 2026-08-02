@@ -1,0 +1,89 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var cell = typeof cell !== 'undefined' ? cell : null;
+  var members = typeof members !== 'undefined' && members ? members : [];
+%>
+<section class="bb-hq-page" data-bb-member-journey-cell-detail="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/cells">Cells</a>
+      <span aria-hidden="true">›</span>
+      <span>Detail</span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= cell ? cell.displayName : 'Cell' %></h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (!cell) { %>
+    <p>Cell not found.</p>
+  <% } else { %>
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Details</h2>
+      <ul class="bb-hq-list">
+        <li>Key: <%= cell.cellKey %></li>
+        <li>Status: <%= cell.status %></li>
+        <li>Schedule: <%= cell.meetingSchedule || '—' %></li>
+        <li>Location: <%= cell.meetingLocationSummary || '—' %></li>
+        <li>Primary leader: <%= cell.primaryLeaderUserId || '—' %></li>
+        <li>Assistant leader: <%= cell.assistantLeaderUserId || '—' %></li>
+      </ul>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Update cell</h2>
+      <form method="post" action="/hq/cells/<%= cell.id %>" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <label>Name <input name="displayName" required maxlength="200" value="<%= cell.displayName %>"/></label>
+        <label>Primary leader user id <input name="primaryLeaderUserId" maxlength="36" value="<%= cell.primaryLeaderUserId || '' %>"/></label>
+        <label>Assistant leader user id <input name="assistantLeaderUserId" maxlength="36" value="<%= cell.assistantLeaderUserId || '' %>"/></label>
+        <label>Meeting schedule <input name="meetingSchedule" maxlength="500" value="<%= cell.meetingSchedule || '' %>"/></label>
+        <label>Meeting location summary <input name="meetingLocationSummary" maxlength="500" value="<%= cell.meetingLocationSummary || '' %>"/></label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Save</button>
+      </form>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Assign member</h2>
+      <form method="post" action="/hq/cells/<%= cell.id %>/assign" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <label>Member id <input name="memberId" required maxlength="36" placeholder="UUID"/></label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Assign</button>
+      </form>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Transfer member into this cell</h2>
+      <form method="post" action="/hq/cells/<%= cell.id %>/transfer" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <label>Member id <input name="memberId" required maxlength="36" placeholder="UUID"/></label>
+        <label>Transfer reason <input name="transferReason" required maxlength="500"/></label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Transfer</button>
+      </form>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Members</h2>
+      <% if (!members.length) { %>
+        <p>No active members (or not authorized to view).</p>
+      <% } else { %>
+        <ul class="bb-hq-list">
+          <% members.forEach(function (m) { %>
+            <li><%= m.firstName %> <%= m.lastName %> · <%= m.careStatus || '—' %> · <%= m.memberId %></li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  <% } %>
+  <p><a href="/hq/cells">Back to cells</a></p>
+</section>
+<%- include('../partials/hq-shell-end') %>

@@ -83,6 +83,8 @@ describe("blessboard settings http", () => {
 
   before(async () => {
     try {
+      process.env.PLATFORM_DEPLOYMENT_CODE = "blessboard-org-staging";
+      process.env.DEPLOYMENT_ENV = "testing";
       const databaseUrl = await resetFoundationDatabase();
       pool = createFoundationPool(databaseUrl);
       await migrate({ connectionString: databaseUrl });

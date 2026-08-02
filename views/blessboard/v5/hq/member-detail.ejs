@@ -71,6 +71,54 @@
   <p class="bb-hq-hint">
     Linking a login is a separate step. Approving a registration never promises an automatic account.
   </p>
+
+  <% if (typeof journeySummary !== 'undefined' && journeySummary) { %>
+  <article class="bb-hq-panel" data-bb-member-journey-summary="1">
+    <h2 class="bb-hq-panel__title">Member journey</h2>
+    <dl class="bb-hq-dl">
+      <dt>Current stage</dt>
+      <dd><%= journeySummary.currentStage || '—' %></dd>
+      <dt>Active handover</dt>
+      <dd><%= journeySummary.activeHandoverStatus || '—' %></dd>
+      <dt>Cell</dt>
+      <dd>
+        <% if (journeySummary.cell) { %>
+          <%= journeySummary.cell.displayName %>
+          <% if (journeySummary.cell.careStatus) { %>
+            <span class="bb-hq-chip bb-hq-chip--muted"><%= journeySummary.cell.careStatus %></span>
+          <% } %>
+        <% } else { %>—<% } %>
+      </dd>
+    </dl>
+    <% if (journeySummary.classes && journeySummary.classes.length) { %>
+      <h3>Classes</h3>
+      <ul>
+        <% journeySummary.classes.forEach(function (c) { %>
+          <li><%= c.programName %> · <%= c.cohortName %> · <%= c.status %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (journeySummary.departments && journeySummary.departments.length) { %>
+      <h3>Departments</h3>
+      <ul>
+        <% journeySummary.departments.forEach(function (d) { %>
+          <li><%= d.displayName %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (journeySummary.handovers && journeySummary.handovers.length) { %>
+      <h3>Recent handovers</h3>
+      <ul>
+        <% journeySummary.handovers.forEach(function (h) { %>
+          <li>
+            <a href="/hq/member-journey/handovers/<%= h.id %>"><%= h.fromStage %> → <%= h.toStage %></a>
+            · <%= h.status %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+  <% } %>
 </section>
 
 <%- include('../partials/hq-shell-end') %>

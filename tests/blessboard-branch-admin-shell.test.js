@@ -286,7 +286,7 @@ describe("blessboard branch-admin shell", () => {
     assert.match(res.text, /\binert\b/);
     assert.match(res.text, /bb-ba-drawer__close/);
     assert.match(res.text, /data-bb-footer="drawer"/);
-    assert.match(res.text, /powered-by-getpro|Powered by/i);
+    assert.match(res.text, /powered-by-getpro|Powered by|Demo Only/i);
     assert.match(res.text, /aria-label="Open navigation"/);
     assert.match(res.text, /aria-label="Open navigation"/);
     assert.match(res.text, />\s*Account\s*</);

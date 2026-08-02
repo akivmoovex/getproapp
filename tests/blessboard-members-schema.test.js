@@ -27,41 +27,9 @@ const {
   linkMemberToUser,
 } = require("../src/blessboard/services/memberRegistrationService");
 
-const EXPECTED_TABLES = [
-  "announcement_attachments",
-  "announcement_audiences",
-  "announcement_reads",
-  "announcements",
-  "attendance_entries",
-  "attendance_events",
-  "branch_settings",
-  "branches",
-  "church_settings",
-  "churches",
-  "contact_channels",
-  "event_registrations",
-  "events",
-  "form_submissions",
-  "forms",
-  "giving_categories",
-  "giving_entries",
-  "giving_methods",
-  "leaders",
-  "media_assets",
-  "member_branch_memberships",
-  "member_registrations",
-  "member_request_status_history",
-  "member_requests",
-  "members",
-  "ministries",
-  "ministry_memberships",
-  "page_sections",
-  "public_pages",
-  "resources",
-  "sermons",
-  "user_roles",
-  "users",
-];
+const { APPROVED_PRODUCT_TABLES } = require("../db/scripts/lib/foundationVerify");
+
+const EXPECTED_TABLES = [...APPROVED_PRODUCT_TABLES.blessboard];
 
 const PASSWORD = "correct-horse-battery-staple";
 

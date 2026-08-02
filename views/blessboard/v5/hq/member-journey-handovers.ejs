@@ -1,0 +1,43 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = typeof handovers !== 'undefined' && handovers ? handovers : [];
+%>
+<section class="bb-hq-page" data-bb-member-journey-handovers="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <span>Handovers</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Handovers</h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">All handovers</h2>
+    <% if (!rows.length) { %>
+      <p>No handovers yet.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% rows.forEach(function (h) { %>
+          <li>
+            <a href="/hq/member-journey/handovers/<%= h.id %>"><%= h.fromStage %> → <%= h.toStage %></a>
+            · <span class="bb-hq-chip bb-hq-chip--muted"><%= h.status %></span>
+            <% if (h.journeyContactId) { %>
+              · <a href="/hq/member-journey/contacts/<%= h.journeyContactId %>">Contact</a>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>

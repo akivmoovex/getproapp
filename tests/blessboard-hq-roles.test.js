@@ -76,6 +76,9 @@ describe("blessboard hq role management", () => {
 
   before(async () => {
     try {
+      // Ephemeral seeds use blessboard-org-staging; audit FK requires a matching deployment code.
+      process.env.PLATFORM_DEPLOYMENT_CODE = "blessboard-org-staging";
+      process.env.DEPLOYMENT_ENV = "testing";
       const databaseUrl = await resetFoundationDatabase();
       pool = createFoundationPool(databaseUrl);
       await migrate({ connectionString: databaseUrl });

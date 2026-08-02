@@ -1,0 +1,74 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = typeof requests !== 'undefined' && requests ? requests : [];
+%>
+<section class="bb-hq-page" data-bb-welfare-requests="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/welfare">Welfare</a>
+      <span aria-hidden="true">›</span>
+      <span>Requests</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Welfare requests</h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Open welfare case</h2>
+    <form method="post" action="/hq/welfare/cases" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>Case key <input name="caseKey" required pattern="[a-z][a-z0-9_]{0,63}"/></label>
+      <label>Title <input name="title" required maxlength="200"/></label>
+      <button type="submit">Create case</button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Submit assistance request</h2>
+    <form method="post" action="/hq/welfare/requests" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>Welfare case id <input name="welfareCaseId" required/></label>
+      <label>Assistance type
+        <select name="assistanceType">
+          <option value="food">Food</option>
+          <option value="transport">Transport</option>
+          <option value="medical">Medical</option>
+          <option value="housing">Housing</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label>Amount <input name="amountRequested" type="number" step="0.01" min="0"/></label>
+      <label>Currency <input name="currencyCode" maxlength="3" placeholder="USD"/></label>
+      <label>Operational summary (no pastoral narrative)
+        <textarea name="operationalSummary" required maxlength="500" rows="3"></textarea>
+      </label>
+      <button type="submit">Submit request</button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Requests</h2>
+    <% if (!rows.length) { %>
+      <p class="bb-hq-lede">No requests.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% rows.forEach(function (r) { %>
+          <li>
+            <a href="/hq/welfare/requests/<%= r.id %>"><%= r.assistanceType %></a>
+            — <span class="bb-hq-badge"><%= r.status %></span>
+            <% if (r.amountRequested != null) { %>(<%= r.amountRequested %> <%= r.currencyCode || '' %>)<% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>

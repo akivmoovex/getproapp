@@ -12,6 +12,9 @@ const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
+const {
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -133,6 +136,11 @@ function createHqAdminRouter(deps) {
     getPool,
     allowedRoles: ["church_hq_admin", "platform_admin"],
   });
+  const requireOrgSettingsManage = createRequireBlessBoardPermission(
+    "organisation.settings.manage",
+    null,
+    { getPool }
+  );
 
   function sendMissingTenantContext(req, res) {
     const reason = req.blessBoardSessionTenantReason || "tenant_context_missing";
@@ -500,7 +508,7 @@ function createHqAdminRouter(deps) {
     return res.redirect(303, "/");
   });
 
-  router.get("/hq/settings", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/settings", rejectApex, gateHq, requireOrgSettingsManage, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");

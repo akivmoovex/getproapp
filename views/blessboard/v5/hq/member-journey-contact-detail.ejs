@@ -1,0 +1,150 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var contact = typeof contact !== 'undefined' ? contact : null;
+  var related = typeof handovers !== 'undefined' && handovers ? handovers : [];
+  var editable = typeof contactEditable !== 'undefined' ? contactEditable : false;
+  var stagesList = typeof stages !== 'undefined' && stages ? stages : [];
+  var fuStatuses = typeof followUpStatuses !== 'undefined' && followUpStatuses ? followUpStatuses : [];
+  var mayEditFn = typeof previousStageMayEdit === 'function' ? previousStageMayEdit : function () { return false; };
+%>
+<section class="bb-hq-page" data-bb-member-journey-contact-detail="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey/contacts">Contacts</a>
+      <span aria-hidden="true">›</span>
+      <span>Detail</span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= contact ? (contact.firstName + ' ' + contact.lastName) : 'Contact' %></h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (!contact) { %>
+    <p>Contact not found.</p>
+  <% } else { %>
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Profile</h2>
+      <ul class="bb-hq-list">
+        <li>Status: <strong><%= contact.status %></strong></li>
+        <li>Source: <%= contact.sourceType %></li>
+        <li>Email: <%= contact.emailDisplay || '—' %></li>
+        <li>Phone: <%= contact.phoneDisplay || '—' %></li>
+        <li>Membership interest: <%= contact.membershipInterest || '—' %></li>
+        <li>Decision of faith: <%= contact.decisionOfFaith ? 'yes' : 'no' %></li>
+        <li>Linked member: <%= contact.memberId || '—' %></li>
+        <li>Follow-up: <%= contact.followUpStatus || '—' %></li>
+        <% if (contact.followUpOutcomeSummary) { %>
+          <li>Follow-up outcome: <%= contact.followUpOutcomeSummary %></li>
+        <% } %>
+      </ul>
+    </section>
+
+    <% if (editable) { %>
+      <section class="bb-hq-card">
+        <h2 class="bb-hq-section-title">Edit contact</h2>
+        <form method="post" action="/hq/member-journey/contacts/<%= contact.id %>" class="bb-hq-form">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <label>First name <input name="firstName" required maxlength="100" value="<%= contact.firstName %>"/></label>
+          <label>Last name <input name="lastName" required maxlength="100" value="<%= contact.lastName %>"/></label>
+          <label>Membership interest <input name="membershipInterest" maxlength="100" value="<%= contact.membershipInterest || '' %>"/></label>
+          <label>
+            <input type="checkbox" name="decisionOfFaith" value="1" <%= contact.decisionOfFaith ? 'checked' : '' %>/>
+            Decision of faith
+          </label>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Save</button>
+        </form>
+      </section>
+    <% } %>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Follow-up</h2>
+      <form method="post" action="/hq/member-journey/contacts/<%= contact.id %>/follow-up" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <label>Status
+          <select name="followUpStatus" required>
+            <% fuStatuses.forEach(function (s) { %>
+              <option value="<%= s %>" <%= contact.followUpStatus === s ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Outcome summary
+          <input name="followUpOutcomeSummary" maxlength="500" value="<%= contact.followUpOutcomeSummary || '' %>"/>
+        </label>
+        <label>Assigned user id <input name="followUpAssignedUserId" maxlength="36" value="<%= contact.followUpAssignedUserId || '' %>" placeholder="UUID"/></label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Update follow-up</button>
+      </form>
+    </section>
+
+    <% if (!contact.memberId) { %>
+      <section class="bb-hq-card">
+        <h2 class="bb-hq-section-title">Link to member</h2>
+        <form method="post" action="/hq/member-journey/contacts/<%= contact.id %>/link-member" class="bb-hq-form">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <label>Member id <input name="memberId" required maxlength="36" placeholder="UUID"/></label>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Link member</button>
+        </form>
+      </section>
+    <% } %>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Create handover</h2>
+      <form method="post" action="/hq/member-journey/handovers" class="bb-hq-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="journeyContactId" value="<%= contact.id %>"/>
+        <% if (contact.memberId) { %>
+          <input type="hidden" name="memberId" value="<%= contact.memberId %>"/>
+        <% } %>
+        <label>From stage
+          <select name="fromStage" required>
+            <% stagesList.forEach(function (s) { %>
+              <option value="<%= s %>"><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>To stage
+          <select name="toStage" required>
+            <% stagesList.forEach(function (s) { %>
+              <option value="<%= s %>" <%= s === 'first_timers' ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Notes summary <input name="notesSummary" maxlength="500"/></label>
+        <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create handover</button>
+      </form>
+    </section>
+
+    <section class="bb-hq-card">
+      <h2 class="bb-hq-section-title">Related handovers</h2>
+      <% if (!related.length) { %>
+        <p>No handovers yet.</p>
+      <% } else { %>
+        <ul class="bb-hq-list">
+          <% related.forEach(function (h) { %>
+            <li>
+              <a href="/hq/member-journey/handovers/<%= h.id %>"><%= h.fromStage %> → <%= h.toStage %></a>
+              · <%= h.status %>
+              <% if (mayEditFn(h.status)) { %>
+                <form method="post" action="/hq/member-journey/handovers/<%= h.id %>" style="display:inline">
+                  <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+                  <input type="hidden" name="action" value="submit"/>
+                  <input type="hidden" name="expectedStatus" value="<%= h.status %>"/>
+                  <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Submit</button>
+                </form>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  <% } %>
+</section>
+<%- include('../partials/hq-shell-end') %>

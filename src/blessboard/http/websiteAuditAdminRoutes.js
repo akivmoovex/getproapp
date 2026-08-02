@@ -9,6 +9,9 @@ const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
   createRequireBlessBoardTenantRole,
 } = require("./requireBlessBoardTenantRole");
+const {
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -56,6 +59,7 @@ function createWebsiteAuditAdminRouter(deps) {
     getPool,
     allowedRoles: ["church_hq_admin", "platform_admin"],
   });
+  const requireWebsiteView = createRequireBlessBoardPermission("website.view", null, { getPool });
   const rejectApex = createRejectApex({
     isApexHost,
     mode: "unlessTenant",
@@ -83,7 +87,7 @@ function createWebsiteAuditAdminRouter(deps) {
     });
   }
 
-  router.get("/hq/website/audit-log", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/website/audit-log", rejectApex, gateHq, requireWebsiteView, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.organization || !tenant.organization.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");

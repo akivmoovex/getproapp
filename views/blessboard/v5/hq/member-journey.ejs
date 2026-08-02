@@ -1,0 +1,55 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var c = typeof counts !== 'undefined' && counts ? counts : {};
+  function countVal(key) {
+    return typeof c[key] === 'number' ? c[key] : '—';
+  }
+%>
+<section class="bb-hq-page" data-bb-member-journey="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <span>Member journey</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Member journey</h1>
+    <p class="bb-hq-page-head__lede">Operational dashboard for contacts, handovers, cells, classes, and departments.</p>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <nav class="bb-hq-card" aria-label="Quick links">
+    <h2 class="bb-hq-section-title">Quick links</h2>
+    <p class="bb-hq-lede">
+      <a href="/hq/member-journey/contacts">Contacts</a> ·
+      <a href="/hq/member-journey/handovers">Handovers</a> ·
+      <a href="/hq/cells">Cells</a> ·
+      <a href="/hq/classes">Classes</a> ·
+      <a href="/hq/classes/programs">Programs</a> ·
+      <a href="/hq/departments">Departments</a>
+    </p>
+  </nav>
+
+  <section class="bb-hq-card" aria-label="Journey counts">
+    <h2 class="bb-hq-section-title">Counts</h2>
+    <ul class="bb-hq-list">
+      <li>Evangelism contacts (30d): <strong><%= countVal('evangelismContacts') %></strong></li>
+      <li>Registration membership interest: <strong><%= countVal('registrationMembershipInterest') %></strong></li>
+      <li>First timers awaiting acceptance: <strong><%= countVal('firstTimersAwaitingAcceptance') %></strong></li>
+      <li>Returned handovers: <strong><%= countVal('returnedHandovers') %></strong></li>
+      <li>Overdue follow-ups: <strong><%= countVal('overdueFollowUps') %></strong></li>
+      <li>Orientation participants: <strong><%= countVal('orientationParticipants') %></strong></li>
+      <li>Awaiting cell assignment: <strong><%= countVal('awaitingCellAssignment') %></strong></li>
+      <li>Active class enrolments: <strong><%= countVal('activeClassEnrolments') %></strong></li>
+      <li>Completion awaiting approval: <strong><%= countVal('completionAwaitingApproval') %></strong></li>
+      <li>Awaiting department placement: <strong><%= countVal('awaitingDepartmentPlacement') %></strong></li>
+      <li>Stalled handovers: <strong><%= countVal('stalledHandovers') %></strong></li>
+    </ul>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>

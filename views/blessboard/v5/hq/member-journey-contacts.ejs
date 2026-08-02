@@ -1,0 +1,114 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = typeof contacts !== 'undefined' && contacts ? contacts : [];
+  var formState = typeof form !== 'undefined' && form ? form : {};
+  var dups = typeof duplicateMatches !== 'undefined' && duplicateMatches ? duplicateMatches : [];
+  var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
+  var source = typeof sourceType !== 'undefined' && sourceType ? String(sourceType) : '';
+  var totalSafe = typeof total === 'number' ? total : 0;
+  var pageSafe = typeof page === 'number' ? page : 1;
+  var sizeSafe = typeof pageSize === 'number' ? pageSize : 50;
+  var totalPages = Math.max(Math.ceil(totalSafe / sizeSafe), 1);
+  function pageHref(p) {
+    var params = ['page=' + p];
+    if (searchQ) params.push('q=' + encodeURIComponent(searchQ));
+    if (source) params.push('sourceType=' + encodeURIComponent(source));
+    return '/hq/member-journey/contacts?' + params.join('&');
+  }
+%>
+<section class="bb-hq-page" data-bb-member-journey-contacts="1">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/member-journey">Member journey</a>
+      <span aria-hidden="true">›</span>
+      <span>Contacts</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Journey contacts</h1>
+  </header>
+
+  <% if (typeof notice !== 'undefined' && notice) { %>
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Filter</h2>
+    <form method="get" action="/hq/member-journey/contacts" class="bb-hq-form">
+      <label>Search <input name="q" value="<%= searchQ %>" maxlength="100" placeholder="Name, email, phone"/></label>
+      <label>Source
+        <select name="sourceType">
+          <option value="">All</option>
+          <% ['evangelism','registration_desk','public_form','manual','other'].forEach(function (s) { %>
+            <option value="<%= s %>" <%= source === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </label>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Apply</button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Create contact</h2>
+    <% if (dups.length) { %>
+      <div class="bb-hq-banner bb-hq-banner--error" role="alert">
+        <p>Possible duplicates found. Review below, then confirm to create anyway.</p>
+        <ul>
+          <% dups.forEach(function (m) { %>
+            <li>
+              <a href="/hq/member-journey/contacts/<%= m.id %>"><%= m.firstName %> <%= m.lastName %></a>
+              · <%= m.emailDisplay || '—' %> · <%= m.phoneDisplay || '—' %>
+              · <%= m.status %><% if (m.memberId) { %> · linked<% } %>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+    <form method="post" action="/hq/member-journey/contacts" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <% if (dups.length) { %>
+        <input type="hidden" name="confirmDuplicates" value="1"/>
+      <% } %>
+      <label>First name <input name="firstName" required maxlength="100" value="<%= formState.firstName || '' %>"/></label>
+      <label>Last name <input name="lastName" required maxlength="100" value="<%= formState.lastName || '' %>"/></label>
+      <label>Email <input name="email" type="email" maxlength="254" value="<%= formState.email || '' %>"/></label>
+      <label>Phone <input name="phone" maxlength="40" value="<%= formState.phone || '' %>"/></label>
+      <label>Source
+        <select name="sourceType">
+          <% ['manual','evangelism','registration_desk','public_form','other'].forEach(function (s) { %>
+            <option value="<%= s %>" <%= (formState.sourceType || 'manual') === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </label>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary"><%= dups.length ? 'Create anyway' : 'Create contact' %></button>
+    </form>
+  </section>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Contacts (<%= totalSafe %>)</h2>
+    <% if (!rows.length) { %>
+      <p>No contacts found.</p>
+    <% } else { %>
+      <ul class="bb-hq-list">
+        <% rows.forEach(function (row) { %>
+          <li>
+            <a href="/hq/member-journey/contacts/<%= row.id %>"><%= row.firstName %> <%= row.lastName %></a>
+            · <%= row.sourceType %> · <%= row.status %>
+            <% if (row.followUpStatus) { %> · follow-up: <%= row.followUpStatus %><% } %>
+          </li>
+        <% }) %>
+      </ul>
+      <% if (totalPages > 1) { %>
+        <p>
+          Page <%= pageSafe %> of <%= totalPages %>
+          <% if (pageSafe > 1) { %> · <a href="<%= pageHref(pageSafe - 1) %>">Previous</a><% } %>
+          <% if (pageSafe < totalPages) { %> · <a href="<%= pageHref(pageSafe + 1) %>">Next</a><% } %>
+        </p>
+      <% } %>
+    <% } %>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>
