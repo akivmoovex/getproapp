@@ -10,9 +10,6 @@ const path = require("path");
 const ejs = require("ejs");
 const express = require("express");
 
-const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const {
@@ -30,12 +27,20 @@ const {
   updateGivingEntry,
   submitGivingEntry,
   approveGivingEntry,
+  rejectGivingEntry,
+  adjustGivingEntry,
+  reverseGivingEntry,
   voidGivingEntry,
   getGivingEntry,
   listGivingEntries,
   listGivingCategories,
   getMonthlyGivingSummary,
+  evaluateApprovalSeparation,
+  safeFinanceErrorMessage,
+  ERROR_CODES,
 } = require("../services/givingService");
+const { authorize } = require("../services/blessBoardRbacAuthorizationService");
+const { aliasesFor } = require("../services/financeSeparation");
 const {
   listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
@@ -50,7 +55,32 @@ const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard",
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const LIST_LIMIT = 50;
-const ENTRY_STATUSES = Object.freeze(["draft", "submitted", "approved", "void"]);
+const ENTRY_STATUSES = Object.freeze([
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+  "void",
+  "reversed",
+]);
+
+async function hasAnyPermission(pool, { userId, tenant, branchId, permissionKey }) {
+  const resourceContext = {
+    organizationId: tenant.organization.id,
+    churchId: tenant.church.id,
+    branchId: branchId || null,
+  };
+  for (const key of aliasesFor(permissionKey)) {
+    const result = await authorize(pool, {
+      actor: { userId },
+      permission: key,
+      tenantContext: tenant,
+      resourceContext,
+    });
+    if (result.allowed) return true;
+  }
+  return false;
+}
 
 function renderView(relativePath, data) {
   const filename = path.join(VIEWS_ROOT, relativePath);
@@ -97,8 +127,14 @@ function formError(reason) {
   if (reason === "status_locked" || reason === "not_draft") {
     return "This entry cannot be changed in its current status.";
   }
-  if (reason === "void_reason") {
-    return "A void reason is required.";
+  if (reason === "void_reason" || reason === ERROR_CODES.FINANCE_REASON_REQUIRED) {
+    return "A reason is required.";
+  }
+  if (reason === ERROR_CODES.FINANCE_SELF_APPROVAL_DENIED) {
+    return safeFinanceErrorMessage(ERROR_CODES.FINANCE_SELF_APPROVAL_DENIED);
+  }
+  if (reason === ERROR_CODES.FINANCE_STALE_TRANSITION || reason === "already_approved") {
+    return safeFinanceErrorMessage(ERROR_CODES.FINANCE_STALE_TRANSITION);
   }
   return "Please check the form and try again.";
 }
@@ -122,18 +158,11 @@ function createGivingAdminRouter(deps) {
   const shellKind = variant === "hq" ? "hq" : "branch";
   const loginNext = variant === "hq" ? "/hq/giving" : "/branch-admin/giving";
 
-  const allowedRoles =
-    variant === "hq"
-      ? ["church_hq_admin", "platform_admin"]
-      : ["platform_admin", "church_hq_admin", "branch_admin"];
-
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
 
   const rejectApex = createRejectApex({
     isApexHost,
     sendUnavailable,
-    // Branch modules must match /branch-admin shell: allow apex when session tenant resolves.
     mode: "unlessTenant",
   });
 
@@ -141,11 +170,31 @@ function createGivingAdminRouter(deps) {
     loginNext,
   });
 
-  function gate(req, res, next) {
+  async function gate(req, res, next) {
     if (!requireSession(req, res, { loginNext: req.originalUrl || loginNext })) {
       return;
     }
-    return requireAccess(req, res, next);
+    try {
+      const session = req.v5Session && req.v5Session.session;
+      const tenant = resolveTenantForAuthorization(req);
+      if (!session || !session.userId || !tenant || tenant.resolved !== true) {
+        return sendControlled(req, res, 403, "You do not have access to this site.", shellKind);
+      }
+      const branchId =
+        tenant.primaryBranch && tenant.primaryBranch.id ? tenant.primaryBranch.id : null;
+      const allowed = await hasAnyPermission(getPool(), {
+        userId: session.userId,
+        tenant,
+        branchId,
+        permissionKey: "finance.transactions.view",
+      });
+      if (!allowed) {
+        return sendControlled(req, res, 404, "Giving entry not found.", shellKind);
+      }
+      return next();
+    } catch {
+      return sendControlled(req, res, 503, "Access check is temporarily unavailable.", shellKind);
+    }
   }
 
   async function shellLocals(req, res, extra) {
@@ -421,23 +470,84 @@ function createGivingAdminRouter(deps) {
       const scope = await resolveScope(req, res);
       if (!scope) return;
       const id = String(req.params.id || "");
-      const entry = await loadScopedEntry(req, res, scope, id);
-      if (!entry) return;
+      const loaded = await getGivingEntry(getPool(), {
+        id,
+        churchId: scope.churchId,
+        scopeBranchId: scope.branchId,
+        actorUserId: scope.actorUserId,
+        tenant: scope.tenant,
+      });
+      if (!loaded.ok || !loaded.entry) {
+        return sendControlled(req, res, 404, "Giving entry not found.", shellKind);
+      }
+      const entry = loaded.entry;
       const cats = await listGivingCategories(getPool(), { churchId: scope.churchId });
+      const canApprovePerm = await hasAnyPermission(getPool(), {
+        userId: scope.actorUserId,
+        tenant: scope.tenant,
+        branchId: entry.branchId,
+        permissionKey: "finance.transactions.approve",
+      });
+      const canRejectPerm = await hasAnyPermission(getPool(), {
+        userId: scope.actorUserId,
+        tenant: scope.tenant,
+        branchId: entry.branchId,
+        permissionKey: "finance.transactions.reject",
+      });
+      const canVoidPerm = await hasAnyPermission(getPool(), {
+        userId: scope.actorUserId,
+        tenant: scope.tenant,
+        branchId: entry.branchId,
+        permissionKey: "finance.transactions.void",
+      });
+      const canAdjustPerm = await hasAnyPermission(getPool(), {
+        userId: scope.actorUserId,
+        tenant: scope.tenant,
+        branchId: entry.branchId,
+        permissionKey: "finance.transactions.adjust",
+      });
+      const canReversePerm = await hasAnyPermission(getPool(), {
+        userId: scope.actorUserId,
+        tenant: scope.tenant,
+        branchId: entry.branchId,
+        permissionKey: "finance.transactions.reverse",
+      });
+      const canEditPerm = await hasAnyPermission(getPool(), {
+        userId: scope.actorUserId,
+        tenant: scope.tenant,
+        branchId: entry.branchId,
+        permissionKey: "finance.transactions.edit_draft",
+      });
+      const sod = evaluateApprovalSeparation(entry, scope.actorUserId);
       const html = renderView(
         "giving/admin-detail.ejs",
         await shellLocals(req, res, {
           pageTitle: entry.categoryLabel || "Giving entry",
           basePath: scope.basePath,
           entry,
+          events: loaded.events || [],
           categories: cats.ok ? cats.categories : [],
           isHq: variant === "hq",
-          canEdit: entry.status === "draft",
+          readOnly: !(canEditPerm && entry.status === "draft"),
+          canEdit: Boolean(canEditPerm && entry.status === "draft"),
+          canSubmit: Boolean(canEditPerm && entry.status === "draft"),
+          canApprove: Boolean(
+            canApprovePerm && entry.status === "submitted" && sod.ok
+          ),
+          canReject: Boolean(
+            canRejectPerm && entry.status === "submitted" && sod.ok
+          ),
+          approvalBlockedReason:
+            entry.status === "submitted" && canApprovePerm && !sod.ok
+              ? sod.safeMessage
+              : null,
           canVoid:
-            entry.status === "draft" ||
-            (variant === "hq" && entry.status !== "void"),
+            (entry.status === "draft" && canEditPerm) ||
+            (canVoidPerm && entry.status !== "void" && entry.status !== "reversed"),
+          canAdjust: Boolean(canAdjustPerm && entry.status === "approved"),
+          canReverse: Boolean(canReversePerm && entry.status === "approved"),
           saved: String((req.query && req.query.saved) || ""),
-          error: null,
+          error: String((req.query && req.query.error) || "") || null,
         })
       );
       return res.status(200).type("html").send(html);
@@ -582,9 +692,86 @@ function createGivingAdminRouter(deps) {
           tenant: scope.tenant,
         });
         if (!approved.ok) {
-          return sendControlled(req, res, 400, "Could not approve giving entry.", shellKind);
+          const msg = approved.safeMessage || formError(approved.reason);
+          return res.redirect(
+            303,
+            `${scope.basePath}/${id}?error=${encodeURIComponent(msg)}`
+          );
         }
         return res.redirect(303, `${scope.basePath}/${id}?saved=approved`);
+      });
+
+      router.post(`${mountPrefix}/:id/reject`, rejectApex, gate, async (req, res) => {
+        if (!validateCsrfPost(req, res)) return;
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        const id = String(req.params.id || "");
+        if (!UUID_RE.test(id)) {
+          return sendControlled(req, res, 404, "Giving entry not found.", shellKind);
+        }
+        const body = req.body || {};
+        const rejected = await rejectGivingEntry(getPool(), {
+          id,
+          churchId: scope.churchId,
+          actorUserId: scope.actorUserId,
+          tenant: scope.tenant,
+          rejectionReason: body.rejection_reason,
+        });
+        if (!rejected.ok) {
+          const msg = rejected.safeMessage || formError(rejected.reason);
+          return res.redirect(
+            303,
+            `${scope.basePath}/${id}?error=${encodeURIComponent(msg)}`
+          );
+        }
+        return res.redirect(303, `${scope.basePath}/${id}?saved=rejected`);
+      });
+
+      router.post(`${mountPrefix}/:id/adjust`, rejectApex, gate, async (req, res) => {
+        if (!validateCsrfPost(req, res)) return;
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        const id = String(req.params.id || "");
+        const body = req.body || {};
+        const adjusted = await adjustGivingEntry(getPool(), {
+          id,
+          churchId: scope.churchId,
+          actorUserId: scope.actorUserId,
+          tenant: scope.tenant,
+          amount: body.amount,
+          adjustmentReason: body.adjustment_reason,
+        });
+        if (!adjusted.ok) {
+          const msg = adjusted.safeMessage || formError(adjusted.reason);
+          return res.redirect(
+            303,
+            `${scope.basePath}/${id}?error=${encodeURIComponent(msg)}`
+          );
+        }
+        return res.redirect(303, `${scope.basePath}/${id}?saved=adjusted`);
+      });
+
+      router.post(`${mountPrefix}/:id/reverse`, rejectApex, gate, async (req, res) => {
+        if (!validateCsrfPost(req, res)) return;
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        const id = String(req.params.id || "");
+        const body = req.body || {};
+        const reversed = await reverseGivingEntry(getPool(), {
+          id,
+          churchId: scope.churchId,
+          actorUserId: scope.actorUserId,
+          tenant: scope.tenant,
+          reversalReason: body.reversal_reason,
+        });
+        if (!reversed.ok) {
+          const msg = reversed.safeMessage || formError(reversed.reason);
+          return res.redirect(
+            303,
+            `${scope.basePath}/${id}?error=${encodeURIComponent(msg)}`
+          );
+        }
+        return res.redirect(303, `${scope.basePath}/${id}?saved=reversed`);
       });
     }
   }

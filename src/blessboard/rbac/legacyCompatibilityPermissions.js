@@ -12,6 +12,8 @@
  * Permissions granted to preserve current platform_admin shell/ops behaviour.
  * Explicitly excludes pastoral-confidential and safeguarding permission keys
  * (pastoral_cases.*, pastoral_referrals.*, welfare_cases.*).
+ * Explicitly excludes Finance transaction / export / bank / welfare disbursement keys
+ * (Prompt 5: Platform Administrators denied transaction-level Finance by default).
  * Does not grant data.export by default (sensitive; not required for current PA shells).
  */
 const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([
@@ -32,11 +34,7 @@ const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([
   "website.view",
   "website.edit",
   "website.publish",
-  "giving.view_summary",
-  "giving.record",
-  "giving.submit",
-  "giving.approve",
-  "giving.void",
+  // No giving.* / finance.transactions.* — PA denied transaction-level Finance by default.
   "requests.view",
   "requests.manage",
   "roles.view",
@@ -81,6 +79,9 @@ const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([
 /**
  * Permissions granted to preserve current church_hq_admin HQ shell/ops.
  * Church-scoped at evaluation time via legacy role churchId.
+ * Temporary Finance compatibility (documented): giving.view_summary/record/submit/approve/void
+ * required to preserve current HQ giving workflows. Does NOT grant finance.data.export,
+ * finance.bank_details.view, finance.periods.close, or finance.welfare_disbursement.record.
  */
 const CHURCH_HQ_ADMIN_PERMISSIONS = Object.freeze([
   "organisation.view",
@@ -105,6 +106,14 @@ const CHURCH_HQ_ADMIN_PERMISSIONS = Object.freeze([
   "giving.submit",
   "giving.approve",
   "giving.void",
+  "finance.transactions.view",
+  "finance.transactions.create",
+  "finance.transactions.edit_draft",
+  "finance.transactions.submit",
+  "finance.transactions.approve",
+  "finance.transactions.reject",
+  "finance.transactions.void",
+  "finance.reports.view",
   "requests.view",
   "requests.manage",
   "roles.view",
@@ -150,6 +159,8 @@ const CHURCH_HQ_ADMIN_PERMISSIONS = Object.freeze([
  * Permissions granted to preserve current branch_admin branch shell/ops.
  * Branch-scoped at evaluation time via legacy role branchId — never expanded.
  * No giving.approve, roles.assign_*, roles.revoke, data.export, branches.create/archive.
+ * Temporary branch Finance compatibility: giving.view_summary/record/submit only.
+ * Does NOT grant finance.transactions.approve/void/export/bank/welfare_disbursement.
  */
 const BRANCH_ADMIN_PERMISSIONS = Object.freeze([
   "organisation.view",
@@ -168,6 +179,11 @@ const BRANCH_ADMIN_PERMISSIONS = Object.freeze([
   "giving.view_summary",
   "giving.record",
   "giving.submit",
+  "finance.transactions.view",
+  "finance.transactions.create",
+  "finance.transactions.edit_draft",
+  "finance.transactions.submit",
+  "finance.reports.view",
   "requests.view",
   "requests.manage",
   // Minimal journey compatibility — not full journey admin

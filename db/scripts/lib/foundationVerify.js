@@ -67,6 +67,7 @@ const APPROVED_PRODUCT_TABLES = Object.freeze({
     "forms",
     "giving_categories",
     "giving_entries",
+    "giving_entry_events",
     "giving_methods",
     "journey_contacts",
     "leaders",

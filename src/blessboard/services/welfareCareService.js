@@ -541,31 +541,104 @@ async function getWelfareRequestDetail(db, input) {
 
 /**
  * Finance-facing payload: payment instructions only, no operational pastoral summary.
+ * Allowed for finance.welfare_instructions.view, or welfare viewers that already
+ * use this safe projection (does not grant pastoral note bodies).
  */
 async function getWelfareFinanceInstructions(db, input) {
-  const detail = await getWelfareRequestDetail(db, { ...input, financeView: true });
-  if (!detail.ok) return detail;
-  if (String(detail.request.status) !== "approved" && String(detail.request.status) !== "distributed") {
-    return { ok: false, status: STATUS.FORBIDDEN, reason: "not_approved" };
+  const requestId = String((input && input.requestId) || "").trim();
+  const actorUserId = String((input && input.actorUserId) || "").trim();
+  if (!UUID_RE.test(requestId) || !UUID_RE.test(actorUserId)) {
+    return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
   }
-  const latestApproval = [...(detail.approvals || [])]
-    .reverse()
-    .find((a) => a.decision === "approved");
-  return {
-    ok: true,
-    status: STATUS.OK,
-    payment: {
-      requestId: detail.request.id,
-      amountApproved: latestApproval ? latestApproval.amountApproved : null,
-      currencyCode: detail.request.currencyCode,
-      financeInstructionSummary: latestApproval
-        ? latestApproval.financeInstructionSummary
-        : null,
-      assistanceType: detail.request.assistanceType,
-      memberId: detail.request.memberId,
-      branchId: detail.request.branchId,
-    },
-  };
+  try {
+    return await withClient(db, async (client) => {
+      const financeView = await authorize(client, {
+        actor: { userId: actorUserId },
+        permission: "finance.welfare_instructions.view",
+        tenantContext: input.tenantContext,
+        resourceContext: resourceBase(input),
+      });
+      const welfareView = await authorize(client, {
+        actor: { userId: actorUserId },
+        permission: "welfare_cases.view_assigned",
+        tenantContext: input.tenantContext,
+        resourceContext: resourceBase(input),
+      });
+      const welfareApprove = await authorize(client, {
+        actor: { userId: actorUserId },
+        permission: "welfare_cases.approve_assistance",
+        tenantContext: input.tenantContext,
+        resourceContext: resourceBase(input),
+      });
+      if (!financeView.allowed && !welfareView.allowed && !welfareApprove.allowed) {
+        return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
+      }
+
+      const reqR = await client.query(
+        `SELECT * FROM blessboard.welfare_requests WHERE id = $1 AND church_id = $2 LIMIT 1`,
+        [requestId, input.churchId]
+      );
+      const request = reqR.rows[0];
+      if (!request) return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
+      if (String(request.status) !== "approved" && String(request.status) !== "distributed") {
+        return { ok: false, status: STATUS.FORBIDDEN, reason: "not_approved" };
+      }
+
+      const approvals = await client.query(
+        `SELECT id, actor_user_id, decision, amount_approved,
+                finance_instruction_summary, created_at
+           FROM blessboard.welfare_approvals
+          WHERE welfare_request_id = $1
+          ORDER BY created_at ASC`,
+        [requestId]
+      );
+      const latestApproval = [...approvals.rows]
+        .reverse()
+        .find((a) => a.decision === "approved");
+
+      if (financeView.allowed) {
+        try {
+          await recordBlessBoardAudit(client, {
+            organizationId: request.organization_id,
+            churchId: request.church_id,
+            branchId: request.branch_id,
+            actorUserId,
+            actionKey: "finance.welfare_instruction.viewed",
+            entityType: "welfare_request",
+            entityId: request.id,
+            metadata: { status: request.status },
+          });
+        } catch {
+          // ignore audit failure
+        }
+      }
+
+      return {
+        ok: true,
+        status: STATUS.OK,
+        payment: {
+          requestId: request.id,
+          amountApproved: latestApproval ? latestApproval.amount_approved : null,
+          currencyCode: request.currency_code,
+          financeInstructionSummary: latestApproval
+            ? latestApproval.finance_instruction_summary
+            : null,
+          assistanceType: request.assistance_type,
+          memberId: request.member_id,
+          branchId: request.branch_id,
+          authorizationStatus: request.status,
+          approvedDate: latestApproval ? latestApproval.created_at : null,
+          approvalReference: latestApproval ? latestApproval.id : null,
+        },
+      };
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reason: err && err.message ? String(err.message) : "error",
+    };
+  }
 }
 
 module.exports = {

@@ -219,7 +219,7 @@ describe("blessboard giving", () => {
     );
     assert.deepEqual(
       tables.rows.map((r) => r.table_name),
-      ["giving_categories", "giving_entries", "giving_methods"]
+      ["giving_categories", "giving_entries", "giving_entry_events", "giving_methods"]
     );
 
     const amountCol = await pool.query(
