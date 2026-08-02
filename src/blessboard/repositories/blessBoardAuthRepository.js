@@ -14,7 +14,7 @@ async function findUserByEmail(client, emailNormalized) {
     `SELECT id, email_normalized, email_display, password_hash, status, display_name,
             created_at, updated_at, password_changed_at, last_login_at,
             password_change_required, sign_in_locked_until,
-            phone_normalized, phone_display
+            phone_normalized, phone_display, phone_verified_at
        FROM blessboard.users
       WHERE email_normalized = $1
       LIMIT 1`,
@@ -33,7 +33,7 @@ async function findUserByPhone(client, phoneNormalized) {
     `SELECT id, email_normalized, email_display, password_hash, status, display_name,
             created_at, updated_at, password_changed_at, last_login_at,
             password_change_required, sign_in_locked_until,
-            phone_normalized, phone_display
+            phone_normalized, phone_display, phone_verified_at
        FROM blessboard.users
       WHERE phone_normalized = $1
       ORDER BY created_at ASC

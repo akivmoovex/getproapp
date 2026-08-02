@@ -14,6 +14,10 @@ const {
   rolesApplicableToOrganization,
   preferSessionRole,
 } = require("./establishBlessBoardSession");
+const {
+  resolvePhoneLoginStatus,
+  phoneMigrationPrompt,
+} = require("./phoneLoginStatus");
 
 const STATUS = Object.freeze({
   AUTHENTICATED: "authenticated",
@@ -187,7 +191,7 @@ async function authenticateBlessBoardUser(db, input) {
       client = null;
     }
 
-    return establishBlessBoardSession(db, {
+    const established = await establishBlessBoardSession(db, {
       userId: user.id,
       deploymentCode,
       requireOrganizationId,
@@ -195,6 +199,20 @@ async function authenticateBlessBoardUser(db, input) {
       userAgent: input.userAgent || null,
       createSession: input.createSession,
     });
+    if (!established || !established.ok) return established;
+
+    const phoneStatus = resolvePhoneLoginStatus(user);
+    return {
+      ...established,
+      phoneStatus,
+      phoneMigrationPrompt: phoneMigrationPrompt(phoneStatus),
+      /**
+       * Ambiguous global phone matches fail closed in findUserByPhone (null).
+       * Tenant is then applied via deployment host / requireOrganizationId /
+       * invitation context — never by picking the first matching account.
+       */
+      phoneResolution: "exact_global_or_fail_closed",
+    };
   } catch {
     return {
       ok: false,
