@@ -198,20 +198,29 @@ async function createJourneyContact(db, input) {
   const emailDisplay = input.email != null ? String(input.email).trim() : "";
   const phoneDisplay = input.phone != null ? String(input.phone).trim() : "";
   const sourceType = String((input && input.sourceType) || "manual").trim();
-  const emailNormalized = emailDisplay ? emailDisplay.toLowerCase() : null;
-  const phoneNormalized = phoneDisplay ? phoneDisplay.replace(/[^\d+]/g, "") : null;
+  const {
+    parsePhoneFirstContact,
+  } = require("./phoneFirstIdentityHelpers");
+  const contact = parsePhoneFirstContact(
+    { phone: phoneDisplay, email: emailDisplay, country: input.country },
+    { requirePhone: true }
+  );
+  if (!contact.ok) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      contact: null,
+      reason: contact.reason === "phone_required" ? "phone" : contact.reason,
+    };
+  }
+  const emailNormalized = contact.value.emailNormalized;
+  const phoneNormalized = contact.value.phoneNormalized;
 
   if (![actorUserId, organizationId, churchId, branchId].every((x) => UUID_RE.test(x))) {
     return { ok: false, status: STATUS.INVALID_INPUT, contact: null, reason: "ids" };
   }
   if (!firstName || !lastName) {
     return { ok: false, status: STATUS.INVALID_INPUT, contact: null, reason: "name" };
-  }
-  if (!emailNormalized && !phoneNormalized) {
-    return { ok: false, status: STATUS.INVALID_INPUT, contact: null, reason: "contact" };
-  }
-  if (emailNormalized && !EMAIL_RE.test(emailNormalized)) {
-    return { ok: false, status: STATUS.INVALID_INPUT, contact: null, reason: "email" };
   }
 
   try {
@@ -238,9 +247,9 @@ async function createJourneyContact(db, input) {
           firstName,
           lastName,
           emailNormalized,
-          emailDisplay || null,
+          contact.value.emailDisplay || null,
           phoneNormalized,
-          phoneDisplay || null,
+          contact.value.phoneDisplay || null,
           sourceType,
           input.membershipInterest || null,
           Boolean(input.decisionOfFaith),

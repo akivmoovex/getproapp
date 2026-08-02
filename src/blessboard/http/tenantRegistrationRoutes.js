@@ -45,8 +45,9 @@ const FIELD_ERROR_MESSAGES = Object.freeze({
   preferred_name_html: "Preferred name cannot include HTML characters.",
   preferred_name_len: "Preferred name is too long.",
   email: "Enter a valid email address.",
-  phone: "Enter a valid phone number.",
-  contact_required: "Provide at least an email or a phone number.",
+  phone: "Enter a valid mobile phone number.",
+  phone_required: "Mobile phone number is required.",
+  contact_required: "Mobile phone number is required. Email is optional.",
 });
 
 /**
@@ -64,9 +65,11 @@ function mapRegistrationFieldErrors(reason) {
     return { fieldErrors, summaryItems };
   }
 
-  if (key === "contact_required") {
-    const msg = FIELD_ERROR_MESSAGES.contact_required;
-    fieldErrors.email = msg;
+  if (key === "contact_required" || key === "phone_required") {
+    const msg =
+      key === "phone_required"
+        ? FIELD_ERROR_MESSAGES.phone_required
+        : FIELD_ERROR_MESSAGES.contact_required;
     fieldErrors.phone = msg;
     summaryItems.push(msg);
     return { fieldErrors, summaryItems };
@@ -79,6 +82,7 @@ function mapRegistrationFieldErrors(reason) {
     "preferred_name",
     "email",
     "phone",
+    "phone_required",
   ]);
   if (!knownFields.has(fieldKey) && !FIELD_ERROR_MESSAGES[key]) {
     return { fieldErrors, summaryItems };

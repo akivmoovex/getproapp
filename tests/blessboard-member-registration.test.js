@@ -228,9 +228,9 @@ describe("blessboard member registration http", () => {
     assert.match(res.text, /for="preferred_name"/);
     assert.match(res.text, /for="email"/);
     assert.match(res.text, /for="phone"/);
-    assert.match(res.text, /Email Address/);
-    assert.match(res.text, /Phone Number/);
-    assert.match(res.text, /Provide at least an email or a phone number/);
+    assert.match(res.text, /Mobile phone number/);
+    assert.match(res.text, /Email address, optional|optional/i);
+    assert.match(res.text, /Mobile phone is required/);
     assert.match(res.text, /Submit Registration/);
     assert.doesNotMatch(res.text, /name="church_id"|name="branch_id"|name="churchId"|name="branchId"/);
     assert.doesNotMatch(res.text, /name="password"|name="gender"|name="address"|Forgot password|waiting.?verification|email verification|SMS/i);
@@ -242,9 +242,12 @@ describe("blessboard member registration http", () => {
     assert.equal(missing.fieldErrors.firstName, "Enter your first name.");
     assert.equal(missing.summaryItems.length, 1);
 
-    const contact = mapRegistrationFieldErrors("contact_required");
-    assert.equal(contact.fieldErrors.email, contact.fieldErrors.phone);
-    assert.match(contact.fieldErrors.email, /email or a phone/i);
+    const contact = mapRegistrationFieldErrors("phone_required");
+    assert.match(contact.fieldErrors.phone, /mobile phone/i);
+    assert.equal(contact.fieldErrors.email, undefined);
+
+    const contactLegacy = mapRegistrationFieldErrors("contact_required");
+    assert.match(contactLegacy.fieldErrors.phone, /mobile phone|optional/i);
 
     const unknown = mapRegistrationFieldErrors("branch_ownership");
     assert.deepEqual(unknown.fieldErrors, {});
@@ -288,7 +291,7 @@ describe("blessboard member registration http", () => {
         phone: "",
       });
     assert.equal(contactMissing.status, 400);
-    assert.match(contactMissing.text, /Provide at least an email or a phone number/);
+    assert.match(contactMissing.text, /Mobile phone number is required/i);
     assert.match(contactMissing.text, /aria-invalid="true"/);
 
     const okForm = await request(app).get("/register").set("Host", HOST_A);
@@ -302,6 +305,7 @@ describe("blessboard member registration http", () => {
         [CSRF_FIELD]: okCsrf,
         first_name: "Sam",
         last_name: "Confirmed",
+        phone: "0977000111",
         email: "sam-confirmed@example.test",
       });
     assert.equal(ok.status, 303);
@@ -347,7 +351,7 @@ describe("blessboard member registration http", () => {
         first_name: "Nora",
         last_name: "Applicant",
         email: "nora@example.test",
-        phone: "",
+        phone: "0977000222",
       });
 
     assert.equal(post.status, 303);
@@ -379,6 +383,7 @@ describe("blessboard member registration http", () => {
         first_name: "Nora",
         last_name: "Again",
         email: "nora@example.test",
+        phone: "0977000222",
       });
 
     assert.equal(dup.status, 409);
@@ -401,6 +406,7 @@ describe("blessboard member registration http", () => {
         first_name: "Bad",
         last_name: "Csrf",
         email: "bad-csrf@example.test",
+        phone: "0977000333",
       });
     assert.equal(bad.status, 403);
   });
@@ -425,6 +431,7 @@ describe("blessboard member registration http", () => {
           first_name: "Rate",
           last_name: `Limit${i}`,
           email: `rate-limit-${i}@example.test`,
+          phone: `0977100${100 + i}`,
         });
       if (res.status === 429) {
         saw429 = true;
@@ -586,6 +593,7 @@ describe("blessboard member registration http", () => {
         first_name: "Cross",
         last_name: "Tenant",
         email: "cross-tenant@example.test",
+        phone: "0977000444",
       });
 
     const row = await pool.query(
@@ -859,6 +867,7 @@ describe("blessboard member registration http", () => {
         first_name: "East",
         last_name: "Member",
         email: "east-member@example.test",
+        phone: "0977000555",
       });
 
     const eastReg = await pool.query(
@@ -952,6 +961,7 @@ describe("blessboard member registration http", () => {
         first_name: "Campus",
         last_name: "Applicant",
         email: "campus-applicant@example.test",
+        phone: "0977000666",
       });
 
     await pool.query(

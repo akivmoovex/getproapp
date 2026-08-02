@@ -52,10 +52,11 @@
   function errorText(code) {
     if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
     if (code === 'email') return 'Enter a valid email address.';
-    if (code === 'phone' || code === 'phone_exists') {
-      return code === 'phone_exists'
-        ? 'A user with this phone number already exists in this church.'
-        : 'Enter a valid phone number.';
+    if (code === 'phone' || code === 'phone_exists' || code === 'pending_invitation' || code === 'tenant_duplicate') {
+      if (code === 'phone_exists') return 'A user with this phone number already exists in this church.';
+      if (code === 'pending_invitation') return 'A pending invitation already exists for this phone number.';
+      if (code === 'tenant_duplicate') return 'This phone number matches more than one record in this church.';
+      return 'Enter a valid phone number.';
     }
     if (code === 'name') return 'First and last name are required.';
     if (code === 'reason_required') return 'A reason is required for sensitive roles.';
@@ -88,18 +89,21 @@
 
   <% if (errorMsg) { %>
   <p class="bb-pa-flash bb-pa-flash--error" role="alert" data-bb-pa-invite-error="<%= error || '' %>"><%= errorMsg %></p>
-  <% if (String(error) === 'phone_exists') { %>
+  <% if (String(error) === 'phone_exists' || String(error) === 'pending_invitation') { %>
   <p class="bb-pa-list bb-pa-list--inline" data-bb-pa-phone-exists-actions="1">
-    <% if (existingUserId) { %>
+    <% if (String(error) === 'phone_exists' && existingUserId) { %>
     <a class="bb-pa-link" href="<%= basePath %>/<%= encodeURIComponent(existingUserId) %>">Open user</a>
     ·
     <a class="bb-pa-link" href="<%= basePath %>/<%= encodeURIComponent(existingUserId) %>">Review access</a>
     ·
     <a class="bb-pa-link" href="<%= basePath %>/<%= encodeURIComponent(existingUserId) %>">Assign another role</a>
+    ·
     <% } %>
+    <a class="bb-pa-link" href="<%= basePath %>">View invitation / Share again</a>
+    ·
     <a class="bb-pa-link" href="<%= basePath %>">Resend invitation</a>
     ·
-    <a class="bb-pa-link" href="/admin/users">Send password-reset link</a>
+    <a class="bb-pa-link" href="/admin/users">Reset access</a>
   </p>
   <% } %>
   <% } %>
@@ -128,13 +132,14 @@
         <input id="last_name" name="last_name" required maxlength="100" value="<%= draft.lastName || '' %>" />
       </div>
       <div class="bb-pa-field">
-        <label for="phone">Phone</label>
+        <label for="phone">Mobile phone number *</label>
         <input id="phone" name="phone" type="tel" required maxlength="40" value="<%= draft.phone || '' %>" autocomplete="tel" />
-        <p class="bb-pa-hint">Required. Local and international formats are normalized for this church.</p>
+        <p class="bb-pa-hint">Used for login, verification and invitations</p>
       </div>
       <div class="bb-pa-field">
-        <label for="email">Email (optional)</label>
-        <input id="email" name="email" type="email" maxlength="254" value="<%= draft.email || '' %>" />
+        <label for="email">Email address, optional</label>
+        <input id="email" name="email" type="email" maxlength="254" value="<%= draft.email || '' %>" autocomplete="email" />
+        <p class="bb-pa-hint">Used for additional notifications</p>
       </div>
       <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Continue to placement</button>
     </section>

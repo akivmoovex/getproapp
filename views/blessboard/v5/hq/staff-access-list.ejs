@@ -54,8 +54,8 @@
 
   <form method="get" action="/hq/settings/staff-access" class="bb-hq-card bb-hq-roles__form" aria-label="Filter staff">
     <div class="bb-hq-field">
-      <label for="staff-q">Search name or email</label>
-      <input id="staff-q" name="q" type="search" value="<%= f.q || '' %>" maxlength="200" autocomplete="off" />
+      <label for="staff-q">Search phone, name, or email</label>
+      <input id="staff-q" name="q" type="search" value="<%= f.q || '' %>" maxlength="200" autocomplete="off" placeholder="097… or name" />
     </div>
     <div class="bb-hq-field">
       <label for="staff-branch">Branch</label>
@@ -98,12 +98,12 @@
     <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Filter</button>
   </form>
 
-  <form method="post" action="/hq/settings/staff-access/assign" class="bb-hq-card bb-hq-roles__form" aria-label="Open user by email">
+  <form method="post" action="/hq/settings/staff-access/assign" class="bb-hq-card bb-hq-roles__form" aria-label="Open user by phone or email">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
     <h2 class="bb-hq-section-title">Open staff member</h2>
     <div class="bb-hq-field">
-      <label for="open-email">Email</label>
-      <input id="open-email" name="email" type="email" required maxlength="254" autocomplete="off" />
+      <label for="open-email">Phone or email</label>
+      <input id="open-email" name="email" type="text" required maxlength="254" autocomplete="off" placeholder="097… or name@example.com" />
     </div>
     <button type="submit" class="bb-hq-btn">Open access detail</button>
   </form>
@@ -117,7 +117,7 @@
       <% rows.forEach(function (u) { %>
       <li>
         <a href="/hq/settings/staff-access/<%= u.id %>"><strong><%= u.displayName %></strong></a>
-        <span class="bb-hq-muted"> · <%= u.emailDisplay %></span>
+        <span class="bb-hq-muted"> · <%= u.phoneMasked || u.emailDisplay || '—' %></span>
         <span class="bb-hq-chip <%= statusClass(u.status) %>"><%= u.status %></span>
         <% if (u.hasLegacy) { %><span class="bb-hq-chip bb-hq-chip--pending">Legacy compatibility</span><% } %>
         <% if (u.hasExpired) { %><span class="bb-hq-chip bb-hq-chip--muted">Expired assignment</span><% } %>

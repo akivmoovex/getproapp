@@ -74,8 +74,8 @@
       <% } %>
       <label>First name <input name="firstName" required maxlength="100" value="<%= formState.firstName || '' %>"/></label>
       <label>Last name <input name="lastName" required maxlength="100" value="<%= formState.lastName || '' %>"/></label>
-      <label>Email <input name="email" type="email" maxlength="254" value="<%= formState.email || '' %>"/></label>
-      <label>Phone <input name="phone" maxlength="40" value="<%= formState.phone || '' %>"/></label>
+      <label>Mobile phone number * <input name="phone" type="tel" required maxlength="40" value="<%= formState.phone || '' %>" autocomplete="tel"/></label>
+      <label>Email address, optional <input name="email" type="email" maxlength="254" value="<%= formState.email || '' %>" autocomplete="email"/></label>
       <label>Source
         <select name="sourceType">
           <% ['manual','evangelism','registration_desk','public_form','other'].forEach(function (s) { %>

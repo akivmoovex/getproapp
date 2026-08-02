@@ -98,7 +98,12 @@ async function listStaffAccess(db, input) {
     return { ok: false, status: STATUS.INVALID_INPUT, users: [], reason: "ids" };
   }
 
-  const q = String((input && input.q) || "").trim().toLowerCase();
+  const qRaw = String((input && input.q) || "").trim();
+  const {
+    prepareIdentitySearchQuery,
+  } = require("./phoneFirstIdentityHelpers");
+  const search = prepareIdentitySearchQuery(qRaw);
+  const q = search.raw.toLowerCase();
   const branchId = input.branchId ? String(input.branchId).trim() : "";
   const roleKey = input.roleKey ? String(input.roleKey).trim() : "";
   const assignmentStatus = input.assignmentStatus
@@ -139,11 +144,20 @@ async function listStaffAccess(db, input) {
         )
       `;
       if (q) {
-        params.push(`%${q}%`);
+        params.push(search.like);
+        const likeIdx = params.length;
+        let phoneClause = "";
+        if (search.phoneNormalized) {
+          params.push(search.phoneNormalized);
+          phoneClause = ` OR u.phone_normalized = $${params.length}`;
+        }
         where += ` AND (
-          lower(COALESCE(u.display_name, '')) LIKE $${params.length}
-          OR lower(u.email_normalized) LIKE $${params.length}
-          OR lower(COALESCE(u.email_display, '')) LIKE $${params.length}
+          lower(COALESCE(u.display_name, '')) LIKE $${likeIdx}
+          OR lower(COALESCE(u.email_normalized, '')) LIKE $${likeIdx}
+          OR lower(COALESCE(u.email_display, '')) LIKE $${likeIdx}
+          OR lower(COALESCE(u.phone_display, '')) LIKE $${likeIdx}
+          OR COALESCE(u.phone_normalized, '') LIKE $${likeIdx}
+          ${phoneClause}
         )`;
       }
       if (branchId && UUID_RE.test(branchId)) {
@@ -199,13 +213,20 @@ async function listStaffAccess(db, input) {
       }
 
       params.push(limit, offset);
+      const limitIdx = params.length - 1;
+      const offsetIdx = params.length;
+      let orderBy = `lower(COALESCE(u.display_name, u.email_normalized, u.phone_normalized)) ASC`;
+      if (search.phoneNormalized) {
+        params.push(search.phoneNormalized);
+        orderBy = `CASE WHEN u.phone_normalized = $${params.length} THEN 0 ELSE 1 END ASC, ${orderBy}`;
+      }
       const r = await client.query(
         `SELECT u.id, u.email_display, u.email_normalized, u.display_name, u.status,
-                u.created_at
+                u.created_at, u.phone_normalized, u.phone_display
            FROM blessboard.users u
           WHERE ${where}
-          ORDER BY lower(COALESCE(u.display_name, u.email_normalized)) ASC
-          LIMIT $${params.length - 1} OFFSET $${params.length}`,
+          ORDER BY ${orderBy}
+          LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
         params
       );
 
@@ -259,10 +280,19 @@ async function listStaffAccess(db, input) {
           );
         }
 
+        const { maskBlessBoardPhone } = require("./phoneFirstIdentityHelpers");
         users.push({
           id: row.id,
           emailDisplay: row.email_display || row.email_normalized,
-          displayName: row.display_name || row.email_display || row.email_normalized,
+          phoneDisplay: row.phone_display || row.phone_normalized || null,
+          phoneMasked: row.phone_normalized
+            ? maskBlessBoardPhone(row.phone_normalized)
+            : null,
+          displayName:
+            row.display_name ||
+            row.email_display ||
+            row.phone_display ||
+            row.email_normalized,
           status: row.status,
           activeRoles,
           hasLegacy: legacy.rows.length > 0,
@@ -727,39 +757,65 @@ async function listAssignableScopeOptions(db, input) {
 async function findUserInOrganisation(db, input) {
   const organizationId = String((input && input.organizationId) || "").trim();
   const churchId = String((input && input.churchId) || "").trim();
-  const email = String((input && input.email) || "")
-    .trim()
-    .toLowerCase();
-  if (!UUID_RE.test(organizationId) || !email) {
+  const identifier = String((input && (input.email || input.identifier || input.phone)) || "")
+    .trim();
+  if (!UUID_RE.test(organizationId) || !identifier) {
     return { ok: false, status: STATUS.INVALID_INPUT, user: null };
   }
+  const {
+    prepareIdentitySearchQuery,
+  } = require("./phoneFirstIdentityHelpers");
+  const search = prepareIdentitySearchQuery(identifier);
+  const email = identifier.includes("@") ? identifier.toLowerCase() : "";
   try {
     return await withClient(db, async (client) => {
-      const r = await client.query(
-        `SELECT u.id, u.email_display, u.email_normalized, u.display_name, u.status
-           FROM blessboard.users u
-          WHERE u.email_normalized = $1
-            AND (
-              EXISTS (
-                SELECT 1 FROM blessboard.user_roles ur
-                 WHERE ur.user_id = u.id AND ur.organization_id = $2
+      let r;
+      if (search.phoneNormalized) {
+        r = await client.query(
+          `SELECT u.id, u.email_display, u.email_normalized, u.display_name, u.status,
+                  u.phone_normalized, u.phone_display
+             FROM blessboard.users u
+             JOIN blessboard.organization_staff_phones osp
+               ON osp.user_id = u.id AND osp.organization_id = $2
+            WHERE osp.phone_normalized = $1
+            LIMIT 1`,
+          [search.phoneNormalized, organizationId]
+        );
+      } else if (email) {
+        r = await client.query(
+          `SELECT u.id, u.email_display, u.email_normalized, u.display_name, u.status,
+                  u.phone_normalized, u.phone_display
+             FROM blessboard.users u
+            WHERE u.email_normalized = $1
+              AND (
+                EXISTS (
+                  SELECT 1 FROM blessboard.user_roles ur
+                   WHERE ur.user_id = u.id AND ur.organization_id = $2
+                )
+                OR EXISTS (
+                  SELECT 1 FROM blessboard.user_role_assignments a
+                   WHERE a.user_id = u.id AND a.organization_id = $2
+                )
               )
-              OR EXISTS (
-                SELECT 1 FROM blessboard.user_role_assignments a
-                 WHERE a.user_id = u.id AND a.organization_id = $2
-              )
-            )
-          LIMIT 1`,
-        [email, organizationId]
-      );
+            LIMIT 1`,
+          [email, organizationId]
+        );
+      } else {
+        return { ok: false, status: STATUS.INVALID_INPUT, user: null };
+      }
       const user = r.rows[0];
       if (!user) return { ok: false, status: STATUS.NOT_FOUND, user: null };
+      const { maskBlessBoardPhone } = require("./phoneFirstIdentityHelpers");
       return {
         ok: true,
         status: STATUS.OK,
         user: {
           id: user.id,
           emailDisplay: user.email_display || user.email_normalized,
+          phoneDisplay: user.phone_display || user.phone_normalized || null,
+          phoneMasked: user.phone_normalized
+            ? maskBlessBoardPhone(user.phone_normalized)
+            : null,
           displayName: user.display_name,
           status: user.status,
         },

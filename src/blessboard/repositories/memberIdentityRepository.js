@@ -359,7 +359,8 @@ async function findChurchById(client, churchId) {
 
 async function findUserById(client, userId) {
   const { rows } = await client.query(
-    `SELECT id, email_normalized, email_display, display_name, status
+    `SELECT id, email_normalized, email_display, display_name, status,
+            phone_normalized, phone_display
        FROM blessboard.users
       WHERE id = $1
       LIMIT 1`,
@@ -408,13 +409,28 @@ async function listRegistrations(client, input) {
     params.push(status);
   }
   if (q) {
-    const like = `%${q.toLowerCase().replace(/[%_]/g, "")}%`;
-    where.push(
-      `(lower(r.first_name) LIKE $${i} OR lower(r.last_name) LIKE $${i} OR lower(COALESCE(r.preferred_name, '')) LIKE $${i}
-        OR lower(COALESCE(r.email_normalized, '')) LIKE $${i} OR COALESCE(r.phone_normalized, '') LIKE $${i})`
-    );
-    params.push(like);
-    i += 1;
+    const {
+      prepareIdentitySearchQuery,
+    } = require("../services/phoneFirstIdentityHelpers");
+    const search = prepareIdentitySearchQuery(q);
+    if (search.phoneNormalized) {
+      where.push(
+        `(r.phone_normalized = $${i}
+          OR lower(r.first_name) LIKE $${i + 1} OR lower(r.last_name) LIKE $${i + 1}
+          OR lower(COALESCE(r.preferred_name, '')) LIKE $${i + 1}
+          OR lower(COALESCE(r.email_normalized, '')) LIKE $${i + 1})`
+      );
+      params.push(search.phoneNormalized, search.like);
+      i += 2;
+    } else {
+      const like = `%${q.toLowerCase().replace(/[%_]/g, "")}%`;
+      where.push(
+        `(lower(r.first_name) LIKE $${i} OR lower(r.last_name) LIKE $${i} OR lower(COALESCE(r.preferred_name, '')) LIKE $${i}
+          OR lower(COALESCE(r.email_normalized, '')) LIKE $${i} OR COALESCE(r.phone_normalized, '') LIKE $${i})`
+      );
+      params.push(like);
+      i += 1;
+    }
   }
 
   const whereSql = where.join(" AND ");
@@ -491,13 +507,30 @@ async function listMembersForBranch(client, input) {
     params.push(membershipStatus);
   }
   if (q) {
-    const like = `%${q.toLowerCase().replace(/[%_]/g, "")}%`;
-    where.push(
-      `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
-        OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i})`
-    );
-    params.push(like);
-    i += 1;
+    const {
+      prepareIdentitySearchQuery,
+    } = require("../services/phoneFirstIdentityHelpers");
+    const search = prepareIdentitySearchQuery(q);
+    const like = search.like;
+    // Use normalized phone equality when query looks like a phone.
+    if (search.phoneNormalized) {
+      where.push(
+        `(m.phone_normalized = $${i}
+          OR lower(m.first_name) LIKE $${i + 1} OR lower(m.last_name) LIKE $${i + 1}
+          OR lower(COALESCE(m.preferred_name, '')) LIKE $${i + 1}
+          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1})`
+      );
+      params.push(search.phoneNormalized, like);
+      i += 2;
+    } else {
+      where.push(
+        `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
+          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i}
+          OR lower(COALESCE(m.phone_display, '')) LIKE $${i})`
+      );
+      params.push(like);
+      i += 1;
+    }
   }
 
   const whereSql = where.join(" AND ");
@@ -613,13 +646,30 @@ async function listMembersForChurch(client, input) {
     params.push(status);
   }
   if (q) {
-    const like = `%${q.toLowerCase().replace(/[%_]/g, "")}%`;
-    where.push(
-      `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
-        OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i})`
-    );
-    params.push(like);
-    i += 1;
+    const {
+      prepareIdentitySearchQuery,
+    } = require("../services/phoneFirstIdentityHelpers");
+    const search = prepareIdentitySearchQuery(q);
+    const like = search.like;
+    // Use normalized phone equality when query looks like a phone.
+    if (search.phoneNormalized) {
+      where.push(
+        `(m.phone_normalized = $${i}
+          OR lower(m.first_name) LIKE $${i + 1} OR lower(m.last_name) LIKE $${i + 1}
+          OR lower(COALESCE(m.preferred_name, '')) LIKE $${i + 1}
+          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i + 1})`
+      );
+      params.push(search.phoneNormalized, like);
+      i += 2;
+    } else {
+      where.push(
+        `(lower(m.first_name) LIKE $${i} OR lower(m.last_name) LIKE $${i} OR lower(COALESCE(m.preferred_name, '')) LIKE $${i}
+          OR lower(COALESCE(m.email_normalized, '')) LIKE $${i} OR COALESCE(m.phone_normalized, '') LIKE $${i}
+          OR lower(COALESCE(m.phone_display, '')) LIKE $${i})`
+      );
+      params.push(like);
+      i += 1;
+    }
   }
 
   const whereSql = where.join(" AND ");

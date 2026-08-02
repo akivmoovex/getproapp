@@ -162,26 +162,8 @@
             <% } %>
           </div>
 
-          <div class="bb-mp-field<%= fe.emailDisplay ? ' is-invalid' : '' %>">
-            <label for="emailDisplay">Display email</label>
-            <input
-              id="emailDisplay"
-              name="emailDisplay"
-              type="email"
-              maxlength="254"
-              value="<%= profile.emailDisplay || profile.emailNormalized || '' %>"
-              autocomplete="email"
-              <%= showEdit ? '' : 'readonly' %>
-              <% if (fe.emailDisplay) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('emailDisplay', ['hint-emailDisplay']) %>"<% } else { %>aria-describedby="hint-emailDisplay"<% } %>
-            />
-            <p class="bb-mp-hint" id="hint-emailDisplay">Changes how your email is shown. Your sign-in email stays the same.</p>
-            <% if (fe.emailDisplay) { %>
-            <p class="bb-mp-field__error" id="err-emailDisplay"><%= fe.emailDisplay %></p>
-            <% } %>
-          </div>
-
           <div class="bb-mp-field<%= fe.phone ? ' is-invalid' : '' %>">
-            <label for="phone">Phone</label>
+            <label for="phone">Mobile phone number</label>
             <input
               id="phone"
               name="phone"
@@ -193,8 +175,27 @@
               <%= showEdit ? '' : 'readonly' %>
               <% if (fe.phone) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('phone') %>"<% } %>
             />
+            <p class="bb-mp-hint">Used for login and invitations. Email remains optional for notifications.</p>
             <% if (fe.phone) { %>
             <p class="bb-mp-field__error" id="err-phone"><%= fe.phone %></p>
+            <% } %>
+          </div>
+
+          <div class="bb-mp-field<%= fe.emailDisplay ? ' is-invalid' : '' %>">
+            <label for="emailDisplay">Email address, optional</label>
+            <input
+              id="emailDisplay"
+              name="emailDisplay"
+              type="email"
+              maxlength="254"
+              value="<%= profile.emailDisplay || profile.emailNormalized || '' %>"
+              autocomplete="email"
+              <%= showEdit ? '' : 'readonly' %>
+              <% if (fe.emailDisplay) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('emailDisplay', ['hint-emailDisplay']) %>"<% } else { %>aria-describedby="hint-emailDisplay"<% } %>
+            />
+            <p class="bb-mp-hint" id="hint-emailDisplay">Used for additional notifications. Your sign-in identifier stays the same until phone verification is complete.</p>
+            <% if (fe.emailDisplay) { %>
+            <p class="bb-mp-field__error" id="err-emailDisplay"><%= fe.emailDisplay %></p>
             <% } %>
           </div>
         </div>

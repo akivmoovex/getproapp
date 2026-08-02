@@ -197,7 +197,26 @@
 
                 <div class="bb-auth-field-row">
                   <div class="bb-auth-field">
-                    <label for="email">Email Address</label>
+                    <label for="phone">Mobile phone number *</label>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      maxlength="40"
+                      required
+                      autocomplete="tel"
+                      inputmode="tel"
+                      <% if (fieldInvalid('phone') || fieldInvalid('phone_required')) { %>aria-invalid="true"<% } %>
+                      aria-describedby="<%= fieldDescribedBy('phone', ['bb-auth-contact-hint']) || 'bb-auth-contact-hint' %>"
+                      value="<%= sub.phone != null ? sub.phone : '' %>"
+                    />
+                    <% if (fe.phone || fe.phone_required) { %>
+                    <p class="bb-auth-field__error" id="err-phone" role="status"><%= fe.phone || fe.phone_required %></p>
+                    <% } %>
+                  </div>
+
+                  <div class="bb-auth-field">
+                    <label for="email">Email address, optional</label>
                     <input
                       id="email"
                       name="email"
@@ -213,27 +232,9 @@
                     <p class="bb-auth-field__error" id="err-email" role="status"><%= fe.email %></p>
                     <% } %>
                   </div>
-
-                  <div class="bb-auth-field">
-                    <label for="phone">Phone Number</label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      maxlength="40"
-                      autocomplete="tel"
-                      inputmode="tel"
-                      <% if (fieldInvalid('phone')) { %>aria-invalid="true"<% } %>
-                      aria-describedby="<%= fieldDescribedBy('phone', ['bb-auth-contact-hint']) || 'bb-auth-contact-hint' %>"
-                      value="<%= sub.phone != null ? sub.phone : '' %>"
-                    />
-                    <% if (fe.phone) { %>
-                    <p class="bb-auth-field__error" id="err-phone" role="status"><%= fe.phone %></p>
-                    <% } %>
-                  </div>
                 </div>
 
-                <p class="bb-auth-hint" id="bb-auth-contact-hint">Provide at least an email or a phone number.</p>
+                <p class="bb-auth-hint" id="bb-auth-contact-hint">Mobile phone is required for registration. Email is optional for additional notifications.</p>
               </fieldset>
 
               <p class="bb-auth-privacy" id="bb-auth-privacy-note" data-bb-auth-privacy="1">

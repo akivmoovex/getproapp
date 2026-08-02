@@ -339,7 +339,9 @@ async function findUserById(client, userId) {
   const r = await client.query(
     `SELECT id, email_normalized, email_display, password_hash, status, display_name,
             created_at, updated_at, password_changed_at, last_login_at,
-            password_change_required, sign_in_locked_until
+            password_change_required, sign_in_locked_until,
+            phone_normalized, phone_display, phone_country_code, phone_verified_at,
+            preferred_login_identifier, preferred_contact_channel
        FROM blessboard.users
       WHERE id = $1
       LIMIT 1`,

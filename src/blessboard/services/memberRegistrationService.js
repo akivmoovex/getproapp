@@ -7,7 +7,6 @@
 
 const { requireActorPermission } = require("./requireActorPermission");
 const { normalizeEmail } = require("./createBlessBoardUser");
-const { normalizePhone } = require("./settingsValidation");
 const authRepo = require("../repositories/blessBoardAuthRepository");
 const repo = require("../repositories/memberIdentityRepository");
 
@@ -140,14 +139,19 @@ function parseProfileContact(input) {
   let phoneNormalized = null;
   let phoneDisplay = null;
   if (phoneRaw) {
-    const phone = normalizePhone(phoneRaw);
-    if (!phone.ok || !phone.value) return { ok: false, reason: "phone" };
-    phoneNormalized = phone.value;
-    phoneDisplay = phoneRaw;
-  }
-
-  if (!emailNormalized && !phoneNormalized) {
-    return { ok: false, reason: "contact_required" };
+    const {
+      normalizeBlessBoardPhone,
+    } = require("./normalizeBlessBoardPhone");
+    const phone = normalizeBlessBoardPhone(phoneRaw, {
+      country: input.country,
+      defaultCountry: "ZM",
+    });
+    if (!phone.ok) return { ok: false, reason: "phone" };
+    phoneNormalized = phone.normalized;
+    phoneDisplay = phone.display || phoneRaw;
+  } else {
+    // New member registrations require phone (email remains optional).
+    return { ok: false, reason: "phone_required" };
   }
 
   return {
@@ -695,7 +699,7 @@ async function rejectMemberRegistration(db, input) {
 }
 
 /**
- * Link an existing login user to a member by matching email.
+ * Link an existing login user to a member by matching phone (preferred) or email.
  * Never creates users or passwords.
  */
 async function linkMemberToUser(db, input) {
@@ -704,8 +708,18 @@ async function linkMemberToUser(db, input) {
   const actorUserId = String(raw.actorUserId || "").trim();
   const userId = raw.userId != null ? String(raw.userId).trim() : "";
   const email = raw.email != null ? normalizeEmail(raw.email) : "";
+  const phoneRaw = raw.phone != null ? String(raw.phone).trim() : "";
+  let phoneNormalized = null;
+  if (phoneRaw) {
+    const { normalizeBlessBoardPhone } = require("./normalizeBlessBoardPhone");
+    const phone = normalizeBlessBoardPhone(phoneRaw, {
+      country: raw.country,
+      defaultCountry: "ZM",
+    });
+    if (phone.ok) phoneNormalized = phone.normalized;
+  }
 
-  if (!memberId || !actorUserId || (!userId && !email)) {
+  if (!memberId || !actorUserId || (!userId && !email && !phoneNormalized)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids", member: null };
   }
 
@@ -745,28 +759,43 @@ async function linkMemberToUser(db, input) {
           }
         }
 
-        if (!member.emailNormalized) {
+        if (!member.phoneNormalized && !member.emailNormalized) {
           await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.INVALID_INPUT, reason: "member_email_required", member };
+          return { ok: false, status: STATUS.INVALID_INPUT, reason: "member_contact_required", member };
         }
 
         let user = null;
         if (userId) {
           user = await repo.findUserById(client, userId);
-        } else {
-          user = await authRepo.findUserByEmail(client, email);
+        } else if (phoneNormalized || member.phoneNormalized) {
+          user = await authRepo.findUserByPhone(
+            client,
+            phoneNormalized || member.phoneNormalized
+          );
+        } else if (email || member.emailNormalized) {
+          user = await authRepo.findUserByEmail(client, email || member.emailNormalized);
         }
         if (!user || user.status !== "active") {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.USER_NOT_FOUND, reason: "user_not_found", member };
         }
 
-        if (String(user.email_normalized) !== String(member.emailNormalized)) {
+        const memberPhone = member.phoneNormalized || null;
+        const userPhone = user.phone_normalized || null;
+        const memberEmail = member.emailNormalized || null;
+        const userEmail = user.email_normalized || null;
+
+        const phoneMatch =
+          memberPhone && userPhone && String(memberPhone) === String(userPhone);
+        const emailMatch =
+          memberEmail && userEmail && String(memberEmail) === String(userEmail);
+
+        if (!phoneMatch && !emailMatch) {
           await client.query("ROLLBACK");
           return {
             ok: false,
             status: STATUS.IDENTITY_CONFLICT,
-            reason: "email_mismatch",
+            reason: phoneMatch === false && memberPhone ? "phone_mismatch" : "email_mismatch",
             member,
           };
         }
