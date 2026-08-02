@@ -7,9 +7,13 @@
 
 const authRepo = require("../../blessboard/repositories/blessBoardAuthRepository");
 const {
-  normalizeRegistrationPhone,
-} = require("../../blessboard/services/normalizeRegistrationPhone");
+  normalizeBlessBoardPhone,
+} = require("../../blessboard/services/normalizeBlessBoardPhone");
 const { normalizeEmail } = require("../../blessboard/services/createBlessBoardUser");
+const {
+  MATCH,
+  resolveTenantPhoneIdentity,
+} = require("../../blessboard/services/resolveTenantPhoneIdentity");
 const {
   inviteBlessBoardStaff,
   STATUS: INVITE_STATUS,
@@ -207,7 +211,10 @@ async function createScopedTeamMember(db, input) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "self_assignment" };
   }
 
-  const phoneResult = normalizeRegistrationPhone(input && input.phone, country);
+  const phoneResult = normalizeBlessBoardPhone(input && input.phone, {
+    country,
+    defaultCountry: "ZM",
+  });
   if (!phoneResult.ok) {
     return {
       ok: false,
@@ -218,6 +225,7 @@ async function createScopedTeamMember(db, input) {
   }
   const phoneNormalized = phoneResult.normalized;
   const phoneDisplay = phoneResult.display || phoneNormalized;
+  const phoneCountryCode = phoneResult.countryCode || null;
   const displayName = `${firstName} ${lastName}`.trim().slice(0, 200);
 
   let expiresAt = null;
@@ -251,9 +259,13 @@ async function createScopedTeamMember(db, input) {
         const countryHint = country || orgRow.country_code || "ZM";
 
         // Re-normalize with church country if first pass used weak context.
-        const phone2 = normalizeRegistrationPhone(input.phone, countryHint);
+        const phone2 = normalizeBlessBoardPhone(input.phone, {
+          country: countryHint,
+          defaultCountry: "ZM",
+        });
         const phoneNorm = phone2.ok ? phone2.normalized : phoneNormalized;
         const phoneDisp = phone2.ok ? phone2.display : phoneDisplay;
+        const phoneCc = phone2.ok ? phone2.countryCode || phoneCountryCode : phoneCountryCode;
 
         let branchRow = null;
         if (placement === "branch") {
@@ -313,37 +325,63 @@ async function createScopedTeamMember(db, input) {
           return { ok: false, status: STATUS.INVALID_INPUT, reason: "reason_required" };
         }
 
-        const existingStaff = await findOrgStaffByPhone(client, organizationId, phoneNorm);
-        if (existingStaff) {
-          const member = await findMemberByPhone(client, churchId, phoneNorm);
+        const identity = await resolveTenantPhoneIdentity(client, {
+          organizationId,
+          churchId,
+          phoneNormalized: phoneNorm,
+        });
+        if (identity.ok && identity.match === MATCH.EXISTING_USER) {
           await client.query("ROLLBACK");
           return {
             ok: false,
             status: STATUS.CONFLICT,
             reason: "phone_exists",
+            match: MATCH.EXISTING_USER,
             message: "A user with this phone number already exists in this church.",
-            existingUser: {
-              id: String(existingStaff.user_id),
-              displayName: existingStaff.display_name,
-              emailDisplay: existingStaff.email_display,
-              status: existingStaff.status,
-              phoneDisplay: existingStaff.phone_display,
-            },
-            existingMember: member
+            existingUser: identity.user
               ? {
-                  id: String(member.id),
-                  displayName:
-                    member.preferred_name ||
-                    `${member.first_name || ""} ${member.last_name || ""}`.trim(),
-                  userId: member.user_id ? String(member.user_id) : null,
+                  id: identity.user.userId,
+                  displayName: identity.user.displayName,
+                  emailDisplay: identity.user.emailDisplay,
+                  status: identity.user.status,
+                  phoneDisplay: identity.user.phoneDisplay,
+                }
+              : null,
+            existingMember: identity.members && identity.members[0]
+              ? {
+                  id: identity.members[0].id,
+                  displayName: identity.members[0].displayName,
+                  userId: identity.members[0].userId,
                 }
               : null,
           };
         }
-
-        const memberOnly = await findMemberByPhone(client, churchId, phoneNorm);
-        // Member without staff phone binding — caller may choose link flow; still allow invite
-        // unless member already has a linked user in this org (handled via existingStaff).
+        if (identity.ok && identity.match === MATCH.PENDING_INVITATION) {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            status: STATUS.CONFLICT,
+            reason: "pending_invitation",
+            match: MATCH.PENDING_INVITATION,
+            message: "A pending invitation already exists for this phone number.",
+            invitation: identity.invitation,
+          };
+        }
+        if (identity.ok && identity.match === MATCH.TENANT_DUPLICATE) {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            status: STATUS.CONFLICT,
+            reason: "tenant_duplicate",
+            match: MATCH.TENANT_DUPLICATE,
+            message: "This phone number matches more than one record in this church.",
+          };
+        }
+        const memberOnly =
+          identity.ok && identity.match === MATCH.EXISTING_MEMBER_WITHOUT_USER
+            ? identity.member
+            : null;
+        // Member without staff phone binding — caller may choose link flow; still allow invite.
 
         const bootstrapRole = placement === "branch" ? "branch_admin" : "church_hq_admin";
         const depCode = await resolveDeploymentCodeForOrg(
@@ -396,9 +434,12 @@ async function createScopedTeamMember(db, input) {
           `UPDATE blessboard.users
               SET phone_normalized = COALESCE(phone_normalized, $2),
                   phone_display = COALESCE(phone_display, $3),
+                  phone_country_code = COALESCE(phone_country_code, $4),
+                  preferred_login_identifier = COALESCE(preferred_login_identifier, 'phone'),
+                  preferred_contact_channel = COALESCE(preferred_contact_channel, 'whatsapp'),
                   updated_at = now()
             WHERE id = $1`,
-          [userId, phoneNorm, phoneDisp]
+          [userId, phoneNorm, phoneDisp, phoneCc]
         );
 
         try {
@@ -536,9 +577,8 @@ async function createScopedTeamMember(db, input) {
           existingMemberOffer: memberOnly
             ? {
                 id: String(memberOnly.id),
-                displayName:
-                  memberOnly.preferred_name ||
-                  `${memberOnly.first_name || ""} ${memberOnly.last_name || ""}`.trim(),
+                displayName: memberOnly.displayName || null,
+                userId: memberOnly.userId || null,
               }
             : null,
           invitation: invited.invitation,

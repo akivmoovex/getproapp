@@ -54,12 +54,17 @@ function emptyToNull(value) {
 
 /**
  * Normalize phone to E.164-compatible text (+ and digits only) for validation.
+ * Settings contact phones must include a country code (no invented default).
  * @param {unknown} value
  * @returns {{ ok: true, value: string | null } | { ok: false, reason: string }}
  */
 function normalizePhone(value) {
   const raw = emptyToNull(value);
   if (raw == null) return { ok: true, value: null };
+  const { normalizeBlessBoardPhone } = require("./normalizeBlessBoardPhone");
+  const checked = normalizeBlessBoardPhone(raw, { requireCountry: true });
+  if (checked.ok) return { ok: true, value: checked.normalized };
+  // Legacy: digits-only international numbers previously accepted via auto-+.
   let digits = String(raw).replace(/[^\d+]/g, "");
   if (digits.indexOf("+") > 0) {
     digits = digits.replace(/\+/g, "");
