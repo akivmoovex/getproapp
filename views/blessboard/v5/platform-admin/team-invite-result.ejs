@@ -56,25 +56,24 @@
     <p class="bb-pa-flash bb-pa-flash--ok" role="status" hidden data-bb-pa-invite-copied="1">
       Invitation link copied
     </p>
-    <p class="bb-pa-list bb-pa-list--inline">
-      <button type="button" class="bb-pa-btn bb-pa-btn--primary" data-bb-pa-copy-invite="1">Copy link</button>
+    <p class="bb-pa-list bb-pa-list--inline" data-bb-pa-invite-actions="1">
       <% if (r.whatsappUrl) { %>
-      <a class="bb-pa-btn" href="<%= r.whatsappUrl %>" target="_blank" rel="noopener noreferrer" data-bb-pa-whatsapp-invite="1">Share on WhatsApp</a>
+      <a class="bb-pa-btn bb-pa-btn--primary" href="<%= r.whatsappUrl %>" target="_blank" rel="noopener noreferrer" data-bb-pa-whatsapp-invite="1">Share on WhatsApp</a>
       <% } %>
+      <button type="button" class="bb-pa-btn<%= r.whatsappUrl ? '' : ' bb-pa-btn--primary' %>" data-bb-pa-copy-invite="1">Copy link</button>
       <% if (hasEmail) { %>
       <a
         class="bb-pa-btn"
         href="mailto:<%= encodeURIComponent(r.emailDisplay) %>?subject=<%= encodeURIComponent('BlessBoard invitation') %>&body=<%= encodeURIComponent('Open your invitation: ' + (r.invitationUrl || '')) %>"
         data-bb-pa-email-invite="1"
-      >Share by email</a>
-      <% } else { %>
-      <button type="button" class="bb-pa-btn" disabled data-bb-pa-email-invite-disabled="1">Share by email</button>
+      >Send by email</a>
       <% } %>
+      <a class="bb-pa-link" href="<%= basePath %>/invite" data-bb-pa-add-another="1">Add another team member</a>
       <% if (r.userId) { %>
       <a class="bb-pa-link" href="<%= basePath %>/<%= encodeURIComponent(r.userId) %>" data-bb-pa-open-user="1">Open user</a>
       <% } %>
-      <a class="bb-pa-link" href="<%= basePath %>/invite" data-bb-pa-add-another="1">Add another team member</a>
     </p>
+    <p class="bb-pa-muted">WhatsApp opens a manual share draft. BlessBoard does not send WhatsApp messages automatically.</p>
   </section>
 </section>
 

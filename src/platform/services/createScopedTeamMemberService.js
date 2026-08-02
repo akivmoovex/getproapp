@@ -111,7 +111,7 @@ function buildInviteShareMessage({
   return (
     `Hello ${firstName},\n\n` +
     `You have been invited to join ${churchName} on BlessBoard as ${roleLabel}.\n\n` +
-    `Use this secure link to create your account:\n\n` +
+    `Open this secure invitation:\n` +
     `${invitationUrl}\n\n` +
     `This invitation expires on ${exp}.`
   );

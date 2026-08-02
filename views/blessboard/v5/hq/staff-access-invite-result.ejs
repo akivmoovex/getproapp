@@ -29,17 +29,21 @@
     <label for="bb-hq-invite-url">Invitation URL</label>
     <input id="bb-hq-invite-url" type="text" readonly value="<%= r.invitationUrl || '' %>" data-bb-hq-invite-url="1" />
     <p class="bb-hq-banner bb-hq-banner--ok" role="status" hidden data-bb-hq-invite-copied="1">Invitation link copied</p>
-    <p>
-      <button type="button" class="bb-hq-btn bb-hq-btn--primary" data-bb-hq-copy-invite="1">Copy link</button>
+    <p class="bb-hq-list bb-hq-list--inline" data-bb-hq-invite-actions="1">
       <% if (r.whatsappUrl) { %>
-      <a class="bb-hq-btn" href="<%= r.whatsappUrl %>" target="_blank" rel="noopener noreferrer" data-bb-hq-whatsapp-invite="1">Share on WhatsApp</a>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= r.whatsappUrl %>" target="_blank" rel="noopener noreferrer" data-bb-hq-whatsapp-invite="1">Share on WhatsApp</a>
       <% } %>
+      <button type="button" class="bb-hq-btn<%= r.whatsappUrl ? '' : ' bb-hq-btn--primary' %>" data-bb-hq-copy-invite="1">Copy link</button>
       <% if (hasEmail) { %>
-      <a class="bb-hq-btn" href="mailto:<%= encodeURIComponent(r.emailDisplay) %>?subject=BlessBoard%20invitation&body=<%= encodeURIComponent('Open your invitation: ' + (r.invitationUrl || '')) %>" data-bb-hq-email-invite="1">Share by email</a>
+      <a class="bb-hq-btn" href="mailto:<%= encodeURIComponent(r.emailDisplay) %>?subject=BlessBoard%20invitation&body=<%= encodeURIComponent('Open your invitation: ' + (r.invitationUrl || '')) %>" data-bb-hq-email-invite="1">Send by email</a>
       <% } %>
-      <a class="bb-hq-btn" href="/hq/settings/staff-access/invite?placement=<%= r.placement === 'branch' ? 'branch' : 'hq' %>">Add another team member</a>
+      <a class="bb-hq-btn" href="/hq/settings/staff-access/invite?placement=<%= r.placement === 'branch' ? 'branch' : 'hq' %>" data-bb-hq-add-another="1">Add another team member</a>
+      <% if (r.userId) { %>
+      <a class="bb-hq-btn" href="/hq/settings/staff-access/<%= r.userId %>" data-bb-hq-open-user="1">Open user</a>
+      <% } %>
       <a href="/hq/settings/staff-access">Back to staff access</a>
     </p>
+    <p class="bb-hq-muted">WhatsApp opens a manual share draft. BlessBoard does not send WhatsApp messages automatically.</p>
   </section>
 </section>
 <script>
