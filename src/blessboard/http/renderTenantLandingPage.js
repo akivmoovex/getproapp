@@ -133,7 +133,7 @@ function classifyAuthErrorState(message) {
   if (/invalid or has expired|has expired|session has expired|please sign in again/i.test(m)) {
     return "expired";
   }
-  if (/invalid email or password/i.test(m)) return "credentials";
+  if (/invalid email(?:, phone number,)? or password/i.test(m)) return "credentials";
   return "generic";
 }
 

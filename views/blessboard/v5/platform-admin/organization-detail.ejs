@@ -915,13 +915,13 @@
         <p class="bb-pa-list bb-pa-list--inline">
           <a class="bb-pa-link" href="#pa-org-support-mode-heading">Open HQ support mode</a>
           ·
-          <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team">View staff</a>
+          <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team">View HQ team</a>
+          ·
+          <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team/invite?placement=hq&amp;step=identity" data-bb-pa-add-hq-member="1">Add HQ team member</a>
+          ·
+          <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team/invite?placement=branch&amp;step=identity" data-bb-pa-add-branch-member="1">Add branch team member</a>
           ·
           <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/members">View members</a>
-          ·
-          <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team/invite">Invite team member</a>
-          ·
-          <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team">Review access</a>
           ·
           <a class="bb-pa-link" href="#pa-org-staff">Send reset link</a>
           ·
@@ -955,7 +955,13 @@
                 <td><span class="bb-pa-chip <%= statusChip(b.status) %>"><%= statusLabel(b.status) %></span></td>
                 <td><%= b.countryCode || '—' %></td>
                 <td>
-                  <a class="bb-pa-link" href="#pa-org-support-mode-heading">Open Branch support mode</a>
+                  <a class="bb-pa-link" href="#pa-org-support-mode-heading">View branch</a>
+                  ·
+                  <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team">View team</a>
+                  ·
+                  <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team/invite?placement=branch&amp;branch_key=<%= encodeURIComponent(b.key) %>&amp;step=identity">Add team member</a>
+                  ·
+                  <a class="bb-pa-link" href="#pa-org-support-mode-heading">Open support mode</a>
                 </td>
               </tr>
               <% }) %>
@@ -975,7 +981,15 @@
               <% if (b.isPrimary) { %> · Primary<% } %>
               <% if (b.countryCode) { %> · <%= b.countryCode %><% } %>
             </p>
-            <p><a class="bb-pa-link" href="#pa-org-support-mode-heading">Open Branch support mode</a></p>
+            <p>
+              <a class="bb-pa-link" href="#pa-org-support-mode-heading">View branch</a>
+              ·
+              <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team">View team</a>
+              ·
+              <a class="bb-pa-link" href="/admin/organizations/<%= org.organizationKey %>/team/invite?placement=branch&amp;branch_key=<%= encodeURIComponent(b.key) %>&amp;step=identity">Add team member</a>
+              ·
+              <a class="bb-pa-link" href="#pa-org-support-mode-heading">Open support mode</a>
+            </p>
           </li>
           <% }) %>
         </ul>

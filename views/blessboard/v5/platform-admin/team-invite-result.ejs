@@ -1,0 +1,106 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var org = organization || {};
+  var orgKey = orgKey || org.organization_key || '';
+  var basePath = '/admin/organizations/' + encodeURIComponent(orgKey) + '/team';
+  var r = result || {};
+  var invitation = r.invitation || {};
+  var placementLabel = r.placement === 'branch'
+    ? ((r.branch && r.branch.displayName) || 'Branch')
+    : 'HQ';
+  var expLabel = invitation.expiresAt
+    ? new Date(invitation.expiresAt).toISOString().slice(0, 10)
+    : '—';
+  var hasEmail = Boolean(r.emailDisplay);
+%>
+
+<section class="bb-pa-orgs" data-bb-pa-team-invite-result="1" aria-label="Team member added">
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-orgs__eyebrow">
+      <a class="bb-pa-link" href="/admin/organizations/<%= orgKey %>"><%= org.display_name || orgKey %></a>
+      · <a class="bb-pa-link" href="<%= basePath %>">Team</a>
+      · Invitation
+    </p>
+    <h1 class="bb-pa-page-head__title">Team member added</h1>
+    <p class="bb-pa-lede">
+      Share the invitation link securely. The link is shown once on this screen.
+    </p>
+  </header>
+
+  <section class="bb-pa-panel" data-bb-pa-invite-summary="1">
+    <ul class="bb-pa-list">
+      <li>Name: <strong><%= r.displayName || '—' %></strong></li>
+      <li>Phone: <strong><%= r.phoneDisplay || '—' %></strong></li>
+      <li>Email: <%= r.emailDisplay || '—' %></li>
+      <li>Church: <%= (r.church && r.church.displayName) || org.church_name || '—' %></li>
+      <li>Placement: <strong><%= placementLabel %></strong></li>
+      <li>Role: <strong><%= (r.role && r.role.displayName) || '—' %></strong></li>
+      <li>Scope: <%= r.scopeType || '—' %></li>
+      <li>Invitation status: <%= invitation.resent ? 'Resent' : 'Pending' %></li>
+      <li>Expires: <%= expLabel %></li>
+    </ul>
+  </section>
+
+  <section class="bb-pa-panel" data-bb-pa-invite-link-panel="1">
+    <h2 class="bb-pa-panel__title">Invitation link</h2>
+    <div class="bb-pa-field">
+      <label for="bb-pa-invite-url">Invitation URL</label>
+      <input
+        id="bb-pa-invite-url"
+        type="text"
+        readonly
+        value="<%= r.invitationUrl || '' %>"
+        data-bb-pa-invite-url="1"
+      />
+    </div>
+    <p class="bb-pa-flash bb-pa-flash--ok" role="status" hidden data-bb-pa-invite-copied="1">
+      Invitation link copied
+    </p>
+    <p class="bb-pa-list bb-pa-list--inline">
+      <button type="button" class="bb-pa-btn bb-pa-btn--primary" data-bb-pa-copy-invite="1">Copy link</button>
+      <% if (r.whatsappUrl) { %>
+      <a class="bb-pa-btn" href="<%= r.whatsappUrl %>" target="_blank" rel="noopener noreferrer" data-bb-pa-whatsapp-invite="1">Share on WhatsApp</a>
+      <% } %>
+      <% if (hasEmail) { %>
+      <a
+        class="bb-pa-btn"
+        href="mailto:<%= encodeURIComponent(r.emailDisplay) %>?subject=<%= encodeURIComponent('BlessBoard invitation') %>&body=<%= encodeURIComponent('Open your invitation: ' + (r.invitationUrl || '')) %>"
+        data-bb-pa-email-invite="1"
+      >Share by email</a>
+      <% } else { %>
+      <button type="button" class="bb-pa-btn" disabled data-bb-pa-email-invite-disabled="1">Share by email</button>
+      <% } %>
+      <% if (r.userId) { %>
+      <a class="bb-pa-link" href="<%= basePath %>/<%= encodeURIComponent(r.userId) %>" data-bb-pa-open-user="1">Open user</a>
+      <% } %>
+      <a class="bb-pa-link" href="<%= basePath %>/invite" data-bb-pa-add-another="1">Add another team member</a>
+    </p>
+  </section>
+</section>
+
+<script>
+(function () {
+  var btn = document.querySelector('[data-bb-pa-copy-invite]');
+  var input = document.querySelector('[data-bb-pa-invite-url]');
+  var note = document.querySelector('[data-bb-pa-invite-copied]');
+  if (!btn || !input) return;
+  btn.addEventListener('click', function () {
+    var url = String(input.value || '');
+    if (!url) return;
+    function showOk() {
+      if (note) note.hidden = false;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(showOk).catch(function () {
+        input.select();
+        try { document.execCommand('copy'); showOk(); } catch (e) {}
+      });
+    } else {
+      input.select();
+      try { document.execCommand('copy'); showOk(); } catch (e) {}
+    }
+  });
+})();
+</script>
+
+<%- include('../partials/platform-admin-shell-end') %>

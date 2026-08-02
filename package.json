@@ -108,6 +108,7 @@
     "test:blessboard:platform-admin-directory": "node --test --test-concurrency=1 tests/blessboard-platform-admin-directory.test.js",
     "test:blessboard:platform-support-mode": "node --test --test-concurrency=1 tests/blessboard-platform-support-mode.test.js",
     "test:blessboard:platform-admin-team": "node --test --test-concurrency=1 tests/blessboard-platform-admin-team.test.js",
+    "test:blessboard:hq-branch-user-creation": "node --test --test-concurrency=1 tests/blessboard-hq-branch-user-creation.test.js",
     "test:blessboard:platform-account-recovery": "node --test --test-concurrency=1 tests/blessboard-platform-account-recovery.test.js",
     "test:blessboard:platform-admin-integration": "node --test --test-concurrency=1 tests/blessboard-platform-admin-integration.test.js",
     "test:blessboard:testing-maintenance": "node --test --test-concurrency=1 tests/blessboard-testing-maintenance.test.js",

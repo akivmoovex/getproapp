@@ -251,7 +251,7 @@ describe("blessboard v5 auth http", () => {
     requireDb();
     const missing = await loginFlow("nobody@example.org", PASSWORD);
     assert.equal(missing.post.status, 401);
-    assert.match(missing.post.text, /Invalid email or password/i);
+    assert.match(missing.post.text, /Invalid email, phone number, or password/i);
     assert.match(missing.post.text, /data-bb-auth-error="credentials"/);
     assert.match(missing.post.text, /id="bb-auth-error-summary"/);
     assert.match(missing.post.text, /id="email-error"/);
@@ -259,7 +259,7 @@ describe("blessboard v5 auth http", () => {
     assert.doesNotMatch(missing.post.text, /does not exist|no account|unknown user/i);
     const badPw = await loginFlow("admin@example.org", "wrong-password-xx");
     assert.equal(badPw.post.status, 401);
-    assert.match(badPw.post.text, /Invalid email or password/i);
+    assert.match(badPw.post.text, /Invalid email, phone number, or password/i);
     assert.match(badPw.post.text, /data-bb-auth-error="credentials"/);
   });
 
@@ -372,7 +372,7 @@ describe("blessboard v5 auth http", () => {
     });
     const norole = await loginFlow("norole@example.org", PASSWORD);
     assert.equal(norole.post.status, 401);
-    assert.match(norole.post.text, /not available|Invalid email or password/i);
+    assert.match(norole.post.text, /not available|Invalid email, phone number, or password|Invalid email or password/i);
   });
 
   it("session from another deployment is rejected", async () => {

@@ -9,16 +9,39 @@
  * @param {string} emailNormalized
  */
 async function findUserByEmail(client, emailNormalized) {
+  if (!emailNormalized) return null;
   const r = await client.query(
     `SELECT id, email_normalized, email_display, password_hash, status, display_name,
             created_at, updated_at, password_changed_at, last_login_at,
-            password_change_required, sign_in_locked_until
+            password_change_required, sign_in_locked_until,
+            phone_normalized, phone_display
        FROM blessboard.users
       WHERE email_normalized = $1
       LIMIT 1`,
     [emailNormalized]
   );
   return r.rows[0] || null;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} phoneNormalized E.164
+ */
+async function findUserByPhone(client, phoneNormalized) {
+  if (!phoneNormalized) return null;
+  const r = await client.query(
+    `SELECT id, email_normalized, email_display, password_hash, status, display_name,
+            created_at, updated_at, password_changed_at, last_login_at,
+            password_change_required, sign_in_locked_until,
+            phone_normalized, phone_display
+       FROM blessboard.users
+      WHERE phone_normalized = $1
+      ORDER BY created_at ASC
+      LIMIT 2`,
+    [phoneNormalized]
+  );
+  if (r.rows.length !== 1) return null;
+  return r.rows[0];
 }
 
 /**
@@ -34,15 +57,19 @@ async function findUserByEmail(client, emailNormalized) {
 async function insertUser(client, fields) {
   const r = await client.query(
     `INSERT INTO blessboard.users
-       (email_normalized, email_display, password_hash, status, display_name)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, email_normalized, email_display, status, display_name, created_at`,
+       (email_normalized, email_display, password_hash, status, display_name,
+        phone_normalized, phone_display)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, email_normalized, email_display, status, display_name,
+               phone_normalized, phone_display, created_at`,
     [
-      fields.emailNormalized,
-      fields.emailDisplay,
+      fields.emailNormalized != null ? fields.emailNormalized : null,
+      fields.emailDisplay != null ? fields.emailDisplay : null,
       fields.passwordHash == null ? null : fields.passwordHash,
       fields.status || "active",
       fields.displayName,
+      fields.phoneNormalized != null ? fields.phoneNormalized : null,
+      fields.phoneDisplay != null ? fields.phoneDisplay : null,
     ]
   );
   return r.rows[0];
@@ -530,6 +557,7 @@ function isUniqueViolation(err) {
 
 module.exports = {
   findUserByEmail,
+  findUserByPhone,
   findUserById,
   insertUser,
   activateUserWithPassword,

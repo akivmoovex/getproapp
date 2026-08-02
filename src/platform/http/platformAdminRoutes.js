@@ -4571,6 +4571,14 @@ function createPlatformAdminRouter(deps) {
         return sendControlled(req, res, 503, "Invite wizard is temporarily unavailable.");
       }
       const step = String(req.query.step || "identity").trim().toLowerCase();
+      let draftBranchId = String(req.query.branch_id || "");
+      const draftBranchKey = String(req.query.branch_key || "").trim().toLowerCase();
+      if (!draftBranchId && draftBranchKey) {
+        const match = (ctx.branches || []).find(
+          (b) => String(b.branchKey || "").toLowerCase() === draftBranchKey
+        );
+        if (match) draftBranchId = String(match.id);
+      }
       const detected =
         req.query.email
           ? await detectTeamUserByEmail(getPool(), {
@@ -4596,7 +4604,9 @@ function createPlatformAdminRouter(deps) {
             lastName: String(req.query.last_name || ""),
             email: String(req.query.email || ""),
             phone: String(req.query.phone || ""),
-            branchId: String(req.query.branch_id || ""),
+            branchId: draftBranchId,
+            branchKey: draftBranchKey,
+            placement: String(req.query.placement || ""),
             leadershipTitle: String(req.query.leadership_title || ""),
             roleKey: String(req.query.role_key || ""),
             scopeType: String(req.query.scope_type || "church"),
@@ -4605,6 +4615,7 @@ function createPlatformAdminRouter(deps) {
             expiresAt: String(req.query.expires_at || ""),
           },
           existingUser: detected && detected.ok ? detected.user : null,
+          existing_user_id: String(req.query.existing_user_id || ""),
           notice: String(req.query.notice || ""),
           error: String(req.query.error || ""),
         })
@@ -4635,6 +4646,7 @@ function createPlatformAdminRouter(deps) {
           "email",
           "phone",
           "branch_id",
+          "placement",
           "leadership_title",
           "role_key",
           "scope_type",
@@ -4659,22 +4671,66 @@ function createPlatformAdminRouter(deps) {
         phone: body.phone,
         leadershipTitle: body.leadership_title,
         branchId: body.branch_id,
+        placement: body.placement,
         body,
+        invitationAcceptBase: `${req.protocol}://${req.get("host")}/invite/accept`,
         env,
       });
       if (!invited.ok) {
-        return res.redirect(
-          303,
-          `${base}/invite?step=review&error=${encodeURIComponent(invited.reason || "invite_failed")}`
-        );
+        const errParams = new URLSearchParams();
+        errParams.set("step", "review");
+        errParams.set("error", invited.reason || "invite_failed");
+        if (invited.existingUser && invited.existingUser.id) {
+          errParams.set("existing_user_id", invited.existingUser.id);
+        }
+        for (const key of [
+          "first_name",
+          "last_name",
+          "email",
+          "phone",
+          "branch_id",
+          "placement",
+          "leadership_title",
+          "role_key",
+          "assignment_reason",
+          "expires_at",
+        ]) {
+          if (body[key] != null && String(body[key]).trim()) {
+            errParams.set(key, String(body[key]).trim());
+          }
+        }
+        return res.redirect(303, `${base}/invite?${errParams.toString()}`);
       }
-      const tokenQ = invited.rawToken
-        ? `&invite_token=${encodeURIComponent(invited.rawToken)}`
-        : "";
-      return res.redirect(
-        303,
-        `${base}/${encodeURIComponent(invited.userId)}?notice=invited${tokenQ}`
+      const ctx = await getTeamInviteContext(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+      });
+      if (!ctx.ok) {
+        return sendControlled(req, res, 503, "Invite result is temporarily unavailable.");
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/team-invite-result.ejs",
+        shellLocals(req, res, "organizations", {
+          pageTitle: `Team member added · ${ctx.organization.display_name}`,
+          organization: ctx.organization,
+          orgKey: ctx.organization.organization_key,
+          result: {
+            userId: invited.userId,
+            displayName: invited.displayName,
+            phoneDisplay: invited.phoneDisplay,
+            emailDisplay: invited.emailDisplay,
+            invitationUrl: invited.invitationUrl,
+            whatsappUrl: invited.whatsappUrl,
+            placement: invited.placement,
+            branch: invited.branch,
+            church: invited.church,
+            role: invited.role,
+            scopeType: invited.scopeType,
+            invitation: invited.invitation,
+          },
+        })
       );
+      return res.status(200).type("html").send(html);
     }
   );
 

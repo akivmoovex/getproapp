@@ -389,7 +389,8 @@ describe("blessboard platform admin integration workflow", () => {
     assert.match(detail.text, /Open Branch support mode/);
     assert.match(detail.text, /View staff/);
     assert.match(detail.text, /View members/);
-    assert.match(detail.text, /Invite team member/);
+    assert.match(detail.text, /Add HQ team member/);
+    assert.match(detail.text, /Add branch team member/);
     assert.match(detail.text, /Review access/);
     assert.match(detail.text, /Send reset link/);
     assert.match(detail.text, /Revoke sessions/);
@@ -470,6 +471,7 @@ describe("blessboard platform admin integration workflow", () => {
       firstName: "Linked",
       lastName: "Other",
       email: "int-linked@example.org",
+      phone: "+260973000001",
       roleAssignments: [
         {
           roleKey: "website_editor",
@@ -497,6 +499,7 @@ describe("blessboard platform admin integration workflow", () => {
       firstName: "New",
       lastName: "Invitee",
       email: "int-new@example.org",
+      phone: "+260973000002",
       roleAssignments: [
         {
           roleKey: "website_editor",

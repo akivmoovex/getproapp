@@ -1,0 +1,67 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var r = result || {};
+  var invitation = r.invitation || {};
+  var placementLabel = r.placement === 'branch'
+    ? ((r.branch && r.branch.displayName) || 'Branch')
+    : 'HQ';
+  var hasEmail = Boolean(r.emailDisplay);
+%>
+<section class="bb-hq-page" data-bb-staff-invite-result="1" aria-label="Team member added">
+  <header class="bb-hq-page-head">
+    <h1 class="bb-hq-page-head__title">Team member added</h1>
+    <p class="bb-hq-lede">Share the invitation link securely. It is shown once on this screen.</p>
+  </header>
+
+  <section class="bb-hq-card">
+    <ul class="bb-hq-list">
+      <li>Name: <strong><%= r.displayName || '—' %></strong></li>
+      <li>Phone: <strong><%= r.phoneDisplay || '—' %></strong></li>
+      <li>Email: <%= r.emailDisplay || '—' %></li>
+      <li>Placement: <strong><%= placementLabel %></strong></li>
+      <li>Role: <strong><%= (r.role && r.role.displayName) || '—' %></strong></li>
+      <li>Scope: <%= r.scopeType || '—' %></li>
+      <li>Expires: <%= invitation.expiresAt ? new Date(invitation.expiresAt).toISOString().slice(0, 10) : '—' %></li>
+    </ul>
+  </section>
+
+  <section class="bb-hq-card">
+    <label for="bb-hq-invite-url">Invitation URL</label>
+    <input id="bb-hq-invite-url" type="text" readonly value="<%= r.invitationUrl || '' %>" data-bb-hq-invite-url="1" />
+    <p class="bb-hq-banner bb-hq-banner--ok" role="status" hidden data-bb-hq-invite-copied="1">Invitation link copied</p>
+    <p>
+      <button type="button" class="bb-hq-btn bb-hq-btn--primary" data-bb-hq-copy-invite="1">Copy link</button>
+      <% if (r.whatsappUrl) { %>
+      <a class="bb-hq-btn" href="<%= r.whatsappUrl %>" target="_blank" rel="noopener noreferrer" data-bb-hq-whatsapp-invite="1">Share on WhatsApp</a>
+      <% } %>
+      <% if (hasEmail) { %>
+      <a class="bb-hq-btn" href="mailto:<%= encodeURIComponent(r.emailDisplay) %>?subject=BlessBoard%20invitation&body=<%= encodeURIComponent('Open your invitation: ' + (r.invitationUrl || '')) %>" data-bb-hq-email-invite="1">Share by email</a>
+      <% } %>
+      <a class="bb-hq-btn" href="/hq/settings/staff-access/invite?placement=<%= r.placement === 'branch' ? 'branch' : 'hq' %>">Add another team member</a>
+      <a href="/hq/settings/staff-access">Back to staff access</a>
+    </p>
+  </section>
+</section>
+<script>
+(function () {
+  var btn = document.querySelector('[data-bb-hq-copy-invite]');
+  var input = document.querySelector('[data-bb-hq-invite-url]');
+  var note = document.querySelector('[data-bb-hq-invite-copied]');
+  if (!btn || !input) return;
+  btn.addEventListener('click', function () {
+    var url = String(input.value || '');
+    if (!url) return;
+    function showOk() { if (note) note.hidden = false; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(showOk).catch(function () {
+        input.select();
+        try { document.execCommand('copy'); showOk(); } catch (e) {}
+      });
+    } else {
+      input.select();
+      try { document.execCommand('copy'); showOk(); } catch (e) {}
+    }
+  });
+})();
+</script>
+<%- include('../partials/hq-shell-end') %>

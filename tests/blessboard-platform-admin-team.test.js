@@ -253,6 +253,7 @@ describe("blessboard platform team management", () => {
       firstName: "Nova",
       lastName: "Invitee",
       email: "team-new@example.org",
+      phone: "+260972000001",
       roleAssignments: [],
       env: TEST_ENV,
     });
@@ -272,14 +273,20 @@ describe("blessboard platform team management", () => {
       firstName: "Nova",
       lastName: "Invitee",
       email: "Team-New@Example.org",
+      phone: "+260972000001",
       roleAssignments: [],
     });
-    // Resend path or already_assigned skip — must not create second user.
+    // Resend path, already assigned, or tenant phone uniqueness — must not create second user.
     const count2 = await pool.query(
       `SELECT COUNT(*)::int AS n FROM blessboard.users WHERE email_normalized = 'team-new@example.org'`
     );
     assert.equal(count2.rows[0].n, 1);
-    assert.ok(again.ok || again.reason === "already_assigned" || again.inviteSkipped);
+    assert.ok(
+      again.ok ||
+        again.reason === "already_assigned" ||
+        again.reason === "phone_exists" ||
+        again.inviteSkipped
+    );
   });
 
   it("reuses an existing BlessBoard user by normalized email", async () => {
@@ -298,6 +305,7 @@ describe("blessboard platform team management", () => {
       firstName: "Existing",
       lastName: "Staff",
       email: "team-existing@example.org",
+      phone: "+260972000002",
       roleAssignments: [
         {
           roleKey: "website_editor",
@@ -306,6 +314,7 @@ describe("blessboard platform team management", () => {
           assignmentReason: "reuse existing editor",
         },
       ],
+      env: TEST_ENV,
     });
     assert.equal(invited.ok, true, invited.reason);
     assert.equal(invited.existingUser, true);
@@ -320,8 +329,11 @@ describe("blessboard platform team management", () => {
       firstName: "Branch",
       lastName: "Person",
       email: "team-branch@example.org",
+      phone: "+260972000003",
       branchId: campusA.id,
+      placement: "branch",
       roleAssignments: [],
+      env: TEST_ENV,
     });
     assert.equal(invited.ok, true, invited.reason);
     const role = await pool.query(
@@ -449,6 +461,7 @@ describe("blessboard platform team management", () => {
       firstName: "Forge",
       lastName: "Org",
       email: "team-forge-org@example.org",
+      phone: "+260972000091",
     });
     assert.equal(forgedOrg.ok, false);
     assert.equal(forgedOrg.reason, "forged_organization");
@@ -459,11 +472,16 @@ describe("blessboard platform team management", () => {
       firstName: "Forge",
       lastName: "Branch",
       email: "team-forge-branch@example.org",
+      phone: "+260972000092",
       branchId: "00000000-0000-4000-8000-000000000099",
+      placement: "branch",
     });
     assert.equal(forgedBranch.ok, false);
     assert.ok(
-      forgedBranch.reason === "forged_branch" || forgedBranch.reason === "branch"
+      forgedBranch.reason === "forged_branch" ||
+        forgedBranch.reason === "branch" ||
+        forgedBranch.reason === "branch_required",
+      forgedBranch.reason
     );
 
     // Branch from org B's church cannot be used as scope in org A.
@@ -535,7 +553,7 @@ describe("blessboard platform team management", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", agentCookie);
     assert.equal(inviteGet.status, 200);
-    assert.match(inviteGet.text, /Add or invite user/);
+    assert.match(inviteGet.text, /Add team member/);
 
     const badCsrf = await request(app)
       .post("/admin/organizations/team-org-a/team/invite")
@@ -548,6 +566,7 @@ describe("blessboard platform team management", () => {
         first_name: "Csrf",
         last_name: "Fail",
         email: "team-csrf@example.org",
+        phone: "0972000099",
       });
     assert.equal(badCsrf.status, 303);
     assert.match(String(badCsrf.headers.location || ""), /error=csrf/);

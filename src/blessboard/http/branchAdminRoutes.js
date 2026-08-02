@@ -308,8 +308,7 @@ function createBranchAdminRouter(deps) {
   });
 
   /**
-   * Branch admins may invite only branch_admin for their assigned branch.
-   * Copy-once link returned once (no email delivery).
+   * Branch admins may invite only within their assigned branch (phone-first).
    */
   router.post("/branch-admin/invitations", rejectApex, gateAccess, requireRolesAssign, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
@@ -322,39 +321,79 @@ function createBranchAdminRouter(deps) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
     const body = req.body || {};
-    const result = await inviteBlessBoardStaff(getPool(), {
+    const host = String(req.hostname || req.get("host") || "")
+      .split(":")[0]
+      .toLowerCase();
+    const acceptBase =
+      tenantAbsoluteUrl(host, "/invite/accept", env) || "/invite/accept";
+    const {
+      createScopedTeamMember,
+      STATUS: SCOPED_STATUS,
+    } = require("../../platform/services/createScopedTeamMemberService");
+    const result = await createScopedTeamMember(getPool(), {
       actorUserId: session.userId,
       organizationId: tenant.organization.id,
       churchId: tenant.church.id,
       branchId: tenant.primaryBranch.id,
-      email: body.email,
-      displayName: body.display_name || body.email,
-      roleKey: "branch_admin",
+      placement: "branch",
+      firstName: body.first_name || String(body.display_name || "").split(/\s+/)[0] || "Team",
+      lastName:
+        body.last_name ||
+        String(body.display_name || "")
+          .split(/\s+/)
+          .slice(1)
+          .join(" ") ||
+        "Member",
+      phone: body.phone,
+      email: body.email || undefined,
+      roleKey: body.role_key || "branch_admin",
+      assignmentReason: body.assignment_reason,
+      actorSource: "branch_admin",
+      invitationAcceptBase: acceptBase,
+      env,
     });
     if (!result.ok) {
       const status =
-        result.status === INVITE_STATUS.LIMIT_EXCEEDED
+        result.status === SCOPED_STATUS.FORBIDDEN
           ? 403
-          : result.status === INVITE_STATUS.FORBIDDEN
-            ? 403
+          : result.status === SCOPED_STATUS.CONFLICT
+            ? 409
             : 400;
       return res
         .status(status)
         .type("text")
-        .send(result.message || "Invitation could not be created.");
+        .send(result.message || result.reason || "Invitation could not be created.");
     }
-    const host = String(req.hostname || req.get("host") || "")
-      .split(":")[0]
-      .toLowerCase();
-    const inviteLink =
-      tenantAbsoluteUrl(host, `/invite/accept?token=${encodeURIComponent(result.rawToken)}`, env) ||
-      `/invite/accept?token=${encodeURIComponent(result.rawToken)}`;
+    const inviteLink = result.invitationUrl || "";
+    const whatsapp = result.whatsappUrl
+      ? `<p><a data-bb-invite-whatsapp="1" href="${String(result.whatsappUrl).replace(/&/g, "&amp;").replace(/"/g, "&quot;")}">Share on WhatsApp</a></p>`
+      : "";
+    const emailBtn = result.emailDisplay
+      ? `<p><a data-bb-invite-email="1" href="mailto:${encodeURIComponent(result.emailDisplay)}">Share by email</a></p>`
+      : `<p data-bb-invite-email-disabled="1">Share by email unavailable (no email)</p>`;
     return res.status(201).type("html").send(`<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><title>Invitation</title></head>
+<html lang="en"><head><meta charset="utf-8"/><title>Team member added</title></head>
 <body>
+  <h1 data-bb-invite-result="1">Team member added</h1>
+  <p>Placement: <strong>${String((result.branch && result.branch.displayName) || "Branch").replace(/</g, "&lt;")}</strong></p>
   <p data-bb-invite-copy-once="1">Copy this invitation link once — it will not be shown again.</p>
-  <p><code data-bb-invite-link="1">${inviteLink.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</code></p>
+  <p><input readonly data-bb-invite-link="1" value="${inviteLink.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" style="width:100%"/></p>
+  <p><button type="button" data-bb-copy-invite="1">Copy link</button></p>
+  ${whatsapp}
+  ${emailBtn}
   <p><a href="/branch-admin">Back</a></p>
+  <script>
+  (function(){
+    var b=document.querySelector('[data-bb-copy-invite]');
+    var i=document.querySelector('[data-bb-invite-link]');
+    if(!b||!i)return;
+    b.onclick=function(){
+      var u=i.value||'';
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u);
+      else{i.select();try{document.execCommand('copy')}catch(e){}}
+    };
+  })();
+  </script>
 </body></html>`);
   });
 

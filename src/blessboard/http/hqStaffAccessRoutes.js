@@ -34,6 +34,10 @@ const {
   CHURCH_ASSIGNABLE_SCOPE_TYPES,
 } = require("../services/blessBoardRoleAssignmentService");
 const { listBlessBoardBranches } = require("../services/listBlessBoardBranches");
+const {
+  createScopedTeamMember,
+} = require("../../platform/services/createScopedTeamMemberService");
+const { tenantAbsoluteUrl } = require("./tenantLoginHelpers");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -216,6 +220,104 @@ function createHqStaffAccessRouter(deps) {
           },
           notice: String(req.query.notice || ""),
           error: String(req.query.error || ""),
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/hq/settings/staff-access/invite",
+    rejectApex,
+    gateSession,
+    requireRolesView,
+    async (req, res) => {
+      const scope = tenantScope(req);
+      const catalogue = await listRoleCatalogue(getPool(), {
+        actorUserId: scope.actorUserId,
+        organizationId: scope.organizationId,
+        churchId: scope.churchId,
+        tenantContext: scope.tenant,
+      });
+      const branches = await listBlessBoardBranches(getPool(), scope.churchId);
+      const placement = String(req.query.placement || "hq").toLowerCase() === "branch" ? "branch" : "hq";
+      const html = renderV5Ejs(
+        "hq/staff-access-invite.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Add team member",
+          activeNav: "staff-access",
+          placement,
+          branches: branches.ok ? branches.branches : [],
+          roles: catalogue.ok ? catalogue.roles : [],
+          draft: {
+            firstName: String(req.query.first_name || ""),
+            lastName: String(req.query.last_name || ""),
+            phone: String(req.query.phone || ""),
+            email: String(req.query.email || ""),
+            branchId: String(req.query.branch_id || ""),
+            roleKey: String(req.query.role_key || ""),
+            assignmentReason: String(req.query.assignment_reason || ""),
+          },
+          notice: String(req.query.notice || ""),
+          error: String(req.query.error || ""),
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/hq/settings/staff-access/invite",
+    rejectApex,
+    gateSession,
+    requireRolesView,
+    async (req, res) => {
+      if (!validateCsrfPost(req, res)) return;
+      const scope = tenantScope(req);
+      const body = req.body || {};
+      const placement =
+        String(body.placement || "").toLowerCase() === "branch" ? "branch" : "hq";
+      let branchId =
+        body.branch_id != null && String(body.branch_id).trim()
+          ? String(body.branch_id).trim()
+          : null;
+      if (placement === "hq") branchId = null;
+      const host = String(req.hostname || req.get("host") || "")
+        .split(":")[0]
+        .toLowerCase();
+      const acceptBase =
+        tenantAbsoluteUrl(host, "/invite/accept", env) || "/invite/accept";
+      const created = await createScopedTeamMember(getPool(), {
+        organizationId: scope.organizationId,
+        churchId: scope.churchId,
+        actorUserId: scope.actorUserId,
+        firstName: body.first_name,
+        lastName: body.last_name,
+        phone: body.phone,
+        email: body.email,
+        placement,
+        branchId,
+        roleKey:
+          body.role_key ||
+          (placement === "branch" ? "branch_admin" : "church_hq_admin"),
+        assignmentReason: body.assignment_reason,
+        leadershipTitle: body.leadership_title,
+        actorSource: "church_hq_admin",
+        invitationAcceptBase: acceptBase,
+        env,
+      });
+      if (!created.ok) {
+        return res.redirect(
+          303,
+          `/hq/settings/staff-access/invite?placement=${encodeURIComponent(placement)}&error=${encodeURIComponent(created.reason || "invite_failed")}`
+        );
+      }
+      const html = renderV5Ejs(
+        "hq/staff-access-invite-result.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Team member added",
+          activeNav: "staff-access",
+          result: created,
         })
       );
       return res.status(200).type("html").send(html);

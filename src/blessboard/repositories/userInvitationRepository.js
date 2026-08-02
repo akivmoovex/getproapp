@@ -13,6 +13,8 @@ function mapInvitation(row) {
     branchId: row.branch_id || null,
     emailNormalized: row.email_normalized,
     emailDisplay: row.email_display,
+    phoneNormalized: row.phone_normalized || null,
+    phoneDisplay: row.phone_display || null,
     displayName: row.display_name,
     roleKey: row.role_key,
     tokenHash: row.token_hash,
@@ -34,11 +36,35 @@ function mapInvitation(row) {
 }
 
 const INVITATION_SELECT = `id, organization_id, church_id, branch_id, email_normalized, email_display,
+            phone_normalized, phone_display,
             display_name, role_key, token_hash, status, expires_at, invited_by_user_id,
             accepted_user_id, accepted_at, revoked_at, revoked_by_user_id, created_at, updated_at,
             delivery_status, delivery_attempted_at, delivery_error_code`;
 
 async function findPendingByScope(client, fields) {
+  if (fields.phoneNormalized) {
+    const byPhone = await client.query(
+      `SELECT ${INVITATION_SELECT}
+         FROM blessboard.user_invitations
+        WHERE organization_id = $1
+          AND church_id = $2
+          AND phone_normalized = $3
+          AND role_key = $4
+          AND branch_id IS NOT DISTINCT FROM $5
+          AND status = 'pending'
+        LIMIT 1
+        FOR UPDATE`,
+      [
+        fields.organizationId,
+        fields.churchId,
+        fields.phoneNormalized,
+        fields.roleKey,
+        fields.branchId || null,
+      ]
+    );
+    if (byPhone.rows[0]) return mapInvitation(byPhone.rows[0]);
+  }
+  if (!fields.emailNormalized) return null;
   const r = await client.query(
     `SELECT ${INVITATION_SELECT}
        FROM blessboard.user_invitations
@@ -88,16 +114,19 @@ async function findById(client, invitationId, { forUpdate } = {}) {
 async function insertInvitation(client, fields) {
   const r = await client.query(
     `INSERT INTO blessboard.user_invitations
-       (organization_id, church_id, branch_id, email_normalized, email_display, display_name,
+       (organization_id, church_id, branch_id, email_normalized, email_display,
+        phone_normalized, phone_display, display_name,
         role_key, token_hash, status, expires_at, invited_by_user_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9::timestamptz, $10)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', $11::timestamptz, $12)
      RETURNING ${INVITATION_SELECT}`,
     [
       fields.organizationId,
       fields.churchId,
       fields.branchId || null,
-      fields.emailNormalized,
-      fields.emailDisplay,
+      fields.emailNormalized != null ? fields.emailNormalized : null,
+      fields.emailDisplay != null ? fields.emailDisplay : null,
+      fields.phoneNormalized != null ? fields.phoneNormalized : null,
+      fields.phoneDisplay != null ? fields.phoneDisplay : null,
       fields.displayName,
       fields.roleKey,
       fields.tokenHash,

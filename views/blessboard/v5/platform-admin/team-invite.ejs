@@ -11,6 +11,34 @@
   catalogue.forEach(function (r) {
     if (r.roleKey === draft.roleKey) selectedRole = r;
   });
+  var roleGroups = [
+    { key: 'Administration', match: /admin|organisation|system|branch_administrator/i },
+    { key: 'Member journey', match: /registration|first.?timer|member|cell|department/i },
+    { key: 'Pastoral and welfare', match: /pastoral|welfare|safeguarding/i },
+    { key: 'Finance', match: /finance/i },
+    { key: 'Communications', match: /communication/i },
+    { key: 'Website', match: /website|publisher|editor/i },
+    { key: 'Audit', match: /audit/i }
+  ];
+  function groupForRole(r) {
+    var cat = String(r.roleCategory || '');
+    for (var i = 0; i < roleGroups.length; i++) {
+      if (cat && cat.toLowerCase() === roleGroups[i].key.toLowerCase()) return roleGroups[i].key;
+      if (roleGroups[i].match.test(String(r.roleKey || '') + ' ' + String(r.displayName || ''))) {
+        return roleGroups[i].key;
+      }
+    }
+    return cat || 'Administration';
+  }
+  var grouped = {};
+  roleGroups.forEach(function (g) { grouped[g.key] = []; });
+  grouped.Other = [];
+  catalogue.forEach(function (r) {
+    var g = groupForRole(r);
+    if (!grouped[g]) grouped[g] = [];
+    grouped[g].push(r);
+  });
+  var placement = draft.placement || (draft.branchId ? 'branch' : 'hq');
   function markerLabel(m) {
     if (m === 'pastoral') return 'Pastoral';
     if (m === 'safeguarding') return 'Safeguarding';
@@ -24,16 +52,24 @@
   function errorText(code) {
     if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
     if (code === 'email') return 'Enter a valid email address.';
+    if (code === 'phone' || code === 'phone_exists') {
+      return code === 'phone_exists'
+        ? 'A user with this phone number already exists in this church.'
+        : 'Enter a valid phone number.';
+    }
     if (code === 'name') return 'First and last name are required.';
     if (code === 'reason_required') return 'A reason is required for sensitive roles.';
     if (code === 'forged_organization') return 'Organisation mismatch rejected.';
     if (code === 'forged_branch') return 'That branch does not belong to this organisation.';
     if (code === 'platform_scope_forbidden') return 'Platform scope cannot be assigned here.';
-    if (code === 'self_invite' || code === 'self_elevation') return 'You cannot invite or assign roles to yourself.';
+    if (code === 'self_invite' || code === 'self_elevation' || code === 'self_assignment') return 'You cannot invite or assign roles to yourself.';
     if (code === 'already_assigned') return 'That user already has this staff role.';
+    if (code === 'role') return 'Select a supported role.';
+    if (code === 'placement') return 'Select HQ or a branch.';
     return code || null;
   }
   var errorMsg = errorText(error);
+  var existingUserId = typeof existing_user_id !== 'undefined' ? existing_user_id : (typeof reqQueryExistingUserId !== 'undefined' ? reqQueryExistingUserId : '');
 %>
 
 <section class="bb-pa-orgs" data-bb-pa-team-invite="1" aria-label="Invite team member">
@@ -43,22 +79,34 @@
       · <a class="bb-pa-link" href="<%= basePath %>">Team</a>
       · Invite
     </p>
-    <h1 class="bb-pa-page-head__title">Add or invite user</h1>
+    <h1 class="bb-pa-page-head__title">Add team member</h1>
     <p class="bb-pa-lede">
-      Sends an invitation — never choose a permanent password here.
-      Existing BlessBoard users are reused by normalized email (no duplicates).
+      Phone is required. Email is optional. Invitation creates access for HQ or a selected branch within this organisation tenant.
     </p>
     <p class="bb-pa-muted">Step: <%= step %></p>
   </header>
 
   <% if (errorMsg) { %>
-  <p class="bb-pa-flash bb-pa-flash--error" role="alert"><%= errorMsg %></p>
+  <p class="bb-pa-flash bb-pa-flash--error" role="alert" data-bb-pa-invite-error="<%= error || '' %>"><%= errorMsg %></p>
+  <% if (String(error) === 'phone_exists') { %>
+  <p class="bb-pa-list bb-pa-list--inline" data-bb-pa-phone-exists-actions="1">
+    <% if (existingUserId) { %>
+    <a class="bb-pa-link" href="<%= basePath %>/<%= encodeURIComponent(existingUserId) %>">Open user</a>
+    ·
+    <a class="bb-pa-link" href="<%= basePath %>/<%= encodeURIComponent(existingUserId) %>">Review access</a>
+    ·
+    <a class="bb-pa-link" href="<%= basePath %>/<%= encodeURIComponent(existingUserId) %>">Assign another role</a>
+    <% } %>
+    <a class="bb-pa-link" href="<%= basePath %>">Resend invitation</a>
+    ·
+    <a class="bb-pa-link" href="/admin/users">Send password-reset link</a>
+  </p>
+  <% } %>
   <% } %>
 
   <% if (existingUser) { %>
   <p class="bb-pa-flash bb-pa-flash--warn" role="status" data-bb-pa-existing-user="1">
-    Existing BlessBoard user detected: <%= existingUser.displayName %> (<%= existingUser.emailDisplay %>, <%= existingUser.status %>).
-    Invitation will reuse this identity.
+    Existing BlessBoard user detected: <%= existingUser.displayName %> (<%= existingUser.emailDisplay || existingUser.phoneDisplay || '—' %>, <%= existingUser.status %>).
   </p>
   <% } %>
 
@@ -80,14 +128,15 @@
         <input id="last_name" name="last_name" required maxlength="100" value="<%= draft.lastName || '' %>" />
       </div>
       <div class="bb-pa-field">
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required maxlength="254" value="<%= draft.email || '' %>" />
+        <label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel" required maxlength="40" value="<%= draft.phone || '' %>" autocomplete="tel" />
+        <p class="bb-pa-hint">Required. Local and international formats are normalized for this church.</p>
       </div>
       <div class="bb-pa-field">
-        <label for="phone">Phone (optional)</label>
-        <input id="phone" name="phone" type="tel" maxlength="40" value="<%= draft.phone || '' %>" />
+        <label for="email">Email (optional)</label>
+        <input id="email" name="email" type="email" maxlength="254" value="<%= draft.email || '' %>" />
       </div>
-      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Continue to church placement</button>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Continue to placement</button>
     </section>
     <% } %>
 
@@ -99,13 +148,23 @@
     <input type="hidden" name="email" value="<%= draft.email || '' %>" />
     <input type="hidden" name="phone" value="<%= draft.phone || '' %>" />
     <section class="bb-pa-panel">
-      <h2 class="bb-pa-panel__title">Church placement</h2>
-      <p class="bb-pa-muted">Organisation: <strong><%= org.display_name %></strong> (<%= orgKey %>)</p>
-      <p class="bb-pa-muted">Church: <strong><%= org.church_name %></strong></p>
+      <h2 class="bb-pa-panel__title">HQ or branch</h2>
+      <p class="bb-pa-muted">Organisation: <strong><%= org.display_name %></strong> · Church: <strong><%= org.church_name %></strong></p>
+      <fieldset class="bb-pa-field">
+        <legend>Add user to</legend>
+        <label>
+          <input type="radio" name="placement" value="hq" <%= placement !== 'branch' ? 'checked' : '' %> data-bb-pa-placement-hq="1" />
+          HQ (church-wide)
+        </label>
+        <label>
+          <input type="radio" name="placement" value="branch" <%= placement === 'branch' ? 'checked' : '' %> data-bb-pa-placement-branch="1" />
+          Branch
+        </label>
+      </fieldset>
       <div class="bb-pa-field">
-        <label for="branch_id">Branch (optional — required for branch staff bootstrap)</label>
+        <label for="branch_id">Branch</label>
         <select id="branch_id" name="branch_id">
-          <option value="">Church HQ (no branch)</option>
+          <option value="">Select branch</option>
           <% branchRows.forEach(function (b) { %>
           <option value="<%= b.id %>"<%= String(draft.branchId) === String(b.id) ? ' selected' : '' %>>
             <%= b.displayName || b.display_name %> (<%= b.branchKey || b.branch_key %>)
@@ -116,9 +175,8 @@
       <div class="bb-pa-field">
         <label for="leadership_title">Church leadership title (optional)</label>
         <input id="leadership_title" name="leadership_title" maxlength="120" value="<%= draft.leadershipTitle || '' %>" />
-        <p class="bb-pa-hint">Separate from BlessBoard system role. Not used as an RBAC role key.</p>
       </div>
-      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Continue to role assignment</button>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Continue to role</button>
     </section>
     <% } %>
 
@@ -129,43 +187,48 @@
     <input type="hidden" name="last_name" value="<%= draft.lastName || '' %>" />
     <input type="hidden" name="email" value="<%= draft.email || '' %>" />
     <input type="hidden" name="phone" value="<%= draft.phone || '' %>" />
+    <input type="hidden" name="placement" value="<%= placement %>" />
     <input type="hidden" name="branch_id" value="<%= draft.branchId || '' %>" />
     <input type="hidden" name="leadership_title" value="<%= draft.leadershipTitle || '' %>" />
     <section class="bb-pa-panel">
-      <h2 class="bb-pa-panel__title">Role assignment</h2>
-      <p class="bb-pa-lede">
-        Optional RBAC role in addition to the invitation bootstrap
-        (HQ admin or branch admin based on placement). Platform scope is not available here.
+      <h2 class="bb-pa-panel__title">Role and scope</h2>
+      <p class="bb-pa-flash" role="status">
+        Adding to: <strong><%= placement === 'branch' ? 'Branch' : 'HQ' %></strong>
+        <% if (placement === 'branch' && draft.branchId) { %>
+        <% branchRows.forEach(function (b) { if (String(b.id) === String(draft.branchId)) { %> — <%= b.displayName || b.display_name %><% } }) %>
+        <% } %>
       </p>
       <div class="bb-pa-field">
-        <label for="role_key">RBAC role (optional)</label>
-        <select id="role_key" name="role_key">
-          <option value="">None (invite bootstrap only)</option>
-          <% catalogue.forEach(function (r) { %>
-          <option value="<%= r.roleKey %>"<%= draft.roleKey === r.roleKey ? ' selected' : '' %>>
-            <%= r.displayName %> (<%= r.sensitivityLabel %>)<% if (r.markers && r.markers.length) { %> · <%= r.markers.map(markerLabel).join(', ') %><% } %>
-          </option>
+        <label for="role_key">Role</label>
+        <select id="role_key" name="role_key" required>
+          <option value="">Select role</option>
+          <optgroup label="Bootstrap (legacy)">
+            <% if (placement !== 'branch') { %>
+            <option value="church_hq_admin"<%= draft.roleKey === 'church_hq_admin' ? ' selected' : '' %>>Organisation Administrator (HQ bootstrap)</option>
+            <% } else { %>
+            <option value="branch_admin"<%= draft.roleKey === 'branch_admin' ? ' selected' : '' %>>Branch Administrator (branch bootstrap)</option>
+            <% } %>
+          </optgroup>
+          <% Object.keys(grouped).forEach(function (gName) {
+               if (!grouped[gName].length) return; %>
+          <optgroup label="<%= gName %>">
+            <% grouped[gName].forEach(function (r) { %>
+            <option value="<%= r.roleKey %>"<%= draft.roleKey === r.roleKey ? ' selected' : '' %>>
+              <%= r.displayName %> — <%= r.sensitivityLabel || 'Standard' %><% if (r.description) { %> · <%= String(r.description).slice(0, 80) %><% } %>
+            </option>
+            <% }) %>
+          </optgroup>
           <% }) %>
         </select>
       </div>
+      <input type="hidden" name="scope_type" value="<%= placement === 'branch' ? 'branch' : 'church' %>" />
+      <input type="hidden" name="scope_id" value="<%= placement === 'branch' ? (draft.branchId || '') : '' %>" />
       <div class="bb-pa-field">
-        <label for="scope_type">Scope</label>
-        <select id="scope_type" name="scope_type">
-          <% (scopeTypes || []).forEach(function (t) { %>
-          <option value="<%= t %>"<%= (draft.scopeType || 'church') === t ? ' selected' : '' %>><%= t %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div class="bb-pa-field">
-        <label for="scope_id">Target resource</label>
-        <input id="scope_id" name="scope_id" value="<%= draft.scopeId || '' %>" maxlength="36" />
-      </div>
-      <div class="bb-pa-field">
-        <label for="assignment_reason">Reason</label>
+        <label for="assignment_reason">Assignment reason (required for sensitive roles)</label>
         <input id="assignment_reason" name="assignment_reason" value="<%= draft.assignmentReason || '' %>" maxlength="500" />
       </div>
       <div class="bb-pa-field">
-        <label for="expires_at">Optional expiry</label>
+        <label for="expires_at">Expiry date (optional)</label>
         <input id="expires_at" name="expires_at" type="datetime-local" value="<%= draft.expiresAt || '' %>" />
       </div>
       <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Continue to review</button>
@@ -178,40 +241,36 @@
     <input type="hidden" name="last_name" value="<%= draft.lastName || '' %>" />
     <input type="hidden" name="email" value="<%= draft.email || '' %>" />
     <input type="hidden" name="phone" value="<%= draft.phone || '' %>" />
+    <input type="hidden" name="placement" value="<%= placement %>" />
     <input type="hidden" name="branch_id" value="<%= draft.branchId || '' %>" />
     <input type="hidden" name="leadership_title" value="<%= draft.leadershipTitle || '' %>" />
     <input type="hidden" name="role_key" value="<%= draft.roleKey || '' %>" />
-    <input type="hidden" name="scope_type" value="<%= draft.scopeType || 'church' %>" />
-    <input type="hidden" name="scope_id" value="<%= draft.scopeId || '' %>" />
+    <input type="hidden" name="scope_type" value="<%= placement === 'branch' ? 'branch' : 'church' %>" />
+    <input type="hidden" name="scope_id" value="<%= placement === 'branch' ? (draft.branchId || '') : '' %>" />
     <input type="hidden" name="assignment_reason" value="<%= draft.assignmentReason || '' %>" />
     <input type="hidden" name="expires_at" value="<%= draft.expiresAt || '' %>" />
     <section class="bb-pa-panel">
       <h2 class="bb-pa-panel__title">Review</h2>
       <ul class="bb-pa-list">
         <li>Name: <strong><%= draft.firstName %> <%= draft.lastName %></strong></li>
-        <li>Email: <strong><%= draft.email %></strong></li>
-        <li>Phone: <%= draft.phone || '—' %></li>
+        <li>Phone: <strong><%= draft.phone %></strong></li>
+        <li>Email: <%= draft.email || '—' %> <em>(optional)</em></li>
         <li>Organisation: <%= org.display_name %></li>
         <li>Church: <%= org.church_name %></li>
-        <li>Branch: <%= draft.branchId || 'HQ (none)' %></li>
-        <li>Leadership title: <%= draft.leadershipTitle || '—' %> <em>(not a system role)</em></li>
-        <li>Bootstrap invite role: <%= draft.branchId ? 'branch_admin' : 'church_hq_admin' %></li>
+        <li>Placement: <strong><%= placement === 'branch' ? 'Branch' : 'HQ' %></strong></li>
+        <li>Leadership title: <%= draft.leadershipTitle || '—' %></li>
         <% if (selectedRole) { %>
-        <li>RBAC role: <strong><%= selectedRole.displayName %></strong> (<%= selectedRole.roleKey %>)</li>
-        <li>Scope: <%= draft.scopeType || 'church' %><% if (draft.scopeId) { %> · <%= draft.scopeId %><% } %></li>
-        <li>Sensitivity: <%= selectedRole.sensitivityLabel %><% if (selectedRole.markers && selectedRole.markers.length) { %> · <%= selectedRole.markers.map(markerLabel).join(', ') %><% } %></li>
-        <li>Assignment reason: <%= draft.assignmentReason || '—' %></li>
-        <li>Expiry: <%= draft.expiresAt || 'None' %></li>
-        <li>Inherited permissions (modules):
-          <% if (selectedRole.permissionGroups) { %>
-          <%= Object.keys(selectedRole.permissionGroups).join(', ') || '—' %>
-          <% } else { %>—<% } %>
-        </li>
+        <li>Role: <strong><%= selectedRole.displayName %></strong></li>
+        <li>Sensitivity: <%= selectedRole.sensitivityLabel %></li>
+        <li>Permission modules: <%= selectedRole.permissionGroups ? Object.keys(selectedRole.permissionGroups).join(', ') : '—' %></li>
         <% } else { %>
-        <li>RBAC role: none (invitation bootstrap only)</li>
+        <li>Role: <strong><%= draft.roleKey || '—' %></strong></li>
         <% } %>
+        <li>Scope: <%= placement === 'branch' ? 'branch' : 'church' %></li>
+        <li>Reason: <%= draft.assignmentReason || '—' %></li>
+        <li>Expiry: <%= draft.expiresAt || 'None' %></li>
       </ul>
-      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Send invitation</button>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Create invitation</button>
     </section>
     <% } %>
   </form>

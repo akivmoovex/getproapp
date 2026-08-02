@@ -114,17 +114,32 @@ function actorMayInvite(actorRoles, input) {
 
 /**
  * Create or resend a staff invitation. Raw token returned once for copy-once delivery.
+ * When allowPhoneOnly is true, email may be omitted if phoneNormalized (E.164) is provided.
+ * When skipTransaction is true, caller must already hold an open transaction on `db`.
  */
 async function inviteBlessBoardStaff(db, input) {
   const organizationId = String((input && input.organizationId) || "").trim();
   const churchId = String((input && input.churchId) || "").trim();
   const actorUserId = String((input && input.actorUserId) || "").trim();
   const emailDisplay = String((input && input.email) || "").trim();
-  const email = normalizeEmail(emailDisplay);
+  const email = emailDisplay ? normalizeEmail(emailDisplay) : "";
+  const allowPhoneOnly = Boolean(input && input.allowPhoneOnly);
+  const skipTransaction = Boolean(input && input.skipTransaction);
+  const phoneNormalized =
+    input && input.phoneNormalized != null
+      ? String(input.phoneNormalized).trim()
+      : "";
+  const phoneDisplay =
+    input && input.phoneDisplay != null
+      ? String(input.phoneDisplay).trim().slice(0, 40)
+      : phoneNormalized;
   const roleKey = String((input && input.roleKey) || "")
     .trim()
     .toLowerCase();
-  const displayName = String((input && input.displayName) || "").trim() || emailDisplay;
+  const displayName =
+    String((input && input.displayName) || "").trim() ||
+    emailDisplay ||
+    phoneDisplay;
   let branchId =
     input && input.branchId != null && String(input.branchId).trim()
       ? String(input.branchId).trim()
@@ -135,8 +150,14 @@ async function inviteBlessBoardStaff(db, input) {
   if (!UUID_RE.test(organizationId) || !UUID_RE.test(churchId) || !UUID_RE.test(actorUserId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "scope" };
   }
-  if (!email || !EMAIL_RE.test(email) || email.length > 254) {
+  if (email && (!EMAIL_RE.test(email) || email.length > 254)) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "email", message: "Enter a valid email address." };
+  }
+  if (!email && !(allowPhoneOnly && phoneNormalized)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "email", message: "Enter a valid email address." };
+  }
+  if (allowPhoneOnly && phoneNormalized && !/^\+[1-9][0-9]{6,14}$/.test(phoneNormalized)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "phone", message: "Enter a valid phone number." };
   }
   if (!INVITE_ROLES.includes(roleKey)) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "role_escalation" };
@@ -156,15 +177,19 @@ async function inviteBlessBoardStaff(db, input) {
 
   try {
     return await withClient(db, async (client) => {
-      await client.query("BEGIN");
+      if (!skipTransaction) await client.query("BEGIN");
       try {
         const org = await client.query(
           `SELECT id, status FROM platform.organizations WHERE id = $1 FOR UPDATE`,
           [organizationId]
         );
+        const fail = async (payload) => {
+          if (!skipTransaction) await client.query("ROLLBACK");
+          return payload;
+        };
+
         if (!org.rows[0] || String(org.rows[0].status) !== "active") {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.ORG_INACTIVE, reason: "organization_inactive" };
+          return fail({ ok: false, status: STATUS.ORG_INACTIVE, reason: "organization_inactive" });
         }
         const church = await client.query(
           `SELECT id, organization_id, status FROM blessboard.churches WHERE id = $1 FOR UPDATE`,
@@ -176,16 +201,14 @@ async function inviteBlessBoardStaff(db, input) {
           String(church.rows[0].status) === "suspended" ||
           String(church.rows[0].status) === "archived"
         ) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.ORG_INACTIVE, reason: "church_inactive" };
+          return fail({ ok: false, status: STATUS.ORG_INACTIVE, reason: "church_inactive" });
         }
 
         if (roleKey === "branch_admin") {
           if (!branchId && branchKey) {
             const branch = await authRepo.findBranchByChurchAndKey(client, churchId, branchKey);
             if (!branch || String(branch.status) !== "active") {
-              await client.query("ROLLBACK");
-              return { ok: false, status: STATUS.NOT_FOUND, reason: "branch" };
+              return fail({ ok: false, status: STATUS.NOT_FOUND, reason: "branch" });
             }
             branchId = branch.id;
           } else if (branchId) {
@@ -198,8 +221,7 @@ async function inviteBlessBoardStaff(db, input) {
               String(br.rows[0].church_id) !== churchId ||
               String(br.rows[0].status) !== "active"
             ) {
-              await client.query("ROLLBACK");
-              return { ok: false, status: STATUS.NOT_FOUND, reason: "branch" };
+              return fail({ ok: false, status: STATUS.NOT_FOUND, reason: "branch" });
             }
           }
         } else {
@@ -214,18 +236,21 @@ async function inviteBlessBoardStaff(db, input) {
           roleKey,
         });
         if (!gate.ok) {
-          await client.query("ROLLBACK");
-          return {
+          return fail({
             ok: false,
             status: STATUS.FORBIDDEN,
             reason: gate.reason || "actor",
-          };
+          });
         }
 
-        const existingUser = await authRepo.findUserByEmail(client, email);
+        let existingUser = email
+          ? await authRepo.findUserByEmail(client, email)
+          : null;
+        if (!existingUser && phoneNormalized) {
+          existingUser = await authRepo.findUserByPhone(client, phoneNormalized);
+        }
         if (existingUser && String(existingUser.id) === actorUserId) {
-          await client.query("ROLLBACK");
-          return { ok: false, status: STATUS.FORBIDDEN, reason: "self_invite" };
+          return fail({ ok: false, status: STATUS.FORBIDDEN, reason: "self_invite" });
         }
 
         let hasActiveStaffInOrg = false;
@@ -247,23 +272,23 @@ async function inviteBlessBoardStaff(db, input) {
             roleKey,
           });
           if (sameRole && String(sameRole.status) === "active") {
-            await client.query("ROLLBACK");
-            return {
+            return fail({
               ok: false,
               status: STATUS.CONFLICT,
               reason: "already_assigned",
               message: "That user already has this role.",
-            };
+            });
           }
         }
 
         const countsAsNewStaff = !hasActiveStaffInOrg;
         const countsAsNewUser = !hasActiveStaffInOrg;
-        // Pending invite for this email already counted in seat totals; resend does not add a seat.
+        // Pending invite for this identity already counted in seat totals; resend does not add a seat.
         const pending = await inviteRepo.findPendingByScope(client, {
           organizationId,
           churchId,
-          emailNormalized: email,
+          emailNormalized: email || null,
+          phoneNormalized: phoneNormalized || null,
           roleKey,
           branchId,
         });
@@ -273,33 +298,45 @@ async function inviteBlessBoardStaff(db, input) {
           countsAsNewUser: pending ? false : countsAsNewUser,
         });
         if (!seatGate.ok) {
-          await client.query("ROLLBACK");
           const mapped =
             seatGate.status === ENT_STATUS.LIMIT_EXCEEDED
               ? STATUS.LIMIT_EXCEEDED
               : STATUS.FORBIDDEN;
-          return {
+          return fail({
             ok: false,
             status: mapped,
             reason: seatGate.reason,
             current: seatGate.current,
             limit: seatGate.limit,
             message: seatGate.message,
-          };
+          });
         }
 
         if (pending) {
           await inviteRepo.markRevoked(client, pending.id, actorUserId);
         }
 
+        let userId = existingUser ? String(existingUser.id) : null;
         if (!existingUser) {
-          await authRepo.insertUser(client, {
-            emailNormalized: email,
-            emailDisplay: emailDisplay.slice(0, 254),
+          const created = await authRepo.insertUser(client, {
+            emailNormalized: email || null,
+            emailDisplay: email ? emailDisplay.slice(0, 254) : null,
             passwordHash: null,
             status: "invited",
             displayName: displayName.slice(0, 200),
+            phoneNormalized: phoneNormalized || null,
+            phoneDisplay: phoneNormalized ? phoneDisplay || phoneNormalized : null,
           });
+          userId = String(created.id);
+        } else if (phoneNormalized && !existingUser.phone_normalized) {
+          await client.query(
+            `UPDATE blessboard.users
+                SET phone_normalized = COALESCE(phone_normalized, $2),
+                    phone_display = COALESCE(phone_display, $3),
+                    updated_at = now()
+              WHERE id = $1`,
+            [existingUser.id, phoneNormalized, phoneDisplay || phoneNormalized]
+          );
         }
 
         const { rawToken, tokenHash } = generateInviteToken();
@@ -308,14 +345,49 @@ async function inviteBlessBoardStaff(db, input) {
           organizationId,
           churchId,
           branchId,
-          emailNormalized: email,
-          emailDisplay: emailDisplay.slice(0, 254),
+          emailNormalized: email || null,
+          emailDisplay: email ? emailDisplay.slice(0, 254) : null,
+          phoneNormalized: phoneNormalized || null,
+          phoneDisplay: phoneNormalized ? phoneDisplay || phoneNormalized : null,
           displayName: displayName.slice(0, 200),
           roleKey,
           tokenHash,
           expiresAt,
           invitedByUserId: actorUserId,
         });
+
+        const depCode =
+          (input && input.deploymentCode) ||
+          (await (async () => {
+            const fromEnv = (() => {
+              try {
+                const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+                const id = getPlatformDeploymentCode((input && input.env) || process.env);
+                return id && id.ok ? id.code : null;
+              } catch {
+                return null;
+              }
+            })();
+            if (fromEnv) {
+              const exists = await client.query(
+                `SELECT 1 FROM platform.deployments WHERE deployment_code = $1 LIMIT 1`,
+                [fromEnv]
+              );
+              if (exists.rows[0]) return fromEnv;
+            }
+            const row = await client.query(
+              `SELECT deployment_id AS deployment_code
+                 FROM platform.domains
+                WHERE organization_id = $1
+                ORDER BY is_primary DESC NULLS LAST, created_at ASC
+                LIMIT 1`,
+              [organizationId]
+            );
+            if (row.rows[0] && row.rows[0].deployment_code) {
+              return String(row.rows[0].deployment_code);
+            }
+            return fromEnv || "blessboard-org-staging";
+          })());
 
         await recordBlessBoardAudit(client, {
           churchId,
@@ -327,23 +399,28 @@ async function inviteBlessBoardStaff(db, input) {
           entityId: invitation.id,
           outcome: "success",
           env: input && input.env,
-          deploymentCode: input && input.deploymentCode,
+          deploymentCode: depCode,
           metadata: {
             status: pending ? "resent" : "created",
             reason_code: gate.source === "platform" ? "platform_override" : "tenant_invite",
             entity_key: roleKey,
             branch_key: branchKey || undefined,
             source: gate.source,
+            has_email: Boolean(email),
+            has_phone: Boolean(phoneNormalized),
           },
         });
 
-        await client.query("COMMIT");
+        if (!skipTransaction) await client.query("COMMIT");
         return {
           ok: true,
           status: STATUS.OK,
+          userId,
+          existingUser: Boolean(existingUser),
           invitation: {
             id: invitation.id,
             emailDisplay: invitation.emailDisplay,
+            phoneDisplay: invitation.phoneDisplay,
             roleKey: invitation.roleKey,
             expiresAt: invitation.expiresAt,
             resent: Boolean(pending),
@@ -353,10 +430,12 @@ async function inviteBlessBoardStaff(db, input) {
           delivery: "copy_once",
         };
       } catch (err) {
-        try {
-          await client.query("ROLLBACK");
-        } catch {
-          /* ignore */
+        if (!skipTransaction) {
+          try {
+            await client.query("ROLLBACK");
+          } catch {
+            /* ignore */
+          }
         }
         throw err;
       }
@@ -498,7 +577,12 @@ async function getInvitationForAccept(db, rawToken) {
         await inviteRepo.markExpired(client, invite.id);
         return { ok: false, status: STATUS.EXPIRED, message: GENERIC_ACCEPT_FAILURE };
       }
-      const user = await authRepo.findUserByEmail(client, invite.emailNormalized);
+      let user = invite.emailNormalized
+        ? await authRepo.findUserByEmail(client, invite.emailNormalized)
+        : null;
+      if (!user && invite.phoneNormalized) {
+        user = await authRepo.findUserByPhone(client, invite.phoneNormalized);
+      }
       const requiresPassword = !user || String(user.status) !== "active";
       return {
         ok: true,
@@ -508,6 +592,8 @@ async function getInvitationForAccept(db, rawToken) {
           roleKey: invite.roleKey,
           displayName: invite.displayName,
           requiresPassword,
+          hasEmail: Boolean(invite.emailNormalized),
+          hasPhone: Boolean(invite.phoneNormalized),
         },
       };
     });
@@ -596,7 +682,12 @@ async function acceptInvitation(db, input) {
           }
         }
 
-        let user = await authRepo.findUserByEmail(client, invite.emailNormalized);
+        let user = invite.emailNormalized
+          ? await authRepo.findUserByEmail(client, invite.emailNormalized)
+          : null;
+        if (!user && invite.phoneNormalized) {
+          user = await authRepo.findUserByPhone(client, invite.phoneNormalized);
+        }
         if (!user) {
           if (!passwordHash) {
             await client.query("ROLLBACK");
@@ -608,11 +699,13 @@ async function acceptInvitation(db, input) {
             };
           }
           user = await authRepo.insertUser(client, {
-            emailNormalized: invite.emailNormalized,
-            emailDisplay: invite.emailDisplay,
+            emailNormalized: invite.emailNormalized || null,
+            emailDisplay: invite.emailDisplay || null,
             passwordHash,
             status: "active",
             displayName: invite.displayName,
+            phoneNormalized: invite.phoneNormalized || null,
+            phoneDisplay: invite.phoneDisplay || null,
           });
         } else if (String(user.status) === "invited") {
           if (!passwordHash) {
@@ -661,6 +754,35 @@ async function acceptInvitation(db, input) {
           return { ok: false, status: STATUS.CONFLICT, message: GENERIC_ACCEPT_FAILURE };
         }
 
+        const acceptDepCode = await (async () => {
+          try {
+            const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+            const id = getPlatformDeploymentCode((input && input.env) || process.env);
+            const fromEnv = id && id.ok ? id.code : null;
+            if (fromEnv) {
+              const exists = await client.query(
+                `SELECT 1 FROM platform.deployments WHERE deployment_code = $1 LIMIT 1`,
+                [fromEnv]
+              );
+              if (exists.rows[0]) return fromEnv;
+            }
+            const row = await client.query(
+              `SELECT deployment_id AS deployment_code
+                 FROM platform.domains
+                WHERE organization_id = $1
+                ORDER BY is_primary DESC NULLS LAST, created_at ASC
+                LIMIT 1`,
+              [invite.organizationId]
+            );
+            if (row.rows[0] && row.rows[0].deployment_code) {
+              return String(row.rows[0].deployment_code);
+            }
+            return fromEnv || "blessboard-org-staging";
+          } catch {
+            return "blessboard-org-staging";
+          }
+        })();
+
         await recordBlessBoardAudit(client, {
           churchId: invite.churchId,
           organizationId: invite.organizationId,
@@ -670,6 +792,8 @@ async function acceptInvitation(db, input) {
           entityType: "user_invitation",
           entityId: invite.id,
           outcome: "success",
+          deploymentCode: acceptDepCode,
+          env: input && input.env,
           metadata: {
             status: "accepted",
             entity_key: invite.roleKey,
@@ -685,6 +809,8 @@ async function acceptInvitation(db, input) {
           entityType: "user_role",
           entityId: roleRow && roleRow.id,
           outcome: "success",
+          deploymentCode: acceptDepCode,
+          env: input && input.env,
           metadata: {
             status: "assigned",
             entity_key: invite.roleKey,

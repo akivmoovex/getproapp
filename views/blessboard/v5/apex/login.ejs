@@ -135,19 +135,20 @@
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
             <div class="bb-auth-field">
-              <label for="email">Email</label>
+              <label for="email">Email or phone number</label>
               <div class="bb-auth-input-wrap">
                 <span class="bb-auth-input-wrap__icon material-symbols-outlined" aria-hidden="true">mail</span>
                 <input
                   id="email"
                   name="email"
-                  type="email"
+                  type="text"
                   required
                   autocomplete="username"
-                  inputmode="email"
+                  inputmode="text"
                   spellcheck="false"
-                  placeholder="you@example.com"
+                  placeholder="Email or phone"
                   value="<%= emailValue || '' %>"
+                  data-bb-auth-identifier="1"
                   <% if (errorState === 'credentials' || errorState === 'generic' || errorState === 'throttled') { %>
                   aria-invalid="true"
                   aria-describedby="<%= errorState === 'credentials' ? 'email-error bb-auth-error-summary' : 'bb-auth-error-summary' %>"
@@ -155,7 +156,7 @@
                 />
               </div>
               <% if (errorState === 'credentials') { %>
-              <p class="bb-auth-field__error" id="email-error">Check your email and try again.</p>
+              <p class="bb-auth-field__error" id="email-error">Check your email or phone number and try again.</p>
               <% } %>
             </div>
 

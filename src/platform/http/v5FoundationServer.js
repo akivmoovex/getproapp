@@ -1197,7 +1197,7 @@ function createV5FoundationApp(options) {
         const message =
           result.status === "no_active_role"
             ? "Sign-in is not available for this account."
-            : "Invalid email or password.";
+            : "Invalid email, phone number, or password.";
         return res.status(401).type("html").send(renderLoginPage({ ...loginPageOpts, error: message }));
       }
 

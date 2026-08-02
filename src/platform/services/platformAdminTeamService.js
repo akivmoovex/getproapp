@@ -30,6 +30,10 @@ const {
   listPendingInvitations,
   STATUS: INVITE_STATUS,
 } = require("../../blessboard/services/inviteBlessBoardStaff");
+const {
+  createScopedTeamMember,
+  STATUS: SCOPED_STATUS,
+} = require("./createScopedTeamMemberService");
 const { normalizeEmail } = require("../../blessboard/services/createBlessBoardUser");
 const authRepo = require("../../blessboard/repositories/blessBoardAuthRepository");
 const { resolveOrganizationTarget } = require("./platformSupportModeService");
@@ -182,6 +186,14 @@ function effectiveAccessSummary(userRow) {
 async function resolveTeamOrganization(db, organizationKeyOrId) {
   const org = await resolveOrganizationTarget(db, organizationKeyOrId);
   if (!org) return null;
+  let countryCode = org.country_code || null;
+  if (!countryCode && org.church_id) {
+    const cc = await db.query(
+      `SELECT country_code FROM blessboard.churches WHERE id = $1 LIMIT 1`,
+      [org.church_id]
+    );
+    countryCode = cc.rows[0] ? cc.rows[0].country_code : null;
+  }
   return {
     id: org.id,
     organization_key: org.organization_key,
@@ -189,6 +201,7 @@ async function resolveTeamOrganization(db, organizationKeyOrId) {
     church_id: org.church_id,
     church_key: org.church_key,
     church_name: org.church_name,
+    country_code: countryCode,
   };
 }
 
@@ -597,273 +610,158 @@ async function inviteOrganizationTeamMember(db, input) {
   const firstName = String((input.firstName || "").trim());
   const lastName = String((input.lastName || "").trim());
   const emailDisplay = String((input.email || "").trim());
-  const email = normalizeEmail(emailDisplay);
   const phone = String((input.phone || "").trim()).slice(0, 40);
   const leadershipTitle = String((input.leadershipTitle || "").trim()).slice(
     0,
     120
   );
-  const branchId =
+  const body = input.body || {};
+  let branchId =
     input.branchId != null && String(input.branchId).trim()
       ? String(input.branchId).trim()
       : null;
+  const branchKey =
+    input.branchKey != null && String(input.branchKey).trim()
+      ? String(input.branchKey).trim().toLowerCase()
+      : body.branch_key
+        ? String(body.branch_key).trim().toLowerCase()
+        : "";
+  if (!branchId && branchKey) {
+    const byKey = await db.query(
+      `SELECT b.id FROM blessboard.branches b
+        JOIN blessboard.churches c ON c.id = b.church_id
+       WHERE c.organization_id = $1 AND b.church_id = $2
+         AND lower(b.branch_key) = $3 AND b.status = 'active'
+       LIMIT 1`,
+      [org.id, org.church_id, branchKey]
+    );
+    if (!byKey.rows[0]) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "forged_branch" };
+    }
+    branchId = String(byKey.rows[0].id);
+  }
+  const placementRaw = String(body.placement || input.placement || "")
+    .trim()
+    .toLowerCase();
+  const placement =
+    placementRaw === "branch" || placementRaw === "hq"
+      ? placementRaw
+      : branchId
+        ? "branch"
+        : "hq";
+  if (placement === "hq") branchId = null;
 
-  if (!email || !EMAIL_RE.test(email)) {
-    return { ok: false, status: STATUS.INVALID_INPUT, reason: "email" };
+  if (!phone) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: "phone",
+      message: "Enter a valid phone number.",
+    };
   }
   if (!firstName || !lastName) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "name" };
   }
 
-  const displayName = `${firstName} ${lastName}`.trim().slice(0, 200);
-  const actorUserId = String(input.actorUserId).trim();
-
-  const existing = await authRepo.findUserByEmail(db, email);
-  if (existing && String(existing.id) === actorUserId) {
-    return { ok: false, status: STATUS.FORBIDDEN, reason: "self_invite" };
-  }
-
-  if (branchId) {
-    if (!UUID_RE.test(branchId)) {
-      return { ok: false, status: STATUS.INVALID_INPUT, reason: "branch" };
-    }
-    const br = await db.query(
-      `SELECT b.id FROM blessboard.branches b
-        JOIN blessboard.churches c ON c.id = b.church_id
-       WHERE b.id = $1 AND b.church_id = $2 AND c.organization_id = $3
-         AND b.status = 'active'
-       LIMIT 1`,
-      [branchId, org.church_id, org.id]
-    );
-    if (!br.rows[0]) {
-      return { ok: false, status: STATUS.FORBIDDEN, reason: "forged_branch" };
-    }
-  }
-
-  const bootstrapRole = branchId ? "branch_admin" : "church_hq_admin";
-  let invitationResult = null;
-  let inviteSkipped = false;
-
-  if (existing) {
-    const sameRole = await db.query(
-      `SELECT id FROM blessboard.user_roles
-        WHERE user_id = $1 AND organization_id = $2 AND church_id = $3
-          AND role_key = $4 AND status = 'active'
-          AND (($5::uuid IS NULL AND branch_id IS NULL) OR branch_id = $5)
-        LIMIT 1`,
-      [existing.id, org.id, org.church_id, bootstrapRole, branchId]
-    );
-    if (sameRole.rows[0]) {
-      inviteSkipped = true;
-    }
-  }
-
-  if (!inviteSkipped) {
-    invitationResult = await inviteBlessBoardStaff(db, {
-      organizationId: org.id,
-      churchId: org.church_id,
-      actorUserId,
-      email: emailDisplay,
-      roleKey: bootstrapRole,
-      displayName,
-      branchId,
-      env: input.env,
-      deploymentCode: deploymentCode(input.env),
-    });
-    if (!invitationResult.ok) {
-      if (invitationResult.reason === "already_assigned") {
-        inviteSkipped = true;
-      } else {
-        return {
-          ok: false,
-          status:
-            invitationResult.status === INVITE_STATUS.CONFLICT
-              ? STATUS.CONFLICT
-              : invitationResult.status === INVITE_STATUS.FORBIDDEN
-                ? STATUS.FORBIDDEN
-                : invitationResult.status === INVITE_STATUS.INVALID_INPUT
-                  ? STATUS.INVALID_INPUT
-                  : invitationResult.status === INVITE_STATUS.NOT_FOUND
-                    ? STATUS.NOT_FOUND
-                    : STATUS.LOOKUP_ERROR,
-          reason: invitationResult.reason || "invite_failed",
-          message: invitationResult.message,
-        };
-      }
-    }
-  }
-
-  const userRow = await authRepo.findUserByEmail(db, email);
-  if (!userRow) {
-    return {
-      ok: false,
-      status: STATUS.LOOKUP_ERROR,
-      reason: "user_missing_after_invite",
-    };
-  }
-
-  const tenantContext = buildTenantContext(org);
   const roleAssignments = Array.isArray(input.roleAssignments)
     ? input.roleAssignments
-    : parseRoleAssignmentsBody(input.body || {});
+    : parseRoleAssignmentsBody(body);
+  const primaryRole =
+    (roleAssignments[0] && roleAssignments[0].roleKey) ||
+    String(body.role_key || input.roleKey || "").trim() ||
+    (placement === "branch" ? "branch_admin" : "church_hq_admin");
+  const assignmentReason =
+    (roleAssignments[0] && roleAssignments[0].assignmentReason) ||
+    String(body.assignment_reason || input.assignmentReason || "").trim() ||
+    null;
+  const expiresAt =
+    (roleAssignments[0] && roleAssignments[0].expiresAt) ||
+    body.expires_at ||
+    input.expiresAt ||
+    null;
 
-  const assignmentResults = [];
-  for (const ra of roleAssignments) {
-    if (String(ra.scopeType || "") === "platform") {
-      return {
-        ok: false,
-        status: STATUS.FORBIDDEN,
-        reason: "platform_scope_forbidden",
-        assignmentResults,
-      };
-    }
-    if (String(userRow.id) === actorUserId) {
-      return { ok: false, status: STATUS.FORBIDDEN, reason: "self_elevation" };
-    }
+  if (String(primaryRole) === "platform_administrator" || String(primaryRole) === "platform_admin") {
+    return { ok: false, status: STATUS.FORBIDDEN, reason: "platform_scope_forbidden" };
+  }
 
-    let scopeType = String(ra.scopeType || "church").trim();
-    let scopeId = ra.scopeId ? String(ra.scopeId).trim() : "";
-    let churchId = org.church_id;
-    if (scopeType === "organisation") {
-      churchId = null;
-      scopeId = scopeId || org.id;
-    } else if (scopeType === "church") {
-      scopeId = org.church_id;
-      churchId = org.church_id;
-    } else if (scopeType === "branch") {
-      churchId = org.church_id;
-      if (!scopeId && branchId) scopeId = branchId;
-      if (scopeId) {
-        const br = await db.query(
-          `SELECT b.id FROM blessboard.branches b
-            JOIN blessboard.churches c ON c.id = b.church_id
-           WHERE b.id = $1 AND c.organization_id = $2 LIMIT 1`,
-          [scopeId, org.id]
-        );
-        if (!br.rows[0]) {
-          return {
-            ok: false,
-            status: STATUS.FORBIDDEN,
-            reason: "cross_org_scope_mismatch",
-            assignmentResults,
-          };
-        }
-      }
-    }
-
-    const roleMeta = await db.query(
-      `SELECT role_key, is_sensitive FROM blessboard.roles
-        WHERE role_key = $1 AND is_active = true LIMIT 1`,
-      [ra.roleKey]
-    );
-    const roleRow = roleMeta.rows[0];
-    if (!roleRow) {
-      return {
-        ok: false,
-        status: STATUS.NOT_FOUND,
-        reason: "role",
-        assignmentResults,
-      };
-    }
-    const needsSensitive =
-      roleRow.is_sensitive ||
-      HIGHLY_SENSITIVE_ROLE_KEYS.includes(String(roleRow.role_key));
+  const roleMeta = await db.query(
+    `SELECT role_key, is_sensitive FROM blessboard.roles
+      WHERE role_key = $1 AND is_active = true LIMIT 1`,
+    [primaryRole]
+  );
+  const needsSensitive =
+    (roleMeta.rows[0] && roleMeta.rows[0].is_sensitive) ||
+    HIGHLY_SENSITIVE_ROLE_KEYS.includes(String(primaryRole));
+  if (roleMeta.rows[0]) {
     const assignPerm = needsSensitive
       ? "platform.roles.assign_sensitive"
       : "platform.roles.assign_standard";
-    const assignGate = await assertPlatformPermission(db, actorUserId, assignPerm);
+    const assignGate = await assertPlatformPermission(
+      db,
+      input.actorUserId,
+      assignPerm
+    );
     if (!assignGate.ok) {
-      return {
-        ok: false,
-        status: STATUS.FORBIDDEN,
-        reason: "assign_permission",
-        assignmentResults,
-      };
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "assign_permission" };
     }
-    if (needsSensitive && !String(ra.assignmentReason || "").trim()) {
-      return {
-        ok: false,
-        status: STATUS.INVALID_INPUT,
-        reason: "reason_required",
-        assignmentResults,
-      };
-    }
+  }
 
-    let expiresAt = null;
-    if (ra.expiresAt) {
-      const exp = new Date(ra.expiresAt);
-      if (Number.isNaN(exp.getTime())) {
-        return {
-          ok: false,
-          status: STATUS.INVALID_INPUT,
-          reason: "expires_at",
-          assignmentResults,
-        };
-      }
-      expiresAt = exp.toISOString();
-    }
+  const created = await createScopedTeamMember(db, {
+    organizationId: org.id,
+    churchId: org.church_id,
+    actorUserId: input.actorUserId,
+    firstName,
+    lastName,
+    phone,
+    email: emailDisplay || undefined,
+    leadershipTitle,
+    placement,
+    branchId,
+    roleKey: primaryRole,
+    assignmentReason,
+    expiresAt,
+    country: org.country_code || null,
+    actorSource: "platform_admin",
+    invitationAcceptBase: input.invitationAcceptBase || "/invite/accept",
+    env: input.env,
+    deploymentCode: deploymentCode(input.env),
+  });
 
-    const created = await createRoleAssignment(db, {
-      actorUserId,
-      userId: userRow.id,
-      roleKey: ra.roleKey,
-      organizationId: org.id,
-      churchId,
-      scopeType,
-      scopeId,
-      assignmentOrigin: "manual",
-      assignmentReason: ra.assignmentReason || null,
-      expiresAt,
-      tenantContext,
-      actorChurchId: org.church_id,
-      forbidPlatformScope: true,
-    });
-    assignmentResults.push({
-      roleKey: ra.roleKey,
-      ok: created.ok,
-      reason: created.reason || null,
-      idempotent: Boolean(created.idempotent),
-      assignmentId:
-        created.assignment && created.assignment.id
-          ? created.assignment.id
-          : null,
-    });
-    if (!created.ok && created.reason !== "duplicate") {
-      return {
-        ok: false,
-        status:
-          created.status === "forbidden"
+  if (!created.ok) {
+    return {
+      ok: false,
+      status:
+        created.status === SCOPED_STATUS.CONFLICT
+          ? STATUS.CONFLICT
+          : created.status === SCOPED_STATUS.FORBIDDEN
             ? STATUS.FORBIDDEN
-            : created.status === "invalid_input"
+            : created.status === SCOPED_STATUS.INVALID_INPUT
               ? STATUS.INVALID_INPUT
-              : created.status === "conflict"
-                ? STATUS.CONFLICT
+              : created.status === SCOPED_STATUS.NOT_FOUND
+                ? STATUS.NOT_FOUND
                 : STATUS.LOOKUP_ERROR,
-        reason: created.reason,
-        assignmentResults,
-        userId: userRow.id,
-      };
-    }
+      reason: created.reason || "invite_failed",
+      message: created.message,
+      existingUser: created.existingUser || null,
+      existingMember: created.existingMember || null,
+    };
   }
 
   await recordAuditEventSafe(db, {
     deploymentCode: deploymentCode(input.env),
     organizationId: org.id,
     churchId: org.church_id,
-    actorUserId,
-    actionKey: inviteSkipped
-      ? "platform.team.user_reused"
-      : "platform.team.invite",
+    actorUserId: input.actorUserId,
+    actionKey: "platform.team.invite",
     entityType: "user",
-    entityId: userRow.id,
+    entityId: created.userId,
     outcome: "success",
     metadata: {
       source: "platform_admin",
       actor_type: "platform_admin",
-      entity_key: bootstrapRole,
-      reason_code: inviteSkipped ? "user_reused" : "invite_created",
-      count: assignmentResults.length,
-      status: existing ? "existing_user" : "new_user",
+      entity_key: primaryRole,
+      reason_code: placement,
+      status: created.existingUser ? "existing_user" : "new_user",
     },
   });
 
@@ -871,19 +769,33 @@ async function inviteOrganizationTeamMember(db, input) {
     ok: true,
     status: STATUS.OK,
     organization: org,
-    userId: userRow.id,
-    existingUser: Boolean(existing),
-    inviteSkipped,
-    invitation:
-      invitationResult && invitationResult.ok
-        ? invitationResult.invitation
-        : null,
-    rawToken:
-      invitationResult && invitationResult.ok
-        ? invitationResult.rawToken
-        : null,
-    assignmentResults,
+    userId: created.userId,
+    existingUser: Boolean(created.existingUser),
+    inviteSkipped: false,
+    invitation: created.invitation,
+    rawToken: created.rawToken,
+    invitationUrl: created.invitationUrl,
+    whatsappUrl: created.whatsappUrl,
+    shareMessage: created.shareMessage,
+    placement: created.placement,
+    branch: created.branch,
+    church: created.church,
+    role: created.role,
+    scopeType: created.scopeType,
+    phoneDisplay: created.phoneDisplay,
+    emailDisplay: created.emailDisplay,
+    displayName: created.displayName,
+    assignmentResults: created.rbacAssignment
+      ? [
+          {
+            roleKey: primaryRole,
+            ok: true,
+            assignmentId: created.rbacAssignment.id || null,
+          },
+        ]
+      : [],
     leadershipTitle: leadershipTitle || null,
+    result: created,
   };
 }
 
