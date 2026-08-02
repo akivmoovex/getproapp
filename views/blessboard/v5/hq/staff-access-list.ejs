@@ -1,0 +1,134 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = users || [];
+  var branchOptions = branches || [];
+  var roleOptions = roles || [];
+  var f = filters || {};
+  function statusClass(st) {
+    if (st === 'active') return 'bb-hq-chip--ok';
+    if (st === 'suspended' || st === 'inactive') return 'bb-hq-chip--error';
+    return 'bb-hq-chip--muted';
+  }
+  function sensChip(label) {
+    if (label === 'Highly sensitive') return 'bb-hq-chip--error';
+    if (label === 'Sensitive' || label === 'Legacy compatibility') return 'bb-hq-chip--pending';
+    return 'bb-hq-chip--muted';
+  }
+%>
+<section class="bb-hq-page" data-bb-staff-access="1" aria-label="Staff access">
+  <header class="bb-hq-page-head bb-hq-page-head--split">
+    <div>
+      <p class="bb-hq-breadcrumb">
+        <a href="/hq">Dashboard</a>
+        <span aria-hidden="true">›</span>
+        <a href="/hq/settings">Settings</a>
+        <span aria-hidden="true">›</span>
+        <span>Staff access</span>
+      </p>
+      <h1 class="bb-hq-page-head__title">Staff access</h1>
+      <p class="bb-hq-lede">
+        Manage BlessBoard system access for <strong><%= churchDisplayName %></strong>.
+        Church leadership position and BlessBoard system access are managed separately.
+      </p>
+    </div>
+  </header>
+
+  <% if (notice) { %>
+  <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (error) { %>
+  <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <p class="bb-hq-banner bb-hq-banner--info" role="note">
+    Canonical RBAC assignments live here.
+    Legacy HQ/branch admin roles remain under
+    <a href="/hq/roles">legacy staff permissions</a>.
+    <a href="/hq/settings/roles">Role catalogue</a> ·
+    <a href="/hq/settings/access-audit">Access audit</a>
+  </p>
+
+  <form method="get" action="/hq/settings/staff-access" class="bb-hq-card bb-hq-roles__form" aria-label="Filter staff">
+    <div class="bb-hq-field">
+      <label for="staff-q">Search name or email</label>
+      <input id="staff-q" name="q" type="search" value="<%= f.q || '' %>" maxlength="200" autocomplete="off" />
+    </div>
+    <div class="bb-hq-field">
+      <label for="staff-branch">Branch</label>
+      <select id="staff-branch" name="branch">
+        <option value="">All branches</option>
+        <% branchOptions.forEach(function (b) { %>
+        <option value="<%= b.id %>" <%= f.branch === String(b.id) ? 'selected' : '' %>><%= b.displayName || b.display_name %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="staff-role">Role</label>
+      <select id="staff-role" name="role">
+        <option value="">All roles</option>
+        <% roleOptions.forEach(function (r) { %>
+        <option value="<%= r.roleKey %>" <%= f.role === r.roleKey ? 'selected' : '' %>><%= r.displayName %></option>
+        <% }); %>
+        <option value="church_hq_admin" <%= f.role === 'church_hq_admin' ? 'selected' : '' %>>Legacy HQ admin</option>
+        <option value="branch_admin" <%= f.role === 'branch_admin' ? 'selected' : '' %>>Legacy branch admin</option>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="staff-status">Assignment status</label>
+      <select id="staff-status" name="status">
+        <option value="">Any</option>
+        <option value="active" <%= f.status === 'active' ? 'selected' : '' %>>Active RBAC</option>
+        <option value="expired" <%= f.status === 'expired' ? 'selected' : '' %>>Expired</option>
+        <option value="revoked" <%= f.status === 'revoked' ? 'selected' : '' %>>Revoked</option>
+      </select>
+    </div>
+    <div class="bb-hq-field">
+      <label for="staff-sensitivity">Sensitivity</label>
+      <select id="staff-sensitivity" name="sensitivity">
+        <option value="">Any</option>
+        <option value="standard" <%= f.sensitivity === 'standard' ? 'selected' : '' %>>Standard</option>
+        <option value="sensitive" <%= f.sensitivity === 'sensitive' ? 'selected' : '' %>>Sensitive</option>
+        <option value="highly_sensitive" <%= f.sensitivity === 'highly_sensitive' ? 'selected' : '' %>>Highly sensitive</option>
+      </select>
+    </div>
+    <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Filter</button>
+  </form>
+
+  <form method="post" action="/hq/settings/staff-access/assign" class="bb-hq-card bb-hq-roles__form" aria-label="Open user by email">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+    <h2 class="bb-hq-section-title">Open staff member</h2>
+    <div class="bb-hq-field">
+      <label for="open-email">Email</label>
+      <input id="open-email" name="email" type="email" required maxlength="254" autocomplete="off" />
+    </div>
+    <button type="submit" class="bb-hq-btn">Open access detail</button>
+  </form>
+
+  <section class="bb-hq-card" aria-label="Staff list">
+    <h2 class="bb-hq-section-title">Staff with access</h2>
+    <% if (!rows.length) { %>
+    <p class="bb-hq-lede">No matching staff in this organisation.</p>
+    <% } else { %>
+    <ul class="bb-hq-list">
+      <% rows.forEach(function (u) { %>
+      <li>
+        <a href="/hq/settings/staff-access/<%= u.id %>"><strong><%= u.displayName %></strong></a>
+        <span class="bb-hq-muted"> · <%= u.emailDisplay %></span>
+        <span class="bb-hq-chip <%= statusClass(u.status) %>"><%= u.status %></span>
+        <% if (u.hasLegacy) { %><span class="bb-hq-chip bb-hq-chip--pending">Legacy compatibility</span><% } %>
+        <% if (u.hasExpired) { %><span class="bb-hq-chip bb-hq-chip--muted">Expired assignment</span><% } %>
+        <% if (u.hasRevoked) { %><span class="bb-hq-chip bb-hq-chip--muted">Revoked history</span><% } %>
+        <div class="bb-hq-muted">
+          <% (u.activeRoles || []).forEach(function (r) { %>
+            <span class="bb-hq-chip <%= r.source === 'legacy' ? 'bb-hq-chip--pending' : 'bb-hq-chip--ok' %>">
+              <%= r.roleKey %><% if (r.scopeType) { %> · <%= r.scopeType %><% } %><% if (r.expiresAt) { %> · expires <% } %>
+            </span>
+          <% }); %>
+        </div>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>

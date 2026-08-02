@@ -1,0 +1,258 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var d = detail || {};
+  var u = d.user || {};
+  var scopeOpts = scopeOptions || {};
+  var types = scopeTypes || [];
+  var catalogue = assignableRoles || [];
+  function fmtDate(v) {
+    if (!v) return '—';
+    try { return new Date(v).toISOString().replace('T', ' ').slice(0, 19) + ' UTC'; } catch (e) { return String(v); }
+  }
+  function sensChip(label) {
+    if (label === 'Highly sensitive') return 'bb-hq-chip--error';
+    if (label === 'Sensitive' || label === 'Legacy compatibility') return 'bb-hq-chip--pending';
+    return 'bb-hq-chip--ok';
+  }
+%>
+<section class="bb-hq-page" data-bb-staff-access-detail="1" aria-label="Staff access detail">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/settings/staff-access">Staff access</a>
+      <span aria-hidden="true">›</span>
+      <span><%= u.displayName %></span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= u.displayName %></h1>
+    <p class="bb-hq-lede">
+      <%= u.emailDisplay %> ·
+      <span class="bb-hq-chip <%= u.status === 'active' ? 'bb-hq-chip--ok' : 'bb-hq-chip--error' %>"><%= u.status %></span>
+    </p>
+    <p class="bb-hq-banner bb-hq-banner--info" role="note">
+      Church leadership position and BlessBoard system access are managed separately.
+      Legacy HQ/branch admin changes use <a href="/hq/roles">legacy staff permissions</a>.
+    </p>
+  </header>
+
+  <% if (notice) { %>
+  <p class="bb-hq-banner bb-hq-banner--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (error) { %>
+  <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <% } %>
+
+  <% if (d.sensitiveSummary) { %>
+  <section class="bb-hq-card" aria-label="Sensitive access summary">
+    <h2 class="bb-hq-section-title">Sensitive-access summary</h2>
+    <ul class="bb-hq-list">
+      <li>Finance access: <strong><%= d.sensitiveSummary.hasFinance ? 'Yes' : 'No' %></strong></li>
+      <li>Pastoral access: <strong><%= d.sensitiveSummary.hasPastoral ? 'Yes' : 'No' %></strong></li>
+      <li>Export access: <strong><%= d.sensitiveSummary.hasExport ? 'Yes' : 'No' %></strong></li>
+      <li>Role administration: <strong><%= d.sensitiveSummary.hasRoleAdmin ? 'Yes' : 'No' %></strong></li>
+    </ul>
+    <p class="bb-hq-muted">Pastoral notes and Finance transaction details are never shown here.</p>
+  </section>
+  <% } %>
+
+  <section class="bb-hq-card" aria-label="Legacy roles">
+    <h2 class="bb-hq-section-title">Legacy compatibility roles</h2>
+    <% if (!(d.legacyRoles || []).length) { %>
+    <p class="bb-hq-lede">None.</p>
+    <% } else { %>
+    <ul class="bb-hq-list">
+      <% (d.legacyRoles || []).forEach(function (leg) { %>
+      <li>
+        <span class="bb-hq-chip bb-hq-chip--pending">Legacy compatibility</span>
+        <strong><%= leg.roleKey %></strong>
+        · scope <%= leg.scopeType %><% if (leg.branchDisplayName) { %> (<%= leg.branchDisplayName %>)<% } %>
+        · since <%= fmtDate(leg.createdAt) %>
+        <p class="bb-hq-muted">Permissions from compatibility mapping (<%= (leg.permissions || []).length %> keys). Manage via <a href="/hq/roles">/hq/roles</a>.</p>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-hq-card" aria-label="Active RBAC assignments">
+    <h2 class="bb-hq-section-title">Active RBAC assignments</h2>
+    <% if (!(d.activeAssignments || []).length) { %>
+    <p class="bb-hq-lede">None.</p>
+    <% } else { %>
+    <ul class="bb-hq-list">
+      <% (d.activeAssignments || []).forEach(function (a) { %>
+      <li>
+        <span class="bb-hq-chip <%= sensChip(a.sensitivityLabel) %>"><%= a.sensitivityLabel %></span>
+        <strong><%= a.roleKey %></strong>
+        · <%= a.scopeType %><% if (a.scopeId) { %> scope<% } %>
+        · origin <%= a.assignmentOrigin || '—' %>
+        <% if (a.assignmentReason) { %> · reason: <%= a.assignmentReason %><% } %>
+        · assigned <%= fmtDate(a.createdAt || a.assignedAt) %>
+        <% if (a.expiresAt) { %> · expires <%= fmtDate(a.expiresAt) %><% } else { %> · no expiry<% } %>
+        <form method="post" action="/hq/settings/staff-access/<%= u.id %>/assignments/<%= a.id %>/revoke" class="bb-hq-roles__form" onsubmit="return confirm('Revoke this assignment?');">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <div class="bb-hq-field">
+            <label for="revoke-<%= a.id %>">Revocation reason<%= a.isSensitiveRole || a.sensitivityLabel !== 'Standard' ? ' (required for sensitive)' : '' %></label>
+            <input id="revoke-<%= a.id %>" name="revocation_reason" type="text" maxlength="500" <%= a.isSensitiveRole || a.sensitivityLabel !== 'Standard' ? 'required' : '' %> />
+          </div>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--danger">Revoke</button>
+        </form>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-hq-card" aria-label="Expired assignments">
+    <h2 class="bb-hq-section-title">Expired assignments</h2>
+    <% if (!(d.expiredAssignments || []).length) { %>
+    <p class="bb-hq-lede">None.</p>
+    <% } else { %>
+    <ul class="bb-hq-list">
+      <% (d.expiredAssignments || []).forEach(function (a) { %>
+      <li>
+        <span class="bb-hq-chip bb-hq-chip--muted">Expired</span>
+        <strong><%= a.roleKey %></strong> · <%= a.scopeType %> · expired <%= fmtDate(a.expiresAt) %>
+        <span class="bb-hq-muted">Expired assignments are not reactivated automatically.</span>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-hq-card" aria-label="Revoked assignments">
+    <h2 class="bb-hq-section-title">Revoked assignments</h2>
+    <% if (!(d.revokedAssignments || []).length) { %>
+    <p class="bb-hq-lede">None.</p>
+    <% } else { %>
+    <ul class="bb-hq-list">
+      <% (d.revokedAssignments || []).forEach(function (a) { %>
+      <li>
+        <span class="bb-hq-chip bb-hq-chip--muted">Revoked</span>
+        <strong><%= a.roleKey %></strong> · <%= a.scopeType %>
+        <% if (a.revocationReason) { %> · <%= a.revocationReason %><% } %>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-hq-card" aria-labelledby="assign-heading">
+    <h2 id="assign-heading" class="bb-hq-section-title">Assign role</h2>
+    <p class="bb-hq-lede">Sensitive and highly sensitive roles require a reason. Highly sensitive roles also require organisation administrator authority. Self-assignment is prohibited.</p>
+    <form method="post" action="/hq/settings/staff-access/<%= u.id %>/assign" class="bb-hq-roles__form" data-bb-staff-assign="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <div class="bb-hq-field">
+        <label for="role_key">Role</label>
+        <select id="role_key" name="role_key" required>
+          <option value="">Select role</option>
+          <% catalogue.forEach(function (r) { %>
+          <option value="<%= r.roleKey %>" data-sensitive="<%= r.isSensitive ? '1' : '0' %>" data-label="<%= r.sensitivityLabel %>">
+            <%= r.displayName %> (<%= r.sensitivityLabel %>)
+          </option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="bb-hq-field">
+        <label for="scope_type">Scope type</label>
+        <select id="scope_type" name="scope_type" required data-bb-scope-type="1">
+          <% types.forEach(function (t) { %>
+          <option value="<%= t %>"><%= t %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="bb-hq-field" data-bb-scope-id-wrap="1">
+        <label for="scope_id">Resource</label>
+        <select id="scope_id" name="scope_id">
+          <option value="">Select resource</option>
+        </select>
+      </div>
+      <div class="bb-hq-field">
+        <label for="expires_at">Expiry (optional, UTC)</label>
+        <input id="expires_at" name="expires_at" type="datetime-local" />
+      </div>
+      <div class="bb-hq-field">
+        <label for="assignment_reason">Reason (required for sensitive / highly sensitive)</label>
+        <textarea id="assignment_reason" name="assignment_reason" rows="2" maxlength="1000"></textarea>
+      </div>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Assign role</button>
+    </form>
+    <script>
+      (function () {
+        var options = <%- JSON.stringify(scopeOpts) %>;
+        var typeEl = document.getElementById('scope_type');
+        var idEl = document.getElementById('scope_id');
+        function refresh() {
+          var t = typeEl.value;
+          var list = options[t] || [];
+          idEl.innerHTML = '';
+          if (t === 'organisation' || t === 'church') {
+            list.forEach(function (o) {
+              var opt = document.createElement('option');
+              opt.value = o.id;
+              opt.textContent = o.label;
+              idEl.appendChild(opt);
+            });
+            idEl.required = false;
+          } else if (t === 'assigned_member' || t === 'assigned_case') {
+            var opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'Enter validated ID via server only — use existing assignment tools';
+            idEl.appendChild(opt);
+            idEl.required = true;
+          } else {
+            list.forEach(function (o) {
+              var opt = document.createElement('option');
+              opt.value = o.id;
+              opt.textContent = o.label || o.key;
+              idEl.appendChild(opt);
+            });
+            idEl.required = true;
+          }
+        }
+        if (typeEl) { typeEl.addEventListener('change', refresh); refresh(); }
+      })();
+    </script>
+  </section>
+
+  <section class="bb-hq-card" aria-label="Assignment history">
+    <h2 class="bb-hq-section-title">Assignment timeline</h2>
+    <% if (!(d.history || []).length) { %>
+    <p class="bb-hq-lede">No events.</p>
+    <% } else { %>
+    <ol class="bb-hq-list">
+      <% (d.history || []).forEach(function (e) { %>
+      <li>
+        <strong><%= e.eventKey %></strong>
+        · <%= fmtDate(e.createdAt) %>
+        <% if (e.reason) { %> · <%= e.reason %><% } %>
+        · <%= e.previousStatus || '—' %> → <%= e.newStatus || '—' %>
+      </li>
+      <% }); %>
+    </ol>
+    <% } %>
+  </section>
+
+  <section class="bb-hq-card" aria-label="Effective permissions">
+    <h2 class="bb-hq-section-title">Effective permissions</h2>
+    <p class="bb-hq-lede">Read-only summary. Expired and revoked assignments are ignored by authorization.</p>
+    <% var grouped = d.effectiveGrouped || {}; %>
+    <% Object.keys(grouped).forEach(function (mod) { %>
+    <h3 class="bb-hq-section-title"><%= mod %></h3>
+    <ul class="bb-hq-list">
+      <% grouped[mod].forEach(function (p) { %>
+      <li>
+        <span class="bb-hq-chip <%= sensChip(p.sensitivity) %>"><%= p.sensitivity %></span>
+        <%= p.displayName %>
+        <span class="bb-hq-muted">
+          · <%= p.permissionKey %>
+          · source: <%= p.source === 'legacy_compatibility' ? 'legacy compatibility' : (p.source === 'multiple_role_combination' ? 'multiple-role combination' : 'RBAC role assignment') %>
+          <% if (p.sourceRole) { %> · role <%= p.sourceRole %><% } %>
+        </span>
+      </li>
+      <% }); %>
+    </ul>
+    <% }); %>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>

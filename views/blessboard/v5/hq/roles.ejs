@@ -43,10 +43,13 @@
         <span aria-hidden="true">›</span>
         <span>Staff permissions</span>
       </p>
-      <h1 class="bb-hq-page-head__title">Staff permissions</h1>
+      <h1 class="bb-hq-page-head__title">Legacy staff permissions</h1>
       <p class="bb-hq-lede">
         Assign fixed HQ and branch admin roles for <strong><%= churchDisplayName %></strong>.
         Platform admin and custom permission matrices are not available here.
+        Canonical RBAC assignments are managed under
+        <a href="/hq/settings/staff-access">Staff access</a>.
+        Church leadership position and BlessBoard system access are managed separately.
       </p>
     </div>
   </header>
@@ -57,6 +60,12 @@
   <% if (error) { %>
   <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
   <% } %>
+
+  <p class="bb-hq-banner bb-hq-banner--info" role="note">
+    This page manages <strong>legacy compatibility</strong> roles only
+    (<code>church_hq_admin</code>, <code>branch_admin</code>).
+    It does not create RBAC catalogue assignments.
+  </p>
 
   <section class="bb-hq-roles__summary" aria-label="Active staff counts">
     <article class="bb-hq-roles__stat">

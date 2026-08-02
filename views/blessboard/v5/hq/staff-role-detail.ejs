@@ -1,0 +1,52 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var r = role || {};
+  function sensChip(label) {
+    if (label === 'Highly sensitive') return 'bb-hq-chip--error';
+    if (label === 'Sensitive') return 'bb-hq-chip--pending';
+    return 'bb-hq-chip--ok';
+  }
+%>
+<section class="bb-hq-page" data-bb-staff-role-detail="1" aria-label="Role detail">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/settings/roles">Roles</a>
+      <span aria-hidden="true">›</span>
+      <span><%= r.displayName %></span>
+    </p>
+    <h1 class="bb-hq-page-head__title"><%= r.displayName %></h1>
+    <p class="bb-hq-lede">
+      <span class="bb-hq-chip <%= sensChip(r.sensitivityLabel) %>"><%= r.sensitivityLabel %></span>
+      <code class="bb-hq-key"><%= r.roleKey %></code>
+      · <%= r.roleCategory || '—' %>
+      · <%= r.isActive ? 'Active' : 'Inactive' %>
+      · read-only catalogue
+    </p>
+  </header>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Description</h2>
+    <p><%= r.description || 'No description.' %></p>
+    <p class="bb-hq-muted">Assigned users in this organisation: <strong><%= r.assignedCount %></strong></p>
+    <p class="bb-hq-muted">Allowed scope types: <%= (r.allowedScopeTypes || []).join(', ') %></p>
+  </section>
+
+  <section class="bb-hq-card" aria-label="Permission groups">
+    <h2 class="bb-hq-section-title">Assigned permission groups</h2>
+    <% var groups = r.permissionGroups || {}; %>
+    <% Object.keys(groups).forEach(function (mod) { %>
+    <h3 class="bb-hq-section-title"><%= mod %></h3>
+    <ul class="bb-hq-list">
+      <% groups[mod].forEach(function (pk) { %>
+      <li><code class="bb-hq-key"><%= pk %></code></li>
+      <% }); %>
+    </ul>
+    <% }); %>
+    <% if (!Object.keys(groups).length) { %>
+    <p class="bb-hq-lede">No permissions mapped.</p>
+    <% } %>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>

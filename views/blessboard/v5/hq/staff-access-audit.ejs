@@ -1,0 +1,44 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var rows = events || [];
+  function fmtDate(v) {
+    if (!v) return '—';
+    try { return new Date(v).toISOString().replace('T', ' ').slice(0, 19) + ' UTC'; } catch (e) { return String(v); }
+  }
+%>
+<section class="bb-hq-page" data-bb-staff-access-audit="1" aria-label="Access audit">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/settings/staff-access">Staff access</a>
+      <span aria-hidden="true">›</span>
+      <span>Access audit</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Access audit</h1>
+    <p class="bb-hq-lede">
+      Safe metadata for role-assignment events. Pastoral case text, Finance details, passwords, and tokens are never shown.
+    </p>
+  </header>
+
+  <section class="bb-hq-card">
+    <h2 class="bb-hq-section-title">Recent events</h2>
+    <% if (!rows.length) { %>
+    <p class="bb-hq-lede">No access events for this organisation.</p>
+    <% } else { %>
+    <ul class="bb-hq-list">
+      <% rows.forEach(function (e) { %>
+      <li>
+        <strong><%= e.eventKey %></strong>
+        · <%= fmtDate(e.createdAt) %>
+        <% if (e.roleKey) { %> · role <%= e.roleKey %><% } %>
+        <% if (e.scopeType) { %> · scope <%= e.scopeType %><% } %>
+        <% if (e.reason) { %> · reason recorded<% } %>
+        <span class="bb-hq-muted"> · <%= e.source %></span>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+</section>
+<%- include('../partials/hq-shell-end') %>

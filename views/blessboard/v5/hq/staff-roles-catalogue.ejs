@@ -1,0 +1,42 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var catalogue = roles || [];
+  function sensChip(label) {
+    if (label === 'Highly sensitive') return 'bb-hq-chip--error';
+    if (label === 'Sensitive') return 'bb-hq-chip--pending';
+    return 'bb-hq-chip--ok';
+  }
+%>
+<section class="bb-hq-page" data-bb-staff-roles="1" aria-label="Role catalogue">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">Dashboard</a>
+      <span aria-hidden="true">›</span>
+      <a href="/hq/settings/staff-access">Staff access</a>
+      <span aria-hidden="true">›</span>
+      <span>Roles</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Role catalogue</h1>
+    <p class="bb-hq-lede">
+      Canonical BlessBoard roles are read-only in this stage. Permission mappings cannot be edited here.
+      Church leadership position and BlessBoard system access are managed separately.
+    </p>
+  </header>
+
+  <div class="bb-hq-roles__cards">
+    <% catalogue.forEach(function (r) { %>
+    <article class="bb-hq-roles__card">
+      <span class="bb-hq-chip <%= sensChip(r.sensitivityLabel) %>"><%= r.sensitivityLabel %></span>
+      <h3><a href="/hq/settings/roles/<%= encodeURIComponent(r.roleKey) %>"><%= r.displayName %></a></h3>
+      <p class="bb-hq-muted"><code class="bb-hq-key"><%= r.roleKey %></code> · <%= r.roleCategory || '—' %></p>
+      <p><%= r.description || 'No description.' %></p>
+      <p class="bb-hq-muted">
+        <%= r.assignedCount %> active assignment<%= r.assignedCount === 1 ? '' : 's' %> in this organisation ·
+        scopes: <%= (r.allowedScopeTypes || []).join(', ') %>
+      </p>
+      <p class="bb-hq-muted">Permission groups: <%= Object.keys(r.permissionGroups || {}).join(', ') || '—' %></p>
+    </article>
+    <% }); %>
+  </div>
+</section>
+<%- include('../partials/hq-shell-end') %>

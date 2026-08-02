@@ -1,7 +1,13 @@
 "use strict";
 
 /**
- * Internal RBAC assignment service (no public management UI in this stage).
+ * Internal RBAC assignment service.
+ * Staff-access HQ UI calls createRoleAssignment / revokeRoleAssignment only —
+ * routes must not insert into assignment tables directly.
+ *
+ * Highly sensitive limitation: no separate multi-step approval engine.
+ * Requires roles.assign_sensitive + organisation-wide admin authority + reason
+ * + immutable audit (rbac.assignment.created_highly_sensitive).
  */
 
 const rbacRepo = require("../repositories/blessBoardRbacRepository");
@@ -34,10 +40,215 @@ const SCOPE_TYPES = Object.freeze([
   "assigned_member",
   "assigned_case",
 ]);
+
+/** Scopes church HQ staff-access UI may select (never platform). */
+const CHURCH_ASSIGNABLE_SCOPE_TYPES = Object.freeze([
+  "organisation",
+  "church",
+  "branch",
+  "ministry",
+  "department",
+  "cell",
+  "class",
+  "assigned_member",
+  "assigned_case",
+]);
+
 const ORIGINS = Object.freeze(["system", "legacy_compatibility", "manual", "migration", "support"]);
+
+/** Roles that require strongest church-HQ authority + reason (no separate approval engine). */
+const HIGHLY_SENSITIVE_ROLE_KEYS = Object.freeze([
+  "organisation_administrator",
+  "church_system_administrator",
+  "finance_director",
+  "finance_approver",
+  "safeguarding_officer",
+  "auditor",
+  "website_publisher",
+]);
+
+const HIGHLY_SENSITIVE_PERMISSION_MARKERS = Object.freeze([
+  "pastoral_cases.view_highly_confidential",
+  "pastoral_cases.view_safeguarding",
+  "finance.data.export",
+  "data.export",
+  "roles.assign_sensitive",
+  "roles.revoke",
+]);
+
+const FINANCE_ROLE_KEYS = Object.freeze([
+  "finance_director",
+  "finance_approver",
+  "finance_officer",
+]);
+
+const PASTORAL_CONFIDENTIAL_ROLE_KEYS = Object.freeze([
+  "safeguarding_officer",
+  "minister",
+  "branch_pastor",
+  "welfare_officer",
+  "welfare_approver",
+]);
+
+const EXPORT_ROLE_MARKERS = Object.freeze(["data.export", "finance.data.export"]);
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isHighlySensitiveRole(role, rolePerms) {
+  if (!role) return false;
+  if (HIGHLY_SENSITIVE_ROLE_KEYS.includes(String(role.roleKey || ""))) return true;
+  const perms = rolePerms || [];
+  return perms.some((pk) => HIGHLY_SENSITIVE_PERMISSION_MARKERS.includes(pk));
+}
+
+/**
+ * Explicit delegation SoD beyond generic permission-subset checks.
+ * @returns {string|null} denial reason or null when allowed
+ */
+function evaluateDelegationMatrix(actorRoleKeys, targetRoleKey, targetPerms) {
+  const actors = new Set((actorRoleKeys || []).map((k) => String(k)));
+  const target = String(targetRoleKey || "");
+  const perms = targetPerms || [];
+  const isFinanceTarget =
+    FINANCE_ROLE_KEYS.includes(target) || perms.some((p) => String(p).startsWith("finance.") || String(p).startsWith("giving."));
+  const isPastoralTarget =
+    PASTORAL_CONFIDENTIAL_ROLE_KEYS.includes(target) ||
+    perms.some((p) => String(p).startsWith("pastoral_") || String(p).startsWith("welfare_"));
+  const isExportTarget = perms.some((p) => EXPORT_ROLE_MARKERS.includes(p));
+  const isRoleAdminTarget = perms.some((p) => String(p).startsWith("roles."));
+  const isAuditorTarget = target === "auditor" || perms.includes("audit.view");
+
+  const isBranchAdminOnly =
+    (actors.has("branch_administrator") || actors.has("branch_admin")) &&
+    ![
+      "organisation_administrator",
+      "church_system_administrator",
+      "church_hq_admin",
+      "platform_admin",
+      "platform_administrator",
+    ].some((k) => actors.has(k));
+
+  if (isBranchAdminOnly) {
+    if (
+      target === "finance_director" ||
+      target === "safeguarding_officer" ||
+      target === "organisation_administrator" ||
+      target === "church_system_administrator"
+    ) {
+      return "excessive_delegation";
+    }
+  }
+
+  if (actors.has("ministry_leader") && !actors.has("organisation_administrator") && !actors.has("church_hq_admin")) {
+    if (isFinanceTarget || isPastoralTarget || isAuditorTarget || isExportTarget || isRoleAdminTarget) {
+      return "excessive_delegation";
+    }
+  }
+
+  if (actors.has("finance_director") && !actors.has("organisation_administrator") && !actors.has("church_hq_admin")) {
+    if (isPastoralTarget) return "excessive_delegation";
+  }
+
+  if (
+    (actors.has("branch_pastor") || actors.has("minister")) &&
+    !actors.has("organisation_administrator") &&
+    !actors.has("church_system_administrator") &&
+    !actors.has("church_hq_admin")
+  ) {
+    if (isFinanceTarget && !actors.has("role_administrator")) return "excessive_delegation";
+  }
+
+  if (actors.has("website_publisher") && !actors.has("organisation_administrator") && !actors.has("church_hq_admin")) {
+    if (isFinanceTarget) return "excessive_delegation";
+  }
+
+  if (
+    actors.has("communications_officer") &&
+    !actors.has("organisation_administrator") &&
+    !actors.has("church_hq_admin")
+  ) {
+    if (isExportTarget) return "excessive_delegation";
+  }
+
+  return null;
+}
+
+/**
+ * Resolve scoped resource belongs to the trusted church/org (server-side).
+ */
+async function resolveScopedResource(client, scope) {
+  const { scopeType, organizationId, churchId, scopeId } = scope;
+  if (scopeType === "platform" || scopeType === "organisation" || scopeType === "personal") {
+    return { ok: true };
+  }
+  if (scopeType === "church") {
+    const r = await client.query(
+      `SELECT id FROM blessboard.churches WHERE id = $1 AND organization_id = $2 LIMIT 1`,
+      [churchId, organizationId]
+    );
+    return r.rowCount ? { ok: true } : { ok: false, reason: "scope_ownership" };
+  }
+  if (scopeType === "branch") {
+    const r = await client.query(
+      `SELECT b.id FROM blessboard.branches b
+        JOIN blessboard.churches c ON c.id = b.church_id
+       WHERE b.id = $1 AND b.church_id = $2 AND c.organization_id = $3 LIMIT 1`,
+      [scopeId, churchId, organizationId]
+    );
+    return r.rowCount ? { ok: true } : { ok: false, reason: "scope_ownership" };
+  }
+  if (scopeType === "ministry") {
+    const r = await client.query(
+      `SELECT id FROM blessboard.ministries WHERE id = $1 AND church_id = $2 LIMIT 1`,
+      [scopeId, churchId]
+    ).catch(() => ({ rowCount: 0 }));
+    return r.rowCount ? { ok: true } : { ok: false, reason: "scope_ownership" };
+  }
+  if (scopeType === "department") {
+    const r = await client.query(
+      `SELECT id FROM blessboard.departments WHERE id = $1 AND church_id = $2 LIMIT 1`,
+      [scopeId, churchId]
+    ).catch(() => ({ rowCount: 0 }));
+    return r.rowCount ? { ok: true } : { ok: false, reason: "scope_ownership" };
+  }
+  if (scopeType === "cell") {
+    const r = await client.query(
+      `SELECT id FROM blessboard.cells WHERE id = $1 AND church_id = $2 LIMIT 1`,
+      [scopeId, churchId]
+    ).catch(() => ({ rowCount: 0 }));
+    return r.rowCount ? { ok: true } : { ok: false, reason: "scope_ownership" };
+  }
+  if (scopeType === "class") {
+    const r = await client.query(
+      `SELECT id FROM blessboard.class_cohorts WHERE id = $1 AND church_id = $2 LIMIT 1`,
+      [scopeId, churchId]
+    ).catch(() => ({ rowCount: 0 }));
+    return r.rowCount ? { ok: true } : { ok: false, reason: "scope_ownership" };
+  }
+  if (scopeType === "assigned_member") {
+    const r = await client.query(
+      `SELECT id FROM blessboard.members WHERE id = $1 AND church_id = $2 LIMIT 1`,
+      [scopeId, churchId]
+    ).catch(() => ({ rowCount: 0 }));
+    return r.rowCount ? { ok: true } : { ok: false, reason: "scope_ownership" };
+  }
+  if (scopeType === "assigned_case") {
+    const pastoral = await client.query(
+      `SELECT id FROM blessboard.pastoral_cases
+        WHERE id = $1 AND church_id = $2 AND organization_id = $3 LIMIT 1`,
+      [scopeId, churchId, organizationId]
+    ).catch(() => ({ rowCount: 0 }));
+    if (pastoral.rowCount) return { ok: true };
+    const welfare = await client.query(
+      `SELECT id FROM blessboard.welfare_cases
+        WHERE id = $1 AND church_id = $2 AND organization_id = $3 LIMIT 1`,
+      [scopeId, churchId, organizationId]
+    ).catch(() => ({ rowCount: 0 }));
+    return welfare.rowCount ? { ok: true } : { ok: false, reason: "scope_ownership" };
+  }
+  return { ok: false, reason: "scope_type" };
+}
 
 async function withClient(db, fn) {
   let client = null;
@@ -156,6 +367,21 @@ async function createRoleAssignment(db, input) {
     return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: "self_elevation" };
   }
 
+  if (expiresAt) {
+    const exp = new Date(expiresAt);
+    if (Number.isNaN(exp.getTime())) {
+      return { ok: false, status: STATUS.INVALID_INPUT, assignment: null, reason: "expires_at" };
+    }
+    if (exp.getTime() <= Date.now()) {
+      return { ok: false, status: STATUS.INVALID_INPUT, assignment: null, reason: "expires_at_past" };
+    }
+  }
+
+  // Church HQ UI never assigns platform scope.
+  if (input.forbidPlatformScope !== false && String(input.scopeType || "") === "platform") {
+    return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: "platform_scope_forbidden" };
+  }
+
   const scope = validateAssignmentScope({
     scopeType: input.scopeType,
     organizationId: input.organizationId,
@@ -179,8 +405,11 @@ async function createRoleAssignment(db, input) {
         return { ok: false, status: STATUS.NOT_FOUND, assignment: null, reason: "role" };
       }
 
-      const neededPerm = role.isSensitive ? "roles.assign_sensitive" : "roles.assign_standard";
-      if (role.isSensitive && !reason) {
+      const rolePerms = await rbacRepo.listPermissionKeysForRoleId(client, role.id);
+      const highlySensitive = isHighlySensitiveRole(role, rolePerms);
+      const neededPerm =
+        role.isSensitive || highlySensitive ? "roles.assign_sensitive" : "roles.assign_standard";
+      if ((role.isSensitive || highlySensitive) && !reason) {
         return { ok: false, status: STATUS.INVALID_INPUT, assignment: null, reason: "reason_required" };
       }
 
@@ -226,6 +455,11 @@ async function createRoleAssignment(db, input) {
         return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: authz.reasonCode };
       }
 
+      const owned = await resolveScopedResource(client, scope);
+      if (!owned.ok) {
+        return { ok: false, status: STATUS.INVALID_INPUT, assignment: null, reason: owned.reason };
+      }
+
       // Actor cannot assign a role whose permissions exceed their own effective set
       // for sensitive keys beyond assign_sensitive itself.
       const actorPerms = await listEffectivePermissions(client, {
@@ -237,7 +471,6 @@ async function createRoleAssignment(db, input) {
           branchId: scope.scopeType === "branch" ? scope.scopeId : null,
         },
       });
-      const rolePerms = await rbacRepo.listPermissionKeysForRoleId(client, role.id);
       const actorSet = new Set(actorPerms.permissions || []);
       const delegationMeta = new Set([
         "roles.view",
@@ -245,6 +478,60 @@ async function createRoleAssignment(db, input) {
         "roles.assign_sensitive",
         "roles.revoke",
       ]);
+
+      // Scope breadth: branch-only actors cannot grant org/church-wide scopes.
+      const actorAssignments = await rbacRepo.listActiveAssignmentsForUser(
+        client,
+        actorUserId,
+        scope.organizationId
+      );
+      const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
+      const legacyRoles = await authzRepo.listActiveAuthorizationRoles(client, actorUserId);
+      const actorRoleKeys = [
+        ...actorAssignments.map((a) => a.roleKey),
+        ...legacyRoles.map((r) => r.roleKey),
+      ];
+      const matrixDenial = evaluateDelegationMatrix(actorRoleKeys, role.roleKey, rolePerms);
+      if (matrixDenial) {
+        return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: matrixDenial };
+      }
+
+      const hasOrgWideAdmin =
+        actorAssignments.some((a) =>
+          ["organisation_administrator", "church_system_administrator", "platform_administrator"].includes(
+            String(a.roleKey || "")
+          )
+        ) ||
+        legacyRoles.some((r) =>
+          ["church_hq_admin", "platform_admin"].includes(String(r.roleKey || ""))
+        );
+      const branchOnlyActor =
+        !hasOrgWideAdmin &&
+        actorAssignments.length > 0 &&
+        actorAssignments.every((a) => String(a.scopeType) === "branch") &&
+        !legacyRoles.some((r) => r.roleKey === "church_hq_admin" || r.roleKey === "platform_admin");
+
+      if (
+        branchOnlyActor &&
+        (scope.scopeType === "organisation" || scope.scopeType === "church" || scope.scopeType === "platform")
+      ) {
+        return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: "scope_exceeds_authority" };
+      }
+
+      if (highlySensitive) {
+        if (!hasOrgWideAdmin) {
+          return {
+            ok: false,
+            status: STATUS.FORBIDDEN,
+            assignment: null,
+            reason: "highly_sensitive_requires_org_admin",
+          };
+        }
+        if (!actorSet.has("roles.assign_sensitive")) {
+          return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: authz.reasonCode };
+        }
+      }
+
       for (const pk of rolePerms) {
         if (delegationMeta.has(pk)) continue;
         if (actorSet.has(pk)) continue;
@@ -260,7 +547,7 @@ async function createRoleAssignment(db, input) {
         }
         // Org/platform admins with assign_sensitive may grant mapped role permissions
         // they themselves received via the same sensitive-admin bundle.
-        if (!actorSet.has(pk) && !role.isSensitive) {
+        if (!actorSet.has(pk) && !role.isSensitive && !highlySensitive) {
           return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: "excessive_delegation" };
         }
       }
@@ -292,6 +579,7 @@ async function createRoleAssignment(db, input) {
             scope_type: scope.scopeType,
             scope_id: scope.scopeId,
             target_user_id: targetUserId,
+            highly_sensitive: highlySensitive,
           },
         });
 
@@ -300,7 +588,9 @@ async function createRoleAssignment(db, input) {
           churchId: actorChurchId,
           branchId: scope.scopeType === "branch" ? scope.scopeId : null,
           actorUserId,
-          actionKey: "rbac.assignment.created",
+          actionKey: highlySensitive
+            ? "rbac.assignment.created_highly_sensitive"
+            : "rbac.assignment.created",
           entityType: "user_role_assignment",
           entityId: assignment.id,
           outcome: "success",
@@ -309,6 +599,7 @@ async function createRoleAssignment(db, input) {
             role_key: role.roleKey,
             scope_type: scope.scopeType,
             scope_id: scope.scopeId,
+            highly_sensitive: highlySensitive,
           },
         });
 
@@ -382,6 +673,15 @@ async function revokeRoleAssignment(db, input) {
       }
       if (existing.userId === actorUserId) {
         return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: "self_elevation" };
+      }
+
+      const rolePerms = await rbacRepo.listPermissionKeysForRoleId(client, existing.roleId);
+      const highlySensitive = isHighlySensitiveRole(
+        { roleKey: existing.roleKey, isSensitive: existing.isSensitiveRole },
+        rolePerms
+      );
+      if ((existing.isSensitiveRole || highlySensitive) && !reason) {
+        return { ok: false, status: STATUS.INVALID_INPUT, assignment: null, reason: "reason_required" };
       }
 
       const tenantContext = input.tenantContext;
@@ -496,7 +796,11 @@ async function getEffectivePermissions(db, input) {
 module.exports = {
   STATUS,
   SCOPE_TYPES,
+  CHURCH_ASSIGNABLE_SCOPE_TYPES,
   ORIGINS,
+  HIGHLY_SENSITIVE_ROLE_KEYS,
+  isHighlySensitiveRole,
+  evaluateDelegationMatrix,
   validateAssignmentScope,
   createRoleAssignment,
   revokeRoleAssignment,

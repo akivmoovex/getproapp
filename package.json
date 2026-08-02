@@ -96,6 +96,7 @@
     "test:blessboard:member-journey-workflow": "node --test --test-concurrency=1 tests/blessboard-member-journey-workflow.test.js",
     "test:blessboard:pastoral-welfare": "node --test --test-concurrency=1 tests/blessboard-pastoral-welfare.test.js",
     "test:blessboard:finance-separation": "node --test --test-concurrency=1 tests/blessboard-finance-separation.test.js",
+    "test:blessboard:staff-access": "node --test --test-concurrency=1 tests/blessboard-staff-access.test.js",
     "test:blessboard:branch-admin-shell": "node --test --test-concurrency=1 tests/blessboard-branch-admin-shell.test.js",
     "test:blessboard:hq-shell": "node --test --test-concurrency=1 tests/blessboard-hq-shell.test.js",
     "test:blessboard:branch-list": "node --test --test-concurrency=1 tests/blessboard-branch-list.test.js",
