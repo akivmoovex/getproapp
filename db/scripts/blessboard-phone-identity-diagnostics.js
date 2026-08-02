@@ -72,17 +72,29 @@ async function main() {
         WHERE phone_normalized IS NOT NULL
           AND email_normalized IS NULL`
     );
-    const usersVerifiedPhone = await pool.query(
-      `SELECT COUNT(*)::int AS n
-         FROM blessboard.users
-        WHERE phone_verified_at IS NOT NULL`
+
+    const cols = await pool.query(
+      `SELECT column_name
+         FROM information_schema.columns
+        WHERE table_schema = 'blessboard' AND table_name = 'users'
+          AND column_name = 'phone_verified_at'`
     );
-    const usersUnverifiedPhone = await pool.query(
-      `SELECT COUNT(*)::int AS n
-         FROM blessboard.users
-        WHERE phone_normalized IS NOT NULL
-          AND phone_verified_at IS NULL`
-    );
+    const hasVerifiedAt = cols.rowCount > 0;
+    let usersVerifiedPhone = { rows: [{ n: null }] };
+    let usersUnverifiedPhone = { rows: [{ n: null }] };
+    if (hasVerifiedAt) {
+      usersVerifiedPhone = await pool.query(
+        `SELECT COUNT(*)::int AS n
+           FROM blessboard.users
+          WHERE phone_verified_at IS NOT NULL`
+      );
+      usersUnverifiedPhone = await pool.query(
+        `SELECT COUNT(*)::int AS n
+           FROM blessboard.users
+          WHERE phone_normalized IS NOT NULL
+            AND phone_verified_at IS NULL`
+      );
+    }
 
     const membersMissingPhone = await pool.query(
       `SELECT COUNT(*)::int AS n
@@ -149,6 +161,7 @@ async function main() {
         phone_only: usersPhoneOnly.rows[0].n,
         phone_verified: usersVerifiedPhone.rows[0].n,
         phone_unverified: usersUnverifiedPhone.rows[0].n,
+        phone_verified_at_column_present: hasVerifiedAt,
       },
       members: {
         active_or_pending: membersTotal.rows[0].n,

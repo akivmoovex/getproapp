@@ -112,6 +112,7 @@
     "test:blessboard:phone-identity-foundation": "node --test --test-concurrency=1 tests/blessboard-phone-identity-foundation.test.js",
     "test:blessboard:phone-first-forms": "node --test --test-concurrency=1 tests/blessboard-phone-first-forms.test.js",
     "test:blessboard:phone-invitation-sharing": "node --test --test-concurrency=1 tests/blessboard-phone-invitation-sharing.test.js",
+    "test:blessboard:phone-login": "node --test --test-concurrency=1 tests/blessboard-phone-login.test.js",
     "test:blessboard:otp-foundation": "node --test --test-concurrency=1 tests/blessboard-otp-foundation.test.js",
     "test:blessboard:phone-otp-workflows": "node --test --test-concurrency=1 tests/blessboard-phone-otp-workflows.test.js",
     "blessboard:phone-identity:diagnostics": "node db/scripts/blessboard-phone-identity-diagnostics.js",
