@@ -620,16 +620,38 @@ async function findLeaderById(client, id) {
   return mapLeader(r.rows[0] || null);
 }
 
+function slugMinistryKey(name) {
+  const base = String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 64);
+  if (base && /^[a-z][a-z0-9_]{0,63}$/.test(base)) return base;
+  return `ministry_${Date.now().toString(36)}`.slice(0, 64);
+}
+
 async function insertMinistry(client, fields) {
+  const orgRow = await client.query(
+    `SELECT organization_id FROM blessboard.churches WHERE id = $1 LIMIT 1`,
+    [fields.churchId]
+  );
+  const organizationId =
+    fields.organizationId || (orgRow.rows[0] && orgRow.rows[0].organization_id) || null;
+  const ministryKey = fields.ministryKey || slugMinistryKey(fields.name);
+  const ministryType = fields.ministryType || "other";
   const r = await client.query(
     `INSERT INTO blessboard.ministries
-       (church_id, branch_id, name, summary, description, meeting_day, contact_email,
-        image_url, sort_order, status, join_policy)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       (organization_id, church_id, branch_id, ministry_key, ministry_type, name, summary,
+        description, meeting_day, contact_email, image_url, sort_order, status, join_policy)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING ${MINISTRY_COLS}`,
     [
+      organizationId,
       fields.churchId,
       fields.branchId,
+      ministryKey,
+      ministryType,
       fields.name,
       fields.summary,
       fields.description,

@@ -46,10 +46,6 @@ const {
   resolveBlessBoardBranchForChurch,
   STATUS: BRANCH_STATUS,
 } = require("../services/listBlessBoardBranches");
-const {
-  authorizeBlessBoardTenantAccess,
-  STATUS: AUTHZ_STATUS,
-} = require("../services/authorizeBlessBoardTenantAccess");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const UUID_RE =
@@ -277,17 +273,19 @@ function createGivingAdminRouter(deps) {
         );
         return null;
       }
-      const authz = await authorizeBlessBoardTenantAccess(getPool(), {
+      // Ownership check: ensure resolved branch belongs to tenant church before authorizing
+      if (String(resolved.branch.churchId) !== String(tenant.church.id)) {
+        sendControlled(req, res, 404, "Branch not found.", shellKind);
+        return null;
+      }
+      const allowed = await hasAnyPermission(getPool(), {
         userId: session.userId,
         tenant,
         branchId: resolved.branch.id,
+        permissionKey: "finance.transactions.view",
       });
-      if (authz.status === AUTHZ_STATUS.LOOKUP_ERROR) {
-        sendControlled(req, res, 503, "Access check is temporarily unavailable.", shellKind);
-        return null;
-      }
-      if (!authz.ok) {
-        sendControlled(req, res, 403, "You do not have access to this branch.", shellKind);
+      if (!allowed) {
+        sendControlled(req, res, 404, "Branch not found.", shellKind);
         return null;
       }
       return {

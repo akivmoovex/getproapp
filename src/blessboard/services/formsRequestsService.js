@@ -15,6 +15,7 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("./authorizeBlessBoardTenantAccess");
+const { requireActorPermission } = require("./requireActorPermission");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -84,28 +85,24 @@ function plainText(value, field, { required, max }) {
 }
 
 async function authorizeActor(client, input) {
-  const authz = await authorizeBlessBoardTenantAccess(
+  const permission = input.permission || "requests.view";
+  const result = await requireActorPermission(
     { query: client.query.bind(client) },
     {
-      userId: input.actorUserId,
+      actorUserId: input.actorUserId,
       tenant: input.tenant,
+      permission,
       branchId: input.branchId,
     }
   );
-  if (!authz.ok) {
+  if (!result.ok || !result.allowed) {
     return {
       ok: false,
-      reason: authz.status || AUTHZ_STATUS.UNAUTHORIZED,
+      reason: result.reason || "denied",
       mode: null,
     };
   }
-  const roles = authz.context.effectiveRoles || [];
-  const hasHq = roles.some((r) => r.roleKey === "church_hq_admin");
-  const hasBranch = roles.some((r) => r.roleKey === "branch_admin");
-  const hasPlatform = roles.some((r) => r.roleKey === "platform_admin");
-  if (hasHq || hasPlatform) return { ok: true, mode: "hq" };
-  if (hasBranch && input.branchId) return { ok: true, mode: "branch" };
-  return { ok: false, reason: "role", mode: null };
+  return { ok: true, mode: result.mode };
 }
 
 function assertAdminScope(authz, input, entityBranchId) {
@@ -159,6 +156,7 @@ async function createResource(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: branchId || input.scopeBranchId || null,
+          permission: "requests.manage",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, resource: null, reason: authz.reason };
@@ -227,6 +225,7 @@ async function changeContentStatus(db, kind, input, nextStatus) {
           actorUserId,
           tenant: input.tenant,
           branchId: entity.branchId || input.scopeBranchId || null,
+          permission: "requests.manage",
         });
         const scope = assertAdminScope(authz, input, entity.branchId);
         if (!scope.ok) return { ...scope, [kind]: null };
@@ -279,6 +278,7 @@ async function getResource(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: resource.branchId || input.scopeBranchId || null,
+          permission: "requests.view",
         });
         const scope = assertAdminScope(authz, input, resource.branchId);
         if (!scope.ok) return { ...scope, resource: null };
@@ -312,6 +312,7 @@ async function listResources(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: input.branchId || input.scopeBranchId || null,
+          permission: "requests.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, resources: [], reason: authz.reason };
@@ -363,6 +364,7 @@ async function createForm(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: branchId || input.scopeBranchId || null,
+          permission: "requests.manage",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, form: null, reason: authz.reason };
@@ -433,6 +435,7 @@ async function updateFormDraft(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: form.branchId || input.scopeBranchId || null,
+          permission: "requests.manage",
         });
         const scope = assertAdminScope(authz, input, form.branchId);
         if (!scope.ok) return { ...scope, form: null };
@@ -485,6 +488,7 @@ async function getForm(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: form.branchId || input.scopeBranchId || null,
+          permission: "requests.view",
         });
         const scope = assertAdminScope(authz, input, form.branchId);
         if (!scope.ok) return { ...scope, form: null };
@@ -517,9 +521,13 @@ async function listForms(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: input.branchId || input.scopeBranchId || null,
+          permission: "requests.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, forms: [], reason: authz.reason };
+        }
+        if (authz.mode === "branch" && !input.branchId && !input.scopeBranchId) {
+          return { ok: false, status: STATUS.FORBIDDEN, forms: [], reason: "church_wide_denied" };
         }
       }
       const forms = await repo.listForms(client, {
@@ -604,6 +612,7 @@ async function getFormSubmission(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: submission.branchId,
+          permission: "requests.view",
         });
         const scope = assertAdminScope(authz, input, submission.branchId);
         if (!scope.ok) return { ...scope, submission: null };
@@ -644,6 +653,7 @@ async function listFormSubmissions(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: input.branchId || input.scopeBranchId || null,
+          permission: "requests.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, submissions: [], reason: authz.reason };
@@ -760,6 +770,7 @@ async function updateMemberRequestStatus(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: request.branchId,
+          permission: "requests.manage",
         });
         const scope = assertAdminScope(authz, input, request.branchId);
         if (!scope.ok) return { ...scope, request: null };
@@ -828,6 +839,7 @@ async function getMemberRequest(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: request.branchId,
+          permission: "requests.view",
         });
         const scope = assertAdminScope(authz, input, request.branchId);
         if (!scope.ok) return { ...scope, request: null };
@@ -870,6 +882,7 @@ async function listMemberRequests(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: input.branchId || input.scopeBranchId || null,
+          permission: "requests.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, requests: [], reason: authz.reason };

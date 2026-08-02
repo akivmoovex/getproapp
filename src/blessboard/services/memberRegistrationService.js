@@ -5,6 +5,7 @@
  * No public portal routes. No automatic account creation. No plaintext passwords.
  */
 
+const { requireActorPermission } = require("./requireActorPermission");
 const { normalizeEmail } = require("./createBlessBoardUser");
 const { normalizePhone } = require("./settingsValidation");
 const authRepo = require("../repositories/blessBoardAuthRepository");
@@ -164,39 +165,12 @@ function parseProfileContact(input) {
 }
 
 /**
- * @param {Array<{ role_key?: string, roleKey?: string, church_id?: string, churchId?: string, branch_id?: string, branchId?: string, status?: string }>} roles
- * @param {{ churchId: string, branchId?: string|null }} scope
- */
-function actorCanManageMembers(roles, scope) {
-  const churchId = String(scope.churchId || "");
-  const branchId = scope.branchId != null ? String(scope.branchId) : null;
-  for (const role of roles || []) {
-    if (role.status && String(role.status) !== "active") continue;
-    const key = String(role.role_key || role.roleKey || "");
-    const roleChurch = role.church_id || role.churchId || null;
-    const roleBranch = role.branch_id || role.branchId || null;
-    if (key === "platform_admin") return true;
-    if (key === "church_hq_admin" && roleChurch && String(roleChurch) === churchId) return true;
-    if (
-      key === "branch_admin" &&
-      roleChurch &&
-      String(roleChurch) === churchId &&
-      branchId &&
-      roleBranch &&
-      String(roleBranch) === branchId
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
  * @param {{ query: Function }} client
- * @param {{ actorUserId: string, churchId: string, branchId?: string|null }} input
+ * @param {{ actorUserId: string, churchId: string, branchId?: string|null, tenant?: object }} input
  */
 async function requireMemberManager(client, input) {
   const actorUserId = String(input.actorUserId || "").trim();
+  const churchId = String(input.churchId || "").trim();
   if (!actorUserId) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "actor_required" };
   }
@@ -204,11 +178,65 @@ async function requireMemberManager(client, input) {
   if (!user || user.status !== "active") {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "actor_inactive" };
   }
-  const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-  if (!actorCanManageMembers(roles, { churchId: input.churchId, branchId: input.branchId || null })) {
-    return { ok: false, status: STATUS.FORBIDDEN, reason: "role" };
+
+  let tenant = input.tenant;
+  if (!tenant || tenant.resolved !== true) {
+    if (!churchId) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "tenant_required" };
+    }
+    const churchRow = await client.query(
+      `SELECT c.id, c.organization_id, c.church_key, c.display_name,
+              b.id AS branch_id, b.branch_key, b.display_name AS branch_display_name
+         FROM blessboard.churches c
+         LEFT JOIN blessboard.branches b
+           ON b.church_id = c.id AND b.is_primary = true AND b.status = 'active'
+        WHERE c.id = $1
+        LIMIT 1`,
+      [churchId]
+    );
+    const row = churchRow.rows[0];
+    if (!row) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "church_not_found" };
+    }
+    tenant = {
+      resolved: true,
+      organization: { id: row.organization_id },
+      church: {
+        id: row.id,
+        key: row.church_key,
+        displayName: row.display_name || "",
+      },
+      primaryBranch: row.branch_id
+        ? {
+            id: row.branch_id,
+            key: row.branch_key,
+            displayName: row.branch_display_name || "",
+          }
+        : null,
+      hqBranch: row.branch_id
+        ? {
+            id: row.branch_id,
+            key: row.branch_key,
+            displayName: row.branch_display_name || "",
+          }
+        : null,
+    };
   }
-  return { ok: true, user };
+
+  // Use permission-based authorization (edit when acting in a branch scope).
+  const permission = input.branchId ? "members.edit" : "members.view";
+  const authz = await requireActorPermission(client, {
+    actorUserId,
+    tenant,
+    permission,
+    branchId: input.branchId || null,
+  });
+
+  if (!authz.allowed) {
+    return { ok: false, status: STATUS.FORBIDDEN, reason: authz.reason || "permission_denied" };
+  }
+
+  return { ok: true, user, tenant };
 }
 
 /**
@@ -348,6 +376,7 @@ async function reviewMemberRegistration(db, input) {
           actorUserId,
           churchId: registration.churchId,
           branchId: registration.branchId,
+          tenant: input.tenant,
         });
         if (!gate.ok) {
           await client.query("ROLLBACK");
@@ -422,6 +451,7 @@ async function approveMemberRegistration(db, input) {
           actorUserId,
           churchId: registration.churchId,
           branchId: registration.branchId,
+          tenant: input.tenant,
         });
         if (!gate.ok) {
           await client.query("ROLLBACK");
@@ -630,6 +660,7 @@ async function rejectMemberRegistration(db, input) {
           actorUserId,
           churchId: registration.churchId,
           branchId: registration.branchId,
+          tenant: input.tenant,
         });
         if (!gate.ok) {
           await client.query("ROLLBACK");
@@ -691,21 +722,26 @@ async function linkMemberToUser(db, input) {
           actorUserId,
           churchId: member.churchId,
           branchId: null,
+          tenant: input.tenant,
         });
         // HQ / platform only when branchId null — branch_admin needs a branch.
         // Allow branch_admin if they have any active branch role in this church:
         if (!gate.ok) {
-          const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-          const churchScoped = roles.some((r) => {
-            const key = String(r.role_key || "");
-            return (
-              (key === "branch_admin" || key === "church_hq_admin" || key === "platform_admin") &&
-              (key === "platform_admin" || String(r.church_id) === String(member.churchId))
-            );
+          // Fallback: check if actor has members.view permission at church level
+          const churchAuthz = await requireActorPermission(client, {
+            actorUserId,
+            tenant: input.tenant,
+            permission: "members.view",
+            branchId: null,
+            resourceContext: {
+              organizationId: input.tenant.organization.id,
+              churchId: member.churchId,
+              branchId: null,
+            },
           });
-          if (!churchScoped) {
+          if (!churchAuthz.allowed) {
             await client.query("ROLLBACK");
-            return { ok: false, status: STATUS.FORBIDDEN, reason: "role", member: null };
+            return { ok: false, status: STATUS.FORBIDDEN, reason: "permission_denied", member: null };
           }
         }
 
@@ -795,6 +831,7 @@ async function listMemberRegistrations(db, input) {
         actorUserId,
         churchId,
         branchId,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return {
@@ -940,6 +977,7 @@ async function listBranchMembersForManager(db, input) {
         actorUserId,
         churchId,
         branchId,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return {
@@ -1016,6 +1054,7 @@ async function getBranchMemberForManager(db, input) {
         actorUserId,
         churchId,
         branchId,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return { ok: false, status: gate.status, reason: gate.reason, member: null };
@@ -1077,6 +1116,7 @@ async function listChurchMembersForManager(db, input) {
         actorUserId,
         churchId,
         branchId,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return {
@@ -1089,26 +1129,8 @@ async function listChurchMembersForManager(db, input) {
           offset: 0,
         };
       }
-      // Branch admins must stay on their branch; HQ may omit branchId for church-wide.
-      const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-      const isHqOrPlatform = (roles || []).some((r) => {
-        if (r.status && String(r.status) !== "active") return false;
-        const key = String(r.role_key || r.roleKey || "");
-        if (key === "platform_admin") return true;
-        const roleChurch = r.church_id || r.churchId || null;
-        return key === "church_hq_admin" && roleChurch && String(roleChurch) === churchId;
-      });
-      if (!isHqOrPlatform && !branchId) {
-        return {
-          ok: false,
-          status: STATUS.FORBIDDEN,
-          reason: "branch_required",
-          items: [],
-          total: 0,
-          limit: 0,
-          offset: 0,
-        };
-      }
+      // Church-wide listing (branchId null) is already gated by members.view at
+      // church scope in requireMemberManager; branch-scoped callers must pass branchId.
       const listed = await repo.listMembersForChurch(client, {
         churchId,
         branchId,
@@ -1173,20 +1195,10 @@ async function getChurchMemberForManager(db, input) {
         actorUserId,
         churchId,
         branchId: null,
+        tenant: input.tenant,
       });
       if (!gate.ok) {
         return { ok: false, status: gate.status, reason: gate.reason, member: null };
-      }
-      const roles = await authRepo.listActiveRolesForUser(client, actorUserId);
-      const isHqOrPlatform = (roles || []).some((r) => {
-        if (r.status && String(r.status) !== "active") return false;
-        const key = String(r.role_key || r.roleKey || "");
-        if (key === "platform_admin") return true;
-        const roleChurch = r.church_id || r.churchId || null;
-        return key === "church_hq_admin" && roleChurch && String(roleChurch) === churchId;
-      });
-      if (!isHqOrPlatform) {
-        return { ok: false, status: STATUS.FORBIDDEN, reason: "role", member: null };
       }
       const member = await repo.findMemberInChurch(client, { memberId, churchId });
       if (!member) {
@@ -1223,7 +1235,6 @@ module.exports = {
   STATUS,
   PRIVACY_ALLOWED_PROFILE_KEYS,
   PRIVACY_FORBIDDEN_KEYS,
-  actorCanManageMembers,
   submitMemberRegistration,
   reviewMemberRegistration,
   approveMemberRegistration,

@@ -177,9 +177,18 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
       if (!authz.ok) {
         return sendControlled(req, res, 403, "You do not have access to this site.");
       }
-      const keys = (authz.context.effectiveRoles || []).map((r) => r.roleKey);
-      const allowed = ["branch_admin", "church_hq_admin", "platform_admin"];
-      if (!keys.some((k) => allowed.includes(k))) {
+      const { authorize } = require("../services/blessBoardRbacAuthorizationService");
+      const perm = await authorize(getPool(), {
+        actor: { userId: session.userId },
+        permission: "website.view",
+        tenantContext: tenant,
+        resourceContext: {
+          organizationId: tenant.organization.id,
+          churchId: tenant.church.id,
+          branchId,
+        },
+      });
+      if (!perm.allowed) {
         return sendControlled(req, res, 403, "You do not have access to this site.");
       }
       req.blessBoardAuthorizationContext = { ...authz.context, reason: authz.status };

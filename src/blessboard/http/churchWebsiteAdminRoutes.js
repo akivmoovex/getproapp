@@ -8,8 +8,8 @@
 const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -126,10 +126,8 @@ function createChurchWebsiteAdminRouter(deps) {
   const env = deps.env || process.env;
   const isProduction = String(env.NODE_ENV || "") === "production";
 
-  const requireHq = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
+  const requireHq = createRequireBlessBoardPermission("website.view", null, { getPool, scopeMode: "church" });
+  const requireWebsitePublish = createRequireBlessBoardPermission("website.publish", null, { getPool, scopeMode: "church" });
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -712,7 +710,7 @@ function createChurchWebsiteAdminRouter(deps) {
     return res.redirect(303, publicPath);
   }
 
-  router.post("/hq/website/publish", rejectApex, gateHq, async (req, res) => {
+  router.post("/hq/website/publish", rejectApex, gateHq, requireWebsitePublish, async (req, res) => {
     return handlePublishPost(req, res, null);
   });
 
@@ -727,7 +725,7 @@ function createChurchWebsiteAdminRouter(deps) {
     }
   );
 
-  router.post("/hq/website/unpublish", rejectApex, gateHq, async (req, res) => {
+  router.post("/hq/website/unpublish", rejectApex, gateHq, requireWebsitePublish, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");

@@ -7,9 +7,6 @@
 const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
-const {
   createRequireBlessBoardPermission,
 } = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
@@ -55,11 +52,7 @@ function createWebsiteAuditAdminRouter(deps) {
   const env = deps.env || process.env;
   const isProduction = String(env.NODE_ENV || "") === "production";
 
-  const requireHq = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
-  const requireWebsiteView = createRequireBlessBoardPermission("website.view", null, { getPool });
+  const requireWebsiteView = createRequireBlessBoardPermission("website.view", null, { getPool, scopeMode: "church" });
   const rejectApex = createRejectApex({
     isApexHost,
     mode: "unlessTenant",
@@ -73,7 +66,7 @@ function createWebsiteAuditAdminRouter(deps) {
       }
       return sendControlled(req, res, 401, "Sign-in is required.");
     }
-    return requireHq(req, res, next);
+    return requireWebsiteView(req, res, next);
   }
 
   async function shellLocals(req, res, extras) {

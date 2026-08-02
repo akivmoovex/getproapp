@@ -106,6 +106,7 @@ function createHqStaffAccessRouter(deps) {
 
   const requireRolesView = createRequireBlessBoardPermission("roles.view", null, {
     getPool,
+    scopeMode: "church",
     concealAsNotFound: true,
   });
 

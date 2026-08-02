@@ -9,8 +9,14 @@ const express = require("express");
 const { renderV5Ejs, VIEWS_ROOT } = require("./v5EjsTemplateCache");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
+const {
+  createRequireAnyBlessBoardPermission,
+} = require("./requireBlessBoardShellAccess");
+const {
+  BRANCH_SHELL_VISIBLE_PERMISSIONS,
+} = require("./shellVisiblePermissions");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const {
   CSRF_FIELD,
@@ -107,9 +113,20 @@ function createBranchAdminRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
 
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({
+  const requireAccess = createRequireAnyBlessBoardPermission(BRANCH_SHELL_VISIBLE_PERMISSIONS, {
     getPool,
-    allowedRoles: ["platform_admin", "church_hq_admin", "branch_admin"],
+    resolveResourceContext: (_req, tenant) => ({
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      // Host-resolved branch only — never rebind to a different assigned branch.
+      branchId: tenant.primaryBranch && tenant.primaryBranch.id ? tenant.primaryBranch.id : null,
+    }),
+    denyMessage:
+      "You do not have access to this branch workspace. Ask an administrator to assign a branch module permission.",
+  });
+  const requireBranchesEdit = createRequireBlessBoardPermission("branches.edit", null, { getPool });
+  const requireRolesAssign = createRequireBlessBoardPermission("roles.assign_standard", null, {
+    getPool,
   });
 
   function sendMissingTenantContext(req, res) {
@@ -190,7 +207,7 @@ function createBranchAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/branch-admin/settings", rejectApex, gateAccess, async (req, res) => {
+  router.get("/branch-admin/settings", rejectApex, gateAccess, requireBranchesEdit, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     const branchId = tenant && tenant.primaryBranch ? tenant.primaryBranch.id : null;
     if (!branchId) {
@@ -218,7 +235,7 @@ function createBranchAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.post("/branch-admin/settings", rejectApex, gateAccess, async (req, res) => {
+  router.post("/branch-admin/settings", rejectApex, gateAccess, requireBranchesEdit, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     const branchId = tenant && tenant.primaryBranch ? tenant.primaryBranch.id : null;
     if (!branchId) {
@@ -289,7 +306,7 @@ function createBranchAdminRouter(deps) {
    * Branch admins may invite only branch_admin for their assigned branch.
    * Copy-once link returned once (no email delivery).
    */
-  router.post("/branch-admin/invitations", rejectApex, gateAccess, async (req, res) => {
+  router.post("/branch-admin/invitations", rejectApex, gateAccess, requireRolesAssign, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     const session = req.v5Session && req.v5Session.session;
     if (!tenant || !tenant.church || !tenant.organization || !tenant.primaryBranch || !session) {

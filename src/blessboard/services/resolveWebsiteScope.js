@@ -253,6 +253,65 @@ async function resolveWebsiteScope(db, input) {
     const roles = await authzRepo.listActiveAuthorizationRoles(db, userId);
     const classified = classifyEditorRoles(roles, ids);
 
+    // Permission-based website editors (RBAC website_editor / website_publisher, etc.)
+    try {
+      const {
+        listEffectivePermissions,
+      } = require("./blessBoardRbacAuthorizationService");
+      const churchPerms = await listEffectivePermissions(db, {
+        actor: { userId },
+        tenantContext: opts.tenant,
+        resourceContext: {
+          organizationId: ids.organizationId,
+          churchId: ids.churchId,
+          branchId: null,
+        },
+      });
+      const churchKeys = new Set(churchPerms.permissions || []);
+      if (
+        churchKeys.has("website.view") ||
+        churchKeys.has("website.edit") ||
+        churchKeys.has("website.publish")
+      ) {
+        classified.isHqEditor = true;
+      }
+
+      if (!classified.isHqEditor) {
+        const rbacRepo = require("../repositories/blessBoardRbacRepository");
+        const assignments = await rbacRepo.listActiveAssignmentsForUser(
+          db,
+          userId,
+          ids.organizationId
+        );
+        for (const assignment of assignments) {
+          if (String(assignment.scopeType) !== "branch" || !assignment.scopeId) continue;
+          const branchPerms = await listEffectivePermissions(db, {
+            actor: { userId },
+            tenantContext: opts.tenant,
+            resourceContext: {
+              organizationId: ids.organizationId,
+              churchId: ids.churchId,
+              branchId: assignment.scopeId,
+            },
+          });
+          const keys = new Set(branchPerms.permissions || []);
+          if (
+            keys.has("website.view") ||
+            keys.has("website.edit") ||
+            keys.has("website.publish")
+          ) {
+            classified.isBranchEditor = true;
+            const bid = String(assignment.scopeId);
+            if (!classified.assignedBranchIds.includes(bid)) {
+              classified.assignedBranchIds.push(bid);
+            }
+          }
+        }
+      }
+    } catch {
+      /* permission expansion is best-effort; legacy roles still apply */
+    }
+
     if (!classified.isHqEditor && !classified.isBranchEditor) {
       return fail({
         status: STATUS.FORBIDDEN,

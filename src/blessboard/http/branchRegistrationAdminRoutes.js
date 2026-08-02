@@ -8,8 +8,8 @@
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const {
@@ -68,10 +68,7 @@ function createBranchRegistrationAdminRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
 
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["platform_admin", "church_hq_admin", "branch_admin"],
-  });
+  const requireAccess = createRequireBlessBoardPermission("members.view", null, { getPool });
 
   function sendMissingTenantContext(req, res) {
     return sendLoginUnavailable(

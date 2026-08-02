@@ -27,12 +27,40 @@ function sendControlled(status, message, req, res) {
 }
 
 /**
+ * Church-wide HQ resource context. Explicit branchId: null excludes branch-only grants
+ * (including primary-branch branch_admin) from HQ surfaces.
+ * @param {import('express').Request} _req
+ * @param {object} tenant
+ */
+function resolveChurchWideResourceContext(_req, tenant) {
+  return {
+    organizationId: tenant.organization.id,
+    churchId: tenant.church.id,
+    branchId: null,
+  };
+}
+
+/**
+ * Host primary-branch resource context for Branch Admin surfaces.
+ * @param {import('express').Request} _req
+ * @param {object} tenant
+ */
+function resolveHostBranchResourceContext(_req, tenant) {
+  return {
+    organizationId: tenant.organization.id,
+    churchId: tenant.church.id,
+    branchId: tenant.primaryBranch && tenant.primaryBranch.id ? tenant.primaryBranch.id : null,
+  };
+}
+
+/**
  * @param {string} permissionKey
  * @param {(req: import('express').Request, tenant: object) => object | null | Promise<object|null>} [resolveResourceContext]
  * @param {{
  *   getPool?: () => { query: Function } | null | undefined,
  *   getTenant?: Function,
  *   concealAsNotFound?: boolean,
+ *   scopeMode?: 'church'|'host_branch',
  * }} [deps]
  */
 function createRequireBlessBoardPermission(permissionKey, resolveResourceContext, deps) {
@@ -41,6 +69,13 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
   const getTenant = options.getTenant || resolveTenantForAuthorization;
   const concealAsNotFound = options.concealAsNotFound === true;
   const key = String(permissionKey || "").trim();
+  const scopeMode = options.scopeMode === "church" ? "church" : null;
+  const effectiveResolve =
+    typeof resolveResourceContext === "function"
+      ? resolveResourceContext
+      : scopeMode === "church"
+        ? resolveChurchWideResourceContext
+        : null;
 
   return async function requireBlessBoardPermission(req, res, next) {
     try {
@@ -75,8 +110,8 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
         churchId: tenant.church.id,
         branchId: tenant.primaryBranch && tenant.primaryBranch.id ? tenant.primaryBranch.id : null,
       };
-      if (typeof resolveResourceContext === "function") {
-        const resolved = await resolveResourceContext(req, tenant);
+      if (typeof effectiveResolve === "function") {
+        const resolved = await effectiveResolve(req, tenant);
         if (resolved && typeof resolved === "object") {
           resourceContext = {
             organizationId: resolved.organizationId || resourceContext.organizationId,
@@ -169,4 +204,6 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
 
 module.exports = {
   createRequireBlessBoardPermission,
+  resolveChurchWideResourceContext,
+  resolveHostBranchResourceContext,
 };

@@ -74,6 +74,16 @@ const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([
   "journey_handovers.escalate",
   "journey_handovers.close",
   "journey_handovers.view_status",
+  // Prompt 7 communications + narrowly scoped audit (no pastoral bodies / finance details)
+  "announcements.view",
+  "announcements.manage",
+  // Platform may inspect/draft announcements; publish remains product-policy gated
+  // (not granted here — see announcementsService authorizeActor).
+  "broadcasts.view",
+  "broadcasts.manage",
+  "audit.view_access",
+  "audit.view_website",
+  "audit.view_pastoral_metadata",
 ]);
 
 /**
@@ -153,6 +163,15 @@ const CHURCH_HQ_ADMIN_PERMISSIONS = Object.freeze([
   "journey_handovers.escalate",
   "journey_handovers.close",
   "journey_handovers.view_status",
+  "announcements.view",
+  "announcements.manage",
+  "announcements.publish",
+  "broadcasts.view",
+  "broadcasts.manage",
+  "audit.view_access",
+  "audit.view_website",
+  "audit.view_finance",
+  "audit.view_pastoral_metadata",
 ]);
 
 /**
@@ -196,6 +215,10 @@ const BRANCH_ADMIN_PERMISSIONS = Object.freeze([
   "journey_handovers.view_status",
   "journey_handovers.create",
   "journey_handovers.submit",
+  "announcements.view",
+  "announcements.manage",
+  "announcements.publish",
+  "audit.view_website",
 ]);
 
 const LEGACY_BUNDLES = Object.freeze({

@@ -11,8 +11,8 @@ const ejs = require("ejs");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const {
@@ -160,13 +160,11 @@ function createAnnouncementAdminRouter(deps) {
     variant === "hq" ? "/hq/announcements" : "/branch-admin/announcements";
   const productPolicy = resolveAnnouncementProductPolicy(env);
 
-  const allowedRoles =
-    variant === "hq"
-      ? ["church_hq_admin", "platform_admin"]
-      : ["platform_admin", "church_hq_admin", "branch_admin"];
-
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
+  const requireAccess = createRequireBlessBoardPermission("announcements.view", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
 
   const rejectApex = createRejectApex({
     isApexHost,

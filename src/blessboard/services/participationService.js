@@ -10,6 +10,7 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("./authorizeBlessBoardTenantAccess");
+const { requireActorPermission } = require("./requireActorPermission");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -73,49 +74,42 @@ function contentVisibleToBranch(item, branchId) {
 
 /**
  * @param {{ query: Function }} client
- * @param {{ actorUserId: string, tenant: object, branchId: string|null }} input
+ * @param {{ actorUserId: string, tenant: object, branchId: string|null, permission: string }} input
  */
 async function authorizeAdmin(client, input) {
-  const authz = await authorizeBlessBoardTenantAccess(
+  const permission = input.permission || "events.view";
+  const result = await requireActorPermission(
     { query: client.query.bind(client) },
     {
-      userId: input.actorUserId,
+      actorUserId: input.actorUserId,
       tenant: input.tenant,
+      permission,
       branchId: input.branchId,
     }
   );
-  if (!authz.ok) {
+  if (!result.ok || !result.allowed) {
     return {
       ok: false,
-      reason: authz.status || AUTHZ_STATUS.UNAUTHORIZED,
-      effectiveRoles: [],
+      reason: result.reason || "denied",
+      mode: null,
     };
   }
-  const roles = authz.context.effectiveRoles || [];
-  const hasHq = roles.some((r) => r.roleKey === "church_hq_admin");
-  const hasBranch = roles.some((r) => r.roleKey === "branch_admin");
-  const hasPlatform = roles.some((r) => r.roleKey === "platform_admin");
-  if (!hasHq && !hasBranch && !hasPlatform) {
-    return { ok: false, reason: "role", effectiveRoles: roles };
+  if (input.branchId == null && result.mode === "branch") {
+    return { ok: false, reason: "church_wide_denied", mode: result.mode };
   }
-  if (input.branchId == null && hasBranch && !hasHq && !hasPlatform) {
-    return { ok: false, reason: "church_wide_denied", effectiveRoles: roles };
-  }
-  return { ok: true, effectiveRoles: roles };
+  return { ok: true, mode: result.mode };
 }
 
 function assertAdminCanManageItem(authz, item, scopeBranchId) {
   if (!authz.ok) return false;
-  const roles = authz.effectiveRoles || [];
-  const hasHq = roles.some((r) => r.roleKey === "church_hq_admin");
-  const hasPlatform = roles.some((r) => r.roleKey === "platform_admin");
-  if (hasHq || hasPlatform) {
+  const mode = authz.mode;
+  if (mode === "hq") {
     if (scopeBranchId !== undefined && String(scopeBranchId || "") !== String(item.branchId || "")) {
       return false;
     }
     return true;
   }
-  // branch admin: only branch-scoped items matching their scope
+  // branch mode: only branch-scoped items matching their scope
   if (item.branchId == null) return false;
   if (scopeBranchId && String(item.branchId) !== String(scopeBranchId)) return false;
   return true;
@@ -212,11 +206,13 @@ async function joinMinistry(db, input) {
       const nextStatus = ministry.joinPolicy === "open" ? "active" : "pending";
       const membership = await repo.insertMinistryMembership(client, {
         churchId,
+        branchId,
         ministryId,
         memberId,
         status: nextStatus,
         message: msg.value,
         joinedAt: nextStatus === "active" ? new Date().toISOString() : null,
+        assignmentSource: "self_join",
       });
       return { ok: true, status: STATUS.OK, membership };
     });
@@ -463,6 +459,7 @@ async function listAdminMinistryParticipation(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: branchId == null ? null : branchId,
+          permission: "events.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, items: [], reason: authz.reason };
@@ -527,6 +524,7 @@ async function reviewMinistryMembership(db, input) {
           actorUserId,
           tenant: input.tenant,
           branchId: ministry.branchId,
+          permission: "events.manage",
         });
         if (!assertAdminCanManageItem(authz, ministry, input.scopeBranchId)) {
           return { ok: false, status: STATUS.FORBIDDEN, membership: null, reason: "role" };
@@ -562,6 +560,7 @@ async function listAdminEventParticipation(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: branchId == null ? null : branchId,
+          permission: "events.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, items: [], reason: authz.reason };

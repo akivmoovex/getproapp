@@ -11,8 +11,8 @@ const ejs = require("ejs");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const {
@@ -205,13 +205,11 @@ function createFormsRequestsAdminRouter(deps) {
   const shellKind = variant === "hq" ? "hq" : "branch";
   const mediaService = deps.mediaService || createMediaUploadService(env);
 
-  const allowedRoles =
-    variant === "hq"
-      ? ["church_hq_admin", "platform_admin"]
-      : ["platform_admin", "church_hq_admin", "branch_admin"];
-
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
+  const requireAccess = createRequireBlessBoardPermission("requests.view", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -414,7 +412,13 @@ function createFormsRequestsAdminRouter(deps) {
           limit: LIST_LIMIT,
         });
         if (!listed.ok) {
-          return sendControlled(req, res, 503, "Resources unavailable.", shellKind);
+          return sendControlled(
+            req,
+            res,
+            listed.status === STATUS.FORBIDDEN ? 403 : 503,
+            "Resources unavailable.",
+            shellKind
+          );
         }
         let resources = listed.resources || [];
         if (searchQ) {
@@ -518,7 +522,13 @@ function createFormsRequestsAdminRouter(deps) {
         limit: LIST_LIMIT,
       });
       if (!listed.ok) {
-        return sendControlled(req, res, 503, "Forms unavailable.", shellKind);
+        return sendControlled(
+          req,
+          res,
+          listed.status === STATUS.FORBIDDEN ? 403 : 503,
+          "Forms unavailable.",
+          shellKind
+        );
       }
       let forms = listed.forms || [];
       if (searchQ) {
@@ -718,9 +728,11 @@ function createFormsRequestsAdminRouter(deps) {
         );
         let mayViewPastoralBodies = false;
         try {
+          // Form-request pastoral category messages are operational request content.
+          // Confidential pastoral_cases note bodies remain gated by pastoral permissions elsewhere.
           const pastoralBody = await authorize(getPool(), {
             actor: { userId: scope.actorUserId },
-            permission: "pastoral_cases.view_restricted",
+            permission: "requests.manage",
             tenantContext: scope.tenant,
             resourceContext: {
               organizationId: scope.tenant.organization.id,

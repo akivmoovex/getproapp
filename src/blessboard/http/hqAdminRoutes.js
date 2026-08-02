@@ -10,11 +10,14 @@ const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
-const {
   createRequireBlessBoardPermission,
 } = require("./requireBlessBoardPermission");
+const {
+  createRequireAnyBlessBoardPermission,
+} = require("./requireBlessBoardShellAccess");
+const {
+  HQ_SHELL_VISIBLE_PERMISSIONS,
+} = require("./shellVisiblePermissions");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -132,15 +135,30 @@ function createHqAdminRouter(deps) {
   void deps.sendUnavailable;
 
   const router = express.Router();
-  const requireHqAccess = createRequireBlessBoardTenantRole({
+  // HQ shell: any church/org-scoped visible permission (branch-only grants excluded via branchId: null).
+  const requireHqAccess = createRequireAnyBlessBoardPermission(HQ_SHELL_VISIBLE_PERMISSIONS, {
     getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
+    resolveResourceContext: (_req, tenant) => ({
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      branchId: null,
+    }),
+    denyMessage:
+      "You do not have access to this church HQ workspace. Ask an administrator to assign an HQ module permission.",
   });
   const requireOrgSettingsManage = createRequireBlessBoardPermission(
     "organisation.settings.manage",
     null,
-    { getPool }
+    { getPool, scopeMode: "church" }
   );
+  const requireBranchesView = createRequireBlessBoardPermission("branches.view", null, {
+    getPool,
+    scopeMode: "church",
+  });
+  const requireBranchesCreate = createRequireBlessBoardPermission("branches.create", null, {
+    getPool,
+    scopeMode: "church",
+  });
 
   function sendMissingTenantContext(req, res) {
     const reason = req.blessBoardSessionTenantReason || "tenant_context_missing";
@@ -299,7 +317,7 @@ function createHqAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/hq/branches", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/branches", rejectApex, gateHq, requireBranchesView, async (req, res) => {
     const listResult = await loadBranchList(req, res);
     if (!listResult) return;
     const tenant = resolveTenantForAuthorization(req);
@@ -332,7 +350,7 @@ function createHqAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/hq/branches/new", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/branches/new", rejectApex, gateHq, requireBranchesCreate, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -355,7 +373,7 @@ function createHqAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.post("/hq/branches", rejectApex, gateHq, async (req, res) => {
+  router.post("/hq/branches", rejectApex, gateHq, requireBranchesCreate, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -455,7 +473,7 @@ function createHqAdminRouter(deps) {
     );
   });
 
-  router.get("/hq/branches/:branchKey/created", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/branches/:branchKey/created", rejectApex, gateHq, requireBranchesView, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id || !tenant.organization) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -545,7 +563,7 @@ function createHqAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.post("/hq/settings", rejectApex, gateHq, async (req, res) => {
+  router.post("/hq/settings", rejectApex, gateHq, requireOrgSettingsManage, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -683,7 +701,7 @@ function createHqAdminRouter(deps) {
    * Resolve branch key under current church, authorize for that branch UUID,
    * then open the existing branch-admin shell (no UUID in URL).
    */
-  router.get("/hq/branches/:branchKey", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/branches/:branchKey", rejectApex, gateHq, requireBranchesView, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");

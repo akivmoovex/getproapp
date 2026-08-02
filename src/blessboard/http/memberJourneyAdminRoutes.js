@@ -81,17 +81,24 @@ function createMemberJourneyAdminRouter(deps) {
   const requireHandoverView = createRequireBlessBoardPermission(
     "journey_handovers.view_status",
     null,
-    { getPool }
+    { getPool, scopeMode: "church" }
   );
   const requireContactsView = createRequireBlessBoardPermission(
     "journey_contacts.view_team",
     null,
-    { getPool }
+    { getPool, scopeMode: "church" }
   );
-  const requireCellsView = createRequireBlessBoardPermission("cells.view", null, { getPool });
-  const requireClassesView = createRequireBlessBoardPermission("classes.view", null, { getPool });
+  const requireCellsView = createRequireBlessBoardPermission("cells.view", null, {
+    getPool,
+    scopeMode: "church",
+  });
+  const requireClassesView = createRequireBlessBoardPermission("classes.view", null, {
+    getPool,
+    scopeMode: "church",
+  });
   const requireDepartmentsView = createRequireBlessBoardPermission("departments.view", null, {
     getPool,
+    scopeMode: "church",
   });
 
   const rejectApex = createRejectApex({

@@ -132,12 +132,28 @@ function mediaThumb(url) {
  * Resolve publish vs submit-for-approval using existing approval settings.
  * Does not invent new governance — trusted branch publish stays inactive unless
  * resolveBranchEditMode reports trustedActive.
+ * @param {{
+ *   canPublish: boolean,
+ *   actorRole?: string,
+ *   settings: object|null,
+ * }} opts
  */
 function resolvePublishCapability(opts) {
-  const actorRole = String(opts.actorRole || "");
+  const canPublish = Boolean(opts.canPublish);
+  const actorRole = opts.actorRole ? String(opts.actorRole) : null;
   const settings = opts.settings || null;
 
-  if (actorRole === "church_hq_admin" || actorRole === "platform_admin") {
+  if (!canPublish) {
+    return {
+      action: "forbidden",
+      label: null,
+      reason: "forbidden",
+      message: "You do not have permission to publish website changes.",
+    };
+  }
+
+  // actorRole used only for audit labels if provided
+  if (actorRole === "church_hq_admin" || actorRole === "platform_admin" || !actorRole) {
     const hqDirect =
       !settings ||
       settings.hqDirectPublishEnabled !== false;
@@ -465,6 +481,7 @@ async function loadWebsiteDraftChangesReview(db, opts) {
       "Church";
 
     const capability = resolvePublishCapability({
+      canPublish: opts.canPublish === true,
       actorRole: opts.actorRole,
       settings: approvalLoad.ok ? approvalLoad.settings : null,
     });

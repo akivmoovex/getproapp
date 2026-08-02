@@ -10,8 +10,9 @@ const {
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const {
-  authorizeBlessBoardTenantAccess,
-} = require("../services/authorizeBlessBoardTenantAccess");
+  authorize,
+  listEffectivePermissions,
+} = require("../services/blessBoardRbacAuthorizationService");
 const {
   resolveWebsiteScope,
   SCOPE_TYPE,
@@ -71,23 +72,58 @@ function buildDisplayBaselineMap(sections, publicContact) {
 }
 
 /**
- * @param {object|null|undefined} authz
+ * @param {{ query: Function }} pool
+ * @param {{
+ *   userId: string,
+ *   tenant: object,
+ *   branchId?: string|null,
+ * }} opts
  */
-function resolveWebsiteEditCapability(authz) {
-  if (!authz || !authz.authenticated || !authz.authorized) {
+async function resolveWebsiteEditCapability(pool, opts) {
+  const tenant = opts.tenant;
+  if (!tenant || tenant.resolved !== true) {
     return { canEdit: false, isHqEditor: false, isBranchEditor: false, actorRole: null };
   }
-  const roles = Array.isArray(authz.effectiveRoles) ? authz.effectiveRoles : [];
-  const keys = new Set(roles.map((r) => String(r.roleKey || "")));
-  const isHqEditor = keys.has("church_hq_admin") || keys.has("platform_admin");
-  const isBranchEditor = keys.has("branch_admin");
-  if (!isHqEditor && !isBranchEditor) {
+
+  const resourceContext = {
+    organizationId: tenant.organization.id,
+    churchId: tenant.church.id,
+    branchId: opts.branchId || null,
+  };
+
+  const editCheck = await authorize(pool, {
+    actor: { userId: opts.userId },
+    permission: "website.edit",
+    tenantContext: tenant,
+    resourceContext,
+  });
+
+  if (!editCheck.allowed) {
     return { canEdit: false, isHqEditor: false, isBranchEditor: false, actorRole: null };
   }
+
+  // Determine editor type from permissions context (for audit labels only)
+  const perms = await listEffectivePermissions(pool, {
+    actor: { userId: opts.userId },
+    tenantContext: tenant,
+    resourceContext,
+  });
+
+  const hasOrgSettingsManage = (perms.permissions || []).some(
+    (p) => p.permissionKey === "organisation.settings.manage"
+  );
+
+  const isHqEditor = hasOrgSettingsManage;
+  const isBranchEditor = !isHqEditor;
+
+  // actorRole for audit labels only
   let actorRole = null;
-  if (keys.has("platform_admin")) actorRole = "platform_admin";
-  else if (keys.has("church_hq_admin")) actorRole = "church_hq_admin";
-  else if (keys.has("branch_admin")) actorRole = "branch_admin";
+  if (hasOrgSettingsManage) {
+    actorRole = "church_hq_admin"; // or platform_admin
+  } else {
+    actorRole = "branch_admin";
+  }
+
   return { canEdit: true, isHqEditor, isBranchEditor, actorRole };
 }
 
@@ -206,38 +242,24 @@ async function attachWebsiteAdminChrome(opts) {
         isHqEditor = websiteScope.scopeType === SCOPE_TYPE.CHURCH;
         draftBranchId =
           websiteScope.scopeType === SCOPE_TYPE.BRANCH ? websiteScope.branchId : null;
-        if (isHqEditor) {
-          actorRole = "church_hq_admin";
-        } else if (websiteScope.scopeType === SCOPE_TYPE.BRANCH) {
-          actorRole = "branch_admin";
-        }
-
-        const authzBranchId =
-          websiteScope.scopeType === SCOPE_TYPE.BRANCH
-            ? websiteScope.branchId
-            : tenant.primaryBranch
-              ? tenant.primaryBranch.id
-              : null;
-        const result = await authorizeBlessBoardTenantAccess(db, {
-          userId: session.userId,
-          tenant,
-          branchId: authzBranchId,
-        });
-        authz = result.context || authz;
-        req.blessBoardAuthorizationContext = authz;
       }
     } catch {
       // keep prior fail-soft context
     }
   }
 
-  const capability = resolveWebsiteEditCapability(authz);
+  const capability = await resolveWebsiteEditCapability(db, {
+    userId: session && session.userId,
+    tenant,
+    branchId: draftBranchId,
+  });
+
   if (!capability.canEdit) {
     model.websiteAdmin = null;
     return model;
   }
 
-  // Prefer resolver outcome; fall back to role capability for HQ/platform.
+  // Prefer resolver outcome; fall back to capability for HQ/platform.
   if (capability.isHqEditor) {
     isHqEditor = true;
     draftBranchId = null;

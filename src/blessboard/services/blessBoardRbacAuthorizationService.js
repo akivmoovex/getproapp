@@ -224,12 +224,17 @@ async function authorize(db, input) {
       (resource.churchId && String(resource.churchId)) ||
       (tenantIds && tenantIds.churchId) ||
       null;
-    let branchId =
-      resource.branchId != null && String(resource.branchId).trim() !== ""
-        ? String(resource.branchId)
-        : tenantIds && tenantIds.primaryBranchId
-          ? tenantIds.primaryBranchId
+    // Explicit branchId: null means church-wide (do not fall back to primaryBranch).
+    // Omitted branchId may use tenant primaryBranch for convenience on branch surfaces.
+    let branchId = null;
+    if (Object.prototype.hasOwnProperty.call(resource, "branchId")) {
+      branchId =
+        resource.branchId != null && String(resource.branchId).trim() !== ""
+          ? String(resource.branchId)
           : null;
+    } else if (tenantIds && tenantIds.primaryBranchId) {
+      branchId = tenantIds.primaryBranchId;
+    }
 
     if (!organizationId || !churchId) {
       return decision({
@@ -457,12 +462,16 @@ async function listEffectivePermissions(db, input) {
       (resource.churchId && String(resource.churchId)) ||
       (tenantIds && tenantIds.churchId) ||
       null;
-    const branchId =
-      resource.branchId != null && String(resource.branchId).trim() !== ""
-        ? String(resource.branchId)
-        : tenantIds && tenantIds.primaryBranchId
-          ? tenantIds.primaryBranchId
+    // Explicit branchId: null means church-wide (do not fall back to primaryBranch).
+    let branchId = null;
+    if (Object.prototype.hasOwnProperty.call(resource, "branchId")) {
+      branchId =
+        resource.branchId != null && String(resource.branchId).trim() !== ""
+          ? String(resource.branchId)
           : null;
+    } else if (tenantIds && tenantIds.primaryBranchId) {
+      branchId = tenantIds.primaryBranchId;
+    }
 
     if (!organizationId || !churchId) {
       return { ok: false, reasonCode: REASON.TENANT_UNRESOLVED, permissions: [] };

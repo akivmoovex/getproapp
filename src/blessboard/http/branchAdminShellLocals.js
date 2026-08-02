@@ -10,6 +10,7 @@ const {
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
+const { buildPermissionNavFlags } = require("./permissionNavLocals");
 const { formatRoleLabel } = require("./renderTenantLandingPage");
 const {
   BRANCH_ADMIN_NAV,
@@ -93,10 +94,48 @@ async function buildBranchAdminShellLocals(req, res, opts) {
     opts.websiteMode ||
     (await resolveBranchWebsiteModeForShell(req, opts.getPool, churchId));
 
-  const navItems = applyBranchWebsiteModeNav(
+  let permissionNavFlags = {
+    canViewGiving: false,
+    canViewWebsite: false,
+    canViewMembers: false,
+    canViewAttendance: false,
+    canViewAnnouncements: false,
+  };
+  if (opts.getPool && session && session.userId && tenant && tenant.resolved === true) {
+    try {
+      permissionNavFlags = await buildPermissionNavFlags(opts.getPool(), {
+        actorUserId: session.userId,
+        tenant,
+        branchId: tenant.primaryBranch && tenant.primaryBranch.id ? tenant.primaryBranch.id : null,
+      });
+    } catch {
+      /* fail closed */
+    }
+  }
+
+  let navItems = applyBranchWebsiteModeNav(
     BRANCH_ADMIN_NAV.filter((item) => item.nav && item.enabled),
     websiteMode
   );
+  navItems = navItems.filter((item) => {
+    if (!item || !item.enabled) return false;
+    if (item.key === "giving" && !permissionNavFlags.canViewGiving) return false;
+    if (
+      (item.key === "content" || item.key === "website" || item.key === "website_submissions") &&
+      !permissionNavFlags.canViewWebsite
+    ) {
+      return false;
+    }
+    if (
+      (item.key === "members" || item.key === "registrations") &&
+      !permissionNavFlags.canViewMembers
+    ) {
+      return false;
+    }
+    if (item.key === "attendance" && !permissionNavFlags.canViewAttendance) return false;
+    if (item.key === "announcements" && !permissionNavFlags.canViewAnnouncements) return false;
+    return true;
+  });
   const portalModules = applyBranchWebsiteModeModules(BRANCH_ADMIN_MODULES, websiteMode);
   const mobileNav = buildBranchMobileNav(navItems, activeNav);
   const mobileTabs = BRANCH_ADMIN_MOBILE_TABS.map((key) =>

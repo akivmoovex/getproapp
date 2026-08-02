@@ -11,8 +11,8 @@ const ejs = require("ejs");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -102,10 +102,7 @@ function createHqMembersAdminRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
 
   const router = express.Router();
-  const requireHqAccess = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
+  const requireHqAccess = createRequireBlessBoardPermission("members.view", null, { getPool, scopeMode: "church" });
 
   const rejectApex = createRejectApex({
     isApexHost,

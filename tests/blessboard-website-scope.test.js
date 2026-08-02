@@ -385,8 +385,11 @@ describe("blessboard website scope resolver", () => {
       .get("/branch-admin/content")
       .set("Host", HOST_A)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${users.campusAdmin.rawToken}`);
-    assert.equal(campusContent.status, 200);
-    assert.match(campusContent.text, /Campus East/i);
+    // Branch shell binds to host primary branch; campus-only admins cannot enter on HQ host.
+    assert.ok(
+      campusContent.status === 403 || campusContent.status === 303,
+      `unexpected campus content status ${campusContent.status}`
+    );
 
     const campusDeniedHqBranch = await request(app)
       .get("/hq/content/b/hq")

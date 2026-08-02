@@ -9,8 +9,8 @@
 
 const express = require("express");
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
@@ -89,10 +89,7 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
     },
   });
 
-  const requireHq = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
+  const requireHq = createRequireBlessBoardPermission("website.edit", null, { getPool, scopeMode: "church" });
 
   function requireSession(req, res, next) {
     if (!(req.v5Session && req.v5Session.authenticated)) {

@@ -199,18 +199,28 @@ async function findMinistryMembershipById(client, id) {
 }
 
 async function insertMinistryMembership(client, fields) {
+  const orgRow = await client.query(
+    `SELECT organization_id FROM blessboard.churches WHERE id = $1 LIMIT 1`,
+    [fields.churchId]
+  );
+  const organizationId =
+    fields.organizationId || (orgRow.rows[0] && orgRow.rows[0].organization_id) || null;
   const { rows } = await client.query(
     `INSERT INTO blessboard.ministry_memberships
-       (church_id, ministry_id, member_id, status, message, joined_at)
-     VALUES ($1, $2, $3, $4, $5, $6)
+       (organization_id, church_id, branch_id, ministry_id, member_id, status, message,
+        joined_at, assignment_source)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING ${MEMBERSHIP_COLS}`,
     [
+      organizationId,
       fields.churchId,
+      fields.branchId || null,
       fields.ministryId,
       fields.memberId,
       fields.status,
       fields.message || null,
       fields.joinedAt || null,
+      fields.assignmentSource || "self_join",
     ]
   );
   return mapMembership(rows[0]);

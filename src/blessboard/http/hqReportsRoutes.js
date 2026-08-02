@@ -9,9 +9,6 @@ const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
-const {
   createRequireBlessBoardPermission,
 } = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
@@ -203,17 +200,15 @@ function createHqReportsRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
 
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
-  const requireAuditView = createRequireBlessBoardPermission("audit.view", null, { getPool });
+  const requireAuditView = createRequireBlessBoardPermission("audit.view", null, { getPool, scopeMode: "church" });
 
   const rejectApex = createRejectApex({
     isApexHost,
     sendUnavailable,
     mode: "unlessTenant",
   });
+
+  const requireOrganisationView = createRequireBlessBoardPermission("organisation.view", null, { getPool, scopeMode: "church" });
 
   function gate(req, res, next) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
@@ -224,7 +219,7 @@ function createHqReportsRouter(deps) {
       }
       return sendControlled(req, res, 401, "Sign-in is required.");
     }
-    return requireAccess(req, res, next);
+    return requireOrganisationView(req, res, next);
   }
 
   async function shellLocals(req, res, activeNav, extra) {

@@ -7,8 +7,8 @@
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -128,9 +128,9 @@ function createBroadcastAdminRouter(deps) {
         );
     },
   });
-  const requireHq = createRequireBlessBoardTenantRole({
+  const requireBroadcastsView = createRequireBlessBoardPermission("broadcasts.view", null, {
     getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
+    scopeMode: "church",
   });
 
   function gateHq(req, res, next) {
@@ -151,7 +151,7 @@ function createBroadcastAdminRouter(deps) {
           "Your account is signed in, but this church HQ workspace could not be loaded."
         );
     }
-    return requireHq(req, res, next);
+    return requireBroadcastsView(req, res, next);
   }
 
   async function shell(req, res, activeNav, extra) {

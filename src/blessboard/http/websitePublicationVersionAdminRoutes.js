@@ -6,9 +6,6 @@
 
 const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
-const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -123,7 +120,6 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     shellLocalsFn: shellLocals,
     sendControlled,
     loginNext: "/hq/website/version-history",
-    createRequireBlessBoardTenantRole,
   });
 
   function requireTenant(req, res) {

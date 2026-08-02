@@ -10,8 +10,14 @@ const ejs = require("ejs");
 const express = require("express");
 
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
+const {
+  createRequireAnyBlessBoardPermission,
+} = require("./requireBlessBoardShellAccess");
+const {
+  CONTENT_SHELL_VISIBLE_PERMISSIONS,
+} = require("./shellVisiblePermissions");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -28,6 +34,9 @@ const {
   resolveWebsiteMode,
   WEBSITE_MODE,
 } = require("../services/resolveWebsiteMode");
+const {
+  authorize,
+} = require("../services/blessBoardRbacAuthorizationService");
 const {
   canonicalChurchWideHqContentPath,
 } = require("./singleSiteHqContentCanonical");
@@ -282,13 +291,73 @@ function createContentAdminRouter(deps) {
     limits: { fileSize: MAX_ANY_BYTES, files: 1 },
   });
 
-  const allowedRoles =
-    variant === "hq"
-      ? ["church_hq_admin", "platform_admin"]
-      : ["platform_admin", "church_hq_admin", "branch_admin"];
-
   const router = express.Router();
-  const requireAccess = createRequireBlessBoardTenantRole({ getPool, allowedRoles });
+  // Final shell authorization is permission-based (website.view|edit|publish).
+  // Legacy HQ/branch roles enter only via compatibility website.* grants.
+  const requireWebsiteShell = createRequireAnyBlessBoardPermission(
+    CONTENT_SHELL_VISIBLE_PERMISSIONS,
+    {
+      getPool,
+      resolveResourceContext: (_req, tenant) => ({
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        branchId:
+          variant === "hq"
+            ? null
+            : tenant.primaryBranch && tenant.primaryBranch.id
+              ? tenant.primaryBranch.id
+              : null,
+      }),
+      denyMessage: "You do not have access to the website editor.",
+    }
+  );
+  const requireWebsiteEdit = createRequireBlessBoardPermission("website.edit", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
+  const requireWebsitePublish = createRequireBlessBoardPermission("website.publish", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
+  const requireAccess = requireWebsiteShell;
+
+  async function assertWebsitePermission(req, permissionKey, branchId) {
+    const tenant = resolveTenantForAuthorization(req);
+    const session = req.v5Session && req.v5Session.session;
+    if (!tenant || !session || !session.userId) {
+      return { ok: false, status: 401, error: "Sign-in is required." };
+    }
+    // Explicit null = church-wide (do not fall back to primary branch).
+    const scopedBranchId =
+      branchId != null && String(branchId).trim() !== ""
+        ? String(branchId)
+        : null;
+    const authz = await authorize(getPool(), {
+      actor: { userId: session.userId },
+      permission: permissionKey,
+      tenantContext: tenant,
+      resourceContext: {
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        branchId: scopedBranchId,
+      },
+    });
+    if (!authz.allowed) {
+      return { ok: false, status: 403, error: "Access denied." };
+    }
+    return { ok: true, tenant, session };
+  }
+
+  function legacyActorRoleLabel(req) {
+    const authzCtx = req.blessBoardAuthorizationContext;
+    const roleKeys = new Set(
+      ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
+    );
+    if (roleKeys.has("platform_admin")) return "platform_admin";
+    if (roleKeys.has("church_hq_admin")) return "church_hq_admin";
+    if (roleKeys.has("branch_admin")) return "branch_admin";
+    return variant === "hq" ? "church_hq_admin" : "branch_admin";
+  }
 
   function sendMissingContentTenantContext(req, res) {
     const reason = req.blessBoardSessionTenantReason || "tenant_context_missing";
@@ -355,6 +424,20 @@ function createContentAdminRouter(deps) {
       return sendMissingContentTenantContext(req, res);
     }
 
+    function afterShell(err) {
+      if (err) return next(err);
+      const method = String(req.method || "GET").toUpperCase();
+      if (method === "GET" || method === "HEAD") return next();
+      const path = String(req.path || req.url || "");
+      if (
+        path.includes("/draft-changes/publish") ||
+        path.includes("/api/inline-field/publish")
+      ) {
+        return requireWebsitePublish(req, res, next);
+      }
+      return requireWebsiteEdit(req, res, next);
+    }
+
     // Branch Admin surfaces must authorize against the assigned website branch,
     // not the catalogue primaryBranch used by global middleware.
     if (variant === "branch") {
@@ -404,7 +487,7 @@ function createContentAdminRouter(deps) {
             ...authz.context,
             reason: authz.status,
           };
-          return requireAccess(req, res, next);
+          return requireAccess(req, res, afterShell);
         } catch {
           return sendControlled(
             req,
@@ -417,7 +500,7 @@ function createContentAdminRouter(deps) {
       })();
     }
 
-    return requireAccess(req, res, next);
+    return requireAccess(req, res, afterShell);
   }
 
   /**
@@ -1680,29 +1763,12 @@ function createContentAdminRouter(deps) {
         });
       }
 
-      const tenant = resolveTenantForAuthorization(req);
-      if (!tenant || !tenant.organization || !tenant.church) {
-        return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
+      const perm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+      if (!perm.ok) {
+        return res.status(perm.status).json({ ok: false, reason: "forbidden", error: perm.error });
       }
-
-      const session = req.v5Session && req.v5Session.session;
-      if (!session || !session.userId) {
-        return res.status(401).json({ ok: false, reason: "auth", error: "Sign-in is required." });
-      }
-
-      const authzCtx = req.blessBoardAuthorizationContext;
-      const roleKeys = new Set(
-        ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
-      );
-      const allowed =
-        (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
-        (variant === "branch" &&
-          (roleKeys.has("branch_admin") ||
-            roleKeys.has("church_hq_admin") ||
-            roleKeys.has("platform_admin")));
-      if (!allowed) {
-        return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
-      }
+      const tenant = perm.tenant;
+      const session = perm.session;
 
       const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
       try {
@@ -1711,11 +1777,7 @@ function createContentAdminRouter(deps) {
           churchId: scope.churchId,
           branchId: scope.branchId,
           editorUserId: session.userId,
-          actorRole: roleKeys.has("platform_admin")
-            ? "platform_admin"
-            : roleKeys.has("church_hq_admin")
-              ? "church_hq_admin"
-              : "branch_admin",
+          actorRole: legacyActorRoleLabel(req),
           pageKey,
           sectionKey,
           fieldKey,
@@ -1833,40 +1895,26 @@ function createContentAdminRouter(deps) {
           });
         }
 
-        const session = req.v5Session && req.v5Session.session;
-        if (!session || !session.userId) {
-          return res.status(401).json({
-            ok: false,
-            reason: "auth",
-            error: "Sign-in is required.",
-            published: false,
-          });
-        }
-
-        const authzCtx = req.blessBoardAuthorizationContext;
-        const roleKeys = new Set(
-          ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
-        );
-        const allowed =
-          (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
-          (variant === "branch" &&
-            (roleKeys.has("branch_admin") ||
-              roleKeys.has("church_hq_admin") ||
-              roleKeys.has("platform_admin")));
-        if (!allowed) {
-          return res.status(403).json({
+        const editPerm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+        if (!editPerm.ok) {
+          return res.status(editPerm.status).json({
             ok: false,
             reason: "forbidden",
-            error: "Access denied.",
+            error: editPerm.error,
             published: false,
           });
         }
-
-        const actorRole = roleKeys.has("platform_admin")
-          ? "platform_admin"
-          : roleKeys.has("church_hq_admin")
-            ? "church_hq_admin"
-            : "branch_admin";
+        const publishPerm = await assertWebsitePermission(req, "website.publish", scope.branchId);
+        if (!publishPerm.ok) {
+          return res.status(publishPerm.status).json({
+            ok: false,
+            reason: "forbidden",
+            error: "Publish permission required.",
+            published: false,
+          });
+        }
+        const session = publishPerm.session;
+        const actorRole = legacyActorRoleLabel(req);
 
         const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
         const { publishWebsiteDrafts } = require("../services/websiteDraftPublishService");
@@ -1909,6 +1957,7 @@ function createContentAdminRouter(deps) {
           branchId: scope.branchId,
           actorUserId: session.userId,
           actorRole,
+          tenant,
           confirmPublish: true,
           mobilePreviewConfirmed: true,
           deferServiceTimes: true,
@@ -2033,35 +2082,18 @@ function createContentAdminRouter(deps) {
           return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
         }
 
-        const session = req.v5Session && req.v5Session.session;
-        if (!session || !session.userId) {
-          return res.status(401).json({ ok: false, reason: "auth", error: "Sign-in is required." });
+        const perm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+        if (!perm.ok) {
+          return res.status(perm.status).json({ ok: false, reason: "forbidden", error: perm.error });
         }
-
-        const authzCtx = req.blessBoardAuthorizationContext;
-        const roleKeys = new Set(
-          ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
-        );
-        const allowed =
-          (variant === "hq" && (roleKeys.has("church_hq_admin") || roleKeys.has("platform_admin"))) ||
-          (variant === "branch" &&
-            (roleKeys.has("branch_admin") ||
-              roleKeys.has("church_hq_admin") ||
-              roleKeys.has("platform_admin")));
-        if (!allowed) {
-          return res.status(403).json({ ok: false, reason: "forbidden", error: "Access denied." });
-        }
+        const session = perm.session;
 
         const {
           saveStructuredDraft,
           cancelStructuredDraft,
         } = require("../services/websiteStructuredDraftService");
         const action = String(body.action || "save").trim().toLowerCase();
-        const actorRole = roleKeys.has("platform_admin")
-          ? "platform_admin"
-          : roleKeys.has("church_hq_admin")
-            ? "church_hq_admin"
-            : "branch_admin";
+        const actorRole = legacyActorRoleLabel(req);
 
         try {
           if (action === "cancel") {
@@ -2128,12 +2160,28 @@ function createContentAdminRouter(deps) {
       const orgKey = tenant && tenant.organization ? tenant.organization.key : null;
       const { publicChurchHomePath } = require("../urls/churchUrlHelper");
       const publicHome = publicChurchHomePath(orgKey) || "/";
+      let canPublish = false;
+      if (tenant && session && session.userId) {
+        const pub = await authorize(getPool(), {
+          actor: { userId: session.userId },
+          permission: "website.publish",
+          tenantContext: tenant,
+          resourceContext: {
+            organizationId: tenant.organization.id,
+            churchId: tenant.church.id,
+            branchId: scope.branchId || null,
+          },
+        });
+        canPublish = pub.allowed === true;
+      }
       return {
         organizationId: tenant && tenant.organization ? tenant.organization.id : null,
         churchId: scope.churchId,
         branchId: scope.branchId,
         actorRole: resolveActorRole(req),
         actorUserId: session && session.userId,
+        tenant,
+        canPublish,
         scopeLabel: scope.scopeLabel || (scope.branchId ? "Branch website" : "Organization website"),
         basePath: scope.basePath,
         publicHomePath: publicHome,
@@ -2296,6 +2344,7 @@ function createContentAdminRouter(deps) {
         branchId: scope.branchId,
         actorUserId: session.userId,
         actorRole: resolveActorRole(req),
+        tenant,
         confirmPublish: req.body && req.body.confirm_publish,
         // Phase 7 draft republish: incremental text/media changes must not re-block
         // on first-publish service-time gaps that the review UI only treats as warnings.
@@ -2347,6 +2396,7 @@ function createContentAdminRouter(deps) {
         branchId: scope.branchId,
         actorUserId: session.userId,
         actorRole: resolveActorRole(req),
+        tenant,
         reason: req.body && req.body.reason,
         submitterNote: req.body && req.body.submitter_note,
       });

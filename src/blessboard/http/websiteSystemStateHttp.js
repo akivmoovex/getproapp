@@ -127,15 +127,19 @@ function wantsHtmlResponse(req) {
 }
 
 /**
- * Gate HQ Network-governance HTML routes: wrong role → restricted system state;
+ * Gate HQ Network-governance HTML routes: wrong permission → restricted system state;
  * unauthorized / cross-tenant → plain denial (no upgrade / lock screen).
+ *
+ * Product policy: network governance remains HQ church-scoped (organisation.settings.manage
+ * or website.publish). Not granted to branch-only editors.
  *
  * @param {{
  *   getPool: () => { query: Function },
  *   shellLocalsFn: Function,
  *   sendControlled: Function,
  *   loginNext?: string,
- *   createRequireBlessBoardTenantRole: Function,
+ *   createRequireBlessBoardTenantRole?: Function,
+ *   createRequireBlessBoardPermission?: Function,
  * }} deps
  */
 function createNetworkGovernanceRoleGate(deps) {
@@ -143,8 +147,13 @@ function createNetworkGovernanceRoleGate(deps) {
   const shellLocalsFn = deps.shellLocalsFn;
   const sendControlled = deps.sendControlled;
   const loginNext = deps.loginNext || "/hq/website";
-  const createRequire = deps.createRequireBlessBoardTenantRole;
-  const requireTenantMember = createRequire({ getPool });
+  const {
+    createRequireBlessBoardPermission,
+  } = require("./requireBlessBoardPermission");
+  const { authorize } = require("../services/blessBoardRbacAuthorizationService");
+  const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
+  // Prefer organisation.settings.manage (HQ signal); website.publish also admits publishers.
+  const requireTenantMember = createRequireBlessBoardPermission("website.view", null, { getPool, scopeMode: "church" });
 
   return function gateNetworkGovernanceRole(req, res, next) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);
@@ -158,22 +167,50 @@ function createNetworkGovernanceRoleGate(deps) {
       return sendControlled(req, res, 401, "Sign-in is required.");
     }
 
-    return requireTenantMember(req, res, () => {
-      const ctx = req.blessBoardAuthorizationContext || {};
-      const keys = (ctx.effectiveRoles || []).map((r) => String(r.roleKey || ""));
-      const ok = NETWORK_GOVERNANCE_HQ_ROLES.some((role) => keys.includes(role));
-      if (ok) return next();
+    return requireTenantMember(req, res, async () => {
+      try {
+        const tenant = resolveTenantForAuthorization(req);
+        const session = req.v5Session && req.v5Session.session;
+        if (!tenant || !session || !session.userId) {
+          return sendControlled(req, res, 403, "You do not have access to this site.");
+        }
+        const hq = await authorize(getPool(), {
+          actor: { userId: session.userId },
+          permission: "organisation.settings.manage",
+          tenantContext: tenant,
+          resourceContext: {
+            organizationId: tenant.organization.id,
+            churchId: tenant.church.id,
+            branchId: null,
+          },
+        });
+        const publish = hq.allowed
+          ? hq
+          : await authorize(getPool(), {
+              actor: { userId: session.userId },
+              permission: "website.publish",
+              tenantContext: tenant,
+              resourceContext: {
+                organizationId: tenant.organization.id,
+                churchId: tenant.church.id,
+                branchId: null,
+              },
+            });
+        if (hq.allowed || publish.allowed) return next();
 
-      if (!wantsHtmlResponse(req)) {
-        return sendControlled(req, res, 403, "You do not have access to this site.");
+        if (!wantsHtmlResponse(req)) {
+          return sendControlled(req, res, 403, "You do not have access to this site.");
+        }
+        return renderSystemStatePage(
+          req,
+          res,
+          shellLocalsFn,
+          buildNetworkGovernanceRestrictedState(),
+          { statusCode: 403, pageTitle: "Access Restricted" }
+        );
+      } catch {
+        return sendControlled(req, res, 503, "Access check is temporarily unavailable.");
       }
-      return renderSystemStatePage(
-        req,
-        res,
-        shellLocalsFn,
-        buildNetworkGovernanceRestrictedState(),
-        { statusCode: 403, pageTitle: "Access Restricted" }
-      );
     });
   };
 }

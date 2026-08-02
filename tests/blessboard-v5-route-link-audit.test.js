@@ -144,6 +144,7 @@ function collectRegisteredPathPatterns() {
     "src/blessboard/http/inviteAcceptRoutes.js",
     "src/blessboard/http/tenantRegistrationRoutes.js",
     "src/blessboard/http/publicMediaRoutes.js",
+    "src/blessboard/http/passwordResetRoutes.js",
     "src/blessboard/http/hqAdminRoutes.js",
     "src/blessboard/http/churchWebsiteAdminRoutes.js",
     "src/blessboard/http/pathPublicRoutes.js",
@@ -159,6 +160,15 @@ function collectRegisteredPathPatterns() {
     "src/blessboard/http/broadcastAdminRoutes.js",
     "src/blessboard/http/participationMemberRoutes.js",
     "src/blessboard/http/formsRequestsMemberRoutes.js",
+    "src/blessboard/http/memberJourneyAdminRoutes.js",
+    "src/blessboard/http/pastoralWelfareAdminRoutes.js",
+    "src/blessboard/http/websiteChangeSubmissionBranchRoutes.js",
+    "src/blessboard/http/websiteChangeSubmissionAdminRoutes.js",
+    "src/blessboard/http/websiteWorkflowBatchCAdminRoutes.js",
+    "src/blessboard/http/websitePublicationVersionAdminRoutes.js",
+    "src/blessboard/http/websiteScopeSettingsAdminRoutes.js",
+    "src/blessboard/http/websiteServiceTimesAdminRoutes.js",
+    "src/blessboard/http/websiteAuditAdminRoutes.js",
   ];
   for (const f of literalFiles) scanRouterFile(f);
 
@@ -278,8 +288,21 @@ function collectRegisteredPathPatterns() {
     ]),
   ];
   expand(
-    [...hqBranch("/hq/content"), ...ba("/branch-admin/content")],
+    [...hqBranch("/hq/content"), ...ba("/branch-admin/content"), ...ba("/branch-admin/website")],
     contentSuffixes
+  );
+
+  // Branch website submissions hub (change-request workflow)
+  expand(
+    ba("/branch-admin/website"),
+    [
+      { method: "get", suffix: "" },
+      { method: "get", suffix: "/overview" },
+      { method: "get", suffix: "/submissions" },
+      { method: "get", suffix: "/submissions/:id" },
+      { method: "get", suffix: "/submit" },
+      { method: "post", suffix: "/submissions/submit" },
+    ]
   );
 
   return patterns;

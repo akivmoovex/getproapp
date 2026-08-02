@@ -10,6 +10,7 @@ const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("./authorizeBlessBoardTenantAccess");
+const { requireActorPermission } = require("./requireActorPermission");
 const { safeExternalUrl } = require("../http/tenantPublicSafe");
 const {
   DEFAULT_PRODUCT_POLICY,
@@ -251,28 +252,63 @@ async function auditAnnouncementWrite(client, input) {
 
 /**
  * @param {{ query: Function }} client
- * @param {{ actorUserId: string, tenant: object, branchId: string|null }} input
+ * @param {{ actorUserId: string, tenant: object, branchId: string|null, permission: string, productPolicy?: object }} input
  */
 async function authorizeActor(client, input) {
-  const authz = await authorizeBlessBoardTenantAccess(
+  const permission = input.permission || "announcements.view";
+  const result = await requireActorPermission(
     { query: client.query.bind(client) },
     {
-      userId: input.actorUserId,
+      actorUserId: input.actorUserId,
       tenant: input.tenant,
+      permission,
       branchId: input.branchId,
     }
   );
-  if (!authz.ok) {
+  if (!result.ok || !result.allowed) {
+    // Platform default: may draft (manage) but not publish unless product policy allows.
+    if (permission === "announcements.publish") {
+      const policy = { ...DEFAULT_PRODUCT_POLICY, ...(input.productPolicy || {}) };
+      const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
+      const roles = await authzRepo.listActiveAuthorizationRoles(client, input.actorUserId);
+      const isPlatform = roles.some((r) => String(r.roleKey) === "platform_admin");
+      const isHq = roles.some((r) => String(r.roleKey) === "church_hq_admin");
+      if (isPlatform && !isHq && !policy.allowPlatformAdminPublish) {
+        return {
+          ok: false,
+          status: STATUS.FORBIDDEN,
+          reason: "platform_publish_denied",
+          mode: null,
+        };
+      }
+    }
     return {
       ok: false,
       status: STATUS.FORBIDDEN,
-      reason: authz.status || AUTHZ_STATUS.UNAUTHORIZED,
-      effectiveRoles: [],
+      reason: result.reason || "denied",
+      mode: null,
     };
   }
+
+  if (permission === "announcements.publish") {
+    const policy = { ...DEFAULT_PRODUCT_POLICY, ...(input.productPolicy || {}) };
+    const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
+    const roles = await authzRepo.listActiveAuthorizationRoles(client, input.actorUserId);
+    const isPlatform = roles.some((r) => String(r.roleKey) === "platform_admin");
+    const isHq = roles.some((r) => String(r.roleKey) === "church_hq_admin");
+    if (isPlatform && !isHq && !policy.allowPlatformAdminPublish) {
+      return {
+        ok: false,
+        status: STATUS.FORBIDDEN,
+        reason: "platform_publish_denied",
+        mode: result.mode,
+      };
+    }
+  }
+
   return {
     ok: true,
-    effectiveRoles: authz.context.effectiveRoles || [],
+    mode: result.mode,
   };
 }
 
@@ -417,38 +453,20 @@ async function createAnnouncement(db, input) {
     return await withClient(db, async (client) => {
       let capabilityMode = null;
       if (input.tenant) {
+        const permission = nextStatus === "published" ? "announcements.publish" : "announcements.manage";
         const authz = await authorizeActor(client, {
           actorUserId,
           tenant: input.tenant,
           branchId,
+          permission,
+          productPolicy: input.productPolicy,
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: authz.reason };
         }
-        const writeCap = evaluateAnnouncementCapability(
-          authz.effectiveRoles,
-          { branchId },
-          input.productPolicy,
-          "write"
-        );
-        if (!writeCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: writeCap.reason };
-        }
-        capabilityMode = writeCap.mode;
-        if (branchId == null && writeCap.mode === "branch") {
+        capabilityMode = authz.mode;
+        if (branchId == null && authz.mode === "branch") {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "church_wide_denied" };
-        }
-        if (nextStatus === "published") {
-          const pubCap = evaluateAnnouncementCapability(
-            authz.effectiveRoles,
-            { branchId },
-            input.productPolicy,
-            "publish"
-          );
-          if (!pubCap.ok) {
-            return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: pubCap.reason };
-          }
-          capabilityMode = pubCap.mode;
         }
       }
 
@@ -563,29 +581,26 @@ async function updateAnnouncement(db, id, patch) {
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND, item: null };
 
       const scopeBranchId = existing.branchId;
-      let effectiveRoles = [];
       let capabilityMode = null;
+      
+      const nextStatus =
+        built.fields.status !== undefined ? built.fields.status : existing.status;
+      const willPublish = nextStatus === "published" && existing.status !== "published";
+      
       if (raw.tenant && raw.actorUserId) {
+        const permission = willPublish ? "announcements.publish" : "announcements.manage";
         const authz = await authorizeActor(client, {
           actorUserId: raw.actorUserId,
           tenant: raw.tenant,
           branchId: scopeBranchId,
+          permission,
+          productPolicy: raw.productPolicy,
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: authz.reason };
         }
-        effectiveRoles = authz.effectiveRoles;
-        const writeCap = evaluateAnnouncementCapability(
-          effectiveRoles,
-          { branchId: scopeBranchId },
-          raw.productPolicy,
-          "write"
-        );
-        if (!writeCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: writeCap.reason };
-        }
-        capabilityMode = writeCap.mode;
-        if (scopeBranchId == null && writeCap.mode === "branch") {
+        capabilityMode = authz.mode;
+        if (scopeBranchId == null && authz.mode === "branch") {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "church_wide_denied" };
         }
         if (raw.churchId && String(raw.churchId) !== String(existing.churchId)) {
@@ -599,9 +614,7 @@ async function updateAnnouncement(db, id, patch) {
         }
       }
 
-      const nextStatus =
-        built.fields.status !== undefined ? built.fields.status : existing.status;
-      if (nextStatus === "published" && existing.status !== "published") {
+      if (willPublish) {
         const conf = requirePublishConfirm(
           existing.status,
           nextStatus,
@@ -610,18 +623,6 @@ async function updateAnnouncement(db, id, patch) {
         );
         if (!conf.ok) {
           return { ok: false, status: STATUS.INVALID_INPUT, item: null, reason: conf.reason };
-        }
-        if (raw.tenant && raw.actorUserId) {
-          const pubCap = evaluateAnnouncementCapability(
-            effectiveRoles,
-            { branchId: scopeBranchId },
-            raw.productPolicy,
-            "publish"
-          );
-          if (!pubCap.ok) {
-            return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: pubCap.reason };
-          }
-          capabilityMode = pubCap.mode;
         }
         built.fields.setPublishedAtNow = true;
       }
@@ -708,20 +709,12 @@ async function listAdminAnnouncements(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: branchId == null ? null : branchId,
+          permission: "announcements.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, items: [], total: 0, reason: authz.reason };
         }
-        const readCap = evaluateAnnouncementCapability(
-          authz.effectiveRoles,
-          { branchId: branchId == null ? null : branchId },
-          input.productPolicy,
-          "read"
-        );
-        if (!readCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, items: [], total: 0, reason: readCap.reason };
-        }
-        if (branchId == null && readCap.mode === "branch") {
+        if (branchId == null && authz.mode === "branch") {
           return {
             ok: false,
             status: STATUS.FORBIDDEN,
@@ -781,20 +774,12 @@ async function getAdminAnnouncement(db, input) {
           actorUserId: input.actorUserId,
           tenant: input.tenant,
           branchId: existing.branchId,
+          permission: "announcements.view",
         });
         if (!authz.ok) {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: authz.reason };
         }
-        const readCap = evaluateAnnouncementCapability(
-          authz.effectiveRoles,
-          { branchId: existing.branchId },
-          input.productPolicy,
-          "read"
-        );
-        if (!readCap.ok) {
-          return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: readCap.reason };
-        }
-        if (existing.branchId == null && readCap.mode === "branch") {
+        if (existing.branchId == null && authz.mode === "branch") {
           return { ok: false, status: STATUS.FORBIDDEN, item: null, reason: "church_wide_denied" };
         }
       }

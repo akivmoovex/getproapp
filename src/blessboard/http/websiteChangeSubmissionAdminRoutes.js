@@ -7,8 +7,8 @@
 const express = require("express");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
-  createRequireBlessBoardTenantRole,
-} = require("./requireBlessBoardTenantRole");
+  createRequireBlessBoardPermission,
+} = require("./requireBlessBoardPermission");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -102,10 +102,7 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
   const env = deps.env || process.env;
   const isProduction = String(env.NODE_ENV || "") === "production";
 
-  const requireHq = createRequireBlessBoardTenantRole({
-    getPool,
-    allowedRoles: ["church_hq_admin", "platform_admin"],
-  });
+  const requireHq = createRequireBlessBoardPermission("website.view", null, { getPool, scopeMode: "church" });
 
   const rejectApex = createRejectApex({
     isApexHost,

@@ -5,6 +5,7 @@
  * Network-only nav entries require FEATURE_KEYS and are omitted when not entitled.
  */
 
+const { buildPermissionNavFlags } = require("./permissionNavLocals");
 const {
   CSRF_FIELD,
   issueCsrfToken,
@@ -156,6 +157,51 @@ async function buildHqAdminShellLocals(req, res, opts) {
   navItems = composed.navItems;
   const activeNav = composed.activeNav;
 
+  // Build permission-based nav flags (before mobile nav so filters apply)
+  let permissionNavFlags = {
+    canViewGiving: false,
+    canViewStaffAccess: false,
+    canPublishWebsite: false,
+    canViewFinance: false,
+    canExportData: false,
+  };
+  if (opts.getPool && session && session.userId) {
+    try {
+      permissionNavFlags = await buildPermissionNavFlags(opts.getPool(), {
+        actorUserId: session.userId,
+        tenant,
+        // HQ nav is church-wide — do not fall back to primary branch grants.
+        branchId: null,
+      });
+    } catch {
+      // fail closed
+    }
+  }
+
+  navItems = navItems.filter((item) => {
+    if (!item || !item.enabled) return false;
+    if (item.key === "giving" && !permissionNavFlags.canViewGiving) return false;
+    if (item.key === "staff-access" && !permissionNavFlags.canViewStaffAccess) return false;
+    if (
+      (item.key === "content" || item.key === "website") &&
+      !permissionNavFlags.canViewWebsite
+    ) {
+      return false;
+    }
+    if (item.key === "members" && !permissionNavFlags.canViewMembers) return false;
+    if (item.key === "attendance" && !permissionNavFlags.canViewAttendance) return false;
+    if (item.key === "announcements" && !permissionNavFlags.canViewAnnouncements) return false;
+    if (item.key === "reports" && !permissionNavFlags.canViewReports) return false;
+    if (
+      (item.key === "pastoral" || item.key === "pastoral-care") &&
+      !permissionNavFlags.canViewPastoral
+    ) {
+      return false;
+    }
+    if (item.key === "welfare" && !permissionNavFlags.canViewWelfare) return false;
+    return true;
+  });
+
   const mobileNav = buildHqMobileNav(navItems, activeNav);
   const mobileTabs = HQ_ADMIN_MOBILE_TABS.map((key) =>
     navItems.find((item) => item.key === key)
@@ -206,6 +252,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
     mobileTabs,
     entitledFeatures,
     websiteMode: websiteMode || null,
+    permissionNavFlags,
     ...(opts.extra || {}),
   };
 }

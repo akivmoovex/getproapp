@@ -20,6 +20,7 @@ const approvalSettingsSvc = require("./websiteApprovalSettingsService");
 const submissionSvc = require("./websiteChangeSubmissionService");
 const auditSvc = require("./websiteAuditService");
 const { PAGE_KEY_TITLES } = require("./publicContentConstants");
+const { authorize } = require("./blessBoardRbacAuthorizationService");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -133,6 +134,7 @@ async function publishWebsiteDrafts(db, opts) {
   const churchId = opts.churchId;
   const branchId = opts.branchId === undefined ? null : opts.branchId;
   const actorUserId = opts.actorUserId;
+  const tenant = opts.tenant;
 
   if (
     !fieldDraftRepo.isUuid(organizationId) ||
@@ -161,19 +163,44 @@ async function publishWebsiteDrafts(db, opts) {
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup" };
   }
 
+  // Check website.publish permission
+  let canPublish = false;
+  if (tenant) {
+    try {
+      const authz = await authorize(db, {
+        userId: actorUserId,
+        tenant,
+        permission: "website.publish",
+        branchId,
+      });
+      canPublish = authz.allowed;
+    } catch {
+      return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "authz_check" };
+    }
+  }
+
   const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(db, organizationId);
   const capability = resolvePublishCapability({
+    canPublish,
     actorRole: opts.actorRole,
     settings: settingsLoad.ok ? settingsLoad.settings : null,
   });
   if (capability.action === "submit_for_approval") {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "approval_required" };
   }
-  if (capability.action !== "publish") {
+  if (capability.action !== "publish" && capability.action !== "blocked") {
     return {
       ok: false,
       status: STATUS.FORBIDDEN,
       reason: capability.reason || "forbidden",
+    };
+  }
+  if (capability.action === "blocked") {
+    return {
+      ok: false,
+      status: STATUS.FORBIDDEN,
+      reason: capability.reason || "blocked",
+      message: capability.message,
     };
   }
 
@@ -281,6 +308,7 @@ async function submitWebsiteDraftsForApproval(db, opts) {
   const churchId = opts.churchId;
   const branchId = opts.branchId;
   const actorUserId = opts.actorUserId;
+  const tenant = opts.tenant;
 
   if (
     !fieldDraftRepo.isUuid(organizationId) ||
@@ -291,8 +319,25 @@ async function submitWebsiteDraftsForApproval(db, opts) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
   }
 
+  // Check website.publish permission
+  let canPublish = false;
+  if (tenant) {
+    try {
+      const authz = await authorize(db, {
+        userId: actorUserId,
+        tenant,
+        permission: "website.publish",
+        branchId,
+      });
+      canPublish = authz.allowed;
+    } catch {
+      // fail closed
+    }
+  }
+
   const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(db, organizationId);
   const capability = resolvePublishCapability({
+    canPublish,
     actorRole: opts.actorRole || "branch_admin",
     settings: settingsLoad.ok ? settingsLoad.settings : null,
   });

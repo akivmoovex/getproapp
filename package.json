@@ -91,6 +91,8 @@
     "smoke:v5:deployed": "node scripts/smoke-v5-deployed.js",
     "test:blessboard:deployed-smoke": "node --test --test-concurrency=1 tests/blessboard-deployed-smoke.test.js",
     "test:blessboard:authorization": "node --test --test-concurrency=1 tests/blessboard-authorization.test.js",
+    "test:blessboard:authorization-migration": "node --test --test-concurrency=1 tests/blessboard-authorization-migration.test.js",
+    "test:blessboard:authorization-shells": "node --test --test-concurrency=1 tests/blessboard-authorization-shells.test.js",
     "test:blessboard:rbac-foundation": "node --test --test-concurrency=1 tests/blessboard-rbac-foundation.test.js",
     "test:blessboard:member-journey-foundation": "node --test --test-concurrency=1 tests/blessboard-member-journey-foundation.test.js",
     "test:blessboard:member-journey-workflow": "node --test --test-concurrency=1 tests/blessboard-member-journey-workflow.test.js",
