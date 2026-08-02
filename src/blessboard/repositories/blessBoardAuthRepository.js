@@ -11,7 +11,8 @@
 async function findUserByEmail(client, emailNormalized) {
   const r = await client.query(
     `SELECT id, email_normalized, email_display, password_hash, status, display_name,
-            created_at, updated_at, password_changed_at, last_login_at
+            created_at, updated_at, password_changed_at, last_login_at,
+            password_change_required, sign_in_locked_until
        FROM blessboard.users
       WHERE email_normalized = $1
       LIMIT 1`,
@@ -310,7 +311,8 @@ async function countActiveChurchStaffRoles(client, churchId, organizationId) {
 async function findUserById(client, userId) {
   const r = await client.query(
     `SELECT id, email_normalized, email_display, password_hash, status, display_name,
-            created_at, updated_at, password_changed_at, last_login_at
+            created_at, updated_at, password_changed_at, last_login_at,
+            password_change_required, sign_in_locked_until
        FROM blessboard.users
       WHERE id = $1
       LIMIT 1`,
@@ -380,6 +382,87 @@ async function revokeAllSessionsForUser(client, userId) {
     [userId]
   );
   return r.rowCount || 0;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ * @param {'active'|'inactive'|'suspended'|'invited'} status
+ */
+async function updateUserStatus(client, userId, status) {
+  const r = await client.query(
+    `UPDATE blessboard.users
+        SET status = $2, updated_at = now()
+      WHERE id = $1
+      RETURNING id, status, email_normalized, display_name`,
+    [userId, status]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ * @param {boolean} required
+ */
+async function setPasswordChangeRequired(client, userId, required) {
+  const r = await client.query(
+    `UPDATE blessboard.users
+        SET password_change_required = $2, updated_at = now()
+      WHERE id = $1
+      RETURNING id, password_change_required`,
+    [userId, Boolean(required)]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Clear temporary sign-in lock.
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ */
+async function clearSignInLock(client, userId) {
+  const r = await client.query(
+    `UPDATE blessboard.users
+        SET sign_in_locked_until = NULL, updated_at = now()
+      WHERE id = $1
+      RETURNING id, sign_in_locked_until`,
+    [userId]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Set temporary sign-in lock until timestamp (ISO or Date).
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ * @param {string|Date} until
+ */
+async function setSignInLockedUntil(client, userId, until) {
+  const r = await client.query(
+    `UPDATE blessboard.users
+        SET sign_in_locked_until = $2::timestamptz, updated_at = now()
+      WHERE id = $1
+      RETURNING id, sign_in_locked_until`,
+    [userId, until]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * After a successful password reset/change, clear recovery flags.
+ * @param {{ query: Function }} client
+ * @param {string} userId
+ */
+async function clearPasswordRecoveryFlags(client, userId) {
+  await client.query(
+    `UPDATE blessboard.users
+        SET password_change_required = false,
+            sign_in_locked_until = NULL,
+            updated_at = now()
+      WHERE id = $1`,
+    [userId]
+  );
 }
 
 /**
@@ -464,6 +547,11 @@ module.exports = {
   updateUserPasswordHash,
   countActiveSessionsForUser,
   revokeAllSessionsForUser,
+  updateUserStatus,
+  setPasswordChangeRequired,
+  clearSignInLock,
+  setSignInLockedUntil,
+  clearPasswordRecoveryFlags,
   listPlatformAdministrators,
   findAuditOrganizationIdForUser,
   userHasActivePlatformAdminRole,

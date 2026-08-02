@@ -1,0 +1,161 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var org = organization || {};
+  var orgKey = orgKey || org.organization_key || '';
+  var rows = teamUsers || [];
+  var pending = pendingInvitations || [];
+  var f = filters || {};
+  var basePath = '/admin/organizations/' + encodeURIComponent(orgKey) + '/team';
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'suspended') return 'bb-pa-chip--danger';
+    if (key === 'invited') return 'bb-pa-chip--warn';
+    return 'bb-pa-chip--muted';
+  }
+  function formatTs(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    } catch (e) {
+      return '—';
+    }
+  }
+  function noticeText(code) {
+    if (code === 'invitation_resent') return 'Invitation resent. Previous link was invalidated.';
+    if (code === 'invited') return 'Invitation prepared.';
+    return code || null;
+  }
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    return code || null;
+  }
+  var noticeMsg = noticeText(notice);
+  var errorMsg = errorText(error);
+%>
+
+<section class="bb-pa-orgs" data-bb-pa-team="1" aria-label="Organisation team">
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-orgs__eyebrow">
+        <a class="bb-pa-link" href="/admin/organizations/<%= orgKey %>"><%= org.display_name || orgKey %></a>
+        · Team
+      </p>
+      <h1 class="bb-pa-page-head__title">Team management</h1>
+      <p class="bb-pa-lede">
+        Staff access for <strong><%= org.church_name || org.display_name %></strong>.
+        Church leadership titles stay separate from BlessBoard system roles.
+        Reuses Staff Access and RBAC assignment services — no second role engine.
+      </p>
+    </div>
+    <p class="bb-pa-page-head__actions">
+      <a class="bb-pa-btn bb-pa-btn--primary" href="<%= basePath %>/invite">Invite user</a>
+    </p>
+  </header>
+
+  <% if (noticeMsg) { %>
+  <p class="bb-pa-flash bb-pa-flash--ok" role="status"><%= noticeMsg %></p>
+  <% } %>
+  <% if (errorMsg) { %>
+  <p class="bb-pa-flash bb-pa-flash--error" role="alert"><%= errorMsg %></p>
+  <% } %>
+  <% if (typeof inviteOnceToken !== 'undefined' && inviteOnceToken) { %>
+  <p class="bb-pa-flash bb-pa-flash--warn" role="status" data-bb-pa-invite-once="1">
+    Copy-once invite token (shown once): <code><%= inviteOnceToken %></code>
+  </p>
+  <% } %>
+
+  <form method="get" action="<%= basePath %>" class="bb-pa-org-filter" role="search">
+    <div class="bb-pa-field">
+      <label for="team-q">Name or email</label>
+      <input id="team-q" name="q" type="search" value="<%= f.q || '' %>" maxlength="200" autocomplete="off" />
+    </div>
+    <div class="bb-pa-field">
+      <label for="team-role">Role</label>
+      <input id="team-role" name="role" type="text" value="<%= f.role || '' %>" maxlength="64" autocomplete="off" />
+    </div>
+    <button type="submit" class="bb-pa-btn">Filter</button>
+  </form>
+
+  <% if (pending.length) { %>
+  <section class="bb-pa-panel" aria-label="Pending invitations">
+    <h2 class="bb-pa-panel__title">Pending invitations</h2>
+    <ul class="bb-pa-list">
+      <% pending.forEach(function (inv) { %>
+      <li>
+        <%= inv.displayName || inv.emailDisplay %> · <%= inv.emailDisplay %>
+        · <%= inv.roleKey %><% if (inv.branchDisplayName) { %> · <%= inv.branchDisplayName %><% } %>
+        · expires <%= formatTs(inv.expiresAt) %>
+        <form method="post" action="/admin/organizations/<%= orgKey %>/team/resend-invite" class="bb-pa-form bb-pa-form--inline">
+          <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+          <input type="hidden" name="email" value="<%= inv.emailDisplay || '' %>" />
+          <input type="hidden" name="display_name" value="<%= inv.displayName || '' %>" />
+          <input type="hidden" name="role_key" value="<%= inv.roleKey || 'church_hq_admin' %>" />
+          <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Resend invitation</button>
+        </form>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <div class="bb-pa-table-wrap" data-bb-pa-team-table="1">
+    <% if (!rows.length) { %>
+    <p class="bb-pa-empty" role="status">No staff users found for this organisation yet.</p>
+    <% } else { %>
+    <table class="bb-pa-table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Email</th>
+          <th scope="col">Account</th>
+          <th scope="col">Invitation</th>
+          <th scope="col">Church</th>
+          <th scope="col">Branch</th>
+          <th scope="col">Legacy</th>
+          <th scope="col">RBAC</th>
+          <th scope="col">Scope</th>
+          <th scope="col">Expiry</th>
+          <th scope="col">Last login</th>
+          <th scope="col">Effective access</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (u) { %>
+        <tr data-bb-pa-team-user="<%= u.id %>">
+          <td><%= u.displayName %></td>
+          <td><%= u.emailDisplay %></td>
+          <td><span class="bb-pa-chip <%= statusChip(u.status) %>"><%= u.status %></span></td>
+          <td><%= u.invitationStatus || 'none' %></td>
+          <td><%= u.churchName || org.church_name || '—' %></td>
+          <td><%= (u.branchNames || []).join(', ') || '—' %></td>
+          <td><%= (u.legacyRoleKeys || []).join(', ') || '—' %></td>
+          <td><%= (u.rbacRoleKeys || []).join(', ') || '—' %></td>
+          <td><%= u.scopeSummary || '—' %></td>
+          <td><%= u.expirySummary === '—' ? '—' : formatTs(u.expirySummary) %></td>
+          <td><%= formatTs(u.lastLoginAt) %></td>
+          <td><%= u.effectiveAccessSummary || '—' %></td>
+          <td>
+            <a class="bb-pa-link" href="<%= basePath %>/<%= u.id %>">Open access</a>
+            <% if (u.invitationStatus === 'pending' || u.status === 'invited') { %>
+            <form method="post" action="/admin/organizations/<%= orgKey %>/team/resend-invite" class="bb-pa-form bb-pa-form--inline">
+              <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+              <input type="hidden" name="email" value="<%= u.emailDisplay || '' %>" />
+              <input type="hidden" name="display_name" value="<%= u.displayName || '' %>" />
+              <input type="hidden" name="role_key" value="<%= (u.legacyRoleKeys && u.legacyRoleKeys[0]) || 'church_hq_admin' %>" />
+              <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Resend</button>
+            </form>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

@@ -326,6 +326,8 @@ async function inviteBlessBoardStaff(db, input) {
           entityType: "user_invitation",
           entityId: invitation.id,
           outcome: "success",
+          env: input && input.env,
+          deploymentCode: input && input.deploymentCode,
           metadata: {
             status: pending ? "resent" : "created",
             reason_code: gate.source === "platform" ? "platform_override" : "tenant_invite",

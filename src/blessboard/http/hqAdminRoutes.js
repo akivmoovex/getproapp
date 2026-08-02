@@ -66,6 +66,11 @@ const {
 } = require("../../platform/session/v5SessionCookie");
 const { revokeV5Session } = require("../../platform/session/revokeV5Session");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { exitSupport } = require("../../platform/services/platformSupportModeService");
+const {
+  readSupportContextCookie,
+  clearSupportContextCookie,
+} = require("../../platform/http/supportContextCookie");
 const { getApexOrigin } = require("./tenantLoginHelpers");
 
 /**
@@ -523,7 +528,29 @@ function createHqAdminRouter(deps) {
       /* fail-open clear cookie */
     }
     clearV5SessionCookie(res, { secure: isProduction, env });
+    clearSupportContextCookie(res, { secure: isProduction, env });
     return res.redirect(303, "/");
+  });
+
+  router.post("/hq/support/exit", rejectApex, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return res.status(403).type("text").send("Invalid or missing CSRF token.");
+    }
+    const session =
+      req.v5Session && req.v5Session.authenticated && req.v5Session.session
+        ? req.v5Session.session
+        : null;
+    if (!session || !session.userId) {
+      return res.redirect(303, "/login");
+    }
+    await exitSupport(getPool(), {
+      actorUserId: session.userId,
+      rawToken: readSupportContextCookie(req, env),
+      env,
+    });
+    clearSupportContextCookie(res, { secure: isProduction, env });
+    return res.redirect(303, "/admin");
   });
 
   router.get("/hq/settings", rejectApex, gateHq, requireOrgSettingsManage, async (req, res) => {

@@ -355,7 +355,8 @@ describe("blessboard settings http", () => {
       .get("/hq/settings")
       .set("Host", HOST_A)
       .set("Cookie", plat);
-    assert.equal(platPage.status, 200);
+    assert.equal(platPage.status, 403);
+    assert.match(platPage.text, /audited support session|Support mode required/i);
   });
 
   it("HQ admin can edit first-branch details from settings", async () => {

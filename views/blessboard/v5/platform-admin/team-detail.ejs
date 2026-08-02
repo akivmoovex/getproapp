@@ -1,0 +1,199 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var org = organization || {};
+  var orgKey = orgKey || org.organization_key || '';
+  var d = detail || {};
+  var u = d.user || {};
+  var basePath = '/admin/organizations/' + encodeURIComponent(orgKey) + '/team';
+  var catalogue = assignableRoles || [];
+  var scopeOpts = scopeOptions || {};
+  var types = scopeTypes || [];
+  function formatTs(iso) {
+    if (!iso) return '—';
+    try {
+      var dt = new Date(iso);
+      if (Number.isNaN(dt.getTime())) return '—';
+      return dt.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    } catch (e) {
+      return '—';
+    }
+  }
+  function statusChip(s) {
+    return String(s || '') === 'active' ? 'bb-pa-chip--ok' : 'bb-pa-chip--muted';
+  }
+  function markerLabel(m) {
+    if (m === 'pastoral') return 'Pastoral';
+    if (m === 'safeguarding') return 'Safeguarding';
+    if (m === 'finance') return 'Finance';
+    if (m === 'export') return 'Export';
+    if (m === 'publication') return 'Publication';
+    if (m === 'highly_sensitive') return 'Highly sensitive';
+    if (m === 'sensitive') return 'Sensitive';
+    return m;
+  }
+%>
+
+<section class="bb-pa-orgs" data-bb-pa-team-detail="1" aria-label="Team member access">
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-orgs__eyebrow">
+      <a class="bb-pa-link" href="/admin/organizations/<%= orgKey %>"><%= org.display_name || orgKey %></a>
+      · <a class="bb-pa-link" href="<%= basePath %>">Team</a>
+      · Access detail
+    </p>
+    <h1 class="bb-pa-page-head__title"><%= u.displayName %></h1>
+    <p class="bb-pa-lede">
+      <%= u.emailDisplay %>
+      · <span class="bb-pa-chip <%= statusChip(u.status) %>"><%= u.status %></span>
+      · Last login <%= formatTs(u.lastLoginAt) %>
+    </p>
+  </header>
+
+  <% if (notice) { %>
+  <p class="bb-pa-flash bb-pa-flash--ok" role="status"><%= notice %></p>
+  <% } %>
+  <% if (error) { %>
+  <p class="bb-pa-flash bb-pa-flash--error" role="alert"><%= error === 'csrf' ? 'Invalid or missing security token.' : error %></p>
+  <% } %>
+  <% if (typeof inviteOnceToken !== 'undefined' && inviteOnceToken) { %>
+  <p class="bb-pa-flash bb-pa-flash--warn" role="status">
+    Copy-once invite token: <code><%= inviteOnceToken %></code>
+  </p>
+  <% } %>
+
+  <section class="bb-pa-panel" aria-label="Actions">
+    <h2 class="bb-pa-panel__title">Actions</h2>
+    <ul class="bb-pa-list">
+      <li>
+        <a class="bb-pa-link" href="<%= basePath %>/<%= u.id %>#assign">Assign role</a>
+      </li>
+      <li>
+        Enter support mode from
+        <a class="bb-pa-link" href="/admin/organizations/<%= orgKey %>#pa-org-support-mode-heading">organisation detail</a>
+        (audited, temporary).
+      </li>
+      <li>
+        Open church admin view after starting support mode
+        (HQ or branch portal on the church host).
+      </li>
+    </ul>
+  </section>
+
+  <% if (d.sensitiveSummary) { %>
+  <section class="bb-pa-panel" aria-label="Effective-access summary">
+    <h2 class="bb-pa-panel__title">Effective-access summary</h2>
+    <ul class="bb-pa-list">
+      <li>Finance: <strong><%= d.sensitiveSummary.hasFinance ? 'Yes' : 'No' %></strong></li>
+      <li>Pastoral: <strong><%= d.sensitiveSummary.hasPastoral ? 'Yes' : 'No' %></strong></li>
+      <li>Export: <strong><%= d.sensitiveSummary.hasExport ? 'Yes' : 'No' %></strong></li>
+      <li>Role administration: <strong><%= d.sensitiveSummary.hasRoleAdmin ? 'Yes' : 'No' %></strong></li>
+    </ul>
+    <p class="bb-pa-muted">Pastoral notes and Finance transaction details are never shown here.</p>
+  </section>
+  <% } %>
+
+  <section class="bb-pa-panel" aria-label="Legacy roles">
+    <h2 class="bb-pa-panel__title">Legacy roles</h2>
+    <% if (!(d.legacyRoles || []).length) { %>
+    <p class="bb-pa-empty">None.</p>
+    <% } else { %>
+    <ul class="bb-pa-list">
+      <% (d.legacyRoles || []).forEach(function (leg) { %>
+      <li>
+        <strong><%= leg.roleKey %></strong>
+        · scope <%= leg.scopeType %><% if (leg.branchDisplayName) { %> (<%= leg.branchDisplayName %>)<% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-label="Active RBAC assignments">
+    <h2 class="bb-pa-panel__title">RBAC roles</h2>
+    <% if (!(d.activeAssignments || []).length) { %>
+    <p class="bb-pa-empty">None.</p>
+    <% } else { %>
+    <ul class="bb-pa-list">
+      <% (d.activeAssignments || []).forEach(function (a) { %>
+      <li>
+        <strong><%= a.roleKey || a.displayName %></strong>
+        · scope <%= a.scopeType %>
+        · <%= a.sensitivityLabel || 'Standard' %>
+        · expiry <%= formatTs(a.expiresAt) %>
+        <form
+          method="post"
+          action="<%= basePath %>/<%= u.id %>/assignments/<%= a.id %>/revoke"
+          class="bb-pa-form bb-pa-form--inline"
+        >
+          <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+          <label class="bb-pa-field">
+            <span class="bb-pa-field__label">Revocation reason</span>
+            <input name="revocation_reason" type="text" maxlength="500" autocomplete="off" />
+          </label>
+          <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Revoke role</button>
+        </form>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" id="assign" aria-label="Assign role">
+    <h2 class="bb-pa-panel__title">Assign role</h2>
+    <p class="bb-pa-lede">
+      Platform scope is blocked on this church team screen.
+      Sensitive and highly sensitive roles require a reason and are audited.
+    </p>
+    <form method="post" action="<%= basePath %>/<%= u.id %>/assign" class="bb-pa-form" data-bb-pa-team-assign="1">
+      <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+      <input type="hidden" name="organization_id" value="<%= org.id %>" />
+      <div class="bb-pa-field">
+        <label for="role_key">Role</label>
+        <select id="role_key" name="role_key" required>
+          <option value="">Select role</option>
+          <% catalogue.forEach(function (r) { %>
+          <option value="<%= r.roleKey %>">
+            <%= r.displayName %> (<%= r.sensitivityLabel %>)<% if (r.markers && r.markers.length) { %> · <%= r.markers.map(markerLabel).join(', ') %><% } %>
+          </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-pa-field">
+        <label for="scope_type">Scope</label>
+        <select id="scope_type" name="scope_type" required>
+          <% types.forEach(function (t) { %>
+          <option value="<%= t %>"<%= t === 'church' ? ' selected' : '' %>><%= t %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="bb-pa-field">
+        <label for="scope_id">Target resource (branch id when scope is branch)</label>
+        <input id="scope_id" name="scope_id" type="text" maxlength="36" autocomplete="off" />
+      </div>
+      <div class="bb-pa-field">
+        <label for="assignment_reason">Reason (required for sensitive roles)</label>
+        <input id="assignment_reason" name="assignment_reason" type="text" maxlength="500" autocomplete="off" />
+      </div>
+      <div class="bb-pa-field">
+        <label for="expires_at">Optional expiry</label>
+        <input id="expires_at" name="expires_at" type="datetime-local" />
+      </div>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Assign role</button>
+    </form>
+  </section>
+
+  <% if (d.effectiveGrouped) { %>
+  <section class="bb-pa-panel" aria-label="Inherited permissions">
+    <h2 class="bb-pa-panel__title">Inherited permissions</h2>
+    <% Object.keys(d.effectiveGrouped).forEach(function (mod) { %>
+    <h3 class="bb-pa-subsection-title"><%= mod %></h3>
+    <ul class="bb-pa-list">
+      <% (d.effectiveGrouped[mod] || []).forEach(function (p) { %>
+      <li><code><%= p.permissionKey %></code> · <%= p.sensitivity %></li>
+      <% }) %>
+    </ul>
+    <% }) %>
+  </section>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

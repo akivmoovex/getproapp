@@ -111,6 +111,47 @@ async function authenticateBlessBoardUser(db, input) {
       };
     }
 
+    if (
+      user.sign_in_locked_until &&
+      new Date(user.sign_in_locked_until).getTime() > Date.now()
+    ) {
+      try {
+        await bcrypt.compare(
+          password,
+          "$2a$12$C6UzMDM.H6dfI/f/IKxGhuR.Vo5.1qHqGhuR.Vo5.1qHqGhuR.Vo5."
+        );
+      } catch {
+        /* ignore */
+      }
+      return {
+        ok: false,
+        status: STATUS.INVALID_CREDENTIALS,
+        message: GENERIC_FAILURE,
+        session: null,
+        user: null,
+        failureCategory: "account_locked",
+      };
+    }
+
+    if (user.password_change_required === true) {
+      try {
+        await bcrypt.compare(
+          password,
+          "$2a$12$C6UzMDM.H6dfI/f/IKxGhuR.Vo5.1qHqGhuR.Vo5.1qHqGhuR.Vo5."
+        );
+      } catch {
+        /* ignore */
+      }
+      return {
+        ok: false,
+        status: STATUS.INVALID_CREDENTIALS,
+        message: GENERIC_FAILURE,
+        session: null,
+        user: null,
+        failureCategory: "password_change_required",
+      };
+    }
+
     const passwordOk = await bcrypt.compare(password, user.password_hash);
     if (!passwordOk) {
       return {

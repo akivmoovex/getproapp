@@ -1,0 +1,169 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var u = user || {};
+  function formatTs(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    } catch (e) {
+      return '—';
+    }
+  }
+  function noticeText(code) {
+    if (code === 'password_reset_sent') return 'Password reset email was accepted for delivery.';
+    if (code === 'password_reset_recorded') return 'Password reset was recorded. Delivery may be unavailable in this environment.';
+    if (code === 'invitation_resent') return 'Invitation resent. Previous invite link was invalidated.';
+    if (code === 'sessions_revoked') return 'Active sessions were revoked.';
+    if (code === 'password_change_required') return 'Password change is now required. Active sessions were revoked.';
+    if (code === 'user_suspended') return 'Sign-in suspended. Active sessions were revoked.';
+    if (code === 'user_restored') return 'Sign-in restored. Revoked roles were not reactivated.';
+    if (code === 'user_unlocked') return 'Temporary sign-in lock cleared.';
+    return code || null;
+  }
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    if (code === 'rate_limited') return 'Too many recovery actions for this account. Try again later.';
+    if (code === 'reset_unavailable') return 'Password reset is unavailable for this account state.';
+    if (code === 'invite_unavailable' || code === 'invite_scope_missing') return 'Invitation resend is unavailable for this account.';
+    if (code === 'require_change_unavailable') return 'Password-change requirement is unavailable for this account state.';
+    if (code === 'suspend_unavailable') return 'Suspend is unavailable for this account state.';
+    if (code === 'restore_unavailable') return 'Restore is unavailable for this account state.';
+    if (code === 'self_suspend') return 'You cannot suspend your own Platform Admin account from this screen.';
+    if (code === 'forbidden') return 'You do not have permission for that recovery action.';
+    if (code === 'not_found') return 'User not found.';
+    return code || null;
+  }
+  var noticeMsg = noticeText(typeof notice !== 'undefined' ? notice : '');
+  var errorMsg = errorText(typeof error !== 'undefined' ? error : '');
+  var canReset = u.hasPassword && u.status === 'active';
+  var canInvite = u.invitationState === 'invited' || u.invitationState === 'pending_invitation' || u.status === 'invited';
+  var canSuspend = u.hasPassword && u.status === 'active';
+  var canRestore = u.hasPassword && (u.status === 'suspended' || u.status === 'inactive');
+%>
+
+<section class="bb-pa-orgs" data-bb-pa-user-detail="1" aria-label="Staff user detail">
+  <header class="bb-pa-page-head">
+    <p class="bb-pa-orgs__eyebrow"><a class="bb-pa-link" href="/admin/users">Users</a></p>
+    <h1 class="bb-pa-page-head__title"><%= u.displayName || 'User' %></h1>
+    <p class="bb-pa-lede">Safe staff identity and role summary. No passwords, tokens, or confidential notes.</p>
+  </header>
+
+  <% if (noticeMsg) { %>
+  <p class="bb-pa-flash bb-pa-flash--ok" role="status"><%= noticeMsg %></p>
+  <% } %>
+  <% if (errorMsg) { %>
+  <p class="bb-pa-flash bb-pa-flash--error" role="alert"><%= errorMsg %></p>
+  <% } %>
+
+  <dl class="bb-pa-dl" data-bb-pa-user-identity="1">
+    <div><dt>Email</dt><dd><%= u.emailDisplay || '—' %></dd></div>
+    <div><dt>Status</dt><dd><%= u.status || '—' %></dd></div>
+    <div><dt>Invitation</dt><dd><%= u.invitationState || 'none' %></dd></div>
+    <div><dt>Last login</dt><dd><%= formatTs(u.lastLoginAt) %></dd></div>
+    <div><dt>Created</dt><dd><%= formatTs(u.createdAt) %></dd></div>
+    <div><dt>Password set</dt><dd><%= u.hasPassword ? 'Yes' : 'No' %></dd></div>
+    <div><dt>Password changed</dt><dd><%= formatTs(u.passwordChangedAt) %></dd></div>
+    <div><dt>Password change required</dt><dd><%= u.passwordChangeRequired ? 'Yes' : 'No' %></dd></div>
+    <div><dt>Sign-in lock</dt><dd><%= u.signInLocked ? ('Until ' + formatTs(u.signInLockedUntil)) : 'None' %></dd></div>
+    <div><dt>Active sessions</dt><dd><%= typeof u.activeSessionCount === 'number' ? u.activeSessionCount : '—' %></dd></div>
+    <div><dt>User id</dt><dd><code class="bb-pa-key"><%= u.userId %></code></dd></div>
+  </dl>
+
+  <section class="bb-pa-panel" id="pa-user-recovery" data-bb-pa-user-recovery="1" aria-labelledby="pa-user-recovery-title">
+    <h2 id="pa-user-recovery-title" class="bb-pa-panel__title">Account recovery</h2>
+    <p class="bb-pa-lede">
+      Platform Admin never views or retrieves passwords. Reset links are one-time, expire, and are never logged.
+      Restoring sign-in does not reactivate revoked RBAC assignments.
+    </p>
+    <div class="bb-pa-list">
+      <% if (canReset) { %>
+      <form method="post" action="/admin/users/<%= u.userId %>/send-password-reset" class="bb-pa-form bb-pa-form--inline">
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button type="submit" class="bb-pa-btn">Send password-reset link</button>
+      </form>
+      <% } %>
+      <% if (canInvite) { %>
+      <form method="post" action="/admin/users/<%= u.userId %>/resend-invitation" class="bb-pa-form bb-pa-form--inline">
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Resend invitation</button>
+      </form>
+      <% } %>
+      <form method="post" action="/admin/users/<%= u.userId %>/revoke-sessions" class="bb-pa-form bb-pa-form--inline">
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Revoke active sessions</button>
+      </form>
+      <% if (canReset) { %>
+      <form method="post" action="/admin/users/<%= u.userId %>/require-password-change" class="bb-pa-form bb-pa-form--inline">
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Require password change</button>
+      </form>
+      <% } %>
+      <% if (canSuspend) { %>
+      <form method="post" action="/admin/users/<%= u.userId %>/suspend" class="bb-pa-form bb-pa-form--inline">
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button type="submit" class="bb-pa-btn">Suspend sign-in</button>
+      </form>
+      <% } %>
+      <% if (canRestore) { %>
+      <form method="post" action="/admin/users/<%= u.userId %>/restore" class="bb-pa-form bb-pa-form--inline">
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button type="submit" class="bb-pa-btn">Restore sign-in</button>
+      </form>
+      <% } %>
+      <form method="post" action="/admin/users/<%= u.userId %>/unlock" class="bb-pa-form bb-pa-form--inline">
+        <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
+        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Unlock account</button>
+      </form>
+    </div>
+  </section>
+
+  <h2 class="bb-pa-section-title">Legacy roles</h2>
+  <% if (!(u.legacyAssignments || []).length) { %>
+  <p class="bb-pa-muted">None</p>
+  <% } else { %>
+  <ul class="bb-pa-list" data-bb-pa-legacy-roles="1">
+    <% (u.legacyAssignments || []).forEach(function (a) { %>
+    <li>
+      <code class="bb-pa-key"><%= a.roleKey %></code>
+      · <%= a.organizationName || a.organizationKey || '—' %>
+      <% if (a.churchName || a.churchKey) { %> · <%= a.churchName || a.churchKey %><% } %>
+      <% if (a.branchName || a.branchKey) { %> · <%= a.branchName || a.branchKey %><% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <h2 class="bb-pa-section-title">RBAC roles</h2>
+  <% if (!(u.rbacAssignments || []).length) { %>
+  <p class="bb-pa-muted">None</p>
+  <% } else { %>
+  <ul class="bb-pa-list" data-bb-pa-rbac-roles="1">
+    <% (u.rbacAssignments || []).forEach(function (a) { %>
+    <li>
+      <code class="bb-pa-key"><%= a.roleKey %></code>
+      · <%= a.scopeType || '—' %>
+      · <%= a.organizationName || a.organizationKey || '—' %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <h2 class="bb-pa-section-title">Pending invitations</h2>
+  <% if (!(u.pendingInvitations || []).length) { %>
+  <p class="bb-pa-muted">None</p>
+  <% } else { %>
+  <ul class="bb-pa-list" data-bb-pa-pending-invites="1">
+    <% (u.pendingInvitations || []).forEach(function (inv) { %>
+    <li>
+      <code class="bb-pa-key"><%= inv.roleKey %></code>
+      · <%= inv.organizationName || inv.organizationKey || '—' %>
+      · expires <%= formatTs(inv.expiresAt) %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

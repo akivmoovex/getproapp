@@ -47,6 +47,55 @@ const {
   STATUS: DETAIL_STATUS,
 } = require("../services/getPlatformOrganizationSummary");
 const {
+  listPlatformUsers,
+  getPlatformUserDetail,
+  listPlatformMembers,
+  getPlatformMemberSupportProfile,
+  resolveOrganizationRef,
+  STATUS: DIRECTORY_STATUS,
+  DEFAULT_LIMIT: DIR_DEFAULT_LIMIT,
+  MAX_LIMIT: DIR_MAX_LIMIT,
+  ALLOWED_LIMITS: DIR_ALLOWED_LIMITS,
+  USER_STATUSES: DIR_USER_STATUSES,
+  MEMBER_STATUSES: DIR_MEMBER_STATUSES,
+} = require("../services/platformAdminDirectoryService");
+const {
+  startHqSupport,
+  startBranchSupport,
+  exitSupport,
+  getSupportStatus,
+  STATUS: SUPPORT_STATUS,
+} = require("../services/platformSupportModeService");
+const {
+  listOrganizationTeam,
+  getOrganizationTeamMember,
+  getTeamInviteContext,
+  detectTeamUserByEmail,
+  inviteOrganizationTeamMember,
+  assignOrganizationTeamRole,
+  revokeOrganizationTeamRole,
+  resendOrganizationTeamInvitation,
+  STATUS: TEAM_STATUS,
+} = require("../services/platformAdminTeamService");
+const {
+  sendPasswordReset,
+  resendInvitation,
+  revokeSessions,
+  requirePasswordChange,
+  suspendSignIn,
+  restoreSignIn,
+  unlockAccount,
+  STATUS: RECOVERY_STATUS,
+} = require("../services/platformAdminAccountRecoveryService");
+const {
+  listOrganizationAuditEvents,
+} = require("../services/auditEventService");
+const {
+  setSupportContextCookie,
+  clearSupportContextCookie,
+  readSupportContextCookie,
+} = require("./supportContextCookie");
+const {
   listPlatformPlansCatalogue,
   STATUS: PLANS_STATUS,
 } = require("../services/listPlatformPlansCatalogue");
@@ -2968,6 +3017,40 @@ function createPlatformAdminRouter(deps) {
       } catch {
         growthTrial = null;
       }
+      let activeSupport = null;
+      try {
+        const supportStatus = await getSupportStatus(getPool(), {
+          actorUserId: req.platformAdminContext.userId,
+          rawToken: readSupportContextCookie(req, env),
+          env,
+        });
+        if (supportStatus.ok && supportStatus.active && supportStatus.context) {
+          activeSupport = supportStatus.context;
+        }
+      } catch {
+        activeSupport = null;
+      }
+      let organizationAuditEvents = [];
+      if (churchScope && churchScope.organizationId) {
+        try {
+          const auditPage = await listOrganizationAuditEvents(getPool(), {
+            organizationId: churchScope.organizationId,
+            actionCategory: "platform",
+            limit: 25,
+          });
+          if (auditPage.ok) {
+            organizationAuditEvents = (auditPage.events || []).map((ev) => ({
+              id: String(ev.id),
+              actionKey: String(ev.actionKey || ""),
+              entityType: ev.entityType != null ? String(ev.entityType) : "",
+              outcome: ev.outcome != null ? String(ev.outcome) : "",
+              createdAt: ev.createdAt || null,
+            }));
+          }
+        } catch {
+          organizationAuditEvents = [];
+        }
+      }
       const html = renderPlatformAdminView(
         "platform-admin/organization-detail.ejs",
         shellLocals(req, res, "organizations", {
@@ -2984,6 +3067,8 @@ function createPlatformAdminRouter(deps) {
           supportContacts,
           platformAdmins,
           growthTrial,
+          activeSupport,
+          organizationAuditEvents,
           followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
           onboardingStatuses: ONBOARDING_STATUSES,
           inviteOnceLink: inviteOnceLink || null,
@@ -3869,6 +3954,875 @@ function createPlatformAdminRouter(deps) {
         })
       );
       return res.status(200).type("html").send(html);
+    }
+  );
+
+  // ---------------------------------------------------------------------------
+  // Prompt 10C: audited support mode
+  // ---------------------------------------------------------------------------
+
+  router.post(
+    "/admin/organizations/:organizationId/support/hq",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const detailPath = `/admin/organizations/${encodeURIComponent(orgRef)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const session =
+        req.v5Session && req.v5Session.authenticated && req.v5Session.session
+          ? req.v5Session.session
+          : null;
+      const started = await startHqSupport(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+        reason: req.body && req.body.reason,
+        actorSessionId: session && session.id ? session.id : null,
+        env,
+      });
+      if (!started.ok) {
+        if (started.status === SUPPORT_STATUS.INVALID_INPUT) {
+          return res.redirect(303, `${detailPath}?error=support_reason_required`);
+        }
+        if (started.status === SUPPORT_STATUS.NOT_FOUND) {
+          return res.redirect(303, `${detailPath}?error=support_org_not_found`);
+        }
+        if (started.status === SUPPORT_STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "You cannot start HQ support mode.");
+        }
+        return res.redirect(303, `${detailPath}?error=support_start_failed`);
+      }
+      setSupportContextCookie(res, started.rawToken, {
+        secure: isProduction,
+        env,
+        maxAgeSeconds: Math.max(
+          60,
+          Math.floor((new Date(started.context.expiresAt).getTime() - Date.now()) / 1000)
+        ),
+      });
+      const host = started.context.hostname;
+      if (host) {
+        const proto = isProduction ? "https" : req.protocol || "http";
+        return res.redirect(303, `${proto}://${host}/hq`);
+      }
+      return res.redirect(303, "/hq");
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationId/branches/:branchId/support",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const branchRef = String(req.params.branchId || "").trim();
+      const detailPath = `/admin/organizations/${encodeURIComponent(orgRef)}`;
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const session =
+        req.v5Session && req.v5Session.authenticated && req.v5Session.session
+          ? req.v5Session.session
+          : null;
+      const started = await startBranchSupport(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+        branchKeyOrId: branchRef,
+        reason: req.body && req.body.reason,
+        actorSessionId: session && session.id ? session.id : null,
+        env,
+      });
+      if (!started.ok) {
+        if (started.status === SUPPORT_STATUS.INVALID_INPUT) {
+          return res.redirect(303, `${detailPath}?error=support_reason_required`);
+        }
+        if (started.status === SUPPORT_STATUS.NOT_FOUND) {
+          const code =
+            started.reason === "branch_not_found"
+              ? "support_branch_not_found"
+              : "support_org_not_found";
+          return res.redirect(303, `${detailPath}?error=${code}`);
+        }
+        if (started.status === SUPPORT_STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "You cannot start branch support mode.");
+        }
+        return res.redirect(303, `${detailPath}?error=support_start_failed`);
+      }
+      setSupportContextCookie(res, started.rawToken, {
+        secure: isProduction,
+        env,
+        maxAgeSeconds: Math.max(
+          60,
+          Math.floor((new Date(started.context.expiresAt).getTime() - Date.now()) / 1000)
+        ),
+      });
+      const host = started.context.hostname;
+      if (host) {
+        const proto = isProduction ? "https" : req.protocol || "http";
+        return res.redirect(303, `${proto}://${host}/branch-admin`);
+      }
+      return res.redirect(303, "/branch-admin");
+    }
+  );
+
+  router.post("/admin/support/exit", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return res.redirect(303, "/admin?error=csrf");
+    }
+    await exitSupport(getPool(), {
+      actorUserId: req.platformAdminContext.userId,
+      rawToken: readSupportContextCookie(req, env),
+      env,
+    });
+    clearSupportContextCookie(res, { secure: isProduction, env });
+    return res.redirect(303, "/admin?notice=support_ended");
+  });
+
+  router.get("/admin/support/status", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
+    const status = await getSupportStatus(getPool(), {
+      actorUserId: req.platformAdminContext.userId,
+      rawToken: readSupportContextCookie(req, env),
+      env,
+    });
+    if (!status.ok) {
+      if (status.status === SUPPORT_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You cannot view support status.");
+      }
+      return sendControlled(req, res, 503, "Support status is temporarily unavailable.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/support-status.ejs",
+      shellLocals(req, res, "organizations", {
+        pageTitle: "Support mode status",
+        supportActive: Boolean(status.active),
+        supportContext: status.context || null,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Prompt 10B: global users / members discovery (read-only)
+  // ---------------------------------------------------------------------------
+
+  function sessionAuditOrganizationId(req) {
+    const session =
+      req.v5Session && req.v5Session.authenticated && req.v5Session.session
+        ? req.v5Session.session
+        : null;
+    return session && session.organizationId ? String(session.organizationId) : null;
+  }
+
+  router.get("/admin/users", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
+    const list = await listPlatformUsers(getPool(), {
+      actorUserId: req.platformAdminContext.userId,
+      filters: req.query || {},
+      auditOrganizationId: sessionAuditOrganizationId(req),
+      env,
+    });
+    if (!list.ok) {
+      if (list.status === DIRECTORY_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You do not have access to the user directory.");
+      }
+      if (list.status === DIRECTORY_STATUS.INVALID_INPUT) {
+        return sendControlled(req, res, 400, "Invalid user directory filters.");
+      }
+      return sendControlled(req, res, 503, "User directory is temporarily unavailable.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/users.ejs",
+      shellLocals(req, res, "users", {
+        pageTitle: "Users",
+        users: list.users,
+        page: list.page,
+        limit: list.limit,
+        total: list.total,
+        totalPages: list.totalPages,
+        filters: list.filters || {},
+        allowedLimits: DIR_ALLOWED_LIMITS,
+        defaultLimit: DIR_DEFAULT_LIMIT,
+        maxLimit: DIR_MAX_LIMIT,
+        userStatuses: DIR_USER_STATUSES,
+        rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
+        rangeTo: Math.min(list.page * list.limit, list.total),
+        organizationScope: null,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/admin/users/:userId", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
+    const detail = await getPlatformUserDetail(getPool(), {
+      actorUserId: req.platformAdminContext.userId,
+      userId: req.params.userId,
+      env,
+    });
+    if (!detail.ok) {
+      if (detail.status === DIRECTORY_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You do not have access to this user.");
+      }
+      if (detail.status === DIRECTORY_STATUS.NOT_FOUND) {
+        return sendControlled(req, res, 404, "User not found.");
+      }
+      if (detail.status === DIRECTORY_STATUS.INVALID_INPUT) {
+        return sendControlled(req, res, 400, "Invalid user id.");
+      }
+      return sendControlled(req, res, 503, "User detail is temporarily unavailable.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/user-detail.ejs",
+      shellLocals(req, res, "users", {
+        pageTitle: "User detail",
+        user: detail.user,
+        notice: String(req.query.notice || ""),
+        error: String(req.query.error || ""),
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Prompt 10E: account recovery (no password view/retrieval)
+  // ---------------------------------------------------------------------------
+
+  function recoveryUserPath(userId) {
+    return `/admin/users/${encodeURIComponent(String(userId || "").trim())}`;
+  }
+
+  function recoveryRedirect(res, userId, kind, code) {
+    const path = recoveryUserPath(userId);
+    const q =
+      kind === "error"
+        ? `error=${encodeURIComponent(code)}`
+        : `notice=${encodeURIComponent(code)}`;
+    return res.redirect(303, `${path}?${q}#pa-user-recovery`);
+  }
+
+  function mapRecoveryError(result) {
+    if (!result) return "recovery_failed";
+    if (result.status === RECOVERY_STATUS.NOT_FOUND) return "not_found";
+    if (result.status === RECOVERY_STATUS.RATE_LIMITED) return "rate_limited";
+    if (result.status === RECOVERY_STATUS.FORBIDDEN) {
+      return result.reason === "self_suspend" ? "self_suspend" : "forbidden";
+    }
+    if (result.reason) return String(result.reason).slice(0, 64);
+    return "recovery_failed";
+  }
+
+  async function runRecoveryAction(req, res, actionFn, successNotice) {
+    setAdminNoStore(res);
+    const userId = String(req.params.userId || "").trim();
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return recoveryRedirect(res, userId || "unknown", "error", "csrf");
+    }
+    if (!PHONE_VERIFY_ATTEMPT_UUID_RE.test(userId)) {
+      return sendControlled(req, res, 404, "User not found.");
+    }
+    const result = await actionFn(getPool(), {
+      actorUserId: req.platformAdminContext.userId,
+      userId,
+      requestIp: (req.headers && req.headers["x-forwarded-for"]) || req.ip,
+      env,
+      publicBaseUrl: getApexOrigin(env),
+    });
+    if (!result.ok) {
+      if (result.status === RECOVERY_STATUS.NOT_FOUND) {
+        return sendControlled(req, res, 404, "User not found.");
+      }
+      return recoveryRedirect(res, userId, "error", mapRecoveryError(result));
+    }
+    return recoveryRedirect(res, userId, "notice", successNotice(result));
+  }
+
+  router.post(
+    "/admin/users/:userId/send-password-reset",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) =>
+      runRecoveryAction(req, res, sendPasswordReset, (r) =>
+        r.sent ? "password_reset_sent" : "password_reset_recorded"
+      )
+  );
+  router.post(
+    "/admin/users/:userId/resend-invitation",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) =>
+      runRecoveryAction(req, res, resendInvitation, () => "invitation_resent")
+  );
+  router.post(
+    "/admin/users/:userId/revoke-sessions",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) =>
+      runRecoveryAction(req, res, revokeSessions, () => "sessions_revoked")
+  );
+  router.post(
+    "/admin/users/:userId/require-password-change",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) =>
+      runRecoveryAction(req, res, requirePasswordChange, () => "password_change_required")
+  );
+  router.post(
+    "/admin/users/:userId/suspend",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) => runRecoveryAction(req, res, suspendSignIn, () => "user_suspended")
+  );
+  router.post(
+    "/admin/users/:userId/restore",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) => runRecoveryAction(req, res, restoreSignIn, () => "user_restored")
+  );
+  router.post(
+    "/admin/users/:userId/unlock",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) => runRecoveryAction(req, res, unlockAccount, () => "user_unlocked")
+  );
+
+  router.get("/admin/members", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
+    const list = await listPlatformMembers(getPool(), {
+      actorUserId: req.platformAdminContext.userId,
+      filters: req.query || {},
+      auditOrganizationId: sessionAuditOrganizationId(req),
+      env,
+    });
+    if (!list.ok) {
+      if (list.status === DIRECTORY_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You do not have access to the member directory.");
+      }
+      if (list.status === DIRECTORY_STATUS.INVALID_INPUT) {
+        return sendControlled(req, res, 400, "Invalid member directory filters.");
+      }
+      return sendControlled(req, res, 503, "Member directory is temporarily unavailable.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/members.ejs",
+      shellLocals(req, res, "members", {
+        pageTitle: "Members",
+        members: list.members,
+        page: list.page,
+        limit: list.limit,
+        total: list.total,
+        totalPages: list.totalPages,
+        filters: list.filters || {},
+        allowedLimits: DIR_ALLOWED_LIMITS,
+        defaultLimit: DIR_DEFAULT_LIMIT,
+        maxLimit: DIR_MAX_LIMIT,
+        memberStatuses: DIR_MEMBER_STATUSES,
+        rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
+        rangeTo: Math.min(list.page * list.limit, list.total),
+        organizationScope: null,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.get("/admin/members/:memberId", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
+    const detail = await getPlatformMemberSupportProfile(getPool(), {
+      actorUserId: req.platformAdminContext.userId,
+      memberId: req.params.memberId,
+      env,
+    });
+    if (!detail.ok) {
+      if (detail.status === DIRECTORY_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You do not have access to this member.");
+      }
+      if (detail.status === DIRECTORY_STATUS.NOT_FOUND) {
+        return sendControlled(req, res, 404, "Member not found.");
+      }
+      if (detail.status === DIRECTORY_STATUS.INVALID_INPUT) {
+        return sendControlled(req, res, 400, "Invalid member id.");
+      }
+      return sendControlled(req, res, 503, "Member profile is temporarily unavailable.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/member-detail.ejs",
+      shellLocals(req, res, "members", {
+        pageTitle: "Member support profile",
+        member: detail.member,
+      })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  async function orgScopedDirectory(req, res, kind) {
+    setAdminNoStore(res);
+    const org = await resolveOrganizationRef(getPool(), req.params.organizationId);
+    if (!org) {
+      return sendControlled(req, res, 404, "Organization not found.");
+    }
+    const filters = {
+      ...(req.query || {}),
+      organizationId: org.id,
+      organizationKey: org.organization_key,
+    };
+    if (kind === "users") {
+      const list = await listPlatformUsers(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        filters,
+        auditOrganizationId: sessionAuditOrganizationId(req),
+        env,
+      });
+      if (!list.ok) {
+        if (list.status === DIRECTORY_STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "You do not have access to the user directory.");
+        }
+        return sendControlled(req, res, 503, "User directory is temporarily unavailable.");
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/users.ejs",
+        shellLocals(req, res, "users", {
+          pageTitle: `Users · ${org.display_name || org.organization_key}`,
+          users: list.users,
+          page: list.page,
+          limit: list.limit,
+          total: list.total,
+          totalPages: list.totalPages,
+          filters: list.filters || {},
+          allowedLimits: DIR_ALLOWED_LIMITS,
+          defaultLimit: DIR_DEFAULT_LIMIT,
+          maxLimit: DIR_MAX_LIMIT,
+          userStatuses: DIR_USER_STATUSES,
+          rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
+          rangeTo: Math.min(list.page * list.limit, list.total),
+          organizationScope: {
+            id: org.id,
+            key: org.organization_key,
+            displayName: org.display_name,
+          },
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+
+    const list = await listPlatformMembers(getPool(), {
+      actorUserId: req.platformAdminContext.userId,
+      filters,
+      auditOrganizationId: sessionAuditOrganizationId(req),
+      env,
+    });
+    if (!list.ok) {
+      if (list.status === DIRECTORY_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You do not have access to the member directory.");
+      }
+      return sendControlled(req, res, 503, "Member directory is temporarily unavailable.");
+    }
+    const html = renderPlatformAdminView(
+      "platform-admin/members.ejs",
+      shellLocals(req, res, "members", {
+        pageTitle: `Members · ${org.display_name || org.organization_key}`,
+        members: list.members,
+        page: list.page,
+        limit: list.limit,
+        total: list.total,
+        totalPages: list.totalPages,
+        filters: list.filters || {},
+        allowedLimits: DIR_ALLOWED_LIMITS,
+        defaultLimit: DIR_DEFAULT_LIMIT,
+        maxLimit: DIR_MAX_LIMIT,
+        memberStatuses: DIR_MEMBER_STATUSES,
+        rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
+        rangeTo: Math.min(list.page * list.limit, list.total),
+        organizationScope: {
+          id: org.id,
+          key: org.organization_key,
+          displayName: org.display_name,
+        },
+      })
+    );
+    return res.status(200).type("html").send(html);
+  }
+
+  // Convention: :organizationId accepts UUID or organization_key (adapted from prompt).
+  router.get(
+    "/admin/organizations/:organizationId/users",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) => orgScopedDirectory(req, res, "users")
+  );
+  router.get(
+    "/admin/organizations/:organizationId/members",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res) => orgScopedDirectory(req, res, "members")
+  );
+
+  // ---------------------------------------------------------------------------
+  // Prompt 10D: organisation team management (Staff Access / RBAC reuse)
+  // ---------------------------------------------------------------------------
+
+  function teamBasePath(orgRef) {
+    return `/admin/organizations/${encodeURIComponent(String(orgRef || "").trim())}/team`;
+  }
+
+  function teamAssignError(reason) {
+    switch (String(reason || "")) {
+      case "self_elevation":
+      case "self_invite":
+        return "You cannot assign church roles to yourself from this screen.";
+      case "reason_required":
+        return "A reason is required for sensitive role changes.";
+      case "platform_scope_forbidden":
+        return "Platform scope cannot be assigned from a church team screen.";
+      case "forged_organization":
+        return "Organisation mismatch rejected.";
+      case "forged_branch":
+      case "cross_org_scope_mismatch":
+        return "Branch or scope does not belong to this organisation.";
+      case "expires_at":
+      case "expires_at_past":
+        return "Expiry must be a valid future date.";
+      case "duplicate":
+        return "An identical active assignment already exists.";
+      case "already_assigned":
+        return "That user already has this staff role.";
+      default:
+        return "This team change could not be completed.";
+    }
+  }
+
+  router.get(
+    "/admin/organizations/:organizationId/team",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const listed = await listOrganizationTeam(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+        q: req.query.q,
+        branchId: req.query.branch,
+        roleKey: req.query.role,
+        assignmentStatus: req.query.status,
+        sensitivity: req.query.sensitivity,
+        env,
+      });
+      if (!listed.ok) {
+        if (listed.status === TEAM_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Organisation not found.");
+        }
+        if (listed.status === TEAM_STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "You cannot view this organisation team.");
+        }
+        return sendControlled(req, res, 503, "Team list is temporarily unavailable.");
+      }
+      const orgKey = listed.organization.organization_key;
+      const html = renderPlatformAdminView(
+        "platform-admin/team.ejs",
+        shellLocals(req, res, "organizations", {
+          pageTitle: `Team · ${listed.organization.display_name}`,
+          organization: listed.organization,
+          orgKey,
+          teamUsers: listed.users,
+          pendingInvitations: listed.pendingInvitations,
+          filters: {
+            q: String(req.query.q || ""),
+            branch: String(req.query.branch || ""),
+            role: String(req.query.role || ""),
+            status: String(req.query.status || ""),
+            sensitivity: String(req.query.sensitivity || ""),
+          },
+          notice: String(req.query.notice || ""),
+          error: String(req.query.error || ""),
+          inviteOnceToken: String(req.query.invite_token || ""),
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/organizations/:organizationId/team/invite",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const ctx = await getTeamInviteContext(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+      });
+      if (!ctx.ok) {
+        if (ctx.status === TEAM_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Organisation not found.");
+        }
+        if (ctx.status === TEAM_STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "You cannot invite team members here.");
+        }
+        return sendControlled(req, res, 503, "Invite wizard is temporarily unavailable.");
+      }
+      const step = String(req.query.step || "identity").trim().toLowerCase();
+      const detected =
+        req.query.email
+          ? await detectTeamUserByEmail(getPool(), {
+              actorUserId: req.platformAdminContext.userId,
+              email: req.query.email,
+            })
+          : null;
+      const html = renderPlatformAdminView(
+        "platform-admin/team-invite.ejs",
+        shellLocals(req, res, "organizations", {
+          pageTitle: `Invite · ${ctx.organization.display_name}`,
+          organization: ctx.organization,
+          orgKey: ctx.organization.organization_key,
+          branches: ctx.branches,
+          assignableRoles: ctx.assignableRoles,
+          scopeOptions: ctx.scopeOptions,
+          scopeTypes: ctx.scopeTypes,
+          step: ["identity", "placement", "roles", "review"].includes(step)
+            ? step
+            : "identity",
+          draft: {
+            firstName: String(req.query.first_name || ""),
+            lastName: String(req.query.last_name || ""),
+            email: String(req.query.email || ""),
+            phone: String(req.query.phone || ""),
+            branchId: String(req.query.branch_id || ""),
+            leadershipTitle: String(req.query.leadership_title || ""),
+            roleKey: String(req.query.role_key || ""),
+            scopeType: String(req.query.scope_type || "church"),
+            scopeId: String(req.query.scope_id || ""),
+            assignmentReason: String(req.query.assignment_reason || ""),
+            expiresAt: String(req.query.expires_at || ""),
+          },
+          existingUser: detected && detected.ok ? detected.user : null,
+          notice: String(req.query.notice || ""),
+          error: String(req.query.error || ""),
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationId/team/invite",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const base = teamBasePath(orgRef);
+      const body = req.body || {};
+      if (!validateCsrf(req, body[CSRF_FIELD], env)) {
+        return res.redirect(303, `${base}/invite?error=csrf`);
+      }
+      const wizardAction = String(body.wizard_action || "submit").trim();
+      if (wizardAction === "continue") {
+        const params = new URLSearchParams();
+        params.set("step", String(body.next_step || "placement"));
+        for (const key of [
+          "first_name",
+          "last_name",
+          "email",
+          "phone",
+          "branch_id",
+          "leadership_title",
+          "role_key",
+          "scope_type",
+          "scope_id",
+          "assignment_reason",
+          "expires_at",
+        ]) {
+          if (body[key] != null && String(body[key]).trim()) {
+            params.set(key, String(body[key]).trim());
+          }
+        }
+        return res.redirect(303, `${base}/invite?${params.toString()}`);
+      }
+
+      const invited = await inviteOrganizationTeamMember(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+        submittedOrganizationId: body.organization_id,
+        firstName: body.first_name,
+        lastName: body.last_name,
+        email: body.email,
+        phone: body.phone,
+        leadershipTitle: body.leadership_title,
+        branchId: body.branch_id,
+        body,
+        env,
+      });
+      if (!invited.ok) {
+        return res.redirect(
+          303,
+          `${base}/invite?step=review&error=${encodeURIComponent(invited.reason || "invite_failed")}`
+        );
+      }
+      const tokenQ = invited.rawToken
+        ? `&invite_token=${encodeURIComponent(invited.rawToken)}`
+        : "";
+      return res.redirect(
+        303,
+        `${base}/${encodeURIComponent(invited.userId)}?notice=invited${tokenQ}`
+      );
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationId/team/resend-invite",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const base = teamBasePath(orgRef);
+      const body = req.body || {};
+      if (!validateCsrf(req, body[CSRF_FIELD], env)) {
+        return res.redirect(303, `${base}?error=csrf`);
+      }
+      const resent = await resendOrganizationTeamInvitation(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+        email: body.email,
+        displayName: body.display_name,
+        roleKey: body.role_key,
+        branchId: body.branch_id,
+        env,
+      });
+      if (!resent.ok) {
+        return res.redirect(
+          303,
+          `${base}?error=${encodeURIComponent(resent.reason || "resend_failed")}`
+        );
+      }
+      const tokenQ = resent.rawToken
+        ? `&invite_token=${encodeURIComponent(resent.rawToken)}`
+        : "";
+      return res.redirect(303, `${base}?notice=invitation_resent${tokenQ}`);
+    }
+  );
+
+  router.get(
+    "/admin/organizations/:organizationId/team/:userId",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const userId = String(req.params.userId || "").trim();
+      const result = await getOrganizationTeamMember(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+        userId,
+        env,
+      });
+      if (!result.ok) {
+        if (result.status === TEAM_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Team member not found.");
+        }
+        if (result.status === TEAM_STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "You cannot view this team member.");
+        }
+        return sendControlled(req, res, 503, "Team detail is temporarily unavailable.");
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/team-detail.ejs",
+        shellLocals(req, res, "organizations", {
+          pageTitle: result.detail.user.displayName,
+          organization: result.organization,
+          orgKey: result.organization.organization_key,
+          detail: result.detail,
+          assignableRoles: result.assignableRoles,
+          scopeOptions: result.scopeOptions,
+          scopeTypes: result.scopeTypes,
+          notice: String(req.query.notice || ""),
+          error: String(req.query.error || ""),
+          inviteOnceToken: String(req.query.invite_token || ""),
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationId/team/:userId/assign",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const userId = String(req.params.userId || "").trim();
+      const detailPath = `${teamBasePath(orgRef)}/${encodeURIComponent(userId)}`;
+      const body = req.body || {};
+      if (!validateCsrf(req, body[CSRF_FIELD], env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const assigned = await assignOrganizationTeamRole(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+        userId,
+        submittedOrganizationId: body.organization_id,
+        roleKey: body.role_key,
+        scopeType: body.scope_type,
+        scopeId: body.scope_id,
+        assignmentReason: body.assignment_reason,
+        expiresAt: body.expires_at,
+        env,
+      });
+      if (!assigned.ok) {
+        return res.redirect(
+          303,
+          `${detailPath}?error=${encodeURIComponent(teamAssignError(assigned.reason))}`
+        );
+      }
+      return res.redirect(
+        303,
+        `${detailPath}?notice=${encodeURIComponent(
+          assigned.idempotent ? "Assignment already active." : "Role assigned."
+        )}`
+      );
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationId/team/:userId/assignments/:assignmentId/revoke",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const orgRef = String(req.params.organizationId || "").trim();
+      const userId = String(req.params.userId || "").trim();
+      const assignmentId = String(req.params.assignmentId || "").trim();
+      const detailPath = `${teamBasePath(orgRef)}/${encodeURIComponent(userId)}`;
+      const body = req.body || {};
+      if (!validateCsrf(req, body[CSRF_FIELD], env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const revoked = await revokeOrganizationTeamRole(getPool(), {
+        actorUserId: req.platformAdminContext.userId,
+        organizationKeyOrId: orgRef,
+        userId,
+        assignmentId,
+        revocationReason: body.revocation_reason,
+        env,
+      });
+      if (!revoked.ok) {
+        return res.redirect(
+          303,
+          `${detailPath}?error=${encodeURIComponent(teamAssignError(revoked.reason))}`
+        );
+      }
+      return res.redirect(303, `${detailPath}?notice=Assignment%20revoked.`);
     }
   );
 

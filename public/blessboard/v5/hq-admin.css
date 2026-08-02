@@ -6185,3 +6185,48 @@ body.bb-hq-drawer-open { overflow: hidden; }
     align-items: stretch;
   }
 }
+
+/* Prompt 10C: Platform Admin support-mode banner */
+.bb-support-banner {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #7c2d12;
+  color: #fff7ed;
+  border-bottom: 3px solid #fb923c;
+}
+.bb-support-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.bb-support-banner__icon {
+  font-size: 1.35rem;
+  color: #fdba74;
+}
+.bb-support-banner__copy {
+  flex: 1 1 16rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.bb-support-banner__exit button {
+  appearance: none;
+  border: 1px solid #fdba74;
+  background: #9a3412;
+  color: #fff7ed;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bb-support-banner__exit button:hover,
+.bb-support-banner__exit button:focus-visible {
+  background: #c2410c;
+  outline: 2px solid #fdba74;
+  outline-offset: 2px;
+}

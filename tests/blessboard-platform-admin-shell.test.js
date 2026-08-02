@@ -479,8 +479,10 @@ describe("blessboard platform-admin shell", () => {
     assert.doesNotMatch(detail.text, new RegExp(org.id, "i"));
     assert.doesNotMatch(
       detail.text,
-      /password|session_token|DATABASE_URL|secret|connection string|Export CSV|New Branch|\$249|impersonat/i
+      /password_hash|plaintext password|session_token|DATABASE_URL|connection string|Export CSV|New Branch|\$249|impersonat/i
     );
+    // Credential-reset action paths are intentional; forbid storage/secrets leakage only.
+    assert.doesNotMatch(detail.text, /\bsecret\b/i);
 
     const missing = await request(app)
       .get("/admin/organizations/does-not-exist")

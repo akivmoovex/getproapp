@@ -321,6 +321,7 @@ async function completePasswordReset(db, input) {
 
         const passwordHash = await bcrypt.hash(passwordCheck.value, BCRYPT_ROUNDS);
         await authRepo.updateUserPasswordHash(client, String(user.id), passwordHash);
+        await authRepo.clearPasswordRecoveryFlags(client, String(user.id));
         await tokenRepo.markConsumed(client, token.id);
         await tokenRepo.consumeActiveTokensForUserPurpose(client, {
           userId: String(user.id),

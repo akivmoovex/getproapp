@@ -70,7 +70,7 @@ function activeRegistrationLink(html, sectionAttr) {
 }
 
 describe("platform-admin registration nav config", () => {
-  it("defines exactly one Church Registrations nav item after Organizations", () => {
+  it("defines exactly one Church Registrations nav item", () => {
     const regItems = PLATFORM_ADMIN_NAV.filter(
       (item) => item.key === "registration-applications"
     );
@@ -82,24 +82,30 @@ describe("platform-admin registration nav config", () => {
     assert.equal(regItems[0].enabled, true);
 
     const orgIdx = PLATFORM_ADMIN_NAV.findIndex((i) => i.key === "organizations");
+    const usersIdx = PLATFORM_ADMIN_NAV.findIndex((i) => i.key === "users");
+    const membersIdx = PLATFORM_ADMIN_NAV.findIndex((i) => i.key === "members");
     const regIdx = PLATFORM_ADMIN_NAV.findIndex(
       (i) => i.key === "registration-applications"
     );
     assert.ok(orgIdx >= 0);
-    assert.equal(regIdx, orgIdx + 1);
+    assert.equal(usersIdx, orgIdx + 1);
+    assert.equal(membersIdx, usersIdx + 1);
+    assert.ok(regIdx > membersIdx);
   });
 
-  it("includes registration in mobile tab keys without duplicating", () => {
-    const hits = PLATFORM_ADMIN_MOBILE_TABS.filter(
-      (k) => k === "registration-applications"
+  it("includes users and members in mobile tab keys without duplicating", () => {
+    assert.equal(PLATFORM_ADMIN_MOBILE_TABS.filter((k) => k === "users").length, 1);
+    assert.equal(PLATFORM_ADMIN_MOBILE_TABS.filter((k) => k === "members").length, 1);
+    assert.equal(
+      PLATFORM_ADMIN_MOBILE_TABS.filter((k) => k === "registration-applications").length,
+      0
     );
-    assert.equal(hits.length, 1);
     const orgIdx = PLATFORM_ADMIN_MOBILE_TABS.indexOf("organizations");
-    const regIdx = PLATFORM_ADMIN_MOBILE_TABS.indexOf("registration-applications");
-    assert.equal(regIdx, orgIdx + 1);
+    assert.equal(PLATFORM_ADMIN_MOBILE_TABS.indexOf("users"), orgIdx + 1);
+    assert.equal(PLATFORM_ADMIN_MOBILE_TABS.indexOf("members"), orgIdx + 2);
   });
 
-  it("shell locals expose a single registration nav item and mobile tab", () => {
+  it("shell locals expose a single registration nav item", () => {
     const res = {
       cookie() {},
       setHeader() {},
@@ -115,10 +121,8 @@ describe("platform-admin registration nav config", () => {
     );
     assert.equal(navHits.length, 1);
     assert.equal(navHits[0].href, "/admin/registration-applications");
-    const tabHits = locals.mobileTabs.filter(
-      (i) => i && i.key === "registration-applications"
-    );
-    assert.equal(tabHits.length, 1);
+    assert.ok(locals.navItems.some((i) => i.key === "users"));
+    assert.ok(locals.navItems.some((i) => i.key === "members"));
     assert.equal(locals.activeNav, "registration-applications");
   });
 
@@ -138,6 +142,8 @@ describe("platform-admin registration nav config", () => {
     for (const required of [
       "home",
       "organizations",
+      "users",
+      "members",
       "registration-applications",
       "plans",
       "subscriptions",

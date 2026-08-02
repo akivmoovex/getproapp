@@ -29,6 +29,18 @@ const {
   createBlessBoardTenantRoutingDecision,
 } = require("../../blessboard/http/loadBlessBoardTenantRouting");
 const {
+  createLoadSessionScopedTenantContext,
+} = require("../../blessboard/http/loadSessionScopedTenantContext");
+const {
+  createLoadPlatformSupportContext,
+} = require("./loadPlatformSupportContext");
+const {
+  createApplySupportContextTenant,
+} = require("./applySupportContextTenant");
+const {
+  createRequirePlatformSupportContext,
+} = require("./requirePlatformSupportContext");
+const {
   createLoadBlessBoardAuthorizationContext,
 } = require("../../blessboard/http/loadBlessBoardAuthorizationContext");
 const {
@@ -95,9 +107,6 @@ const {
 const { createApexMarketingRouter } = require("../../blessboard/http/apexMarketingRoutes");
 const { createPlatformAdminRouter } = require("./platformAdminRoutes");
 const { createLoadV5Session } = require("./loadV5Session");
-const {
-  createLoadSessionScopedTenantContext,
-} = require("../../blessboard/http/loadSessionScopedTenantContext");
 const {
   getPlatformHostContextMode,
   MODE_DIAGNOSTIC,
@@ -439,12 +448,34 @@ function createV5FoundationApp(options) {
     })
   );
 
+  // 4c. Platform Admin support context (does not replace V5 session)
+  app.use(
+    createLoadPlatformSupportContext({
+      getPool,
+      env,
+      isProduction,
+    })
+  );
+  app.use(
+    createApplySupportContextTenant({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+    })
+  );
+
   // 5. Tenant authorization context (attach only; never blocks public routes)
   app.use(
     createLoadBlessBoardAuthorizationContext({
       getPool,
     })
   );
+
+  // 5b. Platform Admin must use audited support mode for HQ / branch portals
+  const requirePlatformSupportContext = createRequirePlatformSupportContext({
+    getPool,
+  });
+  app.use("/hq", requirePlatformSupportContext);
+  app.use("/branch-admin", requirePlatformSupportContext);
 
   const requireTenantAccess = createRequireBlessBoardTenantRole({ getPool });
   const mediaService =

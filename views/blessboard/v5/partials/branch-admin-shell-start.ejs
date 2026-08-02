@@ -6,7 +6,7 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=44" />
+  <link rel="stylesheet" href="/blessboard/v5/branch-admin.css?v=45" />
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=8" />
   <% } %>
@@ -225,4 +225,5 @@
       </div>
 
       <main id="bb-ba-main" class="bb-ba-main" tabindex="-1">
+        <%- include('./support-mode-banner') %>
         <div class="bb-ba-page" data-bb-page-area="1">

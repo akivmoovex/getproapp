@@ -253,6 +253,17 @@ async function buildHqAdminShellLocals(req, res, opts) {
     entitledFeatures,
     websiteMode: websiteMode || null,
     permissionNavFlags,
+    supportBanner:
+      req.platformSupportBanner && req.platformSupportBanner.visible === true
+        ? {
+            visible: true,
+            supportType: req.platformSupportBanner.supportType || "hq",
+            churchName: req.platformSupportBanner.churchName || "this church",
+            branchName: req.platformSupportBanner.branchName || null,
+            expiresAt: req.platformSupportBanner.expiresAt || null,
+            exitAction: "/hq/support/exit",
+          }
+        : null,
     ...(opts.extra || {}),
   };
 }

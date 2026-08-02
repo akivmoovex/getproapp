@@ -22,6 +22,22 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
     enabled: true,
   },
   {
+    key: "users",
+    label: "Users",
+    href: "/admin/users",
+    icon: "group",
+    nav: true,
+    enabled: true,
+  },
+  {
+    key: "members",
+    label: "Members",
+    href: "/admin/members",
+    icon: "badge",
+    nav: true,
+    enabled: true,
+  },
+  {
     key: "registration-applications",
     label: "Church Registrations",
     href: "/admin/registration-applications",
@@ -92,8 +108,8 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
 const PLATFORM_ADMIN_MOBILE_TABS = Object.freeze([
   "home",
   "organizations",
-  "registration-applications",
-  "plans",
+  "users",
+  "members",
   "account",
 ]);
 

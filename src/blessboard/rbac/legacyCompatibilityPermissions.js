@@ -84,6 +84,27 @@ const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([
   "audit.view_access",
   "audit.view_website",
   "audit.view_pastoral_metadata",
+  // Prompt 10B: explicit platform directory permissions (no church-confidential keys)
+  "platform.users.view",
+  "platform.members.search",
+  "platform.members.view_support_profile",
+  // Prompt 10C: audited support mode (no Finance / pastoral auto-grants)
+  "platform.support.enter_hq",
+  "platform.support.enter_branch",
+  "platform.support.exit",
+  "platform.support.view_status",
+  // Prompt 10D: organisation team management (delegates to Staff Access / RBAC services)
+  "platform.users.invite",
+  "platform.roles.view",
+  "platform.roles.assign_standard",
+  "platform.roles.assign_sensitive",
+  "platform.roles.revoke",
+  // Prompt 10E: account recovery (no password view/retrieval)
+  "platform.users.reset_access",
+  "platform.users.revoke_sessions",
+  "platform.users.suspend",
+  "platform.users.restore",
+  "platform.users.unlock",
 ]);
 
 /**

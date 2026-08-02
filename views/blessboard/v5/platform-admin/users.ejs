@@ -1,0 +1,191 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = users || [];
+  var limits = allowedLimits || [10, 25, 50, 100];
+  var f = filters || {};
+  var statuses = userStatuses || [];
+  var scope = organizationScope || null;
+  var basePath = scope
+    ? ('/admin/organizations/' + encodeURIComponent(scope.key) + '/users')
+    : '/admin/users';
+  var hasFilter = Boolean(
+    f.q || f.status || f.roleKey || f.organizationKey || f.organizationId ||
+    f.churchId || f.branchId
+  );
+  var totalCount = typeof total !== 'undefined' ? Number(total) || 0 : 0;
+  function statusChip(s) {
+    var key = String(s || '').toLowerCase();
+    if (key === 'active') return 'bb-pa-chip--ok';
+    if (key === 'suspended') return 'bb-pa-chip--danger';
+    if (key === 'invited') return 'bb-pa-chip--warn';
+    return 'bb-pa-chip--muted';
+  }
+  function formatTs(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    } catch (e) {
+      return '—';
+    }
+  }
+  function filterQueryParts() {
+    var parts = ['limit=' + encodeURIComponent(limit)];
+    if (f.q) parts.push('q=' + encodeURIComponent(f.q));
+    if (f.status) parts.push('status=' + encodeURIComponent(f.status));
+    if (f.roleKey) parts.push('role=' + encodeURIComponent(f.roleKey));
+    if (!scope && f.organizationKey) parts.push('organizationKey=' + encodeURIComponent(f.organizationKey));
+    if (f.churchId) parts.push('churchId=' + encodeURIComponent(f.churchId));
+    if (f.branchId) parts.push('branchId=' + encodeURIComponent(f.branchId));
+    return parts;
+  }
+  function queryPage(p) {
+    return basePath + '?' + filterQueryParts().concat(['page=' + encodeURIComponent(p)]).join('&');
+  }
+  function clearHref() {
+    return basePath + '?limit=' + encodeURIComponent(limit);
+  }
+%>
+
+<section class="bb-pa-orgs" data-bb-pa-users="1" aria-label="Staff user directory">
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-orgs__eyebrow">Platform directory</p>
+      <h1 class="bb-pa-page-head__title"><%= pageTitle || 'Users' %></h1>
+      <p class="bb-pa-lede">
+        Cross-organisation staff users with safe identity fields only.
+        Passwords, tokens, and pastoral records are never shown.
+      </p>
+      <% if (scope) { %>
+      <p class="bb-pa-muted">
+        Scoped to
+        <a class="bb-pa-link" href="/admin/organizations/<%= scope.key %>"><%= scope.displayName || scope.key %></a>
+        · <a class="bb-pa-link" href="/admin/users">All organisations</a>
+      </p>
+      <% } %>
+    </div>
+    <p class="bb-pa-page-head__actions">
+      <span class="bb-pa-orgs__total" data-bb-count="users-total"><%= totalCount %></span>
+      <span class="bb-pa-orgs__total-label">users</span>
+    </p>
+  </header>
+
+  <form class="bb-pa-org-filter" method="get" action="<%= basePath %>" role="search" data-bb-pa-users-filter="1">
+    <div class="bb-pa-field">
+      <label for="q">Name or email</label>
+      <input id="q" name="q" type="search" value="<%= f.q || '' %>" maxlength="100" autocomplete="off" />
+    </div>
+    <% if (!scope) { %>
+    <div class="bb-pa-field">
+      <label for="organizationKey">Organisation key</label>
+      <input id="organizationKey" name="organizationKey" type="text" value="<%= f.organizationKey || '' %>" maxlength="64" autocomplete="off" />
+    </div>
+    <% } %>
+    <div class="bb-pa-field">
+      <label for="role">Role key</label>
+      <input id="role" name="role" type="text" value="<%= f.roleKey || '' %>" maxlength="64" autocomplete="off" placeholder="e.g. church_hq_admin" />
+    </div>
+    <div class="bb-pa-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">Any</option>
+        <% statuses.forEach(function (s) { %>
+        <option value="<%= s %>"<%= f.status === s ? ' selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-field">
+      <label for="churchId">Church id</label>
+      <input id="churchId" name="churchId" type="text" value="<%= f.churchId || '' %>" maxlength="36" autocomplete="off" />
+    </div>
+    <div class="bb-pa-field">
+      <label for="branchId">Branch id</label>
+      <input id="branchId" name="branchId" type="text" value="<%= f.branchId || '' %>" maxlength="36" autocomplete="off" />
+    </div>
+    <div class="bb-pa-field">
+      <label for="limit">Page size</label>
+      <select id="limit" name="limit">
+        <% limits.forEach(function (n) { %>
+        <option value="<%= n %>"<%= Number(limit) === n ? ' selected' : '' %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="bb-pa-org-filter__actions">
+      <button type="submit" class="bb-pa-btn bb-pa-btn--primary">Search</button>
+      <% if (hasFilter) { %>
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= clearHref() %>">Clear</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (!rows.length) { %>
+  <div class="bb-pa-orgs-empty" role="status" data-bb-empty="users">
+    <%- include('../partials/empty-state', {
+      title: hasFilter ? 'No matching users' : 'No staff users yet',
+      body: hasFilter ? 'Try different filters or clear the search.' : 'Staff users with active roles or pending invitations appear here.',
+      icon: 'group',
+      actionHref: hasFilter ? clearHref() : '/admin',
+      actionLabel: hasFilter ? 'Clear filter' : 'Back to dashboard'
+    }) %>
+  </div>
+  <% } else { %>
+  <p class="bb-pa-muted" data-bb-pa-users-range="1">
+    Showing <%= rangeFrom %>–<%= rangeTo %> of <%= totalCount %>
+  </p>
+  <div class="bb-pa-table-wrap" role="region" aria-label="Users table" tabindex="0">
+    <table class="bb-pa-table" data-bb-table="users">
+      <thead>
+        <tr>
+          <th scope="col">User</th>
+          <th scope="col">Organisation</th>
+          <th scope="col">Church</th>
+          <th scope="col">Branch</th>
+          <th scope="col">Roles</th>
+          <th scope="col">Status</th>
+          <th scope="col">Invitation</th>
+          <th scope="col">Last login</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (u) { %>
+        <tr data-bb-user-id="<%= u.userId %>">
+          <td>
+            <a class="bb-pa-orgs__name-link" href="/admin/users/<%= u.userId %>">
+              <strong><%= u.displayName || '—' %></strong>
+              <span class="bb-pa-muted"><%= u.emailDisplay || '—' %></span>
+            </a>
+          </td>
+          <td>
+            <% if (u.organizationKey) { %>
+            <a class="bb-pa-link" href="/admin/organizations/<%= u.organizationKey %>"><%= u.organizationName || u.organizationKey %></a>
+            <div><code class="bb-pa-key"><%= u.organizationKey %></code></div>
+            <% } else { %>—<% } %>
+          </td>
+          <td><%= u.churchName || u.churchKey || '—' %></td>
+          <td><%= u.branchName || u.branchKey || '—' %></td>
+          <td>
+            <% var roles = [].concat(u.legacyRoles || [], u.rbacRoles || []); %>
+            <% if (roles.length) { %>
+            <code class="bb-pa-key"><%= roles.join(', ') %></code>
+            <% } else { %>—<% } %>
+          </td>
+          <td><span class="bb-pa-chip <%= statusChip(u.status) %>"><%= u.status || '—' %></span></td>
+          <td><%= u.invitationState || 'none' %></td>
+          <td><time datetime="<%= u.lastLoginAt || '' %>"><%= formatTs(u.lastLoginAt) %></time></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (totalPages > 1) { %>
+  <nav class="bb-pa-pager" aria-label="Users pagination">
+    <% if (page > 1) { %><a class="bb-pa-link" href="<%= queryPage(page - 1) %>">Previous</a><% } %>
+    <span class="bb-pa-muted">Page <%= page %> of <%= totalPages %></span>
+    <% if (page < totalPages) { %><a class="bb-pa-link" href="<%= queryPage(page + 1) %>">Next</a><% } %>
+  </nav>
+  <% } %>
+  <% } %>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

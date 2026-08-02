@@ -176,6 +176,19 @@ async function buildBranchAdminShellLocals(req, res, opts) {
     mobileTabs,
     portalModules,
     websiteMode: websiteMode || null,
+    supportBanner:
+      req.platformSupportBanner && req.platformSupportBanner.visible === true
+        ? {
+            visible: true,
+            supportType: req.platformSupportBanner.supportType || "branch",
+            churchName: req.platformSupportBanner.churchName || "this church",
+            branchName:
+              req.platformSupportBanner.branchName ||
+              (tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : null),
+            expiresAt: req.platformSupportBanner.expiresAt || null,
+            exitAction: "/branch-admin/support/exit",
+          }
+        : null,
     ...(opts.extra || {}),
   };
 }

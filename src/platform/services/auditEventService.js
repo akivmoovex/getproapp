@@ -216,24 +216,54 @@ async function recordAuditEvent(db, input) {
 
   try {
     return await withClient(db, async (client) => {
-      const event = await repo.insertAuditEvent(client, {
-        deploymentCode,
-        organizationId,
-        churchId,
-        branchId,
-        actorUserId,
-        actionKey,
-        entityType,
-        entityId,
-        outcome,
-        metadata: sanitized.metadata,
-      });
-      return {
-        ok: true,
-        status: STATUS.OK,
-        event,
-        redactedKeys: sanitized.redactedKeys,
-      };
+      // Isolate audit failures so a best-effort write cannot abort a caller's open transaction.
+      const sp = `audit_sp_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6)}`;
+      let usedSavepoint = false;
+      try {
+        await client.query(`SAVEPOINT ${sp}`);
+        usedSavepoint = true;
+      } catch {
+        usedSavepoint = false;
+      }
+      try {
+        const event = await repo.insertAuditEvent(client, {
+          deploymentCode,
+          organizationId,
+          churchId,
+          branchId,
+          actorUserId,
+          actionKey,
+          entityType,
+          entityId,
+          outcome,
+          metadata: sanitized.metadata,
+        });
+        if (usedSavepoint) {
+          await client.query(`RELEASE SAVEPOINT ${sp}`);
+        }
+        return {
+          ok: true,
+          status: STATUS.OK,
+          event,
+          redactedKeys: sanitized.redactedKeys,
+        };
+      } catch {
+        if (usedSavepoint) {
+          try {
+            await client.query(`ROLLBACK TO SAVEPOINT ${sp}`);
+            await client.query(`RELEASE SAVEPOINT ${sp}`);
+          } catch {
+            /* ignore nested rollback failures */
+          }
+        }
+        return {
+          ok: false,
+          status: STATUS.LOOKUP_ERROR,
+          event: null,
+          reason: "db_error",
+          redactedKeys: sanitized.redactedKeys,
+        };
+      }
     });
   } catch {
     // Never surface SQL / driver payloads to callers (may be logged or rendered).

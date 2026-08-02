@@ -364,13 +364,14 @@ describe("blessboard hq shell", () => {
     assert.equal(ok.headers.location, "/");
   });
 
-  it("platform admin may access HQ; branch admin receives 403", async () => {
+  it("platform admin requires support mode for HQ; branch admin receives 403", async () => {
     requireDb();
     const platform = await request(app)
       .get("/hq")
       .set("Host", HOST_A)
       .set("Cookie", await cookieFor(users.platform));
-    assert.equal(platform.status, 200);
+    assert.equal(platform.status, 403);
+    assert.match(platform.text, /audited support session|Support mode required/i);
 
     const branchOnly = await request(app)
       .get("/hq")

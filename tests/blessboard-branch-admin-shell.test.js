@@ -343,15 +343,15 @@ describe("blessboard branch-admin shell", () => {
     assert.match(res.text, /Church HQ admin/);
   });
 
-  it("platform_admin receives 200", async () => {
+  it("platform_admin without support mode is denied branch portal", async () => {
     requireDb();
     const cookie = await cookieFor(users.platform);
     const res = await request(app)
       .get("/branch-admin")
       .set("Host", HOST_A)
       .set("Cookie", cookie);
-    assert.equal(res.status, 200);
-    assert.match(res.text, /Platform admin/);
+    assert.equal(res.status, 403);
+    assert.match(res.text, /audited support session|Support mode required/i);
   });
 
   it("wrong branch returns 403", async () => {
