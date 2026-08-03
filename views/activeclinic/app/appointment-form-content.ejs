@@ -1,0 +1,143 @@
+<%
+  var form = (pageData && pageData.form) || {};
+  var values = form.values || {};
+  var stitch = form.stitch || {};
+  var isEdit = form.mode === 'edit';
+  var review = form.review === true;
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-appointment-form" data-ac-page-section="appointment-<%= form.mode || 'create' %>" data-ac-appointment-step="<%= review ? 'review' : 'edit' %>" data-ac-stitch-book="<%= stitch.book || '' %>" data-ac-stitch-review="<%= stitch.review || '' %>" data-ac-stitch-reschedule-desktop="<%= stitch.rescheduleDesktop || '' %>" data-ac-stitch-reschedule-mobile="<%= stitch.rescheduleMobile || '' %>">
+  <% if (form.error) { %>
+  <div class="ac-alert ac-alert--error" role="alert" tabindex="-1" data-ac-error-summary="1"><%= form.error %></div>
+  <% } %>
+  <% if (form.slotCheck && form.slotCheck.slots && !form.slotCheck.slots.length) { %>
+  <div class="ac-alert ac-alert--error" role="alert">Selected time is not available for the assigned staff.</div>
+  <% } %>
+
+  <form class="ac-panel" method="post" action="<%= isEdit ? (form.rescheduleAction || form.formAction) : form.formAction %>" novalidate>
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+    <% if (review) { %>
+    <input type="hidden" name="confirm" value="1"/>
+    <input type="hidden" name="patient_id" value="<%= values.patientId || '' %>"/>
+    <input type="hidden" name="patient_number" value="<%= values.patientNumber || '' %>"/>
+    <input type="hidden" name="facility_id" value="<%= values.facilityId || '' %>"/>
+    <input type="hidden" name="service_type_id" value="<%= values.serviceTypeId || '' %>"/>
+    <input type="hidden" name="assigned_staff_id" value="<%= values.assignedStaffId || '' %>"/>
+    <input type="hidden" name="starts_date" value="<%= values.startsDate || '' %>"/>
+    <input type="hidden" name="starts_time" value="<%= values.startsTime || '' %>"/>
+    <input type="hidden" name="ends_time" value="<%= values.endsTime || '' %>"/>
+    <input type="hidden" name="timezone" value="<%= values.timezone || '' %>"/>
+    <input type="hidden" name="scheduling_note" value="<%= values.schedulingNote || '' %>"/>
+    <input type="hidden" name="reminder_channel" value="<%= values.reminderChannel || 'none' %>"/>
+    <h2 class="ac-panel__title">Review booking</h2>
+    <dl class="ac-dl">
+      <div><dt>Patient</dt><dd><%= values.patientNumber || values.patientId || '—' %></dd></div>
+      <div><dt>When</dt><dd><%= values.startsDate %> <%= values.startsTime %>–<%= values.endsTime %> (<%= values.timezone %>)</dd></div>
+      <div><dt>Facility</dt><dd><%= values.facilityId %></dd></div>
+      <div><dt>Service</dt><dd><%= values.serviceTypeId %></dd></div>
+      <div><dt>Staff</dt><dd><%= values.assignedStaffId || 'Unassigned' %></dd></div>
+      <div><dt>Admin note</dt><dd><%= values.schedulingNote || '—' %></dd></div>
+      <div><dt>Reminder preference</dt><dd><%= values.reminderChannel || 'none' %> (delivery not sent from this screen)</dd></div>
+    </dl>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn"><%= isEdit ? 'Confirm reschedule' : 'Confirm booking' %></button>
+      <a class="ac-btn ac-btn--ghost" href="/app/appointments/new">Back</a>
+    </div>
+    <% } else { %>
+    <fieldset class="ac-fieldset">
+      <legend>Patient</legend>
+      <div class="ac-field">
+        <label class="ac-label" for="patient_number">Patient number</label>
+        <input class="ac-input" id="patient_number" name="patient_number" value="<%= values.patientNumber || '' %>" <%= isEdit ? 'readonly' : '' %> autocomplete="off"/>
+      </div>
+      <% if (!isEdit) { %>
+      <div class="ac-field">
+        <label class="ac-label" for="patient_query">Search by name</label>
+        <input class="ac-input" id="patient_query" name="patient_query" value="<%= values.patientQuery || '' %>" autocomplete="off"/>
+        <p class="ac-muted">Submit without confirm to search, then pick a match.</p>
+      </div>
+      <% if ((form.patientMatches || []).length) { %>
+      <div class="ac-field" role="group" aria-label="Patient matches">
+        <% form.patientMatches.forEach(function (p) { %>
+        <label class="ac-check">
+          <input type="radio" name="patient_id" value="<%= p.id %>" <%= values.patientId === p.id ? 'checked' : '' %>/>
+          <%= p.displayName %> · <%= p.patientNumber %>
+        </label>
+        <% }) %>
+      </div>
+      <% } %>
+      <% } else { %>
+      <input type="hidden" name="patient_id" value="<%= values.patientId || '' %>"/>
+      <% } %>
+    </fieldset>
+
+    <fieldset class="ac-fieldset">
+      <legend>Schedule</legend>
+      <div class="ac-field">
+        <label class="ac-label" for="facility_id">Facility</label>
+        <select class="ac-select" id="facility_id" name="facility_id" required>
+          <option value="">Select facility</option>
+          <% (form.facilities || []).forEach(function (f) { %>
+          <option value="<%= f.id %>" <%= values.facilityId === f.id ? 'selected' : '' %>><%= f.displayName %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="service_type_id">Service</label>
+        <select class="ac-select" id="service_type_id" name="service_type_id" required>
+          <option value="">Select service</option>
+          <% (form.services || []).forEach(function (s) { %>
+          <option value="<%= s.id %>" <%= values.serviceTypeId === s.id ? 'selected' : '' %>><%= s.displayName %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="assigned_staff_id">Assigned staff</label>
+        <select class="ac-select" id="assigned_staff_id" name="assigned_staff_id">
+          <option value="">Unassigned</option>
+          <% (form.staffOptions || []).forEach(function (s) { %>
+          <option value="<%= s.id %>" <%= values.assignedStaffId === s.id ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="starts_date">Date</label>
+        <input class="ac-input" id="starts_date" name="starts_date" type="date" value="<%= values.startsDate || '' %>" required/>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="starts_time">Start time</label>
+        <input class="ac-input" id="starts_time" name="starts_time" type="time" value="<%= values.startsTime || '' %>" required/>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="ends_time">End time</label>
+        <input class="ac-input" id="ends_time" name="ends_time" type="time" value="<%= values.endsTime || '' %>" required/>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="timezone">Timezone</label>
+        <input class="ac-input" id="timezone" name="timezone" value="<%= values.timezone || '' %>" required/>
+        <p class="ac-muted">Stored as entered — not silently converted.</p>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="scheduling_note">Administrative note</label>
+        <textarea class="ac-input" id="scheduling_note" name="scheduling_note" rows="3" maxlength="500"><%= values.schedulingNote || '' %></textarea>
+      </div>
+      <% if (!isEdit) { %>
+      <div class="ac-field">
+        <label class="ac-label" for="reminder_channel">Reminder preference</label>
+        <select class="ac-select" id="reminder_channel" name="reminder_channel">
+          <option value="none" <%= values.reminderChannel === 'none' ? 'selected' : '' %>>None</option>
+          <option value="sms" <%= values.reminderChannel === 'sms' ? 'selected' : '' %>>SMS (metadata only)</option>
+          <option value="phone" <%= values.reminderChannel === 'phone' ? 'selected' : '' %>>Phone (metadata only)</option>
+          <option value="email" <%= values.reminderChannel === 'email' ? 'selected' : '' %>>Email (metadata only)</option>
+        </select>
+      </div>
+      <% } %>
+    </fieldset>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn"><%= isEdit ? 'Reschedule' : 'Continue to review' %></button>
+      <a class="ac-btn ac-btn--ghost" href="/app/appointments">Cancel</a>
+    </div>
+    <% } %>
+  </form>
+  <p class="ac-sr-only">Booking does not create clinical encounters, diagnoses, or clinical notes.</p>
+</section>

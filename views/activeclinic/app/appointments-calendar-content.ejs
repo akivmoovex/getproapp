@@ -1,0 +1,89 @@
+<%
+  var calendar = (pageData && pageData.calendar) || {};
+  var days = calendar.days || [];
+  var filters = calendar.filters || {};
+  var filterOptions = calendar.filterOptions || {};
+  var actions = calendar.actions || {};
+  var emptyMode = calendar.emptyMode;
+  var stitch = calendar.stitch || {};
+%>
+<section class="ac-appointment-calendar" data-ac-page-section="appointment-calendar" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>" data-ac-stitch-list-alt="<%= stitch.listAlt || '' %>">
+  <form class="ac-panel ac-filter-bar" method="get" action="/app/appointments/calendar" data-ac-appointment-calendar-filters="1">
+    <div class="ac-filter-bar__grid ac-filter-bar__grid--appointments">
+      <div>
+        <label class="ac-label" for="cal_date">From date</label>
+        <input class="ac-input" id="cal_date" name="date" type="date" value="<%= filters.date || '' %>"/>
+      </div>
+      <div>
+        <label class="ac-label" for="cal_date_to">To date</label>
+        <input class="ac-input" id="cal_date_to" name="date_to" type="date" value="<%= filters.dateTo || '' %>"/>
+      </div>
+      <div>
+        <label class="ac-label" for="cal_facility">Facility</label>
+        <select class="ac-select" id="cal_facility" name="facility">
+          <option value="">All authorized</option>
+          <% (filterOptions.facilities || []).forEach(function (f) { %>
+          <option value="<%= f.value %>" <%= filters.facilityId === f.value ? 'selected' : '' %>><%= f.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="cal_status">Status</label>
+        <select class="ac-select" id="cal_status" name="status">
+          <option value="">All</option>
+          <% (filterOptions.statuses || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-filter-bar__checks">
+        <button type="submit" class="ac-btn">Apply</button>
+        <a class="ac-btn ac-btn--ghost" href="/app/appointments">List view</a>
+      </div>
+    </div>
+  </form>
+
+  <% if (emptyMode) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: emptyMode === 'filtered' ? 'no_results' : 'empty',
+      marker: 'appointments-calendar-empty',
+      title: 'No appointments in this calendar range',
+      description: 'Counts are based on real bookings only.',
+      primaryAction: actions.canCreate
+        ? { href: '/app/appointments/new', label: 'Book appointment' }
+        : null,
+      secondaryAction: { href: '/app/appointments', label: 'Open list' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-calendar-days ac-calendar-days--desktop" data-ac-calendar="desktop">
+    <% days.forEach(function (day) { %>
+    <section class="ac-panel ac-calendar-day" aria-labelledby="day-<%= day.dayKey %>">
+      <h2 class="ac-calendar-day__title" id="day-<%= day.dayKey %>"><%= day.dayKey %> <span class="ac-muted">(<%= day.count %>)</span></h2>
+      <ul class="ac-calendar-day__list">
+        <% day.appointments.forEach(function (a) { %>
+        <li>
+          <a href="/app/appointments/<%= a.id %>"><%= a.when.timeLabel %> · <%= (a.patient && a.patient.displayName) || 'Patient' %></a>
+          <span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel %></span>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% }) %>
+  </div>
+  <div class="ac-calendar-days--mobile ac-card-list" data-ac-calendar="mobile">
+    <p class="ac-muted">Mobile uses a day list instead of a dense desktop grid.</p>
+    <% days.forEach(function (day) { %>
+    <article class="ac-card">
+      <h3 class="ac-card__title"><%= day.dayKey %> · <%= day.count %> booking<%= day.count === 1 ? '' : 's' %></h3>
+      <ul class="ac-calendar-day__list">
+        <% day.appointments.forEach(function (a) { %>
+        <li><a href="/app/appointments/<%= a.id %>"><%= a.when.timeLabel %> · <%= (a.patient && a.patient.displayName) || 'Patient' %> · <%= a.statusLabel %></a></li>
+        <% }) %>
+      </ul>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+</section>

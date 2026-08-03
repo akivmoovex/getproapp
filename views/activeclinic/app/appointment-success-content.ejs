@@ -1,0 +1,13 @@
+<%
+  var success = (pageData && pageData.success) || {};
+%>
+<section class="ac-appointment-success" data-ac-page-section="appointment-success" data-ac-stitch-confirm="<%= success.stitchConfirm || '' %>">
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Appointment confirmed</h2>
+    <p>The administrative booking was created. No clinical encounter was opened.</p>
+    <div class="ac-form-actions" style="margin-top:1rem">
+      <a class="ac-btn" href="<%= success.detailHref || '/app/appointments' %>">View appointment</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/appointments">Back to list</a>
+    </div>
+  </div>
+</section>

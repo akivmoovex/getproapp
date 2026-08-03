@@ -28,7 +28,7 @@ Unprefixed foundation duplicates (6) + platform states (4) recorded in master in
 |------:|--------------|------------|----------:|---------:|--------:|--------:|-------|------------------|
 | Inventory | `1fcd61a6` | `392abdec` | 173+10 | — | — | — | n/a | P01 verify |
 | 1 | `1fcd61a6` | `392abdec` | 7 | 0 | 7 | 0 | P01 suite pass | P02 patients |
-| 2 | `392abdec` | *(pending)* | 18 | 0 | 17 | 1 print card | patient suites pass | P03 appointment UI |
+| 2 | `392abdec` | `9ffb3675` | 18 | 0 | 17 | 1 print card | patient suites pass | P03 appointments |
 | 3 | | | 20 | 0 | 0 | 20 | n/a | schema required |
 | 4 | | | 12 | 0 | 0 | 12 | n/a | schema required |
 | 5 | | | 29 | 0 | 0 | 29 | n/a | schema required |
@@ -50,3 +50,10 @@ Unprefixed foundation duplicates (6) + platform states (4) recorded in master in
 - Print Patient Card = PRODUCT_DECISION.
 - Fixes: archive/deceased result checks; id/ec/status error flashes; review-required create CTA; medical-history honesty note.
 - Test contract updates: allow Patients nav word without allowing fabricated clinical KPIs.
+
+
+### Phase 3 detail
+
+- Appointment schema + services + Stitch list/calendar/book/detail/check-in/cancel/reschedule/no-show UI.
+- Reception queue / walk-in encounter / call-board: honesty unavailable (may land in later migrations; not required for P03 booking subset).
+- Remaining P03 screens tied to queue/transfer stay SCHEMA_BLOCKED or PRODUCT_DECISION until reception module is complete.

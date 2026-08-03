@@ -925,6 +925,7 @@ body.ac-drawer-open .ac-drawer {
 @media (min-width: 900px) {
   .ac-desktop-header { display: flex; }
   .ac-patients-mobile { display: none; }
+  .ac-appointments-mobile { display: none; }
 }
 @media (max-width: 899px) {
   .ac-actions--stack-mobile { flex-direction: column; }
@@ -935,12 +936,50 @@ body.ac-drawer-open .ac-drawer {
   .ac-staff-mobile { display: grid; }
   .ac-patients-desktop { display: none; }
   .ac-patients-mobile { display: grid; }
+  .ac-appointments-desktop { display: none; }
+  .ac-appointments-mobile { display: grid; }
   .ac-access .ac-table-wrap { display: none; }
   .ac-access .ac-card-list--mobile { display: grid; }
 }
 
 .ac-filter-bar__grid--patients {
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+.ac-filter-bar__grid--appointments {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+.ac-calendar-days {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+.ac-calendar-day__list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.ac-calendar-day__list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 900px) {
+  .ac-calendar-days--mobile { display: none; }
+}
+@media (max-width: 899px) {
+  .ac-calendar-days--desktop { display: none; }
+}
+.ac-appointment-actions .ac-form-actions {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.ac-btn--danger {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
 }
 .ac-duplicate-warning {
   border-color: #b45309;

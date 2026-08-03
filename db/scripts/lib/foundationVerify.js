@@ -54,6 +54,10 @@ const PRODUCT_SCHEMAS = Object.freeze(["blessboard", "activeclinic", "getpro", "
  */
 const APPROVED_PRODUCT_TABLES = Object.freeze({
   activeclinic: Object.freeze([
+    "appointment_reminder_requests",
+    "appointment_service_types",
+    "appointment_status_events",
+    "appointments",
     "facilities",
     "healthcare_organizations",
     "patient_emergency_contacts",

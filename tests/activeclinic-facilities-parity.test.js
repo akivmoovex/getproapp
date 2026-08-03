@@ -279,10 +279,10 @@ describe("ActiveClinic facilities management parity (AC-V6-S03)", () => {
     assert.match(list.text, /data-ac-facility-primary="1"/);
     assert.match(list.text, /Hospital|Clinic/);
     assert.match(list.text, /activeclinic\/ac-app\.css/);
-    // Patients nav is Stitch P02; still forbid clinical/finance fabrication on facilities screens.
+    // Patients + Appointments nav are Stitch P02/P03; still forbid clinical/finance fabrication.
     assert.doesNotMatch(
       list.text,
-      /appointment|revenue|ward|pharmacy stock|patient census|patients today/i
+      /revenue|ward|pharmacy stock|patient census|patients today|appointments today/i
     );
     assert.doesNotMatch(list.text, /BlessBoard|church\.css/i);
     assert.match(list.text, /<h1[\s>]/i);

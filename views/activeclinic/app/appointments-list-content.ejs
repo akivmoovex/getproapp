@@ -1,0 +1,137 @@
+<%
+  var list = (pageData && pageData.list) || {};
+  var appointments = list.appointments || [];
+  var filters = list.filters || {};
+  var filterOptions = list.filterOptions || {};
+  var actions = list.actions || {};
+  var emptyMode = list.emptyMode;
+  var stitch = list.stitch || {};
+%>
+<section class="ac-appointments" data-ac-page-section="appointment-list" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>" data-ac-stitch-shared="<%= stitch.shared || '' %>">
+  <form class="ac-panel ac-filter-bar" method="get" action="/app/appointments" data-ac-appointment-filters="1">
+    <div class="ac-filter-bar__grid ac-filter-bar__grid--appointments">
+      <div>
+        <label class="ac-label" for="appt_date">From date</label>
+        <input class="ac-input" id="appt_date" name="date" type="date" value="<%= filters.date || '' %>"/>
+      </div>
+      <div>
+        <label class="ac-label" for="appt_date_to">To date</label>
+        <input class="ac-input" id="appt_date_to" name="date_to" type="date" value="<%= filters.dateTo || '' %>"/>
+      </div>
+      <div>
+        <label class="ac-label" for="appt_facility">Facility</label>
+        <select class="ac-select" id="appt_facility" name="facility">
+          <option value="">All authorized</option>
+          <% (filterOptions.facilities || []).forEach(function (f) { %>
+          <option value="<%= f.value %>" <%= filters.facilityId === f.value ? 'selected' : '' %>><%= f.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="appt_status">Status</label>
+        <select class="ac-select" id="appt_status" name="status">
+          <option value="">All</option>
+          <% (filterOptions.statuses || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="appt_staff">Staff</label>
+        <select class="ac-select" id="appt_staff" name="staff">
+          <option value="">Any</option>
+          <% (filterOptions.staff || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.assignedStaffId === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-filter-bar__checks">
+        <button type="submit" class="ac-btn">Filter</button>
+        <a class="ac-btn ac-btn--ghost" href="<%= actions.calendarHref || '/app/appointments/calendar' %>">Calendar</a>
+        <% if (filters.active) { %>
+        <a class="ac-btn ac-btn--ghost" href="/app/appointments">Clear</a>
+        <% } %>
+      </div>
+    </div>
+  </form>
+
+  <p class="ac-muted" data-ac-unavailable="reception-queue">Reception queue, walk-in encounters, and call-board actions are not available yet (no queue schema).</p>
+
+  <% if (list.resultCount != null && !emptyMode) { %>
+  <p class="ac-muted" data-ac-result-count="<%= list.resultCount %>"><%= list.resultCount %> appointment<%= list.resultCount === 1 ? '' : 's' %></p>
+  <% } %>
+
+  <% if (emptyMode === 'none') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'appointments-none',
+      title: 'No appointments in this range',
+      description: 'Book an appointment or widen the date filters.',
+      primaryAction: actions.canCreate
+        ? { href: actions.createHref || '/app/appointments/new', label: 'Book appointment' }
+        : null
+    }
+  }) %>
+  <% } else if (emptyMode === 'filtered') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'no_results',
+      marker: 'appointments-filtered',
+      title: 'No appointments match these filters',
+      description: 'Try a different facility, status, or date range.',
+      secondaryAction: { href: '/app/appointments', label: 'Clear filters' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-appointments-desktop" data-ac-table="appointments">
+    <table class="ac-table">
+      <caption class="ac-sr-only">Appointments</caption>
+      <thead>
+        <tr>
+          <th scope="col">When</th>
+          <th scope="col">Patient</th>
+          <th scope="col">Service</th>
+          <th scope="col">Facility</th>
+          <th scope="col">Staff</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% appointments.forEach(function (a) { %>
+        <tr>
+          <td>
+            <a href="/app/appointments/<%= a.id %>"><%= a.when.dateLabel %></a>
+            <div class="ac-muted"><%= a.when.timeLabel %></div>
+          </td>
+          <td>
+            <% if (a.patient) { %>
+            <a href="/app/patients/<%= encodeURIComponent(a.patient.patientNumber) %>"><%= a.patient.displayName %></a>
+            <div class="ac-muted"><%= a.patient.patientNumber %></div>
+            <% } else { %>—<% } %>
+          </td>
+          <td><%= (a.service && a.service.displayName) || '—' %></td>
+          <td><%= (a.facility && a.facility.displayName) || '—' %></td>
+          <td><%= (a.assignedStaff && a.assignedStaff.displayName) || '—' %></td>
+          <td><span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel %></span></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="ac-appointments-mobile ac-card-list" data-ac-card-list="appointments">
+    <% appointments.forEach(function (a) { %>
+    <article class="ac-card">
+      <h3 class="ac-card__title"><a href="/app/appointments/<%= a.id %>"><%= (a.patient && a.patient.displayName) || 'Appointment' %></a></h3>
+      <dl class="ac-dl ac-dl--compact">
+        <div><dt>When</dt><dd><%= a.when.dateLabel %> · <%= a.when.timeLabel %></dd></div>
+        <div><dt>Service</dt><dd><%= (a.service && a.service.displayName) || '—' %></dd></div>
+        <div><dt>Facility</dt><dd><%= (a.facility && a.facility.displayName) || '—' %></dd></div>
+        <div><dt>Status</dt><dd><span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel %></span></dd></div>
+      </dl>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+  <p class="ac-sr-only">This view does not include clinical diagnoses or clinical notes.</p>
+</section>
