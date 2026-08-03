@@ -9,7 +9,10 @@
 | GAP-P02-WIZARD | 2 | Multi-step register screens vs single form | Medium | Stitch shows Identity/Contact/Emergency/Review steps; app may consolidate with honest sections |
 | GAP-P02-PRINT | 2 | Print Patient Card Preview | Medium | PRODUCT_DECISION — card format, ID barcode, print pipeline |
 | GAP-P02-MEDHIST | 2 | Medical fields on registration | High | Do not store unsupported clinical history |
-| GAP-P03-SCHEMA | 3 | Appointments/queues schema | Blocker | Entire phase |
+| GAP-P03-SCHEMA | 3 | Appointments booking schema | Resolved (partial) | Booking UI shipped; queue/walk-in still blocked |
+| GAP-P03-QUEUE | 3 | Reception queue / call board / walk-in encounter | Blocker | No complete queue product surface committed |
+| GAP-P04-SCHEMA | 4 | Clinical notes/orders schema | Blocker | Entire phase |
+
 | GAP-P04-SCHEMA | 4 | Clinical notes/orders schema | Blocker | Entire phase |
 | GAP-P05-SCHEMA | 5 | Pharmacy/stock schema | Blocker | Entire phase |
 | GAP-P06-SCHEMA | 6 | Lab/imaging schema | Blocker | Entire phase |

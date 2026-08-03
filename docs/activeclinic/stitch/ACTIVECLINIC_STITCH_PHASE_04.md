@@ -39,3 +39,12 @@ Safe overnight action: do not invent clinical schemas or fake operational data. 
 ## Checkpoint
 
 See `ACTIVECLINIC_STITCH_IMPLEMENTATION_LEDGER.md`.
+
+
+## Overnight checkpoint (2026-08-04)
+
+**Verdict:** SCHEMA_BLOCKED — Triage / Consultation
+
+No triage/vitals/consultation/order tables or services under activeclinic migrations.
+
+Safe action taken: inventory + gap recording only. No mock clinical/financial UI, no fabricated KPIs, no dead routes advertised in navigation.

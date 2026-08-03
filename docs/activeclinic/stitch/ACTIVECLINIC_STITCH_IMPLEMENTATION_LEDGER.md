@@ -29,11 +29,11 @@ Unprefixed foundation duplicates (6) + platform states (4) recorded in master in
 | Inventory | `1fcd61a6` | `392abdec` | 173+10 | — | — | — | n/a | P01 verify |
 | 1 | `1fcd61a6` | `392abdec` | 7 | 0 | 7 | 0 | P01 suite pass | P02 patients |
 | 2 | `392abdec` | `9ffb3675` | 18 | 0 | 17 | 1 print card | patient suites pass | P03 appointments |
-| 3 | | | 20 | 0 | 0 | 20 | n/a | schema required |
-| 4 | | | 12 | 0 | 0 | 12 | n/a | schema required |
-| 5 | | | 29 | 0 | 0 | 29 | n/a | schema required |
-| 6 | | | 14 | 0 | 0 | 14 | n/a | schema required |
-| 7 | | | 73 | 0 | 0 | 73 | n/a | schema required |
+| 3 | `9ffb3675` | `f9587fb1` | 20 | 0 | ~12 booking subset | ~8 queue/walk-in | appointment suites pass | P04 blocked |
+| 4 | `f9587fb1` | *(doc)* | 12 | 0 | 0 | 12 | n/a | schema + clinical safety |
+| 5 | `f9587fb1` | *(doc)* | 29 | 0 | 0 | 29 | n/a | schema required |
+| 6 | `f9587fb1` | *(doc)* | 14 | 0 | 0 | 14 | n/a | schema required |
+| 7 | `f9587fb1` | *(doc)* | 73 | 0 | 0 | 73 | n/a | schema required |
 
 ### Phase 1 detail
 
@@ -57,3 +57,8 @@ Unprefixed foundation duplicates (6) + platform states (4) recorded in master in
 - Appointment schema + services + Stitch list/calendar/book/detail/check-in/cancel/reschedule/no-show UI.
 - Reception queue / walk-in encounter / call-board: honesty unavailable (may land in later migrations; not required for P03 booking subset).
 - Remaining P03 screens tied to queue/transfer stay SCHEMA_BLOCKED or PRODUCT_DECISION until reception module is complete.
+
+
+### Phase 4–7 blockers
+
+No ActiveClinic schema/services for triage/consultation/orders (P04), pharmacy/stock (P05), lab/imaging (P06), or billing/cashier (P07). Overnight run records SCHEMA_BLOCKED and does not invent clinical or financial workflows. Preserved untracked reception WIP (`014_reception_queue.sql`) is out of Phase 4–7 clinical scope and not committed here.
