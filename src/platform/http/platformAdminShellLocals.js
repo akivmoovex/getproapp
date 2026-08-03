@@ -19,6 +19,26 @@ const registrationStatus = require("../../blessboard/services/registrationStatus
 const registrationQueue = require("../../blessboard/services/registrationQueuePresentation");
 
 /**
+ * @param {readonly object[]} items
+ * @param {boolean} testingMaintenance
+ */
+function filterNavTree(items, testingMaintenance) {
+  const out = [];
+  for (const item of items || []) {
+    if (!item || item.nav === false || item.enabled === false) continue;
+    if (item.testingOnly && !testingMaintenance) continue;
+    if (Array.isArray(item.children) && item.children.length) {
+      const children = filterNavTree(item.children, testingMaintenance);
+      if (!children.length) continue;
+      out.push({ ...item, children });
+      continue;
+    }
+    out.push(item);
+  }
+  return out;
+}
+
+/**
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {{
@@ -38,12 +58,17 @@ function buildPlatformAdminShellLocals(req, res, opts) {
 
   const ctx = req.platformAdminContext || {};
   const testingMaintenance = isTestingDataMaintenanceAllowed(env);
-  const navItems = PLATFORM_ADMIN_NAV.filter(
-    (item) => item.nav && item.enabled && (testingMaintenance || !item.testingOnly)
-  );
-  const mobileTabs = PLATFORM_ADMIN_MOBILE_TABS.map((key) =>
-    navItems.find((item) => item.key === key)
-  ).filter(Boolean);
+  const navItems = filterNavTree(PLATFORM_ADMIN_NAV, testingMaintenance);
+  const mobileTabs = PLATFORM_ADMIN_MOBILE_TABS.map((key) => {
+    for (const item of navItems) {
+      if (item.key === key) return item;
+      if (Array.isArray(item.children)) {
+        const child = item.children.find((c) => c.key === key);
+        if (child) return child;
+      }
+    }
+    return null;
+  }).filter(Boolean);
 
   const deployment = getPlatformDeploymentCode(env);
   const deploymentCode =
@@ -52,20 +77,26 @@ function buildPlatformAdminShellLocals(req, res, opts) {
 
   const defaultTitles = {
     home: "Platform admin",
-    organizations: "Organizations",
+    organizations: "Organisations",
     "registration-applications": "Church Registrations",
     plans: "Plans",
     subscriptions: "Subscriptions",
-    domains: "Domains",
+    domains: "Domains and links",
+    roles: "Roles and access",
+    "access-health": "Access health",
     deployments: "Deployments",
+    system: "System",
     settings: "Settings",
     maintenance: "Maintenance",
     account: "Account",
   };
 
+  const systemChildActive = ["deployments", "maintenance"].includes(activeNav);
+
   return {
     pageTitle: opts.pageTitle || defaultTitles[activeNav] || "Platform admin",
     activeNav,
+    systemNavOpen: systemChildActive || activeNav === "system",
     shellKind: "platform-admin",
     csrfToken,
     csrfField: CSRF_FIELD,

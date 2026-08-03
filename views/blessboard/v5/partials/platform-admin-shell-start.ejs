@@ -6,20 +6,28 @@
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=57" />
+  <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=59" />
 </head>
 <%
   var paNav = (typeof navItems !== 'undefined' && navItems && navItems.length)
     ? navItems
     : [
         { key: 'home', label: 'Dashboard', href: '/admin', icon: 'dashboard' },
-        { key: 'organizations', label: 'Organizations', href: '/admin/organizations', icon: 'corporate_fare' },
-        { key: 'registration-applications', label: 'Church Registrations', href: '/admin/registration-applications', icon: 'church' },
-        { key: 'plans', label: 'Plans', href: '/admin/plans', icon: 'workspace_premium' },
-        { key: 'subscriptions', label: 'Subscriptions', href: '/admin/subscriptions', icon: 'receipt_long' },
-        { key: 'domains', label: 'Domains', href: '/admin/domains', icon: 'language' },
-        { key: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'dns' },
+        { key: 'organizations', label: 'Organisations', href: '/admin/organizations', icon: 'corporate_fare' },
+        { key: 'users', label: 'Users', href: '/admin/users', icon: 'group' },
+        { key: 'members', label: 'Members', href: '/admin/members', icon: 'badge' },
+        { key: 'domains', label: 'Domains and links', href: '/admin/domains', icon: 'language' },
+        { key: 'roles', label: 'Roles and access', href: '/admin/roles', icon: 'admin_panel_settings' },
         { key: 'settings', label: 'Settings', href: '/admin/settings', icon: 'settings' },
+        {
+          key: 'system',
+          label: 'System',
+          href: '/admin/system/deployments',
+          icon: 'monitor_heart',
+          children: [
+            { key: 'deployments', label: 'Deployments', href: '/admin/system/deployments', icon: 'dns' }
+          ]
+        },
         { key: 'account', label: 'Account', href: '/admin/account', icon: 'person' },
       ];
   var paRole = typeof roleLabel !== 'undefined' && roleLabel ? roleLabel : 'Platform admin';
@@ -27,6 +35,7 @@
   var paDeploy = typeof deploymentCode !== 'undefined' && deploymentCode ? deploymentCode : '';
   var paCsrf = typeof csrfToken !== 'undefined' ? csrfToken : '';
   var paPageTitle = typeof pageTitle !== 'undefined' && pageTitle ? pageTitle : 'Platform Admin';
+  var paSystemOpen = typeof systemNavOpen !== 'undefined' ? systemNavOpen : false;
 %>
 <body
   class="bb-pa-body"
@@ -67,6 +76,29 @@
 
       <nav class="bb-pa-sidebar__nav" aria-label="Platform admin desktop" data-bb-nav="desktop">
         <% paNav.forEach(function (item) { %>
+        <% if (item.children && item.children.length) { %>
+        <div class="bb-pa-nav-group<%= (paSystemOpen || activeNav === item.key) ? ' is-open' : '' %>" data-bb-pa-nav-group="<%= item.key %>">
+          <a
+            href="<%= item.href %>"
+            class="bb-pa-nav-link bb-pa-nav-link--parent<%= (paSystemOpen || activeNav === item.key) ? ' is-active' : '' %>"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+            <span><%= item.label %></span>
+          </a>
+          <div class="bb-pa-nav-group__children">
+            <% item.children.forEach(function (child) { %>
+            <a
+              href="<%= child.href %>"
+              class="bb-pa-nav-link bb-pa-nav-link--child<%= activeNav === child.key ? ' is-active' : '' %>"
+              <% if (activeNav === child.key) { %>aria-current="page"<% } %>
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"><%= child.icon %></span>
+              <span><%= child.label %></span>
+            </a>
+            <% }) %>
+          </div>
+        </div>
+        <% } else { %>
         <a
           href="<%= item.href %>"
           class="bb-pa-nav-link<%= activeNav === item.key ? ' is-active' : '' %>"
@@ -75,6 +107,7 @@
           <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
           <span><%= item.label %></span>
         </a>
+        <% } %>
         <% }) %>
       </nav>
 
@@ -174,6 +207,31 @@
           <div class="bb-pa-drawer__links" data-bb-nav="mobile-links">
             <ul class="bb-pa-drawer__list">
               <% paNav.forEach(function (item) { %>
+              <% if (item.children && item.children.length) { %>
+              <li class="bb-pa-drawer__item bb-pa-drawer__item--group">
+                <a
+                  href="<%= item.href %>"
+                  class="bb-pa-nav-link<%= (paSystemOpen || activeNav === item.key) ? ' is-active' : '' %>"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+                  <span><%= item.label %></span>
+                </a>
+                <ul class="bb-pa-drawer__sublist">
+                  <% item.children.forEach(function (child) { %>
+                  <li class="bb-pa-drawer__item">
+                    <a
+                      href="<%= child.href %>"
+                      class="bb-pa-nav-link bb-pa-nav-link--child<%= activeNav === child.key ? ' is-active' : '' %>"
+                      <% if (activeNav === child.key) { %>aria-current="page"<% } %>
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true"><%= child.icon %></span>
+                      <span><%= child.label %></span>
+                    </a>
+                  </li>
+                  <% }) %>
+                </ul>
+              </li>
+              <% } else { %>
               <li class="bb-pa-drawer__item">
                 <a
                   href="<%= item.href %>"
@@ -184,6 +242,7 @@
                   <span><%= item.label %></span>
                 </a>
               </li>
+              <% } %>
               <% }) %>
             </ul>
           </div>

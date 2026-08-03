@@ -105,6 +105,11 @@ const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([
   "platform.users.suspend",
   "platform.users.restore",
   "platform.users.unlock",
+  // Prompt 13B–13D: information architecture (view-only)
+  "platform.deployments.view",
+  "platform.domains.view",
+  "platform.access_health.view",
+  "platform.audit.view",
 ]);
 
 /**

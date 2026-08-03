@@ -17,6 +17,9 @@ const {
   findUserStatusById,
 } = require("../../blessboard/repositories/blessBoardAuthorizationRepository");
 const {
+  authorize: authorizeBlessBoardPermission,
+} = require("../../blessboard/services/blessBoardRbacAuthorizationService");
+const {
   listPlatformOrganizations,
   getPlatformAdminDashboardStats,
   STATUS: LIST_STATUS,
@@ -142,6 +145,23 @@ const {
   STATUS: DEPLOY_DETAIL_STATUS,
 } = require("../services/getPlatformDeploymentDetail");
 const {
+  getPlatformAdminSettingsView,
+  STATUS: SETTINGS_STATUS,
+} = require("../services/getPlatformAdminSettingsView");
+const {
+  listPlatformRoleCatalogue,
+  getPlatformRoleDetail,
+  STATUS: ROLES_STATUS,
+} = require("../services/platformAdminRolesService");
+const {
+  getPlatformAccessHealth,
+  STATUS: ACCESS_HEALTH_STATUS,
+} = require("../services/platformAdminAccessHealthService");
+const {
+  listPlatformPublicLinks,
+  STATUS: PUBLIC_LINKS_STATUS,
+} = require("../services/platformAdminPublicLinksService");
+const {
   listRegistrationApplicationsAdmin,
   getRegistrationApplicationDetail,
   updateRegistrationFollowUpStatus,
@@ -245,10 +265,6 @@ const {
   STATUS: MAINT_STATUS,
 } = require("../services/testingDataResetService");
 const { parseSessionSecret } = require("../config/v5EnvValidation");
-const {
-  ORGANIZATION_RESERVED_SLUGS,
-  BRANCH_HOST_RESERVED_SLUGS,
-} = require("../../church/platformProvisioningValidation");
 
 /**
  * @param {string} relativePath
@@ -987,6 +1003,59 @@ function createPlatformAdminRouter(deps) {
       ? deps.getRegistrationApplicationDetail
       : getRegistrationApplicationDetail;
   const router = express.Router();
+
+  function requirePlatformPermission(permissionKey) {
+    return async function platformPermissionGate(req, res, next) {
+      try {
+        const pool = getPool();
+        const actorUserId =
+          req.platformAdminContext && req.platformAdminContext.userId
+            ? req.platformAdminContext.userId
+            : null;
+        if (!actorUserId || !pool) {
+          return sendControlled(req, res, 403, "You do not have access to this resource.");
+        }
+        const decision = await authorizeBlessBoardPermission(pool, {
+          actor: { userId: actorUserId },
+          permission: permissionKey,
+          tenantContext: {
+            organizationId: null,
+            churchId: null,
+            primaryBranchId: null,
+          },
+          resourceContext: {
+            organizationId: null,
+            churchId: null,
+            branchId: null,
+          },
+        });
+        if (decision && decision.allowed === true) return next();
+        const roles = await pool.query(
+          `SELECT 1
+             FROM blessboard.user_roles
+            WHERE user_id = $1
+              AND role_key = 'platform_admin'
+              AND status = 'active'
+            LIMIT 1`,
+          [actorUserId]
+        );
+        if (roles.rows[0]) return next();
+        return sendControlled(req, res, 403, "You do not have access to this resource.");
+      } catch {
+        return sendControlled(req, res, 503, "Authorization is temporarily unavailable.");
+      }
+    };
+  }
+
+  function getUserIdForAudit(req) {
+    return (
+      (req.platformAdminContext && req.platformAdminContext.userId) ||
+      (req.v5Session &&
+        req.v5Session.session &&
+        req.v5Session.session.userId) ||
+      null
+    );
+  }
 
   function requireApex(req, res, next) {
     if (!isApexHost(req)) {
@@ -2630,47 +2699,71 @@ function createPlatformAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.get("/admin/domains", requireApex, requirePlatformAdmin, async (req, res) => {
-    const list = await listPlatformDomains(getPool(), {
-      page: req.query.page,
-      limit: req.query.limit,
-      q: req.query.q,
-      org: req.query.org,
-      status: req.query.status,
-      type: req.query.type,
-      verified: req.query.verified,
-    });
-    if (!list.ok && list.status === DOMAINS_STATUS.LOOKUP_ERROR) {
-      return sendControlled(req, res, 503, "Domain directory is temporarily unavailable.");
+  router.get(
+    "/admin/domains",
+    requireApex,
+    requirePlatformAdmin,
+    requirePlatformPermission("platform.domains.view"),
+    async (req, res) => {
+      setAdminNoStore(res);
+      const linksResult = await listPlatformPublicLinks(getPool(), {
+        actorUserId: getUserIdForAudit(req),
+        filters: req.query || {},
+        env,
+      });
+      if (!linksResult.ok || linksResult.status === PUBLIC_LINKS_STATUS.LOOKUP_ERROR) {
+        return sendControlled(req, res, 503, "Public links temporarily unavailable.");
+      }
+      if (linksResult.status === PUBLIC_LINKS_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You do not have permission to view domains and links.");
+      }
+      // Keep hostname directory available for operators who filter to host records.
+      const list = await listPlatformDomains(getPool(), {
+        page: req.query.page,
+        limit: req.query.limit,
+        q: req.query.q,
+        org: req.query.org,
+        status: req.query.status,
+        type: req.query.type,
+        verified: req.query.verified,
+      });
+      const html = renderPlatformAdminView(
+        "platform-admin/domains.ejs",
+        shellLocals(req, res, "domains", {
+          pageTitle: "Domains and links",
+          links: linksResult.links || [],
+          linksTotal:
+            linksResult.total != null
+              ? linksResult.total
+              : (linksResult.links || []).length,
+          domains: (list && list.ok && list.domains) || [],
+          page: (list && list.page) || 1,
+          limit: (list && list.limit) || DOMAIN_DEFAULT_LIMIT,
+          total: (list && list.ok && list.total != null) ? list.total : 0,
+          totalPages: (list && list.totalPages) || 1,
+          hostnamePrefix: (list && list.hostnamePrefix) || "",
+          orgKeyPrefix: (list && list.orgKeyPrefix) || "",
+          statusFilter: (list && list.statusFilter) || "",
+          typeFilter: (list && list.typeFilter) || "",
+          verifiedFilter: (list && list.verifiedFilter) || "",
+          defaultLimit: DOMAIN_DEFAULT_LIMIT,
+          maxLimit: DOMAIN_MAX_LIMIT,
+          allowedLimits: DOMAIN_ALLOWED_LIMITS,
+          allowedStatuses: DOMAIN_ALLOWED_STATUSES,
+          allowedDomainTypes: ALLOWED_DOMAIN_TYPES,
+          rangeFrom:
+            list && list.ok && list.total
+              ? (list.page - 1) * list.limit + 1
+              : 0,
+          rangeTo:
+            list && list.ok
+              ? Math.min(list.page * list.limit, list.total)
+              : 0,
+        })
+      );
+      return res.status(200).type("html").send(html);
     }
-    if (!list.ok && list.status === DOMAINS_STATUS.INVALID_INPUT) {
-      return sendControlled(req, res, 400, "Invalid domain directory filters.");
-    }
-    const html = renderPlatformAdminView(
-      "platform-admin/domains.ejs",
-      shellLocals(req, res, "domains", {
-        pageTitle: "Domains",
-        domains: list.domains || [],
-        page: list.page,
-        limit: list.limit,
-        total: list.total,
-        totalPages: list.totalPages,
-        hostnamePrefix: list.hostnamePrefix || "",
-        orgKeyPrefix: list.orgKeyPrefix || "",
-        statusFilter: list.statusFilter || "",
-        typeFilter: list.typeFilter || "",
-        verifiedFilter: list.verifiedFilter || "",
-        defaultLimit: DOMAIN_DEFAULT_LIMIT,
-        maxLimit: DOMAIN_MAX_LIMIT,
-        allowedLimits: DOMAIN_ALLOWED_LIMITS,
-        allowedStatuses: DOMAIN_ALLOWED_STATUSES,
-        allowedDomainTypes: ALLOWED_DOMAIN_TYPES,
-        rangeFrom: list.total === 0 ? 0 : (list.page - 1) * list.limit + 1,
-        rangeTo: Math.min(list.page * list.limit, list.total),
-      })
-    );
-    return res.status(200).type("html").send(html);
-  });
+  );
 
   router.get("/admin/domains/:hostname", requireApex, requirePlatformAdmin, async (req, res) => {
     const detail = await getPlatformDomainDetail(getPool(), req.params.hostname, env);
@@ -2763,73 +2856,177 @@ function createPlatformAdminRouter(deps) {
     }
   );
 
-  router.get("/admin/deployments", requireApex, requirePlatformAdmin, async (req, res) => {
-    const list = await listPlatformDeployments(getPool(), env);
-    if (!list.ok || list.status === DEPLOY_STATUS.LOOKUP_ERROR) {
-      return sendControlled(req, res, 503, "Deployment registry is temporarily unavailable.");
-    }
-    const html = renderPlatformAdminView(
-      "platform-admin/deployments.ejs",
-      shellLocals(req, res, "deployments", {
-        pageTitle: "Deployments",
-        deployments: list.deployments || [],
-        currentDeploymentCode: list.currentDeploymentCode || "",
-      })
-    );
-    return res.status(200).type("html").send(html);
+  router.get("/admin/deployments", requireApex, requirePlatformAdmin, (req, res) =>
+    res.redirect(302, "/admin/system/deployments")
+  );
+  router.get("/admin/deployments/:deploymentCode", requireApex, requirePlatformAdmin, (req, res) => {
+    const code = encodeURIComponent(String(req.params.deploymentCode || "").trim());
+    return res.redirect(302, `/admin/system/deployments/${code}`);
   });
 
-  router.get("/admin/deployments/:deploymentCode", requireApex, requirePlatformAdmin, async (req, res) => {
-    const detail = await getPlatformDeploymentDetail(getPool(), req.params.deploymentCode, env);
-    if (!detail.ok) {
-      if (detail.status === DEPLOY_DETAIL_STATUS.LOOKUP_ERROR) {
-        return sendControlled(req, res, 503, "Deployment detail is temporarily unavailable.");
+  router.get(
+    "/admin/system/deployments",
+    requireApex,
+    requirePlatformAdmin,
+    requirePlatformPermission("platform.deployments.view"),
+    async (req, res) => {
+      setAdminNoStore(res);
+      const list = await listPlatformDeployments(getPool(), env);
+      if (!list.ok || list.status === DEPLOY_STATUS.LOOKUP_ERROR) {
+        return sendControlled(req, res, 503, "Deployment registry is temporarily unavailable.");
       }
-      if (detail.status === DEPLOY_DETAIL_STATUS.INVALID_INPUT) {
-        return sendControlled(req, res, 400, "Invalid deployment code.");
-      }
-      return sendControlled(req, res, 404, "This deployment could not be found.");
+      const html = renderPlatformAdminView(
+        "platform-admin/deployments.ejs",
+        shellLocals(req, res, "deployments", {
+          pageTitle: "Deployments",
+          deployments: list.deployments || [],
+          currentDeploymentCode: list.currentDeploymentCode || "",
+          technicalPage: true,
+        })
+      );
+      return res.status(200).type("html").send(html);
     }
-    const html = renderPlatformAdminView(
-      "platform-admin/deployment-detail.ejs",
-      shellLocals(req, res, "deployments", {
-        pageTitle: detail.deployment.deploymentCode,
-        deployment: detail.deployment,
-        domains: detail.domains || [],
-        products: detail.products || [],
-        diagnostics: detail.diagnostics || [],
-        currentDeploymentCode: detail.currentDeploymentCode || "",
-        isCurrentProcess: Boolean(detail.isCurrentProcess),
-      })
-    );
-    return res.status(200).type("html").send(html);
-  });
+  );
+
+  router.get(
+    "/admin/system/deployments/:deploymentCode",
+    requireApex,
+    requirePlatformAdmin,
+    requirePlatformPermission("platform.deployments.view"),
+    async (req, res) => {
+      setAdminNoStore(res);
+      const detail = await getPlatformDeploymentDetail(getPool(), req.params.deploymentCode, env);
+      if (!detail.ok) {
+        if (detail.status === DEPLOY_DETAIL_STATUS.LOOKUP_ERROR) {
+          return sendControlled(req, res, 503, "Deployment detail is temporarily unavailable.");
+        }
+        if (detail.status === DEPLOY_DETAIL_STATUS.INVALID_INPUT) {
+          return sendControlled(req, res, 400, "Invalid deployment code.");
+        }
+        return sendControlled(req, res, 404, "This deployment could not be found.");
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/deployment-detail.ejs",
+        shellLocals(req, res, "deployments", {
+          pageTitle: detail.deployment.deploymentCode,
+          deployment: detail.deployment,
+          domains: detail.domains || [],
+          products: detail.products || [],
+          diagnostics: detail.diagnostics || [],
+          currentDeploymentCode: detail.currentDeploymentCode || "",
+          isCurrentProcess: Boolean(detail.isCurrentProcess),
+          technicalPage: true,
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
 
   router.get("/admin/settings", requireApex, requirePlatformAdmin, async (req, res) => {
-    const list = await listPlatformDeployments(getPool(), env);
-    if (!list.ok || list.status === DEPLOY_STATUS.LOOKUP_ERROR) {
+    setAdminNoStore(res);
+    const view = await getPlatformAdminSettingsView(getPool(), env);
+    if (!view.ok || view.status === SETTINGS_STATUS.LOOKUP_ERROR || !view.settings) {
       return sendControlled(req, res, 503, "Platform settings are temporarily unavailable.");
     }
-    const current =
-      (list.deployments || []).find((d) => d.deploymentCode === list.currentDeploymentCode) ||
-      null;
-    const orgReserved = Array.from(ORGANIZATION_RESERVED_SLUGS).sort();
-    const hostReserved = Array.from(BRANCH_HOST_RESERVED_SLUGS).sort();
     const html = renderPlatformAdminView(
       "platform-admin/settings.ejs",
       shellLocals(req, res, "settings", {
         pageTitle: "Settings",
-        currentDeployment: current,
-        currentDeploymentCode: list.currentDeploymentCode || "",
-        hostnamePattern: current && current.canonicalDomain
-          ? `{organization}.${current.canonicalDomain}`
-          : "{organization}.blessboard.org",
-        organizationReserved: orgReserved,
-        hostReserved,
+        settings: view.settings,
       })
     );
     return res.status(200).type("html").send(html);
   });
+
+  router.get(
+    "/admin/roles",
+    requireApex,
+    requirePlatformAdmin,
+    requirePlatformPermission("platform.roles.view"),
+    async (req, res) => {
+      setAdminNoStore(res);
+      const catalogue = await listPlatformRoleCatalogue(getPool(), {
+        actorUserId: getUserIdForAudit(req),
+      });
+      if (!catalogue.ok || catalogue.status === ROLES_STATUS.LOOKUP_ERROR) {
+        return sendControlled(req, res, 503, "Roles catalogue temporarily unavailable.");
+      }
+      if (catalogue.status === ROLES_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You do not have permission to view roles.");
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/roles.ejs",
+        shellLocals(req, res, "roles", {
+          pageTitle: "Roles",
+          roles: catalogue.roles || [],
+          grouped: catalogue.grouped || {},
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/roles/:roleKey",
+    requireApex,
+    requirePlatformAdmin,
+    requirePlatformPermission("platform.roles.view"),
+    async (req, res) => {
+      setAdminNoStore(res);
+      const roleKey = String(req.params.roleKey || "").trim();
+      if (!roleKey) {
+        return sendControlled(req, res, 400, "Role key is required.");
+      }
+      const detail = await getPlatformRoleDetail(getPool(), {
+        actorUserId: getUserIdForAudit(req),
+        roleKey,
+      });
+      if (!detail.ok) {
+        if (detail.status === ROLES_STATUS.NOT_FOUND) {
+          return sendControlled(req, res, 404, "Role not found.");
+        }
+        if (detail.status === ROLES_STATUS.FORBIDDEN) {
+          return sendControlled(req, res, 403, "You do not have permission to view this role.");
+        }
+        return sendControlled(req, res, 503, "Role detail temporarily unavailable.");
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/role-detail.ejs",
+        shellLocals(req, res, "roles", {
+          pageTitle: (detail.role && detail.role.displayName) || roleKey,
+          role: detail.role || {},
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
+
+  router.get(
+    "/admin/access-health",
+    requireApex,
+    requirePlatformAdmin,
+    requirePlatformPermission("platform.access_health.view"),
+    async (req, res) => {
+      setAdminNoStore(res);
+      const health = await getPlatformAccessHealth(getPool(), {
+        actorUserId: getUserIdForAudit(req),
+      });
+      if (!health.ok || health.status === ACCESS_HEALTH_STATUS.LOOKUP_ERROR) {
+        return sendControlled(req, res, 503, "Access health checks temporarily unavailable.");
+      }
+      if (health.status === ACCESS_HEALTH_STATUS.FORBIDDEN) {
+        return sendControlled(req, res, 403, "You do not have permission to view access health.");
+      }
+      const html = renderPlatformAdminView(
+        "platform-admin/access-health.ejs",
+        shellLocals(req, res, "access-health", {
+          pageTitle: "Access health",
+          checks: health.checks || [],
+        })
+      );
+      return res.status(200).type("html").send(html);
+    }
+  );
 
   router.get(
     "/admin/organizations/:organizationKey",
@@ -4251,9 +4448,16 @@ function createPlatformAdminRouter(deps) {
     requireApex,
     requirePlatformAdmin,
     (req, res) =>
-      runRecoveryAction(req, res, sendPasswordReset, (r) =>
-        r.sent ? "password_reset_sent" : "password_reset_recorded"
-      )
+      runRecoveryAction(req, res, sendPasswordReset, (r) => {
+        if (r.sent) return "password_reset_sent";
+        if (r.deliveryStatus === "sms_unavailable_link_created") {
+          return "password_reset_phone_recorded";
+        }
+        if (r.deliveryStatus === "email_unavailable") {
+          return "password_reset_recorded";
+        }
+        return "password_reset_recorded";
+      })
   );
   router.post(
     "/admin/users/:userId/resend-invitation",
@@ -4292,7 +4496,10 @@ function createPlatformAdminRouter(deps) {
     "/admin/users/:userId/unlock",
     requireApex,
     requirePlatformAdmin,
-    (req, res) => runRecoveryAction(req, res, unlockAccount, () => "user_unlocked")
+    (req, res) =>
+      runRecoveryAction(req, res, unlockAccount, (r) =>
+        r.alreadyUnlocked ? "user_already_unlocked" : "user_unlocked"
+      )
   );
 
   router.get("/admin/members", requireApex, requirePlatformAdmin, async (req, res) => {
