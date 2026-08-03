@@ -200,3 +200,7 @@ Each later prompt must list: exact Stitch names, routes, services, permissions, 
 - **PARTIAL** — state taxonomy, shared inline/full-page states, error middleware, empty/no-results across foundation modules, context-unavailable for ineligible sessions; Shared Offline **deferred**; **VISUAL_BLOCKED** vs Stitch state pack.
 - Detail: `docs/activeclinic/stitch/AC_V6_S08_FOUNDATION_STATES_QUALITY_GATE.md`
 - Next: **AC-V6-C01 — Patient Identity and Registration Backend Foundation** (no patient UI Stitch until backend lands)
+
+### AC-V6-C01 status
+
+**COMPLETE (backend foundation).** Schema, permissions, repositories, services, duplicate detection, search scope, tests, and clinical docs landed. Patient Stitch screens remain NOT_STARTED until **AC-V6-C02**.

@@ -56,6 +56,12 @@ const APPROVED_PRODUCT_TABLES = Object.freeze({
   activeclinic: Object.freeze([
     "facilities",
     "healthcare_organizations",
+    "patient_emergency_contacts",
+    "patient_facility_links",
+    "patient_identifiers",
+    "patient_number_counters",
+    "patient_registrations",
+    "patients",
     "staff_facility_assignments",
     "staff_invitations",
     "staff_members",

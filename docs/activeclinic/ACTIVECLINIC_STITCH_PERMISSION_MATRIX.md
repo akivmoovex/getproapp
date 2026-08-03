@@ -67,7 +67,7 @@ Public auth lifecycle routes require **no** staff permission.
 
 | Module | Minimum permission pattern | Existing? | Proposed change |
 |---|---|---|---|
-| Patients (P02) | `activeclinic.patient.*` | **no** | PERMISSION_GAP — defer until schema |
+| Patients (P02) | `activeclinic.patient.*` | **yes (catalogue)** | AC-V6-C01 backend foundation; UI still PERMISSION_READY / SCHEMA_READY — Stitch parity next (C02) |
 | Appointments / reception (P03) | `activeclinic.appointment.*`, `activeclinic.reception.*` | **no** | PERMISSION_GAP |
 | Clinical (P04) | `activeclinic.encounter.*`, `activeclinic.clinical_note.*`, … | **no** | PERMISSION_GAP + SECURITY_REVIEW |
 | Pharmacy (P05) | `activeclinic.pharmacy.*`, `activeclinic.medication.*` | **no** | PERMISSION_GAP |
@@ -84,7 +84,7 @@ Public auth lifecycle routes require **no** staff permission.
 
 | Proposed key | Depends on screens | Notes |
 |---|---|---|
-| `activeclinic.patient.view/create/update` | P02 family | Blocked on patient schema |
+| `activeclinic.patient.view/create/update` (+ search, archive, identifiers, sensitive contact, duplicate_override, audit_view; merge reserved) | P02 family | **AC-V6-C01 seeded** — Stitch UI still deferred to C02 |
 | `activeclinic.appointment.view/manage` | P03 | Blocked on appointment model |
 | `activeclinic.reception.manage` | Reception queue / check-in | May merge with appointment ops |
 | `activeclinic.clinical.view/edit` | P04 | Confidentiality levels TBD |

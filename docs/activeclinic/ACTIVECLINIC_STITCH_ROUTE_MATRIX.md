@@ -57,7 +57,7 @@ Staff admin JSON actions (invite reissue, reset, suspend, etc.) remain under `/a
 
 | Package | Example Stitch screens | Proposed route prefix | Status |
 |---|---|---|---|
-| P02 Patients | Patient List, Register…, Profile, Print Card | `/app/patients` | **future** — SCHEMA_REQUIRED |
+| P02 Patients | Patient List, Register…, Profile, Print Card | `/app/patients` | **backend-ready (AC-V6-C01)** — Stitch UI deferred to AC-V6-C02 |
 | P03 Appointments / Reception | Calendar, Book, Queue, Check-In… | `/app/appointments`, `/app/reception` | **future** |
 | P04 Clinical | Triage, Nursing Intake, Consultation, Rx/Lab/Rad requests | `/app/clinical`, `/app/triage` | **future** + SECURITY_REVIEW |
 | P05 Pharmacy | Queue, Dispense, Inventory, Batches… | `/app/pharmacy` | **future** |

@@ -37,6 +37,11 @@ const FORBIDDEN_METADATA_KEYS = Object.freeze([
   "iban",
   "bank_account",
   "ssn",
+  "national_id",
+  "passport",
+  "identifier_value",
+  "identifier_value_normalized",
+  "identifier_value_display",
   "donor_name",
   "donor_email",
   "donor_phone",
@@ -80,6 +85,13 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
   "reason_codes",
   "network_shell",
   "network_activation_required",
+  "patient_number",
+  "identifier_type",
+  "facility_key",
+  "match_strength",
+  "registration_method",
+  "override",
+  "search_kind",
 ]);
 
 const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;
