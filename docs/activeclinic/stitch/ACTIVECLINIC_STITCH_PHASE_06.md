@@ -41,3 +41,12 @@ Safe overnight action: do not invent clinical schemas or fake operational data. 
 ## Checkpoint
 
 See `ACTIVECLINIC_STITCH_IMPLEMENTATION_LEDGER.md`.
+
+
+## Overnight checkpoint (2026-08-04)
+
+**Verdict:** SCHEMA_BLOCKED — Laboratory / Imaging
+
+No lab/radiology request, specimen, or result schema.
+
+Safe action taken: inventory + gap recording only. No mock clinical/financial UI, no fabricated KPIs, no dead routes advertised in navigation.
