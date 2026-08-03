@@ -1,0 +1,167 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var role = locals.role || {};
+  var permissions = role.permissions || [];
+  var assignmentCounts = role.assignmentCounts || {};
+  var supportedScopes = role.supportedScopes || [];
+%>
+
+<section
+  class="bb-pa-role-detail"
+  data-bb-pa-role-detail="1"
+  data-bb-pa-role-key="<%= role.roleKey %>"
+  aria-label="Role detail"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin">Dashboard</a>
+    <span aria-hidden="true">/</span>
+    <a class="bb-pa-link" href="/admin/roles">Roles</a>
+    <span aria-hidden="true">/</span>
+    <span><%= role.displayName || role.roleKey %></span>
+  </nav>
+
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-settings__eyebrow"><%= role.displayGroup || role.category %></p>
+      <h1 class="bb-pa-page-head__title"><%= role.displayName || role.roleKey %></h1>
+      <% if (role.description) { %>
+      <p class="bb-pa-lede"><%= role.description %></p>
+      <% } %>
+      <div class="bb-pa-role-detail__meta">
+        <span class="bb-pa-chip bb-pa-chip--<%= role.isActive ? 'ok' : 'inactive' %>">
+          <%= role.isActive ? 'Active' : 'Inactive' %>
+        </span>
+        <span class="bb-pa-chip bb-pa-chip--<%= role.sensitivity === 'Sensitive' ? 'sensitive' : 'standard' %>">
+          <%= role.sensitivity %>
+        </span>
+        <% if (role.legacyCompatibility) { %>
+        <span class="bb-pa-chip bb-pa-chip--legacy">Legacy compatible</span>
+        <% } %>
+      </div>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/roles">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to catalogue
+      </a>
+    </div>
+  </header>
+
+  <p class="bb-pa-settings__notice" role="note" data-bb-pa-role-notice="1">
+    <strong>Read-only:</strong> This is a catalogue view. Role editing, permission mapping, and user assignment are not available on this page.
+  </p>
+
+  <div class="bb-pa-settings-grid" data-bb-pa-role-grid="1">
+    <section class="bb-pa-panel" aria-labelledby="pa-role-assignments-heading">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-role-assignments-heading" class="bb-pa-section-title">Assignments</h2>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
+      </div>
+      <dl class="bb-pa-dl bb-pa-dl--grid">
+        <div>
+          <dt>Active</dt>
+          <dd><%= assignmentCounts.active || 0 %></dd>
+        </div>
+        <div>
+          <dt>Expired</dt>
+          <dd><%= assignmentCounts.expired || 0 %></dd>
+        </div>
+        <div>
+          <dt>Revoked</dt>
+          <dd><%= assignmentCounts.revoked || 0 %></dd>
+        </div>
+      </dl>
+      <p class="bb-pa-hint">
+        <a class="bb-pa-link" href="/admin/users">View users</a>
+        ·
+        <a class="bb-pa-link" href="/admin/access-health">Access health</a>
+      </p>
+    </section>
+
+    <section class="bb-pa-panel" aria-labelledby="pa-role-scopes-heading">
+      <div class="bb-pa-panel__head">
+        <h2 id="pa-role-scopes-heading" class="bb-pa-section-title">Supported scopes</h2>
+        <span class="bb-pa-org-detail__ro">Read-only</span>
+      </div>
+      <% if (!supportedScopes.length) { %>
+      <p class="bb-pa-empty" role="status">No scopes configured.</p>
+      <% } else { %>
+      <ul class="bb-pa-chip-list" data-bb-pa-role-scopes="1">
+        <% supportedScopes.forEach(function (scope) { %>
+        <li><span class="bb-pa-chip"><%= scope %></span></li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </section>
+  </div>
+
+  <% if (role.sodNotes) { %>
+  <section class="bb-pa-panel" aria-labelledby="pa-role-sod-heading" data-bb-pa-role-sod="1">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-role-sod-heading" class="bb-pa-section-title">Segregation of duties</h2>
+      <span class="bb-pa-org-detail__ro">Policy note</span>
+    </div>
+    <p class="bb-pa-hint"><%= role.sodNotes %></p>
+  </section>
+  <% } %>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-role-permissions-heading">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-role-permissions-heading" class="bb-pa-section-title">Permissions</h2>
+      <span class="bb-pa-org-detail__ro"><%= permissions.length %> permission<%= permissions.length !== 1 ? 's' : '' %></span>
+    </div>
+    <% if (!permissions.length) { %>
+    <p class="bb-pa-empty" role="status">No permissions assigned to this role.</p>
+    <% } else { %>
+    <table class="bb-pa-table" data-bb-pa-role-permissions="1">
+      <thead>
+        <tr>
+          <th>Permission</th>
+          <th>Technical key</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% permissions.forEach(function (perm) { %>
+        <tr data-bb-pa-permission-key="<%= perm.permissionKey %>">
+          <td>
+            <strong><%= perm.displayName %></strong>
+            <% if (perm.description) { %>
+            <p class="bb-pa-hint"><%= perm.description %></p>
+            <% } %>
+          </td>
+          <td><code class="bb-pa-key"><%= perm.permissionKey %></code></td>
+          <td>
+            <% if (perm.isActive) { %>
+            <span class="bb-pa-status bb-pa-status--ok">Active</span>
+            <% } else { %>
+            <span class="bb-pa-status bb-pa-status--inactive">Inactive</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" aria-labelledby="pa-role-technical-heading">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-role-technical-heading" class="bb-pa-section-title">Technical</h2>
+      <span class="bb-pa-org-detail__ro">Read-only</span>
+    </div>
+    <dl class="bb-pa-dl bb-pa-dl--grid">
+      <div><dt>Role key</dt><dd><code class="bb-pa-key"><%= role.roleKey %></code></dd></div>
+      <div><dt>Role ID</dt><dd><code class="bb-pa-key"><%= role.roleId %></code></dd></div>
+      <div><dt>Category</dt><dd><%= role.category %></dd></div>
+      <% if (role.createdAt) { %>
+      <div><dt>Created</dt><dd><%= new Date(role.createdAt).toLocaleString('en-GB', { timeZone: 'UTC', timeZoneName: 'short' }) %></dd></div>
+      <% } %>
+      <% if (role.updatedAt) { %>
+      <div><dt>Updated</dt><dd><%= new Date(role.updatedAt).toLocaleString('en-GB', { timeZone: 'UTC', timeZoneName: 'short' }) %></dd></div>
+      <% } %>
+    </dl>
+  </section>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

@@ -1,0 +1,128 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var grouped = (locals.grouped || {});
+  var groups = Object.keys(grouped).sort();
+  var totalRoles = (locals.roles || []).length;
+%>
+
+<section
+  class="bb-pa-roles"
+  data-bb-pa-roles="1"
+  aria-label="Platform roles catalogue"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin">Dashboard</a>
+    <span aria-hidden="true">/</span>
+    <span>Roles and access</span>
+  </nav>
+
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-settings__eyebrow">RBAC catalogue</p>
+      <h1 class="bb-pa-page-head__title">Roles and access</h1>
+      <p class="bb-pa-lede">
+        Read-only role catalogue. <%= totalRoles %> role<%= totalRoles !== 1 ? 's' : '' %> defined.
+        Role editing and permission assignment are not available on this page.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/access-health">
+        <span class="material-symbols-outlined" aria-hidden="true">health_and_safety</span>
+        Access health
+      </a>
+    </div>
+  </header>
+
+  <% if (!groups.length) { %>
+  <p class="bb-pa-empty" role="status">No roles found.</p>
+  <% } else { %>
+    <% groups.forEach(function (groupName) { %>
+      <% var groupRoles = grouped[groupName] || []; %>
+      <% if (groupRoles.length) { %>
+      <section class="bb-pa-panel" aria-labelledby="pa-roles-group-<%= groupName.toLowerCase().replace(/\s+/g, '-') %>">
+        <div class="bb-pa-panel__head">
+          <h2 id="pa-roles-group-<%= groupName.toLowerCase().replace(/\s+/g, '-') %>" class="bb-pa-section-title"><%= groupName %></h2>
+          <span class="bb-pa-org-detail__ro"><%= groupRoles.length %> role<%= groupRoles.length !== 1 ? 's' : '' %></span>
+        </div>
+        <table class="bb-pa-table" data-bb-pa-roles-group="<%= groupName %>">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Category</th>
+              <th>Sensitivity</th>
+              <th>Permissions</th>
+              <th>Assignments</th>
+              <th>Status</th>
+              <th><span class="bb-pa-sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% groupRoles.forEach(function (role) { %>
+            <tr data-bb-pa-role-key="<%= role.roleKey %>">
+              <td>
+                <a class="bb-pa-link" href="/admin/roles/<%= role.roleKey %>">
+                  <strong><%= role.displayName %></strong>
+                </a>
+                <% if (role.description) { %>
+                <p class="bb-pa-hint"><%= role.description %></p>
+                <% } %>
+                <% if (role.legacyCompatibility) { %>
+                <span class="bb-pa-chip bb-pa-chip--legacy">Legacy compatible</span>
+                <% } %>
+              </td>
+              <td><%= role.category %></td>
+              <td><%= role.sensitivity %></td>
+              <td><%= role.permissionCount %></td>
+              <td><%= role.activeAssignmentCount %></td>
+              <td>
+                <% if (role.isActive) { %>
+                <span class="bb-pa-status bb-pa-status--ok">Active</span>
+                <% } else { %>
+                <span class="bb-pa-status bb-pa-status--inactive">Inactive</span>
+                <% } %>
+              </td>
+              <td>
+                <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-btn--sm" href="/admin/roles/<%= role.roleKey %>">View</a>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </section>
+      <% } %>
+    <% }) %>
+  <% } %>
+
+  <section
+    class="bb-pa-panel bb-pa-settings-unavailable"
+    aria-labelledby="pa-roles-unavailable-heading"
+    data-bb-pa-roles-unavailable="1"
+  >
+    <h2 id="pa-roles-unavailable-heading" class="bb-pa-section-title">Not available on this page</h2>
+    <ul class="bb-pa-settings-unavailable__list">
+      <li data-bb-pa-unavailable="role-edit">
+        <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+        <div>
+          <strong>Role editing</strong>
+          <p>Role definition editing is not available on this read-only catalogue page.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="permission-assign">
+        <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+        <div>
+          <strong>Permission assignment</strong>
+          <p>Permission-to-role mapping is managed via database migrations, not this UI.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="user-assign">
+        <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+        <div>
+          <strong>User role assignment</strong>
+          <p>Assign roles to users via <a class="bb-pa-link" href="/admin/users">user directory</a> or organisation team pages.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>

@@ -1,0 +1,120 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var checks = locals.checks || [];
+  var totalIssues = checks.reduce(function (acc, check) { return acc + (check.count || 0); }, 0);
+%>
+
+<section
+  class="bb-pa-access-health"
+  data-bb-pa-access-health="1"
+  aria-label="Access health checks"
+>
+  <nav class="bb-pa-org-detail__crumb" aria-label="Breadcrumb">
+    <a class="bb-pa-link" href="/admin">Dashboard</a>
+    <span aria-hidden="true">/</span>
+    <a class="bb-pa-link" href="/admin/roles">Roles and access</a>
+    <span aria-hidden="true">/</span>
+    <span>Access health</span>
+  </nav>
+
+  <header class="bb-pa-page-head bb-pa-page-head--split">
+    <div>
+      <p class="bb-pa-settings__eyebrow">RBAC diagnostics</p>
+      <h1 class="bb-pa-page-head__title">Access health</h1>
+      <p class="bb-pa-lede">
+        Safe counts only — no pastoral bodies, finance transactions, or confidential text fields.
+        <%= totalIssues %> total item<%= totalIssues !== 1 ? 's' : '' %> requiring attention.
+      </p>
+    </div>
+    <div class="bb-pa-page-head__actions">
+      <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/roles">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to roles
+      </a>
+    </div>
+  </header>
+
+  <p class="bb-pa-settings__notice" role="note" data-bb-pa-access-health-notice="1">
+    <strong>Read-only diagnostics:</strong> This page displays safe aggregated counts.
+    No user-identifiable data, pastoral case details, or finance transaction bodies are shown.
+  </p>
+
+  <% if (!checks.length) { %>
+  <p class="bb-pa-empty" role="status">No health checks available.</p>
+  <% } else { %>
+  <section class="bb-pa-panel" aria-labelledby="pa-access-health-checks-heading">
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-access-health-checks-heading" class="bb-pa-section-title">Health checks</h2>
+      <span class="bb-pa-org-detail__ro"><%= checks.length %> check<%= checks.length !== 1 ? 's' : '' %></span>
+    </div>
+    <table class="bb-pa-table" data-bb-pa-access-health-checks="1">
+      <thead>
+        <tr>
+          <th>Check</th>
+          <th>Count</th>
+          <th><span class="bb-pa-sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% checks.forEach(function (check) { %>
+        <tr
+          data-bb-pa-health-check="<%= check.key %>"
+          <% if (check.count > 0) { %>class="bb-pa-table-row--warning"<% } %>
+        >
+          <td>
+            <strong><%= check.label %></strong>
+          </td>
+          <td>
+            <% if (check.count > 0) { %>
+            <span class="bb-pa-status bb-pa-status--warning"><%= check.count %></span>
+            <% } else { %>
+            <span class="bb-pa-status bb-pa-status--ok"><%= check.count %></span>
+            <% } %>
+          </td>
+          <td>
+            <% if (check.href) { %>
+            <a class="bb-pa-btn bb-pa-btn--ghost bb-pa-btn--sm" href="<%= check.href %>">View</a>
+            <% } else { %>
+            <span class="bb-pa-hint">—</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+  <% } %>
+
+  <section
+    class="bb-pa-panel bb-pa-settings-unavailable"
+    aria-labelledby="pa-access-health-unavailable-heading"
+    data-bb-pa-access-health-unavailable="1"
+  >
+    <h2 id="pa-access-health-unavailable-heading" class="bb-pa-section-title">Not available on this page</h2>
+    <ul class="bb-pa-settings-unavailable__list">
+      <li data-bb-pa-unavailable="user-detail">
+        <span class="material-symbols-outlined" aria-hidden="true">person</span>
+        <div>
+          <strong>User-identifiable data</strong>
+          <p>Names, emails, and user-specific assignment details are excluded from this health summary. Use the <a class="bb-pa-link" href="/admin/users">user directory</a> for user-level investigation.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="pastoral-bodies">
+        <span class="material-symbols-outlined" aria-hidden="true">health_and_safety</span>
+        <div>
+          <strong>Pastoral and welfare confidential data</strong>
+          <p>Pastoral case notes, welfare referrals, and safeguarding-restricted data are never displayed on this page.</p>
+        </div>
+      </li>
+      <li data-bb-pa-unavailable="finance-transactions">
+        <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+        <div>
+          <strong>Finance transaction detail</strong>
+          <p>Transaction-level finance data, bank details, and disbursement records are excluded from Platform Admin surfaces.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+</section>
+
+<%- include('../partials/platform-admin-shell-end') %>
