@@ -573,6 +573,7 @@ async function getPlatformUserDetail(db, input) {
   try {
     const userRes = await db.query(
       `SELECT u.id AS user_id, u.display_name, u.email_display, u.email_normalized,
+              u.phone_display, u.phone_normalized,
               u.status AS user_status, u.last_login_at, u.created_at, u.password_changed_at,
               (u.password_hash IS NOT NULL) AS has_password,
               COALESCE(u.password_change_required, false) AS password_change_required,
@@ -652,6 +653,12 @@ async function getPlatformUserDetail(db, input) {
       userId: String(u.user_id),
       displayName: String(u.display_name || ""),
       emailDisplay: u.email_display != null ? String(u.email_display) : null,
+      phoneDisplay:
+        u.phone_display != null
+          ? String(u.phone_display)
+          : u.phone_normalized != null
+            ? String(u.phone_normalized)
+            : null,
       status: String(u.user_status || ""),
       lastLoginAt: u.last_login_at || null,
       createdAt: u.created_at || null,

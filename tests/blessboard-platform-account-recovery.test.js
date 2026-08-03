@@ -559,7 +559,7 @@ describe("blessboard platform account recovery", () => {
       .set("Cookie", agentCookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /Account recovery/);
-    assert.match(detail.text, /Send password-reset link/);
+    assert.match(detail.text, /Send password reset/);
     assert.doesNotMatch(detail.text, /password_hash|rawToken|secret_token/i);
 
     const badCsrf = await request(app)
@@ -589,5 +589,138 @@ describe("blessboard platform account recovery", () => {
       deps: { emailAdapter: createCaptureAdapter().adapter },
     });
     assert.equal(cross.ok, true, cross.reason);
+  });
+
+  it("supports phone-only reset, preserves actor session, GET does not mutate, unlock is idempotent", async () => {
+    requireDb();
+    const hash = await bcrypt.hash(PASSWORD, 12);
+    const phoneUser = await authRepo.insertUser(pool, {
+      emailNormalized: null,
+      emailDisplay: null,
+      passwordHash: hash,
+      displayName: "Phone Only Staff",
+      status: "active",
+      phoneNormalized: "+260971112233",
+      phoneDisplay: "+260 97 111 2233",
+    });
+    assert.ok(phoneUser && phoneUser.id);
+    await pool.query(
+      `INSERT INTO blessboard.user_roles
+         (user_id, organization_id, church_id, branch_id, role_key, status)
+       VALUES ($1, $2, $3, NULL, 'church_hq_admin', 'active')`,
+      [phoneUser.id, org.id, church.id]
+    );
+
+    const phoneReset = await sendPasswordReset(pool, {
+      actorUserId: users.platform.id,
+      userId: phoneUser.id,
+      requestIp: "198.51.100.77",
+      env: TEST_ENV,
+      publicBaseUrl: "https://blessboard.org",
+    });
+    assert.equal(phoneReset.ok, true, phoneReset.reason);
+    assert.equal(phoneReset.sent, false);
+    assert.equal(phoneReset.deliveryChannel, "phone");
+    assert.equal(phoneReset.deliveryStatus, "sms_unavailable_link_created");
+    assert.equal(Object.prototype.hasOwnProperty.call(phoneReset, "rawToken"), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(phoneReset, "resetUrl"), false);
+
+    const tokenRow = await pool.query(
+      `SELECT id, metadata_json FROM blessboard.user_action_tokens
+        WHERE user_id = $1 AND purpose = 'password_reset' AND consumed_at IS NULL
+        ORDER BY created_at DESC LIMIT 1`,
+      [phoneUser.id]
+    );
+    assert.equal(tokenRow.rows.length, 1);
+    assert.doesNotMatch(JSON.stringify(tokenRow.rows[0].metadata_json || {}), /token=/);
+
+    const staffSess = await createV5Session(pool, {
+      deploymentCode: DEPLOYMENT,
+      userId: users.staff.id,
+      organizationId: org.id,
+      churchId: church.id,
+      branchId: null,
+    });
+    assert.equal(staffSess.ok, true);
+    const actorBefore = await authRepo.countActiveSessionsForUser(pool, users.platform.id);
+    assert.ok(actorBefore >= 1);
+    const revoked = await revokeSessions(pool, {
+      actorUserId: users.platform.id,
+      userId: users.staff.id,
+      env: TEST_ENV,
+    });
+    assert.equal(revoked.ok, true);
+    assert.equal(await authRepo.countActiveSessionsForUser(pool, users.staff.id), 0);
+    assert.equal(
+      await authRepo.countActiveSessionsForUser(pool, users.platform.id),
+      actorBefore
+    );
+
+    const zero = await revokeSessions(pool, {
+      actorUserId: users.platform.id,
+      userId: users.staff.id,
+      env: TEST_ENV,
+    });
+    assert.equal(zero.ok, true);
+    assert.equal(zero.revokedCount, 0);
+
+    const agentCookie = cookieHeader([sessionCookie, `${CSRF_COOKIE}=${csrf}`]);
+    const getMutate = await request(app)
+      .get(`/admin/users/${users.staff.id}/revoke-sessions`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", agentCookie);
+    assert.ok([404, 405, 501].includes(getMutate.status) || getMutate.status >= 400);
+
+    const unlockIdle = await unlockAccount(pool, {
+      actorUserId: users.platform.id,
+      userId: users.staff.id,
+      env: TEST_ENV,
+    });
+    assert.equal(unlockIdle.ok, true);
+    assert.equal(unlockIdle.alreadyUnlocked, true);
+
+    await authRepo.setPasswordChangeRequired(pool, users.staff.id, true);
+    await authRepo.setSignInLockedUntil(
+      pool,
+      users.staff.id,
+      new Date(Date.now() + 60 * 60 * 1000).toISOString()
+    );
+    await authRepo.updateUserStatus(pool, users.staff.id, "suspended");
+    const unlockPreserves = await unlockAccount(pool, {
+      actorUserId: users.platform.id,
+      userId: users.staff.id,
+      env: TEST_ENV,
+    });
+    assert.equal(unlockPreserves.ok, true);
+    assert.equal(unlockPreserves.alreadyUnlocked, false);
+    const after = await authRepo.findUserById(pool, users.staff.id);
+    assert.equal(String(after.status), "suspended");
+    assert.equal(after.password_change_required, true);
+    assert.equal(after.sign_in_locked_until, null);
+    await authRepo.updateUserStatus(pool, users.staff.id, "active");
+    await authRepo.clearPasswordRecoveryFlags(pool, users.staff.id);
+
+    const churchAdmin = await request(app)
+      .post(`/admin/users/${users.staff.id}/revoke-sessions`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookieHeader([
+        // no platform admin session
+      ]))
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.ok([303, 401, 403].includes(churchAdmin.status));
+
+    const detailHtml = await request(app)
+      .get(`/admin/users/${users.staff.id}`)
+      .set("Host", "blessboard.org")
+      .set("Cookie", agentCookie);
+    assert.equal(detailHtml.status, 200);
+    assert.match(detailHtml.text, /method="post"/i);
+    assert.match(detailHtml.text, /send-password-reset/);
+    assert.match(detailHtml.text, /name="_csrf"|name="[^"]*csrf/i);
+    assert.doesNotMatch(
+      detailHtml.text,
+      /<a[^>]+href="\/admin\/users\/[^"]+\/(send-password-reset|revoke-sessions|suspend|unlock)"/i
+    );
   });
 });

@@ -14,12 +14,14 @@
   function noticeText(code) {
     if (code === 'password_reset_sent') return 'Password reset email was accepted for delivery.';
     if (code === 'password_reset_recorded') return 'Password reset was recorded. Delivery may be unavailable in this environment.';
+    if (code === 'password_reset_phone_recorded') return 'SMS provider unavailable; reset link created but not sent. Share recovery out-of-band if authorized.';
     if (code === 'invitation_resent') return 'Invitation resent. Previous invite link was invalidated.';
     if (code === 'sessions_revoked') return 'Active sessions were revoked.';
     if (code === 'password_change_required') return 'Password change is now required. Active sessions were revoked.';
     if (code === 'user_suspended') return 'Sign-in suspended. Active sessions were revoked.';
     if (code === 'user_restored') return 'Sign-in restored. Revoked roles were not reactivated.';
     if (code === 'user_unlocked') return 'Temporary sign-in lock cleared.';
+    if (code === 'user_already_unlocked') return 'Account is already unlocked.';
     return code || null;
   }
   function errorText(code) {
@@ -59,6 +61,7 @@
 
   <dl class="bb-pa-dl" data-bb-pa-user-identity="1">
     <div><dt>Email</dt><dd><%= u.emailDisplay || '—' %></dd></div>
+    <div><dt>Phone</dt><dd><%= u.phoneDisplay || '—' %></dd></div>
     <div><dt>Status</dt><dd><%= u.status || '—' %></dd></div>
     <div><dt>Invitation</dt><dd><%= u.invitationState || 'none' %></dd></div>
     <div><dt>Last login</dt><dd><%= formatTs(u.lastLoginAt) %></dd></div>
@@ -76,48 +79,70 @@
     <p class="bb-pa-lede">
       Platform Admin never views or retrieves passwords. Reset links are one-time, expire, and are never logged.
       Restoring sign-in does not reactivate revoked RBAC assignments.
+      These actions require POST with a CSRF token — opening the action URL directly in a browser does nothing.
     </p>
-    <div class="bb-pa-list">
+    <div class="bb-pa-list" data-bb-pa-recovery-actions="1">
       <% if (canReset) { %>
-      <form method="post" action="/admin/users/<%= u.userId %>/send-password-reset" class="bb-pa-form bb-pa-form--inline">
+      <form method="post" action="/admin/users/<%= u.userId %>/send-password-reset" class="bb-pa-form bb-pa-form--inline" data-bb-pa-recovery-form="send-password-reset">
         <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-        <button type="submit" class="bb-pa-btn">Send password-reset link</button>
+        <button type="submit" class="bb-pa-btn" data-bb-pa-submit-disable="1">Send password reset</button>
       </form>
       <% } %>
       <% if (canInvite) { %>
-      <form method="post" action="/admin/users/<%= u.userId %>/resend-invitation" class="bb-pa-form bb-pa-form--inline">
+      <form method="post" action="/admin/users/<%= u.userId %>/resend-invitation" class="bb-pa-form bb-pa-form--inline" data-bb-pa-recovery-form="resend-invitation">
         <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Resend invitation</button>
+        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary" data-bb-pa-submit-disable="1">Resend invitation</button>
       </form>
       <% } %>
-      <form method="post" action="/admin/users/<%= u.userId %>/revoke-sessions" class="bb-pa-form bb-pa-form--inline">
+      <form method="post" action="/admin/users/<%= u.userId %>/revoke-sessions" class="bb-pa-form bb-pa-form--inline" data-bb-pa-recovery-form="revoke-sessions" data-bb-pa-confirm="Revoke all active sessions for this user?">
         <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Revoke active sessions</button>
+        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary" data-bb-pa-submit-disable="1">Revoke active sessions</button>
       </form>
       <% if (canReset) { %>
-      <form method="post" action="/admin/users/<%= u.userId %>/require-password-change" class="bb-pa-form bb-pa-form--inline">
+      <form method="post" action="/admin/users/<%= u.userId %>/require-password-change" class="bb-pa-form bb-pa-form--inline" data-bb-pa-recovery-form="require-password-change" data-bb-pa-confirm="Require password change and revoke active sessions?">
         <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Require password change</button>
+        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary" data-bb-pa-submit-disable="1">Require password change</button>
       </form>
       <% } %>
       <% if (canSuspend) { %>
-      <form method="post" action="/admin/users/<%= u.userId %>/suspend" class="bb-pa-form bb-pa-form--inline">
+      <form method="post" action="/admin/users/<%= u.userId %>/suspend" class="bb-pa-form bb-pa-form--inline" data-bb-pa-recovery-form="suspend" data-bb-pa-confirm="Suspend sign-in for this user and revoke active sessions?">
         <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-        <button type="submit" class="bb-pa-btn">Suspend sign-in</button>
+        <button type="submit" class="bb-pa-btn" data-bb-pa-submit-disable="1">Suspend sign-in</button>
       </form>
       <% } %>
       <% if (canRestore) { %>
-      <form method="post" action="/admin/users/<%= u.userId %>/restore" class="bb-pa-form bb-pa-form--inline">
+      <form method="post" action="/admin/users/<%= u.userId %>/restore" class="bb-pa-form bb-pa-form--inline" data-bb-pa-recovery-form="restore" data-bb-pa-confirm="Restore sign-in for this user? Revoked roles stay revoked.">
         <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-        <button type="submit" class="bb-pa-btn">Restore sign-in</button>
+        <button type="submit" class="bb-pa-btn" data-bb-pa-submit-disable="1">Restore sign-in</button>
       </form>
       <% } %>
-      <form method="post" action="/admin/users/<%= u.userId %>/unlock" class="bb-pa-form bb-pa-form--inline">
+      <form method="post" action="/admin/users/<%= u.userId %>/unlock" class="bb-pa-form bb-pa-form--inline" data-bb-pa-recovery-form="unlock">
         <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />
-        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary">Unlock account</button>
+        <button type="submit" class="bb-pa-btn bb-pa-btn--secondary" data-bb-pa-submit-disable="1"><%= u.signInLocked ? 'Unlock account' : 'Unlock account (idempotent)' %></button>
       </form>
     </div>
   </section>
+
+  <script>
+    (function () {
+      var root = document.querySelector('[data-bb-pa-user-recovery="1"]');
+      if (!root) return;
+      root.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!form || form.tagName !== 'FORM') return;
+        var confirmMsg = form.getAttribute('data-bb-pa-confirm');
+        if (confirmMsg && !window.confirm(confirmMsg)) {
+          event.preventDefault();
+          return;
+        }
+        var btn = form.querySelector('[data-bb-pa-submit-disable="1"]');
+        if (btn) {
+          btn.disabled = true;
+          btn.setAttribute('aria-busy', 'true');
+        }
+      });
+    })();
+  </script>
 
   <h2 class="bb-pa-section-title">Legacy roles</h2>
   <% if (!(u.legacyAssignments || []).length) { %>

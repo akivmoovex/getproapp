@@ -106,9 +106,26 @@ async function assertPlatformPermission(db, actorUserId, permissionKey) {
 }
 
 async function loadTargetUser(db, userId) {
+  return resolvePlatformManagedUser(db, userId);
+}
+
+/**
+ * Canonical Platform Admin user resolver for /admin/users/:userId.
+ * Route param is blessboard.users.id (not invitation id, member id, or session id).
+ * @param {{ query?: Function, connect?: Function }} db
+ * @param {string} userId
+ */
+async function resolvePlatformManagedUser(db, userId) {
   const id = String(userId || "").trim();
   if (!UUID_RE.test(id)) return null;
-  return authRepo.findUserById(db, id);
+  const user = await authRepo.findUserById(db, id);
+  if (!user) return null;
+  return {
+    ...user,
+    // Explicit aliases for callers that must not confuse profile vs auth ids.
+    platformUserId: String(user.id),
+    authenticationUserId: String(user.id),
+  };
 }
 
 async function consumePaActionRate(client, userId, actionKey) {
@@ -143,6 +160,9 @@ async function auditRecovery(db, input) {
       to_status: input.toStatus || null,
       count: input.count != null ? input.count : null,
       status: input.status || null,
+      delivery_channel: input.deliveryChannel || null,
+      delivery_status: input.deliveryStatus || null,
+      already_unlocked: input.alreadyUnlocked === true ? true : null,
     },
   });
 }
@@ -165,6 +185,7 @@ async function sendPasswordReset(db, input) {
   const result = await platformAdminRequestPasswordReset(
     db,
     {
+      userId: user.id,
       email: user.email_normalized,
       actorUserId: input.actorUserId,
       organizationId: orgId,
@@ -184,6 +205,9 @@ async function sendPasswordReset(db, input) {
         reason: result.reason || "reset_unavailable",
       };
     }
+    if (result.status === RESET_STATUS.INVALID_INPUT) {
+      return { ok: false, status: STATUS.CONFLICT, reason: "reset_unavailable" };
+    }
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "reset_failed" };
   }
 
@@ -193,8 +217,12 @@ async function sendPasswordReset(db, input) {
     actorUserId: input.actorUserId,
     userId: user.id,
     actionKey: "platform.user.password_reset_requested",
-    reasonCode: result.rateLimited ? "rate_limited_neutral" : "requested",
+    reasonCode: result.rateLimited
+      ? "rate_limited_neutral"
+      : result.deliveryStatus || (result.sent ? "sent" : "recorded"),
     status: result.sent ? "sent" : "recorded",
+    deliveryChannel: result.deliveryChannel || null,
+    deliveryStatus: result.deliveryStatus || null,
   });
 
   return {
@@ -202,6 +230,8 @@ async function sendPasswordReset(db, input) {
     status: STATUS.OK,
     sent: Boolean(result.sent),
     rateLimited: Boolean(result.rateLimited),
+    deliveryChannel: result.deliveryChannel || null,
+    deliveryStatus: result.deliveryStatus || null,
   };
 }
 
@@ -505,10 +535,17 @@ async function unlockAccount(db, input) {
   const user = await loadTargetUser(db, input.userId);
   if (!user) return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
 
+  const lockedUntil = user.sign_in_locked_until
+    ? new Date(user.sign_in_locked_until)
+    : null;
+  const wasLocked =
+    Boolean(lockedUntil) && !Number.isNaN(lockedUntil.getTime()) && lockedUntil.getTime() > Date.now();
+
   return withClient(db, async (client) => {
     if (await consumePaActionRate(client, user.id, "unlock")) {
       return { ok: false, status: STATUS.RATE_LIMITED, reason: "rate_limited" };
     }
+    // Clears temporary lock only — does not unsuspend or clear password-change-required.
     await authRepo.clearSignInLock(client, user.id);
     const orgId = await authRepo.findAuditOrganizationIdForUser(client, user.id);
     await auditRecovery(db, {
@@ -517,14 +554,20 @@ async function unlockAccount(db, input) {
       actorUserId: input.actorUserId,
       userId: user.id,
       actionKey: "platform.user.unlocked",
-      reasonCode: "lock_cleared",
+      reasonCode: wasLocked ? "lock_cleared" : "already_unlocked",
+      alreadyUnlocked: !wasLocked,
     });
-    return { ok: true, status: STATUS.OK };
+    return {
+      ok: true,
+      status: STATUS.OK,
+      alreadyUnlocked: !wasLocked,
+    };
   });
 }
 
 module.exports = {
   STATUS,
+  resolvePlatformManagedUser,
   sendPasswordReset,
   resendInvitation,
   revokeSessions,

@@ -2,7 +2,82 @@
 
 /**
  * BlessBoard auth repository helpers (parameterized SQL).
+ *
+ * Core SELECT stays compatible with migrations through 072. Columns introduced
+ * in 073+ (phone_verified_at, phone_country_code, preferred_*) are attached
+ * when present so testing DBs that lag migrations do not break auth/recovery.
  */
+
+/** @type {string|null} */
+let usersOptionalPhoneSelectSql = null;
+/** @type {Promise<string>|null} */
+let usersOptionalPhoneSelectPromise = null;
+
+/**
+ * @param {{ query: Function }} client
+ * @returns {Promise<string>}
+ */
+async function resolveUsersOptionalPhoneSelect(client) {
+  if (usersOptionalPhoneSelectSql != null) return usersOptionalPhoneSelectSql;
+  if (!usersOptionalPhoneSelectPromise) {
+    usersOptionalPhoneSelectPromise = (async () => {
+      try {
+        const r = await client.query(
+          `SELECT column_name
+             FROM information_schema.columns
+            WHERE table_schema = 'blessboard'
+              AND table_name = 'users'
+              AND column_name = ANY($1::text[])`,
+          [
+            [
+              "phone_country_code",
+              "phone_verified_at",
+              "preferred_login_identifier",
+              "preferred_contact_channel",
+            ],
+          ]
+        );
+        const present = new Set(r.rows.map((row) => String(row.column_name)));
+        const parts = [];
+        for (const col of [
+          "phone_country_code",
+          "phone_verified_at",
+          "preferred_login_identifier",
+          "preferred_contact_channel",
+        ]) {
+          if (present.has(col)) parts.push(col);
+        }
+        usersOptionalPhoneSelectSql = parts.length ? `, ${parts.join(", ")}` : "";
+      } catch {
+        usersOptionalPhoneSelectSql = "";
+      }
+      return usersOptionalPhoneSelectSql;
+    })();
+  }
+  return usersOptionalPhoneSelectPromise;
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} whereSql
+ * @param {unknown[]} params
+ * @param {{ orderLimitSql?: string }} [opts]
+ */
+async function selectUserRow(client, whereSql, params, opts = {}) {
+  const optional = await resolveUsersOptionalPhoneSelect(client);
+  const orderLimitSql = opts.orderLimitSql || "LIMIT 1";
+  const r = await client.query(
+    `SELECT id, email_normalized, email_display, password_hash, status, display_name,
+            created_at, updated_at, password_changed_at, last_login_at,
+            password_change_required, sign_in_locked_until,
+            phone_normalized, phone_display${optional}
+       FROM blessboard.users
+      WHERE ${whereSql}
+      ${orderLimitSql}`,
+    params
+  );
+  return r;
+}
 
 /**
  * @param {{ query: Function }} client
@@ -10,16 +85,7 @@
  */
 async function findUserByEmail(client, emailNormalized) {
   if (!emailNormalized) return null;
-  const r = await client.query(
-    `SELECT id, email_normalized, email_display, password_hash, status, display_name,
-            created_at, updated_at, password_changed_at, last_login_at,
-            password_change_required, sign_in_locked_until,
-            phone_normalized, phone_display, phone_verified_at
-       FROM blessboard.users
-      WHERE email_normalized = $1
-      LIMIT 1`,
-    [emailNormalized]
-  );
+  const r = await selectUserRow(client, "email_normalized = $1", [emailNormalized]);
   return r.rows[0] || null;
 }
 
@@ -29,17 +95,9 @@ async function findUserByEmail(client, emailNormalized) {
  */
 async function findUserByPhone(client, phoneNormalized) {
   if (!phoneNormalized) return null;
-  const r = await client.query(
-    `SELECT id, email_normalized, email_display, password_hash, status, display_name,
-            created_at, updated_at, password_changed_at, last_login_at,
-            password_change_required, sign_in_locked_until,
-            phone_normalized, phone_display, phone_verified_at
-       FROM blessboard.users
-      WHERE phone_normalized = $1
-      ORDER BY created_at ASC
-      LIMIT 2`,
-    [phoneNormalized]
-  );
+  const r = await selectUserRow(client, "phone_normalized = $1", [phoneNormalized], {
+    orderLimitSql: "ORDER BY created_at ASC LIMIT 2",
+  });
   if (r.rows.length !== 1) return null;
   return r.rows[0];
 }
@@ -336,17 +394,7 @@ async function countActiveChurchStaffRoles(client, churchId, organizationId) {
  * @param {string} userId
  */
 async function findUserById(client, userId) {
-  const r = await client.query(
-    `SELECT id, email_normalized, email_display, password_hash, status, display_name,
-            created_at, updated_at, password_changed_at, last_login_at,
-            password_change_required, sign_in_locked_until,
-            phone_normalized, phone_display, phone_country_code, phone_verified_at,
-            preferred_login_identifier, preferred_contact_channel
-       FROM blessboard.users
-      WHERE id = $1
-      LIMIT 1`,
-    [userId]
-  );
+  const r = await selectUserRow(client, "id = $1", [userId]);
   return r.rows[0] || null;
 }
 
