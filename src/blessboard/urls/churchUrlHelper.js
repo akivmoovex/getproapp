@@ -237,6 +237,7 @@ function hqBranchContentPagePath(branchKey, pageKey) {
 }
 
 module.exports = {
+  PUBLIC_PAGE_KEYS,
   publicChurchHomePath,
   publicChurchPagePath,
   publicBranchHomePath,
