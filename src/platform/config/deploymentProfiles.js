@@ -15,6 +15,10 @@ const {
   getPlatformDeploymentCode,
   DEPLOYMENT_CODE_PATTERN,
 } = require("./platformDeploymentCode");
+const {
+  resolveProductOrError,
+  isValidApplicationCode,
+} = require("./productRegistry");
 
 const RUNTIME_LEGACY = "legacy";
 const RUNTIME_PRODUCTION = "production";
@@ -22,6 +26,7 @@ const RUNTIME_V5_FOUNDATION = "v5-foundation";
 
 const CODE_COM_PRODUCTION = "blessboard-com-production";
 const CODE_ORG_STAGING = "blessboard-org-staging";
+const CODE_ACTIVECLINIC_ORG_V6 = "activeclinic-org-v6";
 /** @deprecated Prefer CODE_ORG_STAGING */
 const CODE_ORG_V5 = "blessboard-org-v5";
 /** @deprecated Prefer CODE_COM_PRODUCTION */
@@ -29,6 +34,10 @@ const CODE_COM_V4 = "blessboard-com-v4";
 
 const COOKIE_COM = "blessboard_com_sid";
 const COOKIE_ORG = "blessboard_org_sid";
+const COOKIE_ACTIVECLINIC_ORG = "activeclinic_org_sid";
+const CSRF_COOKIE_COM = "blessboard_org_csrf";
+const CSRF_COOKIE_ORG = "blessboard_org_csrf";
+const CSRF_COOKIE_ACTIVECLINIC_ORG = "activeclinic_org_csrf";
 /** @deprecated legacy express-session default */
 const PRODUCTION_SESSION_COOKIE = "getpro_sid";
 /** @deprecated alias of COOKIE_ORG */
@@ -46,6 +55,7 @@ const OPTIONAL_HOSTINGER_KEYS = Object.freeze(["GETPRO_PG_SSL", "PORT"]);
 /**
  * @typedef {Readonly<{
  *   deploymentCode: string,
+ *   productCode: string,
  *   deploymentEnvironment: "testing"|"production",
  *   runtimeMode: "legacy"|"production"|"v5-foundation",
  *   authoritative: boolean,
@@ -55,6 +65,7 @@ const OPTIONAL_HOSTINGER_KEYS = Object.freeze(["GETPRO_PG_SSL", "PORT"]);
  *   apexDomains: readonly string[],
  *   churchHostDomain: string,
  *   sessionCookieName: string,
+ *   csrfCookieName: string,
  *   expectedDatabaseEnvironment: "testing"|"production",
  *   jobsEnabled: boolean,
  *   trustProxy: number,
@@ -70,6 +81,7 @@ const OPTIONAL_HOSTINGER_KEYS = Object.freeze(["GETPRO_PG_SSL", "PORT"]);
 /** @type {Readonly<DeploymentProfile>} */
 const PROFILE_COM_PRODUCTION = Object.freeze({
   deploymentCode: CODE_COM_PRODUCTION,
+  productCode: "blessboard",
   deploymentEnvironment: "production",
   runtimeMode: RUNTIME_V5_FOUNDATION,
   authoritative: true,
@@ -79,13 +91,19 @@ const PROFILE_COM_PRODUCTION = Object.freeze({
   apexDomains: Object.freeze(["blessboard.com", "www.blessboard.com"]),
   churchHostDomain: "blessboard.com",
   sessionCookieName: COOKIE_COM,
+  csrfCookieName: CSRF_COOKIE_COM,
   expectedDatabaseEnvironment: "production",
   jobsEnabled: true,
   trustProxy: 1,
   listenHost: "0.0.0.0",
   hostContextMode: "off",
   allowTestUsersByDefault: false,
-  foreignTlds: Object.freeze(["blessboard.org", "www.blessboard.org"]),
+  foreignTlds: Object.freeze([
+    "blessboard.org",
+    "www.blessboard.org",
+    "activeclinic.org",
+    "www.activeclinic.org",
+  ]),
   brandSubtitle: "Powered by GetPro",
   brandSubtitleVariant: "production-partner",
 });
@@ -93,6 +111,7 @@ const PROFILE_COM_PRODUCTION = Object.freeze({
 /** @type {Readonly<DeploymentProfile>} */
 const PROFILE_ORG_STAGING = Object.freeze({
   deploymentCode: CODE_ORG_STAGING,
+  productCode: "blessboard",
   deploymentEnvironment: "testing",
   runtimeMode: RUNTIME_V5_FOUNDATION,
   authoritative: true,
@@ -102,14 +121,50 @@ const PROFILE_ORG_STAGING = Object.freeze({
   apexDomains: Object.freeze(["blessboard.org", "www.blessboard.org"]),
   churchHostDomain: "blessboard.org",
   sessionCookieName: COOKIE_ORG,
+  csrfCookieName: CSRF_COOKIE_ORG,
   expectedDatabaseEnvironment: "testing",
   jobsEnabled: false,
   trustProxy: 1,
   listenHost: "0.0.0.0",
   hostContextMode: "diagnostic",
   allowTestUsersByDefault: false,
-  foreignTlds: Object.freeze(["blessboard.com", "www.blessboard.com"]),
+  foreignTlds: Object.freeze([
+    "blessboard.com",
+    "www.blessboard.com",
+    "activeclinic.org",
+    "www.activeclinic.org",
+  ]),
   brandSubtitle: "Demo Only",
+  brandSubtitleVariant: "demo",
+});
+
+/** @type {Readonly<DeploymentProfile>} */
+const PROFILE_ACTIVECLINIC_ORG_V6 = Object.freeze({
+  deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+  productCode: "activeclinic",
+  deploymentEnvironment: "testing",
+  runtimeMode: RUNTIME_V5_FOUNDATION,
+  authoritative: true,
+  canonicalDomain: "activeclinic.org",
+  publicOrigin: "https://activeclinic.org",
+  adminOrigin: "https://activeclinic.org",
+  apexDomains: Object.freeze(["activeclinic.org", "www.activeclinic.org"]),
+  churchHostDomain: "activeclinic.org",
+  sessionCookieName: COOKIE_ACTIVECLINIC_ORG,
+  csrfCookieName: CSRF_COOKIE_ACTIVECLINIC_ORG,
+  expectedDatabaseEnvironment: "testing",
+  jobsEnabled: false,
+  trustProxy: 1,
+  listenHost: "0.0.0.0",
+  hostContextMode: "diagnostic",
+  allowTestUsersByDefault: false,
+  foreignTlds: Object.freeze([
+    "blessboard.com",
+    "www.blessboard.com",
+    "blessboard.org",
+    "www.blessboard.org",
+  ]),
+  brandSubtitle: "Juflona Pilot",
   brandSubtitleVariant: "demo",
 });
 
@@ -117,6 +172,7 @@ const PROFILE_ORG_STAGING = Object.freeze({
 const DEPLOYMENT_PROFILES = Object.freeze({
   [CODE_COM_PRODUCTION]: PROFILE_COM_PRODUCTION,
   [CODE_ORG_STAGING]: PROFILE_ORG_STAGING,
+  [CODE_ACTIVECLINIC_ORG_V6]: PROFILE_ACTIVECLINIC_ORG_V6,
 });
 
 /** Deprecated PLATFORM_DEPLOYMENT_CODE values → canonical profile code */
@@ -312,12 +368,14 @@ function resolveDeploymentConfiguration(env) {
       environment: null,
       runtimeMode: null,
       authoritative: false,
+      productCode: null,
       canonicalDomain: null,
       publicOrigin: null,
       adminOrigin: null,
       apexDomains: [],
       churchHostDomain: null,
       sessionCookieName: null,
+      csrfCookieName: null,
       expectedDatabaseEnvironment: null,
       jobsEnabled: null,
       trustProxy,
@@ -333,12 +391,14 @@ function resolveDeploymentConfiguration(env) {
     environment: profile.deploymentEnvironment,
     runtimeMode: profile.runtimeMode,
     authoritative: true,
+    productCode: profile.productCode,
     canonicalDomain: profile.canonicalDomain,
     publicOrigin: profile.publicOrigin,
     adminOrigin: profile.adminOrigin,
     apexDomains: profile.apexDomains.slice(),
     churchHostDomain: profile.churchHostDomain,
     sessionCookieName: profile.sessionCookieName,
+    csrfCookieName: profile.csrfCookieName,
     expectedDatabaseEnvironment: profile.expectedDatabaseEnvironment,
     jobsEnabled: profile.jobsEnabled,
     trustProxy,
@@ -391,6 +451,45 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   const profile = resolved.profile;
   if (!profile || !profile.authoritative) {
     return { ok: true, warnings: [] };
+  }
+
+  const productResolved = resolveProductOrError(profile.productCode);
+  if (!productResolved.ok) {
+    return {
+      ok: false,
+      code: productResolved.code,
+      message: productResolved.message,
+      warnings: [],
+    };
+  }
+  if (!isValidApplicationCode(profile.productCode)) {
+    return {
+      ok: false,
+      code: "unknown_product_code",
+      message:
+        `Deployment profile ${profile.deploymentCode} has invalid productCode=` +
+        `${JSON.stringify(profile.productCode)}.`,
+      warnings: [],
+    };
+  }
+  if (!profile.sessionCookieName || !profile.csrfCookieName) {
+    return {
+      ok: false,
+      code: "missing_cookie_names",
+      message:
+        `Deployment profile ${profile.deploymentCode} is missing sessionCookieName or csrfCookieName.`,
+      warnings: [],
+    };
+  }
+  if (productResolved.product.productCode !== profile.productCode) {
+    return {
+      ok: false,
+      code: "deployment_product_mismatch",
+      message:
+        `Deployment profile ${profile.deploymentCode} product mismatch ` +
+        `(profile=${profile.productCode}).`,
+      warnings: [],
+    };
   }
 
   const warnings = [];
@@ -527,21 +626,14 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
   {
     const raw = envTrim(source, "SESSION_COOKIE_NAME");
     if (raw) {
-      const siblingCookie =
-        profile.deploymentCode === CODE_COM_PRODUCTION ? COOKIE_ORG : COOKIE_COM;
-      if (raw === siblingCookie || raw === PRODUCTION_SESSION_COOKIE) {
-        if (raw !== profile.sessionCookieName) {
-          return {
-            ok: false,
-            code: "session_cookie_conflict",
-            message:
-              `SESSION_COOKIE_NAME=${JSON.stringify(raw)} conflicts with profile ${profile.deploymentCode} ` +
-              `(expected ${profile.sessionCookieName}). Refusing to start.`,
-            warnings,
-          };
-        }
-      }
-      if (raw !== profile.sessionCookieName) {
+      const foreignCookies = new Set([
+        COOKIE_COM,
+        COOKIE_ORG,
+        COOKIE_ACTIVECLINIC_ORG,
+        PRODUCTION_SESSION_COOKIE,
+      ]);
+      foreignCookies.delete(profile.sessionCookieName);
+      if (foreignCookies.has(raw) || raw !== profile.sessionCookieName) {
         return {
           ok: false,
           code: "session_cookie_conflict",
@@ -552,6 +644,29 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
         };
       }
       noteMatch("SESSION_COOKIE_NAME", raw);
+    }
+  }
+
+  {
+    const raw = envTrim(source, "CSRF_COOKIE_NAME");
+    if (raw) {
+      const foreignCsrf = new Set([
+        CSRF_COOKIE_COM,
+        CSRF_COOKIE_ORG,
+        CSRF_COOKIE_ACTIVECLINIC_ORG,
+      ]);
+      foreignCsrf.delete(profile.csrfCookieName);
+      if (foreignCsrf.has(raw) || raw !== profile.csrfCookieName) {
+        return {
+          ok: false,
+          code: "csrf_cookie_conflict",
+          message:
+            `CSRF_COOKIE_NAME=${JSON.stringify(raw)} conflicts with profile ${profile.deploymentCode} ` +
+            `(expected ${profile.csrfCookieName}). Refusing to start.`,
+          warnings,
+        };
+      }
+      noteMatch("CSRF_COOKIE_NAME", raw);
     }
   }
 
@@ -736,10 +851,15 @@ module.exports = {
   RUNTIME_V5_FOUNDATION,
   CODE_COM_PRODUCTION,
   CODE_ORG_STAGING,
+  CODE_ACTIVECLINIC_ORG_V6,
   CODE_ORG_V5,
   CODE_COM_V4,
   COOKIE_COM,
   COOKIE_ORG,
+  COOKIE_ACTIVECLINIC_ORG,
+  CSRF_COOKIE_COM,
+  CSRF_COOKIE_ORG,
+  CSRF_COOKIE_ACTIVECLINIC_ORG,
   PRODUCTION_SESSION_COOKIE,
   V5_SESSION_COOKIE,
   REQUIRED_HOSTINGER_KEYS,

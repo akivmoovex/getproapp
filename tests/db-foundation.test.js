@@ -16,25 +16,14 @@ const {
   createFoundationPool,
 } = require("./helpers/foundationDb");
 const { migrate, status, MIGRATIONS_ROOT, SEEDS_ROOT, sha256Hex } = require("../db/scripts/lib/migrator");
+const {
+  APPROVED_PRODUCT_TABLES,
+  REQUIRED_PLATFORM_TABLES,
+} = require("../db/scripts/lib/foundationVerify");
 
 const ROOT = path.resolve(__dirname, "..");
 
-const EXPECTED_PLATFORM_TABLES = [
-  "audit_events",
-  "auth_transfers",
-  "database_identity",
-  "deployment_sessions",
-  "deployments",
-  "domains",
-  "organization_entitlements",
-  "organization_products",
-  "organization_subscriptions",
-  "organizations",
-  "plan_features",
-  "plans",
-  "products",
-  "schema_migrations",
-];
+const EXPECTED_PLATFORM_TABLES = [...REQUIRED_PLATFORM_TABLES].sort();
 
 function runCli(scriptRel, args, envExtra) {
   const result = spawnSync(process.execPath, [path.join(ROOT, scriptRel), ...args], {
@@ -82,11 +71,11 @@ describe("db foundation (empty PostgreSQL)", () => {
          FROM information_schema.schemata
         WHERE schema_name = ANY($1::text[])
         ORDER BY schema_name`,
-      [["blessboard", "getpro", "ngo", "platform"]]
+      [["activeclinic", "blessboard", "getpro", "ngo", "platform"]]
     );
     assert.deepEqual(
       schemas.rows.map((r) => r.schema_name),
-      ["blessboard", "getpro", "ngo", "platform"]
+      ["activeclinic", "blessboard", "getpro", "ngo", "platform"]
     );
 
     const tables = await pool.query(
@@ -120,10 +109,11 @@ describe("db foundation (empty PostgreSQL)", () => {
          FROM platform.products
         ORDER BY product_key`
     );
-    assert.equal(r.rowCount, 3);
+    assert.equal(r.rowCount, 4);
     assert.deepEqual(
       r.rows.map((row) => [row.product_key, row.display_name, row.status]),
       [
+        ["activeclinic", "ActiveClinic", "active"],
         ["blessboard", "BlessBoard", "active"],
         ["getpro", "GetPro", "active"],
         ["ngo", "NGO", "active"],
@@ -149,7 +139,7 @@ describe("db foundation (empty PostgreSQL)", () => {
       assert.ok(row.execution_ms >= 0);
     }
     const modules = new Set(r.rows.map((row) => row.module));
-    for (const m of ["platform", "blessboard", "getpro", "ngo", "seeds"]) {
+    for (const m of ["platform", "blessboard", "activeclinic", "getpro", "ngo", "seeds"]) {
       assert.ok(modules.has(m), `missing module ${m}`);
     }
   });
@@ -256,12 +246,14 @@ describe("db foundation (empty PostgreSQL)", () => {
          FROM platform.deployments
         ORDER BY deployment_code`
     );
-    assert.equal(r.rowCount, 2);
+    assert.equal(r.rowCount, 3);
 
     const com = r.rows.find((row) => row.deployment_code === "blessboard-com-production");
     const org = r.rows.find((row) => row.deployment_code === "blessboard-org-staging");
+    const ac = r.rows.find((row) => row.deployment_code === "activeclinic-org-v6");
     assert.ok(com);
     assert.ok(org);
+    assert.ok(ac);
 
     assert.equal(com.application_code, "blessboard");
     assert.equal(com.release_version, "v5");
@@ -280,6 +272,15 @@ describe("db foundation (empty PostgreSQL)", () => {
     assert.equal(org.jobs_enabled, false);
     assert.equal(org.database_access_mode, "read_write");
     assert.equal(org.session_cookie_name, "blessboard_org_sid");
+
+    assert.equal(ac.application_code, "activeclinic");
+    assert.equal(ac.release_version, "v6");
+    assert.equal(ac.canonical_domain, "activeclinic.org");
+    assert.equal(ac.environment_code, "testing");
+    assert.equal(ac.status, "active");
+    assert.equal(ac.jobs_enabled, false);
+    assert.equal(ac.database_access_mode, "read_write");
+    assert.equal(ac.session_cookie_name, "activeclinic_org_sid");
   });
 
   it("unique canonical domains and session cookie names", async () => {
@@ -540,7 +541,18 @@ describe("db foundation (empty PostgreSQL)", () => {
     );
     assert.deepEqual(
       blessboard.rows.map((r) => r.table_name),
-      ["announcement_attachments", "announcement_audiences", "announcement_reads", "announcements", "attendance_entries", "attendance_events", "branch_settings", "branches", "church_settings", "churches", "contact_channels", "event_registrations", "events", "form_submissions", "forms", "giving_categories", "giving_entries", "giving_methods", "leaders", "media_assets", "member_branch_memberships", "member_registrations", "member_request_status_history", "member_requests", "members", "ministries", "ministry_memberships", "page_sections", "public_pages", "resources", "sermons", "user_roles", "users"]
+      [...APPROVED_PRODUCT_TABLES.blessboard].sort()
+    );
+
+    const activeclinic = await pool.query(
+      `SELECT table_name
+         FROM information_schema.tables
+        WHERE table_schema = 'activeclinic' AND table_type = 'BASE TABLE'
+        ORDER BY table_name`
+    );
+    assert.deepEqual(
+      activeclinic.rows.map((r) => r.table_name),
+      [...APPROVED_PRODUCT_TABLES.activeclinic].sort()
     );
 
     for (const schema of ["getpro", "ngo"]) {
@@ -572,7 +584,7 @@ describe("db foundation (empty PostgreSQL)", () => {
     );
 
     const sqlFiles = [];
-    for (const mod of ["platform", "blessboard", "getpro", "ngo"]) {
+    for (const mod of ["platform", "blessboard", "activeclinic", "getpro", "ngo"]) {
       const dir = path.join(MIGRATIONS_ROOT, mod);
       for (const f of fs.readdirSync(dir)) {
         if (f.endsWith(".sql")) sqlFiles.push(path.join(dir, f));

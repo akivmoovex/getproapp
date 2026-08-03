@@ -1,0 +1,25 @@
+<%#
+  Desktop brand panel (P01 Login left column).
+%>
+<aside class="ac-auth-brand-panel" data-ac-auth-brand-panel="1" aria-label="Product information">
+  <div>
+    <div class="ac-auth-brand-lockup">
+      <%- include('auth-mark') %>
+      <p class="ac-auth-brand-lockup__title"><%= supportingName %></p>
+    </div>
+    <p class="ac-auth-brand-panel__product"><%= productName %></p>
+    <p class="ac-auth-brand-panel__tagline"><%= tagline %></p>
+  </div>
+  <div class="ac-auth-secure-note">
+    <span class="ac-auth-secure-note__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false">
+        <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z"/>
+        <path d="M9.5 12.5l1.8 1.8 3.7-3.8"/>
+      </svg>
+    </span>
+    <div>
+      <h2>Secure System Access</h2>
+      <p>You are accessing a secure healthcare system. All activities are logged and monitored for compliance.</p>
+    </div>
+  </div>
+</aside>

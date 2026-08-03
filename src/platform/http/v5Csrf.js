@@ -3,13 +3,39 @@
 /**
  * V5 signed double-submit CSRF (independent of express-session / legacy tables).
  * Cookie + form field must match; HMAC uses SESSION_SECRET.
+ * Cookie name is resolved from the authoritative deployment profile.
  */
 
 const crypto = require("crypto");
 
-const CSRF_COOKIE = "blessboard_org_csrf";
+/** BlessBoard historical default — kept as export alias for existing tests. */
+const DEFAULT_CSRF_COOKIE = "blessboard_org_csrf";
+/** @deprecated Prefer getCsrfCookieName(env). Equals BlessBoard default. */
+const CSRF_COOKIE = DEFAULT_CSRF_COOKIE;
 const CSRF_PREFIX = "v5c1";
 const CSRF_FIELD = "_csrf";
+
+/**
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string}
+ */
+function getCsrfCookieName(env) {
+  const source = env || process.env;
+  const {
+    hasAuthoritativeDeploymentProfile,
+    getDeploymentProfile,
+  } = require("../config/deploymentProfiles");
+  if (hasAuthoritativeDeploymentProfile(source)) {
+    const profile = getDeploymentProfile(source);
+    if (profile && profile.csrfCookieName) {
+      return String(profile.csrfCookieName);
+    }
+    throw new Error(
+      `Deployment profile ${(profile && profile.deploymentCode) || "(unknown)"} is missing csrfCookieName`
+    );
+  }
+  return DEFAULT_CSRF_COOKIE;
+}
 
 /**
  * @param {NodeJS.ProcessEnv} [env]
@@ -65,9 +91,10 @@ function issueCsrfToken(env) {
  */
 function validateCsrf(req, submitted, env) {
   const secret = getCsrfSecret(env);
+  const cookieName = getCsrfCookieName(env);
   const cookieToken =
-    (req.cookies && req.cookies[CSRF_COOKIE]) ||
-    (req.signedCookies && req.signedCookies[CSRF_COOKIE]) ||
+    (req.cookies && req.cookies[cookieName]) ||
+    (req.signedCookies && req.signedCookies[cookieName]) ||
     null;
   const bodyToken = submitted != null ? String(submitted) : "";
   if (!cookieToken || !bodyToken) return false;
@@ -82,11 +109,14 @@ function validateCsrf(req, submitted, env) {
 /**
  * @param {import('express').Response} res
  * @param {string} token
- * @param {{ secure?: boolean }} [opts]
+ * @param {{ secure?: boolean, env?: NodeJS.ProcessEnv }} [opts]
  */
 function setCsrfCookie(res, token, opts) {
-  const secure = opts && opts.secure !== undefined ? opts.secure : process.env.NODE_ENV === "production";
-  res.cookie(CSRF_COOKIE, token, {
+  const env = (opts && opts.env) || process.env;
+  const secure =
+    opts && opts.secure !== undefined ? opts.secure : String(env.NODE_ENV || "") === "production";
+  const cookieName = getCsrfCookieName(env);
+  res.cookie(cookieName, token, {
     httpOnly: false, // double-submit must be readable by form issuance from server; value is HMAC-signed
     secure,
     sameSite: "lax",
@@ -97,8 +127,10 @@ function setCsrfCookie(res, token, opts) {
 
 module.exports = {
   CSRF_COOKIE,
+  DEFAULT_CSRF_COOKIE,
   CSRF_FIELD,
   CSRF_PREFIX,
+  getCsrfCookieName,
   getCsrfSecret,
   issueCsrfToken,
   validateCsrf,

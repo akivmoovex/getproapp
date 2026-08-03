@@ -1,0 +1,163 @@
+<%
+  var form = (pageData && pageData.form) || {};
+  var values = form.values || {};
+  var errors = form.errors || [];
+  var fieldErrors = form.fieldErrors || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var mode = form.mode || 'create';
+  var facilities = form.facilities || [];
+  var roleOptions = form.roleOptions || [];
+%>
+<section class="ac-staff-form" data-ac-page-section="staff-<%= mode %>" data-ac-visual="stitch-gap">
+  <% if (errors.length) { %>
+  <div id="ac-staff-error-summary" class="ac-flash ac-flash--error" role="alert" tabindex="-1">
+    <strong>Please fix the following:</strong>
+    <ul>
+      <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+    </ul>
+  </div>
+  <% } %>
+
+  <form class="ac-panel" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+
+    <h2 class="ac-dashboard__card-title">Identity &amp; contact</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="first_name">First name</label>
+      <input class="ac-input" id="first_name" name="first_name" required maxlength="100" autocomplete="given-name" value="<%= values.firstName || '' %>"/>
+      <% if (fieldErrors.first_name) { %><p class="ac-field-error"><%= fieldErrors.first_name %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="last_name">Last name</label>
+      <input class="ac-input" id="last_name" name="last_name" required maxlength="100" autocomplete="family-name" value="<%= values.lastName || '' %>"/>
+      <% if (fieldErrors.last_name) { %><p class="ac-field-error"><%= fieldErrors.last_name %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="preferred_name">Preferred name <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="preferred_name" name="preferred_name" maxlength="100" value="<%= values.preferredName || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="phone">Phone</label>
+      <input class="ac-input" id="phone" name="phone" required inputmode="tel" autocomplete="tel" value="<%= values.phone || '' %>" placeholder="+260…"/>
+      <% if (fieldErrors.phone) { %><p class="ac-field-error"><%= fieldErrors.phone %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="email">Email <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="email" name="email" type="email" autocomplete="email" value="<%= values.email || '' %>"/>
+      <% if (fieldErrors.email) { %><p class="ac-field-error"><%= fieldErrors.email %></p><% } %>
+    </div>
+
+    <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Employment</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="job_title">Job title</label>
+      <input class="ac-input" id="job_title" name="job_title" maxlength="120" value="<%= values.jobTitle || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="employment_type">Employment type</label>
+      <select class="ac-select" id="employment_type" name="employment_type" required>
+        <% (form.employmentOptions || []).forEach(function (t) { %>
+        <option value="<%= t.value %>" <%= values.employmentType === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+      <% if (fieldErrors.employment_type) { %><p class="ac-field-error"><%= fieldErrors.employment_type %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="staff_number">Staff number <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="staff_number" name="staff_number" maxlength="64" value="<%= values.staffNumber || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="start_date">Start date <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="start_date" name="start_date" type="date" value="<%= values.startDate || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="end_date">End date <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="end_date" name="end_date" type="date" value="<%= values.endDate || '' %>"/>
+    </div>
+
+    <% if (form.canAssignFacility) { %>
+    <fieldset class="ac-fieldset" style="margin-top:1.5rem">
+      <legend class="ac-dashboard__card-title">Facility assignments</legend>
+      <% if (!facilities.length) { %>
+      <p class="ac-muted">No assignable facilities are available for your access.</p>
+      <% } else { %>
+      <div class="ac-check-grid" data-ac-facility-multi="1">
+        <% facilities.forEach(function (f) { %>
+        <label class="ac-check">
+          <input type="checkbox" name="facility_ids" value="<%= f.id %>" <%= (values.facilityIds || []).indexOf(String(f.id)) >= 0 ? 'checked' : '' %>/>
+          <%= f.displayName %>
+        </label>
+        <% }) %>
+      </div>
+      <% if (fieldErrors.facility_ids) { %><p class="ac-field-error"><%= fieldErrors.facility_ids %></p><% } %>
+      <div class="ac-field" style="margin-top:1rem">
+        <label class="ac-label" for="primary_facility_id">Primary facility</label>
+        <select class="ac-select" id="primary_facility_id" name="primary_facility_id">
+          <option value="">Select primary</option>
+          <% facilities.forEach(function (f) { %>
+          <option value="<%= f.id %>" <%= values.primaryFacilityId === String(f.id) ? 'selected' : '' %>><%= f.displayName %></option>
+          <% }) %>
+        </select>
+        <% if (fieldErrors.primary_facility_id) { %><p class="ac-field-error"><%= fieldErrors.primary_facility_id %></p><% } %>
+      </div>
+      <% } %>
+    </fieldset>
+    <% } %>
+
+    <% if (mode === 'create' && form.canAssignAccess && roleOptions.length) { %>
+    <fieldset class="ac-fieldset" style="margin-top:1.5rem">
+      <legend class="ac-dashboard__card-title">Initial access</legend>
+      <div class="ac-field">
+        <label class="ac-label" for="role_key">Foundational role</label>
+        <select class="ac-select" id="role_key" name="role_key" required>
+          <% roleOptions.forEach(function (r) { %>
+          <option value="<%= r.value %>" <%= values.roleKey === r.value ? 'selected' : '' %>><%= r.label %></option>
+          <% }) %>
+        </select>
+        <% if (fieldErrors.role_key) { %><p class="ac-field-error"><%= fieldErrors.role_key %></p><% } %>
+        <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem">
+          <% roleOptions.forEach(function (r) { if (r.value === values.roleKey) { %><%= r.description %><% } }) %>
+        </p>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="role_scope">Role scope</label>
+        <select class="ac-select" id="role_scope" name="role_scope">
+          <option value="facility" <%= values.roleScope === 'facility' ? 'selected' : '' %>>Facility</option>
+          <option value="organisation" <%= values.roleScope === 'organisation' ? 'selected' : '' %>>Organization-wide</option>
+        </select>
+        <% if (fieldErrors.role_scope) { %><p class="ac-field-error"><%= fieldErrors.role_scope %></p><% } %>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="role_facility_id">Role facility <span class="ac-muted">(when facility-scoped)</span></label>
+        <select class="ac-select" id="role_facility_id" name="role_facility_id">
+          <option value="">Same as primary / first assignment</option>
+          <% facilities.forEach(function (f) { %>
+          <option value="<%= f.id %>" <%= values.roleFacilityId === String(f.id) ? 'selected' : '' %>><%= f.displayName %></option>
+          <% }) %>
+        </select>
+        <% if (fieldErrors.role_facility_id) { %><p class="ac-field-error"><%= fieldErrors.role_facility_id %></p><% } %>
+      </div>
+      <p class="ac-muted">Detailed role editing belongs to Roles &amp; access. This step assigns one foundational role only.</p>
+    </fieldset>
+    <% } %>
+
+    <% if (mode === 'create') { %>
+    <label class="ac-check" style="margin-top:1rem">
+      <input type="checkbox" name="issue_invitation" value="1" <%= values.issueInvitation ? 'checked' : '' %>/>
+      Issue activation invitation now
+    </label>
+    <% } %>
+
+    <div class="ac-actions ac-actions--stack-mobile" style="margin-top:1.25rem">
+      <button type="submit" class="ac-btn" data-loading="Saving…"><%= mode === 'create' ? 'Create &amp; invite' : 'Save changes' %></button>
+      <a class="ac-btn ac-btn--ghost" href="<%= mode === 'edit' && form.staff ? '/app/staff/' + encodeURIComponent(form.staff.id) : '/app/staff' %>">Cancel</a>
+    </div>
+  </form>
+</section>
+<% if (errors.length) { %>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var el = document.getElementById("ac-staff-error-summary");
+  if (el && el.focus) el.focus();
+});
+</script>
+<% } %>

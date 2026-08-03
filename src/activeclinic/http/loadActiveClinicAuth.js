@@ -1,0 +1,182 @@
+"use strict";
+
+/**
+ * Resolve ActiveClinic authenticated request context from deployment session.
+ */
+
+const identityRepo = require("../../platform/repositories/platformIdentityRepository");
+const {
+  isIdentityUsable,
+  mapIdentity,
+} = require("../../platform/services/platformIdentityService");
+const {
+  resolveEligibleOrganization,
+} = require("../services/activeClinicLoginEligibility");
+const {
+  getActiveStaffFacilityAssignment,
+} = require("../services/activeClinicStaffFacilityService");
+
+/**
+ * @param {{
+ *   getPool: () => { query: Function },
+ *   env?: NodeJS.ProcessEnv,
+ * }} deps
+ */
+function createLoadActiveClinicAuth(deps) {
+  const getPool = deps.getPool;
+
+  return async function loadActiveClinicAuth(req, res, next) {
+    req.activeClinicAuth = {
+      authenticated: false,
+      reason: "none",
+      platformIdentity: null,
+      organization: null,
+      organizationProduct: null,
+      healthcareOrganization: null,
+      staffMember: null,
+      facilityAssignments: [],
+      roleAssignments: [],
+      permissions: [],
+      selectedFacility: null,
+      mustChangePassword: false,
+      session: null,
+    };
+
+    try {
+      const v5 = req.v5Session;
+      if (!v5 || !v5.authenticated || !v5.session) {
+        req.activeClinicAuth.reason = (v5 && v5.reason) || "unauthenticated";
+        return next();
+      }
+      const session = v5.session;
+      if (session.principalType !== "platform_identity" || !session.platformIdentityId) {
+        req.activeClinicAuth.reason = "wrong_principal";
+        return next();
+      }
+      if (String(session.applicationCode || "").toLowerCase() !== "activeclinic") {
+        req.activeClinicAuth.reason = "product_mismatch";
+        return next();
+      }
+
+      const pool = getPool();
+      const identityRow = await identityRepo.findIdentityById(
+        pool,
+        session.platformIdentityId
+      );
+      if (!identityRow || !isIdentityUsable(identityRow)) {
+        req.activeClinicAuth.reason = "identity_disabled";
+        return next();
+      }
+
+      if (!session.organizationId) {
+        req.activeClinicAuth.reason = "organization_required";
+        return next();
+      }
+
+      const resolved = await resolveEligibleOrganization(pool, {
+        platformIdentityId: session.platformIdentityId,
+        organizationId: session.organizationId,
+      });
+      if (!resolved.ok) {
+        req.activeClinicAuth.reason = "eligibility_denied";
+        return next();
+      }
+
+      const elig = resolved.eligibility;
+      let selectedFacility = null;
+      const sessionContext =
+        session.contextJson && typeof session.contextJson === "object"
+          ? session.contextJson
+          : {};
+      const requestedFacilityId =
+        sessionContext.selectedFacilityId ||
+        elig.defaultFacilityId ||
+        null;
+
+      if (requestedFacilityId) {
+        const assignment = await getActiveStaffFacilityAssignment(pool, {
+          staffMemberId: elig.staffMember.id,
+          facilityId: requestedFacilityId,
+          organizationId: elig.organization.id,
+        });
+        if (assignment.ok || elig.isNetworkAdmin) {
+          const fac = await pool.query(
+            `SELECT * FROM activeclinic.facilities
+              WHERE id = $1 AND organization_id = $2 AND status = 'active'
+              LIMIT 1`,
+            [requestedFacilityId, elig.organization.id]
+          );
+          if (fac.rows[0]) {
+            selectedFacility = {
+              id: fac.rows[0].id,
+              facilityKey: fac.rows[0].facility_key,
+              displayName: fac.rows[0].display_name,
+              status: fac.rows[0].status,
+              isPrimary: fac.rows[0].is_primary === true,
+            };
+          }
+        }
+      }
+
+      req.activeClinicAuth = {
+        authenticated: true,
+        reason: "ok",
+        platformIdentity: mapIdentity(identityRow),
+        organization: elig.organization,
+        organizationProduct: elig.organizationProduct,
+        healthcareOrganization: elig.healthcareOrganization,
+        staffMember: elig.staffMember,
+        facilityAssignments: elig.facilityAssignments,
+        roleAssignments: elig.roleAssignments,
+        permissions: elig.permissions,
+        selectedFacility,
+        mustChangePassword: identityRow.must_change_password === true,
+        session,
+        isNetworkAdmin: elig.isNetworkAdmin,
+      };
+      return next();
+    } catch {
+      req.activeClinicAuth.reason = "lookup_error";
+      return next();
+    }
+  };
+}
+
+/**
+ * Require authenticated ActiveClinic context. Password-change gate optional.
+ */
+function createRequireActiveClinicAuth(options) {
+  const allowPasswordChangeOnly = Boolean(options && options.allowPasswordChangeOnly);
+  const loginPath = (options && options.loginPath) || "/login";
+  const changePasswordPath =
+    (options && options.changePasswordPath) || "/account/change-password";
+
+  return function requireActiveClinicAuth(req, res, next) {
+    const auth = req.activeClinicAuth;
+    if (!auth || !auth.authenticated) {
+      if (req.accepts("html")) {
+        return res.redirect(303, loginPath);
+      }
+      return res.status(401).json({ ok: false, code: "unauthenticated" });
+    }
+    if (auth.mustChangePassword && !allowPasswordChangeOnly) {
+      const pathOnly = String(req.path || "").split("?")[0];
+      if (
+        pathOnly !== changePasswordPath &&
+        pathOnly !== "/logout" &&
+        !pathOnly.startsWith("/account/change-password")
+      ) {
+        if (req.accepts("html")) {
+          return res.redirect(303, changePasswordPath);
+        }
+        return res.status(403).json({ ok: false, code: "password_change_required" });
+      }
+    }
+    return next();
+  };
+}
+
+module.exports = {
+  createLoadActiveClinicAuth,
+  createRequireActiveClinicAuth,
+};

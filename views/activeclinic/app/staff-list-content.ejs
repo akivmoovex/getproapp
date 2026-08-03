@@ -1,0 +1,150 @@
+<%
+  var list = (pageData && pageData.list) || {};
+  var staff = list.staff || [];
+  var filters = list.filters || {};
+  var filterOptions = list.filterOptions || {};
+  var actions = list.actions || {};
+  var emptyMode = list.emptyMode;
+%>
+<section class="ac-staff" data-ac-page-section="staff-list" data-ac-visual="stitch-gap">
+  <form class="ac-panel ac-filter-bar" method="get" action="/app/staff" data-ac-staff-filters="1">
+    <div class="ac-filter-bar__grid ac-filter-bar__grid--staff">
+      <div>
+        <label class="ac-label" for="staff_search">Search</label>
+        <input class="ac-input" id="staff_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Name or job title" autocomplete="off"/>
+      </div>
+      <div>
+        <label class="ac-label" for="staff_status">Staff status</label>
+        <select class="ac-select" id="staff_status" name="status">
+          <option value="">All statuses</option>
+          <% (filterOptions.statuses || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="staff_employment">Employment</label>
+        <select class="ac-select" id="staff_employment" name="employment">
+          <option value="">All types</option>
+          <% (filterOptions.employmentTypes || []).forEach(function (t) { %>
+          <option value="<%= t.value %>" <%= filters.employment === t.value ? 'selected' : '' %>><%= t.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="staff_facility">Facility</label>
+        <select class="ac-select" id="staff_facility" name="facility">
+          <option value="">All facilities</option>
+          <% (filterOptions.facilities || []).forEach(function (f) { %>
+          <option value="<%= f.value %>" <%= filters.facility === f.value ? 'selected' : '' %>><%= f.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="staff_account">Account</label>
+        <select class="ac-select" id="staff_account" name="account">
+          <option value="">All account states</option>
+          <% (filterOptions.accounts || []).forEach(function (a) { %>
+          <option value="<%= a.value %>" <%= filters.account === a.value ? 'selected' : '' %>><%= a.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-filter-bar__checks">
+        <button type="submit" class="ac-btn">Apply</button>
+        <% if (filters.active) { %>
+        <a class="ac-btn ac-btn--ghost" href="/app/staff">Clear</a>
+        <% } %>
+      </div>
+    </div>
+  </form>
+
+  <% if (list.resultCount != null && !emptyMode) { %>
+  <p class="ac-muted" data-ac-result-count="<%= list.resultCount %>"><%= list.resultCount %> staff profile<%= list.resultCount === 1 ? '' : 's' %></p>
+  <% } %>
+  <% if (list.invitedOnly) { %>
+  <p class="ac-flash" data-ac-staff-invited-only="1">Showing invited staff who have not completed activation yet.</p>
+  <% } %>
+
+  <% if (emptyMode === 'none') { %>
+  <div class="ac-panel ac-empty" data-ac-empty="staff-none">
+    <h2>No staff yet</h2>
+    <p>This organization does not have any staff profiles configured.</p>
+    <% if (actions.canInvite) { %>
+    <p><a class="ac-btn" href="<%= actions.inviteHref || '/app/staff/new' %>">Invite staff</a></p>
+    <% } %>
+  </div>
+  <% } else if (emptyMode === 'filtered') { %>
+  <div class="ac-panel ac-empty" data-ac-empty="staff-filtered">
+    <h2>No matching staff</h2>
+    <p>No staff match the current search or filters.</p>
+    <p><a class="ac-btn ac-btn--ghost" href="/app/staff">Clear filters</a></p>
+  </div>
+  <% } else if (emptyMode === 'facility') { %>
+  <div class="ac-panel ac-empty" data-ac-empty="staff-facility">
+    <h2>No staff assigned to this facility</h2>
+    <p>There are no staff with an active assignment for the selected facility.</p>
+    <p><a class="ac-btn ac-btn--ghost" href="/app/staff">Clear filters</a></p>
+  </div>
+  <% } else if (emptyMode === 'restricted') { %>
+  <div class="ac-panel ac-empty" data-ac-empty="staff-restricted">
+    <h2>No staff available</h2>
+    <p>You do not have access to staff profiles for your assigned facilities.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-staff-desktop" data-ac-table="staff">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Job title</th>
+          <th scope="col">Staff status</th>
+          <th scope="col">Facilities</th>
+          <th scope="col">Account</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% staff.forEach(function (row) { %>
+        <tr data-ac-staff-row="<%= row.id %>">
+          <td>
+            <div class="ac-staff-name">
+              <%- include('../partials/staff-badges', { initials: row.initials, status: null, accountKey: null }) %>
+              <div>
+                <a href="<%= row.href %>"><%= row.displayName %></a>
+                <% if (row.preferredName) { %><div class="ac-muted" style="font-size:.85rem">Preferred: <%= row.preferredName %></div><% } %>
+              </div>
+            </div>
+          </td>
+          <td class="ac-muted"><%= row.jobTitle || '—' %></td>
+          <td><%- include('../partials/staff-badges', { status: row.status, statusLabel: row.statusLabel, initials: null, accountKey: null }) %></td>
+          <td class="ac-muted"><%= row.facilitySummary || '—' %></td>
+          <td>
+            <%- include('../partials/staff-badges', { accountKey: row.accountKey, accountLabel: row.accountLabel, status: null, initials: null, invitationPending: row.invitationPending && row.accountKey !== 'pending_invite' }) %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ac-staff-mobile" data-ac-mobile-list="staff">
+    <% staff.forEach(function (row) { %>
+    <article class="ac-panel ac-mobile-card" data-ac-staff-card="<%= row.id %>">
+      <div class="ac-staff-name">
+        <%- include('../partials/staff-badges', { initials: row.initials, status: null, accountKey: null }) %>
+        <div>
+          <h2 class="ac-mobile-card__title"><a href="<%= row.href %>"><%= row.displayName %></a></h2>
+          <p class="ac-muted" style="margin:0 0 .5rem"><%= row.jobTitle || 'No job title' %></p>
+        </div>
+      </div>
+      <div class="ac-actions" style="gap:.35rem;flex-wrap:wrap">
+        <%- include('../partials/staff-badges', { status: row.status, statusLabel: row.statusLabel, accountKey: row.accountKey, accountLabel: row.accountLabel, initials: null }) %>
+      </div>
+      <% if (row.primaryFacilityName || row.facilitySummary) { %>
+      <p class="ac-muted" style="margin:.65rem 0 0"><%= row.primaryFacilityName || row.facilitySummary %></p>
+      <% } %>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+</section>
+<p class="ac-muted" style="margin-top:1rem">Staff create and invite form screens are scheduled for a later wave. Credential actions are available on each staff profile when permitted.</p>

@@ -1,0 +1,342 @@
+"use strict";
+
+/**
+ * Authenticated ActiveClinic application shell routes (AC-V6-10).
+ */
+
+const {
+  issueCsrfToken,
+  setCsrfCookie,
+  validateCsrf,
+  CSRF_FIELD,
+} = require("../../platform/http/v5Csrf");
+const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const {
+  createRequireActiveClinicAuth,
+} = require("./loadActiveClinicAuth");
+const {
+  createRequireActiveClinicPermission,
+} = require("./activeClinicPermissionMiddleware");
+const {
+  buildActiveClinicShellViewModel,
+} = require("../services/buildActiveClinicShellViewModel");
+const {
+  renderActiveClinicAppPage,
+} = require("./renderActiveClinicShell");
+const {
+  listSelectableFacilities,
+  selectFacilityForSession,
+} = require("../services/activeClinicFacilityContextService");
+const {
+  listEligibleActiveClinicOrganizations,
+} = require("../services/activeClinicLoginEligibility");
+const {
+  loadActiveClinicDashboardHome,
+} = require("../services/loadActiveClinicDashboardHome");
+const {
+  createPlatformIdentitySession,
+} = require("../../platform/session/createDeploymentSession");
+const {
+  setV5SessionCookie,
+  readV5SessionCookie,
+} = require("../../platform/session/v5SessionCookie");
+const { revokeV5Session } = require("../../platform/session/revokeV5Session");
+
+
+/**
+ * @param {import('express').Express} app
+ * @param {{ getPool: Function, env: NodeJS.ProcessEnv, isProduction: boolean }} deps
+ */
+function registerActiveClinicAppRoutes(app, deps) {
+  const getPool = deps.getPool;
+  const env = deps.env;
+  const isProduction = deps.isProduction;
+  const requireAuth = createRequireActiveClinicAuth({});
+  const requirePermission = createRequireActiveClinicPermission({
+    getPool,
+    env,
+    isProduction,
+  });
+
+  function issuePageCsrf(res) {
+    const token = issueCsrfToken(env);
+    setCsrfCookie(res, token, { secure: isProduction, env });
+    return token;
+  }
+
+  async function renderShell(req, res, options) {
+    const csrfToken = issuePageCsrf(res);
+    const shell = await buildActiveClinicShellViewModel(getPool(), {
+      req,
+      auth: req.activeClinicAuth,
+      csrfToken,
+      activeNav: options.activeNav,
+      pageHeader: options.pageHeader,
+      breadcrumbs: options.breadcrumbs,
+      flash: options.flash || null,
+      pageData: options.pageData || {},
+    });
+    // Sync selected facility onto auth for permission checks within same request pages
+    if (shell.selectedFacility) {
+      req.activeClinicAuth.selectedFacility = shell.selectedFacility;
+    }
+    const html = renderActiveClinicAppPage(options.content, shell);
+    return res.status(options.status || 200).type("html").send(html);
+  }
+
+  app.get("/app", requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
+    try {
+      const csrfToken = issuePageCsrf(res);
+      const shellBase = await buildActiveClinicShellViewModel(getPool(), {
+        req,
+        auth: req.activeClinicAuth,
+        csrfToken,
+        activeNav: "home",
+        pageHeader: {
+          title: "Home",
+          description: "Infrastructure workspace for your healthcare organization.",
+          actions: [],
+        },
+        breadcrumbs: [{ label: "Home" }],
+      });
+      if (shellBase.selectedFacility) {
+        req.activeClinicAuth.selectedFacility = shellBase.selectedFacility;
+      }
+      const dashboard = await loadActiveClinicDashboardHome(getPool(), {
+        auth: req.activeClinicAuth,
+        shell: shellBase,
+      });
+      const actions = [];
+      if (dashboard.quickActions && dashboard.quickActions[0]) {
+        const first = dashboard.quickActions.find((a) => a.primary) || dashboard.quickActions[0];
+        if (first && first.href) {
+          actions.push({ label: first.label, href: first.href });
+        }
+      }
+      shellBase.pageHeader.actions = actions;
+      shellBase.pageData = { dashboard };
+      const html = renderActiveClinicAppPage("app/home-content.ejs", shellBase);
+      return res.status(200).type("html").send(html);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get(
+    "/app/access",
+    requireAuth,
+    requirePermission("activeclinic.staff.assign_access"),
+    async (req, res, next) => {
+      try {
+        return await renderShell(req, res, {
+          activeNav: "access",
+          content: "app/access-content.ejs",
+          pageHeader: {
+            title: "Roles & access",
+            description: "Foundational ActiveClinic roles and scope model.",
+            actions: [],
+          },
+          breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Roles & access" }],
+          pageData: {
+            roles: [
+              {
+                displayName: "Network admin",
+                description:
+                  "Organization-wide administration including facilities, staff, and access.",
+              },
+              {
+                displayName: "Facility admin",
+                description:
+                  "Facility-scoped administration for assigned facilities.",
+              },
+              {
+                displayName: "Staff",
+                description:
+                  "Authenticated access with facility visibility according to assignments.",
+              },
+            ],
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/settings",
+    requireAuth,
+    requirePermission("activeclinic.organization.manage"),
+    async (req, res, next) => {
+      try {
+        const perms = new Set(req.activeClinicAuth.permissions || []);
+        const categories = [];
+        if (perms.has("activeclinic.organization.view")) {
+          categories.push({
+            label: "Organization",
+            description: "Healthcare organization context for this tenant.",
+            href: "/app",
+          });
+        }
+        if (perms.has("activeclinic.facility.view")) {
+          categories.push({
+            label: "Facilities",
+            description: "Facility catalogue and status.",
+            href: "/app/facilities",
+          });
+        }
+        if (perms.has("activeclinic.staff.assign_access")) {
+          categories.push({
+            label: "Staff access",
+            description: "Roles and permission foundations.",
+            href: "/app/access",
+          });
+        }
+        categories.push({
+          label: "Account",
+          description: "Password and signed-in session.",
+          href: "/account/change-password",
+        });
+        return await renderShell(req, res, {
+          activeNav: "settings",
+          content: "app/settings-content.ejs",
+          pageHeader: {
+            title: "Settings",
+            description: "Infrastructure settings available in this foundation stage.",
+            actions: [],
+          },
+          breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Settings" }],
+          pageData: { categories },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get("/app/select-facility", requireAuth, async (req, res, next) => {
+    try {
+      const listed = await listSelectableFacilities(getPool(), req.activeClinicAuth);
+      return await renderShell(req, res, {
+        activeNav: "home",
+        content: "app/select-facility-content.ejs",
+        pageHeader: {
+          title: "Select facility",
+          description: "Choose the facility context for your session.",
+          actions: [],
+        },
+        breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Select facility" }],
+        pageData: { facilities: listed.facilities || [] },
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/app/select-facility", requireAuth, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.status(403).send("Forbidden");
+      }
+      const session = req.v5Session && req.v5Session.session;
+      if (!session || !session.id) {
+        return res.redirect(303, "/login");
+      }
+      const selected = await selectFacilityForSession(getPool(), {
+        auth: req.activeClinicAuth,
+        sessionId: session.id,
+        facilityId: req.body && req.body.facility_id,
+      });
+      if (!selected.ok) {
+        return res.redirect(303, "/app/select-facility");
+      }
+      return res.redirect(303, "/app");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/app/select-organization", requireAuth, async (req, res, next) => {
+    try {
+      const listed = await listEligibleActiveClinicOrganizations(getPool(), {
+        platformIdentityId: req.activeClinicAuth.platformIdentity.id,
+      });
+      const organizations = (listed.organizations || []).map((o) => ({
+        organizationId: o.organization.id,
+        displayName:
+          (o.healthcareOrganization && o.healthcareOrganization.publicName) ||
+          o.organization.displayName,
+        staffDisplayName: o.staffMember && o.staffMember.displayName,
+      }));
+      return await renderShell(req, res, {
+        activeNav: "home",
+        content: "app/select-organization-content.ejs",
+        pageHeader: {
+          title: "Switch organization",
+          description: "Choose an eligible healthcare organization.",
+          actions: [],
+        },
+        breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Switch organization" }],
+        pageData: { organizations },
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/app/select-organization", requireAuth, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.status(403).send("Forbidden");
+      }
+      const organizationId = String((req.body && req.body.organization_id) || "").trim();
+      const deployment = getPlatformDeploymentCode(env);
+      if (!deployment.ok || !organizationId) {
+        return res.redirect(303, "/app/select-organization");
+      }
+
+      const listed = await listEligibleActiveClinicOrganizations(getPool(), {
+        platformIdentityId: req.activeClinicAuth.platformIdentity.id,
+      });
+      const match = (listed.organizations || []).find(
+        (o) => String(o.organization.id) === organizationId
+      );
+      if (!match) {
+        return res.redirect(303, "/app/select-organization");
+      }
+
+      const rawToken = readV5SessionCookie(req, env);
+      if (rawToken) {
+        await revokeV5Session(getPool(), {
+          rawToken,
+          deploymentCode: deployment.code,
+        });
+      }
+
+      const fresh = await createPlatformIdentitySession(getPool(), {
+        deploymentCode: deployment.code,
+        platformIdentityId: req.activeClinicAuth.platformIdentity.id,
+        organizationId,
+        ip: String(
+          (req.headers && req.headers["x-forwarded-for"]) ||
+            req.ip ||
+            ""
+        )
+          .split(",")[0]
+          .trim(),
+        userAgent: req.headers["user-agent"] || null,
+      });
+      if (!fresh.ok) {
+        return res.redirect(303, "/login");
+      }
+      setV5SessionCookie(res, fresh.rawToken, { secure: isProduction, env });
+      return res.redirect(303, "/app");
+    } catch (err) {
+      return next(err);
+    }
+  });
+}
+
+module.exports = {
+  registerActiveClinicAppRoutes,
+};

@@ -1,0 +1,21 @@
+<main id="ac-auth-main" class="ac-auth-main" data-ac-auth-main="1">
+  <div class="ac-auth-card ac-auth-card--single" data-ac-lifecycle-state="<%= stateCode || 'invalid' %>">
+    <div class="ac-auth-form-panel" style="text-align:center">
+      <div class="ac-auth-state-icon ac-auth-state-icon--<%= tone || 'error' %>" aria-hidden="true">
+        <% if (tone === 'success') { %>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+        <% } else { %>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <% } %>
+      </div>
+      <h1 class="ac-auth-h1" style="display:block"><%= heading %></h1>
+      <p class="ac-auth-alert ac-auth-alert--<%= tone === 'success' ? 'success' : 'error' %>" role="<%= tone === 'success' ? 'status' : 'alert' %>">
+        <%= message %>
+      </p>
+      <p class="ac-auth-hint">
+        <% if (primaryHref) { %><a class="ac-auth-link" href="<%= primaryHref %>"><%= primaryLabel || 'Continue' %></a><% } %>
+        <% if (secondaryHref) { %> · <a class="ac-auth-link" href="<%= secondaryHref %>"><%= secondaryLabel %></a><% } %>
+      </p>
+    </div>
+  </div>
+</main>

@@ -1,0 +1,86 @@
+<%
+  var s = typeof shell !== 'undefined' && shell ? shell : {};
+  var nav = (s.navigation && s.navigation.items) || [];
+  var csrf = s.csrf || { token: '', field: '_csrf' };
+  var account = s.accountMenu || {};
+  var isMobile = typeof mobile !== 'undefined' && mobile;
+%>
+<div class="ac-sidebar__brand" data-ac-shell-brand="1">
+  <a class="ac-brand-lockup" href="/app">
+    <span class="ac-brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M7 3h10v4h4v10h-4v4H7v-4H3V7h4V3zm2 2v4H5v6h4v4h6v-4h4V9h-4V5H9z"/></svg>
+    </span>
+    <span class="ac-brand-text">
+      <span class="ac-brand-text__org"><%= (s.healthcareOrganization && s.healthcareOrganization.publicName) || 'ActiveClinic' %></span>
+      <span class="ac-brand-text__product"><%= (s.product && s.product.productLine) || 'ActiveClinic HMS' %></span>
+    </span>
+  </a>
+  <p class="ac-facility-chip" data-ac-facility-context="1">
+    <% if (s.selectedFacility) { %>
+      <span class="ac-facility-chip__pin" aria-hidden="true">⌖</span>
+      <span><%= s.selectedFacility.displayName %></span>
+    <% } else if (s.isNetworkAdmin) { %>
+      <span>Organization-wide</span>
+    <% } else { %>
+      <span>No facility selected</span>
+    <% } %>
+  </p>
+</div>
+
+<% if (s.canSwitchFacility || (s.availableFacilities && s.availableFacilities.length > 1) || (!s.selectedFacility && !s.isNetworkAdmin && s.availableFacilities && s.availableFacilities.length)) { %>
+  <a class="ac-context-link" href="/app/select-facility" data-ac-facility-switcher="1">Switch facility</a>
+<% } %>
+<% if (s.canSwitchOrganization) { %>
+  <a class="ac-context-link" href="/app/select-organization" data-ac-org-switcher="1">Switch organization</a>
+<% } %>
+
+<nav
+  class="ac-nav"
+  aria-label="<%= isMobile ? 'Mobile' : 'Desktop' %> primary"
+  data-ac-nav-source="registry"
+>
+  <p class="ac-nav-group-label">Foundation</p>
+  <% nav.forEach(function (item) { %>
+  <a
+    href="<%= item.href %>"
+    class="ac-nav-item<%= item.current ? ' is-active' : '' %>"
+    <% if (item.current) { %>aria-current="page"<% } %>
+    data-ac-nav-key="<%= item.key %>"
+  >
+    <%- include('nav-icon', { name: item.icon }) %>
+    <span><%= item.label %></span>
+  </a>
+  <% }) %>
+</nav>
+
+<div class="ac-sidebar__foot ac-account" data-ac-account-menu="1">
+  <details>
+    <summary>
+      <span class="ac-account__avatar" aria-hidden="true"><%= (account.staffDisplayName || 'A').charAt(0) %></span>
+      <span class="ac-account__meta">
+        <span class="ac-account__name"><%= account.staffDisplayName || 'Account' %></span>
+        <span class="ac-account__role"><%= account.roleLabel || account.jobTitle || 'Staff' %></span>
+      </span>
+    </summary>
+    <div class="ac-account__menu">
+      <p class="ac-muted" style="margin:0;font-size:.85rem">
+        <%= account.organizationLabel || '' %>
+        <% if (account.facilityLabel) { %><br /><%= account.facilityLabel %><% } %>
+      </p>
+      <a href="<%= account.changePasswordHref || '/account/change-password' %>">Change password</a>
+      <% if (s.canSwitchOrganization) { %>
+      <a href="<%= account.selectOrganizationHref || '/app/select-organization' %>">Switch organization</a>
+      <% } %>
+      <% if (s.canSwitchFacility || (s.availableFacilities && s.availableFacilities.length > 1)) { %>
+      <a href="<%= account.selectFacilityHref || '/app/select-facility' %>">Switch facility</a>
+      <% } %>
+      <form method="post" action="<%= account.logoutAction || '/logout' %>">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </details>
+</div>
+<% if (isMobile) { %>
+  <button type="button" class="ac-btn ac-btn--ghost ac-drawer-close" data-ac-nav-close="1">Close menu</button>
+<% } %>

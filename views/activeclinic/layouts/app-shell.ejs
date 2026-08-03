@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= (pageHeader && pageHeader.title) || 'ActiveClinic' %> · ActiveClinic</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/activeclinic/ac-app.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's02-1' %>" />
+</head>
+<body
+  class="ac-app-body"
+  data-ac-product="activeclinic"
+  data-ac-shell="staff-app"
+  data-ac-page="<%= activeNav || 'home' %>"
+  data-ac-shell-version="s02"
+>
+  <a class="ac-skip" href="#ac-main">Skip to content</a>
+  <div id="ac-shell-nav-live" class="ac-sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="ac-app" data-ac-composition="desktop-shell">
+    <aside class="ac-sidebar" data-ac-nav="desktop-sidebar" aria-label="ActiveClinic navigation">
+      <%- include('../partials/sidebar', { shell: typeof shell !== 'undefined' ? shell : null }) %>
+    </aside>
+
+    <div class="ac-main-wrap">
+      <header class="ac-topbar" data-ac-nav="mobile-header" data-ac-composition="mobile-topbar">
+        <button
+          type="button"
+          class="ac-icon-btn"
+          data-ac-nav-toggle="1"
+          aria-expanded="false"
+          aria-controls="ac-nav-drawer"
+          aria-label="Open navigation menu"
+        >
+          <span aria-hidden="true">☰</span>
+          <span class="ac-sr-only">Menu</span>
+        </button>
+        <div class="ac-topbar__context">
+          <strong><%= (shell && shell.product && shell.product.displayName) || 'ActiveClinic' %></strong>
+          <div class="ac-muted ac-topbar__sub">
+            <%= (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName) || '' %>
+            <% if (shell && shell.selectedFacility) { %>
+              · <%= shell.selectedFacility.displayName %>
+            <% } %>
+          </div>
+        </div>
+        <details class="ac-topbar-account" data-ac-account-menu="mobile">
+          <summary class="ac-icon-btn" aria-label="Account menu"><%= ((shell && shell.accountMenu && shell.accountMenu.staffDisplayName) || 'A').charAt(0) %></summary>
+          <div class="ac-topbar-account__menu">
+            <p class="ac-muted" style="margin:0 0 .5rem;font-size:.85rem"><%= shell && shell.accountMenu && shell.accountMenu.staffDisplayName %></p>
+            <a href="/account/change-password">Change password</a>
+            <form method="post" action="/logout">
+              <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || '_csrf' %>" value="<%= (shell && shell.csrf && shell.csrf.token) || '' %>" />
+              <button type="submit">Sign out</button>
+            </form>
+          </div>
+        </details>
+      </header>
+
+      <header class="ac-desktop-header" data-ac-nav="desktop-header">
+        <div class="ac-desktop-header__left">
+          <p class="ac-desktop-header__context ac-muted">
+            <%= (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName) || '' %>
+            <% if (shell && shell.selectedFacility) { %> · <%= shell.selectedFacility.displayName %><% } %>
+          </p>
+        </div>
+        <div class="ac-desktop-header__right" data-ac-account-menu="desktop">
+          <details class="ac-header-account">
+            <summary>
+              <span class="ac-account__avatar" aria-hidden="true"><%= ((shell && shell.accountMenu && shell.accountMenu.staffDisplayName) || 'A').charAt(0) %></span>
+              <span class="ac-account__meta">
+                <span class="ac-account__name"><%= shell && shell.accountMenu && shell.accountMenu.staffDisplayName %></span>
+                <span class="ac-account__role"><%= (shell && shell.accountMenu && (shell.accountMenu.roleLabel || shell.accountMenu.jobTitle)) || 'Staff' %></span>
+              </span>
+            </summary>
+            <div class="ac-account__menu">
+              <a href="/account/change-password">Change password</a>
+              <% if (shell && shell.canSwitchOrganization) { %>
+              <a href="/app/select-organization">Switch organization</a>
+              <% } %>
+              <% if (shell && (shell.canSwitchFacility || (shell.availableFacilities && shell.availableFacilities.length > 1))) { %>
+              <a href="/app/select-facility">Switch facility</a>
+              <% } %>
+              <form method="post" action="/logout">
+                <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || '_csrf' %>" value="<%= (shell && shell.csrf && shell.csrf.token) || '' %>" />
+                <button type="submit">Sign out</button>
+              </form>
+            </div>
+          </details>
+        </div>
+      </header>
+
+      <main id="ac-main" class="ac-content" tabindex="-1">
+        <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %>
+        <nav aria-label="Breadcrumb">
+          <ol class="ac-breadcrumbs">
+            <% breadcrumbs.forEach(function (crumb) { %>
+            <li>
+              <% if (crumb.href) { %><a href="<%= crumb.href %>"><%= crumb.label %></a><% } else { %><%= crumb.label %><% } %>
+            </li>
+            <% }) %>
+          </ol>
+        </nav>
+        <% } %>
+
+        <% if (typeof flash !== 'undefined' && flash && flash.message) { %>
+        <p class="ac-flash ac-flash--<%= flash.type || 'success' %>" role="status"><%= flash.message %></p>
+        <% } %>
+
+        <header class="ac-page-header">
+          <div>
+            <h1><%= (pageHeader && pageHeader.title) || 'ActiveClinic' %></h1>
+            <% if (pageHeader && pageHeader.description) { %>
+            <p><%= pageHeader.description %></p>
+            <% } %>
+          </div>
+          <% if (pageHeader && pageHeader.actions && pageHeader.actions.length) { %>
+          <div class="ac-actions">
+            <% pageHeader.actions.forEach(function (action) { %>
+              <% if (action.href) { %>
+              <a class="ac-btn<%= action.ghost ? ' ac-btn--ghost' : '' %>" href="<%= action.href %>"><%= action.label %></a>
+              <% } %>
+            <% }) %>
+          </div>
+          <% } %>
+        </header>
+
+        <%- body %>
+      </main>
+    </div>
+  </div>
+
+  <div class="ac-drawer-backdrop" data-ac-nav-backdrop="1" hidden></div>
+  <div
+    id="ac-nav-drawer"
+    class="ac-drawer"
+    data-ac-nav-drawer="1"
+    data-ac-composition="mobile-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Navigation"
+    aria-hidden="true"
+  >
+    <%- include('../partials/sidebar', { shell: typeof shell !== 'undefined' ? shell : null, mobile: true }) %>
+  </div>
+
+  <script src="/activeclinic/ac-shell-nav.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's02-1' %>" defer></script>
+</body>
+</html>

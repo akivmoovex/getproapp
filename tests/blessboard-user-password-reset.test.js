@@ -50,6 +50,7 @@ function runCli(args, { input, databaseUrl, extraEnv } = {}) {
       DATABASE_URL: databaseUrl,
       DATABASE_IDENTITY_EXPECTED: IDENTITY_KEY,
       GETPRO_DATABASE_URL: "",
+      PLATFORM_DEPLOYMENT_CODE: DEPLOYMENT,
       ...(extraEnv || {}),
     },
     encoding: "utf8",

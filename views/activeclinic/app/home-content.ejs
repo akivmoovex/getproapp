@@ -1,0 +1,105 @@
+<%
+  var dash = (pageData && pageData.dashboard) || {};
+  var welcome = dash.welcome || {};
+  var summaries = dash.summaries || {};
+  var tasks = dash.setupTasks || [];
+  var actions = dash.quickActions || [];
+  var notices = dash.notices || [];
+  var mode = dash.mode || 'ready';
+%>
+<section class="ac-dashboard" data-ac-page-section="home" data-ac-dashboard="<%= mode %>">
+  <article class="ac-panel ac-dashboard__welcome" data-ac-dashboard-card="welcome">
+    <h2 class="ac-dashboard__card-title">Welcome</h2>
+    <p class="ac-dashboard__lead">
+      <strong><%= welcome.staffDisplayName || shell.staff.displayName %></strong>
+      <% if (welcome.jobTitle) { %><span class="ac-muted"> · <%= welcome.jobTitle %></span><% } %>
+    </p>
+    <dl class="ac-dl">
+      <div>
+        <dt>Organization</dt>
+        <dd><%= welcome.organizationName || '' %></dd>
+      </div>
+      <div>
+        <dt>Facility context</dt>
+        <dd><%= welcome.facilityName || welcome.scopeLabel || 'Not selected' %></dd>
+      </div>
+      <div>
+        <dt>Access</dt>
+        <dd><%= welcome.roleSummary || shell.roleSummary || 'Staff' %></dd>
+      </div>
+    </dl>
+  </article>
+
+  <% if (mode === 'empty') { %>
+  <article class="ac-panel ac-empty" data-ac-dashboard-state="empty">
+    <h2>No facilities yet</h2>
+    <p>This healthcare organization does not have an active facility. Add a facility to continue infrastructure setup.</p>
+    <% if (actions.length && actions[0].href) { %>
+    <p><a class="ac-btn" href="<%= actions[0].href %>"><%= actions[0].label %></a></p>
+    <% } else if (shell.permissionSet && shell.permissionSet['activeclinic.facility.view']) { %>
+    <p><a class="ac-btn" href="/app/facilities">Open facilities</a></p>
+    <% } %>
+  </article>
+  <% } %>
+
+  <div class="ac-dashboard__summaries ac-grid" data-ac-dashboard-card="summaries">
+    <% if (summaries.facilities) { %>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label"><%= summaries.facilities.label %></p>
+      <p class="ac-stat-card__value"><%= summaries.facilities.value %></p>
+      <a class="ac-stat-card__link" href="<%= summaries.facilities.href %>">View facilities</a>
+    </article>
+    <% } %>
+    <% if (summaries.staff) { %>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label"><%= summaries.staff.label %></p>
+      <p class="ac-stat-card__value"><%= summaries.staff.value %></p>
+      <a class="ac-stat-card__link" href="<%= summaries.staff.href %>">View staff</a>
+    </article>
+    <% } %>
+    <% if (summaries.invitations) { %>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label"><%= summaries.invitations.label %></p>
+      <p class="ac-stat-card__value"><%= summaries.invitations.value %></p>
+      <a class="ac-stat-card__link" href="<%= summaries.invitations.href %>">Open staff</a>
+    </article>
+    <% } %>
+  </div>
+
+  <% if (tasks.length) { %>
+  <article class="ac-panel" data-ac-dashboard-card="setup">
+    <h2 class="ac-dashboard__card-title">Setup checklist</h2>
+    <ul class="ac-checklist">
+      <% tasks.forEach(function (task) { %>
+      <li class="<%= task.done ? 'is-done' : '' %>">
+        <span class="ac-checklist__mark" aria-hidden="true"><%= task.done ? '✓' : '○' %></span>
+        <% if (task.href && !task.done) { %>
+          <a href="<%= task.href %>"><%= task.label %></a>
+        <% } else if (task.href) { %>
+          <a href="<%= task.href %>" class="ac-muted"><%= task.label %></a>
+        <% } else { %>
+          <span><%= task.label %></span>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </article>
+  <% } %>
+
+  <% if (actions.length) { %>
+  <article class="ac-panel" data-ac-dashboard-card="actions">
+    <h2 class="ac-dashboard__card-title">Quick actions</h2>
+    <div class="ac-actions ac-actions--stack-mobile">
+      <% actions.forEach(function (action) { %>
+        <a class="ac-btn<%= action.primary ? '' : ' ac-btn--ghost' %>" href="<%= action.href %>"><%= action.label %></a>
+      <% }) %>
+    </div>
+  </article>
+  <% } %>
+
+  <% notices.forEach(function (note) { %>
+  <p class="ac-flash ac-flash--<%= note.tone === 'info' ? 'warning' : (note.tone || 'warning') %>" role="status" data-ac-dashboard-notice="1">
+    <%= note.message %>
+  </p>
+  <% }) %>
+</section>

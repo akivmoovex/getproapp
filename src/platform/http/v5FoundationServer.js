@@ -437,6 +437,7 @@ function createV5FoundationApp(options) {
       getPool,
       getDeploymentCode: () => getPlatformDeploymentCode(env),
       log: typeof opts.log === "function" ? opts.log : undefined,
+      env,
     })
   );
 
@@ -1608,6 +1609,17 @@ async function verifyFoundationPool(pool) {
 async function startV5FoundationServer(opts) {
   void opts;
   const {
+    resolveDeploymentConfiguration,
+  } = require("../config/deploymentProfiles");
+  const deployment = resolveDeploymentConfiguration();
+  if (deployment.productCode === "activeclinic") {
+    const {
+      startActiveClinicFoundationServer,
+    } = require("../../activeclinic/http/activeClinicFoundationServer");
+    return startActiveClinicFoundationServer(opts);
+  }
+
+  const {
     assertV5SessionSecretPolicyOrExit,
     summarizeV5DatabaseEnv,
     parseBlessBoardJobsEnabled,
@@ -1660,6 +1672,9 @@ async function startV5FoundationServer(opts) {
     assertPlatformDatabaseIdentityOrExit,
   } = require("../../startup/blessBoardOrgDbGate");
   await assertPlatformDatabaseIdentityOrExit(pool);
+
+  // BlessBoard product routes remain registered inside createV5FoundationApp
+  // (registerBlessBoardRoutes is the documented boundary; extraction deferred).
 
   const app = createV5FoundationApp({ getPool: () => pool, env: process.env });
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;

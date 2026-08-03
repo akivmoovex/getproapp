@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><%= pageTitle %> · ActiveClinic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/activeclinic/ac-app.css?v=s02-1"/>
+</head>
+<body class="ac-app-body ac-state-body" data-ac-product="activeclinic" data-ac-page="<%= pageId %>" data-ac-state="<%= pageId %>">
+  <main class="ac-state-card" role="main">
+    <div class="ac-state-card__icon" aria-hidden="true">
+      <% if (pageId === 'session-expired') { %>⏱<% } else { %>🔒<% } %>
+    </div>
+    <h1><%= heading %></h1>
+    <p><%= message %></p>
+    <div class="ac-actions" style="justify-content:center">
+      <a class="ac-btn" href="<%= primaryHref %>"><%= primaryLabel %></a>
+      <% if (secondaryHref) { %>
+      <a class="ac-btn ac-btn--ghost" href="<%= secondaryHref %>"><%= secondaryLabel %></a>
+      <% } %>
+    </div>
+    <% if (showLogout) { %>
+    <form method="post" action="/logout" style="margin-top:1rem">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit" class="ac-btn ac-btn--ghost" style="width:100%">Sign out</button>
+    </form>
+    <% } %>
+  </main>
+</body>
+</html>

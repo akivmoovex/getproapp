@@ -7,7 +7,13 @@
 const { statusReadOnly, discoverMigrations, discoverSeeds } = require("./migrator");
 const { checkDatabaseIdentity } = require("./databaseIdentity");
 
-const REQUIRED_SCHEMAS = Object.freeze(["platform", "blessboard", "getpro", "ngo"]);
+const REQUIRED_SCHEMAS = Object.freeze([
+  "platform",
+  "blessboard",
+  "activeclinic",
+  "getpro",
+  "ngo",
+]);
 const REQUIRED_PLATFORM_TABLES = Object.freeze([
   "audit_events",
   "auth_transfers",
@@ -15,8 +21,11 @@ const REQUIRED_PLATFORM_TABLES = Object.freeze([
   "deployment_sessions",
   "deployments",
   "domains",
+  "identities",
+  "identity_action_token_rate_limits",
+  "identity_action_tokens",
+  "identity_product_profiles",
   "organization_entitlements",
-  
   "organization_products",
   "organization_subscriptions",
   "organizations",
@@ -24,23 +33,34 @@ const REQUIRED_PLATFORM_TABLES = Object.freeze([
   "plans",
   "products",
   "schema_migrations",
+  "support_contexts",
 ]);
 const REQUIRED_DEPLOYMENTS = Object.freeze([
+  "activeclinic-org-v6",
   "blessboard-com-production",
   "blessboard-org-staging",
 ]);
-const REQUIRED_PRODUCTS = Object.freeze(["blessboard", "getpro", "ngo"]);
+const REQUIRED_PRODUCTS = Object.freeze(["activeclinic", "blessboard", "getpro", "ngo"]);
 const FORBIDDEN_PUBLIC_TABLES = Object.freeze(["tenants", "session"]);
-const PRODUCT_SCHEMAS = Object.freeze(["blessboard", "getpro", "ngo"]);
+const PRODUCT_SCHEMAS = Object.freeze(["blessboard", "activeclinic", "getpro", "ngo"]);
 
 /**
  * Approved base tables per product schema.
- * BlessBoard catalogue + identity/auth tables; getpro/ngo must stay empty.
+ * BlessBoard catalogue + identity/auth tables; ActiveClinic healthcare foundation;
+ * getpro/ngo must stay empty.
  *
  * `user_invitations` is canonical V5 auth/identity foundation (migration 032):
  * hash-only staff invites, password set on accept — not a product CMS table.
  */
 const APPROVED_PRODUCT_TABLES = Object.freeze({
+  activeclinic: Object.freeze([
+    "facilities",
+    "healthcare_organizations",
+    "staff_facility_assignments",
+    "staff_invitations",
+    "staff_members",
+    "staff_role_assignments",
+  ]),
   blessboard: Object.freeze([
     "announcement_attachments",
     "announcement_audiences",
@@ -88,6 +108,7 @@ const APPROVED_PRODUCT_TABLES = Object.freeze({
     "ministry_memberships",
     "organization_growth_trial_offers",
     "organization_onboarding",
+    "organization_staff_phones",
     "organization_support_contacts",
     "page_sections",
     "password_reset_rate_limits",
@@ -96,6 +117,7 @@ const APPROVED_PRODUCT_TABLES = Object.freeze({
     "pastoral_case_notes",
     "pastoral_cases",
     "permissions",
+    "phone_otp_verifications",
     "platform_church_registration_applications",
     "public_pages",
     "registration_application_communications",

@@ -13,7 +13,7 @@ const { Pool } = require("pg");
 const { requireDatabaseUrl } = require("./databaseUrl");
 const { buildFoundationPoolConfig } = require("./foundationPool");
 
-const MODULE_ORDER = ["platform", "blessboard", "getpro", "ngo"];
+const MODULE_ORDER = ["platform", "blessboard", "activeclinic", "getpro", "ngo"];
 
 /** pg_advisory_lock key for foundation migrate concurrency protection */
 const FOUNDATION_MIGRATE_LOCK_KEY = 824510017;

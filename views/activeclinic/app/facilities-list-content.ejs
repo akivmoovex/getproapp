@@ -1,0 +1,109 @@
+<%
+  var list = (pageData && pageData.list) || {};
+  var facilities = list.facilities || [];
+  var filters = list.filters || {};
+  var filterOptions = list.filterOptions || { types: [], statuses: [] };
+  var actions = list.actions || {};
+  var emptyMode = list.emptyMode;
+%>
+<section class="ac-facilities" data-ac-page-section="facilities-list" data-ac-visual="stitch-gap">
+  <form class="ac-panel ac-filter-bar" method="get" action="/app/facilities" data-ac-facility-filters="1">
+    <div class="ac-filter-bar__grid">
+      <div>
+        <label class="ac-label" for="facility_search">Search</label>
+        <input class="ac-input" id="facility_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Name or key" autocomplete="off"/>
+      </div>
+      <div>
+        <label class="ac-label" for="facility_type">Type</label>
+        <select class="ac-select" id="facility_type" name="type">
+          <option value="">All types</option>
+          <% (filterOptions.types || []).forEach(function (t) { %>
+          <option value="<%= t.value %>" <%= filters.type === t.value ? 'selected' : '' %>><%= t.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="facility_status">Status</label>
+        <select class="ac-select" id="facility_status" name="status">
+          <option value="">All statuses</option>
+          <% (filterOptions.statuses || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-filter-bar__checks">
+        <label class="ac-check">
+          <input type="checkbox" name="primary" value="1" <%= filters.primary ? 'checked' : '' %>/>
+          Primary only
+        </label>
+        <button type="submit" class="ac-btn">Apply</button>
+        <% if (filters.active) { %>
+        <a class="ac-btn ac-btn--ghost" href="/app/facilities">Clear</a>
+        <% } %>
+      </div>
+    </div>
+  </form>
+
+  <% if (emptyMode === 'none') { %>
+  <div class="ac-panel ac-empty" data-ac-empty="facilities-none">
+    <h2>No facilities yet</h2>
+    <p>This organization does not have any facilities configured.</p>
+    <% if (actions.canCreate) { %>
+    <p><a class="ac-btn" href="<%= actions.createHref %>">Add facility</a></p>
+    <% } %>
+  </div>
+  <% } else if (emptyMode === 'filtered') { %>
+  <div class="ac-panel ac-empty" data-ac-empty="facilities-filtered">
+    <h2>No matching facilities</h2>
+    <p>No facilities match the current search or filters.</p>
+    <p><a class="ac-btn ac-btn--ghost" href="/app/facilities">Clear filters</a></p>
+  </div>
+  <% } else if (emptyMode === 'restricted') { %>
+  <div class="ac-panel ac-empty" data-ac-empty="facilities-restricted">
+    <h2>No facilities available</h2>
+    <p>You do not have access to any facilities in this organization. Ask an administrator to assign you to a facility.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-facilities-desktop" data-ac-table="facilities">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Type</th>
+          <th scope="col">Location</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% facilities.forEach(function (f) { %>
+        <tr class="<%= f.isSelected ? 'is-selected' : '' %>" data-ac-facility-row="<%= f.facilityKey %>">
+          <td>
+            <a href="/app/facilities/<%= encodeURIComponent(f.facilityKey) %>"><%= f.displayName %></a>
+            <%- include('../partials/facility-badges', { isPrimary: f.isPrimary, status: null, facilityType: null }) %>
+            <% if (f.isSelected) { %><span class="ac-badge">Current</span><% } %>
+          </td>
+          <td><%= f.facilityTypeLabel %></td>
+          <td class="ac-muted"><%= f.locationSummary || '—' %></td>
+          <td><%- include('../partials/facility-badges', { status: f.status, statusLabel: f.statusLabel, isPrimary: false, facilityType: null }) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ac-facilities-mobile" data-ac-mobile-list="facilities">
+    <% facilities.forEach(function (f) { %>
+    <article class="ac-panel ac-mobile-card <%= f.isSelected ? 'is-selected' : '' %>" data-ac-facility-card="<%= f.facilityKey %>">
+      <h2 class="ac-mobile-card__title">
+        <a href="/app/facilities/<%= encodeURIComponent(f.facilityKey) %>"><%= f.displayName %></a>
+      </h2>
+      <p class="ac-muted" style="margin:0 0 .5rem"><%= f.locationSummary || 'No location set' %></p>
+      <div class="ac-actions" style="gap:.35rem">
+        <%- include('../partials/facility-badges', { status: f.status, statusLabel: f.statusLabel, facilityType: f.facilityType, facilityTypeLabel: f.facilityTypeLabel, isPrimary: f.isPrimary }) %>
+        <% if (f.isSelected) { %><span class="ac-badge">Current</span><% } %>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+</section>

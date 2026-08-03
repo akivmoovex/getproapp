@@ -1,0 +1,32 @@
+---
+description: ActiveClinic vs BlessBoard Stitch project isolation
+alwaysApply: true
+---
+
+# Stitch product isolation — ActiveClinic & BlessBoard
+
+Treat Stitch projects as **separate product design sources**. Never cross-import screens.
+
+## Registry
+
+| Product code | Stitch project | Project ID |
+|--------------|----------------|------------|
+| `blessboard` | GetPro Church Platform | `projects/17124191473876947591` |
+| `activeclinic` | ActiveClinic – Juflona Pilot | `projects/12272131183982732110` |
+
+Canonical map: `docs/stitch-project-map.md`. ActiveClinic detail: `docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`.
+
+## Before any Stitch MCP retrieve / implement
+
+1. Confirm target product (`blessboard` or `activeclinic`).
+2. Confirm that product’s Stitch project ID.
+3. Call MCP only against that project.
+4. Record screen name + screen ID in the product’s implementation map.
+5. Do not import the other product’s navigation, terminology, layouts, or inappropriate components.
+
+## Hard constraints
+
+- **Do not** modify, move, rename, regenerate, or delete screens in the other product’s Stitch project.
+- BlessBoard = church-management screens only.
+- ActiveClinic = healthcare / clinical screens only (pilot: Juflona Hospital & Medical Centre).
+- Shared GetPro architecture may be reused; each product keeps its own design system, navigation, roles, and workflows.

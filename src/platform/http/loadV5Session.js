@@ -46,15 +46,17 @@ function wantsSessionDiagnostics(pathOnly) {
  *   getDeploymentCode?: () => { ok: boolean, code: string | null },
  *   readSession?: Function,
  *   log?: (line: string) => void,
+ *   env?: NodeJS.ProcessEnv,
  * }} [deps]
  */
 function createLoadV5Session(deps) {
   const options = deps && typeof deps === "object" ? deps : {};
   const getPool = options.getPool;
   const getDeployment =
-    options.getDeploymentCode || (() => getPlatformDeploymentCode());
+    options.getDeploymentCode || (() => getPlatformDeploymentCode(options.env));
   const readSession = options.readSession || readV5Session;
   const authLog = createV5AuthLogger({ log: options.log });
+  const env = options.env;
 
   return async function loadV5Session(req, res, next) {
     req.v5Session = { authenticated: false, reason: "none", session: null };
@@ -80,7 +82,7 @@ function createLoadV5Session(deps) {
         }
         return next();
       }
-      rawToken = readV5SessionCookie(req);
+      rawToken = readV5SessionCookie(req, env);
       if (!rawToken) {
         if (diagnose) {
           authLog.logAuthEvent(req, "v5_session_cookie_missing", {
@@ -177,6 +179,9 @@ function createLoadV5Session(deps) {
           authenticatedUserPresent: Boolean(
             result.session && result.session.user && result.session.user.id
           ),
+          principalType: result.session && result.session.principalType
+            ? result.session.principalType
+            : null,
           sessionLookupResult: "ok",
           sessionFingerprint: truncatedSessionFingerprint(rawToken),
         });

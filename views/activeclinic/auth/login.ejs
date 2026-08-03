@@ -1,0 +1,88 @@
+<main id="ac-auth-main" class="ac-auth-main" data-ac-auth-main="1">
+  <div class="ac-auth-card ac-auth-card--split" data-ac-composition="desktop-split">
+    <%- include('../partials/auth-brand-panel', {
+      productName: productName,
+      supportingName: supportingName,
+      tagline: tagline
+    }) %>
+    <div class="ac-auth-form-panel">
+      <header class="ac-auth-mobile-header" data-ac-composition="mobile-card">
+        <%- include('../partials/auth-mark') %>
+        <p class="ac-auth-mobile-header__brand">ActiveClinic</p>
+        <p class="ac-auth-mobile-header__sub"><%= supportingName %></p>
+      </header>
+      <div class="ac-auth-form-inner">
+        <h1 class="ac-auth-h1">Sign In</h1>
+        <% if (notice) { %>
+          <p class="ac-auth-alert ac-auth-alert--success" role="status"><%= notice %></p>
+        <% } %>
+        <% if (error) { %>
+          <div id="ac-auth-error-summary" class="ac-auth-alert ac-auth-alert--error" role="alert" tabindex="-1">
+            <%= error %>
+          </div>
+        <% } %>
+        <form method="post" action="/login" data-ac-login-form="1" data-ac-loading="1" novalidate>
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <% if (nextPath) { %>
+            <input type="hidden" name="next" value="<%= nextPath %>"/>
+          <% } %>
+          <div class="ac-auth-field">
+            <label for="identifier">Phone number or email</label>
+            <div class="ac-auth-phone" data-ac-phone-field="1">
+              <span class="ac-auth-phone__prefix" aria-hidden="true">+260</span>
+              <input
+                class="ac-auth-input"
+                id="identifier"
+                name="identifier"
+                type="text"
+                autocomplete="username"
+                inputmode="tel"
+                required
+                value="<%= identifier || '' %>"
+                placeholder="97 123 4567 or email"
+                aria-describedby="identifier-hint<%= error ? ' ac-auth-error-summary' : '' %>"
+                <% if (error) { %>aria-invalid="true"<% } %>
+              />
+            </div>
+            <p id="identifier-hint" class="ac-auth-hint" style="margin-top:0.35rem">
+              Prefer your staff phone number. Email is accepted when registered.
+            </p>
+          </div>
+          <%- include('../partials/auth-password-field', {
+            id: 'password',
+            name: 'password',
+            label: 'Password',
+            autocomplete: 'current-password',
+            minlength: null,
+            describedBy: error ? 'ac-auth-error-summary' : null,
+            invalid: Boolean(error)
+          }) %>
+          <div class="ac-auth-row">
+            <a class="ac-auth-link" href="/forgot-password">Forgot password?</a>
+          </div>
+          <button type="submit" class="ac-auth-btn" data-loading="Signing in…">
+            Sign In
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+        <div class="ac-auth-footer-secure ac-auth-footer-secure--mobile-only">
+          <span class="ac-auth-secure-note__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" width="16" height="16">
+              <rect x="5" y="10" width="14" height="10" rx="2"/>
+              <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+            </svg>
+          </span>
+          <span>Secure portal access for authorized personnel only.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<% if (error) { %>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var el = document.getElementById("ac-auth-error-summary");
+    if (el && typeof el.focus === "function") el.focus();
+  });
+</script>
+<% } %>

@@ -1,0 +1,70 @@
+<%
+  var invite = (pageData && pageData.invite) || {};
+  var staff = invite.staffMember || {};
+  var share = invite.share || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-invite-result" data-ac-page-section="staff-invite-result" data-ac-visual="stitch-gap">
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Invitation ready</h2>
+    <p><strong><%= staff.displayName || 'Staff member' %></strong> has been created<%= invite.identityCreated ? ' with a new login identity' : '' %>.</p>
+    <dl class="ac-dl">
+      <div>
+        <dt>Delivery</dt>
+        <dd data-ac-delivery="<%= invite.deliveryStatus || 'link_generated' %>"><%= invite.deliveryLabel || 'Link generated — automated email/SMS is not configured.' %></dd>
+      </div>
+      <% if (invite.expiresAt) { %>
+      <div>
+        <dt>Link expires</dt>
+        <dd><%= invite.expiresAt %></dd>
+      </div>
+      <% } %>
+    </dl>
+
+    <% if (invite.activationUrl) { %>
+    <div class="ac-field" style="margin-top:1rem">
+      <label class="ac-label" for="invite_url">Activation link</label>
+      <input class="ac-input" id="invite_url" readonly value="<%= invite.activationUrl %>" data-ac-invite-url="1"/>
+    </div>
+    <div class="ac-actions ac-actions--stack-mobile">
+      <button type="button" class="ac-btn" data-ac-copy-invite="1">Copy link</button>
+      <% if (share.mailtoUrl) { %>
+      <a class="ac-btn ac-btn--ghost" data-ac-invite-email="1" href="<%= share.mailtoUrl %>">Share by email</a>
+      <% } %>
+      <% if (share.whatsappUrl) { %>
+      <a class="ac-btn ac-btn--ghost" data-ac-invite-whatsapp="1" href="<%= share.whatsappUrl %>" target="_blank" rel="noopener">Share on WhatsApp</a>
+      <% } %>
+    </div>
+    <p class="ac-muted" id="copy_status" hidden data-ac-copy-status="1">Invitation link copied</p>
+    <% } else { %>
+    <p class="ac-muted">No activation link is available for this result.</p>
+    <% } %>
+
+    <div class="ac-actions ac-actions--stack-mobile" style="margin-top:1.25rem">
+      <% if (staff.id) { %>
+      <a class="ac-btn" href="/app/staff/<%= encodeURIComponent(staff.id) %>">View staff profile</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="/app/staff/new">Add another staff</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/staff">Back to staff list</a>
+    </div>
+  </div>
+</section>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var btn = document.querySelector("[data-ac-copy-invite]");
+  var input = document.getElementById("invite_url");
+  var status = document.getElementById("copy_status");
+  if (!btn || !input) return;
+  btn.addEventListener("click", function () {
+    var text = input.value;
+    function ok() { if (status) status.hidden = false; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok).catch(function () {
+        input.select(); document.execCommand("copy"); ok();
+      });
+    } else {
+      input.select(); document.execCommand("copy"); ok();
+    }
+  });
+});
+</script>

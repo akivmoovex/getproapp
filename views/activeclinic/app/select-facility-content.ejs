@@ -1,0 +1,22 @@
+<% var facilities = (pageData && pageData.facilities) || []; %>
+<% var csrf = shell.csrf || {}; %>
+<form method="post" action="/app/select-facility" data-ac-form="select-facility">
+  <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+  <% if (!facilities.length) { %>
+  <div class="ac-panel ac-empty" data-ac-empty="facility-select">
+    <h2>No facilities available</h2>
+    <p>You do not have an active facility assignment. Ask a network administrator for access.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-panel">
+    <label class="ac-label" for="facility_id">Facility</label>
+    <select class="ac-select" id="facility_id" name="facility_id" required>
+      <option value="">Select a facility</option>
+      <% facilities.forEach(function (f) { %>
+      <option value="<%= f.id %>" <%= (shell.selectedFacility && shell.selectedFacility.id === f.id) ? 'selected' : '' %>><%= f.displayName %></option>
+      <% }) %>
+    </select>
+    <button class="ac-btn" type="submit">Continue</button>
+  </div>
+  <% } %>
+</form>

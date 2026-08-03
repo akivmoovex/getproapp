@@ -3,9 +3,10 @@
 **Created:** 2026-07-18  
 **Last reconciled:** 2026-07-19 — Foundation/Growth final Stitch audit ([`FOUNDATION_GROWTH_FINAL_STITCH_AUDIT.md`](./FOUNDATION_GROWTH_FINAL_STITCH_AUDIT.md))
 **Stitch project:** `projects/17124191473876947591` — **GetPro Church Platform**  
+**Product code:** `blessboard` (church-management screens only — see cross-product registry [`docs/stitch-project-map.md`](../stitch-project-map.md); ActiveClinic uses a **separate** Stitch project)
 **Live MCP inventory:** `list_screens` → **196** screens; project `screenInstances` → **217** (layout instances may exceed unique screens)  
 **Project updateTime (Stitch):** `2026-07-18T12:21:54.870095Z`  
-**Constraint:** Map is documentation SoT for Stitch IDs ↔ V5 routes. Application fixes only when cited in linked audits.
+**Constraint:** Map is documentation SoT for Stitch IDs ↔ V5 routes. Application fixes only when cited in linked audits. Do **not** use this project for ActiveClinic healthcare screens.
 
 ## Sources of truth
 

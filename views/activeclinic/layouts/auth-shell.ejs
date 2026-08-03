@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><%= pageTitle %> · ActiveClinic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/activeclinic/ac-auth.css?v=<%= assetVersion %>"/>
+</head>
+<body
+  class="ac-auth-body"
+  data-ac-product="activeclinic"
+  data-ac-shell="auth"
+  data-ac-page="<%= pageId %>"
+  data-ac-auth-layout="1"
+  data-ac-composition="<%= composition || 'split' %>"
+>
+  <a class="ac-auth-skip" href="#ac-auth-main">Skip to sign-in form</a>
+  <%- bodyHtml %>
+  <script src="/activeclinic/ac-auth.js?v=<%= assetVersion %>" defer></script>
+</body>
+</html>

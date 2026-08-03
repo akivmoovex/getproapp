@@ -424,7 +424,7 @@ describe("invitation delivery and password reset", () => {
       .set("Cookie", cookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-pa-org-staff="1"/);
-    assert.match(detail.text, /Send password reset/);
+    assert.match(detail.text, /data-bb-pa-password-reset-form="1"/);
 
     const csrfPage = await request(app)
       .get(`/admin/organizations/${org.organization_key}`)

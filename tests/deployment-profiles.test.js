@@ -11,6 +11,7 @@ const {
   DEPLOYMENT_PROFILES,
   CODE_COM_PRODUCTION,
   CODE_ORG_STAGING,
+  CODE_ACTIVECLINIC_ORG_V6,
   CODE_ORG_V5,
   CODE_COM_V4,
   COOKIE_COM,
@@ -132,10 +133,12 @@ describe("deploymentProfiles registry", () => {
     const p = DEPLOYMENT_PROFILES[CODE_COM_PRODUCTION];
     assert.equal(p.authoritative, true);
     assert.equal(p.runtimeMode, "v5-foundation");
+    assert.equal(p.productCode, "blessboard");
     assert.equal(p.deploymentEnvironment, "production");
     assert.equal(p.expectedDatabaseEnvironment, "production");
     assert.equal(p.canonicalDomain, "blessboard.com");
     assert.equal(p.sessionCookieName, COOKIE_COM);
+    assert.equal(p.csrfCookieName, "blessboard_org_csrf");
     assert.equal(p.jobsEnabled, true);
     assert.equal(p.allowTestUsersByDefault, false);
     assert.ok(!p.apexDomains.includes("blessboard.org"));
@@ -145,13 +148,24 @@ describe("deploymentProfiles registry", () => {
     const p = DEPLOYMENT_PROFILES[CODE_ORG_STAGING];
     assert.equal(p.authoritative, true);
     assert.equal(p.runtimeMode, "v5-foundation");
+    assert.equal(p.productCode, "blessboard");
     assert.equal(p.deploymentEnvironment, "testing");
     assert.equal(p.expectedDatabaseEnvironment, "testing");
     assert.equal(p.canonicalDomain, "blessboard.org");
     assert.equal(p.sessionCookieName, COOKIE_ORG);
+    assert.equal(p.csrfCookieName, "blessboard_org_csrf");
     assert.equal(p.jobsEnabled, false);
     assert.equal(p.allowTestUsersByDefault, false);
     assert.ok(!p.apexDomains.includes("blessboard.com"));
+  });
+
+  it("registers activeclinic-org-v6 as authoritative ActiveClinic testing profile", () => {
+    const p = DEPLOYMENT_PROFILES[CODE_ACTIVECLINIC_ORG_V6];
+    assert.equal(p.productCode, "activeclinic");
+    assert.equal(p.canonicalDomain, "activeclinic.org");
+    assert.equal(p.sessionCookieName, "activeclinic_org_sid");
+    assert.equal(p.csrfCookieName, "activeclinic_org_csrf");
+    assert.equal(p.jobsEnabled, false);
   });
 
   it("maps deprecated blessboard-org-v5 alias to staging with warning", () => {

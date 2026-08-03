@@ -1,0 +1,12 @@
+<% var categories = (pageData && pageData.categories) || []; %>
+<section class="ac-grid" data-ac-page-section="settings">
+  <% categories.forEach(function (cat) { %>
+  <a class="ac-panel" href="<%= cat.href %>" style="text-decoration:none;color:inherit">
+    <h2 style="margin-top:0;font-size:1.05rem"><%= cat.label %></h2>
+    <p class="ac-muted" style="margin:0"><%= cat.description %></p>
+  </a>
+  <% }) %>
+</section>
+<% if (!categories.length) { %>
+<div class="ac-panel ac-empty"><h2>No settings available</h2><p>Settings categories appear when you have matching permissions.</p></div>
+<% } %>

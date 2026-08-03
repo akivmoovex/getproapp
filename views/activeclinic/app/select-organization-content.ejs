@@ -1,0 +1,16 @@
+<% var orgs = (pageData && pageData.organizations) || []; %>
+<% var csrf = shell.csrf || {}; %>
+<form method="post" action="/app/select-organization" data-ac-form="select-organization">
+  <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+  <div class="ac-panel">
+    <label class="ac-label" for="organization_id">Healthcare organization</label>
+    <select class="ac-select" id="organization_id" name="organization_id" required>
+      <% orgs.forEach(function (o) { %>
+      <option value="<%= o.organizationId %>" <%= (shell.organization && shell.organization.id === o.organizationId) ? 'selected' : '' %>>
+        <%= o.displayName %> — <%= o.staffDisplayName || '' %>
+      </option>
+      <% }) %>
+    </select>
+    <button class="ac-btn" type="submit">Switch organization</button>
+  </div>
+</form>

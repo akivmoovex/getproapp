@@ -1,0 +1,130 @@
+<%
+  var form = (pageData && pageData.form) || {};
+  var values = form.values || {};
+  var errors = form.errors || [];
+  var fieldErrors = form.fieldErrors || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var mode = form.mode || 'create';
+%>
+<section class="ac-facility-form" data-ac-page-section="facility-<%= mode %>" data-ac-visual="stitch-gap">
+  <% if (errors.length) { %>
+  <div id="ac-facility-error-summary" class="ac-flash ac-flash--error" role="alert" tabindex="-1">
+    <strong>Please fix the following:</strong>
+    <ul>
+      <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+    </ul>
+  </div>
+  <% } %>
+
+  <form class="ac-panel" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+
+    <h2 class="ac-dashboard__card-title">Identity</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="display_name">Display name</label>
+      <input class="ac-input" id="display_name" name="display_name" required maxlength="200" value="<%= values.displayName || '' %>" autocomplete="organization"/>
+      <% if (fieldErrors.display_name) { %><p class="ac-field-error" id="err-display_name"><%= fieldErrors.display_name %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="legal_name">Legal name <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="legal_name" name="legal_name" maxlength="200" value="<%= values.legalName || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="facility_key">Facility key</label>
+      <% if (form.keyEditable) { %>
+      <input class="ac-input" id="facility_key" name="facility_key" required maxlength="64" value="<%= values.facilityKey || '' %>" pattern="[a-z][a-z0-9_-]{0,63}" aria-describedby="facility_key_hint"/>
+      <p id="facility_key_hint" class="ac-muted" style="margin-top:-.5rem;font-size:.85rem">Lowercase slug used in URLs. Reserved words such as <code>new</code> are blocked.</p>
+      <% } else { %>
+      <input class="ac-input" id="facility_key" value="<%= values.facilityKey || '' %>" readonly/>
+      <input type="hidden" name="facility_key" value="<%= values.facilityKey || '' %>"/>
+      <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem">Facility key cannot be changed after creation.</p>
+      <% } %>
+      <% if (fieldErrors.facility_key) { %><p class="ac-field-error"><%= fieldErrors.facility_key %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="facility_type">Facility type</label>
+      <select class="ac-select" id="facility_type" name="facility_type" required>
+        <% (form.typeOptions || []).forEach(function (t) { %>
+        <option value="<%= t.value %>" <%= values.facilityType === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="status">Status</label>
+      <select class="ac-select" id="status" name="status" required <%= mode === 'edit' && values.status === 'archived' ? 'disabled' : '' %>>
+        <% (form.statusOptions || []).forEach(function (s) { %>
+        <option value="<%= s.value %>" <%= values.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+        <% }) %>
+      </select>
+      <% if (mode === 'edit' && values.status === 'archived') { %>
+      <input type="hidden" name="status" value="archived"/>
+      <% } %>
+    </div>
+    <% if (mode === 'create') { %>
+    <label class="ac-check">
+      <input type="checkbox" name="is_primary" value="1" <%= values.isPrimary ? 'checked' : '' %>/>
+      Set as primary facility (must also be Active)
+    </label>
+    <% } %>
+
+    <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Contact</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="phone">Phone</label>
+      <input class="ac-input" id="phone" name="phone" required inputmode="tel" autocomplete="tel" value="<%= values.phone || '' %>" placeholder="+260…"/>
+      <% if (fieldErrors.phone) { %><p class="ac-field-error"><%= fieldErrors.phone %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="email">Email <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="email" name="email" type="email" autocomplete="email" value="<%= values.email || '' %>"/>
+      <% if (fieldErrors.email) { %><p class="ac-field-error"><%= fieldErrors.email %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="timezone">Timezone</label>
+      <input class="ac-input" id="timezone" name="timezone" required value="<%= values.timezone || '' %>" placeholder="Africa/Lusaka"/>
+      <% if (fieldErrors.timezone) { %><p class="ac-field-error"><%= fieldErrors.timezone %></p><% } %>
+    </div>
+
+    <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Location</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="country_code">Country code</label>
+      <input class="ac-input" id="country_code" name="country_code" required maxlength="2" value="<%= values.countryCode || '' %>" autocomplete="country"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="province">Province / state</label>
+      <input class="ac-input" id="province" name="province" maxlength="120" value="<%= values.province || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="district">District</label>
+      <input class="ac-input" id="district" name="district" maxlength="120" value="<%= values.district || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="city">City</label>
+      <input class="ac-input" id="city" name="city" maxlength="120" value="<%= values.city || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="address_line_1">Address line 1</label>
+      <input class="ac-input" id="address_line_1" name="address_line_1" maxlength="200" value="<%= values.addressLine1 || '' %>" autocomplete="address-line1"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="address_line_2">Address line 2</label>
+      <input class="ac-input" id="address_line_2" name="address_line_2" maxlength="200" value="<%= values.addressLine2 || '' %>" autocomplete="address-line2"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="postal_code">Postal code</label>
+      <input class="ac-input" id="postal_code" name="postal_code" maxlength="32" value="<%= values.postalCode || '' %>" autocomplete="postal-code"/>
+    </div>
+
+    <div class="ac-actions ac-actions--stack-mobile" style="margin-top:1.25rem">
+      <button type="submit" class="ac-btn" data-loading="Saving…"><%= mode === 'create' ? 'Create facility' : 'Save changes' %></button>
+      <a class="ac-btn ac-btn--ghost" href="<%= mode === 'edit' && form.facility ? '/app/facilities/' + encodeURIComponent(form.facility.facilityKey) : '/app/facilities' %>">Cancel</a>
+    </div>
+  </form>
+</section>
+<% if (errors.length) { %>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var el = document.getElementById("ac-facility-error-summary");
+  if (el && el.focus) el.focus();
+});
+</script>
+<% } %>

@@ -145,7 +145,7 @@ describe("db bootstrap foundation", () => {
     );
     assert.deepEqual(
       deployments.rows.map((r) => r.deployment_code),
-      ["blessboard-com-production", "blessboard-org-staging"]
+      ["activeclinic-org-v6", "blessboard-com-production", "blessboard-org-staging"]
     );
 
     const products = await pool.query(
@@ -153,7 +153,7 @@ describe("db bootstrap foundation", () => {
     );
     assert.deepEqual(
       products.rows.map((r) => r.product_key),
-      ["blessboard", "getpro", "ngo"]
+      ["activeclinic", "blessboard", "getpro", "ngo"]
     );
   });
 
@@ -172,9 +172,9 @@ describe("db bootstrap foundation", () => {
     assert.equal(second.migrate.seedsApplied.length, 0);
 
     const deployments = await pool.query(`SELECT COUNT(*)::int AS n FROM platform.deployments`);
-    assert.equal(deployments.rows[0].n, 2);
+    assert.equal(deployments.rows[0].n, 3);
     const products = await pool.query(`SELECT COUNT(*)::int AS n FROM platform.products`);
-    assert.equal(products.rows[0].n, 3);
+    assert.equal(products.rows[0].n, 4);
   });
 
   it("different expected database identity is rejected", async () => {

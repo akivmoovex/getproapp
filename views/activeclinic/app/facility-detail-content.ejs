@@ -1,0 +1,106 @@
+<%
+  var detail = (pageData && pageData.detail) || {};
+  var f = detail.facility || {};
+  var actions = detail.actions || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-facility-detail" data-ac-page-section="facility-detail" data-ac-visual="stitch-gap" data-ac-facility-key="<%= f.facilityKey || '' %>">
+  <div class="ac-panel">
+    <div class="ac-actions" style="margin-bottom:1rem">
+      <%- include('../partials/facility-badges', { status: f.status, statusLabel: f.statusLabel, facilityType: f.facilityType, facilityTypeLabel: f.facilityTypeLabel, isPrimary: f.isPrimary }) %>
+    </div>
+    <dl class="ac-dl">
+      <div>
+        <dt>Display name</dt>
+        <dd><%= f.displayName || '' %></dd>
+      </div>
+      <% if (f.legalName) { %>
+      <div>
+        <dt>Legal name</dt>
+        <dd><%= f.legalName %></dd>
+      </div>
+      <% } %>
+      <div>
+        <dt>Facility key</dt>
+        <dd><code><%= f.facilityKey || '' %></code></dd>
+      </div>
+      <div>
+        <dt>Type</dt>
+        <dd><%= f.facilityTypeLabel || '—' %></dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd><%= f.statusLabel || '—' %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="ac-panel" style="margin-top:1rem">
+    <h2 class="ac-dashboard__card-title">Contact</h2>
+    <dl class="ac-dl">
+      <div>
+        <dt>Phone</dt>
+        <dd><%= f.phoneDisplay || '—' %></dd>
+      </div>
+      <div>
+        <dt>Email</dt>
+        <dd><%= f.emailDisplay || '—' %></dd>
+      </div>
+      <div>
+        <dt>Timezone</dt>
+        <dd><%= f.timezone || '—' %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="ac-panel" style="margin-top:1rem">
+    <h2 class="ac-dashboard__card-title">Location</h2>
+    <dl class="ac-dl">
+      <div>
+        <dt>Address</dt>
+        <dd>
+          <% if (f.addressLine1) { %><%= f.addressLine1 %><br/><% } %>
+          <% if (f.addressLine2) { %><%= f.addressLine2 %><br/><% } %>
+          <%= f.locationSummary || '—' %>
+          <% if (f.postalCode) { %><br/><%= f.postalCode %><% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Country</dt>
+        <dd><%= f.countryCode || '—' %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="ac-panel ac-facility-actions" style="margin-top:1rem" data-ac-facility-actions="1">
+    <h2 class="ac-dashboard__card-title">Actions</h2>
+    <div class="ac-actions ac-actions--stack-mobile">
+      <% if (actions.editHref) { %>
+      <a class="ac-btn" href="<%= actions.editHref %>">Edit facility</a>
+      <% } %>
+      <% if (actions.setPrimaryAction) { %>
+      <form method="post" action="<%= actions.setPrimaryAction %>" data-ac-loading="1">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Set as primary</button>
+      </form>
+      <% } %>
+      <% if (actions.archiveAction) { %>
+      <details class="ac-destructive" data-ac-archive-confirm="1">
+        <summary class="ac-btn ac-btn--danger" style="list-style:none;cursor:pointer">Archive facility…</summary>
+        <div class="ac-panel" style="margin-top:.75rem;border-color:#fecdca">
+          <p>Archiving removes this facility from operational use. Staff assignment history is preserved. This cannot be undone from this screen.</p>
+          <form method="post" action="<%= actions.archiveAction %>" data-ac-loading="1">
+            <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+            <label class="ac-check">
+              <input type="checkbox" name="confirm_archive" value="1" required/>
+              I understand this facility will be archived
+            </label>
+            <button type="submit" class="ac-btn ac-btn--danger" data-loading="Archiving…">Confirm archive</button>
+          </form>
+        </div>
+      </details>
+      <% } %>
+    </div>
+  </div>
+</section>
+<p class="ac-muted" style="margin-top:1rem">Clinical activity for this facility is not available in this foundation stage.</p>

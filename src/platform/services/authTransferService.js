@@ -423,6 +423,7 @@ function mapTransfer(row) {
     churchId: row.church_id,
     branchId: row.branch_id,
     userId: row.user_id,
+    platformIdentityId: row.platform_identity_id || null,
     purpose: row.purpose,
     returnPath: row.return_path,
     createdAt: row.created_at,

@@ -1,0 +1,19 @@
+<% var roles = (pageData && pageData.roles) || []; %>
+<section class="ac-stack" data-ac-page-section="access">
+  <div class="ac-panel">
+    <h2 style="margin-top:0;font-size:1.05rem">Foundational roles</h2>
+    <p class="ac-muted">ActiveClinic access is granted through staff role assignments with organization or facility scope. Clinical roles are not defined yet.</p>
+    <ul>
+      <% roles.forEach(function (role) { %>
+      <li style="margin-bottom:.75rem">
+        <strong><%= role.displayName %></strong>
+        <div class="ac-muted"><%= role.description %></div>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
+  <div class="ac-panel ac-empty">
+    <h2>Assignment editor</h2>
+    <p>The full roles and access management screen is scheduled for the next implementation wave. Assignments can be managed through foundation services today.</p>
+  </div>
+</section>
