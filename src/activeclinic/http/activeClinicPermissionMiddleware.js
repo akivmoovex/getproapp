@@ -16,11 +16,28 @@ const {
   renderAccessStatePage,
 } = require("./renderActiveClinicAccessState");
 
+const {
+  STATE,
+} = require("../services/activeClinicStateTaxonomy");
+
 function renderSimpleState(title, message, extras) {
+  const pageId = (extras && extras.state) || "error";
+  const stateKey =
+    (extras && extras.stateKey) ||
+    (pageId === "session-expired"
+      ? STATE.SESSION_EXPIRED
+      : pageId === "context-unavailable"
+        ? STATE.CONTEXT_UNAVAILABLE
+        : pageId === "access-denied"
+          ? STATE.ACCESS_RESTRICTED
+          : pageId === "not-found"
+            ? STATE.NOT_FOUND
+            : STATE.REQUEST_ERROR);
   return renderAccessStatePage({
-    pageId: (extras && extras.state) || "error",
+    stateKey,
+    pageId,
     pageTitle: title,
-    heading: title,
+    heading: (extras && extras.heading) || title,
     message,
     primaryHref: (extras && extras.linkHref) || "/login",
     primaryLabel: (extras && extras.linkLabel) || "Sign in",
@@ -53,24 +70,32 @@ function createRequireActiveClinicPermission(deps) {
           if (
             reason === "inactive_identity" ||
             reason === "eligibility_denied" ||
-            reason === "identity_disabled"
+            reason === "identity_disabled" ||
+            reason === "product_mismatch" ||
+            reason === "wrong_principal"
           ) {
             clearV5SessionCookie(res, { secure: isProduction, env });
             res.clearCookie(getCsrfCookieName(env), { path: "/" });
-            return res
-              .status(401)
-              .type("html")
-              .send(
-                renderSimpleState(
-                  "Session ended",
-                  "Your ActiveClinic session is no longer valid. Sign in again to continue.",
-                  {
-                    state: "session-expired",
-                    linkHref: "/login?expired=1",
-                    linkLabel: "Sign in",
-                  }
-                )
-              );
+            return res.status(403).type("html").send(
+              renderSimpleState(
+                "Workspace unavailable",
+                "This ActiveClinic workspace is currently unavailable. Sign in again, or contact your administrator.",
+                {
+                  state: "context-unavailable",
+                  stateKey: STATE.CONTEXT_UNAVAILABLE,
+                  heading: "This ActiveClinic workspace is currently unavailable",
+                  linkHref: "/login",
+                  linkLabel: "Sign in",
+                }
+              )
+            );
+          }
+          if (
+            reason === "session_expired" ||
+            reason === "session_revoked" ||
+            reason === "unauthenticated"
+          ) {
+            /* fall through to login redirect */
           }
           return res.redirect(303, "/login");
         }
@@ -92,12 +117,14 @@ function createRequireActiveClinicPermission(deps) {
           const csrfToken = issueCsrfToken(env);
           return res.status(403).type("html").send(
             renderSimpleState(
-              "Access Restricted",
-              "You do not have permission to view this page.",
+              "Access restricted",
+              "You do not have access to this area. Ask an administrator if you need permission, or return to an area you can use.",
               {
                 state: "access-denied",
+                stateKey: STATE.ACCESS_RESTRICTED,
+                heading: "You do not have access to this area",
                 linkHref: "/app",
-                linkLabel: "Return to home",
+                linkLabel: "Back to home",
                 showLogout: true,
                 csrfToken,
               }

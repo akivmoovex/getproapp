@@ -263,9 +263,17 @@ async function updateHealthcareOrganization(db, input) {
   const existing = await getHealthcareOrganizationById(db, input);
   if (!existing.ok) return existing;
 
-  const patch = input.patch || {};
-  if (patch.organizationType != null && !ORGANIZATION_TYPES.includes(String(patch.organizationType))) {
-    return { ok: false, code: RESULT.INVALID_TYPE, healthcareOrganization: null };
+  const patch = { ...(input.patch || {}) };
+  // Ordinary profile updates must not change lifecycle status here.
+  if (input.allowStatusChange !== true) {
+    delete patch.status;
+  }
+  if (patch.organizationType != null) {
+    const organizationType = String(patch.organizationType).trim().toLowerCase();
+    if (!ORGANIZATION_TYPES.includes(organizationType)) {
+      return { ok: false, code: RESULT.INVALID_TYPE, healthcareOrganization: null };
+    }
+    patch.organizationType = organizationType;
   }
   if (patch.status != null && !STATUSES.includes(String(patch.status))) {
     return { ok: false, code: RESULT.INVALID_STATUS, healthcareOrganization: null };
@@ -294,16 +302,68 @@ async function updateHealthcareOrganization(db, input) {
     if (!publicName) return { ok: false, code: RESULT.INVALID_INPUT, healthcareOrganization: null };
     patch.publicName = publicName;
   }
+  if (Object.prototype.hasOwnProperty.call(patch, "registrationNumber")) {
+    if (patch.registrationNumber == null || String(patch.registrationNumber).trim() === "") {
+      patch.registrationNumber = null;
+    } else {
+      const registrationNumber = String(patch.registrationNumber).trim().slice(0, 120);
+      if (!registrationNumber) {
+        return { ok: false, code: RESULT.INVALID_INPUT, healthcareOrganization: null };
+      }
+      patch.registrationNumber = registrationNumber;
+    }
+  }
+  // License and ownership fields are not editable via ordinary profile forms.
+  delete patch.licenseNumber;
+  delete patch.organizationId;
+  delete patch.id;
+
+  const before = existing.healthcareOrganization;
+  const changedFields = [];
+  const track = [
+    ["legalName", "legal_name"],
+    ["publicName", "public_name"],
+    ["organizationType", "organization_type"],
+    ["countryCode", "country_code"],
+    ["registrationNumber", "registration_number"],
+    ["timezone", "timezone"],
+    ["status", "status"],
+  ];
+  for (const [key, auditKey] of track) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    const next = patch[key] == null ? null : String(patch[key]);
+    const prev = before[key] == null ? null : String(before[key]);
+    if (next !== prev) changedFields.push(auditKey);
+  }
 
   const row = await repo.updateHealthcareOrganization(db, {
     id: input.id,
     organizationId: input.organizationId,
     patch,
   });
+
+  if (changedFields.length) {
+    await recordAuditEventSafe(db, {
+      deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
+      organizationId: input.organizationId,
+      actorUserId: null,
+      actionKey: "activeclinic.healthcare_organization.update",
+      entityType: "healthcare_organization",
+      entityId: input.id,
+      outcome: "success",
+      metadata: {
+        actor_type: "staff",
+        field_keys: changedFields,
+        source: "settings",
+      },
+    });
+  }
+
   return {
     ok: true,
     code: RESULT.OK,
     healthcareOrganization: mapHealthcareOrganization(row),
+    changedFields,
   };
 }
 

@@ -73,7 +73,7 @@ function registerActiveClinicStaffAdminRoutes(app, deps) {
   const getPool = deps.getPool;
   const env = deps.env;
   const isProduction = deps.isProduction;
-  const requireAuth = createRequireActiveClinicAuth({});
+  const requireAuth = createRequireActiveClinicAuth({ env, isProduction });
 
   function issuePageCsrf(res) {
     const token = issueCsrfToken(env);

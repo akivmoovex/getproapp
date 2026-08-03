@@ -146,6 +146,8 @@
     <%- include('../partials/sidebar', { shell: typeof shell !== 'undefined' ? shell : null, mobile: true }) %>
   </div>
 
-  <script src="/activeclinic/ac-shell-nav.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's02-1' %>" defer></script>
+  <script src="/activeclinic/ac-shell-nav.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's08-1' %>" defer></script>
+  <script src="/activeclinic/ac-auth.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's08-1' %>" defer></script>
+  <div id="ac-form-busy-live" class="ac-sr-only" aria-live="polite"></div>
 </body>
 </html>

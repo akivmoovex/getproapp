@@ -20,8 +20,8 @@ Pairs derived from Stitch titles (`– Desktop` / `– Mobile`). Tablet designs:
 | Dashboard | P01 – Dashboard – Desktop (+ unprefixed DUPLICATE) | P01 – Dashboard – Mobile (+ unprefixed DUPLICATE) | Prefer P01 |
 | Application shell | P01 – Shared Application Shell – Desktop (+ Application Shell DUPLICATE) | — | Mobile via drawer |
 | Navigation drawer | — | P01 – Navigation Drawer – Mobile (+ unprefixed DUPLICATE) | Chrome |
-| Shared states | P01 – Shared States; Shared Error/Loading/Offline; Access Restricted | — | Presentational |
-| Admin lists (code) | facilities/staff utilitarian | same routes, stacked | **STITCH_GAP** |
+| Shared states | P01 – Shared States; Shared Error/Loading/Offline; Access Restricted | same components, stacked actions | **S08 PARTIAL**; offline deferred |
+| Admin lists (code) | facilities/staff/access/settings utilitarian | same routes, stacked cards/tables | **STITCH_GAP** |
 | Facilities (AC-V6-S03) | table + filters | mobile cards + same filters | **VISUAL_BLOCKED**; shared `/app/facilities*` URLs |
 | Staff (AC-V6-S04) | table + filters | mobile cards + same filters | **VISUAL_BLOCKED**; shared `/app/staff*` URLs |
 | Staff create/edit (AC-V6-S05) | form + invite result | stacked form sections | **VISUAL_BLOCKED**; same routes |

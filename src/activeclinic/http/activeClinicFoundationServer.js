@@ -13,8 +13,10 @@ const { getPgPool } = require("../../db/pg");
 const { resolveHostname } = require("../../platform/host");
 const {
   assignV5RequestId,
-  createV5ErrorHandler,
 } = require("../../platform/http/v5SafeLogging");
+const {
+  createActiveClinicErrorHandler,
+} = require("./createActiveClinicErrorHandler");
 const { createV5PrivateNoStoreMiddleware } = require("../../platform/http/v5PrivateNoStore");
 const { createLoadV5Session } = require("../../platform/http/loadV5Session");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
@@ -53,6 +55,12 @@ const {
 const {
   registerActiveClinicStaffRoutes,
 } = require("./activeClinicStaffRoutes");
+const {
+  registerActiveClinicAccessRoutes,
+} = require("./activeClinicAccessRoutes");
+const {
+  registerActiveClinicSettingsRoutes,
+} = require("./activeClinicSettingsRoutes");
 const {
   listOrganizationsByProduct,
 } = require("../../platform/services/organizationProductService");
@@ -165,6 +173,8 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicLifecycleRoutes(app, { getPool, env, isProduction });
   registerActiveClinicFacilityRoutes(app, { getPool, env, isProduction });
   registerActiveClinicStaffRoutes(app, { getPool, env, isProduction });
+  registerActiveClinicAccessRoutes(app, { getPool, env, isProduction });
+  registerActiveClinicSettingsRoutes(app, { getPool, env, isProduction });
   registerActiveClinicAppRoutes(app, { getPool, env, isProduction });
   registerActiveClinicStaffAdminRoutes(app, { getPool, env, isProduction });
 
@@ -190,8 +200,8 @@ function createActiveClinicFoundationApp(options) {
     return res.json(body);
   });
 
-  // Infrastructure-only isolation probe (not a clinical surface).
-  // Temporary: remove or replace when authenticated ActiveClinic surfaces exist.
+  // Deployment landing / foundation stub (honest non-clinical status page).
+  // Retained intentionally — not a clinical surface; probes under /__ac/* stay non-production.
   function rejectAcInfraInProduction(res) {
     if (!isProduction) return false;
     res.status(404).json({ ok: false, code: "not_found" });
@@ -534,7 +544,16 @@ function createActiveClinicFoundationApp(options) {
 </body></html>`);
   });
 
-  app.use(createV5ErrorHandler({ isProduction }));
+  // Canonical ActiveClinic not-found (after all registered routes).
+  app.use((req, res, next) => {
+    if (res.headersSent) return next();
+    const err = new Error("Not found");
+    err.status = 404;
+    err.statusCode = 404;
+    return next(err);
+  });
+
+  app.use(createActiveClinicErrorHandler({ isProduction }));
   return app;
 }
 

@@ -1,19 +1,145 @@
-<% var roles = (pageData && pageData.roles) || []; %>
-<section class="ac-stack" data-ac-page-section="access">
-  <div class="ac-panel">
-    <h2 style="margin-top:0;font-size:1.05rem">Foundational roles</h2>
-    <p class="ac-muted">ActiveClinic access is granted through staff role assignments with organization or facility scope. Clinical roles are not defined yet.</p>
-    <ul>
+<%
+  var overview = (pageData && pageData.overview) || {};
+  var assignments = overview.assignments || [];
+  var filters = overview.filters || {};
+  var filterOptions = overview.filterOptions || {};
+  var roles = overview.roles || [];
+  var emptyMode = overview.emptyMode;
+  var actions = overview.actions || {};
+%>
+<section class="ac-access" data-ac-page-section="access-overview" data-ac-visual="stitch-gap">
+  <div class="ac-panel" data-ac-access-roles="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Foundational roles</h2>
+    <p class="ac-muted">Access is granted through staff role assignments with organization or facility scope. Clinical and custom roles are not available yet.</p>
+    <ul class="ac-access__role-list" role="list">
       <% roles.forEach(function (role) { %>
-      <li style="margin-bottom:.75rem">
-        <strong><%= role.displayName %></strong>
+      <li>
+        <strong><%= role.label %></strong>
         <div class="ac-muted"><%= role.description %></div>
       </li>
       <% }) %>
     </ul>
   </div>
-  <div class="ac-panel ac-empty">
-    <h2>Assignment editor</h2>
-    <p>The full roles and access management screen is scheduled for the next implementation wave. Assignments can be managed through foundation services today.</p>
+
+  <form class="ac-panel ac-filter-bar" method="get" action="/app/access" data-ac-access-filters="1">
+    <div class="ac-filter-bar__grid ac-filter-bar__grid--staff">
+      <div>
+        <label class="ac-label" for="access_search">Search</label>
+        <input class="ac-input" id="access_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Name or role" autocomplete="off"/>
+      </div>
+      <div>
+        <label class="ac-label" for="access_status">Assignment state</label>
+        <select class="ac-select" id="access_status" name="status">
+          <% (filterOptions.statuses || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="access_role">Role</label>
+        <select class="ac-select" id="access_role" name="role">
+          <option value="">All roles</option>
+          <% (filterOptions.roles || []).forEach(function (r) { %>
+          <option value="<%= r.value %>" <%= filters.role === r.value ? 'selected' : '' %>><%= r.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="access_facility">Facility</label>
+        <select class="ac-select" id="access_facility" name="facility">
+          <option value="">All facilities</option>
+          <% (filterOptions.facilities || []).forEach(function (f) { %>
+          <option value="<%= f.value %>" <%= filters.facility === f.value ? 'selected' : '' %>><%= f.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-filter-bar__checks">
+        <button type="submit" class="ac-btn">Apply</button>
+        <% if (filters.active) { %>
+        <a class="ac-btn ac-btn--ghost" href="/app/access">Clear</a>
+        <% } %>
+      </div>
+    </div>
+  </form>
+
+  <% if (overview.resultCount != null && !emptyMode) { %>
+  <p class="ac-muted" data-ac-result-count="<%= overview.resultCount %>"><%= overview.resultCount %> assignment<%= overview.resultCount === 1 ? '' : 's' %></p>
+  <% } %>
+
+  <% if (emptyMode === 'none') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'access-none',
+      title: 'No role assignments yet',
+      description: 'Assign foundational roles from a staff access page in the staff directory.',
+      primaryAction: actions.staffDirectoryHref
+        ? { href: actions.staffDirectoryHref, label: 'Open staff directory' }
+        : null
+    }
+  }) %>
+  <% } else if (emptyMode === 'filtered') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'no_results',
+      marker: 'access-filtered',
+      title: 'No assignments match these filters',
+      description: 'Try different search terms, or clear filters to see all assignments you can access.',
+      secondaryAction: { href: '/app/access', label: 'Clear filters' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-table-wrap" data-ac-access-table="1">
+    <table class="ac-table">
+      <caption class="ac-sr-only">ActiveClinic role assignments</caption>
+      <thead>
+        <tr>
+          <th scope="col">Staff</th>
+          <th scope="col">Role</th>
+          <th scope="col">Scope</th>
+          <th scope="col">Effective</th>
+          <th scope="col">Expires</th>
+          <th scope="col"><span class="ac-sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% assignments.forEach(function (row) { %>
+        <tr data-ac-access-row="1" data-effective="<%= row.effective ? '1' : '0' %>">
+          <td>
+            <a href="<%= row.detailHref %>"><%= row.staff.displayName %></a>
+            <div class="ac-muted"><%= row.staff.jobTitle || row.staff.status || '' %></div>
+          </td>
+          <td><%= row.roleLabel %></td>
+          <td><%= row.scopeLabel %></td>
+          <td>
+            <% if (row.effective) { %>
+            <span class="ac-badge ac-badge--success">Effective</span>
+            <% } else { %>
+            <span class="ac-badge ac-badge--warning">Not effective</span>
+            <span class="ac-sr-only"><%= (row.ineffectiveReasons || []).join(', ') %></span>
+            <% } %>
+          </td>
+          <td><%= row.expiresAt ? new Date(row.expiresAt).toLocaleString() : 'No expiry' %></td>
+          <td><a class="ac-btn ac-btn--ghost" href="<%= row.detailHref %>">Manage</a></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
   </div>
+
+  <ul class="ac-card-list ac-card-list--mobile" data-ac-access-cards="1" aria-label="Role assignments">
+    <% assignments.forEach(function (row) { %>
+    <li class="ac-panel">
+      <a class="ac-card-link" href="<%= row.detailHref %>">
+        <strong><%= row.staff.displayName %></strong>
+        <div><%= row.roleLabel %> · <%= row.scopeLabel %></div>
+        <div class="ac-muted">
+          <%= row.effective ? 'Effective' : 'Not effective' %>
+          · <%= row.expiresAt ? ('Expires ' + new Date(row.expiresAt).toLocaleString()) : 'No expiry' %>
+        </div>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
 </section>

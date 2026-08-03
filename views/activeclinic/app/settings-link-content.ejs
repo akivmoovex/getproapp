@@ -1,0 +1,16 @@
+<%
+  var linkPage = (pageData && pageData.linkPage) || {};
+%>
+<section class="ac-settings-link" data-ac-page-section="settings-link" data-ac-visual="stitch-gap">
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0"><%= linkPage.title || 'Settings' %></h2>
+    <p><%= linkPage.body || '' %></p>
+    <% if (linkPage.summary) { %>
+    <p class="ac-muted" data-ac-link-summary="1"><%= linkPage.summary %></p>
+    <% } %>
+    <% if (linkPage.primaryHref) { %>
+    <p><a class="ac-btn" href="<%= linkPage.primaryHref %>"><%= linkPage.primaryLabel || 'Continue' %></a></p>
+    <% } %>
+    <p><a class="ac-btn ac-btn--ghost" href="/app/settings">Back to settings</a></p>
+  </div>
+</section>

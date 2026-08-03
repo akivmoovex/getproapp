@@ -63,7 +63,41 @@ function normalizeCountryCode(raw) {
 function normalizeTimezone(raw) {
   const value = String(raw == null ? "" : raw).trim();
   if (!value || value.length > 64) return { ok: false, code: "timezone_invalid" };
+  try {
+    // Throws RangeError for unknown IANA zones in modern Node.
+    Intl.DateTimeFormat("en-US", { timeZone: value }).format(new Date());
+  } catch (_err) {
+    return { ok: false, code: "timezone_invalid" };
+  }
   return { ok: true, value };
+}
+
+/** Curated options for settings selects; validation still accepts any valid IANA zone. */
+function listActiveClinicTimezoneOptions() {
+  const preferred = [
+    "Africa/Lusaka",
+    "Africa/Harare",
+    "Africa/Johannesburg",
+    "Africa/Nairobi",
+    "Africa/Lagos",
+    "Africa/Cairo",
+    "UTC",
+    "Europe/London",
+  ];
+  let supported = preferred;
+  try {
+    if (typeof Intl.supportedValuesOf === "function") {
+      supported = Intl.supportedValuesOf("timeZone");
+    }
+  } catch (_err) {
+    supported = preferred;
+  }
+  const set = new Set(supported);
+  const ordered = preferred.filter((z) => set.has(z));
+  for (const z of supported) {
+    if (!ordered.includes(z) && z.startsWith("Africa/")) ordered.push(z);
+  }
+  return ordered;
 }
 
 module.exports = {
@@ -73,4 +107,5 @@ module.exports = {
   normalizeActiveClinicEmail,
   normalizeCountryCode,
   normalizeTimezone,
+  listActiveClinicTimezoneOptions,
 };

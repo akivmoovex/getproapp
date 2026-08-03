@@ -143,6 +143,127 @@ async function listActiveRoleAssignments(db, input) {
   return result.rows;
 }
 
+async function findRoleAssignmentById(db, input) {
+  const result = await db.query(
+    `SELECT a.*, r.role_key, r.display_name AS role_display_name,
+            r.role_category,
+            f.facility_key, f.display_name AS facility_display_name,
+            f.status AS facility_status
+       FROM activeclinic.staff_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+       LEFT JOIN activeclinic.facilities f
+         ON f.id = a.facility_id AND f.organization_id = a.organization_id
+      WHERE a.id = $1
+        AND a.organization_id = $2
+      LIMIT 1`,
+    [input.id, input.organizationId]
+  );
+  return result.rows[0] || null;
+}
+
+async function listRoleAssignmentsForStaff(db, input) {
+  const includeInactive = input.includeInactive === true;
+  const result = await db.query(
+    `SELECT a.*, r.role_key, r.display_name AS role_display_name,
+            r.role_category,
+            f.facility_key, f.display_name AS facility_display_name,
+            f.status AS facility_status
+       FROM activeclinic.staff_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+       LEFT JOIN activeclinic.facilities f
+         ON f.id = a.facility_id AND f.organization_id = a.organization_id
+      WHERE a.staff_member_id = $1
+        AND a.organization_id = $2
+        AND (
+          $3::boolean = true
+          OR (
+            a.status = 'active'
+            AND (a.expires_at IS NULL OR a.expires_at > now())
+          )
+        )
+      ORDER BY
+        CASE a.status WHEN 'active' THEN 0 WHEN 'expired' THEN 1 ELSE 2 END,
+        a.created_at DESC`,
+    [input.staffMemberId, input.organizationId, includeInactive]
+  );
+  return result.rows;
+}
+
+async function listRoleAssignmentsForOrganization(db, input) {
+  const params = [input.organizationId];
+  const clauses = ["a.organization_id = $1", "r.role_category = 'activeclinic'"];
+
+  if (input.status === "effective") {
+    clauses.push(
+      "a.status = 'active'",
+      "(a.expires_at IS NULL OR a.expires_at > now())"
+    );
+  } else if (input.status === "revoked") {
+    clauses.push("a.status = 'revoked'");
+  } else if (input.status === "expired") {
+    clauses.push(
+      "(a.status = 'expired' OR (a.status = 'active' AND a.expires_at IS NOT NULL AND a.expires_at <= now()))"
+    );
+  } else if (input.status === "inactive") {
+    clauses.push(
+      "(a.status <> 'active' OR (a.expires_at IS NOT NULL AND a.expires_at <= now()))"
+    );
+  }
+
+  if (input.roleKey) {
+    params.push(String(input.roleKey));
+    clauses.push(`r.role_key = $${params.length}`);
+  }
+  if (input.facilityId) {
+    params.push(String(input.facilityId));
+    clauses.push(`a.facility_id = $${params.length}`);
+  }
+  if (input.staffMemberId) {
+    params.push(String(input.staffMemberId));
+    clauses.push(`a.staff_member_id = $${params.length}`);
+  }
+  if (Array.isArray(input.staffMemberIds) && input.staffMemberIds.length) {
+    params.push(input.staffMemberIds);
+    clauses.push(`a.staff_member_id = ANY($${params.length}::uuid[])`);
+  }
+
+  const result = await db.query(
+    `SELECT a.*, r.role_key, r.display_name AS role_display_name,
+            r.role_category,
+            f.facility_key, f.display_name AS facility_display_name,
+            f.status AS facility_status,
+            s.first_name AS staff_first_name,
+            s.last_name AS staff_last_name,
+            s.preferred_name AS staff_preferred_name,
+            s.status AS staff_status,
+            s.job_title AS staff_job_title
+       FROM activeclinic.staff_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+       JOIN activeclinic.staff_members s
+         ON s.id = a.staff_member_id AND s.organization_id = a.organization_id
+       LEFT JOIN activeclinic.facilities f
+         ON f.id = a.facility_id AND f.organization_id = a.organization_id
+      WHERE ${clauses.join(" AND ")}
+      ORDER BY s.last_name ASC, s.first_name ASC, r.role_key ASC, a.created_at DESC`,
+    params
+  );
+  return result.rows;
+}
+
+async function updateRoleAssignmentExpiry(db, input) {
+  const result = await db.query(
+    `UPDATE activeclinic.staff_role_assignments
+        SET expires_at = $3,
+            updated_at = now()
+      WHERE id = $1
+        AND organization_id = $2
+        AND status = 'active'
+      RETURNING *`,
+    [input.id, input.organizationId, input.expiresAt || null]
+  );
+  return result.rows[0] || null;
+}
+
 async function revokeRoleAssignment(db, input) {
   const result = await db.query(
     `UPDATE activeclinic.staff_role_assignments
@@ -198,6 +319,10 @@ module.exports = {
   findRoleByKey,
   insertRoleAssignment,
   listActiveRoleAssignments,
+  findRoleAssignmentById,
+  listRoleAssignmentsForStaff,
+  listRoleAssignmentsForOrganization,
+  updateRoleAssignmentExpiry,
   revokeRoleAssignment,
   listPermissionKeysForStaff,
 };

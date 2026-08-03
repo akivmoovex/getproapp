@@ -95,7 +95,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
   const getPool = deps.getPool;
   const env = deps.env;
   const isProduction = deps.isProduction;
-  const requireAuth = createRequireActiveClinicAuth({});
+  const requireAuth = createRequireActiveClinicAuth({ env, isProduction });
   const requirePermission = createRequireActiveClinicPermission({
     getPool,
     env,

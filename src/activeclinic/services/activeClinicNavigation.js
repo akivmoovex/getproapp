@@ -37,7 +37,7 @@ const NAV_ITEMS = Object.freeze([
     key: "settings",
     label: "Settings",
     href: "/app/settings",
-    permission: "activeclinic.organization.manage",
+    permission: "activeclinic.access",
     icon: "settings",
   },
 ]);

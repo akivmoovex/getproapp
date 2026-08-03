@@ -144,16 +144,65 @@ function createLoadActiveClinicAuth(deps) {
 
 /**
  * Require authenticated ActiveClinic context. Password-change gate optional.
+ * Eligibility / identity failures clear the ActiveClinic session and render a
+ * context-unavailable state (no login↔app redirect loop).
  */
 function createRequireActiveClinicAuth(options) {
   const allowPasswordChangeOnly = Boolean(options && options.allowPasswordChangeOnly);
   const loginPath = (options && options.loginPath) || "/login";
   const changePasswordPath =
     (options && options.changePasswordPath) || "/account/change-password";
+  const env = (options && options.env) || process.env;
+  const isProduction =
+    options && Object.prototype.hasOwnProperty.call(options, "isProduction")
+      ? options.isProduction === true
+      : String(env.NODE_ENV || "") === "production";
 
   return function requireActiveClinicAuth(req, res, next) {
     const auth = req.activeClinicAuth;
     if (!auth || !auth.authenticated) {
+      const reason = (auth && auth.reason) || "unauthenticated";
+      const contextDenied =
+        reason === "eligibility_denied" ||
+        reason === "identity_disabled" ||
+        reason === "inactive_identity" ||
+        reason === "product_mismatch" ||
+        reason === "wrong_principal";
+
+      if (contextDenied && req.accepts("html")) {
+        const {
+          clearV5SessionCookie,
+        } = require("../../platform/session/v5SessionCookie");
+        const { getCsrfCookieName, CSRF_FIELD, issueCsrfToken } = require(
+          "../../platform/http/v5Csrf"
+        );
+        const {
+          renderAccessStatePage,
+        } = require("./renderActiveClinicAccessState");
+        const {
+          STATE,
+        } = require("../services/activeClinicStateTaxonomy");
+
+        clearV5SessionCookie(res, { secure: isProduction, env });
+        res.clearCookie(getCsrfCookieName(env), { path: "/" });
+        const csrfToken = issueCsrfToken(env);
+        return res.status(403).type("html").send(
+          renderAccessStatePage({
+            stateKey: STATE.CONTEXT_UNAVAILABLE,
+            pageId: "context-unavailable",
+            pageTitle: "Workspace unavailable",
+            heading: "This ActiveClinic workspace is currently unavailable",
+            message:
+              "Your account cannot access this workspace right now. Sign in again, or contact your administrator.",
+            primaryHref: "/login",
+            primaryLabel: "Sign in",
+            showLogout: false,
+            csrfField: CSRF_FIELD,
+            csrfToken,
+          })
+        );
+      }
+
       if (req.accepts("html")) {
         return res.redirect(303, loginPath);
       }

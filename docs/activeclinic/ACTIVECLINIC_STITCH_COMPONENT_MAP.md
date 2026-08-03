@@ -52,7 +52,7 @@ Existing code: `views/activeclinic/layouts/app-shell.ejs`, `partials/sidebar.ejs
 
 | Component | Stitch | Existing | Wave |
 |---|---|---|---|
-| Empty / loading / error / offline / restricted | Shared + P01 states | simple HTML helpers | W1 |
+| Empty / loading / error / offline / restricted | Shared + P01 states | `ac-inline-state`, `access-state`, taxonomy, error handler (S08); offline deferred | W1 / **S08** |
 | Feature locked / subscription | not in inventory | — | product decision |
 | Confirmation / toast / flash | — | flash slot in shell | W1 |
 | Destructive warning | — | — | W1 admin |
@@ -90,7 +90,16 @@ Patient banner, encounter workspace, Rx builder, queue boards, specimen labels, 
 | Sidebar / drawer | `views/activeclinic/partials/sidebar.ejs` |
 | Nav icons | `views/activeclinic/partials/nav-icon.ejs` |
 | Dashboard loader | `src/activeclinic/services/loadActiveClinicDashboardHome.js` |
-| Access/session state | `views/activeclinic/app/access-state.ejs` |
+| Access/session state | `views/activeclinic/app/access-state.ejs` + `activeClinicStateTaxonomy.js` + `ac-inline-state.ejs` (AC-V6-S08) |
+| Access overview | `views/activeclinic/app/access-content.ejs` |
+| Staff access detail | `views/activeclinic/app/access-staff-content.ejs` |
+| Assign / edit role form | `views/activeclinic/app/access-role-form-content.ejs` |
+| Revoke confirmation | `views/activeclinic/app/access-revoke-content.ejs` |
+| Settings overview | `views/activeclinic/app/settings-content.ejs` |
+| Organization profile | `views/activeclinic/app/settings-organization-content.ejs` |
+| Organization edit form | `views/activeclinic/app/settings-organization-form-content.ejs` |
+| Settings link panel | `views/activeclinic/app/settings-link-content.ejs` |
+| Account settings | `views/activeclinic/app/settings-account-content.ejs` |
 | App CSS | `public/activeclinic/ac-app.css` (S02 tokens/nav) |
 
 ## AC-V6-S03 facility components

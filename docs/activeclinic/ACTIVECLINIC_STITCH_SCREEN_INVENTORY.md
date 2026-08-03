@@ -141,10 +141,10 @@
 | `792d5cbb6f234332a088399e4ccdd545` | P07 – Cashier Dashboard – Desktop | DESKTOP | Billing / Cashier / Invoices | dashboard | cashier / billing | `/app/billing… (future)` | NOT_STARTED | W7 | 2560×2048; Finance |
 | `a84263ac97b8484698dc36d00b498ffa` | P07 – Patient Billing Account – Desktop | DESKTOP | Billing / Cashier / Invoices | detail | cashier / billing | `/app/billing… (future)` | NOT_STARTED | W7 | 2560×2048; Finance |
 | `9f422c33e30c450e9502126ba4012585` | P07 – Patient Invoice – Desktop | DESKTOP | Billing / Cashier / Invoices | detail | cashier / billing | `/app/billing… (future)` | NOT_STARTED | W7 | 2560×2048; Finance |
-| `8731b06bbfa747e98e05372c9aafb3e9` | Access Restricted | DESKTOP | Platform states | restricted state | any (denied) | `(shared chrome states)` | PARTIAL | W1 | 2560×2048; Platform or plan states |
-| `72357dec37864a5a926a1d2b5c551b16` | Shared Error State | DESKTOP | Platform states | error state | tbd | `(shared chrome states)` | PARTIAL | W1 | 2560×2048; Platform or plan states |
-| `8a3f15c0be9c47efb192f206df104d5c` | Shared Loading State | DESKTOP | Platform states | loading state | tbd | `(shared chrome states)` | PARTIAL | W1 | 2560×2048; Platform or plan states |
-| `4d31c82537634b5f981c359662d224b3` | Shared Offline State | DESKTOP | Platform states | offline state | tbd | `(shared chrome states)` | PARTIAL | W1 | 2560×2048; Platform or plan states |
+| `8731b06bbfa747e98e05372c9aafb3e9` | Access Restricted | DESKTOP | Platform states | restricted state | any (denied) | `access-state` / middleware | PARTIAL | **S08** | Functional 403; VISUAL_BLOCKED vs Stitch |
+| `72357dec37864a5a926a1d2b5c551b16` | Shared Error State | DESKTOP | Platform states | error state | tbd | `createActiveClinicErrorHandler` | PARTIAL | **S08** | Safe HTML errors; VISUAL_BLOCKED |
+| `8a3f15c0be9c47efb192f206df104d5c` | Shared Loading State | DESKTOP | Platform states | loading state | tbd | `ac-auth.js` form busy | PARTIAL | **S08** | Submit `aria-busy` only; no SSR skeletons |
+| `4d31c82537634b5f981c359662d224b3` | Shared Offline State | DESKTOP | Platform states | offline state | tbd | — | NOT_STARTED | **S08 deferred** | No browser offline support |
 
 ## Counts by package
 
@@ -162,8 +162,8 @@
 ## Counts by readiness
 
 - **DUPLICATE**: 6
-- **NOT_STARTED**: 97
-- **PARTIAL**: 11
+- **NOT_STARTED**: 98
+- **PARTIAL**: 10
 
 ## Related docs
 
@@ -194,3 +194,11 @@ Staff directory + detail functional UI shipped (`docs/activeclinic/stitch/AC_V6_
 ## AC-V6-S05 note
 
 Staff create/invite/edit functional UI shipped (`docs/activeclinic/stitch/AC_V6_S05_STAFF_CREATE_INVITE_EDIT_PARITY.md`). Remains **STITCH_GAP / VISUAL_BLOCKED** — shell forms, invitation confirmation with copy/share, facility assignment sync; roles/access editor deferred.
+
+### AC-V6-S06 update
+
+Roles and access management functional UI shipped (`docs/activeclinic/stitch/AC_V6_S06_ROLES_ACCESS_PARITY.md`). Remains **STITCH_GAP / VISUAL_BLOCKED** — overview, staff access detail, assign/edit/revoke with grantability guards; custom/clinical roles out of scope.
+
+### AC-V6-S07 update
+
+Organization settings functional UI shipped (`docs/activeclinic/stitch/AC_V6_S07_ORGANIZATION_SETTINGS_PARITY.md`). Remains **STITCH_GAP / VISUAL_BLOCKED** — overview, HCO profile/edit, facilities/access/account links; no branding/billing/clinical settings.

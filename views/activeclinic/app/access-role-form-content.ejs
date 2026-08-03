@@ -1,0 +1,89 @@
+<%
+  var form = (pageData && pageData.form) || {};
+  var values = form.values || {};
+  var errors = form.errors || [];
+  var fieldErrors = form.fieldErrors || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var mode = form.mode || 'assign';
+  var roleOptions = form.roleOptions || [];
+  var facilities = form.facilities || [];
+%>
+<section class="ac-access-form" data-ac-page-section="access-<%= mode %>" data-ac-visual="stitch-gap">
+  <% if (errors.length) { %>
+  <div id="ac-access-error-summary" class="ac-flash ac-flash--error" role="alert" tabindex="-1">
+    <strong>Please fix the following:</strong>
+    <ul>
+      <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+    </ul>
+  </div>
+  <% } %>
+
+  <% if (form.policyNote) { %>
+  <div class="ac-panel ac-flash" data-ac-policy-note="1"><%= form.policyNote %></div>
+  <% } %>
+
+  <form class="ac-panel" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+
+    <p class="ac-muted" style="margin-top:0">Staff: <strong><%= (form.staff && form.staff.displayName) || 'Staff member' %></strong></p>
+
+    <% if (mode === 'edit') { %>
+    <fieldset class="ac-field">
+      <legend class="ac-label">Edit mode</legend>
+      <label class="ac-check">
+        <input type="radio" name="edit_mode" value="expiry" <%= values.editMode !== 'replace' ? 'checked' : '' %>/>
+        Update expiry only
+      </label>
+      <label class="ac-check">
+        <input type="radio" name="edit_mode" value="replace" <%= values.editMode === 'replace' ? 'checked' : '' %>/>
+        Change role or scope (revokes current assignment and creates a new one)
+      </label>
+    </fieldset>
+    <% } %>
+
+    <div class="ac-field">
+      <label class="ac-label" for="role_key">Role</label>
+      <select class="ac-select" id="role_key" name="role_key" required <%= mode === 'edit' && values.editMode !== 'replace' ? '' : '' %>>
+        <% roleOptions.forEach(function (r) { %>
+        <option value="<%= r.value %>" <%= values.roleKey === r.value ? 'selected' : '' %>><%= r.label %></option>
+        <% }) %>
+      </select>
+      <% if (!roleOptions.length) { %>
+      <p class="ac-field-error">No grantable roles are available for your account.</p>
+      <% } %>
+      <% if (fieldErrors.role_key) { %><p class="ac-field-error"><%= fieldErrors.role_key %></p><% } %>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="scope_type">Scope</label>
+      <select class="ac-select" id="scope_type" name="scope_type" required>
+        <option value="organisation" <%= values.scopeType === 'organisation' ? 'selected' : '' %>>Organization-wide</option>
+        <option value="facility" <%= values.scopeType === 'facility' ? 'selected' : '' %>>Facility</option>
+      </select>
+      <% if (fieldErrors.scope_type) { %><p class="ac-field-error"><%= fieldErrors.scope_type %></p><% } %>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="facility_id">Facility</label>
+      <select class="ac-select" id="facility_id" name="facility_id">
+        <option value="">Select facility</option>
+        <% facilities.forEach(function (f) { %>
+        <option value="<%= f.id %>" <%= String(values.facilityId) === String(f.id) ? 'selected' : '' %>><%= f.displayName %></option>
+        <% }) %>
+      </select>
+      <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem">Required for facility-scoped roles. Only facilities where the staff member is assigned are listed.</p>
+      <% if (fieldErrors.facility_id) { %><p class="ac-field-error"><%= fieldErrors.facility_id %></p><% } %>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="expires_at">Expires <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="expires_at" name="expires_at" type="datetime-local" value="<%= values.expiresAt || '' %>"/>
+      <% if (fieldErrors.expires_at) { %><p class="ac-field-error" id="err-expires_at"><%= fieldErrors.expires_at %></p><% } %>
+    </div>
+
+    <div class="ac-actions-row">
+      <button type="submit" class="ac-btn"><%= mode === 'edit' ? 'Save assignment' : 'Assign role' %></button>
+      <a class="ac-btn ac-btn--ghost" href="<%= form.cancelHref || '/app/access' %>">Cancel</a>
+    </div>
+  </form>
+</section>

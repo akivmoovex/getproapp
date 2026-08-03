@@ -51,7 +51,7 @@ function registerActiveClinicAppRoutes(app, deps) {
   const getPool = deps.getPool;
   const env = deps.env;
   const isProduction = deps.isProduction;
-  const requireAuth = createRequireActiveClinicAuth({});
+  const requireAuth = createRequireActiveClinicAuth({ env, isProduction });
   const requirePermission = createRequireActiveClinicPermission({
     getPool,
     env,
@@ -121,98 +121,6 @@ function registerActiveClinicAppRoutes(app, deps) {
       return next(err);
     }
   });
-
-  app.get(
-    "/app/access",
-    requireAuth,
-    requirePermission("activeclinic.staff.assign_access"),
-    async (req, res, next) => {
-      try {
-        return await renderShell(req, res, {
-          activeNav: "access",
-          content: "app/access-content.ejs",
-          pageHeader: {
-            title: "Roles & access",
-            description: "Foundational ActiveClinic roles and scope model.",
-            actions: [],
-          },
-          breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Roles & access" }],
-          pageData: {
-            roles: [
-              {
-                displayName: "Network admin",
-                description:
-                  "Organization-wide administration including facilities, staff, and access.",
-              },
-              {
-                displayName: "Facility admin",
-                description:
-                  "Facility-scoped administration for assigned facilities.",
-              },
-              {
-                displayName: "Staff",
-                description:
-                  "Authenticated access with facility visibility according to assignments.",
-              },
-            ],
-          },
-        });
-      } catch (err) {
-        return next(err);
-      }
-    }
-  );
-
-  app.get(
-    "/app/settings",
-    requireAuth,
-    requirePermission("activeclinic.organization.manage"),
-    async (req, res, next) => {
-      try {
-        const perms = new Set(req.activeClinicAuth.permissions || []);
-        const categories = [];
-        if (perms.has("activeclinic.organization.view")) {
-          categories.push({
-            label: "Organization",
-            description: "Healthcare organization context for this tenant.",
-            href: "/app",
-          });
-        }
-        if (perms.has("activeclinic.facility.view")) {
-          categories.push({
-            label: "Facilities",
-            description: "Facility catalogue and status.",
-            href: "/app/facilities",
-          });
-        }
-        if (perms.has("activeclinic.staff.assign_access")) {
-          categories.push({
-            label: "Staff access",
-            description: "Roles and permission foundations.",
-            href: "/app/access",
-          });
-        }
-        categories.push({
-          label: "Account",
-          description: "Password and signed-in session.",
-          href: "/account/change-password",
-        });
-        return await renderShell(req, res, {
-          activeNav: "settings",
-          content: "app/settings-content.ejs",
-          pageHeader: {
-            title: "Settings",
-            description: "Infrastructure settings available in this foundation stage.",
-            actions: [],
-          },
-          breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Settings" }],
-          pageData: { categories },
-        });
-      } catch (err) {
-        return next(err);
-      }
-    }
-  );
 
   app.get("/app/select-facility", requireAuth, async (req, res, next) => {
     try {

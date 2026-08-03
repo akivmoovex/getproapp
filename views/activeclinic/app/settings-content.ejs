@@ -1,12 +1,76 @@
-<% var categories = (pageData && pageData.categories) || []; %>
-<section class="ac-grid" data-ac-page-section="settings">
-  <% categories.forEach(function (cat) { %>
-  <a class="ac-panel" href="<%= cat.href %>" style="text-decoration:none;color:inherit">
-    <h2 style="margin-top:0;font-size:1.05rem"><%= cat.label %></h2>
-    <p class="ac-muted" style="margin:0"><%= cat.description %></p>
-  </a>
-  <% }) %>
+<%
+  var overview = (pageData && pageData.overview) || {};
+  var categories = overview.categories || [];
+  var setup = overview.setup || null;
+  var primary = overview.primaryFacility || null;
+%>
+<section class="ac-settings" data-ac-page-section="settings-overview" data-ac-visual="stitch-gap">
+  <% if (overview.organizationName) { %>
+  <p class="ac-muted" data-ac-settings-org="1" style="margin-top:0">
+    Organization context: <strong><%= overview.organizationName %></strong>
+  </p>
+  <% } %>
+
+  <% if (setup) { %>
+  <div class="ac-panel" data-ac-setup-state="<%= setup.complete ? 'complete' : 'incomplete' %>">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Profile setup</h2>
+    <p>
+      <% if (setup.complete) { %>
+      <span class="ac-badge ac-badge--success">Profile complete</span>
+      <% } else { %>
+      <span class="ac-badge ac-badge--warning">Setup incomplete</span>
+      <% } %>
+      <span class="ac-muted"><%= setup.label %></span>
+    </p>
+    <% if (setup.missing && setup.missing.length) { %>
+    <ul class="ac-muted" data-ac-setup-missing="1">
+      <% setup.missing.forEach(function (item) { %>
+      <li><%= item.label %></li>
+      <% }) %>
+    </ul>
+    <% } %>
+    <% if (primary) { %>
+    <p class="ac-muted" data-ac-primary-summary="1">
+      Primary facility:
+      <% if (primary.operational) { %>
+      <a href="<%= primary.href %>"><%= primary.displayName %></a>
+      <% } else { %>
+      <%= primary.displayName %> (not operational)
+      <% } %>
+    </p>
+    <% } else { %>
+    <p class="ac-muted" data-ac-primary-summary="missing">No primary facility configured.</p>
+    <% } %>
+  </div>
+  <% } %>
+
+  <% if (!categories.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'access_restricted',
+      marker: 'settings-restricted',
+      title: 'No settings available',
+      description: 'Settings categories appear when you have matching permissions.'
+    }
+  }) %>
+  <% } else { %>
+  <nav class="ac-settings-nav" aria-label="Settings categories" data-ac-settings-nav="1">
+    <ul class="ac-settings-cards">
+      <% categories.forEach(function (cat) { %>
+      <li>
+        <a class="ac-panel ac-settings-card" href="<%= cat.href %>" data-ac-settings-card="<%= cat.key %>">
+          <h2 class="ac-dashboard__card-title" style="margin-top:0"><%= cat.title %></h2>
+          <p class="ac-muted"><%= cat.description %></p>
+          <% if (cat.statusLabel) { %>
+          <p><span class="ac-badge"><%= cat.statusLabel %></span></p>
+          <% } %>
+          <% if (cat.summary) { %>
+          <p class="ac-muted" style="margin-bottom:0"><%= cat.summary %></p>
+          <% } %>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+  </nav>
+  <% } %>
 </section>
-<% if (!categories.length) { %>
-<div class="ac-panel ac-empty"><h2>No settings available</h2><p>Settings categories appear when you have matching permissions.</p></div>
-<% } %>

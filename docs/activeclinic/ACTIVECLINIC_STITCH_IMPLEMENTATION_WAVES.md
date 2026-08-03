@@ -182,3 +182,21 @@ Each later prompt must list: exact Stitch names, routes, services, permissions, 
 - **PARTIAL** — create/invite form, confirmation share panel, edit profile + facility sync; account actions remain on detail + admin POSTs; **VISUAL_BLOCKED**.
 - Detail: `docs/activeclinic/stitch/AC_V6_S05_STAFF_CREATE_INVITE_EDIT_PARITY.md`
 - Next: **AC-V6-S06 — Roles and Access Management**
+
+### AC-V6-S06 status
+
+- **PARTIAL** — access overview, staff access detail, assign/edit/revoke foundational roles with grantability guards; facility admins gained `assign_access` via additive migration 079; **VISUAL_BLOCKED** (no Stitch access screens). Bootstrap suites green on re-run.
+- Detail: `docs/activeclinic/stitch/AC_V6_S06_ROLES_ACCESS_PARITY.md`
+- Next: **AC-V6-S07 — Organization Settings and Healthcare Profile**
+
+### AC-V6-S07 status
+
+- **PARTIAL** — settings overview, organization profile/edit, facilities/access/account links; completeness + status separation; **VISUAL_BLOCKED**.
+- Detail: `docs/activeclinic/stitch/AC_V6_S07_ORGANIZATION_SETTINGS_PARITY.md`
+- Next: **AC-V6-S08 — Foundation Empty, Error and Restricted States**
+
+### AC-V6-S08 status
+
+- **PARTIAL** — state taxonomy, shared inline/full-page states, error middleware, empty/no-results across foundation modules, context-unavailable for ineligible sessions; Shared Offline **deferred**; **VISUAL_BLOCKED** vs Stitch state pack.
+- Detail: `docs/activeclinic/stitch/AC_V6_S08_FOUNDATION_STATES_QUALITY_GATE.md`
+- Next: **AC-V6-C01 — Patient Identity and Registration Backend Foundation** (no patient UI Stitch until backend lands)

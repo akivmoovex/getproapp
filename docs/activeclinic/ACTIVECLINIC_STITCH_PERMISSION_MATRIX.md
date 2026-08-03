@@ -11,9 +11,9 @@ Catalogue sources: `db/migrations/blessboard/077_activeclinic_rbac_catalogue.sql
 
 | Permission | Typical use |
 |---|---|
-| `activeclinic.access` | Enter `/app` |
-| `activeclinic.organization.view` | Read org context |
-| `activeclinic.organization.manage` | Settings landing / org manage |
+| `activeclinic.access` | Enter `/app` and settings overview |
+| `activeclinic.organization.view` | Organization profile view |
+| `activeclinic.organization.manage` | Organization profile edit |
 | `activeclinic.facility.view` | Facilities list/detail |
 | `activeclinic.facility.create` | Create facility |
 | `activeclinic.facility.update` | Edit / set primary |
@@ -51,11 +51,14 @@ Public auth lifecycle routes require **no** staff permission.
 | Invite staff | `/app/staff/new` + POST `/app/staff` | `staff.create` + `staff.invite` | org / facility | yes | AC-V6-S05 |
 | Edit staff | `…/edit` + POST `…/:staffId` | `staff.update` | org / facility | yes | AC-V6-S05 |
 | Assign facility | service | `staff.assign_facility` | org | yes | UI gap |
-| Access overview | `/app/access` | `staff.assign_access` | org | yes | editor gap |
-| Assign/revoke roles | proposed | `staff.assign_access` | org/facility | yes | add write routes |
+| Access overview | `/app/access` | `staff.assign_access` | org / facility overlap | yes | functional (AC-V6-S06) |
+| Staff access detail | `/app/access/staff/:staffId` | `staff.assign_access` | org / facility overlap | yes | functional (AC-V6-S06) |
+| Assign/edit/revoke roles | `/app/access/staff/:staffId/...` | `staff.assign_access` | org/facility + grantability | yes | service-enforced escalation guards |
 | Credential admin | `/app/staff/:id/send-reset` etc. | `staff.manage_credentials` | org | yes | detail UI |
 | Suspend/restore | staff admin POSTs | `staff.archive` / update | org | yes | detail UI |
-| Settings | `/app/settings` | `organization.manage` | org | yes | — |
+| Settings overview | `/app/settings` | `activeclinic.access` | org | yes | category cards permission-filtered |
+| Organization profile | `/app/settings/organization` | `organization.view` | org | yes | functional (AC-V6-S07) |
+| Organization edit | `/app/settings/organization/edit` + POST | `organization.manage` | org | yes | status/enrolment protected |
 | Select facility/org | `/app/select-*` | authenticated | staff-visible | yes | — |
 
 ---

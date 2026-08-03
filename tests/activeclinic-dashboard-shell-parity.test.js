@@ -155,12 +155,13 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
       ["activeclinic.access", "activeclinic.facility.view"],
       "facilities"
     );
-    assert.equal(nav.items.length, 2);
+    assert.equal(nav.items.length, 3);
     assert.deepEqual(
       nav.desktop.map((i) => i.key),
       nav.mobile.map((i) => i.key)
     );
     assert.ok(nav.items.find((i) => i.key === "facilities").current);
+    assert.ok(nav.items.find((i) => i.key === "settings"));
     assert.ok(!nav.items.find((i) => i.key === "staff"));
     assert.ok(!nav.items.find((i) => /patient|pharmacy|billing/i.test(i.label)));
   });

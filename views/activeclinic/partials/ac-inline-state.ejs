@@ -1,0 +1,29 @@
+<%
+  var state = typeof inlineState !== 'undefined' && inlineState
+    ? inlineState
+    : (typeof stateModel !== 'undefined' ? stateModel : null);
+  if (!state && typeof arguments !== 'undefined') { state = null; }
+%>
+<% if (state) { %>
+<div
+  class="ac-panel ac-empty ac-inline-state"
+  data-ac-empty="<%= state.marker || state.stateKey %>"
+  data-ac-state-key="<%= state.stateKey %>"
+  <% if (state.marker === 'dashboard-empty') { %>data-ac-dashboard-state="empty"<% } %>
+  role="status"
+>
+  <h2 class="ac-dashboard__card-title" style="margin-top:0"><%= state.title %></h2>
+  <p><%= state.description %></p>
+  <% if (state.contextLabel) { %>
+  <p class="ac-muted"><%= state.contextLabel %></p>
+  <% } %>
+  <div class="ac-actions-row ac-actions--stack-mobile">
+    <% if (state.primaryAction) { %>
+    <a class="ac-btn" href="<%= state.primaryAction.href %>"><%= state.primaryAction.label %></a>
+    <% } %>
+    <% if (state.secondaryAction) { %>
+    <a class="ac-btn ac-btn--ghost" href="<%= state.secondaryAction.href %>"><%= state.secondaryAction.label %></a>
+    <% } %>
+  </div>
+</div>
+<% } %>

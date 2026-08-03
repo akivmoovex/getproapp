@@ -25,7 +25,7 @@ Classification:
 | Clinical nav items in Stitch dashboards | G | do not add clinical nav until backends exist |
 | Cards / tables / forms density | B–D | list pages are utilitarian |
 | Status colors | B | define AC semantic tokens |
-| Empty / loading / error / offline / restricted | C | Stitch shared states not yet wired as reusable partials |
+| Empty / loading / error / offline / restricted | C | **AC-V6-S08:** taxonomy + `ac-inline-state` + `access-state` + HTML error handler; offline **deferred**; VISUAL_BLOCKED vs Stitch pack |
 | Feature-lock / subscription UI | F | not in Stitch inventory as dedicated screens |
 | Modals | C | few confirmation patterns in foundation |
 

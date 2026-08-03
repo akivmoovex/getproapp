@@ -1,5 +1,5 @@
 /**
- * ActiveClinic auth UI helpers (password visibility + submit loading).
+ * ActiveClinic auth/app UI helpers (password visibility + submit loading).
  */
 (function () {
   "use strict";
@@ -25,13 +25,21 @@
   document.addEventListener("submit", function (e) {
     var form = e.target;
     if (!form || !form.matches("form[data-ac-loading]")) return;
-    var btn = form.querySelector('button[type="submit"]');
-    if (!btn || btn.disabled) return;
+    if (form.getAttribute("aria-busy") === "true") {
+      e.preventDefault();
+      return;
+    }
+    var btn = form.querySelector('button[type="submit"]:not([disabled])');
+    if (!btn) return;
+    form.setAttribute("aria-busy", "true");
     btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
     var loading = btn.getAttribute("data-loading") || "Please wait…";
     if (!btn.getAttribute("data-original-label")) {
       btn.setAttribute("data-original-label", btn.textContent.trim());
     }
     btn.textContent = loading;
+    var live = document.getElementById("ac-form-busy-live");
+    if (live) live.textContent = loading;
   });
 })();

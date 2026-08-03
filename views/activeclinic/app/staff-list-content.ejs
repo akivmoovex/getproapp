@@ -66,30 +66,46 @@
   <% } %>
 
   <% if (emptyMode === 'none') { %>
-  <div class="ac-panel ac-empty" data-ac-empty="staff-none">
-    <h2>No staff yet</h2>
-    <p>This organization does not have any staff profiles configured.</p>
-    <% if (actions.canInvite) { %>
-    <p><a class="ac-btn" href="<%= actions.inviteHref || '/app/staff/new' %>">Invite staff</a></p>
-    <% } %>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'staff-none',
+      title: 'No staff have been added yet',
+      description: 'This organization does not have any staff profiles configured.',
+      primaryAction: actions.canInvite
+        ? { href: actions.inviteHref || '/app/staff/new', label: 'Invite staff' }
+        : null
+    }
+  }) %>
   <% } else if (emptyMode === 'filtered') { %>
-  <div class="ac-panel ac-empty" data-ac-empty="staff-filtered">
-    <h2>No matching staff</h2>
-    <p>No staff match the current search or filters.</p>
-    <p><a class="ac-btn ac-btn--ghost" href="/app/staff">Clear filters</a></p>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'no_results',
+      marker: 'staff-filtered',
+      title: 'No staff match these filters',
+      description: 'Try different search terms, or clear filters to see staff you can access.',
+      secondaryAction: { href: '/app/staff', label: 'Clear filters' }
+    }
+  }) %>
   <% } else if (emptyMode === 'facility') { %>
-  <div class="ac-panel ac-empty" data-ac-empty="staff-facility">
-    <h2>No staff assigned to this facility</h2>
-    <p>There are no staff with an active assignment for the selected facility.</p>
-    <p><a class="ac-btn ac-btn--ghost" href="/app/staff">Clear filters</a></p>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'staff-facility',
+      title: 'No staff assigned to this facility',
+      description: 'There are no staff with an active assignment for the selected facility.',
+      secondaryAction: { href: '/app/staff', label: 'Clear filters' }
+    }
+  }) %>
   <% } else if (emptyMode === 'restricted') { %>
-  <div class="ac-panel ac-empty" data-ac-empty="staff-restricted">
-    <h2>No staff available</h2>
-    <p>You do not have access to staff profiles for your assigned facilities.</p>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'access_restricted',
+      marker: 'staff-restricted',
+      title: 'No staff available',
+      description: 'You do not have access to staff profiles for your assigned facilities.'
+    }
+  }) %>
   <% } else { %>
   <div class="ac-panel ac-table-wrap ac-staff-desktop" data-ac-table="staff">
     <table class="ac-table">

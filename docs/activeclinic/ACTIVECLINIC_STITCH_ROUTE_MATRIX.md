@@ -22,7 +22,7 @@ Organization and facility identity stay in authenticated session context; avoid 
 | Change password | `/account/change-password` | GET/POST | — | yes | — | identity | `changeActiveClinicPassword` | POST | password changed | **STITCH_GAP** |
 | P01 Shell / drawer | `/app/*` chrome | — | — | yes | nav-filtered | session | `buildActiveClinicShellViewModel` | — | — | D+M Stitch |
 | P01 Dashboard | `/app` | GET | — | yes | `activeclinic.access` | org | shell + home content | — | — | D+M Stitch |
-| Shared loading/error/offline/restricted | chrome states | — | — | varies | — | — | middleware / render helpers | — | — | D Stitch |
+| Shared loading/error/offline/restricted | chrome states | — | — | varies | — | — | taxonomy + `access-state` + error handler (AC-V6-S08) | — | — | D Stitch PARTIAL; offline deferred |
 | Select facility | `/app/select-facility` | GET/POST | body `facilityId` | yes | auth | staff facilities | facility context service | POST + CSRF | session context | **STITCH_GAP** |
 | Select organization (in-app) | `/app/select-organization` | GET/POST | body org | yes | auth | eligible orgs | eligibility + new session | POST + CSRF | session rotate | **STITCH_GAP** |
 | Facilities list | `/app/facilities` | GET | `q,type,status,primary` | yes | `facility.view` | org / assignment | `loadActiveClinicFacilitiesListScreen` | — | — | **STITCH_GAP** functional (AC-V6-S03) |
@@ -36,10 +36,17 @@ Organization and facility identity stay in authenticated session context; avoid 
 | Staff create / invite UI | `/app/staff/new` + POST `/app/staff` | GET/POST | fields | yes | `staff.create` + `staff.invite` | org / facility | create loader + `inviteActiveClinicStaff` | POST + CSRF | `activeclinic.staff.invitation_issued` | **STITCH_GAP** functional (AC-V6-S05) |
 | Staff edit | `/app/staff/:staffId/edit` + POST `…/:staffId` | GET/POST | fields | yes | `staff.update` (+ assign_facility) | org / facility | edit loader + `updateStaffMemberProfile` | POST + CSRF | `activeclinic.staff.update` | **STITCH_GAP** functional (AC-V6-S05) |
 | Invite confirmation | create success (shell) | GET result | — | yes | create actor | org | invite result VM | — | — | **STITCH_GAP** functional (AC-V6-S05) |
-| Access overview | `/app/access` | GET | — | yes | `staff.assign_access` | org | catalogue view model | — | — | **STITCH_GAP** (placeholder) |
-| Assign roles | POST `/app/access/staff/:staffId/roles` | POST | roles | yes | `staff.assign_access` | org/facility | staffAccessRepository services | POST + CSRF | role.assigned | **proposed** |
-| Settings | `/app/settings` | GET | — | yes | `organization.manage` | org | settings landing | — | — | **STITCH_GAP** |
-| Org settings write | `/app/settings/organization` | GET/POST | fields | yes | `organization.manage` | org | healthcareOrganizationService | POST + CSRF | org.updated | **proposed + STITCH_GAP** |
+| Access overview | `/app/access` | GET | `q,status,role,facility` | yes | `staff.assign_access` | org / facility overlap | `loadActiveClinicAccessOverviewScreen` | — | — | **STITCH_GAP** functional (AC-V6-S06) |
+| Staff access detail | `/app/access/staff/:staffId` | GET | id | yes | `staff.assign_access` | org / facility overlap | `loadActiveClinicStaffAccessDetailScreen` | — | — | **STITCH_GAP** functional (AC-V6-S06) |
+| Assign role | `/app/access/staff/:staffId/assign` + POST `…/roles` | GET/POST | role/scope/facility/expiry | yes | `staff.assign_access` | org/facility | assign loader + `assignFoundationalStaffRole` | POST + CSRF | `activeclinic.staff.role_assign` | **STITCH_GAP** functional (AC-V6-S06) |
+| Edit assignment | `/app/access/staff/:staffId/roles/:assignmentId/edit` + POST | GET/POST | expiry or replace | yes | `staff.assign_access` | org/facility | edit loader + expiry/replace services | POST + CSRF | expiry / revoke+assign | **STITCH_GAP** functional (AC-V6-S06) |
+| Revoke assignment | GET/POST `…/roles/:assignmentId/revoke` | GET/POST | reason | yes | `staff.assign_access` | org/facility | revoke loader + `revokeFoundationalStaffRole` | POST + CSRF | `activeclinic.staff.role_revoked` | **STITCH_GAP** functional (AC-V6-S06) |
+| Settings overview | `/app/settings` | GET | — | yes | `activeclinic.access` | org | `loadActiveClinicSettingsOverviewScreen` | — | — | **STITCH_GAP** functional (AC-V6-S07) |
+| Organization profile | `/app/settings/organization` | GET | — | yes | `organization.view` | org | `loadHealthcareOrganizationSettingsScreen` | — | — | **STITCH_GAP** functional (AC-V6-S07) |
+| Org settings write | `/app/settings/organization` (+ `/edit`) | GET/POST | fields | yes | `organization.manage` | org | edit loader + `updateHealthcareOrganizationSettings` | POST + CSRF | `activeclinic.healthcare_organization.update` | **STITCH_GAP** functional (AC-V6-S07) |
+| Facility settings link | `/app/settings/facilities` | GET | — | yes | `facility.view` | org | summary + canonical facilities link | — | — | **STITCH_GAP** functional (AC-V6-S07) |
+| Access settings link | `/app/settings/access` | GET | — | yes | `staff.assign_access` | org | redirect `/app/access` | — | — | **STITCH_GAP** functional (AC-V6-S07) |
+| Account settings | `/app/settings/account` | GET | — | yes | auth | identity | account panel → password/logout | — | — | **STITCH_GAP** functional (AC-V6-S07) |
 | Logout | `/logout` | POST | — | cookie | — | — | revoke session | POST + CSRF | logout | — |
 
 Staff admin JSON actions (invite reissue, reset, suspend, etc.) remain under `/app/staff/:staffId/…` as audited; HTML shells should eventually wrap them.

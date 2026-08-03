@@ -23,7 +23,7 @@ const {
   plainRoleSummary,
 } = require("./loadActiveClinicDashboardHome");
 
-const SHELL_ASSET_VERSION = "s05-1";
+const SHELL_ASSET_VERSION = "s08-1";
 
 /**
  * @param {{ query: Function }} db

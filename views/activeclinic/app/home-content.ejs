@@ -31,15 +31,19 @@
   </article>
 
   <% if (mode === 'empty') { %>
-  <article class="ac-panel ac-empty" data-ac-dashboard-state="empty">
-    <h2>No facilities yet</h2>
-    <p>This healthcare organization does not have an active facility. Add a facility to continue infrastructure setup.</p>
-    <% if (actions.length && actions[0].href) { %>
-    <p><a class="ac-btn" href="<%= actions[0].href %>"><%= actions[0].label %></a></p>
-    <% } else if (shell.permissionSet && shell.permissionSet['activeclinic.facility.view']) { %>
-    <p><a class="ac-btn" href="/app/facilities">Open facilities</a></p>
-    <% } %>
-  </article>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'dashboard-empty',
+      title: 'No facilities yet',
+      description: 'This healthcare organization does not have an active facility. Add a facility to continue infrastructure setup.',
+      primaryAction: (actions.length && actions[0].href)
+        ? { href: actions[0].href, label: actions[0].label }
+        : (shell.permissionSet && shell.permissionSet['activeclinic.facility.view'])
+          ? { href: '/app/facilities', label: 'Open facilities' }
+          : null
+    }
+  }) %>
   <% } %>
 
   <div class="ac-dashboard__summaries ac-grid" data-ac-dashboard-card="summaries">

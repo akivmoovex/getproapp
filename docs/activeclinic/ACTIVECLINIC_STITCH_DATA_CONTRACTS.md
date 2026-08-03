@@ -32,8 +32,8 @@ Statuses: `READY` · `SERVICE_GAP` · `REPOSITORY_GAP` · `SCHEMA_GAP` · `AUTHO
 | Staff create/invite | `loadActiveClinicCreateStaffScreen` | `inviteActiveClinicStaff` | invitations + staff | org / facility | — | invitation_issued | **READY** (AC-V6-S05; VISUAL_BLOCKED) |
 | Staff edit | `loadActiveClinicEditStaffScreen` | `updateStaffMemberProfile` + facility sync | staff | org / facility | — | staff.update | **READY** (AC-V6-S05; VISUAL_BLOCKED) |
 | Invite | — | `activeClinicStaffInvitationService` | invitations | org | — | invitation | **READY** (API + shell form) |
-| Access overview | **propose** `loadAccessManagementScreen` | role assign (missing HTTP) | staffAccess | org/facility | — | role events | **SERVICE_GAP** |
-| Settings | shell categories | org update missing HTTP | healthcare org | org | — | — | **SERVICE_GAP** |
+| Access overview / detail / assign | `loadActiveClinicAccess*Screen` | `assignFoundationalStaffRole` / expiry / revoke | staffAccess | org/facility | CSRF | role_assign / revoked | **READY** (AC-V6-S06; Stitch VISUAL_BLOCKED) |
+| Settings overview / org profile / edit | `loadActiveClinicSettings*Screen` | `updateHealthcareOrganizationSettings` | healthcare org + facilities | org | CSRF | healthcare_organization.update | **READY** (AC-V6-S07; Stitch VISUAL_BLOCKED) |
 | Select facility/org | context / eligibility | session context | sessions | staff-visible | — | context | **READY** |
 
 ---

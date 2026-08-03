@@ -280,6 +280,8 @@ function registerActiveClinicAuthRoutes(app, deps) {
 
   const requireAuthPw = createRequireActiveClinicAuth({
     allowPasswordChangeOnly: true,
+    env,
+    isProduction,
   });
 
   app.get("/account/change-password", requireAuthPw, (req, res) => {

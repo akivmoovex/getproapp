@@ -45,24 +45,36 @@
   </form>
 
   <% if (emptyMode === 'none') { %>
-  <div class="ac-panel ac-empty" data-ac-empty="facilities-none">
-    <h2>No facilities yet</h2>
-    <p>This organization does not have any facilities configured.</p>
-    <% if (actions.canCreate) { %>
-    <p><a class="ac-btn" href="<%= actions.createHref %>">Add facility</a></p>
-    <% } %>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'facilities-none',
+      title: 'No facilities have been added yet',
+      description: 'This organization does not have any facilities configured.',
+      primaryAction: actions.canCreate
+        ? { href: actions.createHref || '/app/facilities/new', label: 'Add facility' }
+        : null
+    }
+  }) %>
   <% } else if (emptyMode === 'filtered') { %>
-  <div class="ac-panel ac-empty" data-ac-empty="facilities-filtered">
-    <h2>No matching facilities</h2>
-    <p>No facilities match the current search or filters.</p>
-    <p><a class="ac-btn ac-btn--ghost" href="/app/facilities">Clear filters</a></p>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'no_results',
+      marker: 'facilities-filtered',
+      title: 'No facilities match these filters',
+      description: 'Try different search terms, or clear filters to see all facilities you can access.',
+      secondaryAction: { href: '/app/facilities', label: 'Clear filters' }
+    }
+  }) %>
   <% } else if (emptyMode === 'restricted') { %>
-  <div class="ac-panel ac-empty" data-ac-empty="facilities-restricted">
-    <h2>No facilities available</h2>
-    <p>You do not have access to any facilities in this organization. Ask an administrator to assign you to a facility.</p>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'access_restricted',
+      marker: 'facilities-restricted',
+      title: 'No facilities available',
+      description: 'You do not have access to any facilities in this organization. Ask an administrator to assign you to a facility.'
+    }
+  }) %>
   <% } else { %>
   <div class="ac-panel ac-table-wrap ac-facilities-desktop" data-ac-table="facilities">
     <table class="ac-table">

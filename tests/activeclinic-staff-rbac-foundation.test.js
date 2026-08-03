@@ -386,7 +386,9 @@ describe("ActiveClinic staff profile and RBAC foundation", () => {
     });
     assert.equal(facPerms.ok, true);
     assert.ok(facPerms.permissions.includes("activeclinic.facility.update"));
-    assert.equal(facPerms.permissions.includes("activeclinic.staff.assign_access"), false);
+    // Facility admins receive assign_access (AC-V6-S06 migration 079); grantability
+    // still blocks network-admin grants and out-of-scope facilities in the access service.
+    assert.equal(facPerms.permissions.includes("activeclinic.staff.assign_access"), true);
     assert.equal(facPerms.permissions.includes("activeclinic.facility.archive"), false);
 
     const otherFac = await resolveEffectivePermissions(pool, {

@@ -38,6 +38,14 @@ Existing suites to preserve: `tests/activeclinic-*.test.js`, BlessBoard isolatio
 - Empty facilities/staff lists  
 - Access denied / not-found simple states  
 
+### AC-V6-S08 foundation states
+
+- Suite: `tests/activeclinic-foundation-states-parity.test.js`
+- Taxonomy + safe messages; HTML error handler status map
+- Empty vs no-results markers; restricted without permission keys
+- Context-unavailable clears ActiveClinic cookie; probes production-404
+- Cross-tenant concealment; password non-echo; ActiveClinic branding only
+
 ### Visual (when tooling available)
 
 - Compare Login / Shell / Dashboard to **P01** Stitch screenshots at desktop (~1280+) and mobile (~390)  

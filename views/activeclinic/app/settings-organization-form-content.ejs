@@ -1,0 +1,81 @@
+<%
+  var form = (pageData && pageData.form) || {};
+  var values = form.values || {};
+  var errors = form.errors || [];
+  var fieldErrors = form.fieldErrors || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-settings-form" data-ac-page-section="settings-organization-edit" data-ac-visual="stitch-gap">
+  <% if (errors.length) { %>
+  <div id="ac-settings-error-summary" class="ac-flash ac-flash--error" role="alert" tabindex="-1">
+    <strong>Please fix the following:</strong>
+    <ul>
+      <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+    </ul>
+  </div>
+  <% } %>
+
+  <% if (form.statusNote) { %>
+  <div class="ac-panel ac-flash" data-ac-status-readonly="1"><%= form.statusNote %></div>
+  <% } %>
+
+  <form class="ac-panel" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Identity</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="public_name">Public name</label>
+      <input class="ac-input" id="public_name" name="public_name" required maxlength="200" value="<%= values.publicName || '' %>" autocomplete="organization"/>
+      <% if (fieldErrors.public_name) { %><p class="ac-field-error" id="err-public_name"><%= fieldErrors.public_name %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="legal_name">Legal name</label>
+      <input class="ac-input" id="legal_name" name="legal_name" required maxlength="200" value="<%= values.legalName || '' %>"/>
+      <% if (fieldErrors.legal_name) { %><p class="ac-field-error"><%= fieldErrors.legal_name %></p><% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="organization_type">Organization type</label>
+      <select class="ac-select" id="organization_type" name="organization_type" required>
+        <% (form.typeOptions || []).forEach(function (t) { %>
+        <option value="<%= t.value %>" <%= values.organizationType === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+      <% if (form.typeChangeWarning) { %>
+      <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem"><%= form.typeChangeWarning %></p>
+      <% } %>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="registration_number">Registration number <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="registration_number" name="registration_number" maxlength="120" value="<%= values.registrationNumber || '' %>"/>
+    </div>
+
+    <h2 class="ac-dashboard__card-title">Country and timezone</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="country_code">Country</label>
+      <select class="ac-select" id="country_code" name="country_code" required>
+        <% (form.countryOptions || []).forEach(function (c) { %>
+        <option value="<%= c.value %>" <%= values.countryCode === c.value ? 'selected' : '' %>><%= c.label %></option>
+        <% }) %>
+        <% if (values.countryCode && !(form.countryOptions || []).some(function (c) { return c.value === values.countryCode; })) { %>
+        <option value="<%= values.countryCode %>" selected><%= values.countryCode %></option>
+        <% } %>
+      </select>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="timezone">Timezone</label>
+      <select class="ac-select" id="timezone" name="timezone" required>
+        <% (form.timezoneOptions || []).forEach(function (z) { %>
+        <option value="<%= z.value %>" <%= values.timezone === z.value ? 'selected' : '' %>><%= z.label %></option>
+        <% }) %>
+      </select>
+      <% if (form.timezoneNote) { %>
+      <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem"><%= form.timezoneNote %></p>
+      <% } %>
+    </div>
+
+    <div class="ac-actions-row ac-actions--stack-mobile">
+      <button type="submit" class="ac-btn">Save organization profile</button>
+      <a class="ac-btn ac-btn--ghost" href="<%= form.cancelHref || '/app/settings/organization' %>">Cancel</a>
+    </div>
+  </form>
+</section>

@@ -231,9 +231,10 @@ describe("ActiveClinic application shell and navigation", () => {
       ["activeclinic.access", "activeclinic.facility.view"],
       "facilities"
     );
-    assert.equal(nav.items.length, 2);
+    assert.equal(nav.items.length, 3);
     assert.ok(nav.items.every((i) => i.permission));
     assert.equal(nav.items.find((i) => i.key === "facilities").current, true);
+    assert.ok(nav.items.find((i) => i.key === "settings"));
     assert.equal(
       nav.items.find((i) => i.key === "staff"),
       undefined
@@ -320,12 +321,17 @@ describe("ActiveClinic application shell and navigation", () => {
     const home = await request(app).get("/app").set("Cookie", cookie);
     assert.equal(home.status, 200);
     assert.doesNotMatch(home.text, /data-ac-nav-key="access"/);
-    assert.doesNotMatch(home.text, /data-ac-nav-key="settings"/);
+    assert.match(home.text, /data-ac-nav-key="settings"/);
     assert.match(home.text, /data-ac-nav-key="home"/);
 
     const denied = await request(app).get("/app/access").set("Cookie", cookie);
     assert.equal(denied.status, 403);
     assert.match(denied.text, /Access denied|data-ac-state="access-denied"/);
+
+    const deniedEdit = await request(app)
+      .get("/app/settings/organization/edit")
+      .set("Cookie", cookie);
+    assert.equal(deniedEdit.status, 403);
   });
 
   it("facilities and staff pages are tenant-scoped with empty-state safety", async () => {
