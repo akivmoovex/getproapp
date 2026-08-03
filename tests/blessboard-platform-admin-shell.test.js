@@ -283,7 +283,8 @@ describe("blessboard platform-admin shell", () => {
     assert.match(home.text, /href="\/admin\/subscriptions"/);
     assert.match(home.text, /href="\/admin\/registration-applications"/);
     assert.match(home.text, /href="\/admin\/domains"/);
-    assert.match(home.text, /href="\/admin\/deployments"/);
+    assert.match(home.text, /href="\/admin\/system\/deployments"/);
+    assert.match(home.text, /href="\/admin\/roles"/);
     assert.match(home.text, /href="\/admin\/settings"/);
     assert.match(home.text, /data-bb-quick-action="organizations"/);
     assert.match(home.text, /data-bb-quick-action="registrations"/);
@@ -664,7 +665,7 @@ describe("blessboard platform-admin shell", () => {
     assert.equal(anonPlans.status, 303);
 
     const deployments = await request(app)
-      .get("/admin/deployments")
+      .get("/admin/system/deployments")
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(deployments.status, 200);
@@ -693,13 +694,21 @@ describe("blessboard platform-admin shell", () => {
     assert.match(deployments.text, /data-bb-status-badge=/);
     assert.match(deployments.text, /BlessBoard/);
     assert.match(deployments.text, /href="\/admin\/settings"/);
-    assert.match(deployments.text, /href="\/admin\/deployments\/blessboard-org-staging"/);
+    assert.match(deployments.text, /href="\/admin\/system\/deployments\/blessboard-org-staging"/);
     assert.doesNotMatch(deployments.text, /session_cookie|SESSION_SECRET|DATABASE_URL|password|credential/i);
     assert.doesNotMatch(deployments.text, /Force Sync|Export Reports|Support Tickets|99\.98%|Critical Error Rate/i);
     assert.doesNotMatch(deployments.text, /Retire deployment|Delete deployment|Manual Failover|Rollback now|Restart process/i);
 
+    const deployRedirect = await request(app)
+      .get("/admin/deployments")
+      .set("Host", "blessboard.org")
+      .set("Cookie", cookie)
+      .redirects(0);
+    assert.equal(deployRedirect.status, 302);
+    assert.equal(deployRedirect.headers.location, "/admin/system/deployments");
+
     const deployDetail = await request(app)
-      .get("/admin/deployments/blessboard-org-staging")
+      .get("/admin/system/deployments/blessboard-org-staging")
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(deployDetail.status, 200);
@@ -724,35 +733,35 @@ describe("blessboard platform-admin shell", () => {
     assert.match(deployDetail.text, /data-bb-env-badge=/);
     assert.match(deployDetail.text, /data-bb-status-badge=/);
     assert.match(deployDetail.text, /data-bb-deploy-product="blessboard"/);
-    assert.match(deployDetail.text, /href="\/admin\/deployments"/);
+    assert.match(deployDetail.text, /href="\/admin\/system\/deployments"/);
     assert.doesNotMatch(deployDetail.text, /session_cookie|SESSION_SECRET|DATABASE_URL|password|credential/i);
     assert.doesNotMatch(deployDetail.text, /token_hash|bcrypt|Force Sync|Export Reports|99\.98%/i);
-    assert.doesNotMatch(deployDetail.text, /action="\/admin\/deployments[^"]*"[^>]*method="post"|Restart process|Rollback now|Edit environment/i);
-    assert.doesNotMatch(deployDetail.text, /<form[^>]*action="\/admin\/deployments/i);
+    assert.doesNotMatch(deployDetail.text, /action="\/admin\/(?:system\/)?deployments[^"]*"[^>]*method="post"|Restart process|Rollback now|Edit environment/i);
+    assert.doesNotMatch(deployDetail.text, /<form[^>]*action="\/admin\/(?:system\/)?deployments/i);
 
     const deployMissing = await request(app)
-      .get("/admin/deployments/not-a-real-deployment")
+      .get("/admin/system/deployments/not-a-real-deployment")
       .set("Host", "blessboard.org")
       .set("Cookie", cookie)
       .set("Accept", "text/html");
     assert.equal(deployMissing.status, 404);
 
     const deployInvalid = await request(app)
-      .get("/admin/deployments/Bad_Code!")
+      .get("/admin/system/deployments/Bad_Code!")
       .set("Host", "blessboard.org")
       .set("Cookie", cookie)
       .set("Accept", "text/html");
     assert.equal(deployInvalid.status, 400);
 
     const hqDeploy = await request(app)
-      .get("/admin/deployments")
+      .get("/admin/system/deployments")
       .set("Host", "blessboard.org")
       .set("Cookie", await cookieFor(users.hq))
       .set("Accept", "text/html");
     assert.equal(hqDeploy.status, 403);
 
     const hqDeployDetail = await request(app)
-      .get("/admin/deployments/blessboard-org-staging")
+      .get("/admin/system/deployments/blessboard-org-staging")
       .set("Host", "blessboard.org")
       .set("Cookie", await cookieFor(users.hq))
       .set("Accept", "text/html");
@@ -765,6 +774,15 @@ describe("blessboard platform-admin shell", () => {
     assert.equal(settings.status, 200);
     assert.match(settings.text, /data-bb-pa-settings="1"/);
     assert.match(settings.text, /data-bb-stitch-settings="67-platform-settings"/);
+    assert.match(settings.text, /data-bb-pa-settings-architecture="1"/);
+    assert.match(settings.text, /Organisation tenant/i);
+    assert.match(settings.text, /not separate deployments/i);
+    assert.match(settings.text, /data-bb-pa-settings-general="1"/);
+    assert.match(settings.text, /data-bb-pa-settings-org-defaults="1"/);
+    assert.match(settings.text, /data-bb-pa-settings-identity="1"/);
+    assert.match(settings.text, /data-bb-pa-settings-comms="1"/);
+    assert.match(settings.text, /data-bb-pa-settings-security="1"/);
+    assert.match(settings.text, /data-bb-pa-settings-health="1"/);
     assert.match(settings.text, /data-bb-pa-dns-patterns="1"/);
     assert.match(settings.text, /data-bb-pa-hostname-pattern="1"/);
     assert.match(settings.text, /data-bb-pa-settings-reserved="1"/);
@@ -772,9 +790,11 @@ describe("blessboard platform-admin shell", () => {
     assert.match(settings.text, /data-bb-pa-unavailable="dns-automation"/);
     assert.match(settings.text, /data-bb-pa-reserved="organization"/);
     assert.match(settings.text, /data-bb-pa-reserved="host"/);
-    assert.match(settings.text, /href="\/admin\/deployments"/);
+    assert.match(settings.text, /href="\/admin\/system\/deployments"/);
+    assert.match(settings.text, /href="\/admin\/organizations\/new"/);
     assert.doesNotMatch(settings.text, /Save Changes|Manual Failover|Export Logs|Primary Color|Force MFA|\+ Add Keyword/i);
-    assert.doesNotMatch(settings.text, /session_cookie_name|password|DATABASE_URL|Reset All Platform Settings/i);
+    assert.doesNotMatch(settings.text, /session_cookie_name|password_hash|DATABASE_URL|SESSION_SECRET|Reset All Platform Settings/i);
+    assert.doesNotMatch(settings.text, /new deployment per organisation|branches are deployments/i);
 
     const hqSettings = await request(app)
       .get("/admin/settings")
