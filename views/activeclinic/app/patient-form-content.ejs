@@ -1,0 +1,218 @@
+<%
+  var form = (pageData && pageData.form) || {};
+  var values = form.values || {};
+  var errors = form.errors || [];
+  var fieldErrors = form.fieldErrors || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var mode = form.mode || 'create';
+  var matches = form.duplicateMatches || [];
+  var facilities = form.facilities || [];
+  var stitch = form.stitch || {};
+  var isReview = values.step === 'review';
+%>
+<section class="ac-patient-form" data-ac-page-section="patient-<%= mode %>" data-ac-patient-step="<%= values.step || 'edit' %>" data-ac-stitch-identity="<%= stitch.identity || '' %>" data-ac-stitch-contact="<%= stitch.contact || '' %>" data-ac-stitch-emergency="<%= stitch.emergency || '' %>" data-ac-stitch-review="<%= stitch.review || '' %>" data-ac-stitch-duplicate="<%= stitch.duplicate || '' %>">
+  <% if (errors.length) { %>
+  <div id="ac-patient-error-summary" class="ac-flash ac-flash--error" role="alert" tabindex="-1">
+    <strong>Please fix the following:</strong>
+    <ul>
+      <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+    </ul>
+  </div>
+  <% } %>
+
+  <% if (matches.length) { %>
+  <div class="ac-panel ac-duplicate-warning" data-ac-duplicate-warning="1" role="alertdialog" aria-labelledby="ac-dup-title">
+    <h2 id="ac-dup-title" class="ac-dashboard__card-title">Possible duplicate patients</h2>
+    <p class="ac-muted">Matches are minimized. Identifiers are masked. Continuing creates a new patient record.</p>
+    <ul class="ac-dup-list">
+      <% matches.forEach(function (m) { %>
+      <li class="ac-dup-item" data-match-strength="<%= m.matchStrength %>">
+        <strong><%= m.displayName %></strong>
+        <span class="ac-muted"><%= m.patientNumber %></span>
+        <span class="ac-status"><%= m.matchStrength %></span>
+        <span class="ac-muted"><%= (m.reasons || []).join(', ') %></span>
+        <span class="ac-muted"><%= m.phoneMasked || '' %></span>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
+
+  <form class="ac-panel" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+
+    <% if (isReview) { %>
+    <input type="hidden" name="step" value="confirm"/>
+    <h2 class="ac-dashboard__card-title">Registration review</h2>
+    <dl class="ac-dl">
+      <div><dt>Name</dt><dd><%= values.firstName %> <%= values.middleName || '' %> <%= values.lastName %></dd></div>
+      <div><dt>Date of birth</dt><dd><%= values.dateOfBirth || '—' %><%= values.estimatedDateOfBirth ? ' (estimated)' : '' %></dd></div>
+      <div><dt>Phone</dt><dd><%= values.phone || '—' %></dd></div>
+      <div><dt>Email</dt><dd><%= values.email || '—' %></dd></div>
+      <div><dt>Identifier</dt><dd><%= values.identifierType ? (values.identifierType + ' · ' + values.identifierValue) : '—' %></dd></div>
+      <div><dt>Emergency contact</dt><dd><%= values.emergencyFullName || '—' %></dd></div>
+    </dl>
+    <% Object.keys(values).forEach(function (key) {
+      if (key === 'step') return;
+      var map = {
+        firstName:'first_name', middleName:'middle_name', lastName:'last_name', preferredName:'preferred_name',
+        dateOfBirth:'date_of_birth', sexAtRegistration:'sex_at_registration', nationalityCountryCode:'nationality_country_code',
+        primaryLanguage:'primary_language', phone:'phone', email:'email', addressLine1:'address_line_1', addressLine2:'address_line_2',
+        city:'city', district:'district', province:'province', countryCode:'country_code', postalCode:'postal_code',
+        preferredContactMethod:'preferred_contact_method', facilityId:'facility_id', registrationMethod:'registration_method',
+        identifierType:'identifier_type', identifierValue:'identifier_value', emergencyFullName:'emergency_full_name',
+        emergencyRelationship:'emergency_relationship', emergencyPhone:'emergency_phone', emergencyEmail:'emergency_email',
+        duplicateOverrideReason:'duplicate_override_reason'
+      };
+      var name = map[key];
+      if (!name) return;
+      var val = values[key];
+      if (val === true) { %><input type="hidden" name="<%= name %>" value="1"/><% }
+      else if (val === false || val == null || val === '') { return; }
+      else { %><input type="hidden" name="<%= name %>" value="<%= val %>"/><% }
+    }); %>
+    <% if (values.estimatedDateOfBirth) { %><input type="hidden" name="estimated_date_of_birth" value="1"/><% } %>
+    <% if (values.duplicateOverride) { %><input type="hidden" name="duplicate_override" value="1"/><% } %>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn" name="step" value="confirm">Confirm registration</button>
+      <button type="submit" class="ac-btn ac-btn--ghost" name="step" value="edit">Back to edit</button>
+    </div>
+    <% } else { %>
+
+    <h2 class="ac-dashboard__card-title">Identity</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="first_name">First name</label>
+      <input class="ac-input" id="first_name" name="first_name" required maxlength="100" autocomplete="given-name" value="<%= values.firstName || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="middle_name">Middle name <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="middle_name" name="middle_name" maxlength="100" value="<%= values.middleName || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="last_name">Last name</label>
+      <input class="ac-input" id="last_name" name="last_name" required maxlength="100" autocomplete="family-name" value="<%= values.lastName || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="preferred_name">Preferred name <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="preferred_name" name="preferred_name" maxlength="100" value="<%= values.preferredName || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="date_of_birth">Date of birth</label>
+      <input class="ac-input" id="date_of_birth" name="date_of_birth" type="date" value="<%= values.dateOfBirth || '' %>"/>
+    </div>
+    <label class="ac-check">
+      <input type="checkbox" name="estimated_date_of_birth" value="1" <%= values.estimatedDateOfBirth ? 'checked' : '' %>/>
+      Estimated date of birth
+    </label>
+    <div class="ac-field">
+      <label class="ac-label" for="sex_at_registration">Sex at registration</label>
+      <select class="ac-select" id="sex_at_registration" name="sex_at_registration">
+        <option value="">Not recorded</option>
+        <% (form.sexOptions || []).forEach(function (o) { %>
+        <option value="<%= o.value %>" <%= values.sexAtRegistration === o.value ? 'selected' : '' %>><%= o.label %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Contact</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="phone">Phone <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="phone" name="phone" inputmode="tel" autocomplete="tel" value="<%= values.phone || '' %>" placeholder="+260…"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="email">Email <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="email" name="email" type="email" autocomplete="email" value="<%= values.email || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="address_line_1">Address line 1</label>
+      <input class="ac-input" id="address_line_1" name="address_line_1" maxlength="200" value="<%= values.addressLine1 || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="city">City</label>
+      <input class="ac-input" id="city" name="city" maxlength="120" value="<%= values.city || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="country_code">Country</label>
+      <input class="ac-input" id="country_code" name="country_code" maxlength="2" value="<%= values.countryCode || '' %>" placeholder="ZM"/>
+    </div>
+
+    <% if (mode === 'create') { %>
+    <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Registration</h2>
+    <div class="ac-field">
+      <label class="ac-label" for="facility_id">Registration facility</label>
+      <select class="ac-select" id="facility_id" name="facility_id" required>
+        <option value="">Select facility</option>
+        <% facilities.forEach(function (f) { %>
+        <option value="<%= f.id %>" <%= values.facilityId === String(f.id) ? 'selected' : '' %>><%= f.displayName %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="registration_method">Registration method</label>
+      <select class="ac-select" id="registration_method" name="registration_method">
+        <% (form.methodOptions || []).forEach(function (o) { %>
+        <option value="<%= o.value %>" <%= values.registrationMethod === o.value ? 'selected' : '' %>><%= o.label %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Identifier <span class="ac-muted">(optional)</span></h2>
+    <div class="ac-field">
+      <label class="ac-label" for="identifier_type">Type</label>
+      <select class="ac-select" id="identifier_type" name="identifier_type">
+        <option value="">None</option>
+        <% (form.identifierOptions || []).forEach(function (o) { %>
+        <option value="<%= o.value %>" <%= values.identifierType === o.value ? 'selected' : '' %>><%= o.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="identifier_value">Value</label>
+      <input class="ac-input" id="identifier_value" name="identifier_value" maxlength="128" value="<%= values.identifierValue || '' %>" autocomplete="off"/>
+    </div>
+
+    <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Emergency contact <span class="ac-muted">(optional)</span></h2>
+    <p class="ac-muted">Administrative contact only. Allergies, medical history, and clinical risk are not collected here (no clinical schema for those fields yet).</p>
+    <div class="ac-field">
+      <label class="ac-label" for="emergency_full_name">Full name</label>
+      <input class="ac-input" id="emergency_full_name" name="emergency_full_name" maxlength="200" value="<%= values.emergencyFullName || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="emergency_relationship">Relationship</label>
+      <input class="ac-input" id="emergency_relationship" name="emergency_relationship" maxlength="80" value="<%= values.emergencyRelationship || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="emergency_phone">Phone</label>
+      <input class="ac-input" id="emergency_phone" name="emergency_phone" inputmode="tel" value="<%= values.emergencyPhone || '' %>" placeholder="+260…"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="emergency_email">Email</label>
+      <input class="ac-input" id="emergency_email" name="emergency_email" type="email" value="<%= values.emergencyEmail || '' %>"/>
+    </div>
+    <% } %>
+
+    <% if (matches.length && form.canOverrideDuplicate) { %>
+    <fieldset class="ac-fieldset" style="margin-top:1.5rem">
+      <legend class="ac-dashboard__card-title">Duplicate override</legend>
+      <label class="ac-check">
+        <input type="checkbox" name="duplicate_override" value="1" <%= values.duplicateOverride ? 'checked' : '' %>/>
+        I confirm this is a distinct patient
+      </label>
+      <div class="ac-field">
+        <label class="ac-label" for="duplicate_override_reason">Reason</label>
+        <input class="ac-input" id="duplicate_override_reason" name="duplicate_override_reason" maxlength="120" value="<%= values.duplicateOverrideReason || '' %>" required/>
+      </div>
+    </fieldset>
+    <% } %>
+
+    <div class="ac-form-actions" style="margin-top:1.5rem">
+      <% if (mode === 'create') { %>
+      <button type="submit" class="ac-btn" name="step" value="review">Review registration</button>
+      <% } else { %>
+      <button type="submit" class="ac-btn">Save changes</button>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="<%= mode === 'edit' && form.patientNumber ? ('/app/patients/' + encodeURIComponent(form.patientNumber)) : '/app/patients' %>">Cancel</a>
+    </div>
+    <% } %>
+  </form>
+</section>

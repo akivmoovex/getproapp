@@ -924,6 +924,7 @@ body.ac-drawer-open .ac-drawer {
 
 @media (min-width: 900px) {
   .ac-desktop-header { display: flex; }
+  .ac-patients-mobile { display: none; }
 }
 @media (max-width: 899px) {
   .ac-actions--stack-mobile { flex-direction: column; }
@@ -932,6 +933,62 @@ body.ac-drawer-open .ac-drawer {
   .ac-facilities-mobile { display: grid; }
   .ac-staff-desktop { display: none; }
   .ac-staff-mobile { display: grid; }
+  .ac-patients-desktop { display: none; }
+  .ac-patients-mobile { display: grid; }
   .ac-access .ac-table-wrap { display: none; }
   .ac-access .ac-card-list--mobile { display: grid; }
+}
+
+.ac-filter-bar__grid--patients {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+.ac-duplicate-warning {
+  border-color: #b45309;
+  background: #fffbeb;
+}
+.ac-dup-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.ac-dup-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+}
+.ac-inline-form {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 28rem;
+}
+.ac-simple-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.ac-simple-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  overflow-wrap: anywhere;
+}
+.ac-card__label {
+  font-weight: 600;
+}
+.ac-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

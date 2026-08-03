@@ -279,7 +279,11 @@ describe("ActiveClinic facilities management parity (AC-V6-S03)", () => {
     assert.match(list.text, /data-ac-facility-primary="1"/);
     assert.match(list.text, /Hospital|Clinic/);
     assert.match(list.text, /activeclinic\/ac-app\.css/);
-    assert.doesNotMatch(list.text, /patient|appointment|revenue|ward|pharmacy stock/i);
+    // Patients nav is Stitch P02; still forbid clinical/finance fabrication on facilities screens.
+    assert.doesNotMatch(
+      list.text,
+      /appointment|revenue|ward|pharmacy stock|patient census|patients today/i
+    );
     assert.doesNotMatch(list.text, /BlessBoard|church\.css/i);
     assert.match(list.text, /<h1[\s>]/i);
     assert.equal((list.text.match(/<h1[\s>]/gi) || []).length, 1);

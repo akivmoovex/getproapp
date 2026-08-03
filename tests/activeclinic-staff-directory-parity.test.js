@@ -272,7 +272,11 @@ describe("ActiveClinic staff directory parity (AC-V6-S04)", () => {
     assert.match(list.text, /Nia Nurse/);
     assert.match(list.text, /data-ac-staff-avatar/);
     assert.doesNotMatch(list.text, /password_hash|activationUrl|token|failed_sign_in/i);
-    assert.doesNotMatch(list.text, /patient|appointment|salary|BlessBoard|church\.css/i);
+    // Patients nav is Stitch P02; staff directory still omits clinical/HR secrets and BlessBoard chrome.
+    assert.doesNotMatch(
+      list.text,
+      /appointment|salary|BlessBoard|church\.css|patient census|patients today/i
+    );
     assert.equal((list.text.match(/<h1[\s>]/gi) || []).length, 1);
 
     const filtered = await request(app)

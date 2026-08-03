@@ -1,0 +1,153 @@
+<%
+  var profile = (pageData && pageData.profile) || {};
+  var patient = profile.patient || {};
+  var actions = profile.actions || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var stitch = profile.stitch || {};
+%>
+<section class="ac-patient-profile" data-ac-page-section="patient-profile" data-ac-patient-status="<%= patient.status || '' %>" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Identity</h2>
+    <dl class="ac-dl">
+      <div><dt>Patient number</dt><dd data-ac-patient-number="1"><%= patient.patientNumber %></dd></div>
+      <div><dt>Name</dt><dd><%= patient.displayName %></dd></div>
+      <div><dt>Date of birth</dt><dd><%= patient.dateOfBirth || '—' %><%= patient.estimatedDateOfBirth ? ' (estimated)' : '' %> · age <%= patient.approximateAge || '—' %></dd></div>
+      <div><dt>Sex at registration</dt><dd><%= patient.sexLabel || '—' %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= patient.status %>"><%= patient.statusLabel || patient.status %></span></dd></div>
+    </dl>
+  </div>
+
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Contact</h2>
+    <dl class="ac-dl">
+      <div><dt>Phone</dt><dd><%= patient.phoneDisplay || '—' %></dd></div>
+      <div><dt>Email</dt><dd><%= patient.emailDisplay || '—' %></dd></div>
+      <% if (patient.showAddress) { %>
+      <div><dt>Address</dt><dd><%= [patient.addressLine1, patient.city, patient.countryCode].filter(Boolean).join(', ') || '—' %></dd></div>
+      <% } else { %>
+      <div><dt>Address</dt><dd class="ac-muted">Hidden without sensitive-contact permission</dd></div>
+      <% } %>
+    </dl>
+  </div>
+
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Identifiers</h2>
+    <% if (!(profile.identifiers || []).length) { %>
+    <p class="ac-muted">No formal identifiers on file.</p>
+    <% } else { %>
+    <ul class="ac-simple-list">
+      <% (profile.identifiers || []).forEach(function (idn) { %>
+      <li>
+        <strong><%= idn.identifierType %></strong>
+        <span><%= idn.identifierMasked || idn.identifierValueDisplay %></span>
+        <span class="ac-muted"><%= idn.verificationStatus %></span>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+    <% if (actions.canManageIdentifiers) { %>
+    <form method="post" action="/app/patients/<%= encodeURIComponent(patient.patientNumber) %>/identifiers" class="ac-inline-form" data-ac-loading="1">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+      <div class="ac-field">
+        <label class="ac-label" for="identifier_type">Add identifier</label>
+        <select class="ac-select" id="identifier_type" name="identifier_type" required>
+          <option value="national_id">National ID</option>
+          <option value="passport">Passport</option>
+          <option value="birth_certificate">Birth certificate</option>
+          <option value="insurance_member_number">Insurance member number</option>
+          <option value="facility_legacy_number">Facility legacy number</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="identifier_value">Value</label>
+        <input class="ac-input" id="identifier_value" name="identifier_value" required maxlength="128" autocomplete="off"/>
+      </div>
+      <button type="submit" class="ac-btn">Add identifier</button>
+    </form>
+    <% } %>
+  </div>
+
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Emergency contacts</h2>
+    <% if (profile.emergencyHidden) { %>
+    <p class="ac-muted">Emergency contacts require sensitive-contact permission.</p>
+    <% } else if (!(profile.emergencyContacts || []).length) { %>
+    <p class="ac-muted">No emergency contacts on file.</p>
+    <% } else { %>
+    <ul class="ac-simple-list">
+      <% (profile.emergencyContacts || []).forEach(function (c) { %>
+      <li>
+        <strong><%= c.fullName %></strong>
+        <span class="ac-muted"><%= c.relationship %></span>
+        <span><%= c.phoneDisplay || c.phoneNormalized %></span>
+        <% if (c.isPrimary) { %><span class="ac-status">primary</span><% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+    <% if (actions.canManageEmergency) { %>
+    <form method="post" action="/app/patients/<%= encodeURIComponent(patient.patientNumber) %>/emergency-contacts" class="ac-inline-form" data-ac-loading="1">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+      <div class="ac-field">
+        <label class="ac-label" for="full_name">Full name</label>
+        <input class="ac-input" id="full_name" name="full_name" required maxlength="200"/>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="relationship">Relationship</label>
+        <input class="ac-input" id="relationship" name="relationship" required maxlength="80"/>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="ec_phone">Phone</label>
+        <input class="ac-input" id="ec_phone" name="phone" required inputmode="tel" placeholder="+260…"/>
+      </div>
+      <button type="submit" class="ac-btn">Add emergency contact</button>
+    </form>
+    <% } %>
+  </div>
+
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Registrations</h2>
+    <ul class="ac-simple-list">
+      <% (profile.registrations || []).forEach(function (r) { %>
+      <li>
+        <%= r.facilityName %> · <%= r.method %>
+        <% if (r.isInitial) { %><span class="ac-status">initial</span><% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
+
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Facility links</h2>
+    <ul class="ac-simple-list">
+      <% (profile.facilityLinks || []).forEach(function (l) { %>
+      <li><%= l.facilityName %> · <%= l.relationshipType %> · <%= l.status %></li>
+      <% }) %>
+    </ul>
+  </div>
+
+  <% if (actions.canArchive || actions.canMarkDeceased) { %>
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Status actions</h2>
+    <p class="ac-muted">Archive and deceased are separate administrative states. No hard delete.</p>
+    <div class="ac-form-actions">
+      <% if (actions.canMarkDeceased) { %>
+      <form method="post" action="/app/patients/<%= encodeURIComponent(patient.patientNumber) %>/mark-deceased" data-ac-loading="1">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Mark deceased</button>
+      </form>
+      <% } %>
+      <% if (actions.canArchive) { %>
+      <form method="post" action="/app/patients/<%= encodeURIComponent(patient.patientNumber) %>/archive" data-ac-loading="1">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <input type="hidden" name="reason" value="archived_from_profile"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Archive patient</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+
+  <p class="ac-muted" data-ac-clinical-absent="1">Clinical modules are not available on this administrative profile.</p>
+</section>

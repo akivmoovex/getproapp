@@ -1,0 +1,123 @@
+<%
+  var list = (pageData && pageData.list) || {};
+  var patients = list.patients || [];
+  var filters = list.filters || {};
+  var filterOptions = list.filterOptions || {};
+  var actions = list.actions || {};
+  var emptyMode = list.emptyMode;
+  var stitch = list.stitch || {};
+%>
+<section class="ac-patients" data-ac-page-section="patient-list" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <form class="ac-panel ac-filter-bar" method="get" action="/app/patients" data-ac-patient-filters="1">
+    <div class="ac-filter-bar__grid ac-filter-bar__grid--patients">
+      <div>
+        <label class="ac-label" for="patient_search">Name</label>
+        <input class="ac-input" id="patient_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="First or last name" autocomplete="off"/>
+      </div>
+      <div>
+        <label class="ac-label" for="patient_number">Patient number</label>
+        <input class="ac-input" id="patient_number" name="patient_number" value="<%= filters.patientNumber || '' %>" autocomplete="off"/>
+      </div>
+      <div>
+        <label class="ac-label" for="patient_phone">Phone</label>
+        <input class="ac-input" id="patient_phone" name="phone" value="<%= filters.phone || '' %>" inputmode="tel" placeholder="+260…" autocomplete="off"/>
+      </div>
+      <div>
+        <label class="ac-label" for="patient_dob">Date of birth</label>
+        <input class="ac-input" id="patient_dob" name="dob" type="date" value="<%= filters.dateOfBirth || '' %>"/>
+      </div>
+      <div>
+        <label class="ac-label" for="patient_status">Status</label>
+        <select class="ac-select" id="patient_status" name="status">
+          <option value="">All (except archived)</option>
+          <% (filterOptions.statuses || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="patient_facility">Facility</label>
+        <select class="ac-select" id="patient_facility" name="facility">
+          <option value="">All authorized</option>
+          <% (filterOptions.facilities || []).forEach(function (f) { %>
+          <option value="<%= f.value %>" <%= filters.facilityId === f.value ? 'selected' : '' %>><%= f.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-filter-bar__checks">
+        <button type="submit" class="ac-btn">Search</button>
+        <% if (filters.active) { %>
+        <a class="ac-btn ac-btn--ghost" href="/app/patients">Clear</a>
+        <% } %>
+      </div>
+    </div>
+  </form>
+
+  <% if (list.resultCount != null && !emptyMode) { %>
+  <p class="ac-muted" data-ac-result-count="<%= list.resultCount %>"><%= list.resultCount %> patient<%= list.resultCount === 1 ? '' : 's' %></p>
+  <% } %>
+
+  <% if (emptyMode === 'none') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'patients-none',
+      title: 'No patients registered yet',
+      description: 'Register a patient to begin reception and clinical workflows later.',
+      primaryAction: actions.canCreate
+        ? { href: actions.createHref || '/app/patients/new', label: 'Register patient' }
+        : null
+    }
+  }) %>
+  <% } else if (emptyMode === 'filtered' || emptyMode === 'query_too_short') { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'no_results',
+      marker: emptyMode === 'query_too_short' ? 'patients-query-short' : 'patients-filtered',
+      title: emptyMode === 'query_too_short' ? 'Search needs more detail' : 'No patients match these filters',
+      description: emptyMode === 'query_too_short'
+        ? 'Enter at least two characters for a name search, or search by patient number, phone, or date of birth.'
+        : 'Try different filters, or clear them to see patients you can access.',
+      secondaryAction: { href: '/app/patients', label: 'Clear filters' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-patients-desktop" data-ac-table="patients">
+    <table class="ac-table">
+      <caption class="ac-sr-only">Patient search results</caption>
+      <thead>
+        <tr>
+          <th scope="col">Patient number</th>
+          <th scope="col">Name</th>
+          <th scope="col">Age</th>
+          <th scope="col">Phone</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% patients.forEach(function (p) { %>
+        <tr>
+          <td><a href="/app/patients/<%= encodeURIComponent(p.patientNumber) %>"><%= p.patientNumber %></a></td>
+          <td><%= p.displayName %></td>
+          <td><%= p.approximateAge || '—' %></td>
+          <td><%= p.phoneMasked || '—' %></td>
+          <td><span class="ac-status" data-status="<%= p.status %>"><%= p.status %></span></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="ac-card-list ac-patients-mobile" data-ac-cards="patients">
+    <% patients.forEach(function (p) { %>
+    <li class="ac-card">
+      <a class="ac-card__link" href="/app/patients/<%= encodeURIComponent(p.patientNumber) %>">
+        <p class="ac-card__title"><%= p.displayName %></p>
+        <p class="ac-muted"><span class="ac-card__label">Number</span> <%= p.patientNumber %></p>
+        <p class="ac-muted"><span class="ac-card__label">Age</span> <%= p.approximateAge || '—' %> · <span class="ac-card__label">Phone</span> <%= p.phoneMasked || '—' %></p>
+        <p><span class="ac-status" data-status="<%= p.status %>"><%= p.status %></span></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

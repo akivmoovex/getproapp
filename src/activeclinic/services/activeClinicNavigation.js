@@ -27,6 +27,13 @@ const NAV_ITEMS = Object.freeze([
     icon: "groups",
   },
   {
+    key: "patients",
+    label: "Patients",
+    href: "/app/patients",
+    permission: "activeclinic.patient.search",
+    icon: "personal_injury",
+  },
+  {
     key: "access",
     label: "Roles & access",
     href: "/app/access",
@@ -65,6 +72,7 @@ function matchActiveNavKey(pathname) {
   if (path === "/app" || path === "/app/") return "home";
   if (path.startsWith("/app/facilities")) return "facilities";
   if (path.startsWith("/app/staff")) return "staff";
+  if (path.startsWith("/app/patients")) return "patients";
   if (path.startsWith("/app/access")) return "access";
   if (path.startsWith("/app/settings")) return "settings";
   if (path.startsWith("/app/select-facility")) return "home";

@@ -433,7 +433,11 @@ describe("ActiveClinic authentication foundation (AC-V6-08)", () => {
     assert.match(appPage.text, /data-ac-shell="staff-app"/);
     assert.match(appPage.text, /data-ac-page="home"/);
     assert.match(appPage.text, /Ada Clinic|Public Hospital/);
-    assert.doesNotMatch(appPage.text, /patient|revenue|prescription/i);
+    // Patients nav is Stitch P02 (real admin module). Still forbid fabricated clinical KPIs.
+    assert.doesNotMatch(
+      appPage.text,
+      /revenue|prescription|patient census|appointments today|clinical KPI/i
+    );
 
     // BlessBoard cookie must not be set by AC login.
     const setCookies = [].concat(post.headers["set-cookie"] || []).join("\n");

@@ -26,9 +26,9 @@ Unprefixed foundation duplicates (6) + platform states (4) recorded in master in
 
 | Phase | Starting SHA | Ending SHA | Attempted | Complete | Partial | Blocked | Tests | Next safe action |
 |------:|--------------|------------|----------:|---------:|--------:|--------:|-------|------------------|
-| Inventory | `1fcd61a6` | *(with phase 1)* | 173+10 | — | — | — | n/a | P01 verify |
-| 1 | `1fcd61a6` | *(pending commit)* | 7 | 0 | 7 | 0 | P01 suite pass | P02 patients |
-| 2 | *(after P1)* | *(pending)* | 18 | 0 | 17 | 1 print card | patient suites pass | P03 blocked docs |
+| Inventory | `1fcd61a6` | `392abdec` | 173+10 | — | — | — | n/a | P01 verify |
+| 1 | `1fcd61a6` | `392abdec` | 7 | 0 | 7 | 0 | P01 suite pass | P02 patients |
+| 2 | `392abdec` | *(pending)* | 18 | 0 | 17 | 1 print card | patient suites pass | P03 appointment UI |
 | 3 | | | 20 | 0 | 0 | 20 | n/a | schema required |
 | 4 | | | 12 | 0 | 0 | 12 | n/a | schema required |
 | 5 | | | 29 | 0 | 0 | 29 | n/a | schema required |
