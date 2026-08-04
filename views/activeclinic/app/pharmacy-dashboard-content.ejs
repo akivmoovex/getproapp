@@ -1,0 +1,69 @@
+<%
+  var dashboard = (pageData && pageData) || {};
+  var stats = dashboard.stats || {};
+  var actions = dashboard.actions || {};
+  var stitch = dashboard.stitch || {};
+  var facility = dashboard.facility || {};
+%>
+<section class="ac-pharmacy-dashboard" data-ac-page-section="pharmacy-dashboard" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <h2 class="ac-sr-only">Pharmacy Dashboard</h2>
+    <p class="ac-muted">Pharmacy dashboard for <%= facility.displayName || 'this facility' %>.</p>
+  </div>
+
+  <div class="ac-panel">
+    <div class="ac-stats-grid">
+      <div class="ac-stat-card">
+        <div class="ac-stat-value"><%= stats.pendingPrescriptions || 0 %></div>
+        <div class="ac-stat-label">Pending prescriptions</div>
+        <% if (actions.canViewPharmacy) { %>
+        <a href="/app/pharmacy/queue" class="ac-stat-link">View queue</a>
+        <% } %>
+      </div>
+      <div class="ac-stat-card">
+        <div class="ac-stat-value"><%= stats.lowStockCount || 0 %></div>
+        <div class="ac-stat-label">Low stock items</div>
+        <% if (actions.canManageInventory) { %>
+        <a href="/app/pharmacy/alerts/low-stock" class="ac-stat-link">View alerts</a>
+        <% } %>
+      </div>
+      <div class="ac-stat-card">
+        <div class="ac-stat-value"><%= stats.expiringBatchesCount || 0 %></div>
+        <div class="ac-stat-label">Expiring batches (90 days)</div>
+        <% if (actions.canManageInventory) { %>
+        <a href="/app/pharmacy/alerts/expiry" class="ac-stat-link">View alerts</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="ac-panel">
+    <h3>Quick Actions</h3>
+    <div class="ac-action-grid">
+      <% if (actions.canViewPharmacy) { %>
+      <a href="/app/pharmacy/queue" class="ac-action-card">
+        <div class="ac-action-icon">📋</div>
+        <div class="ac-action-title">Prescription Queue</div>
+        <div class="ac-action-description">View and process prescriptions</div>
+      </a>
+      <% } %>
+      <% if (actions.canManageInventory) { %>
+      <a href="/app/pharmacy/inventory" class="ac-action-card">
+        <div class="ac-action-icon">📦</div>
+        <div class="ac-action-title">Inventory</div>
+        <div class="ac-action-description">View stock levels</div>
+      </a>
+      <a href="/app/pharmacy/catalogue" class="ac-action-card">
+        <div class="ac-action-icon">💊</div>
+        <div class="ac-action-title">Medicine Catalogue</div>
+        <div class="ac-action-description">Browse medications</div>
+      </a>
+      <a href="/app/pharmacy/inventory/receive" class="ac-action-card">
+        <div class="ac-action-icon">➕</div>
+        <div class="ac-action-title">Receive Stock</div>
+        <div class="ac-action-description">Record incoming stock</div>
+      </a>
+      <% } %>
+    </div>
+  </div>
+</section>

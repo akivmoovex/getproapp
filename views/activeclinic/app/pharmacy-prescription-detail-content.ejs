@@ -1,0 +1,76 @@
+<%
+  var prescriptionDetail = (pageData && pageData) || {};
+  var prescription = prescriptionDetail.prescription || {};
+  var items = prescriptionDetail.items || [];
+  var actions = prescriptionDetail.actions || {};
+  var stitch = prescriptionDetail.stitch || {};
+%>
+<section class="ac-pharmacy-prescription-detail" data-ac-page-section="pharmacy-prescription-detail" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <div class="ac-panel">
+    <dl class="ac-detail-list">
+      <dt>Prescription Number</dt>
+      <dd><strong><%= prescription.prescriptionNumber || '—' %></strong></dd>
+      
+      <dt>Patient</dt>
+      <dd><%= prescription.patientDisplayName || '—' %> (<%= prescription.patientNumber || '—' %>)</dd>
+      
+      <dt>Prescriber</dt>
+      <dd><%= prescription.prescriberStaffDisplayName || '—' %></dd>
+      
+      <dt>Encounter</dt>
+      <dd><%= prescription.encounterNumber || '—' %></dd>
+      
+      <dt>Status</dt>
+      <dd><span class="ac-status" data-ac-status="<%= prescription.status %>"><%= prescription.statusLabel %></span></dd>
+      
+      <dt>Priority</dt>
+      <dd><span class="ac-priority" data-ac-priority="<%= prescription.priority %>"><%= prescription.priority %></span></dd>
+      
+      <dt>Review Required</dt>
+      <dd><%= prescription.reviewRequired ? 'Yes' : 'No' %></dd>
+      
+      <dt>Created</dt>
+      <dd><%= prescription.createdAt ? new Date(prescription.createdAt).toLocaleString() : '—' %></dd>
+    </dl>
+  </div>
+
+  <div class="ac-panel">
+    <h3>Prescription Items</h3>
+    <% if (!items.length) { %>
+    <p class="ac-muted">No items in this prescription.</p>
+    <% } else { %>
+    <table class="ac-table">
+      <caption class="ac-sr-only">Prescription Items</caption>
+      <thead>
+        <tr>
+          <th scope="col">Medication</th>
+          <th scope="col">Strength</th>
+          <th scope="col">Dosage Instructions</th>
+          <th scope="col">Quantity Ordered</th>
+          <th scope="col">Quantity Dispensed</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(function (item) { %>
+        <tr>
+          <td><strong><%= item.medicationGenericName || '—' %></strong></td>
+          <td><%= item.medicationStrength || '—' %></td>
+          <td><%= item.dosageInstructions || '—' %></td>
+          <td><%= item.quantityOrdered %></td>
+          <td><%= item.quantityDispensed %></td>
+          <td><span class="ac-status" data-ac-status="<%= item.status %>"><%= item.status %></span></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+
+  <div class="ac-panel ac-form-actions">
+    <% if (actions.canDispense && ['pending', 'in_preparation', 'partially_dispensed'].includes(prescription.status)) { %>
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-btn ac-btn--primary">Dispense</a>
+    <% } %>
+    <a href="/app/pharmacy/queue" class="ac-btn ac-btn--secondary">Back to queue</a>
+  </div>
+</section>

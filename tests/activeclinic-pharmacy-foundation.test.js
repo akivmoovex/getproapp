@@ -90,49 +90,51 @@ async function seedTenant(stamp, tag) {
     countryCode: "ZM",
     timezone: "Africa/Lusaka",
   });
-  assert.equal(hco.ok, true);
+  assert.equal(hco.ok, true, JSON.stringify(hco));
   const facility = await createFacility(pool, {
     organizationId: org.records.organization.id,
     healthcareOrganizationId: hco.healthcareOrganization.id,
     facilityKey: `main-${tag}`.slice(0, 64),
     displayName: "Main",
     facilityType: "hospital",
+    status: "active",
+    isPrimary: true,
     countryCode: "ZM",
     timezone: "Africa/Lusaka",
+    phone: nextPhone(),
   });
-  assert.equal(facility.ok, true);
+  assert.equal(facility.ok, true, JSON.stringify(facility));
   const staff = await createStaffMember(pool, {
     organizationId: org.records.organization.id,
     healthcareOrganizationId: hco.healthcareOrganization.id,
-    personalEmail: `pharm-${tag}-${stamp}@example.com`,
-    fullName: `Pharm Staff ${tag}`,
-    phoneNumber: nextPhone(),
-    staffRole: "pharmacist",
+    firstName: "Pharm",
+    lastName: `Staff${tag}`,
+    employmentType: "permanent",
+    status: "active",
+    phone: nextPhone(),
   });
-  assert.equal(staff.ok, true);
+  assert.equal(staff.ok, true, JSON.stringify(staff));
   await assignStaffToFacility(pool, {
     organizationId: org.records.organization.id,
     staffMemberId: staff.staffMember.id,
     facilityId: facility.facility.id,
   });
-  await assignStaffRole(pool, {
+  const role = await assignStaffRole(pool, {
     organizationId: org.records.organization.id,
     staffMemberId: staff.staffMember.id,
     roleKey: NETWORK_ADMIN,
+    scopeType: "organisation",
   });
+  assert.equal(role.ok, true, JSON.stringify(role));
   const patient = await registerActiveClinicPatient(pool, {
-    actorStaffId: staff.staffMember.id,
     organizationId: org.records.organization.id,
     healthcareOrganizationId: hco.healthcareOrganization.id,
-    firstName: "Test",
-    lastName: "Patient",
-    dateOfBirth: "1990-01-01",
-    sex: "male",
-    phoneNumber: nextPhone(),
-    countryCode: "ZM",
-    registrationFacilityId: facility.facility.id,
+    facilityId: facility.facility.id,
+    actor: { staffMemberId: staff.staffMember.id },
+    demographics: { firstName: "Test", lastName: "Patient", dateOfBirth: "1990-01-01" },
+    registrationMethod: "walk_in",
   });
-  assert.equal(patient.ok, true);
+  assert.equal(patient.ok, true, JSON.stringify(patient));
 
   return {
     org,
@@ -143,31 +145,31 @@ async function seedTenant(stamp, tag) {
   };
 }
 
-before(async () => {
-  resetDeploymentProfileWarningsForTests();
-  const dbResult = await resetFoundationDatabase();
-  if (dbResult.skip) {
-    skipReason = dbResult.reason;
-    return;
-  }
-  databaseUrl = dbResult.databaseUrl;
-  pool = createFoundationPool(databaseUrl);
+describe("ActiveClinic P05 Pharmacy Foundation", () => {
+  before(async () => {
+    try {
+      databaseUrl = await resetFoundationDatabase();
+      pool = createFoundationPool(databaseUrl);
+      await migrate({ connectionString: databaseUrl });
+    } catch (err) {
+      skipReason = err && err.message ? err.message : String(err);
+    }
+  });
 
-  const migrateResult = await migrate(pool, { verbose: false });
-  if (!migrateResult.ok) {
-    skipReason = `Migration failed: ${migrateResult.error}`;
-    console.error(skipReason);
-  }
-});
+  beforeEach(() => {
+    resetDeploymentProfileWarningsForTests();
+  });
 
-after(async () => {
-  if (pool) {
-    await pool.end();
-  }
-});
+  after(async () => {
+    if (pool) await pool.end().catch(() => {});
+  });
 
-describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () => {
+  function requireDb() {
+    if (skipReason) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
+  }
+
   it("should add medication to catalogue", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "addmed");
 
@@ -194,6 +196,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should prevent duplicate medication in catalogue", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "dupmed");
 
@@ -224,6 +227,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should list medications in catalogue", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "listmed");
 
@@ -260,6 +264,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should receive stock and create inventory item, batch, and movement", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "recvstock");
 
@@ -298,6 +303,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should prevent negative stock", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "negstock");
 
@@ -347,6 +353,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should list inventory items for a facility", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "listinv");
 
@@ -404,6 +411,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should list low stock items", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "lowstock");
 
@@ -448,6 +456,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should list expiring batches", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "expiry");
 
@@ -487,6 +496,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should create pharmacy prescription and list in queue", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "prescr");
 
@@ -536,6 +546,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should dispense prescription (full) and decrement stock", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "disp");
 
@@ -625,6 +636,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should dispense prescription (partial)", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "partial");
 
@@ -711,6 +723,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should reject dispense when insufficient stock", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "insuffic");
 
@@ -779,6 +792,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should reject dispense from expired batch", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "expired");
 
@@ -850,6 +864,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should enforce tenant isolation for prescriptions", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant1 = await seedTenant(stamp, "iso1");
     const tenant2 = await seedTenant(stamp + 1, "iso2");
@@ -904,6 +919,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should enforce tenant isolation for inventory", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant1 = await seedTenant(stamp, "inviso1");
     const tenant2 = await seedTenant(stamp + 1, "inviso2");
@@ -941,6 +957,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should reject dispense without permission", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "noperm");
 
@@ -948,10 +965,11 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
     const staffNoPerm = await createStaffMember(pool, {
       organizationId: tenant.org.records.organization.id,
       healthcareOrganizationId: tenant.hco.healthcareOrganization.id,
-      personalEmail: `noperm-${stamp}@example.com`,
-      fullName: "No Perm Staff",
-      phoneNumber: nextPhone(),
-      staffRole: "receptionist",
+      firstName: "No",
+      lastName: "Perm",
+      employmentType: "permanent",
+      status: "active",
+      phone: nextPhone(),
     });
 
     await assignStaffToFacility(pool, {
@@ -1025,6 +1043,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", { skip: () => skipReason }, () 
   });
 
   it("should not mutate BlessBoard church data", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedTenant(stamp, "bbiso");
 

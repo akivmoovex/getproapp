@@ -1,0 +1,65 @@
+<%
+  var prescriptionQueue = (pageData && pageData) || {};
+  var prescriptions = prescriptionQueue.prescriptions || [];
+  var facility = prescriptionQueue.facility || {};
+  var currentStatus = prescriptionQueue.currentStatus || 'pending';
+  var actions = prescriptionQueue.actions || {};
+  var stitch = prescriptionQueue.stitch || {};
+%>
+<section class="ac-pharmacy-prescription-queue" data-ac-page-section="pharmacy-prescription-queue" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <div class="ac-panel">
+    <p class="ac-muted">Prescription queue for <%= facility.displayName || 'this facility' %>.</p>
+  </div>
+
+  <div class="ac-panel">
+    <div class="ac-filter-tabs">
+      <a href="/app/pharmacy/queue?status=pending" class="ac-filter-tab <%= currentStatus === 'pending' ? 'ac-filter-tab--active' : '' %>">Pending</a>
+      <a href="/app/pharmacy/queue?status=in_preparation" class="ac-filter-tab <%= currentStatus === 'in_preparation' ? 'ac-filter-tab--active' : '' %>">In Preparation</a>
+      <a href="/app/pharmacy/queue?status=ready_for_collection" class="ac-filter-tab <%= currentStatus === 'ready_for_collection' ? 'ac-filter-tab--active' : '' %>">Ready</a>
+      <a href="/app/pharmacy/queue?status=dispensed" class="ac-filter-tab <%= currentStatus === 'dispensed' ? 'ac-filter-tab--active' : '' %>">Dispensed</a>
+      <a href="/app/pharmacy/queue?status=partially_dispensed" class="ac-filter-tab <%= currentStatus === 'partially_dispensed' ? 'ac-filter-tab--active' : '' %>">Partially Dispensed</a>
+    </div>
+  </div>
+
+  <% if (!prescriptions.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'prescription-queue-empty',
+      title: 'No prescriptions',
+      description: `No prescriptions with status "${currentStatus}".`,
+      secondaryAction: { href: '/app/pharmacy', label: 'Back to pharmacy' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table">
+      <caption class="ac-sr-only">Prescription Queue</caption>
+      <thead>
+        <tr>
+          <th scope="col">Prescription #</th>
+          <th scope="col">Patient</th>
+          <th scope="col">Prescriber</th>
+          <th scope="col">Priority</th>
+          <th scope="col">Status</th>
+          <th scope="col">Created</th>
+          <th scope="col" class="ac-sr-only">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% prescriptions.forEach(function (rx) { %>
+        <tr data-ac-prescription-id="<%= rx.id %>">
+          <td><strong><%= rx.prescriptionNumber %></strong></td>
+          <td><%= rx.patientDisplayName || '—' %></td>
+          <td><%= rx.prescriberStaffDisplayName || '—' %></td>
+          <td><span class="ac-priority" data-ac-priority="<%= rx.priority %>"><%= rx.priority %></span></td>
+          <td><span class="ac-status" data-ac-status="<%= rx.status %>"><%= rx.statusLabel %></span></td>
+          <td><%= rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : '—' %></td>
+          <td><a href="/app/pharmacy/prescriptions/<%= rx.id %>" class="ac-link">View</a></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>

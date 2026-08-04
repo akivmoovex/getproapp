@@ -51,14 +51,19 @@ Pharmacy dashboard, prescriptions, inventory, dispensing
 
 ## Implementation Notes (2026-08-04)
 
-**Status:** Foundation complete
+**Status:** Foundation + UI complete
 
 - ✅ Schema: `db/migrations/activeclinic/016_pharmacy_stock.sql` (8 tables, append-only movements, batch/expiry tracking)
 - ✅ Permissions: `db/migrations/blessboard/085_activeclinic_pharmacy_permissions.sql` (6 permissions, conservative defaults)
 - ✅ Services: `src/activeclinic/services/activeClinicPharmacyService.js` (medication catalogue, inventory, stock movements, prescriptions, dispensing with partial support)
 - ✅ Tests: `tests/activeclinic-pharmacy-foundation.test.js` (15 tests covering catalogue, receive, dispense, partial, authz, tenant isolation)
 - ✅ Architecture: `docs/activeclinic/architecture/ACTIVECLINIC_P05_PHARMACY_DOMAIN.md`
-- ⚠️  UI: Routes/views not implemented — backend services ready for UI layer
+- ✅ UI: Routes/views implemented with EJS + data-ac-stitch attributes
+- ✅ Loaders: `src/activeclinic/services/loadActiveClinicPharmacyScreens.js`
+- ✅ Routes: `src/activeclinic/http/activeClinicPharmacyRoutes.js`
+- ✅ Views: 11 EJS templates for pharmacy screens
+- ✅ Navigation: Pharmacy menu item with activeclinic.pharmacy.view permission
+- ✅ UI Parity Tests: `tests/activeclinic-pharmacy-ui-parity.test.js` (6 tests: auth, CSRF, catalogue add, receive stock, list inventory)
 
 **Backend Features Implemented:**
 - Medication catalogue management

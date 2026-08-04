@@ -1,0 +1,50 @@
+<%
+  var lowStock = (pageData && pageData) || {};
+  var items = lowStock.items || [];
+  var facility = lowStock.facility || {};
+  var actions = lowStock.actions || {};
+  var stitch = lowStock.stitch || {};
+%>
+<section class="ac-pharmacy-low-stock" data-ac-page-section="pharmacy-low-stock" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <p class="ac-muted">Items at or below reorder level for <%= facility.displayName || 'this facility' %>.</p>
+  </div>
+
+  <% if (!items.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'low-stock-empty',
+      title: 'No low stock items',
+      description: 'All items are above reorder levels.',
+      secondaryAction: { href: '/app/pharmacy/inventory', label: 'View inventory' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table">
+      <caption class="ac-sr-only">Low Stock Items</caption>
+      <thead>
+        <tr>
+          <th scope="col">Medication</th>
+          <th scope="col">Strength</th>
+          <th scope="col">Current Quantity</th>
+          <th scope="col">Reorder Level</th>
+          <th scope="col">Unit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(function (item) { %>
+        <tr>
+          <td><strong><%= item.medicationGenericName || '—' %></strong></td>
+          <td><%= item.medicationStrength || '—' %></td>
+          <td class="ac-text-warning"><%= item.currentQuantity %></td>
+          <td><%= item.reorderLevel || '—' %></td>
+          <td><%= item.medicationUnit || '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>

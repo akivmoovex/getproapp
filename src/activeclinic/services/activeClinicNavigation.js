@@ -55,6 +55,13 @@ const NAV_ITEMS = Object.freeze([
     icon: "medical_services",
   },
   {
+    key: "pharmacy",
+    label: "Pharmacy",
+    href: "/app/pharmacy",
+    permission: "activeclinic.pharmacy.view",
+    icon: "medication",
+  },
+  {
     key: "access",
     label: "Roles & access",
     href: "/app/access",
@@ -97,6 +104,7 @@ function matchActiveNavKey(pathname) {
   if (path.startsWith("/app/appointments")) return "appointments";
   if (path.startsWith("/app/reception")) return "reception";
   if (path.startsWith("/app/clinical")) return "clinical";
+  if (path.startsWith("/app/pharmacy")) return "pharmacy";
   if (path.startsWith("/app/access")) return "access";
   if (path.startsWith("/app/settings")) return "settings";
   if (path.startsWith("/app/select-facility")) return "home";

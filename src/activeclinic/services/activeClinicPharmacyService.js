@@ -247,8 +247,13 @@ async function addMedication(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.INVENTORY_MANAGE);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_MANAGE,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -323,8 +328,13 @@ async function listMedications(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.INVENTORY_VIEW);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -354,8 +364,13 @@ async function getMedicationById(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.INVENTORY_VIEW);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -401,8 +416,13 @@ async function receiveStock(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.INVENTORY_MANAGE);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_MANAGE,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -536,8 +556,13 @@ async function listInventoryItems(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.INVENTORY_VIEW);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -570,8 +595,13 @@ async function listLowStockItems(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.INVENTORY_VIEW);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -607,8 +637,13 @@ async function listExpiringBatches(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.INVENTORY_VIEW);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -642,8 +677,13 @@ async function listPrescriptionQueue(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.PHARMACY_VIEW);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.PHARMACY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -653,7 +693,7 @@ async function listPrescriptionQueue(pool, input) {
     `SELECT pp.*,
        p.patient_number,
        COALESCE(p.first_name || ' ' || p.last_name, p.first_name, p.last_name) AS patient_display_name,
-       sm.full_name AS prescriber_staff_display_name,
+       sm.display_name AS prescriber_staff_display_name,
        e.encounter_number
      FROM activeclinic.pharmacy_prescriptions pp
      JOIN activeclinic.patients p ON pp.patient_id = p.id
@@ -681,8 +721,13 @@ async function getPrescriptionById(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.PHARMACY_VIEW);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.PHARMACY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -690,7 +735,7 @@ async function getPrescriptionById(pool, input) {
     `SELECT pp.*,
        p.patient_number,
        COALESCE(p.first_name || ' ' || p.last_name, p.first_name, p.last_name) AS patient_display_name,
-       sm.full_name AS prescriber_staff_display_name,
+       sm.display_name AS prescriber_staff_display_name,
        e.encounter_number
      FROM activeclinic.pharmacy_prescriptions pp
      JOIN activeclinic.patients p ON pp.patient_id = p.id
@@ -746,8 +791,13 @@ async function dispensePrescription(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.PHARMACY_DISPENSE);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.PHARMACY_DISPENSE,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
@@ -982,8 +1032,13 @@ async function createPharmacyPrescription(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
-  const authResult = await authorizeStaffPermission(pool, staffId, organizationId, PERM.PHARMACY_VIEW);
-  if (authResult.result !== "ok") {
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.PHARMACY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 

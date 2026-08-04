@@ -1,0 +1,50 @@
+<%
+  var expiryAlerts = (pageData && pageData) || {};
+  var batches = expiryAlerts.batches || [];
+  var facility = expiryAlerts.facility || {};
+  var actions = expiryAlerts.actions || {};
+  var stitch = expiryAlerts.stitch || {};
+%>
+<section class="ac-pharmacy-expiry-alerts" data-ac-page-section="pharmacy-expiry-alerts" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <p class="ac-muted">Batches expiring within 90 days for <%= facility.displayName || 'this facility' %>.</p>
+  </div>
+
+  <% if (!batches.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'expiry-alerts-empty',
+      title: 'No expiring batches',
+      description: 'No batches are expiring within the next 90 days.',
+      secondaryAction: { href: '/app/pharmacy/inventory', label: 'View inventory' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table">
+      <caption class="ac-sr-only">Expiry Alerts</caption>
+      <thead>
+        <tr>
+          <th scope="col">Medication</th>
+          <th scope="col">Strength</th>
+          <th scope="col">Batch Number</th>
+          <th scope="col">Quantity</th>
+          <th scope="col">Expiry Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% batches.forEach(function (batch) { %>
+        <tr>
+          <td><strong><%= batch.medicationGenericName || '—' %></strong></td>
+          <td><%= batch.medicationStrength || '—' %></td>
+          <td><%= batch.batchNumber %></td>
+          <td><%= batch.quantityInBatch %></td>
+          <td class="ac-text-warning"><%= batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString() : '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>

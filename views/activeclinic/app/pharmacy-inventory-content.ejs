@@ -1,0 +1,56 @@
+<%
+  var inventory = (pageData && pageData) || {};
+  var items = inventory.items || [];
+  var facility = inventory.facility || {};
+  var actions = inventory.actions || {};
+  var stitch = inventory.stitch || {};
+%>
+<section class="ac-pharmacy-inventory" data-ac-page-section="pharmacy-inventory" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <% if (actions.canManageInventory) { %>
+  <div class="ac-panel">
+    <a href="/app/pharmacy/inventory/receive" class="ac-btn ac-btn--primary">Receive Stock</a>
+  </div>
+  <% } %>
+
+  <% if (!items.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'inventory-empty',
+      title: 'No inventory items',
+      description: 'Receive stock to add inventory items for this facility.',
+      primaryAction: actions.canManageInventory ? { href: '/app/pharmacy/inventory/receive', label: 'Receive stock' } : null
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table">
+      <caption class="ac-sr-only">Medicine Inventory</caption>
+      <thead>
+        <tr>
+          <th scope="col">Medication</th>
+          <th scope="col">Strength</th>
+          <th scope="col">Form</th>
+          <th scope="col">Current Quantity</th>
+          <th scope="col">Unit</th>
+          <th scope="col">Reorder Level</th>
+          <th scope="col">Last Restocked</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(function (item) { %>
+        <tr>
+          <td><strong><%= item.medicationGenericName || '—' %></strong></td>
+          <td><%= item.medicationStrength || '—' %></td>
+          <td><%= item.medicationDosageForm || '—' %></td>
+          <td><%= item.currentQuantity %></td>
+          <td><%= item.medicationUnit || '—' %></td>
+          <td><%= item.reorderLevel || '—' %></td>
+          <td><%= item.lastRestockedAt ? new Date(item.lastRestockedAt).toLocaleDateString() : '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>

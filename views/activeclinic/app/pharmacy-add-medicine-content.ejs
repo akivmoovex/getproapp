@@ -1,0 +1,78 @@
+<%
+  var addMedicine = (pageData && pageData) || {};
+  var values = addMedicine.values || {};
+  var error = addMedicine.error;
+  var stitch = addMedicine.stitch || {};
+%>
+<section class="ac-pharmacy-add-medicine" data-ac-page-section="pharmacy-add-medicine" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error">
+    <%= error %>
+  </div>
+  <% } %>
+
+  <form method="post" action="/app/pharmacy/catalogue/new" class="ac-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+
+    <div class="ac-panel">
+      <div class="ac-form-field">
+        <label for="genericName" class="ac-form-label">Generic Name <span class="ac-required">*</span></label>
+        <input type="text" id="genericName" name="genericName" value="<%= values.genericName || '' %>" required class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="brandNames" class="ac-form-label">Brand Names (comma-separated)</label>
+        <input type="text" id="brandNames" name="brandNames" value="<%= values.brandNames || '' %>" class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="strength" class="ac-form-label">Strength <span class="ac-required">*</span></label>
+        <input type="text" id="strength" name="strength" value="<%= values.strength || '' %>" required class="ac-form-input" placeholder="e.g., 500mg">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="dosageForm" class="ac-form-label">Dosage Form <span class="ac-required">*</span></label>
+        <select id="dosageForm" name="dosageForm" required class="ac-form-input">
+          <option value="">Select form</option>
+          <option value="tablet" <%= values.dosageForm === 'tablet' ? 'selected' : '' %>>Tablet</option>
+          <option value="capsule" <%= values.dosageForm === 'capsule' ? 'selected' : '' %>>Capsule</option>
+          <option value="syrup" <%= values.dosageForm === 'syrup' ? 'selected' : '' %>>Syrup</option>
+          <option value="injection" <%= values.dosageForm === 'injection' ? 'selected' : '' %>>Injection</option>
+          <option value="cream" <%= values.dosageForm === 'cream' ? 'selected' : '' %>>Cream</option>
+          <option value="ointment" <%= values.dosageForm === 'ointment' ? 'selected' : '' %>>Ointment</option>
+          <option value="drops" <%= values.dosageForm === 'drops' ? 'selected' : '' %>>Drops</option>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="unitOfMeasure" class="ac-form-label">Unit of Measure <span class="ac-required">*</span></label>
+        <input type="text" id="unitOfMeasure" name="unitOfMeasure" value="<%= values.unitOfMeasure || '' %>" required class="ac-form-input" placeholder="e.g., tablet, ml, vial">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="standardCost" class="ac-form-label">Standard Cost (ZMW)</label>
+        <input type="number" id="standardCost" name="standardCost" value="<%= values.standardCost || '' %>" step="0.01" min="0" class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="reorderLevel" class="ac-form-label">Reorder Level</label>
+        <input type="number" id="reorderLevel" name="reorderLevel" value="<%= values.reorderLevel || '' %>" min="0" class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="storageConditions" class="ac-form-label">Storage Conditions</label>
+        <input type="text" id="storageConditions" name="storageConditions" value="<%= values.storageConditions || '' %>" class="ac-form-input" placeholder="e.g., room temperature, refrigerate">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="notes" class="ac-form-label">Notes</label>
+        <textarea id="notes" name="notes" rows="3" class="ac-form-input"><%= values.notes || '' %></textarea>
+      </div>
+    </div>
+
+    <div class="ac-panel ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Add Medicine</button>
+      <a href="/app/pharmacy/catalogue" class="ac-btn ac-btn--secondary">Cancel</a>
+    </div>
+  </form>
+</section>

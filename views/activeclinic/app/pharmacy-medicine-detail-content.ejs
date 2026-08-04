@@ -1,0 +1,44 @@
+<%
+  var medicineDetail = (pageData && pageData) || {};
+  var medication = medicineDetail.medication || {};
+  var stitch = medicineDetail.stitch || {};
+%>
+<section class="ac-pharmacy-medicine-detail" data-ac-page-section="pharmacy-medicine-detail" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <dl class="ac-detail-list">
+      <dt>Generic Name</dt>
+      <dd><strong><%= medication.genericName || '—' %></strong></dd>
+      
+      <dt>Brand Names</dt>
+      <dd><%= medication.brandNames ? JSON.stringify(medication.brandNames) : '—' %></dd>
+      
+      <dt>Strength</dt>
+      <dd><%= medication.strength || '—' %></dd>
+      
+      <dt>Dosage Form</dt>
+      <dd><%= medication.dosageForm || '—' %></dd>
+      
+      <dt>Unit of Measure</dt>
+      <dd><%= medication.unitOfMeasure || '—' %></dd>
+      
+      <dt>Standard Cost</dt>
+      <dd><%= medication.standardCost ? `ZMW ${medication.standardCost.toFixed(2)}` : '—' %></dd>
+      
+      <dt>Reorder Level</dt>
+      <dd><%= medication.reorderLevel || '—' %></dd>
+      
+      <dt>Storage Conditions</dt>
+      <dd><%= medication.storageConditions || '—' %></dd>
+      
+      <dt>Notes</dt>
+      <dd><%= medication.notes || '—' %></dd>
+      
+      <dt>Status</dt>
+      <dd><span class="ac-status" data-ac-status="<%= medication.status %>"><%= medication.status %></span></dd>
+    </dl>
+  </div>
+
+  <div class="ac-panel">
+    <a href="/app/pharmacy/catalogue" class="ac-btn ac-btn--secondary">Back to catalogue</a>
+  </div>
+</section>

@@ -1,0 +1,68 @@
+<%
+  var receiveStock = (pageData && pageData) || {};
+  var values = receiveStock.values || {};
+  var medications = receiveStock.medications || [];
+  var error = receiveStock.error;
+  var facility = receiveStock.facility || {};
+  var stitch = receiveStock.stitch || {};
+%>
+<section class="ac-pharmacy-receive-stock" data-ac-page-section="pharmacy-receive-stock" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error">
+    <%= error %>
+  </div>
+  <% } %>
+
+  <form method="post" action="/app/pharmacy/inventory/receive" class="ac-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+
+    <div class="ac-panel">
+      <div class="ac-form-field">
+        <label for="medicationCatalogueItemId" class="ac-form-label">Medication <span class="ac-required">*</span></label>
+        <select id="medicationCatalogueItemId" name="medicationCatalogueItemId" required class="ac-form-input">
+          <option value="">Select medication</option>
+          <% medications.forEach(function (med) { %>
+          <option value="<%= med.id %>" <%= values.medicationCatalogueItemId === med.id ? 'selected' : '' %>>
+            <%= med.genericName %> - <%= med.strength %> (<%= med.dosageForm %>)
+          </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="batchNumber" class="ac-form-label">Batch Number <span class="ac-required">*</span></label>
+        <input type="text" id="batchNumber" name="batchNumber" value="<%= values.batchNumber || '' %>" required class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="quantity" class="ac-form-label">Quantity <span class="ac-required">*</span></label>
+        <input type="number" id="quantity" name="quantity" value="<%= values.quantity || '' %>" required min="1" class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="expiryDate" class="ac-form-label">Expiry Date <span class="ac-required">*</span></label>
+        <input type="date" id="expiryDate" name="expiryDate" value="<%= values.expiryDate || '' %>" required class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="manufactureDate" class="ac-form-label">Manufacture Date</label>
+        <input type="date" id="manufactureDate" name="manufactureDate" value="<%= values.manufactureDate || '' %>" class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="supplierName" class="ac-form-label">Supplier Name</label>
+        <input type="text" id="supplierName" name="supplierName" value="<%= values.supplierName || '' %>" class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="costPerUnit" class="ac-form-label">Cost Per Unit (ZMW)</label>
+        <input type="number" id="costPerUnit" name="costPerUnit" value="<%= values.costPerUnit || '' %>" step="0.01" min="0" class="ac-form-input">
+      </div>
+    </div>
+
+    <div class="ac-panel ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Receive Stock</button>
+      <a href="/app/pharmacy/inventory" class="ac-btn ac-btn--secondary">Cancel</a>
+    </div>
+  </form>
+</section>

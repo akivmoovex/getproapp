@@ -1,0 +1,100 @@
+<%
+  var dispense = (pageData && pageData) || {};
+  var prescription = dispense.prescription || {};
+  var items = dispense.items || [];
+  var availableInventory = dispense.availableInventory || [];
+  var error = dispense.error;
+  var facility = dispense.facility || {};
+  var actions = dispense.actions || {};
+  var stitch = dispense.stitch || {};
+%>
+<section class="ac-pharmacy-dispense" data-ac-page-section="pharmacy-dispense" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error">
+    <%= error %>
+  </div>
+  <% } %>
+
+  <div class="ac-panel">
+    <dl class="ac-detail-list">
+      <dt>Prescription</dt>
+      <dd><strong><%= prescription.prescriptionNumber || '—' %></strong></dd>
+      
+      <dt>Patient</dt>
+      <dd><%= prescription.patientDisplayName || '—' %></dd>
+    </dl>
+  </div>
+
+  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+
+    <div class="ac-panel">
+      <h3>Items to Dispense</h3>
+      <% if (!items.length) { %>
+      <p class="ac-muted">No items to dispense.</p>
+      <% } else { %>
+      <% items.forEach(function (item) { 
+        var remainingQty = item.quantityOrdered - item.quantityDispensed;
+      %>
+      <div class="ac-dispense-item">
+        <input type="hidden" name="item_<%= item.id %>" value="<%= item.id %>">
+        <div class="ac-dispense-item-header">
+          <strong><%= item.medicationGenericName %></strong> - <%= item.medicationStrength %> (<%= item.medicationDosageForm %>)
+        </div>
+        <div class="ac-dispense-item-details">
+          <p><strong>Dosage:</strong> <%= item.dosageInstructions || '—' %></p>
+          <p><strong>Remaining to dispense:</strong> <%= remainingQty %> <%= item.medicationUnit %></p>
+        </div>
+        <div class="ac-form-field">
+          <label for="quantity_<%= item.id %>" class="ac-form-label">Quantity to dispense</label>
+          <input type="number" id="quantity_<%= item.id %>" name="quantity_<%= item.id %>" min="0" max="<%= remainingQty %>" value="<%= remainingQty %>" class="ac-form-input">
+        </div>
+        <div class="ac-form-field">
+          <label for="batch_<%= item.id %>" class="ac-form-label">Select batch</label>
+          <select id="batch_<%= item.id %>" name="batch_<%= item.id %>" class="ac-form-input">
+            <option value="">Select batch</option>
+            <% availableInventory.filter(function(inv) { return inv.medicationCatalogueItemId === item.medicationCatalogueItemId }).forEach(function(inv) { %>
+            <option value="<%= inv.id %>">Available: <%= inv.currentQuantity %> <%= inv.medicationUnit %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <% }) %>
+      <% } %>
+    </div>
+
+    <div class="ac-panel">
+      <div class="ac-form-field">
+        <label for="dispenseType" class="ac-form-label">Dispense Type</label>
+        <select id="dispenseType" name="dispenseType" class="ac-form-input">
+          <option value="full">Full dispense</option>
+          <option value="partial">Partial dispense</option>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label class="ac-form-label">
+          <input type="checkbox" name="patientAcknowledged" value="true" class="ac-form-checkbox">
+          Patient acknowledged receipt
+        </label>
+      </div>
+
+      <div class="ac-form-field">
+        <label class="ac-form-label">
+          <input type="checkbox" name="counselingProvided" value="true" class="ac-form-checkbox">
+          Counseling provided
+        </label>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="counselingNotes" class="ac-form-label">Counseling Notes</label>
+        <textarea id="counselingNotes" name="counselingNotes" rows="3" class="ac-form-input"></textarea>
+      </div>
+    </div>
+
+    <div class="ac-panel ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Confirm Dispense</button>
+      <a href="/app/pharmacy/prescriptions/<%= prescription.id %>" class="ac-btn ac-btn--secondary">Cancel</a>
+    </div>
+  </form>
+</section>
