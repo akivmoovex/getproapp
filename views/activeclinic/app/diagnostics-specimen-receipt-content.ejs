@@ -1,0 +1,19 @@
+<div data-ac-stitch="5018c7fabf324fcebfbac85d7048f19a" data-ac-screen="specimen-receipt">
+  <form method="POST">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    
+    <div class="ac-form-group">
+      <label>Specimen: <%= pageData.receipt.specimen.specimenIdentifier %></label>
+      <p>Type: <%= pageData.receipt.specimen.specimenType %></p>
+      <p>Patient: <%= pageData.receipt.specimen.patientDisplayName %></p>
+      <p>Request: <%= pageData.receipt.specimen.requestNumber %></p>
+    </div>
+    
+    <div class="ac-form-group">
+      <label for="event_note">Note</label>
+      <textarea name="event_note" id="event_note" rows="3"></textarea>
+    </div>
+    
+    <button type="submit" class="ac-btn">Receive specimen</button>
+  </form>
+</div>

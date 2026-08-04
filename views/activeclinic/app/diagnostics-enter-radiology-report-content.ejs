@@ -1,0 +1,42 @@
+<div data-ac-stitch="41a0f1b3e1974e7ca26599bf8a37fc5f" data-ac-screen="enter-radiology-report">
+  <form method="POST">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    
+    <div class="ac-form-group">
+      <label>Request: <%= pageData.reportEntry.request.requestNumber %></label>
+      <p>Patient: <%= pageData.reportEntry.request.patientDisplayName %></p>
+      <p>Study: <%= pageData.reportEntry.request.studyType %></p>
+      <% if (pageData.reportEntry.request.clinicalIndication) { %>
+      <p><strong>Clinical indication:</strong> <%= pageData.reportEntry.request.clinicalIndication %></p>
+      <% } %>
+    </div>
+    
+    <div class="ac-form-group">
+      <label for="technique">Technique</label>
+      <textarea name="technique" id="technique" rows="2"></textarea>
+    </div>
+    
+    <div class="ac-form-group">
+      <label for="findings">Findings</label>
+      <textarea name="findings" id="findings" rows="6"></textarea>
+    </div>
+    
+    <div class="ac-form-group">
+      <label for="impression">Impression</label>
+      <textarea name="impression" id="impression" rows="3"></textarea>
+    </div>
+    
+    <div class="ac-form-group">
+      <label>
+        <input type="checkbox" name="is_critical" value="1" />
+        Critical finding (requires acknowledgment)
+      </label>
+    </div>
+    
+    <% if (pageData.reportEntry.error) { %>
+    <p class="ac-error"><%= pageData.reportEntry.error %></p>
+    <% } %>
+    
+    <button type="submit" class="ac-btn">Enter report</button>
+  </form>
+</div>

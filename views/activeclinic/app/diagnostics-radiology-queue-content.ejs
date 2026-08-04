@@ -1,0 +1,32 @@
+<div data-ac-stitch="1fa6c921703145af96e47f7344b6cb62" data-ac-screen="radiology-queue">
+  <% if (pageData.queue.requests.length === 0) { %>
+  <p class="ac-empty">No pending radiology requests.</p>
+  <% } else { %>
+  <table class="ac-table">
+    <thead>
+      <tr>
+        <th>Request #</th>
+        <th>Patient</th>
+        <th>Study type</th>
+        <th>Urgency</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pageData.queue.requests.forEach(function (req) { %>
+      <tr>
+        <td><%= req.requestNumber %></td>
+        <td><%= req.patientDisplayName %></td>
+        <td><%= req.studyType %></td>
+        <td><%= req.urgency %></td>
+        <td><%= req.status %></td>
+        <td>
+          <a href="/app/diagnostics/radiology/request/<%= req.id %>/report">Report</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>

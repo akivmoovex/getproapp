@@ -1,0 +1,32 @@
+<div data-ac-stitch="cd5ff44012dd4f0f88fc7ed60848fd37" data-ac-screen="laboratory-worklist">
+  <% if (pageData.worklist.specimens.length === 0) { %>
+  <p class="ac-empty">No specimens in processing.</p>
+  <% } else { %>
+  <table class="ac-table">
+    <thead>
+      <tr>
+        <th>Specimen ID</th>
+        <th>Patient</th>
+        <th>Type</th>
+        <th>Request #</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pageData.worklist.specimens.forEach(function (spec) { %>
+      <tr>
+        <td><%= spec.specimenIdentifier %></td>
+        <td><%= spec.patientDisplayName %></td>
+        <td><%= spec.specimenType %></td>
+        <td><%= spec.requestNumber %></td>
+        <td><%= spec.status %></td>
+        <td>
+          <a href="/app/diagnostics/laboratory/specimen/<%= spec.id %>/receive">Receive</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>

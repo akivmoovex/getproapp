@@ -1,0 +1,40 @@
+<div data-ac-stitch="f53854e6c18e45a094a0bab86e011e5b" data-ac-screen="critical-result-alert">
+  <div class="ac-alert ac-alert-critical">
+    <h2>CRITICAL RESULT ALERT</h2>
+    
+    <div class="ac-detail">
+      <p><strong>Result type:</strong> <%= pageData.alert.resultType %></p>
+      <p><strong>Patient:</strong> <%= pageData.alert.patientDisplayName %></p>
+      <p><strong>Request:</strong> <%= pageData.alert.requestNumber %></p>
+      
+      <% if (pageData.alert.resultType === 'laboratory') { %>
+      <p><strong>Test panel:</strong> <%= pageData.alert.testPanelName %></p>
+      <p><strong>Summary:</strong> <%= pageData.alert.resultSummary %></p>
+      <% } else { %>
+      <p><strong>Study:</strong> <%= pageData.alert.studyType %></p>
+      <p><strong>Impression:</strong> <%= pageData.alert.impression %></p>
+      <% } %>
+    </div>
+    
+    <form method="POST" action="/app/diagnostics/critical-alert/<%= pageData.alert.resultId %>/acknowledge">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      
+      <div class="ac-form-group">
+        <label for="recipient_name">Notified (clinician name) *</label>
+        <input type="text" name="recipient_name" id="recipient_name" required />
+      </div>
+      
+      <div class="ac-form-group">
+        <label for="notification_method">Notification method *</label>
+        <select name="notification_method" id="notification_method" required>
+          <option value="">Select method</option>
+          <option value="phone">Phone</option>
+          <option value="in_person">In person</option>
+          <option value="secure_message">Secure message</option>
+        </select>
+      </div>
+      
+      <button type="submit" class="ac-btn">Acknowledge critical result</button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,37 @@
+<div data-ac-stitch="73c50eef2b10459793f12689cce27bb6" data-ac-screen="specimen-collection">
+  <form method="POST">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    
+    <div class="ac-form-group">
+      <label>Request: <%= pageData.collection.request.requestNumber %></label>
+      <p>Patient: <%= pageData.collection.request.patientDisplayName %></p>
+      <p>Test panel: <%= pageData.collection.request.testPanelName %></p>
+    </div>
+    
+    <div class="ac-form-group">
+      <label for="specimen_type">Specimen type *</label>
+      <select name="specimen_type" id="specimen_type" required>
+        <option value="">Select type</option>
+        <% pageData.collection.specimenTypes.forEach(function (type) { %>
+        <option value="<%= type %>"><%= type %></option>
+        <% }) %>
+      </select>
+    </div>
+    
+    <div class="ac-form-group">
+      <label for="collection_method">Collection method</label>
+      <input type="text" name="collection_method" id="collection_method" />
+    </div>
+    
+    <div class="ac-form-group">
+      <label for="collection_site">Collection site</label>
+      <input type="text" name="collection_site" id="collection_site" />
+    </div>
+    
+    <% if (pageData.collection.error) { %>
+    <p class="ac-error"><%= pageData.collection.error %></p>
+    <% } %>
+    
+    <button type="submit" class="ac-btn">Collect specimen</button>
+  </form>
+</div>

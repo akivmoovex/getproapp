@@ -1,0 +1,28 @@
+<div data-ac-stitch="b62c8afb0c59477d8bcfeaac7210987a" data-ac-screen="specimen-rejected">
+  <form method="POST">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    
+    <div class="ac-form-group">
+      <label>Specimen: <%= pageData.rejection.specimen.specimenIdentifier %></label>
+      <p>Type: <%= pageData.rejection.specimen.specimenType %></p>
+      <p>Patient: <%= pageData.rejection.specimen.patientDisplayName %></p>
+      <p>Request: <%= pageData.rejection.specimen.requestNumber %></p>
+    </div>
+    
+    <div class="ac-form-group">
+      <label for="rejection_reason">Rejection reason *</label>
+      <select name="rejection_reason" id="rejection_reason" required>
+        <option value="">Select reason</option>
+        <% pageData.rejection.rejectionReasons.forEach(function (reason) { %>
+        <option value="<%= reason %>"><%= reason %></option>
+        <% }) %>
+      </select>
+    </div>
+    
+    <% if (pageData.rejection.error) { %>
+    <p class="ac-error"><%= pageData.rejection.error %></p>
+    <% } %>
+    
+    <button type="submit" class="ac-btn ac-btn-danger">Reject specimen</button>
+  </form>
+</div>

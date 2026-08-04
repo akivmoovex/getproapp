@@ -1,0 +1,32 @@
+<div data-ac-stitch="f8b17233f1f7457ea5fe5179207aa0d1" data-ac-screen="laboratory-queue">
+  <% if (pageData.queue.requests.length === 0) { %>
+  <p class="ac-empty">No pending laboratory requests.</p>
+  <% } else { %>
+  <table class="ac-table">
+    <thead>
+      <tr>
+        <th>Request #</th>
+        <th>Patient</th>
+        <th>Test panel</th>
+        <th>Urgency</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pageData.queue.requests.forEach(function (req) { %>
+      <tr>
+        <td><a href="/app/diagnostics/laboratory/request/<%= req.id %>"><%= req.requestNumber %></a></td>
+        <td><%= req.patientDisplayName %></td>
+        <td><%= req.testPanelName %></td>
+        <td><%= req.urgency %></td>
+        <td><%= req.status %></td>
+        <td>
+          <a href="/app/diagnostics/laboratory/request/<%= req.id %>">View</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
