@@ -1,27 +1,66 @@
 <section class="ac-public-section" data-ac-page-section="register-clinic">
+  <ol class="ac-onboarding-steps" aria-label="Registration progress">
+    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--active" aria-current="step">Details</li>
+    <li class="ac-onboarding-steps__item">Review</li>
+    <li class="ac-onboarding-steps__item">Submitted</li>
+  </ol>
+
   <h1>Register your clinic</h1>
   <p>Submit an application to join ActiveClinic. Applications are reviewed — submitting does not publish your clinic or create a live account automatically.</p>
+
   <% if (typeof error === 'string' && error) { %>
   <div class="ac-public-error" role="alert"><%= error %></div>
   <% } %>
+
+  <% if (typeof formState === 'string' && formState === 'validation_error') { %>
+  <div class="ac-public-validation-summary" role="alert" data-ac-form-state="validation_error">
+    <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
+    <ul class="ac-public-validation-summary__list">
+      <% const verr = validationErrors || {}; %>
+      <% Object.keys(verr).forEach(function(field) { %>
+      <li><a href="#<%= field %>"><%= verr[field] %></a></li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
+
   <% const fd = formData || {}; %>
+  <% const verr = validationErrors || {}; %>
   <form method="post" action="/register-clinic" class="ac-public-form" novalidate>
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <label for="clinicName">Clinic name</label>
-    <input id="clinicName" name="clinicName" required maxlength="200" value="<%= fd.clinicName || '' %>"/>
-    <label for="contactName">Contact name</label>
-    <input id="contactName" name="contactName" required maxlength="120" value="<%= fd.contactName || '' %>"/>
-    <label for="contactEmail">Contact email</label>
-    <input id="contactEmail" name="contactEmail" type="email" required value="<%= fd.contactEmail || '' %>"/>
-    <label for="contactPhone">Contact phone (Zambia)</label>
-    <input id="contactPhone" name="contactPhone" required placeholder="+260…" value="<%= fd.contactPhone || '' %>"/>
-    <label for="province">Province</label>
-    <input id="province" name="province" value="<%= fd.province || '' %>"/>
-    <label for="city">City</label>
-    <input id="city" name="city" value="<%= fd.city || '' %>"/>
+    <div class="ac-form-field<%= verr.clinicName ? ' ac-form-field--error' : '' %>">
+      <label for="clinicName">Clinic name</label>
+      <input id="clinicName" name="clinicName" required maxlength="200" value="<%= fd.clinicName || '' %>" aria-invalid="<%= verr.clinicName ? 'true' : 'false' %>"/>
+      <% if (verr.clinicName) { %><p class="ac-form-field__error" id="clinicName-error"><%= verr.clinicName %></p><% } %>
+    </div>
+    <div class="ac-form-field<%= verr.contactName ? ' ac-form-field--error' : '' %>">
+      <label for="contactName">Contact name</label>
+      <input id="contactName" name="contactName" required maxlength="120" value="<%= fd.contactName || '' %>" aria-invalid="<%= verr.contactName ? 'true' : 'false' %>"/>
+      <% if (verr.contactName) { %><p class="ac-form-field__error" id="contactName-error"><%= verr.contactName %></p><% } %>
+    </div>
+    <div class="ac-form-field<%= verr.contactEmail ? ' ac-form-field--error' : '' %>">
+      <label for="contactEmail">Contact email</label>
+      <input id="contactEmail" name="contactEmail" type="email" required value="<%= fd.contactEmail || '' %>" aria-invalid="<%= verr.contactEmail ? 'true' : 'false' %>"/>
+      <% if (verr.contactEmail) { %><p class="ac-form-field__error" id="contactEmail-error"><%= verr.contactEmail %></p><% } %>
+    </div>
+    <div class="ac-form-field<%= verr.contactPhone ? ' ac-form-field--error' : '' %>">
+      <label for="contactPhone">Contact phone (Zambia)</label>
+      <input id="contactPhone" name="contactPhone" required placeholder="+260… or 09…" value="<%= fd.contactPhone || '' %>" aria-invalid="<%= verr.contactPhone ? 'true' : 'false' %>"/>
+      <% if (verr.contactPhone) { %><p class="ac-form-field__error" id="contactPhone-error"><%= verr.contactPhone %></p><% } %>
+    </div>
+    <div class="ac-form-field">
+      <label for="province">Province</label>
+      <input id="province" name="province" value="<%= fd.province || '' %>"/>
+    </div>
+    <div class="ac-form-field">
+      <label for="city">City</label>
+      <input id="city" name="city" value="<%= fd.city || '' %>"/>
+    </div>
     <input type="hidden" name="countryCode" value="ZM"/>
-    <label for="notes">Notes (optional)</label>
-    <textarea id="notes" name="notes" maxlength="2000"><%= fd.notes || '' %></textarea>
-    <button type="submit" class="ac-btn ac-btn--primary">Submit application</button>
+    <div class="ac-form-field">
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" name="notes" maxlength="2000"><%= fd.notes || '' %></textarea>
+    </div>
+    <button type="submit" class="ac-btn ac-btn--primary">Continue to review</button>
   </form>
 </section>

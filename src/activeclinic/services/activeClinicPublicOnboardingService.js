@@ -60,32 +60,86 @@ function normalizeZambiaPhone(raw) {
 }
 
 /**
- * Create a clinic registration application.
- * Detects duplicate by email within 30 days.
+ * Validate clinic registration input without persisting.
+ * @returns {{ ok: boolean, code?: string, errors: Record<string, string>, normalized: object|null }}
  */
-async function createClinicRegistrationApplication(db, input) {
+function validateClinicRegistrationInput(input) {
+  const errors = {};
   const clinicName = trimName(input.clinicName, 200);
   const contactName = trimName(input.contactName, 120);
   const province = input.province ? trimName(input.province, 100) : null;
   const city = input.city ? trimName(input.city, 100) : null;
   const notes = input.notes ? String(input.notes).trim().slice(0, 2000) : null;
 
-  if (!clinicName || !contactName) {
-    return { ok: false, code: RESULT.INVALID_INPUT, application: null };
-  }
+  if (!clinicName) errors.clinicName = "Enter your clinic name (up to 200 characters).";
+  if (!contactName) errors.contactName = "Enter a contact name (up to 120 characters).";
 
   const email = normalizeActiveClinicEmail(input.contactEmail);
-  if (!email.ok) {
-    return { ok: false, code: email.code, application: null };
-  }
-  if (!email.normalized) {
-    return { ok: false, code: "email_required", application: null };
+  if (!email.ok || !email.normalized) {
+    errors.contactEmail = email.code === "email_required"
+      ? "Enter a contact email address."
+      : "Enter a valid email address.";
   }
 
   const phone = normalizeZambiaPhone(input.contactPhone);
   if (!phone.ok) {
-    return { ok: false, code: phone.code, application: null };
+    errors.contactPhone = phone.code === "phone_required"
+      ? "Enter a Zambia mobile number."
+      : "Enter a valid Zambia phone number (e.g. +260… or 09…).";
   }
+
+  if (Object.keys(errors).length) {
+    return { ok: false, code: RESULT.INVALID_INPUT, errors, normalized: null };
+  }
+
+  const countryCode = input.countryCode && /^[A-Z]{2}$/.test(String(input.countryCode).toUpperCase())
+    ? String(input.countryCode).toUpperCase()
+    : "ZM";
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    errors: {},
+    normalized: {
+      clinicName,
+      contactName,
+      contactEmail: email.normalized,
+      contactEmailDisplay: email.display,
+      contactPhone: phone.normalized,
+      contactPhoneDisplay: phone.display,
+      province,
+      city,
+      countryCode,
+      notes,
+    },
+  };
+}
+
+/**
+ * Create a clinic registration application.
+ * Detects duplicate by email within 30 days.
+ */
+async function createClinicRegistrationApplication(db, input) {
+  const validated = validateClinicRegistrationInput(input);
+  if (!validated.ok) {
+    return { ok: false, code: validated.code, errors: validated.errors, application: null };
+  }
+
+  const {
+    clinicName,
+    contactName,
+    contactEmail,
+    contactEmailDisplay,
+    contactPhone,
+    contactPhoneDisplay,
+    province,
+    city,
+    countryCode,
+    notes,
+  } = validated.normalized;
+
+  const email = { ok: true, normalized: contactEmail, display: contactEmailDisplay };
+  const phone = { ok: true, normalized: contactPhone, display: contactPhoneDisplay };
 
   // Check for duplicate application by email in last 30 days
   const dupCheck = await db.query(
@@ -112,9 +166,6 @@ async function createClinicRegistrationApplication(db, input) {
   }
 
   const applicationNumber = generateApplicationNumber();
-  const countryCode = input.countryCode && /^[A-Z]{2}$/.test(String(input.countryCode).toUpperCase())
-    ? String(input.countryCode).toUpperCase()
-    : "ZM";
 
   const row = await db.query(
     `INSERT INTO activeclinic.clinic_registration_applications (
@@ -154,5 +205,6 @@ async function createClinicRegistrationApplication(db, input) {
 module.exports = {
   RESULT,
   normalizeZambiaPhone,
+  validateClinicRegistrationInput,
   createClinicRegistrationApplication,
 };

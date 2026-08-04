@@ -1,0 +1,22 @@
+<%
+  var filterAction = typeof filterFormAction === 'string' ? filterFormAction : '/clinics/search';
+  var qVal = typeof search === 'string' ? search : '';
+  var provVal = typeof province === 'string' && province ? province : '';
+  var cityVal = typeof city === 'string' && city ? city : '';
+%>
+<form class="ac-directory-filters" method="get" action="<%= filterAction %>" role="search" data-ac-directory-filters>
+  <div class="ac-directory-filters__header">
+    <h2 class="ac-directory-filters__title">Filter clinics</h2>
+    <button type="button" class="ac-directory-filters__close ac-btn ac-btn--ghost" data-ac-filter-close aria-label="Close filters">Close</button>
+  </div>
+  <label for="ac-filter-q">Search</label>
+  <input id="ac-filter-q" name="q" type="search" value="<%= qVal %>" placeholder="Clinic name or city"/>
+  <label for="ac-filter-province">Province</label>
+  <input id="ac-filter-province" name="province" value="<%= provVal %>" placeholder="e.g. Lusaka"/>
+  <label for="ac-filter-city">City</label>
+  <input id="ac-filter-city" name="city" value="<%= cityVal %>" placeholder="e.g. Lusaka"/>
+  <div class="ac-directory-filters__actions">
+    <button type="submit" class="ac-btn ac-btn--primary">Apply filters</button>
+    <a class="ac-btn ac-btn--secondary" href="/clinics">Clear all</a>
+  </div>
+</form>

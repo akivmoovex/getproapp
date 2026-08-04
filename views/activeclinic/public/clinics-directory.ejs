@@ -1,24 +1,49 @@
 <section class="ac-public-section" data-ac-page-section="clinic-directory">
-  <h1>Clinic directory</h1>
-  <form class="ac-public-search" method="get" action="/clinics/search" role="search">
+  <header class="ac-directory-header">
+    <h1>Clinic directory</h1>
+    <p class="ac-public-lede">Browse clinics that have published a public listing on ActiveClinic.</p>
+  </header>
+
+  <form class="ac-public-search ac-public-search--inline" method="get" action="/clinics/search" role="search">
     <label for="q">Search clinics</label>
     <div class="ac-public-search__row">
       <input id="q" name="q" type="search" value="<%= typeof search === 'string' ? search : '' %>" placeholder="Clinic name or city"/>
       <button type="submit" class="ac-btn ac-btn--primary">Search</button>
+      <button type="button" class="ac-btn ac-btn--secondary ac-directory-filters-toggle" data-ac-filter-open aria-expanded="false" aria-controls="ac-directory-filter-drawer">
+        Filters
+      </button>
     </div>
   </form>
+
+  <aside id="ac-directory-filter-drawer" class="ac-directory-filter-drawer" data-ac-filter-drawer hidden>
+    <div class="ac-directory-filter-drawer__backdrop" data-ac-filter-close tabindex="-1" aria-hidden="true"></div>
+    <div class="ac-directory-filter-drawer__panel" role="dialog" aria-modal="true" aria-label="Filter clinics">
+      <%- include('../partials/public-directory-filters', { filterFormAction: '/clinics/search', search: typeof search === 'string' ? search : '', province: typeof province === 'string' ? province : '', city: typeof city === 'string' ? city : '' }) %>
+    </div>
+  </aside>
+
   <% const list = Array.isArray(clinics) ? clinics : []; %>
-  <% if (!list.length) { %>
-  <p class="ac-public-empty" data-ac-empty="clinics">No published clinics match your filters.</p>
+  <% const dirState = typeof directoryState === 'string' ? directoryState : 'ready'; %>
+
+  <% if (dirState === 'loading' || dirState === 'error' || (dirState === 'ready' && !list.length)) { %>
+  <%- include('../partials/public-directory-state', {
+    directoryState: dirState,
+    directoryEmpty: typeof directoryEmpty !== 'undefined' ? directoryEmpty : !list.length,
+    search: typeof search === 'string' ? search : '',
+    province: typeof province === 'string' ? province : '',
+    city: typeof city === 'string' ? city : '',
+  }) %>
   <% } else { %>
+  <p class="ac-directory-result-count" data-ac-result-count="<%= list.length %>"><%= list.length %> clinic<%= list.length === 1 ? '' : 's' %> found</p>
   <ul class="ac-clinic-cards">
     <% list.forEach(function(c) { %>
     <li class="ac-clinic-card">
       <a href="/clinics/<%= c.clinicKey %>">
         <h2><%= c.publicName %></h2>
         <% if (c.city || c.province) { %>
-        <p><%= [c.city, c.province].filter(Boolean).join(', ') %></p>
+        <p class="ac-clinic-card__location"><%= [c.city, c.province].filter(Boolean).join(', ') %></p>
         <% } %>
+        <span class="ac-clinic-card__link">View clinic</span>
       </a>
     </li>
     <% }) %>

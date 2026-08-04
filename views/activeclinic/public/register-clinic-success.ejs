@@ -1,6 +1,27 @@
 <section class="ac-public-section" data-ac-page-section="register-clinic-success">
-  <h1>Application received</h1>
-  <p>Thank you. Your clinic registration application has been recorded for review.</p>
-  <p>We have <strong>not</strong> published your clinic and have <strong>not</strong> sent SMS, WhatsApp, or email confirmation from this form.</p>
-  <p><a href="/">Return home</a></p>
+  <ol class="ac-onboarding-steps" aria-label="Registration progress">
+    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--done">Details</li>
+    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--done">Review</li>
+    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--active" aria-current="step">Submitted</li>
+  </ol>
+
+  <div class="ac-success-panel">
+    <h1>Application received</h1>
+    <p>Thank you. Your clinic registration application has been recorded and is <strong>pending review</strong> by the ActiveClinic team.</p>
+  </div>
+
+  <div class="ac-public-note">
+    <h2 class="ac-success-panel__subtitle">What happens next</h2>
+    <ul class="ac-public-list">
+      <li>Our team will review your application. This may take several business days.</li>
+      <li>We have <strong>not</strong> published your clinic or created a live staff account.</li>
+      <li>We have <strong>not</strong> sent SMS, WhatsApp, or email confirmation from this form.</li>
+      <li>If approved, you will receive separate onboarding instructions from ActiveClinic.</li>
+    </ul>
+  </div>
+
+  <p class="ac-public-actions">
+    <a class="ac-btn ac-btn--primary" href="/">Return home</a>
+    <a class="ac-btn ac-btn--secondary" href="/about">Learn more</a>
+  </p>
 </section>
