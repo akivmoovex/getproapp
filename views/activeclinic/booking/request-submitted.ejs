@@ -1,0 +1,9 @@
+<section class="ac-public-section" data-ac-page-section="booking-submitted">
+  <h1>Request submitted</h1>
+  <p>Your appointment request <strong><%= booking.requestNumber %></strong> is <strong>pending clinic confirmation</strong>.</p>
+  <p>This is not a confirmed appointment. Save your access link to check status.</p>
+  <% if (accessToken) { %>
+  <p><a href="/clinics/<%= clinic.clinicKey %>/my-booking?token=<%= accessToken %>">View my booking</a></p>
+  <% } %>
+  <p class="ac-public-note">No SMS or email was sent by this system unless a separate delivery integration completed.</p>
+</section>

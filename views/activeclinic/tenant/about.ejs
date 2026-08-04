@@ -1,0 +1,5 @@
+<article class="ac-public-section" data-ac-page-section="tenant-about">
+  <h1>About <%= clinic.publicName %></h1>
+  <% if (clinic.websiteAbout) { %><div class="ac-public-prose"><%= clinic.websiteAbout %></div>
+  <% } else { %><p>Public about content has not been configured for this clinic yet.</p><% } %>
+</article>

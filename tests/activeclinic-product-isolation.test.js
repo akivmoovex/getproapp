@@ -353,13 +353,18 @@ describe("ActiveClinic organization product isolation", () => {
         .get("/")
         .query({ organizationKey: bb.records.organization.key });
       assert.equal(homeDenied.status, 200);
-      assert.match(homeDenied.text, /data-ac-org-denied="1"/);
+      // Public platform home replaces foundation stub; org query must not
+      // expose BlessBoard tenant content or grant ActiveClinic access.
+      assert.match(homeDenied.text, /data-ac-shell="public"/);
+      assert.doesNotMatch(homeDenied.text, new RegExp(bb.records.organization.key));
 
       const homeOk = await request(app)
         .get("/")
         .query({ organizationKey: ac.records.organization.key });
       assert.equal(homeOk.status, 200);
-      assert.match(homeOk.text, /data-ac-org=/);
+      assert.match(homeOk.text, /data-ac-shell="public"/);
+      // Tenant pages remain the publishable clinic surface, not apex query params.
+      assert.match(homeOk.text, /Find a clinic|ActiveClinic/);
     } finally {
       for (const k of Object.keys(MINIMAL_AC)) {
         if (prev[k] === undefined) delete process.env[k];

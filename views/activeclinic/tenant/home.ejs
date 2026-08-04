@@ -1,0 +1,10 @@
+<section class="ac-public-hero" data-ac-page-section="tenant-home">
+  <h1><%= clinic.publicName %></h1>
+  <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
+  <p class="ac-public-actions">
+    <% if (clinic.publicBookingEnabled) { %>
+    <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book">Request an appointment</a>
+    <% } %>
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
+  </p>
+</section>

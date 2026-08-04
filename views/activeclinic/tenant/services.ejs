@@ -1,0 +1,24 @@
+<section class="ac-public-section" data-ac-page-section="tenant-services">
+  <h1>Services</h1>
+  <% const serviceList = Array.isArray(services) ? services : []; %>
+  <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
+  <% if (!serviceList.length && !procedureList.length) { %>
+  <p class="ac-public-empty">No public services are published yet.</p>
+  <% } %>
+  <% if (serviceList.length) { %>
+  <h2>Consultations</h2>
+  <ul class="ac-service-cards">
+    <% serviceList.forEach(function(s) { %>
+    <li><a href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>"><h3><%= s.displayName %></h3></a></li>
+    <% }) %>
+  </ul>
+  <% } %>
+  <% if (procedureList.length) { %>
+  <h2>Procedures &amp; diagnostics</h2>
+  <ul class="ac-service-cards">
+    <% procedureList.forEach(function(p) { %>
+    <li><a href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= p.procedureKey %>"><h3><%= p.displayName %></h3></a></li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

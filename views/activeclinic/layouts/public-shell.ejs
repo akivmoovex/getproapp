@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><%= pageTitle %> · ActiveClinic</title>
+  <% if (typeof metaDescription === 'string' && metaDescription) { %>
+  <meta name="description" content="<%= metaDescription %>"/>
+  <% } %>
+  <% if (typeof canonicalUrl === 'string' && canonicalUrl) { %>
+  <link rel="canonical" href="<%= canonicalUrl %>"/>
+  <% } %>
+  <% if (typeof robots === 'string' && robots) { %>
+  <meta name="robots" content="<%= robots %>"/>
+  <% } %>
+  <meta property="og:title" content="<%= pageTitle %> · ActiveClinic"/>
+  <% if (typeof metaDescription === 'string' && metaDescription) { %>
+  <meta property="og:description" content="<%= metaDescription %>"/>
+  <% } %>
+  <meta property="og:type" content="website"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
+</head>
+<body
+  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %>"
+  data-ac-product="activeclinic"
+  data-ac-shell="public"
+  data-ac-page="<%= pageId %>"
+  data-ac-public-variant="<%= shellVariant || 'platform' %>"
+>
+  <a class="ac-public-skip" href="#ac-public-main">Skip to content</a>
+  <%- headerHtml %>
+  <main id="ac-public-main" class="ac-public-main" tabindex="-1">
+    <%- bodyHtml %>
+  </main>
+  <%- footerHtml %>
+  <div id="ac-public-live" class="ac-sr-only" aria-live="polite"></div>
+  <script src="/activeclinic/ac-public.js?v=<%= assetVersion %>" defer></script>
+</body>
+</html>

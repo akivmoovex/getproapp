@@ -1,0 +1,27 @@
+<section class="ac-public-section" data-ac-page-section="register-clinic">
+  <h1>Register your clinic</h1>
+  <p>Submit an application to join ActiveClinic. Applications are reviewed — submitting does not publish your clinic or create a live account automatically.</p>
+  <% if (typeof error === 'string' && error) { %>
+  <div class="ac-public-error" role="alert"><%= error %></div>
+  <% } %>
+  <% const fd = formData || {}; %>
+  <form method="post" action="/register-clinic" class="ac-public-form" novalidate>
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label for="clinicName">Clinic name</label>
+    <input id="clinicName" name="clinicName" required maxlength="200" value="<%= fd.clinicName || '' %>"/>
+    <label for="contactName">Contact name</label>
+    <input id="contactName" name="contactName" required maxlength="120" value="<%= fd.contactName || '' %>"/>
+    <label for="contactEmail">Contact email</label>
+    <input id="contactEmail" name="contactEmail" type="email" required value="<%= fd.contactEmail || '' %>"/>
+    <label for="contactPhone">Contact phone (Zambia)</label>
+    <input id="contactPhone" name="contactPhone" required placeholder="+260…" value="<%= fd.contactPhone || '' %>"/>
+    <label for="province">Province</label>
+    <input id="province" name="province" value="<%= fd.province || '' %>"/>
+    <label for="city">City</label>
+    <input id="city" name="city" value="<%= fd.city || '' %>"/>
+    <input type="hidden" name="countryCode" value="ZM"/>
+    <label for="notes">Notes (optional)</label>
+    <textarea id="notes" name="notes" maxlength="2000"><%= fd.notes || '' %></textarea>
+    <button type="submit" class="ac-btn ac-btn--primary">Submit application</button>
+  </form>
+</section>

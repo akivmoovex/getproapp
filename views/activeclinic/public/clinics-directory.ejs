@@ -1,0 +1,27 @@
+<section class="ac-public-section" data-ac-page-section="clinic-directory">
+  <h1>Clinic directory</h1>
+  <form class="ac-public-search" method="get" action="/clinics/search" role="search">
+    <label for="q">Search clinics</label>
+    <div class="ac-public-search__row">
+      <input id="q" name="q" type="search" value="<%= typeof search === 'string' ? search : '' %>" placeholder="Clinic name or city"/>
+      <button type="submit" class="ac-btn ac-btn--primary">Search</button>
+    </div>
+  </form>
+  <% const list = Array.isArray(clinics) ? clinics : []; %>
+  <% if (!list.length) { %>
+  <p class="ac-public-empty" data-ac-empty="clinics">No published clinics match your filters.</p>
+  <% } else { %>
+  <ul class="ac-clinic-cards">
+    <% list.forEach(function(c) { %>
+    <li class="ac-clinic-card">
+      <a href="/clinics/<%= c.clinicKey %>">
+        <h2><%= c.publicName %></h2>
+        <% if (c.city || c.province) { %>
+        <p><%= [c.city, c.province].filter(Boolean).join(', ') %></p>
+        <% } %>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

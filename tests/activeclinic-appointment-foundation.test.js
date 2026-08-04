@@ -311,7 +311,15 @@ describe("ActiveClinic appointment foundation (AC-V6-C03)", () => {
       `SELECT table_name FROM information_schema.tables
         WHERE table_schema = 'activeclinic' AND table_name LIKE '%encounter%'`
     );
-    assert.equal(encounters.rows.length, 0);
+    // P04 clinical foundation introduced encounter tables; appointments must
+    // still function without creating encounter rows from this booking path.
+    assert.ok(encounters.rows.length >= 1);
+    const encounterRows = await pool.query(
+      `SELECT COUNT(*)::int AS c FROM activeclinic.encounters
+        WHERE organization_id = $1`,
+      [tenant.orgId]
+    );
+    assert.equal(encounterRows.rows[0].c, 0);
 
     assert.equal(PERM.CREATE, "activeclinic.appointment.create");
   });

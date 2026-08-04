@@ -1,0 +1,23 @@
+<section class="ac-public-section" data-ac-page-section="clinic-search">
+  <h1>Search clinics</h1>
+  <form class="ac-public-search" method="get" action="/clinics/search" role="search">
+    <label for="q">Search</label>
+    <input id="q" name="q" type="search" value="<%= typeof search === 'string' ? search : '' %>"/>
+    <label for="province">Province</label>
+    <input id="province" name="province" value="<%= typeof province === 'string' && province ? province : '' %>"/>
+    <label for="city">City</label>
+    <input id="city" name="city" value="<%= typeof city === 'string' && city ? city : '' %>"/>
+    <button type="submit" class="ac-btn ac-btn--primary">Apply filters</button>
+  </form>
+  <% const list = Array.isArray(clinics) ? clinics : []; %>
+  <% if (!list.length) { %>
+  <p class="ac-public-empty" data-ac-empty="search">No clinics found. Try a different search.</p>
+  <% } else { %>
+  <p data-ac-result-count="<%= list.length %>"><%= list.length %> result<%= list.length === 1 ? '' : 's' %></p>
+  <ul class="ac-clinic-cards">
+    <% list.forEach(function(c) { %>
+    <li class="ac-clinic-card"><a href="/clinics/<%= c.clinicKey %>"><h2><%= c.publicName %></h2></a></li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

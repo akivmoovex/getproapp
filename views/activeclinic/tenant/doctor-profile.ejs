@@ -1,0 +1,8 @@
+<article class="ac-public-section" data-ac-page-section="tenant-doctor-profile">
+  <h1><%= profile.displayName %></h1>
+  <% if (profile.title) { %><p><%= profile.title %></p><% } %>
+  <% if (profile.bio) { %><p><%= profile.bio %></p><% } %>
+  <% if (clinic.publicBookingEnabled) { %>
+  <p><a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book?doctor=<%= profile.staffKey %>">Request appointment</a></p>
+  <% } %>
+</article>

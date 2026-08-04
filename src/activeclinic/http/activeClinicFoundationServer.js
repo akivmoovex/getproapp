@@ -86,6 +86,9 @@ const {
   registerActiveClinicCashierRoutes,
 } = require("./activeClinicCashierRoutes");
 const {
+  registerActiveClinicPublicRoutes,
+} = require("./activeClinicPublicRoutes");
+const {
   listOrganizationsByProduct,
 } = require("../../platform/services/organizationProductService");
 const {
@@ -192,6 +195,9 @@ function createActiveClinicFoundationApp(options) {
 
   app.use(createLoadActiveClinicProductContext({ getPool, env }));
   app.use(createLoadActiveClinicAuth({ getPool, env }));
+
+  // Register public routes BEFORE auth routes (public takes precedence over auth landing)
+  registerActiveClinicPublicRoutes(app, { getPool, env, isProduction });
 
   registerActiveClinicAuthRoutes(app, { getPool, env, isProduction });
   registerActiveClinicLifecycleRoutes(app, { getPool, env, isProduction });
@@ -529,52 +535,7 @@ function createActiveClinicFoundationApp(options) {
     }
   });
 
-  // Issue CSRF cookie on HTML entry so forms can use double-submit later.
-  app.use((req, res, next) => {
-    if (req.method === "GET" && req.path === "/") {
-      const token = issueCsrfToken(env);
-      setCsrfCookie(res, token, { secure: isProduction, env });
-      res.locals = res.locals || {};
-      res.locals.csrfToken = token;
-    }
-    return next();
-  });
-
   registerPlatformRoutes(app, { env });
-
-  app.get("/", (req, res) => {
-    if (req.activeClinicAuth && req.activeClinicAuth.authenticated) {
-      if (req.activeClinicAuth.mustChangePassword) {
-        return res.redirect(303, "/account/change-password");
-      }
-      return res.redirect(303, "/app");
-    }
-    const product = getProduct("activeclinic");
-    const ctx = req.activeClinicContext || {};
-    const orgLine =
-      ctx.resolution === "tenant_resolved" && ctx.organization
-        ? `<p data-ac-org="${escapeHtml(ctx.organization.key)}">Organization context: ${escapeHtml(
-            ctx.organization.displayName
-          )} (${escapeHtml(ctx.organization.key)})</p>`
-        : ctx.resolution === "denied"
-          ? `<p data-ac-org-denied="1">Organization product access denied.</p>`
-          : `<p data-ac-org-none="1">No organization context (deployment-level landing).</p>`;
-
-    res.status(200).type("html").send(`<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>${escapeHtml(product.displayName)}</title></head>
-<body data-ac-page="foundation-stub" data-ac-product="activeclinic" data-ac-resolution="${escapeHtml(
-      ctx.resolution || "unknown"
-    )}">
-<main>
-  <h1>${escapeHtml(product.displayName)}</h1>
-  <p>Foundation runtime is active. Explicit product enablement is required for tenant access.</p>
-  <p>Clinical modules are not implemented yet.</p>
-  ${orgLine}
-  <p><a href="/login">Staff sign in</a> · <a href="/healthz">Health check</a></p>
-</main>
-</body></html>`);
-  });
 
   // Canonical ActiveClinic not-found (after all registered routes).
   app.use((req, res, next) => {

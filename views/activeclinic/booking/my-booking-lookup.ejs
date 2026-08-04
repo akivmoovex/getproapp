@@ -1,0 +1,10 @@
+<section class="ac-public-section" data-ac-page-section="my-booking-lookup">
+  <h1>My booking</h1>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <p>Use the secure link provided when you submitted your request. Do not share it.</p>
+  <form method="get" action="/clinics/<%= clinic.clinicKey %>/my-booking" class="ac-public-form">
+    <label for="token">Access token</label>
+    <input id="token" name="token" required autocomplete="off"/>
+    <button type="submit" class="ac-btn ac-btn--primary">Look up</button>
+  </form>
+</section>

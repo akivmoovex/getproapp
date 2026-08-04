@@ -1,0 +1,22 @@
+<section class="ac-public-section" data-ac-page-section="my-booking-detail">
+  <h1>Booking <%= booking.requestNumber %></h1>
+  <p>Status: <strong data-ac-booking-status="<%= booking.status %>"><%= booking.status %></strong></p>
+  <% if (booking.status === 'submitted_pending_confirmation') { %>
+  <p>Your request is waiting for clinic confirmation. It is not confirmed yet.</p>
+  <% } %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/my-booking/cancel" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="token" value="<%= accessToken %>"/>
+    <label for="reason">Request cancellation (optional reason)</label>
+    <input id="reason" name="reason"/>
+    <button type="submit" class="ac-btn ac-btn--secondary">Request cancellation</button>
+  </form>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/my-booking/reschedule" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="token" value="<%= accessToken %>"/>
+    <label for="preferredStartsAt">Preferred new time</label>
+    <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" required/>
+    <button type="submit" class="ac-btn ac-btn--secondary">Request reschedule</button>
+  </form>
+  <p class="ac-public-note">Cancellation and reschedule submit a request for clinic review.</p>
+</section>

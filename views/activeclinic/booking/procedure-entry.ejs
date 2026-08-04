@@ -1,0 +1,28 @@
+<section class="ac-public-section" data-ac-page-section="procedure-booking">
+  <h1>Request a procedure</h1>
+  <h2><%= procedure.displayName %></h2>
+  <% if (procedure.summary) { %><p><%= procedure.summary %></p><% } %>
+  <% if (procedure.referralRequired) { %>
+  <p class="ac-public-banner" data-ac-referral="required">A referral is required. Secure document upload is not available online yet — the clinic will follow up after you submit this request.</p>
+  <% } %>
+  <% if (procedure.preparationInstructions) { %>
+  <div class="ac-public-prep"><h3>Preparation</h3><p><%= procedure.preparationInstructions %></p></div>
+  <% } else { %>
+  <p class="ac-public-note">Preparation instructions are not configured. Contact the clinic for guidance. This site does not generate clinical advice.</p>
+  <% } %>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <% const fd = formData || {}; %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label for="patientFirstName">First name</label>
+    <input id="patientFirstName" name="patientFirstName" required value="<%= fd.patientFirstName || '' %>"/>
+    <label for="patientLastName">Last name</label>
+    <input id="patientLastName" name="patientLastName" required value="<%= fd.patientLastName || '' %>"/>
+    <label for="patientPhone">Phone</label>
+    <input id="patientPhone" name="patientPhone" required value="<%= fd.patientPhone || '' %>"/>
+    <label for="preferredStartsAt">Preferred date and time</label>
+    <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local"/>
+    <label class="ac-public-check"><input type="checkbox" name="preparationAcknowledged" value="1"/> I understand preparation guidance must come from the clinic when not listed above.</label>
+    <button type="submit" class="ac-btn ac-btn--primary">Submit procedure request</button>
+  </form>
+</section>

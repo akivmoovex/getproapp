@@ -1,0 +1,37 @@
+<header class="ac-public-header ac-public-header--tenant" data-ac-public-header="tenant">
+  <div class="ac-public-header__inner">
+    <a class="ac-public-brand" href="/clinics/<%= clinic.clinicKey %>" aria-label="<%= clinic.publicName %> home">
+      <span class="ac-public-brand__name"><%= clinic.publicName %></span>
+    </a>
+    <nav class="ac-public-nav ac-public-nav--desktop" aria-label="Clinic">
+      <a href="/clinics/<%= clinic.clinicKey %>/about">About</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/doctors">Doctors</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
+      <% if (clinic.publicBookingEnabled) { %>
+      <a class="ac-public-nav__cta" href="/clinics/<%= clinic.clinicKey %>/book">Book</a>
+      <% } %>
+    </nav>
+    <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer">
+      <span class="ac-sr-only">Open menu</span>
+      <span aria-hidden="true">☰</span>
+    </button>
+  </div>
+</header>
+<aside id="ac-public-drawer" class="ac-public-drawer" data-ac-nav-drawer hidden>
+  <div class="ac-public-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
+    <button type="button" class="ac-public-drawer__close" data-ac-nav-close>Close</button>
+    <nav aria-label="Mobile clinic">
+      <a href="/clinics/<%= clinic.clinicKey %>/about">About</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/doctors">Doctors</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/patient-information">Patient information</a>
+      <% if (clinic.publicBookingEnabled) { %>
+      <a href="/clinics/<%= clinic.clinicKey %>/book">Book appointment</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/my-booking">My booking</a>
+      <% } %>
+      <a href="/clinics">All clinics</a>
+    </nav>
+  </div>
+</aside>

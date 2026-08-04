@@ -369,7 +369,7 @@ describe("ActiveClinic foundation stub app", () => {
       const home = await request(app).get("/");
       assert.equal(home.status, 200);
       assert.match(home.text, /ActiveClinic/);
-      assert.match(home.text, /data-ac-page="foundation-stub"/);
+      assert.match(home.text, /data-ac-shell="public"/);
       const setCookie = String(home.headers["set-cookie"] || "");
       assert.match(setCookie, /activeclinic_org_csrf=/);
     } finally {

@@ -1,0 +1,13 @@
+<section class="ac-public-section" data-ac-page-section="tenant-doctors">
+  <h1>Doctors</h1>
+  <% const list = Array.isArray(profiles) ? profiles : []; %>
+  <% if (!list.length) { %>
+  <p class="ac-public-empty" data-ac-empty="doctors">No public doctor profiles are published.</p>
+  <% } else { %>
+  <ul class="ac-doctor-cards">
+    <% list.forEach(function(d) { %>
+    <li><a href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>"><h2><%= d.displayName %></h2><% if (d.title) { %><p><%= d.title %></p><% } %></a></li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

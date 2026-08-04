@@ -1,0 +1,24 @@
+<section class="ac-public-section" data-ac-page-section="tenant-contact">
+  <h1>Contact</h1>
+  <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
+  <ul class="ac-public-list">
+    <% if (clinic.publicPhoneDisplay) { %><li>Phone: <%= clinic.publicPhoneDisplay %></li><% } %>
+    <% if (clinic.publicEmailDisplay) { %><li>Email: <%= clinic.publicEmailDisplay %></li><% } %>
+  </ul>
+  <% } %>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <% const fd = formData || {}; %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/contact" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label for="senderName">Your name</label>
+    <input id="senderName" name="senderName" required value="<%= fd.senderName || '' %>"/>
+    <label for="senderEmail">Email</label>
+    <input id="senderEmail" name="senderEmail" type="email" required value="<%= fd.senderEmail || '' %>"/>
+    <label for="senderPhone">Phone (optional)</label>
+    <input id="senderPhone" name="senderPhone" value="<%= fd.senderPhone || '' %>"/>
+    <label for="message">Message</label>
+    <textarea id="message" name="message" required maxlength="4000"><%= fd.message || '' %></textarea>
+    <button type="submit" class="ac-btn ac-btn--primary">Send message</button>
+  </form>
+  <p class="ac-public-note">Submitting stores your inquiry for the clinic. This form does not send SMS or email confirmation.</p>
+</section>
