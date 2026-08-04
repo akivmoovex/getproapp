@@ -3,12 +3,29 @@
 /**
  * ActiveClinic P04 clinical UI parity tests.
  * Verifies all 12 Stitch screens have corresponding views with correct data-ac-stitch markers.
+ * HTTP smoke tests: queue load + CSRF denial.
  */
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const http = require("http");
+const {
+  resetFoundationDatabase,
+  createFoundationPool,
+} = require("./helpers/foundationDb");
+const { migrate } = require("../db/scripts/lib/migrator");
+const {
+  startDev,
+  stopDev,
+} = require("../src/platform/http/devServer");
+
+let pool;
+let databaseUrl;
+let skipHttpTests = false;
+let httpServer;
+let httpPort;
 
 const VIEWS_DIR = path.join(__dirname, "..", "views", "activeclinic", "app");
 
@@ -75,7 +92,72 @@ const EXPECTED_SCREENS = [
   },
 ];
 
-test("ActiveClinic P04 clinical UI parity", async (t) => {
+test("ActiveClinic P04 clinical UI parity — HTTP smoke", async (t) => {
+  t.before(async () => {
+    try {
+      const dbResult = await resetFoundationDatabase();
+      if (!dbResult.ok) {
+        skipHttpTests = dbResult.reason;
+        return;
+      }
+      databaseUrl = dbResult.databaseUrl;
+      pool = createFoundationPool(databaseUrl);
+      await migrate({ connectionString: databaseUrl, schema: "all" });
+
+      const server = await startDev({
+        port: 0,
+        isTest: true,
+        databaseUrl,
+      });
+      httpServer = server.server;
+      httpPort = server.port;
+    } catch (err) {
+      skipHttpTests = err.message;
+    }
+  });
+
+  t.after(async () => {
+    if (httpServer) {
+      await stopDev(httpServer);
+    }
+    if (pool) {
+      await pool.end();
+    }
+  });
+
+  await t.test("GET /app/clinical queue page loads without crash", { skip: skipHttpTests }, async () => {
+    return new Promise((resolve, reject) => {
+      http.get(`http://127.0.0.1:${httpPort}/app/clinical`, (res) => {
+        // Expect 401/302 redirect or 403 without auth, not 500
+        assert.ok([200, 302, 401, 403].includes(res.statusCode), `Queue load crashed: ${res.statusCode}`);
+        res.resume();
+        res.on("end", resolve);
+      }).on("error", reject);
+    });
+  });
+
+  await t.test("POST /app/clinical/start-encounter CSRF denial", { skip: skipHttpTests }, async () => {
+    return new Promise((resolve, reject) => {
+      const req = http.request({
+        hostname: "127.0.0.1",
+        port: httpPort,
+        path: "/app/clinical/start-encounter",
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      }, (res) => {
+        // Expect 401/403 denial, not 500
+        assert.ok([401, 403].includes(res.statusCode), `CSRF denial crashed: ${res.statusCode}`);
+        res.resume();
+        res.on("end", resolve);
+      });
+      req.on("error", reject);
+      req.write("patient_id=123&encounter_type=outpatient");
+      req.end();
+    });
+  });
+});
+
+test("ActiveClinic P04 clinical UI parity — file checks", async (t) => {
   await t.test("all clinical view files exist", async () => {
     const files = new Set(await fs.readdir(VIEWS_DIR));
 

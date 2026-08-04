@@ -357,15 +357,26 @@ See `docs/activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_04.md` for exact screen 
 ## Implementation checklist
 
 - [x] Architecture doc
-- [ ] Migration 015 (clinical schema)
-- [ ] Migration 083 (permissions)
-- [ ] Repositories: encounterRepository, triageRepository, vitalSignsRepository, consultationRepository, clinicalOrderRepository, clinicalAlertRepository
-- [ ] Services: activeClinicClinicalService
-- [ ] Routes: activeClinicClinicalRoutes
-- [ ] Loaders: loadActiveClinicClinicalScreens
-- [ ] Views: clinical-queue, consultation-workspace, triage, vitals, nursing-intake, diagnosis, order forms, alerts
-- [ ] Tests: foundation + UI parity
-- [ ] Docs: update PHASE_04, IMPLEMENTATION_LEDGER, PRODUCT_GAPS
+- [x] Migration 015 (clinical schema)
+- [x] Migration 083 (permissions)
+- [~] Repositories: inline SQL in service (no dedicated repositories implemented)
+- [x] Services: activeClinicClinicalService (encounter, triage, vitals, nursing intake, consultation, diagnosis, orders, alerts)
+- [x] Routes: activeClinicClinicalRoutes (clinical queue, encounter workspace, triage, vitals, nursing intake, diagnosis, orders, alerts)
+- [x] Loaders: loadActiveClinicClinicalScreens (queue, workspace, triage, vitals, alerts, order forms)
+- [~] Views: PARTIAL - files exist with Stitch IDs, but UI parity not visually verified in browser against Stitch references
+  - [x] clinical-queue-content.ejs
+  - [x] consultation-workspace-content.ejs
+  - [x] triage-assessment-content.ejs
+  - [x] vital-signs-entry-content.ejs
+  - [x] nursing-intake-content.ejs
+  - [x] diagnosis-entry-content.ejs
+  - [x] create-laboratory-request-content.ejs
+  - [x] create-prescription-content.ejs
+  - [x] create-radiology-request-content.ejs
+  - [x] clinical-escalation-alert-content.ejs
+  - [x] clinical-start-encounter-content.ejs
+- [x] Tests: foundation (full encounter workflow, authz, tenant isolation) + UI parity (file checks, HTTP smoke)
+- [x] Docs: PHASE_04.md updated with honest implementation status
 
 ---
 

@@ -378,11 +378,12 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
       .set("Cookie", otherCookie);
     assert.ok(cross.status === 403 || cross.status === 404);
 
-    const encounters = await pool.query(
-      `SELECT table_name FROM information_schema.tables
-        WHERE table_schema = 'activeclinic' AND table_name LIKE '%encounter%'`
+    const encounterRows = await pool.query(
+      `SELECT COUNT(*)::int AS c FROM activeclinic.encounters
+        WHERE organization_id = $1`,
+      [tenant.orgId]
     );
-    assert.equal(encounters.rows.length, 0);
+    assert.equal(encounterRows.rows[0].c, 0);
   });
 
   it("reception: scheduled check-in with appointment", async () => {

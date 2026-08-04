@@ -36,8 +36,10 @@ const {
   startEncounter,
   recordTriageAssessment,
   recordVitalSignObservation,
+  recordNursingIntake,
   recordConsultationNote,
   signConsultationNote,
+  recordClinicalDiagnosis,
   createClinicalOrder,
   raiseClinicalAlert,
   closeEncounter,
@@ -492,6 +494,82 @@ function registerActiveClinicClinicalRoutes(app, deps) {
         }
 
         return res.redirect(303, `/app/clinical/encounter/${encounterId}/vitals?recorded=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // Nursing intake (POST)
+  app.post(
+    "/app/clinical/encounter/:encounterId/nursing-intake",
+    requireAuth,
+    requirePermission(PERM.NURSING_INTAKE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const encounterId = String(req.params.encounterId || "");
+        const auth = req.activeClinicAuth;
+
+        const result = await recordNursingIntake(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility.id,
+          encounterId,
+          intakeNoteText: String(req.body.intake_note_text || "").trim(),
+          actor: actor(auth),
+          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+        });
+
+        if (!result.ok) {
+          return res.status(400).type("html").send(
+            renderSimpleState("Nursing intake failed", mapClinicalError(result.code), { status: 400 })
+          );
+        }
+
+        return res.redirect(303, `/app/clinical/encounter/${encounterId}?intake_recorded=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // Diagnosis entry (POST)
+  app.post(
+    "/app/clinical/encounter/:encounterId/diagnosis",
+    requireAuth,
+    requirePermission(PERM.DIAGNOSIS_RECORD),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const encounterId = String(req.params.encounterId || "");
+        const auth = req.activeClinicAuth;
+
+        const result = await recordClinicalDiagnosis(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility.id,
+          encounterId,
+          diagnosisCode: String(req.body.diagnosis_code || "").trim() || null,
+          diagnosisText: String(req.body.diagnosis_text || "").trim(),
+          diagnosisType: String(req.body.diagnosis_type || "primary").trim(),
+          certainty: String(req.body.certainty || "").trim() || null,
+          correctsDiagnosisId: req.body.corrects_diagnosis_id || null,
+          actor: actor(auth),
+          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+        });
+
+        if (!result.ok) {
+          return res.status(400).type("html").send(
+            renderSimpleState("Diagnosis entry failed", mapClinicalError(result.code), { status: 400 })
+          );
+        }
+
+        return res.redirect(303, `/app/clinical/encounter/${encounterId}?diagnosis_recorded=1`);
       } catch (err) {
         return next(err);
       }

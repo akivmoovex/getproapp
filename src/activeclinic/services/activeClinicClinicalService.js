@@ -37,8 +37,10 @@ const PERM = Object.freeze({
   VIEW: "activeclinic.encounter.view",
   MANAGE: "activeclinic.encounter.manage",
   TRIAGE: "activeclinic.triage.record",
+  NURSING_INTAKE: "activeclinic.nursing_intake.record",
   CONSULTATION_RECORD: "activeclinic.consultation.record",
   CONSULTATION_SIGN: "activeclinic.consultation.sign",
+  DIAGNOSIS_RECORD: "activeclinic.diagnosis.record",
   ORDER_CREATE: "activeclinic.clinical_order.create",
   ALERT_VIEW: "activeclinic.clinical_alert.view",
   ALERT_RAISE: "activeclinic.clinical_alert.raise",
@@ -292,7 +294,7 @@ async function listOpenEncounters(db, input) {
 
   const result = await db.query(
     `SELECT e.*,
-            p.display_name AS patient_display_name,
+            (p.first_name || ' ' || p.last_name) AS patient_display_name,
             p.patient_number,
             s.display_name AS opened_by_staff_display_name
        FROM activeclinic.encounters e
@@ -329,7 +331,7 @@ async function getEncounterById(db, input) {
 
   const result = await db.query(
     `SELECT e.*,
-            p.display_name AS patient_display_name,
+            (p.first_name || ' ' || p.last_name) AS patient_display_name,
             p.patient_number,
             s.display_name AS opened_by_staff_display_name
        FROM activeclinic.encounters e
@@ -540,6 +542,104 @@ async function recordVitalSignObservation(db, input) {
   });
 
   return { ok: true, code: RESULT.OK, observation: mapVitalSignObservation(row.rows[0]) };
+}
+
+/**
+ * Record nursing intake note.
+ */
+async function recordNursingIntake(db, input) {
+  const authz = await authorizeStaffPermission(db, {
+    organizationId: input.organizationId,
+    staffMemberId: input.actor.staffMemberId,
+    platformIdentityId: input.actor.platformIdentityId,
+    permissionKey: PERM.NURSING_INTAKE,
+    facilityId: input.facilityId,
+  });
+  if (!authz.ok) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, nursingIntake: null };
+  }
+
+  const encounter = await getEncounterById(db, input);
+  if (!encounter.ok) {
+    return { ok: false, code: encounter.code, nursingIntake: null };
+  }
+
+  const row = await db.query(
+    `INSERT INTO activeclinic.nursing_intake_notes (
+       organization_id, healthcare_organization_id, facility_id, encounter_id, patient_id,
+       intake_note_text, recorded_by_staff_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING *`,
+    [
+      input.organizationId,
+      input.healthcareOrganizationId,
+      input.facilityId,
+      input.encounterId,
+      encounter.encounter.patientId,
+      input.intakeNoteText,
+      input.actor.staffMemberId,
+    ]
+  );
+
+  await db.query(
+    `INSERT INTO activeclinic.encounter_events (
+       organization_id, healthcare_organization_id, encounter_id,
+       event_type, actor_staff_id
+     ) VALUES ($1, $2, $3, $4, $5)`,
+    [
+      input.organizationId,
+      input.healthcareOrganizationId,
+      input.encounterId,
+      "nursing_intake_recorded",
+      input.actor.staffMemberId,
+    ]
+  );
+
+  await recordAuditEventSafe(db, {
+    deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
+    organizationId: input.organizationId,
+    actorUserId: input.actor.platformIdentityId || null,
+    actionKey: "activeclinic.nursing_intake.recorded",
+    entityType: "nursing_intake_note",
+    entityId: row.rows[0].id,
+    outcome: "success",
+    metadataJson: {
+      encounter_id: input.encounterId,
+    },
+  });
+
+  return { ok: true, code: RESULT.OK, nursingIntake: row.rows[0] };
+}
+
+/**
+ * List nursing intake notes for encounter.
+ */
+async function listNursingIntakesForEncounter(db, input) {
+  const authz = await authorizeStaffPermission(db, {
+    organizationId: input.organizationId,
+    staffMemberId: input.actor.staffMemberId,
+    platformIdentityId: input.actor.platformIdentityId,
+    permissionKey: PERM.VIEW,
+    facilityId: input.facilityId,
+  });
+  if (!authz.ok) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, nursingIntakes: [] };
+  }
+
+  const result = await db.query(
+    `SELECT n.*, s.display_name AS recorded_by_staff_display_name
+       FROM activeclinic.nursing_intake_notes n
+       JOIN activeclinic.staff_members s ON s.id = n.recorded_by_staff_id
+      WHERE n.encounter_id = $1
+      ORDER BY n.created_at DESC`,
+    [input.encounterId]
+  );
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    nursingIntakes: result.rows,
+  };
 }
 
 /**
@@ -832,6 +932,110 @@ async function createClinicalOrder(db, input) {
 }
 
 /**
+ * Record clinical diagnosis.
+ */
+async function recordClinicalDiagnosis(db, input) {
+  const authz = await authorizeStaffPermission(db, {
+    organizationId: input.organizationId,
+    staffMemberId: input.actor.staffMemberId,
+    platformIdentityId: input.actor.platformIdentityId,
+    permissionKey: PERM.DIAGNOSIS_RECORD,
+    facilityId: input.facilityId,
+  });
+  if (!authz.ok) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, diagnosis: null };
+  }
+
+  const encounter = await getEncounterById(db, input);
+  if (!encounter.ok) {
+    return { ok: false, code: encounter.code, diagnosis: null };
+  }
+
+  const row = await db.query(
+    `INSERT INTO activeclinic.clinical_diagnoses (
+       organization_id, healthcare_organization_id, facility_id, encounter_id, patient_id,
+       diagnosis_code, diagnosis_text, diagnosis_type, certainty, recorded_by_staff_id,
+       corrects_diagnosis_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     RETURNING *`,
+    [
+      input.organizationId,
+      input.healthcareOrganizationId,
+      input.facilityId,
+      input.encounterId,
+      encounter.encounter.patientId,
+      input.diagnosisCode || null,
+      input.diagnosisText,
+      input.diagnosisType || "primary",
+      input.certainty || null,
+      input.actor.staffMemberId,
+      input.correctsDiagnosisId || null,
+    ]
+  );
+
+  await db.query(
+    `INSERT INTO activeclinic.encounter_events (
+       organization_id, healthcare_organization_id, encounter_id,
+       event_type, actor_staff_id
+     ) VALUES ($1, $2, $3, $4, $5)`,
+    [
+      input.organizationId,
+      input.healthcareOrganizationId,
+      input.encounterId,
+      "diagnosis_recorded",
+      input.actor.staffMemberId,
+    ]
+  );
+
+  await recordAuditEventSafe(db, {
+    deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
+    organizationId: input.organizationId,
+    actorUserId: input.actor.platformIdentityId || null,
+    actionKey: "activeclinic.diagnosis.recorded",
+    entityType: "clinical_diagnosis",
+    entityId: row.rows[0].id,
+    outcome: "success",
+    metadataJson: {
+      encounter_id: input.encounterId,
+      diagnosis_type: input.diagnosisType || "primary",
+    },
+  });
+
+  return { ok: true, code: RESULT.OK, diagnosis: row.rows[0] };
+}
+
+/**
+ * List clinical diagnoses for encounter.
+ */
+async function listDiagnosesForEncounter(db, input) {
+  const authz = await authorizeStaffPermission(db, {
+    organizationId: input.organizationId,
+    staffMemberId: input.actor.staffMemberId,
+    platformIdentityId: input.actor.platformIdentityId,
+    permissionKey: PERM.VIEW,
+    facilityId: input.facilityId,
+  });
+  if (!authz.ok) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, diagnoses: [] };
+  }
+
+  const result = await db.query(
+    `SELECT d.*, s.display_name AS recorded_by_staff_display_name
+       FROM activeclinic.clinical_diagnoses d
+       JOIN activeclinic.staff_members s ON s.id = d.recorded_by_staff_id
+      WHERE d.encounter_id = $1
+      ORDER BY d.created_at DESC`,
+    [input.encounterId]
+  );
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    diagnoses: result.rows,
+  };
+}
+
+/**
  * Raise clinical alert (manual only).
  */
 async function raiseClinicalAlert(db, input) {
@@ -916,7 +1120,7 @@ async function listActiveAlertsForFacility(db, input) {
 
   const result = await db.query(
     `SELECT a.*,
-            p.display_name AS patient_display_name,
+            (p.first_name || ' ' || p.last_name) AS patient_display_name,
             s.display_name AS raised_by_staff_display_name
        FROM activeclinic.clinical_alerts a
        JOIN activeclinic.patients p ON p.id = a.patient_id
@@ -1014,8 +1218,12 @@ module.exports = {
   recordTriageAssessment,
   recordVitalSignObservation,
   listVitalSignsForEncounter,
+  recordNursingIntake,
+  listNursingIntakesForEncounter,
   recordConsultationNote,
   signConsultationNote,
+  recordClinicalDiagnosis,
+  listDiagnosesForEncounter,
   createClinicalOrder,
   raiseClinicalAlert,
   listActiveAlertsForFacility,
