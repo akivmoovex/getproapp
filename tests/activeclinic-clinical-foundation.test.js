@@ -138,31 +138,37 @@ async function seedNetwork(tenant, phone) {
   return { staffMemberId: staff.staffMember.id, organizationId: tenant.orgId };
 }
 
-async function seedPatient(tenant) {
+async function seedPatient(tenant, actor) {
   const patient = await registerActiveClinicPatient(pool, {
     organizationId: tenant.orgId,
     healthcareOrganizationId: tenant.hcoId,
-    firstName: "Test",
-    lastName: "Patient",
-    dateOfBirth: "1990-01-01",
-    phone: nextPhone(),
+    facilityId: tenant.facilityId,
+    actor,
+    demographics: { firstName: "Test", lastName: "Patient", dateOfBirth: "1990-01-01" },
+    registrationMethod: "walk_in",
   });
-  assert.equal(patient.ok, true);
+  assert.equal(patient.ok, true, JSON.stringify(patient));
   return patient.patient.id;
 }
 
-describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
+describe("ActiveClinic P04 clinical foundation", () => {
   before(async () => {
-    resetDeploymentProfileWarningsForTests();
-    const result = await resetFoundationDatabase();
-    if (!result.ok) {
-      skipReason = result.reason;
-      return;
+    try {
+      databaseUrl = await resetFoundationDatabase();
+      pool = createFoundationPool(databaseUrl);
+      await migrate({ connectionString: databaseUrl });
+    } catch (err) {
+      skipReason = err && err.message ? err.message : String(err);
     }
-    databaseUrl = result.databaseUrl;
-    pool = createFoundationPool(databaseUrl);
-    await migrate({ connectionString: databaseUrl, schema: "all" });
   });
+
+  beforeEach(() => {
+    resetDeploymentProfileWarningsForTests();
+  });
+
+  function requireDb() {
+    if (skipReason) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
+  }
 
   after(async () => {
     if (pool) {
@@ -171,6 +177,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("RESULT codes defined", () => {
+    requireDb();
     assert.strictEqual(typeof RESULT.OK, "string");
     assert.strictEqual(typeof RESULT.ACCESS_DENIED, "string");
     assert.strictEqual(typeof RESULT.ENCOUNTER_NOT_FOUND, "string");
@@ -179,6 +186,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("PERM keys defined", () => {
+    requireDb();
     assert.strictEqual(PERM.VIEW, "activeclinic.encounter.view");
     assert.strictEqual(PERM.MANAGE, "activeclinic.encounter.manage");
     assert.strictEqual(PERM.TRIAGE, "activeclinic.triage.record");
@@ -192,16 +200,17 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("full encounter workflow: start, triage, vitals, consultation, diagnosis, orders, alert, close", async () => {
-    const tenant = await seedTenant(Date.now(), "wkfl");
+    requireDb();
+    const tenant = await seedTenant(Date.now().toString(36), "wkfl");
     const admin = await seedNetwork(tenant, nextPhone());
-    const patientId = await seedPatient(tenant);
-
     const actor = {
       staffMemberId: admin.staffMemberId,
       platformIdentityId: null,
+      organizationId: tenant.orgId,
       healthcareOrganizationId: tenant.hcoId,
       facilityId: tenant.facilityId,
     };
+    const patientId = await seedPatient(tenant, actor);
 
     // Start encounter
     const startRes = await startEncounter(pool, {
@@ -356,8 +365,16 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("unauthorized staff denied", async () => {
-    const tenant = await seedTenant(Date.now(), "unauth");
-    const patientId = await seedPatient(tenant);
+    requireDb();
+    const tenant = await seedTenant(Date.now().toString(36), "unauth");
+    const admin = await seedNetwork(tenant, nextPhone());
+    const adminActor = {
+      staffMemberId: admin.staffMemberId,
+      organizationId: tenant.orgId,
+      healthcareOrganizationId: tenant.hcoId,
+      facilityId: tenant.facilityId,
+    };
+    const patientId = await seedPatient(tenant, adminActor);
 
     const unauthorizedStaff = await createStaffMember(pool, {
       organizationId: tenant.orgId,
@@ -373,6 +390,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
     const actor = {
       staffMemberId: unauthorizedStaff.staffMember.id,
       platformIdentityId: null,
+      organizationId: tenant.orgId,
       healthcareOrganizationId: tenant.hcoId,
       facilityId: tenant.facilityId,
     };
@@ -392,19 +410,20 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("cross-tenant encounter denial", async () => {
-    const tenantA = await seedTenant(Date.now(), "tenA");
+    requireDb();
+    const tenantA = await seedTenant(Date.now().toString(36), "tenA");
     const adminA = await seedNetwork(tenantA, nextPhone());
-    const patientA = await seedPatient(tenantA);
-
-    const tenantB = await seedTenant(Date.now() + 1, "tenB");
-    const adminB = await seedNetwork(tenantB, nextPhone());
-
     const actorA = {
       staffMemberId: adminA.staffMemberId,
       platformIdentityId: null,
+      organizationId: tenantA.orgId,
       healthcareOrganizationId: tenantA.hcoId,
       facilityId: tenantA.facilityId,
     };
+    const patientA = await seedPatient(tenantA, actorA);
+
+    const tenantB = await seedTenant(`${Date.now().toString(36)}b`, "tenB");
+    const adminB = await seedNetwork(tenantB, nextPhone());
 
     const startRes = await startEncounter(pool, {
       organizationId: tenantA.orgId,
@@ -420,6 +439,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
     const actorB = {
       staffMemberId: adminB.staffMemberId,
       platformIdentityId: null,
+      organizationId: tenantB.orgId,
       healthcareOrganizationId: tenantB.hcoId,
       facilityId: tenantB.facilityId,
     };
@@ -437,6 +457,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("clinical permissions exist in catalogue", async () => {
+    requireDb();
     const perms = await pool.query(
       `SELECT permission_key FROM blessboard.permissions
        WHERE permission_key LIKE 'activeclinic.%'
@@ -459,6 +480,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("encounter table exists with correct structure", async () => {
+    requireDb();
     const result = await pool.query(
       `SELECT column_name, data_type
          FROM information_schema.columns
@@ -480,6 +502,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("vital_sign_observations table immutable design", async () => {
+    requireDb();
     const result = await pool.query(
       `SELECT column_name
          FROM information_schema.columns
@@ -496,6 +519,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("consultation_notes draft vs signed separation", async () => {
+    requireDb();
     const result = await pool.query(
       `SELECT column_name
          FROM information_schema.columns
@@ -512,6 +536,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("nursing_intake_notes table exists", async () => {
+    requireDb();
     const result = await pool.query(
       `SELECT column_name
          FROM information_schema.columns
@@ -527,6 +552,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("clinical_orders table exists", async () => {
+    requireDb();
     const result = await pool.query(
       `SELECT column_name
          FROM information_schema.columns
@@ -543,6 +569,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("clinical_alerts manual raise only (no auto fields)", async () => {
+    requireDb();
     const result = await pool.query(
       `SELECT column_name
          FROM information_schema.columns
@@ -559,6 +586,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("clinical_diagnoses table exists", async () => {
+    requireDb();
     const result = await pool.query(
       `SELECT column_name
          FROM information_schema.columns
@@ -575,6 +603,7 @@ describe("ActiveClinic P04 clinical foundation", { skip: skipReason }, () => {
   });
 
   it("clinical services do not touch BlessBoard church tables", async () => {
+    requireDb();
     const blessboardTables = await pool.query(
       `SELECT table_name FROM information_schema.tables
        WHERE table_schema = 'blessboard' AND table_name LIKE 'church%'`

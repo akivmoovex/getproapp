@@ -704,15 +704,15 @@ describe("ActiveClinic reception/queue foundation (AC-V6-C05)", () => {
     assert.equal(list.queueEntries.length, 3);
   });
 
-  it("does not create encounter tables", async () => {
+  it("does not invent pharmacy or billing tables from reception", async () => {
     requireDb();
-    const encounters = await pool.query(
+    const finance = await pool.query(
       `SELECT table_name FROM information_schema.tables
         WHERE table_schema = 'activeclinic'
-          AND (table_name LIKE '%encounter%' OR table_name LIKE '%triage%'
-               OR table_name LIKE '%visit%' OR table_name LIKE '%diagnosis%')`
+          AND (table_name LIKE '%invoice%' OR table_name LIKE '%payment%'
+               OR table_name LIKE '%dispense%' OR table_name LIKE '%inventory_batch%')`
     );
-    assert.equal(encounters.rows.length, 0);
+    assert.equal(finance.rows.length, 0);
   });
 
   it("does not modify BlessBoard church product tables", async () => {
