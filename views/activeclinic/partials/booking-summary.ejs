@@ -1,0 +1,20 @@
+<% const d = draft || {}; %>
+<aside class="ac-booking-summary" data-ac-booking-summary>
+  <h2 class="ac-booking-summary__title">Your request summary</h2>
+  <dl class="ac-booking-summary__list">
+    <% if (d.serviceDisplayName) { %>
+    <div><dt>Consultation type</dt><dd><%= d.serviceDisplayName %></dd></div>
+    <% } %>
+    <% if (d.procedureDisplayName) { %>
+    <div><dt>Procedure</dt><dd><%= d.procedureDisplayName %></dd></div>
+    <% } %>
+    <div><dt>Doctor preference</dt><dd><%= d.anyDoctor ? 'Any available doctor' : (d.staffDisplayName || 'Not selected yet') %></dd></div>
+    <% if (d.preferredStartsAt) { %>
+    <div><dt>Preferred time</dt><dd><%= d.preferredStartsAt %></dd></div>
+    <% } %>
+    <% if (d.patientFirstName) { %>
+    <div><dt>Patient</dt><dd><%= d.patientFirstName %> <%= d.patientLastName || '' %></dd></div>
+    <% } %>
+  </dl>
+  <p class="ac-public-note ac-booking-summary__note">The clinic confirms availability — this is not an automatic booking.</p>
+</aside>

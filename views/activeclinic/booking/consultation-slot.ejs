@@ -1,0 +1,20 @@
+<section class="ac-public-section ac-booking-wizard" data-ac-page-section="booking-choose-slot">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <h1>Preferred date and time</h1>
+  <% if (slotAvailabilityState === 'no_slots_published') { %>
+  <p class="ac-public-banner" data-ac-slot-state="no_slots_published">This clinic has not published bookable time slots online. Enter your preferred date and time — the clinic will confirm what is available.</p>
+  <% } %>
+  <p>Your preferred time is a request only. It is not confirmed until the clinic responds.</p>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <% if (validationErrors && validationErrors.preferredStartsAt) { %><div class="ac-public-error" role="alert"><%= validationErrors.preferredStartsAt %></div><% } %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/slot" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label for="preferredStartsAt">Preferred date and time</label>
+    <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" required value="<%= (draft && draft.preferredStartsAt) || '' %>"/>
+    <div class="ac-booking-wizard__actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/doctor">Back</a>
+    </div>
+  </form>
+  <%- include('../partials/booking-summary', { draft: draft }) %>
+</section>

@@ -1,0 +1,32 @@
+<section class="ac-public-section ac-booking-wizard" data-ac-page-section="booking-patient-details">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <h1>Your details</h1>
+  <p>We need contact details so the clinic can confirm your request.</p>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <% if (validationErrors && Object.keys(validationErrors).length) { %>
+  <div class="ac-public-error" role="alert" data-ac-form-state="validation_error">
+    <p>Please fix the following:</p>
+    <ul><% Object.entries(validationErrors).forEach(function (entry) { %><li><%= entry[1] %></li><% }); %></ul>
+  </div>
+  <% } %>
+  <% const fd = formData || draft || {}; %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/patient" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label for="patientFirstName">First name</label>
+    <input id="patientFirstName" name="patientFirstName" required maxlength="80" value="<%= fd.patientFirstName || '' %>"/>
+    <label for="patientLastName">Last name</label>
+    <input id="patientLastName" name="patientLastName" required maxlength="80" value="<%= fd.patientLastName || '' %>"/>
+    <label for="patientPhone">Phone</label>
+    <input id="patientPhone" name="patientPhone" required value="<%= fd.patientPhone || '' %>"/>
+    <label for="patientEmail">Email (optional)</label>
+    <input id="patientEmail" name="patientEmail" type="email" value="<%= fd.patientEmail || '' %>"/>
+    <label for="visitReason">Reason for visit (optional)</label>
+    <textarea id="visitReason" name="visitReason" maxlength="500"><%= fd.visitReason || '' %></textarea>
+    <div class="ac-booking-wizard__actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Continue to review</button>
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/slot">Back</a>
+    </div>
+  </form>
+  <%- include('../partials/sms-honesty-note') %>
+  <%- include('../partials/booking-summary', { draft: draft }) %>
+</section>

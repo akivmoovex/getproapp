@@ -1,0 +1,23 @@
+<section class="ac-public-section ac-booking-wizard" data-ac-page-section="booking-review">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <h1>Review your request</h1>
+  <p>Submitting creates a <strong>pending</strong> request. The clinic must confirm before it becomes an appointment.</p>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <div class="ac-booking-review">
+    <%- include('../partials/booking-summary', { draft: draft }) %>
+    <dl class="ac-booking-summary__list">
+      <div><dt>Phone</dt><dd><%= draft.patientPhone || '—' %></dd></div>
+      <% if (draft.patientEmail) { %><div><dt>Email</dt><dd><%= draft.patientEmail %></dd></div><% } %>
+      <% if (draft.visitReason) { %><div><dt>Reason</dt><dd><%= draft.visitReason %></dd></div><% } %>
+    </dl>
+  </div>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/submit" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="idempotencyKey" value="<%= draft.idempotencyKey %>"/>
+    <div class="ac-booking-wizard__actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Submit request</button>
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/patient">Back</a>
+    </div>
+  </form>
+  <%- include('../partials/sms-honesty-note') %>
+</section>

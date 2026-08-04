@@ -1,0 +1,20 @@
+<section class="ac-public-section" data-ac-page-section="booking-procedures-list">
+  <h1>Book a procedure</h1>
+  <p>Select a procedure to request. The clinic will confirm availability and any referral requirements.</p>
+  <% if (!procedures || !procedures.length) { %>
+  <p class="ac-public-empty">No procedures are published for online requests at this clinic.</p>
+  <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book">Request a consultation instead</a></p>
+  <% } else { %>
+  <ul class="ac-service-cards">
+    <% procedures.forEach(function (proc) { %>
+    <li>
+      <a href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= proc.procedureKey %>">
+        <h3><%= proc.displayName %></h3>
+        <% if (proc.summary) { %><p><%= proc.summary %></p><% } %>
+        <% if (proc.referralRequired) { %><p class="ac-booking-choice__meta">Referral required</p><% } %>
+      </a>
+    </li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>

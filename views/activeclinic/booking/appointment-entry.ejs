@@ -15,6 +15,10 @@
     <input id="patientEmail" name="patientEmail" type="email" value="<%= fd.patientEmail || '' %>"/>
     <label for="serviceKey">Service (optional key)</label>
     <input id="serviceKey" name="serviceKey" value="<%= fd.serviceKey || (typeof preferredService === 'string' ? preferredService : '') %>"/>
+    <% if (typeof preferredDoctor === 'string' && preferredDoctor) { %>
+    <label for="preferredDoctorKey">Preferred doctor (optional key)</label>
+    <input id="preferredDoctorKey" name="preferredDoctorKey" value="<%= fd.preferredDoctorKey || preferredDoctor %>"/>
+    <% } %>
     <label for="preferredStartsAt">Preferred date and time</label>
     <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" value="<%= fd.preferredStartsAt || '' %>"/>
     <label for="visitReason">Reason for visit (optional)</label>

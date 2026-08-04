@@ -1,0 +1,34 @@
+<section class="ac-public-section ac-booking-wizard" data-ac-page-section="booking-choose-doctor">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <h1>Choose a doctor</h1>
+  <p>Select a doctor if you have a preference, or choose any available doctor. We do not show live availability.</p>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/doctor" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <fieldset class="ac-booking-choice-list">
+      <legend class="ac-sr-only">Doctor preference</legend>
+      <label class="ac-booking-choice">
+        <input type="radio" name="doctorChoice" value="any"<%= (draft && draft.anyDoctor) ? ' checked' : '' %>/>
+        <span class="ac-booking-choice__body"><strong>Any available doctor</strong><span class="ac-booking-choice__meta">The clinic will assign based on availability</span></span>
+      </label>
+      <% if (profiles && profiles.length) { %>
+      <% profiles.forEach(function (doc) { %>
+      <label class="ac-booking-choice">
+        <input type="radio" name="doctorChoice" value="<%= doc.staffKey %>"<%= (draft && draft.staffKey === doc.staffKey) ? ' checked' : '' %>/>
+        <span class="ac-booking-choice__body">
+          <strong><%= doc.displayName %></strong>
+          <% if (doc.title) { %><span class="ac-booking-choice__meta"><%= doc.title %></span><% } %>
+        </span>
+      </label>
+      <% }); %>
+      <% } else { %>
+      <p class="ac-public-note">No doctor profiles are published. The clinic will assign a clinician.</p>
+      <% } %>
+    </fieldset>
+    <div class="ac-booking-wizard__actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book">Back</a>
+    </div>
+  </form>
+  <%- include('../partials/booking-summary', { draft: draft }) %>
+</section>

@@ -1,10 +1,16 @@
 <section class="ac-public-section" data-ac-page-section="my-booking-lookup">
   <h1>My booking</h1>
-  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-  <p>Use the secure link provided when you submitted your request. Do not share it.</p>
-  <form method="get" action="/clinics/<%= clinic.clinicKey %>/my-booking" class="ac-public-form">
+  <% const state = typeof lookupState === 'string' ? lookupState : 'form'; %>
+  <p class="ac-public-note ac-booking-privacy">Use the secure link from your booking confirmation. Do not share your access token — it provides access to your request details only.</p>
+  <% if (state === 'error' && typeof error === 'string' && error) { %>
+  <div class="ac-public-error" role="alert" data-ac-lookup-state="error"><%= error %></div>
+  <% } %>
+  <% if (state === 'progress') { %>
+  <p class="ac-public-note" data-ac-lookup-state="progress">Looking up your booking…</p>
+  <% } %>
+  <form method="get" action="/clinics/<%= clinic.clinicKey %>/my-booking" class="ac-public-form" data-ac-lookup-state="<%= state %>">
     <label for="token">Access token</label>
-    <input id="token" name="token" required autocomplete="off"/>
-    <button type="submit" class="ac-btn ac-btn--primary">Look up</button>
+    <input id="token" name="token" required autocomplete="off" value="<%= typeof tokenValue === 'string' ? tokenValue : '' %>"/>
+    <button type="submit" class="ac-btn ac-btn--primary">Look up booking</button>
   </form>
 </section>

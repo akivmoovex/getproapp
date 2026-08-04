@@ -1,0 +1,42 @@
+<section class="ac-public-section ac-booking-wizard" data-ac-page-section="booking-consultation-type">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <h1>Request a consultation</h1>
+  <p>Choose a consultation type or continue with a general request. The clinic will confirm your appointment.</p>
+  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+  <% if (validationErrors && Object.keys(validationErrors).length) { %>
+  <div class="ac-public-error" role="alert">
+    <p>Please fix the following:</p>
+    <ul><% Object.values(validationErrors).forEach(function (msg) { %><li><%= msg %></li><% }); %></ul>
+  </div>
+  <% } %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="wizardAction" value="continue"/>
+    <% if (services && services.length) { %>
+    <fieldset class="ac-booking-choice-list">
+      <legend class="ac-sr-only">Consultation type</legend>
+      <% services.forEach(function (svc) { %>
+      <label class="ac-booking-choice">
+        <input type="radio" name="serviceKey" value="<%= svc.serviceKey %>"<%= (draft && draft.serviceKey === svc.serviceKey) ? ' checked' : '' %>/>
+        <span class="ac-booking-choice__body">
+          <strong><%= svc.displayName %></strong>
+          <% if (svc.summary) { %><span class="ac-booking-choice__meta"><%= svc.summary %></span><% } %>
+        </span>
+      </label>
+      <% }); %>
+      <label class="ac-booking-choice">
+        <input type="radio" name="serviceKey" value=""<%= !(draft && draft.serviceKey) ? ' checked' : '' %>/>
+        <span class="ac-booking-choice__body"><strong>General consultation</strong><span class="ac-booking-choice__meta">No specific service selected</span></span>
+      </label>
+    </fieldset>
+    <% } else { %>
+    <p class="ac-public-note">No specific consultation types are published. You can continue with a general request.</p>
+    <input type="hidden" name="serviceKey" value=""/>
+    <% } %>
+    <div class="ac-booking-wizard__actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/procedures">Book a procedure instead</a>
+    </div>
+  </form>
+  <%- include('../partials/sms-honesty-note') %>
+</section>

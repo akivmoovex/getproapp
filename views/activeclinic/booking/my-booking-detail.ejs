@@ -1,22 +1,41 @@
 <section class="ac-public-section" data-ac-page-section="my-booking-detail">
   <h1>Booking <%= booking.requestNumber %></h1>
   <p>Status: <strong data-ac-booking-status="<%= booking.status %>"><%= booking.status %></strong></p>
+
   <% if (booking.status === 'submitted_pending_confirmation') { %>
-  <p>Your request is waiting for clinic confirmation. It is not confirmed yet.</p>
+  <p class="ac-public-banner">Your request is waiting for clinic confirmation. It is <strong>not confirmed</strong> yet.</p>
+  <% } else if (booking.status === 'confirmed') { %>
+  <p class="ac-public-note">Your booking has been confirmed by the clinic.</p>
+  <% } else if (booking.status === 'cancellation_requested') { %>
+  <p class="ac-public-banner">A cancellation request is pending clinic review. Your booking is not yet cancelled.</p>
+  <% } else if (booking.status === 'reschedule_requested') { %>
+  <p class="ac-public-banner">A reschedule request is pending clinic review. Your time is not yet changed.</p>
+  <% } else if (booking.status === 'cancelled') { %>
+  <p class="ac-public-note">This booking has been cancelled.</p>
+  <% } else if (booking.status === 'completed') { %>
+  <p class="ac-public-note">This visit has been marked completed.</p>
+  <% } else if (booking.status === 'no_show') { %>
+  <p class="ac-public-note">This booking was marked as a no-show.</p>
   <% } %>
-  <form method="post" action="/clinics/<%= clinic.clinicKey %>/my-booking/cancel" class="ac-public-form">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <input type="hidden" name="token" value="<%= accessToken %>"/>
-    <label for="reason">Request cancellation (optional reason)</label>
-    <input id="reason" name="reason"/>
-    <button type="submit" class="ac-btn ac-btn--secondary">Request cancellation</button>
-  </form>
-  <form method="post" action="/clinics/<%= clinic.clinicKey %>/my-booking/reschedule" class="ac-public-form">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <input type="hidden" name="token" value="<%= accessToken %>"/>
-    <label for="preferredStartsAt">Preferred new time</label>
-    <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" required/>
-    <button type="submit" class="ac-btn ac-btn--secondary">Request reschedule</button>
-  </form>
-  <p class="ac-public-note">Cancellation and reschedule submit a request for clinic review.</p>
+
+  <dl class="ac-booking-summary__list">
+    <% if (booking.serviceDisplayName) { %><div><dt>Service</dt><dd><%= booking.serviceDisplayName %></dd></div><% } %>
+    <% if (booking.procedureDisplayName) { %><div><dt>Procedure</dt><dd><%= booking.procedureDisplayName %></dd></div><% } %>
+    <% if (booking.staffDisplayName) { %><div><dt>Doctor</dt><dd><%= booking.staffDisplayName %></dd></div><% } %>
+    <% if (booking.facilityDisplayName) { %><div><dt>Facility</dt><dd><%= booking.facilityDisplayName %></dd></div><% } %>
+    <% if (booking.preferredStartsAt) { %><div><dt>Preferred time</dt><dd><%= booking.preferredStartsAt %></dd></div><% } %>
+    <div><dt>Patient</dt><dd><%= booking.patientFirstName %> <%= booking.patientLastName %></dd></div>
+  </dl>
+
+  <% if (canModifyBooking) { %>
+  <div class="ac-booking-actions">
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/my-booking/cancel?token=<%= encodeURIComponent(accessToken) %>">Request cancellation</a>
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/my-booking/reschedule?token=<%= encodeURIComponent(accessToken) %>">Request reschedule</a>
+  </div>
+  <p class="ac-public-note">Cancellation and reschedule submit a request for clinic review — they are not immediate.</p>
+  <% } else { %>
+  <p class="ac-public-note" data-ac-actions-unavailable="1">Cancel and reschedule are not available for this booking status.</p>
+  <% } %>
+
+  <%- include('../partials/sms-honesty-note') %>
 </section>

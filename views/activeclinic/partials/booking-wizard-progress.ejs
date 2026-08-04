@@ -1,0 +1,12 @@
+<% const steps = typeof wizardSteps !== 'undefined' ? wizardSteps : []; %>
+<% const current = typeof wizardStep !== 'undefined' ? wizardStep : 1; %>
+<nav class="ac-booking-progress" aria-label="Booking progress" data-ac-booking-progress="<%= current %>">
+  <ol class="ac-booking-progress__list">
+    <% steps.forEach(function (step) { %>
+    <li class="ac-booking-progress__item<%= step.step === current ? ' ac-booking-progress__item--current' : '' %><%= step.step < current ? ' ac-booking-progress__item--done' : '' %>">
+      <span class="ac-booking-progress__num" aria-hidden="true"><%= step.step %></span>
+      <span class="ac-booking-progress__label"><%= step.label %></span>
+    </li>
+    <% }); %>
+  </ol>
+</nav>

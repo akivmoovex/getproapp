@@ -5,5 +5,5 @@
   <% if (accessToken) { %>
   <p><a href="/clinics/<%= clinic.clinicKey %>/my-booking?token=<%= accessToken %>">View my booking</a></p>
   <% } %>
-  <p class="ac-public-note">No SMS or email was sent by this system unless a separate delivery integration completed.</p>
+  <%- include('../partials/sms-honesty-note') %>
 </section>

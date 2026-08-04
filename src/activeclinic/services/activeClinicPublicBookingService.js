@@ -150,6 +150,33 @@ async function createConsultationBookingRequest(db, input) {
   const timezone = input.timezone || "Africa/Lusaka";
 
   const idempotencyKey = input.idempotencyKey || generateIdempotencyKey();
+
+  const existingRow = await db.query(
+    `SELECT b.id, b.request_number, b.status, b.created_at,
+            (SELECT t.token_hash FROM activeclinic.public_booking_access_tokens t
+             WHERE t.booking_request_id = b.id AND t.revoked_at IS NULL
+             ORDER BY t.created_at DESC LIMIT 1) AS token_hash
+     FROM activeclinic.public_booking_requests b
+     WHERE b.organization_id = $1 AND b.idempotency_key = $2
+     LIMIT 1`,
+    [organizationId, idempotencyKey]
+  );
+  if (existingRow.rows.length) {
+    const existing = existingRow.rows[0];
+    return {
+      ok: true,
+      code: RESULT.OK,
+      duplicate: true,
+      booking: {
+        id: existing.id,
+        requestNumber: existing.request_number,
+        status: existing.status,
+        createdAt: existing.created_at,
+        accessToken: null,
+      },
+    };
+  }
+
   const requestNumber = generateRequestNumber();
 
   const bookingRow = await db.query(
@@ -290,6 +317,30 @@ async function createProcedureBookingRequest(db, input) {
   const preferredStartsAt = input.preferredStartsAt ? new Date(input.preferredStartsAt) : null;
   const timezone = input.timezone || "Africa/Lusaka";
   const idempotencyKey = input.idempotencyKey || generateIdempotencyKey();
+
+  const existingRow = await db.query(
+    `SELECT b.id, b.request_number, b.status, b.created_at
+     FROM activeclinic.public_booking_requests b
+     WHERE b.organization_id = $1 AND b.idempotency_key = $2
+     LIMIT 1`,
+    [organizationId, idempotencyKey]
+  );
+  if (existingRow.rows.length) {
+    const existing = existingRow.rows[0];
+    return {
+      ok: true,
+      code: RESULT.OK,
+      duplicate: true,
+      booking: {
+        id: existing.id,
+        requestNumber: existing.request_number,
+        status: existing.status,
+        createdAt: existing.created_at,
+        accessToken: null,
+      },
+    };
+  }
+
   const requestNumber = generateRequestNumber();
 
   // If no upload infra, use clinic_follow_up for referral_required cases

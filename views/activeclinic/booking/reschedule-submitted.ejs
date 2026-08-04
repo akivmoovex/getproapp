@@ -1,0 +1,7 @@
+<section class="ac-public-section" data-ac-page-section="reschedule-submitted">
+  <h1>Reschedule request submitted</h1>
+  <p>Your reschedule request for booking <strong><%= booking.requestNumber %></strong> has been received.</p>
+  <p class="ac-public-banner">This is a request — your appointment time is <strong>not yet changed</strong>. The clinic will confirm availability.</p>
+  <p><a href="/clinics/<%= clinic.clinicKey %>/my-booking?token=<%= encodeURIComponent(accessToken) %>">Return to my booking</a></p>
+  <%- include('../partials/sms-honesty-note') %>
+</section>
