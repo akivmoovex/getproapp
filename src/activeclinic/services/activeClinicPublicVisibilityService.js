@@ -19,7 +19,7 @@ const RESULT = Object.freeze({
 
 async function findOrganizationByKey(db, clinicKey) {
   const rows = await db.query(
-    `SELECT id, organization_key, display_name, status
+    `SELECT id, organization_key, display_name, status, data_environment
        FROM platform.organizations
       WHERE organization_key = $1
       LIMIT 1`,
@@ -54,6 +54,8 @@ async function resolvePublishableClinicByKey(db, input) {
   if (organization.status !== "active") {
     return { ok: false, code: RESULT.NOT_PUBLISHED, clinic: null };
   }
+
+  const dataEnvironment = String(organization.data_environment || "").toLowerCase();
 
   const hcoRows = await db.query(
     `SELECT h.id, h.organization_id, h.public_name, h.status,
@@ -106,6 +108,13 @@ async function resolvePublishableClinicByKey(db, input) {
       publicHours: f.public_hours_json || null,
     }));
 
+  const tagline = hco.website_tagline || "";
+  const isDemonstrationClinic =
+    dataEnvironment === "demo" ||
+    /demonstration clinic/i.test(tagline) ||
+    clinicKey === "activeclinic-demo" ||
+    clinicKey === "julflona-clinic";
+
   const clinic = {
     clinicKey,
     organizationId: organization.id,
@@ -119,6 +128,8 @@ async function resolvePublishableClinicByKey(db, input) {
     publicBookingEnabled: hco.public_booking_enabled === true,
     countryCode: hco.country_code,
     timezone: hco.timezone,
+    dataEnvironment: dataEnvironment || null,
+    isDemonstrationClinic,
     facilities,
     primaryFacilityId: (facilities.find((f) => f.isPrimary) || facilities[0] || {}).id || null,
   };

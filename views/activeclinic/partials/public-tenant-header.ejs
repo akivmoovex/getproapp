@@ -1,4 +1,9 @@
 <header class="ac-public-header ac-public-header--tenant" data-ac-public-header="tenant">
+  <% if (clinic && clinic.isDemonstrationClinic) { %>
+  <div class="ac-public-banner ac-public-banner--demo" data-ac-demo-banner="1" role="status">
+    Demonstration clinic — sample information only
+  </div>
+  <% } %>
   <div class="ac-public-header__inner">
     <a class="ac-public-brand" href="/clinics/<%= clinic.clinicKey %>" aria-label="<%= clinic.publicName %> home">
       <span class="ac-public-brand__name"><%= clinic.publicName %></span>

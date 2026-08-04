@@ -10,7 +10,7 @@ const ejs = require("ejs");
 const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "p24-1";
+const ASSET_VERSION = "p24-2";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
