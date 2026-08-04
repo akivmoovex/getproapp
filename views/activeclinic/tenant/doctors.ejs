@@ -2,7 +2,10 @@
   <h1>Doctors</h1>
   <% const list = Array.isArray(profiles) ? profiles : []; %>
   <% if (!list.length) { %>
-  <p class="ac-public-empty" data-ac-empty="doctors">No public doctor profiles are published.</p>
+  <div class="ac-public-empty" data-ac-empty="doctors">
+    <p>No public doctor profiles are published.</p>
+    <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
+  </div>
   <% } else { %>
   <ul class="ac-doctor-cards">
     <% list.forEach(function(d) { %>

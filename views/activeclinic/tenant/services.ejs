@@ -3,13 +3,16 @@
   <% const serviceList = Array.isArray(services) ? services : []; %>
   <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
   <% if (!serviceList.length && !procedureList.length) { %>
-  <p class="ac-public-empty">No public services are published yet.</p>
+  <div class="ac-public-empty" data-ac-empty="services">
+    <p>No public services are published yet.</p>
+    <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
+  </div>
   <% } %>
   <% if (serviceList.length) { %>
   <h2>Consultations</h2>
   <ul class="ac-service-cards">
     <% serviceList.forEach(function(s) { %>
-    <li><a href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>"><h3><%= s.displayName %></h3></a></li>
+    <li><a href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>"><h3><%= s.displayName %></h3><% if (s.summary) { %><p><%= s.summary %></p><% } %></a></li>
     <% }) %>
   </ul>
   <% } %>
@@ -17,8 +20,9 @@
   <h2>Procedures &amp; diagnostics</h2>
   <ul class="ac-service-cards">
     <% procedureList.forEach(function(p) { %>
-    <li><a href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= p.procedureKey %>"><h3><%= p.displayName %></h3></a></li>
+    <li><a href="/clinics/<%= clinic.clinicKey %>/procedures/<%= p.procedureKey %>"><h3><%= p.displayName %></h3><% if (p.summary) { %><p><%= p.summary %></p><% } %></a></li>
     <% }) %>
   </ul>
   <% } %>
+  <p class="ac-public-note"><a href="/clinics/<%= clinic.clinicKey %>/pricing">Pricing information</a> · Fees are shown only when configured by the clinic.</p>
 </section>

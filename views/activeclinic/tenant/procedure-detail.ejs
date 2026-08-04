@@ -1,0 +1,29 @@
+<article class="ac-public-section" data-ac-page-section="tenant-procedure-detail">
+  <p class="ac-public-breadcrumb"><a href="/clinics/<%= clinic.clinicKey %>/services">Services</a> · Procedure</p>
+  <h1><%= procedure.displayName %></h1>
+  <% if (procedure.category) { %><p class="ac-public-muted"><%= procedure.category %></p><% } %>
+  <% if (procedure.summary) { %><p><%= procedure.summary %></p><% } %>
+  <% if (procedure.estimatedDurationMinutes) { %>
+  <p class="ac-public-muted">Estimated duration: about <%= procedure.estimatedDurationMinutes %> minutes (clinic-provided estimate).</p>
+  <% } %>
+  <% if (procedure.referralRequired) { %>
+  <p class="ac-public-banner" data-ac-referral="required">A referral is required for this procedure. Secure document upload is not available online — the clinic will follow up after you submit a request.</p>
+  <% } else { %>
+  <p class="ac-public-note" data-ac-referral="not-required">No referral is marked as required for this procedure. Contact the clinic if you are unsure.</p>
+  <% } %>
+  <% if (procedure.preparationInstructions) { %>
+  <div class="ac-public-prep">
+    <h2>Preparation</h2>
+    <p><%= procedure.preparationInstructions %></p>
+  </div>
+  <% } else { %>
+  <p class="ac-public-note">Preparation instructions are not configured. Contact the clinic for guidance. This site does not generate clinical advice.</p>
+  <% } %>
+  <p class="ac-public-actions">
+    <% if (clinic.publicBookingEnabled) { %>
+    <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>">Request this procedure</a>
+    <% } %>
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a>
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/pricing">View pricing information</a>
+  </p>
+</article>

@@ -1,7 +1,19 @@
-<article class="ac-public-section" data-ac-page-section="tenant-service-detail">
+<article class="ac-public-section" data-ac-page-section="tenant-service-detail" data-ac-service-kind="<%= serviceKind || 'consultation' %>">
+  <p class="ac-public-breadcrumb"><a href="/clinics/<%= clinic.clinicKey %>/services">Services</a> · <%= serviceKind === 'informational' ? 'Information' : 'Consultation' %></p>
   <h1><%= service.displayName %></h1>
   <% if (service.summary) { %><p><%= service.summary %></p><% } %>
-  <% if (clinic.publicBookingEnabled) { %>
-  <p><a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book?service=<%= service.serviceKey %>">Request this service</a></p>
+  <% if (service.durationMinutes) { %>
+  <p class="ac-public-muted">Typical duration: about <%= service.durationMinutes %> minutes (clinic-provided estimate).</p>
+  <% } %>
+  <% if (serviceKind === 'consultation' && clinic.publicBookingEnabled) { %>
+  <p class="ac-public-actions">
+    <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book?service=<%= service.serviceKey %>">Request this service</a>
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/pricing">View pricing information</a>
+  </p>
+  <% } else if (serviceKind === 'informational' || !clinic.publicBookingEnabled) { %>
+  <p class="ac-public-note">Online booking is not available for this service. Contact the clinic for next steps.</p>
+  <p class="ac-public-actions">
+    <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a>
+  </p>
   <% } %>
 </article>

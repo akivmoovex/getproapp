@@ -1,0 +1,37 @@
+<section class="ac-public-section" data-ac-page-section="tenant-location">
+  <h1>Location &amp; hours</h1>
+  <% const facilityList = Array.isArray(clinic.facilities) ? clinic.facilities : []; %>
+  <% if (!facilityList.length) { %>
+  <div class="ac-public-empty" data-ac-location-state="empty">
+    <p>Location details have not been published for this clinic yet.</p>
+    <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a></p>
+  </div>
+  <% } else { %>
+  <ul class="ac-location-list">
+    <% facilityList.forEach(function(f) { %>
+    <li class="ac-location-card" data-ac-facility="<%= f.facilityKey %>">
+      <h2><%= f.displayName %><% if (f.isPrimary) { %> <span class="ac-location-badge">Primary</span><% } %></h2>
+      <% const addressParts = [f.addressLine1, f.addressLine2, f.city, f.district, f.province, f.postalCode].filter(Boolean); %>
+      <% if (addressParts.length) { %>
+      <p class="ac-location-address"><%= addressParts.join(', ') %></p>
+      <% } else { %>
+      <p class="ac-public-muted">Address not configured.</p>
+      <% } %>
+      <% if (f.phoneDisplay) { %><p>Phone: <%= f.phoneDisplay %></p><% } %>
+      <% if (f.emailDisplay) { %><p>Email: <%= f.emailDisplay %></p><% } %>
+      <% if (f.publicHours && typeof f.publicHours === 'object' && Object.keys(f.publicHours).length) { %>
+      <div class="ac-location-hours">
+        <h3>Hours</h3>
+        <dl class="ac-hours-list">
+          <% Object.keys(f.publicHours).forEach(function(day) { %>
+          <dt><%= day %></dt>
+          <dd><%= f.publicHours[day] %></dd>
+          <% }) %>
+        </dl>
+      </div>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

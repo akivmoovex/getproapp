@@ -7,10 +7,15 @@
       <a href="/clinics/<%= clinic.clinicKey %>/about">About</a>
       <a href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
       <a href="/clinics/<%= clinic.clinicKey %>/doctors">Doctors</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/pricing">Pricing</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/location">Location</a>
       <a href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
       <% if (clinic.publicBookingEnabled) { %>
       <a class="ac-public-nav__cta" href="/clinics/<%= clinic.clinicKey %>/book">Book</a>
       <% } %>
+      <a href="/clinics/<%= clinic.clinicKey %>/my-booking">My booking</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/patient/login">Patient portal</a>
+      <a href="/">ActiveClinic</a>
     </nav>
     <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer">
       <span class="ac-sr-only">Open menu</span>
@@ -25,12 +30,16 @@
       <a href="/clinics/<%= clinic.clinicKey %>/about">About</a>
       <a href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
       <a href="/clinics/<%= clinic.clinicKey %>/doctors">Doctors</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/pricing">Pricing</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/location">Location</a>
       <a href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
       <a href="/clinics/<%= clinic.clinicKey %>/patient-information">Patient information</a>
       <% if (clinic.publicBookingEnabled) { %>
       <a href="/clinics/<%= clinic.clinicKey %>/book">Book appointment</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/my-booking">My booking</a>
       <% } %>
+      <a href="/clinics/<%= clinic.clinicKey %>/my-booking">My booking</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/patient/login">Patient portal</a>
+      <a href="/">Back to ActiveClinic</a>
       <a href="/clinics">All clinics</a>
     </nav>
   </div>

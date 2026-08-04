@@ -227,6 +227,7 @@ async function listPublicStaffProfiles(db, input) {
 
   const result = await db.query(sql, [organizationId, healthcareOrganizationId]);
   const profiles = result.rows.map((row) => ({
+    id: row.id,
     staffKey: row.public_profile_key,
     displayName: row.public_display_name,
     title: row.public_title || null,
@@ -266,6 +267,7 @@ async function getPublicStaffProfile(db, input) {
 
   const row = result.rows[0];
   const profile = {
+    id: row.id,
     staffKey: row.public_profile_key,
     displayName: row.public_display_name,
     title: row.public_title || null,
@@ -427,6 +429,23 @@ async function getPublicProcedure(db, input) {
   return { ok: true, code: RESULT.OK, procedure };
 }
 
+/**
+ * Public price patterns for tenant pricing page.
+ * Returns configured public prices only — no billing catalogue exposure until public columns exist.
+ */
+async function listPublicPricePatterns(db, input) {
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
+  if (!UUID_RE.test(organizationId) || !UUID_RE.test(healthcareOrganizationId)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, patterns: [] };
+  }
+
+  // No public price fields on appointment_service_types or public_procedures yet.
+  // Future: query verified public price columns when added to schema.
+  void db;
+  return { ok: true, code: RESULT.OK, patterns: [] };
+}
+
 module.exports = {
   RESULT,
   resolvePublishableClinicByKey,
@@ -437,4 +456,5 @@ module.exports = {
   getPublicService,
   listPublicProcedures,
   getPublicProcedure,
+  listPublicPricePatterns,
 };

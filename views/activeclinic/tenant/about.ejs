@@ -1,5 +1,17 @@
 <article class="ac-public-section" data-ac-page-section="tenant-about">
   <h1>About <%= clinic.publicName %></h1>
+  <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
   <% if (clinic.websiteAbout) { %><div class="ac-public-prose"><%= clinic.websiteAbout %></div>
   <% } else { %><p>Public about content has not been configured for this clinic yet.</p><% } %>
+  <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
+  <h2>Contact details</h2>
+  <ul class="ac-public-list">
+    <% if (clinic.publicPhoneDisplay) { %><li>Phone: <%= clinic.publicPhoneDisplay %></li><% } %>
+    <% if (clinic.publicEmailDisplay) { %><li>Email: <%= clinic.publicEmailDisplay %></li><% } %>
+  </ul>
+  <% } %>
+  <p class="ac-public-actions">
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/location">Location &amp; hours</a>
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Send a message</a>
+  </p>
 </article>

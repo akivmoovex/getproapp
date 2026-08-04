@@ -1,10 +1,24 @@
 <section class="ac-public-hero" data-ac-page-section="tenant-home">
   <h1><%= clinic.publicName %></h1>
   <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
+  <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
+  <ul class="ac-public-list ac-public-list--inline">
+    <% if (clinic.publicPhoneDisplay) { %><li>Phone: <%= clinic.publicPhoneDisplay %></li><% } %>
+    <% if (clinic.publicEmailDisplay) { %><li>Email: <%= clinic.publicEmailDisplay %></li><% } %>
+  </ul>
+  <% } %>
   <p class="ac-public-actions">
     <% if (clinic.publicBookingEnabled) { %>
     <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book">Request an appointment</a>
     <% } %>
     <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
+    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/location">Location</a>
   </p>
+  <% if (clinic.websiteAbout) { %>
+  <div class="ac-public-prose ac-public-prose--home">
+    <p><%= clinic.websiteAbout.length > 280 ? clinic.websiteAbout.slice(0, 280) + '…' : clinic.websiteAbout %></p>
+    <p><a href="/clinics/<%= clinic.clinicKey %>/about">Read more about us</a></p>
+  </div>
+  <% } %>
 </section>
