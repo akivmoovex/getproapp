@@ -1,0 +1,80 @@
+<section class="ac-patient-page">
+  <header class="ac-patient-page__header">
+    <h1>Booking <%= escapeHtml(booking.requestNumber || booking.id) %></h1>
+  </header>
+
+  <dl class="ac-patient-detail">
+    <div>
+      <dt>Status</dt>
+      <dd><%= escapeHtml(bookingStatusLabels[booking.status] || booking.status || "") %></dd>
+    </div>
+    <div>
+      <dt>Type</dt>
+      <dd><%= escapeHtml(booking.bookingKind || "") %></dd>
+    </div>
+    <div>
+      <dt>Facility</dt>
+      <dd><%= escapeHtml(booking.facilityDisplayName || "") %></dd>
+    </div>
+    <% if (booking.serviceDisplayName) { %>
+    <div>
+      <dt>Service</dt>
+      <dd><%= escapeHtml(booking.serviceDisplayName) %></dd>
+    </div>
+    <% } %>
+    <% if (booking.procedureDisplayName) { %>
+    <div>
+      <dt>Procedure</dt>
+      <dd><%= escapeHtml(booking.procedureDisplayName) %></dd>
+    </div>
+    <% } %>
+    <% if (booking.staffDisplayName) { %>
+    <div>
+      <dt>Provider</dt>
+      <dd><%= escapeHtml(booking.staffDisplayName) %></dd>
+    </div>
+    <% } %>
+    <% if (booking.visitReason) { %>
+    <div>
+      <dt>Reason</dt>
+      <dd><%= escapeHtml(booking.visitReason) %></dd>
+    </div>
+    <% } %>
+    <% if (booking.preferredStartsAt) { %>
+    <div>
+      <dt>Preferred time</dt>
+      <dd><%= escapeHtml(String(booking.preferredStartsAt)) %></dd>
+    </div>
+    <% } %>
+  </dl>
+
+  <% if (["submitted_pending_confirmation", "confirmed"].includes(booking.status)) { %>
+  <section class="ac-patient-section">
+    <h2>Request changes</h2>
+    <form method="POST" action="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(booking.requestNumber || booking.id) %>/cancel" class="ac-patient-form-inline" data-ac-shell="patient">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <div class="ac-patient-field">
+        <label for="cancelReason">Cancellation reason (optional)</label>
+        <textarea id="cancelReason" name="reason" rows="2" maxlength="500"></textarea>
+      </div>
+      <button type="submit" class="ac-patient-btn ac-patient-btn--secondary">Request cancellation</button>
+    </form>
+    <form method="POST" action="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(booking.requestNumber || booking.id) %>/reschedule" class="ac-patient-form-inline" data-ac-shell="patient">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <div class="ac-patient-field">
+        <label for="preferredStartsAt">Preferred new date and time</label>
+        <input type="datetime-local" id="preferredStartsAt" name="preferredStartsAt"/>
+      </div>
+      <div class="ac-patient-field">
+        <label for="rescheduleReason">Reschedule reason (optional)</label>
+        <textarea id="rescheduleReason" name="reason" rows="2" maxlength="500"></textarea>
+      </div>
+      <button type="submit" class="ac-patient-btn">Request reschedule</button>
+    </form>
+  </section>
+  <% } %>
+
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient/bookings">Back to bookings</a>
+  </p>
+</section>

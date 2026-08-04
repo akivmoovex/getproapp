@@ -1,0 +1,34 @@
+<nav class="ac-patient-nav ac-patient-nav--desktop" aria-label="Patient portal" data-ac-patient-nav="desktop">
+  <a href="/clinics/<%= clinicKey %>/patient"<% if (activeNav === 'dashboard') { %> aria-current="page"<% } %>>Dashboard</a>
+  <a href="/clinics/<%= clinicKey %>/patient/bookings"<% if (activeNav === 'bookings') { %> aria-current="page"<% } %>>My Bookings</a>
+  <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking"<% if (activeNav === 'link') { %> aria-current="page"<% } %>>Link booking</a>
+  <a href="/clinics/<%= clinicKey %>/patient/profile"<% if (activeNav === 'profile') { %> aria-current="page"<% } %>>Profile</a>
+  <a href="/clinics/<%= clinicKey %>/patient/security"<% if (activeNav === 'security') { %> aria-current="page"<% } %>>Security</a>
+  <a href="/clinics/<%= clinicKey %>/patient/notifications"<% if (activeNav === 'notifications') { %> aria-current="page"<% } %>>Notifications</a>
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/logout" class="ac-patient-nav__logout">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit">Sign out</button>
+  </form>
+</nav>
+<nav class="ac-patient-nav ac-patient-nav--mobile" aria-label="Patient portal mobile" data-ac-patient-nav="mobile">
+  <a href="/clinics/<%= clinicKey %>/patient"<% if (activeNav === 'dashboard') { %> aria-current="page"<% } %>>
+    <span class="ac-patient-nav__icon" aria-hidden="true">⌂</span>
+    <span class="ac-patient-nav__label">Home</span>
+  </a>
+  <a href="/clinics/<%= clinicKey %>/patient/bookings"<% if (activeNav === 'bookings') { %> aria-current="page"<% } %>>
+    <span class="ac-patient-nav__icon" aria-hidden="true">☰</span>
+    <span class="ac-patient-nav__label">Bookings</span>
+  </a>
+  <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking"<% if (activeNav === 'link') { %> aria-current="page"<% } %>>
+    <span class="ac-patient-nav__icon" aria-hidden="true">🔗</span>
+    <span class="ac-patient-nav__label">Link</span>
+  </a>
+  <a href="/clinics/<%= clinicKey %>/patient/profile"<% if (activeNav === 'profile') { %> aria-current="page"<% } %>>
+    <span class="ac-patient-nav__icon" aria-hidden="true">👤</span>
+    <span class="ac-patient-nav__label">Profile</span>
+  </a>
+  <a href="/clinics/<%= clinicKey %>/patient/security"<% if (activeNav === 'security') { %> aria-current="page"<% } %>>
+    <span class="ac-patient-nav__icon" aria-hidden="true">🔒</span>
+    <span class="ac-patient-nav__label">Security</span>
+  </a>
+</nav>

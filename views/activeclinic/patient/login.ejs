@@ -1,0 +1,23 @@
+<section class="ac-patient-card ac-patient-card--auth">
+  <h1>Patient portal sign in</h1>
+  <% if (error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/login" data-ac-shell="patient">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-patient-field">
+      <label for="identifier">Phone or email</label>
+      <input type="text" id="identifier" name="identifier" autocomplete="username" required/>
+    </div>
+    <div class="ac-patient-field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required/>
+    </div>
+    <button type="submit" class="ac-patient-btn">Sign in</button>
+  </form>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient/register">Register for patient portal</a>
+    ·
+    <a href="/clinics/<%= clinicKey %>/patient/forgot-password">Forgot password?</a>
+  </p>
+</section>

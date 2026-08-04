@@ -6,7 +6,6 @@
 (function () {
   "use strict";
 
-  // Basic form validation
   document.addEventListener("DOMContentLoaded", function () {
     const forms = document.querySelectorAll('form[data-ac-shell="patient"]');
     forms.forEach(function (form) {
@@ -25,7 +24,10 @@
 
         if (!valid) {
           e.preventDefault();
-          alert("Please fill in all required fields.");
+          const live = document.getElementById("ac-patient-live");
+          if (live) {
+            live.textContent = "Please fill in all required fields.";
+          }
         }
       });
     });

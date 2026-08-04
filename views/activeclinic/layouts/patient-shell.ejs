@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><%= pageTitle %> · Patient Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/activeclinic/ac-patient.css?v=<%= assetVersion %>"/>
+</head>
+<body
+  class="ac-patient-body"
+  data-ac-product="activeclinic"
+  data-ac-shell="patient"
+  data-ac-page="<%= pageId %>"
+>
+  <a class="ac-patient-skip" href="#ac-patient-main">Skip to content</a>
+  <%- headerHtml %>
+  <% if (typeof navHtml === 'string' && navHtml) { %>
+  <%- navHtml %>
+  <% } %>
+  <main id="ac-patient-main" class="ac-patient-main" tabindex="-1">
+    <%- bodyHtml %>
+  </main>
+  <script src="/activeclinic/ac-patient.js?v=<%= assetVersion %>" defer></script>
+  <div id="ac-patient-live" class="ac-sr-only" aria-live="polite"></div>
+</body>
+</html>

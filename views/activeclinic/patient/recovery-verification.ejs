@@ -1,0 +1,20 @@
+<section class="ac-patient-card">
+  <h1>Recovery verification</h1>
+  <div class="ac-patient-honesty">
+    <p>
+      Automated recovery codes (SMS or email OTP) are not available for patient portal password recovery at this time.
+    </p>
+    <p>
+      If you requested a password reset, the clinic may need to verify your identity by phone or in person before resetting your account.
+    </p>
+    <p>Please contact the clinic directly for help recovering access to your patient portal account.</p>
+    <% if (clinic && clinic.publicName) { %>
+    <p>Clinic: <strong><%= clinic.publicName %></strong></p>
+    <% } %>
+  </div>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient/forgot-password">Request password reset</a>
+    ·
+    <a href="/clinics/<%= clinicKey %>/patient/login">Back to sign in</a>
+  </p>
+</section>

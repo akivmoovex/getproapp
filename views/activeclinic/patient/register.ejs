@@ -1,0 +1,42 @@
+<section class="ac-patient-card ac-patient-card--auth">
+  <h1>Register for patient portal</h1>
+  <% if (error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <p class="ac-patient-hint">
+    If you have a guest booking token, enter it below. Otherwise, enter your details to match your patient record.
+  </p>
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/register" data-ac-shell="patient">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-patient-field">
+      <label for="guestToken">Guest token (optional)</label>
+      <input type="text" id="guestToken" name="guestToken" autocomplete="off"/>
+    </div>
+    <div class="ac-patient-field">
+      <label for="phone">Phone</label>
+      <input type="tel" id="phone" name="phone" autocomplete="tel" required/>
+    </div>
+    <div class="ac-patient-field">
+      <label for="email">Email (optional)</label>
+      <input type="email" id="email" name="email" autocomplete="email"/>
+    </div>
+    <div class="ac-patient-field">
+      <label for="firstName">First name</label>
+      <input type="text" id="firstName" name="firstName" autocomplete="given-name"/>
+    </div>
+    <div class="ac-patient-field">
+      <label for="lastName">Last name</label>
+      <input type="text" id="lastName" name="lastName" autocomplete="family-name"/>
+    </div>
+    <div class="ac-patient-field">
+      <label for="password">Password (min 10 characters)</label>
+      <input type="password" id="password" name="password" autocomplete="new-password" required minlength="10"/>
+    </div>
+    <button type="submit" class="ac-patient-btn">Register</button>
+  </form>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient/login">Already have an account? Sign in</a>
+    ·
+    <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking">Link a guest booking</a>
+  </p>
+</section>

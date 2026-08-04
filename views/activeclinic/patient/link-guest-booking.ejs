@@ -1,0 +1,36 @@
+<section class="ac-patient-page">
+  <header class="ac-patient-page__header">
+    <h1>Link guest booking</h1>
+  </header>
+
+  <p class="ac-patient-hint">
+    Enter the guest access token from your booking confirmation to link it to your patient portal account.
+  </p>
+
+  <% if (error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <% if (success) { %>
+  <div class="ac-patient-alert ac-patient-alert--success" role="status"><%= success %></div>
+  <% } %>
+
+  <% if (patientAuth && patientAuth.authenticated) { %>
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/link-guest-booking" data-ac-shell="patient">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-patient-field">
+      <label for="guestToken">Guest booking token</label>
+      <input type="text" id="guestToken" name="guestToken" autocomplete="off" required/>
+    </div>
+    <button type="submit" class="ac-patient-btn">Link booking</button>
+  </form>
+  <% } else { %>
+  <div class="ac-patient-honesty">
+    <p>Sign in to link a guest booking to your account, or include the token when registering.</p>
+  </div>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient/login">Sign in</a>
+    ·
+    <a href="/clinics/<%= clinicKey %>/patient/register">Register with token</a>
+  </p>
+  <% } %>
+</section>

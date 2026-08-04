@@ -1,0 +1,18 @@
+<section class="ac-patient-card">
+  <h1>Verification request recorded</h1>
+  <div class="ac-patient-honesty ac-patient-honesty--success">
+    <p>
+      Your verification request has been noted. Automated SMS verification is not available —
+      a clinic staff member will contact you if follow-up is needed.
+    </p>
+  </div>
+  <% if (message) { %>
+  <p class="ac-patient-hint"><%= message %></p>
+  <% } %>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient/login" class="ac-patient-btn ac-patient-btn--inline">Back to sign in</a>
+    <% if (patientAuth && patientAuth.authenticated) { %>
+    · <a href="/clinics/<%= clinicKey %>/patient">Go to dashboard</a>
+    <% } %>
+  </p>
+</section>

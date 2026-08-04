@@ -1,0 +1,25 @@
+<section class="ac-patient-page">
+  <header class="ac-patient-page__header">
+    <h1><%= notFoundKind === 'booking' ? 'Booking not found' : 'Page not found' %></h1>
+  </header>
+
+  <p>
+    <% if (notFoundKind === 'clinic') { %>
+    This clinic could not be found or is not available for patient portal access.
+    <% } else if (notFoundKind === 'booking') { %>
+    This booking could not be found or is not linked to your account.
+    <% } else { %>
+    The page you requested could not be found.
+    <% } %>
+  </p>
+
+  <p class="ac-patient-links">
+    <% if (clinicKey && notFoundKind !== 'clinic') { %>
+    <a href="/clinics/<%= clinicKey %>/patient">Back to dashboard</a>
+    ·
+    <a href="/clinics/<%= clinicKey %>/patient/login">Sign in</a>
+    <% } else { %>
+    <a href="/clinics">Browse clinics</a>
+    <% } %>
+  </p>
+</section>

@@ -368,8 +368,102 @@ async function registerPatientWithPhoneMatch(db, input) {
   }
 }
 
+/**
+ * Link an existing guest booking to an authenticated patient via access token.
+ */
+async function linkGuestBookingToPatient(db, input) {
+  const guestToken = String((input && input.guestToken) || "").trim();
+  const patientId = String((input && input.patientId) || "").trim();
+  const platformIdentityId = String((input && input.platformIdentityId) || "").trim();
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
+
+  if (
+    !guestToken ||
+    !UUID_RE.test(patientId) ||
+    !UUID_RE.test(platformIdentityId) ||
+    !UUID_RE.test(organizationId) ||
+    !UUID_RE.test(healthcareOrganizationId)
+  ) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+
+  const verified = await verifyBookingAccessToken(db, { token: guestToken });
+  if (!verified.ok) {
+    return { ok: false, code: RESULT.INVALID_TOKEN };
+  }
+
+  const bookingRow = await db.query(
+    `SELECT b.id, b.request_number, b.patient_id, b.organization_id, b.healthcare_organization_id
+     FROM activeclinic.public_booking_requests b
+     WHERE b.id = $1`,
+    [verified.booking.id]
+  );
+
+  if (!bookingRow.rows[0]) {
+    return { ok: false, code: RESULT.INVALID_TOKEN };
+  }
+
+  const booking = bookingRow.rows[0];
+  if (
+    booking.organization_id !== organizationId ||
+    booking.healthcare_organization_id !== healthcareOrganizationId
+  ) {
+    return { ok: false, code: RESULT.INVALID_TOKEN };
+  }
+
+  if (booking.patient_id && booking.patient_id !== patientId) {
+    await db.query(
+      `INSERT INTO activeclinic.patient_portal_link_events
+        (organization_id, healthcare_organization_id, patient_id, platform_identity_id, event_type, booking_request_id, metadata_json)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        organizationId,
+        healthcareOrganizationId,
+        patientId,
+        platformIdentityId,
+        "link_conflict",
+        booking.id,
+        JSON.stringify({ reason: "booking_owned_by_other_patient" }),
+      ]
+    );
+    return { ok: false, code: "link_conflict" };
+  }
+
+  if (!booking.patient_id) {
+    await db.query(
+      `UPDATE activeclinic.public_booking_requests
+       SET patient_id = $1, updated_at = now()
+       WHERE id = $2 AND patient_id IS NULL`,
+      [patientId, booking.id]
+    );
+  }
+
+  await db.query(
+    `INSERT INTO activeclinic.patient_portal_link_events
+      (organization_id, healthcare_organization_id, patient_id, platform_identity_id, event_type, booking_request_id, metadata_json)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      organizationId,
+      healthcareOrganizationId,
+      patientId,
+      platformIdentityId,
+      "linked_via_guest_token",
+      booking.id,
+      JSON.stringify({ linked_existing_account: true }),
+    ]
+  );
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    requestNumber: booking.request_number,
+  };
+}
+
 module.exports = {
   RESULT,
   registerPatientWithGuestToken,
   registerPatientWithPhoneMatch,
+  linkGuestBookingToPatient,
 };

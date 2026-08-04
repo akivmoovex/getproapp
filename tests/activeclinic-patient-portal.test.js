@@ -428,4 +428,242 @@ describe("ActiveClinic Patient Portal (P27)", () => {
       .send({ identifier: "+260977111111", password: "Whatever123!" });
     assert.equal(bad.status, 403);
   });
+
+  it("login page renders EJS patient shell", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}ejs`;
+    const clinic = await seedPublishedClinic(stamp);
+    const app = appWithEnv();
+    const page = await request(app).get(
+      `/clinics/${clinic.clinicKey}/patient/login`
+    );
+    assert.equal(page.status, 200);
+    assert.match(page.text, /data-ac-shell="patient"/);
+    assert.match(page.text, /ac-patient-header/);
+    assert.match(page.text, /ac-patient\.css\?v=p27-1/);
+    assert.match(page.text, /<h1[^>]*>Patient portal sign in<\/h1>/i);
+    assert.doesNotMatch(page.text, /href="#"/);
+    assert.equal((page.text.match(/<h1/gi) || []).length, 1);
+  });
+
+  it("verify-phone honesty page does not claim SMS delivery", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}vp`;
+    const clinic = await seedPublishedClinic(stamp);
+    const app = appWithEnv();
+    const page = await request(app).get(
+      `/clinics/${clinic.clinicKey}/patient/verify-phone`
+    );
+    assert.equal(page.status, 200);
+    assert.match(page.text, /not yet available|contact the clinic|no SMS/i);
+    assert.doesNotMatch(page.text, /SMS sent|code sent|OTP sent/i);
+    assert.doesNotMatch(page.text, /href="#"/);
+    assert.equal((page.text.match(/<h1/gi) || []).length, 1);
+  });
+
+  it("bookings filter by status query param", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}bf`;
+    const clinic = await seedPublishedClinic(stamp);
+    const phone = nextPhone();
+
+    const staff = await createStaffMember(pool, {
+      organizationId: clinic.orgId,
+      healthcareOrganizationId: clinic.hcoId,
+      firstName: "Net",
+      lastName: "Admin",
+      employmentType: "permanent",
+      status: "active",
+      phone: nextPhone(),
+    });
+    assert.equal(staff.ok, true);
+    await assignStaffRole(pool, {
+      organizationId: clinic.orgId,
+      staffMemberId: staff.staffMember.id,
+      roleKey: NETWORK_ADMIN,
+      scopeType: "organisation",
+    });
+
+    const patient = await registerActiveClinicPatient(pool, {
+      organizationId: clinic.orgId,
+      healthcareOrganizationId: clinic.hcoId,
+      facilityId: clinic.facilityId,
+      actor: { staffMemberId: staff.staffMember.id },
+      demographics: {
+        firstName: "Filter",
+        lastName: "Pat",
+        sexAtRegistration: "female",
+      },
+      contacts: { phone },
+      registrationMethod: "walk_in",
+    });
+    assert.equal(patient.ok, true);
+
+    const identity = await createPlatformIdentity(pool, {
+      status: "active",
+      primaryPhone: phone,
+      phoneNormalized: phone,
+      phoneVerifiedAt: new Date().toISOString(),
+      requireContact: true,
+    });
+    await setPlatformIdentityPassword(pool, {
+      identityId: identity.identity.id,
+      password: "PortalPass1!",
+    });
+    await linkIdentityToProductProfile(pool, {
+      identityId: identity.identity.id,
+      productKey: "activeclinic",
+      profileType: "activeclinic_patient",
+      productProfileId: patient.patient.id,
+    });
+    await pool.query(
+      `UPDATE activeclinic.patients SET platform_identity_id = $1 WHERE id = $2`,
+      [identity.identity.id, patient.patient.id]
+    );
+
+    const confirmed = await createConsultationBookingRequest(pool, {
+      organizationId: clinic.orgId,
+      healthcareOrganizationId: clinic.hcoId,
+      facilityId: clinic.facilityId,
+      patientFirstName: "Filter",
+      patientLastName: "Pat",
+      patientPhone: phone,
+      preferredStartsAt: "2030-07-01T09:00:00Z",
+      timezone: "Africa/Lusaka",
+    });
+    assert.equal(confirmed.ok, true);
+    await pool.query(
+      `UPDATE activeclinic.public_booking_requests SET patient_id = $1, status = 'confirmed' WHERE id = $2`,
+      [patient.patient.id, confirmed.booking.id]
+    );
+
+    const pending = await createConsultationBookingRequest(pool, {
+      organizationId: clinic.orgId,
+      healthcareOrganizationId: clinic.hcoId,
+      facilityId: clinic.facilityId,
+      patientFirstName: "Filter",
+      patientLastName: "Pat",
+      patientPhone: phone,
+      preferredStartsAt: "2030-08-01T09:00:00Z",
+      timezone: "Africa/Lusaka",
+    });
+    assert.equal(pending.ok, true);
+    await pool.query(
+      `UPDATE activeclinic.public_booking_requests SET patient_id = $1 WHERE id = $2`,
+      [patient.patient.id, pending.booking.id]
+    );
+
+    const app = appWithEnv();
+    const loginPage = await request(app).get(
+      `/clinics/${clinic.clinicKey}/patient/login`
+    );
+    const csrf = extractCookie(loginPage, CSRF_COOKIE_ACTIVECLINIC_ORG);
+    const login = await request(app)
+      .post(`/clinics/${clinic.clinicKey}/patient/login`)
+      .set("Cookie", `${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        identifier: phone,
+        password: "PortalPass1!",
+      });
+    const sid = extractCookie(login, COOKIE_ACTIVECLINIC_ORG);
+    assert.ok(sid);
+
+    const filtered = await request(app)
+      .get(`/clinics/${clinic.clinicKey}/patient/bookings?status=confirmed`)
+      .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}`);
+    assert.equal(filtered.status, 200);
+    assert.match(filtered.text, new RegExp(confirmed.booking.requestNumber));
+    assert.doesNotMatch(filtered.text, new RegExp(pending.booking.requestNumber));
+    assert.match(filtered.text, /ac-patient-filters/);
+  });
+
+  it("link-guest-booking page renders for authenticated patient", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}lg`;
+    const clinic = await seedPublishedClinic(stamp);
+    const phone = nextPhone();
+
+    const staff = await createStaffMember(pool, {
+      organizationId: clinic.orgId,
+      healthcareOrganizationId: clinic.hcoId,
+      firstName: "Net",
+      lastName: "Admin",
+      employmentType: "permanent",
+      status: "active",
+      phone: nextPhone(),
+    });
+    assert.equal(staff.ok, true);
+    await assignStaffRole(pool, {
+      organizationId: clinic.orgId,
+      staffMemberId: staff.staffMember.id,
+      roleKey: NETWORK_ADMIN,
+      scopeType: "organisation",
+    });
+
+    const patient = await registerActiveClinicPatient(pool, {
+      organizationId: clinic.orgId,
+      healthcareOrganizationId: clinic.hcoId,
+      facilityId: clinic.facilityId,
+      actor: { staffMemberId: staff.staffMember.id },
+      demographics: {
+        firstName: "Link",
+        lastName: "Pat",
+        sexAtRegistration: "male",
+      },
+      contacts: { phone },
+      registrationMethod: "walk_in",
+    });
+    assert.equal(patient.ok, true);
+
+    const identity = await createPlatformIdentity(pool, {
+      status: "active",
+      primaryPhone: phone,
+      phoneNormalized: phone,
+      phoneVerifiedAt: new Date().toISOString(),
+      requireContact: true,
+    });
+    await setPlatformIdentityPassword(pool, {
+      identityId: identity.identity.id,
+      password: "PortalPass1!",
+    });
+    await linkIdentityToProductProfile(pool, {
+      identityId: identity.identity.id,
+      productKey: "activeclinic",
+      profileType: "activeclinic_patient",
+      productProfileId: patient.patient.id,
+    });
+    await pool.query(
+      `UPDATE activeclinic.patients SET platform_identity_id = $1 WHERE id = $2`,
+      [identity.identity.id, patient.patient.id]
+    );
+
+    const app = appWithEnv();
+    const loginPage = await request(app).get(
+      `/clinics/${clinic.clinicKey}/patient/login`
+    );
+    const csrf = extractCookie(loginPage, CSRF_COOKIE_ACTIVECLINIC_ORG);
+    const login = await request(app)
+      .post(`/clinics/${clinic.clinicKey}/patient/login`)
+      .set("Cookie", `${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        identifier: phone,
+        password: "PortalPass1!",
+      });
+    const sid = extractCookie(login, COOKIE_ACTIVECLINIC_ORG);
+    assert.ok(sid);
+
+    const page = await request(app)
+      .get(`/clinics/${clinic.clinicKey}/patient/link-guest-booking`)
+      .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}`);
+    assert.equal(page.status, 200);
+    assert.match(page.text, /Link guest booking/i);
+    assert.match(page.text, /name="guestToken"/);
+    assert.match(page.text, /\/patient\/link-guest-booking/);
+    assert.doesNotMatch(page.text, /href="#"/);
+    assert.equal((page.text.match(/<h1/gi) || []).length, 1);
+  });
 });

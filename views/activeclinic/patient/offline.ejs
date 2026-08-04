@@ -1,0 +1,16 @@
+<section class="ac-patient-page">
+  <header class="ac-patient-page__header">
+    <h1>Patient portal unavailable</h1>
+  </header>
+
+  <div class="ac-patient-honesty">
+    <p>The patient portal is temporarily unavailable. Please try again later or contact the clinic directly.</p>
+    <% if (clinic && clinic.publicName) { %>
+    <p>Clinic: <strong><%= clinic.publicName %></strong></p>
+    <% } %>
+  </div>
+
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>">Return to clinic website</a>
+  </p>
+</section>

@@ -1,0 +1,21 @@
+<section class="ac-patient-page">
+  <header class="ac-patient-page__header">
+    <h1>Welcome, <%= escapeHtml(displayName) %></h1>
+    <% if (patient.patientNumber) { %>
+    <p class="ac-patient-meta">Patient number: <%= escapeHtml(patient.patientNumber) %></p>
+    <% } %>
+  </header>
+
+  <div class="ac-patient-empty-state">
+    <p>You have no bookings linked to your patient portal account yet.</p>
+    <p>Book an appointment on the clinic website, or link an existing guest booking with your access token.</p>
+  </div>
+
+  <nav class="ac-patient-actions" aria-label="Quick links">
+    <% if (clinic && clinic.publicBookingEnabled !== false) { %>
+    <a href="/clinics/<%= clinicKey %>/book" class="ac-patient-btn ac-patient-btn--inline">Book appointment</a>
+    <% } %>
+    <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking">Link a guest booking</a>
+    <a href="/clinics/<%= clinicKey %>/patient/profile">Update my profile</a>
+  </nav>
+</section>

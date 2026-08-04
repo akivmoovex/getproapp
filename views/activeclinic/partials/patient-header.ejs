@@ -1,0 +1,18 @@
+<header class="ac-patient-header" data-ac-patient-header="1">
+  <div class="ac-patient-header__inner">
+    <div class="ac-patient-header__brand">
+      <% if (clinic && clinic.publicName) { %>
+      <a class="ac-patient-header__clinic" href="/clinics/<%= clinicKey %>">
+        <%= clinic.publicName %>
+      </a>
+      <% } %>
+      <span class="ac-patient-header__portal">Patient Portal</span>
+    </div>
+    <nav class="ac-patient-header__links" aria-label="Portal shortcuts">
+      <a href="/clinics/<%= clinicKey %>">Clinic website</a>
+      <% if (!(patientAuth && patientAuth.authenticated)) { %>
+      <a href="/clinics/<%= clinicKey %>/patient/login">Sign in</a>
+      <% } %>
+    </nav>
+  </div>
+</header>

@@ -14,6 +14,7 @@ const {
 const {
   registerPatientWithGuestToken,
   registerPatientWithPhoneMatch,
+  linkGuestBookingToPatient,
 } = require("../services/activeClinicPatientPortalRegistrationService");
 const {
   listPatientBookings,
@@ -35,7 +36,11 @@ const {
 const {
   setPlatformIdentityPassword,
 } = require("../../platform/services/platformIdentityCredentialService");
-const { renderPatientView } = require("./renderActiveClinicPatient");
+const {
+  renderPatientView,
+  renderPatientClinicNotFound,
+  BOOKING_STATUS_LABELS,
+} = require("./renderActiveClinicPatient");
 const {
   resolvePublishableClinicByKey,
 } = require("../services/activeClinicPublicVisibilityService");
@@ -59,6 +64,30 @@ function issuePageCsrf(res, env, isProduction) {
   const token = issueCsrfToken(env);
   setCsrfCookie(res, token, { secure: isProduction, env });
   return token;
+}
+
+function sendPatientClinicNotFound(res, env, isProduction) {
+  const csrfToken = issuePageCsrf(res, env, isProduction);
+  return res
+    .status(404)
+    .type("html")
+    .send(
+      renderPatientClinicNotFound({
+        csrfToken,
+        csrfField: CSRF_FIELD,
+        clinicKey: "",
+      })
+    );
+}
+
+function patientViewPayload(clinicCtx, csrfToken, extra) {
+  return {
+    csrfToken,
+    csrfField: CSRF_FIELD,
+    clinicKey: clinicCtx.clinicKey,
+    clinic: clinicCtx.clinic,
+    ...(extra || {}),
+  };
 }
 
 /**
@@ -136,6 +165,38 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     },
   });
 
+  const linkBookingLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: String(env.NODE_ENV || "") === "test" ? 1000 : 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) =>
+      sha256Hex(
+        `patient-link-booking|${req.params.clinicKey}|${
+          (req.activeClinicPatientAuth &&
+            req.activeClinicPatientAuth.patient &&
+            req.activeClinicPatientAuth.patient.id) ||
+          ""
+        }|${clientIp(req)}`
+      ),
+    handler: (req, res) => {
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res
+        .status(429)
+        .type("html")
+        .send(
+          renderPatientView("patient/link-guest-booking", {
+            csrfToken,
+            csrfField: CSRF_FIELD,
+            clinicKey: req.params.clinicKey,
+            patientAuth: req.activeClinicPatientAuth || { authenticated: false },
+            activeNav: "link",
+            error: "Too many link attempts. Please try again later.",
+          })
+        );
+    },
+  });
+
   const passwordResetLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     limit: String(env.NODE_ENV || "") === "test" ? 1000 : 3,
@@ -174,6 +235,11 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
       clinicKey: resolved.clinic.clinicKey,
       publicName: resolved.clinic.publicName,
       primaryFacilityId: resolved.clinic.primaryFacilityId,
+      clinic: {
+        clinicKey: resolved.clinic.clinicKey,
+        publicName: resolved.clinic.publicName,
+        publicBookingEnabled: resolved.clinic.publicBookingEnabled === true,
+      },
     };
   }
 
@@ -183,7 +249,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     try {
       const clinic = await resolveClinicContext(req.params.clinicKey);
       if (!clinic) {
-        return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+        return sendPatientClinicNotFound(res, env, isProduction);
       }
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
@@ -191,11 +257,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         .status(200)
         .type("html")
         .send(
-          renderPatientView("patient/login", {
-            csrfToken,
-            csrfField: CSRF_FIELD,
-            clinicKey: req.params.clinicKey,
-          })
+          renderPatientView("patient/login", patientViewPayload(clinic, csrfToken))
         );
     } catch (err) {
       return next(err);
@@ -210,7 +272,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         const clinicKey = req.params.clinicKey;
         const clinic = await resolveClinicContext(clinicKey);
         if (!clinic) {
-          return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+          return sendPatientClinicNotFound(res, env, isProduction);
         }
 
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
@@ -287,7 +349,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
       const clinicKey = req.params.clinicKey;
       const clinic = await resolveClinicContext(clinicKey);
       if (!clinic) {
-        return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+        return sendPatientClinicNotFound(res, env, isProduction);
       }
 
       const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
@@ -325,7 +387,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     try {
       const clinic = await resolveClinicContext(req.params.clinicKey);
       if (!clinic) {
-        return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+        return sendPatientClinicNotFound(res, env, isProduction);
       }
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
@@ -352,7 +414,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         const clinicKey = req.params.clinicKey;
         const clinic = await resolveClinicContext(clinicKey);
         if (!clinic) {
-          return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+          return sendPatientClinicNotFound(res, env, isProduction);
         }
 
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
@@ -456,7 +518,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     try {
       const clinic = await resolveClinicContext(req.params.clinicKey);
       if (!clinic) {
-        return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+        return sendPatientClinicNotFound(res, env, isProduction);
       }
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
@@ -483,7 +545,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         const clinicKey = req.params.clinicKey;
         const clinic = await resolveClinicContext(clinicKey);
         if (!clinic) {
-          return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+          return sendPatientClinicNotFound(res, env, isProduction);
         }
 
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
@@ -557,15 +619,21 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     try {
       const clinic = await resolveClinicContext(req.params.clinicKey);
       if (!clinic) {
-        return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+        return sendPatientClinicNotFound(res, env, isProduction);
       }
 
       const token = String((req.query && req.query.token) || "").trim();
       if (!token) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
         return res
           .status(400)
           .type("html")
-          .send("<h1>Invalid or missing reset token</h1>");
+          .send(
+            renderPatientView("patient/recovery-verification", {
+              ...patientViewPayload(clinic, csrfToken),
+              error: "Invalid or missing reset token.",
+            })
+          );
       }
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
@@ -592,7 +660,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         const clinicKey = req.params.clinicKey;
         const clinic = await resolveClinicContext(clinicKey);
         if (!clinic) {
-          return res.status(404).type("html").send("<h1>Clinic not found</h1>");
+          return sendPatientClinicNotFound(res, env, isProduction);
         }
 
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
@@ -708,21 +776,25 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           (b) => !pendingStatuses.has(b.status) && !pastStatuses.has(b.status)
         );
 
+        const clinicCtx = await resolveClinicContext(req.params.clinicKey);
         const csrfToken = issuePageCsrf(res, env, isProduction);
+        const dashboardView =
+          bookings.length === 0 ? "patient/dashboard-empty" : "patient/dashboard";
         return res
           .status(200)
           .type("html")
           .send(
-            renderPatientView("patient/dashboard", {
-              csrfToken,
-              csrfField: CSRF_FIELD,
-              clinicKey: req.params.clinicKey,
-              patientAuth: req.activeClinicPatientAuth,
-              bookings,
-              upcoming,
-              pending,
-              past,
-            })
+            renderPatientView(
+              dashboardView,
+              patientViewPayload(clinicCtx || { clinicKey: req.params.clinicKey, clinic: null }, csrfToken, {
+                patientAuth: req.activeClinicPatientAuth,
+                activeNav: "dashboard",
+                bookings,
+                upcoming,
+                pending,
+                past,
+              })
+            )
           );
       } catch (err) {
         return next(err);
@@ -737,24 +809,36 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     async (req, res, next) => {
       try {
         const auth = req.activeClinicPatientAuth;
-        const bookings = await listPatientBookings(getPool(), {
+        const clinicCtx = await resolveClinicContext(req.params.clinicKey);
+        const listed = await listPatientBookings(getPool(), {
           patientId: auth.patient.id,
           organizationId: auth.organization.id,
           healthcareOrganizationId: auth.healthcareOrganization.id,
         });
+        let bookings = listed.ok ? listed.bookings : [];
+        const statusFilter = String((req.query && req.query.status) || "").trim();
+        if (statusFilter && Object.prototype.hasOwnProperty.call(BOOKING_STATUS_LABELS, statusFilter)) {
+          bookings = bookings.filter((b) => b.status === statusFilter);
+        } else if (statusFilter) {
+          bookings = [];
+        }
 
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res
           .status(200)
           .type("html")
           .send(
-            renderPatientView("patient/bookings", {
-              csrfToken,
-              csrfField: CSRF_FIELD,
-              clinicKey: req.params.clinicKey,
-              patientAuth: auth,
-              bookings: bookings.bookings || [],
-            })
+            renderPatientView(
+              "patient/bookings",
+              patientViewPayload(clinicCtx || { clinicKey: req.params.clinicKey, clinic: null }, csrfToken, {
+                patientAuth: auth,
+                activeNav: "bookings",
+                bookings,
+                statusFilter: Object.prototype.hasOwnProperty.call(BOOKING_STATUS_LABELS, statusFilter)
+                  ? statusFilter
+                  : "",
+              })
+            )
           );
       } catch (err) {
         return next(err);
@@ -779,21 +863,37 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         });
 
         if (!booking.ok) {
-          return res.status(404).type("html").send("<h1>Booking not found</h1>");
+          const clinicCtx = await resolveClinicContext(req.params.clinicKey);
+          const csrfToken = issuePageCsrf(res, env, isProduction);
+          return res
+            .status(404)
+            .type("html")
+            .send(
+              renderPatientView(
+                "patient/not-found",
+                patientViewPayload(clinicCtx || { clinicKey: req.params.clinicKey, clinic: null }, csrfToken, {
+                  patientAuth: auth,
+                  activeNav: "bookings",
+                  notFoundKind: "booking",
+                })
+              )
+            );
         }
 
+        const clinicCtx = await resolveClinicContext(req.params.clinicKey);
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res
           .status(200)
           .type("html")
           .send(
-            renderPatientView("patient/booking-detail", {
-              csrfToken,
-              csrfField: CSRF_FIELD,
-              clinicKey: req.params.clinicKey,
-              patientAuth: auth,
-              booking: booking.booking,
-            })
+            renderPatientView(
+              "patient/booking-detail",
+              patientViewPayload(clinicCtx || { clinicKey: req.params.clinicKey, clinic: null }, csrfToken, {
+                patientAuth: auth,
+                activeNav: "bookings",
+                booking: booking.booking,
+              })
+            )
           );
       } catch (err) {
         return next(err);
@@ -820,6 +920,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           patientId: auth.patient.id,
           organizationId: auth.organization.id,
           healthcareOrganizationId: auth.healthcareOrganization.id,
+          reason: req.body && req.body.reason,
         });
 
         if (!result.ok) {
@@ -855,6 +956,8 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           patientId: auth.patient.id,
           organizationId: auth.organization.id,
           healthcareOrganizationId: auth.healthcareOrganization.id,
+          reason: req.body && req.body.reason,
+          preferredStartsAt: req.body && req.body.preferredStartsAt,
         });
 
         if (!result.ok) {
@@ -1139,16 +1242,256 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     requirePatientAuth,
     async (req, res, next) => {
       try {
+        const clinicCtx = await resolveClinicContext(req.params.clinicKey);
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res
           .status(200)
           .type("html")
           .send(
-            renderPatientView("patient/notifications", {
-              csrfToken,
-              csrfField: CSRF_FIELD,
-              clinicKey: req.params.clinicKey,
-              patientAuth: req.activeClinicPatientAuth,
+            renderPatientView(
+              "patient/notifications",
+              patientViewPayload(clinicCtx || { clinicKey: req.params.clinicKey, clinic: null }, csrfToken, {
+                patientAuth: req.activeClinicPatientAuth,
+                activeNav: "notifications",
+              })
+            )
+          );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get("/clinics/:clinicKey/patient/verify-phone", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicContext(req.params.clinicKey);
+      if (!clinic) {
+        return sendPatientClinicNotFound(res, env, isProduction);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res
+        .status(200)
+        .type("html")
+        .send(
+          renderPatientView("patient/verify-phone", patientViewPayload(clinic, csrfToken))
+        );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/patient/verify-phone", async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const clinic = await resolveClinicContext(clinicKey);
+      if (!clinic) {
+        return sendPatientClinicNotFound(res, env, isProduction);
+      }
+
+      const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
+      if (!csrfValid) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res
+          .status(403)
+          .type("html")
+          .send(
+            renderPatientView("patient/verify-phone", {
+              ...patientViewPayload(clinic, csrfToken),
+              error: "Invalid security token. Please try again.",
+            })
+          );
+      }
+
+      return res.redirect(303, `/clinics/${clinicKey}/patient/verification-success`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/patient/verification-success", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicContext(req.params.clinicKey);
+      if (!clinic) {
+        return sendPatientClinicNotFound(res, env, isProduction);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res
+        .status(200)
+        .type("html")
+        .send(
+          renderPatientView(
+            "patient/verification-success",
+            patientViewPayload(clinic, csrfToken, {
+              message:
+                "No SMS was sent. Please contact the clinic if you need to verify your phone number.",
+            })
+          )
+        );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/patient/recovery-verification", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicContext(req.params.clinicKey);
+      if (!clinic) {
+        return sendPatientClinicNotFound(res, env, isProduction);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res
+        .status(200)
+        .type("html")
+        .send(
+          renderPatientView(
+            "patient/recovery-verification",
+            patientViewPayload(clinic, csrfToken)
+          )
+        );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/patient/offline", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicContext(req.params.clinicKey);
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res
+        .status(503)
+        .type("html")
+        .send(
+          renderPatientView(
+            "patient/offline",
+            patientViewPayload(
+              clinic || { clinicKey: req.params.clinicKey, clinic: null },
+              csrfToken
+            )
+          )
+        );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get(
+    "/clinics/:clinicKey/patient/link-guest-booking",
+    loadPatientAuth,
+    async (req, res, next) => {
+      try {
+        const clinic = await resolveClinicContext(req.params.clinicKey);
+        if (!clinic) {
+          return sendPatientClinicNotFound(res, env, isProduction);
+        }
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res
+          .status(200)
+          .type("html")
+          .send(
+            renderPatientView(
+              "patient/link-guest-booking",
+              patientViewPayload(clinic, csrfToken, {
+                patientAuth: req.activeClinicPatientAuth || { authenticated: false },
+                activeNav: "link",
+              })
+            )
+          );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/clinics/:clinicKey/patient/link-guest-booking",
+    loadPatientAuth,
+    requirePatientAuth,
+    linkBookingLimiter,
+    async (req, res, next) => {
+      try {
+        const clinicKey = req.params.clinicKey;
+        const clinic = await resolveClinicContext(clinicKey);
+        if (!clinic) {
+          return sendPatientClinicNotFound(res, env, isProduction);
+        }
+
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
+        if (!csrfValid) {
+          const csrfToken = issuePageCsrf(res, env, isProduction);
+          return res
+            .status(403)
+            .type("html")
+            .send(
+              renderPatientView("patient/link-guest-booking", {
+                ...patientViewPayload(clinic, csrfToken, {
+                  patientAuth: req.activeClinicPatientAuth,
+                  activeNav: "link",
+                  error: "Invalid security token. Please try again.",
+                }),
+              })
+            );
+        }
+
+        const auth = req.activeClinicPatientAuth;
+        const guestToken = String((req.body && req.body.guestToken) || "").trim();
+        if (!guestToken) {
+          const csrfToken = issuePageCsrf(res, env, isProduction);
+          return res
+            .status(400)
+            .type("html")
+            .send(
+              renderPatientView("patient/link-guest-booking", {
+                ...patientViewPayload(clinic, csrfToken, {
+                  patientAuth: auth,
+                  activeNav: "link",
+                  error: "Please enter your guest booking token.",
+                }),
+              })
+            );
+        }
+
+        const linked = await linkGuestBookingToPatient(getPool(), {
+          guestToken,
+          patientId: auth.patient.id,
+          platformIdentityId: auth.platformIdentity.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+        });
+
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+
+        if (!linked.ok) {
+          let errorMsg = "Could not link this booking. Please check your token.";
+          if (linked.code === "link_conflict") {
+            errorMsg = "This booking belongs to another patient. Please contact the clinic.";
+          } else if (linked.code === "invalid_guest_token") {
+            errorMsg = "Invalid or expired guest token.";
+          }
+
+          return res
+            .status(400)
+            .type("html")
+            .send(
+              renderPatientView("patient/link-guest-booking", {
+                ...patientViewPayload(clinic, csrfToken, {
+                  patientAuth: auth,
+                  activeNav: "link",
+                  error: errorMsg,
+                }),
+              })
+            );
+        }
+
+        return res
+          .status(200)
+          .type("html")
+          .send(
+            renderPatientView("patient/link-guest-booking", {
+              ...patientViewPayload(clinic, csrfToken, {
+                patientAuth: auth,
+                activeNav: "link",
+                success: `Booking ${linked.requestNumber} has been linked to your account.`,
+              }),
             })
           );
       } catch (err) {

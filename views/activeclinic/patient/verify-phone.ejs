@@ -1,0 +1,29 @@
+<section class="ac-patient-card">
+  <h1>Verify your phone</h1>
+  <div class="ac-patient-honesty">
+    <p>
+      SMS and automated phone verification are not yet available for this clinic.
+      To verify your contact details or update your phone number, please contact the clinic directly.
+    </p>
+    <% if (clinic && clinic.publicName) { %>
+    <p>Clinic: <strong><%= clinic.publicName %></strong></p>
+    <% } %>
+  </div>
+  <% if (error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/verify-phone" data-ac-shell="patient">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-patient-field">
+      <label for="phone">Phone number on your account</label>
+      <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="For reference only — no SMS will be sent"/>
+    </div>
+    <button type="submit" class="ac-patient-btn">Continue</button>
+  </form>
+  <p class="ac-patient-hint">
+    Submitting this form does not send an SMS. It records your request to contact the clinic for verification.
+  </p>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient/login">Back to sign in</a>
+  </p>
+</section>
