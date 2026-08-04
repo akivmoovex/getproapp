@@ -163,9 +163,29 @@ describe("deploymentProfiles registry", () => {
     const p = DEPLOYMENT_PROFILES[CODE_ACTIVECLINIC_ORG_V6];
     assert.equal(p.productCode, "activeclinic");
     assert.equal(p.canonicalDomain, "activeclinic.org");
+    assert.equal(p.publicOrigin, "https://activeclinic.org");
+    assert.equal(p.deploymentEnvironment, "testing");
+    assert.equal(p.expectedDatabaseEnvironment, "testing");
     assert.equal(p.sessionCookieName, "activeclinic_org_sid");
     assert.equal(p.csrfCookieName, "activeclinic_org_csrf");
     assert.equal(p.jobsEnabled, false);
+    assert.ok(!p.apexDomains.includes("blessboard.com"));
+    assert.ok(!p.apexDomains.includes("blessboard.org"));
+    assert.equal(p.churchHostDomain, "activeclinic.org");
+  });
+
+  it("rejects Hostinger typo activeclinic-org-testing fail-closed", () => {
+    const r = resolveDeploymentProfileOrError({
+      PLATFORM_DEPLOYMENT_CODE: "activeclinic-org-testing",
+    });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, "unknown_deployment_code");
+    assert.match(r.message, /activeclinic-org-testing/);
+    assert.match(r.message, /activeclinic-org-v6/);
+    assert.match(r.message, /PLATFORM_DEPLOYMENT_CODE/);
+    assert.match(r.message, /Startup intentionally blocked/);
+    assert.doesNotMatch(r.message, /postgres:\/\//i);
+    assert.doesNotMatch(r.message, /SESSION_SECRET/i);
   });
 
   it("maps deprecated blessboard-org-v5 alias to staging with warning", () => {
@@ -196,6 +216,8 @@ describe("deploymentProfiles registry", () => {
     });
     assert.equal(r.ok, false);
     assert.equal(r.code, "unknown_deployment_code");
+    assert.match(r.message, /Startup intentionally blocked/);
+    assert.match(r.message, /Fix Hostinger PLATFORM_DEPLOYMENT_CODE/);
   });
 
   it("invalid format fails closed", () => {
@@ -204,6 +226,7 @@ describe("deploymentProfiles registry", () => {
     });
     assert.equal(r.ok, false);
     assert.equal(r.code, "invalid_deployment_code");
+    assert.match(r.message, /Startup intentionally blocked/);
   });
 
   it("unset PLATFORM_DEPLOYMENT_CODE is legacy-ok", () => {

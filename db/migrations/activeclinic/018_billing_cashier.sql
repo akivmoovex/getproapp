@@ -39,8 +39,8 @@ CREATE TABLE activeclinic.charge_catalogue_items (
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_by_staff_id UUID REFERENCES activeclinic.staff(id),
-  updated_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  created_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
+  updated_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   
   UNIQUE(tenant_id, facility_id, code),
   CHECK (effective_until IS NULL OR effective_until >= effective_from)
@@ -62,7 +62,7 @@ CREATE TABLE activeclinic.patient_charges (
   tenant_id UUID NOT NULL REFERENCES platform.organizations(id) ON DELETE CASCADE,
   facility_id UUID NOT NULL REFERENCES activeclinic.facilities(id) ON DELETE CASCADE,
   patient_id UUID NOT NULL REFERENCES activeclinic.patients(id) ON DELETE CASCADE,
-  encounter_id UUID REFERENCES activeclinic.clinical_encounters(id) ON DELETE SET NULL,
+  encounter_id UUID REFERENCES activeclinic.encounters(id) ON DELETE SET NULL,
   
   catalogue_item_id UUID REFERENCES activeclinic.charge_catalogue_items(id),
   
@@ -80,7 +80,7 @@ CREATE TABLE activeclinic.patient_charges (
   status VARCHAR(20) NOT NULL DEFAULT 'pending',
   
   charged_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  charged_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id),
+  charged_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id),
   
   -- Audit
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -124,10 +124,10 @@ CREATE TABLE activeclinic.invoices (
   status VARCHAR(20) NOT NULL DEFAULT 'draft',
   
   posted_at TIMESTAMPTZ,
-  posted_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  posted_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   
   voided_at TIMESTAMPTZ,
-  voided_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  voided_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   void_reason TEXT,
   
   notes TEXT,
@@ -135,8 +135,8 @@ CREATE TABLE activeclinic.invoices (
   -- Audit
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id),
-  updated_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  created_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id),
+  updated_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   
   UNIQUE(tenant_id, facility_id, invoice_number),
   CHECK (status IN ('draft', 'pending', 'posted', 'void')),
@@ -195,7 +195,7 @@ CREATE TABLE activeclinic.cashier_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES platform.organizations(id) ON DELETE CASCADE,
   facility_id UUID NOT NULL REFERENCES activeclinic.facilities(id) ON DELETE CASCADE,
-  cashier_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id) ON DELETE CASCADE,
+  cashier_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id) ON DELETE RESTRICT,
   
   session_number VARCHAR(50) NOT NULL,
   session_date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -212,9 +212,9 @@ CREATE TABLE activeclinic.cashier_sessions (
   
   status VARCHAR(20) NOT NULL DEFAULT 'open',
   
-  closed_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  closed_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   reconciled_at TIMESTAMPTZ,
-  reconciled_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  reconciled_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   
   notes TEXT,
   
@@ -249,7 +249,7 @@ CREATE TABLE activeclinic.cashier_session_events (
   event_data JSONB,
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id),
+  created_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id),
   
   CHECK (event_type IN ('session_open', 'payment_received', 'refund_issued', 'cash_count', 'session_close', 'session_reconcile', 'variance_noted'))
 );
@@ -285,7 +285,7 @@ CREATE TABLE activeclinic.payments (
   
   notes TEXT,
   
-  received_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id),
+  received_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id),
   
   -- Duplicate prevention
   idempotency_key VARCHAR(100) UNIQUE,
@@ -321,7 +321,7 @@ CREATE TABLE activeclinic.payment_allocations (
   currency_code VARCHAR(3) NOT NULL DEFAULT 'ZMW',
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id)
+  created_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id)
 );
 
 CREATE INDEX idx_payment_allocations_payment ON activeclinic.payment_allocations(payment_id);
@@ -349,7 +349,7 @@ CREATE TABLE activeclinic.receipts (
   currency_code VARCHAR(3) NOT NULL DEFAULT 'ZMW',
   
   issued_to_patient_name VARCHAR(255) NOT NULL,
-  issued_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id),
+  issued_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id),
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   
@@ -383,10 +383,10 @@ CREATE TABLE activeclinic.refunds (
   
   status VARCHAR(20) NOT NULL DEFAULT 'pending',
   
-  requested_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id),
-  approved_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  requested_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id),
+  approved_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   approved_at TIMESTAMPTZ,
-  rejected_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  rejected_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   rejected_at TIMESTAMPTZ,
   rejection_reason TEXT,
   
@@ -425,10 +425,10 @@ CREATE TABLE activeclinic.financial_reversals (
   
   status VARCHAR(20) NOT NULL DEFAULT 'pending',
   
-  requested_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id),
-  approved_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  requested_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id),
+  approved_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   approved_at TIMESTAMPTZ,
-  rejected_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  rejected_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   rejected_at TIMESTAMPTZ,
   rejection_reason TEXT,
   
@@ -474,8 +474,8 @@ CREATE TABLE activeclinic.payment_arrangements (
   
   status VARCHAR(20) NOT NULL DEFAULT 'pending',
   
-  requested_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff(id),
-  approved_by_staff_id UUID REFERENCES activeclinic.staff(id),
+  requested_by_staff_id UUID NOT NULL REFERENCES activeclinic.staff_members(id),
+  approved_by_staff_id UUID REFERENCES activeclinic.staff_members(id),
   approved_at TIMESTAMPTZ,
   
   notes TEXT,
@@ -494,33 +494,8 @@ CREATE INDEX idx_payment_arrangements_status ON activeclinic.payment_arrangement
 
 COMMENT ON TABLE activeclinic.payment_arrangements IS 'Payment plan agreements (PRODUCT_DECISION: basic support only)';
 
--- ============================================================================
--- RLS POLICIES (Tenant isolation)
--- ============================================================================
-
-ALTER TABLE activeclinic.charge_catalogue_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.patient_charges ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.invoice_lines ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.cashier_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.cashier_session_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.payment_allocations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.receipts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.refunds ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.financial_reversals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activeclinic.payment_arrangements ENABLE ROW LEVEL SECURITY;
-
--- Note: RLS policies enforced via application session variables
--- See platform RLS infrastructure for tenant_id enforcement
-
--- ============================================================================
--- GRANTS
--- ============================================================================
-
--- Application role grants (adjust based on actual application role structure)
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA activeclinic TO getpro_app;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA activeclinic TO getpro_app;
+-- Tenant isolation is enforced in application services (organization_id/tenant_id scoping).
+-- Do not enable RLS without policies — that blocks the foundation role used in tests.
 
 -- ============================================================================
 -- VALIDATION FUNCTIONS (optional helpers)

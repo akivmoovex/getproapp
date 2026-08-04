@@ -1,14 +1,14 @@
 "use strict";
 
 /**
- * Unified BlessBoard deployment-profile registry.
+ * Unified deployment-profile registry (BlessBoard + ActiveClinic).
  *
  * Official Hostinger apps use the same env KEYS; only VALUES differ:
- *   PLATFORM_DEPLOYMENT_CODE=blessboard-com-production | blessboard-org-staging
+ *   PLATFORM_DEPLOYMENT_CODE=blessboard-com-production | blessboard-org-staging | activeclinic-org-v6
  *
  * Authoritative profiles derive domains, deployment env, cookie, jobs, trust proxy,
  * and listen host. Unknown non-empty codes fail closed. Unset code keeps legacy
- * env-driven behaviour for non-BlessBoard / transitional hosts.
+ * env-driven behaviour for non-profiled / transitional hosts.
  */
 
 const {
@@ -258,13 +258,15 @@ function resolveDeploymentProfileOrError(env, opts = {}) {
   if (!raw) {
     return { ok: true, profile: null, requestedCode: null, aliased: false };
   }
+  const knownCodes = Object.keys(DEPLOYMENT_PROFILES).join(", ");
   if (!DEPLOYMENT_CODE_PATTERN.test(raw)) {
     return {
       ok: false,
       code: "invalid_deployment_code",
       message:
         `PLATFORM_DEPLOYMENT_CODE=${JSON.stringify(raw)} is not a valid kebab-case deployment code. ` +
-        `Known codes: ${Object.keys(DEPLOYMENT_PROFILES).join(", ")}.`,
+        `Known codes: ${knownCodes}. ` +
+        `Fix Hostinger PLATFORM_DEPLOYMENT_CODE to a known code. Startup intentionally blocked.`,
     };
   }
   const aliasTarget = DEPLOYMENT_CODE_ALIASES[raw];
@@ -276,7 +278,10 @@ function resolveDeploymentProfileOrError(env, opts = {}) {
       code: "unknown_deployment_code",
       message:
         `PLATFORM_DEPLOYMENT_CODE=${JSON.stringify(raw)} is not a registered deployment profile. ` +
-        `Known codes: ${Object.keys(DEPLOYMENT_PROFILES).join(", ")}. Refusing to start.`,
+        `Known codes: ${knownCodes}. ` +
+        `Fix Hostinger PLATFORM_DEPLOYMENT_CODE to one of the known codes ` +
+        `(ActiveClinic testing: ${CODE_ACTIVECLINIC_ORG_V6}). ` +
+        `Startup intentionally blocked.`,
     };
   }
   if (aliasTarget) {

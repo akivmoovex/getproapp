@@ -69,6 +69,20 @@ Authoritative profiles fail closed on:
 - session / CSRF cookie env mismatches
 - existing DB environment pairing (unchanged)
 
+## Hostinger environment (activeclinic.org)
+
+Canonical Hostinger contract: `docs/activeclinic/ACTIVECLINIC_HOSTINGER_ENV.md`.
+
+```env
+DATABASE_URL=<ActiveClinic testing database>
+SESSION_SECRET=<strong secret>
+NODE_ENV=testing
+DEPLOYMENT_ENV=testing
+PLATFORM_DEPLOYMENT_CODE=activeclinic-org-v6
+```
+
+**Do not use** `PLATFORM_DEPLOYMENT_CODE=activeclinic-org-testing` — that code is not registered and startup fails closed (Hostinger 503).
+
 ## Deferred
 
 - User identity architecture (`blessboard.users` vs platform identity) — AC-V6-04

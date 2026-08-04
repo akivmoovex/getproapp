@@ -23,7 +23,7 @@ INSERT INTO blessboard.permissions (
   ('activeclinic.billing.invoice.post', 'activeclinic', 'post',
    'Post invoices', 'Finalize and post invoices (makes them immutable)', 'highly_sensitive'),
   ('activeclinic.billing.invoice.void', 'activeclinic', 'void',
-   'Void posted invoices', 'Void posted invoices via financial reversal (elevated permission)', 'critical'),
+   'Void posted invoices', 'Void posted invoices via financial reversal (elevated permission)', 'highly_sensitive'),
   ('activeclinic.billing.invoice.amend', 'activeclinic', 'amend',
    'Amend invoices', 'Request and approve invoice amendments', 'highly_sensitive'),
   
@@ -31,7 +31,7 @@ INSERT INTO blessboard.permissions (
   ('activeclinic.billing.catalog.manage', 'activeclinic', 'manage',
    'Manage charge catalog', 'Create and update charge catalog items and price lists', 'highly_sensitive'),
   ('activeclinic.billing.price.override', 'activeclinic', 'override',
-   'Override prices', 'Override catalog prices on individual charges (requires approval)', 'critical')
+   'Override prices', 'Override catalog prices on individual charges (requires approval)', 'highly_sensitive')
 
 ON CONFLICT (permission_key) DO NOTHING;
 
@@ -49,10 +49,10 @@ INSERT INTO blessboard.permissions (
    'Collect payments', 'Record patient payments and generate receipts', 'highly_sensitive'),
   
   ('activeclinic.payment.refund', 'activeclinic', 'refund',
-   'Process refunds', 'Request and approve payment refunds (elevated permission)', 'critical'),
+   'Process refunds', 'Request and approve payment refunds (elevated permission)', 'highly_sensitive'),
   
   ('activeclinic.payment.reverse', 'activeclinic', 'reverse',
-   'Reverse payments', 'Reverse posted payments via financial correction (elevated permission)', 'critical'),
+   'Reverse payments', 'Reverse posted payments via financial correction (elevated permission)', 'highly_sensitive'),
   
   ('activeclinic.payment.allocate', 'activeclinic', 'allocate',
    'Allocate payments', 'Allocate payments to invoices (normally automatic)', 'highly_sensitive')
@@ -66,17 +66,17 @@ ON CONFLICT (permission_key) DO NOTHING;
 INSERT INTO blessboard.permissions (
   permission_key, resource_key, action_key, display_name, description, sensitivity
 ) VALUES
-  ('activeclinic.cashier.open_session', 'activeclinic', 'open',
+  ('activeclinic.cashier.open_session', 'activeclinic', 'open_session',
    'Open cashier session', 'Open daily cashier shift', 'highly_sensitive'),
   
-  ('activeclinic.cashier.close_session', 'activeclinic', 'close',
+  ('activeclinic.cashier.close_session', 'activeclinic', 'close_session',
    'Close cashier session', 'Close and reconcile cashier shift', 'highly_sensitive'),
   
   ('activeclinic.cashier.manage', 'activeclinic', 'manage',
    'Manage cashier operations', 'Full cashier management including variance review and history', 'highly_sensitive'),
   
   ('activeclinic.cashier.reconcile', 'activeclinic', 'reconcile',
-   'Reconcile cashier sessions', 'Approve cashier session reconciliations and variances', 'critical')
+   'Reconcile cashier sessions', 'Approve cashier session reconciliations and variances', 'highly_sensitive')
 
 ON CONFLICT (permission_key) DO NOTHING;
 
@@ -91,7 +91,7 @@ INSERT INTO blessboard.permissions (
    'View billing reports', 'View revenue reports and accounts receivable', 'highly_sensitive'),
   
   ('activeclinic.billing.reports.export', 'activeclinic', 'export',
-   'Export billing reports', 'Export financial reports and data extracts', 'critical'),
+   'Export billing reports', 'Export financial reports and data extracts', 'highly_sensitive'),
   
   ('activeclinic.billing.corrections.view', 'activeclinic', 'view',
    'View financial corrections', 'View audit trail of refunds, reversals, and voids', 'highly_sensitive')
@@ -180,7 +180,7 @@ ON CONFLICT DO NOTHING;
 -- ============================================================================
 
 -- 1. Elevated permissions (void, refund, reverse, reconcile, price override):
---    - Marked as 'critical' sensitivity
+--    - Marked as 'highly_sensitive' sensitivity
 --    - Require explicit role assignment or approval workflow
 --    - Should log to audit trail
 --

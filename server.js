@@ -2,6 +2,20 @@ const { runBootstrap, logBootstrapMarker } = require("./src/startup/bootstrap");
 const boot = runBootstrap();
 logBootstrapMarker(boot);
 
+// Refuse unknown PLATFORM_DEPLOYMENT_CODE before domain diagnostics so a Hostinger typo
+// cannot log BlessBoard production defaults and then abort (misleading 503 evidence).
+const {
+  assertAuthoritativeProfileRuntimePairingOrExit,
+} = require("./src/platform/config/v5EnvValidation");
+const {
+  assertDeploymentProfileOrExit,
+  resolveDeploymentConfiguration,
+  hasAuthoritativeDeploymentProfile,
+  RUNTIME_V5_FOUNDATION,
+} = require("./src/platform/config/deploymentProfiles");
+assertDeploymentProfileOrExit();
+assertAuthoritativeProfileRuntimePairingOrExit();
+
 const {
   isPgConfigured,
   logPgStartupDiagnostics,
@@ -69,19 +83,6 @@ logPgStartupDiagnostics({
 });
 
 const { isV5FoundationMode } = require("./src/platform/config/v5FoundationMode");
-const {
-  assertAuthoritativeProfileRuntimePairingOrExit,
-} = require("./src/platform/config/v5EnvValidation");
-const {
-  assertDeploymentProfileOrExit,
-  resolveDeploymentConfiguration,
-  hasAuthoritativeDeploymentProfile,
-  RUNTIME_V5_FOUNDATION,
-} = require("./src/platform/config/deploymentProfiles");
-// Refuse unknown PLATFORM_DEPLOYMENT_CODE and security-sensitive legacy conflicts before other gates.
-assertDeploymentProfileOrExit();
-// Refuse silent fall-through when a V5-foundation profile has a conflicting DEPLOYMENT_ENV.
-assertAuthoritativeProfileRuntimePairingOrExit();
 
 const { assertProductionRequiredEnvOrExit } = require("./src/startup/productionEnvGate");
 assertProductionRequiredEnvOrExit(boot);

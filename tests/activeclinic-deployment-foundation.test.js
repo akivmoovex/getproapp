@@ -194,6 +194,56 @@ describe("activeclinic-org-v6 deployment profile", () => {
     assert.equal(r.ok, false);
     assert.equal(r.code, "unknown_deployment_code");
   });
+
+  it("rejects activeclinic-org-testing Hostinger typo fail-closed", () => {
+    const r = resolveDeploymentProfileOrError({
+      PLATFORM_DEPLOYMENT_CODE: "activeclinic-org-testing",
+    });
+    assert.equal(r.ok, false);
+    assert.equal(r.code, "unknown_deployment_code");
+    assert.match(r.message, /Known codes:.*activeclinic-org-v6/);
+    assert.match(r.message, /Fix Hostinger PLATFORM_DEPLOYMENT_CODE/);
+    assert.match(r.message, /Startup intentionally blocked/);
+    assert.doesNotMatch(r.message, /postgres:\/\//i);
+  });
+
+  it("resolves public URL and domains without BlessBoard inheritance", () => {
+    withEnv(MINIMAL_AC, () => {
+      const deployment = resolveDeploymentConfiguration();
+      assert.equal(deployment.publicOrigin, "https://activeclinic.org");
+      assert.equal(deployment.canonicalDomain, "activeclinic.org");
+      assert.equal(deployment.environment, "testing");
+      assert.deepEqual(deployment.apexDomains.sort(), [
+        "activeclinic.org",
+        "www.activeclinic.org",
+      ]);
+      assert.equal(deployment.churchHostDomain, "activeclinic.org");
+      assert.equal(deployment.jobsEnabled, false);
+      assert.ok(!deployment.apexDomains.includes("blessboard.com"));
+      assert.ok(!deployment.apexDomains.includes("blessboard.org"));
+    });
+  });
+
+  it("DEPLOYMENT_ENV unset still uses ActiveClinic profile (not BlessBoard production)", () => {
+    withEnv(
+      {
+        ...MINIMAL_AC,
+        DEPLOYMENT_ENV: undefined,
+      },
+      () => {
+        assert.equal(hasAuthoritativeDeploymentProfile(), true);
+        const deployment = resolveDeploymentConfiguration();
+        assert.equal(deployment.code, CODE_ACTIVECLINIC_ORG_V6);
+        assert.equal(deployment.productCode, "activeclinic");
+        assert.equal(deployment.canonicalDomain, "activeclinic.org");
+        assert.equal(deployment.publicOrigin, "https://activeclinic.org");
+        assert.equal(deployment.environment, "testing");
+        assert.notEqual(deployment.canonicalDomain, "blessboard.com");
+        assert.notEqual(deployment.publicOrigin, "https://blessboard.com");
+        assert.equal(deployment.sessionCookieName, COOKIE_ACTIVECLINIC_ORG);
+      }
+    );
+  });
 });
 
 describe("BlessBoard cookie isolation preserved", () => {
