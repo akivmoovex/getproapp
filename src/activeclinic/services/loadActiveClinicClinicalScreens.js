@@ -15,7 +15,8 @@ const {
 function actorFromAuth(auth) {
   return {
     staffMemberId: auth.staffMember.id,
-    platformIdentityId: auth.identity.id,
+    platformIdentityId: auth.platformIdentity && auth.platformIdentity.id,
+    organizationId: auth.organization && auth.organization.id,
     healthcareOrganizationId: auth.healthcareOrganization.id,
     facilityId: auth.selectedFacility ? auth.selectedFacility.id : null,
   };

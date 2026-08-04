@@ -19,10 +19,10 @@ const RESULT = {
 };
 
 const PERM = {
-  VIEW: "diagnostics.view",
-  COLLECT: "diagnostics.collect",
-  RESULT: "diagnostics.result",
-  VERIFY: "diagnostics.verify",
+  VIEW: "activeclinic.diagnostics.view",
+  COLLECT: "activeclinic.diagnostics.collect",
+  RESULT: "activeclinic.diagnostics.result",
+  VERIFY: "activeclinic.diagnostics.verify",
 };
 
 /**
