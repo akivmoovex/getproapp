@@ -150,16 +150,31 @@ node --test tests/db-bootstrap-foundation.test.js tests/db-foundation.test.js
 
 ## Intentional differences / remaining gaps
 
-- **VISUAL_BLOCKED:** no Stitch access designs — shell tokens only
+- **VISUAL_BLOCKED:** no Stitch access designs — shell tokens only (not an unimplemented stub)
 - Custom roles / permission editor not implemented
 - Clinical roles not implemented
 - Assignment history UI is status-inclusive listing, not a separate audit timeline
 - S01–S05 remain PARTIAL (auth/shell/admin visual gaps) — do not block access workflows
-- Organization settings (S07) not started
+
+---
+
+## AC-V6-S06R recovery verification (2026-08-04)
+
+| Check | Result |
+|---|---|
+| Branch / SHA | `V6` @ `1fcd61a6b9a66c32399a510a40336d7ca95a3c6c` |
+| Working tree | clean |
+| DB identity | `blessboard-platform-v5` / testing |
+| `db-bootstrap-foundation` | **10/10 pass** |
+| `db-foundation` | **16/16 pass** |
+| `activeclinic-roles-access-parity` | **4/4 pass** |
+| `/app/access` | Real overview + assign/edit/revoke (not placeholder) |
+| Privilege escalation | Covered (facility→network, cross-facility, raw perms, cross-org, self-escalation) |
+| Production touched | no |
 
 ---
 
 ## Gate for AC-V6-S07
 
-S06 reaches a **non-blocking PARTIAL** with bootstrap green and access no longer a placeholder.  
-**AC-V6-S07 — Organization Settings** may begin.
+S06 remains a **non-blocking PARTIAL** (visual only). Bootstrap green; `/app/access` is real.  
+**AC-V6-S07 — Organization Settings** is unlocked (and already implemented as PARTIAL).

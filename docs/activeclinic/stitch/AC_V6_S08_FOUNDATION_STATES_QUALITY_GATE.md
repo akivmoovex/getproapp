@@ -120,8 +120,20 @@ plus regression: S01–S07 parity suites, shell, auth, session, product isolatio
 
 ## Gate for AC-V6-C01
 
-**OPEN with conditions:** non-clinical administration foundation is coherent enough to begin **patient identity backend foundation** (schema/identifiers/permissions/audit). Do **not** begin patient UI Stitch until backend foundation lands.
+**OPEN with conditions:** non-clinical administration foundation is coherent enough for patient identity backend (and **AC-V6-C01 is already COMPLETE** on this branch). Do **not** begin patient UI Stitch until ready for **AC-V6-C02**.
+
+### AC-V6-S08R recovery verification (2026-08-04)
+
+| Check | Result |
+|---|---|
+| S06 + S07 docs | present; non-blocking PARTIAL |
+| `activeclinic-foundation-states-parity` | **12/12 pass** |
+| DB bootstrap / foundation | **26/26 pass** |
+| AC foundation regression (shell/RBAC/auth/session/isolation + S06) | **68/68 pass** |
+| Offline | deferred (honest) |
+| Clinical modules | none added |
+| Production touched | no |
 
 ## Explicit non-goals completed as non-goals
 
-No patients, appointments, clinical modules, production deploy/push/commit.
+No appointments/clinical UI in this gate; no production deploy/push/commit.

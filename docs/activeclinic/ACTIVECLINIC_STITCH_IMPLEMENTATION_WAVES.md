@@ -185,22 +185,49 @@ Each later prompt must list: exact Stitch names, routes, services, permissions, 
 
 ### AC-V6-S06 status
 
-- **PARTIAL** — access overview, staff access detail, assign/edit/revoke foundational roles with grantability guards; facility admins gained `assign_access` via additive migration 079; **VISUAL_BLOCKED** (no Stitch access screens). Bootstrap suites green on re-run.
+- **PARTIAL** (non-blocking) — access overview, staff access detail, assign/edit/revoke foundational roles with grantability guards; facility admins gained `assign_access` via additive migration 079; **VISUAL_BLOCKED** (no Stitch access screens). **S06R (2026-08-04):** bootstrap **26/26**, roles-access parity **4/4**, `/app/access` confirmed real (not stub).
 - Detail: `docs/activeclinic/stitch/AC_V6_S06_ROLES_ACCESS_PARITY.md`
-- Next: **AC-V6-S07 — Organization Settings and Healthcare Profile**
+- Next: **AC-V6-S07 — Organization Settings and Healthcare Profile** (unlocked)
 
 ### AC-V6-S07 status
 
-- **PARTIAL** — settings overview, organization profile/edit, facilities/access/account links; completeness + status separation; **VISUAL_BLOCKED**.
+- **PARTIAL** (non-blocking) — settings overview, organization profile/edit, facilities/access/account links; completeness + status separation; **VISUAL_BLOCKED**. **S07R (2026-08-04):** settings parity **4/4**; protected fields enforced.
 - Detail: `docs/activeclinic/stitch/AC_V6_S07_ORGANIZATION_SETTINGS_PARITY.md`
-- Next: **AC-V6-S08 — Foundation Empty, Error and Restricted States**
+- Next: **AC-V6-S08 — Foundation Empty, Error and Restricted States** (unlocked)
 
 ### AC-V6-S08 status
 
-- **PARTIAL** — state taxonomy, shared inline/full-page states, error middleware, empty/no-results across foundation modules, context-unavailable for ineligible sessions; Shared Offline **deferred**; **VISUAL_BLOCKED** vs Stitch state pack.
+- **PARTIAL** (non-blocking) — state taxonomy, shared inline/full-page states, error middleware, empty/no-results across foundation modules, context-unavailable for ineligible sessions; Shared Offline **deferred**; **VISUAL_BLOCKED** vs Stitch state pack. **S08R (2026-08-04):** foundation-states parity **12/12**; AC foundation regression **68/68**.
 - Detail: `docs/activeclinic/stitch/AC_V6_S08_FOUNDATION_STATES_QUALITY_GATE.md`
-- Next: **AC-V6-C01 — Patient Identity and Registration Backend Foundation** (no patient UI Stitch until backend lands)
+- Next: **AC-V6-C02 — Patient Registration, Search and Profile Stitch Parity** (C01 backend already complete)
 
 ### AC-V6-C01 status
 
-**COMPLETE (backend foundation).** Schema, permissions, repositories, services, duplicate detection, search scope, tests, and clinical docs landed. Patient Stitch screens remain NOT_STARTED until **AC-V6-C02**.
+**COMPLETE (backend foundation).** Schema, permissions, repositories, services, duplicate detection, search scope, tests, and clinical docs landed.
+
+### AC-V6-C02 status
+
+- **PARTIAL** — patient list/search, register (review + duplicate warning + success), profile, edit, identifier/emergency POSTs, archive/deceased; nav **Patients**; stitch markers present; print card deferred; **VISUAL_BLOCKED** vs full P02 chrome.
+- Detail: `docs/activeclinic/stitch/AC_V6_C02_PATIENT_REGISTRATION_SEARCH_PROFILE.md`
+- Next: **AC-V6-C03 — Appointment and Scheduling Backend Foundation**
+
+### AC-V6-C03 status
+
+- **COMPLETE (backend foundation)** — service types, appointments, append-only status events, reminder metadata (no `sent`), permissions (conservative), collision checks, transactional reschedule, scope/audit docs; no Stitch appointment UI; no encounters.
+- Docs: `docs/activeclinic/clinical/ACTIVECLINIC_APPOINTMENT_*.md`, `ACTIVECLINIC_SCHEDULING_RULES.md`
+- Tests: `tests/activeclinic-appointment-foundation.test.js`
+- Next: **AC-V6-C04 — Appointment Stitch UI** (parallel to C05 — do NOT implement reception UI in C04)
+
+### AC-V6-C04 status
+
+- **PARTIAL** — appointment list/calendar (desktop + mobile list alternative), book (review + confirm), detail, reschedule, cancel, check-in, no-show; nav **Appointments**; stitch markers; server slot revalidation; no clinical content; doctor schedule / reception UI deferred. **VISUAL_BLOCKED** vs full P03 chrome.
+- Detail: `docs/activeclinic/stitch/AC_V6_C04_APPOINTMENT_PARITY.md`
+- Tests: `tests/activeclinic-appointment-ui-parity.test.js`
+- Next: **AC-V6-C05** reception backend (COMPLETE) → **AC-V6-C06** reception/queue Stitch UI
+
+### AC-V6-C05 status
+
+- **COMPLETE (backend foundation)** — reception arrivals, queue entries, queue status history (append-only), service points, queue priorities, check-in events, administrative reception notes; statuses: waiting, called, serving, paused, completed, cancelled, left_before_service, transferred; permissions (conservative — staff role gets NONE); services: checkInScheduledPatient, checkInWalkInPatient, createQueueEntry, listFacilityQueue, callNextQueueEntry, startServingQueueEntry, completeQueueEntry, pauseQueueEntry, transferQueueEntry, cancelQueueEntry, markLeftBeforeService; HCO + facility scope, atomic queue position allocation, duplicate prevention, status transitions validated, no triage/clinical/encounter creation, walk-in requires existing patient, no client-authoritative queue order; migrations 014/082, foundationVerify approved tables.
+- Docs: `docs/activeclinic/clinical/ACTIVECLINIC_RECEPTION_MODEL.md`, `ACTIVECLINIC_QUEUE_LIFECYCLE.md`, `ACTIVECLINIC_QUEUE_ORDERING.md`, `ACTIVECLINIC_RECEPTION_SCOPE_AND_AUDIT.md`
+- Tests: `tests/activeclinic-reception-foundation.test.js`
+- Next: **AC-V6-C06 — Reception and Queue Stitch Parity**

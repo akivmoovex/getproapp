@@ -123,6 +123,15 @@ node --test tests/activeclinic-organization-settings-parity.test.js
 
 ## Gate for next wave
 
-S07 reaches non-blocking **PARTIAL**. Recommended next:
+S07 remains a non-blocking **PARTIAL** (visual only). Settings use real scoped HCO/facility data; protected fields stay protected; bootstrap green.
 
-**AC-V6-S08 — Foundation Empty, Error and Restricted States**
+### AC-V6-S07R recovery verification (2026-08-04)
+
+| Check | Result |
+|---|---|
+| S06 prerequisite | non-blocking PARTIAL; `/app/access` real |
+| `activeclinic-organization-settings-parity` | **4/4 pass** |
+| DB bootstrap / foundation | **26/26 pass** |
+| Production touched | no |
+
+**AC-V6-S08 — Foundation Empty, Error and Restricted States** is unlocked (and already implemented as PARTIAL).
