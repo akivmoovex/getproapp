@@ -1,0 +1,90 @@
+<div data-ac-stitch="5e4dbc7265ad4e17b060b1f641996db3" data-ac-screen="consultation-workspace">
+  <section class="ac-workspace-section">
+    <h2>Patient summary</h2>
+    <p><strong>Patient:</strong> <%= pageData.workspace.encounter.patientDisplayName %> (<%= pageData.workspace.encounter.patientNumber %>)</p>
+    <p><strong>Encounter:</strong> <%= pageData.workspace.encounter.encounterNumber %> · <%= pageData.workspace.encounter.encounterType %></p>
+    <p><strong>Status:</strong> <%= pageData.workspace.encounter.status %></p>
+  </section>
+  
+  <% if (pageData.workspace.triage) { %>
+  <section class="ac-workspace-section">
+    <h2>Triage</h2>
+    <p><strong>Chief complaint:</strong> <%= pageData.workspace.triage.chief_complaint %></p>
+    <% if (pageData.workspace.triage.triage_category) { %>
+    <p><strong>Category:</strong> <%= pageData.workspace.triage.triage_category %></p>
+    <% } %>
+    <p><a href="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/triage">View/edit triage</a></p>
+  </section>
+  <% } %>
+  
+  <section class="ac-workspace-section">
+    <h2>Vital signs</h2>
+    <% if (pageData.workspace.vitals.length === 0) { %>
+    <p class="ac-empty">No vitals recorded. <a href="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/vitals">Record vitals</a></p>
+    <% } else { %>
+    <p><%= pageData.workspace.vitals.length %> observation(s) recorded. <a href="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/vitals">View vitals</a></p>
+    <% } %>
+  </section>
+  
+  <section class="ac-workspace-section">
+    <h2>Consultation notes</h2>
+    <% if (pageData.workspace.consultationNotes.length === 0) { %>
+    <p class="ac-empty">No consultation notes.</p>
+    <% } else { %>
+    <% pageData.workspace.consultationNotes.forEach(function (note) { %>
+    <div class="ac-consultation-note">
+      <p><strong>Status:</strong> <%= note.status %></p>
+      <% if (note.subjective_text) { %>
+      <p><strong>Subjective:</strong> <%= note.subjective_text.substring(0, 200) %><%= note.subjective_text.length > 200 ? '...' : '' %></p>
+      <% } %>
+    </div>
+    <% }) %>
+    <% } %>
+    
+    <form method="post" action="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/consultation" style="margin-top:1rem;">
+      <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+      <div class="ac-field">
+        <label for="subjective_text">Subjective</label>
+        <textarea id="subjective_text" name="subjective_text" rows="3"></textarea>
+      </div>
+      <div class="ac-field">
+        <label for="objective_text">Objective</label>
+        <textarea id="objective_text" name="objective_text" rows="3"></textarea>
+      </div>
+      <div class="ac-field">
+        <label for="assessment_text">Assessment</label>
+        <textarea id="assessment_text" name="assessment_text" rows="3"></textarea>
+      </div>
+      <div class="ac-field">
+        <label for="plan_text">Plan</label>
+        <textarea id="plan_text" name="plan_text" rows="3"></textarea>
+      </div>
+      <button type="submit" class="ac-btn">Save draft</button>
+    </form>
+  </section>
+  
+  <section class="ac-workspace-section">
+    <h2>Orders</h2>
+    <% if (pageData.workspace.orders.length === 0) { %>
+    <p class="ac-empty">No orders.</p>
+    <% } else { %>
+    <ul>
+      <% pageData.workspace.orders.forEach(function (order) { %>
+      <li><%= order.order_type %> · <%= order.status %></li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+  
+  <% if (pageData.workspace.actions.canCloseEncounter) { %>
+  <form method="post" action="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/close" style="margin-top:2rem;">
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    <input type="hidden" name="version" value="<%= pageData.workspace.encounter.version %>" />
+    <div class="ac-field">
+      <label for="closure_note">Closure note (optional)</label>
+      <textarea id="closure_note" name="closure_note" rows="2"></textarea>
+    </div>
+    <button type="submit" class="ac-btn">Close encounter</button>
+  </form>
+  <% } %>
+</div>

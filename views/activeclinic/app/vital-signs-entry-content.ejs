@@ -1,0 +1,87 @@
+<div data-ac-stitch="dede5e72277d413497e1f870f6b4a0e1" data-ac-screen="vital-signs-entry">
+  <section>
+    <h2>Recent observations</h2>
+    <% if (pageData.vitals.observations.length === 0) { %>
+    <p class="ac-empty">No vitals recorded yet.</p>
+    <% } else { %>
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Value</th>
+          <th>Observed</th>
+          <th>Recorded by</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pageData.vitals.observations.forEach(function (obs) { %>
+        <tr>
+          <td><%= obs.observationType %></td>
+          <td>
+            <% if (obs.observationType === 'blood_pressure' && obs.systolic && obs.diastolic) { %>
+              <%= obs.systolic %>/<%= obs.diastolic %> <%= obs.unit || 'mmHg' %>
+            <% } else if (obs.valueNumeric) { %>
+              <%= obs.valueNumeric %> <%= obs.unit || '' %>
+            <% } else { %>
+              <%= obs.valueText || '—' %>
+            <% } %>
+          </td>
+          <td><%= new Date(obs.observedAt).toLocaleString() %></td>
+          <td><%= obs.recordedByStaffDisplayName %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </section>
+  
+  <section style="margin-top:2rem;">
+    <h2>Record new observation</h2>
+    <% if (pageData.vitals.error) { %>
+    <p class="ac-error"><%= pageData.vitals.error %></p>
+    <% } %>
+    
+    <form method="post" action="/app/clinical/encounter/<%= pageData.vitals.encounter.id %>/vitals">
+      <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+      
+      <div class="ac-field">
+        <label for="observation_type">Observation type *</label>
+        <select id="observation_type" name="observation_type" required>
+          <option value="">Select type</option>
+          <option value="blood_pressure">Blood pressure</option>
+          <option value="heart_rate">Heart rate</option>
+          <option value="respiratory_rate">Respiratory rate</option>
+          <option value="temperature">Temperature</option>
+          <option value="oxygen_saturation">Oxygen saturation</option>
+          <option value="weight">Weight</option>
+          <option value="height">Height</option>
+        </select>
+      </div>
+      
+      <div class="ac-field">
+        <label for="value_numeric">Numeric value</label>
+        <input type="number" step="0.01" id="value_numeric" name="value_numeric" />
+      </div>
+      
+      <div class="ac-field">
+        <label for="unit">Unit</label>
+        <input type="text" id="unit" name="unit" placeholder="e.g. bpm, °C, kg" />
+      </div>
+      
+      <div class="ac-field">
+        <label for="systolic">Systolic (for BP)</label>
+        <input type="number" id="systolic" name="systolic" />
+      </div>
+      
+      <div class="ac-field">
+        <label for="diastolic">Diastolic (for BP)</label>
+        <input type="number" id="diastolic" name="diastolic" />
+      </div>
+      
+      <div class="ac-actions">
+        <button type="submit" class="ac-btn">Record observation</button>
+        <a href="/app/clinical/encounter/<%= pageData.vitals.encounter.id %>" class="ac-btn ac-btn--ghost">Back to encounter</a>
+      </div>
+    </form>
+  </section>
+</div>

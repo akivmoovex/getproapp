@@ -1,0 +1,51 @@
+<%
+  var callBoard = (pageData && pageData.callBoard) || {};
+  var entries = callBoard.entries || [];
+  var facility = callBoard.facility || {};
+  var stitch = callBoard.stitch || {};
+%>
+<section class="ac-call-board" data-ac-page-section="reception-call-board" data-ac-table="call-board" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <p class="ac-muted">Public call board for <%= facility.displayName || 'this facility' %>. Showing only patients being called or currently serving.</p>
+  </div>
+
+  <% if (!entries.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'call-board-empty',
+      title: 'No patients called',
+      description: 'When reception calls a patient, they will appear here.',
+      secondaryAction: { href: '/app/reception', label: 'Back to reception' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table ac-table--large">
+      <caption class="ac-sr-only">Call board</caption>
+      <thead>
+        <tr>
+          <th scope="col">Queue #</th>
+          <th scope="col">Initials</th>
+          <th scope="col">Service point</th>
+          <th scope="col">Room</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% entries.forEach(function (e) { %>
+        <tr data-ac-queue-status="<%= e.status %>">
+          <td class="ac-table__large-text"><%= e.queueNumber %></td>
+          <td class="ac-table__large-text"><%= e.patientInitials %></td>
+          <td><%= e.servicePointName %></td>
+          <td><%= e.assignedRoom || '—' %></td>
+          <td><span class="ac-status" data-ac-status="<%= e.status %>"><%= e.statusLabel %></span></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+
+  <p class="ac-sr-only">This call board does not show patient phone numbers, NRC, or any clinical information.</p>
+</section>

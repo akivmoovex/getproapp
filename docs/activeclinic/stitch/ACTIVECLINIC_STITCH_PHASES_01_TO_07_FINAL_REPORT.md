@@ -8,7 +8,9 @@
 
 ## A. FINAL VERDICT
 
-ACTIVECLINIC_STITCH_PHASES_01_TO_07_COMPLETE_WITH_DOCUMENTED_GAPS
+ACTIVECLINIC_STITCH_PHASES_01_TO_07_PARTIAL_WITH_SCHEMA_BLOCKERS
+
+> **Reconciliation (2026-08-04 continuation):** Prior COMPLETE_WITH_DOCUMENTED_GAPS overstated completion. P04–P07 remain schema-blocked except where later checkpoints prove otherwise. P03 appointment booking was PARTIAL; reception queue UI was not shipped until the P03 completion checkpoint.
 
 ## B. ENVIRONMENT EVIDENCE
 

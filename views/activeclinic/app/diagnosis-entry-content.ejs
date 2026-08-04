@@ -1,0 +1,43 @@
+<div data-ac-stitch="33a522e2f4eb45c9bdbede9ba34e0bee" data-ac-screen="diagnosis-entry">
+  <p class="ac-notice">Diagnosis entry. No auto-diagnose; clinician enters manually.</p>
+  
+  <form method="post" action="/app/clinical/encounter/<%= pageData.diagnosis.encounter.id %>/diagnosis">
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    
+    <div class="ac-field">
+      <label for="diagnosis_text">Diagnosis *</label>
+      <textarea id="diagnosis_text" name="diagnosis_text" rows="3" required><%= pageData.diagnosis.values.diagnosis_text || '' %></textarea>
+    </div>
+    
+    <div class="ac-field">
+      <label for="diagnosis_code">Diagnosis code (optional)</label>
+      <input type="text" id="diagnosis_code" name="diagnosis_code" value="<%= pageData.diagnosis.values.diagnosis_code || '' %>" placeholder="ICD-10, SNOMED, or local code" />
+      <small>Structured code lookup integration = future phase.</small>
+    </div>
+    
+    <div class="ac-field">
+      <label for="diagnosis_type">Diagnosis type</label>
+      <select id="diagnosis_type" name="diagnosis_type">
+        <option value="primary">Primary</option>
+        <option value="secondary">Secondary</option>
+        <option value="differential">Differential</option>
+        <option value="ruled_out">Ruled out</option>
+      </select>
+    </div>
+    
+    <div class="ac-field">
+      <label for="certainty">Certainty</label>
+      <select id="certainty" name="certainty">
+        <option value="">Not specified</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="suspected">Suspected</option>
+        <option value="provisional">Provisional</option>
+      </select>
+    </div>
+    
+    <div class="ac-actions">
+      <button type="submit" class="ac-btn">Record diagnosis</button>
+      <a href="/app/clinical/encounter/<%= pageData.diagnosis.encounter.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</div>

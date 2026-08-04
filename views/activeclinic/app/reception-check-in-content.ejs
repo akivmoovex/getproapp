@@ -1,0 +1,61 @@
+<%
+  var checkIn = (pageData && pageData.checkIn) || {};
+  var appointment = checkIn.appointment || null;
+  var servicePoints = checkIn.servicePoints || [];
+  var facility = checkIn.facility || {};
+  var actions = checkIn.actions || {};
+  var error = checkIn.error;
+  var stitch = checkIn.stitch || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-reception-check-in" data-ac-page-section="reception-check-in" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <form class="ac-panel" method="post" action="/app/reception/check-in" data-ac-form="reception-check-in">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+
+    <% if (error) { %>
+    <div class="ac-alert ac-alert--error" role="alert" data-ac-error="1">
+      <%= error %>
+    </div>
+    <% } %>
+
+    <div class="ac-form-field">
+      <label class="ac-label" for="checkin_appt_id">Appointment ID</label>
+      <input class="ac-input" id="checkin_appt_id" name="appointment_id" type="text" required value="<%= (appointment && appointment.id) || '' %>" placeholder="UUID of scheduled appointment"/>
+      <p class="ac-hint">Paste the appointment ID from the appointments list.</p>
+    </div>
+
+    <% if (appointment) { %>
+    <div class="ac-panel ac-panel--nested">
+      <h3 class="ac-panel__title">Appointment details</h3>
+      <dl class="ac-dl">
+        <div><dt>Patient</dt><dd><%= (appointment.patient && appointment.patient.displayName) || '—' %></dd></div>
+        <div><dt>Service</dt><dd><%= (appointment.service && appointment.service.displayName) || '—' %></dd></div>
+        <div><dt>Status</dt><dd><span class="ac-status" data-ac-status="<%= appointment.status %>"><%= appointment.statusLabel || appointment.status %></span></dd></div>
+      </dl>
+    </div>
+    <% } %>
+
+    <div class="ac-form-field">
+      <label class="ac-label" for="checkin_service_point">Service point</label>
+      <select class="ac-select" id="checkin_service_point" name="service_point_id" required>
+        <option value="">Select service point</option>
+        <% servicePoints.forEach(function (sp) { %>
+        <option value="<%= sp.id %>"><%= sp.displayName %></option>
+        <% }) %>
+      </select>
+      <p class="ac-hint">Where the patient should queue.</p>
+    </div>
+
+    <div class="ac-form-field">
+      <label class="ac-label" for="checkin_note">Check-in note (optional)</label>
+      <textarea class="ac-input" id="checkin_note" name="check_in_note" rows="3" maxlength="500" placeholder="Administrative note"></textarea>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn" <%= !actions.canCheckIn ? 'disabled' : '' %>>Check in and add to queue</button>
+      <a class="ac-btn ac-btn--ghost" href="/app/reception">Cancel</a>
+    </div>
+  </form>
+
+  <p class="ac-sr-only">This form does not create a clinical encounter.</p>
+</section>

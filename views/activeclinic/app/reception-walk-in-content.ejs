@@ -1,0 +1,52 @@
+<%
+  var walkIn = (pageData && pageData.walkIn) || {};
+  var values = walkIn.values || {};
+  var servicePoints = walkIn.servicePoints || [];
+  var facility = walkIn.facility || {};
+  var actions = walkIn.actions || {};
+  var error = walkIn.error;
+  var stitch = walkIn.stitch || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-reception-walk-in" data-ac-page-section="reception-walk-in" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <form class="ac-panel" method="post" action="/app/reception/walk-in" data-ac-form="reception-walk-in">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+
+    <% if (error) { %>
+    <div class="ac-alert ac-alert--error" role="alert" data-ac-error="1">
+      <%= error %>
+    </div>
+    <% } %>
+
+    <p class="ac-muted">Register a walk-in patient arrival at <%= facility.displayName || 'this facility' %> and add to the queue.</p>
+
+    <div class="ac-form-field">
+      <label class="ac-label" for="walkin_patient_number">Patient number</label>
+      <input class="ac-input" id="walkin_patient_number" name="patient_number" type="text" required value="<%= values.patientNumber || '' %>" placeholder="P000001"/>
+      <p class="ac-hint">The patient must already be registered. This does not create a new patient record.</p>
+    </div>
+
+    <div class="ac-form-field">
+      <label class="ac-label" for="walkin_service_point">Service point</label>
+      <select class="ac-select" id="walkin_service_point" name="service_point_id" required>
+        <option value="">Select service point</option>
+        <% servicePoints.forEach(function (sp) { %>
+        <option value="<%= sp.id %>" <%= values.servicePointId === sp.id ? 'selected' : '' %>><%= sp.displayName %></option>
+        <% }) %>
+      </select>
+      <p class="ac-hint">Where the patient should queue.</p>
+    </div>
+
+    <div class="ac-form-field">
+      <label class="ac-label" for="walkin_note">Check-in note (optional)</label>
+      <textarea class="ac-input" id="walkin_note" name="check_in_note" rows="3" maxlength="500" placeholder="Administrative note"><%= values.checkInNote || '' %></textarea>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn" <%= !actions.canCheckIn ? 'disabled' : '' %>>Check in and add to queue</button>
+      <a class="ac-btn ac-btn--ghost" href="/app/reception">Cancel</a>
+    </div>
+  </form>
+
+  <p class="ac-sr-only">This form does not create a clinical encounter, diagnoses, or vitals.</p>
+</section>

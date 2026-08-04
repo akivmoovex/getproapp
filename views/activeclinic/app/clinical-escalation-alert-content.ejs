@@ -1,0 +1,72 @@
+<div data-ac-stitch="99757cfd7d3747d490f00ac342faa519" data-ac-screen="clinical-escalation-alert">
+  <p class="ac-notice"><strong>Manual alerts only:</strong> No auto-escalation in P04. Clinician must explicitly raise alerts.</p>
+  
+  <% if (pageData.alerts.activeAlerts.length === 0) { %>
+  <p class="ac-empty">No active clinical alerts.</p>
+  <% } else { %>
+  <table class="ac-table">
+    <thead>
+      <tr>
+        <th>Priority</th>
+        <th>Type</th>
+        <th>Message</th>
+        <th>Patient</th>
+        <th>Raised by</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pageData.alerts.activeAlerts.forEach(function (alert) { %>
+      <tr data-priority="<%= alert.priority %>">
+        <td><strong><%= alert.priority %></strong></td>
+        <td><%= alert.alertType %></td>
+        <td><%= alert.alertMessage %></td>
+        <td><%= alert.patientDisplayName %></td>
+        <td><%= alert.raisedByStaffDisplayName %></td>
+        <td><%= new Date(alert.createdAt).toLocaleString() %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+  
+  <section style="margin-top:2rem;">
+    <h2>Raise new alert</h2>
+    <form method="post" action="/app/clinical/alerts/raise">
+      <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+      
+      <div class="ac-field">
+        <label for="patient_id">Patient ID *</label>
+        <input type="text" id="patient_id" name="patient_id" required />
+      </div>
+      
+      <div class="ac-field">
+        <label for="alert_type">Alert type *</label>
+        <select id="alert_type" name="alert_type" required>
+          <option value="clinical_deterioration">Clinical deterioration</option>
+          <option value="critical_result">Critical result</option>
+          <option value="resource_required">Resource required</option>
+          <option value="follow_up_needed">Follow-up needed</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      
+      <div class="ac-field">
+        <label for="priority">Priority *</label>
+        <select id="priority" name="priority" required>
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+      
+      <div class="ac-field">
+        <label for="alert_message">Message *</label>
+        <textarea id="alert_message" name="alert_message" rows="3" required></textarea>
+      </div>
+      
+      <button type="submit" class="ac-btn">Raise alert</button>
+    </form>
+  </section>
+</div>

@@ -1,0 +1,29 @@
+<div data-ac-stitch="start-encounter" data-ac-screen="start-encounter">
+  <% if (pageData.error) { %>
+  <p class="ac-error"><%= pageData.error %></p>
+  <% } %>
+  
+  <form method="post" action="/app/clinical/start-encounter">
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    
+    <div class="ac-field">
+      <label for="patient_id">Patient ID *</label>
+      <input type="text" id="patient_id" name="patient_id" value="<%= pageData.values.patientId || '' %>" required />
+    </div>
+    
+    <div class="ac-field">
+      <label for="encounter_type">Encounter type</label>
+      <select id="encounter_type" name="encounter_type">
+        <option value="outpatient" <%= (pageData.values.encounterType === 'outpatient') ? 'selected' : '' %>>Outpatient</option>
+        <option value="emergency" <%= (pageData.values.encounterType === 'emergency') ? 'selected' : '' %>>Emergency</option>
+        <option value="referral" <%= (pageData.values.encounterType === 'referral') ? 'selected' : '' %>>Referral</option>
+        <option value="follow_up" <%= (pageData.values.encounterType === 'follow_up') ? 'selected' : '' %>>Follow-up</option>
+      </select>
+    </div>
+    
+    <div class="ac-actions">
+      <button type="submit" class="ac-btn">Start encounter</button>
+      <a href="/app/clinical" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,30 @@
+<div data-ac-stitch="b8d47f05a83c4959ac2d3d6ca83c7dfb" data-ac-screen="clinical-queue">
+  <% if (pageData.queue.encounters.length === 0) { %>
+  <p class="ac-empty">No open encounters. Start a new encounter to begin clinical workflow.</p>
+  <% } else { %>
+  <table class="ac-table">
+    <thead>
+      <tr>
+        <th>Encounter #</th>
+        <th>Patient</th>
+        <th>Opened</th>
+        <th>Opened by</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pageData.queue.encounters.forEach(function (enc) { %>
+      <tr>
+        <td><a href="/app/clinical/encounter/<%= enc.id %>"><%= enc.encounterNumber %></a></td>
+        <td><%= enc.patientDisplayName %> (<%= enc.patientNumber %>)</td>
+        <td><%= new Date(enc.openedAt).toLocaleString() %></td>
+        <td><%= enc.openedByStaffDisplayName %></td>
+        <td>
+          <a href="/app/clinical/encounter/<%= enc.id %>">View</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>

@@ -710,7 +710,11 @@ async function pauseQueueEntry(db, input) {
 }
 
 async function transferQueueEntry(db, input) {
-  return appendQueueStatusEvent(db, { ...input, toStatus: "transferred" });
+  return appendQueueStatusEvent(db, {
+    ...input,
+    toStatus: "transferred",
+    reason: input.reason || "department_transfer",
+  });
 }
 
 async function cancelQueueEntry(db, input) {
@@ -719,6 +723,79 @@ async function cancelQueueEntry(db, input) {
 
 async function markLeftBeforeService(db, input) {
   return appendQueueStatusEvent(db, { ...input, toStatus: "left_before_service" });
+}
+
+/**
+ * Assign room / desk without changing queue status (Queue Assignment Stitch).
+ * Records an audit + status-event with same from/to status for history.
+ */
+async function assignQueueEntryRoom(db, input) {
+  const detail = await getQueueEntryDetail(db, input);
+  if (!detail.ok) return detail;
+
+  const status = detail.queueEntry.status;
+  if (["completed", "cancelled", "left_before_service", "transferred"].includes(status)) {
+    return { ok: false, code: RESULT.INVALID_STATUS, queueEntry: detail.queueEntry };
+  }
+
+  const authz = await authorize(db, {
+    organizationId: input.organizationId,
+    facilityId: detail.queueEntry.facilityId,
+    permissionKey: PERM.MANAGE_QUEUE,
+    actor: input.actor,
+  });
+  if (!authz.ok) return { ok: false, code: authz.code, queueEntry: null };
+
+  const assignedRoom = String(input.assignedRoom || "").trim() || null;
+  if (assignedRoom && assignedRoom.length > 64) {
+    return { ok: false, code: RESULT.INVALID_INPUT, queueEntry: null };
+  }
+
+  return withClient(db, async (client) => {
+    await client.query("BEGIN");
+    try {
+      const updated = await repo.updateQueueEntryByOrgAndId(client, {
+        id: detail.queueEntry.id,
+        organizationId: input.organizationId,
+        healthcareOrganizationId: input.healthcareOrganizationId,
+        expectedVersion: detail.queueEntry.version,
+        patch: {
+          assignedRoom,
+          updatedByStaffId: input.actor.staffMemberId,
+          version: detail.queueEntry.version + 1,
+        },
+      });
+      if (!updated) {
+        await client.query("ROLLBACK");
+        return { ok: false, code: RESULT.STALE_VERSION, queueEntry: null };
+      }
+      await repo.insertQueueStatusEvent(client, {
+        organizationId: input.organizationId,
+        healthcareOrganizationId: input.healthcareOrganizationId,
+        queueEntryId: detail.queueEntry.id,
+        fromStatus: status,
+        toStatus: status,
+        reasonCode: "room_assignment",
+        note: assignedRoom ? `Assigned room: ${assignedRoom}` : "Cleared room assignment",
+        actorStaffId: input.actor.staffMemberId,
+      });
+      await recordAuditEventSafe(client, {
+        deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
+        organizationId: input.organizationId,
+        actorUserId: null,
+        actionKey: "activeclinic.reception.queue_assignment",
+        entityType: "queue_entry",
+        entityId: detail.queueEntry.id,
+        outcome: "success",
+        metadata: { assigned_room: assignedRoom, status },
+      });
+      await client.query("COMMIT");
+      return { ok: true, code: RESULT.OK, queueEntry: mapQueueEntry(updated) };
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    }
+  });
 }
 
 module.exports = {
@@ -737,6 +814,7 @@ module.exports = {
   transferQueueEntry,
   cancelQueueEntry,
   markLeftBeforeService,
+  assignQueueEntryRoom,
   mapServicePoint,
   mapQueueEntry,
   mapReceptionArrival,

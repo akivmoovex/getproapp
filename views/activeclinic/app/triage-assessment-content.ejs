@@ -1,0 +1,58 @@
+<div data-ac-stitch="3c8f7b43b7984718acf661e381c1e6f7" data-ac-screen="triage-assessment">
+  <% if (pageData.triage.error) { %>
+  <p class="ac-error"><%= pageData.triage.error %></p>
+  <% } %>
+  
+  <form method="post" action="/app/clinical/encounter/<%= pageData.triage.encounter.id %>/triage">
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    
+    <div class="ac-field">
+      <label for="chief_complaint">Chief complaint *</label>
+      <textarea id="chief_complaint" name="chief_complaint" rows="3" required><%= pageData.triage.values.chief_complaint || (pageData.triage.assessment && pageData.triage.assessment.chief_complaint) || '' %></textarea>
+    </div>
+    
+    <div class="ac-field">
+      <label for="triage_category">Triage category (manual assignment)</label>
+      <select id="triage_category" name="triage_category">
+        <option value="">Not assigned</option>
+        <option value="emergency">Emergency</option>
+        <option value="urgent">Urgent</option>
+        <option value="semi_urgent">Semi-urgent</option>
+        <option value="non_urgent">Non-urgent</option>
+      </select>
+    </div>
+    
+    <div class="ac-field">
+      <label for="presenting_symptoms">Presenting symptoms</label>
+      <textarea id="presenting_symptoms" name="presenting_symptoms" rows="3"><%= pageData.triage.values.presenting_symptoms || (pageData.triage.assessment && pageData.triage.assessment.presenting_symptoms) || '' %></textarea>
+    </div>
+    
+    <div class="ac-field">
+      <label for="allergies_reported">Allergies reported</label>
+      <textarea id="allergies_reported" name="allergies_reported" rows="2"><%= pageData.triage.values.allergies_reported || (pageData.triage.assessment && pageData.triage.assessment.allergies_reported) || '' %></textarea>
+    </div>
+    
+    <div class="ac-field">
+      <label for="current_medications_reported">Current medications</label>
+      <textarea id="current_medications_reported" name="current_medications_reported" rows="2"><%= pageData.triage.values.current_medications_reported || (pageData.triage.assessment && pageData.triage.assessment.current_medications_reported) || '' %></textarea>
+    </div>
+    
+    <div class="ac-field">
+      <label for="pain_level">Pain level (0-10)</label>
+      <input type="number" id="pain_level" name="pain_level" min="0" max="10" value="<%= pageData.triage.values.pain_level || (pageData.triage.assessment && pageData.triage.assessment.pain_level) || '' %>" />
+    </div>
+    
+    <div class="ac-field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="draft">Draft</option>
+        <option value="completed">Completed</option>
+      </select>
+    </div>
+    
+    <div class="ac-actions">
+      <button type="submit" class="ac-btn">Save triage</button>
+      <a href="/app/clinical/encounter/<%= pageData.triage.encounter.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</div>

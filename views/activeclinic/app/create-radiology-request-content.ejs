@@ -1,0 +1,36 @@
+<div data-ac-stitch="bc4ffd8f0e8c44f48f38cc15a069656a" data-ac-screen="create-radiology-request">
+  <% if (pageData.orderForm.error) { %>
+  <p class="ac-error"><%= pageData.orderForm.error %></p>
+  <% } %>
+  
+  <form method="post" action="/app/clinical/encounter/<%= pageData.orderForm.encounter.id %>/order/radiology">
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    
+    <div class="ac-field">
+      <label for="imaging_type">Imaging type *</label>
+      <select id="imaging_type" name="imaging_type" required>
+        <option value="">Select type</option>
+        <option value="x_ray">X-ray</option>
+        <option value="ct_scan">CT scan</option>
+        <option value="mri">MRI</option>
+        <option value="ultrasound">Ultrasound</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    
+    <div class="ac-field">
+      <label for="body_part">Body part/region *</label>
+      <input type="text" id="body_part" name="body_part" required placeholder="e.g. Chest, Abdomen, Left knee" />
+    </div>
+    
+    <div class="ac-field">
+      <label for="instructions">Clinical indication / instructions</label>
+      <textarea id="instructions" name="instructions" rows="3" required placeholder="Reason for imaging request"></textarea>
+    </div>
+    
+    <div class="ac-actions">
+      <button type="submit" class="ac-btn">Create radiology request</button>
+      <a href="/app/clinical/encounter/<%= pageData.orderForm.encounter.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</div>

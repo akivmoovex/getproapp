@@ -1,0 +1,41 @@
+<div data-ac-stitch="ee9bf2322b924cd79e86619a4635f702" data-ac-screen="create-prescription">
+  <p class="ac-notice"><strong>Note:</strong> No auto-prescribing. Clinician manually enters medication details. No drug interaction checking (marked PRODUCT_DECISION / blocked advanced).</p>
+  
+  <% if (pageData.orderForm.error) { %>
+  <p class="ac-error"><%= pageData.orderForm.error %></p>
+  <% } %>
+  
+  <form method="post" action="/app/clinical/encounter/<%= pageData.orderForm.encounter.id %>/order/prescription">
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    
+    <div class="ac-field">
+      <label for="drug_name">Drug name *</label>
+      <input type="text" id="drug_name" name="drug_name" required />
+    </div>
+    
+    <div class="ac-field">
+      <label for="dose">Dose *</label>
+      <input type="text" id="dose" name="dose" required placeholder="e.g. 500mg" />
+    </div>
+    
+    <div class="ac-field">
+      <label for="frequency">Frequency *</label>
+      <input type="text" id="frequency" name="frequency" required placeholder="e.g. twice daily" />
+    </div>
+    
+    <div class="ac-field">
+      <label for="duration">Duration *</label>
+      <input type="text" id="duration" name="duration" required placeholder="e.g. 7 days" />
+    </div>
+    
+    <div class="ac-field">
+      <label for="instructions">Additional instructions</label>
+      <textarea id="instructions" name="instructions" rows="3" placeholder="e.g. Take with food"></textarea>
+    </div>
+    
+    <div class="ac-actions">
+      <button type="submit" class="ac-btn">Create prescription</button>
+      <a href="/app/clinical/encounter/<%= pageData.orderForm.encounter.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,89 @@
+<%
+  var queue = (pageData && pageData.queue) || {};
+  var entries = queue.entries || [];
+  var servicePoints = queue.servicePoints || [];
+  var actions = queue.actions || {};
+  var facility = queue.facility || {};
+  var stitch = queue.stitch || {};
+%>
+<section class="ac-reception" data-ac-page-section="reception-queue" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>"<% if (pageData && pageData.stale) { %> data-ac-stitch-stale="bf9b846da6174bf995793b09e869cd30"<% } %>>
+  <% if (pageData && pageData.stale) { %>
+  <div class="ac-panel ac-flash ac-flash--warning" data-ac-stale-warning="1" role="alert">
+    <p>Queue data changed while you were working. Refresh the list before taking another action.</p>
+  </div>
+  <% } %>
+  <div class="ac-panel ac-filter-bar" data-ac-reception-filters="1">
+    <p class="ac-muted">Showing active queue entries (waiting, called, serving, paused) for <%= facility.displayName || 'selected facility' %>.</p>
+    <div class="ac-form-actions">
+      <a class="ac-btn ac-btn--ghost" href="/app/reception/call-board">Call board</a>
+    </div>
+  </div>
+
+  <% if (!entries.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'reception-queue-empty',
+      title: 'No patients in queue',
+      description: 'Check in patients to add them to the queue.',
+      primaryAction: actions.canCheckIn
+        ? { href: '/app/reception/check-in', label: 'Check in scheduled' }
+        : null,
+      secondaryAction: actions.canCheckIn
+        ? { href: '/app/reception/walk-in', label: 'Walk-in check-in' }
+        : null
+    }
+  }) %>
+  <% } else { %>
+  <p class="ac-muted" data-ac-result-count="<%= entries.length %>"><%= entries.length %> patient<%= entries.length === 1 ? '' : 's' %> in active queue</p>
+
+  <div class="ac-panel ac-table-wrap ac-reception-desktop" data-ac-table="reception-queue">
+    <table class="ac-table">
+      <caption class="ac-sr-only">Reception queue</caption>
+      <thead>
+        <tr>
+          <th scope="col">Queue #</th>
+          <th scope="col">Patient</th>
+          <th scope="col">Service point</th>
+          <th scope="col">Status</th>
+          <th scope="col">Room</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% entries.forEach(function (e) { %>
+        <tr data-ac-queue-status="<%= e.status %>">
+          <td><a href="/app/reception/queue/<%= e.id %>"><%= e.queueNumber %></a></td>
+          <td>
+            <% if (e.patient) { %>
+            <a href="/app/patients/<%= encodeURIComponent(e.patient.patientNumber) %>"><%= e.patient.displayName %></a>
+            <div class="ac-muted"><%= e.patient.patientNumber %></div>
+            <% } else { %>—<% } %>
+          </td>
+          <td><%= (e.servicePoint && e.servicePoint.displayName) || '—' %></td>
+          <td><span class="ac-status" data-ac-status="<%= e.status %>"><%= e.statusLabel %></span></td>
+          <td><%= e.assignedRoom || '—' %></td>
+          <td><a href="/app/reception/queue/<%= e.id %>">View</a></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ac-reception-mobile ac-card-list" data-ac-card-list="reception-queue">
+    <% entries.forEach(function (e) { %>
+    <article class="ac-card" data-ac-queue-status="<%= e.status %>">
+      <h3 class="ac-card__title"><a href="/app/reception/queue/<%= e.id %>">Queue #<%= e.queueNumber %></a></h3>
+      <dl class="ac-dl ac-dl--compact">
+        <div><dt>Patient</dt><dd><%= (e.patient && e.patient.displayName) || '—' %></dd></div>
+        <div><dt>Service point</dt><dd><%= (e.servicePoint && e.servicePoint.displayName) || '—' %></dd></div>
+        <div><dt>Status</dt><dd><span class="ac-status" data-ac-status="<%= e.status %>"><%= e.statusLabel %></span></dd></div>
+        <div><dt>Room</dt><dd><%= e.assignedRoom || '—' %></dd></div>
+      </dl>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <p class="ac-sr-only">This queue view does not show patient phone numbers, NRC, or clinical diagnoses.</p>
+</section>

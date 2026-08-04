@@ -1,0 +1,17 @@
+<div data-ac-stitch="7959616d1673403ba3bf6ff71d18a77b" data-ac-screen="nursing-intake">
+  <p class="ac-notice">Nursing intake documentation (separate from triage if workflow requires).</p>
+  
+  <form method="post" action="/app/clinical/encounter/<%= pageData.intake.encounter.id %>/nursing-intake">
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    
+    <div class="ac-field">
+      <label for="intake_note_text">Nursing intake note *</label>
+      <textarea id="intake_note_text" name="intake_note_text" rows="10" required><%= pageData.intake.values.intake_note_text || (pageData.intake.note && pageData.intake.note.intake_note_text) || '' %></textarea>
+    </div>
+    
+    <div class="ac-actions">
+      <button type="submit" class="ac-btn">Save nursing intake</button>
+      <a href="/app/clinical/encounter/<%= pageData.intake.encounter.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</div>

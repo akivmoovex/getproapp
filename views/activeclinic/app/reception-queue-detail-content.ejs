@@ -1,0 +1,127 @@
+<%
+  var detail = (pageData && pageData.detail) || {};
+  var e = detail.queueEntry || {};
+  var actions = detail.actions || {};
+  var events = detail.statusEvents || [];
+  var stitch = detail.stitch || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-queue-detail" data-ac-page-section="queue-detail" data-ac-stitch-called="<%= stitch.called || '' %>" data-ac-stitch-did-not-respond="<%= stitch.didNotRespond || '' %>" data-ac-stitch-transfer="<%= stitch.transfer || '' %>" data-ac-stitch-assignment="<%= stitch.assignment || '' %>">
+  <div class="ac-panel">
+    <h2 class="ac-panel__title">Queue entry</h2>
+    <dl class="ac-dl">
+      <div><dt>Queue number</dt><dd><%= e.queueNumber || '—' %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-ac-status="<%= e.status %>"><%= e.statusLabel || e.status %></span></dd></div>
+      <div><dt>Position</dt><dd><%= e.queuePosition || '—' %></dd></div>
+      <div>
+        <dt>Patient</dt>
+        <dd>
+          <% if (e.patient) { %>
+          <a href="/app/patients/<%= encodeURIComponent(e.patient.patientNumber) %>"><%= e.patient.displayName %></a>
+          (<%= e.patient.patientNumber %>)
+          <% } else { %>—<% } %>
+        </dd>
+      </div>
+      <div><dt>Service point</dt><dd><%= (e.servicePoint && e.servicePoint.displayName) || '—' %></dd></div>
+      <div><dt>Assigned room</dt><dd><%= e.assignedRoom || '—' %></dd></div>
+      <div><dt>Estimated wait</dt><dd><%= e.estimatedWaitMinutes ? e.estimatedWaitMinutes + ' min' : '—' %></dd></div>
+      <div><dt>Patient note</dt><dd><%= e.patientNote || '—' %></dd></div>
+      <% if (e.calledAt) { %>
+      <div><dt>Called at</dt><dd><%= new Date(e.calledAt).toISOString().slice(0, 16).replace('T', ' ') %></dd></div>
+      <% } %>
+      <% if (e.servingStartedAt) { %>
+      <div><dt>Serving started</dt><dd><%= new Date(e.servingStartedAt).toISOString().slice(0, 16).replace('T', ' ') %></dd></div>
+      <% } %>
+      <% if (e.completedAt) { %>
+      <div><dt>Completed at</dt><dd><%= new Date(e.completedAt).toISOString().slice(0, 16).replace('T', ' ') %></dd></div>
+      <% } %>
+    </dl>
+  </div>
+
+  <div class="ac-panel">
+    <h2 class="ac-panel__title">Status history</h2>
+    <% if (!events.length) { %>
+    <p class="ac-muted">No events yet.</p>
+    <% } else { %>
+    <ol class="ac-timeline" data-ac-status-history="1">
+      <% events.forEach(function (ev) { %>
+      <li>
+        <span class="ac-status" data-ac-status="<%= ev.toStatus %>"><%= ev.toStatus %></span>
+        <% if (ev.fromStatus) { %> from <%= ev.fromStatus %><% } %>
+        <% if (ev.reasonCode) { %> · <%= ev.reasonCode %><% } %>
+      </li>
+      <% }) %>
+    </ol>
+    <% } %>
+  </div>
+
+  <div class="ac-panel ac-queue-actions" data-ac-queue-actions="1">
+    <h2 class="ac-panel__title">Actions</h2>
+    <div class="ac-form-actions">
+      <% if (actions.canCall) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/call" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">Call patient</button>
+      </form>
+      <% } %>
+      <% if (actions.canStartServing) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/start-serving" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">Start serving</button>
+      </form>
+      <% } %>
+      <% if (actions.canPause) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/pause" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Pause</button>
+      </form>
+      <% } %>
+      <% if (actions.canComplete) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/complete" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">Complete</button>
+      </form>
+      <% } %>
+      <% if (actions.canRequeue) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/requeue" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <label class="ac-label" for="requeue_reason">Reason</label>
+        <input class="ac-input" id="requeue_reason" name="reason" maxlength="200" placeholder="Patient not present"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Return to waiting</button>
+      </form>
+      <% } %>
+      <% if (actions.canMarkLeft) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/left" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Mark left before service</button>
+      </form>
+      <% } %>
+      <% if (actions.canCancel) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/cancel" class="ac-inline-form" data-ac-cancel-confirm="1">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <label class="ac-label" for="cancel_reason">Cancel reason</label>
+        <input class="ac-input" id="cancel_reason" name="reason" required maxlength="200" placeholder="Reason"/>
+        <button type="submit" class="ac-btn ac-btn--danger">Cancel queue entry</button>
+      </form>
+      <% } %>
+      <% if (actions.canAssign) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/assign" class="ac-inline-form" data-ac-queue-assignment="1">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <label class="ac-label" for="assigned_room">Assigned room / desk</label>
+        <input class="ac-input" id="assigned_room" name="assigned_room" maxlength="64" value="<%= e.assignedRoom || '' %>" placeholder="e.g. Room 3"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Save assignment</button>
+      </form>
+      <% } %>
+      <% if (actions.canTransfer) { %>
+      <form method="post" action="/app/reception/queue/<%= e.id %>/transfer" class="ac-inline-form" data-ac-queue-transfer="1">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <label class="ac-label" for="transfer_reason">Transfer destination / reason</label>
+        <input class="ac-input" id="transfer_reason" name="reason" required maxlength="80" placeholder="e.g. Triage desk"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Transfer patient</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+
+  <p class="ac-sr-only">This page does not create encounters, show clinical diagnoses, or vitals.</p>
+</section>

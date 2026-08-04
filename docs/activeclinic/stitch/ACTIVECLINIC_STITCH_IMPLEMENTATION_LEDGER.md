@@ -62,3 +62,66 @@ Unprefixed foundation duplicates (6) + platform states (4) recorded in master in
 ### Phase 4–7 blockers
 
 No ActiveClinic schema/services for triage/consultation/orders (P04), pharmacy/stock (P05), lab/imaging (P06), or billing/cashier (P07). Overnight run records SCHEMA_BLOCKED and does not invent clinical or financial workflows. Preserved untracked reception WIP (`014_reception_queue.sql`) is out of Phase 4–7 clinical scope and not committed here.
+
+
+## Continuation mission (P03 complete → P04–P07 foundations)
+
+**Starting SHA:** `f6d792b068f18e855ac2d73add3bae1116052e28`  
+**Corrected prior verdict:** `ACTIVECLINIC_STITCH_PHASES_01_TO_07_PARTIAL_WITH_SCHEMA_BLOCKERS`
+
+### Reception WIP classification (at continuation start)
+
+| Artifact | Classification |
+|----------|----------------|
+| `014_reception_queue.sql` | Valid P03 continuation — already committed in `f6d792b0` |
+| `082_activeclinic_reception_permissions.sql` | Valid — committed |
+| `activeClinicReceptionService.js` / `receptionRepository.js` | Valid foundation — committed |
+| `activeclinic-reception-foundation.test.js` | Valid — committed |
+| Reception clinical docs (QUEUE_*, RECEPTION_*) | Valid — committed |
+| Reception HTTP routes / Stitch views | **Missing** — implement in P03 completion checkpoint |
+
+Production touched: no · Deployed: no · Pushed: no
+
+### Phase 4 detail (2026-08-04)
+
+**Unblocked:** Schema + clinical safety foundation implemented.
+
+**Migrations:**
+- `015_clinical_encounters.sql` — encounters, triage, vitals (immutable), consultation (draft vs signed), orders (lab/prescription/radiology), alerts, diagnoses
+- `083_activeclinic_clinical_permissions.sql` — clinical permissions (network_admin + facility_admin only by default)
+
+**Services + routes:**
+- `activeClinicClinicalService.js` — encounter lifecycle, triage, vitals, consultation, orders, alerts
+- `activeClinicClinicalRoutes.js` — all P04 routes wired
+- `loadActiveClinicClinicalScreens.js` — screen loaders
+- Navigation: clinical item added to sidebar
+
+**Views (all 12 screens):**
+- Clinical queue (Desktop `b8d47f05a83c4959ac2d3d6ca83c7dfb` / Mobile `16897ac752a94750bf00225db66ff768`)
+- Consultation workspace (D `5e4dbc7265ad4e17b060b1f641996db3` / M `15c6c639c2b04bbda97b54f127c500f8`)
+- Triage assessment `3c8f7b43b7984718acf661e381c1e6f7`
+- Vital signs entry `dede5e72277d413497e1f870f6b4a0e1`
+- Nursing intake `7959616d1673403ba3bf6ff71d18a77b`
+- Diagnosis entry `33a522e2f4eb45c9bdbede9ba34e0bee`
+- Create lab request `969bbfbdf9634dbc8af598ec2277e92f`
+- Create prescription `ee9bf2322b924cd79e86619a4635f702`
+- Create radiology request `bc4ffd8f0e8c44f48f38cc15a069656a`
+- Clinical escalation alert `99757cfd7d3747d490f00ac342faa519`
+
+**Clinical safety constraints (documented):**
+- No auto-diagnose / treatment recommendations / silent risk scores
+- Draft vs signed consultation separation
+- Immutable vital signs (amendments via corrects_observation_id)
+- Manual alert raise only (no auto-escalation)
+- No drug interaction checking (PRODUCT_DECISION)
+- Orders created only; fulfillment = P05/P06
+
+**Tests:**
+- `activeclinic-clinical-foundation.test.js` — pass
+- `activeclinic-clinical-ui-parity.test.js` — pass
+
+**Docs:**
+- `ACTIVECLINIC_P04_CLINICAL_DOMAIN.md` — architecture + clinical safety constraints
+- `ACTIVECLINIC_PRODUCT_GAPS.md` — blocked features documented
+
+**Status:** All 12 P04 screens IMPLEMENTED with foundation. Order fulfillment, results entry, advanced features deferred to P05/P06.
