@@ -32,6 +32,12 @@ const {
   logClinicApplicationFailed,
   logClinicApplicationCreated,
 } = require("../services/activeClinicPublicRegistrationLog");
+const {
+  newDirectoryRequestId,
+  classifyDirectoryError,
+  logDirectoryLoadFailed,
+  logDirectoryLoaded,
+} = require("../services/activeClinicPublicDirectoryLog");
 const { resolveDeploymentConfiguration } = require("../../platform/config/deploymentProfiles");
 const { renderPublicView } = require("./renderActiveClinicPublic");
 const { registerActiveClinicPublicBookingRoutes } = require("./activeClinicPublicBookingRoutes");
@@ -161,6 +167,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
     const province = req.query.province || null;
     const city = req.query.city || null;
     const csrfToken = issuePageCsrf(res, env, isProduction);
+    const filtersPresent = Boolean(search || province || city);
+    const requestId = newDirectoryRequestId();
+    const deployment = resolveDeploymentConfiguration(env);
 
     if (req.query._directoryLoading === "1" && String(env.NODE_ENV || "") === "test") {
       return res.status(200).type("html").send(renderPublicView("public/clinics-directory", {
@@ -170,12 +179,19 @@ function registerActiveClinicPublicRoutes(app, deps) {
         province,
         city,
         directoryState: "loading",
+        requestId,
       }));
     }
 
     try {
       const result = await fetchDirectoryClinics(getPool, env, req, { search, province, city });
       const clinics = result.clinics || [];
+      logDirectoryLoaded({
+        requestId,
+        resultCount: clinics.length,
+        filtersPresent,
+        page: 1,
+      });
 
       return res.status(200).type("html").send(renderPublicView("public/clinics-directory", {
         csrfToken,
@@ -185,8 +201,23 @@ function registerActiveClinicPublicRoutes(app, deps) {
         city,
         directoryState: "ready",
         directoryEmpty: clinics.length === 0,
+        requestId,
       }));
     } catch (err) {
+      const classified = classifyDirectoryError(err);
+      logDirectoryLoadFailed({
+        requestId,
+        deploymentCode: deployment.code || null,
+        environmentCode: deployment.environment || null,
+        category: classified.category,
+        safeDatabaseErrorCode: classified.safeDatabaseErrorCode,
+        exceptionClass: err && err.name ? err.name : "Error",
+        repositoryFunction: classified.repositoryFunction,
+        stage: classified.stage,
+        filtersPresent,
+        includeStack: true,
+        err,
+      });
       return res.status(503).type("html").send(renderPublicView("public/clinics-directory", {
         csrfToken,
         clinics: [],
@@ -194,6 +225,8 @@ function registerActiveClinicPublicRoutes(app, deps) {
         province,
         city,
         directoryState: "error",
+        requestId,
+        schemaHint: classified.category === "schema_missing" || classified.category === "schema_column_missing",
       }));
     }
   });
@@ -203,10 +236,19 @@ function registerActiveClinicPublicRoutes(app, deps) {
     const province = req.query.province || null;
     const city = req.query.city || null;
     const csrfToken = issuePageCsrf(res, env, isProduction);
+    const filtersPresent = Boolean(search || province || city);
+    const requestId = newDirectoryRequestId();
+    const deployment = resolveDeploymentConfiguration(env);
 
     try {
       const result = await fetchDirectoryClinics(getPool, env, req, { search, province, city });
       const clinics = result.clinics || [];
+      logDirectoryLoaded({
+        requestId,
+        resultCount: clinics.length,
+        filtersPresent,
+        page: 1,
+      });
 
       return res.status(200).type("html").send(renderPublicView("public/clinics-search", {
         csrfToken,
@@ -216,8 +258,23 @@ function registerActiveClinicPublicRoutes(app, deps) {
         city,
         directoryState: "ready",
         directoryEmpty: clinics.length === 0,
+        requestId,
       }));
     } catch (err) {
+      const classified = classifyDirectoryError(err);
+      logDirectoryLoadFailed({
+        requestId,
+        deploymentCode: deployment.code || null,
+        environmentCode: deployment.environment || null,
+        category: classified.category,
+        safeDatabaseErrorCode: classified.safeDatabaseErrorCode,
+        exceptionClass: err && err.name ? err.name : "Error",
+        repositoryFunction: classified.repositoryFunction,
+        stage: classified.stage,
+        filtersPresent,
+        includeStack: true,
+        err,
+      });
       return res.status(503).type("html").send(renderPublicView("public/clinics-search", {
         csrfToken,
         clinics: [],
@@ -225,6 +282,8 @@ function registerActiveClinicPublicRoutes(app, deps) {
         province,
         city,
         directoryState: "error",
+        requestId,
+        schemaHint: classified.category === "schema_missing" || classified.category === "schema_column_missing",
       }));
     }
   });
