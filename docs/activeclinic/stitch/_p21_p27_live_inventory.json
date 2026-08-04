@@ -1,0 +1,1897 @@
+{
+  "projectId": "17813606734422395399",
+  "audited": "2026-08-04",
+  "count": 189,
+  "screens": [
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Review - Desktop",
+      "id": "fa556d169e1a44b38a65770869bf2c09",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuXD1i13FHdFLQSwhIsnQHVLnkRsHF-dwZqhfqLKVAAJqUw8ecuKYsSW5i0jsnN1xr4M20TvmIWLtmSdKrCU_C0gVZb4bkd38MM-uFuDq-ayqmLef5ww2gg3C-zOjQ-bZtQbC0I8303xp6XIYEHV4E1stwuenlCoG04dLmVDy-tBwts48ocKQZKRtja2wVKnQ_twS7mtOdUoOup-8kjY3PJxqdcDfog7b8Cgp-H6Y92CclHuvBq7KC5mSdx",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGIzMzA3NmYwMjNiZDE5MWE1MTU0YjFmEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Mobile",
+      "id": "85f99ea3326f46a2bd0415ba1cf2d8d2",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2710,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu6NRk7JWCTokRye5hNafhZARLTG7riqsOcXkt_H7maM_O20Dv91Ovs4n86UzhP7PHbP_MbdlWmau19FqkEYFMCuA9MKOwOWrJRR56T_FeXGGF5xsEGpczvpdDGYed5zYkCu037zMU2ev5dE_089LGEug5BxqDbrvCKCyhh6qsCTgCD87Q0nwKR4epIh80fwlZmDFKkUPg684jdSlaJQfFVZVE8jelggjLlZF9yJLg3G_iA79A-vf2fQhMN",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTViYTgzZTQwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Review - Desktop",
+      "id": "1167937cacc4424f852368d5179a7e7c",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2120,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuMHuD7kNU7UXLPnH5S3Cqr_S8kcp_KolhICo7Td9FkDLH-9pKSuZOZFfd925iZC1Cuhcc04mV4E3NO2CTOeGocudsE7bBNZnW11U1Wooe_qsPu25v7ivKNdV1HkNA2Pri4WK7ik9v1n1ndY8bPWhlA8CReeccYHcSNB6t203mCXoHQcDSD9BfRYZGz0mdw59qj8DLpVxSPaZbDNHKqS3dX_qENO8u954rb4itd9pohfvbFInNxlgyJH5HE",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGVlZmZkOTQwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Empty - Mobile",
+      "id": "08791796ff3046df8c2c479ee2641814",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvhutC7a5jLqVIhjR3AKDpQDHMuFe6B3Leu0LzKkRubP4cGnFu5UugL3wAIZfP7Us1WSje22RQfcdRsUi68j-jqJsPmL4UOcowmkRGb6DMeUzDOgxPse8qkVtwLXovG0M9FqfLNGrAbXWzT2px5gDWPwB8a6WqwncLLD_A5ZTR-dTlBiXKcrqFyvSBuQtaFjXUMF_bfXh_-5MFF76NJespDGLjREdCdOcrDGqDr6vNYt7O67CQwr3ws_zP4",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGE3YmNiMzUwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Pending Preference Change - Mobile",
+      "id": "4e84a1501ffa454b91221a4f32cfaabb",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1868,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvo4LKvhMVhyHCSgB12sFaqkw2rXWG3Kb0ISFfoIiTGyjt5ji0E_v2WH6IP_NCGnjIejZpUJtNaWRJeHCqz37KczWUUPVBcwYyXTfoZJ9BeVdoKpQdk7n1dsPbTjzbcFlF4bjConO20ZBlDP2MD7i_TAb6jpOh2VNt4JqQTor1MgrAoWbLh0nYwdQ0ArEm4YbEWT89_2k0I-3d2oJ0BZoDL4ZV5LKRVu3rnKVJZL540vuAYDl-5hS9n8WzE",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTJkMjA1MDYwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Consultation Service Detail - Desktop",
+      "id": "47005f4888bc4e099a990fd65a6b8962",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtgq4WDBNSHK9BCT_9tws753X5W1BA97NHGZBiddqItWNC7MY02PQL5JiKNl5bK-RhzEBMtucsg0FFqdM--IwfiLmvtUpUrkZ5XBD1skDK6u1jlA1yWLlPSZ3RwNQ290PlTFElMjiB6qzqhtsf8E4daLChhtk3QtJQ_aUxNwQrFKzMhk4Vg1CN3FMywOhJr29XMRCYhU2vKtCLKSg9m_pCXv7Zo9RMXjcs17X4vE65uRA_XJfXpX4h0-YaK",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTFiZDFkMTEwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Service States - Mobile",
+      "id": "c158c997d0db4d6bb2b228164441ab37",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2692,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsrpdsSuRu5rf9Be9bHcLaKzWnhKpUd9OS53dH7Ey8R0fLVaaDwaQNaV0nAKA0TKG1muF9_98rtWC2VTjevuDzmoPc89Je8YaYY8MWfdHj8H7CVDUJINH-SYRNgJ3o9xcHD_lOpS2vTClVstHzzjSkBn9WxYqpDt6HnF-VlO2fdECqvnkQK9TtxhPWYcjlEdJ3JSHp_5-uRQ54BwgkdN5jGLSME_cI72AtBRBDYVLQR9dADEiG8Yqf8RxM",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTIyZjYwN2EwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Desktop",
+      "id": "2c612094416e468ea4063dc162667609",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2292,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtXpjgWkO7ytwtxPELYGjdsrF4u7ccfEwFRKrBzal8daHJdUSBwc82PiovQNBYqEwd_zEh7b2rHCXUUxzTAox6_AgIoJ9oUAH8XxRrSSioPf4h8SqJdchnjDK1Yu7VWFow7bt-xGQIz9bfFLcMXAtRtlKBnWCsP6EQWU66lyKd--Qa-tiMMPEzch2obmPpVA_ocbtkJuvyNl51mB2NXY6tWn4qpL7KTrJzezSwB-juKnTuw7Ey7c2p4bvI6",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTU0YTFhZWUwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Status Patterns - Desktop",
+      "id": "b18ffbdac9a644f8bea30734fc9368df",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2132,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu3inRJ5egnlF59xuoTAazoqK5zzOwPId_H6sladnRQq3xKhVgXRXZuuTZ6vT_ZQod43tEUTudYehNkHY6q6Dtz9I9VaTEs3ae-6Ghh27WsQePJaUvL8PTNpQj3uEwEYKxt7JnectIqbBvifBdQIyVif6bS6pdwR1jZ_VABGjo4ImyueODlnKjhnooaQnxpvB7ENUSkOlh53Nx91tf-HIVgSrbz_cWxnPXhnzC-sFCvDaz-FRQ5mySeyK0",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTMzYmFlMmYwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P20",
+      "title": "ActiveClinic Tenant Template - Configuration Reference",
+      "id": "83fe90078bb349efad00ea1138d795d2",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 5104,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsB-MZYgZ8LgEK6DGuQ3lDRmUw7qVRvoSuaqqhU3PivJkSBd3pXwIgkf_3xltFrDXD7tdWFGmBN5cYQZzLP5YA5OcZCBVUlEPTCW8hpgFufjPxNno53SyARkiYflZR7m47eV8eoIAUI15-JzfgsHRY5-eflxP2OvvrsrlQAoHdmjITRhk05s-Bz1M0j5_x0LyWv5aboK1QHwAf8ADStD2QXAoaZZ1nVAd9UnsCjjnHV5pLksmfQOR3La5p-",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwODcwMTJkN2EwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Reschedule Submitted - Mobile",
+      "id": "684f5190840549698bd9237caedeccb3",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2098,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsd6PMIOhC79MQpVjkJie_Q3IfikQv9C5FHUuy0yCAA_mbDvMjn-RBFgTQI7KvvmT9dakKa976kUzbn68q1lCMtZF-wur-G3bauCc2_dFknmJRp4JeLcN03n9RUv9mbqccx4thx1gpJ1k9PBILrNLIeDOURNJsLssKEFkwktJRHjJnbf45JFWkVSzrd362avo63AxN5QKoobxkDaEjpWtLXC8jeUZiVOUy--cqVhks8N1Waw2FyM6q1hQiX",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGU0NGQ3YjkwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure SMS States - Mobile",
+      "id": "9a4b08f02d2b4cc990eab7b16b4202aa",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1804,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvO5ieaCUjbELaTl0Vnu1JkPRa3stplGvAyF5ZTZc5O1HIlEHSkzM2VnTGIMzDB_7JmHTbKD8kB75XDOTEMAPu4NAFNF-FTtV_3rA-ApTQ70keX_xosHN_FjXzFfG15HxMr85sXXREXVWeCupg5nD5UzW-IZlVznCT0cadM0xaVj-clvvqkunVaXQAOqX0cNVp_2hNhhxcYmCxrT0W39lm2pcEq79vUTypHp_9XpNUSI1i4iB97WFiRXbVk",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDIyZTBkMjIwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Patient Details - Desktop",
+      "id": "e49351b2224449d2b86756b198e5ffb6",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtAK8iCPJaxnPzOzvPM6kncvpuYunngvI4Jqhx2moj1r9DDzW6VhyKraQEVJCjoRGzf4L9fm1sKSFRwiqJN57yt1g-3_zuQzJJ_rJC2aPJglEojlXB0mq-3sStJ9IsxqZSPokLa6pMlVQ-dNJED3lEYt05rhRjBasrYP0Xv9Yf-PQsrQZbHSOKCFg2eohvXEooBzmt9fH6gFKwtwBldsiDJp4nchXjJA3gVyywhILVlXf7R2tueR0Kz7TE",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGY1MDQ1ZjkwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Submitted - Desktop",
+      "id": "1e23d5e9dfa649aab7746c966b255a5f",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuA9OQOvmkZ30dZ8e0gPy9fR-s8sfJpYYQqXGGKuqYkLtdDeK_73yplkkVaI380McP6-vOL4vMTFLD8kvePLloE15t9c_DlQmW9B25hHT0ig-rZdjY8_XHTN70tSTrUyaa2g6DOnlX0necZZhvuXNuqJlCU_TBl9GAhvtFd-UsRQ67stbCoKEafjDN86niapojHzCY1AIAoEOUxgo4RDu6GqCfZ2f1yqe5uQBLKJj8vBx7-q-6F8feRgyAF",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2M5YmYyZjQwMjNiZDE5MWE1MTU0YjFmEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Recovery Verification - Mobile",
+      "id": "3e22604b90844b499b98bed2dba8f81c",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs0Y4VHWsRRoasHaahjg9EXR5O7U-W8ruso5ggqwJQExan7nAgJR8fT1D-9d4AMwLQ3ZYEFpLOZUgnXhnWx4iVysoXs_1FmegeGUM8cS_yDXAz3B-0NS6mDe8fKO_M8emhCYbfpfrQ0t_vplPQWqrn50lMi0dobMnTGmIUSsRV9MITMDVaFDL_Hjmmi9qtGQwIonDcBtlalq0TG0hQ_2I4zF_ekuMjF-2g7nIKAKjjsS4t2zL0JcY8xVgFT",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjU3MTM2YzIwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Home - Mobile",
+      "id": "6eb5bda4ca694e54b34693e3f86e986b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 3034,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvbY3BGfpF1BL0_S4faY06hzzzkVva-kkjmela0Vv98-tVsTmxy-ceVjrkoGjxfYwFkhYeDJRKcKBF9_g1S0oCghfeaflTCMbu5xDkZu78P8hjUHkOm1ydYVYAeVdMjPF_oF6BtUqKzMOPIW_hgGNSy9lVpKJX3cV7bjezAPW9dJWLb0hjuOiprrKqosIDJvVishgpHgJzx5seUAuO55nkPjbRuuwcCUOBKvLG_QZfbD3tlv6h5f0sgtKC-",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmUyOGI1OTcwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Solutions - Mobile",
+      "id": "990884d1aa844bb2a789f41b23b7704e",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 3694,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvifpF86YfnfdUcee5myPB0u-mmepJLl4oX7J0n-q42u8V1X9gjeklkD-xatls2wYM5McgdjZDN6N-rb2O98qXGGDdW5CzWIL-4RqnTpgQy2kwQgWxzuXYBCkEdcPYV-XiUYdzAzjSRLk9lPGjFeLIUSW8hGg0__6CD7aJF_yM7mDUQIrYber8MDYbbsd85PIZPvK590TkBAjwTgP3Ob2CQdRJc2fXzXdef1KxgDBiMdhwuBKBaE5L9X2WI",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTYyZTdjM2IwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Home - Mobile",
+      "id": "2ac5e52f18bc40b187603880f1175f89",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1976,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsEcb7fZIghKUieBjxRhghTMNiWrwseqZxEah_y9zNsZw-pjsP51qSgODLA61R3mIyImiiqn0FROvgQ6zWbg3_g5mxZzotjOvs6utOuV9mGWm56Cx_TvQt7TMcFY7BP86TKVcEDrVO35572AUh5H9wQmRMYawqpZLo9lm1qDokYHnkyqaWW2ytUoEcOQsQcJVN3MUu62ISJyiGUakw32GqNUHC7DHG62mFOvyZoWil_44-RxXZlcSHPUejo",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTM0ZTA0NWYwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Pending - Desktop",
+      "id": "3b311f353e1745c0b020b400af92b0f5",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtcMF64vh3XPP9_tYayrG76lptzwgCMFNwPd7Uh1r0cCJTNKen221Gh3bQ9KhXI83Ejz37idZdW77DMRe_VHtWc8Jjt-9xvO3fO-0g3DhNetFTEqr-YxpIw-ukvTOmaELXauEuGqOVzVcNJLejm6DZbe_vRLUemN2UG0-0vEP4IcE3eCMksBsqcu1UsJM186NhOtSyTitC-P174VdKL3xoS8lhS4mZ9eJm2jQiKv7um0WnJoeAKOoN2mzOd",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODliZmVjODAwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Cancelled - Desktop",
+      "id": "df011954ab5248cfb5126f49d6187258",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvxpI5LJaPmNaTUq9ngOOvtH9pw2QIKf1Hpj4x5MXVbMN7Av3C2hXcfNIg1qUQ3ur-QmR_xOZVduxOGExmgJbgUjbbEllF6Ej2Qb4NyZCnatBUvf6XoiosNmkMmzR3OWf9BYrSocEHTzpoitf89EFSXKzbfpdEjobRIgHtTExt_G1cL5PqnPGFdCWNpa1L3X3Lxr1Ahk6w_mlDLxZmHUNV2oQrYTdj-L27ac0PELA064gUgESxU4tENRpcc",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGI0ZjA2MDQwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Pricing - Desktop",
+      "id": "38b42384631a423abd13f4f1d23ebd43",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtr-balCHj0UTU-vJuX0qV15ptE47K4un103uMC8GtM9PC7ix_ehNj0Wbyp_Tp9Za6qyxLncd4hfdr1kJzrZGF7-xoEieBgd8BnIupipDa-l5cUwCTviE_QEKGF05DlCduM5_6j1sUaMJ0ehwjBcE4DWau9LwE47QxqDJPmHAjhUyPFN0YY50Stg-hPIQmf64rdjjvXh_RWwigcStXSp7GQkUTPjpERYvPSsH7t6yMqFq_04VtotpyA9E9a",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTJhYzFhYzQwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Informational Service Detail - Mobile",
+      "id": "9f712f5799384727bb06b415618dd186",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2314,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvC7q9Rz5E-I1dijLcSwz3iSK-73rPBULmAMm5QTCEcUuDRorPpYNLfXk8l-QJ3Qzkg6HxNrKPHqUXDOqfj5JtRppSd4OOO6Z9ZJlbSrQU2gmyGD9z_JOvX8ACj64ieQ1j7vIpqRcJO8sk5Pkbedc4weYdm2yo98GPHJg1oyETDcypJ7OgIUGd-Wjbgndu1XAHQNyqggRczqIo2iv3gj0Dwx2B6tjJGfvcwlK5MGbxlYWyMNYZUAie6LdQ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTI5MjllYTcwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Pricing - Mobile",
+      "id": "775340af70d540bea3af6d7ed277402a",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1876,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtzfhSFUwDELFnX8hniHQrRbKMRh28X1LGxMR7JcoSEc27rxh38De7YBitkQEiTUQdmUUdOeQrlHHoSfQsIp6gzt1Z0xuAu5j336iAbnx5sT7cXrvCLMQp-v0SjO049kL7-tUqQXnzLEnFfnCylZNDFcvYQO3SFlPS4jtjEhzlFGxF0td7limfqiCzv4UPSSKj4UMqsFNYztVrqzuNbkg0Id5pdqR64XEunwnDrRCFDHePXDlfWpI7baXU",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGVkYmRlMGYwMjNiY2VjNzU4MDMxMzRiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Error - Desktop",
+      "id": "cdc46325b27b4813bf5a19eb8e85dd9f",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs_Wez-kmJriFEXJu5wF-vwDoQGjMeVdltUs2mnqNr87mACmBo0JS1KhRcvFPQaLlETDrn-t7Na0Hcj5zcZgBHM2bpNij_IZaa4YBR-hwhxddI-nOTKINi2KK5SYhpdMcloVYj5NU7k228DE1AdXDFyePA7DPvh7t1eS3Kk838jpD3unAPVxhaWk-4Tk_Z_J2IbSaEzDetVDu3fQ6qafrFuLqjUoKodqHZIyebVJwd_vKYSASlPfoNJ3aYn",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNDllOGQwNzEwOTY4OWNhNDAxMDI1YzgzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Success - Mobile",
+      "id": "7f422dccacea4a5c93932db627522000",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvEkjtbk3QGClQfSs1ntMvY8sgJvfrZA2GUv5Z0nl-zUBTaFay3mN-Ulb1nO_LF7JRA3NNbyy8pjIdMcAJTnHRGhG2vFs5x2mCvpC90jaFQ83lcoyn4V0O6zSHUkR09arFHBFOJCf6zomfUa34W5r21sW9EYUP5FtMyhIzAFpIVxhnKE3r7ve3G1lSk3rE71kUhVvweExH6uo1T0RVfRbhozFVBqTfpra3ZztFGSBeH0EqJozQeHtDgLUKo",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTUxNjY1MzgwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Notifications - Mobile",
+      "id": "1938bff7a7d54fa5a7d856457864d84d",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1980,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLslmcRVEzl2Jv2ljUr_UamET13a6RxO5SuAL8mCF8Vi8JPg33r_FoYmBIUVx0vrVthpFauQeOXiGbcE77FbvOnAa8NMbscmAHMRbgSIxVNbuWr6OBTXq1aw7TOoQ3BlQxel60qZfsMQ2mlsj1RktqY2iyBOE4yYL7eQUhDPNTCPPkV-14pD6nTNnNBq3vk2GB_faxvGr2YCUh87X0hTa2tAYPDyEqJJeSh2elehNE3VWQxayCDk0He4cHMR",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjkxZjkyZjcwNDc5ZjI5YzkwMDg2NDA0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Lookup Progress - Mobile",
+      "id": "ab96f1f72f444e9e943a1e6b2d539b46",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuV819DTQatwxFBpjoKsWm8iKFgPVRDUZBIJ7wCT2VAFXUpBIpg-rg7y8ytnx9BoR7qiVHvAxmQDZ73Wk83Pr6rGgaLhz5LTWmMj-2WIZRNnpw69Jt70OvQ104GMTIUy6GsdQk5DeCq4k0hQEzBZG6gtIrSd0vlbgNwdM031vJWsRgYl_x1m_nFi87EPFpw1ZY4NOSA2nFz-NWxXW2rAoJozLS5pAKnyc9Dm2ah8gG3ygBwKW0V8tHWfmU",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODg0NmU4YjEwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Login - Desktop",
+      "id": "4bc683c012fc465681d21655ac3d1d01",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLseWF7nv9hIAvC4gLimnFzYkstACwpYevpVzRoNz7A64OVmm_uKxJi6oVzZWx1FcoiMSJe-YnyFB2XDZuiOY6Gm4CQZiDgXfRCMt35YP0xNFBV5DK1SPTvSDxLzpdBKnBYMX5U7YHlAEYL-gA58HlAhOEcYcB1T7IUM22RnXdI7U6HYjKPTjN9-dJJRSlp414kAMw2nZEGqsoM3PKtX3cy4KyQP3F4p-9rCZk-1X-D27lXN3PmOi7kdCiHl",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjNlNzgyZGEwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Booking Entry - Mobile",
+      "id": "bdc67d336bc64447bd0c02474b34c144",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLulOQKlnPo96QXhRwiCob0wm2tvb6tKDQ9uLvOvqFMxka5ZcSxSHkbKyFNvLhJGLx65yPpD6QnWR91-jOU77YIZP1bQ-iBtaCrFjIK7u4A3MZawqbSfMw0Aa5s-iIIren01GGKWQPdC_7dJassgL84lzgVh0umIG5HbYxUrbVjnMrRhv_X_9T7n_5fCSUqkIXvtSm_8rNhSxcEmYjfvBi1pNXpThIyRsK-Ktv5fdRzJWAUKVbEoSK33thGm",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGVlZjI3MzYwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding - Desktop",
+      "id": "a45f68ec92f8495d8f5cd1aa42831e88",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2372,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuN9Z5-gVvNI2SxEQvFhG8PD8UU6CD16NQhEAwrMSfuNSyPYwThVOi7EZbRlTGcHeSQa5NE4fO02I7E-1TKltpuX-uLkl4Fj-jxf8Bq25sniAy9_-LypNqYrA8rplPOFzCnefQ0gj7wVMRV_tvdllFlPSeEBJYrBGcdT_-h3qFsdEf5MRNH_wyebGo5Gz79c67-BKoGwdpkVg3B4O3qR81eMUrQgJpMf6iPl1ejwzi9Zz59HwEoztCpfuri",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTQ1Njc0M2QwMjNiZmEyZTBjMjUyZGJlEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Dashboard - Mobile",
+      "id": "e4c2703d85764c2cbf2f91ab890d27e3",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1784,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtDqPS8EgvC2aID7ekk3ewpxUl7oAvCwXDHuMzGJuTutSHl57RGm00SUgm3QNt1etYzfECUu-hpuHxF1TfpIotL9224cvIcGqX5fajNn9wGGtmshLLvZ4Qprmz3UegU_bry3NXcFQB9KLUzM4IQP2GDqVqI7wor-yC06DQZRvEnX-NCjiSPweAyTzyNElMsckI0_d6pi-lLwdijgpJTl1SeEISbVmQSEzqhddi-cvrHypiDXXQy-sab5KhR",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjk4YmFjNDkwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Reschedule Request - Mobile",
+      "id": "c016257b490d42ccb49bdb01e4228c2f",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1868,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvdzaLGwJ7EKMFzQMUo5k1WO2ySkOX9pqro4kQnyqJIkfQb4CO3cBKXr4ouZRjAcO7pCLkBOaZDhRhkOAIIrHmHm8OXV08L57XsOtrOQa8ez5PT6vos4rczg-5KUP_XaP3G5yQnQ2w3w_JqFHqc2UAdM85Q7Dablya0oYalUy6uxPf4j-nBpQPTHuBdP-ddpAsLc0-e0sgCfIxs_ZZ90y6sjgJelBCDG9Bo6wrfVv-rUeKLUaQIkPed6E5j",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGVhNDBkNjgwOTY4OWNhNDAxMDI1YzgzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Home - Desktop",
+      "id": "0d9f0a8244804859b12ffd7dee972754",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtRPwgBfekdRF8QhAbUnJP7WVHCBVbR5P4EAbHaReQJrzxG4BuhvJVSOR7FnBuNqUjKZr2e3QiVGoMibs2iptD2kN-PixH6VGPLrwRxjb1S6devYO8JmAZhWhyw-E7xnLR-DFCT7jt2lfgKCUL8eOmlnJGz1iOQ68_LqtQ9IDTG5t3ii1u156YTqL046UxVgxZW1n-pS89ybebNPAs6rMZBVuhTKwrnVQ2kaHLh7DAg0-2Q97dyAkuUWbpW",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTI3ZDY2YmYwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Dashboard - Desktop",
+      "id": "1bb70f70b2d442bda9ec2bcfe6c9cd08",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuZ4WZMBAbAueMhWTg90l-VXaa3P8wogCOObVjuSHGc4enyVXTPFRJp6MRCDdo6uv5Gbz1923lTW3DN1OTjoOD3AjFhF96_s6vxJPj9BUmo-Z2jsQ7DqC8h5IPBzsHfvT711Yr0bN7WvGDoaXIk0IamgEIsiv48cVLKCDOV2XfKNrszhYTOICncJNeds0g4e2xivc6S3vWdBDOkKHunOkMkHBlOpRHp0p3SGJph8gIfQM45AOXakrqJ5Os",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjkyZDhhMDEwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Consultation Type - Mobile",
+      "id": "82cc9c49d881406592c6d877240731fd",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1848,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLt5hbAh8-9cFHMouk77QVqUJhl9bhdMsBi4N9i4fnb6FdgUov2YJCqHN3kVLdo9DXyKGplQZn_Pmn7On_pomDq-qDoKxEukIo1ND0Wqg6o1XwpjjIqUJ8mWoY03AB00OZCUzX_6N_h0CR14ht78vQm9vmD8ie9axkNstgd8vMQsNyCV4Z9vcQWLG1_Uv-vCmYk-keuVuuXwTfIa_3E3rw7RfZViNA0hr5Q9PW858inYwf2kSGa1aAVa69oQ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGI5MGM0NmEwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Reschedule Request - Desktop",
+      "id": "97540ef2e0244f97a2974c50835276c3",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2872,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLt--2iWHnQPo5ZcFF2RC325mntp31583R_TTj9_3DcwhTDShF3Hdcw_C5Utypgxmn0Q8YDKsLe3p8z-Pc1t3fK6jfBcEHw7ZnKqi_VBNi-24_04gTreYs_biNyFhl1h0Eli0IzePVmAPftGcunuOGxcNMsiVw98qIEqB4CBRArPFD25BBB4GeVNrXwHs5TmPDD3nhTkuG70a-9xo-9uwDxs3xXkC708Y_gbuCrw6NzsiOrkfnPpBdQIKZru",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGViNmIwOTAwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail No-show - Mobile",
+      "id": "e712f1d474024445899b4014f1d5c977",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLublZbQUModlZAz3ldx-qHbvHETjxmRk-zd9kymjEnTqwEE5QT1mQ0KPFgjMm8B1QnqJv_-pcCIRw996mXC9trPu6Tx8DCcCg2j1J8Bh98a1yEmf1YVGXqaTITuUdJS-W4YMoLV1qCPAU8_Me9erJTCHG1zRZo-UvH7CLiOgoXn53yskSmz48Rp0AsToQfanDeyWVIMS3cJ5Dd-DQ9AtshdDZq3N6gS5DmE4BVfI26OXD5-Duh9ZN0YT71X",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGU5MzlkYjYwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Cancellation Review - Mobile",
+      "id": "3be2c468e5e24ae592feb7c8b264b098",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtDnEZjmP2HwjMcGErd_Tbj-fU57L2yFylgH3ZuSDHGLgILsXoYASXfgEozp_if7F534OYE3ytlvNgMepn0C3_QOYqDyUahZwayPmHs6TUGcHwL6-fkZy2HJPkO_bOklvBw7ySVr-B_LJneADJ65yYQpYk5yHfjGHBhhna5ARqg742dL3zXXHToVJw9JOjnatvPy6n4b2PoNGTHJKMEngpFW37ty345SsEfNHnwwLrEn6pAjY8uhLeylNSY",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTJhZTdkOWQwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail No-show - Desktop",
+      "id": "0a244c1b24f140368509e4f6f014a9fe",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLt5ce7pausk1_MoGHC4lD_Hd5Gg-U_rl4CQd7rFfy0vCPTeBQwho9kmoMjA-vDows0TTQkmTPcpXbNk9Y4WINRqCWi0c6irZ7k8eayXUCJfbbVOOf_qQ-VntKIxoKHZS-nOKDKeU29ZrUTurTWb0RVMdqbcIGv7N9ja_9aUOBnqCR7hHrHURfQISC2tBDI8Zux_Za63UpiJFxIEJmIN8PuGqe5YuMwltlKn6nsQ5UE5aZzFgBEg1iv7w1k",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGVjOWVjNjIwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Cancellation Submitted - Mobile",
+      "id": "f30239e9267242c0af4dfbaf44bb2d20",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2218,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu2l-RQpV5ZBWkYmK8rE4C3Llut3VJ_OLVzcJZPWW8sasZ83TWrvzP6DjVznzQ3u6Ar4lyahMDietaZ9yB3dL0pNb80UOAsWWiaKXghHtW9Wp3LHys7U32jdmICHTU3u5VhrDqGyzVxLudMvTgtJaO9Cd3DxliSlZrdzHZhvt3308C4ZW7yS3GMELe4ilqGuZXzJm9GFk2_bjebuE8ozHHynlhGu8dEd0pFujZv2TaG2xlNMpNeEKGqCZw",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTJmNDY1YjkwMjNiZmEyZTBjMjUyZGJlEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Not Found - Desktop",
+      "id": "0d8b62deaeb843a99f02f844a5d00ebd",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLt_FqQhVIBx9NOLx8FncEH3jiuJzXjAXT3NPpNCYhZGmFGcHxNYqZvsvw9uoqubI8WzH3kCDQaOUQsibRN8ajwi7oxYzCNQBPl9CYq2jLTOBpNL-HnXdo08fzlFkYJtbcfVGRl_D7mODEHpUk6EgpQ_c4uq_DlKcKryW8gqlXGEBrkTYoJrv3mzdaIde90vSF_NKN4kFHeKWz3FJIvLbC9qIv8cgh0qsMpVBEazvnmQwUlxs4iGOsKaaadk",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGU4ZDQ1NGUwNDc5ZjIwYTcwMjFjYTU3EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Home - Desktop",
+      "id": "85d2b873d38f4196a9b17eb35e2bc4da",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsxA3fVAC1yw0yroITwx_jL3wioje5ngSOZzIqcIQBY1sfexhA0DYbtF1PI9MivIE-2B8q_IpmPJnTSFjy7AbLjqZHoKjWytZwfbEycxAeDGjy2mHgjhftI3nIRD8aUa1ovvVJQS1opHjRI78smy0UNLLvGHuwJJR-8kNVPpJb107wVt9ABJ4lSD29IeeNMErz3vu3av1zpzQ_oykeU_Hc3gJ9VN3mFOIw0QhyHvrdhOcVa404J96oUSjYq",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmNlZDMxNjEwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Progress Patterns - Desktop",
+      "id": "14b98caed9cc4b4889d77763373a0e28",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtYTaZ-xS1ObB_QKauBhJpvZyAFIltRcwPrH9DWJuY33TSUDyuPAxYJtfHht8pxH5LEBB1GlFMa5gUfDA3swSHkCk6kZVrzTZQiflRpnjeDTgKfca9b0iaiWq1urKgU0CeK6WUJvd4wcc-Z2LlBjXT6nI8GHUhY66KOypLbnzANSRE9oDROv9rb26p-WVR9SnyzhrrorWBFmDVMphLF-80E9BeBWLPZn3QFl6TfA1SMuMSyhfRYl8QmPiZ0",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGU1MTZhNmEwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Set New Password - Desktop",
+      "id": "e1b3f826511f408e85c401d3a455f26d",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLueNhJCHdFKhu6OnoxSdF6mtaLKjNjaHSgAiqQzqnpeNWdWd-IaCiXPzGhrRtATxYhHW8yqb9bCJeooJBgrXmOTCq9HZkzIn43QJArLFFo4rqDj1n8cDnsnssjuKDYPEXldQCaBkMlikE-czG8Ojoqrh5SVJ_aLV6BZIv_b2rRz4RT58ZwXAKHF4umZmZueLmpRH17-oAVlKTe0EFDzMVKdecv4y2XD-f5ZnWHQHIepmCe7kq5j1W-CnQbU",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjUwYTBhNGYwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Referral Requirements - Mobile",
+      "id": "28dd3dae170e43f88902aa3a1f26cdfe",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2024,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvRpIObAaDkp53tUUGMBKhVSsNZiwOTeqyaEodh-lckSL2lgd7hmNk3jUYwSLtOUjC0hz9__dUSHOOhl7CQmOT7Ite6R7fZZkyiK-uuY72ix3KMsZtXu6ZCk6XqfDf9EpTtu95il7wUiIMWnkLXhKxfpyBUAdJkNiMJ_GYCAjXoTOc1BAddzNweX3lnB5EgLIthDgHKd4R9Y0s8_Mv2QzYKH-kD2L7_w-Kjc4neyhU-IgL8ocy0YRXOPSmb",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2UzOWYyNjAwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Choose Doctor - Desktop",
+      "id": "688a0eee8f014c7a8c999762b22be06d",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuz2W5XPsgw2yx-JTrreH4hZJfgpOXH751jgXWzpGOzDRpg5nrF5i3rDqOGZaJK7lUSzUOSsARSpEY9LjAhNUBTv_zjSifn_wzRqfygZNjZk1jSzJyz6bIsK_iMOm7wAqa1gJZrKnBrG6y9_vy2vBP2muWuxC_kOGFnoiNx1A4cJIKvE0tTnTOIOWuM-o1aoeCkOt2D8-Jpt8CYChb--BSqfKRsY53FJ_VXziFcprsQ3VhGIJK0kKGtM2OV",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGI0ZTBmYzcwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Mobile Booking Summary Pattern - Mobile",
+      "id": "8f9a5650ff3d4f7482de4f82bcee597b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsqlAS2dSOuDioiEDeZMFL2K7Uow1CSX5eFok1xqSdLlcuYDy5w70GYyCx-NuG2534Hs0Ism6TUczGUE_VoOX43vxq0dT42vURfnwiR4SXXXJOZ9Ci9cLD2d_pvaR4uMRZmPRn6GrCOaPy7cVR16Q1y9ZZXG9ER5MVe6S8e5-2vVbRhvq8-XBULQ5P-C62FWpmU0k_yKbjQkHGr1b4KETeWbz-SlNzrMW9SsR1kq0ia9e3FmI9etqD_t4Of",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTMwOWJiZDcwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - About - Mobile",
+      "id": "2447429876f24ac287f903795c4d4d04",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 4854,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtidi72tZJmmdEzat9ImDnAcEQGkKAojKIsgAOlKF3itERzFqKPfhg965XE216cNxMZetqFIn6nlqhBu7z-Q-yqjaiYeD8LAwqTPhkqVdvjJT27XcQ6fYp7Z6LPOPR3B3XJ6gv_p_dBcPQJ3eJ0OwqS6f5uymscFGoT5IjUDcwj5ry711A9XPBUqp90XFuDL6DGO7IsFWbSBRD_L6kARF8vXbdWyGHOBaycS5c3hBtZw7IXND30EfloCOs-",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTY0MWYzZjAwNDc5ZjIwYTcwMjFjYTU3EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Register - Desktop",
+      "id": "cc7711d9ca2947bba30e8bdde0c473de",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2580,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtCnqwGiIArwuDZm5pM9Fd2IhBKNr8zn2VMIqiwC2XSrc_Pib_LHZ4zv_UyphhWloux3rOLVxYIy3J59O3szOMdLCpy71f-hKWazhKILOVpcc6YysDMbBfh3h9SRvgEAtsvZIlwaQs1LhZvoR0mJAWBWWNbGQqwUtpUfZd8J0xYLHEfQQHa3YR5NvBDmJTcMy2cc39eZsxiqFmNSBiLeDQ0PaABJO9AxuqO1xg7Wt4QTdVjU4BF62BVrno",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjRjNGMwOTAwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Referral and Upload States - Mobile",
+      "id": "ef1d0961e88e43549af5361a5fb9320c",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2292,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu9i9YDihxZwzhXbhTXT_u0DUU7A9BAmYoHhMrqeaEgv4wk25UI-Tkphfm8OZcyL1fSV7khv5WvOJ8-eE0J0DzNf9kYDuaWkh3nSVTtKXMGfcse_z6uVpoFI5btN2qt2U7A0yw_UcwL7UTx-5utnHEq4OY_Mk77rlVWaQ83u_Pj-4EV-6gjbNTnpgXDMAudYeCwFwovqh9hjEVopjv8pcuLpSA8iZAY3AHmA2IonyBvPOgdQrXo6Ig9bVg",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDIyMDRjNzIwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Contact Success - Mobile",
+      "id": "c3586685e9f342f681f177d1036c18fc",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv11CJMVCpMZWzqEY7LwKf_11JwCkKplP3em2rJTfrZxSh-cmlYwD21wJKy0-qMizuA0YBO9po0c3dcXuKt-9NKgH1dq-AZMvxZQYWJ0zF6v_WFnlhKN0Z75pViMohJ0w5gXSRHshDEjgVHjipTmwJRj8iS-vpLGD7hk0-RgGo3JrfeB8MXDwxcpgwwa6ske0qpN4pNKAA13aJYu0z_KdvY5RbAUIlseokDaGdMGRB7IRhwc0BENdGrFTAr",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmRmZWMxMGUwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Slot - Desktop",
+      "id": "8c52142a20484c39928c8f3355174384",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLudW54xIgrQiw4b7GrxKAgqJ8bmOHqvntglgldObXpib3Jh0sutn8l_5HnMsHdpzlOKUMAXTxHI_mTPy8M74uPj_g3oOrHsC50omasE3dYadpqKASFbU9VNdzwCN_YCDVzdYmoPCWfnjmJk_Lvob2B8ggzS5ONm-xfXVVEtGkHAZZ5Ii-quhlWFyCB_k5CHdj_iSVb7uOZSLdMg5jgSpIr2p_EtPLl1f7tgGmxTLdCdHbywhrqb3vso4Ew",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2QzNjQ2YmUwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Form States - Mobile",
+      "id": "4dc9024e5d6f4267bf6b5a8c6c80aa08",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2932,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtF5PzY_o8d_PfA0NSksBBV5i66stCDohdwVqc1oWbtHfeH4GJdz884TrZyTvyK8TRTFiLiOoYXuugYxk15mEtXdfqIqziOnXyWXYNO8j8sstgsx8ttBiW0m6F9PYhItiowEM41I5gHr3VMEehd2k_PDruVRdmJAmTAhcT7kzjVL1szwT1TocuPar57C09KXzSF4QmxbkP4jXxDL2N1tqjHqAlcXsxqm5bHuTwRNlkdrVzw8i4dlX2AgXQ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGVkZGZmNDYwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - SMS Notification States - Mobile",
+      "id": "bb250d93ee27449793869522211fb17c",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2172,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvwV7zhbOaBnvIsIAYxfM4Ab-fyPccfE6VVaBYN-gV5WrAWSFz0RWifqp80pY2M2tKOUXZhrx5lhc68770_Zh3g7IHa5mZpWXGl_NcVEMPPfhHIzj1nv-zqkhF-_RXwFDM2Iu7ofWfgRkMjq-Vyu9YEqFoL_EqExja-Ck6kM8b-6KxHSBFDpfXoQZtmn_nrlUgrt2TWArmMk-E0NbNssayhOjxnR-ukA8IRmz_Q5aRgxy9HnRI9usW0oU4",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGVmZDhmN2IwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P20",
+      "title": "ActiveClinic Tenant Template - Footer",
+      "id": "f8ab02fa6a8143debebc923644f62961",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2828,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtet__czcu2wOcPnTMO7jj7YoTwcFZQj2jS-I80tHdqpMV-rpTj7pdnZX9v7yvJolhA8OXi9wfQwCIQ1E5LklCRYW7WNhmpvei8qwKVagJ2EiyUh-zA8Qyfei2QGhvThD6ZX2ST7MUe_KKj8IQ9ZNWT5LdftK3K9q87gUsEP073QKQBxtBUp5iS83MLHhge9_DkJGzsn5X3feCrmAtp20qm4uUiRYn761q4Ed_t05_TbPcsHd1_KFhL6uw",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwODU1MmQyODYwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Change Request States - Mobile",
+      "id": "7b7546940db743839e4c4b11ae366dda",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2548,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv6jmI_WMbR6b4K5UHhyKWElP5D8zyb5CKTfz3-tRL644HC9FMqH_L_0-ea6wwpd-C2G2tcy8smuNSIGDS_VGzyLdrSSHCnMpb9pinirghlJnEOxJwxxuXejJ3wIHPwA4YdFYjU4N8pEkJEuPoXsUgldWozZ-QiN1HOc1EG4Y55QkYxa1tyHHJc10LjdQyH9_LI_mj9ZMlEwPkqQ-cT33Mt59JATgdmNEnYoN4vX86-wOEblkzCYgz9J0zS",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTJkZmJkMWEwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Preparation States - Mobile",
+      "id": "bb4906f130374a72a21596d427c2af9d",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2096,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvfgBa9NTKM0ild0UsqAnNHeRCUCQrYZwXo3yQnapNF79G93wftXqvqgbzP8VEWk_P92-zgsP0ZQmYoG5dV1zDjBux8n6qiHAgGM8A9HeIiH-GZNusaqy9iNLK4ctY8t0hWUJvJWGK3M5xWZwNMJZA0AILCkCH_6iIR1uTBXANAmxz4NYtg0E8in5E3krNGr6KlWTmxyhYm955rJ9RIqd3kOiUcmkprc6IGLiuC61MxL4Hk3jaFa23CWFMW",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDE3NTdkOTYwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Changed During Request - Mobile",
+      "id": "ca7cdd02f84f4a13abb5b324f3fb453f",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtAYd2gx8NGgjcHaXmjWZmjV6arozIOj9h2846sCWIK5UFgcjZG5w-vU4T8G1fijm2uwEDGP496N4HeI0PGqMNso6O7-9ZKUTtHw1fNJ-2N1tBj3fYwyD6jBRg_5A5H_Y-ol1KD3MirqrqlScvSebuvBEW8mcnvdtQ_d_WTnd8Z3wxd2B74P7heyJhtoCQ3VhDehyZPhOdteWwmRS6JkDkiMzEKp5axGyUpXjUOVClXjhTc5-ZrMKzbHSY",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTMxY2VlZDcwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Appointment Entry - Mobile",
+      "id": "e4e98986370640f2864a9aa2279ad878",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2116,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv8p16l4crvIEtuqDQeunOgAXW9Z3qlSo8Z57x4qitiPgH-khP6iUABSKjJ123Wwy8Y1ob9M_-AKCReixvYyDX9LA91bfhd7KgYm1ercSrAFLnZAFdST3_x-FicS_kxSzvFDFWSrZMM78hiQw06Puo5JIQ5ZcplkGRTEtjDPIfy_v47sbGFNqKwGf8OObd2rfXvm7hmuQQ-yeJKph85SZ0ESErEWevQZzglno1p7t8QbGe0WXVdxL_MZLBF",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMDhjZGJhNzkwNDc5ZjIwYTcwMjFjYTU3EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Public Price Patterns - Desktop",
+      "id": "a59b166b17ff4c1b8514102aedaeef57",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv3kvmKrzaOa_LTV4cBtfnxb7eBc3M5kwKR7ewDPMdUvMtEE4iZg0MuY5qFSxEaagmszGioz9xYpulAWY9yWjMa8Nq39-GPOIsT9B262z4xvDgsqqRhgvj6jZuzKLBJjmVPzfh30lQ9dDCCDP_n3tXlPETWDh1bj1udHbiRTXtNZUM2yHYap-4c49ngQMwAuJmecxGUJxNM6IZOq5gk0f-rF-AY3G7VdgE4s0TCD4cvtnrgEifdt-C3h6Y",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTIyMmFlYzEwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Confirmation Rules - Desktop",
+      "id": "2f99501abec942138637abb0934ed767",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2250,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs62Q5pkksyyRocG9Z0nrrH3PTv_GQ4YtnsL-TzTPhPk6AKijS4SEnrgmQSBQ_vfSsqpDBCeH868VcY90mSdbDt7j29fTNT1XuaUZINjqx1r8dnJrR1JoD21yXkJKbOtppNGYD8Lx03Or1Lc4QAHvCZcamXcuPhPHRJRR7C7GEicELHHgfGP1-yB69Q5CL3pLstk7R9207deiwJIS6vu760inc7HEpWYubyOWVZMfApN0zzwSuZqVP1iGI",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDFiZTgyNTAwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - About - Desktop",
+      "id": "38abfa8767f4492ca11895b4f360effe",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 3888,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtJya0nJ9RR8fcFKPIhCsHL-T48E6yo_BdinYksFDghmChiOlPvmpRjRhiZZ6yZJMAhJhIcN9pRxVybKhwVRuyJiJswzEN_ljXorqpKifM1UaM4IEVJVdbEJ2foggCAayxM_tDZu26X0wvxBRQwzoDcB4raIpDSbn4gyIsHc4Uq-PSPggJqoU33EC6S4E5pKblvWkr37Cy5t1wNV9VOR-OTn5L6z-j--3f2uvPJrl-Uw5RQckj5Asgi6FJ2",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmU1ZTE4ZWYwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Mobile Navigation Pattern - Mobile",
+      "id": "e5078ea281eb4f29a284cf461b1c9b85",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1896,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvUMLaw58KaeZadmEkQeec1kw9BZ4eZQ5oaVKCVuMjZnLvTsjFIimukjth5oCAoxmAtmP7RUJ0mqaMdp31iUnEzdhrVdRq9IWK5xWfYbhN2_wSSvmze0F6gaWo96C5LSIEp-_HH8bN_kyDw8BfT5u7jtrwd0-pbxhSXE10ZeW923o-hn4C1QYZmbYmCPDn5pQH3ailwbSS-PHAAQGJbo3RNQXlUHeEkJZLvhZuXsS_gzbypUCLldjEaIBL5",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZmFkMzJmMjkwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Services - Desktop",
+      "id": "3b7d3c9f3808441a8965c43b86c4ba44",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2088,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu2_Haunf9sQTfvssmbXvSRsYkfgZnjZzmgysM-AE0oCLsVx8JCt1cLZytDlFw9Cjcpd0JXvLi5pPHCenN6ej4EeXrkd9-Go-9HfS6BH7pjqU82MBUej8Lw1QmynKLcNgwHrIp5XnLWSSmevm7-p6hWKGkaRXhKKupdHLxOrVMM4DPtX5aiZehf946nK4wGN_oysx9Q-MydwCbY1B9MP4bqRi9NPnrP1nyuOue_GIQAenXuFoH2rUxViJ5T",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTM2MWQyM2YwMjNiY2VjNzU4MDMxMzRiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Patient Details - Mobile",
+      "id": "b1e95d2173934e969b8d2b85346b82bd",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvPWDyAgXEYCWBJuT1grVGPZGZS6BZ5iaMTKqcVEWidFHf7HM73ksHTNuZFq2IhTSKvf5mGxR5A0RrhCZpeWGdwv7s7ia-f-4fXcQjaXSzHHEeD86L5tjshD52zVgNGTg0Jap8aecGsjocVJRmk4v69TigpMZSNPnO5JHVQU39Jn8BihaKPeLvQ-UiK0j2Fxei_FR_05nHsOPDDgMuXV6HBWHlVEI-q4f9ojFlEVfh-04JPSbN2k9X5151S",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGVhNDZmNDEwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Register - Mobile",
+      "id": "588d1139d7b548c5856e9e34ce736bf9",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2036,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtNVdeEBBQM1vBeD1YqGRvH3kx95CLoXz1S-Yk0nR9Ss-2pBQs7-k1IFeEZXwGGrDM-AZNEKpYNEYPF-iUXwQYgxSm45cXnqZ5qEWbIde-9GKI6_I1mZEBkrmu7t8IAVnpns9_LfTyEGwJSMXizawo8tWqpihvag0k33DgVe8hsy-bygYPIKRJlXKIkbY2T0W0Z-IQIc2vmVUCI-TiLh3XUv_cbEboJDWxoWRxICHTsM5qNmr7tSLzaBkQ7",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjU4NWZlYTYwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Patient Data Boundaries - Desktop",
+      "id": "8405633077d0486f9622badff41899c9",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv3HKRjLEFEz7Q8A6zS21PzSp_SFRNaikGgrY2Ojd4OQPT2ghZ_v3aftXEo_W-tzJY-3lJHdF8WCEFTvzHgxiuKd-0SbMFWm5k9F2O27_S4CRPrtxccPYWPtF2KfCGNKS6AR9_nman8G-HleJcs9k8M8kLkysoTV2n0mVB3syt1QwFcV9YPx6H9JNtmI46TGpXBofDcnJC2U9y2e5qwfgZYqKGa_OEBvzEMk8dikA-q59AaDq5z4-c6Wz4L",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjg2MzY4MDAwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Validation Error - Mobile",
+      "id": "9a4d8a72068e4fec88cb7eadab0a4dd4",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuzbaXg2yKYhXT7JrWw41LSPspDzBphX747e_HWJAb3_AiYYSpsKdJSWxrDfxTy6DimCTyy4yKR4vy3tVSXqE--DY_QH3MwogSJMbTCApUGw-z2Lvf9RL-7PuwrJ6Xp-qLmZ_vftfcP1Kgla6uPziAyb2LwhY3cbIn_f_ZF6I-6gNFFfk_3sBXiKTBupdRoTV-JbiY0Qn_QyGALu_u2vpPmcaJ0rfxoBcjYHid_gmtZiT6Lc2xo5hb2W7_K",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGFhMDE4ZjYwMjNiZmEyZTBjMjUyZGJlEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Reschedule Review - Desktop",
+      "id": "d968e9e9008d4987a5c4cdba86ab9a95",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtBNmhKlbpju6QxFVQDL9pkgF4j2cC1439jtrZgztB8RWEgof3DFhvu-rfOMKBcE2r-hUp4HDKJ2KLOnxvLnhjwIR57wlO4bVQWkRYFBjBp8kZ6_845GySpvzcnBq4ovEnPOikGT7mMoFaPMzUMEqBzLzfzjwynF2Av_WZSLmV6GWXhxkaeATZOFPYv611BzgEGni9rYDx6WYn6TKIOndUGeoI0nN2QmoPKYGUEoCaP0GtqJbiecx-lQx8n",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGUxMGQ3MmUwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Services - Mobile",
+      "id": "a0d5997b31c44203ba94de0708ca5737",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLucq9euwzK91SeHY5yp-kEaElqz8H2Tr6tYjgrawoFZcVNR5dLC_lDXjc779QWAxzw8P0xjlTs3yoSLVArJB57bitlateklQPB0B72JyJcNuP1HodMdb4i5Bk82m82kWd1NLLpx1f6VGwROkRr6jIVnL4WbXflvNeGFg5zMgSz_FYKpM36oLlgQyLvfs_uXokL0VoWPygvudtTih1-u_sDZ69DVedj8VQZxz73_J8IN_gPqSdx09xLrPQfJ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTJmMmFkZjMwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Booking Entry - Desktop",
+      "id": "016440abad32484486a24c43d46a44f8",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu-tqMTevJntJb6NS5nPVAO49z_l960fZbUIV-GG41rrsivyISCWnnQrPhKzmxjb0VQpyCRzymAdNtaT926_mdtd8oAbJDkG3kb8ltGqyWZzQ1FXGfAypWTvg36aRMX8kap9qNLtogtMlNu_eMV0FKoectVDThAfKwZy_DEyI8rwvCYw1zEIAKOmOlVUrGbGuwsF81Ejco23Up1YhqG7oCQLjg-NNuj0y3lPB7nqzhkxTXvuQK_GTwXCko",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGVhZDhkNzQwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Cancellation Request - Mobile",
+      "id": "81d1f26454324356b25cfec1db745491",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1838,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs56JKld_HZsAXHK0cS7Os4deh6XL8I-N_4yzrQ7568BhiqL_6PD7bFyK-mXyOezd2QYjXz1rzwA0CGI41DqXa-amrSI7C3IWQ8H9kluE3a4MX5s0l9GJFDeHJgVHrSXcQ6NzUK8jcRj7FfM8EuH7mYCreopIhdkWuk7811pdvC5CynpKnAeLl4TPACbzqknrMBX0Fmch-GeRQqSy4gMTJlWW-UuFlCjkttwwSaxwHjH4XWYlgZSPk-Mf9G",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGYwNDJlYWYwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - My Booking - Mobile",
+      "id": "a2b5c7ddfddc4c80a1ddb035748da72f",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2050,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu_Up4TVlsWDv4JDrW8JTUJPq9ksDSEd3TnCnsZQTqyHuTC8rlY7LItJDqYM6EIMFl7zkIoDY8xfSGN7sIj9Ybns2tPRhdIWy6WMqLm17WC5T4FnLZ_SweCY67FwKY4-7vCrdHiuM9no8FSGMi2Cz2Mj6PtNmYP0K146mMp5I4WLVxOaLyM0R25MwPdUhKRAg24PcgMu879Rofr-3I0f0-bqxuwgQdGK0Wg0zuIqBMqG1oxPAYszbAToHs",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODkyODE3YmEwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Consultation Type - Desktop",
+      "id": "a4096a26352040fd9d56be53a393fe4b",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsVHcpympcWO2iGE9b9eon1OwJ0ClopsvuqNSVCkhUBftbUGSY-IJ0neaDC2o3qDJth75eD2tH_iD70jCPGX_-FwNypjWGSf_ZLsEq_U6uJAsDVVNNj1BKfTYTz1T08jfb_S8q7BB1CwfYZTdEYtMVW8sE1YFYcexGNZ6DXsggTfcJFVunmcAO7CS5eT4H425GDL8Z_8DYEc3NDduXrcctGXfJxAdLsOozO1EwW4wwcV7d2rzECXJmPqbsB",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGI3MzBiNWYwMjNiZDE5MWE1MTU0YjFmEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Login States - Mobile",
+      "id": "795b6f3cce584467bdc369bd89f67419",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2804,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu3Sdnb32nlK21iXOkVTmRtD1aTW-6w66IrAfqIrFLCos7s-neHUGQspJCT14jcM5JafrDpqkqOzp9p3II_UpOIMhS8VBdf63GeVO1_ZqWEQ0MTwpThfZjXeU6Nhur5X2Kim-OZnHK41tNX7STBbJJX2upbEcFIsyMVJt3nik8h_lK7xw9cCcbPXlEHMtvaol78uVEZXlN6LCNVmaqeNeQnIElZ8zS0nKD5ir7KPo_0eGXK81p9rTGcQAcu",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjRmOWYwOWMwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Privacy - Desktop",
+      "id": "ab5711022ce84342b2e9ecfae818d78e",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2720,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvpObt_ykZASdl9jD5lrL44ogcA2dBAq_iyS83lYx8jqE6V0w1U_z9jKzp3HFyp3dYlSl_obcy8tY8T3rghrvWFBVSy_vpbOKhoAoalQn9s-wjGc7c9Kmx4mARWp_na6sqnB0rWkKsSdOSv3aIBqLyUnUevyYhr45EofLVN-aAcBm2YXn9odf0nnyi7n49y79He-Q6Hf7MY-nIUI-k7Z4gHkhpMhrd5kBiWCwImX44Rk8EKxN5e4LpMcaQ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmM4NmNhOWQwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Consultation Service Detail - Mobile",
+      "id": "e6205fec780046f5bb006c669276a5c5",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1844,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs8yqV_lR_KJhVA7WX_K1NrTn_p1dyu6mc8Aa2Ccg-g5BO7pYejmwJWVsgu-cJKEbyCU7XYKAoZY_x76N4Ya8JEykNvCGs4zlgFozOiKbwwAZS9q9CuQHiDreY8ugtsMtKS6Gd2pGQMcH5umgdoK_Jb2cF--lasB3bCBFzSZ70WGqR4W1-4Z0OkuYmfm8AiIqv3WL5B3RXjEEagtxYdoAatkC5P83NJ5VapxAvzxKy8xsazvmzzZfJr9A",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTI2ZWY0ZDQwNDc5ZjIwYTcwMjFjYTU3EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Doctors - Desktop",
+      "id": "3b5370de88bf4bb8adaf679dae11b035",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuWAyKHfxWJ34dgXiJWGfj9yVGSZyWUtTRzw69KJ5QwDY54TFNXs6c3nNHidyEQSphHoBfBvAUOSOUXfxz_QdClP7WDKHEyIJb35aFrthPPga96Oc-eLlJtjSSKocHNrlEEBPS4mqS7ceIj3ygmBDQa8p4A1CCpp-uggXP5FTETvaNi3vjOPOEJWw7jxLPCx1OO6lJoH5wooXvXF7wEhMsdun8IR_r13y71YFNO1bgqGgUNN9v0Mb3OS2g",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTJjZTY3ZTYwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Patient Details - Desktop",
+      "id": "2a64a22146ed4b2ca704d01d9cb18383",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2662,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv6e05utUYROkDE9EUoIgG9u1YknQNL4aVb0cXF2NETNiyZj6r__KPszC-vw15_TleumJcs7zPxbunEzIzekFmdS_pSAT56z2eGwXfmnSbWC6cnLuoss4gnLs4mLWzqodsTOiiS0DqN5bQhqhY96HkOric7BhdvT41w6TU4RoJsexkhsceIHUNSis-Jv_75KvXVkU1tiQcNaBycK2hH2Pyk0lZO8zwpleuBeGiihxyU7EeuVzoBtq-lhxt_",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2RmZTIwNWIwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Submitted - Mobile",
+      "id": "df69f70fb79c467b9aa9a7750520a241",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1988,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtpObJR3U3trNHf_DBEQKLi0faxRB6nIoMai4ujgduXnfqn-_6wDL1R6W6KMPzCLOtwe3QiNLEWtPqzvF5FJ-DJZqoZHcsBmrwuq6ULTFvAQNsnWmSyGzxVjtvV_0XMLPQzu_QOPcFIklKIGnp6jNV_DG4NwNwdz0v8zICYDn2chVahConVcNDyXs5JwWEwe4ph6Rhb2LAmvlTJDacVwcwdRc2TiABohg3WeM9UoX-5lqIW_VlY5anR3Iv2",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2QxZWQ1OTcwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Verification Success - Mobile",
+      "id": "aebd18aad45b40ad90ebe164b87b282e",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvBufrxny52IS9torMKFzer-YoFh5MEKT7RO9fxcZnvV-d2OqsM04wzjv490TCmyCLviYq6JeTZPA-t7yA9V1q1KtsC1kRkhJtzRmp9oaUxL1E6PiEMwEKeH-6kXyehxrVekNyDvj32Xq7qsP_eJED2YIv1Ei3qeRDM_Svd_QwC8Qoh4r5hppMn8YbFIVxjmhC9kw_cY6JtwT6MfHdCkYE2v3dZjifvMXzKxjU6SSs7JetDakcpy5hoh81O",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjQ0ZDQwMGEwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Location - Mobile",
+      "id": "4fb9866c196540199d4de109ba807726",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsJcJXKZVDsk_ICXbHYudm0YgubmlA_DmbgPLGKI2VFd2m6L6jeixDK6e3JO74lTNXUaBjf3DrNnftn7mEmYFETSQJAC0YkZdPUVidmc0-0Kq2lp-GxE9HjRrMehj024uDEoo2vtv5r52mgMEz7S2I2iOocqdosXsLsWR5S0hJMFtUwlGS22A8PMkIp-iM3OnOe3ARlP1yES9ZdUAHSZSaC4bLpbseaTTDcu7TAnV8d-s-940kqhZMYOpDV",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGY1MGYzNGUwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Choose Procedure - Desktop",
+      "id": "6b916729502c43f08ef4ed61bf959159",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2198,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtU-2YeByjdomDzZf8VKFRYZOPKg5q4oqJ8vr4ME01yUBPuX26AAj5hIZzB_obCmEwfF4jm4Wqte6Qg1OiQrMaorTeMV7cPVE9xySLvE7MrP5p0Q9JwCGtrOjyjAjfedp1-roTcyV4mf4smSpBiP_RpOUI9PNZ9hXjqn53z7EIyzmd0AAjJTWGy5JRHQWnn_7S6ilSygCWhEzzEFgcETXGwX5UP4cxcz_YKy1QyW4c2W7tORYexYB8ylM2B",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2RlMTRjMmQwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Contact - Desktop",
+      "id": "a1a662f6a5c342df8783414bff11a866",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2510,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtTK7V9iGBBiChLoPUlIvOy9dt22lGXvdCA0ibbICMgCie9zgmsOximdgJEzihefhmPczfmAIdYBuKd2kQgHyHcsXunj2kRJpZz1Md27Ucv5Wk9bnFM0A_Kv94mWFtgF3lsWoF51wTqOhyFCYALs21Tq-r_jiCcY48xS2ljIOgddV2CstbAQUCEvzl9ZFmteAk6DfKQGdGc6CzBJyQw4WmNIjZ2jRbujSe_iNB4b3n385XwWDB0QW7YJ5uX",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmQzYjZlY2MwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Closed or Unavailable - Desktop",
+      "id": "ea3abfe05bcc4e6a96eeba72dfea5d38",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvkDP8hCH0hpUwJ7a82Xmn7NpSOyagmOXKWG3qaK89xKexxmKXDCbPyAsogS_KzXNGkNGbBiysPXLcWTpa7Dr2OwikrGXr5JwTd2MjFVWh2H7ZGIEhb5wnIl5pWdllDnA9dV8XtDPNhoL9ad9GEuw5dFjpsm8VRU2lpPSeYfzjuWioXlfbi3IrjAQtXYzBErsre25kFRrOCe7I5Lt8nTQJ5_bBTvzFSsLda0J59DrVHSKsAQseoxKjN9sW0",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGViZWI4YzYwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Activity Pattern - Desktop",
+      "id": "e1a9a3b347b74171848d5639eaf48694",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLud7aCEqh_1ounfc7UXzRskjWaj_5t_uHpGYoayoLJAWJ9SDLT0bI1HQFkiBy2Z24DQtUPh4EX6wpPChm89QKuSMSCiHXJaxvNd_P-yLQmbdfhvb7W7STYcrxgfKO5lEOvlbIjQA7GoNbyAbM2OxlG5uNwsM6S9FnLeVC3WVuJN_hvcmzasUCjD8LxJvkBkYVgRSdvjWpQy5IbC3b8zK3PRNnmH0T3eMxnAH0kQExk9BJ16knhNfmeKFc0",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTNhNDgzMmUwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Review - Desktop",
+      "id": "e04f78111c6a43eb851a0db24cc2f001",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv0arR2M-6Q27gscUvdL6brH88k47STM_tz6n3Y7HFRsv2I0OBOMN63L_5dGV-ZfAqTKx4TFSh7rXqxGqU13diM2hVNM6lL9yV5aIJodLfCOdMHP1x0pbvGfDTCSEIS0oYZ8f3tGNxWjM0FLNw0eVulaoBzS8k--e8XvDoAlRh7kfJdkxCdVsBFAMtsZ0r_oAKA3PyuHdeqELVbX28RN008sBq03vEKlwGWRkB7uAnAHa3P5OjAZNY-O48J",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2NlZDIwZTkwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Privacy - Mobile",
+      "id": "45a9c24fcbfe4bbdb739452308397b95",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvWZrnxNmim7tL-6YWro-qVHcwjXNiWb4r-82eNt2Dxm_b9AgOW1fllvIhvFB15NdHqdjtWejoE-PqsS314_6dmpsyScGg25oMmf_7daUsQkW4EBkF1SdSkrK61qmsDjoPnkKevWmEVXmNRx8-2br5io8deihJwWfrb6KR4p4IY6QxQqjoqHl-DB-K7wLFW05qrEJeh9tSgRQvscHllFum6oj9TwhX8jgcWPwuv6PUWr3X9mdJenLSmjWnn",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmU0NjEwYTkwOTY4OWNhNDAxMDI1YzgzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Completed - Desktop",
+      "id": "a0d78f650671453594236ad0ad1f727f",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv5_HyUCV_YLOO_hm26X4fdNvzaC8pv1DlGgGZo3J7jTRwpU5LZG9xWPNHgM0_5NGr8RexDKxVQD30IycxIjpROsB99Xtv0f2z8qqzR0GB5Xrwq0T9Oe1nVyE6pG9PwS4xE2R2TChDZ7c7mQJtksYTvyzRQ6wYHBD4NpUQr3dgbcy7x1ezZhQLv9iNqd6iv5OWHvf3vvTfMa11T_HBQUKIMmJ60tsm6YzAv4eCxQXiILES__HL-oXGHGIDY",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODk5NTU5ZjUwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - My Booking - Desktop",
+      "id": "a8ad8c9b489149d592cd9ca53a525e14",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvXzh1Wztte73o9DAMVOjODwJc19CRSIO-qj8JK8W9NQhkb3Z9lB_7CLvQqeM1SJL_RJzlwsXEUF8C4F1JaWmwgx8LtGuAlfucnGSM1ezOyOnLHU2I8Knv7N7sZdbHB76xVl00gR4ij18cP1qK9I60b7BHO8yhx2qlVdsJRBgNPmoqRDA2C-HG6P1ekQ81JIUHVohxpm9uuHpJT1Kz6pcPsKMA4m-sOnUmcr1dzl8XUqjg1F9L1y_0BqyE",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODk2NzU3YjQwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Referral Clarification - Mobile",
+      "id": "72428671e0fa4317bad44d3ccf367ea8",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtHdvFBykdRefItZOqaz4MwHjQenQ0tVSHO1QI46pT8oYQdvYs_ZKM7MKt_QXZOpAETobS6MopLRHzb5PLDG63fmq3QqRoNeZwkwCOobrll7T3PZIEsxVqXANLMpz3ubsvg4YRMeIejgLOajk5pOMGarrePh2fTdBeUH2y-NlAsCZ6FNn3xNc5io7twu14cTHUE816jkVZv13mbm1jalRKkhXmuLX9Idv5xvWvkKF_e7G0PpVyg28GXjv0N",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDEzMGIyYzUwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Review - Mobile",
+      "id": "254bcedf197b4b0794c9df173f8a6857",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLucqRx2UpeJaXVDi9-EwuLhLtKgZLzfHqAhSEZWZL0Zx3mpEGh75A3UQESvS6jDdZQd78XNnctMi206HhirmLyM_JC4cT2dg0KOLHLQFPcwoQwrhlJqM3uicN57pYATt8bSov7d8lq_Ut0ANoqwsJ40nRw-gK2wn2AKcPRo4glo-e0nDl2lrVXxDEZbQmj4J4sHyEotwea13858h8bFl8xoBHtn8i6951RF0LBZvveA9-OhXFRFEk7jsN8",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGFmNTYwODEwMjNiZDE5MWE1MTU0YjFmEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding - Mobile",
+      "id": "18f6b1a32e464e8c93f977f918e05500",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvxoiJjsYCLaCmrB9nsuRmwrB7-qcJv3rDbQPMLYoJn7U9Al_HgNj0_vb1qSNnmA7Bzyrh2xHRfM14yMwf2xZdl55kDDnU5uZjK6E-VvXuychf3z1Hq_0qjwL_bSYnEmLRuJCgzcHw8Tkhz_rCPFHgV3shVDCqvTKXmLlnhPGDDfVFg8GMeYcwJS9qJ5ItcUjO6JwG4a0ciPPrHv1ywztNgZc4cMzArcc3FuCfaVHw2xy-SLq4S9cj8rEih",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGExMDY0YWMwNDc5ZjI5YzkwMDg2NDA0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Reschedule Review - Mobile",
+      "id": "15321bc4c76f4c08b61e59972aa7d44f",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuZWOLBz3dQ2J5R0ydHYA1n35lGFQezHR850Y4-GY3KcQVGNPGnTUNk4h2beLVwpiZJ9XAMCLAb46VlRdohhJHqjWykLNSdshSeKzowpXEaKXEZ-L8mhLpA8BlRKj049CUcEr7S2ZcXGbpLpb5C0A4OtqE59MGVUcOFEIqz-LoR5TcC3-xbpe2S-Kwp8tq8HVUI8lNGNkzDklSrH6lyXcnV91VgatMObe5EZ43oJREYmmFEpAeIhV5Uem0l",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGY1MzY0MmQwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Review - Mobile",
+      "id": "5263923b759a4bc288c23c8ffe5c85b0",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2050,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsqKCaKHM3DQZQaSQ39l49WptCfOcJT8wY-hl1msJPmaQhy-GYZvroeOgMgIdRfG_GSPdTezVyczKW_vHU68PebncB9O6X5oeIYiYT5jxUdHD-7U0Zt0P7B_KNJHJFz3Oq3STtueTXIBYQvqiLo7xtABpoQ7x8_SAvWpdp4IfR-IjMKvHdFYB5nHsAjzeXRdrvz9FN5u4oEW2I6f0hnC5VPFBMDDixr8D44pZD1bpGF7rKdlAOQ4q4Vu-wC",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGY5OGJjNzUwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Pricing - Desktop",
+      "id": "7780a4d599b441a6be7695ff72b84107",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsE8mTd53XfmBq_T6Y3WSIp_bwuQImBsv28NIQmxc6KhFELQcA4WRxkOHdnZgK0ZqoN7DDPBdIHf8mbCLcM7sre1RQTmGB42O9i2QJSX4cTeprrGhykLfg4nZpNijgggRwWGAXb_N87FKRUqohYCXOyzpAwRNJz6AC_K0L4YpSSPDlAYTFYz8bRg_O0HOBcb7t10X8qFcB7rJBG6xAjIlzzArjmouylWydLfwcKdWtlZIzelNNHiaYE2cg",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGY2M2JkMDAwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Validation Error - Desktop",
+      "id": "341517f50f3f4fce85e4715f41e12b3c",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2326,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvGAOpmLeSXk2KbOYXinHYSN68NVDoxHJM3yKuDd31P3u2Q0tEfAJSRh3z41sIxsrq7dKoZWlKyr3VH-j-jiuUQvz338z9KOCq1Fvus2lvlrdG0nSJs2WQ5gGmAGoqkBBoR-dZu7m7STbpR3WHdWZe4hZJpQIYDGr1pEDh8N9-LsvEGNtm5s6yXFjFl_kTi6WlsU7p1W-k0Ln1dZ5eSuifwqyROdiSWWDmujh7EjwExk2CGzp0hAr7YR1E",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGIwZGQwYjcwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Home - Mobile",
+      "id": "2ccf327230b640c3b3340e5bca2bb162",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2596,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuDZQWyDpcRSnfRPJYoimZ20a1PjknlAm51d2SQGp7W8V-ejss4X5WaOynOPq4yuG2mQap1xNUG-8F5tURXcQuVyQCEQSAxK6cFMzJBkh1For4FbvXKyTUdctSCC5adhOvFpVq1TCRMQUoPdx5nrmmhn3dGsSqJbAApDieJ_KUZqEPNdueFH9t2Hiitd9T-zMtCNEWnifTCJEyRPQ0TEB05Xw7B9AgDTKTEHd_qy9tRQUtAWLeLA1e4R3eD",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGI3YjYzZjIwMjNiZDE5MWE1MTU0YjFmEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Booking Detail - Desktop",
+      "id": "e506a5ea31c54b0abd9d7bba96c83ed8",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2370,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtptCfwIPtkWYYvQsJT_JW2jskm9cbNXL5G5iJE4OlzsEmwV07hHwRNocogIFgDbFxq6VRmnS6pRPbyVOr8C7-YoF1Txp2xpsHIqhqH7m8Pv9095bv_MsIiRJ6sf3ftcyfqxs7tax_02p_rsovVdpFl3Z3QgOjAdTvp8tSoaaVGv5i5VUbnEPyUNBTcayzL84fT-wufAPdA2ULsJQziMS4ZT1YKeUIqFE0TX69V7EBhWkcTferl4WNmE7A",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjk1ODQ3ZjIwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Server Error - Mobile",
+      "id": "8c33ca1f083c494fa4b2143e3a3e45d3",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs4O2sYUMeiuNwx9gW_4Nh4Rl5oypvgmI1UUGDQCf0ZEHoNtIbZUDaUDKEEzbmc6KhCHKFI_7n2Evl_lfvRXCa0_HZSpSgGpysqmGK2PBPOrnIm6uKjDvjnC-9yfpwF89kr8DMeFmt2H0cjJe5hogOtI4N49DXAc9VIv52A_CtuT489SXUG5Y-n909h4tVi8I3kV8GTUNqh_iAJnVH3pKgXcXRl_xesB1DEPzOKnw2ZdJi3VioiECAubLs",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNDk4MWZjMjUwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Dashboard Multiple Bookings - Desktop",
+      "id": "d499e36b667047e1998d38d66be6bbe2",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsSrypNWsTEm859mgWQQOxXAt0ejOy--v9OdKlEavoQ_B8HwVapqNPTgK-zqhbXW4DbcQoc8NMNX4wsB722jvUS-KBn8jgbYaooHswl0h7sZIH61x0PvW7aG5AGDs7vQEUlSx6KX1tG_dAcS7qlsmaO8Jazj8vBOvwmKq4BYepUOaPscRo68DkDKvXvdcWWVPZceDPNlEZt77_WhopW0TIslDbY7X0e07x6W_yOytXVpJXYxo33imyRnQI",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjk2ZDlmOTQwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Closed or Unavailable - Mobile",
+      "id": "4df57c6409904d9aadd5841987aa315f",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLselEDeBLc8I34mhXwx9Zy5EXOhXgaiKWwdCyV8tglpJRNtr5PUhmz6aaUwdUv_BYB9WRhIdxnOq3_LsQFUshuG8MwhVhXGbsj7_GM9iwYttqjj_NuLi0nx3N2Mz9kWafz1pDcswSrjN7iL8K_K6dQSlbGT7uz-Ay93foEfJdJD9kx1mL5MfmWIm0Bn6eIoHPaWKg8Jds-PsXDHFUlz14H5k6yYdFxTiMW5CMLcMxJO-xPhm1_jKyrgJsUY",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGYwZWI3NDgwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Lookup Error States - Mobile",
+      "id": "e4fa5d144ebb46cea06c4ef3a3af3e7b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 4492,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtkHmz2UY1B6Mmlk4xscp0G4IN51Q5DThIo0wCu8Ab1-blWXDaqxKO0AZQm7OUiRuxzo9hpgyAGrTdLnIHpee_k_dpdh5H3Eynr6_669WRA76kZUakEYtS70qMYcxO0wzuDghGF8EQ2vzRH7l8Qwm_tfYBb103NiiwvzxkunD2H15QKsRUKp2idbTnc1S3BtH-kueklos8kJCrsb2cpT4IdPAhrw_NUyD-N8EUIblQa3Fzop2gMHImjTxAZ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTM0OGM1ZWMwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Slot - Mobile",
+      "id": "3f05000a252b4732952b7dcbd70a9c06",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2100,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLub06R3cFDe1ItKbNPVbRHE-Zd_Oq5-XIQormTJcoAeGS43ivUGDp7vHMRwLmFcDi6rGXgZkWvim9drb1NYngRVGtU5z9fphvywQLSowi1rA39tVMzSK7e1RfPHx3LX9VK3JK7kRsdBGJ09yvQMksGx2Wyia5DEFxwKBTFAqeXEZaKD88SFUH5Q1djBySuqY5GWKdIac4WhP32ZwTY1gX8Um-MEyseIgTSqFhOUtkl1JOsWB1e0Krz8r0o",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2RmMDQ4NjcwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Patient Information - Desktop",
+      "id": "5adb49b9a1a940a581eeaca83524c7f1",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2716,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs6N_VLqxkBcFXojpD4EuVEW9T-zmBWYOGu2qNsU063s07CzcBzb2gHGou2ehdMIhV5lAjchg1cEN4Qhglv_U1H8p83Rj6Kk_Al0ZcAegnXi3aje8KOwt6r3bgNRfbGWj7eu4wpiSDz0FgQ-1TFfzgTzzVhGohpbgSfDLQ_RgFf4vldyfIH5T6qTXy46pCjWLlTIFHz2N6Dq8UmTvTrQtO2A_7w9C-wOqcVT1_lQMLMa0V3rXm38F_A1sDP",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmRkZDM0OTQwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Doctor Profile - Desktop",
+      "id": "75e6b6a7fbba46018ee8aab976f72d23",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2358,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsvFKkV5Xyy8eOPehH94-LUluO030CPsdrrt7tLNRoQSCefcbwDcUuKskSZHD3a45S9HLZV5vzBjX3yF8elljqf1pvpKI9eMF0KwevA_0e8Hwqwf5myV090NGzIVMAY5DGW74uNb-6Xf-AKV39ctlwxyxyDJHdL0Wfyr3cqNcgIkY-Ut_ScVRBXbe6sju3b9PXAJKhKyg0HrQnY0cdrL3NTIu2psn3BMM6qyOMAkl1lkOC7nOfROL_0wyg",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTM4ZWVlYzkwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P20",
+      "title": "ActiveClinic Public - Design System",
+      "id": "dbe4c18b488e4d12ba3ce57af8e49d9f",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2702,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvAy83zEAXhiCxrjpO13Fum2ClhIH611V8YCHMSpS0uNpUO05AyvUpkPndi1DBWFjLn-AO4WUBV-TPaNMobJjoZkSYv3_AXF3N7i3rLD53TfSOHWUoP4_nLdPv-OixYYLG1VrPzo0W1CUcb5vguEXdo58Bu5xWGi7-3QntF2ExEscVPJOGdXKcneEPkFLTmXOPctds0TK5TGU-DO12EerTYyQ20MxVxx7pbUqFw4ecqzJCwLgTroCh2Nhby",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwODI3M2JjMDQwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Patient Information - Mobile",
+      "id": "62f5da19ec9047898ba0957faf21b408",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2490,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtfKGbbMv5xSH6eujs1vWlsV79zyWth-f9aw8HlJhFAznV1WID06STuD9JmqQnpVK29m8DGCdhj7rMmIdWLKDQ9BkOpvE1ie4zQYaG5g4aq_M4XADoU6_GKa__4XcpFT7whd2ksZQf0KeKVqkhlL_ZmAm7ETrZ5UiqGyqtBziLU91gss7dasC9SIpmANU5-0lT6kLnhc8B2mywbybtLGCdwA4570lZcV90CppgQ1YIMFmwu-350IThv8_0",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmQ2MTEzNTkwOTY4OWNhNDAxMDI1YzgzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Set New Password - Mobile",
+      "id": "fb2dab64c9ed41f483ae83d4a7f20fe3",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuYwJA7tl7h6PvAP9shtJSiuGqsEvLVZk9V1Ad7DfwviOQZD5oTXy3Bbo2q7RMkt5_D--e_Djsy-EXMDukxcVHdOV5VX0opE1upyjY8jftvQ8edTv-tQtJo6ez-OMBbKvjXFxIArxwX5iph8GLJspFsE464fkBy6OJNJGgRzv6koT3-2yHnPx3od3ZntCGDGywsQ8AE2_9l8vhHb1nQWly1a3sBXr80BzH63zXi92CtrZG2BPs4fPr-4FxJ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjRiNGZkZjEwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Services - Desktop",
+      "id": "61bcf76807744d898c859ed1078236b5",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2174,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuOLGgARZvrp5gK2EXnQjrzCP36Xm28CnsjXqKD6Df453MORvRyiToS4xuQgo278WtxSNZJUNnZJea3k1Ur09KqZI8mdyiHpmFyBfj_VVKZOxX_ZMkYsk6r9UjGC1OLck-n9fbhU3ZajBVKhldNv0wJ8fgx24uRKm_GiBKnJpC4kvsjz_A_1cRLm5ORx_ruSasz2X2sTLBGaBI0L_vwouIikf082ML-XhKnkwslhupESfuQvMVt6vkp8gOY",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTMwMzU2NjMwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Procedure Service Detail - Desktop",
+      "id": "b887c39d2de947fda062d568b641f229",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtjejRjuIwc5kOebMJrFHYjpdvZSKigetoBbPiMtzzWoLItMbFLoAlnGK4SFa9e0-b6zpLPAs6KCtRq0IJTR1BKnqsSUXBMvtyshVnKn9aIfWAXNm-oKDCkgSpDc8nEV8CYpeGSMO-LUURvyLsA2njA7O1ZVOc3URRWfvo5b5dSidPwBZUgmnGniN6070tmBVPajrVCFCJFGgsJ36ySwFqOYBOTIeQngLmhjRsNgjDuPvAGV5_VMxVllXBu",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTE1ZTFjYWQwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Rescheduled - Desktop",
+      "id": "8e3e9337e8404c38b4f3e1dacdc7ba9c",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2156,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsncKG_9M0ua6WszHi7-6gRA_WODa5ykPYnsV_Nab2EOFcmZBEitKT6MrpRVyiPNNhRMoWreiBKQSXhZk7t9gsShR2gHyrMn-E7zvy5_3U6dSBN0_9gsltRITn6Sh07_u9WqBEVGmeZubJAuIbkG4nztLGrMyPkbrEJZYegHt4dzAWgAXoYQhbdGYqA8TQdZZrUM4T946b5zs4QIB5-5DZmqd9FyvTKeAfrb1vRsf0sT91Nnq85s3OinroW",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODk1ODU4YjUwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Choose Procedure - Mobile",
+      "id": "9526a27d8e5a4c8eb5a9bee842bee41b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2012,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsx3wI8fXLwfYSJ7RExiGm41wF7H2AQGlJOLiJFCwBvzi8FUXAVPtVF-B_bDsBCXKpw-hi9fWlTHLnSvJaVo9-Re5Q6r50IpazPwYITj_bDpAmdOnBD7gAyHECax2hXISqixEoXvGi6-K_yee3kCOBcNj9g5448FhOTgPyqRvwxwmuJAu09tb0_4M_PHSYpt_kkhIXqKMzfbPYkipmNOW68C8VluA7yInM59frZrboto6JKN9fzbbAPHdqu",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2UwZDc1N2IwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Patient Details - Mobile",
+      "id": "d2c8f78719484d7ca4d443f844f83929",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2058,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuFJqRzCR8r3G61shPTzb_JrZLxVpKpo9Eolmok82J_BQv-A6IObvF0L6omqTrv1CTe2zkX0uS0F_qfojefH9LMr2GT-aVN9jZg5OgjI7yMcbvmVIuDIHtPoOobgUB463WeeeeWUxp_xMCBEoGMC8c8wO8dhT4xYpMnieGhzAnNDxOUkTBYjduXWyjii8ibNNEwWn77aq5CrnTPEVLcOqqWEIj0Op_-vyt7GJC0ZybeHAWAHw_aqM7TVng",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2Q5MTQ5NjUwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Verify Phone - Mobile",
+      "id": "fc27f3a94086412bbb546e19248ffc5d",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtHL54iOw2gk1df8N5cJHZVWMst21lIfSZabAM_D7eDvlMQSjIG8QidXVJ0yQ_A-NexwXah6csjhiOLhsPuT3EdiGwHJx8CeJkgLdAp_Xb4WxLsWZA_GVe8DyBEmv6Dz0C1O9Ghx1G4JgOhzcN42Nmt5h6H_CuF5GbTzWjD3mzLy135cKtUvPQZBNcrPP_M9nhCzWplxh4ZHTXiaMlfA6vREdKtemrwzqIBm5wd6IZ3nHt0VM5v2ZnW-L21",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjQ5MjA2YTYwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Doctors - Desktop",
+      "id": "dba48eeff55343cc95f1876c76388ce6",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 3292,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtVs3VmC63qU8U14Yxpri3D-i-rvjqn7LqJNfUKoVabnuBUmg-ypJlChm94Vnkgn9JBmNsGdF5iKWqhZirAcwS2QQqDXoo2x3LtniHOcy3yp2GdUXEWvPfFtmYUPgkhWlHGuosn7DrArqBe27EwjKXAzm3mIk6SctIpyaqN2ej7ir6XzkL_s9Lqjo83bUdkHNjTuoxM-v3xATQUbwIvXM3NGsM6aD7R16XJVUY2OXIvKHhreSCfh58Dz7xO",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTM0Yjg4MDQwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Choose Slot - Mobile",
+      "id": "ece91cba8cff4381a9ef2e8ac97cb988",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsbHd3vrMLzMAXgvy3EeEYQsVmRCGrOMdhyiQZqjb5cGXcvlYBK00ePFwVxt3YYk-LAaHBl3UU8zEglLug693RLttcDdkIDGJjaUVhJCC7ZFRYMLi4Fp3yMNE7DYxvet-gWvHizc3xlIheMMgNZfR0Pb5OSuq9EOZUnwq1ms0LSYu5oCSHE0N88oDW9goWc47EN8bn45_NugKPsXN1mPGYc8-ndh0usYv1-aslTrsSBOc6FEaSpabdjECTd",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGJiNDQ0MTQwMjNiZmEyZTBjMjUyZGJlEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Booking Filters - Mobile",
+      "id": "b3521756764f4a978c9244a2f5c3ae9e",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLulhBYGNymzBYUjSU9Y94WVqVOtGzeG_MN3oLLxfPteiH7Kl9n3QmgjhoBmNEVnCnP6zYGkYpauBT3PdEcZWV-qslAAnO0ZNPCsQJ6HYAKhPmXts6369IBQBSkOZuciiP2QR-hNVLAPxEjTKroiGd-1_mYiu9bgJRT-h5vl8mryUNfcT74IgBj1jWieLsewA2uXCKWFVgtLVcbp0Rczoo1MY-eT727UJ8C4lmJBzZIlU16mnmC8ETuRe7g",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjhhNjVlNjIwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Mobile Navigation and Summary Pattern - Mobile",
+      "id": "c8dc05d3e0744fcf9f0030ccbe63a172",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLt0ohi0K9HrsVDAJV9VDaG68aVjJhfuX5rB6Nz8lqZ9gG-sEzQIFnp7T3ocsZvm0Vku5Uiuxxh1aIwbTrxqu6IFP5UVdCb7bSlqRpDDaSsyX0eTT0t7bbL3kwOFDmW6BDO-guPgRjph_kEx4LplljzFHpk9d174gjy5Wlaj5mU6fxHLyDG7DPNnBxl1BEHB9f3Goylj-HKb9NJ-wgWY4Vtti__pHv_uiVd67Q0N_NDJ3b56znZBwvaZSH1V",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGY4NWRkZDQwNDc5ZjIwYTcwMjFjYTU3EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Resource Availability States - Mobile",
+      "id": "95f3a0fc88f7490fbd7d46e649e6b61e",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 3324,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuXMegf5vjZWjWt8cgcGWYOtiQ-y95ebtkhmnGX4alQ7BPbhNPDXTW8LghH6k8Sqt3g-b11m7ZEXZ_K3HKK6yt8N9Clo-F1BkDssPD_6ku4TUMjBQU6ruBtW9cWlPsDgFty2p9srnFsqValjeiBTot8kXPuAd4Eni0S1SPduOOFDTI13OogUgSVu9epdDlv5AZ9b1mUeDxMCndse7osLbegoBpWzrifMfVC16dHDiY0idtxkcQsqkT1cDoC",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDFmYmIxMjcwNDc5ZjI5YzkwMDg2NDA0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Information - Mobile",
+      "id": "d033da337b5740f29b4681042ab4a99c",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2056,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuZkwiKymgMh-DbK-ISZVhT3ZFB_Qnzpy_vWwrNIxEPXs1ZWExQpToEfKDgJu7uAa-XJhZb-XEZSSyvykeebLS2DO9CH7hq5Qi0RnqI9JEO_0pufmKHjg8jvq2bfIu8tDHG6uUCt-OD8oQNdqh_R0Ts00X2GX5gSV2yqvsg2LRiDnHCqGX-pi6K_E41lkusqsJz3M8YtJytccxj9lVIVV2efhczjvdG9QjKVXds9b4Lo8bMvdM760hOnps6",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2U0ZTAxMWEwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Appointment Entry - Desktop",
+      "id": "e879dd50e2d64f6b93aa807efbdd1775",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuaLCiU1Gw0iaAxSGPYHSxDCd-8AJ4yQg7cgH5LFRf6pBwYiZNRTGn12WG7PIAEjjGy_bdGXY-MOdGKRNNW4xPlcJkfjCyRyhNi8cmdULBeDDDVu6QGIcGd5A524iW5ykAzTpnEEa2Y12-Qmc7ori3xn81sPvpeqU6MuImQplJQYo15BhTEfcp70Zw6oIxUTSNOEKlmdGt3fLH_Tmd9ZMsmRaXD8UXAqDsIIfoJTQBNbmE5_RT0bza0Tb8s",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMDhhYTI3MTEwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Request Submitted - Mobile",
+      "id": "8f72ff10f79d421fade5a7ac6e6d875f",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1926,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuG7fQ-Srtj2jcT9TjW2j1wKtxILzCByptNiKuRZaEnSIJftnqjlOPiu9_SxdsbQciQBLfERIKu774lTe8dxK9ih-9JtnWT5MWD6xCKKLT4LNnnlzMH0n6TzVpOS0pJzdbJL-zsVi_bo2TKn6sc-X6BpO58xlGro6UaG7vsOcLs5459FMgno8xyXe9xvrzHwPRWE-eK2Fkd4LJTOnPNkD66cAxH4t7UfNgIg41UixiaKZeDqYPhQxi0HoY",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGVjYWMxNzUwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Completed - Mobile",
+      "id": "bbe2c7c3fdf442b397ee457e287b1674",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1814,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuspmmh79HfprNWyxxmxLS4qQH0xGcYduIYYskMUS_E2WBB8kNzEib_UFfRANmCUFVdIbB9Z-C5Q1g-7ych9HWYPTHw0U1DBr2gi0phzygU-rCX4FiUof0Z9F3MFACyWpZNOKmeZZYwvJzU7BWz4ivqe4_zpArPA2QLsxNh2hMlTDcftO5kozw5ozia3cCNbc5abLNHH7RqWqdJICApzhS6zt_kpKF0Puxl18wAWknkazek8a0yXf5w7vpq",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGVlMzdiYzEwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Information - Desktop",
+      "id": "ea6f77fad9444fa3b3f04cf5178f9c72",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtS6CSfU5IjlHNLOQg1Cgf5T4arLSTdI1UnOMPzR9c4-4VNYxBSBD4W-N0wMJVagiAEDthwQTiXQRb3XBbahncwY9CgaxEC2SKXDxF9-nAWrKUYCJMhI7cnngb5ufR0AOA0aki-bnJjFlEogm9zjD3eS5uv0IoJFnAnJRIyR_Ux9grcpc4owE9YczlHGjkRdarzpCw7EfyR6BG34HHvM7P7BvcCnjyJrr13ZU7uOAMF_WVyQVhd77LDnKyD",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2RjMjU5ZGEwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Login - Mobile",
+      "id": "7c24084776e64719be06423d42263e61",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1920,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtBnCaFnVGUuFDQZbu2sr0c1NSm3A37ApZgDo9jgb76M-BhFSviVp67-6RYLnUYZpM0uH2NePYek_W0nDZ6kpwO64ESCNvY7iakCr2OufZx38X4yNNctgqt3caAoomEBgOsy7ffFwnMZM7LjDTQOW5J-8HezFMI9p7iuYit1xeh_rKNtAz75Au7JL2TwNfRxuqBSwvgxwvm05U0dIQ5W-lupjI16XDmeaRox8uIHYkBNL7LPhqnQFpNezQ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjRkM2E3YmQwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Server Error - Desktop",
+      "id": "3410067aec51400d95936b34efd85e46",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsYR1n73wfEjsakos5XY77Y5IzL4-ReJb_vDj82_eZTEnfh96R4oJg6FfErL47xI1JDDAt_L3udPpPAEg1pn_QSX-K1rge8M8Vh7Qaal_l8VA-mX8rJNDmWlJ36mryTQ1qYQqAA8yQdFnoLMl5fwf1w5mUA69r2U_sGJqmHG2E64e-0Nu7MQE-eqKPCzbTFIUoEx2YkY8MTNPc-YHCe5useilXDz23SqkG_g9ah0T4XOR7bC5wG4-hTHMz-",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNDljNGU0NGUwMjNiZDE5MWE1MTU0YjFmEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Doctor Profile - Mobile",
+      "id": "64cf5e42e55c4f9fbcebaf59a6940f5b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2774,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtaMHnd-DYneQFcdjfhrNMP3URR5mHzVJUilZwPsRJiyypM0vsxYCojzYnJg8sELRznZIr3rUVa1Xdk3XjC8zUTsqOwSbld0PsM0IjBRApX9tg7mWrhT70TbYKh-o0pWZYHzlQKRbv_qdL58lOdlUa3y4-IYTqWcKdZ-HxP5RTrqHloGWDf9kcuf34SUsWfK024z_O6ngS4WjKK6fPzq8JlXeeZEzBg4y-BmyZk43xkD0kQP3B4Ek6v74SU",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTJlODVlNDQwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Choose Doctor - Mobile",
+      "id": "f9d67dd3a8c2457884c7e32bcbbf47e5",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvbCoFLeuthLTybjSJ9001MkoOf5mH_2ghVyi4bdDNUleTYQErnWuNIGajRp3A7gnTkKdD-COYt_WqdeOsIPfz3ITya6uSsxVLK5IH5g_KXUD_JDiaxzLegqRoFcFWfdgOSNxAKRtYW-cVyKJVRFSFkyNwkEqBuOm4rqeNzwejPGrGt7zcyrtNdYrRKjbYe4qtnLJkdDNj2rEx0xQCV9wLBt3pIe4rLxAPHTXgLN-Vya4428qKoOil4K-v7",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGJjNWY3OTcwNDc5ZjIwYTcwMjFjYTU3EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Password Updated - Mobile",
+      "id": "cc39b8bf074e408682da114b26ed8897",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuJ2akl7r69RDjLFX4uJo6PaU3cZC3Rl736HeQt-7zTLlrAAyhG1sb4EGLBgUv2rdN3SKotK7WcHMbrEHpR9sVDJ39FpZ7vWpKV0kp8Qi4mmxRVSsrr-XovSkEllnzDiqlLvvUE3oRWpOPO9hjOkg9XNftxC-er96EHi5PfaJcBpO9EN1ll9DUBixcBeCuUpxDR_FLcdMFgd6Vbw4PUtnEhim2dSpTfwrIBtILjl9NHd2kyAe_XfBhYLXqZ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjU5YWZlNGUwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Choose Slot - Desktop",
+      "id": "32812bec1d384d2ab5c9821f6865e85a",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2476,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtzpOPCj7VVLKhpfFDx496trSWs0CNDB6038wwiIX5ChBEm-vFJqthDAIXY3fRN-ZDVL_rSLq1B3mgCjmsle7x9h1JZ3WB35MHIiAh1e80oAs8lUfBrd4bdbiot2JPfR1yzauigGWmKHz_hQOKhF14Vg5q4YbYdOmplfD3BEHxhHLpMoSpnSyJYOOBngO1wTAc0pYmCzPE10IkkgnX_JICcHnmFnkGJU2NkWLxQBSKWWtSisunHDm2_mjZV",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGJlNjZiMTYwNDc5ZjIwYTcwMjFjYTU3EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - About - Desktop",
+      "id": "4443fa4c1eea429fb6ee67a97efb8f92",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 3036,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuZAqI0FdLCKD6Kb_94WZtKe-8KFGwo6k1JH2WWZ7BuAOs1gYs-lqzThaPGMMVFim2gylK7qWmLHuGR785R4PEj0waz9A_RsLufa7vJhI3VGyrRqIwahbaAgK1h7DTMZU85vZzmsTDcXogXlVl_j9DQqlHzyqhdZPW3gQEy6BJ-Vulybpq1tU-9NZ0C3if_xVBUp-7ilq_Djcy9MviCaGD-e-owztq_BenAEQaKE1hHyN_PkIPW5ClYZFCt",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTQ5NThkYmUwOTY4OWNhNDAxMDI1YzgzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Request Submitted - Desktop",
+      "id": "12e5d96e8ac647f49d0cf66457da4b17",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsNFctyc9fcSWmbzPDbWyjNh1Kzj5qbfH6mGw0ojlZDWXxF4x16uDZHZqNFn94jQYzXznEQ4OJsqtoqRXMkUFOyJz8v9Ir2ddBstH1h7RUcwe6uNnRCpvdXT7jbe1_bSNtOHJzLJa5768UAULlpK6KfmmQ1T5Il_v0rQQzMj3Xc22w7Q9_VmALkR0dR3dxPvSa-x7IPUw-tgGVZ8mfgSOdDi7lwQThvAKNQzAEdP5opGL7zMji1yBSKiT7l",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGUzMGU2NzIwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Doctors States - Mobile",
+      "id": "8a5894d5bc294a90ae7c8a83ec159230",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 3762,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvWt8nII7Asmhvb34pI3ZBCVpSwf7LZZJhslAKDPJGIQN7ZqKW9PlMxtWIkFbE-EfKmQfsviUp5uRxEhZC3wxWI712fxaxaGl-n2g-9f8NDkGsfPAgo1IA61vKnfJUx9pXGtQGK3Zbo2xKRc6c7y0WWpn8kBcOtcbzbtdbIZoeUXVVPtD27sD3pMDTR6JcuiP487AJ2xJng2AVL3EdZKcYpUNjXol1qnnNj14slD5W6EIiuh17VdJ9h_fj9",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTJkMWE3MWMwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Loading - Desktop",
+      "id": "3cf8b9cbce0a4866aace37f72c319e5f",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLujvjVcz6ZJHmck06iC0HT9BNk-1YjfijA1XqeCDxToMKlLs5cyYQnGfivEQUjAANkIQBUJ7WcG3WCKJsmHuUul4FOhcQuWIKUaICo6Ggehpy7R1rr0rqGvmNNOJ3Kpr46CFjU11o-CLcwpOOps3Y_Yp8bj2xuAABMSjxkl5gzSsiK75aoyw5wQ74lFdL8jRDKO6pdqGzCCHMaC5Vlfjy_R24PdOoIJZ1TvP8KiASBmhqDOcvqqUbtjsNo2",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGIxYjhhMWUwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Not Found - Mobile",
+      "id": "e4668b043467417295bdb7c41836a344",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsXtW-M5hnkLPmMYSzLqa3dWXmGxNa7a8weYKZKiw0kfb9KitviT3iniBpwaFSXWbcEZ5v-nFgeEUlmbFB2HWmm67MTei-6kbN6Uwa08vaaUeCdQm6OuW25lfQ5VPX2OMeXDvGVbAw52HI0TUHqaZkXJgxyWA010M16mlC2cCzYAm_nSVY9n_Ryb6Wbsf6nvuoWKh0zf4F_-47XuQjR7XJspsrQZdCpNbJACXPcJp1S5V8aX1DSwXe14Jg",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGUzMzIyODQwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Pricing - Mobile",
+      "id": "e6360fb33fba477bb2ad47f81234fae3",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2330,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsntvmFHFaGUHfDXeaEzn-_Y4K_Ftk1vTQVpdy0N6umIxiU4jDUHx3PXejHTLoEXcR_7TmZJiU6BuWsORZK0ZYqL8Sb4HxvzkdSjulaOUlt7iRxaC8Tc8bDf2sgQAENqKJ__K1Lt40LN83xy1bZUPz3l2LZbuA9Q5dYS6j1uk_aREKapx8scMKYVekpL7X0Q7E0iXLPHoqccBSJSjHzhaAAaXsN80Bozv9IElemOy5tmo8pRu2klGtnb1Eo",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTI1MWYwNTUwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Cancelled - Mobile",
+      "id": "48a852ead3284e44b9700df8a8875167",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1774,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtocJIQGGnEufVElE9unfdkWBMgnlC3-Ra3ijYF-fqy8H7MlNt26osaMC5pbruU7wlRII_imE3P7BQ7q0xVhUzRKOQIczC8jeBsQd-7GawEWZX6N0GFwidIrlHjLrstyRJY1VkiAp6gEajLPP5tzD4tNSm1TpFhp6e5pQBFr_4NasDtE5qeOgZU_3UOpzn7t7yKQbm9NuHfFDthxIOFY3fKYOIgkSAY-QZlzZn09fCdO9FNeOHOj5MZF2t1",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODkzNjQwNzAwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Reschedule Submitted - Desktop",
+      "id": "ba51a076b8ed49e0b4761f3068b56e41",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs05sWtZDycp-H4n3gJac8pMg_S5RFUunUXiDvRxDzty41ohuuhjMiTxgmwJBlffoQHBF-dt7mAFXqoqV-ESj6jGOsCfEoc1EdM4Dia8fwsgoPTUrrTSEwjMuxBKEsfxo6CK-91lg66QN6mw88avX84oUmzw64PoTczZtShuJi5vG1IrE2t8KD9L1gxfFvbeAReAcsnvDgk_Otlb_eia_EJnq9FuQOJbHqh_OMBjxwOWHcLZL285-XTOZYY",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGRkZjUxNzIwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Account Security - Desktop",
+      "id": "bb852d4218b9470981d9944eff62b1b4",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2626,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsW6786ZB8LpPAin-h3HVU_EbbMdUCKvzPqKWW3vTDJZjFgFnFJRKHACCAW0-n2PG_8p25fc5uheU4ifzfJ0wwFLnCVqyUtJPBFxmdgXolaOn3D_8Q_dg0uao8EUZDqgFW_trcK2ZAFlrw7cBEGsR_t3i4aSL1aah_kGYucru67g9Z910csEyhmnRkU5wf6q37EUZKopmSlpROz6PTK730ryFdpUfgY-0yu7HmS-xHb797GLcVM-7XIgAfG",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjhiZDcxOTMwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Home - Mobile",
+      "id": "6dadae69ad0d4e4e9441e1a68b3f6282",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2604,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvUFO_ypvnHwET8zW7kAV_-eS7BW8pWb6WWfUMAq_uYtiVj_GcmK1fxpDq4JepwohgrrCzCrOCirI4zFyZs7yyBm0agIUbHDp6WrG71iRqvj8AyCkhzo3zOAfFcVKDNgbUmRKyeZubPu0K_VQ15kisqdMxsOLtZMM2_RoOUrT13A7kVx3JFjixlJGiQjnvE6u44SSbx0EH85-ufIWPZ8cNlxAUpJjGGQEo4VNXWcKFJlAxlNwA0C_UAXHU",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTU1NzU0ZWMwMjNiY2VjNzU4MDMxMzRiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Search States - Mobile",
+      "id": "50d278a0dc7c4618b20e70e4fdfd6076",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2684,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv8lqcgLgU6r2JPgOaRs3Hoj-Nd3ww_NjQuuEFHCBi5hN1H0am5pHKqmb0cVIj-CiAYGd9FCgUUddwQsRX-zTVKnE0TBzRmNPSE-_OuZlua4gFEVJmzw3AFNdpvTODDbxJcPdW1JeKn7fSX_hbJgZ8eZCLjlftxo6pBu0T6_1Bh5LEqLzbz2Xyz3pi606tGxocfWqRYrwosAbtITS0KoR9P7hcdz4rKD4Y93Akp3javTQaoqVVK1YAaLQs",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTRmZjNiMTIwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Services - Mobile",
+      "id": "e0b4b500de47418cb4df06df8a65428b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2214,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsuRbsNK6oRWbPmPjvVKmW89UDDLqYYF4a89OeyfGk2G9RdAIrGFY4tzTI5sktZS1lBk_kue88u5LxiDDZS-eXXwJXbNlT-t9xwBMOHDaLsqrR0H8ETRc5zy4RhqCnQsk5ben88Xc7teLZerdnolglsi7io1Z4W_rj-xaii_mNiWydBLyk1gS9o9yGuT9ia-M2KfG7AxgOfK-jEkDXVyRptJtj5ZuhQmZH0gtBk1Zl1gC4b4RsTxnyNHBVJ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTMyN2MxNTMwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Cancellation Review - Desktop",
+      "id": "4685ca7800dd477faa561270dfe01cba",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuDc8atIn3_2h4szJI4f99di3AVLoJrOG9bpnJZEbIYIWYrKzoLMgnhmP5cWzP_1A5I7nYtfrtJHXDypBgND8Sk6ssO2g3jnc-Uoeii1B_25RD-pRi4v9r6-bqhkyxjoTR22uf32r7ErMu4Jd1tmsdEHlzgqqETT5lqtPhwmL7ZSICb_E_YWJc11NkpAOKvYGe3RgYS_OYg-_9RDqZUgwALv0xY2HG2vwEVexFA0k6EDdLVnccrdGNYu0o",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGVmNWI3OTEwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Clinic - Location - Desktop",
+      "id": "32766a7879be4e539bd1ca8e352ef1d0",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLunPVN8uQnRx-TeZyhkdYpy98cBGtGLwHsOSFQIgMnIKJMVHSUPwQbcfL1brlDacvzbl0leLYCagjaPdhEauQnsZGVUiYoK0za0ccpJDSF8KqDUusQ61S75Q1R6YdTd7yqlzllMi-DsikRl3UIftEJJE2x3Rpjb6xmC8tORWaSgGlo6yAmlcUXnO7oqHEY7-uA6FBfpbm-hjXEZSI91x6UYu49eENJwaCg84InS033UZZ70V6JCvzmDILDO",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGY3YTJhOTEwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Unavailable - Mobile",
+      "id": "042c455322b94242b289e4c5cee37fe8",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtyTG3DhLTxaE9MP44YQ6xClwktSyCMSx5-Tr-qHVQ8ymbZ6cKGnsGpT0iii4rg_t_K97F5EDZ2pwWrH83tJ9g6je0wGZ5Sg8HGPiXdlVY5y32lCZ57nfiKjgJw3sCeMOItHOF2rWwIbjFQ_q3XxSVbGbZs3dBmKtfwx_zVxNKv-1j7aZiCK0xDIpnXn0mZWxZUEN5conGN_NGHcqxad5xrDp4Ph0mMPHY329Sk8F5zH2EcvfSgjOemPZQ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDBhOTJhNGMwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Booking Entry - Mobile",
+      "id": "f18d2b7bea004db492c5f0cc45d0743e",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2094,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtmUNjOfkAEV9Oy0OkAiXbh_gYiLV4LQtgZog99f7sJiiHmRbYNpn90Nrdqpvyu5mpNZVx9niyF04CNHXRM0jv2K3hov1vJA7KrRRLxT2Puj5lKZWKiJYOIJ76j7yx30fYE9kFDCs3vqYiH4ypaKxY8ggzLS0EVUeXaYHftgYLWB92Py_d-OWoLOY8j6fHwa16W6xSLs7Nr38SqeL52ufUcv7jHEkp1zCLdpKhDhme9sP_GJOAw0qS9nkAg",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTMzMDlkYTAwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Review - Mobile",
+      "id": "6da5390fcac44722a37ae34f2ae82a11",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2276,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLspgphA50CapMuJv98fpG3KHShaLJm6SBreuDbG8tsSBpAMlHltw1jY3WVOzEMB-qclnc25t0ShsGo1uI7qSE0J5IGKQuQVpBlat22v1nxJ4UaDAQQqHRYSbRq_-O9xddbMdF0AdTCfunvAcu-kdGgqvleFy7Jv9zbZrOcmQw5F2bMffhpjArO1qgFpcOjbUQu7i3f7rC9wHSC7PcJaOYfp25vvuqWX3-z5KwQc6fM_CFJg1UE1H7yzuJ8",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2Q2MjM3OTQwMjNiZDE5MWE1MTU0YjFmEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Progress Patterns - Desktop",
+      "id": "82a454047e064592b763896f815aa721",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvZkg-WUkrQLG8FvigbdbkmyCQdiCOHNo_b-sw4-Fck7dNywujfW-tn_AJiMUojXjjyNpdltA5kc4G24HOiTi8UaHOtbdO8bqna0KKTk406VuUYvLhSbivFcaEE-gGLnoQ6VFXvcZcjwiGlhB_PqTOtg3u6O-E1XVOZuf9drStCkG2KzmNNpbE7E24CxiyixwoXLC8o5chPwoj-Y9Sh5GgtUWnxPWbpAg-AZkCrUzIFQieGPdJDnRKxOeCC",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDE4Mzg2NjgwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Forgot Password - Mobile",
+      "id": "9ff0dd371e8e49d38b82288c77699671",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuFn6uWtDYfVYdbEAPnxvsN7025hrgSDOYZJjK5IkClNSqqHE6lgNus9aarGJ0yUky7dGpKhA3frMMAXSzXC_qZLAdhK5aTn-VusS-P4-37P2FNyZXAD3UKYub0Vs8Ppnie88aaCLUqyFOuk0xqfxTWppvJ5DBfaAugdUOPl0MVR2BtPG0na3moGpJTlqvlf-LjysVTQzzWzKa2AxakUEZMwMwQhpv8CyC3KJCOu1G6CXodNWY2iHnFcV4Z",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjQwNTYzMmIwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Home - Desktop",
+      "id": "f96b485558c64fc38193c5d3231633ec",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2990,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLthL4V4Y3_Q2D4yEyaf2jPSh-Ry6XC97U8UXW2r0P-PywAnGED4UN36KSwBcwFdoWX0V2wmYOl8PH6bbb-Q4mZvecFQGzYWzsISnxfiBygep9G-XXHIhGitKMdCKFgThWtojs_p_Ixlggt6rOOSRFqEkIV-Oz76dXHPrXooy963koYUmf_V9TAj3fKkZXUE68VS0KU6CojNB2xQytL6nMuW66jt13UfTkxHYEH5C7wga4AKhZAkBCMOS4gx",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGJhNzUzMjEwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Privacy and Lookup Rules - Desktop",
+      "id": "e50e9dfeaf1a405bbf3f3c334ebbe039",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2178,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtO91ynLhSz365jo72xPVMCFg3n9qebd3IQT62SsZNqXw5zQCUxCcwMez0UpX59Pbeq7jqOOCkX1XgdL9eIPwYrK79AXbzpBcSXPSx4ByrI6e4VJ0QFAy9xNB5BNRIQl17-VIC-OWG_J9CrHLiajGYl9dz2Zpou4lp_tVpx3hleg_tWuMoPLgm9Az1cnE5jtIJuTDwgk8p9OF6MuuwaKWLJ5SaRm_BCR7i1tsphfd0ld7c1Gcvd7ao2BlMc",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTM3ZGVhZGQwMjNiZmEyZTBjMjUyZGJlEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Doctors - Mobile",
+      "id": "911e3c7f4fdd4016bedea8641aad2c6f",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2272,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtY-nlBk9mX5Ur6mN4wp6Ln5McvuZyWpg0DFE0-QeSG3X3jNHRvZnT4tgwOily0zu319otOIWGlSUvTIx17SkhYpsdUmgLOvI7IDASzigqLPHk9DVQ2jgKb7SwJ7LKZijZ_eSGLsTAuOOqPlsISWkMq7XpWvPik49QavWjJ4inBirlXchqHSo9ILKtxu2vpmcBHGsh_35KLnVhEPnocTp3c-v_gr8RhPOo-nMapxXjzv_tynIwI-5rwlgM",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTNhOGE3NmYwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Procedure Service Detail - Mobile",
+      "id": "e54a6661157f441d93c94efad91a8858",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 3126,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtcjLoZx3eeLuQd6D_tdghkq5xCH7ycbECGVIdhCjfcKIx93S5BtAeOFLAgkIvJqAiaQ9hVnByj7rDijnYdm8skv8tMqvGMRLY2OGZBgrPceyVfWHPsQaGY5wOo-evNlhZ2NwAdJSLtx-EePAbTOV0EkjDKwe7NCb-8E-fs1bPKF-EcgaEf_hymRJHUksGSs0XN7NEsm4KA8CFtpXaWktSPjDvO-luU2xP5uQUhaxnsXJnWmsJ2Y3xIxoRH",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTJmOGZmM2UwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Cancellation Request - Desktop",
+      "id": "766528bda7e548ac93d381129023802f",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2142,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvaZxUwAcUQDgsdEe4Cp1irq9p0a-jOA3O2e29i8oExb_XhXYpmw4_AQOzw69Ua1lDfoGis-CNJHXzOl2jzerpg6X_TiD_5IQuVYKT65xFl77uJBInZiKtqaPil1gbt1Buju_rbM-3Xqs14gkilxno0wVRrkIL4gev60RcM3_7AGyPs37gUK_tdYAZ_5BXnlmBPMmXxDr7RLAekzurCxGP_k-GuuQjKwjVtxrHd5skV1qmYodSJlUzT-Iw0",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOGYzMzdlZmQwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - My Bookings - Mobile",
+      "id": "b86ad20f46574f5cba98f3aa4909b597",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2274,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsT-hAcXqm4Dt8LWKXrLpC1ZSluC3XnTyJm4qE1JtVa57CUO43lt1ML9ndulO62IkjbZ4FlpVXG19Sa1dpbif99lg_MIstm1ZN5kyc8bSKUdV9ahzndx_pTutpbjTK776DKGuk49YcKdsTULdp0ENySW65FOoJ6H96coT8eJBtE62QHXryrehxGaDaHnSRXASTBJmU4NRRrDmBqhv7QmLfB2XNeGy5CcqgTtItcQPv1EGbtpRzPf6H0lssZ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZmFmOTg1ODgwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Demo Clinic - Booking Entry - Desktop",
+      "id": "5b3a0cccbc224b388752747847c0749a",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs9K2p8saXTVbS8C6YHX45pT3OtMctd5BkpcTcHcNm3Rbc7ebbe7SvMVv8BzqvVxOZR_lhQNjiJB5AOKGFok7N_4rCRonmUT6eaz5c36mzlpointsYa4o-LeiO5sGWMa1Oej-jZzPnyt3Hqg8iZXum4WDTmRyIIH4eXJeaJ6WpPtkV91aaS2NmFZrv8bnnxpCaV_JP4sWWLcL8lmIlGBYFN0nG8BjQyQXmBbXfJm5ltdWJxfzh1Tmgh3MQf",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNTI3MDkzYzMwNDRmNDZhYjNiMmU3OTk5EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Loading - Mobile",
+      "id": "4889fc1798d2425f85ba19dd68c29734",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtEN01LDg6gaZ_J9smj0HPdhrmkJTOdmaBjCn-2w4vp1nwoJM3zk8josw_nzxvu_XHEXLGYdw4YWcByR1KJjF89W0Tqbuq2s2KlBENCzTKjtL9sujMJtDpxVc69NaMwJjbWkPqYNSLghUO82KCGQVx8k8iSai9vX-g83NI91CoAI9ocPfd6Mm2QsFpPhjv7DmNTlMpH-xbpoJtwtVz8RDZQSh64p_Tfpq_bA9Mi_8WFfGeSdzMkE4k_QF0",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGFjZTQ1MzMwMjNiY2VjNzU4MDMxMzRiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Informational Service Detail - Desktop",
+      "id": "cf33b64cfa39421893a4413422a4e13a",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2282,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsxk5srLu7fGkAOui3TtAs2HU6JUsCvaQQpNNwX4o1dVuvLwyfC9Rr89yCVP98y6SCTCyt-oGgYIDqo-eVqIO-H-CKKgLQB-aiIXJpiTlGYlfNpERxaTDpqbuhGiMfvurhdjRBVht7_WupaJkjH2p7QhHAdrt72FetQ4MEcYt_A0LDCh-eJJGZ2lkvZVspVjHc1M-dDZV4bCDRWXzh1GhnWMxCiP_pr4hCGxCIwtzEw-vt5luSzh5--rRdJ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTJjMTdjNWEwOTY4OWNhNDAxMDI1YzgzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Mobile Summary Pattern - Mobile",
+      "id": "ffc4c24bcadd4b919bdb573d7d06681c",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2218,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsAypVtUsTZiQp5pWyZTr_UJL23K_PQaPurK6XJ5irp70qzp86pcq0z0uZneSOdnc0e64WZf4EQi39eEblN55J40BelMa4_1BZa8JizR2DXodAerol9ywWtFQmdrh-ehzdvTDrWai-vn3e_0V-jvvHsquhyx4SOM_3Y7fHRoyL8mH-nj5d4h2b9o3dU2Hu4GOcpwQ5RLSiDztqXUS2JpCG3hQ4PQjzdGvvPuOGelZGrQ8VAT36Q0Gx02bU",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDI2MTMxOGUwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Procedure Form States - Mobile",
+      "id": "2d5d9db651e046eabb65fdbc89b676e2",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2218,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLupe87QJsxC0VGJ9OLAqgZTt1nbdx06QtP4hDGjlQQjGGwVaxsBOnRVwYEs31P8M-XUjxqWVlvR2TcqADbKxYxtU_ILZckXUcM2sFZQlpJHNiCYTL5dDA2b9fb6D9hpCGqvNi5VfHEAu1SWLes-PX9qzPKTFNE8uUuXzwHtZyUV-xnJOnssHOGyoAi4JUQNtsEe6TnCQuWUPFREOUmfM3S1OYjTFbnpOI8uW-Xd5vaSiwSOnXML3TFXp1M5",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxNDFhZmY2MDAwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P20",
+      "title": "ActiveClinic Public - Mobile Navigation",
+      "id": "e0ebb2af00e944e0b90a6400ea6093ba",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv7Eqmlqy6bUFRseiNi2NrQ00vqzIqNXwsYrJCJwxxnGMeCwUZmnuWdFmKt5l6NDF3-xhUtelj4mcX4ba9hZ0BHbvzzVNEAFA_-E5bDLNiKcxEKQUA6Fvl8r2XKrnAe08f0Ya5_ZxGb7rdOAY-yvcnpM0HrgK9iYJNQ0hsLUMz-cf3rjcfa3duDxdgOUxxxQxi_MAxik8UdP2OZGEOQ8I4DBE_t1twwyvR6Npezs0_sYIvVVPjv8anJaIiW",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwODQ0YWQ2OGMwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Forgot Password - Desktop",
+      "id": "215624995dc145f7ad5f6adb14fd4ae6",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvoXF41KxtnbZtuF0jG8IbTU2CJszNkVxO3dvxPwpniJGs4LXZgxSONjNYhP9jEg32KoP_PuV4OotGlSO6i_bZCKU_1eej0xiMcICSpgF7S9oC3FydcF5-WKV5pgS3OLeIgD7G0ns3F-r5Huc447HeEMNFFuf8_Chy2Jl_YcJ91nJQeYNEJYqr8IYIz0BJM_8C8JlV9_k6KyNrig6_MoQX9pou9EB35Ut2SAf8zafMRuC0UmFKCvR7No34i",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjVjOWI2MGUwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Registration States - Mobile",
+      "id": "bc0fd174f14d4a3a8e78a57aad1564ee",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 7280,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuByYbYfNngy7U73mRNq0pxfKHp1ytpqO0BoPTjUnDMb-pWN-mdZCMAd-Yx5R5x0-Ec7rKLuXJq08XHbQmT3NJA1WXnnolfsjggsai_PDrz52Ey4j9gi1lk2JqG74LWOWPyzfTlBP0CEPDDWcwWbYeaHQ7nVRBXb40I30ydubdHHDGZqlBB0mSSy5E4n4jvEtpTOLurmk09BXP-SixI2owDEfmUuydAvxb51q8BzU1cGZ_ib0s3V6nvZ1cS",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjVlODczY2EwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Link Guest Booking - Mobile",
+      "id": "1d86eebeee5645c784e68b3b6315d06b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsnRPcbBuXzPY6yg7BzeK0Kb_CGK1PvBpMd3wXxLE4RqNWcE-c0wTfJ3i7slYM7NAhiE98IC3wn8JYaTUkwcuSvEt6ibWUxOMlgH-pFjmsuw4aS4l1ZqxNsmibfR44M-5wn5wE6ehzFEAT8ngpxno3EHE2BZ5Z058dK-k_1i-KY71Uo0QZgx5p7KQfnnikAYeb5hHzY7BWK4CS44Rk1XH8wE6sC2VYgfQ31HpXlRkj4ot9KmA2dA5_AxaRu",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjlmMzNjZGMwMjNiZmEyZTBjMjUyZGJlEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Portal Offline State - Mobile",
+      "id": "210ee3ac1bbe43588ed84d2e663c6604",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtBZ-irAad9umPtQlVbOnA3EGRwOqEbkAq48-yH2dRDzz5QbUD_7VgNEICxNrp0M9C80tdt-UmSwXlEImNUWTqvF9oLNSgoVMBYQvGy1ppiyAUgCPh7dg1_go6lfieUINWcTcNzbCgOOY0-G1v2B8mRnorHzgpOFKFieUxKnp3D6ZkwOKPxsfbR0E3SHo8EIYmfEGINcjM36D_h3EeOSwyx5BWeW5hgqSa_XcGzXwyiEFRcrGg1OVG_KcSO",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjg4ZmUwMTkwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Verify Phone - Desktop",
+      "id": "4cb2cd96dd3846dcbcd3504e45b90f47",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuBpNKXxgo17Q2nnlG2oE1l4h8hcqAQx2O-o08GfoTFGZY-KqfKgJ37DS9qeh3CWcGdwNLf7zsfYp3OHGG7nbkItegI4Mm7KvVEfdiUU7iwQAAy3E5OWzgUYsoDr8kAeMXHQ-QmB3OLfWyZDPkw1c-G5dgnx-AO1Hl1WwfbiAni808sZdfmSbI1JCnMKrjLZPJoG6cP0vOaG3lELjqaUIpCIvO2jRKLxXootdXk6DOiNJ7OLWx4A1z7fhY",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjQxODZmZjYwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Terms - Mobile",
+      "id": "a789772602dc4e2bac342970ca833751",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLugpF-7WHPKYfzm8aZj0LA89Db2HQd2mBgevkNVKrVALfFqG8mBAGOQOBMWhWx_5YKhfpxZt1VW2FsSCBWtUuw8sJa1Gb3UJb5OH4qJzOBYh3kIhjUXJIuSIrIWpJN5KvcMqnEL8Z9VUl_0dBBaeC-WepObPd4mcp4dL_wPTC2rSlP636GqxLNVVOSEn62tSRn7Bl_mTxkxXThO_z1FT-1x0Gecn99mCStNUsldNJ5zkpWFsgJ6rYqGb-M",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmQxZjA0YmEwOTY4OWNhNDAxMDI1YzgzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Confirmed - Desktop",
+      "id": "36db01f8f7d741a8ad3b91536834ab10",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2186,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvEjEQ793eCcNSLA1eSe84u9TIUbU8qAG1f4w7kMjCmz1QAPpraC-sFxe85k65LKe8vXPKgNFt7FHYejELpn1X6fxhKUxN1ced4ehVN2nnAz6rWpDKuGekzyhB5QtyVAY8m8fpc3iddQG66Li_Tiw6qKpPoftwF9zeZHJc2EN5-YGBkHkXvsnZEkom_faWQOP13274FzpOsSAh7aNi68cLjlS39WS0X4D5jbv8gktoIRW_7n11CKlxC7Fcl",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODlmNzc2YjMwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Home - Desktop",
+      "id": "22391e15f8c34fc5b23927b4e7644120",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2844,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvFyHoA7eZeP-h2e70rCO6BGHNmrj9A_XhpfbqS8adVqLBdaz6Hvbe7NPenAvXVVqvFKmlKsJb1qvyv3WVzesJ2cpkMCbcPGHw6MbScX5MSA-uENNzxRyOtvrf3IwKy_8GNGDu4ED-l7e2yqaJ863EjkzLsrOi7-Js1E0idCEvuGBE_N14wmEry7TvFGlu9q76PQh-mKV1XiFTUJMzpSA1vqSRqC0qhth7Ba5SQHAY8AtuWydNwoBWRO2TK",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTRkMmFhODUwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P20",
+      "title": "ActiveClinic Public - Header",
+      "id": "5265ab7118c74f8b885de211483ef48c",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs2WQte5fxUcCesFzsy3dJPohLgnbClXIg8DdndqfPaFQ0P32oo-6Pu-1h41idtW0i38rpooPRffPnaeuLy_5B1h-FTk_ts-DA_yOC5_Y6KPMYy8IJeGjp05v4IwnwSAg-X0wtEN3DF8kKMMWemWFpNxfslEVoKPkNvS6LFxgdco1FAHpS8_gHldtJjWSXV9pQwCPci2w5aGsE8JJVEInHDCPevQP9g5NWwHUtQqq-oupoCqxfsz3ImuePq",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwODIwMGIyNTgwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Confirmed - Mobile",
+      "id": "5511e7ced0094007b300f58665fc9ccd",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuNEL91YW8lLYllT743YX64Zi6TwYVVR8jx_WLARaV67HHGWOqCFO-5Tnbqlbm5OtCHmfpYbnkZIEuNTpR5B1a8ANTT141cqHmxrQNBXA8mtorx4FQkaKQo8UxNGB9_9YphuqaNWcyA0rK7Aft9gwgKmbO3AYRLhtF9KdsvIveqcv1QWKwYP0WfLHo1YloS2Bc1p1yEiM7mhJ4_cGf0RaOv_GusBC40PS7jVFoAdIxf1NkROOowc1vrhV1v",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODk0ODA0NDkwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Contact - Mobile",
+      "id": "a1ceb17fd59a429a980d0b20ea42e83b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 3304,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLujWU5Vj47jqhMtTZ_tul_ycaOBJ2NVB5RE5pxldZoPtXZhMcjThqnRuFhGALl90EPCQ7pBdZlTe7Nh_kBLE91CsqrbKCy9MEfseeF4bMU-Z57JMrHrjgkgCuf2S0yFKfwPxy65pxgPifaxJMy_U8nvGMTyBkX0_1puwx49gPMmUEA77jXcQGYbQ6vAoPfuk66vSI-dVRcFQeAZ99wQA-q_OA3E8z7x1eg4e-BjQqnP3zoi4tPJu9F0YLnf",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmUxODY3NjgwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P24",
+      "title": "P24 - Juflona Booking - Availability States - Mobile",
+      "id": "d548137f807b40daaaaeff7fe2bcd0fa",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 4424,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsXt40b2zQub-skmksPxjLFF85vhmkWs3-av0m3eC6WfzQE-RRrRFaE-pBghhAaXxdQz93cPewnaXcbntCGbjl0Z0EAmYo6rJvdhyCrqrrpsOLMpB7n7rsG-6wrkiedQayghe9mxA-QG6SwgRu_eUbb38Gd9D4YwFDe8U9Jfn66dr4i8hhrP39FUajf8GaOYtAEf712rWuSAkcNMnQ8-AU8kyIPHHfzhsKCbXJ_42J8_411rw_aUJ6CRLhv",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxMGYyYjNmNTQwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Cancellation Submitted - Desktop",
+      "id": "f510ec7d017e426e86e801932011d346",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2196,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsrCvLTLP8upRN96sYAtBS5vhVaQBEafU8xS7ohL8_pgYZ1WpVtSPR0uy2QyaV8HHn3eDrtFeGoqQhJfHaqOFrvnOR3w3slmtfKHnQyz2E7pOJXd8-1D__ov8Cmw9NZPk8wld-t60ChlZoj-9Nw_ctYCO_-3RIe5FTS9IBXxJ1LTEOs75Id1tjZwF-Pc4-XETbTTCHxVn3a14UDK4qfF1tC1BxkZhpClcjOMJ74GORixDq4rAl9kW_jX8vg",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxOTQwYWJkNmQwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Solutions - Desktop",
+      "id": "ac6b69a1ef614134af6d674c62891632",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 3024,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuKMaly8lUxXAARurLZz4ouqi8-r160NT3dc7FH7YhR_KI9r4XCgpH6zwB3ytk5jLOYF-QVEsB72anQLn_QRcALxRmGxNuQhBtqGlxCIcTX_NR0v7QgSiMMRRTquBRbelmVBrLNvl85LsgSyROSwAZSDImSGQaKhF-OgAiQZuJyRml5_D-VK5g1v-YU3Af4LuqOftUZUlE99AMcnNEf0_9WbP76JebRcD5WCS4wMWgRpWeiJKH55SkSoKgJ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwOTQ4NGQ1OGYwOTY4OWNhNDAxMDI1YzgzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Profile - Desktop",
+      "id": "34350dec0e124a538024436ec728e2be",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuIymOKihGTF93TEjECf55S4lgj8iLpVsGfv-tDiq594zMbikrQareUwT8zMP0kuBpBgGjMklLWonwpDOYaETmQo6-uEWr1hH2UkiaXaFXOrNiEmNUI9FH93gqPMPloCZKLZqlI-P9FgSvxsNtAwvZBHmlfiOfP-i7ZNBI2U8nx9AcKhQtQExyvLKPhsYmioqRLWcxEAZmZAG5We59-TOeMcH9Ta_VKdPkdZREl6UxWwBDcNuVmpNyB7XVg",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjliZTcxNGYwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - About - Mobile",
+      "id": "4aa46e7ddb424bc690e16a246de28c6b",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 3606,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsYLu0i5z-ekjHrHL26_f5M7x2Q6E7PeT0VM9ZjOB-sntcv5FQh_FZY5hvDr-IGQhRougxqWfxst8ouGPpN7x8RsKrMJzd6oJIxcpAYpw1RMSg2gSqiyOjt3P0UxTiogKbf78m9u0SqD_dcD7bsSmYoX_AeB9SOZCuYwLe5OiuQH5bnPZ8pHKcYiD6F-bxz9JuibVnaxQVsbr_VoZfHXM_k2RIaJgzxuuF2nMdaoIobXxH83aqvPlZ1lJMw",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmU4MGU5N2IwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P23",
+      "title": "P23 - Juflona Public - Doctors - Mobile",
+      "id": "dae36b9307f149d9ad4989a16eec975d",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2406,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs1qWIa8sWMYUYuBIy_4Pn15RPiRdbkoDxVowy_lDbLB9jyZKN9iLKFAa1FUVW6Dz5X9S1TAapEKXP7fegpW_tdeho4o2hZ67yySP0w4NI0_iM6i9Zh9VT4uYsrJhqyqDdZ72f7oleLclogIvt6jvKmhfN8xKN76GtB0Pn5_CkdKpnFnEAjpyZJEondDOH-9dpkxwz04RxUMeb4JUHHMiTi7a1-hH3m7crQNlSzkBJBR_7wbTrQOT1ST6c",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwZTMzYmVjZWUwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Pending - Mobile",
+      "id": "df7614f5b31347d4b3dff81928e5eadc",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 2460,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtCDmNfXOrxUMF9jw7pyO3iUFagGn8gFlpI8AMkEDlIQhNFqZQtE-McFxNyqP_7VMmKyYGy8ecr5mbJnQurnDu9yaTF9BdJiytLjETFjwWHTOMNwx_4rA6eULitcWNw6pcPMu4lfenLpvPOX-jIHD_W43vfBZHl6s9reM5MkHOACusuOke0NsJfu-ipih_t9PymxyFn33MqXjSkmi-L4X7Q0YYG-oP-HQm6bEAqVCO2iCO0qm8TmwNzD4fy",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODkxNjM2NmQwMjNiZGMyOWYxM2E3OGIzEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Empty - Desktop",
+      "id": "2c495fc46a3648c5b878e207d9f12661",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtPosBySVP_bdIA2hWexEgTQ3I6Jn_om3Y9hWxZr0qxWwF5zbnwsZgXMqbBR22jlvT-syVLkSgJQVUqkkYHuiQ_YDIKh3-Qj7JMXo6-sdiSn_7ntyuqk_53auyBWifutMKotXPUJe2AsCZCxI0O9SSk4v-io2Ua4kF4ntFmVV2HBXlMP5FVRK08Y1Fy2ElWdzUzugcYTDGx_TGsDTJ2Fle5wCO8-zAsuS3btJGl9FGZ_knjhgIjJfc2K5Q",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGEzNzk4ZTcwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P26",
+      "title": "P26 - Juflona Booking - Booking Detail Rescheduled - Mobile",
+      "id": "189043d6d06d4819b06ea42e22e10035",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLucFiGK-KL8RHJsPdopLa3qxb1rBzPWv2jsyFwHE2sV8ehv11o4CnEIhvR_4BQnLqq8vee_uUQ2Lsmkd-ZPcaWfMtqp12HgS28PsuJeB7V98Dv3l9gxpuWE1C9VIye5T6si6uXQWpr_hSdtcXsCnN0ZR9KeDXIxWNZU86WUP3-69TstoxgEtQ-mcne32XMfNmdaEEw8RcraCBPYTurLhbl-Cz4V2W6npeMbp7eUDNJ2bR6BugImtM10FjBb",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxODhiNTA4ZjQwMzU2YzdhYmQxMDcxMDEyEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P22",
+      "title": "P22 - Juflona Public - Terms - Desktop",
+      "id": "2a7f744da5a44fc68c1f1bfeafba67ff",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 4266,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsk1Ou8_SU9gnrpL8YBeIuxX_MjzVoBDee3TTy8oGEqCGhMQzKqFRbY-TkqSRKmsfqiqWXDsnMqxlr14II4q9DR9eI0OnMAMo2zujvLzXtOlxwTwQe7U2OzNnV_bnGyv8Ykf0oE8gXXO6Rk3rK5m7Q0FbMyHug6vGGv5FJhKULDkSjbV6LDt-vzi1Zdjvc3C0M4pES94mda0MyDu816YjFPrhUFqWV1n2yg6ZHKbbye4INxuSb04Lqv_Xc",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMwYmQwZDFhODUwOTY4ODlkMDI3MWFlMTU0EgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P25",
+      "title": "P25 - Juflona Booking - Referral Requirements - Desktop",
+      "id": "7377b7ca51e049048c10e34af2950bac",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLt1w0LsceNChKdUzOaI_5e6pQtO0Kn9uZr-RWlzii2FGEvPb-xxdNaYJYZXwuGqX_80n6IpX6sW4ridhpFfT82iT0FIYJ-Y0ok8wBDvL5K75YAko2snBlQzeiJI0qE-jS-jCRktPBjCDxDRjfQIyHDxuvzmiPPVYMi3ymVphYVUrhg_GPkZNTiJC7MOuoCd3DbHjYLFyr31tX_DGg-T15Xjedc_gWFQqRK4bjn0kEAy_Do1RfEpagGxPoaM",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxM2M4MzM1ZjcwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Dashboard Empty - Mobile",
+      "id": "0ec2c722bd80493ea69102f61b9b36e3",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuMTSi7G8Nky2jxiVAAIhgrMxIWCTp97tz98ECTEMLEyjEa0bM-CSZUmi22MCdm6j1Lg1K41V2MdPCR7pTUrkzABgMxWlYuRe_kTI281WSLtTCbH2iHE1deX6UAlSJIL_jBuMJ8hALc2bKkZ0iHK9FoWCIKEzJnjLy1z5V0_tjKnrtoN6eEG2EKKUXeeRcxnHKcaMG1u8eMN0R4jqLXsMFSeJPtex-qoOvO1KObgT5KuckNIH8yHn71otQN",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZjk3Y2Q0M2YwNWYxMDM4YzBhMmNlYjBkEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Desktop",
+      "id": "dac958cf9559485aa0aac7803360cf40",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2150,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtSbewM5swTUidgMz7EYSlpMFX1cDmKHqjPJ8D_-4msRsPgXbNLLARLYJw97lwSOACIegkRsBppiVe7Xl5F2OAPN9dFza3c4v5zELO1fdgXiAiHN2w-b-O77jFqWT_ZN5qKy9KRw-BRd9E47maQFkhoj2Zue-9DbBYh-O7Amd7LuUA8XtbyDUkTNzyNQFB0gkWI_2P9zBQM6VfU9R8-Pz-mMBUnZPpFflPR7be_K_bt2OBqdC8FHtxIeMVA",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNGJiNjk0MjkwOTY4OTIzZjA5MDBkNTIwEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Onboarding Success - Desktop",
+      "id": "f9f8853209fb42ebb1ef71cdb97145ba",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs2Aabuv-X-cs9e8yIM05pB0DWGqOcB9wcP83iDwSjHvdK73pAlcXLo1s1XK0cu7vcD_2Dd9gd0Y1yxYCyfCyCpM_Exhhri58XU-ZQ_ZoHqMx9PL8rBLPN2ohFy933dFiSFlOHLWVnbB6RvtiHOzWaLqPSyPnFa_jqbJAn5rEcVQ3mr6msV6yGvu-inJmFwMm1oXG1fww2hdbUcjVqtx4vyJUJeE-pHPExA3ktHSRV6pL5ci3NzZg5U3LE",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNDk2OTlkYjEwM2IxYWRmODMzMGEzMGFiEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P27",
+      "title": "P27 - Juflona Patient - Portal Component Patterns - Desktop",
+      "id": "5eceb58beaad489ba03f6750dee3896d",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 3534,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtAuk3bIAY-WAmCwhHNddo146mpGWpGLi4F-EmeZmiFag4MSfJJez7KWnYf0duIEeHKiC6QLOERzKa-r-_W9heq1cx8pjY9WtDKQ5hOlWKCdj6I_PYypU8rDQ8QMYjZPbJKXRlgKsir2vrzjS1AYdf3ig40PqaDdpvBA51jB7V4EBNB41cA1v_VxLlY2VcmPAvCCTqDj8NpObVcEbFqk6O-6WtU_dnaWSdYhb0XrX5EvlFmg_HMr_a1ZxnJ",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMxZmExOWIyZmYwMzU2Y2U1ZGFhMzJmZWJjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    },
+    {
+      "phase": "P21",
+      "title": "P21 - ActiveClinic Public - Clinic Directory - Error - Mobile",
+      "id": "82299e09519c4098b07429d9ae97bdac",
+      "deviceType": "MOBILE",
+      "width": 780,
+      "height": 1768,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtffSvUtTrLp5BzwjGuIXlA0aRvTXKAHFvwfUJCfEbrBNjypupSiwfy52SNpuQDtMa3mClwES3nKBQEJuZHpE47mVdPZVkT2XBu1TlaL144Zmer0GU-i9zBIIRZPFth9C8U3oGCGEXEuI7GRL0VQJxZADFfNuc9rlUctJjcJra8qd3L16810hqacDR8dOh8en05rzEt0YWWQOnqpnHawrmLhdq-BlbSsAy1C1m1qH9hIzok0QikPu4yrMjE",
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1ODMzNDlkOTVjZjEwMjNiZTA2OTcxMzhmMmVjEgsSBxCb4vSwjQoYAZIBJAoKcHJvamVjdF9pZBIWQhQxNzgxMzYwNjczNDQyMjM5NTM5OQ&filename=&opi=89354086"
+    }
+  ]
+}
