@@ -1,0 +1,26 @@
+<%
+  var invoice = (pageData && pageData.invoice) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-invoice-post" data-ac-page-section="invoice-post" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <form method="post" action="/app/billing/invoices/<%= invoice.id %>/post" class="ac-panel" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+    <p class="ac-flash ac-flash--warning" role="alert">
+      <strong>Posting this invoice will make it immutable.</strong>
+      Once posted, the invoice cannot be edited or deleted. Only refunds and reversals can correct it.
+    </p>
+
+    <dl class="ac-dl">
+      <div><dt>Invoice number</dt><dd><strong><%= invoice.invoice_number %></strong></dd></div>
+      <div><dt>Total amount</dt><dd><strong><%= invoice.totalAmountFormatted %></strong></dd></div>
+      <div><dt>Current status</dt><dd><span class="ac-status" data-status="<%= invoice.status %>"><%= invoice.status %></span></dd></div>
+    </dl>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Post invoice</button>
+      <a href="/app/billing/invoices/<%= invoice.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,37 @@
+<%
+  var dash = (pageData && pageData.dashboard) || {};
+  var unpaid = dash.unpaidInvoices || {};
+  var todayPayments = dash.todayPayments || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-billing-dashboard" data-ac-page-section="billing-dashboard" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Billing overview</h2>
+    <p class="ac-dashboard__lead">Revenue, invoices, and outstanding balances.</p>
+  </article>
+
+  <div class="ac-dashboard__summaries ac-grid">
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Unpaid invoices</p>
+      <p class="ac-stat-card__value"><%= unpaid.count || 0 %></p>
+      <p class="ac-muted"><%= unpaid.totalFormatted || 'ZMW 0.00' %> outstanding</p>
+      <a class="ac-stat-card__link" href="/app/billing/invoices?status=unpaid">View unpaid</a>
+    </article>
+
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Today's payments</p>
+      <p class="ac-stat-card__value"><%= todayPayments.count || 0 %></p>
+      <p class="ac-muted"><%= todayPayments.totalFormatted || 'ZMW 0.00' %> collected</p>
+      <a class="ac-stat-card__link" href="/app/cashier">Open cashier</a>
+    </article>
+  </div>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Quick actions</h2>
+    <div class="ac-actions ac-actions--stack-mobile">
+      <a class="ac-btn" href="/app/billing/catalog">Charge catalog</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/billing/invoices">Invoices</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/cashier">Cashier</a>
+    </div>
+  </article>
+</section>

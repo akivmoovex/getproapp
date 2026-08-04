@@ -1,0 +1,25 @@
+<%
+  var session = (pageData && pageData.session) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-cashier-session" data-ac-page-section="cashier-session" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Session details</h2>
+    <dl class="ac-dl">
+      <div><dt>Session number</dt><dd><strong><%= session.sessionNumber %></strong></dd></div>
+      <div><dt>Session date</dt><dd><%= session.sessionDate %></dd></div>
+      <div><dt>Opened at</dt><dd><%= new Date(session.openedAt).toLocaleString() %></dd></div>
+      <div><dt>Opening cash</dt><dd><%= session.openingCashFormatted %></dd></div>
+      <div><dt>Total payments</dt><dd><%= session.totalPaymentsFormatted %></dd></div>
+      <div><dt>Expected cash</dt><dd><strong><%= session.expectedCashFormatted %></strong></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= session.status %>"><%= session.status %></span></dd></div>
+    </dl>
+  </article>
+
+  <% if (session.notes) { %>
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Notes</h2>
+    <p><%= session.notes %></p>
+  </article>
+  <% } %>
+</section>

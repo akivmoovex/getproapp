@@ -1,0 +1,49 @@
+<%
+  var items = (pageData && pageData.items) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-charge-catalog" data-ac-page-section="charge-catalog" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <div class="ac-panel">
+    <% if (items.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'catalog-empty',
+          title: 'No catalog items yet',
+          description: 'Create charge items to begin billing patients for services and procedures.',
+          primaryAction: { href: '/app/billing/catalog/new', label: 'Add charge item' }
+        }
+      }) %>
+    <% } else { %>
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (item) { %>
+          <tr>
+            <td><code><%= item.code %></code></td>
+            <td><strong><%= item.name %></strong></td>
+            <td><%= item.category || '—' %></td>
+            <td><%= item.amountFormatted %></td>
+            <td>
+              <% if (item.isActive) { %>
+                <span class="ac-status" data-status="active">Active</span>
+              <% } else { %>
+                <span class="ac-status" data-status="inactive">Inactive</span>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</section>

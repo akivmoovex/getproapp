@@ -1,0 +1,52 @@
+<%
+  var mode = (pageData && pageData.mode) || 'create';
+  var item = (pageData && pageData.item) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-catalog-form" data-ac-page-section="catalog-form" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <form method="post" action="/app/billing/catalog" class="ac-panel" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+    <div class="ac-field">
+      <label class="ac-label" for="code">Item code *</label>
+      <input class="ac-input" id="code" name="code" required maxlength="50" value="<%= item.code || '' %>" placeholder="e.g., CONS-GP" style="text-transform:uppercase" />
+      <p class="ac-help">Unique billing code (e.g., CONS-GP for general consultation)</p>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="name">Item name *</label>
+      <input class="ac-input" id="name" name="name" required maxlength="255" value="<%= item.name || '' %>" placeholder="e.g., General consultation" />
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="description">Description</label>
+      <textarea class="ac-textarea" id="description" name="description" rows="3" maxlength="500"><%= item.description || '' %></textarea>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="category">Category</label>
+      <select class="ac-select" id="category" name="category">
+        <option value="">— Select category —</option>
+        <option value="consultation" <%= item.category === 'consultation' ? 'selected' : '' %>>Consultation</option>
+        <option value="procedure" <%= item.category === 'procedure' ? 'selected' : '' %>>Procedure</option>
+        <option value="laboratory" <%= item.category === 'laboratory' ? 'selected' : '' %>>Laboratory</option>
+        <option value="radiology" <%= item.category === 'radiology' ? 'selected' : '' %>>Radiology</option>
+        <option value="pharmacy" <%= item.category === 'pharmacy' ? 'selected' : '' %>>Pharmacy</option>
+        <option value="admission" <%= item.category === 'admission' ? 'selected' : '' %>>Admission</option>
+        <option value="other" <%= item.category === 'other' ? 'selected' : '' %>>Other</option>
+      </select>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="amount">Amount (ZMW) *</label>
+      <input class="ac-input" id="amount" name="amount" required inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" value="<%= item.amountMajor || '' %>" placeholder="e.g., 100.00" />
+      <p class="ac-help">Enter amount in major currency units (e.g., 100.00 for ZMW 100.00)</p>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Add charge item</button>
+      <a href="/app/billing/catalog" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</section>

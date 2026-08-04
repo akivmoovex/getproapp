@@ -1,0 +1,50 @@
+<%
+  var patient = (pageData && pageData.patient) || null;
+  var pendingCharges = (pageData && pageData.pendingCharges) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-invoice-create" data-ac-page-section="invoice-create" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <form method="post" action="/app/billing/invoices" class="ac-panel" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+    <% if (!patient) { %>
+      <div class="ac-field">
+        <label class="ac-label" for="patient_number">Patient number *</label>
+        <input class="ac-input" id="patient_number" name="patient_number" required maxlength="50" placeholder="Enter patient number" />
+      </div>
+      <div class="ac-form-actions">
+        <button type="submit" formaction="/app/billing/invoices/new" formmethod="get" class="ac-btn ac-btn--ghost">Load patient charges</button>
+      </div>
+    <% } else { %>
+      <input type="hidden" name="patient_number" value="<%= patient.patientNumber %>" />
+
+      <article class="ac-field-group">
+        <p class="ac-label">Patient</p>
+        <p><strong><%= patient.displayName %></strong> · <%= patient.patientNumber %></p>
+      </article>
+
+      <% if (pendingCharges.length === 0) { %>
+        <p class="ac-muted">No pending charges for this patient. Create charges first before invoicing.</p>
+        <div class="ac-form-actions">
+          <a href="/app/billing/patients/<%= patient.patientNumber %>" class="ac-btn ac-btn--ghost">View patient account</a>
+        </div>
+      <% } else { %>
+        <div class="ac-field">
+          <p class="ac-label">Select charges to include *</p>
+          <% pendingCharges.forEach(function (c) { %>
+            <label class="ac-checkbox">
+              <input type="checkbox" name="charge_ids" value="<%= c.id %>" />
+              <span><%= c.description %> — <%= c.totalAmountFormatted %></span>
+            </label>
+          <% }) %>
+        </div>
+
+        <div class="ac-form-actions">
+          <button type="submit" class="ac-btn">Create invoice</button>
+          <a href="/app/billing/patients/<%= patient.patientNumber %>" class="ac-btn ac-btn--ghost">Cancel</a>
+        </div>
+      <% } %>
+    <% } %>
+  </form>
+</section>

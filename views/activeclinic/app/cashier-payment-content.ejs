@@ -1,0 +1,53 @@
+<%
+  var session = (pageData && pageData.session) || {};
+  var invoice = (pageData && pageData.invoice) || null;
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-cashier-payment" data-ac-page-section="cashier-payment" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <form method="post" action="/app/cashier/payment" class="ac-panel" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+    <% if (invoice) { %>
+      <input type="hidden" name="invoice_id" value="<%= invoice.id %>" />
+      <article class="ac-field-group">
+        <p class="ac-label">Invoice</p>
+        <p><strong><%= invoice.invoiceNumber %></strong> · <%= invoice.patientName %> · <%= invoice.totalAmountFormatted %></p>
+      </article>
+    <% } %>
+
+    <div class="ac-field">
+      <label class="ac-label" for="patient_number">Patient number *</label>
+      <input class="ac-input" id="patient_number" name="patient_number" required maxlength="50" value="<%= (invoice && invoice.patientNumber) || '' %>" placeholder="Enter patient number" <%= invoice ? 'readonly' : '' %> />
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="amount">Payment amount (ZMW) *</label>
+      <input class="ac-input" id="amount" name="amount" required inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" value="<%= (invoice && (invoice.totalAmountMinor / 100).toFixed(2)) || '' %>" placeholder="e.g., 100.00" />
+    </div>
+
+    <div class="ac-field">
+      <p class="ac-label">Payment method</p>
+      <label class="ac-radio">
+        <input type="radio" name="payment_method" value="cash" checked />
+        <span>Cash</span>
+      </label>
+      <p class="ac-help">Only cash payments are supported in the current session.</p>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="notes">Notes (optional)</label>
+      <textarea class="ac-textarea" id="notes" name="notes" rows="3" maxlength="500"></textarea>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Record payment</button>
+      <a href="/app/cashier" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+
+  <article class="ac-panel" style="margin-top:1.5rem">
+    <h3 class="ac-dashboard__card-title">PRODUCT_DECISION: Non-cash payment methods</h3>
+    <p class="ac-muted">Card, mobile money, and bank transfer payments require external integration (not yet connected). Contact finance team to verify non-cash payments manually.</p>
+  </article>
+</section>

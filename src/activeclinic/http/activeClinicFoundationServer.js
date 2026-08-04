@@ -80,6 +80,12 @@ const {
   registerActiveClinicDiagnosticsRoutes,
 } = require("./activeClinicDiagnosticsRoutes");
 const {
+  registerActiveClinicBillingRoutes,
+} = require("./activeClinicBillingRoutes");
+const {
+  registerActiveClinicCashierRoutes,
+} = require("./activeClinicCashierRoutes");
+const {
   listOrganizationsByProduct,
 } = require("../../platform/services/organizationProductService");
 const {
@@ -199,6 +205,8 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicClinicalRoutes(app, { getPool, env, isProduction });
   registerActiveClinicPharmacyRoutes(app, { getPool, env, isProduction });
   registerActiveClinicDiagnosticsRoutes(app, { getPool, env, isProduction });
+  registerActiveClinicBillingRoutes(app, { getPool, env, isProduction });
+  registerActiveClinicCashierRoutes(app, { getPool, env, isProduction });
   registerActiveClinicAppRoutes(app, { getPool, env, isProduction });
   registerActiveClinicStaffAdminRoutes(app, { getPool, env, isProduction });
 

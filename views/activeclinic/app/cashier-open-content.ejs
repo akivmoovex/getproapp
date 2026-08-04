@@ -1,0 +1,27 @@
+<%
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-cashier-open" data-ac-page-section="cashier-open" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <form method="post" action="/app/cashier/open" class="ac-panel" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+    <p class="ac-help">Open a new cashier session to begin collecting payments.</p>
+
+    <div class="ac-field">
+      <label class="ac-label" for="opening_cash">Opening cash (ZMW) *</label>
+      <input class="ac-input" id="opening_cash" name="opening_cash" required inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" value="0.00" placeholder="e.g., 500.00" />
+      <p class="ac-help">Enter the cash float amount at the start of your shift.</p>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="notes">Notes (optional)</label>
+      <textarea class="ac-textarea" id="notes" name="notes" rows="3" maxlength="500"></textarea>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Open session</button>
+      <a href="/app/cashier" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,48 @@
+<%
+  var sessions = (pageData && pageData.sessions) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-cashier-history" data-ac-page-section="cashier-history" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <% if (sessions.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'history-empty',
+          title: 'No session history',
+          description: 'Past cashier sessions will appear here.',
+          primaryAction: null
+        }
+      }) %>
+    <% } else { %>
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Session number</th>
+            <th>Cashier</th>
+            <th>Date</th>
+            <th>Opening cash</th>
+            <th>Expected cash</th>
+            <th>Actual cash</th>
+            <th>Variance</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% sessions.forEach(function (sess) { %>
+          <tr>
+            <td><strong><%= sess.sessionNumber %></strong></td>
+            <td><%= sess.cashierName || '—' %></td>
+            <td><%= sess.sessionDate %></td>
+            <td><%= sess.openingCashFormatted %></td>
+            <td><%= sess.expectedCashFormatted %></td>
+            <td><%= sess.actualCashFormatted %></td>
+            <td <%= (sess.varianceMinor && sess.varianceMinor !== 0) ? 'style="color:#c33"' : '' %>><%= sess.varianceFormatted %></td>
+            <td><span class="ac-status" data-status="<%= sess.status %>"><%= sess.status %></span></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</section>

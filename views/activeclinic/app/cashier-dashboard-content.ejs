@@ -1,0 +1,50 @@
+<%
+  var dash = (pageData && pageData.dashboard) || {};
+  var currentSession = dash.currentSession || null;
+  var todayPayments = dash.todayPayments || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-cashier-dashboard" data-ac-page-section="cashier-dashboard" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Cashier operations</h2>
+    <p class="ac-dashboard__lead">Payment collection and session management.</p>
+  </article>
+
+  <% if (currentSession) { %>
+    <article class="ac-panel">
+      <h2 class="ac-dashboard__card-title">Current session</h2>
+      <dl class="ac-dl">
+        <div><dt>Session number</dt><dd><strong><%= currentSession.sessionNumber %></strong></dd></div>
+        <div><dt>Opened at</dt><dd><%= new Date(currentSession.openedAt).toLocaleString() %></dd></div>
+        <div><dt>Opening cash</dt><dd><%= currentSession.openingCashFormatted %></dd></div>
+        <div><dt>Expected cash</dt><dd><%= currentSession.expectedCashFormatted %></dd></div>
+        <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= currentSession.status %>"><%= currentSession.status %></span></dd></div>
+      </dl>
+      <div class="ac-actions">
+        <a class="ac-btn" href="/app/cashier/payment">Record payment</a>
+        <a class="ac-btn ac-btn--ghost" href="/app/cashier/close">Close session</a>
+      </div>
+    </article>
+  <% } else { %>
+    <article class="ac-panel">
+      <p class="ac-muted">No active cashier session. Open a session to begin collecting payments.</p>
+      <div class="ac-actions">
+        <a class="ac-btn" href="/app/cashier/open">Open session</a>
+      </div>
+    </article>
+  <% } %>
+
+  <article class="ac-panel ac-stat-card">
+    <p class="ac-stat-card__label">Today's payments</p>
+    <p class="ac-stat-card__value"><%= todayPayments.count || 0 %></p>
+    <p class="ac-muted"><%= todayPayments.totalFormatted || 'ZMW 0.00' %> collected</p>
+  </article>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Quick actions</h2>
+    <div class="ac-actions ac-actions--stack-mobile">
+      <a class="ac-btn ac-btn--ghost" href="/app/cashier/history">Session history</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/billing">Billing</a>
+    </div>
+  </article>
+</section>
