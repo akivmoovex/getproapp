@@ -14,10 +14,18 @@ const RESULT = Object.freeze({
   DUPLICATE: "duplicate_application",
 });
 
-function trimName(value, max) {
+function trimName(value, max, min) {
   const text = String(value == null ? "" : value).trim();
-  if (!text || text.length > max) return null;
+  const minLen = typeof min === "number" ? min : 1;
+  if (!text || text.length < minLen || text.length > max) return null;
   return text.slice(0, max);
+}
+
+function normalizeOptionalNotes(raw) {
+  if (raw == null) return null;
+  const text = String(raw).trim();
+  if (!text) return null;
+  return text.slice(0, 2000);
 }
 
 function generateApplicationNumber() {
@@ -65,14 +73,19 @@ function normalizeZambiaPhone(raw) {
  */
 function validateClinicRegistrationInput(input) {
   const errors = {};
-  const clinicName = trimName(input.clinicName, 200);
-  const contactName = trimName(input.contactName, 120);
-  const province = input.province ? trimName(input.province, 100) : null;
-  const city = input.city ? trimName(input.city, 100) : null;
-  const notes = input.notes ? String(input.notes).trim().slice(0, 2000) : null;
+  // Match SQL CHECKs: clinic_name 2–200, contact_name 2–120, notes null or 1–2000.
+  const clinicName = trimName(input.clinicName, 200, 2);
+  const contactName = trimName(input.contactName, 120, 2);
+  const province = input.province ? trimName(input.province, 100, 1) : null;
+  const city = input.city ? trimName(input.city, 100, 1) : null;
+  const notes = normalizeOptionalNotes(input.notes);
 
-  if (!clinicName) errors.clinicName = "Enter your clinic name (up to 200 characters).";
-  if (!contactName) errors.contactName = "Enter a contact name (up to 120 characters).";
+  if (!clinicName) {
+    errors.clinicName = "Enter your clinic name (2–200 characters).";
+  }
+  if (!contactName) {
+    errors.contactName = "Enter a contact name (2–120 characters).";
+  }
 
   const email = normalizeActiveClinicEmail(input.contactEmail);
   if (!email.ok || !email.normalized) {

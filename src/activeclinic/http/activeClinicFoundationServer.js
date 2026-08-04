@@ -89,6 +89,9 @@ const {
   registerActiveClinicPublicRoutes,
 } = require("./activeClinicPublicRoutes");
 const {
+  inspectActiveClinicPublicSchema,
+} = require("../services/activeClinicPublicSchemaStatus");
+const {
   listOrganizationsByProduct,
 } = require("../../platform/services/organizationProductService");
 const {
@@ -257,6 +260,29 @@ function createActiveClinicFoundationApp(options) {
     res.status(404).json({ ok: false, code: "not_found" });
     return true;
   }
+
+  app.get("/__ac/public-schema-status", async (req, res, next) => {
+    if (rejectAcInfraInProduction(res)) return;
+    try {
+      const status = await inspectActiveClinicPublicSchema(getPool());
+      return res.status(status.ok ? 200 : 503).json({
+        ok: status.ok,
+        product: "activeclinic",
+        deploymentCode: resolveDeploymentConfiguration(env).code || null,
+        environment: resolveDeploymentConfiguration(env).environment || null,
+        schema: {
+          schemaExists: status.schemaExists,
+          healthcareOrganizations: status.healthcareOrganizations,
+          websitePublishedColumn: status.websitePublishedColumn,
+          clinicRegistrationApplications: status.clinicRegistrationApplications,
+        },
+        activeclinicMigrationsApplied: status.activeclinicMigrations,
+        pendingHint: status.pendingHint,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
 
   app.get("/__ac/organization-context", (req, res) => {
     if (rejectAcInfraInProduction(res)) return;
@@ -591,6 +617,39 @@ async function startActiveClinicFoundationServer(opts) {
       assertPlatformDatabaseIdentityOrExit,
     } = require("../../startup/blessBoardOrgDbGate");
     await assertPlatformDatabaseIdentityOrExit(pool);
+  }
+
+  try {
+    const schemaStatus = await inspectActiveClinicPublicSchema(pool);
+    // eslint-disable-next-line no-console
+    console.log(
+      JSON.stringify({
+        event: "activeclinic.public.schema_status",
+        ok: schemaStatus.ok,
+        clinicRegistrationApplications: schemaStatus.clinicRegistrationApplications,
+        websitePublishedColumn: schemaStatus.websitePublishedColumn,
+        pendingHint: schemaStatus.pendingHint,
+        activeclinicMigrationsAppliedCount: (schemaStatus.activeclinicMigrations || []).length,
+        timestamp: new Date().toISOString(),
+      })
+    );
+    if (!schemaStatus.ok) {
+      // eslint-disable-next-line no-console
+      console.error(
+        "[activeclinic] public website schema incomplete — clinic registration and directory will fail until migrations are applied:",
+        schemaStatus.pendingHint
+      );
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        event: "activeclinic.public.schema_status_failed",
+        exceptionClass: err && err.name ? err.name : "Error",
+        safeDatabaseErrorCode: err && err.code ? err.code : "unknown",
+        timestamp: new Date().toISOString(),
+      })
+    );
   }
 
   const app = createActiveClinicFoundationApp({

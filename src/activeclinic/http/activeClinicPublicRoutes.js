@@ -26,6 +26,13 @@ const {
 const {
   createPublicContactInquiry,
 } = require("../services/activeClinicPublicContactService");
+const {
+  newRegistrationRequestId,
+  classifyRegistrationError,
+  logClinicApplicationFailed,
+  logClinicApplicationCreated,
+} = require("../services/activeClinicPublicRegistrationLog");
+const { resolveDeploymentConfiguration } = require("../../platform/config/deploymentProfiles");
 const { renderPublicView } = require("./renderActiveClinicPublic");
 const { registerActiveClinicPublicBookingRoutes } = require("./activeClinicPublicBookingRoutes");
 const {
@@ -249,21 +256,41 @@ function registerActiveClinicPublicRoutes(app, deps) {
     }
 
     if (action === "confirm") {
+      const requestId = newRegistrationRequestId();
+      const deployment = resolveDeploymentConfiguration(env);
       try {
         const result = await createClinicRegistrationApplication(getPool(), formData);
 
         if (!result.ok) {
           const csrfToken = issuePageCsrf(res, env, isProduction);
           if (result.code === "duplicate_application") {
+            logClinicApplicationFailed({
+              requestId,
+              deploymentCode: deployment.code || null,
+              environmentCode: deployment.environment || null,
+              validationCategory: "duplicate_application",
+              category: "duplicate_application",
+              failingOperation: "create_clinic_registration_application",
+              transactionStage: "duplicate_check",
+            });
             return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
               csrfToken,
-              error: "An application with this email was recently submitted.",
+              error: "An application with this email was recently submitted. It remains pending review — a second copy was not created.",
               formState: "form",
               validationErrors: {},
               formData,
             }));
           }
           if (result.errors && Object.keys(result.errors).length) {
+            logClinicApplicationFailed({
+              requestId,
+              deploymentCode: deployment.code || null,
+              environmentCode: deployment.environment || null,
+              validationCategory: "invalid_input",
+              category: "validation",
+              failingOperation: "validate_clinic_registration_input",
+              transactionStage: "validate",
+            });
             return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
               csrfToken,
               error: null,
@@ -272,6 +299,15 @@ function registerActiveClinicPublicRoutes(app, deps) {
               formData,
             }));
           }
+          logClinicApplicationFailed({
+            requestId,
+            deploymentCode: deployment.code || null,
+            environmentCode: deployment.environment || null,
+            validationCategory: result.code || "rejected",
+            category: "rejected",
+            failingOperation: "create_clinic_registration_application",
+            transactionStage: "service",
+          });
           return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
             csrfToken,
             error: "Please check your information and try again.",
@@ -281,12 +317,33 @@ function registerActiveClinicPublicRoutes(app, deps) {
           }));
         }
 
-        return res.redirect(303, "/register-clinic/success");
+        logClinicApplicationCreated({
+          requestId,
+          deploymentCode: deployment.code || null,
+          environmentCode: deployment.environment || null,
+          applicationReference: result.application && result.application.applicationNumber,
+        });
+        return res.redirect(303, `/register-clinic/success?ref=${encodeURIComponent(result.application.applicationNumber)}`);
       } catch (err) {
+        const classified = classifyRegistrationError(err);
+        logClinicApplicationFailed({
+          requestId,
+          deploymentCode: deployment.code || null,
+          environmentCode: deployment.environment || null,
+          category: classified.category,
+          safeDatabaseErrorCode: classified.safeDatabaseErrorCode,
+          exceptionClass: err && err.name ? err.name : "Error",
+          failingOperation: classified.failingOperation,
+          transactionStage: classified.transactionStage,
+          includeStack: true,
+          err,
+        });
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res.status(500).type("html").send(renderPublicView("public/register-clinic-server-error", {
           csrfToken,
           formData,
+          requestId,
+          schemaHint: classified.category === "schema_missing" || classified.category === "schema_column_missing",
         }));
       }
     }
@@ -321,7 +378,11 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/register-clinic/success", (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction);
-    return res.status(200).type("html").send(renderPublicView("public/register-clinic-success", { csrfToken }));
+    const applicationReference = String(req.query.ref || "").trim().slice(0, 64);
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic-success", {
+      csrfToken,
+      applicationReference: applicationReference || null,
+    }));
   });
 
   // ========== Tenant Public Routes ==========

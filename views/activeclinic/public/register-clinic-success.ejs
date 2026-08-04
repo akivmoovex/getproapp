@@ -8,6 +8,9 @@
   <div class="ac-success-panel">
     <h1>Application received</h1>
     <p>Thank you. Your clinic registration application has been recorded and is <strong>pending review</strong> by the ActiveClinic team.</p>
+    <% if (typeof applicationReference === 'string' && applicationReference) { %>
+    <p>Reference: <code data-ac-application-ref="<%= applicationReference %>"><%= applicationReference %></code></p>
+    <% } %>
   </div>
 
   <div class="ac-public-note">

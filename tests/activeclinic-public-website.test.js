@@ -392,11 +392,12 @@ describe("ActiveClinic public website (P20–P26)", () => {
         countryCode: "ZM",
       });
     assert.equal(ok.status, 303);
-    assert.equal(ok.headers.location, "/register-clinic/success");
+    assert.match(ok.headers.location, /^\/register-clinic\/success\?ref=AC-/);
 
-    const success = await request(app).get("/register-clinic/success");
+    const success = await request(app).get(ok.headers.location);
     assert.equal(success.status, 200);
     assert.match(success.text, /Application received/);
+    assert.match(success.text, /data-ac-application-ref=/);
     assert.match(success.text, /not.*published/i);
     assert.match(success.text, /not.*SMS/i);
   });
