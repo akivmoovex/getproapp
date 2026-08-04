@@ -132,14 +132,20 @@ async function createDeploymentSession(client, fields) {
   const expiresAt = sessionExpiresAt();
   const ipHash = fields.ip ? sha256Hex(fields.ip) : null;
   const uaHash = fields.userAgent ? sha256Hex(fields.userAgent) : null;
+  const contextJson =
+    fields.contextJson && typeof fields.contextJson === "object" && !Array.isArray(fields.contextJson)
+      ? fields.contextJson
+      : {};
 
   const inserted = await client.query(
     `INSERT INTO platform.deployment_sessions
        (session_token_hash, deployment_code, user_id, platform_identity_id,
-        organization_id, church_id, branch_id, expires_at, ip_hash, user_agent_hash)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        organization_id, church_id, branch_id, expires_at, ip_hash, user_agent_hash,
+        context_json)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb)
      RETURNING id, deployment_code, user_id, platform_identity_id, organization_id,
-               church_id, branch_id, created_at, last_seen_at, expires_at, revoked_at`,
+               church_id, branch_id, created_at, last_seen_at, expires_at, revoked_at,
+               context_json`,
     [
       tokenHash,
       deploymentCode,
@@ -151,6 +157,7 @@ async function createDeploymentSession(client, fields) {
       expiresAt.toISOString(),
       ipHash,
       uaHash,
+      JSON.stringify(contextJson),
     ]
   );
 

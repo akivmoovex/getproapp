@@ -18,4 +18,8 @@
 | GAP-P25-UPLOAD | 25 | No AC secure upload | High | Upload-pending / clinic follow-up |
 | GAP-P25-PREP | 25 | Prep instructions | High | Config only; else clinic-contact guidance |
 | GAP-P26-TOKEN | 26 | Patient booking lookup | Medium | Opaque tokens + rate limits |
-| GAP-P27 | 27 | Screens not in Stitch | Blocker | Do not implement |
+| GAP-P27-SMS | 27 | Phone verify / recovery OTP delivery | High | Honesty / contact clinic only |
+| GAP-P27-VISUAL | 27 | Stitch visual parity | Medium | FUNCTIONAL_ONLY renderer |
+| GAP-P27-EMR | 27 | Clinical data in Stitch boundary screens | Info | Intentionally omitted — booking portal only |
+| GAP-P27-NOTIFY | 27 | Notifications inbox | Medium | No fabricated messages |
+| GAP-P27 | 27 | ~~Screens not in Stitch~~ | Resolved | 30 screens STABLE; implemented with gaps |

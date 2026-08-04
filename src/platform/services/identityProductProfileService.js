@@ -35,6 +35,7 @@ const UUID_RE =
 const PROFILE_TYPES = Object.freeze({
   blessboard: "blessboard_user",
   activeclinic: "activeclinic_staff",
+  activeclinic_patient: "activeclinic_patient",
 });
 
 function mapLink(row) {
@@ -53,11 +54,13 @@ function mapLink(row) {
 
 /**
  * @param {{ query: Function }} db
- * @param {{ productKey: string, productProfileId: string }} input
+ * @param {{ productKey: string, productProfileId: string, profileType?: string }} input
  */
 async function assertProductProfileExists(db, input) {
   const productKey = String(input.productKey || "").trim().toLowerCase();
   const productProfileId = String(input.productProfileId || "").trim();
+  const profileType = input.profileType ? String(input.profileType).trim() : null;
+
   if (!UUID_RE.test(productProfileId)) {
     return { ok: false, code: RESULT.INVALID_INPUT };
   }
@@ -69,6 +72,14 @@ async function assertProductProfileExists(db, input) {
   }
 
   if (productKey === "activeclinic") {
+    if (profileType === "activeclinic_patient") {
+      const patient = await db.query(
+        `SELECT id FROM activeclinic.patients WHERE id = $1 LIMIT 1`,
+        [productProfileId]
+      );
+      if (!patient.rows[0]) return { ok: false, code: RESULT.PROFILE_NOT_FOUND };
+      return { ok: true, code: RESULT.OK, blessBoardUser: null };
+    }
     const staff = await db.query(
       `SELECT id FROM activeclinic.staff_members WHERE id = $1 LIMIT 1`,
       [productProfileId]
@@ -86,6 +97,7 @@ async function assertProductProfileExists(db, input) {
  *   identityId: string,
  *   productKey: string,
  *   productProfileId: string,
+ *   profileType?: string,
  *   allowDisabledIdentity?: boolean,
  * }} input
  */
@@ -95,12 +107,16 @@ async function linkIdentityToProductProfile(db, input) {
     .trim()
     .toLowerCase();
   const productProfileId = String((input && input.productProfileId) || "").trim();
+  const profileType = input.profileType || PROFILE_TYPES[productKey];
 
   if (!identityId || !UUID_RE.test(identityId) || !productProfileId) {
     return { ok: false, code: RESULT.INVALID_INPUT, link: null };
   }
-  if (!isValidApplicationCode(productKey) || !PROFILE_TYPES[productKey]) {
+  if (!isValidApplicationCode(productKey)) {
     return { ok: false, code: RESULT.INVALID_PRODUCT, link: null };
+  }
+  if (!profileType || !Object.values(PROFILE_TYPES).includes(profileType)) {
+    return { ok: false, code: RESULT.NOT_SUPPORTED, link: null };
   }
 
   const identityRow = await repo.findIdentityById(db, identityId);
@@ -114,6 +130,7 @@ async function linkIdentityToProductProfile(db, input) {
   const profileCheck = await assertProductProfileExists(db, {
     productKey,
     productProfileId,
+    profileType,
   });
   if (!profileCheck.ok) {
     return { ok: false, code: profileCheck.code, link: null };
@@ -188,7 +205,7 @@ async function linkIdentityToProductProfile(db, input) {
     const linkRow = await repo.insertProductProfile(q, {
       identityId,
       productKey,
-      profileType: PROFILE_TYPES[productKey],
+      profileType,
       productProfileId,
       status: "active",
     });

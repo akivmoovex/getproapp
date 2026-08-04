@@ -194,10 +194,22 @@ function createActiveClinicFoundationApp(options) {
   );
 
   app.use(createLoadActiveClinicProductContext({ getPool, env }));
+
+  // Load both staff and patient auth contexts
   app.use(createLoadActiveClinicAuth({ getPool, env }));
+  const {
+    createLoadActiveClinicPatientAuth,
+  } = require("./loadActiveClinicPatientAuth");
+  app.use(createLoadActiveClinicPatientAuth({ getPool, env }));
 
   // Register public routes BEFORE auth routes (public takes precedence over auth landing)
   registerActiveClinicPublicRoutes(app, { getPool, env, isProduction });
+
+  // Register patient portal routes (public, tenant-scoped)
+  const {
+    registerActiveClinicPatientPortalRoutes,
+  } = require("./activeClinicPatientPortalRoutes");
+  registerActiveClinicPatientPortalRoutes(app, { getPool, env, isProduction });
 
   registerActiveClinicAuthRoutes(app, { getPool, env, isProduction });
   registerActiveClinicLifecycleRoutes(app, { getPool, env, isProduction });

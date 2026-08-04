@@ -160,6 +160,26 @@ function createRequireActiveClinicAuth(options) {
 
   return function requireActiveClinicAuth(req, res, next) {
     const auth = req.activeClinicAuth;
+    const patientAuth = req.activeClinicPatientAuth;
+    const sessionContext =
+      req.v5Session &&
+      req.v5Session.session &&
+      req.v5Session.session.contextJson &&
+      typeof req.v5Session.session.contextJson === "object"
+        ? req.v5Session.session.contextJson
+        : {};
+
+    // Patient portal sessions must never be cleared by staff gates.
+    if (
+      sessionContext.principalKind === "patient" ||
+      (patientAuth && patientAuth.authenticated)
+    ) {
+      if (req.accepts("html")) {
+        return res.redirect(303, loginPath);
+      }
+      return res.status(403).json({ ok: false, code: "wrong_principal_kind" });
+    }
+
     if (!auth || !auth.authenticated) {
       const reason = (auth && auth.reason) || "unauthenticated";
       const contextDenied =
