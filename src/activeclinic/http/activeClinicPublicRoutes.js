@@ -17,23 +17,21 @@ const {
   getPublicService,
   listPublicProcedures,
   getPublicProcedure,
+  listPublicPricePatterns,
 } = require("../services/activeClinicPublicVisibilityService");
 const {
+  validateClinicRegistrationInput,
   createClinicRegistrationApplication,
 } = require("../services/activeClinicPublicOnboardingService");
 const {
   createPublicContactInquiry,
 } = require("../services/activeClinicPublicContactService");
-const {
-  createConsultationBookingRequest,
-  createProcedureBookingRequest,
-} = require("../services/activeClinicPublicBookingService");
-const {
-  verifyBookingAccessToken,
-  requestBookingCancellation,
-  requestBookingReschedule,
-} = require("../services/activeClinicPublicBookingLookupService");
 const { renderPublicView } = require("./renderActiveClinicPublic");
+const { registerActiveClinicPublicBookingRoutes } = require("./activeClinicPublicBookingRoutes");
+const {
+  sendClinicResolveFailure,
+  resolveClinicOrRespond,
+} = require("./activeClinicPublicRespond");
 
 function clientIp(req) {
   return String((req.headers && req.headers["x-forwarded-for"]) || req.ip || (req.socket && req.socket.remoteAddress) || "").split(",")[0].trim();
@@ -49,6 +47,33 @@ function issuePageCsrf(res, env, isProduction) {
   return token;
 }
 
+function resolveDirectorySearchQuery(req) {
+  const q = req.query.q != null ? String(req.query.q) : "";
+  const search = req.query.search != null ? String(req.query.search) : "";
+  return (q || search || "").trim();
+}
+
+function registerFormDataFromBody(body) {
+  const fd = body || {};
+  return {
+    clinicName: fd.clinicName || "",
+    contactName: fd.contactName || "",
+    contactEmail: fd.contactEmail || "",
+    contactPhone: fd.contactPhone || "",
+    province: fd.province || "",
+    city: fd.city || "",
+    countryCode: fd.countryCode || "ZM",
+    notes: fd.notes || "",
+  };
+}
+
+async function fetchDirectoryClinics(getPoolFn, env, req, filters) {
+  if (String(env.NODE_ENV || "") === "test" && req.query._directoryError === "1") {
+    throw new Error("directory_unavailable");
+  }
+  return listPublishableClinics(getPoolFn(), filters);
+}
+
 /**
  * @param {import('express').Express} app
  * @param {{ getPool: Function, env: NodeJS.ProcessEnv, isProduction: boolean }} deps
@@ -57,6 +82,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
   const getPool = deps.getPool;
   const env = deps.env;
   const isProduction = deps.isProduction;
+  const respondDeps = { env, isProduction, issuePageCsrf };
 
   // Rate limiters
   const registerLimiter = rateLimit({
@@ -67,7 +93,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
     keyGenerator: (req) => sha256Hex(`register|${req.body && req.body.contactEmail}|${clientIp(req)}`),
     handler: (req, res) => {
       const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(429).type("html").send(renderPublicView("public/register-clinic", { csrfToken, error: "Too many requests. Please try again later." }));
+      return res.status(429).type("html").send(renderPublicView("public/register-clinic", {
+        csrfToken,
+        error: "Too many requests. Please try again later.",
+        formState: "form",
+        validationErrors: {},
+        formData: registerFormDataFromBody(req.body),
+      }));
     },
   });
 
@@ -117,45 +149,76 @@ function registerActiveClinicPublicRoutes(app, deps) {
     return res.status(200).type("html").send(renderPublicView("public/solutions", { csrfToken }));
   });
 
-  app.get("/clinics", async (req, res, next) => {
-    try {
-      const search = req.query.search || "";
-      const province = req.query.province || null;
-      const city = req.query.city || null;
+  app.get("/clinics", async (req, res) => {
+    const search = resolveDirectorySearchQuery(req);
+    const province = req.query.province || null;
+    const city = req.query.city || null;
+    const csrfToken = issuePageCsrf(res, env, isProduction);
 
-      const result = await listPublishableClinics(getPool(), { search, province, city });
-      const csrfToken = issuePageCsrf(res, env, isProduction);
+    if (req.query._directoryLoading === "1" && String(env.NODE_ENV || "") === "test") {
+      return res.status(200).type("html").send(renderPublicView("public/clinics-directory", {
+        csrfToken,
+        clinics: [],
+        search,
+        province,
+        city,
+        directoryState: "loading",
+      }));
+    }
+
+    try {
+      const result = await fetchDirectoryClinics(getPool, env, req, { search, province, city });
+      const clinics = result.clinics || [];
 
       return res.status(200).type("html").send(renderPublicView("public/clinics-directory", {
         csrfToken,
-        clinics: result.clinics || [],
+        clinics,
         search,
         province,
         city,
+        directoryState: "ready",
+        directoryEmpty: clinics.length === 0,
       }));
     } catch (err) {
-      return next(err);
+      return res.status(503).type("html").send(renderPublicView("public/clinics-directory", {
+        csrfToken,
+        clinics: [],
+        search,
+        province,
+        city,
+        directoryState: "error",
+      }));
     }
   });
 
-  app.get("/clinics/search", async (req, res, next) => {
-    try {
-      const search = req.query.q || "";
-      const province = req.query.province || null;
-      const city = req.query.city || null;
+  app.get("/clinics/search", async (req, res) => {
+    const search = resolveDirectorySearchQuery(req);
+    const province = req.query.province || null;
+    const city = req.query.city || null;
+    const csrfToken = issuePageCsrf(res, env, isProduction);
 
-      const result = await listPublishableClinics(getPool(), { search, province, city });
-      const csrfToken = issuePageCsrf(res, env, isProduction);
+    try {
+      const result = await fetchDirectoryClinics(getPool, env, req, { search, province, city });
+      const clinics = result.clinics || [];
 
       return res.status(200).type("html").send(renderPublicView("public/clinics-search", {
         csrfToken,
-        clinics: result.clinics || [],
+        clinics,
         search,
         province,
         city,
+        directoryState: "ready",
+        directoryEmpty: clinics.length === 0,
       }));
     } catch (err) {
-      return next(err);
+      return res.status(503).type("html").send(renderPublicView("public/clinics-search", {
+        csrfToken,
+        clinics: [],
+        search,
+        province,
+        city,
+        directoryState: "error",
+      }));
     }
   });
 
@@ -164,45 +227,96 @@ function registerActiveClinicPublicRoutes(app, deps) {
     return res.status(200).type("html").send(renderPublicView("public/register-clinic", {
       csrfToken,
       error: null,
+      formState: "form",
+      validationErrors: {},
       formData: {},
     }));
   });
 
-  app.post("/register-clinic", registerLimiter, async (req, res, next) => {
-    try {
-      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(403).type("html").send(renderPublicView("public/register-clinic", {
-          csrfToken,
-          error: "Your session expired. Please try again.",
-          formData: req.body || {},
-        }));
-      }
+  app.post("/register-clinic", registerLimiter, async (req, res) => {
+    const formData = registerFormDataFromBody(req.body);
+    const action = String((req.body && req.body.action) || "").trim().toLowerCase();
 
-      const result = await createClinicRegistrationApplication(getPool(), {
-        clinicName: req.body.clinicName,
-        contactName: req.body.contactName,
-        contactEmail: req.body.contactEmail,
-        contactPhone: req.body.contactPhone,
-        province: req.body.province || null,
-        city: req.body.city || null,
-        countryCode: req.body.countryCode || "ZM",
-        notes: req.body.notes || null,
-      });
-
-      if (!result.ok) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
-          csrfToken,
-          error: result.code === "duplicate_application" ? "An application with this email was recently submitted." : "Please check your information and try again.",
-          formData: req.body || {},
-        }));
-      }
-
-      return res.redirect(303, "/register-clinic/success");
-    } catch (err) {
-      return next(err);
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(403).type("html").send(renderPublicView("public/register-clinic", {
+        csrfToken,
+        error: "Your session expired. Please try again.",
+        formState: "form",
+        validationErrors: {},
+        formData,
+      }));
     }
+
+    if (action === "confirm") {
+      try {
+        const result = await createClinicRegistrationApplication(getPool(), formData);
+
+        if (!result.ok) {
+          const csrfToken = issuePageCsrf(res, env, isProduction);
+          if (result.code === "duplicate_application") {
+            return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
+              csrfToken,
+              error: "An application with this email was recently submitted.",
+              formState: "form",
+              validationErrors: {},
+              formData,
+            }));
+          }
+          if (result.errors && Object.keys(result.errors).length) {
+            return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
+              csrfToken,
+              error: null,
+              formState: "validation_error",
+              validationErrors: result.errors,
+              formData,
+            }));
+          }
+          return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
+            csrfToken,
+            error: "Please check your information and try again.",
+            formState: "form",
+            validationErrors: {},
+            formData,
+          }));
+        }
+
+        return res.redirect(303, "/register-clinic/success");
+      } catch (err) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(500).type("html").send(renderPublicView("public/register-clinic-server-error", {
+          csrfToken,
+          formData,
+        }));
+      }
+    }
+
+    const validated = validateClinicRegistrationInput(formData);
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+
+    if (!validated.ok) {
+      return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
+        csrfToken,
+        error: null,
+        formState: "validation_error",
+        validationErrors: validated.errors,
+        formData,
+      }));
+    }
+
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic-review", {
+      csrfToken,
+      formData: {
+        clinicName: validated.normalized.clinicName,
+        contactName: validated.normalized.contactName,
+        contactEmail: validated.normalized.contactEmailDisplay || formData.contactEmail,
+        contactPhone: validated.normalized.contactPhoneDisplay || formData.contactPhone,
+        province: validated.normalized.province || "",
+        city: validated.normalized.city || "",
+        countryCode: validated.normalized.countryCode,
+        notes: validated.normalized.notes || "",
+      },
+    }));
   });
 
   app.get("/register-clinic/success", (req, res) => {
@@ -214,15 +328,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey", async (req, res, next) => {
     try {
-      const result = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!result.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1><p>This clinic is not available.</p>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/home", {
         csrfToken,
-        clinic: result.clinic,
+        clinic,
       }));
     } catch (err) {
       return next(err);
@@ -231,15 +343,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey/about", async (req, res, next) => {
     try {
-      const result = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!result.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/about", {
         csrfToken,
-        clinic: result.clinic,
+        clinic,
       }));
     } catch (err) {
       return next(err);
@@ -248,17 +358,37 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey/contact", async (req, res, next) => {
     try {
-      const result = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!result.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
+      if (req.query.submitted === "1") {
+        return res.status(200).type("html").send(renderPublicView("tenant/contact-success", {
+          csrfToken,
+          clinic,
+        }));
+      }
+
       return res.status(200).type("html").send(renderPublicView("tenant/contact", {
         csrfToken,
-        clinic: result.clinic,
+        clinic,
         error: null,
         formData: {},
+      }));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/contact/success", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(200).type("html").send(renderPublicView("tenant/contact-success", {
+        csrfToken,
+        clinic,
       }));
     } catch (err) {
       return next(err);
@@ -269,22 +399,24 @@ function registerActiveClinicPublicRoutes(app, deps) {
     try {
       const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
       if (!clinicResult.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
+        return sendClinicResolveFailure(res, clinicResult, respondDeps);
       }
+
+      const clinic = clinicResult.clinic;
 
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res.status(403).type("html").send(renderPublicView("tenant/contact", {
           csrfToken,
-          clinic: clinicResult.clinic,
+          clinic,
           error: "Your session expired. Please try again.",
           formData: req.body || {},
         }));
       }
 
       const result = await createPublicContactInquiry(getPool(), {
-        organizationId: clinicResult.clinic.organizationId,
-        healthcareOrganizationId: clinicResult.clinic.healthcareOrganizationId,
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
         facilityId: null,
         senderName: req.body.senderName,
         senderEmail: req.body.senderEmail,
@@ -296,13 +428,49 @@ function registerActiveClinicPublicRoutes(app, deps) {
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res.status(400).type("html").send(renderPublicView("tenant/contact", {
           csrfToken,
-          clinic: clinicResult.clinic,
+          clinic,
           error: "Please check your information and try again.",
           formData: req.body || {},
         }));
       }
 
-      return res.redirect(303, `/clinics/${req.params.clinicKey}/contact?submitted=1`);
+      return res.redirect(303, `/clinics/${req.params.clinicKey}/contact/success`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/pricing", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const priceResult = await listPublicPricePatterns(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+      });
+
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(200).type("html").send(renderPublicView("tenant/pricing", {
+        csrfToken,
+        clinic,
+        pricePatterns: priceResult.patterns || [],
+      }));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/location", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(200).type("html").send(renderPublicView("tenant/location", {
+        csrfToken,
+        clinic,
+      }));
     } catch (err) {
       return next(err);
     }
@@ -310,15 +478,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey/patient-information", async (req, res, next) => {
     try {
-      const result = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!result.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/patient-information", {
         csrfToken,
-        clinic: result.clinic,
+        clinic,
       }));
     } catch (err) {
       return next(err);
@@ -327,15 +493,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey/privacy", async (req, res, next) => {
     try {
-      const result = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!result.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/privacy", {
         csrfToken,
-        clinic: result.clinic,
+        clinic,
       }));
     } catch (err) {
       return next(err);
@@ -344,15 +508,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey/terms", async (req, res, next) => {
     try {
-      const result = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!result.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/terms", {
         csrfToken,
-        clinic: result.clinic,
+        clinic,
       }));
     } catch (err) {
       return next(err);
@@ -362,25 +524,23 @@ function registerActiveClinicPublicRoutes(app, deps) {
   // P23: Services & Doctors
   app.get("/clinics/:clinicKey/services", async (req, res, next) => {
     try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const servicesResult = await listPublicServices(getPool(), {
-        organizationId: clinicResult.clinic.organizationId,
-        healthcareOrganizationId: clinicResult.clinic.healthcareOrganizationId,
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
       });
 
       const proceduresResult = await listPublicProcedures(getPool(), {
-        organizationId: clinicResult.clinic.organizationId,
-        healthcareOrganizationId: clinicResult.clinic.healthcareOrganizationId,
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
       });
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/services", {
         csrfToken,
-        clinic: clinicResult.clinic,
+        clinic,
         services: servicesResult.services || [],
         procedures: proceduresResult.procedures || [],
       }));
@@ -391,26 +551,62 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey/services/:serviceKey", async (req, res, next) => {
     try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const serviceResult = await getPublicService(getPool(), {
-        organizationId: clinicResult.clinic.organizationId,
-        healthcareOrganizationId: clinicResult.clinic.healthcareOrganizationId,
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
         serviceKey: req.params.serviceKey,
       });
 
       if (!serviceResult.ok) {
-        return res.status(404).type("html").send("<h1>Service Not Found</h1>");
+        return res.status(404).type("html").send(renderPublicView("tenant/clinic-not-found", {
+          csrfToken: issuePageCsrf(res, env, isProduction),
+          pageTitle: "Service not found",
+          shellVariant: "tenant",
+          clinic,
+        }));
       }
 
+      const serviceKind = clinic.publicBookingEnabled ? "consultation" : "informational";
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/service-detail", {
         csrfToken,
-        clinic: clinicResult.clinic,
+        clinic,
         service: serviceResult.service,
+        serviceKind,
+      }));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/procedures/:procedureKey", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+
+      if (!procedureResult.ok) {
+        return res.status(404).type("html").send(renderPublicView("tenant/clinic-not-found", {
+          csrfToken: issuePageCsrf(res, env, isProduction),
+          pageTitle: "Procedure not found",
+          shellVariant: "tenant",
+          clinic,
+        }));
+      }
+
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(200).type("html").send(renderPublicView("tenant/procedure-detail", {
+        csrfToken,
+        clinic,
+        procedure: procedureResult.procedure,
       }));
     } catch (err) {
       return next(err);
@@ -419,20 +615,18 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey/doctors", async (req, res, next) => {
     try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const profilesResult = await listPublicStaffProfiles(getPool(), {
-        organizationId: clinicResult.clinic.organizationId,
-        healthcareOrganizationId: clinicResult.clinic.healthcareOrganizationId,
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
       });
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/doctors", {
         csrfToken,
-        clinic: clinicResult.clinic,
+        clinic,
         profiles: profilesResult.profiles || [],
       }));
     } catch (err) {
@@ -442,25 +636,28 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/clinics/:clinicKey/doctors/:staffKey", async (req, res, next) => {
     try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
 
       const profileResult = await getPublicStaffProfile(getPool(), {
-        organizationId: clinicResult.clinic.organizationId,
-        healthcareOrganizationId: clinicResult.clinic.healthcareOrganizationId,
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
         staffKey: req.params.staffKey,
       });
 
       if (!profileResult.ok) {
-        return res.status(404).type("html").send("<h1>Doctor Not Found</h1>");
+        return res.status(404).type("html").send(renderPublicView("tenant/clinic-not-found", {
+          csrfToken: issuePageCsrf(res, env, isProduction),
+          pageTitle: "Doctor not found",
+          shellVariant: "tenant",
+          clinic,
+        }));
       }
 
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("tenant/doctor-profile", {
         csrfToken,
-        clinic: clinicResult.clinic,
+        clinic,
         profile: profileResult.profile,
       }));
     } catch (err) {
@@ -468,254 +665,16 @@ function registerActiveClinicPublicRoutes(app, deps) {
     }
   });
 
-  // P24: Booking (simplified stub — full wizard requires session state)
-  app.get("/clinics/:clinicKey/book", async (req, res, next) => {
-    try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
-
-      if (!clinicResult.clinic.publicBookingEnabled) {
-        return res.status(403).type("html").send("<h1>Booking Not Available</h1><p>Online booking is not enabled for this clinic.</p>");
-      }
-
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("booking/appointment-entry", {
-        csrfToken,
-        clinic: clinicResult.clinic,
-      }));
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-
-  app.post("/clinics/:clinicKey/book", bookingLimiter, async (req, res, next) => {
-    try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) {
-        return res.status(404).type("html").send(renderPublicView("public/home", { csrfToken: issuePageCsrf(res, env, isProduction), pageTitle: "Not found" }));
-      }
-      const clinic = clinicResult.clinic;
-      if (!clinic.publicBookingEnabled) {
-        return res.status(403).type("html").send("<h1>Booking Not Available</h1>");
-      }
-      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(403).type("html").send(renderPublicView("booking/appointment-entry", {
-          csrfToken, clinic, error: "Your session expired. Please try again.", formData: req.body || {},
-        }));
-      }
-      const facilityId = clinic.primaryFacilityId;
-      if (!facilityId) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(400).type("html").send(renderPublicView("booking/appointment-entry", {
-          csrfToken, clinic, error: "No bookable facility is available.", formData: req.body || {},
-        }));
-      }
-
-      let serviceTypeId = null;
-      const serviceKey = String((req.body && req.body.serviceKey) || "").trim();
-      if (serviceKey) {
-        const service = await getPublicService(getPool(), {
-          organizationId: clinic.organizationId,
-          healthcareOrganizationId: clinic.healthcareOrganizationId,
-          serviceKey,
-        });
-        if (service.ok) serviceTypeId = service.service.id;
-      }
-
-      const result = await createConsultationBookingRequest(getPool(), {
-        organizationId: clinic.organizationId,
-        healthcareOrganizationId: clinic.healthcareOrganizationId,
-        facilityId,
-        serviceTypeId,
-        patientFirstName: req.body.patientFirstName,
-        patientLastName: req.body.patientLastName,
-        patientPhone: req.body.patientPhone,
-        patientEmail: req.body.patientEmail,
-        visitReason: req.body.visitReason,
-        preferredStartsAt: req.body.preferredStartsAt || null,
-        timezone: clinic.timezone || "Africa/Lusaka",
-        idempotencyKey: req.body.idempotencyKey || undefined,
-      });
-
-      if (!result.ok) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(400).type("html").send(renderPublicView("booking/appointment-entry", {
-          csrfToken, clinic, error: "Unable to submit booking request. Check your details and try again.",
-          formData: req.body || {},
-        }));
-      }
-
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("booking/request-submitted", {
-        csrfToken,
-        clinic,
-        booking: result.booking,
-        accessToken: result.booking.accessToken,
-        pageTitle: "Request submitted",
-        robots: "noindex",
-      }));
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  app.get("/clinics/:clinicKey/book/procedures/:procedureKey", async (req, res, next) => {
-    try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      if (!clinicResult.clinic.publicBookingEnabled) return res.status(403).type("html").send("<h1>Booking Not Available</h1>");
-      const procedureResult = await getPublicProcedure(getPool(), {
-        organizationId: clinicResult.clinic.organizationId,
-        healthcareOrganizationId: clinicResult.clinic.healthcareOrganizationId,
-        procedureKey: req.params.procedureKey,
-      });
-      if (!procedureResult.ok) return res.status(404).type("html").send("<h1>Procedure Not Found</h1>");
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("booking/procedure-entry", {
-        csrfToken,
-        clinic: clinicResult.clinic,
-        procedure: procedureResult.procedure,
-      }));
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  app.post("/clinics/:clinicKey/book/procedures/:procedureKey", bookingLimiter, async (req, res, next) => {
-    try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      const clinic = clinicResult.clinic;
-      if (!clinic.publicBookingEnabled) return res.status(403).type("html").send("<h1>Booking Not Available</h1>");
-      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        return res.status(403).type("html").send("CSRF invalid");
-      }
-      const procedureResult = await getPublicProcedure(getPool(), {
-        organizationId: clinic.organizationId,
-        healthcareOrganizationId: clinic.healthcareOrganizationId,
-        procedureKey: req.params.procedureKey,
-      });
-      if (!procedureResult.ok) return res.status(404).type("html").send("<h1>Procedure Not Found</h1>");
-      const result = await createProcedureBookingRequest(getPool(), {
-        organizationId: clinic.organizationId,
-        healthcareOrganizationId: clinic.healthcareOrganizationId,
-        facilityId: clinic.primaryFacilityId,
-        procedureId: procedureResult.procedure.id,
-        patientFirstName: req.body.patientFirstName,
-        patientLastName: req.body.patientLastName,
-        patientPhone: req.body.patientPhone,
-        patientEmail: req.body.patientEmail,
-        preferredStartsAt: req.body.preferredStartsAt || null,
-        preparationAcknowledged: req.body.preparationAcknowledged === "1",
-        timezone: clinic.timezone || "Africa/Lusaka",
-      });
-      if (!result.ok) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(400).type("html").send(renderPublicView("booking/procedure-entry", {
-          csrfToken, clinic, procedure: procedureResult.procedure,
-          error: "Unable to submit procedure request.", formData: req.body || {},
-        }));
-      }
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("booking/request-submitted", {
-        csrfToken, clinic, booking: result.booking, accessToken: result.booking.accessToken, robots: "noindex",
-      }));
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  app.post("/clinics/:clinicKey/my-booking/cancel", lookupLimiter, async (req, res, next) => {
-    try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        return res.status(403).type("html").send("CSRF invalid");
-      }
-      const token = String((req.body && req.body.token) || "");
-      const result = await requestBookingCancellation(getPool(), { token, reason: req.body.reason || null });
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      if (!result.ok) {
-        return res.status(400).type("html").send(renderPublicView("booking/my-booking-lookup", {
-          csrfToken, clinic: clinicResult.clinic, error: "Unable to request cancellation.",
-        }));
-      }
-      return res.redirect(303, `/clinics/${req.params.clinicKey}/my-booking?token=${encodeURIComponent(token)}`);
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  app.post("/clinics/:clinicKey/my-booking/reschedule", lookupLimiter, async (req, res, next) => {
-    try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        return res.status(403).type("html").send("CSRF invalid");
-      }
-      const token = String((req.body && req.body.token) || "");
-      const result = await requestBookingReschedule(getPool(), {
-        token,
-        preferredStartsAt: req.body.preferredStartsAt,
-        reason: req.body.reason || null,
-      });
-      if (!result.ok) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(400).type("html").send(renderPublicView("booking/my-booking-lookup", {
-          csrfToken, clinic: clinicResult.clinic, error: "Unable to request reschedule.",
-        }));
-      }
-      return res.redirect(303, `/clinics/${req.params.clinicKey}/my-booking?token=${encodeURIComponent(token)}`);
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  // P26: My Booking lookup
-  app.get("/clinics/:clinicKey/my-booking", lookupLimiter, async (req, res, next) => {
-    try {
-      const clinicResult = await resolvePublishableClinicByKey(getPool(), { clinicKey: req.params.clinicKey });
-      if (!clinicResult.ok) {
-        return res.status(404).type("html").send("<h1>Clinic Not Found</h1>");
-      }
-
-      const token = req.query.token || "";
-      if (!token) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(200).type("html").send(renderPublicView("booking/my-booking-lookup", {
-          csrfToken,
-          clinic: clinicResult.clinic,
-          booking: null,
-          error: null,
-        }));
-      }
-
-      const verifyResult = await verifyBookingAccessToken(getPool(), { token });
-      if (!verifyResult.ok) {
-        const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(200).type("html").send(renderPublicView("booking/my-booking-lookup", {
-          csrfToken,
-          clinic: clinicResult.clinic,
-          booking: null,
-          error: "Booking not found or link expired.",
-        }));
-      }
-
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("booking/my-booking-detail", {
-        csrfToken,
-        clinic: clinicResult.clinic,
-        booking: verifyResult.booking,
-        accessToken: token,
-        robots: "noindex",
-      }));
-    } catch (err) {
-      return next(err);
-    }
+  // P24–P26: Booking wizard, procedure booking, my-booking
+  registerActiveClinicPublicBookingRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    respondDeps,
+    issuePageCsrf,
+    validateCsrf,
+    bookingLimiter,
+    lookupLimiter,
   });
 }
 

@@ -1,31 +1,37 @@
 # ActiveClinic Stitch — P20–P27 Implementation Ledger
 
-**Mission start SHA (P20–P26):** `42234be27cb072859df8bd26cabc7c3557e63a2b`  
-**P27 start SHA:** `775131ade26997d7caf9a23dc153a01a9b2f50a8`  
+**Mission start SHA (this completion run):** `cc34359c1e1bf1c5c1d9cb87be3ae93dc340d57b`  
 **Branch:** `V6`  
-**Production touched:** no · **Deployed:** no · **Pushed:** no
+**Production touched:** no · **Deployed:** no · **Pushed:** no  
 
 **Stitch design project:** `projects/17813606734422395399` (Public Ecosystem & Booking Flow)  
 **Clinical project:** `projects/12272131183982732110` (no P20–P27 screens)
 
-## Discovery
+## Discovery (re-inventory 2026-08-04)
 
 | Item | Result |
 |------|--------|
-| Juflona Pilot `12272131183982732110` P20–P27 | **0 screens** |
-| Public Ecosystem `17813606734422395399` | P20–P26 + P27 |
-| P27 stability (2026-08-04) | **30 screens · STABLE** (A=B) |
+| Live P21–P27 screens | **184** |
+| P20 foundation | 5 |
+| Prior doc P21 count | 11 → live **28** |
+| Prior doc P22 count | 13 → live **33** |
+| P27 | 30 STABLE |
 
-## Checkpoints
+## Checkpoints (this run)
 
-| Phase | Stability | Notes |
-|------:|-----------|-------|
-| P20–P26 | STABLE | Implemented; ending SHA `775131ad` |
-| P27 | STABLE | Patient portal implemented; see `ACTIVECLINIC_STITCH_P27_FINAL_REPORT.md` |
+| Commit message (intended) | Scope |
+|---------------------------|-------|
+| activeclinic stitch p21 missing screens | Platform public + directory/onboarding states |
+| activeclinic stitch p22 p23 missing screens | Tenant pages, pricing/location, procedure detail |
+| activeclinic stitch p24 p25 missing screens | Consultation + procedure booking wizards |
+| activeclinic stitch p26 p27 missing screens | My-booking management + patient portal EJS |
+| activeclinic stitch p21 p27 docs and parity | Audit/completion/visual reports + phase refresh |
 
-## Final run notes (P27)
+Work was heavily interleaved in the working tree; commits may group by file family rather than strict phase isolation. See git log for actual SHAs after commit.
 
-- Patient portal under `/clinics/:clinicKey/patient/*`
-- Migrations platform `026` + activeclinic `020`
-- Visual: FUNCTIONAL_ONLY
-- SMS/email delivery: not claimed
+## Final notes
+
+- Verdict: `ACTIVECLINIC_STITCH_P21_TO_P27_COMPLETE_WITH_DOCUMENTED_PRODUCT_GAPS`
+- Visual: FUNCTIONAL_ONLY (not MATCHED)
+- SMS/email/upload/live-slots: not claimed
+- Migrations: no new migration this run (019/020/026 reused)

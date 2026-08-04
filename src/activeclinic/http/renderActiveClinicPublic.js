@@ -10,7 +10,7 @@ const ejs = require("ejs");
 const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "p20-1";
+const ASSET_VERSION = "p24-1";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -53,6 +53,7 @@ function renderPublicPage(input) {
     clinic: (input.locals && input.locals.clinic) || null,
     formData: {},
     error: null,
+    validationErrors: {},
     clinics: [],
     services: [],
     procedures: [],
@@ -98,7 +99,7 @@ function renderPublicView(relativePath, data) {
     pageTitle: (data && data.pageTitle) || "ActiveClinic",
     contentTemplate: relativePath,
     locals: data || {},
-    shellVariant: data && data.clinic ? "tenant" : "platform",
+    shellVariant: (data && data.shellVariant) || (data && data.clinic ? "tenant" : "platform"),
     metaDescription: data && data.metaDescription,
   });
 }

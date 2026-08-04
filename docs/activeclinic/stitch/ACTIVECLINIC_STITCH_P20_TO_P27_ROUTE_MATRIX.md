@@ -56,9 +56,24 @@
 | Competing `/clinic/:key`, `/c/:key`, `/tenant/:key` | **Not created** | Single canonical `/clinics/:clinicKey` |
 | Authenticated GET `/` | `/app` | Preserve staff landing (P01) |
 
+## Added in P21–P27 completion run (2026-08-04)
+
+| Method | Path | Phase | Notes |
+|--------|------|------:|-------|
+| GET | `/clinics/:clinicKey/pricing` | P22/P23 | Honest no-price when unset |
+| GET | `/clinics/:clinicKey/location` | P22 | Facility address/hours |
+| GET | `/clinics/:clinicKey/contact/success` | P22 | Contact success |
+| GET | `/clinics/:clinicKey/procedures/:procedureKey` | P23 | Procedure detail |
+| GET/POST | `/clinics/:clinicKey/book/*` | P24 | Wizard steps |
+| GET/POST | `/clinics/:clinicKey/book/procedures*` | P25 | Procedure request |
+| GET/POST | `/clinics/:clinicKey/my-booking/cancel` | P26 | Cancel review/submit |
+| GET/POST | `/clinics/:clinicKey/my-booking/reschedule` | P26 | Reschedule review/submit |
+| * | `/clinics/:clinicKey/patient/*` | P27 | Patient portal (EJS) |
+
 ## Unresolved
 
 | Item | Status |
 |------|--------|
 | Custom domain per clinic | Documented readiness only — host mapping not shipped |
-| P27 routes | **Not reserved** until Stitch stable |
+| Live public slot engine | Preferred datetime honesty only |
+| Secure referral upload | clinic_follow_up only |
