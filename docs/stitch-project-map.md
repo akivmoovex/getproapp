@@ -25,6 +25,7 @@ Shared GetPro platform architecture (host routing, sessions, multi-tenant provis
 |--------------|---------|---------------------|-------------------|--------|---------------|------------|
 | `blessboard` | BlessBoard | GetPro Church Platform | `projects/17124191473876947591` | Church management only | Existing church tenants | [`docs/gui/STITCH_SCREEN_MAP.md`](./gui/STITCH_SCREEN_MAP.md) |
 | `activeclinic` | ActiveClinic | ActiveClinic – Juflona Pilot | `projects/12272131183982732110` | Healthcare / clinical only | **Juflona Hospital & Medical Centre** | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
+| `activeclinic` (public/booking) | ActiveClinic | ActiveClinic Public Ecosystem & Booking Flow | `projects/17813606734422395399` | Public website + booking (P20–P26) | Same product; **not** clinical app screens | [`docs/activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_20.md`](./activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_20.md) |
 
 ### MCP quick reference
 
@@ -32,6 +33,7 @@ Shared GetPro platform architecture (host routing, sessions, multi-tenant provis
 |--------------|-------------------------------------|
 | `blessboard` | `17124191473876947591` |
 | `activeclinic` | `12272131183982732110` |
+| `activeclinic` (public/booking) | ActiveClinic | ActiveClinic Public Ecosystem & Booking Flow | `projects/17813606734422395399` | Public website + booking (P20–P26) | Same product; **not** clinical app screens | [`docs/activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_20.md`](./activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_20.md) |
 
 ---
 

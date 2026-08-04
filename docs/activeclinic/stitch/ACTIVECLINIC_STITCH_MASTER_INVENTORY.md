@@ -307,3 +307,26 @@ Billing, cashier shifts, invoices, payments, refunds, price lists
 - [ACTIVECLINIC_STITCH_RESPONSIVE_MATRIX.md](./ACTIVECLINIC_STITCH_RESPONSIVE_MATRIX.md)
 - [ACTIVECLINIC_STITCH_IMPLEMENTATION_LEDGER.md](./ACTIVECLINIC_STITCH_IMPLEMENTATION_LEDGER.md)
 - [ACTIVECLINIC_STITCH_PRODUCT_GAPS.md](./ACTIVECLINIC_STITCH_PRODUCT_GAPS.md)
+
+---
+
+# P20–P27 appendix (2026-08-04 overnight)
+
+**Stitch design project (website/booking):** `projects/17813606734422395399` — ActiveClinic Public Ecosystem & Booking Flow  
+**Clinical app project (P01–P07/P13):** `projects/12272131183982732110` — ActiveClinic – Juflona Pilot  
+**Note:** P20–P27 screens live in the Public Ecosystem project. The Juflona Pilot project contains **zero** P20–P27 screens (verified 2026-08-04).
+
+| Phase | Exact label | Module | Screens | Desktop | Mobile | Tablet | Stitch stability |
+|------:|-------------|--------|--------:|--------:|-------:|-------:|------------------|
+| 20 | `P20` | Public and tenant website foundation | 5 | 0 | 5 | 0 | STABLE |
+| 21 | `P21` | ActiveClinic platform website | 11 | 5 | 6 | 0 | STABLE |
+| 22 | `P22` | Juflona tenant clinic website | 13 | 6 | 7 | 0 | STABLE |
+| 23 | `P23` | Juflona public services, doctors, and pricing patterns | 15 | 7 | 8 | 0 | STABLE |
+| 24 | `P24` | Juflona consultation appointment booking | 19 | 8 | 11 | 0 | STABLE |
+| 25 | `P25` | Juflona procedure and diagnostic booking | 24 | 9 | 15 | 0 | STABLE |
+| 26 | `P26` | Juflona booking lookup, cancel, and reschedule | 35 | 16 | 19 | 0 | STABLE |
+| 27 | `P27` | Not yet present in Stitch (STITCH_IN_PROGRESS) | 0 | 0 | 0 | 0 | STITCH_IN_PROGRESS |
+
+**Public Ecosystem project total screens:** 122 (P20 foundation unprefixed = 5; P21–P26 = 117; P27 = 0)
+
+P01–P07 verdict unchanged by this appendix.
