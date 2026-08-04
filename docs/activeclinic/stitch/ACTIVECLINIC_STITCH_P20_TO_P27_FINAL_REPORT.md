@@ -3,6 +3,7 @@
 **Generated:** 2026-08-04  
 **Branch:** `V6`  
 **Starting SHA:** `42234be27cb072859df8bd26cabc7c3557e63a2b`  
+**Ending SHA:** `f143bce82624fc811093b1c10730db0edd3ef2b3`  
 **Production touched:** no  
 **Deployed:** no  
 **Pushed:** no  
@@ -104,7 +105,11 @@ FUNCTIONAL_ONLY responsive public CSS. Skip links, focusable drawer, labelled fo
 
 ## U. Checkpoint commits
 
-Listed after git commits are created.
+| Commit | SHA | Notes |
+|--------|-----|-------|
+| Inventory | `de10c435` | P20–P27 docs + project map |
+| P20–P26 implementation | `f143bce8` | Shared migration/routes (phases landed together) |
+| P27 | — | Skipped (STITCH_IN_PROGRESS) |
 
 ---
 
