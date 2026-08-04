@@ -2,6 +2,7 @@
 
 **Mission start SHA (this completion run):** `cc34359c1e1bf1c5c1d9cb87be3ae93dc340d57b`  
 **Branch:** `V6`  
+**Ending SHA:**   
 **Production touched:** no · **Deployed:** no · **Pushed:** no  
 
 **Stitch design project:** `projects/17813606734422395399` (Public Ecosystem & Booking Flow)  
@@ -27,7 +28,7 @@
 | activeclinic stitch p26 p27 missing screens | My-booking management + patient portal EJS |
 | activeclinic stitch p21 p27 docs and parity | Audit/completion/visual reports + phase refresh |
 
-Work was heavily interleaved in the working tree; commits may group by file family rather than strict phase isolation. See git log for actual SHAs after commit.
+Work was heavily interleaved in the working tree; commits may group by file family rather than strict phase isolation. Actual SHAs:  …  (6 commits ahead of origin/V6).
 
 ## Final notes
 
