@@ -513,11 +513,15 @@ async function receiveStock(pool, input) {
 
     const movement = mapStockMovement(movementResult.rows[0]);
 
-    // Update last_restocked_at.
-    await client.query(
-      `UPDATE activeclinic.inventory_items SET last_restocked_at = now() WHERE id = $1`,
+    // Update last_restocked_at and reload quantity after movement trigger.
+    const refreshedInventory = await client.query(
+      `UPDATE activeclinic.inventory_items
+          SET last_restocked_at = now()
+        WHERE id = $1
+      RETURNING *`,
       [inventoryItem.id]
     );
+    inventoryItem = mapInventoryItem(refreshedInventory.rows[0]);
 
     await client.query("COMMIT");
 
