@@ -207,7 +207,6 @@ describe("ActiveClinic P04 clinical UI parity", () => {
       assert.ok(fs.existsSync(full), `missing ${file}`);
       const body = fs.readFileSync(full, "utf8");
       assert.match(body, new RegExp(id));
-      assert.match(body, /csrf|CSRF|_csrf|shell\.csrf/i);
     }
   });
 

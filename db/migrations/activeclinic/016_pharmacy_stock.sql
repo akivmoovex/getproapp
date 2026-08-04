@@ -491,16 +491,27 @@ CREATE OR REPLACE FUNCTION activeclinic.update_inventory_quantity_on_movement()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  next_qty INTEGER;
 BEGIN
-  UPDATE activeclinic.inventory_items
-     SET current_quantity = current_quantity + NEW.quantity_delta,
-         updated_at = now()
-   WHERE id = NEW.inventory_item_id;
+  SELECT current_quantity + NEW.quantity_delta
+    INTO next_qty
+    FROM activeclinic.inventory_items
+   WHERE id = NEW.inventory_item_id
+   FOR UPDATE;
 
-  -- Prevent negative stock.
-  IF (SELECT current_quantity FROM activeclinic.inventory_items WHERE id = NEW.inventory_item_id) < 0 THEN
+  IF next_qty IS NULL THEN
+    RAISE EXCEPTION 'Inventory item % not found for stock movement', NEW.inventory_item_id;
+  END IF;
+
+  IF next_qty < 0 THEN
     RAISE EXCEPTION 'Stock movement would result in negative inventory for item %', NEW.inventory_item_id;
   END IF;
+
+  UPDATE activeclinic.inventory_items
+     SET current_quantity = next_qty,
+         updated_at = now()
+   WHERE id = NEW.inventory_item_id;
 
   RETURN NEW;
 END;

@@ -288,7 +288,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: medicationResult.medication.id,
       batchNumber: "BATCH001",
       quantity: 500,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
       supplierName: "MedSupply Inc",
       costPerUnit: 0.45,
     });
@@ -325,7 +325,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: medicationResult.medication.id,
       batchNumber: "BATCH002",
       quantity: 100,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     // Attempt to insert a negative stock movement manually.
@@ -385,7 +385,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: med1.medication.id,
       batchNumber: "BATCH003",
       quantity: 300,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     await receiveStock(pool, {
@@ -396,7 +396,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: med2.medication.id,
       batchNumber: "BATCH004",
       quantity: 150,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     const listResult = await listInventoryItems(pool, {
@@ -434,7 +434,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: medicationResult.medication.id,
       batchNumber: "BATCH005",
       quantity: 50,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     // Set reorder level on inventory item.
@@ -568,7 +568,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: medicationResult.medication.id,
       batchNumber: "BATCH007",
       quantity: 500,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     const prescriptionResult = await createPharmacyPrescription(pool, {
@@ -658,7 +658,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: medicationResult.medication.id,
       batchNumber: "BATCH008",
       quantity: 50,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     const prescriptionResult = await createPharmacyPrescription(pool, {
@@ -745,7 +745,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: medicationResult.medication.id,
       batchNumber: "BATCH009",
       quantity: 10,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     const prescriptionResult = await createPharmacyPrescription(pool, {
@@ -942,7 +942,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: med1.medication.id,
       batchNumber: "BATCH011",
       quantity: 100,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     // Tenant2 staff should not see tenant1 inventory.
@@ -996,7 +996,7 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: medicationResult.medication.id,
       batchNumber: "BATCH012",
       quantity: 100,
-      expiryDate: "2025-12-31",
+      expiryDate: "2027-12-31",
     });
 
     const prescriptionResult = await createPharmacyPrescription(pool, {
