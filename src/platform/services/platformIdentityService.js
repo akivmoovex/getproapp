@@ -178,6 +178,56 @@ async function resolvePlatformIdentity(db, input) {
   return { ok: true, code: RESULT.OK, identity: mapIdentity(row) };
 }
 
+/**
+ * Set/replace phone on an existing platform identity (E.164 normalized).
+ * Caller must enforce uniqueness / ownership policy.
+ * @param {{ query: Function }} db
+ * @param {{
+ *   identityId: string,
+ *   primaryPhone?: string|null,
+ *   phoneNormalized: string,
+ *   phoneVerifiedAt?: string|Date|null,
+ * }} input
+ */
+async function updatePlatformIdentityPhone(db, input) {
+  const identityId = String((input && input.identityId) || "").trim();
+  let phoneNormalized = normalizePhone(
+    input && (input.phoneNormalized || input.primaryPhone)
+  );
+  if (!identityId || !UUID_RE.test(identityId) || !phoneNormalized) {
+    return { ok: false, code: RESULT.INVALID_INPUT, identity: null };
+  }
+  if (!PHONE_RE.test(phoneNormalized) || phoneNormalized.length > 20) {
+    return { ok: false, code: RESULT.INVALID_INPUT, identity: null };
+  }
+  const primaryPhone =
+    input.primaryPhone != null
+      ? String(input.primaryPhone).trim() || phoneNormalized
+      : phoneNormalized;
+
+  try {
+    const row = await repo.updateIdentityPhone(db, {
+      identityId,
+      primaryPhone,
+      phoneNormalized,
+      phoneVerifiedAt:
+        input.phoneVerifiedAt === undefined
+          ? new Date().toISOString()
+          : input.phoneVerifiedAt,
+    });
+    if (!row) {
+      return { ok: false, code: RESULT.NOT_FOUND, identity: null };
+    }
+    return { ok: true, code: RESULT.OK, identity: mapIdentity(row) };
+  } catch (err) {
+    const msg = err && err.message ? String(err.message) : "";
+    if (/identities_verified_phone_uidx/i.test(msg)) {
+      return { ok: false, code: RESULT.DUPLICATE_VERIFIED_PHONE, identity: null };
+    }
+    throw err;
+  }
+}
+
 module.exports = {
   RESULT,
   mapIdentity,
@@ -186,4 +236,5 @@ module.exports = {
   normalizePhone,
   createPlatformIdentity,
   resolvePlatformIdentity,
+  updatePlatformIdentityPhone,
 };

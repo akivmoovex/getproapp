@@ -20,6 +20,8 @@ const {
 const {
   seedActiveClinicQaRoleUsers,
   assessPassword,
+  assessQaPhone,
+  ensureQaIdentityPhone,
   countQaArtifacts,
   REQUESTED_QA_PASSWORD,
   RECOMMENDED_QA_PASSWORD,
@@ -35,7 +37,19 @@ const {
   evaluateStaffEligibility,
 } = require("../src/activeclinic/services/activeClinicLoginEligibility");
 const { buildActiveClinicNavigation } = require("../src/activeclinic/services/activeClinicNavigation");
+const {
+  resolveIdentityForLogin,
+} = require("../src/activeclinic/services/authenticateActiveClinicIdentity");
+const {
+  verifyPlatformIdentityPassword,
+} = require("../src/platform/services/platformIdentityCredentialService");
+const {
+  normalizeRegistrationPhone,
+} = require("../src/blessboard/services/normalizeRegistrationPhone");
 const identityRepo = require("../src/platform/repositories/platformIdentityRepository");
+const {
+  createPlatformIdentity,
+} = require("../src/platform/services/platformIdentityService");
 const {
   resetDeploymentProfileWarningsForTests,
 } = require("../src/platform/config/deploymentProfiles");
@@ -122,6 +136,22 @@ describe("ActiveClinic QA role users", () => {
     }
   }
 
+  it("accepts deterministic QA phones and Zambia login normalization", () => {
+    for (const user of QA_ROLE_USERS) {
+      const assessed = assessQaPhone(user.phone);
+      assert.equal(assessed.ok, true, user.phone);
+      assert.equal(assessed.normalized, user.phone);
+    }
+    const national = normalizeRegistrationPhone("0970000001");
+    assert.equal(national.ok, true);
+    assert.equal(national.normalized, "+260970000001");
+    const staffOnly = assessQaPhone("0970000001");
+    // Login accepts national; staff helper requires E.164 — assessQaPhone
+    // normalizes via login first then staff-validates the E.164 result.
+    assert.equal(staffOnly.ok, true);
+    assert.equal(staffOnly.normalized, "+260970000001");
+  });
+
   it("rejects requested 8-char QA password by existing policy", () => {
     const rejected = assessPassword(REQUESTED_QA_PASSWORD);
     assert.equal(rejected.ok, false);
@@ -150,7 +180,8 @@ describe("ActiveClinic QA role users", () => {
     const { orgId, facilityId } = await loadDemoOrg(pool);
     const preservedBefore = (
       await pool.query(
-        `SELECT email_normalized, display_name, status, platform_identity_id
+        `SELECT email_normalized, display_name, status, platform_identity_id,
+                phone_normalized
            FROM activeclinic.staff_members
           WHERE organization_id = $1
             AND email_normalized = ANY($2::text[])
@@ -178,10 +209,14 @@ describe("ActiveClinic QA role users", () => {
     assert.equal(first.ok, true, JSON.stringify(first));
     assert.equal(first.users.length, 15);
     assert.equal(first.loginReadyCount, 15);
+    assert.equal(first.emailPhoneMatchCount, 15);
+    assert.equal(first.phoneResolveOkCount, 15);
     assert.equal(first.julflonaQaEmailStaffCount, 0);
+    assert.equal(first.julflonaQaPhoneIdentityCount, 0);
     assert.equal(first.afterCounts.identities, 15);
     assert.equal(first.afterCounts.staff, 15);
     assert.equal(first.afterCounts.activeRoleAssignments, 15);
+    assert.equal(first.afterCounts.distinctQaPhones, 15);
 
     const second = await seedActiveClinicQaRoleUsers(pool, {
       confirm: true,
@@ -192,11 +227,15 @@ describe("ActiveClinic QA role users", () => {
     assert.equal(second.afterCounts.identities, 15);
     assert.equal(second.afterCounts.staff, 15);
     assert.equal(second.afterCounts.activeRoleAssignments, 15);
+    assert.equal(second.afterCounts.distinctQaPhones, 15);
     assert.equal(second.loginReadyCount, 15);
+    assert.equal(second.phoneAlreadyCorrect, 15);
+    assert.equal(second.phoneUpdated, 0);
 
     const preservedAfter = (
       await pool.query(
-        `SELECT email_normalized, display_name, status, platform_identity_id
+        `SELECT email_normalized, display_name, status, platform_identity_id,
+                phone_normalized
            FROM activeclinic.staff_members
           WHERE organization_id = $1
             AND email_normalized = ANY($2::text[])
@@ -210,12 +249,14 @@ describe("ActiveClinic QA role users", () => {
         d: r.display_name,
         s: r.status,
         i: r.platform_identity_id,
+        p: r.phone_normalized,
       })),
       preservedBefore.map((r) => ({
         e: r.email_normalized,
         d: r.display_name,
         s: r.status,
         i: r.platform_identity_id,
+        p: r.phone_normalized,
       }))
     );
 
@@ -224,16 +265,53 @@ describe("ActiveClinic QA role users", () => {
          FROM activeclinic.staff_members s
          JOIN platform.organizations o ON o.id = s.organization_id
         WHERE o.organization_key = $1
-          AND s.email_normalized = ANY($2::text[])`,
-      [JULFLONA_CLINIC_KEY, QA_ROLE_USERS.map((u) => u.email)]
+          AND (
+            s.email_normalized = ANY($2::text[])
+            OR s.phone_normalized = ANY($3::text[])
+          )`,
+      [
+        JULFLONA_CLINIC_KEY,
+        QA_ROLE_USERS.map((u) => u.email),
+        QA_ROLE_USERS.map((u) => u.phone),
+      ]
     );
     assert.equal(julflona.rows[0].n, 0);
 
+    const phoneSet = new Set();
     for (const user of QA_ROLE_USERS) {
       const { identity, staff } = await loadQaStaff(pool, orgId, user.email);
       assert.equal(staff.display_name, user.displayName);
       assert.equal(staff.job_title, user.jobTitle);
       assert.equal(identity.status, "active");
+      assert.equal(identity.phone_normalized, user.phone);
+      assert.equal(staff.phone_normalized, user.phone);
+      phoneSet.add(identity.phone_normalized);
+
+      const byPhone = await identityRepo.findIdentitiesByNormalizedContact(pool, {
+        phoneNormalized: user.phone,
+      });
+      assert.equal(byPhone.length, 1);
+      assert.equal(String(byPhone[0].id), String(identity.id));
+
+      const resolved = await resolveIdentityForLogin(pool, {
+        identifier: user.phone,
+      });
+      assert.equal(resolved.ok, true, user.phone);
+      assert.equal(resolved.kind, "phone");
+      assert.equal(String(resolved.identityRow.id), String(identity.id));
+
+      const nationalForm = user.phone.replace("+260", "0");
+      const resolvedNational = await resolveIdentityForLogin(pool, {
+        identifier: nationalForm,
+      });
+      assert.equal(resolvedNational.ok, true, nationalForm);
+      assert.equal(String(resolvedNational.identityRow.id), String(identity.id));
+
+      const pw = await verifyPlatformIdentityPassword(pool, {
+        identityId: identity.id,
+        password: RECOMMENDED_QA_PASSWORD,
+      });
+      assert.equal(pw.ok, true, `password for ${user.email}`);
 
       const profiles = await identityRepo.listProductProfilesByIdentity(
         pool,
@@ -285,6 +363,9 @@ describe("ActiveClinic QA role users", () => {
       const allow = first.verifications.find((v) => v.email === user.email);
       assert.ok(allow.positiveOk, `${user.email} positive ${allow.positivePermission}`);
       assert.ok(allow.negativeOk, `${user.email} negative ${allow.negativePermission}`);
+      assert.ok(allow.emailPhoneMatch);
+      assert.ok(allow.phoneResolveOk);
+      assert.ok(allow.staffPhoneMatches);
       assert.ok(set.has(allow.positivePermission));
       assert.equal(set.has(allow.negativePermission), false);
 
@@ -349,6 +430,28 @@ describe("ActiveClinic QA role users", () => {
         assert.ok(keys.length <= 4);
       }
     }
+    assert.equal(phoneSet.size, 15);
+
+    const wrongPhone = await resolveIdentityForLogin(pool, {
+      identifier: "+260970009999",
+    });
+    assert.equal(wrongPhone.ok, false);
+
+    const foreign = await createPlatformIdentity(pool, {
+      primaryEmail: "qa-phone-conflict@example.com",
+      emailNormalized: "qa-phone-conflict@example.com",
+      emailVerifiedAt: new Date().toISOString(),
+      status: "active",
+    });
+    assert.equal(foreign.ok, true);
+    const conflict = await ensureQaIdentityPhone(
+      pool,
+      foreign.identity.id,
+      QA_ROLE_USERS[0].phone,
+      QA_ROLE_USERS[0].phone
+    );
+    assert.equal(conflict.ok, false);
+    assert.equal(conflict.code, RESULT.PHONE_CONFLICT);
 
     const facilityAdmin = first.verifications.find(
       (v) => v.roleKey === "activeclinic_facility_admin"

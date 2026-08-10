@@ -19,10 +19,12 @@ const {
 } = require("./activeClinicAuthorizationService");
 const {
   createPlatformIdentity,
+  updatePlatformIdentityPhone,
 } = require("../../platform/services/platformIdentityService");
 const {
   setPlatformIdentityPassword,
   validatePasswordPolicy,
+  verifyPlatformIdentityPassword,
 } = require("../../platform/services/platformIdentityCredentialService");
 const identityRepo = require("../../platform/repositories/platformIdentityRepository");
 const {
@@ -32,6 +34,15 @@ const {
   evaluateStaffEligibility,
 } = require("./activeClinicLoginEligibility");
 const { buildActiveClinicNavigation } = require("./activeClinicNavigation");
+const {
+  resolveIdentityForLogin,
+} = require("./authenticateActiveClinicIdentity");
+const {
+  normalizeRegistrationPhone,
+} = require("../../blessboard/services/normalizeRegistrationPhone");
+const {
+  normalizeActiveClinicPhone,
+} = require("./normalizeActiveClinicContact");
 const {
   DEMO_CLINIC_KEY,
   REQUESTED_QA_PASSWORD,
@@ -47,6 +58,8 @@ const RESULT = Object.freeze({
   OK: "ok",
   REFUSED: "QA_ROLE_USERS_SEED_REFUSED",
   PASSWORD_REJECTED: "QA_PASSWORD_REJECTED_BY_EXISTING_POLICY",
+  PHONE_REJECTED: "QA_PHONE_FORMAT_REJECTED_BY_EXISTING_POLICY",
+  PHONE_CONFLICT: "QA_PHONE_OWNED_BY_OTHER_IDENTITY",
   DEMO_CLINIC_NOT_FOUND: "ACTIVECLINIC_DEMO_CLINIC_NOT_FOUND",
   EMAIL_CONFLICT: "QA_ROLE_EMAIL_CONFLICT",
   INVALID_INPUT: "invalid_input",
@@ -55,6 +68,9 @@ const RESULT = Object.freeze({
 });
 
 const PASSWORD_MIN_LENGTH = 10;
+
+/** DEMO PHONE — DO NOT SEND (SMS/WhatsApp/OTP). Login resolution only. */
+const QA_PHONE_DELIVERY_NOTE = "DEMO PHONE — DO NOT SEND";
 
 async function readDatabaseIdentity(db) {
   const r = await db.query(
@@ -203,8 +219,119 @@ function assessPassword(password) {
   return { ok: true, password: policy.value };
 }
 
+/**
+ * Validate QA phone with login normalizer + ActiveClinic staff E.164 helper.
+ * Does not weaken either policy.
+ */
+function assessQaPhone(rawPhone) {
+  const loginPhone = normalizeRegistrationPhone(rawPhone);
+  if (!loginPhone.ok) {
+    return {
+      ok: false,
+      code: RESULT.PHONE_REJECTED,
+      message: "QA_PHONE_FORMAT_REJECTED_BY_EXISTING_POLICY",
+      reason: loginPhone.error || "login_phone_invalid",
+      acceptedFormat: "E.164 e.g. +260970000001 (Zambia national forms also normalize for login)",
+    };
+  }
+  const staffPhone = normalizeActiveClinicPhone(loginPhone.normalized);
+  if (!staffPhone.ok) {
+    return {
+      ok: false,
+      code: RESULT.PHONE_REJECTED,
+      message: "QA_PHONE_FORMAT_REJECTED_BY_EXISTING_POLICY",
+      reason: staffPhone.code,
+      acceptedFormat: "E.164 required for ActiveClinic staff contact (+260…)",
+    };
+  }
+  return {
+    ok: true,
+    normalized: loginPhone.normalized,
+    display: staffPhone.display,
+  };
+}
+
+function assessAllQaPhones() {
+  const seen = new Set();
+  for (const user of QA_ROLE_USERS) {
+    const assessed = assessQaPhone(user.phone);
+    if (!assessed.ok) {
+      return { ok: false, ...assessed, username: user.username, phone: user.phone };
+    }
+    if (seen.has(assessed.normalized)) {
+      return {
+        ok: false,
+        code: RESULT.PHONE_REJECTED,
+        message: "QA_PHONE_FORMAT_REJECTED_BY_EXISTING_POLICY",
+        reason: "duplicate_phone_in_spec",
+        phone: assessed.normalized,
+        username: user.username,
+      };
+    }
+    seen.add(assessed.normalized);
+  }
+  return { ok: true };
+}
+
+async function ensureQaIdentityPhone(db, identityId, phoneNormalized, phoneDisplay) {
+  const owners = await identityRepo.findIdentitiesByNormalizedContact(db, {
+    phoneNormalized,
+  });
+  const foreign = owners.find((row) => String(row.id) !== String(identityId));
+  if (foreign) {
+    return {
+      ok: false,
+      code: RESULT.PHONE_CONFLICT,
+      message: "QA_PHONE_OWNED_BY_OTHER_IDENTITY",
+      phone: phoneNormalized,
+      conflictIdentityId: foreign.id,
+      conflictEmail: foreign.email_normalized || null,
+    };
+  }
+
+  const identity = await identityRepo.findIdentityById(db, identityId);
+  if (!identity) {
+    return { ok: false, code: "identity_not_found", message: "identity_not_found" };
+  }
+
+  if (identity.phone_normalized === phoneNormalized) {
+    return {
+      ok: true,
+      phoneOutcome: "already_correct",
+      phone: phoneNormalized,
+    };
+  }
+
+  const updated = await updatePlatformIdentityPhone(db, {
+    identityId,
+    primaryPhone: phoneDisplay || phoneNormalized,
+    phoneNormalized,
+    phoneVerifiedAt: new Date().toISOString(),
+  });
+  if (!updated.ok) {
+    return {
+      ok: false,
+      code: updated.code,
+      message: updated.code,
+      phone: phoneNormalized,
+    };
+  }
+  return {
+    ok: true,
+    phoneOutcome: identity.phone_normalized ? "phone_replaced" : "phone_assigned",
+    phone: phoneNormalized,
+  };
+}
+
 async function ensureOneQaUser(db, ctx, user, password, options = {}) {
   const email = String(user.email).trim().toLowerCase();
+  const phoneAssessed = assessQaPhone(user.phone);
+  if (!phoneAssessed.ok) {
+    return { ok: false, ...phoneAssessed, email, username: user.username };
+  }
+  const phoneNormalized = phoneAssessed.normalized;
+  const phoneDisplay = phoneAssessed.display;
+
   let identity = await findIdentityByEmail(db, email);
   const linkedForeign = identity
     ? (await findStaffLinkedToIdentity(db, identity.id)).find(
@@ -221,12 +348,32 @@ async function ensureOneQaUser(db, ctx, user, password, options = {}) {
     };
   }
 
+  const phoneOwners = await identityRepo.findIdentitiesByNormalizedContact(db, {
+    phoneNormalized,
+  });
+  if (!identity) {
+    if (phoneOwners.length > 0) {
+      return {
+        ok: false,
+        code: RESULT.PHONE_CONFLICT,
+        message: "QA_PHONE_OWNED_BY_OTHER_IDENTITY",
+        phone: phoneNormalized,
+        email,
+        username: user.username,
+        conflictEmail: phoneOwners[0].email_normalized || null,
+      };
+    }
+  }
+
   let identityCreated = false;
   if (!identity) {
     const created = await createPlatformIdentity(db, {
       primaryEmail: email,
       emailNormalized: email,
       emailVerifiedAt: new Date().toISOString(),
+      primaryPhone: phoneDisplay,
+      phoneNormalized,
+      phoneVerifiedAt: new Date().toISOString(),
       status: "active",
       mustChangePassword: false,
     });
@@ -237,13 +384,24 @@ async function ensureOneQaUser(db, ctx, user, password, options = {}) {
     identityCreated = true;
   }
 
+  const identityId = identity.id;
+  const phoneEnsure = await ensureQaIdentityPhone(
+    db,
+    identityId,
+    phoneNormalized,
+    phoneDisplay
+  );
+  if (!phoneEnsure.ok) {
+    return { ok: false, ...phoneEnsure, email, username: user.username };
+  }
+
   const staffList = await listStaffMembersByOrganization(db, {
     organizationId: ctx.organization.id,
   });
   let staffMember =
     (staffList.staffMembers || []).find(
       (s) =>
-        s.platformIdentityId === identity.id ||
+        s.platformIdentityId === identityId ||
         (s.emailNormalized && s.emailNormalized === email)
     ) || null;
 
@@ -255,11 +413,11 @@ async function ensureOneQaUser(db, ctx, user, password, options = {}) {
       lastName: user.lastName,
       displayName: user.displayName,
       email,
-      phone: user.phone,
+      phone: phoneNormalized,
       jobTitle: user.jobTitle,
       employmentType: "permanent",
       status: "active",
-      platformIdentityId: identity.id,
+      platformIdentityId: identityId,
     });
     if (!createdStaff.ok) {
       return {
@@ -275,12 +433,12 @@ async function ensureOneQaUser(db, ctx, user, password, options = {}) {
       const linked = await linkStaffMemberToIdentity(db, {
         id: staffMember.id,
         organizationId: ctx.organization.id,
-        platformIdentityId: identity.id,
+        platformIdentityId: identityId,
       });
       if (!linked.ok) {
         return { ok: false, code: linked.code, message: linked.code, email };
       }
-    } else if (String(staffMember.platformIdentityId) !== String(identity.id)) {
+    } else if (String(staffMember.platformIdentityId) !== String(identityId)) {
       return {
         ok: false,
         code: RESULT.EMAIL_CONFLICT,
@@ -293,6 +451,7 @@ async function ensureOneQaUser(db, ctx, user, password, options = {}) {
       organizationId: ctx.organization.id,
       patch: {
         email,
+        phone: phoneNormalized,
         jobTitle: user.jobTitle,
         displayName: user.displayName,
       },
@@ -351,12 +510,12 @@ async function ensureOneQaUser(db, ctx, user, password, options = {}) {
   const identityRow =
     identity.password_hash !== undefined
       ? identity
-      : await identityRepo.findIdentityById(db, identity.id);
+      : await identityRepo.findIdentityById(db, identityId);
   const hasPassword = Boolean(identityRow && identityRow.password_hash);
   let passwordOutcome = "unchanged";
   if (identityCreated || options.resetPasswords === true || !hasPassword) {
     const set = await setPlatformIdentityPassword(db, {
-      identityId: identity.id,
+      identityId,
       password,
       mustChangePassword: false,
     });
@@ -370,6 +529,7 @@ async function ensureOneQaUser(db, ctx, user, password, options = {}) {
     ok: true,
     username: user.username,
     email,
+    phone: phoneNormalized,
     displayName: user.displayName,
     roleKey: user.roleKey,
     scopeType: user.scopeType,
@@ -377,8 +537,9 @@ async function ensureOneQaUser(db, ctx, user, password, options = {}) {
     facilityKey: ctx.facility.key,
     facilityDisplayName: ctx.facility.displayName,
     staffMemberId: staffMember.id,
-    identityId: identity.id,
+    identityId,
     passwordOutcome,
+    phoneOutcome: identityCreated ? "phone_assigned" : phoneEnsure.phoneOutcome,
     legacyNote: user.legacyNote || null,
   };
 }
@@ -400,9 +561,42 @@ async function verifyQaUser(db, ctx, provisioned) {
   const allowKey = POSITIVE_PERMISSION_BY_ROLE[provisioned.roleKey];
   const denyKey = NEGATIVE_PERMISSION_BY_ROLE[provisioned.roleKey];
   const nav = buildActiveClinicNavigation(perms.permissions || []);
+
+  const byEmail = await identityRepo.findIdentitiesByNormalizedContact(db, {
+    emailNormalized: provisioned.email,
+  });
+  const byPhone = await identityRepo.findIdentitiesByNormalizedContact(db, {
+    phoneNormalized: provisioned.phone,
+  });
+  const emailIdentityId = byEmail[0] && byEmail[0].id;
+  const phoneIdentityId = byPhone[0] && byPhone[0].id;
+  const emailPhoneMatch =
+    byEmail.length === 1 &&
+    byPhone.length === 1 &&
+    String(emailIdentityId) === String(phoneIdentityId) &&
+    String(emailIdentityId) === String(provisioned.identityId);
+
+  const phoneResolve = await resolveIdentityForLogin(db, {
+    identifier: provisioned.phone,
+  });
+  const phoneResolveOk =
+    phoneResolve.ok === true &&
+    phoneResolve.kind === "phone" &&
+    String(phoneResolve.identityRow.id) === String(provisioned.identityId);
+
+  let passwordVerifyOk = null;
+  if (provisioned.verifyPassword) {
+    const pw = await verifyPlatformIdentityPassword(db, {
+      identityId: provisioned.identityId,
+      password: provisioned.verifyPassword,
+    });
+    passwordVerifyOk = pw.ok === true;
+  }
+
   return {
     username: provisioned.username,
     email: provisioned.email,
+    phone: provisioned.phone,
     roleKey: provisioned.roleKey,
     scopeType: provisioned.scopeType,
     facility: provisioned.facilityDisplayName,
@@ -421,11 +615,20 @@ async function verifyQaUser(db, ctx, provisioned) {
     charge: set.has("activeclinic.billing.charge"),
     collect: set.has("activeclinic.payment.collect"),
     assignAccess: set.has("activeclinic.staff.assign_access"),
+    identityPhone: identity && identity.phone_normalized,
+    staffPhone: staff && staff.phone_normalized,
+    staffPhoneMatches: staff && staff.phone_normalized === provisioned.phone,
+    emailPhoneMatch,
+    phoneResolveOk,
+    passwordVerifyOk,
   };
 }
 
 async function countQaArtifacts(db, organizationId) {
   const emails = QA_ROLE_USERS.map((u) => u.email);
+  const phones = QA_ROLE_USERS.map((u) => assessQaPhone(u.phone).normalized).filter(
+    Boolean
+  );
   const identities = await db.query(
     `SELECT count(*)::int AS n FROM platform.identities
       WHERE email_normalized = ANY($1::text[])`,
@@ -447,16 +650,24 @@ async function countQaArtifacts(db, organizationId) {
         AND a.revoked_at IS NULL`,
     [organizationId, emails]
   );
+  const phoneOwners = await db.query(
+    `SELECT count(DISTINCT phone_normalized)::int AS n
+       FROM platform.identities
+      WHERE phone_normalized = ANY($1::text[])`,
+    [phones]
+  );
   return {
     identities: identities.rows[0].n,
     staff: staff.rows[0].n,
     activeRoleAssignments: roles.rows[0].n,
+    distinctQaPhones: phoneOwners.rows[0].n,
   };
 }
 
 async function snapshotPreservedDemoUsers(db, organizationId) {
   const r = await db.query(
-    `SELECT email_normalized, display_name, status, platform_identity_id
+    `SELECT email_normalized, display_name, status, platform_identity_id,
+            phone_normalized
        FROM activeclinic.staff_members
       WHERE organization_id = $1
         AND email_normalized = ANY($2::text[])
@@ -467,6 +678,7 @@ async function snapshotPreservedDemoUsers(db, organizationId) {
     email: row.email_normalized,
     displayName: row.display_name,
     status: row.status,
+    phone: row.phone_normalized,
     hasIdentity: Boolean(row.platform_identity_id),
   }));
 }
@@ -526,6 +738,21 @@ async function seedActiveClinicQaRoleUsers(db, options = {}) {
     };
   }
 
+  const phoneGate = assessAllQaPhones();
+  if (!phoneGate.ok) {
+    return {
+      ok: false,
+      code: RESULT.PHONE_REJECTED,
+      message: phoneGate.message,
+      reason: phoneGate.reason,
+      acceptedFormat: phoneGate.acceptedFormat,
+      username: phoneGate.username || null,
+      phone: phoneGate.phone || null,
+      identity: envGate.identity,
+      usersCreated: 0,
+    };
+  }
+
   const ctx = await resolveDemoClinicContext(db);
   if (!ctx.ok) {
     return { ok: false, code: ctx.code, message: ctx.message || ctx.code };
@@ -548,6 +775,7 @@ async function seedActiveClinicQaRoleUsers(db, options = {}) {
       wouldProvision: QA_ROLE_USERS.length,
       beforeCounts,
       preservedDemoUsers: beforePreserved,
+      phoneDeliveryNote: QA_PHONE_DELIVERY_NOTE,
     };
   }
 
@@ -562,6 +790,7 @@ async function seedActiveClinicQaRoleUsers(db, options = {}) {
         code: one.code,
         message: one.message,
         failedUsername: user.username,
+        phone: one.phone || user.phone,
         users,
         identity: envGate.identity,
       };
@@ -569,9 +798,25 @@ async function seedActiveClinicQaRoleUsers(db, options = {}) {
     users.push(one);
   }
 
+  const representativePasswordCheck = new Set([
+    "demo_organization_admin",
+    "demo_receptionist",
+    "demo_clinician",
+    "demo_lab_technician",
+    "demo_cashier",
+    "demo_staff",
+  ]);
+
   const verifications = [];
   for (const u of users) {
-    verifications.push(await verifyQaUser(db, ctx, u));
+    verifications.push(
+      await verifyQaUser(db, ctx, {
+        ...u,
+        verifyPassword: representativePasswordCheck.has(u.username)
+          ? passwordGate.password
+          : null,
+      })
+    );
   }
 
   const afterPreserved = await snapshotPreservedDemoUsers(
@@ -584,9 +829,32 @@ async function seedActiveClinicQaRoleUsers(db, options = {}) {
        FROM activeclinic.staff_members s
        JOIN platform.organizations o ON o.id = s.organization_id
       WHERE o.organization_key = 'julflona-clinic'
-        AND s.email_normalized = ANY($1::text[])`,
-    [QA_ROLE_USERS.map((u) => u.email)]
+        AND (
+          s.email_normalized = ANY($1::text[])
+          OR s.phone_normalized = ANY($2::text[])
+        )`,
+    [
+      QA_ROLE_USERS.map((u) => u.email),
+      QA_ROLE_USERS.map((u) => assessQaPhone(u.phone).normalized),
+    ]
   );
+  const julflonaPhones = await db.query(
+    `SELECT count(*)::int AS n
+       FROM platform.identities i
+       JOIN activeclinic.staff_members s ON s.platform_identity_id = i.id
+       JOIN platform.organizations o ON o.id = s.organization_id
+      WHERE o.organization_key = 'julflona-clinic'
+        AND i.phone_normalized = ANY($1::text[])`,
+    [QA_ROLE_USERS.map((u) => assessQaPhone(u.phone).normalized)]
+  );
+
+  const phoneUpdated = users.filter(
+    (u) =>
+      u.phoneOutcome === "phone_assigned" || u.phoneOutcome === "phone_replaced"
+  ).length;
+  const phoneAlreadyCorrect = users.filter(
+    (u) => u.phoneOutcome === "already_correct"
+  ).length;
 
   return {
     ok: true,
@@ -602,9 +870,16 @@ async function seedActiveClinicQaRoleUsers(db, options = {}) {
     preservedDemoUsersBefore: beforePreserved,
     preservedDemoUsersAfter: afterPreserved,
     julflonaQaEmailStaffCount: julflona.rows[0].n,
+    julflonaQaPhoneIdentityCount: julflonaPhones.rows[0].n,
     loginReadyCount: verifications.filter((v) => v.LOGIN_READY).length,
+    emailPhoneMatchCount: verifications.filter((v) => v.emailPhoneMatch).length,
+    phoneResolveOkCount: verifications.filter((v) => v.phoneResolveOk).length,
+    phoneUpdated,
+    phoneAlreadyCorrect,
+    phoneConflicts: 0,
     passwordPolicyAccepted: true,
     passwordMustChange: false,
+    phoneDeliveryNote: QA_PHONE_DELIVERY_NOTE,
   };
 }
 
@@ -617,7 +892,11 @@ module.exports = {
   PRESERVED_DEMO_EMAILS,
   POSITIVE_PERMISSION_BY_ROLE,
   NEGATIVE_PERMISSION_BY_ROLE,
+  QA_PHONE_DELIVERY_NOTE,
   assessPassword,
+  assessQaPhone,
+  assessAllQaPhones,
+  ensureQaIdentityPhone,
   seedActiveClinicQaRoleUsers,
   resolveDemoClinicContext,
   verifyQaUser,

@@ -138,6 +138,38 @@ async function updateIdentityPasswordHash(db, input) {
 
 /**
  * @param {{ query: Function }} db
+ * @param {{
+ *   identityId: string,
+ *   primaryPhone: string,
+ *   phoneNormalized: string,
+ *   phoneVerifiedAt?: string|Date|null,
+ * }} input
+ */
+async function updateIdentityPhone(db, input) {
+  const result = await db.query(
+    `UPDATE platform.identities
+        SET primary_phone = $2,
+            phone_normalized = $3,
+            phone_verified_at = COALESCE($4::timestamptz, phone_verified_at, now()),
+            updated_at = now()
+      WHERE id = $1
+      RETURNING *`,
+    [
+      input.identityId,
+      input.primaryPhone,
+      input.phoneNormalized,
+      input.phoneVerifiedAt === undefined
+        ? null
+        : input.phoneVerifiedAt instanceof Date
+          ? input.phoneVerifiedAt.toISOString()
+          : input.phoneVerifiedAt,
+    ]
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * @param {{ query: Function }} db
  * @param {{ identityId: string, failedSignInCount: number, signInLockedUntil?: Date|string|null }} input
  */
 async function updateIdentitySignInFailure(db, input) {
@@ -331,6 +363,7 @@ module.exports = {
   findIdentityByVerifiedContact,
   findIdentitiesByNormalizedContact,
   updateIdentityPasswordHash,
+  updateIdentityPhone,
   updateIdentitySignInFailure,
   recordIdentitySignInSuccess,
   setMustChangePassword,

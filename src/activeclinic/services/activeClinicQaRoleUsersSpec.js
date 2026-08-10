@@ -27,7 +27,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Organization Administrator",
     roleKey: "activeclinic_organization_admin",
     scopeType: "organisation",
-    phone: "+260900001001",
+    phone: "+260970000001",
   },
   {
     username: "demo_network_admin",
@@ -38,7 +38,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Network Administrator",
     roleKey: "activeclinic_network_admin",
     scopeType: "organisation",
-    phone: "+260900001002",
+    phone: "+260970000002",
     legacyNote: "LEGACY / COMPATIBILITY ROLE",
   },
   {
@@ -50,7 +50,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Facility Administrator",
     roleKey: "activeclinic_facility_admin",
     scopeType: "facility",
-    phone: "+260900001003",
+    phone: "+260970000003",
   },
   {
     username: "demo_clinic_manager",
@@ -61,7 +61,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Clinic Manager",
     roleKey: "activeclinic_clinic_manager",
     scopeType: "facility",
-    phone: "+260900001004",
+    phone: "+260970000004",
   },
   {
     username: "demo_receptionist",
@@ -72,7 +72,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Receptionist",
     roleKey: "activeclinic_receptionist",
     scopeType: "facility",
-    phone: "+260900001005",
+    phone: "+260970000005",
   },
   {
     username: "demo_nurse",
@@ -83,7 +83,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Nurse",
     roleKey: "activeclinic_nurse",
     scopeType: "facility",
-    phone: "+260900001006",
+    phone: "+260970000006",
   },
   {
     username: "demo_clinician",
@@ -94,7 +94,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Clinician",
     roleKey: "activeclinic_clinician",
     scopeType: "facility",
-    phone: "+260900001007",
+    phone: "+260970000007",
   },
   {
     username: "demo_pharmacist",
@@ -105,7 +105,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Pharmacist",
     roleKey: "activeclinic_pharmacist",
     scopeType: "facility",
-    phone: "+260900001008",
+    phone: "+260970000008",
   },
   {
     username: "demo_lab_technician",
@@ -116,7 +116,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Laboratory Technician",
     roleKey: "activeclinic_lab_technician",
     scopeType: "facility",
-    phone: "+260900001009",
+    phone: "+260970000009",
   },
   {
     username: "demo_radiology_staff",
@@ -127,7 +127,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Radiology Staff",
     roleKey: "activeclinic_radiology_staff",
     scopeType: "facility",
-    phone: "+260900001010",
+    phone: "+260970000010",
   },
   {
     username: "demo_billing_officer",
@@ -138,7 +138,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Billing Officer",
     roleKey: "activeclinic_billing_officer",
     scopeType: "facility",
-    phone: "+260900001011",
+    phone: "+260970000011",
   },
   {
     username: "demo_cashier",
@@ -149,7 +149,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Cashier",
     roleKey: "activeclinic_cashier",
     scopeType: "facility",
-    phone: "+260900001012",
+    phone: "+260970000012",
   },
   {
     username: "demo_finance_supervisor",
@@ -160,7 +160,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Finance Supervisor",
     roleKey: "activeclinic_finance_supervisor",
     scopeType: "facility",
-    phone: "+260900001013",
+    phone: "+260970000013",
   },
   {
     username: "demo_auditor",
@@ -171,7 +171,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "Auditor",
     roleKey: "activeclinic_auditor",
     scopeType: "organisation",
-    phone: "+260900001014",
+    phone: "+260970000014",
   },
   {
     username: "demo_staff",
@@ -182,7 +182,7 @@ const QA_ROLE_USERS = Object.freeze([
     jobTitle: "General Staff",
     roleKey: "activeclinic_staff",
     scopeType: "organisation",
-    phone: "+260900001015",
+    phone: "+260970000015",
   },
 ]);
 
