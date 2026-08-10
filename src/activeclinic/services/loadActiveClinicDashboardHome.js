@@ -129,50 +129,113 @@ async function loadActiveClinicDashboardHome(db, input) {
   }
 
   const quickActions = [];
-  if (hasPerm(perms, "activeclinic.facility.view")) {
-    quickActions.push({
-      label: "View facilities",
-      href: "/app/facilities",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.staff.view")) {
-    quickActions.push({
-      label: "View staff",
-      href: "/app/staff",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.staff.assign_access")) {
-    quickActions.push({
-      label: "Manage access",
-      href: "/app/access",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.organization.manage")) {
-    quickActions.push({
-      label: "Settings",
-      href: "/app/settings",
-      primary: false,
-    });
-  }
   if (
     !shell.selectedFacility &&
     !auth.isNetworkAdmin &&
     (shell.canSwitchFacility ||
       (shell.availableFacilities && shell.availableFacilities.length))
   ) {
-    quickActions.unshift({
+    quickActions.push({
       label: "Select facility",
       href: "/app/select-facility",
       primary: true,
     });
   }
+  if (hasPerm(perms, "activeclinic.patient.search")) {
+    quickActions.push({
+      label: "Patients",
+      href: "/app/patients",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.appointment.view")) {
+    quickActions.push({
+      label: "Appointments",
+      href: "/app/appointments",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.reception.view")) {
+    quickActions.push({
+      label: "Reception",
+      href: "/app/reception",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.encounter.view")) {
+    quickActions.push({
+      label: "Clinical",
+      href: "/app/clinical",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.pharmacy.view")) {
+    quickActions.push({
+      label: "Pharmacy",
+      href: "/app/pharmacy",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.diagnostics.view") ||
+      hasPerm(perms, "activeclinic.lab.view") ||
+      hasPerm(perms, "activeclinic.radiology.view")) {
+    quickActions.push({
+      label: "Diagnostics",
+      href: "/app/diagnostics",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.billing.view")) {
+    quickActions.push({
+      label: "Billing",
+      href: "/app/billing",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.cashier.open_session")) {
+    quickActions.push({
+      label: "Cashier",
+      href: "/app/cashier",
+      primary: false,
+    });
+  }
+  if (
+    hasPerm(perms, "activeclinic.facility.create") ||
+    hasPerm(perms, "activeclinic.facility.update") ||
+    hasPerm(perms, "activeclinic.facility.archive")
+  ) {
+    quickActions.push({
+      label: "Facilities",
+      href: "/app/facilities",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.staff.view")) {
+    quickActions.push({
+      label: "Staff",
+      href: "/app/staff",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.staff.assign_access")) {
+    quickActions.push({
+      label: "Roles & access",
+      href: "/app/access",
+      primary: false,
+    });
+  }
+  if (hasPerm(perms, "activeclinic.access")) {
+    quickActions.push({
+      label: "Settings",
+      href: "/app/settings",
+      primary: false,
+    });
+  }
 
   const empty =
     activeFacilities.length === 0 &&
-    hasPerm(perms, "activeclinic.facility.view") &&
+    (hasPerm(perms, "activeclinic.facility.create") ||
+      hasPerm(perms, "activeclinic.facility.update")) &&
     setupTasks.some((t) => t.key === "add_facility" && !t.done);
 
   const mode = empty ? "empty" : "ready";
@@ -202,13 +265,16 @@ async function loadActiveClinicDashboardHome(db, input) {
           : "Select a facility to continue",
     },
     summaries: {
-      facilities: hasPerm(perms, "activeclinic.facility.view")
-        ? {
-            label: "Active facilities",
-            value: activeFacilities.length,
-            href: "/app/facilities",
-          }
-        : null,
+      facilities:
+        hasPerm(perms, "activeclinic.facility.create") ||
+        hasPerm(perms, "activeclinic.facility.update") ||
+        hasPerm(perms, "activeclinic.facility.archive")
+          ? {
+              label: "Active facilities",
+              value: activeFacilities.length,
+              href: "/app/facilities",
+            }
+          : null,
       staff: hasPerm(perms, "activeclinic.staff.view")
         ? {
             label: "Active staff",
@@ -226,13 +292,7 @@ async function loadActiveClinicDashboardHome(db, input) {
     },
     setupTasks,
     quickActions,
-    notices: [
-      {
-        tone: "info",
-        message:
-          "Clinical modules are not enabled yet. This home view shows infrastructure readiness only.",
-      },
-    ],
+    notices: [],
     unsupportedStitchKpisOmitted: [
       "Patients registered today",
       "Patients waiting",

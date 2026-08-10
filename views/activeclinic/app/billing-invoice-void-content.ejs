@@ -1,0 +1,16 @@
+<%
+  var invoice = (pageData && pageData.invoice) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-panel" data-ac-page-section="invoice-void">
+  <h2 class="ac-dashboard__card-title">Void invoice <%= invoice.invoice_number %></h2>
+  <p class="ac-muted">Elevated action. This permanently voids a posted invoice.</p>
+  <form method="POST" action="/app/billing/invoices/<%= invoice.id %>/void">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+    <div class="ac-form-group">
+      <label for="reason">Reason *</label>
+      <textarea id="reason" name="reason" rows="3" required></textarea>
+    </div>
+    <button type="submit" class="ac-btn" data-ac-finance-action="void-invoice">Void invoice</button>
+  </form>
+</section>

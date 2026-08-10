@@ -17,7 +17,7 @@
     </div>
     
     <form method="POST" action="/app/diagnostics/critical-alert/<%= pageData.alert.resultId %>/acknowledge">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
       
       <div class="ac-form-group">
         <label for="recipient_name">Notified (clinician name) *</label>

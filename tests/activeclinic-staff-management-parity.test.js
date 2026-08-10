@@ -239,7 +239,7 @@ describe("ActiveClinic staff create/invite/edit parity (AC-V6-S05)", () => {
     assert.equal(createPage.status, 200);
     assert.match(createPage.text, /data-ac-page-section="staff-create"/);
     assert.match(createPage.text, /name="facility_ids"/);
-    assert.match(createPage.text, /name="role_key"/);
+    assert.match(createPage.text, /name="role_keys"/);
 
     const noCsrf = await request(app)
       .post("/app/staff")
@@ -252,7 +252,7 @@ describe("ActiveClinic staff create/invite/edit parity (AC-V6-S05)", () => {
         employment_type: "permanent",
         facility_ids: [ac.facilityId],
         primary_facility_id: ac.facilityId,
-        role_key: STAFF_ROLE,
+        role_keys: [STAFF_ROLE],
         role_scope: "facility",
         role_facility_id: ac.facilityId,
         issue_invitation: "1",
@@ -273,7 +273,7 @@ describe("ActiveClinic staff create/invite/edit parity (AC-V6-S05)", () => {
         job_title: "Nurse",
         facility_ids: [ac.facilityId],
         primary_facility_id: ac.facilityId,
-        role_key: STAFF_ROLE,
+        role_keys: [STAFF_ROLE],
         role_scope: "facility",
         role_facility_id: ac.facilityId,
         issue_invitation: "1",

@@ -1,6 +1,6 @@
 <div data-ac-stitch="59ee5d74ff1f47eca3c6fb09413b7c09" data-ac-screen="enter-laboratory-result">
   <form method="POST">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
     
     <div class="ac-form-group">
       <label>Request: <%= pageData.resultEntry.request.requestNumber %></label>

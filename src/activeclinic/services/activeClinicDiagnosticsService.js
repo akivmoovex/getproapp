@@ -19,11 +19,49 @@ const RESULT = {
 };
 
 const PERM = {
+  // Legacy hub/read aggregation (admin/manager/auditor).
   VIEW: "activeclinic.diagnostics.view",
   COLLECT: "activeclinic.diagnostics.collect",
   RESULT: "activeclinic.diagnostics.result",
   VERIFY: "activeclinic.diagnostics.verify",
+  // Modality-specific (Prompt 9).
+  LAB_VIEW: "activeclinic.lab.view",
+  LAB_COLLECT: "activeclinic.lab.collect",
+  LAB_RESULT: "activeclinic.lab.result",
+  LAB_VERIFY: "activeclinic.lab.verify",
+  RADIOLOGY_VIEW: "activeclinic.radiology.view",
+  RADIOLOGY_RESULT: "activeclinic.radiology.result",
+  RADIOLOGY_VERIFY: "activeclinic.radiology.verify",
 };
+
+/** Laboratory read: modality key or legacy diagnostics.view aggregation. */
+const LAB_VIEW_ANY = Object.freeze([PERM.LAB_VIEW, PERM.VIEW]);
+/** Radiology read: modality key or legacy diagnostics.view aggregation. */
+const RADIOLOGY_VIEW_ANY = Object.freeze([PERM.RADIOLOGY_VIEW, PERM.VIEW]);
+/** Diagnostics nav/hub: either modality view or legacy aggregation. */
+const DIAGNOSTICS_HUB_ANY = Object.freeze([
+  PERM.LAB_VIEW,
+  PERM.RADIOLOGY_VIEW,
+  PERM.VIEW,
+]);
+
+function permissionSet(auth) {
+  return new Set(Array.isArray(auth && auth.permissions) ? auth.permissions : []);
+}
+
+function canViewLaboratory(auth) {
+  const set = permissionSet(auth);
+  return set.has(PERM.LAB_VIEW) || set.has(PERM.VIEW);
+}
+
+function canViewRadiology(auth) {
+  const set = permissionSet(auth);
+  return set.has(PERM.RADIOLOGY_VIEW) || set.has(PERM.VIEW);
+}
+
+function canEnterDiagnosticsHub(auth) {
+  return canViewLaboratory(auth) || canViewRadiology(auth);
+}
 
 /**
  * Collect specimen for laboratory request
@@ -827,4 +865,10 @@ module.exports = {
   acknowledgeCriticalResult,
   RESULT,
   PERM,
+  LAB_VIEW_ANY,
+  RADIOLOGY_VIEW_ANY,
+  DIAGNOSTICS_HUB_ANY,
+  canViewLaboratory,
+  canViewRadiology,
+  canEnterDiagnosticsHub,
 };

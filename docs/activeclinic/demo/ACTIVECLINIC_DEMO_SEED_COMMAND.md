@@ -13,7 +13,8 @@ DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5 \
 
 DATABASE_URL=… \
 DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5 \
-  npm run activeclinic:seed-demo-clinics -- --confirm --reset-demo-password
+  npm run activeclinic:seed-demo-clinics -- --confirm --reset-demo-password \
+    --clinic=activeclinic-demo
 
 DATABASE_URL=… \
 DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5 \
@@ -27,7 +28,8 @@ DATABASE_IDENTITY_EXPECTED=blessboard-platform-v5 \
 | `--dry-run` | Plan only (default unless `--confirm`) |
 | `--confirm` | Apply writes |
 | `--clinic=<key>` | Limit to `activeclinic-demo` or `julflona-clinic` (repeatable) |
-| `--reset-demo-password` | Allow credential (re)set for Julflona requested value / temp secret path |
+| `--reset-demo-password` | Allow credential (re)set. Demo admin + departmental users use `ACTIVECLINIC_DEMO_STAFF_PASSWORD` or built-in testing default (`mustChangePassword=true`). Julflona uses `--julflona-password` / temp handoff path. |
+| `--demo-password=…` | Optional override for demo admin + departmental demo staff passwords (testing/demo only) |
 | `--julflona-password=…` | Override requested Julflona credential (default is the mission-requested value) |
 | `--audit` | Read-only demo tenant report |
 

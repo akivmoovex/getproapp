@@ -8,6 +8,27 @@
   <div class="ac-panel">
     <h2 class="ac-dashboard__card-title">Invitation ready</h2>
     <p><strong><%= staff.displayName || 'Staff member' %></strong> has been created<%= invite.identityCreated ? ' with a new login identity' : '' %>.</p>
+    <% if (invite.roles && invite.roles.length) { %>
+    <p class="ac-muted">Assigned roles: <%= invite.roles.map(function (r) { return r.roleKey; }).join(', ') %>.</p>
+    <% } %>
+    <% if (invite.accessReview && invite.accessReview.groups && invite.accessReview.groups.length) { %>
+    <div class="ac-panel" style="margin-top:1rem" data-ac-access-review="1">
+      <h3 class="ac-dashboard__card-title">Effective access</h3>
+      <ul>
+        <% invite.accessReview.groups.forEach(function (g) { %>
+        <li><strong><%= g.label %></strong> — <%= g.count %> permission<%= g.count === 1 ? '' : 's' %></li>
+        <% }) %>
+      </ul>
+      <details>
+        <summary>Detailed permission keys</summary>
+        <ul class="ac-muted" style="font-size:.85rem">
+          <% (invite.accessReview.permissions || []).forEach(function (p) { %>
+          <li><code><%= p %></code></li>
+          <% }) %>
+        </ul>
+      </details>
+    </div>
+    <% } %>
     <dl class="ac-dl">
       <div>
         <dt>Delivery</dt>

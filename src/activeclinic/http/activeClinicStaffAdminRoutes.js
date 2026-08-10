@@ -203,6 +203,7 @@ a{color:#0f766e}
         employmentType: (req.body && req.body.employment_type) || "permanent",
         jobTitle: req.body && req.body.job_title,
         roleAssignments,
+        auth,
         actorPlatformIdentityId: auth.platformIdentity.id,
         deploymentCode: deployment.code,
         env,

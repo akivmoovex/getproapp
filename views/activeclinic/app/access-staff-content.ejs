@@ -4,6 +4,8 @@
   var facilities = detail.facilities || [];
   var assignments = detail.assignments || [];
   var actions = detail.actions || {};
+  var effectiveAccess = detail.effectiveAccess || {};
+  var facilityScoped = effectiveAccess.facilityScoped || { groups: [], permissionCount: 0 };
 %>
 <section class="ac-access-detail" data-ac-page-section="access-staff" data-ac-visual="stitch-gap">
   <div class="ac-panel ac-staff-summary" data-ac-staff-summary="1">
@@ -15,6 +17,13 @@
         <p class="ac-muted" style="margin:0">
           <%= staff.jobTitle || 'No job title' %> · <%= staff.statusLabel || staff.status %>
         </p>
+        <% if (staff.email || staff.phone) { %>
+        <p class="ac-muted" style="margin:.35rem 0 0">
+          <% if (staff.email) { %><%= staff.email %><% } %>
+          <% if (staff.email && staff.phone) { %> · <% } %>
+          <% if (staff.phone) { %><%= staff.phone %><% } %>
+        </p>
+        <% } %>
         <% if (staff.profileHref) { %>
         <p style="margin:.75rem 0 0"><a href="<%= staff.profileHref %>">Open staff profile</a></p>
         <% } %>
@@ -23,6 +32,13 @@
     <p class="ac-muted" data-ac-effective-count="<%= detail.activeCount || 0 %>">
       <%= detail.activeCount || 0 %> currently effective assignment<%= (detail.activeCount || 0) === 1 ? '' : 's' %>
     </p>
+    <% if (actions.profileHref) { %>
+    <p class="ac-muted" style="margin:0">
+      Account actions (invite, suspend, credentials) are available on the
+      <a href="<%= actions.profileHref %>">staff profile</a>
+      when your permissions allow them.
+    </p>
+    <% } %>
   </div>
 
   <div class="ac-panel">
@@ -30,7 +46,7 @@
     <% if (!facilities.length) { %>
     <p class="ac-muted" data-ac-empty="facility-assignments">No facility assignments on this staff profile.</p>
     <% } else { %>
-    <ul>
+    <ul class="ac-access-facility-list">
       <% facilities.forEach(function (f) { %>
       <li>
         <strong><%= f.displayName || f.facilityKey %></strong>
@@ -38,6 +54,40 @@
           · <%= f.status %>
           <%= f.isPrimary ? '· Primary' : '' %>
         </span>
+      </li>
+      <% }) %>
+    </ul>
+    <p class="ac-muted" style="margin-bottom:0">
+      To remove a facility, edit the staff profile. Facility-scoped roles for that facility must be revoked first.
+    </p>
+    <% } %>
+  </div>
+
+  <div class="ac-panel" data-ac-effective-access="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Effective access</h2>
+    <p class="ac-muted">
+      Capability summary
+      <% if (effectiveAccess.facilityContextLabel) { %>
+      for <strong><%= effectiveAccess.facilityContextLabel %></strong>
+      <% } %>
+      (server-side, facility-scoped where applicable).
+    </p>
+    <% if (!(facilityScoped.groups || []).length) { %>
+    <p class="ac-muted" data-ac-empty="effective-access">No effective permissions from current role assignments.</p>
+    <% } else { %>
+    <ul class="ac-access-capability-groups">
+      <% (facilityScoped.groups || []).forEach(function (g) { %>
+      <li>
+        <strong><%= g.label %></strong>
+        <span class="ac-muted"> · <%= g.count %> permission<%= g.count === 1 ? '' : 's' %></span>
+        <details class="ac-access-perm-details">
+          <summary>Show permissions</summary>
+          <ul>
+            <% (g.permissions || []).forEach(function (p) { %>
+            <li><code><%= p %></code></li>
+            <% }) %>
+          </ul>
+        </details>
       </li>
       <% }) %>
     </ul>
@@ -60,14 +110,14 @@
         title: 'No role assignments',
         description: 'No role assignments recorded for this staff member.',
         primaryAction: actions.canAssign
-          ? { href: actions.assignHref, label: 'Assign a foundational role' }
+          ? { href: actions.assignHref, label: 'Assign roles' }
           : null
       }
     }) %>
     <% } else { %>
     <div class="ac-stack">
       <% assignments.forEach(function (a) { %>
-      <article class="ac-access-assignment" data-ac-assignment="<%= a.id %>" data-effective="<%= a.effective ? '1' : '0' %>">
+      <article class="ac-access-assignment" data-ac-assignment="<%= a.id %>" data-role-key="<%= a.roleKey %>" data-effective="<%= a.effective ? '1' : '0' %>">
         <h3 style="margin:0 0 .35rem;font-size:1rem"><%= a.roleLabel %></h3>
         <p class="ac-muted" style="margin:0 0 .5rem"><%= a.scopeLabel %></p>
         <p style="margin:0 0 .5rem">

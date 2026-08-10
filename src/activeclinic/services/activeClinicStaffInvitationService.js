@@ -27,6 +27,10 @@ const {
   assignStaffRole,
 } = require("./activeClinicAuthorizationService");
 const {
+  canGrantRole,
+  RESULT: ACCESS_RESULT,
+} = require("./activeClinicAccessManagementService");
+const {
   resolveOrCreateInvitationIdentity,
   RESULT: MATCH_RESULT,
 } = require("./resolveActiveClinicInvitationIdentity");
@@ -58,6 +62,7 @@ const RESULT = Object.freeze({
   PRODUCT_NOT_ENABLED: "activeclinic_product_not_enabled",
   FACILITY_ASSIGNMENT_FAILED: "facility_assignment_failed",
   ROLE_ASSIGNMENT_FAILED: "role_assignment_failed",
+  GRANT_DENIED: "grant_denied",
   FORBIDDEN: "forbidden",
 });
 
@@ -254,6 +259,23 @@ async function inviteActiveClinicStaff(db, input) {
         ? src.roleAssignments
         : [];
       for (const role of roleAssignments) {
+        if (src.auth) {
+          const grant = await canGrantRole(client, {
+            auth: src.auth,
+            roleKey: role.roleKey,
+            scopeType: role.scopeType,
+            facilityId: role.facilityId || null,
+            targetStaffMemberId: linked.staffMember.id,
+          });
+          if (!grant.ok) {
+            await client.query("ROLLBACK");
+            return {
+              ok: false,
+              code: RESULT.GRANT_DENIED,
+              detail: grant.code || ACCESS_RESULT.GRANT_DENIED,
+            };
+          }
+        }
         const assigned = await assignStaffRole(client, {
           organizationId,
           staffMemberId: linked.staffMember.id,

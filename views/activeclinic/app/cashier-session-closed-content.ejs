@@ -1,0 +1,17 @@
+<%
+  var closed = (pageData && pageData.closed) || {};
+%>
+<section class="ac-panel" data-ac-page-section="cashier-session-closed">
+  <h2 class="ac-dashboard__card-title">Session closed</h2>
+  <% if (closed.varianceMinor) { %>
+  <p class="ac-muted">
+    A cash variance of <%= closed.varianceFormatted || closed.varianceMinor %> was recorded.
+    Finance supervisor reconciliation may be required.
+  </p>
+  <% } else { %>
+  <p class="ac-muted">Your cashier session was closed successfully.</p>
+  <% } %>
+  <div class="ac-actions">
+    <a class="ac-btn" href="/app/cashier">Back to cashier</a>
+  </div>
+</section>

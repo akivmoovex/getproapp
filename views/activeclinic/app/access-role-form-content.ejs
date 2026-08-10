@@ -7,6 +7,8 @@
   var mode = form.mode || 'assign';
   var roleOptions = form.roleOptions || [];
   var facilities = form.facilities || [];
+  var accessPreview = form.accessPreview || null;
+  var selectedKeys = values.roleKeys || (values.roleKey ? [values.roleKey] : []);
 %>
 <section class="ac-access-form" data-ac-page-section="access-<%= mode %>" data-ac-visual="stitch-gap">
   <% if (errors.length) { %>
@@ -39,27 +41,45 @@
         Change role or scope (revokes current assignment and creates a new one)
       </label>
     </fieldset>
-    <% } %>
 
     <div class="ac-field">
       <label class="ac-label" for="role_key">Role</label>
-      <select class="ac-select" id="role_key" name="role_key" required <%= mode === 'edit' && values.editMode !== 'replace' ? '' : '' %>>
+      <select class="ac-select" id="role_key" name="role_key" required>
         <% roleOptions.forEach(function (r) { %>
         <option value="<%= r.value %>" <%= values.roleKey === r.value ? 'selected' : '' %>><%= r.label %></option>
         <% }) %>
       </select>
+      <% if (fieldErrors.role_key) { %><p class="ac-field-error"><%= fieldErrors.role_key %></p><% } %>
+    </div>
+    <% } else { %>
+    <fieldset class="ac-field" data-ac-multi-role="1">
+      <legend class="ac-label">Roles</legend>
+      <p class="ac-muted" style="margin-top:0">Select one or more roles. Scope is applied per role rules.</p>
+      <div class="ac-check-grid">
+        <% roleOptions.forEach(function (r) { %>
+        <label class="ac-check">
+          <input type="checkbox" name="role_keys" value="<%= r.value %>" <%= selectedKeys.indexOf(String(r.value)) >= 0 ? 'checked' : '' %>/>
+          <span>
+            <strong><%= r.label %></strong>
+            <span class="ac-muted" style="display:block;font-size:.85rem"><%= r.description || '' %></span>
+          </span>
+        </label>
+        <% }) %>
+      </div>
       <% if (!roleOptions.length) { %>
       <p class="ac-field-error">No grantable roles are available for your account.</p>
       <% } %>
-      <% if (fieldErrors.role_key) { %><p class="ac-field-error"><%= fieldErrors.role_key %></p><% } %>
-    </div>
+      <% if (fieldErrors.role_keys) { %><p class="ac-field-error"><%= fieldErrors.role_keys %></p><% } %>
+    </fieldset>
+    <% } %>
 
     <div class="ac-field">
-      <label class="ac-label" for="scope_type">Scope</label>
-      <select class="ac-select" id="scope_type" name="scope_type" required>
+      <label class="ac-label" for="scope_type">Default scope for flexible roles</label>
+      <select class="ac-select" id="scope_type" name="scope_type">
         <option value="organisation" <%= values.scopeType === 'organisation' ? 'selected' : '' %>>Organization-wide</option>
-        <option value="facility" <%= values.scopeType === 'facility' ? 'selected' : '' %>>Facility</option>
+        <option value="facility" <%= values.scopeType === 'facility' || !values.scopeType ? 'selected' : '' %>>Facility</option>
       </select>
+      <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem">Organization-only and facility-only roles ignore this when their scope is fixed.</p>
       <% if (fieldErrors.scope_type) { %><p class="ac-field-error"><%= fieldErrors.scope_type %></p><% } %>
     </div>
 
@@ -81,8 +101,20 @@
       <% if (fieldErrors.expires_at) { %><p class="ac-field-error" id="err-expires_at"><%= fieldErrors.expires_at %></p><% } %>
     </div>
 
+    <% if (mode === 'assign' && accessPreview && accessPreview.groups && accessPreview.groups.length) { %>
+    <div class="ac-panel ac-access-preview" data-ac-access-preview="1">
+      <h3 class="ac-dashboard__card-title" style="margin-top:0">Capability preview</h3>
+      <p class="ac-muted">Based on selected roles (server catalogue). Final access still depends on facility scope.</p>
+      <ul class="ac-role-chips">
+        <% accessPreview.groups.forEach(function (g) { %>
+        <li class="ac-chip"><%= g.label %> (<%= g.count %>)</li>
+        <% }) %>
+      </ul>
+    </div>
+    <% } %>
+
     <div class="ac-actions-row">
-      <button type="submit" class="ac-btn"><%= mode === 'edit' ? 'Save assignment' : 'Assign role' %></button>
+      <button type="submit" class="ac-btn"><%= mode === 'edit' ? 'Save assignment' : 'Assign roles' %></button>
       <a class="ac-btn ac-btn--ghost" href="<%= form.cancelHref || '/app/access' %>">Cancel</a>
     </div>
   </form>

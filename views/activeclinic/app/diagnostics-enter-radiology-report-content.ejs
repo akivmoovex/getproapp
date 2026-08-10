@@ -1,6 +1,6 @@
 <div data-ac-stitch="41a0f1b3e1974e7ca26599bf8a37fc5f" data-ac-screen="enter-radiology-report">
   <form method="POST">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
     
     <div class="ac-form-group">
       <label>Request: <%= pageData.reportEntry.request.requestNumber %></label>

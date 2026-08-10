@@ -16,6 +16,7 @@ const {
 } = require("./loadActiveClinicAuth");
 const {
   createRequireActiveClinicPermission,
+  renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
   buildActiveClinicShellViewModel,
@@ -28,14 +29,23 @@ const {
   getCurrentCashierSession,
   closeCashierSession,
   listCashierSessions,
+  reconcileCashierSession,
   RESULT: CASHIER_RESULT,
+  PERM: CASHIER_PERM,
 } = require("../services/activeClinicCashierSessionService");
 const {
   recordPayment,
+  refundPayment,
+  reversePayment,
   RESULT: BILLING_RESULT,
   PAYMENT_METHOD,
+  PERM: BILLING_PERM,
 } = require("../services/activeClinicBillingService");
 const { formatMoney, parseMoneyInput } = require("../services/formatMoney");
+const {
+  financeIdsFromAuth,
+  hasFinancePermission,
+} = require("../services/activeClinicFinanceAuthz");
 
 function registerActiveClinicCashierRoutes(app, deps) {
   const getPool = deps.getPool;
@@ -139,6 +149,12 @@ function registerActiveClinicCashierRoutes(app, deps) {
           breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Cashier" }],
           pageData: {
             dashboard,
+            capabilities: {
+              canCollect: hasFinancePermission(auth.permissions, BILLING_PERM.PAYMENT_COLLECT),
+              canClose: hasFinancePermission(auth.permissions, CASHIER_PERM.CLOSE_SESSION),
+              canManage: hasFinancePermission(auth.permissions, CASHIER_PERM.MANAGE),
+              canReconcile: hasFinancePermission(auth.permissions, CASHIER_PERM.RECONCILE),
+            },
             stitch: { desktop: "792d5cbb6f234332a088399e4ccdd545" },
           },
         });
@@ -700,6 +716,155 @@ function registerActiveClinicCashierRoutes(app, deps) {
             stitch: { desktop: "1cd25ed2bb7a4504a63095a015bd823b" },
           },
         });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // SESSION CLOSED (variance landing)
+  // ========================================================================
+
+  app.get(
+    "/app/cashier/session/closed",
+    requireAuth,
+    requirePermission("activeclinic.cashier.close_session"),
+    async (req, res, next) => {
+      try {
+        const varianceMinor = parseInt(req.query.variance || "0", 10) || 0;
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-session-closed-content.ejs",
+          pageHeader: { title: "Session closed" },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Closed" },
+          ],
+          pageData: {
+            closed: {
+              varianceMinor,
+              varianceFormatted: formatMoney(varianceMinor),
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // ELEVATED: REFUND / REVERSE / RECONCILE
+  // ========================================================================
+
+  app.post(
+    "/app/cashier/payments/:paymentId/refund",
+    requireAuth,
+    requirePermission("activeclinic.payment.refund"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const amountMinor = parseMoneyInput(req.body.amount || "0");
+        const result = await refundPayment({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          paymentId: req.params.paymentId,
+          amountMinor,
+          reason: String(req.body.reason || "").trim(),
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Refund denied",
+              `Unable to refund (${result.result}).`,
+              { status: 403, linkHref: "/app/cashier", linkLabel: "Back to cashier" }
+            )
+          );
+        }
+        return res.redirect(303, "/app/cashier?refunded=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/payments/:paymentId/reverse",
+    requireAuth,
+    requirePermission("activeclinic.payment.reverse"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await reversePayment({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          paymentId: req.params.paymentId,
+          reason: String(req.body.reason || "").trim(),
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Reversal denied",
+              `Unable to reverse (${result.result}).`,
+              { status: 403, linkHref: "/app/cashier", linkLabel: "Back to cashier" }
+            )
+          );
+        }
+        return res.redirect(303, "/app/cashier?reversed=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/sessions/:sessionId/reconcile",
+    requireAuth,
+    requirePermission("activeclinic.cashier.reconcile"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await reconcileCashierSession({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          sessionId: req.params.sessionId,
+          approvalNotes: String(req.body.notes || "").trim() || null,
+        });
+        if (result.result !== CASHIER_RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Reconcile denied",
+              `Unable to reconcile (${result.result}).`,
+              { status: 403, linkHref: "/app/cashier/history", linkLabel: "Session history" }
+            )
+          );
+        }
+        return res.redirect(303, "/app/cashier/history?reconciled=1");
       } catch (err) {
         return next(err);
       }

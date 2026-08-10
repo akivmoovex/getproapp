@@ -1,6 +1,6 @@
 <div data-ac-stitch="b62c8afb0c59477d8bcfeaac7210987a" data-ac-screen="specimen-rejected">
   <form method="POST">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
     
     <div class="ac-form-group">
       <label>Specimen: <%= pageData.rejection.specimen.specimenIdentifier %></label>

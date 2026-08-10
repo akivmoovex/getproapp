@@ -18,7 +18,7 @@ const {
 const {
   resolveEffectivePermissions,
   listStaffRoleAssignments,
-  NETWORK_ADMIN,
+  isOrgWideAdminRole,
 } = require("./activeClinicAuthorizationService");
 const {
   listFacilitiesForStaff,
@@ -132,14 +132,14 @@ async function evaluateStaffEligibility(db, staffRow, identityRow) {
   );
 
   const hasOrgWide = roles.some((r) => r.scopeType === "organisation");
-  const isNetworkAdmin = roles.some((r) => r.roleKey === NETWORK_ADMIN);
+  const isOrgWideAdmin = roles.some((r) => isOrgWideAdminRole(r.roleKey));
 
-  if (!hasOrgWide && !isNetworkAdmin && activeFacilities.length === 0) {
+  if (!hasOrgWide && !isOrgWideAdmin && activeFacilities.length === 0) {
     return { ok: false, code: "no_valid_facility_scope" };
   }
 
   let defaultFacilityId = null;
-  if (!isNetworkAdmin && !hasOrgWide && activeFacilities.length === 1) {
+  if (!isOrgWideAdmin && !hasOrgWide && activeFacilities.length === 1) {
     defaultFacilityId = activeFacilities[0].facilityId;
   }
 
@@ -159,7 +159,7 @@ async function evaluateStaffEligibility(db, staffRow, identityRow) {
     roleAssignments: roles,
     facilityAssignments: activeFacilities,
     defaultFacilityId,
-    isNetworkAdmin: Boolean(isNetworkAdmin || hasOrgWide),
+    isNetworkAdmin: Boolean(isOrgWideAdmin || hasOrgWide),
   };
 }
 

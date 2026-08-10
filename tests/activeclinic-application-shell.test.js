@@ -229,20 +229,30 @@ describe("ActiveClinic application shell and navigation", () => {
   it("filters navigation by permissions without role-name checks", () => {
     const nav = buildActiveClinicNavigation(
       ["activeclinic.access", "activeclinic.facility.view"],
-      "facilities"
+      "home"
     );
-    assert.equal(nav.items.length, 3);
+    // facility.view alone does not expose Facilities management nav.
+    assert.equal(nav.items.length, 2);
     assert.ok(nav.items.every((i) => i.permission));
-    assert.equal(nav.items.find((i) => i.key === "facilities").current, true);
+    assert.ok(nav.items.find((i) => i.key === "home"));
     assert.ok(nav.items.find((i) => i.key === "settings"));
-    assert.equal(
-      nav.items.find((i) => i.key === "staff"),
-      undefined
-    );
+    assert.equal(nav.items.find((i) => i.key === "facilities"), undefined);
+    assert.equal(nav.items.find((i) => i.key === "staff"), undefined);
     assert.deepEqual(
       nav.desktop.map((i) => i.key),
       nav.mobile.map((i) => i.key)
     );
+
+    const adminNav = buildActiveClinicNavigation(
+      [
+        "activeclinic.access",
+        "activeclinic.facility.update",
+        "activeclinic.diagnostics.view",
+      ],
+      "facilities"
+    );
+    assert.ok(adminNav.items.find((i) => i.key === "facilities").current);
+    assert.ok(adminNav.items.find((i) => i.key === "diagnostics"));
   });
 
   it("authenticated /app uses ActiveClinic shell; unauthenticated redirects", async () => {

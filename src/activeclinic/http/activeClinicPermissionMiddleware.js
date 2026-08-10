@@ -61,7 +61,11 @@ function createRequireActiveClinicPermission(deps) {
   const env = deps.env || process.env;
   const isProduction = deps.isProduction === true;
 
-  return function requireActiveClinicPermission(permissionKey) {
+  return function requireActiveClinicPermission(permissionKeyOrKeys) {
+    const requiredKeys = Array.isArray(permissionKeyOrKeys)
+      ? permissionKeyOrKeys.map((k) => String(k || "").trim()).filter(Boolean)
+      : [String(permissionKeyOrKeys || "").trim()].filter(Boolean);
+
     return async function permissionMiddleware(req, res, next) {
       try {
         const auth = req.activeClinicAuth;
@@ -106,14 +110,21 @@ function createRequireActiveClinicPermission(deps) {
 
         const facilityId =
           (auth.selectedFacility && auth.selectedFacility.id) || null;
-        const checked = await authorizeStaffPermission(getPool(), {
-          organizationId: auth.organization.id,
-          staffMemberId: auth.staffMember.id,
-          platformIdentityId: auth.platformIdentity.id,
-          permissionKey,
-          facilityId,
-        });
-        if (!checked.allowed) {
+        let allowed = false;
+        for (const permissionKey of requiredKeys) {
+          const checked = await authorizeStaffPermission(getPool(), {
+            organizationId: auth.organization.id,
+            staffMemberId: auth.staffMember.id,
+            platformIdentityId: auth.platformIdentity.id,
+            permissionKey,
+            facilityId,
+          });
+          if (checked.allowed) {
+            allowed = true;
+            break;
+          }
+        }
+        if (!allowed) {
           const csrfToken = issueCsrfToken(env);
           return res.status(403).type("html").send(
             renderSimpleState(

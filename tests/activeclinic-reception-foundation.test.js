@@ -27,7 +27,7 @@ const {
 } = require("../src/activeclinic/services/activeClinicStaffFacilityService");
 const {
   assignStaffRole,
-  NETWORK_ADMIN,
+  RECEPTIONIST,
   FACILITY_ADMIN,
   STAFF_ROLE,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
@@ -128,12 +128,21 @@ async function seedNetwork(tenant, phone) {
     phone,
   });
   assert.equal(staff.ok, true);
-  await assignStaffRole(pool, {
+  await assignStaffToFacility(pool, {
     organizationId: tenant.orgId,
     staffMemberId: staff.staffMember.id,
-    roleKey: NETWORK_ADMIN,
-    scopeType: "organisation",
+    facilityId: tenant.facilityId,
   });
+  for (const roleKey of [FACILITY_ADMIN, RECEPTIONIST]) {
+    const role = await assignStaffRole(pool, {
+      organizationId: tenant.orgId,
+      staffMemberId: staff.staffMember.id,
+      roleKey,
+      scopeType: "facility",
+      facilityId: tenant.facilityId,
+    });
+    assert.equal(role.ok, true, JSON.stringify(role));
+  }
   return { staffMemberId: staff.staffMember.id, organizationId: tenant.orgId };
 }
 

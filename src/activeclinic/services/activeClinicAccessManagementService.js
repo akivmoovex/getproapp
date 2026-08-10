@@ -6,13 +6,31 @@
  */
 
 const accessRepo = require("../repositories/staffAccessRepository");
+const staffRepo = require("../repositories/staffMemberRepository");
+const identityRepo = require("../../platform/repositories/platformIdentityRepository");
 const {
   assignStaffRole,
   listStaffRoleAssignments,
   mapRoleAssignment,
+  ORGANIZATION_ADMIN,
   NETWORK_ADMIN,
   FACILITY_ADMIN,
+  CLINIC_MANAGER,
+  RECEPTIONIST,
+  NURSE,
+  CLINICIAN,
+  PHARMACIST,
+  LAB_TECHNICIAN,
+  RADIOLOGY_STAFF,
+  BILLING_OFFICER,
+  CASHIER,
+  FINANCE_SUPERVISOR,
+  AUDITOR,
   STAFF_ROLE,
+  ACTIVECLINIC_ROLE_CATALOGUE,
+  ORGANISATION_SCOPE_ONLY_ROLES,
+  FACILITY_SCOPE_ONLY_ROLES,
+  isOrgWideAdminRole,
   RESULT: AUTHZ_RESULT,
 } = require("./activeClinicAuthorizationService");
 const {
@@ -44,14 +62,60 @@ const RESULT = Object.freeze({
   FACILITY_OUT_OF_SCOPE: "facility_out_of_scope",
   BLESSBOARD_ROLE: "blessboard_role_denied",
   RAW_PERMISSIONS: "raw_permissions_denied",
+  LAST_ORG_ADMIN: "last_org_admin_protected",
+  DEPENDENT_FACILITY_ROLES: "dependent_facility_roles",
 });
 
-const FOUNDATIONAL_ROLES = Object.freeze([NETWORK_ADMIN, FACILITY_ADMIN, STAFF_ROLE]);
+/** @deprecated Prefer ACTIVECLINIC_ROLE_CATALOGUE — retained for callers. */
+const FOUNDATIONAL_ROLES = ACTIVECLINIC_ROLE_CATALOGUE;
 
 const ROLE_LABELS = Object.freeze({
-  activeclinic_network_admin: "Network administrator",
+  activeclinic_organization_admin: "Organization administrator",
+  activeclinic_network_admin: "Network administrator (compat)",
   activeclinic_facility_admin: "Facility administrator",
+  activeclinic_clinic_manager: "Clinic manager",
+  activeclinic_receptionist: "Receptionist",
+  activeclinic_nurse: "Nurse / Triage",
+  activeclinic_clinician: "Clinician / Doctor",
+  activeclinic_pharmacist: "Pharmacist",
+  activeclinic_lab_technician: "Laboratory technician",
+  activeclinic_radiology_staff: "Radiology staff",
+  activeclinic_billing_officer: "Billing officer",
+  activeclinic_cashier: "Cashier",
+  activeclinic_finance_supervisor: "Finance supervisor",
+  activeclinic_auditor: "Auditor",
   activeclinic_staff: "Staff",
+});
+
+const ROLE_DESCRIPTIONS = Object.freeze({
+  [ORGANIZATION_ADMIN]:
+    "Manages clinic settings, facilities, staff, access and audit. Does not receive clinical transaction rights automatically.",
+  [NETWORK_ADMIN]:
+    "Legacy compatibility role with the same powers as Organization administrator. Prefer Organization administrator for new grants.",
+  [FACILITY_ADMIN]:
+    "Manages staff and access within assigned facilities. No organization-wide ownership or clinical write rights.",
+  [CLINIC_MANAGER]:
+    "Operational oversight and reporting across departments without clinical or finance write rights.",
+  [RECEPTIONIST]:
+    "Manages patient registration, appointments, check-in and reception queues.",
+  [NURSE]: "Records triage and nursing intake information.",
+  [CLINICIAN]:
+    "Documents consultations, diagnoses and clinical orders.",
+  [PHARMACIST]:
+    "Reviews prescriptions, dispenses medicines and manages pharmacy inventory.",
+  [LAB_TECHNICIAN]:
+    "Records laboratory specimens and results for laboratory requests (modality-scoped).",
+  [RADIOLOGY_STAFF]:
+    "Records radiology reports for imaging requests (modality-scoped; no specimen collection).",
+  [BILLING_OFFICER]:
+    "Creates invoices and charges. Cannot refund or reverse payments.",
+  [CASHIER]:
+    "Collects and allocates payments and operates cashier sessions.",
+  [FINANCE_SUPERVISOR]:
+    "Handles sensitive finance actions including refunds, reversals and reconciliation.",
+  [AUDITOR]: "Read-only audit and reporting visibility. Cannot change access or clinical records.",
+  [STAFF_ROLE]:
+    "Minimal authenticated ActiveClinic access with facility visibility from assignments.",
 });
 
 function rolePlainLabel(roleKey, displayName) {
@@ -64,19 +128,96 @@ function isExpired(expiresAt, now = Date.now()) {
   return new Date(expiresAt).getTime() <= now;
 }
 
-function actorIsNetworkAdmin(auth) {
+function actorIsOrganizationAdmin(auth) {
   return (auth.roleAssignments || []).some(
     (r) =>
-      r.roleKey === NETWORK_ADMIN &&
+      isOrgWideAdminRole(r.roleKey) &&
       (!r.status || r.status === "active") &&
       !isExpired(r.expiresAt)
   );
+}
+
+/** @deprecated Prefer actorIsOrganizationAdmin */
+function actorIsNetworkAdmin(auth) {
+  return actorIsOrganizationAdmin(auth);
 }
 
 function actorHasAssignAccess(auth) {
   return Array.isArray(auth.permissions)
     ? auth.permissions.includes("activeclinic.staff.assign_access")
     : false;
+}
+
+function isOrgWideAdminAssignmentRow(row) {
+  if (!row) return false;
+  const roleKey = row.role_key || row.roleKey;
+  const scopeType = row.scope_type || row.scopeType;
+  return isOrgWideAdminRole(roleKey) && scopeType === "organisation";
+}
+
+/**
+ * Active organization-wide admin holders (organization_admin or network_admin compat).
+ */
+async function countActiveOrgWideAdmins(db, organizationId) {
+  const result = await db.query(
+    `SELECT COUNT(DISTINCT a.staff_member_id)::int AS cnt
+       FROM activeclinic.staff_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+       JOIN activeclinic.staff_members s ON s.id = a.staff_member_id
+      WHERE a.organization_id = $1
+        AND a.status = 'active'
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+        AND a.scope_type = 'organisation'
+        AND r.role_key = ANY($2::text[])
+        AND s.status IN ('active', 'invited')`,
+    [organizationId, [ORGANIZATION_ADMIN, NETWORK_ADMIN]]
+  );
+  return Number(result.rows[0] && result.rows[0].cnt) || 0;
+}
+
+async function staffHoldsActiveOrgWideAdmin(db, input) {
+  const result = await db.query(
+    `SELECT 1
+       FROM activeclinic.staff_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.organization_id = $1
+        AND a.staff_member_id = $2
+        AND a.status = 'active'
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+        AND a.scope_type = 'organisation'
+        AND r.role_key = ANY($3::text[])
+      LIMIT 1`,
+    [input.organizationId, input.staffMemberId, [ORGANIZATION_ADMIN, NETWORK_ADMIN]]
+  );
+  return result.rows.length > 0;
+}
+
+/**
+ * Prevent removing the last viable organization administrator for a tenant.
+ */
+async function assertNotLastOrgAdminRemoval(db, input) {
+  const organizationId = input.organizationId;
+  const staffMemberId = String(input.staffMemberId || "").trim();
+  if (!organizationId || !staffMemberId) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const holds = await staffHoldsActiveOrgWideAdmin(db, {
+    organizationId,
+    staffMemberId,
+  });
+  if (!holds) return { ok: true, code: RESULT.OK };
+  const count = await countActiveOrgWideAdmins(db, organizationId);
+  if (count <= 1) {
+    return { ok: false, code: RESULT.LAST_ORG_ADMIN };
+  }
+  return { ok: true, code: RESULT.OK };
+}
+
+function scopesForRole(roleKey) {
+  if (ORGANISATION_SCOPE_ONLY_ROLES.includes(roleKey)) return ["organisation"];
+  if (FACILITY_SCOPE_ONLY_ROLES.includes(roleKey)) return ["facility"];
+  if (roleKey === STAFF_ROLE) return ["facility", "organisation"];
+  return ["facility"];
 }
 
 async function listActorFacilityIds(db, auth) {
@@ -97,28 +238,53 @@ async function listActorFacilityIds(db, auth) {
  */
 function listGrantableRoleOptions(auth) {
   if (!actorHasAssignAccess(auth)) return [];
-  const options = [
-    {
-      value: STAFF_ROLE,
-      label: ROLE_LABELS[STAFF_ROLE],
-      description: "Authenticated access with facility visibility from assignments.",
-      scopes: ["facility", "organisation"],
-    },
-    {
-      value: FACILITY_ADMIN,
-      label: ROLE_LABELS[FACILITY_ADMIN],
-      description: "Facility-scoped administration for assigned facilities.",
-      scopes: ["facility"],
-    },
+  const orgAdmin = actorIsOrganizationAdmin(auth);
+
+  const facilityScoped = [
+    STAFF_ROLE,
+    FACILITY_ADMIN,
+    CLINIC_MANAGER,
+    RECEPTIONIST,
+    NURSE,
+    CLINICIAN,
+    PHARMACIST,
+    LAB_TECHNICIAN,
+    RADIOLOGY_STAFF,
+    BILLING_OFFICER,
+    CASHIER,
+    FINANCE_SUPERVISOR,
   ];
-  if (actorIsNetworkAdmin(auth)) {
-    options.unshift({
-      value: NETWORK_ADMIN,
-      label: ROLE_LABELS[NETWORK_ADMIN],
-      description: "Organization-wide administration including facilities, staff, and access.",
-      scopes: ["organisation"],
-    });
+
+  const options = facilityScoped.map((value) => ({
+    value,
+    label: ROLE_LABELS[value],
+    description: ROLE_DESCRIPTIONS[value],
+    scopes: scopesForRole(value),
+  }));
+
+  if (orgAdmin) {
+    options.unshift(
+      {
+        value: ORGANIZATION_ADMIN,
+        label: ROLE_LABELS[ORGANIZATION_ADMIN],
+        description: ROLE_DESCRIPTIONS[ORGANIZATION_ADMIN],
+        scopes: scopesForRole(ORGANIZATION_ADMIN),
+      },
+      {
+        value: NETWORK_ADMIN,
+        label: ROLE_LABELS[NETWORK_ADMIN],
+        description: ROLE_DESCRIPTIONS[NETWORK_ADMIN],
+        scopes: scopesForRole(NETWORK_ADMIN),
+      },
+      {
+        value: AUDITOR,
+        label: ROLE_LABELS[AUDITOR],
+        description: ROLE_DESCRIPTIONS[AUDITOR],
+        scopes: scopesForRole(AUDITOR),
+      }
+    );
   }
+
   return options;
 }
 
@@ -135,27 +301,27 @@ async function canGrantRole(db, input) {
   if (!actorHasAssignAccess(auth)) {
     return { ok: false, code: RESULT.GRANT_DENIED };
   }
-  if (!FOUNDATIONAL_ROLES.includes(roleKey)) {
+  if (!ACTIVECLINIC_ROLE_CATALOGUE.includes(roleKey)) {
     return { ok: false, code: RESULT.INVALID_ROLE };
   }
-  if (roleKey === NETWORK_ADMIN && !actorIsNetworkAdmin(auth)) {
-    return { ok: false, code: RESULT.GRANT_DENIED };
-  }
-  if (roleKey === NETWORK_ADMIN && scopeType !== "organisation") {
-    return { ok: false, code: RESULT.INVALID_SCOPE };
-  }
-  if (roleKey === FACILITY_ADMIN && scopeType !== "facility") {
-    return { ok: false, code: RESULT.INVALID_SCOPE };
-  }
-  if (scopeType !== "organisation" && scopeType !== "facility") {
+
+  const allowedScopes = scopesForRole(roleKey);
+  if (!allowedScopes.includes(scopeType)) {
     return { ok: false, code: RESULT.INVALID_SCOPE };
   }
 
-  // Self-escalation: cannot grant network admin to yourself.
+  const isOrgAdminGrant = isOrgWideAdminRole(roleKey) || roleKey === AUDITOR;
+  if (isOrgAdminGrant && !actorIsOrganizationAdmin(auth)) {
+    return { ok: false, code: RESULT.GRANT_DENIED };
+  }
+
+  // Self-escalation: cannot grant org-wide admin to yourself.
+  // Revoke/demotion may set allowSelfDemotion after last-admin checks.
   if (
-    roleKey === NETWORK_ADMIN &&
+    isOrgWideAdminRole(roleKey) &&
     targetStaffMemberId &&
-    String(auth.staffMember.id) === targetStaffMemberId
+    String(auth.staffMember.id) === targetStaffMemberId &&
+    !input.allowSelfDemotion
   ) {
     return { ok: false, code: RESULT.SELF_ESCALATION };
   }
@@ -169,7 +335,7 @@ async function canGrantRole(db, input) {
     if (!facility.ok || facility.facility.status === "archived") {
       return { ok: false, code: RESULT.FACILITY_OUT_OF_SCOPE };
     }
-    if (!actorIsNetworkAdmin(auth)) {
+    if (!actorIsOrganizationAdmin(auth)) {
       const allowed = await listActorFacilityIds(db, auth);
       if (!allowed.has(facilityId)) {
         return { ok: false, code: RESULT.FACILITY_OUT_OF_SCOPE };
@@ -314,7 +480,7 @@ async function assignFoundationalStaffRole(db, input) {
     }
   }
 
-  return assignStaffRole(db, {
+  const assigned = await assignStaffRole(db, {
     organizationId,
     staffMemberId,
     roleKey,
@@ -325,6 +491,27 @@ async function assignFoundationalStaffRole(db, input) {
     deploymentCode,
     assignmentOrigin: "manual",
   });
+  if (!assigned.ok) return assigned;
+
+  // If staff already set a password while invited (activate-without-role),
+  // promote to active once a valid role exists.
+  if (
+    staff.staffMember.status === "invited" &&
+    staff.staffMember.platformIdentityId
+  ) {
+    const identity = await identityRepo.findIdentityById(
+      db,
+      staff.staffMember.platformIdentityId
+    );
+    if (identity && identity.password_hash) {
+      await staffRepo.updateStaffMember(db, {
+        id: staffMemberId,
+        organizationId,
+        patch: { status: "active" },
+      });
+    }
+  }
+  return assigned;
 }
 
 async function updateStaffRoleAssignmentExpiry(db, input) {
@@ -447,12 +634,21 @@ async function revokeFoundationalStaffRole(db, input) {
     return { ok: false, code: RESULT.INVALID_INPUT };
   }
 
+  if (isOrgWideAdminAssignmentRow(row)) {
+    const guard = await assertNotLastOrgAdminRemoval(db, {
+      organizationId,
+      staffMemberId,
+    });
+    if (!guard.ok) return { ok: false, code: guard.code };
+  }
+
   const grant = await canGrantRole(db, {
     auth,
     roleKey: row.role_key,
     scopeType: row.scope_type,
     facilityId: row.facility_id,
     targetStaffMemberId: staffMemberId,
+    allowSelfDemotion: true,
   });
   if (!grant.ok) return { ok: false, code: grant.code };
 
@@ -490,11 +686,14 @@ module.exports = {
   RESULT,
   FOUNDATIONAL_ROLES,
   ROLE_LABELS,
+  ROLE_DESCRIPTIONS,
   rolePlainLabel,
+  actorIsOrganizationAdmin,
   actorIsNetworkAdmin,
   actorHasAssignAccess,
   listGrantableRoleOptions,
   canGrantRole,
+  scopesForRole,
   mapAssignmentDetail,
   evaluateAssignmentEffectiveness,
   assignFoundationalStaffRole,
@@ -502,7 +701,13 @@ module.exports = {
   replaceStaffRoleAssignment,
   revokeFoundationalStaffRole,
   listStaffRoleAssignments,
+  countActiveOrgWideAdmins,
+  staffHoldsActiveOrgWideAdmin,
+  assertNotLastOrgAdminRemoval,
+  isOrgWideAdminAssignmentRow,
+  ORGANIZATION_ADMIN,
   NETWORK_ADMIN,
   FACILITY_ADMIN,
   STAFF_ROLE,
+  ACTIVECLINIC_ROLE_CATALOGUE,
 };

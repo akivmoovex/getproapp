@@ -105,29 +105,30 @@
 
     <% if (mode === 'create' && form.canAssignAccess && roleOptions.length) { %>
     <fieldset class="ac-fieldset" style="margin-top:1.5rem">
-      <legend class="ac-dashboard__card-title">Initial access</legend>
-      <div class="ac-field">
-        <label class="ac-label" for="role_key">Foundational role</label>
-        <select class="ac-select" id="role_key" name="role_key" required>
-          <% roleOptions.forEach(function (r) { %>
-          <option value="<%= r.value %>" <%= values.roleKey === r.value ? 'selected' : '' %>><%= r.label %></option>
-          <% }) %>
-        </select>
-        <% if (fieldErrors.role_key) { %><p class="ac-field-error"><%= fieldErrors.role_key %></p><% } %>
-        <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem">
-          <% roleOptions.forEach(function (r) { if (r.value === values.roleKey) { %><%= r.description %><% } }) %>
-        </p>
+      <legend class="ac-dashboard__card-title">Roles</legend>
+      <p class="ac-muted">Select one or more ActiveClinic roles. Scope follows the role catalogue (facility vs organization).</p>
+      <div class="ac-check-grid" data-ac-role-multi="1">
+        <% roleOptions.forEach(function (r) { %>
+        <label class="ac-check">
+          <input type="checkbox" name="role_keys" value="<%= r.value %>" <%= (values.roleKeys || []).indexOf(String(r.value)) >= 0 ? 'checked' : '' %>/>
+          <span>
+            <strong><%= r.label %></strong>
+            <span class="ac-muted" style="display:block;font-size:.85rem"><%= r.description %></span>
+          </span>
+        </label>
+        <% }) %>
       </div>
-      <div class="ac-field">
-        <label class="ac-label" for="role_scope">Role scope</label>
+      <% if (fieldErrors.role_keys) { %><p class="ac-field-error"><%= fieldErrors.role_keys %></p><% } %>
+      <div class="ac-field" style="margin-top:1rem">
+        <label class="ac-label" for="role_scope">Preferred facility scope</label>
         <select class="ac-select" id="role_scope" name="role_scope">
-          <option value="facility" <%= values.roleScope === 'facility' ? 'selected' : '' %>>Facility</option>
-          <option value="organisation" <%= values.roleScope === 'organisation' ? 'selected' : '' %>>Organization-wide</option>
+          <option value="facility" <%= values.roleScope === 'facility' ? 'selected' : '' %>>Facility (when role allows)</option>
+          <option value="organisation" <%= values.roleScope === 'organisation' ? 'selected' : '' %>>Organization-wide (when role allows)</option>
         </select>
         <% if (fieldErrors.role_scope) { %><p class="ac-field-error"><%= fieldErrors.role_scope %></p><% } %>
       </div>
       <div class="ac-field">
-        <label class="ac-label" for="role_facility_id">Role facility <span class="ac-muted">(when facility-scoped)</span></label>
+        <label class="ac-label" for="role_facility_id">Facility for facility-scoped roles</label>
         <select class="ac-select" id="role_facility_id" name="role_facility_id">
           <option value="">Same as primary / first assignment</option>
           <% facilities.forEach(function (f) { %>
@@ -136,19 +137,42 @@
         </select>
         <% if (fieldErrors.role_facility_id) { %><p class="ac-field-error"><%= fieldErrors.role_facility_id %></p><% } %>
       </div>
-      <p class="ac-muted">Detailed role editing belongs to Roles &amp; access. This step assigns one foundational role only.</p>
+      <% if (form.accessReview && form.accessReview.groups && form.accessReview.groups.length) { %>
+      <div class="ac-panel" style="margin-top:1rem" data-ac-access-review="1">
+        <h3 class="ac-dashboard__card-title">Effective access preview</h3>
+        <p class="ac-muted"><%= form.accessReview.permissionCount %> permissions from selected roles (server catalogue).</p>
+        <ul>
+          <% form.accessReview.groups.forEach(function (g) { %>
+          <li><strong><%= g.label %></strong> — <%= g.count %> permission<%= g.count === 1 ? '' : 's' %></li>
+          <% }) %>
+        </ul>
+        <details>
+          <summary>Detailed permission keys</summary>
+          <ul class="ac-muted" style="font-size:.85rem">
+            <% (form.accessReview.permissions || []).forEach(function (p) { %>
+            <li><code><%= p %></code></li>
+            <% }) %>
+          </ul>
+        </details>
+      </div>
+      <% } %>
     </fieldset>
     <% } %>
 
-    <% if (mode === 'create') { %>
+    <% if (mode === 'create' && form.canInvite) { %>
+    <input type="hidden" name="issue_invitation" value="0"/>
     <label class="ac-check" style="margin-top:1rem">
       <input type="checkbox" name="issue_invitation" value="1" <%= values.issueInvitation ? 'checked' : '' %>/>
       Issue activation invitation now
     </label>
+    <p class="ac-muted" style="font-size:.85rem">When unchecked, the staff profile is saved without a login identity. You can invite later from the staff profile.</p>
+    <% } else if (mode === 'create') { %>
+    <p class="ac-muted" style="margin-top:1rem">You can create the staff profile, but you do not have permission to issue activation invitations.</p>
+    <input type="hidden" name="issue_invitation" value="0"/>
     <% } %>
 
     <div class="ac-actions ac-actions--stack-mobile" style="margin-top:1.25rem">
-      <button type="submit" class="ac-btn" data-loading="Saving…"><%= mode === 'create' ? 'Create &amp; invite' : 'Save changes' %></button>
+      <button type="submit" class="ac-btn" data-loading="Saving…"><%= mode === 'create' ? (values.issueInvitation !== false && form.canInvite ? 'Create &amp; invite' : 'Create staff') : 'Save changes' %></button>
       <a class="ac-btn ac-btn--ghost" href="<%= mode === 'edit' && form.staff ? '/app/staff/' + encodeURIComponent(form.staff.id) : '/app/staff' %>">Cancel</a>
     </div>
   </form>

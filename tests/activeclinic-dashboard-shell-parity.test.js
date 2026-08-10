@@ -153,17 +153,17 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
   it("navigation registry filters by permission and shares desktop/mobile items", () => {
     const nav = buildActiveClinicNavigation(
       ["activeclinic.access", "activeclinic.facility.view"],
-      "facilities"
+      "home"
     );
-    assert.equal(nav.items.length, 3);
+    assert.equal(nav.items.length, 2);
     assert.deepEqual(
       nav.desktop.map((i) => i.key),
       nav.mobile.map((i) => i.key)
     );
-    assert.ok(nav.items.find((i) => i.key === "facilities").current);
     assert.ok(nav.items.find((i) => i.key === "settings"));
+    assert.ok(!nav.items.find((i) => i.key === "facilities"));
     assert.ok(!nav.items.find((i) => i.key === "staff"));
-    assert.ok(!nav.items.find((i) => /patient|pharmacy|billing/i.test(i.label)));
+    assert.ok(!nav.items.find((i) => /patient|pharmacy|billing|diagnostics/i.test(i.label)));
   });
 
   it("dashboard loader omits unauthorized summaries and builds setup tasks", async () => {
@@ -187,11 +187,13 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
       }
     );
     assert.equal(dash.ok, true);
-    assert.ok(dash.summaries.facilities);
+    assert.equal(dash.summaries.facilities, null);
     assert.equal(dash.summaries.staff, null);
     assert.ok(Array.isArray(dash.unsupportedStitchKpisOmitted));
     assert.ok(dash.unsupportedStitchKpisOmitted.length >= 3);
-    assert.match(dash.notices[0].message, /Clinical modules are not enabled/);
+    assert.equal(dash.notices.length, 0);
+    assert.ok(dash.quickActions.some((a) => a.label === "Settings"));
+    assert.ok(!dash.quickActions.some((a) => a.label === "Facilities"));
   });
 
   it("access restricted and session-expired states render without clinical copy", () => {

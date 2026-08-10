@@ -37,8 +37,10 @@ const {
   updateStaffRoleAssignmentExpiry,
   replaceStaffRoleAssignment,
   revokeFoundationalStaffRole,
+  scopesForRole,
   NETWORK_ADMIN,
   FACILITY_ADMIN,
+  ORGANIZATION_ADMIN,
 } = require("../services/activeClinicAccessManagementService");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
@@ -51,7 +53,7 @@ function assignErrorMessage(code) {
       return "An active assignment with this role and scope already exists.";
     case RESULT.INVALID_ROLE:
     case RESULT.BLESSBOARD_ROLE:
-      return "Only foundational ActiveClinic roles can be assigned.";
+      return "Only ActiveClinic catalogue roles can be assigned.";
     case RESULT.INVALID_SCOPE:
       return "Role and scope combination is not valid.";
     case RESULT.FACILITY_ASSIGNMENT_REQUIRED:
@@ -62,7 +64,11 @@ function assignErrorMessage(code) {
     case RESULT.DENIED:
       return "You are not authorized to grant this access.";
     case RESULT.SELF_ESCALATION:
-      return "You cannot grant network administrator access to yourself.";
+      return "You cannot grant organization administrator access to yourself.";
+    case RESULT.LAST_ORG_ADMIN:
+      return "Cannot remove or suspend the last organization administrator for this clinic.";
+    case RESULT.DEPENDENT_FACILITY_ROLES:
+      return "Revoke facility-scoped roles for this facility before removing the facility assignment.";
     case RESULT.RAW_PERMISSIONS:
       return "Permission keys cannot be submitted directly.";
     case RESULT.CROSS_ORGANIZATION:
@@ -166,7 +172,7 @@ function registerActiveClinicAccessRoutes(app, deps) {
           pageHeader: {
             title: "Roles & access",
             description:
-              "Who has ActiveClinic access, which foundational role they hold, and where it applies.",
+              "Manage staff access, facility scope, and ActiveClinic role catalogue assignments.",
             actions: [
               {
                 label: "Staff directory",
@@ -261,7 +267,7 @@ function registerActiveClinicAccessRoutes(app, deps) {
           content: "app/access-role-form-content.ejs",
           pageHeader: {
             title: "Assign role",
-            description: `Grant a foundational ActiveClinic role to ${loaded.form.staff.displayName}.`,
+            description: `Grant one or more ActiveClinic roles to ${loaded.form.staff.displayName}.`,
             actions: [],
           },
           breadcrumbs: [
@@ -292,24 +298,38 @@ function registerActiveClinicAccessRoutes(app, deps) {
         }
         const body = req.body || {};
         const expiresAt = parseExpiresAt(body.expires_at);
-        if (expiresAt === undefined) {
+        let roleKeys = body.role_keys || body["role_keys[]"] || [];
+        if (!Array.isArray(roleKeys)) roleKeys = roleKeys ? [roleKeys] : [];
+        roleKeys = roleKeys.map((k) => String(k || "").trim()).filter(Boolean);
+        if (!roleKeys.length && body.role_key) {
+          roleKeys = [String(body.role_key).trim()].filter(Boolean);
+        }
+        const facilityId = String(body.facility_id || "").trim() || null;
+
+        async function renderAssignFailure(errors, fieldErrors, status) {
           const loaded = await loadActiveClinicAssignRoleScreen(getPool(), {
             auth: req.activeClinicAuth,
             staffMemberId: req.params.staffId,
             values: {
-              roleKey: String(body.role_key || "").trim(),
+              roleKeys,
+              roleKey: roleKeys[0] || "",
               scopeType: String(body.scope_type || "").trim(),
-              facilityId: String(body.facility_id || "").trim(),
+              facilityId: facilityId || "",
               expiresAt: String(body.expires_at || "").trim(),
             },
-            errors: ["Enter a valid expiry date and time, or leave it blank."],
-            fieldErrors: { expires_at: "Invalid expiry" },
+            errors,
+            fieldErrors: fieldErrors || {},
           });
           if (!loaded.ok) {
-            return denyPage(res, 400, "Unable to assign role", assignErrorMessage(loaded.code));
+            return denyPage(
+              res,
+              loaded.code === RESULT.STAFF_NOT_FOUND ? 404 : 403,
+              "Unable to assign role",
+              assignErrorMessage(loaded.code)
+            );
           }
           return await renderShell(req, res, {
-            status: 400,
+            status: status || 400,
             activeNav: "access",
             content: "app/access-role-form-content.ejs",
             pageHeader: {
@@ -326,49 +346,55 @@ function registerActiveClinicAccessRoutes(app, deps) {
           });
         }
 
-        const result = await assignFoundationalStaffRole(getPool(), {
-          auth: req.activeClinicAuth,
-          staffMemberId: req.params.staffId,
-          roleKey: body.role_key,
-          scopeType: body.scope_type,
-          facilityId: body.facility_id || null,
-          expiresAt,
-          organizationId: body.organization_id,
-          permissionKeys: body.permission_keys || body.permissions,
-          deploymentCode: deploymentCode(),
-        });
-        if (!result.ok) {
-          const loaded = await loadActiveClinicAssignRoleScreen(getPool(), {
+        if (expiresAt === undefined) {
+          return await renderAssignFailure(
+            ["Enter a valid expiry date and time, or leave it blank."],
+            { expires_at: "Invalid expiry" }
+          );
+        }
+        if (!roleKeys.length) {
+          return await renderAssignFailure(
+            ["Select at least one role."],
+            { role_keys: "Select at least one role." }
+          );
+        }
+
+        for (const roleKey of roleKeys) {
+          const scopes = scopesForRole(roleKey);
+          let scopeType = String(body.scope_type || "").trim();
+          if (scopes.length === 1) scopeType = scopes[0];
+          if (
+            !scopeType ||
+            (scopes.includes("facility") &&
+              !scopes.includes("organisation") &&
+              scopeType !== "facility")
+          ) {
+            scopeType = scopes.includes("facility") ? "facility" : scopes[0];
+          }
+          if (
+            roleKey === ORGANIZATION_ADMIN ||
+            roleKey === NETWORK_ADMIN
+          ) {
+            scopeType = "organisation";
+          }
+
+          const result = await assignFoundationalStaffRole(getPool(), {
             auth: req.activeClinicAuth,
             staffMemberId: req.params.staffId,
-            values: {
-              roleKey: String(body.role_key || "").trim(),
-              scopeType: String(body.scope_type || "").trim(),
-              facilityId: String(body.facility_id || "").trim(),
-              expiresAt: String(body.expires_at || "").trim(),
-            },
-            errors: [assignErrorMessage(result.code)],
-            fieldErrors: {},
+            roleKey,
+            scopeType,
+            facilityId: scopeType === "facility" ? facilityId : null,
+            expiresAt,
+            organizationId: body.organization_id,
+            permissionKeys: body.permission_keys || body.permissions,
+            deploymentCode: deploymentCode(),
           });
-          if (!loaded.ok) {
-            return denyPage(res, result.code === RESULT.STAFF_NOT_FOUND ? 404 : 403, "Unable to assign role", assignErrorMessage(result.code));
+          if (!result.ok) {
+            return await renderAssignFailure(
+              [assignErrorMessage(result.code)],
+              {}
+            );
           }
-          return await renderShell(req, res, {
-            status: 400,
-            activeNav: "access",
-            content: "app/access-role-form-content.ejs",
-            pageHeader: {
-              title: "Assign role",
-              description: "Fix the validation errors and try again.",
-              actions: [],
-            },
-            breadcrumbs: [
-              { label: "Home", href: "/app" },
-              { label: "Roles & access", href: "/app/access" },
-              { label: "Assign role" },
-            ],
-            pageData: { form: loaded.form },
-          });
         }
         return res.redirect(
           303,

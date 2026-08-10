@@ -2,34 +2,30 @@
 
 /**
  * ActiveClinic navigation registry (permission-filtered; no role-name checks).
+ *
+ * Facilities nav uses facility administration permissions (create/update/archive),
+ * not facility.view — almost every role has facility.view for context, but the
+ * Facilities module is the management catalogue.
+ *
+ * Settings remains available with activeclinic.access so account self-service
+ * is reachable; cards on the settings overview stay individually gated.
+ *
+ * Reports: no coherent landing route — omitted from nav.
  */
 
 const NAV_ITEMS = Object.freeze([
   {
     key: "home",
-    label: "Home",
+    label: "Dashboard",
     href: "/app",
     permission: "activeclinic.access",
     icon: "home",
   },
   {
-    key: "facilities",
-    label: "Facilities",
-    href: "/app/facilities",
-    permission: "activeclinic.facility.view",
-    icon: "apartment",
-  },
-  {
-    key: "staff",
-    label: "Staff",
-    href: "/app/staff",
-    permission: "activeclinic.staff.view",
-    icon: "groups",
-  },
-  {
     key: "patients",
     label: "Patients",
     href: "/app/patients",
+    // List entry uses patient.search; view alone is not enough for the directory.
     permission: "activeclinic.patient.search",
     icon: "personal_injury",
   },
@@ -62,6 +58,18 @@ const NAV_ITEMS = Object.freeze([
     icon: "medication",
   },
   {
+    key: "diagnostics",
+    label: "Diagnostics",
+    href: "/app/diagnostics",
+    // Lab, radiology, or legacy diagnostics.view (admin hub aggregation).
+    anyOf: [
+      "activeclinic.lab.view",
+      "activeclinic.radiology.view",
+      "activeclinic.diagnostics.view",
+    ],
+    icon: "biotech",
+  },
+  {
     key: "billing",
     label: "Billing",
     href: "/app/billing",
@@ -72,8 +80,28 @@ const NAV_ITEMS = Object.freeze([
     key: "cashier",
     label: "Cashier",
     href: "/app/cashier",
+    // Module entry requires opening sessions — not payment.view alone.
     permission: "activeclinic.cashier.open_session",
     icon: "payments",
+  },
+  {
+    key: "staff",
+    label: "Staff",
+    href: "/app/staff",
+    permission: "activeclinic.staff.view",
+    icon: "groups",
+  },
+  {
+    key: "facilities",
+    label: "Facilities",
+    href: "/app/facilities",
+    // Management catalogue — not the near-universal facility.view context perm.
+    anyOf: [
+      "activeclinic.facility.create",
+      "activeclinic.facility.update",
+      "activeclinic.facility.archive",
+    ],
+    icon: "apartment",
   },
   {
     key: "access",
@@ -86,10 +114,19 @@ const NAV_ITEMS = Object.freeze([
     key: "settings",
     label: "Settings",
     href: "/app/settings",
+    // Account self-service is always on the overview; cards remain permission-aware.
     permission: "activeclinic.access",
     icon: "settings",
   },
 ]);
+
+function itemIsVisible(item, permissionSet) {
+  if (Array.isArray(item.anyOf) && item.anyOf.length) {
+    return item.anyOf.some((p) => permissionSet.has(p));
+  }
+  if (item.permission) return permissionSet.has(item.permission);
+  return false;
+}
 
 /**
  * @param {string[]} permissions
@@ -97,8 +134,10 @@ const NAV_ITEMS = Object.freeze([
  */
 function buildActiveClinicNavigation(permissions, activeKey) {
   const set = new Set(Array.isArray(permissions) ? permissions : []);
-  const items = NAV_ITEMS.filter((item) => set.has(item.permission)).map((item) => ({
+  const items = NAV_ITEMS.filter((item) => itemIsVisible(item, set)).map((item) => ({
     ...item,
+    // Expose a single representative permission for tests/markers.
+    permission: item.permission || (item.anyOf && item.anyOf[0]) || null,
     current: activeKey != null && item.key === activeKey,
   }));
   return {
@@ -112,15 +151,16 @@ function buildActiveClinicNavigation(permissions, activeKey) {
 function matchActiveNavKey(pathname) {
   const path = String(pathname || "").split("?")[0];
   if (path === "/app" || path === "/app/") return "home";
-  if (path.startsWith("/app/facilities")) return "facilities";
-  if (path.startsWith("/app/staff")) return "staff";
   if (path.startsWith("/app/patients")) return "patients";
   if (path.startsWith("/app/appointments")) return "appointments";
   if (path.startsWith("/app/reception")) return "reception";
   if (path.startsWith("/app/clinical")) return "clinical";
   if (path.startsWith("/app/pharmacy")) return "pharmacy";
+  if (path.startsWith("/app/diagnostics")) return "diagnostics";
   if (path.startsWith("/app/billing")) return "billing";
   if (path.startsWith("/app/cashier")) return "cashier";
+  if (path.startsWith("/app/staff")) return "staff";
+  if (path.startsWith("/app/facilities")) return "facilities";
   if (path.startsWith("/app/access")) return "access";
   if (path.startsWith("/app/settings")) return "settings";
   if (path.startsWith("/app/select-facility")) return "home";
@@ -132,4 +172,5 @@ module.exports = {
   NAV_ITEMS,
   buildActiveClinicNavigation,
   matchActiveNavKey,
+  itemIsVisible,
 };

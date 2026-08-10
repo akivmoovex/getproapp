@@ -16,13 +16,16 @@ const {
   createStaffMember,
   linkStaffMemberToIdentity,
   listStaffMembersByOrganization,
+  updateStaffMemberProfile,
 } = require("./activeClinicStaffService");
 const { assignStaffToFacility } = require("./activeClinicStaffFacilityService");
 const {
   assignStaffRole,
   listStaffRoleAssignments,
+  ORGANIZATION_ADMIN,
   FACILITY_ADMIN,
 } = require("./activeClinicAuthorizationService");
+const accessRepo = require("../repositories/staffAccessRepository");
 const {
   createPlatformIdentity,
   mapIdentity,
@@ -56,6 +59,21 @@ const RESULT = Object.freeze({
 
 /** Policy-compliant temporary password returned once in CLI handoff when requested password is rejected. */
 const JULFLONA_TEMP_PASSWORD = "JulflonaTmp-2026A";
+
+/**
+ * Testing/demo-only credential for departmental users and optional demo-admin reset
+ * (mustChangePassword=true). Override with options / ACTIVECLINIC_DEMO_STAFF_PASSWORD.
+ * Only usable after assertSafeSeedEnvironment (testing|demo). Never print in normal logs.
+ */
+const DEMO_ROLE_STAFF_PASSWORD = "DemoStaff-ActiveClinic-2026A";
+
+function resolveDemoStaffPassword(explicit) {
+  if (explicit != null && String(explicit).length) return String(explicit);
+  if (process.env.ACTIVECLINIC_DEMO_STAFF_PASSWORD) {
+    return String(process.env.ACTIVECLINIC_DEMO_STAFF_PASSWORD);
+  }
+  return DEMO_ROLE_STAFF_PASSWORD;
+}
 
 function bump(counts, key) {
   counts[key] = (counts[key] || 0) + 1;
@@ -796,22 +814,34 @@ async function ensureAdministrator(db, spec, organizationId, healthcareOrganizat
     staffMemberId: adminStaff.id,
     organizationId,
   });
-  const hasFacilityAdmin = (roles.assignments || []).some(
-    (a) => a.roleKey === FACILITY_ADMIN && a.facilityId === facilityId
+  const hasOrganizationAdmin = (roles.assignments || []).some(
+    (a) => a.roleKey === ORGANIZATION_ADMIN && a.scopeType === "organisation"
   );
-  if (!hasFacilityAdmin) {
+  if (!hasOrganizationAdmin) {
     const assigned = await assignStaffRole(db, {
       organizationId,
       staffMemberId: adminStaff.id,
-      roleKey: FACILITY_ADMIN,
-      scopeType: "facility",
-      facilityId,
+      roleKey: ORGANIZATION_ADMIN,
+      scopeType: "organisation",
       assignmentOrigin: "system",
       deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     });
     if (!assigned.ok && assigned.code !== "role_assignment_exists") {
       return { ok: false, code: assigned.code, message: assigned.code };
     }
+  }
+
+  // Prompt 3: demo/tenant clinic admins use organization_admin; drop legacy facility_admin.
+  const legacyFacilityAdmin = (roles.assignments || []).filter(
+    (a) => a.roleKey === FACILITY_ADMIN
+  );
+  for (const assignment of legacyFacilityAdmin) {
+    await accessRepo.revokeRoleAssignment(db, {
+      id: assignment.id,
+      organizationId,
+      revokedByPlatformIdentityId: null,
+      revocationReason: "seed_org_admin_replaces_facility_admin",
+    });
   }
 
   let passwordOutcome = "unchanged";
@@ -863,20 +893,18 @@ async function ensureAdministrator(db, spec, organizationId, healthcareOrganizat
         return { ok: false, code: attempt.code, message: attempt.code };
       }
     } else if (resetDemoPassword && !isJulflona) {
-      // Demo admin: only set when explicit reset provides password via options.demoPassword
-      if (options.demoPassword) {
-        const set = await setPlatformIdentityPassword(db, {
-          identityId: identity.id,
-          password: options.demoPassword,
-          mustChangePassword: true,
-        });
-        if (!set.ok) {
-          return { ok: false, code: set.code, message: set.code };
-        }
-        passwordOutcome = "demo_password_set";
-      } else {
-        passwordOutcome = "password_reset_requested_without_password";
+      // Demo admin: require --reset-demo-password (testing/demo only). Uses explicit
+      // options.demoPassword, else same ACTIVECLINIC_DEMO_STAFF_PASSWORD / demo staff default.
+      const password = resolveDemoStaffPassword(options.demoPassword);
+      const set = await setPlatformIdentityPassword(db, {
+        identityId: identity.id,
+        password,
+        mustChangePassword: true,
+      });
+      if (!set.ok) {
+        return { ok: false, code: set.code, message: set.code };
       }
+      passwordOutcome = "demo_password_set";
     } else if (identityCreated && isJulflona && requestedPassword == null) {
       passwordOutcome = "identity_created_without_password";
     }
@@ -891,6 +919,283 @@ async function ensureAdministrator(db, spec, organizationId, healthcareOrganizat
     temporaryPassword,
     mustChangePassword: refreshed ? refreshed.must_change_password === true : null,
   };
+}
+
+/**
+ * Idempotent login-capable departmental demo users for activeclinic-demo only.
+ */
+async function ensureDemoRoleUsers(
+  db,
+  spec,
+  organizationId,
+  healthcareOrganizationId,
+  facilityId,
+  options = {}
+) {
+  const {
+    dryRun = false,
+    counts,
+    resetDemoRolePasswords = false,
+  } = options;
+
+  if (spec.organizationKey !== DEMO_CLINIC_KEY) {
+    return { ok: true, skipped: true, users: [] };
+  }
+
+  const roleUsers = Array.isArray(spec.roleUsers) ? spec.roleUsers : [];
+  if (!roleUsers.length) {
+    return { ok: true, skipped: true, users: [] };
+  }
+
+  const password = resolveDemoStaffPassword(options.demoRolePassword);
+
+  const users = [];
+
+  for (const user of roleUsers) {
+    const email = String(user.email || "").trim().toLowerCase();
+    if (!email || !user.roleKey || !user.scopeType) {
+      return {
+        ok: false,
+        code: RESULT.INVALID_INPUT,
+        message: `invalid_role_user:${user.key || "unknown"}`,
+      };
+    }
+
+    let identity = await findIdentityByEmail(db, email);
+    const linkedForeign = identity
+      ? (await findStaffLinkedToIdentity(db, identity.id)).find(
+          (row) => row.organization_id !== organizationId
+        )
+      : null;
+    if (linkedForeign) {
+      return {
+        ok: false,
+        code: RESULT.DEMO_ADMIN_EMAIL_CONFLICT,
+        message: "DEMO_ROLE_EMAIL_CONFLICT",
+        conflictOrganizationKey: linkedForeign.organization_key,
+        email,
+      };
+    }
+
+    if (dryRun) {
+      bump(counts, identity ? "unchanged" : "created");
+      users.push({
+        key: user.key,
+        email,
+        dryRun: true,
+        wouldCreateIdentity: !identity,
+        roleKey: user.roleKey,
+        scopeType: user.scopeType,
+        reusePublicProfileKey: user.reusePublicProfileKey || null,
+      });
+      continue;
+    }
+
+    let identityCreated = false;
+    if (!identity) {
+      const created = await createPlatformIdentity(db, {
+        primaryEmail: email,
+        emailNormalized: email,
+        emailVerifiedAt: new Date().toISOString(),
+        status: "active",
+        mustChangePassword: true,
+      });
+      if (!created.ok) {
+        return {
+          ok: false,
+          code: created.code,
+          message: created.code,
+          email,
+        };
+      }
+      identity = created.identity;
+      identityCreated = true;
+      bump(counts, "created");
+    } else {
+      bump(counts, "updated");
+    }
+
+    let staffMember = null;
+    let staffReuse = false;
+
+    if (user.reusePublicProfileKey) {
+      const existing = await db.query(
+        `SELECT id, platform_identity_id, display_name, status
+           FROM activeclinic.staff_members
+          WHERE healthcare_organization_id = $1
+            AND public_profile_key = $2
+          LIMIT 1`,
+        [healthcareOrganizationId, user.reusePublicProfileKey]
+      );
+      if (existing.rows[0]) {
+        staffMember = {
+          id: existing.rows[0].id,
+          platformIdentityId: existing.rows[0].platform_identity_id,
+          displayName: existing.rows[0].display_name,
+          status: existing.rows[0].status,
+        };
+        staffReuse = true;
+      }
+    }
+
+    if (!staffMember) {
+      const staffList = await listStaffMembersByOrganization(db, { organizationId });
+      staffMember =
+        (staffList.staffMembers || []).find(
+          (s) =>
+            s.platformIdentityId === identity.id ||
+            (s.emailNormalized && s.emailNormalized === email)
+        ) || null;
+    }
+
+    if (!staffMember) {
+      const createdStaff = await createStaffMember(db, {
+        organizationId,
+        healthcareOrganizationId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        displayName: user.displayName,
+        email,
+        phone: user.phone,
+        jobTitle: user.jobTitle,
+        employmentType: "permanent",
+        status: "active",
+        platformIdentityId: identity.id,
+      });
+      if (!createdStaff.ok) {
+        return {
+          ok: false,
+          code: createdStaff.code,
+          message: createdStaff.code,
+          email,
+        };
+      }
+      staffMember = createdStaff.staffMember;
+      bump(counts, "created");
+    } else {
+      if (!staffMember.platformIdentityId) {
+        const linked = await linkStaffMemberToIdentity(db, {
+          id: staffMember.id,
+          organizationId,
+          platformIdentityId: identity.id,
+        });
+        if (!linked.ok) {
+          return {
+            ok: false,
+            code: linked.code,
+            message: linked.code,
+            email,
+          };
+        }
+      } else if (String(staffMember.platformIdentityId) !== String(identity.id)) {
+        return {
+          ok: false,
+          code: RESULT.DEMO_ADMIN_EMAIL_CONFLICT,
+          message: "DEMO_ROLE_STAFF_IDENTITY_CONFLICT",
+          email,
+        };
+      }
+
+      await updateStaffMemberProfile(db, {
+        id: staffMember.id,
+        organizationId,
+        patch: {
+          email,
+          jobTitle: user.jobTitle,
+          displayName: user.displayName,
+        },
+      });
+    }
+
+    const facilityAssign = await assignStaffToFacility(db, {
+      organizationId,
+      staffMemberId: staffMember.id,
+      facilityId,
+      isPrimary: false,
+    });
+    if (
+      !facilityAssign.ok &&
+      facilityAssign.code !== "facility_assignment_exists"
+    ) {
+      return {
+        ok: false,
+        code: facilityAssign.code,
+        message: facilityAssign.code,
+        email,
+      };
+    }
+
+    const roles = await listStaffRoleAssignments(db, {
+      staffMemberId: staffMember.id,
+      organizationId,
+    });
+    const hasRole = (roles.assignments || []).some(
+      (a) =>
+        a.roleKey === user.roleKey &&
+        a.scopeType === user.scopeType &&
+        (user.scopeType === "organisation" ||
+          String(a.facilityId) === String(facilityId))
+    );
+    if (!hasRole) {
+      const assigned = await assignStaffRole(db, {
+        organizationId,
+        staffMemberId: staffMember.id,
+        roleKey: user.roleKey,
+        scopeType: user.scopeType,
+        facilityId: user.scopeType === "facility" ? facilityId : null,
+        assignmentOrigin: "system",
+        deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+      });
+      if (!assigned.ok && assigned.code !== "role_assignment_exists") {
+        return {
+          ok: false,
+          code: assigned.code,
+          message: assigned.code,
+          email,
+        };
+      }
+    }
+
+    const identityRow =
+      identity.password_hash !== undefined
+        ? identity
+        : await identityRepo.findIdentityById(db, identity.id);
+    const hasPassword = Boolean(identityRow && identityRow.password_hash);
+    let passwordOutcome = "unchanged";
+    if (identityCreated || resetDemoRolePasswords || !hasPassword) {
+      const set = await setPlatformIdentityPassword(db, {
+        identityId: identity.id,
+        password,
+        mustChangePassword: true,
+      });
+      if (!set.ok) {
+        return {
+          ok: false,
+          code: set.code,
+          message: set.code,
+          email,
+        };
+      }
+      passwordOutcome = identityCreated
+        ? "demo_role_password_set"
+        : "demo_role_password_reset";
+    }
+
+    users.push({
+      key: user.key,
+      email,
+      displayName: user.displayName,
+      staffMemberId: staffMember.id,
+      staffReuse,
+      roleKey: user.roleKey,
+      scopeType: user.scopeType,
+      facilityId,
+      passwordOutcome,
+      credentialProvisioned: passwordOutcome !== "unchanged" || hasPassword,
+    });
+  }
+
+  return { ok: true, users };
 }
 
 async function seedOneClinic(db, clinicKey, options = {}) {
@@ -961,6 +1266,26 @@ async function seedOneClinic(db, clinicKey, options = {}) {
     }
   }
 
+  let roleUsersResult = { ok: true, skipped: true, users: [] };
+  if (facility.facility) {
+    roleUsersResult = await ensureDemoRoleUsers(
+      db,
+      spec,
+      org.organizationId,
+      hco.hco.id,
+      facility.facility.id,
+      {
+        dryRun,
+        counts,
+        resetDemoRolePasswords: options.resetDemoRolePasswords === true,
+        demoRolePassword: options.demoRolePassword || null,
+      }
+    );
+    if (!roleUsersResult.ok) {
+      return { ...roleUsersResult, clinicKey, counts };
+    }
+  }
+
   return {
     ok: true,
     clinicKey,
@@ -981,8 +1306,9 @@ async function seedOneClinic(db, clinicKey, options = {}) {
           mustChangePassword: adminResult.mustChangePassword,
           // temporaryPassword only returned to CLI for one-time handoff — never log elsewhere
           temporaryPassword: adminResult.temporaryPassword || null,
-          role: FACILITY_ADMIN,
+          role: ORGANIZATION_ADMIN,
         },
+    roleUsers: roleUsersResult.users || [],
   };
 }
 
@@ -1025,6 +1351,9 @@ async function seedActiveClinicDemoClinics(db, options = {}) {
         key === JULFLONA_CLINIC_KEY ? options.julflonaRequestedPassword || null : null,
       allowTemporaryPassword: key === JULFLONA_CLINIC_KEY,
       demoPassword: options.demoPassword || null,
+      resetDemoRolePasswords:
+        options.resetDemoRolePasswords === true || options.resetDemoPassword === true,
+      demoRolePassword: options.demoRolePassword || options.demoPassword || null,
     });
     if (!result.ok) {
       return {
@@ -1159,12 +1488,15 @@ async function auditDemoClinics(db) {
 module.exports = {
   RESULT,
   JULFLONA_TEMP_PASSWORD,
+  DEMO_ROLE_STAFF_PASSWORD,
   assertSafeSeedEnvironment,
   ensureActiveClinicCatalogue,
   seedActiveClinicDemoClinics,
   seedOneClinic,
+  ensureDemoRoleUsers,
   auditDemoClinics,
   DEMO_CLINIC_KEY,
   JULFLONA_CLINIC_KEY,
+  ORGANIZATION_ADMIN,
   FACILITY_ADMIN,
 };

@@ -51,6 +51,12 @@ const {
   acknowledgeCriticalResult,
   RESULT: DIAGNOSTICS_RESULT,
   PERM,
+  LAB_VIEW_ANY,
+  RADIOLOGY_VIEW_ANY,
+  DIAGNOSTICS_HUB_ANY,
+  canViewLaboratory,
+  canViewRadiology,
+  canEnterDiagnosticsHub,
 } = require("../services/activeClinicDiagnosticsService");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
@@ -130,9 +136,42 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
 
   // Laboratory dashboard
   app.get(
+    "/app/diagnostics",
+    requireAuth,
+    requirePermission(DIAGNOSTICS_HUB_ANY),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        return await renderShell(req, res, {
+          activeNav: "diagnostics",
+          content: "app/diagnostics-hub-content.ejs",
+          pageHeader: {
+            title: "Diagnostics",
+            description:
+              "Laboratory and radiology workflows for the selected facility.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Diagnostics" },
+          ],
+          pageData: {
+            hub: {
+              showLaboratory: canViewLaboratory(auth),
+              showRadiology: canViewRadiology(auth),
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
     "/app/diagnostics/laboratory",
     requireAuth,
-    requirePermission(PERM.VIEW),
+    requirePermission(LAB_VIEW_ANY),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicLaboratoryDashboardScreen(getPool(), {
@@ -175,7 +214,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/laboratory/queue",
     requireAuth,
-    requirePermission(PERM.VIEW),
+    requirePermission(LAB_VIEW_ANY),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicLaboratoryQueueScreen(getPool(), {
@@ -215,7 +254,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/laboratory/worklist",
     requireAuth,
-    requirePermission(PERM.VIEW),
+    requirePermission(LAB_VIEW_ANY),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicLaboratoryWorklistScreen(getPool(), {
@@ -255,7 +294,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/laboratory/request/:requestId",
     requireAuth,
-    requirePermission(PERM.VIEW),
+    requirePermission(LAB_VIEW_ANY),
     async (req, res, next) => {
       try {
         const requestId = String(req.params.requestId || "");
@@ -322,7 +361,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/laboratory/request/:requestId/collect",
     requireAuth,
-    requirePermission(PERM.COLLECT),
+    requirePermission(PERM.LAB_COLLECT),
     async (req, res, next) => {
       try {
         const requestId = String(req.params.requestId || "");
@@ -364,7 +403,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.post(
     "/app/diagnostics/laboratory/request/:requestId/collect",
     requireAuth,
-    requirePermission(PERM.COLLECT),
+    requirePermission(PERM.LAB_COLLECT),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -412,7 +451,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/laboratory/specimen/:specimenId/receive",
     requireAuth,
-    requirePermission(PERM.COLLECT),
+    requirePermission(PERM.LAB_COLLECT),
     async (req, res, next) => {
       try {
         const specimenId = String(req.params.specimenId || "");
@@ -453,7 +492,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.post(
     "/app/diagnostics/laboratory/specimen/:specimenId/receive",
     requireAuth,
-    requirePermission(PERM.COLLECT),
+    requirePermission(PERM.LAB_COLLECT),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -488,7 +527,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/laboratory/specimen/:specimenId/reject",
     requireAuth,
-    requirePermission(PERM.COLLECT),
+    requirePermission(PERM.LAB_COLLECT),
     async (req, res, next) => {
       try {
         const specimenId = String(req.params.specimenId || "");
@@ -529,7 +568,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.post(
     "/app/diagnostics/laboratory/specimen/:specimenId/reject",
     requireAuth,
-    requirePermission(PERM.COLLECT),
+    requirePermission(PERM.LAB_COLLECT),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -574,7 +613,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/laboratory/request/:requestId/result",
     requireAuth,
-    requirePermission(PERM.RESULT),
+    requirePermission(PERM.LAB_RESULT),
     async (req, res, next) => {
       try {
         const requestId = String(req.params.requestId || "");
@@ -615,7 +654,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.post(
     "/app/diagnostics/laboratory/request/:requestId/result",
     requireAuth,
-    requirePermission(PERM.RESULT),
+    requirePermission(PERM.LAB_RESULT),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -669,7 +708,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/radiology",
     requireAuth,
-    requirePermission(PERM.VIEW),
+    requirePermission(RADIOLOGY_VIEW_ANY),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicRadiologyDashboardScreen(getPool(), {
@@ -711,7 +750,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/radiology/queue",
     requireAuth,
-    requirePermission(PERM.VIEW),
+    requirePermission(RADIOLOGY_VIEW_ANY),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicRadiologyQueueScreen(getPool(), {
@@ -751,7 +790,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/radiology/request/:requestId/report",
     requireAuth,
-    requirePermission(PERM.RESULT),
+    requirePermission(PERM.RADIOLOGY_RESULT),
     async (req, res, next) => {
       try {
         const requestId = String(req.params.requestId || "");
@@ -792,7 +831,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.post(
     "/app/diagnostics/radiology/request/:requestId/report",
     requireAuth,
-    requirePermission(PERM.RESULT),
+    requirePermission(PERM.RADIOLOGY_RESULT),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -845,7 +884,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.get(
     "/app/diagnostics/critical-alert/:resultId",
     requireAuth,
-    requirePermission(PERM.VIEW),
+    requirePermission(DIAGNOSTICS_HUB_ANY),
     async (req, res, next) => {
       try {
         const resultId = String(req.params.resultId || "");
@@ -885,7 +924,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   app.post(
     "/app/diagnostics/critical-alert/:resultId/acknowledge",
     requireAuth,
-    requirePermission(PERM.VIEW),
+    requirePermission(DIAGNOSTICS_HUB_ANY),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {

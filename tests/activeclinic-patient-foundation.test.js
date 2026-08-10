@@ -24,8 +24,9 @@ const {
 } = require("../src/activeclinic/services/activeClinicStaffService");
 const {
   assignStaffRole,
-  NETWORK_ADMIN,
+  RECEPTIONIST,
   FACILITY_ADMIN,
+  ORGANIZATION_ADMIN,
   STAFF_ROLE,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 const {
@@ -144,11 +145,26 @@ async function seedNetworkActor(tenant, phone) {
     phone,
   });
   assert.equal(staff.ok, true, JSON.stringify(staff));
+  await assignStaffToFacility(pool, {
+    organizationId: tenant.orgId,
+    staffMemberId: staff.staffMember.id,
+    facilityId: tenant.facilityId,
+    isPrimary: true,
+  });
+  // Org admin (archive/audit) + receptionist (patient registration writes).
+  const orgRole = await assignStaffRole(pool, {
+    organizationId: tenant.orgId,
+    staffMemberId: staff.staffMember.id,
+    roleKey: ORGANIZATION_ADMIN,
+    scopeType: "organisation",
+  });
+  assert.equal(orgRole.ok, true, JSON.stringify(orgRole));
   const role = await assignStaffRole(pool, {
     organizationId: tenant.orgId,
     staffMemberId: staff.staffMember.id,
-    roleKey: NETWORK_ADMIN,
-    scopeType: "organisation",
+    roleKey: RECEPTIONIST,
+    scopeType: "facility",
+    facilityId: tenant.facilityId,
   });
   assert.equal(role.ok, true, JSON.stringify(role));
   return {
@@ -174,14 +190,17 @@ async function seedFacilityActor(tenant, facilityId, phone) {
     facilityId,
     isPrimary: true,
   });
-  const role = await assignStaffRole(pool, {
-    organizationId: tenant.orgId,
-    staffMemberId: staff.staffMember.id,
-    roleKey: FACILITY_ADMIN,
-    scopeType: "facility",
-    facilityId,
-  });
-  assert.equal(role.ok, true, JSON.stringify(role));
+  // Facility admin (ops) + receptionist (patient writes) for facility-scoped patient tests.
+  for (const roleKey of [FACILITY_ADMIN, RECEPTIONIST]) {
+    const role = await assignStaffRole(pool, {
+      organizationId: tenant.orgId,
+      staffMemberId: staff.staffMember.id,
+      roleKey,
+      scopeType: "facility",
+      facilityId,
+    });
+    assert.equal(role.ok, true, JSON.stringify(role));
+  }
   return {
     staffMemberId: staff.staffMember.id,
     organizationId: tenant.orgId,
@@ -296,6 +315,20 @@ describe("ActiveClinic patient identity foundation (AC-V6-C01)", () => {
     const actor = await seedNetworkActor(tenant, "+260972000001");
     const unauthorized = await seedUnauthorizedStaff(tenant, "+260972000002");
     const facilityB = await seedSecondFacility(tenant, "clinic-b");
+    await assignStaffToFacility(pool, {
+      organizationId: tenant.orgId,
+      staffMemberId: actor.staffMemberId,
+      facilityId: facilityB.id,
+    });
+    // Least-privilege: patient.create is facility-scoped via receptionist — grant at B too.
+    const receptionAtB = await assignStaffRole(pool, {
+      organizationId: tenant.orgId,
+      staffMemberId: actor.staffMemberId,
+      roleKey: RECEPTIONIST,
+      scopeType: "facility",
+      facilityId: facilityB.id,
+    });
+    assert.equal(receptionAtB.ok, true, JSON.stringify(receptionAtB));
 
     const base = {
       organizationId: tenant.orgId,
@@ -593,6 +626,19 @@ describe("ActiveClinic patient identity foundation (AC-V6-C01)", () => {
     const other = await seedAcTenant(`${stamp}o`, "seo");
     const network = await seedNetworkActor(tenant, "+260972000040");
     const facilityB = await seedSecondFacility(tenant, "site-b");
+    await assignStaffToFacility(pool, {
+      organizationId: tenant.orgId,
+      staffMemberId: network.staffMemberId,
+      facilityId: facilityB.id,
+    });
+    const receptionAtB = await assignStaffRole(pool, {
+      organizationId: tenant.orgId,
+      staffMemberId: network.staffMemberId,
+      roleKey: RECEPTIONIST,
+      scopeType: "facility",
+      facilityId: facilityB.id,
+    });
+    assert.equal(receptionAtB.ok, true, JSON.stringify(receptionAtB));
     const facActor = await seedFacilityActor(tenant, tenant.facilityId, "+260972000041");
     const otherActor = await seedNetworkActor(other, "+260972000042");
 

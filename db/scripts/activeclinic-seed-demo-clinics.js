@@ -38,6 +38,7 @@ function parseArgs(argv) {
   let auditOnly = false;
   let resetDemoPassword = false;
   let julflonaPassword = REQUESTED_JULFLONA_PASSWORD;
+  let demoPassword = null;
   const clinicKeys = [];
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -52,6 +53,9 @@ function parseArgs(argv) {
     else if (arg === "--julflona-password") julflonaPassword = next();
     else if (arg.startsWith("--julflona-password=")) {
       julflonaPassword = arg.slice("--julflona-password=".length);
+    } else if (arg === "--demo-password") demoPassword = next();
+    else if (arg.startsWith("--demo-password=")) {
+      demoPassword = arg.slice("--demo-password=".length);
     }
   }
 
@@ -62,6 +66,7 @@ function parseArgs(argv) {
     auditOnly,
     resetDemoPassword,
     julflonaPassword,
+    demoPassword,
     clinicKeys: clinicKeys.length ? clinicKeys : [DEMO_CLINIC_KEY, JULFLONA_CLINIC_KEY],
   };
 }
@@ -118,6 +123,8 @@ async function main() {
       clinicKeys: args.clinicKeys,
       resetDemoPassword: args.resetDemoPassword,
       julflonaRequestedPassword: args.julflonaPassword,
+      demoPassword: args.demoPassword || null,
+      demoRolePassword: args.demoPassword || null,
       requireIdentityKey: identity.identityKey,
     });
 

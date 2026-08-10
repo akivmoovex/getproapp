@@ -6,12 +6,14 @@
  */
 
 const {
-  authorizeStaffPermission,
-  RESULT: AUTHZ_RESULT,
-} = require("./activeClinicAuthorizationService");
+  CODE_ACTIVECLINIC_ORG_V6,
+} = require("../../platform/config/deploymentProfiles");
 const {
   recordAuditEventSafe,
 } = require("../../platform/services/auditEventService");
+const {
+  requireFinancePermission,
+} = require("./activeClinicFinanceAuthz");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -32,6 +34,25 @@ const PERM = Object.freeze({
   RECONCILE: "activeclinic.cashier.reconcile",
 });
 
+async function assertPerm(pool, params) {
+  const checked = await requireFinancePermission(pool, params);
+  if (!checked.ok) return { result: RESULT.ACCESS_DENIED };
+  return null;
+}
+
+async function writeFinanceAudit(pool, params) {
+  await recordAuditEventSafe(pool, {
+    deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    organizationId: params.tenantId,
+    actorUserId: params.staffId || null,
+    actionKey: params.eventType,
+    entityType: params.resourceType,
+    entityId: params.resourceId,
+    outcome: "success",
+    metadata: params.metadata || {},
+  });
+}
+
 const SESSION_STATUS = {
   OPEN: "open",
   CLOSED: "closed",
@@ -50,15 +71,13 @@ async function openCashierSession({
   openingCashMinor = 0,
   notes = null,
 }) {
-  const authz = await authorizeStaffPermission({
-    pool,
+  const denied = await assertPerm(pool, {
     tenantId,
+    facilityId,
     staffId,
     permissionKey: PERM.OPEN_SESSION,
   });
-  if (authz.result !== AUTHZ_RESULT.OK) {
-    return { result: RESULT.ACCESS_DENIED };
-  }
+  if (denied) return denied;
 
   if (openingCashMinor < 0) {
     return { result: RESULT.INVALID_INPUT };
@@ -97,10 +116,9 @@ async function openCashierSession({
     [sessionId, "session_open", { openingCashMinor }, staffId]
   );
 
-  await recordAuditEventSafe({
-    pool,
+  await writeFinanceAudit(pool, {
     tenantId,
-    userId: staffId,
+    staffId,
     eventType: "activeclinic.cashier.session_opened",
     resourceType: "cashier_session",
     resourceId: sessionId,
@@ -123,15 +141,13 @@ async function getCurrentCashierSession({
   facilityId,
   staffId,
 }) {
-  const authz = await authorizeStaffPermission({
-    pool,
+  const denied = await assertPerm(pool, {
     tenantId,
+    facilityId,
     staffId,
     permissionKey: PERM.OPEN_SESSION,
   });
-  if (authz.result !== AUTHZ_RESULT.OK) {
-    return { result: RESULT.ACCESS_DENIED };
-  }
+  if (denied) return denied;
 
   const sessionResult = await pool.query(
     `SELECT * FROM activeclinic.cashier_sessions
@@ -179,15 +195,13 @@ async function closeCashierSession({
   actualCashMinor,
   notes = null,
 }) {
-  const authz = await authorizeStaffPermission({
-    pool,
+  const denied = await assertPerm(pool, {
     tenantId,
+    facilityId,
     staffId,
     permissionKey: PERM.CLOSE_SESSION,
   });
-  if (authz.result !== AUTHZ_RESULT.OK) {
-    return { result: RESULT.ACCESS_DENIED };
-  }
+  if (denied) return denied;
 
   if (actualCashMinor < 0) {
     return { result: RESULT.INVALID_INPUT };
@@ -195,8 +209,8 @@ async function closeCashierSession({
 
   const sessionResult = await pool.query(
     `SELECT * FROM activeclinic.cashier_sessions
-     WHERE id = $1 AND tenant_id = $2`,
-    [sessionId, tenantId]
+     WHERE id = $1 AND tenant_id = $2 AND facility_id = $3`,
+    [sessionId, tenantId, facilityId]
   );
 
   if (sessionResult.rows.length === 0) {
@@ -204,6 +218,17 @@ async function closeCashierSession({
   }
 
   const session = sessionResult.rows[0];
+
+  // Ordinary cashiers may only close their own session; manage elevates.
+  if (String(session.cashier_staff_id) !== String(staffId)) {
+    const manageDenied = await assertPerm(pool, {
+      tenantId,
+      facilityId,
+      staffId,
+      permissionKey: PERM.MANAGE,
+    });
+    if (manageDenied) return manageDenied;
+  }
 
   if (session.status !== SESSION_STATUS.OPEN) {
     return { result: RESULT.SESSION_ALREADY_CLOSED };
@@ -261,10 +286,9 @@ async function closeCashierSession({
     );
   }
 
-  await recordAuditEventSafe({
-    pool,
+  await writeFinanceAudit(pool, {
     tenantId,
-    userId: staffId,
+    staffId,
     eventType: "activeclinic.cashier.session_closed",
     resourceType: "cashier_session",
     resourceId: sessionId,
@@ -293,20 +317,18 @@ async function reconcileCashierSession({
   sessionId,
   approvalNotes = null,
 }) {
-  const authz = await authorizeStaffPermission({
-    pool,
+  const denied = await assertPerm(pool, {
     tenantId,
+    facilityId,
     staffId,
     permissionKey: PERM.RECONCILE,
   });
-  if (authz.result !== AUTHZ_RESULT.OK) {
-    return { result: RESULT.ACCESS_DENIED };
-  }
+  if (denied) return denied;
 
   const sessionResult = await pool.query(
     `SELECT * FROM activeclinic.cashier_sessions
-     WHERE id = $1 AND tenant_id = $2`,
-    [sessionId, tenantId]
+     WHERE id = $1 AND tenant_id = $2 AND facility_id = $3`,
+    [sessionId, tenantId, facilityId]
   );
 
   if (sessionResult.rows.length === 0) {
@@ -336,10 +358,9 @@ async function reconcileCashierSession({
     [sessionId, "session_reconcile", { approvalNotes }, staffId]
   );
 
-  await recordAuditEventSafe({
-    pool,
+  await writeFinanceAudit(pool, {
     tenantId,
-    userId: staffId,
+    staffId,
     eventType: "activeclinic.cashier.session_reconciled",
     resourceType: "cashier_session",
     resourceId: sessionId,
@@ -366,15 +387,13 @@ async function listCashierSessions({
   limit = 50,
   offset = 0,
 }) {
-  const authz = await authorizeStaffPermission({
-    pool,
+  const denied = await assertPerm(pool, {
     tenantId,
+    facilityId,
     staffId,
     permissionKey: PERM.MANAGE,
   });
-  if (authz.result !== AUTHZ_RESULT.OK) {
-    return { result: RESULT.ACCESS_DENIED };
-  }
+  if (denied) return denied;
 
   let query = `
     SELECT s.*, st.first_name as cashier_first_name, st.last_name as cashier_last_name

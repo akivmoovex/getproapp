@@ -1,5 +1,6 @@
 <%
   var invoices = (pageData && pageData.invoices) || [];
+  var caps = (pageData && pageData.capabilities) || {};
   var stitch = (pageData && pageData.stitch) || {};
 %>
 <section class="ac-invoice-list" data-ac-page-section="invoice-list" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
@@ -11,7 +12,9 @@
           marker: 'invoices-empty',
           title: 'No invoices yet',
           description: 'Create patient invoices from charges.',
-          primaryAction: { href: '/app/billing/invoices/new', label: 'Create invoice' }
+          primaryAction: caps.canCreateInvoice
+            ? { href: '/app/billing/invoices/new', label: 'Create invoice' }
+            : null
         }
       }) %>
     <% } else { %>

@@ -35,9 +35,69 @@ const RESULT = Object.freeze({
   DUPLICATE: "role_assignment_exists",
 });
 
+const ORGANIZATION_ADMIN = "activeclinic_organization_admin";
+/** @deprecated Compat alias of ORGANIZATION_ADMIN — retain for existing assignments/tests. */
 const NETWORK_ADMIN = "activeclinic_network_admin";
 const FACILITY_ADMIN = "activeclinic_facility_admin";
+const CLINIC_MANAGER = "activeclinic_clinic_manager";
+const RECEPTIONIST = "activeclinic_receptionist";
+const NURSE = "activeclinic_nurse";
+const CLINICIAN = "activeclinic_clinician";
+const PHARMACIST = "activeclinic_pharmacist";
+const LAB_TECHNICIAN = "activeclinic_lab_technician";
+const RADIOLOGY_STAFF = "activeclinic_radiology_staff";
+const BILLING_OFFICER = "activeclinic_billing_officer";
+const CASHIER = "activeclinic_cashier";
+const FINANCE_SUPERVISOR = "activeclinic_finance_supervisor";
+const AUDITOR = "activeclinic_auditor";
 const STAFF_ROLE = "activeclinic_staff";
+
+/** Organization-wide admin roles (canonical + compat). */
+const ORG_WIDE_ADMIN_ROLES = Object.freeze([ORGANIZATION_ADMIN, NETWORK_ADMIN]);
+
+/** Roles that must use organisation scope only. */
+const ORGANISATION_SCOPE_ONLY_ROLES = Object.freeze([
+  ORGANIZATION_ADMIN,
+  NETWORK_ADMIN,
+  AUDITOR,
+]);
+
+/** Roles that must use facility scope only. */
+const FACILITY_SCOPE_ONLY_ROLES = Object.freeze([
+  FACILITY_ADMIN,
+  CLINIC_MANAGER,
+  RECEPTIONIST,
+  NURSE,
+  CLINICIAN,
+  PHARMACIST,
+  LAB_TECHNICIAN,
+  RADIOLOGY_STAFF,
+  BILLING_OFFICER,
+  CASHIER,
+  FINANCE_SUPERVISOR,
+]);
+
+const ACTIVECLINIC_ROLE_CATALOGUE = Object.freeze([
+  ORGANIZATION_ADMIN,
+  NETWORK_ADMIN,
+  FACILITY_ADMIN,
+  CLINIC_MANAGER,
+  RECEPTIONIST,
+  NURSE,
+  CLINICIAN,
+  PHARMACIST,
+  LAB_TECHNICIAN,
+  RADIOLOGY_STAFF,
+  BILLING_OFFICER,
+  CASHIER,
+  FINANCE_SUPERVISOR,
+  AUDITOR,
+  STAFF_ROLE,
+]);
+
+function isOrgWideAdminRole(roleKey) {
+  return ORG_WIDE_ADMIN_ROLES.includes(String(roleKey || ""));
+}
 
 function mapRoleAssignment(row) {
   if (!row) return null;
@@ -99,12 +159,12 @@ async function assignStaffRole(db, input) {
       return { ok: false, code: RESULT.INVALID_SCOPE, assignment: null };
     }
     scopeId = facilityId;
-    if (role.role_key === NETWORK_ADMIN) {
+    if (ORGANISATION_SCOPE_ONLY_ROLES.includes(role.role_key)) {
       return { ok: false, code: RESULT.INVALID_SCOPE, assignment: null };
     }
   } else {
     scopeId = input.organizationId;
-    if (role.role_key === FACILITY_ADMIN) {
+    if (FACILITY_SCOPE_ONLY_ROLES.includes(role.role_key)) {
       return { ok: false, code: RESULT.INVALID_SCOPE, assignment: null };
     }
   }
@@ -160,8 +220,12 @@ async function listStaffRoleAssignments(db, input) {
 
 /**
  * Resolve effective permission keys for an active staff member.
- * Facility-scoped permissions require facilityId + active facility assignment
- * (except organisation-scoped roles which apply network-wide).
+ * Facility-scoped permissions require facilityId + active facility membership
+ * when evaluating facility-scoped roles (except organisation-scoped roles,
+ * which apply organization-wide without facility membership).
+ *
+ * Effective permissions are the DISTINCT union of matching role assignments.
+ * Facility resolution never imports permissions from other facilities' roles.
  */
 async function resolveEffectivePermissions(db, input) {
   const active = await requireActiveStaffMember(db, {
@@ -227,21 +291,16 @@ async function resolveEffectivePermissions(db, input) {
     facilityId,
   });
 
-  // When facilityId is provided, also include organisation-scoped permissions.
-  let merged = permissions;
-  if (facilityId) {
-    const orgPerms = await accessRepo.listPermissionKeysForStaff(db, {
-      staffMemberId: active.staffMember.id,
-      organizationId: input.organizationId,
-      facilityId: null,
-    });
-    merged = Array.from(new Set([...orgPerms, ...permissions])).sort();
-  }
-
+  // listPermissionKeysForStaff already unions:
+  // - organisation-scoped assignments, and
+  // - facility-scoped assignments that match facilityId (when provided).
+  // When facilityId is null, it returns the union across all facilities (login /
+  // eligibility). Do NOT merge a null-facility query into a facility-scoped
+  // resolution — that incorrectly imports other facilities' role permissions.
   return {
     ok: true,
     code: RESULT.OK,
-    permissions: merged,
+    permissions,
     staffMember: active.staffMember,
   };
 }
@@ -281,9 +340,26 @@ async function authorizeStaffPermission(db, input) {
 
 module.exports = {
   RESULT,
+  ORGANIZATION_ADMIN,
   NETWORK_ADMIN,
   FACILITY_ADMIN,
+  CLINIC_MANAGER,
+  RECEPTIONIST,
+  NURSE,
+  CLINICIAN,
+  PHARMACIST,
+  LAB_TECHNICIAN,
+  RADIOLOGY_STAFF,
+  BILLING_OFFICER,
+  CASHIER,
+  FINANCE_SUPERVISOR,
+  AUDITOR,
   STAFF_ROLE,
+  ORG_WIDE_ADMIN_ROLES,
+  ORGANISATION_SCOPE_ONLY_ROLES,
+  FACILITY_SCOPE_ONLY_ROLES,
+  ACTIVECLINIC_ROLE_CATALOGUE,
+  isOrgWideAdminRole,
   mapRoleAssignment,
   assignStaffRole,
   listStaffRoleAssignments,

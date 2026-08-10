@@ -26,6 +26,10 @@ const {
   RESULT: STAFF_RESULT,
 } = require("./activeClinicStaffService");
 const {
+  assertNotLastOrgAdminRemoval,
+  RESULT: ACCESS_RESULT,
+} = require("./activeClinicAccessManagementService");
+const {
   issueAdminPasswordResetLink,
 } = require("./activeClinicPasswordRecoveryService");
 const {
@@ -39,6 +43,7 @@ const RESULT = Object.freeze({
   STAFF_NOT_FOUND: "staff_not_found",
   IDENTITY_MISSING: "identity_missing",
   NOT_ELIGIBLE: "not_eligible",
+  LAST_ORG_ADMIN: ACCESS_RESULT.LAST_ORG_ADMIN,
 });
 
 async function withClient(db, fn) {
@@ -182,6 +187,14 @@ async function suspendStaffAccess(db, input) {
   const deploymentCode =
     (input && input.deploymentCode) || CODE_ACTIVECLINIC_ORG_V6;
   const revokeSessions = input && input.revokeSessions !== false;
+
+  const lastAdmin = await assertNotLastOrgAdminRemoval(db, {
+    organizationId,
+    staffMemberId,
+  });
+  if (!lastAdmin.ok) {
+    return { ok: false, code: lastAdmin.code };
+  }
 
   const suspended = await suspendStaffMember(db, {
     id: staffMemberId,

@@ -22,8 +22,11 @@ const {
 const {
   plainRoleSummary,
 } = require("./loadActiveClinicDashboardHome");
+const {
+  resolveEffectivePermissions,
+} = require("./activeClinicAuthorizationService");
 
-const SHELL_ASSET_VERSION = "c04-1";
+const SHELL_ASSET_VERSION = "c07-1";
 
 /**
  * @param {{ query: Function }} db
@@ -46,9 +49,6 @@ async function buildActiveClinicShellViewModel(db, input) {
       ? input.activeNav
       : matchActiveNavKey(req && req.path);
 
-  const permissions = Array.isArray(auth.permissions) ? auth.permissions : [];
-  const navigation = buildActiveClinicNavigation(permissions, activeNav);
-
   const selectable = await listSelectableFacilities(db, auth);
   const availableFacilities = selectable.ok ? selectable.facilities : [];
 
@@ -66,6 +66,25 @@ async function buildActiveClinicShellViewModel(db, input) {
   } else if (!selectedFacility && availableFacilities.length === 1 && !auth.isNetworkAdmin) {
     selectedFacility = availableFacilities[0];
   }
+
+  // Re-resolve after facility selection so nav reflects facility-scoped union,
+  // not the login-time all-facility permission bag.
+  let permissions = Array.isArray(auth.permissions) ? auth.permissions : [];
+  if (
+    selectedFacility &&
+    auth.staffMember &&
+    auth.organization &&
+    auth.platformIdentity
+  ) {
+    const scoped = await resolveEffectivePermissions(db, {
+      organizationId: auth.organization.id,
+      staffMemberId: auth.staffMember.id,
+      platformIdentityId: auth.platformIdentity.id,
+      facilityId: selectedFacility.id,
+    });
+    if (scoped.ok) permissions = scoped.permissions;
+  }
+  const navigation = buildActiveClinicNavigation(permissions, activeNav);
 
   let eligibleOrganizations = [];
   if (auth.platformIdentity && auth.platformIdentity.id) {

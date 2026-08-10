@@ -42,6 +42,7 @@ const {
 } = require("../services/activeClinicStaffInvitationService");
 const {
   updateStaffMemberProfile,
+  createStaffMember,
   RESULT: STAFF_RESULT,
 } = require("../services/activeClinicStaffService");
 const {
@@ -50,6 +51,15 @@ const {
   removeStaffFromFacility,
   setPrimaryFacilityForStaff,
 } = require("../services/activeClinicStaffFacilityService");
+const {
+  assignStaffRole,
+} = require("../services/activeClinicAuthorizationService");
+const {
+  canGrantRole,
+} = require("../services/activeClinicAccessManagementService");
+const {
+  summarizePermissionsForRoleKeys,
+} = require("../services/activeClinicInviteAccessReview");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
@@ -77,6 +87,8 @@ function inviteErrorMessage(code) {
       return "One or more facility assignments could not be saved.";
     case INVITE_RESULT.ROLE_ASSIGNMENT_FAILED:
       return "The initial role could not be assigned.";
+    case INVITE_RESULT.GRANT_DENIED:
+      return "You are not allowed to grant one or more of the selected roles.";
     case INVITE_RESULT.PRODUCT_NOT_ENABLED:
       return "ActiveClinic is not enabled for this organization.";
     case STAFF_RESULT.INVALID_INPUT:
@@ -229,14 +241,15 @@ function registerActiveClinicStaffRoutes(app, deps) {
           activeNav: "staff",
           content: "app/staff-form-content.ejs",
           pageHeader: {
-            title: "Invite staff",
-            description: "Create a staff profile and issue an activation invitation.",
+            title: "Add staff",
+            description:
+              "Create a staff profile, assign facilities and roles, and optionally issue an activation invitation.",
             actions: [],
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },
             { label: "Staff", href: "/app/staff" },
-            { label: "Invite" },
+            { label: "Add" },
           ],
           pageData: { form },
         });
@@ -260,9 +273,30 @@ function registerActiveClinicStaffRoutes(app, deps) {
       if (!preview.ok) {
         return res.status(403).send("Forbidden");
       }
+
+      if (values.issueInvitation && !preview.canInvite) {
+        const form = await loadActiveClinicCreateStaffScreen(getPool(), {
+          auth,
+          values,
+          errors: ["You do not have permission to issue staff invitations."],
+        });
+        return await renderShell(req, res, {
+          status: 403,
+          activeNav: "staff",
+          content: "app/staff-form-content.ejs",
+          pageHeader: { title: "Add staff", description: null, actions: [] },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Staff", href: "/app/staff" },
+            { label: "Add" },
+          ],
+          pageData: { form },
+        });
+      }
+
       const checked = validateStaffFormValues(values, {
         requireFacilities: preview.canAssignFacility,
-        requireRole: preview.canAssignAccess,
+        requireRole: preview.canAssignAccess && values.issueInvitation,
         roleOptions: preview.roleOptions,
       });
       if (!checked.ok) {
@@ -276,11 +310,11 @@ function registerActiveClinicStaffRoutes(app, deps) {
           status: 400,
           activeNav: "staff",
           content: "app/staff-form-content.ejs",
-          pageHeader: { title: "Invite staff", description: null, actions: [] },
+          pageHeader: { title: "Add staff", description: null, actions: [] },
           breadcrumbs: [
             { label: "Home", href: "/app" },
             { label: "Staff", href: "/app/staff" },
-            { label: "Invite" },
+            { label: "Add" },
           ],
           pageData: { form },
         });
@@ -296,11 +330,11 @@ function registerActiveClinicStaffRoutes(app, deps) {
           status: 400,
           activeNav: "staff",
           content: "app/staff-form-content.ejs",
-          pageHeader: { title: "Invite staff", description: null, actions: [] },
+          pageHeader: { title: "Add staff", description: null, actions: [] },
           breadcrumbs: [
             { label: "Home", href: "/app" },
             { label: "Staff", href: "/app/staff" },
-            { label: "Invite" },
+            { label: "Add" },
           ],
           pageData: { form },
         });
@@ -319,11 +353,11 @@ function registerActiveClinicStaffRoutes(app, deps) {
           status: 400,
           activeNav: "staff",
           content: "app/staff-form-content.ejs",
-          pageHeader: { title: "Invite staff", description: null, actions: [] },
+          pageHeader: { title: "Add staff", description: null, actions: [] },
           breadcrumbs: [
             { label: "Home", href: "/app" },
             { label: "Staff", href: "/app/staff" },
-            { label: "Invite" },
+            { label: "Add" },
           ],
           pageData: { form },
         });
@@ -334,6 +368,125 @@ function registerActiveClinicStaffRoutes(app, deps) {
       const roleAssignments = preview.canAssignAccess
         ? buildInviteRoleAssignments(values)
         : [];
+      const accessReview = await summarizePermissionsForRoleKeys(
+        getPool(),
+        roleAssignments.map((r) => r.roleKey)
+      );
+
+      // Create staff profile without invitation (directory / pending identity).
+      if (!values.issueInvitation) {
+        const created = await createStaffMember(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          preferredName: values.preferredName || null,
+          phone: values.phone,
+          email: values.email || null,
+          employmentType: values.employmentType,
+          jobTitle: values.jobTitle || null,
+          staffNumber: values.staffNumber || null,
+          startDate: values.startDate || null,
+          endDate: values.endDate || null,
+          status: "invited",
+          platformIdentityId: null,
+          deploymentCode: deployment.code || CODE_ACTIVECLINIC_ORG_V6,
+        });
+        if (!created.ok) {
+          const form = await loadActiveClinicCreateStaffScreen(getPool(), {
+            auth,
+            values,
+            errors: [inviteErrorMessage(created.code)],
+          });
+          return await renderShell(req, res, {
+            status: 400,
+            activeNav: "staff",
+            content: "app/staff-form-content.ejs",
+            pageHeader: { title: "Add staff", description: null, actions: [] },
+            breadcrumbs: [
+              { label: "Home", href: "/app" },
+              { label: "Staff", href: "/app/staff" },
+              { label: "Add" },
+            ],
+            pageData: { form },
+          });
+        }
+
+        if (preview.canAssignFacility) {
+          for (const facilityId of facilityIds) {
+            const assigned = await assignStaffToFacility(getPool(), {
+              organizationId: auth.organization.id,
+              staffMemberId: created.staffMember.id,
+              facilityId,
+              isPrimary: facilityIds[0] === facilityId,
+              deploymentCode: deployment.code || CODE_ACTIVECLINIC_ORG_V6,
+            });
+            if (!assigned.ok && assigned.code !== "facility_assignment_exists") {
+              const form = await loadActiveClinicCreateStaffScreen(getPool(), {
+                auth,
+                values,
+                errors: ["Facility assignment failed."],
+              });
+              return await renderShell(req, res, {
+                status: 400,
+                activeNav: "staff",
+                content: "app/staff-form-content.ejs",
+                pageHeader: { title: "Add staff", description: null, actions: [] },
+                breadcrumbs: [
+                  { label: "Home", href: "/app" },
+                  { label: "Staff", href: "/app/staff" },
+                  { label: "Add" },
+                ],
+                pageData: { form },
+              });
+            }
+          }
+        }
+
+        for (const role of roleAssignments) {
+          const grant = await canGrantRole(getPool(), {
+            auth,
+            roleKey: role.roleKey,
+            scopeType: role.scopeType,
+            facilityId: role.facilityId || null,
+            targetStaffMemberId: created.staffMember.id,
+          });
+          if (!grant.ok) {
+            const form = await loadActiveClinicCreateStaffScreen(getPool(), {
+              auth,
+              values,
+              errors: [inviteErrorMessage(INVITE_RESULT.GRANT_DENIED)],
+            });
+            return await renderShell(req, res, {
+              status: 403,
+              activeNav: "staff",
+              content: "app/staff-form-content.ejs",
+              pageHeader: { title: "Add staff", description: null, actions: [] },
+              breadcrumbs: [
+                { label: "Home", href: "/app" },
+                { label: "Staff", href: "/app/staff" },
+                { label: "Add" },
+              ],
+              pageData: { form },
+            });
+          }
+          await assignStaffRole(getPool(), {
+            organizationId: auth.organization.id,
+            staffMemberId: created.staffMember.id,
+            roleKey: role.roleKey,
+            scopeType: role.scopeType,
+            facilityId: role.facilityId || null,
+            assignedByPlatformIdentityId: auth.platformIdentity.id,
+            deploymentCode: deployment.code || CODE_ACTIVECLINIC_ORG_V6,
+            assignmentOrigin: "manual",
+          });
+        }
+
+        return res.redirect(
+          303,
+          `/app/staff/${encodeURIComponent(created.staffMember.id)}?created=1`
+        );
+      }
 
       const invited = await inviteActiveClinicStaff(getPool(), {
         organizationId: auth.organization.id,
@@ -350,6 +503,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
         startDate: values.startDate || null,
         endDate: values.endDate || null,
         roleAssignments,
+        auth,
         actorPlatformIdentityId: auth.platformIdentity.id,
         deploymentCode: deployment.code || CODE_ACTIVECLINIC_ORG_V6,
         env,
@@ -362,7 +516,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
           errors: [inviteErrorMessage(invited.code)],
         });
         return await renderShell(req, res, {
-          status: 400,
+          status: invited.code === INVITE_RESULT.GRANT_DENIED ? 403 : 400,
           activeNav: "staff",
           content: "app/staff-form-content.ejs",
           pageHeader: { title: "Invite staff", description: null, actions: [] },
@@ -401,6 +555,8 @@ function registerActiveClinicStaffRoutes(app, deps) {
             deliveryLabel: DELIVERY_LABELS[deliveryStatus] || DELIVERY_LABELS.link_generated,
             share: invited.share || {},
             identityCreated: invited.identityCreated === true,
+            roles: roleAssignments,
+            accessReview,
           },
         },
       });
@@ -413,7 +569,6 @@ function registerActiveClinicStaffRoutes(app, deps) {
     "/app/staff",
     requireAuth,
     requirePermission("activeclinic.staff.create"),
-    requirePermission("activeclinic.staff.invite"),
     handleCreateInvite
   );
 
@@ -567,11 +722,15 @@ function registerActiveClinicStaffRoutes(app, deps) {
             values
           );
           if (!synced.ok) {
+            const facilityMsg =
+              synced.code === "dependent_facility_roles"
+                ? "Revoke facility-scoped roles for a facility before removing that facility assignment."
+                : "Staff saved, but facility assignments could not be updated.";
             const rerender = await loadActiveClinicEditStaffScreen(getPool(), {
               auth: req.activeClinicAuth,
               staffId: req.params.staffId,
               values,
-              errors: ["Staff saved, but facility assignments could not be updated."],
+              errors: [facilityMsg],
             });
             return await renderShell(req, res, {
               status: 400,

@@ -28,6 +28,7 @@ const RESULT = Object.freeze({
   PRIMARY_CONFLICT: "primary_facility_conflict",
   NOT_FOUND: "facility_assignment_not_found",
   NOT_ACTIVE: "facility_assignment_not_active",
+  DEPENDENT_FACILITY_ROLES: "dependent_facility_roles",
 });
 
 function mapAssignment(row) {
@@ -144,6 +145,34 @@ async function removeStaffFromFacility(db, input) {
     (a) => a.facilityId === input.facilityId && a.status === "active"
   );
   if (!match) return { ok: false, code: RESULT.NOT_FOUND, assignment: null };
+
+  // Require dependent facility-scoped roles to be revoked first.
+  const dependent = await db.query(
+    `SELECT a.id, r.role_key, r.display_name
+       FROM activeclinic.staff_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.organization_id = $1
+        AND a.staff_member_id = $2
+        AND a.facility_id = $3
+        AND a.scope_type = 'facility'
+        AND a.status = 'active'
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+      ORDER BY r.role_key ASC`,
+    [input.organizationId, input.staffMemberId, input.facilityId]
+  );
+  if (dependent.rows.length) {
+    return {
+      ok: false,
+      code: RESULT.DEPENDENT_FACILITY_ROLES,
+      assignment: null,
+      dependentRoles: dependent.rows.map((r) => ({
+        id: r.id,
+        roleKey: r.role_key,
+        roleLabel: r.display_name || r.role_key,
+      })),
+    };
+  }
+
   const row = await accessRepo.archiveFacilityAssignment(db, {
     id: match.id,
     organizationId: input.organizationId,

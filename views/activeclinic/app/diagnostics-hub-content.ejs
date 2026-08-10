@@ -1,0 +1,35 @@
+<%
+  var hub = (pageData && pageData.hub) || {};
+  var showLaboratory = hub.showLaboratory !== false;
+  var showRadiology = hub.showRadiology !== false;
+%>
+<section class="ac-diagnostics-hub" data-ac-page-section="diagnostics-hub" data-ac-visual="stitch-gap">
+  <div class="ac-panel">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Diagnostics</h2>
+    <p class="ac-muted">
+      Open the diagnostic workflows you are authorized to use for the selected facility.
+    </p>
+    <% if (!showLaboratory && !showRadiology) { %>
+    <p class="ac-muted" data-ac-diagnostics-empty="1">No diagnostic modules are available for your account.</p>
+    <% } else { %>
+    <ul class="ac-settings-cards" data-ac-diagnostics-hub="1">
+      <% if (showLaboratory) { %>
+      <li class="ac-panel" data-ac-diagnostics-card="laboratory">
+        <a class="ac-card-link" href="/app/diagnostics/laboratory" data-ac-diagnostics-link="laboratory">
+          <strong>Laboratory</strong>
+          <div class="ac-muted">Queues, specimens, and laboratory results</div>
+        </a>
+      </li>
+      <% } %>
+      <% if (showRadiology) { %>
+      <li class="ac-panel" data-ac-diagnostics-card="radiology">
+        <a class="ac-card-link" href="/app/diagnostics/radiology" data-ac-diagnostics-link="radiology">
+          <strong>Radiology</strong>
+          <div class="ac-muted">Imaging queues and radiology reports</div>
+        </a>
+      </li>
+      <% } %>
+    </ul>
+    <% } %>
+  </div>
+</section>

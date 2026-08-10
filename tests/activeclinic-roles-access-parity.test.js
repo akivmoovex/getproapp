@@ -258,8 +258,8 @@ describe("ActiveClinic roles and access parity (AC-V6-S06)", () => {
     assert.equal(overview.status, 200);
     assert.match(overview.text, /data-ac-page-section="access-overview"/);
     assert.match(overview.text, /data-ac-visual="stitch-gap"/);
-    assert.match(overview.text, /Foundational roles/);
-    assert.match(overview.text, /Net Admin|Network administrator/);
+    assert.match(overview.text, /Staff access|Role catalogue/);
+    assert.match(overview.text, /Net Admin|Network administrator|Organization administrator/);
     assert.doesNotMatch(overview.text, /BlessBoard/i);
 
     const { cookie: staffCookie } = await sessionCookie(ordinary.identity.id, ac.orgId);
@@ -293,7 +293,7 @@ describe("ActiveClinic roles and access parity (AC-V6-S06)", () => {
       .set("Cookie", cookie);
     assert.equal(assignPage.status, 200);
     assert.match(assignPage.text, /data-ac-page-section="access-assign"/);
-    assert.match(assignPage.text, /name="role_key"/);
+    assert.match(assignPage.text, /name="role_keys"|name="role_key"/);
 
     const noCsrf = await request(app)
       .post(`/app/access/staff/${target.staff.id}/roles`)

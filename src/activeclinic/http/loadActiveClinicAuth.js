@@ -15,6 +15,9 @@ const {
 const {
   getActiveStaffFacilityAssignment,
 } = require("../services/activeClinicStaffFacilityService");
+const {
+  resolveEffectivePermissions,
+} = require("../services/activeClinicAuthorizationService");
 
 /**
  * @param {{
@@ -118,6 +121,19 @@ function createLoadActiveClinicAuth(deps) {
         }
       }
 
+      // Facility-scoped effective permissions for nav/context. Route gates also
+      // re-authorize live via authorizeStaffPermission (no session perm cache).
+      let permissions = elig.permissions || [];
+      if (selectedFacility) {
+        const scoped = await resolveEffectivePermissions(pool, {
+          organizationId: elig.organization.id,
+          staffMemberId: elig.staffMember.id,
+          platformIdentityId: identityRow.id,
+          facilityId: selectedFacility.id,
+        });
+        if (scoped.ok) permissions = scoped.permissions;
+      }
+
       req.activeClinicAuth = {
         authenticated: true,
         reason: "ok",
@@ -128,11 +144,14 @@ function createLoadActiveClinicAuth(deps) {
         staffMember: elig.staffMember,
         facilityAssignments: elig.facilityAssignments,
         roleAssignments: elig.roleAssignments,
-        permissions: elig.permissions,
+        permissions,
         selectedFacility,
         mustChangePassword: identityRow.must_change_password === true,
         session,
         isNetworkAdmin: elig.isNetworkAdmin,
+        // P07 billing/cashier compatibility aliases
+        tenantId: elig.organization && elig.organization.id,
+        staff: elig.staffMember,
       };
       return next();
     } catch {
