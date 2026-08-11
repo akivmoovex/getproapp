@@ -97,4 +97,19 @@
       <a href="/app/pharmacy/prescriptions/<%= prescription.id %>" class="ac-btn ac-btn--secondary">Cancel</a>
     </div>
   </form>
+
+  <aside class="ac-medicine-instructions" data-ac-screen="patient-medicine-instructions" aria-label="Patient medicine instructions">
+    <h3>Patient medicine instructions</h3>
+    <% if (!items.length) { %>
+    <p class="ac-muted">No medication lines on this prescription yet.</p>
+    <% } else { %>
+      <% items.forEach(function (item) { %>
+      <div class="ac-medicine-instructions__item">
+        <strong><%= item.medicationGenericName %></strong>
+        <% if (item.medicationStrength) { %> — <%= item.medicationStrength %><% } %>
+        <p><%= item.dosageInstructions || 'Dosage instructions will appear here after the clinician records them.' %></p>
+      </div>
+      <% }); %>
+    <% } %>
+  </aside>
 </section>

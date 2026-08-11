@@ -1,0 +1,19 @@
+<%
+  /* Shared public empty/loading/error card — use with --acp-* tokens */
+  var kind = typeof stateKind === 'string' ? stateKind : 'empty';
+  var title = typeof stateTitle === 'string' ? stateTitle : 'Nothing to show';
+  var text = typeof stateText === 'string' ? stateText : 'There is nothing to display right now.';
+  var marker = typeof stateMarker === 'string' ? stateMarker : kind;
+%>
+<div class="acp-shared-state acp-shared-state--<%= kind %>" data-ac-shared-state="<%= kind %>" data-ac-empty="<%= marker %>" role="<%= kind === 'error' ? 'alert' : 'status' %>">
+  <% if (kind === 'loading') { %>
+  <div class="acp-shared-state__spinner" aria-hidden="true"></div>
+  <% } %>
+  <h2 class="acp-shared-state__title"><%= title %></h2>
+  <p class="acp-shared-state__text"><%= text %></p>
+  <% if (typeof primaryHref === 'string' && primaryHref) { %>
+  <p class="acp-shared-state__actions">
+    <a class="ac-btn ac-btn--primary" href="<%= primaryHref %>"><%= typeof primaryLabel === 'string' && primaryLabel ? primaryLabel : 'Continue' %></a>
+  </p>
+  <% } %>
+</div>

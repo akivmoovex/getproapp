@@ -30,6 +30,8 @@ const PAGE_ID = Object.freeze({
   [STATE.DEPARTMENT_NOT_CONFIGURED]: "department-unavailable",
   [STATE.SERVICE_UNAVAILABLE]: "service-unavailable",
   [STATE.REQUEST_ERROR]: "error",
+  [STATE.OFFLINE]: "offline",
+  [STATE.SUCCESS_TERMINAL]: "success",
 });
 
 const PRESETS = Object.freeze({
@@ -40,6 +42,38 @@ const PRESETS = Object.freeze({
     primaryHref: "/app",
     primaryLabel: "Back to home",
     httpStatus: 403,
+  },
+  [STATE.OFFLINE]: {
+    pageTitle: "You are offline",
+    heading: "You appear to be offline",
+    message: "Check your connection and try again. Unsaved changes on this device may not have been sent.",
+    primaryHref: "/app",
+    primaryLabel: "Retry",
+    httpStatus: 503,
+  },
+  [STATE.SUCCESS_TERMINAL]: {
+    pageTitle: "Done",
+    heading: "Request completed",
+    message: "Your changes were saved.",
+    primaryHref: "/app",
+    primaryLabel: "Continue",
+    httpStatus: 200,
+  },
+  [STATE.EMPTY]: {
+    pageTitle: "Nothing here",
+    heading: "Nothing to show",
+    message: "There is nothing to display right now.",
+    primaryHref: "/app",
+    primaryLabel: "Back to home",
+    httpStatus: 200,
+  },
+  [STATE.LOADING]: {
+    pageTitle: "Loading",
+    heading: "Loading",
+    message: "Please wait while ActiveClinic loads this page.",
+    primaryHref: "/app",
+    primaryLabel: "Back to home",
+    httpStatus: 200,
   },
   [STATE.SESSION_EXPIRED]: {
     pageTitle: "Session ended",

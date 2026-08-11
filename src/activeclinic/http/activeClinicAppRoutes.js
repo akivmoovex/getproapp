@@ -41,6 +41,10 @@ const {
   readV5SessionCookie,
 } = require("../../platform/session/v5SessionCookie");
 const { revokeV5Session } = require("../../platform/session/revokeV5Session");
+const {
+  renderAccessStatePage,
+  STATE,
+} = require("./renderActiveClinicAccessState");
 
 
 /**
@@ -63,6 +67,24 @@ function registerActiveClinicAppRoutes(app, deps) {
     setCsrfCookie(res, token, { secure: isProduction, env });
     return token;
   }
+
+  // Shared offline presentation (testable; not a fake outage injector)
+  app.get("/app/offline", (req, res) => {
+    const csrfToken = issuePageCsrf(res);
+    return res
+      .status(503)
+      .type("html")
+      .send(
+        renderAccessStatePage({
+          stateKey: STATE.OFFLINE,
+          pageId: "offline",
+          csrfField: CSRF_FIELD,
+          csrfToken,
+          primaryHref: "/app",
+          primaryLabel: "Retry",
+        })
+      );
+  });
 
   async function renderShell(req, res, options) {
     const csrfToken = issuePageCsrf(res);

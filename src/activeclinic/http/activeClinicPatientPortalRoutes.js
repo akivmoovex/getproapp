@@ -1163,6 +1163,31 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     }
   );
 
+  app.get(
+    "/clinics/:clinicKey/patient/data-boundaries",
+    loadPatientAuth,
+    requirePatientAuth,
+    async (req, res, next) => {
+      try {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res
+          .status(200)
+          .type("html")
+          .send(
+            renderPatientView("patient/data-boundaries", {
+              csrfToken,
+              csrfField: CSRF_FIELD,
+              clinicKey: req.params.clinicKey,
+              patientAuth: req.activeClinicPatientAuth,
+              pageTitle: "Patient data boundaries",
+            })
+          );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
   app.post(
     "/clinics/:clinicKey/patient/security",
     loadPatientAuth,

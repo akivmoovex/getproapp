@@ -107,3 +107,55 @@ Screens rescored this pass: 73
 
 No MATCHED claims without browser side-by-side.
 
+## Pass 4 update (2026-08-11) — browser side-by-side
+
+Method: Playwright Chromium captures of V7 (`activeclinic.org` → local `:3456`) vs Stitch screenshot PNGs from both projects (`17813606734422395399`, `12272131183982732110`). Viewports include 1440 / 390 (plus 1024 / 768 / 430 / 375 sampled).
+
+| Status | Before Pass 4 | After Pass 4 |
+| --- | ---: | ---: |
+| MATCHED | 0 | 0 |
+| MINOR_VARIANCE | 78 | 79 |
+| NEEDS_WORK | 148 | 147 |
+| MAJOR_VARIANCE | 72 | 72 |
+| MISSING_IMPLEMENTATION | 90 | 90 |
+
+### P0 score bands (scored rows)
+
+| Band | Count |
+| --- | ---: |
+| ≥95 MATCHED | 0 |
+| 90–94 | 38 |
+| 80–89 | 54 |
+| <80 | 0 |
+
+### Largest shared fixes
+
+1. Booking mobile horizontal overflow — removed overflowing sticky CTA; compact “Step N of M” + progress bar on ≤767px
+2. Directory clinic cards — image media strip + body stack (shared default hero asset)
+3. Doctors cards — portrait media area + dual CTAs (Book / View profile)
+4. Patient login — centered auth card, mark, forgot-password row, guest lookup secondary
+
+### Explicit asset gaps
+
+- Exact Juflona/doctor photography unavailable → initials / shared `clinic-hero-default.jpg` (`ASSET_PARITY_GAP`)
+- Directory cards reuse one default photo for all clinics (`WRONG_ASSET` / not per-clinic)
+
+MATCHED still not claimed.
+
+## Pass 5 update — close MISSING_IMPLEMENTATION
+
+Focus: screens marked `MISSING_IMPLEMENTATION` only (map existing routes/states; implement shared loading/empty/error/success/offline; wire clinical GET forms; label honest backend gaps).
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| MISSING_IMPLEMENTATION | 86 | **0** |
+| IMPLEMENTED (this pass disposition) | — | 55 |
+| FUNCTIONAL_BACKEND_GAP | — | 22 |
+| DUPLICATE_STITCH_VARIANT | — | 7 |
+| NO_IMPLEMENTATION_REQUIRED (new) | — | 2 |
+| STILL_MISSING | — | **0** |
+
+Shared additions: `ac-loading-state`, `ac-success-state`, `acp-shared-state`, `/app/offline`, clinical diagnosis/nursing GET, patient `data-boundaries`, dispense patient-instructions panel.
+
+No MATCHED claims. Backend gaps are listed under `pass5.functionalBackendGaps` in the JSON matrix.
+

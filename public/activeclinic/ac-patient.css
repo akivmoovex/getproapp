@@ -543,6 +543,46 @@ form.ac-patient-form-inline {
   padding: 1.75rem 1.35rem;
   box-shadow: 0 8px 24px rgba(0, 31, 35, 0.08);
 }
+.acp-auth-card__header--centered {
+  text-align: center;
+}
+.acp-auth-card__mark {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.85rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(145deg, #006068, #0a8a96);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.22);
+}
+.acp-auth-card__powered {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  color: #6e797a;
+  font-size: 0.8rem;
+}
+.ac-patient-field__label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+.ac-patient-field__label-row label { margin: 0; }
+.ac-patient-field__forgot {
+  color: #006068;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ac-patient-field__forgot:hover { text-decoration: underline; }
+.ac-patient-links--stack {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+.ac-patient-links--stack .ac-btn { margin-top: 0.25rem; }
 .acp-auth-card .ac-public-eyebrow,
 .ac-patient-page .ac-public-eyebrow {
   font-size: 0.8rem;

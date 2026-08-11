@@ -1,6 +1,14 @@
 <% const steps = typeof wizardSteps !== 'undefined' ? wizardSteps : []; %>
 <% const current = typeof wizardStep !== 'undefined' ? wizardStep : 1; %>
+<% const currentStep = steps.find(function (s) { return s.step === current; }) || steps[0] || null; %>
 <nav class="ac-booking-progress" aria-label="Booking progress" data-ac-booking-progress="<%= current %>">
+  <div class="ac-booking-progress__compact" aria-hidden="true">
+    <span class="ac-booking-progress__compact-meta">Step <%= current %> of <%= steps.length || 1 %></span>
+    <span class="ac-booking-progress__compact-label"><%= currentStep ? currentStep.label : 'Booking' %></span>
+  </div>
+  <div class="ac-booking-progress__bar" aria-hidden="true">
+    <span class="ac-booking-progress__bar-fill" style="width: <%= steps.length ? Math.round((current / steps.length) * 100) : 0 %>%"></span>
+  </div>
   <ol class="ac-booking-progress__list">
     <% steps.forEach(function (step) { %>
     <li class="ac-booking-progress__item<%= step.step === current ? ' ac-booking-progress__item--current' : '' %><%= step.step < current ? ' ac-booking-progress__item--done' : '' %>">

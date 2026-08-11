@@ -303,6 +303,8 @@ function registerActiveClinicClinicalRoutes(app, deps) {
             actions: [
               { href: `/app/clinical/encounter/${encounterId}/triage`, label: "Triage" },
               { href: `/app/clinical/encounter/${encounterId}/vitals`, label: "Vitals" },
+              { href: `/app/clinical/encounter/${encounterId}/nursing-intake`, label: "Nursing intake", ghost: true },
+              { href: `/app/clinical/encounter/${encounterId}/diagnosis`, label: "Diagnosis", ghost: true },
               { href: `/app/clinical/encounter/${encounterId}/order/prescription`, label: "New prescription", ghost: true },
               { href: `/app/clinical/encounter/${encounterId}/order/lab`, label: "Lab order", ghost: true },
             ],
@@ -510,7 +512,58 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     }
   );
 
-  // Nursing intake (POST)
+  // Nursing intake (GET form + POST)
+  app.get(
+    "/app/clinical/encounter/:encounterId/nursing-intake",
+    requireAuth,
+    requirePermission(PERM.NURSING_INTAKE),
+    requireDepartment("clinical"),
+    async (req, res, next) => {
+      try {
+        const encounterId = String(req.params.encounterId || "");
+        if (!UUID_RE.test(encounterId)) {
+          return res.status(404).type("html").send(renderSimpleState("Not found", "Invalid encounter ID", { status: 404 }));
+        }
+
+        const loaded = await loadActiveClinicConsultationWorkspaceScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          encounterId,
+        });
+
+        if (!loaded.ok) {
+          return res.status(loaded.code === CLINICAL_RESULT.ACCESS_DENIED ? 403 : 404).type("html").send(
+            renderSimpleState("Nursing intake unavailable", mapClinicalError(loaded.code), {
+              status: loaded.code === CLINICAL_RESULT.ACCESS_DENIED ? 403 : 404,
+              linkHref: "/app/clinical",
+              linkLabel: "Back to clinical queue",
+            })
+          );
+        }
+
+        return renderShell(req, res, {
+          activeNav: "clinical",
+          content: "app/nursing-intake-content.ejs",
+          pageHeader: { title: "Nursing intake" },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Clinical", href: "/app/clinical" },
+            { label: "Encounter", href: `/app/clinical/encounter/${encounterId}` },
+            { label: "Nursing intake" },
+          ],
+          pageData: {
+            intake: {
+              encounter: loaded.workspace.encounter,
+              values: {},
+              note: null,
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
   app.post(
     "/app/clinical/encounter/:encounterId/nursing-intake",
     requireAuth,
@@ -547,7 +600,57 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     }
   );
 
-  // Diagnosis entry (POST)
+  // Diagnosis entry (GET form + POST)
+  app.get(
+    "/app/clinical/encounter/:encounterId/diagnosis",
+    requireAuth,
+    requirePermission(PERM.DIAGNOSIS_RECORD),
+    requireDepartment("clinical"),
+    async (req, res, next) => {
+      try {
+        const encounterId = String(req.params.encounterId || "");
+        if (!UUID_RE.test(encounterId)) {
+          return res.status(404).type("html").send(renderSimpleState("Not found", "Invalid encounter ID", { status: 404 }));
+        }
+
+        const loaded = await loadActiveClinicConsultationWorkspaceScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          encounterId,
+        });
+
+        if (!loaded.ok) {
+          return res.status(loaded.code === CLINICAL_RESULT.ACCESS_DENIED ? 403 : 404).type("html").send(
+            renderSimpleState("Diagnosis entry unavailable", mapClinicalError(loaded.code), {
+              status: loaded.code === CLINICAL_RESULT.ACCESS_DENIED ? 403 : 404,
+              linkHref: "/app/clinical",
+              linkLabel: "Back to clinical queue",
+            })
+          );
+        }
+
+        return renderShell(req, res, {
+          activeNav: "clinical",
+          content: "app/diagnosis-entry-content.ejs",
+          pageHeader: { title: "Diagnosis entry" },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Clinical", href: "/app/clinical" },
+            { label: "Encounter", href: `/app/clinical/encounter/${encounterId}` },
+            { label: "Diagnosis" },
+          ],
+          pageData: {
+            diagnosis: {
+              encounter: loaded.workspace.encounter,
+              values: {},
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
   app.post(
     "/app/clinical/encounter/:encounterId/diagnosis",
     requireAuth,

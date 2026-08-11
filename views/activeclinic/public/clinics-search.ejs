@@ -39,13 +39,16 @@
         <% list.forEach(function(c) { %>
         <li class="ac-clinic-card acp-clinic-card">
           <a href="/clinics/<%= c.clinicKey %>">
+            <div class="acp-clinic-card__media" aria-hidden="true">
+              <img src="/activeclinic/assets/clinic-hero-default.jpg" alt="" loading="lazy" width="640" height="360"/>
+            </div>
             <div class="acp-clinic-card__body">
               <h2><%= c.publicName %></h2>
               <% if (c.city || c.province) { %>
               <p class="ac-clinic-card__location"><%= [c.city, c.province].filter(Boolean).join(', ') %></p>
               <% } %>
+              <span class="ac-clinic-card__link">View clinic</span>
             </div>
-            <span class="ac-clinic-card__link">View clinic</span>
           </a>
         </li>
         <% }) %>

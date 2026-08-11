@@ -10,17 +10,26 @@
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
   </div>
   <% } else { %>
-  <ul class="ac-doctor-cards">
+  <ul class="ac-doctor-cards acp-doctor-grid">
     <% list.forEach(function(d) { %>
-    <li class="ac-doctor-card">
-      <a class="ac-doctor-card__link" href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>">
-        <div class="ac-doctor-card__avatar" aria-hidden="true"><%= String(d.displayName || "?").charAt(0).toUpperCase() %></div>
-        <div class="ac-doctor-card__body">
-          <h2 class="ac-doctor-card__name"><%= d.displayName %></h2>
-          <% if (d.title) { %><p class="ac-doctor-card__title"><%= d.title %></p><% } %>
-          <span class="ac-doctor-card__cta">View profile</span>
+    <li class="ac-doctor-card acp-doctor-card">
+      <div class="ac-doctor-card__media" aria-hidden="true">
+        <div class="ac-doctor-card__avatar ac-doctor-card__avatar--xl"><%= String(d.displayName || "?").charAt(0).toUpperCase() %></div>
+      </div>
+      <div class="ac-doctor-card__body">
+        <h2 class="ac-doctor-card__name"><%= d.displayName %></h2>
+        <% if (d.title) { %><p class="ac-doctor-card__title"><%= d.title %></p><% } %>
+        <% if (d.specialty || d.departmentName) { %>
+        <p class="ac-doctor-card__tags">
+          <% if (d.specialty) { %><span class="ac-doctor-card__tag"><%= d.specialty %></span><% } %>
+          <% if (d.departmentName) { %><span class="ac-doctor-card__tag"><%= d.departmentName %></span><% } %>
+        </p>
+        <% } %>
+        <div class="ac-doctor-card__actions">
+          <a class="ac-btn ac-btn--primary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/book">Book appointment</a>
+          <a class="ac-btn ac-btn--secondary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>">View profile</a>
         </div>
-      </a>
+      </div>
     </li>
     <% }) %>
   </ul>
