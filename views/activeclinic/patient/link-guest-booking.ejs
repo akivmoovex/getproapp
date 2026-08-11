@@ -1,11 +1,11 @@
-<section class="ac-patient-page">
-  <header class="ac-patient-page__header">
+<section class="acp-auth-card ac-patient-card ac-patient-card--auth" data-ac-page-section="patient-link-guest-booking">
+  <header class="acp-auth-card__header">
+    <p class="ac-public-eyebrow">Patient portal</p>
     <h1>Link guest booking</h1>
+    <p class="acp-auth-card__lede">
+      Enter the guest access token from your booking confirmation to link it to your patient portal account.
+    </p>
   </header>
-
-  <p class="ac-patient-hint">
-    Enter the guest access token from your booking confirmation to link it to your patient portal account.
-  </p>
 
   <% if (error) { %>
   <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
@@ -21,7 +21,7 @@
       <label for="guestToken">Guest booking token</label>
       <input type="text" id="guestToken" name="guestToken" autocomplete="off" required/>
     </div>
-    <button type="submit" class="ac-patient-btn">Link booking</button>
+    <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary">Link booking</button>
   </form>
   <% } else { %>
   <div class="ac-patient-honesty">

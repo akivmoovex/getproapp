@@ -508,3 +508,128 @@ form.ac-patient-form-inline {
 .ac-patient-form-inline {
   box-shadow: none;
 }
+
+/* Pass 2 — patient portal visual system (scoped to .ac-patient-body / .acp-*) */
+.ac-patient-body {
+  background:
+    radial-gradient(700px 280px at 10% -10%, #d5faff, transparent 55%),
+    linear-gradient(180deg, #eff4ff, #f7fafc);
+  color: #181c1e;
+}
+.ac-patient-header {
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #c4c7c9;
+}
+.ac-patient-header__clinic,
+.ac-patient-header__links a {
+  color: #006068;
+}
+.ac-patient-nav--desktop,
+.ac-patient-nav {
+  background: #006068;
+}
+.ac-patient-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.15rem 3rem;
+}
+.acp-auth-card {
+  max-width: 26rem;
+  margin: 1.5rem auto;
+  background: #fff;
+  border: 1px solid #c4c7c9;
+  border-radius: 1.25rem;
+  padding: 1.75rem 1.35rem;
+  box-shadow: 0 8px 24px rgba(0, 31, 35, 0.08);
+}
+.acp-auth-card .ac-public-eyebrow,
+.ac-patient-page .ac-public-eyebrow {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #004f56;
+  margin: 0 0 0.4rem;
+}
+.acp-auth-card h1,
+.acp-portal-dashboard__header h1 {
+  margin: 0 0 0.4rem;
+  color: #213145;
+  letter-spacing: -0.02em;
+}
+.acp-auth-card__lede { color: #6e797a; }
+.ac-patient-btn,
+.ac-patient-card--auth .ac-btn--primary {
+  width: 100%;
+  background: #006068;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  min-height: 2.75rem;
+  font-weight: 600;
+}
+.acp-portal-grid {
+  display: grid;
+  gap: 1rem;
+}
+.acp-portal-panel {
+  background: #fff;
+  border: 1px solid #c4c7c9;
+  border-radius: 1rem;
+  padding: 1.15rem 1.1rem;
+  box-shadow: 0 8px 24px rgba(0, 31, 35, 0.06);
+}
+.acp-portal-panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  color: #213145;
+}
+.acp-booking-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; }
+.acp-booking-list__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #e8eaed;
+}
+.acp-booking-list__item:last-child { border-bottom: none; }
+.acp-booking-list__item a { color: #006068; font-weight: 600; text-decoration: none; }
+.acp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef2f4;
+  color: #213145;
+}
+.acp-status-badge--pending { background: #fff4ce; color: #6b5200; }
+.acp-status-badge--confirmed { background: #d5faff; color: #004f56; }
+.acp-status-badge--done { background: #e3f6ea; color: #0f5132; }
+.acp-empty-state { color: #6e797a; }
+.acp-portal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+.acp-portal-actions .ac-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #c4c7c9;
+  text-decoration: none;
+  font-weight: 600;
+  color: #213145;
+  background: #fff;
+}
+@media (min-width: 768px) {
+  .acp-portal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

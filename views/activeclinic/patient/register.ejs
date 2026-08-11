@@ -1,9 +1,12 @@
-<section class="ac-patient-card ac-patient-card--auth">
-  <h1>Register for patient portal</h1>
+<section class="acp-auth-card ac-patient-card ac-patient-card--auth" data-ac-page-section="patient-register">
+  <header class="acp-auth-card__header">
+    <p class="ac-public-eyebrow">Patient portal</p>
+    <h1>Register</h1>
+  </header>
   <% if (error) { %>
   <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
   <% } %>
-  <p class="ac-patient-hint">
+  <p class="ac-patient-hint acp-auth-card__lede">
     If you have a guest booking token, enter it below. Otherwise, enter your details to match your patient record.
   </p>
   <form method="POST" action="/clinics/<%= clinicKey %>/patient/register" data-ac-shell="patient">

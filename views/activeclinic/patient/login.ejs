@@ -1,5 +1,9 @@
-<section class="ac-patient-card ac-patient-card--auth">
-  <h1>Patient portal sign in</h1>
+<section class="acp-auth-card ac-patient-card ac-patient-card--auth" data-ac-page-section="patient-login">
+  <header class="acp-auth-card__header">
+    <p class="ac-public-eyebrow">Patient portal</p>
+    <h1>Patient portal sign in</h1>
+    <p class="acp-auth-card__lede">You are signing in to this clinic through ActiveClinic. Only sign in on a device you trust.</p>
+  </header>
   <% if (error) { %>
   <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
   <% } %>
@@ -25,11 +29,14 @@
       <label for="password">Password</label>
       <input type="password" id="password" name="password" autocomplete="current-password" required/>
     </div>
-    <button type="submit" class="ac-patient-btn">Sign in</button>
+    <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary">Sign in</button>
   </form>
   <p class="ac-patient-links">
     <a href="/clinics/<%= clinicKey %>/patient/register">Register for patient portal</a>
     ·
     <a href="/clinics/<%= clinicKey %>/patient/forgot-password">Forgot password?</a>
+  </p>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/my-booking">Look up guest booking</a>
   </p>
 </section>
