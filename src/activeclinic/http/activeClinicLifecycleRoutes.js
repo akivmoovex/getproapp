@@ -197,6 +197,7 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
       const deployment = getPlatformDeploymentCode(env);
       await requestActiveClinicPasswordReset(getPool(), {
         identifier: req.body && req.body.identifier,
+        country: req.body && req.body.phone_country,
         deploymentCode: deployment.ok ? deployment.code : CODE_FALLBACK(),
         requestIp: clientIp(req),
         env,

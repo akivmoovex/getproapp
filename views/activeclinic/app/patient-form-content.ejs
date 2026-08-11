@@ -2,6 +2,7 @@
   var form = (pageData && pageData.form) || {};
   var values = form.values || {};
   var errors = form.errors || [];
+  var fieldErrors = form.fieldErrors || {};
   var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
   var mode = form.mode || 'create';
   var matches = form.duplicateMatches || [];
@@ -58,7 +59,8 @@
     </div>
     <div class="ac-field">
       <label class="ac-label" for="find_phone">Phone</label>
-      <input class="ac-input" id="find_phone" name="find_phone" inputmode="tel" value="<%= values.findPhone || '' %>" placeholder="+260…"/>
+      <input class="ac-input" id="find_phone" name="find_phone" inputmode="tel" value="<%= values.findPhone || '' %>" placeholder="970… / 097… / +260…" aria-describedby="find_phone_hint"/>
+      <p id="find_phone_hint" class="ac-hint">Full or partial phone; compared using canonical storage.</p>
     </div>
     <div class="ac-field">
       <label class="ac-label" for="find_query">Name</label>
@@ -178,8 +180,19 @@
       </select>
     </div>
     <div class="ac-field">
-      <label class="ac-label" for="phone">Phone <span class="ac-muted">(optional)</span></label>
-      <input class="ac-input" id="phone" name="phone" inputmode="tel" autocomplete="tel" value="<%= values.phone || '' %>" placeholder="+260…"/>
+      <%- include('../partials/phone-field', {
+        id: 'phone',
+        label: 'Phone (optional)',
+        required: false,
+        defaultCountry: form.defaultPhoneCountry || 'ZM',
+        selectedCountry: values.phoneCountry || form.defaultPhoneCountry || 'ZM',
+        nationalValue: values.phoneNational || '',
+        e164Value: values.phone || '',
+        countries: form.phoneCountries || [],
+        phoneValidationRelaxed: form.phoneValidationRelaxed,
+        error: fieldErrors.phone || null,
+        showLegacyHidden: true
+      }) %>
     </div>
 
     <% if (!isQuick) { %>
@@ -232,10 +245,22 @@
       <input class="ac-input" id="emergency_relationship" name="emergency_relationship" maxlength="80" value="<%= values.emergencyRelationship || '' %>"/>
     </div>
     <div class="ac-field">
-      <label class="ac-label" for="emergency_phone">Guardian phone</label>
-      <input class="ac-input" id="emergency_phone" name="emergency_phone" inputmode="tel" value="<%= values.emergencyPhone || '' %>" placeholder="+260…"/>
+      <%- include('../partials/phone-field', {
+        id: 'emergency-phone',
+        namePrefix: 'emergency',
+        label: 'Guardian phone',
+        required: false,
+        defaultCountry: form.defaultPhoneCountry || 'ZM',
+        selectedCountry: values.emergencyPhoneCountry || form.defaultPhoneCountry || 'ZM',
+        nationalValue: values.emergencyPhoneNational || '',
+        e164Value: values.emergencyPhone || '',
+        countries: form.phoneCountries || [],
+        phoneValidationRelaxed: form.phoneValidationRelaxed,
+        showLegacyHidden: false
+      }) %>
     </div>
 
+    <% if (form.canManageIdentifiers) { %>
     <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Identifier <span class="ac-muted">(optional)</span></h2>
     <div class="ac-field">
       <label class="ac-label" for="identifier_type">Type</label>
@@ -250,6 +275,7 @@
       <label class="ac-label" for="identifier_value">Value</label>
       <input class="ac-input" id="identifier_value" name="identifier_value" maxlength="128" value="<%= values.identifierValue || '' %>" autocomplete="off"/>
     </div>
+    <% } %>
     <% } %>
     <% } else { %>
     <div class="ac-field">

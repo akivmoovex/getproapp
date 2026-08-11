@@ -1,31 +1,102 @@
 "use strict";
 
 /**
- * Product-local contact helpers for ActiveClinic facilities.
- * Accepts E.164 phones; does not invent a default country.
+ * Product-local contact helpers for ActiveClinic.
+ * Phone normalization delegates to the shared platform PhoneNumberService.
  */
 
+const {
+  PHONE_E164_RE,
+  PLATFORM_DEFAULT_COUNTRY,
+  normalizePhoneNumber,
+  extractPhoneFieldsFromBody,
+  resolveDefaultCountry,
+  resolvePhoneValidationMode,
+} = require("../../platform/services/phoneNumberService");
+
 const EMAIL_RE = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
-const PHONE_E164_RE = /^\+[1-9][0-9]{6,14}$/;
 const COUNTRY_RE = /^[A-Z]{2}$/;
 
 /**
- * @param {unknown} raw
- * @returns {{ ok: true, normalized: string, display: string } | { ok: false, code: string }}
+ * Normalize a phone for ActiveClinic storage / identity.
+ *
+ * Accepts:
+ * - legacy string: "+260971234567" or national with options.country
+ * - structured: { phone, phoneCountry, phoneNational, clinicDefaultCountry }
+ * - (raw, options) where options may include phoneCountry / phoneNational / clinicDefaultCountry
+ *
+ * @param {unknown} rawOrInput
+ * @param {object} [options]
+ * @returns {{ ok: true, normalized: string|null, display: string|null, e164?: string|null, country?: string|null } | { ok: false, code: string, error?: string, field?: string }}
  */
-function normalizeActiveClinicPhone(raw) {
-  const display = String(raw == null ? "" : raw).trim();
-  if (!display) return { ok: false, code: "phone_required" };
-  const digits = display.replace(/[^\d+]/g, "");
-  let normalized = digits;
-  if (!normalized.startsWith("+")) {
-    // National numbers are not accepted without a dedicated country-calling pipeline.
-    return { ok: false, code: "phone_must_be_e164" };
+function normalizeActiveClinicPhone(rawOrInput, options) {
+  const opts = options && typeof options === "object" ? { ...options } : {};
+  let fields = {
+    phone: null,
+    phoneCountry: opts.phoneCountry || opts.country || null,
+    phoneNational: opts.phoneNational || opts.national || null,
+  };
+
+  if (rawOrInput != null && typeof rawOrInput === "object" && !Array.isArray(rawOrInput)) {
+    fields = {
+      phone: rawOrInput.phone != null ? rawOrInput.phone : rawOrInput.phone_number || rawOrInput.mobile,
+      phoneCountry:
+        rawOrInput.phoneCountry ||
+        rawOrInput.phone_country ||
+        rawOrInput.country ||
+        fields.phoneCountry,
+      phoneNational:
+        rawOrInput.phoneNational ||
+        rawOrInput.phone_national ||
+        rawOrInput.national ||
+        fields.phoneNational,
+      clinicDefaultCountry:
+        rawOrInput.clinicDefaultCountry || opts.clinicDefaultCountry || null,
+      defaultCountry: rawOrInput.defaultCountry || opts.defaultCountry || null,
+      required: rawOrInput.required != null ? rawOrInput.required : opts.required,
+      validationMode: rawOrInput.validationMode || opts.validationMode,
+    };
+  } else {
+    fields.phone = rawOrInput;
+    fields.clinicDefaultCountry = opts.clinicDefaultCountry || null;
+    fields.defaultCountry = opts.defaultCountry || null;
+    fields.required = opts.required;
+    fields.validationMode = opts.validationMode;
   }
-  if (!PHONE_E164_RE.test(normalized) || normalized.length > 20) {
-    return { ok: false, code: "phone_invalid" };
+
+  // If only structured national is present, phone may be empty.
+  const result = normalizePhoneNumber({
+    phone: fields.phone,
+    phoneCountry: fields.phoneCountry,
+    phoneNational: fields.phoneNational,
+    clinicDefaultCountry: fields.clinicDefaultCountry,
+    defaultCountry: fields.defaultCountry || PLATFORM_DEFAULT_COUNTRY,
+    required: fields.required !== false,
+    validationMode: fields.validationMode,
+  });
+
+  if (!result.ok) {
+    // Preserve legacy code names used by ActiveClinic routes.
+    let code = result.code;
+    if (code === "phone_unparseable" || code === "phone_invalid_for_country") {
+      code = "phone_invalid";
+    }
+    return {
+      ok: false,
+      code,
+      error: result.error,
+      field: result.field || "phone",
+    };
   }
-  return { ok: true, normalized, display: display.slice(0, 40) };
+
+  return {
+    ok: true,
+    normalized: result.e164,
+    display: result.display || result.e164,
+    e164: result.e164,
+    country: result.country,
+    national: result.national,
+  };
 }
 
 /**
@@ -64,7 +135,6 @@ function normalizeTimezone(raw) {
   const value = String(raw == null ? "" : raw).trim();
   if (!value || value.length > 64) return { ok: false, code: "timezone_invalid" };
   try {
-    // Throws RangeError for unknown IANA zones in modern Node.
     Intl.DateTimeFormat("en-US", { timeZone: value }).format(new Date());
   } catch (_err) {
     return { ok: false, code: "timezone_invalid" };
@@ -103,9 +173,13 @@ function listActiveClinicTimezoneOptions() {
 module.exports = {
   EMAIL_RE,
   PHONE_E164_RE,
+  PLATFORM_DEFAULT_COUNTRY,
   normalizeActiveClinicPhone,
   normalizeActiveClinicEmail,
   normalizeCountryCode,
   normalizeTimezone,
   listActiveClinicTimezoneOptions,
+  extractPhoneFieldsFromBody,
+  resolveDefaultCountry,
+  resolvePhoneValidationMode,
 };

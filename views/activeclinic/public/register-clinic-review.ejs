@@ -50,6 +50,8 @@
       <input type="hidden" name="contactName" value="<%= fd.contactName || '' %>"/>
       <input type="hidden" name="contactEmail" value="<%= fd.contactEmail || '' %>"/>
       <input type="hidden" name="contactPhone" value="<%= fd.contactPhone || '' %>"/>
+      <input type="hidden" name="phone_country" value="<%= fd.phoneCountry || fd.countryCode || 'ZM' %>"/>
+      <input type="hidden" name="phone_national" value="<%= fd.phoneNational || '' %>"/>
       <input type="hidden" name="province" value="<%= fd.province || '' %>"/>
       <input type="hidden" name="city" value="<%= fd.city || '' %>"/>
       <input type="hidden" name="countryCode" value="<%= fd.countryCode || 'ZM' %>"/>

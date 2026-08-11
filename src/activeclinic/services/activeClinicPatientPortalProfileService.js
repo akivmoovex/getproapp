@@ -118,8 +118,11 @@ async function updatePatientProfile(db, input) {
     values.push(preferredName);
   }
 
-  if (input.phone !== undefined && input.phone) {
-    const phoneNorm = normalizeRegistrationPhone(input.phone, input.country || "ZM");
+  if (input.phone !== undefined && (input.phone || input.phoneNational)) {
+    const phoneNorm = normalizeRegistrationPhone(
+      input.phoneNational || input.phone,
+      input.phoneCountry || input.country || "ZM"
+    );
     if (!phoneNorm.ok) {
       return { ok: false, code: RESULT.INVALID_INPUT, message: "invalid_phone" };
     }

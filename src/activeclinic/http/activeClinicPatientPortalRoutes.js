@@ -90,6 +90,17 @@ function patientViewPayload(clinicCtx, csrfToken, extra) {
   };
 }
 
+/** Booking ownership for portal list/detail (patient and/or portal identity). */
+function portalBookingOwner(auth) {
+  return {
+    patientId: (auth && auth.patient && auth.patient.id) || null,
+    platformIdentityId:
+      (auth && auth.platformIdentity && auth.platformIdentity.id) || null,
+    organizationId: auth.organization.id,
+    healthcareOrganizationId: auth.healthcareOrganization.id,
+  };
+}
+
 /**
  * @param {import('express').Express} app
  * @param {{ getPool: Function, env: NodeJS.ProcessEnv, isProduction: boolean }} deps
@@ -316,7 +327,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           clinicKey,
           organizationId: clinic.organizationId,
           healthcareOrganizationId: clinic.healthcareOrganizationId,
-          country: "ZM",
+          country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
           ip: clientIp(req),
           userAgent: req.headers["user-agent"] || null,
         });
@@ -449,7 +460,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             phone,
             email: email || null,
             deploymentCode,
-            country: "ZM",
+            country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
           });
         } else {
           if (!firstName || !lastName) {
@@ -476,7 +487,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             deploymentCode,
             organizationId: clinic.organizationId,
             healthcareOrganizationId: clinic.healthcareOrganizationId,
-            country: "ZM",
+            country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
           });
         }
 
@@ -585,7 +596,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           identifier,
           deploymentCode,
           organizationId: clinic.organizationId,
-          country: "ZM",
+          country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
           ip: clientIp(req),
         });
 
@@ -751,11 +762,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     async (req, res, next) => {
       try {
         const auth = req.activeClinicPatientAuth;
-        const listed = await listPatientBookings(getPool(), {
-          patientId: auth.patient.id,
-          organizationId: auth.organization.id,
-          healthcareOrganizationId: auth.healthcareOrganization.id,
-        });
+        const listed = await listPatientBookings(getPool(), portalBookingOwner(auth));
         const bookings = listed.ok ? listed.bookings : [];
         const pendingStatuses = new Set([
           "submitted_pending_confirmation",
@@ -810,11 +817,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
       try {
         const auth = req.activeClinicPatientAuth;
         const clinicCtx = await resolveClinicContext(req.params.clinicKey);
-        const listed = await listPatientBookings(getPool(), {
-          patientId: auth.patient.id,
-          organizationId: auth.organization.id,
-          healthcareOrganizationId: auth.healthcareOrganization.id,
-        });
+        const listed = await listPatientBookings(getPool(), portalBookingOwner(auth));
         let bookings = listed.ok ? listed.bookings : [];
         const statusFilter = String((req.query && req.query.status) || "").trim();
         if (statusFilter && Object.prototype.hasOwnProperty.call(BOOKING_STATUS_LABELS, statusFilter)) {
@@ -857,9 +860,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
 
         const booking = await getPatientBooking(getPool(), {
           bookingId: reference,
-          patientId: auth.patient.id,
-          organizationId: auth.organization.id,
-          healthcareOrganizationId: auth.healthcareOrganization.id,
+          ...portalBookingOwner(auth),
         });
 
         if (!booking.ok) {
@@ -917,9 +918,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
 
         const result = await requestPatientBookingCancellation(getPool(), {
           bookingId: reference,
-          patientId: auth.patient.id,
-          organizationId: auth.organization.id,
-          healthcareOrganizationId: auth.healthcareOrganization.id,
+          ...portalBookingOwner(auth),
           reason: req.body && req.body.reason,
         });
 
@@ -953,9 +952,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
 
         const result = await requestPatientBookingReschedule(getPool(), {
           bookingId: reference,
-          patientId: auth.patient.id,
-          organizationId: auth.organization.id,
-          healthcareOrganizationId: auth.healthcareOrganization.id,
+          ...portalBookingOwner(auth),
           reason: req.body && req.body.reason,
           preferredStartsAt: req.body && req.body.preferredStartsAt,
         });
@@ -986,6 +983,25 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           organizationId: auth.organization.id,
         });
 
+        const {
+          splitE164ForForm,
+          buildPhoneFieldLocals,
+        } = require("../services/activeClinicPhoneFieldLocals");
+        const profileRow = profile.profile || auth.patient;
+        const phoneParts = splitE164ForForm(
+          profileRow.phoneNormalized || profileRow.phoneDisplay,
+          (auth.clinic && auth.clinic.countryCode) || "ZM"
+        );
+        const phoneLocals = buildPhoneFieldLocals({
+          clinicDefaultCountry:
+            (auth.clinic && auth.clinic.countryCode) ||
+            (req.activeClinicContext &&
+              req.activeClinicContext.healthcareOrganization &&
+              req.activeClinicContext.healthcareOrganization.countryCode) ||
+            null,
+          selectedCountry: phoneParts.country,
+        });
+
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res
           .status(200)
@@ -996,7 +1012,10 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
               csrfField: CSRF_FIELD,
               clinicKey: req.params.clinicKey,
               patientAuth: auth,
-              profile: profile.profile || auth.patient,
+              profile: profileRow,
+              phoneCountry: phoneParts.country,
+              phoneNational: phoneParts.national,
+              ...phoneLocals,
             })
           );
       } catch (err) {
@@ -1035,12 +1054,14 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           organizationId: auth.organization.id,
           preferredName: req.body.preferredName,
           phone: req.body.phone,
+          phoneCountry: req.body.phone_country,
+          phoneNational: req.body.phone_national,
           email: req.body.email,
           addressLine1: req.body.addressLine1,
           addressLine2: req.body.addressLine2,
           addressCity: req.body.addressCity,
           addressProvince: req.body.addressProvince,
-          country: "ZM",
+          country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
         });
 
         const csrfToken = issuePageCsrf(res, env, isProduction);
@@ -1300,6 +1321,39 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
               error: "Invalid security token. Please try again.",
             })
           );
+      }
+
+      // Canonicalize reference phone for any future OTP / audit target.
+      // SMS delivery is still disabled; do not weaken OTP controls when enabled.
+      const {
+        normalizePhoneNumber,
+      } = require("../../platform/services/phoneNumberService");
+      const phoneRaw =
+        (req.body && (req.body.phone_national || req.body.phone)) || "";
+      if (String(phoneRaw).trim()) {
+        const normalized = normalizePhoneNumber({
+          phone: req.body.phone,
+          phoneCountry: req.body.phone_country,
+          phoneNational: req.body.phone_national,
+          clinicDefaultCountry: clinic.countryCode || "ZM",
+          required: true,
+        });
+        if (!normalized.ok) {
+          const csrfToken = issuePageCsrf(res, env, isProduction);
+          return res
+            .status(400)
+            .type("html")
+            .send(
+              renderPatientView("patient/verify-phone", {
+                ...patientViewPayload(clinic, csrfToken),
+                error: normalized.error || "Enter a valid phone number.",
+                phoneCountry: req.body.phone_country,
+              })
+            );
+        }
+        // Canonical E.164 would be the OTP target when SMS is enabled:
+        // normalized.e164
+        void normalized.e164;
       }
 
       return res.redirect(303, `/clinics/${clinicKey}/patient/verification-success`);

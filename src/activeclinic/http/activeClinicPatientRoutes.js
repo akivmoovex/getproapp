@@ -447,6 +447,9 @@ function registerActiveClinicPatientRoutes(app, deps) {
           patientNumber: values.findPatientNumber || null,
           nameQuery: values.findQuery || null,
           phone: values.findPhone || null,
+          clinicDefaultCountry:
+            (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+            null,
           dateOfBirth: values.findDob || null,
           identifierValue: values.findIdentifier || null,
           limit: 10,
@@ -918,6 +921,11 @@ function registerActiveClinicPatientRoutes(app, deps) {
           fullName: String(req.body.full_name || "").trim(),
           relationship: String(req.body.relationship || "").trim(),
           phone: String(req.body.phone || "").trim(),
+          phoneCountry: String(req.body.phone_country || "").trim().toUpperCase() || null,
+          phoneNational: String(req.body.phone_national || "").trim() || null,
+          clinicDefaultCountry:
+            (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+            null,
           email: String(req.body.email || "").trim(),
           isPrimary: true,
           deploymentCode: CODE_ACTIVECLINIC_ORG_V6,

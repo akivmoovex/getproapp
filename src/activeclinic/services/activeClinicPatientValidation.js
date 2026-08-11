@@ -139,8 +139,17 @@ function normalizePatientContacts(contacts) {
   contacts = contacts || {};
   let phoneNormalized = null;
   let phoneDisplay = null;
-  if (contacts.phone != null && String(contacts.phone).trim() !== "") {
-    const phone = normalizeActiveClinicPhone(contacts.phone);
+  const hasPhone =
+    (contacts.phone != null && String(contacts.phone).trim() !== "") ||
+    (contacts.phoneNational != null && String(contacts.phoneNational).trim() !== "");
+  if (hasPhone) {
+    const phone = normalizeActiveClinicPhone({
+      phone: contacts.phone,
+      phoneCountry: contacts.phoneCountry || contacts.country || null,
+      phoneNational: contacts.phoneNational || null,
+      clinicDefaultCountry: contacts.clinicDefaultCountry || null,
+      required: true,
+    });
     if (!phone.ok) return { ok: false, code: phone.code };
     phoneNormalized = phone.normalized;
     phoneDisplay = phone.display;
@@ -252,7 +261,12 @@ function normalizeEmergencyContactInput(raw) {
   const fullName = trimRequired(raw && raw.fullName, 200);
   const relationship = trimRequired(raw && raw.relationship, 80);
   if (!fullName || !relationship) return { ok: false, code: "emergency_contact_invalid" };
-  const phone = normalizeActiveClinicPhone(raw.phone);
+  const phone = normalizeActiveClinicPhone({
+    phone: raw.phone,
+    phoneCountry: raw.phoneCountry || null,
+    phoneNational: raw.phoneNational || null,
+    clinicDefaultCountry: raw.clinicDefaultCountry || null,
+  });
   if (!phone.ok) return { ok: false, code: phone.code };
   const email = normalizeActiveClinicEmail(raw.email);
   if (!email.ok) return { ok: false, code: email.code };

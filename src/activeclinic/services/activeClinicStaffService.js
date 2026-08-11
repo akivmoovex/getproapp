@@ -154,7 +154,12 @@ async function createStaffMember(db, input) {
     return { ok: false, code: RESULT.INVALID_STATUS, staffMember: null };
   }
 
-  const phone = normalizeActiveClinicPhone(input.phone || input.primaryPhone);
+  const phone = normalizeActiveClinicPhone({
+    phone: input.phone || input.primaryPhone,
+    phoneCountry: input.phoneCountry || null,
+    phoneNational: input.phoneNational || null,
+    clinicDefaultCountry: input.clinicDefaultCountry || null,
+  });
   if (!phone.ok) {
     return { ok: false, code: RESULT.INVALID_INPUT, staffMember: null };
   }
@@ -544,8 +549,13 @@ async function updateStaffMemberProfile(db, input) {
   if (src.endDate !== undefined) {
     patch.endDate = src.endDate || null;
   }
-  if (src.phone != null) {
-    const phone = normalizeActiveClinicPhone(src.phone);
+  if (src.phone != null || src.phoneNational != null) {
+    const phone = normalizeActiveClinicPhone({
+      phone: src.phone,
+      phoneCountry: src.phoneCountry || null,
+      phoneNational: src.phoneNational || null,
+      clinicDefaultCountry: src.clinicDefaultCountry || null,
+    });
     if (!phone.ok) {
       return { ok: false, code: RESULT.INVALID_INPUT, staffMember: null };
     }

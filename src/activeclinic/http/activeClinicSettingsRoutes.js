@@ -30,6 +30,8 @@ const {
   loadHealthcareOrganizationSettingsScreen,
   loadEditHealthcareOrganizationScreen,
   updateHealthcareOrganizationSettings,
+  loadRegionalSettingsScreen,
+  updateRegionalSettings,
 } = require("../services/loadActiveClinicSettingsScreens");
 const {
   loadDepartmentsSettingsScreen,
@@ -417,6 +419,97 @@ function registerActiveClinicSettingsRoutes(app, deps) {
             },
           },
         });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/settings/clinic-setup/regional",
+    requireAuth,
+    requirePermission("activeclinic.organization.manage"),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadRegionalSettingsScreen(getPool(), {
+          auth: req.activeClinicAuth,
+        });
+        if (!loaded.ok) {
+          return denyPage(res, 403, "Access restricted", "You cannot manage regional settings.");
+        }
+        return await renderShell(req, res, {
+          activeNav: "settings",
+          content: "app/settings-regional-content.ejs",
+          pageHeader: {
+            title: "Regional settings",
+            description: "Clinic Setup — default country and timezone.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Settings", href: "/app/settings" },
+            { label: "Clinic Setup" },
+            { label: "Regional" },
+          ],
+          pageData: { form: loaded.form },
+          flash: req.query.ok
+            ? {
+                type: "success",
+                message: "Regional settings saved. Existing phone numbers were not changed.",
+              }
+            : null,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/clinic-setup/regional",
+    requireAuth,
+    requirePermission("activeclinic.organization.manage"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const body = req.body || {};
+        const values = {
+          countryCode: String(body.country_code || "").trim().toUpperCase(),
+          timezone: String(body.timezone || "").trim(),
+        };
+        const result = await updateRegionalSettings(getPool(), {
+          auth: req.activeClinicAuth,
+          deploymentCode: deploymentCode(),
+          ...values,
+        });
+        if (!result.ok) {
+          const loaded = await loadRegionalSettingsScreen(getPool(), {
+            auth: req.activeClinicAuth,
+            values,
+            errors: ["Unable to save regional settings. Check country and timezone."],
+            fieldErrors: {},
+          });
+          return await renderShell(req, res, {
+            status: 400,
+            activeNav: "settings",
+            content: "app/settings-regional-content.ejs",
+            pageHeader: {
+              title: "Regional settings",
+              description: "Fix the validation errors and try again.",
+              actions: [],
+            },
+            breadcrumbs: [
+              { label: "Home", href: "/app" },
+              { label: "Settings", href: "/app/settings" },
+              { label: "Clinic Setup" },
+              { label: "Regional" },
+            ],
+            pageData: { form: loaded.form },
+          });
+        }
+        return res.redirect(303, "/app/settings/clinic-setup/regional?ok=1");
       } catch (err) {
         return next(err);
       }

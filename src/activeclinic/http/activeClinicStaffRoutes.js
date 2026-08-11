@@ -382,6 +382,11 @@ function registerActiveClinicStaffRoutes(app, deps) {
           lastName: values.lastName,
           preferredName: values.preferredName || null,
           phone: values.phone,
+          phoneCountry: values.phoneCountry || null,
+          phoneNational: values.phoneNational || null,
+          clinicDefaultCountry:
+            (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+            null,
           email: values.email || null,
           employmentType: values.employmentType,
           jobTitle: values.jobTitle || null,
@@ -496,6 +501,11 @@ function registerActiveClinicStaffRoutes(app, deps) {
         lastName: values.lastName,
         preferredName: values.preferredName || null,
         phone: values.phone,
+        phoneCountry: values.phoneCountry || null,
+        phoneNational: values.phoneNational || null,
+        clinicDefaultCountry:
+          (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+          null,
         email: values.email || null,
         employmentType: values.employmentType,
         jobTitle: values.jobTitle || null,
@@ -680,6 +690,11 @@ function registerActiveClinicStaffRoutes(app, deps) {
             lastName: values.lastName,
             preferredName: values.preferredName || null,
             phone: values.phone,
+            phoneCountry: values.phoneCountry || null,
+            phoneNational: values.phoneNational || null,
+            clinicDefaultCountry:
+              (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+              null,
             email: values.email || null,
             jobTitle: values.jobTitle || null,
             employmentType: values.employmentType,

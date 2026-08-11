@@ -264,6 +264,13 @@ async function searchPatientsByOrg(db, input) {
     where.push(`p.phone_normalized = $${i++}`);
     params.push(input.phoneNormalized);
   }
+  if (input.phoneDigitsPartial) {
+    // Match stored E.164 by digit substring (supports 970000001 / 097… / +260…)
+    where.push(
+      `regexp_replace(COALESCE(p.phone_normalized, ''), '\\D', '', 'g') LIKE $${i++}`
+    );
+    params.push(`%${String(input.phoneDigitsPartial)}%`);
+  }
   if (input.dateOfBirth) {
     where.push(`p.date_of_birth = $${i++}`);
     params.push(input.dateOfBirth);

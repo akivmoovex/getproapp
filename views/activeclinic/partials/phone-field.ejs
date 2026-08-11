@@ -1,0 +1,150 @@
+<%#
+  Shared ActiveClinic split phone field.
+  Locals:
+    - namePrefix (optional): "emergency" → emergency_phone_country / emergency_phone_national
+      When empty, fields are phone_country + phone_national (+ optional legacy hidden phone).
+    - id (optional)
+    - label (optional)
+    - required (boolean)
+    - defaultCountry (ISO2, default ZM)
+    - selectedCountry (ISO2)
+    - nationalValue (string)
+    - e164Value (optional, for editing existing)
+    - countries (optional array of {iso,name,callingCode})
+    - hint (optional)
+    - error (optional)
+    - showLegacyHidden (default true) — also emit name=phone for back-compat when no prefix
+    - identifierMode (boolean) — national input named "identifier" for login (phone or email)
+    - identifierName (default identifier when identifierMode)
+    - phoneValidationRelaxed (boolean) — show testing banner
+#%>
+<%
+  var prefix = (typeof namePrefix === 'string' && namePrefix) ? namePrefix + '_' : '';
+  var fieldId = (typeof id === 'string' && id) ? id : (prefix ? prefix.replace(/_$/, '') + '-phone' : 'phone');
+  var countryName = (typeof countryFieldName === 'string' && countryFieldName)
+    ? countryFieldName
+    : (prefix + 'phone_country');
+  var isIdentifierMode = typeof identifierMode !== 'undefined' && identifierMode === true;
+  var nationalName = (typeof nationalFieldName === 'string' && nationalFieldName)
+    ? nationalFieldName
+    : (isIdentifierMode
+      ? ((typeof identifierName === 'string' && identifierName) ? identifierName : 'identifier')
+      : (prefix + 'phone_national'));
+  var legacyPhoneName = (typeof legacyFieldName === 'string' && legacyFieldName)
+    ? legacyFieldName
+    : (prefix ? (prefix + 'phone') : 'phone');
+  var countryVal = String(
+    (typeof selectedCountry !== 'undefined' && selectedCountry) ||
+    (typeof defaultCountry !== 'undefined' && defaultCountry) ||
+    'ZM'
+  ).toUpperCase();
+  var nationalVal = (typeof nationalValue !== 'undefined' && nationalValue != null)
+    ? String(nationalValue)
+    : '';
+  if (!nationalVal && typeof e164Value !== 'undefined' && e164Value) {
+    nationalVal = String(e164Value);
+  }
+  var countryList = (typeof countries !== 'undefined' && Array.isArray(countries) && countries.length)
+    ? countries
+    : ((typeof phoneCountries !== 'undefined' && phoneCountries) || []);
+  var labelText = (typeof label === 'string') ? label : 'Phone number';
+  var isRequired = typeof required !== 'undefined' && required === true;
+  var hasError = typeof error !== 'undefined' && Boolean(error);
+  var errorText = hasError ? error : '';
+  var hintText = (typeof hint === 'string') ? hint : '';
+  var showLegacy = !(typeof showLegacyHidden !== 'undefined' && showLegacyHidden === false);
+  var showRelaxed = typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed === true;
+  var placeholderText = (typeof placeholder === 'string') ? placeholder : '97 123 4567';
+  var callingHint = '';
+  for (var i = 0; i < countryList.length; i++) {
+    if (String(countryList[i].iso).toUpperCase() === countryVal) {
+      callingHint = countryList[i].callingCode || '';
+      break;
+    }
+  }
+%>
+<div class="ac-phone-field" data-ac-phone-field="1" data-default-country="<%= countryVal %>">
+  <% if (labelText) { %>
+  <label class="ac-label<%= typeof labelClass === 'string' ? ' ' + labelClass : '' %>" for="<%= fieldId %>-national"><%= labelText %><% if (isRequired) { %> <span class="ac-required" aria-hidden="true">*</span><% } %></label>
+  <% } %>
+  <div class="ac-phone-field__row">
+    <div class="ac-phone-field__country">
+      <label class="ac-sr-only" for="<%= fieldId %>-country">Country</label>
+      <input type="hidden" name="<%= countryName %>" id="<%= fieldId %>-country-value" value="<%= countryVal %>" data-ac-phone-country-value="1"/>
+      <button
+        type="button"
+        class="ac-phone-field__country-btn"
+        id="<%= fieldId %>-country"
+        data-ac-phone-country-btn="1"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        aria-controls="<%= fieldId %>-country-list"
+      >
+        <span class="ac-phone-field__flag" data-ac-phone-flag="1" aria-hidden="true"><%= countryVal %></span>
+        <span class="ac-phone-field__code" data-ac-phone-code="1"><%= callingHint || ('+' + countryVal) %></span>
+        <span class="ac-phone-field__chevron" aria-hidden="true">▾</span>
+      </button>
+      <div class="ac-phone-field__popover" id="<%= fieldId %>-country-list" hidden data-ac-phone-popover="1" role="listbox" aria-label="Select country">
+        <label class="ac-sr-only" for="<%= fieldId %>-country-search">Search countries</label>
+        <input
+          type="search"
+          class="ac-input ac-phone-field__search"
+          id="<%= fieldId %>-country-search"
+          data-ac-phone-search="1"
+          placeholder="Search country, code, or +dial"
+          autocomplete="off"
+        />
+        <ul class="ac-phone-field__options" data-ac-phone-options="1">
+          <% countryList.forEach(function (c) {
+            var iso = String(c.iso || '').toUpperCase();
+            var selected = iso === countryVal;
+          %>
+          <li>
+            <button
+              type="button"
+              class="ac-phone-field__option<%= selected ? ' is-selected' : '' %>"
+              role="option"
+              data-iso="<%= iso %>"
+              data-code="<%= c.callingCode || '' %>"
+              data-name="<%= c.name || iso %>"
+              data-search="<%= (c.searchText || ((c.name || '') + ' ' + iso + ' ' + (c.callingCode || ''))).toLowerCase() %>"
+              aria-selected="<%= selected ? 'true' : 'false' %>"
+            >
+              <span class="ac-phone-field__option-flag" aria-hidden="true"><%= iso %></span>
+              <span class="ac-phone-field__option-name"><%= c.name || iso %></span>
+              <span class="ac-phone-field__option-code"><%= c.callingCode || '' %></span>
+            </button>
+          </li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+    <div class="ac-phone-field__national">
+      <input
+        class="ac-input ac-phone-field__input<%= hasError ? ' is-invalid' : '' %>"
+        id="<%= fieldId %>-national"
+        name="<%= nationalName %>"
+        type="text"
+        inputmode="<%= isIdentifierMode ? 'text' : 'tel' %>"
+        autocomplete="<%= isIdentifierMode ? 'username' : 'tel-national' %>"
+        value="<%= nationalVal %>"
+        placeholder="<%= placeholderText %>"
+        <%= isRequired ? 'required' : '' %>
+        <% if (hasError) { %>aria-invalid="true" aria-describedby="<%= fieldId %>-error"<% } %>
+        data-ac-phone-national="1"
+      />
+    </div>
+  </div>
+  <% if (showLegacy && !isIdentifierMode && !prefix) { %>
+  <input type="hidden" name="<%= legacyPhoneName %>" value="" data-ac-phone-legacy="1" autocomplete="off"/>
+  <% } %>
+  <% if (showRelaxed) { %>
+  <p class="ac-phone-field__mode-hint" data-ac-phone-relaxed="1">Testing environment — phone validity checks relaxed</p>
+  <% } %>
+  <% if (hintText) { %>
+  <p class="ac-hint ac-phone-field__hint"><%= hintText %></p>
+  <% } %>
+  <% if (hasError) { %>
+  <p class="ac-field-error" id="<%= fieldId %>-error" role="status"><%= errorText %></p>
+  <% } %>
+</div>

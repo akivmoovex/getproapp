@@ -15,8 +15,19 @@
   <form method="POST" action="/clinics/<%= clinicKey %>/patient/verify-phone" data-ac-shell="patient">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <div class="ac-patient-field">
-      <label for="phone">Phone number on your account</label>
-      <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="For reference only — no SMS will be sent"/>
+      <%- include('../partials/phone-field', {
+        id: 'phone',
+        label: 'Phone number on your account',
+        required: false,
+        defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+        selectedCountry: (typeof phoneCountry !== 'undefined' && phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+        nationalValue: '',
+        countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+        phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+        showLegacyHidden: true,
+        placeholder: 'For reference — no SMS is sent yet',
+        hint: 'SMS OTP is not active yet. Your entered number is normalized for the verification request record.'
+      }) %>
     </div>
     <button type="submit" class="ac-patient-btn">Continue</button>
   </form>

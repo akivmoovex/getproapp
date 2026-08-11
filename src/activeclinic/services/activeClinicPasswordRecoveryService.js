@@ -93,7 +93,8 @@ async function withClient(db, fn) {
   return fn(db);
 }
 
-function parseIdentifier(raw) {
+function parseIdentifier(raw, options) {
+  const opts = options && typeof options === "object" ? options : {};
   const text = String(raw || "").trim();
   if (!text) return { kind: null, normalized: null };
   if (text.includes("@")) {
@@ -101,7 +102,11 @@ function parseIdentifier(raw) {
     if (!email.ok) return { kind: "email", normalized: null, invalid: true };
     return { kind: "email", normalized: email.normalized };
   }
-  const phone = normalizeActiveClinicPhone(text);
+  const phone = normalizeActiveClinicPhone(text, {
+    country: opts.country || opts.phoneCountry || null,
+    clinicDefaultCountry: opts.clinicDefaultCountry || null,
+    defaultCountry: opts.defaultCountry || "ZM",
+  });
   if (!phone.ok) return { kind: "phone", normalized: null, invalid: true };
   return { kind: "phone", normalized: phone.normalized };
 }
@@ -131,7 +136,9 @@ async function findEligibleIdentityForReset(db, identifier) {
 async function requestActiveClinicPasswordReset(db, input) {
   const src = input && typeof input === "object" ? input : {};
   const deploymentCode = src.deploymentCode || CODE_ACTIVECLINIC_ORG_V6;
-  const identifier = parseIdentifier(src.identifier || src.phone || src.email);
+  const identifier = parseIdentifier(src.identifier || src.phone || src.email, {
+    country: src.country || src.phoneCountry || src.phone_country || null,
+  });
   const ipHash = hashIp(src.requestIp);
 
   const neutral = {

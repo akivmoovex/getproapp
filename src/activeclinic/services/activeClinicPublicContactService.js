@@ -53,8 +53,14 @@ async function createPublicContactInquiry(db, input) {
 
   let phoneNormalized = null;
   let phoneDisplay = null;
-  if (input.senderPhone) {
-    const phone = normalizeActiveClinicPhone(input.senderPhone);
+  if (input.senderPhone || input.phoneNational) {
+    const phone = normalizeActiveClinicPhone({
+      phone: input.senderPhone,
+      phoneCountry: input.phoneCountry || null,
+      phoneNational: input.phoneNational || null,
+      clinicDefaultCountry: input.clinicDefaultCountry || null,
+      required: true,
+    });
     if (!phone.ok) {
       return { ok: false, code: phone.code, inquiry: null };
     }

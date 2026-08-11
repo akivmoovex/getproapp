@@ -1,15 +1,18 @@
 "use strict";
 
 /**
- * Canonical BlessBoard V5 phone normalization.
- * Stores E.164-compatible values; never compare raw formatted phones.
- *
- * Default country is Zambia (+260) when no country is supplied.
- * Callers that must not invent a country should pass `{ requireCountry: true }`.
+ * Canonical BlessBoard / platform phone normalization.
+ * Delegates to shared PhoneNumberService (E.164). Default country Zambia (ZM).
  */
 
-const PHONE_E164_RE = /^\+[1-9]\d{6,14}$/;
+const {
+  PHONE_E164_RE,
+  PLATFORM_DEFAULT_COUNTRY,
+  normalizePhoneNumber,
+  getCountryFromE164,
+} = require("../../platform/services/phoneNumberService");
 
+/** @deprecated Prefer PhoneNumberService; retained for BlessBoard callers/tests. */
 const COUNTRY_CALLING_CODES = Object.freeze({
   zm: "260",
   zambia: "260",
@@ -46,7 +49,7 @@ const COUNTRY_CALLING_CODES = Object.freeze({
   india: "91",
 });
 
-const DEFAULT_COUNTRY = "ZM";
+const DEFAULT_COUNTRY = PLATFORM_DEFAULT_COUNTRY;
 
 function trim(value, max) {
   return String(value == null ? "" : value)
@@ -66,6 +69,21 @@ function resolveCallingCode(country) {
   const key = trim(country, 120).toLowerCase();
   if (!key) return null;
   if (COUNTRY_CALLING_CODES[key]) return COUNTRY_CALLING_CODES[key];
+  // ISO-2
+  if (/^[a-z]{2}$/i.test(key)) {
+    try {
+      const {
+        getCountryCallingCode,
+        getCountries,
+      } = require("libphonenumber-js");
+      const iso = key.toUpperCase();
+      if (getCountries().includes(iso)) {
+        return String(getCountryCallingCode(iso));
+      }
+    } catch (_err) {
+      /* fall through */
+    }
+  }
   return null;
 }
 
@@ -75,17 +93,10 @@ function resolveCallingCode(country) {
  *   country?: unknown,
  *   defaultCountry?: string | null,
  *   requireCountry?: boolean,
+ *   clinicDefaultCountry?: string | null,
+ *   phoneNational?: unknown,
+ *   phoneCountry?: unknown,
  * } | null | undefined} [optionsOrCountry]
- * @returns {{
- *   ok: true,
- *   display: string,
- *   normalized: string,
- *   countryCode: string | null,
- * } | {
- *   ok: false,
- *   error: string,
- *   field: "phone",
- * }}
  */
 function normalizeBlessBoardPhone(phone, optionsOrCountry) {
   const opts =
@@ -93,78 +104,19 @@ function normalizeBlessBoardPhone(phone, optionsOrCountry) {
       ? optionsOrCountry
       : { country: optionsOrCountry };
 
-  const display = trim(phone, 50);
-  if (!display) {
+  const display = trim(
+    opts.phoneNational != null && String(opts.phoneNational).trim() !== ""
+      ? opts.phoneNational
+      : phone,
+    50
+  );
+
+  if (!display && !(opts.phoneNational && String(opts.phoneNational).trim())) {
     return { ok: false, error: "Please enter a phone number.", field: "phone" };
   }
 
-  let cleaned = display.replace(/[^\d+]/g, "");
-  if (cleaned.startsWith("00")) {
-    cleaned = `+${cleaned.slice(2)}`;
-  }
-
-  if (cleaned.includes("+") && !cleaned.startsWith("+")) {
-    return {
-      ok: false,
-      error: "Please enter a valid phone number with country code (for example +260…).",
-      field: "phone",
-    };
-  }
-
-  if (cleaned.startsWith("+")) {
-    const normalized = `+${digitsOnly(cleaned.slice(1))}`;
-    if (!PHONE_E164_RE.test(normalized)) {
-      return {
-        ok: false,
-        error: "Please enter a valid phone number with country code (for example +260…).",
-        field: "phone",
-      };
-    }
-    const ccDigits = digitsOnly(normalized).slice(0, 3);
-    let countryCode = null;
-    for (const [name, code] of Object.entries(COUNTRY_CALLING_CODES)) {
-      if (name.length === 2 && normalized.startsWith(`+${code}`)) {
-        countryCode = name.toUpperCase();
-        break;
-      }
-      void ccDigits;
-    }
-    return { ok: true, display, normalized, countryCode };
-  }
-
-  const countryRaw = opts.country;
-  const countryProvided =
-    countryRaw != null && String(countryRaw).trim() !== "";
-  let country = countryProvided ? countryRaw : null;
-
-  if (!countryProvided) {
-    if (opts.requireCountry === true) {
-      return {
-        ok: false,
-        error:
-          "Please enter your phone number with an international country code (for example +260…), or use a recognized country name.",
-        field: "phone",
-      };
-    }
-    const defaultCountry =
-      opts.defaultCountry === null
-        ? null
-        : opts.defaultCountry != null
-          ? opts.defaultCountry
-          : DEFAULT_COUNTRY;
-    if (defaultCountry == null || String(defaultCountry).trim() === "") {
-      return {
-        ok: false,
-        error:
-          "Please enter your phone number with an international country code (for example +260…), or use a recognized country name.",
-        field: "phone",
-      };
-    }
-    country = defaultCountry;
-  }
-
-  const callingCode = resolveCallingCode(country);
-  if (!callingCode) {
+  let defaultCountry = DEFAULT_COUNTRY;
+  if (opts.requireCountry === true && !(opts.country || opts.phoneCountry)) {
     return {
       ok: false,
       error:
@@ -172,44 +124,91 @@ function normalizeBlessBoardPhone(phone, optionsOrCountry) {
       field: "phone",
     };
   }
+  if (opts.defaultCountry === null) {
+    // Legacy: refuse inventing a country when national and no country provided.
+    if (!(opts.country || opts.phoneCountry) && display && !String(display).trim().startsWith("+")) {
+      return {
+        ok: false,
+        error:
+          "Please enter your phone number with an international country code (for example +260…), or use a recognized country name.",
+        field: "phone",
+      };
+    }
+    defaultCountry = null;
+  } else if (opts.defaultCountry != null) {
+    defaultCountry = opts.defaultCountry;
+  }
 
-  let national = digitsOnly(cleaned);
-  if (!national) {
-    return { ok: false, error: "Please enter a valid phone number.", field: "phone" };
+  const countryRaw = opts.phoneCountry || opts.country;
+  let countryIso = null;
+  const countryWasProvided =
+    countryRaw != null && String(countryRaw).trim() !== "";
+  const cleanedForIntl = display.replace(/[^\d+]/g, "");
+  const isInternationalShape =
+    cleanedForIntl.startsWith("+") || cleanedForIntl.startsWith("00");
+
+  if (countryWasProvided) {
+    const key = String(countryRaw).trim();
+    if (/^[a-z]{2}$/i.test(key)) {
+      countryIso = key.toUpperCase();
+    } else {
+      const nameToIso = {
+        zambia: "ZM",
+        "south africa": "ZA",
+        "united states": "US",
+        "united states of america": "US",
+        usa: "US",
+        canada: "CA",
+        "united kingdom": "GB",
+        uk: "GB",
+        kenya: "KE",
+        nigeria: "NG",
+        ghana: "GH",
+        tanzania: "TZ",
+        uganda: "UG",
+        malawi: "MW",
+        botswana: "BW",
+        zimbabwe: "ZW",
+        australia: "AU",
+        india: "IN",
+      };
+      countryIso = nameToIso[key.toLowerCase()] || null;
+    }
+    // Unrecognized country is fatal only for national numbers (ambiguous).
+    // International / 00… inputs already carry the calling code.
+    if (!countryIso && !isInternationalShape) {
+      return {
+        ok: false,
+        error:
+          "Please enter your phone number with an international country code (for example +260…), or use a recognized country name.",
+        field: "phone",
+      };
+    }
   }
-  // Strip leading trunk 0 (e.g. 0971234567 → 971234567)
-  if (national.startsWith("0")) {
-    national = national.slice(1);
-  }
-  // Numbers that already include the country calling code without + / 00
-  if (national.startsWith(callingCode) && national.length > callingCode.length + 5) {
-    national = national.slice(callingCode.length);
-  }
-  if (national.length < 6 || national.length > 12) {
+
+  const result = normalizePhoneNumber({
+    phone: display,
+    phoneCountry: countryIso,
+    phoneNational: opts.phoneNational != null ? opts.phoneNational : null,
+    clinicDefaultCountry: opts.clinicDefaultCountry || null,
+    defaultCountry: defaultCountry || PLATFORM_DEFAULT_COUNTRY,
+    required: true,
+  });
+
+  if (!result.ok) {
     return {
       ok: false,
-      error: "Please enter a valid phone number.",
+      error: result.error || "Please enter a valid phone number.",
       field: "phone",
     };
   }
 
-  const normalized = `+${callingCode}${national}`;
-  if (!PHONE_E164_RE.test(normalized)) {
-    return {
-      ok: false,
-      error: "Please enter a valid phone number.",
-      field: "phone",
-    };
-  }
-
-  const countryCode =
-    typeof country === "string" && /^[a-z]{2}$/i.test(String(country).trim())
-      ? String(country).trim().toUpperCase()
-      : resolveCallingCode(country) === "260"
-        ? "ZM"
-        : null;
-
-  return { ok: true, display, normalized, countryCode };
+  return {
+    ok: true,
+    display: display || result.display,
+    normalized: result.e164,
+    countryCode: result.country || getCountryFromE164(result.e164),
+  };
 }
 
 /**

@@ -49,8 +49,21 @@
       <input id="patientFirstName" name="patientFirstName" required maxlength="80" value="<%= fd.patientFirstName || '' %>"/>
       <label for="patientLastName">Last name</label>
       <input id="patientLastName" name="patientLastName" required maxlength="80" value="<%= fd.patientLastName || '' %>"/>
-      <label for="patientPhone">Phone</label>
-      <input id="patientPhone" name="patientPhone" required value="<%= fd.patientPhone || '' %>"/>
+      <%- include('../partials/phone-field', {
+      id: 'patientPhone',
+      label: 'Phone',
+      required: true,
+      defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+      selectedCountry: (fd && fd.phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+      nationalValue: (fd && (fd.phoneNational || fd.patientPhoneNational)) || '',
+      e164Value: (fd && fd.patientPhone) || '',
+      countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+      phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+      countryFieldName: 'phone_country',
+      nationalFieldName: 'phone_national',
+      legacyFieldName: 'patientPhone',
+      showLegacyHidden: true
+    }) %>
       <label for="patientEmail">Email (optional)</label>
       <input id="patientEmail" name="patientEmail" type="email" value="<%= fd.patientEmail || '' %>"/>
       <label for="preferredStartsAt">Preferred date and time</label>

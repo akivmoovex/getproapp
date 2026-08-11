@@ -22,6 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=<%= assetVersion %>"/>
 </head>
 <body
   class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %>"
@@ -38,5 +39,6 @@
   <%- footerHtml %>
   <div id="ac-public-live" class="ac-sr-only" aria-live="polite"></div>
   <script src="/activeclinic/ac-public.js?v=<%= assetVersion %>" defer></script>
+  <script src="/activeclinic/ac-phone-field.js?v=<%= assetVersion %>" defer></script>
 </body>
 </html>

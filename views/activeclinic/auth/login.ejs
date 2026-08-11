@@ -27,26 +27,22 @@
             <input type="hidden" name="next" value="<%= nextPath %>"/>
           <% } %>
           <div class="ac-auth-field">
-            <label for="identifier">Phone number or email</label>
-            <div class="ac-auth-phone" data-ac-phone-field="1">
-              <span class="ac-auth-phone__prefix" aria-hidden="true">+260</span>
-              <input
-                class="ac-auth-input"
-                id="identifier"
-                name="identifier"
-                type="text"
-                autocomplete="username"
-                inputmode="tel"
-                required
-                value="<%= identifier || '' %>"
-                placeholder="97 123 4567 or email"
-                aria-describedby="identifier-hint<%= error ? ' ac-auth-error-summary' : '' %>"
-                <% if (error) { %>aria-invalid="true"<% } %>
-              />
-            </div>
-            <p id="identifier-hint" class="ac-auth-hint" style="margin-top:0.35rem">
-              Prefer your staff phone number. Email is accepted when registered.
-            </p>
+            <%- include('../partials/phone-field', {
+              id: 'identifier',
+              label: 'Phone number or email',
+              required: true,
+              identifierMode: true,
+              identifierName: 'identifier',
+              defaultCountry: defaultPhoneCountry || 'ZM',
+              selectedCountry: phoneCountry || defaultPhoneCountry || 'ZM',
+              nationalValue: identifier || '',
+              countries: phoneCountries,
+              phoneValidationRelaxed: phoneValidationRelaxed,
+              hint: 'Prefer your staff phone number. Email is accepted when registered.',
+              placeholder: '97 123 4567 or email',
+              error: null,
+              showLegacyHidden: false
+            }) %>
           </div>
           <%- include('../partials/auth-password-field', {
             id: 'password',

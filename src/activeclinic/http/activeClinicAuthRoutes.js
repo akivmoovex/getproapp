@@ -160,7 +160,9 @@ function registerActiveClinicAuthRoutes(app, deps) {
         password: req.body && req.body.password,
         deploymentCode: deployment.code,
         hostname: resolveHostname(req) || "activeclinic.org",
-        country: "ZM",
+        country: String((req.body && req.body.phone_country) || "ZM")
+          .trim()
+          .toUpperCase() || "ZM",
         ip: clientIp(req),
         userAgent: req.headers["user-agent"] || null,
       });
@@ -190,6 +192,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
             csrfToken,
             error: loginErrorMessage(result),
             identifier: req.body && req.body.identifier,
+            phoneCountry: req.body && req.body.phone_country,
           })
         );
       }

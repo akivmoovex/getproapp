@@ -175,7 +175,12 @@ async function createFacility(db, input) {
   if (!timezone.ok) {
     return { ok: false, code: RESULT.INVALID_INPUT, facility: null };
   }
-  const phone = normalizeActiveClinicPhone(input.phone);
+  const phone = normalizeActiveClinicPhone({
+    phone: input.phone,
+    phoneCountry: input.phoneCountry || null,
+    phoneNational: input.phoneNational || null,
+    clinicDefaultCountry: input.clinicDefaultCountry || hco.countryCode || null,
+  });
   if (!phone.ok) {
     return { ok: false, code: RESULT.INVALID_INPUT, facility: null };
   }
@@ -381,11 +386,20 @@ async function updateFacility(db, input) {
   if (patch.status != null && !STATUSES.includes(String(patch.status))) {
     return { ok: false, code: RESULT.INVALID_STATUS, facility: null };
   }
-  if (patch.phone != null) {
-    const phone = normalizeActiveClinicPhone(patch.phone);
+  if (patch.phone != null || patch.phoneNational != null) {
+    const phone = normalizeActiveClinicPhone({
+      phone: patch.phone,
+      phoneCountry: patch.phoneCountry || null,
+      phoneNational: patch.phoneNational || null,
+      clinicDefaultCountry: patch.clinicDefaultCountry || null,
+    });
     if (!phone.ok) return { ok: false, code: RESULT.INVALID_INPUT, facility: null };
     patch.phoneNormalized = phone.normalized;
     patch.phoneDisplay = phone.display;
+    delete patch.phone;
+    delete patch.phoneCountry;
+    delete patch.phoneNational;
+    delete patch.clinicDefaultCountry;
   }
   if (patch.email !== undefined) {
     const email = normalizeActiveClinicEmail(patch.email);

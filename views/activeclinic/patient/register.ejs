@@ -13,8 +13,17 @@
       <input type="text" id="guestToken" name="guestToken" autocomplete="off"/>
     </div>
     <div class="ac-patient-field">
-      <label for="phone">Phone</label>
-      <input type="tel" id="phone" name="phone" autocomplete="tel" required/>
+      <%- include('../partials/phone-field', {
+        id: 'phone',
+        label: 'Phone',
+        required: true,
+        defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+        selectedCountry: (typeof phoneCountry !== 'undefined' && phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+        nationalValue: '',
+        countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+        phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+        showLegacyHidden: true
+      }) %>
     </div>
     <div class="ac-patient-field">
       <label for="email">Email (optional)</label>

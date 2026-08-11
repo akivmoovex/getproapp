@@ -1,0 +1,53 @@
+<%
+  var form = (pageData && pageData.form) || {};
+  var values = form.values || {};
+  var errors = form.errors || [];
+  var fieldErrors = form.fieldErrors || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var tzOptions = form.timezoneOptions || [];
+%>
+<section class="ac-settings-regional" data-ac-page-section="regional-settings">
+  <% if (errors.length) { %>
+  <div class="ac-flash ac-flash--error" role="alert">
+    <ul><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul>
+  </div>
+  <% } %>
+
+  <form class="ac-panel" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+
+    <h2 class="ac-dashboard__card-title">Default country</h2>
+    <p class="ac-muted"><%= form.note || '' %></p>
+
+    <div class="ac-field">
+      <%- include('../partials/country-picker', {
+        id: 'default-country',
+        label: 'Default country',
+        fieldName: 'country_code',
+        required: true,
+        selectedCountry: values.countryCode || form.defaultPhoneCountry || 'ZM',
+        countries: form.phoneCountries || [],
+        hint: 'Used as the default for phone country selectors. Default phone country inherits this value.',
+        error: fieldErrors.country_code || null
+      }) %>
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="timezone">Timezone</label>
+      <select class="ac-select" id="timezone" name="timezone" required>
+        <% tzOptions.forEach(function (tz) { %>
+        <option value="<%= tz %>" <%= values.timezone === tz ? 'selected' : '' %>><%= tz %></option>
+        <% }) %>
+        <% if (values.timezone && tzOptions.indexOf(values.timezone) === -1) { %>
+        <option value="<%= values.timezone %>" selected><%= values.timezone %></option>
+        <% } %>
+      </select>
+      <% if (fieldErrors.timezone) { %><p class="ac-field-error"><%= fieldErrors.timezone %></p><% } %>
+    </div>
+
+    <div class="ac-form-actions" style="margin-top:1.25rem;display:flex;gap:0.75rem;flex-wrap:wrap">
+      <button type="submit" class="ac-btn ac-btn--primary">Save regional settings</button>
+      <a class="ac-btn ac-btn--ghost" href="<%= form.cancelHref || '/app/settings' %>">Cancel</a>
+    </div>
+  </form>
+</section>

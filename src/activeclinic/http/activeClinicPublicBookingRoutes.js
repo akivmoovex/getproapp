@@ -68,11 +68,15 @@ function validatePatientFields(body) {
   const errors = {};
   const firstName = String((body && body.patientFirstName) || "").trim();
   const lastName = String((body && body.patientLastName) || "").trim();
-  const phone = String((body && body.patientPhone) || "").trim();
+  const phoneNational = String((body && body.phone_national) || "").trim();
+  const phone = String((body && body.patientPhone) || phoneNational || "").trim();
+  const phoneCountry = String((body && body.phone_country) || "ZM")
+    .trim()
+    .toUpperCase();
   if (!firstName) errors.patientFirstName = "First name is required.";
   if (!lastName) errors.patientLastName = "Last name is required.";
   if (!phone) errors.patientPhone = "Phone is required.";
-  return { errors, firstName, lastName, phone };
+  return { errors, firstName, lastName, phone, phoneCountry, phoneNational };
 }
 
 /**
@@ -219,6 +223,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         patientFirstName: req.body.patientFirstName,
         patientLastName: req.body.patientLastName,
         patientPhone: req.body.patientPhone,
+        phoneCountry: req.body.phone_country || null,
+        phoneNational: req.body.phone_national || null,
         patientEmail: req.body.patientEmail,
         visitReason: req.body.visitReason,
         preferredStartsAt: req.body.preferredStartsAt || null,
@@ -414,7 +420,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         })));
       }
 
-      const { errors, firstName, lastName, phone } = validatePatientFields(req.body);
+      const { errors, firstName, lastName, phone, phoneCountry, phoneNational } = validatePatientFields(req.body);
       if (Object.keys(errors).length) {
         return res.status(400).type("html").send(renderPublicView("booking/consultation-patient", wizardLocals({
           csrfToken, clinic, draft, wizardStep: 4, validationErrors: errors, formData: req.body || {},
@@ -425,6 +431,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         patientFirstName: firstName,
         patientLastName: lastName,
         patientPhone: phone,
+        phoneCountry,
+        phoneNational,
         patientEmail: String((req.body && req.body.patientEmail) || "").trim() || null,
         visitReason: String((req.body && req.body.visitReason) || "").trim().slice(0, 500) || null,
       });
@@ -615,6 +623,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         patientFirstName: req.body.patientFirstName,
         patientLastName: req.body.patientLastName,
         patientPhone: req.body.patientPhone,
+        phoneCountry: req.body.phone_country || null,
+        phoneNational: req.body.phone_national || null,
         patientEmail: req.body.patientEmail,
         preferredStartsAt: req.body.preferredStartsAt || null,
         preparationAcknowledged: req.body.preparationAcknowledged === "1",

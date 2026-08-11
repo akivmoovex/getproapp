@@ -122,7 +122,11 @@ async function createConsultationBookingRequest(db, input) {
     return { ok: false, code: RESULT.INVALID_INPUT, booking: null };
   }
 
-  const phone = normalizeZambiaPhone(input.patientPhone);
+  const phone = normalizeZambiaPhone(input.patientPhone, {
+    phoneCountry: input.phoneCountry || null,
+    phoneNational: input.phoneNational || null,
+    defaultCountry: input.defaultCountry || "ZM",
+  });
   if (!phone.ok) {
     return { ok: false, code: phone.code, booking: null };
   }
@@ -286,7 +290,11 @@ async function createProcedureBookingRequest(db, input) {
     return { ok: false, code: RESULT.INVALID_INPUT, booking: null };
   }
 
-  const phone = normalizeZambiaPhone(input.patientPhone);
+  const phone = normalizeZambiaPhone(input.patientPhone, {
+    phoneCountry: input.phoneCountry || null,
+    phoneNational: input.phoneNational || null,
+    defaultCountry: input.defaultCountry || "ZM",
+  });
   if (!phone.ok) {
     return { ok: false, code: phone.code, booking: null };
   }

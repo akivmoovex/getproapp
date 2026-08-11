@@ -35,36 +35,35 @@ function generateApplicationNumber() {
 }
 
 /**
- * Normalize Zambia phone to E.164 (+260...).
- * Accepts national or international formats.
+ * Normalize contact phone to E.164 (default country Zambia / clinic default).
+ * Delegates to shared ActiveClinic phone normalization — do not invent a second pipeline.
  */
-function normalizeZambiaPhone(raw) {
-  const display = String(raw == null ? "" : raw).trim();
-  if (!display) return { ok: false, code: "phone_required" };
-  
-  let digits = display.replace(/[^\d+]/g, "");
-  
-  if (digits.startsWith("+260")) {
-    // Already E.164
-  } else if (digits.startsWith("260")) {
-    digits = "+" + digits;
-  } else if (digits.startsWith("0")) {
-    // National format: 0977... -> +260977...
-    digits = "+260" + digits.slice(1);
-  } else if (digits.length >= 9 && !digits.startsWith("+")) {
-    // Assume national without leading 0
-    digits = "+260" + digits;
-  } else {
-    // Try to parse as international
-    if (!digits.startsWith("+")) {
-      return { ok: false, code: "phone_invalid" };
-    }
+function normalizeZambiaPhone(raw, options) {
+  const opts = options && typeof options === "object" ? options : {};
+  const display = String(
+    opts.phoneNational != null && String(opts.phoneNational).trim() !== ""
+      ? opts.phoneNational
+      : raw == null
+        ? ""
+        : raw
+  ).trim();
+  if (!display && !(opts.phoneNational && String(opts.phoneNational).trim())) {
+    return { ok: false, code: "phone_required" };
   }
-  
-  const phone = normalizeActiveClinicPhone(digits);
+  const phone = normalizeActiveClinicPhone({
+    phone: display,
+    phoneCountry: opts.phoneCountry || opts.country || null,
+    phoneNational: opts.phoneNational || null,
+    clinicDefaultCountry: opts.clinicDefaultCountry || null,
+    defaultCountry: opts.defaultCountry || "ZM",
+  });
   if (!phone.ok) return phone;
-  
-  return { ok: true, normalized: phone.normalized, display: display.slice(0, 40) };
+  return {
+    ok: true,
+    normalized: phone.normalized,
+    display: display.slice(0, 40),
+    country: phone.country || null,
+  };
 }
 
 /**
@@ -94,11 +93,15 @@ function validateClinicRegistrationInput(input) {
       : "Enter a valid email address.";
   }
 
-  const phone = normalizeZambiaPhone(input.contactPhone);
+  const phone = normalizeZambiaPhone(input.contactPhone, {
+    phoneCountry: input.phoneCountry || input.contactPhoneCountry || null,
+    phoneNational: input.phoneNational || input.contactPhoneNational || null,
+    defaultCountry: input.countryCode || "ZM",
+  });
   if (!phone.ok) {
     errors.contactPhone = phone.code === "phone_required"
-      ? "Enter a Zambia mobile number."
-      : "Enter a valid Zambia phone number (e.g. +260… or 09…).";
+      ? "Enter a contact phone number."
+      : (phone.error || "Enter a valid phone number for the selected country.");
   }
 
   if (Object.keys(errors).length) {

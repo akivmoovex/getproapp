@@ -73,9 +73,11 @@ function registerFormDataFromBody(body) {
     contactName: fd.contactName || "",
     contactEmail: fd.contactEmail || "",
     contactPhone: fd.contactPhone || "",
+    phoneCountry: fd.phone_country || fd.phoneCountry || "",
+    phoneNational: fd.phone_national || fd.phoneNational || "",
     province: fd.province || "",
     city: fd.city || "",
-    countryCode: fd.countryCode || "ZM",
+    countryCode: fd.countryCode || fd.phone_country || "ZM",
     notes: fd.notes || "",
   };
 }
@@ -541,6 +543,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
         senderName: req.body.senderName,
         senderEmail: req.body.senderEmail,
         senderPhone: req.body.senderPhone || null,
+        phoneCountry: req.body.phone_country || null,
+        phoneNational: req.body.phone_national || null,
+        clinicDefaultCountry: clinic.countryCode || null,
         message: req.body.message,
       });
 

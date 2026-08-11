@@ -8,9 +8,12 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
+const {
+  buildPhoneFieldLocals,
+} = require("../services/activeClinicPhoneFieldLocals");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "p27-1";
+const ASSET_VERSION = "phone-1";
 
 const BOOKING_STATUS_LABELS = Object.freeze({
   submitted_pending_confirmation: "Pending confirmation",
@@ -55,6 +58,11 @@ function defaultLocals(data) {
   const d = data || {};
   const patientAuth = d.patientAuth || {};
   const patient = patientAuth.patient || {};
+  const phoneLocals = buildPhoneFieldLocals({
+    clinicDefaultCountry:
+      (d.clinic && (d.clinic.countryCode || d.clinic.defaultCountry)) || null,
+    selectedCountry: d.phoneCountry || null,
+  });
   return {
     assetVersion: ASSET_VERSION,
     csrfField: CSRF_FIELD,
@@ -78,6 +86,7 @@ function defaultLocals(data) {
     statusFilter: d.statusFilter || "",
     notFoundKind: d.notFoundKind || "",
     pageTitle: d.pageTitle || "Patient Portal",
+    ...phoneLocals,
     pageId: d.pageId || "patient",
     escapeHtml,
     bookingStatusLabels: BOOKING_STATUS_LABELS,

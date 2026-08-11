@@ -83,6 +83,8 @@ function blankStaffForm(defaults) {
     lastName: d.lastName || "",
     preferredName: d.preferredName || "",
     phone: d.phone || d.phoneDisplay || "",
+    phoneCountry: d.phoneCountry || "",
+    phoneNational: d.phoneNational || "",
     email: d.email || d.emailDisplay || "",
     jobTitle: d.jobTitle || "",
     employmentType: d.employmentType || "permanent",
@@ -116,6 +118,8 @@ function parseStaffFormBody(body) {
     lastName: String(b.last_name || "").trim(),
     preferredName: String(b.preferred_name || "").trim(),
     phone: String(b.phone || "").trim(),
+    phoneCountry: String(b.phone_country || "").trim().toUpperCase(),
+    phoneNational: String(b.phone_national || "").trim(),
     email: String(b.email || "").trim(),
     jobTitle: String(b.job_title || "").trim(),
     employmentType: String(b.employment_type || "permanent").trim(),
@@ -286,6 +290,11 @@ async function loadActiveClinicCreateStaffScreen(db, input) {
     canAssignFacility: hasPerm(auth.permissions, "activeclinic.staff.assign_facility"),
     canAssignAccess: hasPerm(auth.permissions, "activeclinic.staff.assign_access"),
     canInvite: hasPerm(auth.permissions, "activeclinic.staff.invite"),
+    ...require("./activeClinicPhoneFieldLocals").buildPhoneFieldLocals({
+      clinicDefaultCountry:
+        (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) || "ZM",
+      selectedCountry: values.phoneCountry || null,
+    }),
   };
 }
 
@@ -327,11 +336,17 @@ async function loadActiveClinicEditStaffScreen(db, input) {
   const active = (assignments.assignments || []).filter((a) => a.status === "active");
   const facilities = await listAssignableFacilities(db, auth);
   const s = got.staffMember;
+  const phoneParts = require("./activeClinicPhoneFieldLocals").splitE164ForForm(
+    s.phoneNormalized || s.phoneDisplay,
+    (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) || "ZM"
+  );
   const defaults = blankStaffForm({
     firstName: s.firstName,
     lastName: s.lastName,
     preferredName: s.preferredName,
     phone: s.phoneDisplay,
+    phoneCountry: phoneParts.country,
+    phoneNational: phoneParts.national,
     email: s.emailDisplay,
     jobTitle: s.jobTitle,
     employmentType: s.employmentType,
@@ -369,6 +384,11 @@ async function loadActiveClinicEditStaffScreen(db, input) {
     canAssignFacility: hasPerm(auth.permissions, "activeclinic.staff.assign_facility"),
     canAssignAccess: false,
     canInvite: false,
+    ...require("./activeClinicPhoneFieldLocals").buildPhoneFieldLocals({
+      clinicDefaultCountry:
+        (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) || "ZM",
+      selectedCountry: defaults.phoneCountry || null,
+    }),
   };
 }
 

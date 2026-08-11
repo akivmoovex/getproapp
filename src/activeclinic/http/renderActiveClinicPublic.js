@@ -8,9 +8,12 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
+const {
+  buildPhoneFieldLocals,
+} = require("../services/activeClinicPhoneFieldLocals");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "p24-2";
+const ASSET_VERSION = "phone-1";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -46,6 +49,18 @@ function renderPartial(relativePath, data) {
  * @param {string} [input.robots]
  */
 function renderPublicPage(input) {
+  const phoneLocals = buildPhoneFieldLocals({
+    clinicDefaultCountry:
+      (input.locals &&
+        input.locals.clinic &&
+        (input.locals.clinic.countryCode || input.locals.clinic.defaultCountry)) ||
+      null,
+    selectedCountry:
+      (input.locals &&
+        input.locals.formData &&
+        (input.locals.formData.phoneCountry || input.locals.formData.countryCode)) ||
+      null,
+  });
   const locals = {
     assetVersion: ASSET_VERSION,
     csrfField: CSRF_FIELD,
@@ -58,6 +73,7 @@ function renderPublicPage(input) {
     services: [],
     procedures: [],
     profiles: [],
+    ...phoneLocals,
     ...(input.locals || {}),
     escapeHtml,
   };

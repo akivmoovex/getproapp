@@ -37,9 +37,19 @@
       <input class="ac-input" id="preferred_name" name="preferred_name" maxlength="100" value="<%= values.preferredName || '' %>"/>
     </div>
     <div class="ac-field">
-      <label class="ac-label" for="phone">Phone</label>
-      <input class="ac-input" id="phone" name="phone" required inputmode="tel" autocomplete="tel" value="<%= values.phone || '' %>" placeholder="+260…"/>
-      <% if (fieldErrors.phone) { %><p class="ac-field-error"><%= fieldErrors.phone %></p><% } %>
+      <%- include('../partials/phone-field', {
+        id: 'phone',
+        label: 'Phone',
+        required: true,
+        defaultCountry: form.defaultPhoneCountry || 'ZM',
+        selectedCountry: values.phoneCountry || form.defaultPhoneCountry || 'ZM',
+        nationalValue: values.phoneNational || '',
+        e164Value: values.phone || '',
+        countries: form.phoneCountries || [],
+        phoneValidationRelaxed: form.phoneValidationRelaxed,
+        error: fieldErrors.phone || null,
+        showLegacyHidden: true
+      }) %>
     </div>
     <div class="ac-field">
       <label class="ac-label" for="email">Email <span class="ac-muted">(optional)</span></label>

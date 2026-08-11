@@ -335,6 +335,16 @@ async function loadActiveClinicSettingsOverviewScreen(db, input) {
       summary: "Reception, OPD, Pharmacy, Lab, and more",
     });
   }
+  if (hasPerm(perms, "activeclinic.organization.manage")) {
+    categories.push({
+      key: "regional",
+      title: "Regional settings",
+      description: "Clinic Setup — default country for phone numbers and regional defaults.",
+      href: "/app/settings/clinic-setup/regional",
+      statusLabel: "Clinic setup",
+      summary: (hco && hco.countryCode) || "ZM",
+    });
+  }
   categories.push({
     key: "account",
     title: "Account security",
@@ -552,6 +562,68 @@ async function updateHealthcareOrganizationSettings(db, input) {
   });
 }
 
+/**
+ * Settings → Clinic Setup → Regional Settings
+ * Default country drives default phone country for forms (does not rewrite stored phones).
+ */
+async function loadRegionalSettingsScreen(db, input) {
+  const auth = input.auth;
+  if (!hasPerm(auth.permissions, "activeclinic.organization.manage")) {
+    return { ok: false, code: RESULT.DENIED };
+  }
+  const hcoResult = await getHealthcareOrganizationByOrganizationId(db, {
+    organizationId: auth.organization.id,
+  });
+  if (!hcoResult.ok) return { ok: false, code: RESULT.NOT_FOUND };
+  const hco = hcoResult.healthcareOrganization;
+  const phoneLocals = require("./activeClinicPhoneFieldLocals").buildPhoneFieldLocals({
+    clinicDefaultCountry: hco.countryCode || "ZM",
+    selectedCountry:
+      (input.values && input.values.countryCode) || hco.countryCode || "ZM",
+  });
+  return {
+    ok: true,
+    form: {
+      formAction: "/app/settings/clinic-setup/regional",
+      cancelHref: "/app/settings",
+      values: {
+        countryCode:
+          (input.values && input.values.countryCode) || hco.countryCode || "ZM",
+        timezone: (input.values && input.values.timezone) || hco.timezone || "Africa/Lusaka",
+      },
+      errors: input.errors || [],
+      fieldErrors: input.fieldErrors || {},
+      timezoneOptions: listActiveClinicTimezoneOptions(),
+      ...phoneLocals,
+      note:
+        "Changing the default country updates new phone forms only. Existing stored phone numbers are not rewritten.",
+    },
+  };
+}
+
+async function updateRegionalSettings(db, input) {
+  const auth = input.auth;
+  if (!hasPerm(auth.permissions, "activeclinic.organization.manage")) {
+    return { ok: false, code: RESULT.DENIED };
+  }
+  const organizationId = auth.organization.id;
+  const hcoResult = await getHealthcareOrganizationByOrganizationId(db, {
+    organizationId,
+  });
+  if (!hcoResult.ok) return { ok: false, code: RESULT.NOT_FOUND };
+
+  return updateHealthcareOrganization(db, {
+    id: hcoResult.healthcareOrganization.id,
+    organizationId,
+    deploymentCode: input.deploymentCode,
+    allowStatusChange: false,
+    patch: {
+      countryCode: input.countryCode,
+      timezone: input.timezone,
+    },
+  });
+}
+
 module.exports = {
   RESULT,
   ORGANIZATION_TYPE_LABELS,
@@ -566,4 +638,6 @@ module.exports = {
   loadHealthcareOrganizationSettingsScreen,
   loadEditHealthcareOrganizationScreen,
   updateHealthcareOrganizationSettings,
+  loadRegionalSettingsScreen,
+  updateRegionalSettings,
 };

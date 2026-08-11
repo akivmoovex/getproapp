@@ -651,13 +651,23 @@ async function searchActiveClinicPatients(db, input) {
   }
 
   let phoneNormalized = null;
+  let phoneDigitsPartial = null;
   if (input.phone) {
     const {
-      normalizeActiveClinicPhone,
-    } = require("./normalizeActiveClinicContact");
-    const phone = normalizeActiveClinicPhone(input.phone);
-    if (!phone.ok) return { ok: false, code: phone.code, results: [] };
-    phoneNormalized = phone.normalized;
+      buildPhoneSearchCriteria,
+    } = require("../../platform/services/phoneNumberService");
+    const criteria = buildPhoneSearchCriteria(input.phone, {
+      clinicDefaultCountry: input.clinicDefaultCountry || null,
+      defaultCountry: input.defaultCountry || "ZM",
+    });
+    if (!criteria.ok) {
+      return { ok: false, code: criteria.code || "phone_invalid", results: [] };
+    }
+    if (criteria.mode === "exact") {
+      phoneNormalized = criteria.e164;
+    } else if (criteria.mode === "partial") {
+      phoneDigitsPartial = criteria.digits;
+    }
   }
 
   let identifierType = null;
@@ -711,6 +721,7 @@ async function searchActiveClinicPatients(db, input) {
     patientNumber: input.patientNumber || null,
     nameQuery: nameQuery || null,
     phoneNormalized,
+    phoneDigitsPartial,
     dateOfBirth: input.dateOfBirth || null,
     status: input.status || null,
     includeArchived: input.includeArchived === true,

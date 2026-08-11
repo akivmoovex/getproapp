@@ -226,6 +226,11 @@ function registerActiveClinicFacilityRoutes(app, deps) {
           addressLine2: values.addressLine2 || null,
           postalCode: values.postalCode || null,
           phone: values.phone,
+          phoneCountry: values.phoneCountry || null,
+          phoneNational: values.phoneNational || null,
+          clinicDefaultCountry:
+            (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+            null,
           email: values.email || null,
           timezone: values.timezone,
           deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
@@ -357,6 +362,11 @@ function registerActiveClinicFacilityRoutes(app, deps) {
           addressLine2: values.addressLine2 || null,
           postalCode: values.postalCode || null,
           phone: values.phone,
+          phoneCountry: values.phoneCountry || null,
+          phoneNational: values.phoneNational || null,
+          clinicDefaultCountry:
+            (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+            null,
           email: values.email || null,
           timezone: values.timezone,
         };

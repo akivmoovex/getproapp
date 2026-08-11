@@ -14,8 +14,21 @@
     <input id="senderName" name="senderName" required value="<%= fd.senderName || '' %>"/>
     <label for="senderEmail">Email</label>
     <input id="senderEmail" name="senderEmail" type="email" required value="<%= fd.senderEmail || '' %>"/>
-    <label for="senderPhone">Phone (optional)</label>
-    <input id="senderPhone" name="senderPhone" value="<%= fd.senderPhone || '' %>"/>
+    <%- include('../partials/phone-field', {
+      id: 'senderPhone',
+      label: 'Phone (optional)',
+      required: false,
+      defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || (clinic && clinic.countryCode) || 'ZM',
+      selectedCountry: (fd && fd.phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || (clinic && clinic.countryCode) || 'ZM',
+      nationalValue: (fd && fd.phoneNational) || '',
+      e164Value: (fd && fd.senderPhone) || '',
+      countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+      phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+      countryFieldName: 'phone_country',
+      nationalFieldName: 'phone_national',
+      legacyFieldName: 'senderPhone',
+      showLegacyHidden: true
+    }) %>
     <label for="message">Message</label>
     <textarea id="message" name="message" required maxlength="4000"><%= fd.message || '' %></textarea>
     <button type="submit" class="ac-btn ac-btn--primary">Send message</button>

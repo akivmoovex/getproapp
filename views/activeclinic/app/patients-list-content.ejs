@@ -20,7 +20,8 @@
       </div>
       <div>
         <label class="ac-label" for="patient_phone">Phone</label>
-        <input class="ac-input" id="patient_phone" name="phone" value="<%= filters.phone || '' %>" inputmode="tel" placeholder="+260…" autocomplete="off"/>
+        <input class="ac-input" id="patient_phone" name="phone" value="<%= filters.phone || '' %>" inputmode="tel" placeholder="970… / 097… / +260…" autocomplete="off" aria-describedby="patient_phone_hint"/>
+        <p id="patient_phone_hint" class="ac-hint">Matches full numbers and digit fragments against stored E.164 phones.</p>
       </div>
       <div>
         <label class="ac-label" for="patient_dob">Date of birth</label>

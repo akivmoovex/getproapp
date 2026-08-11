@@ -30,6 +30,10 @@ const {
   maskEmail,
   maskIdentifier,
 } = require("./patientPrivacyHelpers");
+const {
+  buildPhoneFieldLocals,
+  splitE164ForForm,
+} = require("./activeClinicPhoneFieldLocals");
 
 const STATUS_LABELS = Object.freeze({
   active: "Active",
@@ -88,6 +92,8 @@ function emptyFormValues() {
     nationalityCountryCode: "",
     primaryLanguage: "",
     phone: "",
+    phoneCountry: "",
+    phoneNational: "",
     email: "",
     addressLine1: "",
     addressLine2: "",
@@ -132,6 +138,8 @@ function parsePatientFormBody(body) {
       .toUpperCase(),
     primaryLanguage: String(body.primary_language || "").trim(),
     phone: String(body.phone || "").trim(),
+    phoneCountry: String(body.phone_country || "").trim().toUpperCase(),
+    phoneNational: String(body.phone_national || "").trim(),
     email: String(body.email || "").trim(),
     addressLine1: String(body.address_line_1 || "").trim(),
     addressLine2: String(body.address_line_2 || "").trim(),
@@ -152,6 +160,8 @@ function parsePatientFormBody(body) {
     emergencyFullName: String(body.emergency_full_name || "").trim(),
     emergencyRelationship: String(body.emergency_relationship || "").trim(),
     emergencyPhone: String(body.emergency_phone || "").trim(),
+    emergencyPhoneCountry: String(body.emergency_phone_country || "").trim().toUpperCase(),
+    emergencyPhoneNational: String(body.emergency_phone_national || "").trim(),
     emergencyEmail: String(body.emergency_email || "").trim(),
     duplicateOverride: bool(body.duplicate_override),
     duplicateOverrideReason: String(body.duplicate_override_reason || "").trim(),
@@ -178,11 +188,17 @@ function buildRegistrationPayload(values, auth) {
     });
   }
   const emergencyContacts = [];
-  if (values.emergencyFullName && values.emergencyPhone) {
+  const emergencyPhoneValue =
+    values.emergencyPhoneNational || values.emergencyPhone || "";
+  if (values.emergencyFullName && emergencyPhoneValue) {
     emergencyContacts.push({
       fullName: values.emergencyFullName,
       relationship: values.emergencyRelationship || "emergency_contact",
-      phone: values.emergencyPhone,
+      phone: values.emergencyPhone || null,
+      phoneCountry: values.emergencyPhoneCountry || null,
+      phoneNational: values.emergencyPhoneNational || null,
+      clinicDefaultCountry:
+        (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) || null,
       email: values.emergencyEmail || null,
       isPrimary: true,
     });
@@ -208,6 +224,10 @@ function buildRegistrationPayload(values, auth) {
     },
     contacts: {
       phone: values.phone || null,
+      phoneCountry: values.phoneCountry || null,
+      phoneNational: values.phoneNational || null,
+      clinicDefaultCountry:
+        (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) || null,
       email: values.email || null,
       preferredContactMethod: values.preferredContactMethod || null,
       allowAdminReminders,
@@ -283,6 +303,9 @@ async function loadActiveClinicPatientListScreen(db, input) {
     patientNumber: filters.patientNumber || null,
     nameQuery: filters.q || null,
     phone: filters.phone || null,
+    clinicDefaultCountry:
+      (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+      null,
     dateOfBirth: filters.dateOfBirth || null,
     status: filters.status || null,
     limit: 50,
@@ -360,6 +383,13 @@ async function loadActiveClinicPatientFormScreen(db, input) {
   } else if (mode === "create" && !values.step) {
     values.step = "find";
   }
+  if (!values.phoneCountry) {
+    values.phoneCountry =
+      (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) || "ZM";
+  }
+  if (!values.emergencyPhoneCountry) {
+    values.emergencyPhoneCountry = values.phoneCountry;
+  }
 
   return {
     ok: true,
@@ -380,6 +410,7 @@ async function loadActiveClinicPatientFormScreen(db, input) {
         value: v,
         label: IDENTIFIER_LABELS[v] || v,
       })),
+      canManageIdentifiers: hasPerm(perms, PERM.MANAGE_IDENTIFIERS),
       formAction:
         mode === "edit"
           ? `/app/patients/${encodeURIComponent(input.patientNumber)}`
@@ -390,6 +421,14 @@ async function loadActiveClinicPatientFormScreen(db, input) {
       canOverrideDuplicate: hasPerm(perms, PERM.DUPLICATE_OVERRIDE),
       returnTo: values.returnTo || "",
       returnContext: values.returnContext || "",
+      ...buildPhoneFieldLocals({
+        clinicDefaultCountry:
+          (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) || "ZM",
+        selectedCountry:
+          values.phoneCountry ||
+          (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+          "ZM",
+      }),
       stitch: {
         identity: "40d2005b64864f35ac8df831ddae7084",
         contact: "e1ef5e5d8a1840bcbf1f4dc859f7b812",
@@ -515,11 +554,20 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
         desktop: "1a15f0bf4e564c4993ca33aa2d578a58",
         mobile: "99eb441b48a24fa19855e76669c0da86",
       },
+      ...buildPhoneFieldLocals({
+        clinicDefaultCountry:
+          (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+          "ZM",
+      }),
     },
   };
 }
 
-function patientFormFromPatient(patient) {
+function patientFormFromPatient(patient, clinicDefaultCountry) {
+  const phoneParts = splitE164ForForm(
+    patient.phoneNormalized || patient.phoneDisplay,
+    clinicDefaultCountry || patient.countryCode || "ZM"
+  );
   return {
     ...emptyFormValues(),
     firstName: patient.firstName || "",
@@ -534,6 +582,8 @@ function patientFormFromPatient(patient) {
     nationalityCountryCode: patient.nationalityCountryCode || "",
     primaryLanguage: patient.primaryLanguage || "",
     phone: patient.phoneDisplay || patient.phoneNormalized || "",
+    phoneCountry: phoneParts.country,
+    phoneNational: phoneParts.national,
     email: patient.emailDisplay || patient.emailNormalized || "",
     addressLine1: patient.addressLine1 || "",
     addressLine2: patient.addressLine2 || "",

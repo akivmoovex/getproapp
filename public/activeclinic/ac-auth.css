@@ -656,3 +656,18 @@ body.ac-auth-body {
 .ac-auth-card--single .ac-auth-h1--desktop-only {
   display: none;
 }
+
+/* PhoneField inside auth forms */
+.ac-auth-field .ac-phone-field__country-btn,
+.ac-auth-field .ac-phone-field__input {
+  min-height: 2.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(26, 43, 47, 0.16);
+  background: #fff;
+  font: inherit;
+}
+.ac-auth-field .ac-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}

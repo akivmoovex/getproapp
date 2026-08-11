@@ -12,8 +12,11 @@ const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
 const {
   PASSWORD_MIN,
 } = require("../../platform/services/platformIdentityCredentialService");
+const {
+  buildPhoneFieldLocals,
+} = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "s01-1";
+const ASSET_VERSION = "phone-1";
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic HMS",
@@ -22,6 +25,10 @@ const DEFAULT_BRANDING = Object.freeze({
 });
 
 function baseLocals(overrides) {
+  const phoneLocals = buildPhoneFieldLocals({
+    clinicDefaultCountry: overrides && overrides.clinicDefaultCountry,
+    selectedCountry: overrides && overrides.phoneCountry,
+  });
   return {
     csrfField: CSRF_FIELD,
     assetVersion: ASSET_VERSION,
@@ -30,6 +37,7 @@ function baseLocals(overrides) {
     tagline: DEFAULT_BRANDING.tagline,
     passwordMin: PASSWORD_MIN,
     composition: "split",
+    ...phoneLocals,
     ...overrides,
   };
 }
@@ -54,6 +62,7 @@ function renderLoginPage(input) {
     notice: (input && input.notice) || null,
     error: (input && input.error) || null,
     identifier: String((input && input.identifier) || ""),
+    phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
     nextPath: (input && input.nextPath) || null,
     csrfToken: input && input.csrfToken,
     composition: "desktop-split",

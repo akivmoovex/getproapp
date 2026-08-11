@@ -294,6 +294,8 @@ function blankFacilityForm(defaults) {
     addressLine2: d.addressLine2 || "",
     postalCode: d.postalCode || "",
     phone: d.phone || d.phoneDisplay || "",
+    phoneCountry: d.phoneCountry || "",
+    phoneNational: d.phoneNational || "",
     email: d.email || d.emailDisplay || "",
     timezone: d.timezone || "Africa/Lusaka",
   };
@@ -323,6 +325,10 @@ async function loadActiveClinicCreateFacilityScreen(db, input) {
       label: facilityStatusLabel(s),
     })),
     keyEditable: true,
+    ...require("./activeClinicPhoneFieldLocals").buildPhoneFieldLocals({
+      clinicDefaultCountry: hco.countryCode || "ZM",
+      selectedCountry: values.phoneCountry || values.countryCode || hco.countryCode || "ZM",
+    }),
   };
 }
 
@@ -336,6 +342,10 @@ async function loadActiveClinicEditFacilityScreen(db, input) {
     return { ok: false, code: "access_denied", facility: detail.facility };
   }
   const f = detail.facility;
+  const phoneParts = require("./activeClinicPhoneFieldLocals").splitE164ForForm(
+    f.phoneNormalized || f.phoneDisplay,
+    f.countryCode || "ZM"
+  );
   const values = blankFacilityForm({
     displayName: f.displayName,
     facilityKey: f.facilityKey,
@@ -351,6 +361,8 @@ async function loadActiveClinicEditFacilityScreen(db, input) {
     addressLine2: f.addressLine2,
     postalCode: f.postalCode,
     phone: f.phoneDisplay,
+    phoneCountry: phoneParts.country,
+    phoneNational: phoneParts.national,
     email: f.emailDisplay,
     timezone: f.timezone,
     ...(input.values || {}),
@@ -369,6 +381,14 @@ async function loadActiveClinicEditFacilityScreen(db, input) {
       label: facilityStatusLabel(s),
     })),
     keyEditable: false,
+    ...require("./activeClinicPhoneFieldLocals").buildPhoneFieldLocals({
+      clinicDefaultCountry:
+        (input.auth.healthcareOrganization &&
+          input.auth.healthcareOrganization.countryCode) ||
+        f.countryCode ||
+        "ZM",
+      selectedCountry: values.phoneCountry || f.countryCode || "ZM",
+    }),
   };
 }
 
@@ -389,6 +409,8 @@ function parseFacilityFormBody(body) {
     addressLine2: String(b.address_line_2 || "").trim(),
     postalCode: String(b.postal_code || "").trim(),
     phone: String(b.phone || "").trim(),
+    phoneCountry: String(b.phone_country || "").trim().toUpperCase(),
+    phoneNational: String(b.phone_national || "").trim(),
     email: String(b.email || "").trim(),
     timezone: String(b.timezone || "").trim(),
   };

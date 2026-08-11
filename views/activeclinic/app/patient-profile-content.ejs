@@ -101,8 +101,17 @@
         <input class="ac-input" id="relationship" name="relationship" required maxlength="80"/>
       </div>
       <div class="ac-field">
-        <label class="ac-label" for="ec_phone">Phone</label>
-        <input class="ac-input" id="ec_phone" name="phone" required inputmode="tel" placeholder="+260…"/>
+        <%- include('../partials/phone-field', {
+          id: 'ec_phone',
+          label: 'Phone',
+          required: true,
+          defaultCountry: (profile.defaultPhoneCountry || 'ZM'),
+          selectedCountry: (profile.defaultPhoneCountry || 'ZM'),
+          nationalValue: '',
+          countries: profile.phoneCountries || [],
+          phoneValidationRelaxed: profile.phoneValidationRelaxed,
+          showLegacyHidden: true
+        }) %>
       </div>
       <button type="submit" class="ac-btn">Add emergency contact</button>
     </form>
