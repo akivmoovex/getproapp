@@ -168,10 +168,18 @@ function parsePhoneInput(input) {
     .trim()
     .toUpperCase();
 
+  // Call-site `defaultCountry` is a clinic/context override for interpreting
+  // national numbers. Map it at clinic precedence so an authoritative
+  // deployment profile (e.g. ZM) cannot silently ignore BW/KE/etc.
+  const clinicOrCallerDefault =
+    opts.clinicDefaultCountry != null && String(opts.clinicDefaultCountry).trim() !== ""
+      ? opts.clinicDefaultCountry
+      : opts.defaultCountry;
   const defaultCountry = resolveDefaultCountry({
     selectedCountry: selected || null,
-    clinicDefaultCountry: opts.clinicDefaultCountry,
-    platformDefaultCountry: opts.defaultCountry,
+    clinicDefaultCountry: clinicOrCallerDefault,
+    organizationDefaultCountry: opts.organizationDefaultCountry,
+    env: opts.env,
   });
 
   let raw = "";

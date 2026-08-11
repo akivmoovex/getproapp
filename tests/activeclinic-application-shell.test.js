@@ -384,7 +384,10 @@ describe("ActiveClinic application shell and navigation", () => {
     const staffPage = await request(app).get("/app/staff").set("Cookie", cookie);
     assert.equal(staffPage.status, 200);
     assert.match(staffPage.text, /Net Admin|Shell User|Admin/i);
-    assert.doesNotMatch(staffPage.text, /\+2609|password_hash|token/i);
+    // Secret-leak guard: do not match CSS asset names (ac-tokens.css) or CSRF field names.
+    assert.doesNotMatch(staffPage.text, /password_hash/i);
+    assert.doesNotMatch(staffPage.text, /\b(?:api|access|refresh)_token\b/i);
+    assert.doesNotMatch(staffPage.text, /\+2609\d{6,}/);
 
     void other;
   });
