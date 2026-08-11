@@ -19,6 +19,7 @@ const {
   FACILITY_ADMIN,
   CLINIC_MANAGER,
   RECEPTIONIST,
+  MEDICAL_RECORDS_OFFICER,
   NURSE,
   CLINICIAN,
   PHARMACIST,
@@ -41,6 +42,7 @@ const REQUIRED_ROLES = Object.freeze([
   FACILITY_ADMIN,
   CLINIC_MANAGER,
   RECEPTIONIST,
+  MEDICAL_RECORDS_OFFICER,
   NURSE,
   CLINICIAN,
   PHARMACIST,
@@ -67,10 +69,25 @@ const MUST_NOT = Object.freeze({
     "activeclinic.diagnostics.result",
     "activeclinic.payment.refund",
   ],
+  [CLINIC_MANAGER]: [
+    "activeclinic.patient.manage_identifiers",
+    "activeclinic.patient.merge",
+    "activeclinic.payment.refund",
+  ],
   [RECEPTIONIST]: [
     "activeclinic.consultation.record",
     "activeclinic.pharmacy.dispense",
     "activeclinic.payment.refund",
+    "activeclinic.patient.manage_identifiers",
+    "activeclinic.patient.quick_register",
+    "activeclinic.patient.merge",
+  ],
+  [MEDICAL_RECORDS_OFFICER]: [
+    "activeclinic.consultation.record",
+    "activeclinic.pharmacy.dispense",
+    "activeclinic.payment.collect",
+    "activeclinic.staff.assign_access",
+    "activeclinic.patient.merge",
   ],
   [NURSE]: [
     "activeclinic.consultation.sign",
@@ -114,8 +131,15 @@ const MUST_HAVE = Object.freeze({
   ],
   [RECEPTIONIST]: [
     "activeclinic.patient.create",
+    "activeclinic.patient.update",
     "activeclinic.appointment.create",
     "activeclinic.reception.manage_queue",
+  ],
+  [MEDICAL_RECORDS_OFFICER]: [
+    "activeclinic.patient.create",
+    "activeclinic.patient.update",
+    "activeclinic.patient.manage_identifiers",
+    "activeclinic.patient.search",
   ],
   [NURSE]: ["activeclinic.triage.record", "activeclinic.nursing_intake.record"],
   [CLINICIAN]: [
@@ -178,9 +202,9 @@ async function permissionsForRole(roleKey) {
 describe("ActiveClinic RBAC role matrix (088)", () => {
   before(async () => {
     try {
-      await resetFoundationDatabase();
-      pool = createFoundationPool();
-      await migrate({ pool });
+      const databaseUrl = await resetFoundationDatabase();
+      pool = createFoundationPool(databaseUrl);
+      await migrate({ connectionString: databaseUrl });
     } catch (err) {
       skipReason = err && err.message ? String(err.message) : String(err);
     }
@@ -190,24 +214,23 @@ describe("ActiveClinic RBAC role matrix (088)", () => {
     if (pool) await pool.end();
   });
 
-  function requireDb() {
+  function requireDb(t) {
     if (skipReason) {
-      // eslint-disable-next-line no-console
-      console.log(`skip: ${skipReason}`);
+      if (t && typeof t.skip === "function") t.skip(skipReason);
       return false;
     }
     return true;
   }
 
-  it("catalogue exports match ActiveClinic role keys", () => {
-    if (!requireDb()) return;
+  it("catalogue exports match ActiveClinic role keys", (t) => {
+    if (!requireDb(t)) return;
     for (const key of REQUIRED_ROLES) {
       assert.ok(ACTIVECLINIC_ROLE_CATALOGUE.includes(key), `missing export ${key}`);
     }
   });
 
-  it("every catalogue role exists as an active ActiveClinic system role", async () => {
-    if (!requireDb()) return;
+  it("every catalogue role exists as an active ActiveClinic system role", async (t) => {
+    if (!requireDb(t)) return;
     const r = await pool.query(
       `SELECT role_key, is_active, is_system, role_category
          FROM blessboard.roles
@@ -222,8 +245,8 @@ describe("ActiveClinic RBAC role matrix (088)", () => {
     }
   });
 
-  it("includes required permissions per role", async () => {
-    if (!requireDb()) return;
+  it("includes required permissions per role", async (t) => {
+    if (!requireDb(t)) return;
     for (const [roleKey, keys] of Object.entries(MUST_HAVE)) {
       const perms = await permissionsForRole(roleKey);
       for (const key of keys) {
@@ -232,8 +255,8 @@ describe("ActiveClinic RBAC role matrix (088)", () => {
     }
   });
 
-  it("excludes prohibited permissions for high-risk roles", async () => {
-    if (!requireDb()) return;
+  it("excludes prohibited permissions for high-risk roles", async (t) => {
+    if (!requireDb(t)) return;
     for (const [roleKey, keys] of Object.entries(MUST_NOT)) {
       const perms = await permissionsForRole(roleKey);
       for (const key of keys) {
@@ -242,16 +265,16 @@ describe("ActiveClinic RBAC role matrix (088)", () => {
     }
   });
 
-  it("auditor has no transactional write permissions", async () => {
-    if (!requireDb()) return;
+  it("auditor has no transactional write permissions", async (t) => {
+    if (!requireDb(t)) return;
     const perms = await permissionsForRole(AUDITOR);
     for (const key of AUDITOR_FORBIDDEN_WRITES) {
       assert.equal(perms.includes(key), false, `auditor must not have ${key}`);
     }
   });
 
-  it("no ActiveClinic role receives patient.merge", async () => {
-    if (!requireDb()) return;
+  it("no ActiveClinic role receives patient.merge", async (t) => {
+    if (!requireDb(t)) return;
     const r = await pool.query(
       `SELECT r.role_key
          FROM blessboard.roles r
@@ -263,15 +286,15 @@ describe("ActiveClinic RBAC role matrix (088)", () => {
     assert.deepEqual(r.rows, []);
   });
 
-  it("network_admin mirrors organization_admin permissions", async () => {
-    if (!requireDb()) return;
+  it("network_admin mirrors organization_admin permissions", async (t) => {
+    if (!requireDb(t)) return;
     const org = await permissionsForRole(ORGANIZATION_ADMIN);
     const net = await permissionsForRole(NETWORK_ADMIN);
     assert.deepEqual(net, org);
   });
 
-  it("lab and radiology use modality-scoped permissions (no shared operational diagnostics.*)", async () => {
-    if (!requireDb()) return;
+  it("lab and radiology use modality-scoped permissions (no shared operational diagnostics.*)", async (t) => {
+    if (!requireDb(t)) return;
     const lab = await permissionsForRole(LAB_TECHNICIAN);
     const rad = await permissionsForRole(RADIOLOGY_STAFF);
     assert.ok(lab.includes("activeclinic.lab.view"));
@@ -286,8 +309,8 @@ describe("ActiveClinic RBAC role matrix (088)", () => {
     assert.equal(rad.includes("activeclinic.diagnostics.collect"), false);
   });
 
-  it("clinic manager is read-oriented (no clinical/finance writes)", async () => {
-    if (!requireDb()) return;
+  it("clinic manager is read-oriented (no clinical/finance writes)", async (t) => {
+    if (!requireDb(t)) return;
     const perms = await permissionsForRole(CLINIC_MANAGER);
     for (const key of [
       "activeclinic.consultation.record",

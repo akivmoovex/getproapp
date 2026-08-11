@@ -4,9 +4,16 @@
  * Patient duplicate detection — warning workflow only (no automatic merge).
  *
  * Strength:
- * - strong: same live identifier type+value within HCO
- * - moderate: phone+similar name, name+DOB, email+similar name
+ * - strong: live authoritative identifier match within HCO, OR exact normalized
+ *   phone match (household/shared phone is legitimate — overrideable warning,
+ *   NOT a uniqueness constraint and NOT auto-merge)
+ * - moderate: email+similar name, name+DOB
  * - weak: name only (informational; never blocks)
+ *
+ * Phone exact match → strong possible-duplicate warning → authorized staff with
+ * activeclinic.patient.duplicate_override may confirm a distinct patient.
+ * Authoritative identifier conflicts (NRC/passport) are enforced separately via
+ * HCO-scoped uniqueness and are not overrideable.
  */
 
 const patientRepo = require("../repositories/patientRepository");

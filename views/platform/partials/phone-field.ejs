@@ -1,0 +1,10 @@
+<%#
+  Platform PhoneField (shared control).
+  UI target: [ Country +dial ▼ ] [ national number ]
+  Backend canonical store: E.164 (e.g. +260971234567). Flags are presentation-only — never persist emoji.
+
+  Implementation currently delegates to the ActiveClinic partial (same markup + ac-phone-field.js)
+  so BlessBoard / GetPro / Netraz can adopt one include path without duplicating parsers.
+  Locals: see views/activeclinic/partials/phone-field.ejs
+#%>
+<%- include('../../activeclinic/partials/phone-field') %>

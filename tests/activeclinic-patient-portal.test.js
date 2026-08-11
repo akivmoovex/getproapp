@@ -49,9 +49,15 @@ const {
   createStaffMember,
 } = require("../src/activeclinic/services/activeClinicStaffService");
 const {
+  assignStaffToFacility,
+} = require("../src/activeclinic/services/activeClinicStaffFacilityService");
+const {
   assignStaffRole,
-  NETWORK_ADMIN,
+  RECEPTIONIST,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
+const {
+  ensureDefaultDepartments,
+} = require("../src/activeclinic/services/activeClinicDepartmentService");
 
 let pool;
 let databaseUrl;
@@ -116,11 +122,62 @@ async function seedPublishedClinic(stamp) {
     phone: nextPhone(),
   });
   assert.equal(facility.ok, true);
+  await ensureDefaultDepartments(pool, {
+    organizationId: org.records.organization.id,
+    healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facility.facility.id,
+  });
   return {
     clinicKey: `ac_pt_${stamp}`,
     orgId: org.records.organization.id,
     hcoId: hco.healthcareOrganization.id,
     facilityId: facility.facility.id,
+  };
+}
+
+async function seedReceptionist(clinic) {
+  const phone = nextPhone();
+  const identity = await createPlatformIdentity(pool, {
+    primaryEmail: `recv.${phone.slice(-8)}@example.test`,
+    primaryPhone: phone,
+    phoneNormalized: phone,
+    phoneVerifiedAt: new Date().toISOString(),
+  });
+  assert.equal(identity.ok, true);
+  await setPlatformIdentityPassword(pool, {
+    identityId: identity.identity.id,
+    password: "DemoStaff-ActiveClinic-2026A",
+  });
+  const staff = await createStaffMember(pool, {
+    organizationId: clinic.orgId,
+    healthcareOrganizationId: clinic.hcoId,
+    firstName: "Portal",
+    lastName: "Reception",
+    employmentType: "permanent",
+    status: "active",
+    phone,
+    platformIdentityId: identity.identity.id,
+    jobTitle: "Receptionist",
+  });
+  assert.equal(staff.ok, true);
+  await assignStaffToFacility(pool, {
+    organizationId: clinic.orgId,
+    staffMemberId: staff.staffMember.id,
+    facilityId: clinic.facilityId,
+    isPrimary: true,
+  });
+  await assignStaffRole(pool, {
+    organizationId: clinic.orgId,
+    staffMemberId: staff.staffMember.id,
+    roleKey: RECEPTIONIST,
+    scopeType: "facility",
+    facilityId: clinic.facilityId,
+    assignmentOrigin: "system",
+    deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+  });
+  return {
+    identityId: identity.identity.id,
+    staffMemberId: staff.staffMember.id,
   };
 }
 
@@ -184,28 +241,17 @@ describe("ActiveClinic Patient Portal (P27)", () => {
     const clinic = await seedPublishedClinic(stamp);
     const phone = nextPhone();
 
-    const staff = await createStaffMember(pool, {
-      organizationId: clinic.orgId,
-      healthcareOrganizationId: clinic.hcoId,
-      firstName: "Net",
-      lastName: "Admin",
-      employmentType: "permanent",
-      status: "active",
-      phone: nextPhone(),
-    });
-    assert.equal(staff.ok, true);
-    await assignStaffRole(pool, {
-      organizationId: clinic.orgId,
-      staffMemberId: staff.staffMember.id,
-      roleKey: NETWORK_ADMIN,
-      scopeType: "organisation",
-    });
+    const receptionist = await seedReceptionist(clinic);
 
     const patient = await registerActiveClinicPatient(pool, {
       organizationId: clinic.orgId,
       healthcareOrganizationId: clinic.hcoId,
       facilityId: clinic.facilityId,
-      actor: { staffMemberId: staff.staffMember.id },
+      actor: {
+        staffMemberId: receptionist.staffMemberId,
+        platformIdentityId: receptionist.identityId,
+        organizationId: clinic.orgId,
+      },
       demographics: {
         firstName: "Pat",
         lastName: "Ent",
@@ -284,28 +330,17 @@ describe("ActiveClinic Patient Portal (P27)", () => {
     const clinic = await seedPublishedClinic(stamp);
     const phone = nextPhone();
 
-    const staff = await createStaffMember(pool, {
-      organizationId: clinic.orgId,
-      healthcareOrganizationId: clinic.hcoId,
-      firstName: "Net",
-      lastName: "Admin",
-      employmentType: "permanent",
-      status: "active",
-      phone: nextPhone(),
-    });
-    assert.equal(staff.ok, true);
-    await assignStaffRole(pool, {
-      organizationId: clinic.orgId,
-      staffMemberId: staff.staffMember.id,
-      roleKey: NETWORK_ADMIN,
-      scopeType: "organisation",
-    });
+    const receptionist = await seedReceptionist(clinic);
 
     const patient = await registerActiveClinicPatient(pool, {
       organizationId: clinic.orgId,
       healthcareOrganizationId: clinic.hcoId,
       facilityId: clinic.facilityId,
-      actor: { staffMemberId: staff.staffMember.id },
+      actor: {
+        staffMemberId: receptionist.staffMemberId,
+        platformIdentityId: receptionist.identityId,
+        organizationId: clinic.orgId,
+      },
       demographics: {
         firstName: "Guest",
         lastName: "Link",
@@ -332,7 +367,11 @@ describe("ActiveClinic Patient Portal (P27)", () => {
 
     // Ensure booking has patient_id for linking path
     await pool.query(
-      `UPDATE activeclinic.public_booking_requests SET patient_id = $1 WHERE id = $2`,
+      `UPDATE activeclinic.public_booking_requests
+          SET patient_id = $1,
+              patient_link_status = 'linked',
+              patient_linked_at = now()
+        WHERE id = $2`,
       [patient.patient.id, booking.booking.id]
     );
 
@@ -440,7 +479,7 @@ describe("ActiveClinic Patient Portal (P27)", () => {
     assert.equal(page.status, 200);
     assert.match(page.text, /data-ac-shell="patient"/);
     assert.match(page.text, /ac-patient-header/);
-    assert.match(page.text, /ac-patient\.css\?v=p27-1/);
+    assert.match(page.text, /ac-patient\.css\?v=/);
     assert.match(page.text, /<h1[^>]*>Patient portal sign in<\/h1>/i);
     assert.doesNotMatch(page.text, /href="#"/);
     assert.equal((page.text.match(/<h1/gi) || []).length, 1);
@@ -467,28 +506,17 @@ describe("ActiveClinic Patient Portal (P27)", () => {
     const clinic = await seedPublishedClinic(stamp);
     const phone = nextPhone();
 
-    const staff = await createStaffMember(pool, {
-      organizationId: clinic.orgId,
-      healthcareOrganizationId: clinic.hcoId,
-      firstName: "Net",
-      lastName: "Admin",
-      employmentType: "permanent",
-      status: "active",
-      phone: nextPhone(),
-    });
-    assert.equal(staff.ok, true);
-    await assignStaffRole(pool, {
-      organizationId: clinic.orgId,
-      staffMemberId: staff.staffMember.id,
-      roleKey: NETWORK_ADMIN,
-      scopeType: "organisation",
-    });
+    const receptionist = await seedReceptionist(clinic);
 
     const patient = await registerActiveClinicPatient(pool, {
       organizationId: clinic.orgId,
       healthcareOrganizationId: clinic.hcoId,
       facilityId: clinic.facilityId,
-      actor: { staffMemberId: staff.staffMember.id },
+      actor: {
+        staffMemberId: receptionist.staffMemberId,
+        platformIdentityId: receptionist.identityId,
+        organizationId: clinic.orgId,
+      },
       demographics: {
         firstName: "Filter",
         lastName: "Pat",
@@ -585,28 +613,17 @@ describe("ActiveClinic Patient Portal (P27)", () => {
     const clinic = await seedPublishedClinic(stamp);
     const phone = nextPhone();
 
-    const staff = await createStaffMember(pool, {
-      organizationId: clinic.orgId,
-      healthcareOrganizationId: clinic.hcoId,
-      firstName: "Net",
-      lastName: "Admin",
-      employmentType: "permanent",
-      status: "active",
-      phone: nextPhone(),
-    });
-    assert.equal(staff.ok, true);
-    await assignStaffRole(pool, {
-      organizationId: clinic.orgId,
-      staffMemberId: staff.staffMember.id,
-      roleKey: NETWORK_ADMIN,
-      scopeType: "organisation",
-    });
+    const receptionist = await seedReceptionist(clinic);
 
     const patient = await registerActiveClinicPatient(pool, {
       organizationId: clinic.orgId,
       healthcareOrganizationId: clinic.hcoId,
       facilityId: clinic.facilityId,
-      actor: { staffMemberId: staff.staffMember.id },
+      actor: {
+        staffMemberId: receptionist.staffMemberId,
+        platformIdentityId: receptionist.identityId,
+        organizationId: clinic.orgId,
+      },
       demographics: {
         firstName: "Link",
         lastName: "Pat",

@@ -13,7 +13,10 @@ const DEFAULT_V5_COOKIE = V5_SESSION_COOKIE;
 /**
  * @param {NodeJS.ProcessEnv} [env]
  */
-function getV5SessionCookieName(env) {
+function getV5SessionCookieName(env, req) {
+  if (req && req.platform && req.platform.sessionCookieName) {
+    return req.platform.sessionCookieName;
+  }
   const source = env || process.env;
   const { hasAuthoritativeDeploymentProfile, getDeploymentProfile } = require("../config/deploymentProfiles");
   if (hasAuthoritativeDeploymentProfile(source)) {
@@ -31,9 +34,10 @@ function getV5SessionCookieName(env) {
  */
 function setV5SessionCookie(res, rawToken, opts) {
   const env = (opts && opts.env) || process.env;
+  const req = opts && opts.req;
   const secure =
     opts && opts.secure !== undefined ? opts.secure : String(env.NODE_ENV || "") === "production";
-  res.cookie(getV5SessionCookieName(env), rawToken, {
+  res.cookie(getV5SessionCookieName(env, req), rawToken, {
     httpOnly: true,
     secure,
     sameSite: "lax",
@@ -44,13 +48,14 @@ function setV5SessionCookie(res, rawToken, opts) {
 
 /**
  * @param {import('express').Response} res
- * @param {{ secure?: boolean, env?: NodeJS.ProcessEnv }} [opts]
+ * @param {{ secure?: boolean, env?: NodeJS.ProcessEnv, req?: import('express').Request }} [opts]
  */
 function clearV5SessionCookie(res, opts) {
   const env = (opts && opts.env) || process.env;
+  const req = opts && opts.req;
   const secure =
     opts && opts.secure !== undefined ? opts.secure : String(env.NODE_ENV || "") === "production";
-  res.clearCookie(getV5SessionCookieName(env), {
+  res.clearCookie(getV5SessionCookieName(env, req), {
     httpOnly: true,
     secure,
     sameSite: "lax",
@@ -63,7 +68,7 @@ function clearV5SessionCookie(res, opts) {
  * @param {NodeJS.ProcessEnv} [env]
  */
 function readV5SessionCookie(req, env) {
-  const name = getV5SessionCookieName(env);
+  const name = getV5SessionCookieName(env, req);
   if (req.cookies && req.cookies[name]) return String(req.cookies[name]);
   // Manual Cookie header parse when cookie-parser is absent
   const header = req.headers && req.headers.cookie ? String(req.headers.cookie) : "";

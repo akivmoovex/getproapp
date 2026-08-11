@@ -17,6 +17,7 @@ const {
   FACILITY_ADMIN,
   CLINIC_MANAGER,
   RECEPTIONIST,
+  MEDICAL_RECORDS_OFFICER,
   NURSE,
   CLINICIAN,
   PHARMACIST,
@@ -75,6 +76,7 @@ const ROLE_LABELS = Object.freeze({
   activeclinic_facility_admin: "Facility administrator",
   activeclinic_clinic_manager: "Clinic manager",
   activeclinic_receptionist: "Receptionist",
+  activeclinic_medical_records_officer: "Medical records officer",
   activeclinic_nurse: "Nurse / Triage",
   activeclinic_clinician: "Clinician / Doctor",
   activeclinic_pharmacist: "Pharmacist",
@@ -97,7 +99,9 @@ const ROLE_DESCRIPTIONS = Object.freeze({
   [CLINIC_MANAGER]:
     "Operational oversight and reporting across departments without clinical or finance write rights.",
   [RECEPTIONIST]:
-    "Manages patient registration, appointments, check-in and reception queues.",
+    "Manages patient registration, appointments, check-in and reception queues. Edits demographics; does not manage authoritative identifiers by default.",
+  [MEDICAL_RECORDS_OFFICER]:
+    "Manages patient registration, demographics, and authoritative identifiers (NRC/passport). No clinical, pharmacy, diagnostics, billing, or staff administration rights.",
   [NURSE]: "Records triage and nursing intake information.",
   [CLINICIAN]:
     "Documents consultations, diagnoses and clinical orders.",
@@ -245,6 +249,7 @@ function listGrantableRoleOptions(auth) {
     FACILITY_ADMIN,
     CLINIC_MANAGER,
     RECEPTIONIST,
+    MEDICAL_RECORDS_OFFICER,
     NURSE,
     CLINICIAN,
     PHARMACIST,

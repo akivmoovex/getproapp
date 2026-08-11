@@ -66,7 +66,8 @@ async function createIdentityWithPassword(db, input) {
 
 /**
  * Register patient portal identity with guest token.
- * Token → booking → patient → link identity.
+ * Always links booking → portal identity.
+ * Only links portal → clinic patient when booking already has a deliberate patient_id.
  */
 async function registerPatientWithGuestToken(db, input) {
   const guestToken = String((input && input.guestToken) || "").trim();
@@ -101,37 +102,49 @@ async function registerPatientWithGuestToken(db, input) {
   }
 
   const bookingRow = await db.query(
-    `SELECT b.patient_id, b.organization_id, b.healthcare_organization_id
+    `SELECT b.id, b.patient_id, b.organization_id, b.healthcare_organization_id,
+            b.portal_platform_identity_id, b.patient_link_status
      FROM activeclinic.public_booking_requests b
      WHERE b.id = $1`,
     [booking.id]
   );
-  if (!bookingRow.rows[0] || !bookingRow.rows[0].patient_id) {
-    return { ok: false, code: RESULT.NO_MATCH, message: "booking_has_no_patient" };
+  if (!bookingRow.rows[0]) {
+    return { ok: false, code: RESULT.INVALID_TOKEN };
   }
 
-  const patientId = bookingRow.rows[0].patient_id;
-  const organizationId = bookingRow.rows[0].organization_id;
-  const healthcareOrganizationId = bookingRow.rows[0].healthcare_organization_id;
+  const bookingRec = bookingRow.rows[0];
+  const organizationId = bookingRec.organization_id;
+  const healthcareOrganizationId = bookingRec.healthcare_organization_id;
+  const existingPatientId = bookingRec.patient_id || null;
 
-  const patientRow = await db.query(
-    `SELECT id, platform_identity_id, phone_normalized, status
-     FROM activeclinic.patients
-     WHERE id = $1 AND organization_id = $2 AND healthcare_organization_id = $3`,
-    [patientId, organizationId, healthcareOrganizationId]
-  );
-
-  if (!patientRow.rows[0]) {
-    return { ok: false, code: RESULT.NO_MATCH };
+  if (
+    bookingRec.portal_platform_identity_id &&
+    bookingRec.patient_id
+  ) {
+    // Already fully claimed by another portal path — check conflicts later.
   }
 
-  const patient = patientRow.rows[0];
-  if (patient.status !== "active") {
-    return { ok: false, code: RESULT.NO_MATCH, message: "patient_not_active" };
-  }
+  let patient = null;
+  if (existingPatientId) {
+    const patientRow = await db.query(
+      `SELECT id, platform_identity_id, phone_normalized, status
+       FROM activeclinic.patients
+       WHERE id = $1 AND organization_id = $2 AND healthcare_organization_id = $3`,
+      [existingPatientId, organizationId, healthcareOrganizationId]
+    );
 
-  if (patient.platform_identity_id) {
-    return { ok: false, code: RESULT.PATIENT_ALREADY_LINKED };
+    if (!patientRow.rows[0]) {
+      return { ok: false, code: RESULT.NO_MATCH };
+    }
+
+    patient = patientRow.rows[0];
+    if (patient.status !== "active") {
+      return { ok: false, code: RESULT.NO_MATCH, message: "patient_not_active" };
+    }
+
+    if (patient.platform_identity_id) {
+      return { ok: false, code: RESULT.PATIENT_ALREADY_LINKED };
+    }
   }
 
   const existingIdentity = await identityRepo.findIdentitiesByNormalizedContact(db, {
@@ -164,23 +177,42 @@ async function registerPatientWithGuestToken(db, input) {
       return { ok: false, code: RESULT.TRANSACTION_ERROR, message: created.code };
     }
 
-    const linked = await linkIdentityToProductProfile(q, {
-      identityId: created.identity.id,
-      productKey: "activeclinic",
-      profileType: "activeclinic_patient",
-      productProfileId: patientId,
-    });
+    if (patient) {
+      const linked = await linkIdentityToProductProfile(q, {
+        identityId: created.identity.id,
+        productKey: "activeclinic",
+        profileType: "activeclinic_patient",
+        productProfileId: patient.id,
+      });
 
-    if (!linked.ok) {
+      if (!linked.ok) {
+        if (client) await client.query("ROLLBACK");
+        return { ok: false, code: RESULT.TRANSACTION_ERROR, message: linked.code };
+      }
+
+      await q.query(
+        `UPDATE activeclinic.patients
+         SET platform_identity_id = $1, updated_at = now()
+         WHERE id = $2`,
+        [created.identity.id, patient.id]
+      );
+    }
+
+    // Booking → portal ownership (never implies clinic patient create).
+    if (
+      bookingRec.portal_platform_identity_id &&
+      bookingRec.portal_platform_identity_id !== created.identity.id
+    ) {
       if (client) await client.query("ROLLBACK");
-      return { ok: false, code: RESULT.TRANSACTION_ERROR, message: linked.code };
+      return { ok: false, code: "link_conflict", message: "booking_owned_by_other_portal" };
     }
 
     await q.query(
-      `UPDATE activeclinic.patients
-       SET platform_identity_id = $1, updated_at = now()
+      `UPDATE activeclinic.public_booking_requests
+       SET portal_platform_identity_id = $1,
+           updated_at = now()
        WHERE id = $2`,
-      [created.identity.id, patientId]
+      [created.identity.id, booking.id]
     );
 
     await q.query(
@@ -190,11 +222,14 @@ async function registerPatientWithGuestToken(db, input) {
       [
         organizationId,
         healthcareOrganizationId,
-        patientId,
+        patient ? patient.id : null,
         created.identity.id,
-        "linked_via_guest_token",
+        patient ? "linked_via_guest_token" : "portal_booking_linked",
         booking.id,
-        JSON.stringify({ phone_normalized: phoneNorm.normalized }),
+        JSON.stringify({
+          phone_normalized: phoneNorm.normalized,
+          clinic_patient_linked: Boolean(patient),
+        }),
       ]
     );
 
@@ -204,7 +239,8 @@ async function registerPatientWithGuestToken(db, input) {
       ok: true,
       code: RESULT.OK,
       identityId: created.identity.id,
-      patientId,
+      patientId: patient ? patient.id : null,
+      portalOnly: !patient,
     };
   } catch (err) {
     if (client) await client.query("ROLLBACK").catch(() => {});
@@ -369,18 +405,18 @@ async function registerPatientWithPhoneMatch(db, input) {
 }
 
 /**
- * Link an existing guest booking to an authenticated patient via access token.
+ * Link an existing guest booking to an authenticated portal identity via access token.
+ * Does NOT set clinic patient_id / patient_link_status=linked.
  */
 async function linkGuestBookingToPatient(db, input) {
   const guestToken = String((input && input.guestToken) || "").trim();
-  const patientId = String((input && input.patientId) || "").trim();
+  const patientId = input && input.patientId ? String(input.patientId).trim() : null;
   const platformIdentityId = String((input && input.platformIdentityId) || "").trim();
   const organizationId = String((input && input.organizationId) || "").trim();
   const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
 
   if (
     !guestToken ||
-    !UUID_RE.test(patientId) ||
     !UUID_RE.test(platformIdentityId) ||
     !UUID_RE.test(organizationId) ||
     !UUID_RE.test(healthcareOrganizationId)
@@ -394,7 +430,8 @@ async function linkGuestBookingToPatient(db, input) {
   }
 
   const bookingRow = await db.query(
-    `SELECT b.id, b.request_number, b.patient_id, b.organization_id, b.healthcare_organization_id
+    `SELECT b.id, b.request_number, b.patient_id, b.organization_id, b.healthcare_organization_id,
+            b.portal_platform_identity_id, b.patient_link_status
      FROM activeclinic.public_booking_requests b
      WHERE b.id = $1`,
     [verified.booking.id]
@@ -412,7 +449,10 @@ async function linkGuestBookingToPatient(db, input) {
     return { ok: false, code: RESULT.INVALID_TOKEN };
   }
 
-  if (booking.patient_id && booking.patient_id !== patientId) {
+  if (
+    booking.portal_platform_identity_id &&
+    booking.portal_platform_identity_id !== platformIdentityId
+  ) {
     await db.query(
       `INSERT INTO activeclinic.patient_portal_link_events
         (organization_id, healthcare_organization_id, patient_id, platform_identity_id, event_type, booking_request_id, metadata_json)
@@ -424,20 +464,19 @@ async function linkGuestBookingToPatient(db, input) {
         platformIdentityId,
         "link_conflict",
         booking.id,
-        JSON.stringify({ reason: "booking_owned_by_other_patient" }),
+        JSON.stringify({ reason: "booking_owned_by_other_portal" }),
       ]
     );
     return { ok: false, code: "link_conflict" };
   }
 
-  if (!booking.patient_id) {
-    await db.query(
-      `UPDATE activeclinic.public_booking_requests
-       SET patient_id = $1, updated_at = now()
-       WHERE id = $2 AND patient_id IS NULL`,
-      [patientId, booking.id]
-    );
-  }
+  await db.query(
+    `UPDATE activeclinic.public_booking_requests
+     SET portal_platform_identity_id = $1,
+         updated_at = now()
+     WHERE id = $2`,
+    [platformIdentityId, booking.id]
+  );
 
   await db.query(
     `INSERT INTO activeclinic.patient_portal_link_events
@@ -448,9 +487,12 @@ async function linkGuestBookingToPatient(db, input) {
       healthcareOrganizationId,
       patientId,
       platformIdentityId,
-      "linked_via_guest_token",
+      "portal_booking_linked",
       booking.id,
-      JSON.stringify({ linked_existing_account: true }),
+      JSON.stringify({
+        linked_existing_account: true,
+        clinic_patient_auto_linked: false,
+      }),
     ]
   );
 
@@ -458,6 +500,8 @@ async function linkGuestBookingToPatient(db, input) {
     ok: true,
     code: RESULT.OK,
     requestNumber: booking.request_number,
+    clinicPatientLinked: false,
+    patientLinkStatus: booking.patient_link_status,
   };
 }
 

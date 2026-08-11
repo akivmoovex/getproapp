@@ -358,6 +358,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
       try {
         const loaded = await loadActiveClinicReceptionWalkInScreen(getPool(), {
           auth: req.activeClinicAuth,
+          bookingRequestId: String((req.query && req.query.booking_request_id) || "").trim() || null,
           values: {
             patientNumber: String((req.query && req.query.patient_number) || "").trim(),
             servicePointId: "",

@@ -1,0 +1,31 @@
+<%
+  var list = (pageData && pageData.bookingRequests) || {};
+  var bookings = list.bookings || [];
+  var actions = list.actions || {};
+%>
+<section class="ac-panel" data-ac-page-section="booking-requests">
+  <p class="ac-muted">Public bookings remain valid while clinic patient identity is unresolved. Phone matches are candidates only — never auto-linked.</p>
+  <% if (!bookings.length) { %>
+  <p class="ac-muted" data-ac-empty="booking-requests">No unresolved booking identity links.</p>
+  <% } else { %>
+  <ul class="ac-list" data-ac-booking-request-list="1">
+    <% bookings.forEach(function (b) { %>
+    <li class="ac-list__item" data-ac-link-status="<%= b.patientLinkStatus %>">
+      <div>
+        <strong><%= b.requestNumber %></strong>
+        <span class="ac-muted"><%= b.bookingKind %></span>
+        <span class="ac-status"><%= b.linkStatusLabel %></span>
+      </div>
+      <div class="ac-muted">
+        <%= b.patientFirstName %> <%= b.patientLastName %>
+        <% if (b.patientMatchCount) { %> · <%= b.patientMatchCount %> candidate(s)<% } %>
+      </div>
+      <a class="ac-btn ac-btn--ghost" href="/app/booking-requests/<%= encodeURIComponent(b.id) %>">Review</a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+  <% if (!actions.canLink) { %>
+  <p class="ac-muted">Patient search permission is required to resolve linkage.</p>
+  <% } %>
+</section>

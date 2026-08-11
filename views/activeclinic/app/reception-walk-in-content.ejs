@@ -20,6 +20,17 @@
 
     <p class="ac-muted">Register a walk-in patient arrival at <%= facility.displayName || 'this facility' %> and add to the queue.</p>
 
+    <% if (walkIn.bookingLinkage) { %>
+    <div class="ac-flash ac-flash--<%= walkIn.bookingLinkage.linked ? 'success' : 'warning' %>" role="status" data-ac-booking-linkage="1">
+      Booking <%= walkIn.bookingLinkage.requestNumber %>:
+      <strong><%= walkIn.bookingLinkage.linkStatusLabel %></strong>
+      <% if (!walkIn.bookingLinkage.linked) { %>
+      — Patient record not linked. Resolve identity before check-in.
+      <a href="<%= walkIn.bookingLinkage.reviewHref %>">Find existing patient</a>
+      <% } %>
+    </div>
+    <% } %>
+
     <div class="ac-form-field">
       <label class="ac-label" for="walkin_patient_number">Patient number</label>
       <input class="ac-input" id="walkin_patient_number" name="patient_number" type="text" required value="<%= values.patientNumber || '' %>" placeholder="P000001"/>

@@ -121,6 +121,8 @@ function mapPatientError(code) {
       return "You do not have permission to override duplicate warnings.";
     case PATIENT_RESULT.IDENTIFIER_CONFLICT:
       return "That identifier is already registered for another patient in this organization.";
+    case PATIENT_RESULT.IDENTIFIER_MANAGEMENT_REQUIRED:
+      return "You do not have permission to add authoritative patient identifiers.";
     case "name_required":
       return "First and last name are required.";
     case "date_of_birth_future":

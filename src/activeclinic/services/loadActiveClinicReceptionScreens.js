@@ -255,13 +255,60 @@ async function loadActiveClinicReceptionWalkInScreen(db, input) {
     includeInactive: false,
   });
 
+  let bookingLinkage = null;
+  const bookingRequestId = input.bookingRequestId
+    ? String(input.bookingRequestId).trim()
+    : null;
+  const formValues = {
+    patientNumber: "",
+    servicePointId: "",
+    checkInNote: "",
+    ...(values || {}),
+  };
+  if (bookingRequestId) {
+    const {
+      getBookingRequestById,
+      LINK_STATUS,
+    } = require("./activeClinicBookingPatientLinkageService");
+    const {
+      LINK_STATUS_LABELS,
+    } = require("./loadActiveClinicBookingLinkageScreens");
+    const loaded = await getBookingRequestById(db, {
+      organizationId: auth.organization.id,
+      bookingId: bookingRequestId,
+    });
+    if (loaded.ok) {
+      const b = loaded.booking;
+      bookingLinkage = {
+        bookingId: b.id,
+        requestNumber: b.requestNumber,
+        patientLinkStatus: b.patientLinkStatus,
+        linkStatusLabel: LINK_STATUS_LABELS[b.patientLinkStatus] || b.patientLinkStatus,
+        linked: b.patientLinkStatus === LINK_STATUS.LINKED && Boolean(b.patientId),
+        reviewHref: `/app/booking-requests/${encodeURIComponent(b.id)}`,
+      };
+      if (bookingLinkage.linked && b.patientId) {
+        const patient = await getPatientByOrgAndId(db, {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          patientId: b.patientId,
+        });
+        if (patient.ok && patient.patient) {
+          formValues.patientNumber =
+            formValues.patientNumber || patient.patient.patientNumber;
+        }
+      }
+    }
+  }
+
   return {
     ok: true,
     walkIn: {
-      values: values || { patientNumber: "", servicePointId: "", checkInNote: "" },
+      values: formValues,
       facility: selectedFacility,
       servicePoints: servicePoints.map(mapServicePoint),
       error: error || null,
+      bookingLinkage,
       actions: {
         canCheckIn: hasPerm(perms, PERM.CHECK_IN),
         canManageQueue: hasPerm(perms, PERM.MANAGE_QUEUE),

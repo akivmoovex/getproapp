@@ -380,10 +380,31 @@ describe("ActiveClinic foundation stub app", () => {
     }
   });
 
-  it("registerActiveClinicRoutes mounts GET / only", () => {
-    const app = express();
-    const result = registerActiveClinicRoutes(app, {});
-    assert.equal(result.registered, "activeclinic");
-    assert.deepEqual(result.routes, ["GET /"]);
+  it("registerActiveClinicRoutes requires activeclinic deployment and delegates", () => {
+    const prev = {};
+    for (const key of Object.keys(MINIMAL_AC)) {
+      prev[key] = process.env[key];
+      process.env[key] = MINIMAL_AC[key];
+    }
+    try {
+      const app = express();
+      const result = registerActiveClinicRoutes(app, { env: process.env });
+      assert.equal(result.registered, "activeclinic");
+      assert.equal(result.routes, "delegated-to-activeClinicFoundationServer");
+      assert.throws(() => {
+        const prevCode = process.env.PLATFORM_DEPLOYMENT_CODE;
+        process.env.PLATFORM_DEPLOYMENT_CODE = "blessboard-com-production";
+        try {
+          registerActiveClinicRoutes(app, { env: process.env });
+        } finally {
+          process.env.PLATFORM_DEPLOYMENT_CODE = prevCode;
+        }
+      });
+    } finally {
+      for (const key of Object.keys(MINIMAL_AC)) {
+        if (prev[key] === undefined) delete process.env[key];
+        else process.env[key] = prev[key];
+      }
+    }
   });
 });

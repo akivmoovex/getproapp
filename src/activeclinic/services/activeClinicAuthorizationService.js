@@ -41,6 +41,7 @@ const NETWORK_ADMIN = "activeclinic_network_admin";
 const FACILITY_ADMIN = "activeclinic_facility_admin";
 const CLINIC_MANAGER = "activeclinic_clinic_manager";
 const RECEPTIONIST = "activeclinic_receptionist";
+const MEDICAL_RECORDS_OFFICER = "activeclinic_medical_records_officer";
 const NURSE = "activeclinic_nurse";
 const CLINICIAN = "activeclinic_clinician";
 const PHARMACIST = "activeclinic_pharmacist";
@@ -67,6 +68,7 @@ const FACILITY_SCOPE_ONLY_ROLES = Object.freeze([
   FACILITY_ADMIN,
   CLINIC_MANAGER,
   RECEPTIONIST,
+  MEDICAL_RECORDS_OFFICER,
   NURSE,
   CLINICIAN,
   PHARMACIST,
@@ -83,6 +85,7 @@ const ACTIVECLINIC_ROLE_CATALOGUE = Object.freeze([
   FACILITY_ADMIN,
   CLINIC_MANAGER,
   RECEPTIONIST,
+  MEDICAL_RECORDS_OFFICER,
   NURSE,
   CLINICIAN,
   PHARMACIST,
@@ -345,6 +348,7 @@ module.exports = {
   FACILITY_ADMIN,
   CLINIC_MANAGER,
   RECEPTIONIST,
+  MEDICAL_RECORDS_OFFICER,
   NURSE,
   CLINICIAN,
   PHARMACIST,

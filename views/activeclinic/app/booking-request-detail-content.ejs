@@ -1,0 +1,98 @@
+<%
+  var detail = (pageData && pageData.bookingDetail) || {};
+  var booking = detail.booking || {};
+  var candidates = detail.candidates || [];
+  var actions = detail.actions || {};
+  var errors = detail.errors || [];
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var dupMatches = detail.duplicateMatches || [];
+%>
+<section class="ac-panel" data-ac-page-section="booking-request-detail" data-ac-link-status="<%= booking.patientLinkStatus || '' %>">
+  <% if (errors.length) { %>
+  <div class="ac-flash ac-flash--error" role="alert">
+    <ul><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul>
+  </div>
+  <% } %>
+
+  <h2 class="ac-dashboard__card-title">Booking</h2>
+  <dl class="ac-dl">
+    <div><dt>Request</dt><dd><%= booking.requestNumber || '' %></dd></div>
+    <div><dt>Kind</dt><dd><%= booking.bookingKind || '' %></dd></div>
+    <div><dt>Guest name</dt><dd><%= booking.patientFirstName || '' %> <%= booking.patientLastName || '' %></dd></div>
+    <div><dt>Phone</dt><dd><%= booking.phoneMasked || booking.patientPhoneDisplay || '—' %></dd></div>
+    <div><dt>Identity status</dt><dd data-ac-link-status-label="1"><%= booking.linkStatusLabel || booking.patientLinkStatus || '' %></dd></div>
+  </dl>
+
+  <% if (booking.patientLinkStatus === 'linked' && booking.patientId) { %>
+  <p class="ac-flash ac-flash--success" role="status">Clinic patient is linked.</p>
+  <p><a class="ac-btn" href="<%= detail.checkInHref || '/app/reception' %>">Continue to walk-in / check-in</a></p>
+  <% } else { %>
+
+  <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Possible clinic matches</h2>
+  <% if (!candidates.length) { %>
+  <p class="ac-muted">No strong or moderate candidates. You may create a new patient or search the directory.</p>
+  <% } else { %>
+  <ul class="ac-dup-list" data-ac-booking-candidates="1">
+    <% candidates.forEach(function (c) { %>
+    <li class="ac-dup-item" data-match-strength="<%= c.matchStrength %>">
+      <strong><%= c.displayName %></strong>
+      <span class="ac-muted"><%= c.patientNumberEnding || '' %></span>
+      <span class="ac-status"><%= c.matchStrength %></span>
+      <span class="ac-muted"><%= c.phoneMasked || '' %></span>
+      <% if (actions.canLink) { %>
+      <form method="post" action="/app/booking-requests/<%= encodeURIComponent(booking.id) %>/link" class="ac-inline-form" data-ac-loading="1">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <input type="hidden" name="patient_id" value="<%= c.patientId %>"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">Link this patient</button>
+      </form>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <% if (actions.canLink) { %>
+  <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Link by patient number</h2>
+  <form method="post" action="/app/booking-requests/<%= encodeURIComponent(booking.id) %>/link" class="ac-form" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+    <div class="ac-field">
+      <label class="ac-label" for="patient_number">Patient number</label>
+      <input class="ac-input" id="patient_number" name="patient_number" required autocomplete="off"/>
+    </div>
+    <button type="submit" class="ac-btn">Link existing patient</button>
+    <a class="ac-btn ac-btn--ghost" href="<%= detail.patientSearchHref || '/app/patients' %>">Open patient search</a>
+  </form>
+  <% } %>
+
+  <% if (actions.canCreate) { %>
+  <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Create new patient from booking</h2>
+  <p class="ac-muted">Uses the same duplicate and identifier rules as registration. Sparse bookings create incomplete registrations.</p>
+  <% if (dupMatches.length) { %>
+  <div class="ac-panel ac-duplicate-warning" role="status">
+    <p>Possible duplicates detected. Confirm this is a different person to continue.</p>
+  </div>
+  <% } %>
+  <form method="post" action="/app/booking-requests/<%= encodeURIComponent(booking.id) %>/create-patient" class="ac-form" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+    <div class="ac-field">
+      <label class="ac-label" for="date_of_birth">Date of birth <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="date_of_birth" name="date_of_birth" type="date"/>
+    </div>
+    <% if (dupMatches.length) { %>
+    <label class="ac-check">
+      <input type="checkbox" name="duplicate_override" value="1"/>
+      I confirm this is a distinct patient
+    </label>
+    <div class="ac-field">
+      <label class="ac-label" for="duplicate_override_reason">Reason</label>
+      <input class="ac-input" id="duplicate_override_reason" name="duplicate_override_reason" maxlength="120"/>
+    </div>
+    <% } %>
+    <button type="submit" class="ac-btn">Create patient and link</button>
+  </form>
+  <% } %>
+
+  <% } %>
+
+  <p style="margin-top:1.5rem"><a class="ac-btn ac-btn--ghost" href="/app/booking-requests">Back to list</a></p>
+</section>

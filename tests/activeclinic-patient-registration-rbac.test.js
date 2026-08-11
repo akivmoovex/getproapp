@@ -42,6 +42,7 @@ const {
   RADIOLOGY_STAFF,
   CASHIER,
   CLINIC_MANAGER,
+  MEDICAL_RECORDS_OFFICER,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 const {
   createActiveClinicFoundationApp,
@@ -233,7 +234,7 @@ describe("ActiveClinic patient registration RBAC + workflows", () => {
     if (pool) await pool.end();
   });
 
-  it("quick_register permission exists and is assigned to nurse/clinician", async (t) => {
+  it("quick_register permission exists and is assigned to nurse/clinician only by default", async (t) => {
     if (skipReason) return t.skip(skipReason);
     const perm = await pool.query(
       `SELECT permission_key FROM blessboard.permissions WHERE permission_key=$1`,
@@ -246,12 +247,34 @@ describe("ActiveClinic patient registration RBAC + workflows", () => {
          JOIN blessboard.roles r ON r.id = rp.role_id
          JOIN blessboard.permissions p ON p.id = rp.permission_id
         WHERE p.permission_key = $1
-          AND r.role_key IN ('activeclinic_nurse','activeclinic_clinician','activeclinic_receptionist')
         ORDER BY 1`,
       [PERM.QUICK_REGISTER]
     );
-    assert.ok(roles.rows.some((r) => r.role_key === "activeclinic_nurse"));
-    assert.ok(roles.rows.some((r) => r.role_key === "activeclinic_clinician"));
+    const keys = roles.rows.map((r) => r.role_key);
+    assert.ok(keys.includes("activeclinic_nurse"));
+    assert.ok(keys.includes("activeclinic_clinician"));
+    assert.ok(!keys.includes("activeclinic_receptionist"));
+  });
+
+  it("receptionist lacks manage_identifiers; medical records officer has it", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const rows = await pool.query(
+      `SELECT r.role_key
+         FROM blessboard.role_permissions rp
+         JOIN blessboard.roles r ON r.id = rp.role_id
+         JOIN blessboard.permissions p ON p.id = rp.permission_id
+        WHERE p.permission_key = $1
+          AND r.role_key IN (
+            'activeclinic_receptionist',
+            'activeclinic_clinic_manager',
+            'activeclinic_medical_records_officer'
+          )`,
+      [PERM.MANAGE_IDENTIFIERS]
+    );
+    const keys = rows.rows.map((r) => r.role_key);
+    assert.ok(keys.includes("activeclinic_medical_records_officer"));
+    assert.ok(!keys.includes("activeclinic_receptionist"));
+    assert.ok(!keys.includes("activeclinic_clinic_manager"));
   });
 
   it("receptionist can full-register; pharmacist/lab/radiology/cashier cannot create", async (t) => {
@@ -370,7 +393,7 @@ describe("ActiveClinic patient registration RBAC + workflows", () => {
     assert.equal(res.status, 200);
   });
 
-  it("duplicate phone exact is strong and org-scoped", async (t) => {
+  it("duplicate phone exact is strong warning; shared phone allowed with override; org-scoped", async (t) => {
     if (skipReason) return t.skip(skipReason);
     const a = await seedTenant("dupA");
     const b = await seedTenant("dupB");
@@ -406,6 +429,54 @@ describe("ActiveClinic patient registration RBAC + workflows", () => {
     });
     assert.equal(dupSameOrg.blocking, true);
     assert.ok(dupSameOrg.matches.some((m) => m.matchStrength === "strong"));
+    assert.ok(
+      dupSameOrg.matches.some((m) => (m.reasons || []).includes("phone_exact"))
+    );
+
+    const blocked = await registerActiveClinicPatient(pool, {
+      organizationId: a.orgId,
+      healthcareOrganizationId: a.hcoId,
+      facilityId: a.facilityId,
+      demographics: {
+        firstName: "Child",
+        lastName: "Banda",
+        dateOfBirth: "2015-01-02",
+        sexAtRegistration: "female",
+      },
+      contacts: { phone },
+      address: {},
+      actor: {
+        staffMemberId: receptionistA.staffMemberId,
+        platformIdentityId: receptionistA.identityId,
+        organizationId: a.orgId,
+      },
+    });
+    assert.equal(blocked.ok, false);
+    assert.equal(blocked.code, "duplicate_warning");
+
+    const shared = await registerActiveClinicPatient(pool, {
+      organizationId: a.orgId,
+      healthcareOrganizationId: a.hcoId,
+      facilityId: a.facilityId,
+      demographics: {
+        firstName: "Child",
+        lastName: "Banda",
+        dateOfBirth: "2015-01-02",
+        sexAtRegistration: "female",
+      },
+      contacts: { phone },
+      address: {},
+      duplicateOverride: true,
+      duplicateOverrideReason: "child_uses_parent_phone",
+      actor: {
+        staffMemberId: receptionistA.staffMemberId,
+        platformIdentityId: receptionistA.identityId,
+        organizationId: a.orgId,
+      },
+    });
+    assert.equal(shared.ok, true, JSON.stringify(shared));
+    assert.notEqual(shared.patient.id, created.patient.id);
+    assert.equal(shared.patient.phoneNormalized, created.patient.phoneNormalized);
 
     const dupOtherOrg = await findPotentialPatientDuplicates(pool, {
       organizationId: b.orgId,
@@ -416,6 +487,138 @@ describe("ActiveClinic patient registration RBAC + workflows", () => {
       dateOfBirth: "1988-03-12",
     });
     assert.equal(dupOtherOrg.matches.length, 0);
+  });
+
+  it("receptionist cannot submit authoritative identifiers; medical records can", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const tenant = await seedTenant("idn");
+    const receptionist = await seedUser(tenant, RECEPTIONIST);
+    const records = await seedUser(tenant, MEDICAL_RECORDS_OFFICER);
+    const nrc = `NRC-${Date.now().toString(36).toUpperCase()}`;
+
+    const denied = await registerActiveClinicPatient(pool, {
+      organizationId: tenant.orgId,
+      healthcareOrganizationId: tenant.hcoId,
+      facilityId: tenant.facilityId,
+      demographics: {
+        firstName: "No",
+        lastName: "IdPerm",
+        dateOfBirth: "1990-01-01",
+        sexAtRegistration: "female",
+      },
+      contacts: { phone: nextPhone() },
+      address: {},
+      identifiers: [{ identifierType: "national_id", identifierValue: nrc }],
+      actor: {
+        staffMemberId: receptionist.staffMemberId,
+        platformIdentityId: receptionist.identityId,
+        organizationId: tenant.orgId,
+      },
+    });
+    assert.equal(denied.ok, false);
+    assert.equal(denied.code, "identifier_management_required");
+
+    const ok = await registerActiveClinicPatient(pool, {
+      organizationId: tenant.orgId,
+      healthcareOrganizationId: tenant.hcoId,
+      facilityId: tenant.facilityId,
+      demographics: {
+        firstName: "Has",
+        lastName: "IdPerm",
+        dateOfBirth: "1990-01-01",
+        sexAtRegistration: "female",
+      },
+      contacts: { phone: nextPhone() },
+      address: {},
+      identifiers: [{ identifierType: "national_id", identifierValue: nrc }],
+      actor: {
+        staffMemberId: records.staffMemberId,
+        platformIdentityId: records.identityId,
+        organizationId: tenant.orgId,
+      },
+    });
+    assert.equal(ok.ok, true, JSON.stringify(ok));
+
+    const conflict = await registerActiveClinicPatient(pool, {
+      organizationId: tenant.orgId,
+      healthcareOrganizationId: tenant.hcoId,
+      facilityId: tenant.facilityId,
+      demographics: {
+        firstName: "Dup",
+        lastName: "Id",
+        dateOfBirth: "1991-02-02",
+        sexAtRegistration: "male",
+      },
+      contacts: { phone: nextPhone() },
+      address: {},
+      identifiers: [{ identifierType: "national_id", identifierValue: nrc }],
+      duplicateOverride: true,
+      duplicateOverrideReason: "should_not_bypass_nrc",
+      actor: {
+        staffMemberId: records.staffMemberId,
+        platformIdentityId: records.identityId,
+        organizationId: tenant.orgId,
+      },
+    });
+    assert.equal(conflict.ok, false);
+    assert.equal(conflict.code, "identifier_conflict");
+  });
+
+  it("multi-role receptionist + medical records unions identifier management", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const tenant = await seedTenant("union");
+    const user = await seedUser(tenant, RECEPTIONIST);
+    await assignStaffRole(pool, {
+      organizationId: tenant.orgId,
+      staffMemberId: user.staffMemberId,
+      roleKey: MEDICAL_RECORDS_OFFICER,
+      scopeType: "facility",
+      facilityId: tenant.facilityId,
+      assignmentOrigin: "system",
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    });
+    const nrc = `UNION-${Date.now().toString(36).toUpperCase()}`;
+    const created = await registerActiveClinicPatient(pool, {
+      organizationId: tenant.orgId,
+      healthcareOrganizationId: tenant.hcoId,
+      facilityId: tenant.facilityId,
+      demographics: {
+        firstName: "Union",
+        lastName: "Role",
+        dateOfBirth: "1985-05-05",
+        sexAtRegistration: "male",
+      },
+      contacts: { phone: nextPhone() },
+      address: {},
+      identifiers: [{ identifierType: "national_id", identifierValue: nrc }],
+      actor: {
+        staffMemberId: user.staffMemberId,
+        platformIdentityId: user.identityId,
+        organizationId: tenant.orgId,
+      },
+    });
+    assert.equal(created.ok, true, JSON.stringify(created));
+  });
+
+  it("cashier cannot open patient directory or create patients", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const tenant = await seedTenant("cash");
+    const cashier = await seedUser(tenant, CASHIER);
+    const app = makeApp();
+    const csrf = csrfPair();
+    const cookie = await makeSessionCookie(
+      cashier.identityId,
+      tenant.orgId,
+      tenant.facilityId
+    );
+    const list = await request(app)
+      .get("/app/patients")
+      .set("Cookie", [cookie, csrf.cookie]);
+    assert.equal(list.status, 403);
+    const create = await request(app)
+      .get("/app/patients/new")
+      .set("Cookie", [cookie, csrf.cookie]);
+    assert.equal(create.status, 403);
   });
 
   it("walk-in and appointment forms expose register link for receptionist", async (t) => {
@@ -444,7 +647,7 @@ describe("ActiveClinic patient registration RBAC + workflows", () => {
     assert.match(appt.text, /Register new patient/i);
   });
 
-  it("directory shows Add Patient for create and Quick Register for nurse-only", async (t) => {
+  it("directory shows Register patient for receptionist without Quick Register", async (t) => {
     if (skipReason) return t.skip(skipReason);
     const tenant = await seedTenant("dir");
     const receptionist = await seedUser(tenant, RECEPTIONIST);
@@ -467,6 +670,7 @@ describe("ActiveClinic patient registration RBAC + workflows", () => {
       );
     assert.equal(rec.status, 200);
     assert.match(rec.text, /Register patient/i);
+    assert.doesNotMatch(rec.text, /Quick Register/i);
 
     const nurseList = await request(app)
       .get("/app/patients")

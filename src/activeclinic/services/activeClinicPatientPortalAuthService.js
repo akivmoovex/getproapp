@@ -208,13 +208,28 @@ async function authenticatePatientIdentity(db, input) {
     healthcareOrganizationId,
   });
 
-  if (!patientResolved.ok) {
-    return {
-      ok: false,
-      result: RESULT.ACCESS_UNAVAILABLE,
-      message: GENERIC_ACCESS,
-      failureCategory: "patient_not_found",
-    };
+  let patient = patientResolved.ok ? patientResolved.patient : null;
+  let portalOnly = false;
+
+  if (!patient) {
+    const portalBookings = await db.query(
+      `SELECT id
+         FROM activeclinic.public_booking_requests
+        WHERE portal_platform_identity_id = $1
+          AND organization_id = $2
+          AND healthcare_organization_id = $3
+        LIMIT 1`,
+      [resolved.identityRow.id, organizationId, healthcareOrganizationId]
+    );
+    if (!portalBookings.rows[0]) {
+      return {
+        ok: false,
+        result: RESULT.ACCESS_UNAVAILABLE,
+        message: GENERIC_ACCESS,
+        failureCategory: "patient_not_found",
+      };
+    }
+    portalOnly = true;
   }
 
   const session = await createPlatformIdentitySession(db, {
@@ -225,7 +240,8 @@ async function authenticatePatientIdentity(db, input) {
     userAgent: input.userAgent || null,
     contextJson: {
       principalKind: "patient",
-      patientId: patientResolved.patient.id,
+      patientId: patient ? patient.id : null,
+      portalOnly,
       clinicKey,
       healthcareOrganizationId,
     },
@@ -245,10 +261,10 @@ async function authenticatePatientIdentity(db, input) {
     [
       organizationId,
       healthcareOrganizationId,
-      patientResolved.patient.id,
+      patient ? patient.id : null,
       resolved.identityRow.id,
       "login",
-      JSON.stringify({ clinic_key: clinicKey }),
+      JSON.stringify({ clinic_key: clinicKey, portal_only: portalOnly }),
     ]
   );
 
@@ -257,7 +273,8 @@ async function authenticatePatientIdentity(db, input) {
     result: RESULT.AUTHENTICATED,
     rawToken: session.rawToken,
     session: session.session,
-    patient: patientResolved.patient,
+    patient,
+    portalOnly,
   };
 }
 

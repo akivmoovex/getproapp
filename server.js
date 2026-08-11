@@ -101,9 +101,8 @@ console.log(
 const deployment = resolveDeploymentConfiguration();
 const runtimeMode = deployment.runtimeMode;
 
-if (runtimeMode === RUNTIME_V5_FOUNDATION || (!runtimeMode && isV5FoundationMode())) {
-  // Official BlessBoard profiles (.com production + .org staging): platform DB —
-  // no legacy public.tenants / session / ensure*Schema.
+if (runtimeMode === RUNTIME_V5_FOUNDATION || runtimeMode === "legacy-redirect" || (!runtimeMode && isV5FoundationMode())) {
+  // Profiled multi-product foundation (BlessBoard, ActiveClinic, GetPro, Netraz, Moovex, redirects).
   void require("./src/platform/http/v5FoundationServer")
     .startV5FoundationServer({ boot })
     .catch((err) => {

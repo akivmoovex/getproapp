@@ -62,7 +62,12 @@ function createLoadActiveClinicPatientAuth(deps) {
         return next();
       }
 
-      if (!sessionContext.patientId || !sessionContext.clinicKey || !sessionContext.healthcareOrganizationId) {
+      const portalOnly = sessionContext.portalOnly === true;
+      if (
+        (!portalOnly && !sessionContext.patientId) ||
+        !sessionContext.clinicKey ||
+        !sessionContext.healthcareOrganizationId
+      ) {
         req.activeClinicPatientAuth.reason = "invalid_session_context";
         return next();
       }
@@ -82,20 +87,42 @@ function createLoadActiveClinicPatientAuth(deps) {
         return next();
       }
 
-      const patientResolved = await resolvePatientForIdentity(pool, {
-        identityId: session.platformIdentityId,
-        organizationId: session.organizationId,
-        healthcareOrganizationId: sessionContext.healthcareOrganizationId,
-      });
+      let patient = null;
+      if (!portalOnly) {
+        const patientResolved = await resolvePatientForIdentity(pool, {
+          identityId: session.platformIdentityId,
+          organizationId: session.organizationId,
+          healthcareOrganizationId: sessionContext.healthcareOrganizationId,
+        });
 
-      if (!patientResolved.ok) {
-        req.activeClinicPatientAuth.reason = "patient_not_found";
-        return next();
-      }
+        if (!patientResolved.ok) {
+          req.activeClinicPatientAuth.reason = "patient_not_found";
+          return next();
+        }
 
-      if (patientResolved.patient.id !== sessionContext.patientId) {
-        req.activeClinicPatientAuth.reason = "patient_mismatch";
-        return next();
+        if (patientResolved.patient.id !== sessionContext.patientId) {
+          req.activeClinicPatientAuth.reason = "patient_mismatch";
+          return next();
+        }
+        patient = patientResolved.patient;
+      } else {
+        const portalBookings = await pool.query(
+          `SELECT id
+             FROM activeclinic.public_booking_requests
+            WHERE portal_platform_identity_id = $1
+              AND organization_id = $2
+              AND healthcare_organization_id = $3
+            LIMIT 1`,
+          [
+            session.platformIdentityId,
+            session.organizationId,
+            sessionContext.healthcareOrganizationId,
+          ]
+        );
+        if (!portalBookings.rows[0]) {
+          req.activeClinicPatientAuth.reason = "patient_not_found";
+          return next();
+        }
       }
 
       const orgRow = await pool.query(
@@ -127,6 +154,7 @@ function createLoadActiveClinicPatientAuth(deps) {
       req.activeClinicPatientAuth = {
         authenticated: true,
         reason: "ok",
+        portalOnly,
         platformIdentity: mapIdentity(identityRow),
         organization: {
           id: orgRow.rows[0].id,
@@ -141,7 +169,7 @@ function createLoadActiveClinicPatientAuth(deps) {
           clinicKey: sessionContext.clinicKey || orgRow.rows[0].organization_key,
           websitePublished: hcoRow.rows[0].website_published === true,
         },
-        patient: patientResolved.patient,
+        patient,
         clinicKey: sessionContext.clinicKey || orgRow.rows[0].organization_key,
         session,
       };

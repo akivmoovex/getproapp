@@ -1,13 +1,14 @@
 "use strict";
 
 /**
- * Product-aware route registration boundary for the shared V5 foundation runtime.
- * BlessBoard routers remain mounted from v5FoundationServer today; ActiveClinic
- * mounts a minimal stub until business routes exist.
+ * Product-aware route registration boundary for the shared foundation runtime.
+ * BlessBoard and ActiveClinic routers remain owned by their foundation servers;
+ * GetPro / Netraz (ngo) mount foundation surfaces; Moovex is corporate-only.
  */
 
 const { getDeploymentProfile, hasAuthoritativeDeploymentProfile } = require("../config/deploymentProfiles");
 const { getProduct, resolveProductOrError } = require("../config/productRegistry");
+const { isRoutePackAllowed } = require("./productBootstrap");
 
 /**
  * @param {NodeJS.ProcessEnv} [env]
@@ -42,7 +43,6 @@ function resolveRuntimeProductOrError(env) {
 function registerPlatformRoutes(app, ctx) {
   void app;
   void ctx;
-  // Platform-admin and shared middleware stay owned by the foundation server for now.
   return { registered: "platform", routes: [] };
 }
 
@@ -50,36 +50,102 @@ function registerPlatformRoutes(app, ctx) {
  * BlessBoard product route pack marker. Actual routers remain in v5FoundationServer
  * until a gradual extraction is safe.
  * @param {import('express').Application} app
- * @param {object} [ctx]
+ * @param {{ env?: NodeJS.ProcessEnv }} [ctx]
  */
 function registerBlessBoardRoutes(app, ctx) {
+  const env = (ctx && ctx.env) || process.env;
+  const productCode = resolveRuntimeProductCode(env);
+  if (!isRoutePackAllowed(productCode, "blessboard")) {
+    throw new Error(
+      `registerBlessBoardRoutes refused for deployment product ${JSON.stringify(productCode)}`
+    );
+  }
   void app;
-  void ctx;
   return { registered: "blessboard", routes: "delegated-to-v5FoundationServer" };
 }
 
 /**
- * ActiveClinic product routes — infrastructure stub only (no clinical modules).
+ * ActiveClinic product routes — full pack lives in activeClinicFoundationServer.
+ * This registrar remains a documented boundary; do not mount on foreign products.
  * @param {import('express').Application} app
  * @param {{ env?: NodeJS.ProcessEnv }} [ctx]
  */
 function registerActiveClinicRoutes(app, ctx) {
   const env = (ctx && ctx.env) || process.env;
-  const product = getProduct("activeclinic");
-  app.get("/", (req, res) => {
-    res.status(200).type("html").send(`<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>${product.displayName}</title></head>
-<body data-ac-page="foundation-stub">
-<main>
-  <h1>${product.displayName}</h1>
-  <p>Foundation runtime is active. Clinical modules are not implemented yet.</p>
-  <p><a href="/healthz">Health check</a></p>
-</main>
-</body></html>`);
-  });
-  void env;
-  return { registered: "activeclinic", routes: ["GET /"] };
+  const productCode = resolveRuntimeProductCode(env);
+  if (!isRoutePackAllowed(productCode, "activeclinic")) {
+    throw new Error(
+      `registerActiveClinicRoutes refused for deployment product ${JSON.stringify(productCode)}`
+    );
+  }
+  void app;
+  return { registered: "activeclinic", routes: "delegated-to-activeClinicFoundationServer" };
+}
+
+/**
+ * @param {import('express').Application} app
+ * @param {{ env?: NodeJS.ProcessEnv }} [ctx]
+ */
+function registerGetProRoutes(app, ctx) {
+  const env = (ctx && ctx.env) || process.env;
+  const productCode = resolveRuntimeProductCode(env);
+  if (!isRoutePackAllowed(productCode, "getpro")) {
+    throw new Error(
+      `registerGetProRoutes refused for deployment product ${JSON.stringify(productCode)}`
+    );
+  }
+  void app;
+  return { registered: "getpro", routes: "delegated-to-getproFoundationServer" };
+}
+
+/**
+ * Netraz (product key ngo) route pack boundary.
+ * @param {import('express').Application} app
+ * @param {{ env?: NodeJS.ProcessEnv }} [ctx]
+ */
+function registerNgoRoutes(app, ctx) {
+  const env = (ctx && ctx.env) || process.env;
+  const productCode = resolveRuntimeProductCode(env);
+  if (!isRoutePackAllowed(productCode, "ngo")) {
+    throw new Error(
+      `registerNgoRoutes refused for deployment product ${JSON.stringify(productCode)}`
+    );
+  }
+  const product = getProduct("ngo");
+  void app;
+  return {
+    registered: "ngo",
+    brand: product && product.brandName,
+    routes: "delegated-to-ngoFoundationServer",
+  };
+}
+
+/**
+ * Register only the route pack matching the deployment product.
+ * @param {import('express').Application} app
+ * @param {{ env?: NodeJS.ProcessEnv }} [ctx]
+ */
+function registerRoutesForDeploymentProduct(app, ctx) {
+  const env = (ctx && ctx.env) || process.env;
+  registerPlatformRoutes(app, { env });
+  const productCode = resolveRuntimeProductCode(env);
+  if (!productCode) {
+    return { registered: null, reason: "unprofiled" };
+  }
+  switch (productCode) {
+    case "blessboard":
+      return registerBlessBoardRoutes(app, { env });
+    case "activeclinic":
+      return registerActiveClinicRoutes(app, { env });
+    case "getpro":
+      return registerGetProRoutes(app, { env });
+    case "ngo":
+      return registerNgoRoutes(app, { env });
+    case "platform":
+      return registerPlatformRoutes(app, { env });
+    default:
+      throw new Error(`UNKNOWN_PLATFORM_PRODUCT: ${productCode}`);
+  }
 }
 
 module.exports = {
@@ -88,4 +154,7 @@ module.exports = {
   registerPlatformRoutes,
   registerBlessBoardRoutes,
   registerActiveClinicRoutes,
+  registerGetProRoutes,
+  registerNgoRoutes,
+  registerRoutesForDeploymentProduct,
 };

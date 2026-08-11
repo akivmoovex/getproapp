@@ -71,6 +71,9 @@ const {
   registerActiveClinicReceptionRoutes,
 } = require("./activeClinicReceptionRoutes");
 const {
+  registerActiveClinicBookingLinkageRoutes,
+} = require("./activeClinicBookingLinkageRoutes");
+const {
   registerActiveClinicClinicalRoutes,
 } = require("./activeClinicClinicalRoutes");
 const {
@@ -149,11 +152,13 @@ function createActiveClinicFoundationApp(options) {
   const getPool = typeof opts.getPool === "function" ? opts.getPool : getPgPool;
   const env = opts.env || process.env;
   const isProduction = String(env.NODE_ENV || "") === "production";
-  const productCode = resolveRuntimeProductCode(env);
-  if (productCode !== "activeclinic") {
-    throw new Error(
-      `createActiveClinicFoundationApp requires productCode=activeclinic (got ${JSON.stringify(productCode)})`
-    );
+  if (!opts.allowPlatformRuntimeChild) {
+    const productCode = resolveRuntimeProductCode(env);
+    if (productCode !== "activeclinic") {
+      throw new Error(
+        `createActiveClinicFoundationApp requires productCode=activeclinic (got ${JSON.stringify(productCode)})`
+      );
+    }
   }
 
   const app = express();
@@ -223,6 +228,7 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicPatientRoutes(app, { getPool, env, isProduction });
   registerActiveClinicAppointmentRoutes(app, { getPool, env, isProduction });
   registerActiveClinicReceptionRoutes(app, { getPool, env, isProduction });
+  registerActiveClinicBookingLinkageRoutes(app, { getPool, env, isProduction });
   registerActiveClinicClinicalRoutes(app, { getPool, env, isProduction });
   registerActiveClinicPharmacyRoutes(app, { getPool, env, isProduction });
   registerActiveClinicDiagnosticsRoutes(app, { getPool, env, isProduction });

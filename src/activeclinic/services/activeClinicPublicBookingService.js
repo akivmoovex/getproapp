@@ -9,6 +9,10 @@
 const crypto = require("crypto");
 const { normalizeActiveClinicPhone, normalizeActiveClinicEmail } = require("./normalizeActiveClinicContact");
 const { normalizeZambiaPhone } = require("./activeClinicPublicOnboardingService");
+const {
+  assessBookingIdentityMatches,
+  LINK_STATUS,
+} = require("./activeClinicBookingPatientLinkageService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -46,30 +50,55 @@ function hashToken(token) {
 }
 
 /**
- * Attempt to match guest patient by phone within org.
- * Returns existing patient if strong match found, null otherwise.
- * Never creates patient silently.
+ * @deprecated Phone-only match must not auto-link. Use assessBookingIdentityMatches.
+ * Retained for tests that assert non-creation behavior.
  */
 async function matchGuestPatient(db, input) {
-  const phoneRows = await db.query(
-    `SELECT id, patient_number, first_name, last_name, phone_normalized, status
-     FROM activeclinic.patients
-     WHERE organization_id = $1
-       AND healthcare_organization_id = $2
-       AND phone_normalized = $3
-       AND status IN ('active', 'inactive')
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [input.organizationId, input.healthcareOrganizationId, input.phoneNormalized]
-  );
-
-  if (!phoneRows.rows.length) {
-    return { matched: false, patientId: null };
+  const assessment = await assessBookingIdentityMatches(db, {
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    phoneNormalized: input.phoneNormalized,
+    firstName: input.firstName || null,
+    lastName: input.lastName || null,
+  });
+  if (!assessment.ok || !assessment.matchCount) {
+    return { matched: false, patientId: null, patientLinkStatus: LINK_STATUS.UNLINKED };
   }
+  // Deliberately do NOT return a patientId for auto-link.
+  return {
+    matched: true,
+    patientId: null,
+    patientLinkStatus: assessment.patientLinkStatus,
+    matchCount: assessment.matchCount,
+  };
+}
 
-  const patient = phoneRows.rows[0];
-  // Fuzzy name match optional — for now, trust phone match
-  return { matched: true, patientId: patient.id, patientNumber: patient.patient_number };
+async function finalizeBookingWithMatchAssessment(db, input) {
+  const assessment = await assessBookingIdentityMatches(db, {
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    phoneNormalized: input.phoneNormalized,
+    emailNormalized: input.emailNormalized,
+    firstName: input.firstName,
+    lastName: input.lastName,
+  });
+  if (!assessment.ok) {
+    return {
+      patientId: null,
+      patientLinkStatus: LINK_STATUS.UNLINKED,
+      patientMatchCount: 0,
+    };
+  }
+  const status =
+    assessment.matchCount === 0
+      ? LINK_STATUS.NEW_PATIENT_PENDING
+      : assessment.patientLinkStatus;
+  return {
+    patientId: null,
+    patientLinkStatus: status,
+    patientMatchCount: assessment.matchCount || 0,
+    assessment,
+  };
 }
 
 /**
@@ -142,11 +171,14 @@ async function createConsultationBookingRequest(db, input) {
     emailDisplay = email.display;
   }
 
-  // Attempt patient match
-  const match = await matchGuestPatient(db, {
+  // Assess candidates — never auto-link on phone/name alone.
+  const linkPrep = await finalizeBookingWithMatchAssessment(db, {
     organizationId,
     healthcareOrganizationId,
     phoneNormalized: phone.normalized,
+    emailNormalized,
+    firstName,
+    lastName,
   });
 
   const preferredStartsAt = input.preferredStartsAt ? new Date(input.preferredStartsAt) : null;
@@ -192,10 +224,12 @@ async function createConsultationBookingRequest(db, input) {
       patient_phone_normalized, patient_phone_display,
       patient_email_normalized, patient_email_display,
       visit_reason, preferred_starts_at, preferred_ends_at, timezone,
-      referral_status, idempotency_key
+      referral_status, idempotency_key,
+      patient_link_status, patient_match_count
     ) VALUES ($1, $2, $3, $4, 'consultation', 'submitted_pending_confirmation',
-              $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'not_required', $18)
-    RETURNING id, request_number, status, created_at`,
+              $5, $6, NULL, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'not_required', $17,
+              $18, $19)
+    RETURNING id, request_number, status, created_at, patient_link_status, patient_match_count`,
     [
       organizationId,
       healthcareOrganizationId,
@@ -203,7 +237,6 @@ async function createConsultationBookingRequest(db, input) {
       requestNumber,
       serviceTypeId,
       preferredStaffId,
-      match.patientId,
       firstName,
       lastName,
       phone.normalized,
@@ -215,11 +248,31 @@ async function createConsultationBookingRequest(db, input) {
       preferredEndsAt,
       timezone,
       idempotencyKey,
+      linkPrep.patientLinkStatus,
+      linkPrep.patientMatchCount,
     ]
   );
 
   const booking = bookingRow.rows[0];
-  
+
+  if (linkPrep.patientMatchCount > 0) {
+    await db.query(
+      `INSERT INTO activeclinic.patient_portal_link_events
+         (organization_id, healthcare_organization_id, patient_id, platform_identity_id,
+          event_type, booking_request_id, metadata_json)
+       VALUES ($1, $2, NULL, NULL, 'booking_patient_match_detected', $3, $4)`,
+      [
+        organizationId,
+        healthcareOrganizationId,
+        booking.id,
+        JSON.stringify({
+          match_count: linkPrep.patientMatchCount,
+          status: linkPrep.patientLinkStatus,
+        }),
+      ]
+    );
+  }
+
   // Issue opaque access token
   const token = generateOpaqueToken();
   const tokenHash = hashToken(token);
@@ -242,6 +295,10 @@ async function createConsultationBookingRequest(db, input) {
       status: booking.status,
       createdAt: booking.created_at,
       accessToken: token,
+      patientLinkStatus: booking.patient_link_status || linkPrep.patientLinkStatus,
+      patientMatchCount: booking.patient_match_count != null
+        ? Number(booking.patient_match_count)
+        : linkPrep.patientMatchCount,
     },
   };
 }
@@ -310,10 +367,13 @@ async function createProcedureBookingRequest(db, input) {
     emailDisplay = email.display;
   }
 
-  const match = await matchGuestPatient(db, {
+  const linkPrep = await finalizeBookingWithMatchAssessment(db, {
     organizationId,
     healthcareOrganizationId,
     phoneNormalized: phone.normalized,
+    emailNormalized,
+    firstName,
+    lastName,
   });
 
   const referralStatus = input.referralRequired === true
@@ -364,17 +424,18 @@ async function createProcedureBookingRequest(db, input) {
       patient_email_normalized, patient_email_display,
       visit_reason, preferred_starts_at, timezone,
       referral_status, referral_notes, preparation_acknowledged,
-      idempotency_key
+      idempotency_key,
+      patient_link_status, patient_match_count
     ) VALUES ($1, $2, $3, $4, 'procedure', 'submitted_pending_confirmation',
-              $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-    RETURNING id, request_number, status, created_at`,
+              $5, NULL, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+              $19, $20)
+    RETURNING id, request_number, status, created_at, patient_link_status, patient_match_count`,
     [
       organizationId,
       healthcareOrganizationId,
       facilityId,
       requestNumber,
       procedureId,
-      match.patientId,
       firstName,
       lastName,
       phone.normalized,
@@ -388,10 +449,30 @@ async function createProcedureBookingRequest(db, input) {
       referralNotes,
       preparationAcknowledged,
       idempotencyKey,
+      linkPrep.patientLinkStatus,
+      linkPrep.patientMatchCount,
     ]
   );
 
   const booking = bookingRow.rows[0];
+
+  if (linkPrep.patientMatchCount > 0) {
+    await db.query(
+      `INSERT INTO activeclinic.patient_portal_link_events
+         (organization_id, healthcare_organization_id, patient_id, platform_identity_id,
+          event_type, booking_request_id, metadata_json)
+       VALUES ($1, $2, NULL, NULL, 'booking_patient_match_detected', $3, $4)`,
+      [
+        organizationId,
+        healthcareOrganizationId,
+        booking.id,
+        JSON.stringify({
+          match_count: linkPrep.patientMatchCount,
+          status: linkPrep.patientLinkStatus,
+        }),
+      ]
+    );
+  }
 
   const token = generateOpaqueToken();
   const tokenHash = hashToken(token);
@@ -414,6 +495,10 @@ async function createProcedureBookingRequest(db, input) {
       status: booking.status,
       createdAt: booking.created_at,
       accessToken: token,
+      patientLinkStatus: booking.patient_link_status || linkPrep.patientLinkStatus,
+      patientMatchCount: booking.patient_match_count != null
+        ? Number(booking.patient_match_count)
+        : linkPrep.patientMatchCount,
     },
   };
 }
@@ -426,4 +511,5 @@ module.exports = {
   matchGuestPatient,
   createConsultationBookingRequest,
   createProcedureBookingRequest,
+  finalizeBookingWithMatchAssessment,
 };

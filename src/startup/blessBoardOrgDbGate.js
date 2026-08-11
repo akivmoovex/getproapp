@@ -132,19 +132,38 @@ async function verifyPlatformDatabaseIdentity(pool, opts = {}) {
     hasAuthoritativeDeploymentProfile,
   } = require("../platform/config/deploymentProfiles");
   const { isV5FoundationMode } = require("../platform/config/v5FoundationMode");
+  const {
+    normalizeIdentityKey,
+    validateIdentityKey,
+  } = require("../../db/scripts/lib/databaseIdentity");
 
   let expected =
     opts.expectedEnvironment != null
       ? String(opts.expectedEnvironment).trim().toLowerCase()
       : "";
-  if (!expected && hasAuthoritativeDeploymentProfile()) {
-    const profile = getDeploymentProfile();
-    expected = profile && profile.expectedDatabaseEnvironment
+  const profile = hasAuthoritativeDeploymentProfile()
+    ? getDeploymentProfile()
+    : null;
+  if (!expected && profile) {
+    expected = profile.expectedDatabaseEnvironment
       ? String(profile.expectedDatabaseEnvironment).trim().toLowerCase()
       : "";
   }
   if (!expected) {
     expected = explicitDeploymentEnv();
+  }
+
+  let expectedIdentityKey =
+    opts.expectedIdentityKey != null
+      ? String(opts.expectedIdentityKey).trim().toLowerCase()
+      : "";
+  if (!expectedIdentityKey && profile && profile.expectedIdentityKey) {
+    expectedIdentityKey = String(profile.expectedIdentityKey).trim().toLowerCase();
+  }
+  if (!expectedIdentityKey) {
+    expectedIdentityKey = String(process.env.DATABASE_IDENTITY_EXPECTED || "")
+      .trim()
+      .toLowerCase();
   }
 
   if (!isV5FoundationMode() && !hasAuthoritativeDeploymentProfile()) {
@@ -169,9 +188,12 @@ async function verifyPlatformDatabaseIdentity(pool, opts = {}) {
       status: "fatal",
       reason: "no-pool",
       expectedEnvironment: expected,
+      expectedIdentityKey: expectedIdentityKey || null,
       sanitizedMessage:
         `[blessboard] FATAL: V5 foundation requires a verified platform.database_identity ` +
-        `(expected environment_code=${expected}), but no PostgreSQL pool is configured.`,
+        `(expected environment_code=${expected}` +
+        `${expectedIdentityKey ? `, identity_key=${expectedIdentityKey}` : ""}), ` +
+        `but no PostgreSQL pool is configured.`,
     };
   }
 
@@ -184,9 +206,12 @@ async function verifyPlatformDatabaseIdentity(pool, opts = {}) {
         status: "fatal",
         reason: "identity-table-missing",
         expectedEnvironment: expected,
+        expectedIdentityKey: expectedIdentityKey || null,
         sanitizedMessage:
           `[blessboard] FATAL: platform.database_identity is missing (host ${hostFingerprint}). ` +
-          `Expected environment_code=${expected}. Run foundation migrations / identity init before serving traffic.`,
+          `Expected environment_code=${expected}` +
+          `${expectedIdentityKey ? ` identity_key=${expectedIdentityKey}` : ""}. ` +
+          `Run foundation migrations / identity init before serving traffic.`,
       };
     }
   } catch (err) {
@@ -221,10 +246,13 @@ async function verifyPlatformDatabaseIdentity(pool, opts = {}) {
       status: "fatal",
       reason: "missing",
       expectedEnvironment: expected,
+      expectedIdentityKey: expectedIdentityKey || null,
       identity: null,
       sanitizedMessage:
         `[blessboard] FATAL: no platform.database_identity row (host ${hostFingerprint}). ` +
-        `Expected environment_code=${expected}. Run: npm run db:identity:init.`,
+        `Expected environment_code=${expected}` +
+        `${expectedIdentityKey ? ` identity_key=${expectedIdentityKey}` : ""}. ` +
+        `Run: npm run db:identity:init.`,
     };
   }
 
@@ -236,21 +264,53 @@ async function verifyPlatformDatabaseIdentity(pool, opts = {}) {
       status: "fatal",
       reason: "mismatch",
       expectedEnvironment: expected,
+      expectedIdentityKey: expectedIdentityKey || null,
       identity: row,
       sanitizedMessage:
-        `[blessboard] FATAL: platform database identity mismatch (host ${hostFingerprint}). ` +
+        `[blessboard] FATAL: DATABASE_IDENTITY_MISMATCH (host ${hostFingerprint}). ` +
         `This database is marked environment_code=${actual}, but the deployment profile expects ${expected}. ` +
         "Refusing to start against the wrong database.",
     };
+  }
+
+  if (expectedIdentityKey) {
+    const keyCheck = validateIdentityKey(expectedIdentityKey);
+    if (!keyCheck.ok) {
+      return {
+        status: "fatal",
+        reason: "invalid-expected-identity-key",
+        expectedEnvironment: expected,
+        expectedIdentityKey,
+        identity: row,
+        sanitizedMessage:
+          `[blessboard] FATAL: expected identity_key ${JSON.stringify(expectedIdentityKey)} is invalid.`,
+      };
+    }
+    const actualKey = row.identity_key ? normalizeIdentityKey(row.identity_key) : "";
+    if (actualKey !== keyCheck.key) {
+      return {
+        status: "fatal",
+        reason: "identity-key-mismatch",
+        expectedEnvironment: expected,
+        expectedIdentityKey: keyCheck.key,
+        identity: row,
+        sanitizedMessage:
+          `[blessboard] FATAL: DATABASE_IDENTITY_MISMATCH (host ${hostFingerprint}). ` +
+          `identity_key database=${actualKey || "(null)"} expected=${keyCheck.key} ` +
+          `with environment_code=${actual}. Both identity_key and environment_code must match.`,
+      };
+    }
   }
 
   return {
     status: "ok",
     reason: "verified",
     expectedEnvironment: expected,
+    expectedIdentityKey: expectedIdentityKey || null,
     identity: row,
     sanitizedMessage:
-      `[blessboard] Platform database identity verified: environment_code=${actual} ` +
+      `[blessboard] Platform database identity verified: environment_code=${actual}` +
+      `${expectedIdentityKey ? ` identity_key=${expectedIdentityKey}` : ""} ` +
       `host=${hostFingerprint}.`,
   };
 }

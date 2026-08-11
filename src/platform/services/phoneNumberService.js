@@ -42,17 +42,38 @@ function resolvePhoneValidationMode(env) {
 }
 
 /**
- * Precedence: user selection → clinic default → platform default → ZM
+ * Precedence: user selection → clinic/org default → deployment default → platform default → ZM
  * @param {{
  *   selectedCountry?: string|null,
  *   clinicDefaultCountry?: string|null,
+ *   organizationDefaultCountry?: string|null,
+ *   deploymentDefaultCountry?: string|null,
  *   platformDefaultCountry?: string|null,
+ *   env?: NodeJS.ProcessEnv|object,
  * }} [input]
  */
 function resolveDefaultCountry(input) {
+  const env = (input && input.env) || process.env;
+  let deploymentDefault = input && input.deploymentDefaultCountry;
+  if (!deploymentDefault) {
+    try {
+      const {
+        hasAuthoritativeDeploymentProfile,
+        getDeploymentProfile,
+      } = require("../config/deploymentProfiles");
+      if (hasAuthoritativeDeploymentProfile(env)) {
+        const profile = getDeploymentProfile(env);
+        deploymentDefault = profile && profile.defaultCountry;
+      }
+    } catch (_err) {
+      deploymentDefault = null;
+    }
+  }
   const candidates = [
     input && input.selectedCountry,
     input && input.clinicDefaultCountry,
+    input && input.organizationDefaultCountry,
+    deploymentDefault,
     input && input.platformDefaultCountry,
     PLATFORM_DEFAULT_COUNTRY,
   ];
@@ -65,6 +86,14 @@ function resolveDefaultCountry(input) {
     }
   }
   return PLATFORM_DEFAULT_COUNTRY;
+}
+
+/**
+ * Deployment-aware default country (ZM unless profile overrides).
+ * @param {NodeJS.ProcessEnv|object} [env]
+ */
+function resolveDeploymentDefaultCountry(env) {
+  return resolveDefaultCountry({ env: env || process.env });
 }
 
 function listPhoneCountries() {
@@ -429,6 +458,7 @@ module.exports = {
   VALIDATION_MODES,
   resolvePhoneValidationMode,
   resolveDefaultCountry,
+  resolveDeploymentDefaultCountry,
   listPhoneCountries,
   getCallingCodeForCountry,
   parsePhoneInput,

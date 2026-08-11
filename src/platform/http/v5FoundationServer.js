@@ -344,6 +344,17 @@ function createV5FoundationApp(options) {
   const opts = options || {};
   const getPool = typeof opts.getPool === "function" ? opts.getPool : getPgPool;
   const env = opts.env || process.env;
+  if (!opts.allowPlatformRuntimeChild) {
+    const {
+      resolveRuntimeProductCode,
+    } = require("./productRouteBootstrap");
+    const productCode = resolveRuntimeProductCode(env);
+    if (productCode && productCode !== "blessboard") {
+      throw new Error(
+        `createV5FoundationApp requires productCode=blessboard (got ${JSON.stringify(productCode)})`
+      );
+    }
+  }
   const tenantRoutingMode = getBlessBoardTenantRoutingMode(env);
   const hostContextMode = getPlatformHostContextMode(env);
   // Shadow/authoritative always need platform + catalogue resolution.
@@ -1609,14 +1620,50 @@ async function verifyFoundationPool(pool) {
 async function startV5FoundationServer(opts) {
   void opts;
   const {
-    resolveDeploymentConfiguration,
-  } = require("../config/deploymentProfiles");
-  const deployment = resolveDeploymentConfiguration();
-  if (deployment.productCode === "activeclinic") {
+    resolveProductBootstrapTarget,
+  } = require("./productBootstrap");
+  const bootTarget = resolveProductBootstrapTarget();
+  if (!bootTarget.ok) {
+    // eslint-disable-next-line no-console
+    console.error(`[platform] FATAL: ${bootTarget.message}`);
+    process.exit(1);
+    return;
+  }
+  if (bootTarget.target === "legacy-redirect") {
+    const {
+      startLegacyDomainRedirectServer,
+    } = require("./legacyDomainRedirectServer");
+    return startLegacyDomainRedirectServer(opts);
+  }
+  if (bootTarget.target === "moovex-platform-runtime") {
+    const {
+      startMoovexPlatformRuntimeServer,
+    } = require("./moovexPlatformRuntimeServer");
+    return startMoovexPlatformRuntimeServer(opts);
+  }
+  if (bootTarget.target === "activeclinic") {
     const {
       startActiveClinicFoundationServer,
     } = require("../../activeclinic/http/activeClinicFoundationServer");
     return startActiveClinicFoundationServer(opts);
+  }
+  if (bootTarget.target === "getpro") {
+    const {
+      startGetProFoundationServer,
+    } = require("../../getpro/http/getproFoundationServer");
+    return startGetProFoundationServer(opts);
+  }
+  if (bootTarget.target === "ngo") {
+    const {
+      startNgoFoundationServer,
+    } = require("../../ngo/http/ngoFoundationServer");
+    return startNgoFoundationServer(opts);
+  }
+  if (bootTarget.target === "moovex-corporate") {
+    const {
+      startMoovexCorporateServer,
+    } = require("./moovexCorporateServer");
+    return startMoovexCorporateServer(opts);
   }
 
   const {

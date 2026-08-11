@@ -23,6 +23,7 @@ const MODULE_DEPARTMENT_REQUIREMENTS = Object.freeze({
   patients: null,
   appointments: "reception",
   reception: "reception",
+  booking_requests: null,
   clinical: ["opd", "triage"],
   pharmacy: "pharmacy",
   diagnostics: ["laboratory", "radiology"],

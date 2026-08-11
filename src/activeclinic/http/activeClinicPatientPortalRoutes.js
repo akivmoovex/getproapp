@@ -185,6 +185,9 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
       sha256Hex(
         `patient-link-booking|${req.params.clinicKey}|${
           (req.activeClinicPatientAuth &&
+            req.activeClinicPatientAuth.platformIdentity &&
+            req.activeClinicPatientAuth.platformIdentity.id) ||
+          (req.activeClinicPatientAuth &&
             req.activeClinicPatientAuth.patient &&
             req.activeClinicPatientAuth.patient.id) ||
           ""
@@ -978,6 +981,31 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     async (req, res, next) => {
       try {
         const auth = req.activeClinicPatientAuth;
+        if (!auth.patient || !auth.patient.id) {
+          const clinicCtx = await resolveClinicContext(req.params.clinicKey);
+          const csrfToken = issuePageCsrf(res, env, isProduction);
+          return res
+            .status(200)
+            .type("html")
+            .send(
+              renderPatientView(
+                "patient/dashboard",
+                patientViewPayload(
+                  clinicCtx || { clinicKey: req.params.clinicKey, clinic: null },
+                  csrfToken,
+                  {
+                    patientAuth: auth,
+                    activeNav: "profile",
+                    upcoming: [],
+                    pending: [],
+                    past: [],
+                    notice:
+                      "Your portal account is linked to bookings only. A clinic patient record has not been verified yet.",
+                  }
+                )
+              )
+            );
+        }
         const profile = await getPatientProfile(getPool(), {
           patientId: auth.patient.id,
           organizationId: auth.organization.id,
@@ -1506,7 +1534,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
 
         const linked = await linkGuestBookingToPatient(getPool(), {
           guestToken,
-          patientId: auth.patient.id,
+          patientId: (auth.patient && auth.patient.id) || null,
           platformIdentityId: auth.platformIdentity.id,
           organizationId: auth.organization.id,
           healthcareOrganizationId: auth.healthcareOrganization.id,

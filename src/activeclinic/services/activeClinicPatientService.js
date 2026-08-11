@@ -65,6 +65,7 @@ const RESULT = Object.freeze({
   ACCESS_DENIED: "access_denied",
   DUPLICATE_WARNING: "duplicate_warning",
   IDENTIFIER_CONFLICT: "identifier_conflict",
+  IDENTIFIER_MANAGEMENT_REQUIRED: "identifier_management_required",
   OVERRIDE_REQUIRED: "duplicate_override_required",
   OVERRIDE_DENIED: "duplicate_override_denied",
 });
@@ -331,6 +332,24 @@ async function registerActiveClinicPatient(db, input) {
     const n = normalizeIdentifierInput(raw);
     if (!n.ok) return { ok: false, code: n.code, patient: null };
     normalizedIdentifiers.push(n.value);
+  }
+
+  // Authoritative identifiers require manage_identifiers — create/update alone
+  // only covers demographics/contact. Do not silently drop submitted IDs.
+  if (normalizedIdentifiers.length) {
+    const idAuthz = await authorizePatientAction(db, {
+      organizationId,
+      facilityId,
+      permissionKey: PERM.MANAGE_IDENTIFIERS,
+      actor,
+    });
+    if (!idAuthz.ok) {
+      return {
+        ok: false,
+        code: RESULT.IDENTIFIER_MANAGEMENT_REQUIRED,
+        patient: null,
+      };
+    }
   }
 
   const emergencyIn = Array.isArray(input.emergencyContacts)

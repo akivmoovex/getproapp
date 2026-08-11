@@ -17,15 +17,34 @@ const RESULT = Object.freeze({
 });
 
 /**
- * List bookings for patient.
+ * List bookings for portal identity and/or linked clinic patient.
  */
 async function listPatientBookings(db, input) {
-  const patientId = String((input && input.patientId) || "").trim();
+  const patientId = input && input.patientId ? String(input.patientId).trim() : null;
+  const platformIdentityId =
+    input && input.platformIdentityId ? String(input.platformIdentityId).trim() : null;
   const organizationId = String((input && input.organizationId) || "").trim();
   const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
 
-  if (!UUID_RE.test(patientId) || !UUID_RE.test(organizationId) || !UUID_RE.test(healthcareOrganizationId)) {
+  if (
+    (!patientId || !UUID_RE.test(patientId)) &&
+    (!platformIdentityId || !UUID_RE.test(platformIdentityId))
+  ) {
     return { ok: false, code: RESULT.INVALID_INPUT, bookings: [] };
+  }
+  if (!UUID_RE.test(organizationId) || !UUID_RE.test(healthcareOrganizationId)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, bookings: [] };
+  }
+
+  const params = [organizationId, healthcareOrganizationId];
+  const ownership = [];
+  if (patientId && UUID_RE.test(patientId)) {
+    params.push(patientId);
+    ownership.push(`b.patient_id = $${params.length}`);
+  }
+  if (platformIdentityId && UUID_RE.test(platformIdentityId)) {
+    params.push(platformIdentityId);
+    ownership.push(`b.portal_platform_identity_id = $${params.length}`);
   }
 
   const rows = await db.query(
@@ -36,6 +55,7 @@ async function listPatientBookings(db, input) {
             b.visit_reason, b.preferred_starts_at, b.preferred_ends_at,
             b.timezone, b.referral_status, b.referral_notes,
             b.preparation_acknowledged, b.appointment_id,
+            b.patient_link_status, b.patient_id,
             b.created_at, b.updated_at,
             ast.display_name AS service_display_name,
             pp.display_name AS procedure_display_name,
@@ -50,11 +70,11 @@ async function listPatientBookings(db, input) {
        ON s.id = b.preferred_staff_id
      INNER JOIN activeclinic.facilities f
        ON f.id = b.facility_id
-     WHERE b.patient_id = $1
-       AND b.organization_id = $2
-       AND b.healthcare_organization_id = $3
+     WHERE b.organization_id = $1
+       AND b.healthcare_organization_id = $2
+       AND (${ownership.join(" OR ")})
      ORDER BY b.created_at DESC`,
-    [patientId, organizationId, healthcareOrganizationId]
+    params
   );
 
   const bookings = rows.rows.map((r) => ({
@@ -78,6 +98,8 @@ async function listPatientBookings(db, input) {
     referralNotes: r.referral_notes,
     preparationAcknowledged: r.preparation_acknowledged === true,
     appointmentId: r.appointment_id,
+    patientLinkStatus: r.patient_link_status || null,
+    patientId: r.patient_id || null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }));
@@ -86,18 +108,21 @@ async function listPatientBookings(db, input) {
 }
 
 /**
- * Get booking detail for patient (ownership check).
+ * Get booking detail for portal owner (patient and/or portal identity).
  * Accepts booking UUID or public request_number as bookingId.
  */
 async function getPatientBooking(db, input) {
   const bookingRef = String((input && input.bookingId) || "").trim();
-  const patientId = String((input && input.patientId) || "").trim();
+  const patientId = input && input.patientId ? String(input.patientId).trim() : null;
+  const platformIdentityId =
+    input && input.platformIdentityId ? String(input.platformIdentityId).trim() : null;
   const organizationId = String((input && input.organizationId) || "").trim();
   const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
 
   if (
     !bookingRef ||
-    !UUID_RE.test(patientId) ||
+    ((!patientId || !UUID_RE.test(patientId)) &&
+      (!platformIdentityId || !UUID_RE.test(platformIdentityId))) ||
     !UUID_RE.test(organizationId) ||
     !UUID_RE.test(healthcareOrganizationId)
   ) {
@@ -105,6 +130,17 @@ async function getPatientBooking(db, input) {
   }
 
   const byId = UUID_RE.test(bookingRef);
+  const params = [bookingRef, organizationId, healthcareOrganizationId];
+  const ownership = [];
+  if (patientId && UUID_RE.test(patientId)) {
+    params.push(patientId);
+    ownership.push(`b.patient_id = $${params.length}`);
+  }
+  if (platformIdentityId && UUID_RE.test(platformIdentityId)) {
+    params.push(platformIdentityId);
+    ownership.push(`b.portal_platform_identity_id = $${params.length}`);
+  }
+
   const row = await db.query(
     `SELECT b.id, b.request_number, b.booking_kind, b.status,
             b.service_type_id, b.procedure_id, b.preferred_staff_id,
@@ -113,6 +149,7 @@ async function getPatientBooking(db, input) {
             b.visit_reason, b.preferred_starts_at, b.preferred_ends_at,
             b.timezone, b.referral_status, b.referral_notes,
             b.preparation_acknowledged, b.appointment_id,
+            b.patient_link_status, b.patient_id,
             b.created_at, b.updated_at,
             ast.display_name AS service_display_name,
             pp.display_name AS procedure_display_name,
@@ -128,11 +165,11 @@ async function getPatientBooking(db, input) {
      INNER JOIN activeclinic.facilities f
        ON f.id = b.facility_id
      WHERE ${byId ? "b.id = $1" : "b.request_number = $1"}
-       AND b.patient_id = $2
-       AND b.organization_id = $3
-       AND b.healthcare_organization_id = $4
+       AND b.organization_id = $2
+       AND b.healthcare_organization_id = $3
+       AND (${ownership.join(" OR ")})
      LIMIT 1`,
-    [bookingRef, patientId, organizationId, healthcareOrganizationId]
+    params
   );
 
   if (!row.rows[0]) {
@@ -161,6 +198,8 @@ async function getPatientBooking(db, input) {
     referralNotes: r.referral_notes,
     preparationAcknowledged: r.preparation_acknowledged === true,
     appointmentId: r.appointment_id,
+    patientLinkStatus: r.patient_link_status || null,
+    patientId: r.patient_id || null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
