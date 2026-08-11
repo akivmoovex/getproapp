@@ -1,34 +1,44 @@
-<section class="ac-public-section ac-booking-wizard" data-ac-page-section="booking-choose-doctor">
+<section class="ac-public-section ac-booking-wizard acp-booking-shell" data-ac-page-section="booking-choose-doctor">
   <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
-  <h1>Choose a doctor</h1>
-  <p>Select a doctor if you have a preference, or choose any available doctor. We do not show live availability.</p>
-  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/doctor" class="ac-public-form">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <fieldset class="ac-booking-choice-list">
-      <legend class="ac-sr-only">Doctor preference</legend>
-      <label class="ac-booking-choice">
-        <input type="radio" name="doctorChoice" value="any"<%= (draft && draft.anyDoctor) ? ' checked' : '' %>/>
-        <span class="ac-booking-choice__body"><strong>Any available doctor</strong><span class="ac-booking-choice__meta">The clinic will assign based on availability</span></span>
-      </label>
-      <% if (profiles && profiles.length) { %>
-      <% profiles.forEach(function (doc) { %>
-      <label class="ac-booking-choice">
-        <input type="radio" name="doctorChoice" value="<%= doc.staffKey %>"<%= (draft && draft.staffKey === doc.staffKey) ? ' checked' : '' %>/>
-        <span class="ac-booking-choice__body">
-          <strong><%= doc.displayName %></strong>
-          <% if (doc.title) { %><span class="ac-booking-choice__meta"><%= doc.title %></span><% } %>
-        </span>
-      </label>
-      <% }); %>
-      <% } else { %>
-      <p class="ac-public-note">No doctor profiles are published. The clinic will assign a clinician.</p>
-      <% } %>
-    </fieldset>
-    <div class="ac-booking-wizard__actions">
-      <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
-      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book">Back</a>
+  <div class="acp-booking-layout">
+    <div class="acp-booking-layout__main">
+      <header class="acp-booking-header">
+        <h1>Choose a doctor</h1>
+        <p>Select a doctor if you have a preference, or choose any available doctor. We do not show live availability.</p>
+      </header>
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/doctor" class="ac-public-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <fieldset class="ac-booking-choice-list acp-choice-grid acp-choice-grid--doctors">
+          <legend class="ac-sr-only">Doctor preference</legend>
+          <label class="ac-booking-choice acp-choice-card acp-doctor-card<%= (draft && draft.anyDoctor) ? ' acp-choice-card--selected' : '' %>">
+            <input type="radio" name="doctorChoice" value="any"<%= (draft && draft.anyDoctor) ? ' checked' : '' %>/>
+            <span class="ac-booking-choice__body">
+              <strong>Any available doctor</strong>
+              <span class="ac-booking-choice__meta">The clinic will assign based on availability</span>
+            </span>
+          </label>
+          <% if (profiles && profiles.length) { %>
+          <% profiles.forEach(function (doc) { %>
+          <label class="ac-booking-choice acp-choice-card acp-doctor-card<%= (draft && draft.staffKey === doc.staffKey) ? ' acp-choice-card--selected' : '' %>">
+            <input type="radio" name="doctorChoice" value="<%= doc.staffKey %>"<%= (draft && draft.staffKey === doc.staffKey) ? ' checked' : '' %>/>
+            <span class="ac-booking-choice__body">
+              <span class="acp-doctor-card__avatar" aria-hidden="true"><%= (doc.displayName || '?').charAt(0) %></span>
+              <strong><%= doc.displayName %></strong>
+              <% if (doc.title) { %><span class="ac-booking-choice__meta"><%= doc.title %></span><% } %>
+            </span>
+          </label>
+          <% }); %>
+          <% } else { %>
+          <p class="ac-public-note">No doctor profiles are published. The clinic will assign a clinician.</p>
+          <% } %>
+        </fieldset>
+        <div class="ac-booking-wizard__actions acp-booking-actions">
+          <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+          <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book">Back</a>
+        </div>
+      </form>
     </div>
-  </form>
-  <%- include('../partials/booking-summary', { draft: draft }) %>
+    <%- include('../partials/booking-summary', { draft: draft }) %>
+  </div>
 </section>

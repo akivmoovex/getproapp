@@ -1,14 +1,21 @@
-<section class="ac-public-section" data-ac-page-section="my-booking-cancel-review">
-  <h1>Request cancellation</h1>
-  <p>Booking <strong><%= booking.requestNumber %></strong> — status: <strong data-ac-booking-status="<%= booking.status %>"><%= booking.status %></strong></p>
-  <p class="ac-public-banner">Submitting this form sends a cancellation <em>request</em> to the clinic. Your booking is not cancelled until the clinic confirms.</p>
+<section class="ac-public-section acp-page acp-booking-status-page" data-ac-page-section="my-booking-cancel-review">
+  <header class="acp-booking-status-header">
+    <p class="ac-public-eyebrow">My booking</p>
+    <h1>Request cancellation</h1>
+    <p>Booking <strong><%= booking.requestNumber %></strong> —
+      <span class="acp-status-badge acp-status-badge--<%= (booking.status || '').replace(/_/g, '-') %>" data-ac-booking-status="<%= booking.status %>"><%= (booking.status || '').replace(/_/g, ' ') %></span>
+    </p>
+  </header>
+  <p class="ac-public-banner acp-status-banner acp-status-banner--pending">Submitting this form sends a cancellation <em>request</em> to the clinic. Your booking is not cancelled until the clinic confirms.</p>
   <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-  <form method="post" action="/clinics/<%= clinic.clinicKey %>/my-booking/cancel" class="ac-public-form">
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/my-booking/cancel" class="ac-public-form acp-field-panel">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="token" value="<%= accessToken %>"/>
-    <label for="reason">Reason (optional)</label>
-    <input id="reason" name="reason" maxlength="500" value="<%= (formData && formData.reason) || '' %>"/>
-    <div class="ac-booking-wizard__actions">
+    <div class="acp-field">
+      <label for="reason">Reason (optional)</label>
+      <input id="reason" name="reason" maxlength="500" value="<%= (formData && formData.reason) || '' %>"/>
+    </div>
+    <div class="ac-booking-wizard__actions acp-booking-actions">
       <button type="submit" class="ac-btn ac-btn--primary">Submit cancellation request</button>
       <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/my-booking?token=<%= encodeURIComponent(accessToken) %>">Back to booking</a>
     </div>

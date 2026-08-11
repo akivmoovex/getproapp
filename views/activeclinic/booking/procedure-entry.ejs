@@ -1,84 +1,113 @@
-<section class="ac-public-section ac-booking-procedure" data-ac-page-section="procedure-booking">
-  <h1>Request a procedure</h1>
-  <h2><%= procedure.displayName %></h2>
+<section class="ac-public-section ac-booking-procedure acp-booking-shell" data-ac-page-section="procedure-booking">
+  <header class="acp-booking-header">
+    <p class="ac-public-eyebrow">Procedure request</p>
+    <h1>Request a procedure</h1>
+    <h2 class="acp-procedure-title"><%= procedure.displayName %></h2>
+  </header>
 
-  <section class="ac-booking-procedure__section" data-ac-procedure-section="information">
-    <h3>About this procedure</h3>
-    <% if (procedure.summary) { %><p><%= procedure.summary %></p><% } else { %>
-    <p class="ac-public-note">Detailed information is not published. Contact the clinic for questions.</p>
-    <% } %>
-    <% if (procedure.estimatedDurationMinutes) { %>
-    <p class="ac-booking-choice__meta">Estimated duration: <%= procedure.estimatedDurationMinutes %> minutes (clinic estimate only)</p>
-    <% } %>
-  </section>
+  <div class="acp-booking-layout acp-booking-layout--procedure">
+    <div class="acp-booking-layout__main">
+      <section class="ac-booking-procedure__section acp-info-card" data-ac-procedure-section="information">
+        <h3>About this procedure</h3>
+        <% if (procedure.summary) { %><p><%= procedure.summary %></p><% } else { %>
+        <p class="ac-public-note">Detailed information is not published. Contact the clinic for questions.</p>
+        <% } %>
+        <% if (procedure.estimatedDurationMinutes) { %>
+        <p class="ac-booking-choice__meta">Estimated duration: <%= procedure.estimatedDurationMinutes %> minutes (clinic estimate only)</p>
+        <% } %>
+      </section>
 
-  <section class="ac-booking-procedure__section" data-ac-procedure-section="referral">
-    <h3>Referral requirements</h3>
-    <% if (procedure.referralRequired) { %>
-    <p class="ac-public-banner" data-ac-referral="required">A referral is required. Secure document upload is not available online yet — the clinic will follow up after you submit this request.</p>
-    <% } else { %>
-    <p class="ac-public-note">No referral is required for this procedure.</p>
-    <% } %>
-  </section>
+      <section class="ac-booking-procedure__section acp-info-card" data-ac-procedure-section="referral">
+        <h3>Referral requirements</h3>
+        <% if (procedure.referralRequired) { %>
+        <p class="ac-public-banner" data-ac-referral="required">A referral is required. Secure document upload is not available online yet — the clinic will follow up after you submit this request.</p>
+        <% } else { %>
+        <p class="ac-public-note">No referral is required for this procedure.</p>
+        <% } %>
+      </section>
 
-  <section class="ac-booking-procedure__section" data-ac-procedure-section="preparation">
-    <h3>Preparation</h3>
-    <% if (procedure.preparationInstructions) { %>
-    <div class="ac-public-prep"><p><%= procedure.preparationInstructions %></p></div>
-    <% } else { %>
-    <p class="ac-public-note">Preparation instructions are not configured. Contact the clinic for guidance. This site does not generate clinical advice.</p>
-    <% } %>
-  </section>
+      <section class="ac-booking-procedure__section acp-info-card" data-ac-procedure-section="preparation">
+        <h3>Preparation</h3>
+        <% if (procedure.preparationInstructions) { %>
+        <div class="ac-public-prep"><p><%= procedure.preparationInstructions %></p></div>
+        <% } else { %>
+        <p class="ac-public-note">Preparation instructions are not configured. Contact the clinic for guidance. This site does not generate clinical advice.</p>
+        <% } %>
+      </section>
 
-  <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-  <% if (validationErrors && Object.keys(validationErrors).length) { %>
-  <div class="ac-public-error" role="alert" data-ac-form-state="validation_error">
-    <p>Please fix the following:</p>
-    <ul><% Object.values(validationErrors).forEach(function (msg) { %><li><%= msg %></li><% }); %></ul>
-  </div>
-  <% } %>
-
-  <section class="ac-booking-procedure__section" data-ac-procedure-section="patient">
-    <h3>Your details and preferred time</h3>
-    <p class="ac-public-banner" data-ac-slot-state="no_slots_published">Enter your preferred date and time — the clinic confirms availability. Live slots are not published online.</p>
-    <% const fd = formData || {}; %>
-    <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>" class="ac-public-form">
-      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-      <input type="hidden" name="idempotencyKey" value="<%= idempotencyKey || '' %>"/>
-      <label for="patientFirstName">First name</label>
-      <input id="patientFirstName" name="patientFirstName" required maxlength="80" value="<%= fd.patientFirstName || '' %>"/>
-      <label for="patientLastName">Last name</label>
-      <input id="patientLastName" name="patientLastName" required maxlength="80" value="<%= fd.patientLastName || '' %>"/>
-      <%- include('../partials/phone-field', {
-      id: 'patientPhone',
-      label: 'Phone',
-      required: true,
-      defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
-      selectedCountry: (fd && fd.phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
-      nationalValue: (fd && (fd.phoneNational || fd.patientPhoneNational)) || '',
-      e164Value: (fd && fd.patientPhone) || '',
-      countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
-      phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
-      countryFieldName: 'phone_country',
-      nationalFieldName: 'phone_national',
-      legacyFieldName: 'patientPhone',
-      showLegacyHidden: true
-    }) %>
-      <label for="patientEmail">Email (optional)</label>
-      <input id="patientEmail" name="patientEmail" type="email" value="<%= fd.patientEmail || '' %>"/>
-      <label for="preferredStartsAt">Preferred date and time</label>
-      <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" value="<%= fd.preferredStartsAt || '' %>"/>
-      <% if (procedure.referralRequired) { %>
-      <label for="referralNotes">Referral notes (optional — upload not available)</label>
-      <textarea id="referralNotes" name="referralNotes" maxlength="2000"><%= fd.referralNotes || '' %></textarea>
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <% if (validationErrors && Object.keys(validationErrors).length) { %>
+      <div class="ac-public-error" role="alert" data-ac-form-state="validation_error">
+        <p>Please fix the following:</p>
+        <ul><% Object.values(validationErrors).forEach(function (msg) { %><li><%= msg %></li><% }); %></ul>
+      </div>
       <% } %>
-      <label class="ac-public-check">
-        <input type="checkbox" name="preparationAcknowledged" value="1"<%= fd.preparationAcknowledged ? ' checked' : '' %>/>
-        I understand preparation guidance must come from the clinic when not listed above.
-      </label>
-      <button type="submit" class="ac-btn ac-btn--primary">Submit procedure request</button>
-    </form>
-  </section>
 
-  <%- include('../partials/sms-honesty-note') %>
+      <section class="ac-booking-procedure__section acp-patient-panel" data-ac-procedure-section="patient">
+        <h3>Your details and preferred time</h3>
+        <p class="ac-public-banner acp-slot-banner" data-ac-slot-state="no_slots_published">Enter your preferred date and time — the clinic confirms availability. Live slots are not published online.</p>
+        <% const fd = formData || {}; %>
+        <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>" class="ac-public-form">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <input type="hidden" name="idempotencyKey" value="<%= idempotencyKey || '' %>"/>
+          <div class="acp-field-grid">
+            <div class="acp-field">
+              <label for="patientFirstName">First name</label>
+              <input id="patientFirstName" name="patientFirstName" required maxlength="80" value="<%= fd.patientFirstName || '' %>"/>
+            </div>
+            <div class="acp-field">
+              <label for="patientLastName">Last name</label>
+              <input id="patientLastName" name="patientLastName" required maxlength="80" value="<%= fd.patientLastName || '' %>"/>
+            </div>
+          </div>
+          <%- include('../partials/phone-field', {
+          id: 'patientPhone',
+          label: 'Phone',
+          required: true,
+          defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          selectedCountry: (fd && fd.phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          nationalValue: (fd && (fd.phoneNational || fd.patientPhoneNational)) || '',
+          e164Value: (fd && fd.patientPhone) || '',
+          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+          phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+          countryFieldName: 'phone_country',
+          nationalFieldName: 'phone_national',
+          legacyFieldName: 'patientPhone',
+          showLegacyHidden: true
+        }) %>
+          <div class="acp-field">
+            <label for="patientEmail">Email (optional)</label>
+            <input id="patientEmail" name="patientEmail" type="email" value="<%= fd.patientEmail || '' %>"/>
+          </div>
+          <div class="acp-field">
+            <label for="preferredStartsAt">Preferred date and time</label>
+            <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" value="<%= fd.preferredStartsAt || '' %>"/>
+          </div>
+          <% if (procedure.referralRequired) { %>
+          <div class="acp-field">
+            <label for="referralNotes">Referral notes (optional — upload not available)</label>
+            <textarea id="referralNotes" name="referralNotes" maxlength="2000"><%= fd.referralNotes || '' %></textarea>
+          </div>
+          <% } %>
+          <label class="ac-public-check">
+            <input type="checkbox" name="preparationAcknowledged" value="1"<%= fd.preparationAcknowledged ? ' checked' : '' %>/>
+            I understand preparation guidance must come from the clinic when not listed above.
+          </label>
+          <div class="acp-booking-actions">
+            <button type="submit" class="ac-btn ac-btn--primary">Submit procedure request</button>
+            <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/procedures/<%= procedure.procedureKey %>">Back to procedure</a>
+          </div>
+        </form>
+      </section>
+      <%- include('../partials/sms-honesty-note') %>
+    </div>
+    <aside class="ac-booking-summary" data-ac-booking-summary>
+      <h2 class="ac-booking-summary__title">Procedure summary</h2>
+      <dl class="ac-booking-summary__list">
+        <div><dt>Procedure</dt><dd><%= procedure.displayName %></dd></div>
+        <div><dt>Referral</dt><dd><%= procedure.referralRequired ? 'Required' : 'Not required' %></dd></div>
+      </dl>
+      <p class="ac-public-note ac-booking-summary__note">The clinic confirms availability — this is not an automatic booking.</p>
+    </aside>
+  </div>
 </section>
