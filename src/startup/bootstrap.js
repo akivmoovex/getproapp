@@ -195,6 +195,26 @@ function computeDbUrlProvenance(before, parsedDotenvKeys, effectiveVarName, opts
 function runBootstrap() {
   if (_bootstrapSingleton) return _bootstrapSingleton;
 
+  // Hostinger sometimes injects NODE_ENV=Production. Normalize known values to lowercase
+  // before any production-only bootstrap branches (exact === "production" checks).
+  {
+    const raw = process.env.NODE_ENV;
+    if (raw != null && String(raw).trim() !== "") {
+      const lower = String(raw).trim().toLowerCase();
+      if (
+        (lower === "production" || lower === "test" || lower === "development") &&
+        String(raw) !== lower
+      ) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[getpro] NODE_ENV normalized from ${JSON.stringify(String(raw))} to ${JSON.stringify(lower)} ` +
+            `(use lowercase production|test|development on Hostinger).`
+        );
+        process.env.NODE_ENV = lower;
+      }
+    }
+  }
+
   const startupEntry = getStartupEntryLabel();
   /** Host-only DB presence before any production file merge (provenance). */
   const beforeDb = snapshotDbEnvPresence();

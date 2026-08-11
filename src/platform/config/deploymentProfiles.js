@@ -418,7 +418,22 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
 
   {
     const raw = envTrim(source, "DEPLOYMENT_ENV").toLowerCase();
-    if (raw) {
+    // Hostname-selected platform runtimes must set DEPLOYMENT_ENV explicitly.
+    // Missing value previously allowed silent legacy fallbacks elsewhere when the
+    // profile was not applied; require it here so Hostinger misconfig fails closed.
+    if (profile.productSelection === "hostname") {
+      if (!raw) {
+        return {
+          ok: false,
+          code: "deployment_env_required",
+          message:
+            `DEPLOYMENT_ENV is required for platform runtime ${profile.deploymentCode} ` +
+            `(expected ${profile.deploymentEnvironment}). ` +
+            `Set DEPLOYMENT_ENV=${profile.deploymentEnvironment} on Hostinger. ` +
+            `Refusing to start (will not silently treat this as production).`,
+          warnings,
+        };
+      }
       if (raw !== profile.deploymentEnvironment) {
         return {
           ok: false,
@@ -430,6 +445,78 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
         };
       }
       noteMatch("DEPLOYMENT_ENV", raw);
+    } else if (raw) {
+      if (raw !== profile.deploymentEnvironment) {
+        return {
+          ok: false,
+          code: "deployment_env_conflict",
+          message:
+            `DEPLOYMENT_ENV=${JSON.stringify(raw)} conflicts with profile ${profile.deploymentCode} ` +
+            `(expected ${profile.deploymentEnvironment}). Refusing to start.`,
+          warnings,
+        };
+      }
+      noteMatch("DEPLOYMENT_ENV", raw);
+    }
+  }
+
+  {
+    const expectedKey = profile.expectedIdentityKey
+      ? String(profile.expectedIdentityKey).trim().toLowerCase()
+      : "";
+    if (expectedKey) {
+      const raw = envTrim(source, "DATABASE_IDENTITY_EXPECTED").toLowerCase();
+      if (!raw) {
+        return {
+          ok: false,
+          code: "database_identity_expected_required",
+          message:
+            `DATABASE_IDENTITY_EXPECTED is required for ${profile.deploymentCode} ` +
+            `(expected ${expectedKey}). Set it on Hostinger. Refusing to start.`,
+          warnings,
+        };
+      }
+      if (raw !== expectedKey) {
+        return {
+          ok: false,
+          code: "database_identity_expected_conflict",
+          message:
+            `DATABASE_IDENTITY_EXPECTED=${JSON.stringify(raw)} conflicts with profile ` +
+            `${profile.deploymentCode} (expected ${expectedKey}). Refusing to start.`,
+          warnings,
+        };
+      }
+      noteMatch("DATABASE_IDENTITY_EXPECTED", raw);
+    }
+  }
+
+  {
+    const expectedDbEnv = profile.expectedDatabaseEnvironment
+      ? String(profile.expectedDatabaseEnvironment).trim().toLowerCase()
+      : "";
+    if (profile.productSelection === "hostname" && expectedDbEnv) {
+      const raw = envTrim(source, "DATABASE_IDENTITY_ENV").toLowerCase();
+      if (!raw) {
+        return {
+          ok: false,
+          code: "database_identity_env_required",
+          message:
+            `DATABASE_IDENTITY_ENV is required for platform runtime ${profile.deploymentCode} ` +
+            `(expected ${expectedDbEnv}). Set it on Hostinger. Refusing to start.`,
+          warnings,
+        };
+      }
+      if (raw !== expectedDbEnv) {
+        return {
+          ok: false,
+          code: "database_identity_env_conflict",
+          message:
+            `DATABASE_IDENTITY_ENV=${JSON.stringify(raw)} conflicts with profile ` +
+            `${profile.deploymentCode} (expected ${expectedDbEnv}). Refusing to start.`,
+          warnings,
+        };
+      }
+      noteMatch("DATABASE_IDENTITY_ENV", raw);
     }
   }
 

@@ -414,6 +414,8 @@ const PROFILE_MOOVEX_PLATFORM_TESTING = defineProfile({
   canonicalDomain: "pronline.org",
   publicOrigin: "https://pronline.org",
   apexDomains: [
+    "pronline.org",
+    "www.pronline.org",
     "blessboard.pronline.org",
     "activeclinic.pronline.org",
     "getpro.pronline.org",
@@ -427,6 +429,8 @@ const PROFILE_MOOVEX_PLATFORM_TESTING = defineProfile({
   jobsEnabled: false,
   hostContextMode: "diagnostic",
   foreignTlds: foreignExcept([
+    "pronline.org",
+    "www.pronline.org",
     "blessboard.pronline.org",
     "activeclinic.pronline.org",
     "getpro.pronline.org",
@@ -600,6 +604,7 @@ const ALL_SESSION_COOKIE_NAMES = Object.freeze([
   COOKIE_NETRAZ_PRONLINE,
   COOKIE_MOOVEX_ORG,
   "moovex_pronline_sid",
+  "moovex_pronline_hub_sid",
   "moovex_platform_testing_sid",
   "moovex_platform_production_sid",
   "blessboard_org_redirect_sid",
@@ -619,6 +624,7 @@ const ALL_CSRF_COOKIE_NAMES = Object.freeze([
   CSRF_COOKIE_NETRAZ_PRONLINE,
   CSRF_COOKIE_MOOVEX_ORG,
   "moovex_pronline_csrf",
+  "moovex_pronline_hub_csrf",
   "moovex_platform_testing_csrf",
   "moovex_platform_production_csrf",
   "blessboard_org_redirect_csrf",

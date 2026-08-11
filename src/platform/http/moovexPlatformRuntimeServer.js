@@ -21,6 +21,35 @@ const {
   buildRedirectLocation,
 } = require("./legacyDomainRedirectServer");
 
+const QA_PRODUCT_LINKS = Object.freeze([
+  { label: "BlessBoard", href: "https://blessboard.pronline.org" },
+  { label: "ActiveClinic", href: "https://activeclinic.pronline.org" },
+  { label: "GetPro", href: "https://getpro.pronline.org" },
+  { label: "Netraz", href: "https://netraz.pronline.org" },
+]);
+
+function renderPlatformQaLauncher(res, platform) {
+  const brand = (platform && platform.brand) || "Moovex Platform QA";
+  const links = QA_PRODUCT_LINKS.map(
+    (item) =>
+      `<li><a href="${item.href}">${item.label}</a> — <code>${item.href}</code></li>`
+  ).join("\n");
+  return res.status(200).type("html").send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${brand}</title></head>
+<body data-site-type="platform" data-brand="moovex-platform-qa" data-environment="testing">
+<main>
+  <h1>${brand}</h1>
+  <p>Testing platform hub on <code>pronline.org</code>. Product apps open on their own hostnames.</p>
+  <ul>
+${links}
+  </ul>
+  <p><a href="/healthz">Platform health check</a></p>
+</main>
+</body></html>`);
+}
+
 /**
  * @param {{
  *   env?: NodeJS.ProcessEnv,
@@ -58,7 +87,7 @@ function createMoovexPlatformRuntimeApp(options) {
   app.use(
     createLoadPlatformRequestContext({
       env,
-      allowTestHostOverride: String(env.NODE_ENV || "") !== "production",
+      allowTestHostOverride: String(env.NODE_ENV || "").toLowerCase() !== "production",
     })
   );
 
@@ -74,7 +103,6 @@ function createMoovexPlatformRuntimeApp(options) {
       if (!platform.redirectTargetOrigin) {
         return res.status(503).json({ ok: false, code: "redirect_not_configured" });
       }
-      // Prepared only — require explicit enable flag (Hostinger must not activate yet).
       if (String(env.BLESSBOARD_ORG_REDIRECT_ENABLED || "").trim() !== "1") {
         return res.status(503).json({
           ok: false,
@@ -83,6 +111,23 @@ function createMoovexPlatformRuntimeApp(options) {
         });
       }
       return res.redirect(301, buildRedirectLocation(platform.redirectTargetOrigin, req));
+    }
+
+    if (platform.siteType === "platform") {
+      if (platform.redirectTargetOrigin && platform.canonicalHost === "www.pronline.org") {
+        return res.redirect(301, buildRedirectLocation(platform.redirectTargetOrigin, req));
+      }
+      const pathName = String(req.path || "/");
+      if (pathName === "/" || pathName === "") {
+        return renderPlatformQaLauncher(res, platform);
+      }
+      // Do not expose product operational routes on the QA hub host.
+      return res.status(404).json({
+        ok: false,
+        code: "platform_qa_hub_only",
+        message: "pronline.org is the testing QA launcher only. Use product hostnames for app routes.",
+        links: QA_PRODUCT_LINKS,
+      });
     }
 
     if (platform.siteType === "corporate") {
@@ -167,6 +212,11 @@ function buildDefaultProductApps(opts) {
  */
 async function startMoovexPlatformRuntimeServer(opts) {
   const env = (opts && opts.env) || process.env;
+  const {
+    logPlatformRuntimeDiagnostics,
+  } = require("../../startup/platformRuntimeDiagnostics");
+  logPlatformRuntimeDiagnostics(env);
+
   const pool = getPgPool();
   const {
     assertPlatformDatabaseIdentityOrExit,
@@ -199,4 +249,6 @@ module.exports = {
   createMoovexPlatformRuntimeApp,
   buildDefaultProductApps,
   startMoovexPlatformRuntimeServer,
+  renderPlatformQaLauncher,
+  QA_PRODUCT_LINKS,
 };

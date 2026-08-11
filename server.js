@@ -30,6 +30,8 @@ assertBlessBoardOrgDbIsolationOrExit(boot);
 
 const { logBlessBoardRuntimeIsolationDiagnostics } = require("./src/startup/blessBoardRuntimeDiagnostics");
 logBlessBoardRuntimeIsolationDiagnostics();
+const { logPlatformRuntimeDiagnostics } = require("./src/startup/platformRuntimeDiagnostics");
+logPlatformRuntimeDiagnostics();
 
 if (!isPgConfigured()) {
   // Inconsistent env across restarts (missing vars on some boots) is usually a deployment/supervisor issue:

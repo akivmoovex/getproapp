@@ -14,7 +14,7 @@ const CANONICAL_PLATFORM_IDENTITY_KEY = "moovex-platform-v7";
  *   productKey: string|null,
  *   environment: "testing"|"production",
  *   brand: string,
- *   siteType: "product"|"corporate"|"legacy-redirect",
+ *   siteType: "product"|"corporate"|"legacy-redirect"|"platform",
  *   sessionCookieName: string,
  *   csrfCookieName: string,
  *   redirectTargetOrigin: string|null,
@@ -24,6 +24,28 @@ const CANONICAL_PLATFORM_IDENTITY_KEY = "moovex-platform-v7";
 
 /** @type {Readonly<Record<string, CanonicalHostSite>>} */
 const CANONICAL_HOST_REGISTRY = Object.freeze({
+  "pronline.org": Object.freeze({
+    hostname: "pronline.org",
+    productKey: null,
+    environment: "testing",
+    brand: "Moovex Platform QA",
+    siteType: "platform",
+    sessionCookieName: "moovex_pronline_hub_sid",
+    csrfCookieName: "moovex_pronline_hub_csrf",
+    redirectTargetOrigin: null,
+    status: "canonical",
+  }),
+  "www.pronline.org": Object.freeze({
+    hostname: "www.pronline.org",
+    productKey: null,
+    environment: "testing",
+    brand: "Moovex Platform QA",
+    siteType: "platform",
+    sessionCookieName: "moovex_pronline_hub_sid",
+    csrfCookieName: "moovex_pronline_hub_csrf",
+    redirectTargetOrigin: "https://pronline.org",
+    status: "canonical",
+  }),
   "blessboard.com": Object.freeze({
     hostname: "blessboard.com",
     productKey: "blessboard",
