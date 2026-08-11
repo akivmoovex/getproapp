@@ -38,3 +38,32 @@
 ## DATABASE_URL ENOTFOUND
 
 If logs show `getaddrinfo ENOTFOUND db.exoelhlxvstevtwbldyc.supabase.co`, Hostinger’s `DATABASE_URL` host is wrong or unreachable. Obtain the current connection string from the **intended testing** Supabase project and replace Hostinger `DATABASE_URL`. Do not invent URLs in git.
+
+`GETPRO_PG_SSL=no-verify` does **not** cause `ENOTFOUND` — that error is DNS resolution, before TCP/TLS.
+
+## Environment loading precedence (application)
+
+Order for `NODE_ENV=production` (Hostinger):
+
+1. **Hostinger-injected `process.env`** (and any supervisor-inherited env) — wins for every key already set
+2. **Early** `/home/u549637099/pronline/.env.production` (or other candidate) via dotenv `override: false` — fills **missing** keys only
+3. Repo `.env` — **skipped** in production
+4. Secondary production-file rescue — skipped when DB URL + `SESSION_SECRET` + `BASE_DOMAIN` already present (`mergeSkipped=yes`); does not undo early load
+
+`DATABASE_URL` effective value: host-injected if present before file merge; else filled from `.env.production` if missing; pool prefers `DATABASE_URL` over `GETPRO_DATABASE_URL`.
+
+`DBURL_TEST` is **not** used as a connection string. Presence often comes from `.env.production` early fill even when absent from hPanel.
+
+## Stale worker diagnosis
+
+If hPanel shows new V7 vars / new Supabase hostname but worker logs show old hostname + `dbUrlSource=host-injected` + unset `PLATFORM_DEPLOYMENT_CODE`:
+
+- Application bootstrap does **not** overwrite Hostinger keys
+- The running Node process still has the **old** injected `DATABASE_URL`
+- New hPanel values have not reached that worker — restart/rebuild the Node app so workers inherit the updated panel env
+
+Safe checks after redeploy:
+
+- Grep logs for `processMarker` / `dbUrlFingerprint phase=pre_file`
+- Testing-only: `GET /__platform/runtime` on `pronline.org` (blocked when `DEPLOYMENT_ENV=production`)
+

@@ -17,6 +17,7 @@
 const fs = require("fs");
 const path = require("path");
 const {
+  TRACKED_PRESENCE_KEYS,
   snapshotEnvPresenceYesNo,
   logEnvTracePhase,
   logEnvPresenceDiagnosticLine,
@@ -26,6 +27,13 @@ const {
   logEnvPresenceLostIfAny,
   buildWorkerLabel,
 } = require("./workerEnvTrace");
+const {
+  formatDatabaseUrlFingerprintLog,
+} = require("./databaseUrlFingerprint");
+const {
+  buildStartupProcessMarker,
+  formatStartupProcessMarkerLog,
+} = require("./startupProcessMarker");
 
 /** Generic deterministic fallback (last resort in built-in list). */
 const DEFAULT_PRODUCTION_ENV_FILE_FALLBACK = "/home/u549637099/.env.production";
@@ -216,15 +224,31 @@ function runBootstrap() {
   }
 
   const startupEntry = getStartupEntryLabel();
+  const appRoot = getAppRootFromBootstrap();
+
+  // TRUE earliest snapshot — before any dotenv / .env.production merge.
+  // Distinguishes "Hostinger never injected" from "bootstrap overwrote/removed".
+  const envPresencePreFile = snapshotEnvPresenceYesNo();
   /** Host-only DB presence before any production file merge (provenance). */
   const beforeDb = snapshotDbEnvPresence();
-  const appRoot = getAppRootFromBootstrap();
+  logEnvTracePhase("pre_file", { startupEntry, presence: envPresencePreFile });
+  logEnvPresenceDiagnosticLine({ startupEntry, presence: envPresencePreFile });
+  // eslint-disable-next-line no-console
+  console.log(formatDatabaseUrlFingerprintLog("pre_file", process.env, { sourceKind: "host-or-inherited" }));
+  // eslint-disable-next-line no-console
+  console.log(
+    formatStartupProcessMarkerLog(
+      buildStartupProcessMarker({ appRoot, phase: "pre_file" })
+    )
+  );
 
   let earlyProductionEnvPath = null;
   let earlyProductionEnvExists = false;
   let earlyProductionEnvLoaded = false;
   /** @type {string[]} */
   let earlyProductionFileParsedKeys = [];
+  /** @type {string[]} */
+  let earlyProductionFilledKeys = [];
   /** @type {string[]} */
   let productionFallbackCandidatesOrdered = [];
   let productionFallbackCandidatesExistsSummary = "";
@@ -240,12 +264,17 @@ function runBootstrap() {
     earlyProductionEnvLoaded = res.loaded;
     earlyProductionFileParsedKeys = res.parsedKeys;
     earlyProductionLoadError = res.loadError;
+    const afterEarly = snapshotEnvPresenceYesNo();
+    earlyProductionFilledKeys = TRACKED_PRESENCE_KEYS.filter(
+      (k) => envPresencePreFile[k] === "no" && afterEarly[k] === "yes"
+    );
     logEarlyProductionEnvFileResolution({
       startupEntry,
       candidatesOrdered: res.candidatesOrdered,
       candidatesExistsSummary: res.candidatesExistsSummary,
       selectedPath: res.selectedPath,
       loaded: res.loaded,
+      filledKeys: earlyProductionFilledKeys,
     });
     if (earlyProductionLoadError != null && !res.loaded) {
       // eslint-disable-next-line no-console
@@ -255,11 +284,18 @@ function runBootstrap() {
         ).slice(0, 200)}`
       );
     }
+    logEnvTracePhase("after_early_production_file", { startupEntry, presence: afterEarly });
+    // eslint-disable-next-line no-console
+    console.log(
+      formatDatabaseUrlFingerprintLog("after_early_production_file", process.env, {
+        sourceKind: earlyProductionEnvLoaded ? "host+early-file-fill" : "host-or-inherited",
+      })
+    );
   }
 
+  // Backward-compatible alias: historically named "earliest" but was taken AFTER early file load.
+  // Prefer envPresencePreFile for Hostinger-vs-bootstrap diagnosis.
   const envPresenceEarliest = snapshotEnvPresenceYesNo();
-  logEnvTracePhase("earliest", { startupEntry });
-  logEnvPresenceDiagnosticLine({ startupEntry });
 
   const envPath = getEnvFilePath();
   const serverJsPath = getServerJsPath();
@@ -323,14 +359,10 @@ function runBootstrap() {
       exists: productionFileExists,
       loaded: productionFileLoaded,
       mergeSkipped: productionFileMergeSkipped,
+      earlyAlreadyLoaded: earlyProductionEnvLoaded,
       filledKeys: productionFileFilledKeys,
       error: productionFileError,
-      presence: {
-        DATABASE_URL: fin.DATABASE_URL,
-        GETPRO_DATABASE_URL: fin.GETPRO_DATABASE_URL,
-        SESSION_SECRET: fin.SESSION_SECRET,
-        BASE_DOMAIN: fin.BASE_DOMAIN,
-      },
+      presence: fin,
     });
   }
 
@@ -347,8 +379,17 @@ function runBootstrap() {
   });
 
   const envPresenceFinal = snapshotEnvPresenceYesNo();
-  logEnvTracePhase("bootstrap_complete", { startupEntry });
-  logEnvPresenceLostIfAny(envPresenceEarliest, envPresenceFinal);
+  logEnvTracePhase("bootstrap_complete", { startupEntry, presence: envPresenceFinal });
+  // eslint-disable-next-line no-console
+  console.log(
+    formatDatabaseUrlFingerprintLog("bootstrap_complete", process.env, {
+      sourceKind: dbProvenance.kind === "host" ? "host-injected" : dbProvenance.kind,
+    })
+  );
+  const processMarker = buildStartupProcessMarker({ appRoot, phase: "bootstrap_complete" });
+  // eslint-disable-next-line no-console
+  console.log(formatStartupProcessMarkerLog(processMarker));
+  logEnvPresenceLostIfAny(envPresencePreFile, envPresenceFinal);
   logWorkerIdentityLine({
     startupEntry,
     skipDotenv,
@@ -372,8 +413,11 @@ function runBootstrap() {
     effectiveVarName,
     dbProvenance,
     workerLabel: buildWorkerLabel(startupEntry),
+    envPresencePreFile,
     envPresenceEarliest,
     envPresenceFinal,
+    earlyProductionFilledKeys,
+    processMarker,
     productionEnvFilePath,
     productionFileExists,
     productionFileLoaded,

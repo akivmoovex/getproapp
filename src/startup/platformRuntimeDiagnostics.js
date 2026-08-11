@@ -51,8 +51,24 @@ function buildPlatformRuntimeDiagnosticLines(env) {
     `  DBURL_TEST present: ${present("DBURL_TEST", source)}`,
     `  SESSION_SECRET present: ${present("SESSION_SECRET", source)}`,
     `  BASE_DOMAIN present: ${present("BASE_DOMAIN", source)}`,
+    `  GETPRO_PG_SSL: ${
+      source.GETPRO_PG_SSL != null && String(source.GETPRO_PG_SSL).trim() !== ""
+        ? String(source.GETPRO_PG_SSL).trim()
+        : "(unset)"
+    }`,
     `  authoritative profile: ${hasAuthoritativeDeploymentProfile(source) ? "yes" : "no"}`,
   ];
+  try {
+    const { fingerprintEffectiveDatabaseUrl } = require("./databaseUrlFingerprint");
+    const fp = fingerprintEffectiveDatabaseUrl(source);
+    lines.push(
+      `  DATABASE_URL hostname: ${fp.fingerprint.hostname || "(none)"} ` +
+        `(sourceVar=${fp.sourceVar}, protocol=${fp.fingerprint.protocol || "n/a"}, ` +
+        `port=${fp.fingerprint.port || "default"}, database=${fp.fingerprint.database || "n/a"})`
+    );
+  } catch (_err) {
+    lines.push("  DATABASE_URL hostname: (fingerprint unavailable)");
+  }
   if (!hasAuthoritativeDeploymentProfile(source)) {
     lines.push(
       "  WARNING: no authoritative PLATFORM_DEPLOYMENT_CODE profile — legacy defaults may apply",

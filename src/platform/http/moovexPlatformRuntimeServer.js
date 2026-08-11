@@ -55,6 +55,7 @@ ${links}
  *   env?: NodeJS.ProcessEnv,
  *   getPool?: () => { query: Function },
  *   productApps?: Record<string, import('express').Application>,
+ *   boot?: object,
  * }} [options]
  */
 function createMoovexPlatformRuntimeApp(options) {
@@ -82,6 +83,22 @@ function createMoovexPlatformRuntimeApp(options) {
       expectedIdentityKey: deployment.expectedIdentityKey || null,
       expectedDatabaseEnvironment: deployment.expectedDatabaseEnvironment,
     });
+  });
+
+  // Testing-only non-secret runtime fingerprint (never returns DATABASE_URL / secrets).
+  app.get("/__platform/runtime", (req, res) => {
+    const {
+      isPlatformRuntimeDiagnosticsEndpointAllowed,
+      buildPlatformRuntimeSnapshot,
+    } = require("../../startup/platformRuntimeSnapshot");
+    if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) {
+      return res.status(404).json({ ok: false, code: "not_found" });
+    }
+    return res.status(200).json(
+      buildPlatformRuntimeSnapshot(env, {
+        boot: opts.boot || null,
+      })
+    );
   });
 
   app.use(
@@ -224,7 +241,12 @@ async function startMoovexPlatformRuntimeServer(opts) {
   await assertPlatformDatabaseIdentityOrExit(pool);
 
   const productApps = buildDefaultProductApps({ env, getPool: () => pool });
-  const app = createMoovexPlatformRuntimeApp({ env, getPool: () => pool, productApps });
+  const app = createMoovexPlatformRuntimeApp({
+    env,
+    getPool: () => pool,
+    productApps,
+    boot: opts && opts.boot,
+  });
   const port = env.PORT ? Number(env.PORT) : 3000;
   const host = resolveListenHost(env);
 
