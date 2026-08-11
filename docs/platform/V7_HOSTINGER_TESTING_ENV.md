@@ -12,6 +12,33 @@
 | `DATABASE_IDENTITY_ENV` | `testing` | Required for platform runtime |
 | `SESSION_SECRET` | long random secret | Required |
 
+## Testing database identity
+
+Hostinger testing DB singleton:
+
+```text
+identity_key=moovex-platform-v7
+environment_code=testing
+```
+
+Local ops: copy `scripts/local/env.testing.local.example` → `.env.testing.local` and set
+`DATABASE_IDENTITY_EXPECTED=moovex-platform-v7`.
+
+Re-check:
+
+```bash
+npm run db:identity:check:testing
+```
+
+If a testing DB still reports `blessboard-platform-v5`, run the guarded migrator:
+
+```bash
+npm run db:identity:migrate-testing-to-moovex-v7 -- \
+  --confirm migrate-testing-identity-to-moovex-platform-v7
+```
+
+Never run that migrator against production.
+
 ## Compatibility / optional
 
 | Variable | Role |

@@ -26,7 +26,7 @@ const STATUS = Object.freeze({
 });
 
 const FULL_RESET_CONFIRM_PHRASE = "CLEAR BLESSBOARD TEST DATA";
-const EXPECTED_IDENTITY_KEY = "blessboard-platform-v5";
+const EXPECTED_IDENTITY_KEY = "moovex-platform-v7";
 const EXPECTED_DB_ENV = "testing";
 const ADVISORY_LOCK_KEY = 824510019;
 const PREVIEW_TTL_MS = 10 * 60 * 1000;

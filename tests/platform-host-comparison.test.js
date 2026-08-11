@@ -91,7 +91,8 @@ describe("platform deployment code config", () => {
   it("valid deployment code is normalized", () => {
     const r = getPlatformDeploymentCode({ PLATFORM_DEPLOYMENT_CODE: " BlessBoard-Com-V4 " });
     assert.equal(r.ok, true);
-    assert.equal(r.code, "blessboard-com-production");
+    // getPlatformDeploymentCode only trims/lowercases; alias remap is in resolveDeploymentProfile.
+    assert.equal(r.code, "blessboard-com-v4");
   });
 
   it("missing deployment code is unavailable", () => {

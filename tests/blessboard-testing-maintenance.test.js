@@ -34,7 +34,7 @@ const {
 } = require("../src/platform/services/testingDataResetService");
 const regRepo = require("../src/blessboard/repositories/platformChurchRegistrationRepository");
 
-const IDENTITY_KEY = "blessboard-platform-v5";
+const IDENTITY_KEY = "moovex-platform-v7";
 const PASSWORD = "TestPassword99!";
 const SESSION_SECRET = "test-session-secret-at-least-32-chars!!";
 
@@ -246,7 +246,7 @@ describe("blessboard testing maintenance http + reset", () => {
     assert.match(res.text, /Testing Environment Only/);
     assert.match(res.text, /data-bb-pa-maintenance="1"/);
     assert.match(res.text, /Maintenance/);
-    assert.match(res.text, /blessboard-platform-v5/);
+    assert.match(res.text, /moovex-platform-v7/);
   });
 
   it("2. production-mode platform admin cannot open maintenance", async () => {

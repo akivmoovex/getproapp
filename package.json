@@ -33,6 +33,7 @@
     "db:identity:check": "node db/scripts/identity-check.js",
     "db:identity:check:testing": "scripts/local/run-with-blessboard-env.sh testing npm run db:identity:check",
     "db:identity:check:production": "scripts/local/run-with-blessboard-env.sh production npm run db:identity:check",
+    "db:identity:migrate-testing-to-moovex-v7": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/migrate-testing-identity-to-moovex-platform-v7.js",
     "db:status:testing": "scripts/local/run-with-blessboard-env.sh testing npm run db:status",
     "db:status:production": "scripts/local/run-with-blessboard-env.sh production npm run db:status",
     "db:bootstrap:foundation": "node db/scripts/bootstrap-foundation.js",

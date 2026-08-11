@@ -74,30 +74,25 @@ Host-scoped cookies (no `Domain=.pronline.org`). Cookie names come from the host
 Registered as `siteType=legacy-redirect` → `https://blessboard.com`.  
 Not activated unless `BLESSBOARD_ORG_REDIRECT_ENABLED=1` (do not set on Hostinger yet).
 
-## Testing identity migration (not auto-applied)
+## Testing identity migration
 
-Current testing DBs may still use `blessboard-platform-v5`.
+**Status (testing DB):** completed — `platform.database_identity` singleton on the testing Supabase project
+(`project hint xpcpv…`, `environment_code=testing`) now uses `identity_key=moovex-platform-v7`.
 
-Before switching Hostinger to `moovex-platform-testing`:
+Apply / re-check (idempotent):
 
-1. Prove `DATABASE_URL` is the **testing** DB (`environment_code=testing`).
-2. Backup / note current `identity_key`.
-3. Update singleton:
+```bash
+npm run db:identity:migrate-testing-to-moovex-v7 -- \
+  --confirm migrate-testing-identity-to-moovex-platform-v7
 
-```sql
-UPDATE platform.database_identity
-SET identity_key = 'moovex-platform-v7',
-    updated_at = now()
-WHERE id = 1
-  AND environment_code = 'testing'
-  AND identity_key = 'blessboard-platform-v5';
+DATABASE_IDENTITY_EXPECTED=moovex-platform-v7 \
+  npm run db:identity:check:testing
 ```
 
-4. Set `DATABASE_IDENTITY_EXPECTED=moovex-platform-v7` and `DATABASE_IDENTITY_ENV=testing`.
-5. Set `PLATFORM_DEPLOYMENT_CODE=moovex-platform-testing`.
-6. Verify startup identity log.
+Historical note: testing previously used `blessboard-platform-v5`. Production still uses its own identity row
+(`environment_code=production`) and is **not** migrated by this operation.
 
-**Do not** run this against production. Production migration is documented separately and deferred.
+**Do not** run the testing migrator against production.
 
 ## FunSong
 
