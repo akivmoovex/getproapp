@@ -28,6 +28,9 @@ const {
   createFacility,
 } = require("../src/activeclinic/services/facilityService");
 const {
+  ensureDefaultDepartments,
+} = require("../src/activeclinic/services/activeClinicDepartmentService");
+const {
   createStaffMember,
 } = require("../src/activeclinic/services/activeClinicStaffService");
 const {
@@ -142,6 +145,11 @@ async function seedTenant(stamp, keyPrefix) {
     phone: nextPhone(),
   });
   assert.equal(facility.ok, true, JSON.stringify(facility));
+  await ensureDefaultDepartments(pool, {
+    organizationId: orgId,
+    healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facility.facility.id,
+  });
   return {
     orgId,
     hcoId: hco.healthcareOrganization.id,
