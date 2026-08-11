@@ -76,11 +76,19 @@ const PERM = Object.freeze({
   VIEW: "activeclinic.patient.view",
   SEARCH: "activeclinic.patient.search",
   CREATE: "activeclinic.patient.create",
+  QUICK_REGISTER: "activeclinic.patient.quick_register",
   UPDATE: "activeclinic.patient.update",
   ARCHIVE: "activeclinic.patient.archive",
   MANAGE_IDENTIFIERS: "activeclinic.patient.manage_identifiers",
   VIEW_SENSITIVE: "activeclinic.patient.view_sensitive_contact",
   DUPLICATE_OVERRIDE: "activeclinic.patient.duplicate_override",
+});
+
+const CREATION_MODES = Object.freeze({
+  FULL: "full_registration",
+  QUICK: "quick_registration",
+  WALK_IN: "walk_in_registration",
+  APPOINTMENT: "appointment_registration",
 });
 
 function mapPatient(row) {
@@ -119,6 +127,7 @@ function mapPatient(row) {
     preferredContactMethod: row.preferred_contact_method || null,
     allowAdminReminders: row.allow_admin_reminders,
     status: row.status,
+    registrationStatus: row.registration_status || "complete",
     deceasedAt: row.deceased_at || null,
     archivedAt: row.archived_at || null,
     archiveReason: row.archive_reason || null,
@@ -269,12 +278,29 @@ async function registerActiveClinicPatient(db, input) {
     return { ok: false, code: RESULT.FACILITY_NOT_FOUND, patient: null };
   }
 
-  const authz = await authorizePatientAction(db, {
+  const creationMode = String(input.creationMode || CREATION_MODES.FULL)
+    .trim()
+    .toLowerCase();
+  const isQuick =
+    creationMode === CREATION_MODES.QUICK ||
+    creationMode === "quick_registration";
+  const requiredPerm = isQuick ? PERM.QUICK_REGISTER : PERM.CREATE;
+
+  let authz = await authorizePatientAction(db, {
     organizationId,
     facilityId,
-    permissionKey: PERM.CREATE,
+    permissionKey: requiredPerm,
     actor,
   });
+  // Full create also satisfies quick-register flows (permission union).
+  if (!authz.ok && isQuick) {
+    authz = await authorizePatientAction(db, {
+      organizationId,
+      facilityId,
+      permissionKey: PERM.CREATE,
+      actor,
+    });
+  }
   if (!authz.ok) return { ok: false, code: authz.code, patient: null };
 
   const scope = await resolveActorFacilityScope(db, {
@@ -388,6 +414,11 @@ async function registerActiveClinicPatient(db, input) {
           healthcareOrganizationId,
         });
 
+        const registrationStatus =
+          input.registrationStatus === "incomplete" || isQuick
+            ? "incomplete"
+            : "complete";
+
         const row = await patientRepo.insertPatient(client, {
           organizationId,
           healthcareOrganizationId,
@@ -396,6 +427,7 @@ async function registerActiveClinicPatient(db, input) {
           ...contacts.value,
           ...address.value,
           status: "active",
+          registrationStatus,
           createdByStaffId: actor.staffMemberId,
           updatedByStaffId: actor.staffMemberId,
         });
@@ -470,7 +502,15 @@ async function registerActiveClinicPatient(db, input) {
           metadata: {
             patient_number: patientNumber,
             registration_method: registrationMethod,
+            creation_mode: isQuick
+              ? CREATION_MODES.QUICK
+              : creationMode === CREATION_MODES.WALK_IN ||
+                  creationMode === CREATION_MODES.APPOINTMENT
+                ? creationMode
+                : CREATION_MODES.FULL,
+            registration_status: registrationStatus,
             facility_key: facilityActive.facility.facilityKey,
+            facility_id: facilityId,
             override: input.duplicateOverride === true,
             count: normalizedIdentifiers.length,
           },
@@ -786,6 +826,14 @@ async function updateActiveClinicPatient(db, input) {
     if (!address.ok) return { ok: false, code: address.code, patient: null };
     Object.assign(patch, address.value);
     fieldKeys.push("address");
+  }
+
+  if (
+    existing.patient.registrationStatus === "incomplete" &&
+    (input.markRegistrationComplete === true || input.demographics)
+  ) {
+    patch.registrationStatus = "complete";
+    fieldKeys.push("registration_status");
   }
 
   patch.updatedByStaffId = actor.staffMemberId;
@@ -1185,6 +1233,7 @@ async function mergeActiveClinicPatients() {
 module.exports = {
   RESULT,
   PERM,
+  CREATION_MODES,
   mapPatient,
   mapIdentifier,
   registerActiveClinicPatient,

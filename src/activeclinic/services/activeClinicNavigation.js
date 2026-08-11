@@ -141,11 +141,16 @@ function buildActiveClinicNavigation(permissions, activeKey, options) {
     permission: item.permission || (item.anyOf && item.anyOf[0]) || null,
     current: activeKey != null && item.key === activeKey,
   }));
-  if (options && options.activeDepartmentTypes != null) {
+  if (options && Object.prototype.hasOwnProperty.call(options, "activeDepartmentTypes")) {
     const {
       filterNavItemsByDepartments,
     } = require("./activeClinicModuleAvailability");
-    items = filterNavItemsByDepartments(items, options.activeDepartmentTypes);
+    // null = no facility context → treat as empty (department-gated modules unreachable).
+    const types =
+      options.activeDepartmentTypes == null
+        ? new Set()
+        : options.activeDepartmentTypes;
+    items = filterNavItemsByDepartments(items, types);
   }
   return {
     items,

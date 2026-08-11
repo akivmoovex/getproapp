@@ -29,7 +29,7 @@ const {
   loadActiveDepartmentTypeSet,
 } = require("./activeClinicModuleAvailability");
 
-const SHELL_ASSET_VERSION = "c07-2";
+const SHELL_ASSET_VERSION = "c07-3";
 
 /**
  * @param {{ query: Function }} db
@@ -176,6 +176,8 @@ async function buildActiveClinicShellViewModel(db, input) {
     roleSummary,
     permissions,
     permissionSet: Object.fromEntries(permissions.map((p) => [p, true])),
+    // Set|null — dashboard/nav department gates; null when no facility selected.
+    activeDepartmentTypes,
     navigation,
     breadcrumbs: Array.isArray(input.breadcrumbs) ? input.breadcrumbs : [],
     pageHeader: input.pageHeader || {

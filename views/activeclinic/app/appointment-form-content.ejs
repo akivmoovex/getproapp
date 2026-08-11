@@ -66,6 +66,12 @@
         <% }) %>
       </div>
       <% } %>
+      <% if (form.actions && form.actions.canRegisterPatient) { %>
+      <p class="ac-muted" style="margin-top:0.75rem">
+        <a href="/app/patients/new?return_to=<%= encodeURIComponent('/app/appointments/new') %>&return_context=appointment">Register new patient</a>
+        and return to finish this appointment.
+      </p>
+      <% } %>
       <% } else { %>
       <input type="hidden" name="patient_id" value="<%= values.patientId || '' %>"/>
       <% } %>

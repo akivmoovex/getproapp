@@ -606,6 +606,18 @@ body.ac-drawer-open .ac-drawer {
   font-size: 1rem;
 }
 .ac-dashboard__lead { margin: 0 0 var(--ac-space-4); }
+.ac-dashboard__sections {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+.ac-dashboard__section-title {
+  margin: 0 0 var(--ac-space-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ac-muted);
+}
 .ac-stat-card__label {
   margin: 0;
   font-size: 0.75rem;

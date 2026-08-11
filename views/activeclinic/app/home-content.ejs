@@ -2,10 +2,19 @@
   var dash = (pageData && pageData.dashboard) || {};
   var welcome = dash.welcome || {};
   var summaries = dash.summaries || {};
+  var metrics = Array.isArray(dash.metrics) ? dash.metrics : [];
   var tasks = dash.setupTasks || [];
   var actions = dash.quickActions || [];
+  var sections = Array.isArray(dash.sections) ? dash.sections : [];
   var notices = dash.notices || [];
   var mode = dash.mode || 'ready';
+
+  var primarySections = sections.filter(function (s) {
+    return s.key !== 'administration';
+  });
+  var adminSection = sections.find(function (s) {
+    return s.key === 'administration';
+  });
 %>
 <section class="ac-dashboard" data-ac-page-section="home" data-ac-dashboard="<%= mode %>">
   <article class="ac-panel ac-dashboard__welcome" data-ac-dashboard-card="welcome">
@@ -46,29 +55,43 @@
   }) %>
   <% } %>
 
+  <% if (metrics.length || summaries.facilities || summaries.staff || summaries.invitations) { %>
   <div class="ac-dashboard__summaries ac-grid" data-ac-dashboard-card="summaries">
-    <% if (summaries.facilities) { %>
-    <article class="ac-panel ac-stat-card">
-      <p class="ac-stat-card__label"><%= summaries.facilities.label %></p>
-      <p class="ac-stat-card__value"><%= summaries.facilities.value %></p>
-      <a class="ac-stat-card__link" href="<%= summaries.facilities.href %>">View facilities</a>
-    </article>
-    <% } %>
-    <% if (summaries.staff) { %>
-    <article class="ac-panel ac-stat-card">
-      <p class="ac-stat-card__label"><%= summaries.staff.label %></p>
-      <p class="ac-stat-card__value"><%= summaries.staff.value %></p>
-      <a class="ac-stat-card__link" href="<%= summaries.staff.href %>">View staff</a>
-    </article>
-    <% } %>
-    <% if (summaries.invitations) { %>
-    <article class="ac-panel ac-stat-card">
-      <p class="ac-stat-card__label"><%= summaries.invitations.label %></p>
-      <p class="ac-stat-card__value"><%= summaries.invitations.value %></p>
-      <a class="ac-stat-card__link" href="<%= summaries.invitations.href %>">Open staff</a>
-    </article>
+    <% if (metrics.length) { %>
+      <% metrics.forEach(function (metric) { %>
+      <article class="ac-panel ac-stat-card" data-ac-dashboard-metric="<%= metric.key %>">
+        <p class="ac-stat-card__label"><%= metric.label %></p>
+        <p class="ac-stat-card__value"><%= metric.value %></p>
+        <% if (metric.href) { %>
+        <a class="ac-stat-card__link" href="<%= metric.href %>"><%= metric.key === 'facilities' ? 'View facilities' : (metric.key === 'invitations' ? 'Open staff' : 'View staff') %></a>
+        <% } %>
+      </article>
+      <% }) %>
+    <% } else { %>
+      <% if (summaries.facilities) { %>
+      <article class="ac-panel ac-stat-card">
+        <p class="ac-stat-card__label"><%= summaries.facilities.label %></p>
+        <p class="ac-stat-card__value"><%= summaries.facilities.value %></p>
+        <a class="ac-stat-card__link" href="<%= summaries.facilities.href %>">View facilities</a>
+      </article>
+      <% } %>
+      <% if (summaries.staff) { %>
+      <article class="ac-panel ac-stat-card">
+        <p class="ac-stat-card__label"><%= summaries.staff.label %></p>
+        <p class="ac-stat-card__value"><%= summaries.staff.value %></p>
+        <a class="ac-stat-card__link" href="<%= summaries.staff.href %>">View staff</a>
+      </article>
+      <% } %>
+      <% if (summaries.invitations) { %>
+      <article class="ac-panel ac-stat-card">
+        <p class="ac-stat-card__label"><%= summaries.invitations.label %></p>
+        <p class="ac-stat-card__value"><%= summaries.invitations.value %></p>
+        <a class="ac-stat-card__link" href="<%= summaries.invitations.href %>">Open staff</a>
+      </article>
+      <% } %>
     <% } %>
   </div>
+  <% } %>
 
   <% if (tasks.length) { %>
   <article class="ac-panel" data-ac-dashboard-card="setup">
@@ -90,12 +113,39 @@
   </article>
   <% } %>
 
-  <% if (actions.length) { %>
+  <% if (primarySections.length) { %>
+  <article class="ac-panel" data-ac-dashboard-card="primary-work">
+    <h2 class="ac-dashboard__card-title">My work</h2>
+    <div class="ac-dashboard__sections">
+      <% primarySections.forEach(function (section) { %>
+      <div class="ac-dashboard__section" data-ac-dashboard-section="<%= section.key %>">
+        <h3 class="ac-dashboard__section-title"><%= section.title %></h3>
+        <div class="ac-actions ac-actions--stack-mobile">
+          <% section.items.forEach(function (item) { %>
+            <a class="ac-btn ac-btn--ghost" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>"><%= item.label %></a>
+          <% }) %>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </article>
+  <% } %>
+
+  <% if (adminSection && adminSection.items && adminSection.items.length) { %>
+  <article class="ac-panel" data-ac-dashboard-card="administration">
+    <h2 class="ac-dashboard__card-title">Administration</h2>
+    <div class="ac-actions ac-actions--stack-mobile" data-ac-dashboard-section="administration">
+      <% adminSection.items.forEach(function (item) { %>
+        <a class="ac-btn ac-btn--ghost" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>"><%= item.label %></a>
+      <% }) %>
+    </div>
+  </article>
+  <% } else if (!primarySections.length && actions.length) { %>
   <article class="ac-panel" data-ac-dashboard-card="actions">
     <h2 class="ac-dashboard__card-title">Quick actions</h2>
     <div class="ac-actions ac-actions--stack-mobile">
       <% actions.forEach(function (action) { %>
-        <a class="ac-btn<%= action.primary ? '' : ' ac-btn--ghost' %>" href="<%= action.href %>"><%= action.label %></a>
+        <a class="ac-btn<%= action.primary ? '' : ' ac-btn--ghost' %>" href="<%= action.href %>"<% if (action.key) { %> data-ac-dashboard-tile="<%= action.key %>"<% } %>><%= action.label %></a>
       <% }) %>
     </div>
   </article>

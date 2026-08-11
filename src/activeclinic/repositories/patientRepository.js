@@ -9,6 +9,8 @@
  * @param {object} row
  */
 async function insertPatient(db, row) {
+  const registrationStatus =
+    row.registrationStatus === "incomplete" ? "incomplete" : "complete";
   const result = await db.query(
     `INSERT INTO activeclinic.patients (
        organization_id, healthcare_organization_id, patient_number,
@@ -18,10 +20,10 @@ async function insertPatient(db, row) {
        phone_normalized, phone_display, email_normalized, email_display,
        address_line_1, address_line_2, city, district, province,
        country_code, postal_code, preferred_contact_method, allow_admin_reminders,
-       status, created_by_staff_id, updated_by_staff_id
+       status, registration_status, created_by_staff_id, updated_by_staff_id
      ) VALUES (
        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-       $21,$22,$23,$24,$25,$26,$27,$28
+       $21,$22,$23,$24,$25,$26,$27,$28,$29
      )
      RETURNING *`,
     [
@@ -51,6 +53,7 @@ async function insertPatient(db, row) {
       row.preferredContactMethod,
       row.allowAdminReminders,
       row.status || "active",
+      registrationStatus,
       row.createdByStaffId,
       row.updatedByStaffId,
     ]
@@ -153,6 +156,11 @@ async function updatePatientByOrgAndId(db, input) {
   }
   if (Object.prototype.hasOwnProperty.call(patch, "estimatedDateOfBirth")) {
     set("estimated_date_of_birth", patch.estimatedDateOfBirth === true);
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "registrationStatus")) {
+    const status =
+      patch.registrationStatus === "incomplete" ? "incomplete" : "complete";
+    set("registration_status", status);
   }
   if (Object.prototype.hasOwnProperty.call(patch, "sexAtRegistration")) {
     set("sex_at_registration", patch.sexAtRegistration);

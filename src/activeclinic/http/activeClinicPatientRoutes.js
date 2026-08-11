@@ -38,13 +38,78 @@ const {
   addPatientIdentifier,
   addEmergencyContact,
   resolvePatientForActor,
+  searchActiveClinicPatients,
   RESULT: PATIENT_RESULT,
   PERM,
+  CREATION_MODES,
 } = require("../services/activeClinicPatientService");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+
+const SAFE_RETURN_PREFIXES = Object.freeze([
+  "/app/reception/walk-in",
+  "/app/appointments/new",
+  "/app/reception/check-in",
+  "/app/patients",
+]);
+
+function sanitizeReturnTo(value) {
+  const raw = String(value || "").trim();
+  if (!raw.startsWith("/app/")) return "";
+  if (raw.includes("//") || raw.includes("\\")) return "";
+  return SAFE_RETURN_PREFIXES.some((p) => raw === p || raw.startsWith(`${p}?`))
+    ? raw
+    : "";
+}
+
+function applyApproximateAge(values) {
+  const years = Number(values.approximateAgeYears);
+  if (!values.dateOfBirth && Number.isFinite(years) && years >= 0 && years <= 120) {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - Math.floor(years));
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    values.dateOfBirth = `${y}-${m}-${day}`;
+    values.estimatedDateOfBirth = true;
+  }
+  return values;
+}
+
+function buildSuccessNextActions(auth, patient, returnTo) {
+  const perms = auth.permissions || [];
+  const has = (k) => perms.includes(k);
+  const actions = [
+    {
+      href: `/app/patients/${encodeURIComponent(patient.patientNumber)}`,
+      label: "Open patient",
+      primary: !returnTo,
+    },
+  ];
+  if (returnTo) {
+    const sep = returnTo.includes("?") ? "&" : "?";
+    actions.unshift({
+      href: `${returnTo}${sep}patient_number=${encodeURIComponent(patient.patientNumber)}&patient_id=${encodeURIComponent(patient.id)}`,
+      label: "Continue workflow",
+      primary: true,
+    });
+  }
+  if (has("activeclinic.reception.check_in")) {
+    actions.push({
+      href: `/app/reception/walk-in?patient_number=${encodeURIComponent(patient.patientNumber)}`,
+      label: "Start walk-in visit",
+    });
+  }
+  if (has("activeclinic.appointment.create")) {
+    actions.push({
+      href: `/app/appointments/new?patient_number=${encodeURIComponent(patient.patientNumber)}&patient_id=${encodeURIComponent(patient.id)}`,
+      label: "Create appointment",
+    });
+  }
+  return actions;
+}
 
 function mapPatientError(code) {
   switch (code) {
@@ -141,9 +206,23 @@ function registerActiveClinicPatientRoutes(app, deps) {
           pageHeader: {
             title: "Patients",
             description: "Search and register patients in this healthcare organization.",
-            actions: loaded.list.actions.canCreate
-              ? [{ href: "/app/patients/new", label: "Register patient", primary: true }]
-              : [],
+            actions: (() => {
+              const acts = [];
+              if (loaded.list.actions.canCreate) {
+                acts.push({
+                  href: "/app/patients/new",
+                  label: "Register patient",
+                  primary: true,
+                });
+              } else if (loaded.list.actions.canQuickRegister) {
+                acts.push({
+                  href: "/app/patients/quick-register",
+                  label: "Quick Register",
+                  primary: true,
+                });
+              }
+              return acts;
+            })(),
           },
           breadcrumbs: [{ label: "Patients" }],
           pageData: { list: loaded.list },
@@ -160,9 +239,24 @@ function registerActiveClinicPatientRoutes(app, deps) {
     requirePermission(PERM.CREATE),
     async (req, res, next) => {
       try {
+        const returnTo = sanitizeReturnTo(req.query && req.query.return_to);
+        const returnContext = String(
+          (req.query && req.query.return_context) || ""
+        ).slice(0, 80);
         const form = await loadActiveClinicPatientFormScreen(getPool(), {
           auth: req.activeClinicAuth,
           mode: "create",
+          values: {
+            step: "find",
+            returnTo,
+            returnContext,
+            creationMode:
+              returnTo && returnTo.startsWith("/app/reception/walk-in")
+                ? CREATION_MODES.WALK_IN
+                : returnTo && returnTo.startsWith("/app/appointments")
+                  ? CREATION_MODES.APPOINTMENT
+                  : CREATION_MODES.FULL,
+          },
         });
         if (!form.ok) {
           return res.status(403).type("html").send(
@@ -176,7 +270,7 @@ function registerActiveClinicPatientRoutes(app, deps) {
           content: "app/patient-form-content.ejs",
           pageHeader: {
             title: "Register patient",
-            description: "Capture administrative identity and contact details.",
+            description: "Search for an existing patient before creating a new record.",
           },
           breadcrumbs: [
             { label: "Patients", href: "/app/patients" },
@@ -190,14 +284,230 @@ function registerActiveClinicPatientRoutes(app, deps) {
     }
   );
 
+  app.get(
+    "/app/patients/quick-register",
+    requireAuth,
+    requirePermission([PERM.QUICK_REGISTER, PERM.CREATE]),
+    async (req, res, next) => {
+      try {
+        const form = await loadActiveClinicPatientFormScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          mode: "quick_create",
+          values: {
+            step: "edit",
+            creationMode: CREATION_MODES.QUICK,
+            returnTo: sanitizeReturnTo(req.query && req.query.return_to),
+          },
+        });
+        if (!form.ok) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Access Restricted",
+              "You cannot quick-register patients.",
+              { status: 403 }
+            )
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "patients",
+          content: "app/patient-form-content.ejs",
+          pageHeader: {
+            title: "Quick Register",
+            description:
+              "Minimal patient identity for urgent care. Reception can complete demographics later.",
+          },
+          breadcrumbs: [
+            { label: "Patients", href: "/app/patients" },
+            { label: "Quick Register" },
+          ],
+          pageData: { form: form.form },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/patients/quick-register",
+    requireAuth,
+    requirePermission([PERM.QUICK_REGISTER, PERM.CREATE]),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        let values = applyApproximateAge(parsePatientFormBody(req.body));
+        values.creationMode = CREATION_MODES.QUICK;
+        values.returnTo = sanitizeReturnTo(values.returnTo);
+        const deployment = getPlatformDeploymentCode(env) || {};
+        const payload = buildRegistrationPayload(values, auth);
+        payload.deploymentCode = deployment.code || CODE_ACTIVECLINIC_ORG_V6;
+        payload.creationMode = CREATION_MODES.QUICK;
+        payload.registrationStatus = "incomplete";
+        // Quick register: no identifiers / emergency in this path
+        payload.identifiers = [];
+        payload.emergencyContacts = [];
+        const created = await registerActiveClinicPatient(getPool(), payload);
+
+        if (!created.ok && created.code === PATIENT_RESULT.DUPLICATE_WARNING) {
+          const form = await loadActiveClinicPatientFormScreen(getPool(), {
+            auth,
+            mode: "quick_create",
+            values: { ...values, step: "edit" },
+            errors: [mapPatientError(created.code)],
+            duplicateMatches: created.matches || [],
+          });
+          return await renderShell(req, res, {
+            activeNav: "patients",
+            content: "app/patient-form-content.ejs",
+            pageHeader: {
+              title: "Possible duplicate",
+              description: "Review matches before continuing with quick registration.",
+            },
+            breadcrumbs: [
+              { label: "Patients", href: "/app/patients" },
+              { label: "Quick Register" },
+            ],
+            pageData: { form: form.form },
+          });
+        }
+
+        if (!created.ok) {
+          const form = await loadActiveClinicPatientFormScreen(getPool(), {
+            auth,
+            mode: "quick_create",
+            values,
+            errors: [mapPatientError(created.code)],
+          });
+          return await renderShell(req, res, {
+            activeNav: "patients",
+            content: "app/patient-form-content.ejs",
+            pageHeader: { title: "Quick Register" },
+            breadcrumbs: [
+              { label: "Patients", href: "/app/patients" },
+              { label: "Quick Register" },
+            ],
+            pageData: { form: form.form },
+            status: 400,
+          });
+        }
+
+        return await renderShell(req, res, {
+          activeNav: "patients",
+          content: "app/patient-success-content.ejs",
+          pageHeader: {
+            title: "Patient quick-registered",
+            description: "Minimal record created. Marked as registration incomplete.",
+          },
+          breadcrumbs: [
+            { label: "Patients", href: "/app/patients" },
+            { label: "Success" },
+          ],
+          pageData: {
+            success: {
+              patient: created.patient,
+              incomplete: true,
+              profileHref: `/app/patients/${encodeURIComponent(created.patient.patientNumber)}`,
+              nextActions: buildSuccessNextActions(
+                auth,
+                created.patient,
+                values.returnTo
+              ),
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
   app.post("/app/patients", requireAuth, requirePermission(PERM.CREATE), async (req, res, next) => {
     try {
       const auth = req.activeClinicAuth;
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return res.status(403).type("html").send("CSRF validation failed");
       }
-      const values = parsePatientFormBody(req.body);
+      let values = applyApproximateAge(parsePatientFormBody(req.body));
+      values.returnTo = sanitizeReturnTo(values.returnTo);
       const deployment = getPlatformDeploymentCode(env) || {};
+
+      if (values.step === "find" || values.step === "search") {
+        const listed = await searchActiveClinicPatients(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          actor: {
+            staffMemberId: auth.staffMember.id,
+            platformIdentityId: auth.platformIdentity && auth.platformIdentity.id,
+            organizationId: auth.organization.id,
+          },
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          patientNumber: values.findPatientNumber || null,
+          nameQuery: values.findQuery || null,
+          phone: values.findPhone || null,
+          dateOfBirth: values.findDob || null,
+          identifierValue: values.findIdentifier || null,
+          limit: 10,
+          offset: 0,
+        });
+        const findMatches = listed.ok ? listed.results || [] : [];
+        const form = await loadActiveClinicPatientFormScreen(getPool(), {
+          auth,
+          mode: "create",
+          values: { ...values, step: "find" },
+          findMatches,
+          errors:
+            !listed.ok && listed.code === "query_too_short"
+              ? [mapPatientError(listed.code)]
+              : [],
+        });
+        return await renderShell(req, res, {
+          activeNav: "patients",
+          content: "app/patient-form-content.ejs",
+          pageHeader: {
+            title: "Find existing patient",
+            description: "Review possible matches before creating a new record.",
+          },
+          breadcrumbs: [
+            { label: "Patients", href: "/app/patients" },
+            { label: "Register" },
+          ],
+          pageData: { form: form.form },
+        });
+      }
+
+      if (values.step === "continue") {
+        const form = await loadActiveClinicPatientFormScreen(getPool(), {
+          auth,
+          mode: "create",
+          values: {
+            ...values,
+            step: "edit",
+            firstName: values.firstName || (values.findQuery || "").split(/\s+/)[0] || "",
+            lastName:
+              values.lastName ||
+              (values.findQuery || "").split(/\s+/).slice(1).join(" ") ||
+              "",
+            phone: values.phone || values.findPhone || "",
+            dateOfBirth: values.dateOfBirth || values.findDob || "",
+          },
+        });
+        return await renderShell(req, res, {
+          activeNav: "patients",
+          content: "app/patient-form-content.ejs",
+          pageHeader: {
+            title: "Register patient",
+            description: "Capture administrative identity and contact details.",
+          },
+          breadcrumbs: [
+            { label: "Patients", href: "/app/patients" },
+            { label: "Register" },
+          ],
+          pageData: { form: form.form },
+        });
+      }
 
       if (values.step === "edit") {
         const form = await loadActiveClinicPatientFormScreen(getPool(), {
@@ -243,6 +553,7 @@ function registerActiveClinicPatientRoutes(app, deps) {
 
       const payload = buildRegistrationPayload(values, auth);
       payload.deploymentCode = deployment.code || CODE_ACTIVECLINIC_ORG_V6;
+      payload.creationMode = values.creationMode || CREATION_MODES.FULL;
       const created = await registerActiveClinicPatient(getPool(), payload);
 
       if (!created.ok && created.code === PATIENT_RESULT.DUPLICATE_WARNING) {
@@ -304,6 +615,11 @@ function registerActiveClinicPatientRoutes(app, deps) {
           success: {
             patient: created.patient,
             profileHref: `/app/patients/${encodeURIComponent(created.patient.patientNumber)}`,
+            nextActions: buildSuccessNextActions(
+              auth,
+              created.patient,
+              values.returnTo
+            ),
             stitch: {
               desktop: "cd688e761cca43a1af299769014cb5f0",
               mobile: "b9615559155d41d591dbb91e18c6a090",

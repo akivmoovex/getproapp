@@ -108,7 +108,11 @@ function emptyFormValues() {
     emergencyEmail: "",
     duplicateOverride: false,
     duplicateOverrideReason: "",
-    step: "edit",
+    step: "find",
+    returnTo: "",
+    returnContext: "",
+    creationMode: "full_registration",
+    approximateAgeYears: "",
   };
 }
 
@@ -152,6 +156,15 @@ function parsePatientFormBody(body) {
     duplicateOverride: bool(body.duplicate_override),
     duplicateOverrideReason: String(body.duplicate_override_reason || "").trim(),
     step: String(body.step || "edit").trim(),
+    returnTo: String(body.return_to || "").trim(),
+    returnContext: String(body.return_context || "").trim(),
+    creationMode: String(body.creation_mode || "full_registration").trim(),
+    approximateAgeYears: String(body.approximate_age_years || "").trim(),
+    findQuery: String(body.find_query || body.q || "").trim(),
+    findPhone: String(body.find_phone || "").trim(),
+    findPatientNumber: String(body.find_patient_number || "").trim(),
+    findDob: String(body.find_dob || "").trim(),
+    findIdentifier: String(body.find_identifier || "").trim(),
   };
 }
 
@@ -213,6 +226,7 @@ function buildRegistrationPayload(values, auth) {
     registrationMethod: values.registrationMethod || "walk_in",
     duplicateOverride: values.duplicateOverride === true,
     duplicateOverrideReason: values.duplicateOverrideReason || null,
+    creationMode: values.creationMode || "full_registration",
     actor: actorFromAuth(auth),
   };
 }
@@ -303,7 +317,10 @@ async function loadActiveClinicPatientListScreen(db, input) {
       emptyMode,
       actions: {
         canCreate: hasPerm(perms, PERM.CREATE),
+        canQuickRegister:
+          hasPerm(perms, PERM.QUICK_REGISTER) && !hasPerm(perms, PERM.CREATE),
         createHref: "/app/patients/new",
+        quickRegisterHref: "/app/patients/quick-register",
       },
       stitch: {
         desktop: "5a6728d97b674200823562bb015e10ed",
@@ -317,7 +334,15 @@ async function loadActiveClinicPatientFormScreen(db, input) {
   const auth = input.auth;
   const perms = auth.permissions || [];
   const mode = input.mode || "create";
+  const quick = mode === "quick_create";
   if (mode === "create" && !hasPerm(perms, PERM.CREATE)) {
+    return { ok: false, code: PATIENT_RESULT.ACCESS_DENIED };
+  }
+  if (
+    quick &&
+    !hasPerm(perms, PERM.QUICK_REGISTER) &&
+    !hasPerm(perms, PERM.CREATE)
+  ) {
     return { ok: false, code: PATIENT_RESULT.ACCESS_DENIED };
   }
   if (mode === "edit" && !hasPerm(perms, PERM.UPDATE)) {
@@ -329,15 +354,22 @@ async function loadActiveClinicPatientFormScreen(db, input) {
   if (!values.facilityId && auth.selectedFacility) {
     values.facilityId = auth.selectedFacility.id;
   }
+  if (quick) {
+    values.creationMode = "quick_registration";
+    if (!values.step || values.step === "find") values.step = "edit";
+  } else if (mode === "create" && !values.step) {
+    values.step = "find";
+  }
 
   return {
     ok: true,
     form: {
-      mode,
+      mode: quick ? "quick_create" : mode,
       values,
       errors: input.errors || [],
       fieldErrors: input.fieldErrors || {},
       duplicateMatches: input.duplicateMatches || [],
+      findMatches: input.findMatches || [],
       facilities,
       sexOptions: SEX_VALUES.map((v) => ({ value: v, label: SEX_LABELS[v] || v })),
       methodOptions: REGISTRATION_METHODS.map((v) => ({
@@ -351,9 +383,13 @@ async function loadActiveClinicPatientFormScreen(db, input) {
       formAction:
         mode === "edit"
           ? `/app/patients/${encodeURIComponent(input.patientNumber)}`
-          : "/app/patients",
+          : quick
+            ? "/app/patients/quick-register"
+            : "/app/patients",
       patientNumber: input.patientNumber || null,
       canOverrideDuplicate: hasPerm(perms, PERM.DUPLICATE_OVERRIDE),
+      returnTo: values.returnTo || "",
+      returnContext: values.returnContext || "",
       stitch: {
         identity: "40d2005b64864f35ac8df831ddae7084",
         contact: "e1ef5e5d8a1840bcbf1f4dc859f7b812",
@@ -435,6 +471,7 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
           patient.estimatedDateOfBirth
         ),
         statusLabel: STATUS_LABELS[patient.status] || patient.status,
+        registrationIncomplete: patient.registrationStatus === "incomplete",
         sexLabel: patient.sexAtRegistration
           ? SEX_LABELS[patient.sexAtRegistration] || patient.sexAtRegistration
           : null,

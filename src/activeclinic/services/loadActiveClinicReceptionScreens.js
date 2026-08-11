@@ -15,6 +15,7 @@ const {
 const receptionRepo = require("../repositories/receptionRepository");
 const {
   getPatientByOrgAndId,
+  PERM: PATIENT_PERM,
 } = require("./activeClinicPatientService");
 const {
   formatPatientDisplayName,
@@ -264,6 +265,7 @@ async function loadActiveClinicReceptionWalkInScreen(db, input) {
       actions: {
         canCheckIn: hasPerm(perms, PERM.CHECK_IN),
         canManageQueue: hasPerm(perms, PERM.MANAGE_QUEUE),
+        canRegisterPatient: hasPerm(perms, PATIENT_PERM.CREATE),
       },
       stitch: {
         desktop: STITCH.walkInDesktop,

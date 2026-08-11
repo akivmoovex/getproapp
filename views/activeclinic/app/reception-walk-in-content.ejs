@@ -23,8 +23,11 @@
     <div class="ac-form-field">
       <label class="ac-label" for="walkin_patient_number">Patient number</label>
       <input class="ac-input" id="walkin_patient_number" name="patient_number" type="text" required value="<%= values.patientNumber || '' %>" placeholder="P000001"/>
-      <p class="ac-hint">The patient must already be registered. This does not create a new patient record.</p>
-    </div>
+    <p class="ac-hint">Enter an existing patient number, or register a new patient and return here.</p>
+    <% if (actions.canRegisterPatient) { %>
+    <p><a class="ac-btn ac-btn--ghost" href="/app/patients/new?return_to=<%= encodeURIComponent('/app/reception/walk-in') %>&return_context=walk_in">Register new patient</a></p>
+    <% } %>
+  </div>
 
     <div class="ac-form-field">
       <label class="ac-label" for="walkin_service_point">Service point</label>

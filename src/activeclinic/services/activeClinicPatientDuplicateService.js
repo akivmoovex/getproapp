@@ -132,12 +132,10 @@ async function findPotentialPatientDuplicates(db, input) {
 
     if (
       input.phoneNormalized &&
-      patient.phoneNormalized === input.phoneNormalized &&
-      (similarName(patient.firstName, input.firstName) ||
-        similarName(patient.lastName, input.lastName))
+      patient.phoneNormalized === input.phoneNormalized
     ) {
-      if (strength !== "strong") strength = "moderate";
-      reasons.push("phone_and_name");
+      strength = "strong";
+      reasons.push("phone_exact");
     }
 
     if (

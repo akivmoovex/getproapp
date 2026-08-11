@@ -37,6 +37,7 @@ const {
   NETWORK_ADMIN,
   FACILITY_ADMIN,
   STAFF_ROLE,
+  RECEPTIONIST,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 const {
   registerActiveClinicPatient,
@@ -218,7 +219,7 @@ describe("ActiveClinic patient UI parity (AC-V6-C02)", () => {
     const admin = await seedStaff(tenant, {
       firstName: "Net",
       lastName: "Admin",
-      roleKey: NETWORK_ADMIN,
+      roleKey: RECEPTIONIST,
       facilityIds: [tenant.facilityId],
     });
     const app = createActiveClinicFoundationApp({
@@ -280,7 +281,7 @@ describe("ActiveClinic patient UI parity (AC-V6-C02)", () => {
     const stamp = `${Date.now().toString(36)}d`;
     const tenant = await seedAcTenant(stamp, "c02d");
     const admin = await seedStaff(tenant, {
-      roleKey: NETWORK_ADMIN,
+      roleKey: RECEPTIONIST,
       facilityIds: [tenant.facilityId],
     });
     const actor = {
@@ -365,8 +366,8 @@ describe("ActiveClinic patient UI parity (AC-V6-C02)", () => {
     assert.equal(facilityB.ok, true);
 
     const network = await seedStaff(tenant, {
-      roleKey: NETWORK_ADMIN,
-      facilityIds: [tenant.facilityId, facilityB.facility.id],
+      roleKey: RECEPTIONIST,
+      facilityIds: [facilityB.facility.id],
     });
     const facAdmin = await seedStaff(tenant, {
       firstName: "Fac",
@@ -431,7 +432,7 @@ describe("ActiveClinic patient UI parity (AC-V6-C02)", () => {
     const stamp = `${Date.now().toString(36)}e`;
     const tenant = await seedAcTenant(stamp, "c02e");
     const admin = await seedStaff(tenant, {
-      roleKey: NETWORK_ADMIN,
+      roleKey: RECEPTIONIST,
       facilityIds: [tenant.facilityId],
     });
     const created = await registerActiveClinicPatient(pool, {

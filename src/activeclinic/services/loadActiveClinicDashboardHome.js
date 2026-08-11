@@ -1,8 +1,9 @@
 "use strict";
 
 /**
- * ActiveClinic dashboard home loader (AC-V6-S02).
- * Real foundation data only — no clinical KPIs.
+ * ActiveClinic dashboard home loader.
+ * Capability-driven tiles and metrics — permission union ∩ enabled departments.
+ * No clinical KPI queries until product metrics are authorized per domain.
  */
 
 const {
@@ -11,6 +12,11 @@ const {
 const {
   listStaffMembersByOrganization,
 } = require("./activeClinicStaffService");
+const {
+  buildAuthorizedDashboardTiles,
+  groupDashboardSections,
+  toQuickActions,
+} = require("./activeClinicDashboardCapabilities");
 
 function hasPerm(set, key) {
   return set.has(key);
@@ -26,6 +32,19 @@ function plainRoleSummary(auth) {
   return "ActiveClinic staff";
 }
 
+function resolveActiveDepartmentTypes(shell) {
+  if (!shell) return null;
+  if (shell.activeDepartmentTypes instanceof Set) {
+    return shell.activeDepartmentTypes;
+  }
+  if (Array.isArray(shell.activeDepartmentTypes)) {
+    return new Set(shell.activeDepartmentTypes);
+  }
+  // No facility context → department-gated modules are not reachable.
+  if (!shell.selectedFacility) return null;
+  return new Set();
+}
+
 /**
  * @param {{ query: Function }} db
  * @param {{ auth: object, shell: object }} input
@@ -35,10 +54,16 @@ async function loadActiveClinicDashboardHome(db, input) {
   const shell = input.shell || {};
   const orgId = auth.organization && auth.organization.id;
   const perms = new Set(Array.isArray(auth.permissions) ? auth.permissions : []);
+  // Prefer facility-scoped shell permissions when present (multi-role union).
+  if (Array.isArray(shell.permissions) && shell.permissions.length) {
+    perms.clear();
+    for (const p of shell.permissions) perms.add(p);
+  }
 
   let facilities = [];
   let staffMembers = [];
 
+  // Metrics: only load datasets the user is authorized to see (server-side).
   if (orgId && hasPerm(perms, "activeclinic.facility.view")) {
     const listed = await listFacilitiesByOrganization(db, {
       organizationId: orgId,
@@ -114,12 +139,22 @@ async function loadActiveClinicDashboardHome(db, input) {
     });
   }
 
-  if (
+  if (hasPerm(perms, "activeclinic.departments.manage") && shell.selectedFacility) {
+    setupTasks.push({
+      key: "review_departments",
+      label: "Review clinic departments",
+      done: false,
+      href: "/app/settings/clinic-setup/departments",
+    });
+  }
+
+  const needsFacilitySelect =
     !shell.selectedFacility &&
     !auth.isNetworkAdmin &&
     Array.isArray(shell.availableFacilities) &&
-    shell.availableFacilities.length > 0
-  ) {
+    shell.availableFacilities.length > 0;
+
+  if (needsFacilitySelect) {
     setupTasks.unshift({
       key: "select_facility",
       label: "Select a facility context",
@@ -128,109 +163,19 @@ async function loadActiveClinicDashboardHome(db, input) {
     });
   }
 
-  const quickActions = [];
-  if (
-    !shell.selectedFacility &&
-    !auth.isNetworkAdmin &&
-    (shell.canSwitchFacility ||
-      (shell.availableFacilities && shell.availableFacilities.length))
-  ) {
-    quickActions.push({
-      label: "Select facility",
-      href: "/app/select-facility",
-      primary: true,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.patient.search")) {
-    quickActions.push({
-      label: "Patients",
-      href: "/app/patients",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.appointment.view")) {
-    quickActions.push({
-      label: "Appointments",
-      href: "/app/appointments",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.reception.view")) {
-    quickActions.push({
-      label: "Reception",
-      href: "/app/reception",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.encounter.view")) {
-    quickActions.push({
-      label: "Clinical",
-      href: "/app/clinical",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.pharmacy.view")) {
-    quickActions.push({
-      label: "Pharmacy",
-      href: "/app/pharmacy",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.diagnostics.view") ||
-      hasPerm(perms, "activeclinic.lab.view") ||
-      hasPerm(perms, "activeclinic.radiology.view")) {
-    quickActions.push({
-      label: "Diagnostics",
-      href: "/app/diagnostics",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.billing.view")) {
-    quickActions.push({
-      label: "Billing",
-      href: "/app/billing",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.cashier.open_session")) {
-    quickActions.push({
-      label: "Cashier",
-      href: "/app/cashier",
-      primary: false,
-    });
-  }
-  if (
-    hasPerm(perms, "activeclinic.facility.create") ||
-    hasPerm(perms, "activeclinic.facility.update") ||
-    hasPerm(perms, "activeclinic.facility.archive")
-  ) {
-    quickActions.push({
-      label: "Facilities",
-      href: "/app/facilities",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.staff.view")) {
-    quickActions.push({
-      label: "Staff",
-      href: "/app/staff",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.staff.assign_access")) {
-    quickActions.push({
-      label: "Roles & access",
-      href: "/app/access",
-      primary: false,
-    });
-  }
-  if (hasPerm(perms, "activeclinic.access")) {
-    quickActions.push({
-      label: "Settings",
-      href: "/app/settings",
-      primary: false,
-    });
-  }
+  const activeDepartmentTypes = resolveActiveDepartmentTypes(shell);
+  const authorizedTiles = buildAuthorizedDashboardTiles(perms, {
+    activeDepartmentTypes,
+    includeSelectFacility: Boolean(
+      needsFacilitySelect ||
+        (!shell.selectedFacility &&
+          !auth.isNetworkAdmin &&
+          (shell.canSwitchFacility ||
+            (shell.availableFacilities && shell.availableFacilities.length)))
+    ),
+  });
+  const { buckets, sections } = groupDashboardSections(authorizedTiles);
+  const quickActions = toQuickActions(authorizedTiles);
 
   const empty =
     activeFacilities.length === 0 &&
@@ -239,6 +184,34 @@ async function loadActiveClinicDashboardHome(db, input) {
     setupTasks.some((t) => t.key === "add_facility" && !t.done);
 
   const mode = empty ? "empty" : "ready";
+
+  const metrics = [];
+  if (
+    hasPerm(perms, "activeclinic.facility.create") ||
+    hasPerm(perms, "activeclinic.facility.update") ||
+    hasPerm(perms, "activeclinic.facility.archive")
+  ) {
+    metrics.push({
+      key: "facilities",
+      label: "Active facilities",
+      value: activeFacilities.length,
+      href: "/app/facilities",
+    });
+  }
+  if (hasPerm(perms, "activeclinic.staff.view")) {
+    metrics.push({
+      key: "staff",
+      label: "Active staff",
+      value: activeStaff.length,
+      href: "/app/staff",
+    });
+    metrics.push({
+      key: "invitations",
+      label: "Pending invitations",
+      value: invitedStaff.length,
+      href: "/app/staff",
+    });
+  }
 
   return {
     ok: true,
@@ -264,32 +237,16 @@ async function loadActiveClinicDashboardHome(db, input) {
           ? "Organization-wide access"
           : "Select a facility to continue",
     },
+    /** @deprecated prefer metrics[]; kept for existing templates/tests */
     summaries: {
-      facilities:
-        hasPerm(perms, "activeclinic.facility.create") ||
-        hasPerm(perms, "activeclinic.facility.update") ||
-        hasPerm(perms, "activeclinic.facility.archive")
-          ? {
-              label: "Active facilities",
-              value: activeFacilities.length,
-              href: "/app/facilities",
-            }
-          : null,
-      staff: hasPerm(perms, "activeclinic.staff.view")
-        ? {
-            label: "Active staff",
-            value: activeStaff.length,
-            href: "/app/staff",
-          }
-        : null,
-      invitations: hasPerm(perms, "activeclinic.staff.view")
-        ? {
-            label: "Pending invitations",
-            value: invitedStaff.length,
-            href: "/app/staff",
-          }
-        : null,
+      facilities: metrics.find((m) => m.key === "facilities") || null,
+      staff: metrics.find((m) => m.key === "staff") || null,
+      invitations: metrics.find((m) => m.key === "invitations") || null,
     },
+    metrics,
+    sections,
+    modules: buckets,
+    authorizedTiles,
     setupTasks,
     quickActions,
     notices: [],

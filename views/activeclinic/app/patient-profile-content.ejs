@@ -14,6 +14,9 @@
       <div><dt>Date of birth</dt><dd><%= patient.dateOfBirth || '—' %><%= patient.estimatedDateOfBirth ? ' (estimated)' : '' %> · age <%= patient.approximateAge || '—' %></dd></div>
       <div><dt>Sex at registration</dt><dd><%= patient.sexLabel || '—' %></dd></div>
       <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= patient.status %>"><%= patient.statusLabel || patient.status %></span></dd></div>
+      <% if (patient.registrationIncomplete) { %>
+      <div><dt>Registration</dt><dd><span class="ac-flash ac-flash--warning">Registration incomplete</span></dd></div>
+      <% } %>
     </dl>
   </div>
 

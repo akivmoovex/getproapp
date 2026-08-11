@@ -432,6 +432,9 @@ async function loadActiveClinicAppointmentFormScreen(db, input) {
           : "/app/appointments",
       rescheduleAction:
         appointment && `/app/appointments/${appointment.id}/reschedule`,
+      actions: {
+        canRegisterPatient: hasPerm(auth.permissions, PATIENT_PERM.CREATE),
+      },
       stitch: {
         book: STITCH.bookDesktop,
         review: STITCH.confirmationDesktop,
