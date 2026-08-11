@@ -1,6 +1,7 @@
 /**
- * ActiveClinic Patient Portal CSS (AC-V6-P27)
- * Public Sans / teal tokens — FUNCTIONAL_ONLY Stitch parity.
+ * ActiveClinic Patient Portal CSS (P27)
+ * Uses shared tokens from ac-tokens.css (--acp-* / status).
+ * Pass 8: hardcoded teals replaced with canonical public palette.
  */
 
 .ac-sr-only {
@@ -17,8 +18,7 @@
 
 [data-ac-shell="patient"],
 .ac-patient-body {
-  font-family: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--acp-font);
   color: #1a202c;
   background: #f7fafc;
   margin: 0;
@@ -30,7 +30,7 @@
   position: absolute;
   left: -9999px;
   top: 0;
-  background: #0d9488;
+  background: var(--acp-primary);
   color: #fff;
   padding: 0.5rem 1rem;
   z-index: 100;
@@ -64,7 +64,7 @@
 }
 
 .ac-patient-header__clinic {
-  color: #0d9488;
+  color: var(--acp-primary);
   font-weight: 600;
   text-decoration: none;
 }
@@ -85,7 +85,7 @@
 }
 
 .ac-patient-header__links a {
-  color: #0d9488;
+  color: var(--acp-primary);
   text-decoration: none;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .ac-patient-nav--desktop {
-  background: #0d9488;
+  background: var(--acp-primary);
   color: #fff;
   padding: 0.5rem 1rem;
   display: none;
@@ -157,7 +157,7 @@
 }
 
 .ac-patient-nav--mobile a[aria-current="page"] {
-  color: #0d9488;
+  color: var(--acp-primary);
 }
 
 .ac-patient-nav__icon {
@@ -193,7 +193,7 @@
 
 .ac-patient-page h1,
 .ac-patient-card h1 {
-  color: #0d9488;
+  color: var(--acp-primary);
   font-weight: 600;
   font-size: 1.5rem;
   margin: 0 0 1rem;
@@ -251,7 +251,7 @@
 
 .ac-patient-btn {
   display: inline-block;
-  background: #0d9488;
+  background: var(--acp-primary);
   color: #fff;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -263,13 +263,13 @@
 }
 
 .ac-patient-btn:hover {
-  background: #0f766e;
+  background: var(--acp-primary-hover);
 }
 
 .ac-patient-btn--secondary {
   background: #fff;
-  color: #0d9488;
-  border: 1px solid #0d9488;
+  color: var(--acp-primary);
+  border: 1px solid var(--acp-primary);
 }
 
 .ac-patient-btn--secondary:hover {
@@ -325,7 +325,7 @@
 }
 
 .ac-patient-links a {
-  color: #0d9488;
+  color: var(--acp-primary);
 }
 
 .ac-patient-meta {
@@ -362,7 +362,7 @@
 }
 
 .ac-patient-list a {
-  color: #0d9488;
+  color: var(--acp-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -370,7 +370,7 @@
 .ac-patient-badge {
   font-size: 0.75rem;
   background: #e6fffa;
-  color: #0d9488;
+  color: var(--acp-primary);
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
   white-space: nowrap;
@@ -398,7 +398,7 @@
 }
 
 .ac-patient-actions a {
-  color: #0d9488;
+  color: var(--acp-primary);
   font-size: 0.9375rem;
 }
 
@@ -420,8 +420,8 @@
 }
 
 .ac-patient-filters a[aria-current="true"] {
-  background: #0d9488;
-  border-color: #0d9488;
+  background: var(--acp-primary);
+  border-color: var(--acp-primary);
   color: #fff;
 }
 
@@ -449,12 +449,12 @@
 .ac-patient-table th {
   background: #f7fafc;
   font-weight: 600;
-  color: #0d9488;
+  color: var(--acp-primary);
   font-size: 0.875rem;
 }
 
 .ac-patient-table a {
-  color: #0d9488;
+  color: var(--acp-primary);
   text-decoration: none;
 }
 
@@ -512,22 +512,22 @@ form.ac-patient-form-inline {
 /* Pass 2 — patient portal visual system (scoped to .ac-patient-body / .acp-*) */
 .ac-patient-body {
   background:
-    radial-gradient(700px 280px at 10% -10%, #d5faff, transparent 55%),
+    radial-gradient(700px 280px at 10% -10%, var(--acp-primary-soft), transparent 55%),
     linear-gradient(180deg, #eff4ff, #f7fafc);
-  color: #181c1e;
+  color: var(--acp-ink);
 }
 .ac-patient-header {
   background: rgba(255,255,255,0.94);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid #c4c7c9;
+  border-bottom: 1px solid var(--acp-border);
 }
 .ac-patient-header__clinic,
 .ac-patient-header__links a {
-  color: #006068;
+  color: var(--acp-primary);
 }
 .ac-patient-nav--desktop,
 .ac-patient-nav {
-  background: #006068;
+  background: var(--acp-primary);
 }
 .ac-patient-main {
   max-width: 960px;
@@ -538,7 +538,7 @@ form.ac-patient-form-inline {
   max-width: 26rem;
   margin: 1.5rem auto;
   background: #fff;
-  border: 1px solid #c4c7c9;
+  border: 1px solid var(--acp-border);
   border-radius: 1.25rem;
   padding: 1.75rem 1.35rem;
   box-shadow: 0 8px 24px rgba(0, 31, 35, 0.08);
@@ -551,13 +551,13 @@ form.ac-patient-form-inline {
   height: 3rem;
   margin: 0 auto 0.85rem;
   border-radius: 0.75rem;
-  background: linear-gradient(145deg, #006068, #0a8a96);
+  background: linear-gradient(145deg, var(--acp-primary), var(--acp-primary-hover));
   box-shadow: inset 0 0 0 2px rgba(255,255,255,0.22);
 }
 .acp-auth-card__powered {
   margin: 1.25rem 0 0;
   text-align: center;
-  color: #6e797a;
+  color: var(--acp-muted);
   font-size: 0.8rem;
 }
 .ac-patient-field__label-row {
@@ -569,7 +569,7 @@ form.ac-patient-form-inline {
 }
 .ac-patient-field__label-row label { margin: 0; }
 .ac-patient-field__forgot {
-  color: #006068;
+  color: var(--acp-primary);
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
@@ -589,20 +589,20 @@ form.ac-patient-form-inline {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #004f56;
+  color: var(--acp-primary-strong);
   margin: 0 0 0.4rem;
 }
 .acp-auth-card h1,
 .acp-portal-dashboard__header h1 {
   margin: 0 0 0.4rem;
-  color: #213145;
+  color: var(--acp-navy);
   letter-spacing: -0.02em;
 }
-.acp-auth-card__lede { color: #6e797a; }
+.acp-auth-card__lede { color: var(--acp-muted); }
 .ac-patient-btn,
 .ac-patient-card--auth .ac-btn--primary {
   width: 100%;
-  background: #006068;
+  background: var(--acp-primary);
   color: #fff;
   border: none;
   border-radius: 999px;
@@ -615,7 +615,7 @@ form.ac-patient-form-inline {
 }
 .acp-portal-panel {
   background: #fff;
-  border: 1px solid #c4c7c9;
+  border: 1px solid var(--acp-border);
   border-radius: 1rem;
   padding: 1.15rem 1.1rem;
   box-shadow: 0 8px 24px rgba(0, 31, 35, 0.06);
@@ -623,7 +623,7 @@ form.ac-patient-form-inline {
 .acp-portal-panel h2 {
   margin: 0 0 0.75rem;
   font-size: 1.05rem;
-  color: #213145;
+  color: var(--acp-navy);
 }
 .acp-booking-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; }
 .acp-booking-list__item {
@@ -635,22 +635,9 @@ form.ac-patient-form-inline {
   border-bottom: 1px solid #e8eaed;
 }
 .acp-booking-list__item:last-child { border-bottom: none; }
-.acp-booking-list__item a { color: #006068; font-weight: 600; text-decoration: none; }
-.acp-status-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.65rem;
-  padding: 0.15rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: #eef2f4;
-  color: #213145;
-}
-.acp-status-badge--pending { background: #fff4ce; color: #6b5200; }
-.acp-status-badge--confirmed { background: #d5faff; color: #004f56; }
-.acp-status-badge--done { background: #e3f6ea; color: #0f5132; }
-.acp-empty-state { color: #6e797a; }
+.acp-booking-list__item a { color: var(--acp-primary); font-weight: 600; text-decoration: none; }
+/* Status badges: use shared .acp-status-badge from ac-tokens.css */
+.acp-empty-state { color: var(--acp-muted); }
 .acp-portal-actions {
   display: flex;
   flex-wrap: wrap;
@@ -664,10 +651,10 @@ form.ac-patient-form-inline {
   min-height: 2.75rem;
   padding: 0.55rem 1rem;
   border-radius: 999px;
-  border: 1px solid #c4c7c9;
+  border: 1px solid var(--acp-border);
   text-decoration: none;
   font-weight: 600;
-  color: #213145;
+  color: var(--acp-navy);
   background: #fff;
 }
 @media (min-width: 768px) {
@@ -700,7 +687,7 @@ form.ac-patient-form-inline {
   .ac-patient-card,
   [data-ac-page-section="patient-login"] .acp-auth-card,
   .ac-patient-card--auth {
-    max-width: 100% !important;
+    max-width: 100%;
     width: 100%;
     box-sizing: border-box;
     margin-left: 0;

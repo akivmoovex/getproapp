@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-11T22:25:32.897Z",
-  "sha": "pass7-local",
+  "generated": "2026-08-11T22:31:00.379Z",
+  "sha": "pass8-local",
   "screens": [
     {
       "phase": "P01",
@@ -10964,6 +10964,17 @@
       "Authenticated drawer rounded items + mobile gutters",
       "Priority overflow audit 375/390/430 = 0",
       "MATCHED (>=95) not claimed without full Stitch side-by-side for all screens"
+    ]
+  },
+  "pass8": {
+    "title": "Design-system consolidation",
+    "verdict": "PASS8_COMPLETE_WITH_GAPS",
+    "rescored": false,
+    "notes": [
+      "Introduced ac-tokens.css shared by all shells",
+      "Patient hex teals mapped to --acp-*",
+      "Status badge base unified; booking aliases retained",
+      "No matrix score changes (refactor-only)"
     ]
   }
 }

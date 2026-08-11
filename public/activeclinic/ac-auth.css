@@ -14,12 +14,12 @@
   --ac-auth-on-primary: #ffffff;
   --ac-auth-secondary: #006a6a;
   --ac-auth-focus: #1d59c1;
-  --ac-auth-danger: #ba1a1a;
-  --ac-auth-danger-bg: #ffdad6;
-  --ac-auth-success: #027a48;
-  --ac-auth-success-bg: #ecfdf3;
-  --ac-auth-warning: #b54708;
-  --ac-auth-warning-bg: #fffaeb;
+  --ac-auth-danger: var(--ac-status-danger);
+  --ac-auth-danger-bg: var(--ac-status-danger-bg);
+  --ac-auth-success: var(--ac-status-success);
+  --ac-auth-success-bg: var(--ac-status-success-bg);
+  --ac-auth-warning: var(--ac-status-warning);
+  --ac-auth-warning-bg: var(--ac-status-warning-bg);
   --ac-auth-radius: 0.5rem;
   --ac-auth-radius-sm: 0.125rem;
   --ac-auth-shadow: 0 1px 2px rgba(25, 28, 30, 0.06);
@@ -30,7 +30,7 @@
   --ac-auth-input-h: 2.75rem;
   --ac-auth-btn-h: 3rem;
   --ac-auth-font: "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
-  --ac-auth-touch: 2.75rem;
+  --ac-auth-touch: var(--ac-touch);
 }
 
 *,

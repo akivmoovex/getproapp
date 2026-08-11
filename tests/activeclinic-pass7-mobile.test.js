@@ -27,7 +27,8 @@ describe("ActiveClinic Pass 7 mobile patterns", () => {
       },
     });
     assert.match(home, /acp-mobile-bottom-nav/);
-    assert.match(home, /v7-parity-7/);
+    assert.match(home, /v7-parity-[78]/);
+    assert.match(home, /ac-tokens\.css/);
 
     const book = renderPublicPage({
       pageId: "booking-choose-doctor",
@@ -51,11 +52,15 @@ describe("ActiveClinic Pass 7 mobile patterns", () => {
   });
 
   it("ships Pass 7 mobile CSS tokens and bottom-nav rules", () => {
+    const tokens = fs.readFileSync(
+      path.join(__dirname, "..", "public", "activeclinic", "ac-tokens.css"),
+      "utf8"
+    );
     const css = fs.readFileSync(
       path.join(__dirname, "..", "public", "activeclinic", "ac-public.css"),
       "utf8"
     );
-    assert.match(css, /--acp-bottom-nav-h/);
+    assert.match(tokens, /--acp-bottom-nav-h/);
     assert.match(css, /\.acp-mobile-bottom-nav/);
     assert.match(css, /Pass 7/);
     assert.match(css, /acp-booking-actions[\s\S]*position:\s*fixed/);

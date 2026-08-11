@@ -34,12 +34,12 @@
   align-items: center;
   gap: 0.35rem;
   width: 100%;
-  min-height: 2.75rem;
+  min-height: var(--ac-control-h, var(--ac-touch, 2.75rem));
   padding: 0.5rem 0.65rem;
-  border: 1px solid var(--ac-border, #d5e0e3);
-  border-radius: 10px;
-  background: var(--ac-surface, #fff);
-  color: var(--ac-ink, #1a2b2f);
+  border: 1px solid var(--acp-border, var(--ac-border, #d5e0e3));
+  border-radius: var(--ac-radius-md, 10px);
+  background: var(--acp-surface, var(--ac-surface, #fff));
+  color: var(--acp-ink, var(--ac-ink, #1a2b2f));
   font: inherit;
   cursor: pointer;
 }
@@ -74,7 +74,7 @@
 
 .ac-phone-field__input {
   width: 100%;
-  min-height: 2.75rem;
+  min-height: var(--ac-control-h, var(--ac-touch, 2.75rem));
 }
 
 .ac-phone-field__input.is-invalid {
@@ -83,7 +83,7 @@
 
 .ac-phone-field__popover {
   position: absolute;
-  z-index: 40;
+  z-index: var(--ac-z-popover, 40);
   top: calc(100% + 0.25rem);
   left: 0;
   width: min(22rem, 85vw);
@@ -92,10 +92,10 @@
   flex-direction: column;
   gap: 0.35rem;
   padding: 0.5rem;
-  border: 1px solid var(--ac-border, #d5e0e3);
-  border-radius: 12px;
-  background: var(--ac-surface, #fff);
-  box-shadow: 0 12px 28px rgba(15, 40, 45, 0.12);
+  border: 1px solid var(--acp-border, var(--ac-border, #d5e0e3));
+  border-radius: var(--ac-radius-md, 12px);
+  background: var(--acp-surface, var(--ac-surface, #fff));
+  box-shadow: var(--ac-shadow-sm, 0 12px 28px rgba(15, 40, 45, 0.12));
 }
 
 .ac-phone-field__popover[hidden] {

@@ -166,3 +166,7 @@ See `ACTIVECLINIC_PASS6_ASSET_REPORT.md`. Priority heroes/doctor photos wired fr
 ## Pass 7 (mobile)
 
 Mobile-only sweep: bottom nav, booking fixed CTA, filter bottom-sheet, phone picker, app drawer polish. Priority overflow 375/390/430 = 0. See pass7 block in JSON matrix.
+
+## Pass 8 (design system)
+
+Token consolidation only (`ac-tokens.css`). No broad parity rescore. See `ACTIVECLINIC_PASS8_DESIGN_SYSTEM.md`.

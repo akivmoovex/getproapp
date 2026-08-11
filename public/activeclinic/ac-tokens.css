@@ -1,0 +1,217 @@
+/**
+ * ActiveClinic shared design tokens (Pass 8).
+ * Product-isolated under /activeclinic/. Loaded by all ActiveClinic shells.
+ * Defines custom properties only — no global element styling.
+ *
+ * Layers:
+ *  1) Shared semantic status / space / radius / z
+ *  2) Public+portal teal system (--acp-*) — Stitch project 17813606734422395399
+ *  3) Typography scale for public/portal
+ *
+ * Authenticated app indigo tokens remain in ac-app.css (--ac-*).
+ * Staff auth navy tokens remain in ac-auth.css (--ac-auth-*).
+ */
+:root {
+  /* —— Shared semantic status —— */
+  --ac-status-success: #027a48;
+  --ac-status-success-bg: #ecfdf3;
+  --ac-status-warning: #b54708;
+  --ac-status-warning-bg: #fffaeb;
+  --ac-status-danger: #ba1a1a;
+  --ac-status-danger-bg: #ffdad6;
+  --ac-status-info: #004f56;
+  --ac-status-info-bg: #d5faff;
+  --ac-status-neutral: #213145;
+  --ac-status-neutral-bg: #eef2f4;
+  --ac-status-pending: #6b5200;
+  --ac-status-pending-bg: #fff4ce;
+
+  /* —— Shared space scale —— */
+  --ac-space-1: 0.25rem;
+  --ac-space-2: 0.5rem;
+  --ac-space-3: 0.75rem;
+  --ac-space-4: 1rem;
+  --ac-space-5: 1.5rem;
+  --ac-space-6: 2rem;
+  --ac-space-7: 3rem;
+
+  /* —— Shared radii —— */
+  --ac-radius-sm: 8px;
+  --ac-radius-md: 12px;
+  --ac-radius-lg: 1.25rem;
+  --ac-radius-xl: 1.75rem;
+  --ac-radius-pill: 999px;
+
+  /* —— Shared elevation —— */
+  --ac-shadow-sm: 0 8px 24px rgba(0, 31, 35, 0.08);
+  --ac-shadow-md: 0 12px 28px rgba(0, 31, 35, 0.12);
+
+  /* —— Shared z-index —— */
+  --ac-z-sticky: 50;
+  --ac-z-drawer: 80;
+  --ac-z-modal: 90;
+  --ac-z-popover: 100;
+  --ac-z-skip: 1000;
+
+  /* —— Shared touch / control —— */
+  --ac-touch: 2.75rem;
+  --ac-control-h: 2.75rem;
+
+  /* —— Breakpoint reference (documentation; media queries still literal) ——
+     --ac-bp-sm: 480px;
+     --ac-bp-mobile: 767px;
+     --ac-bp-tablet: 768px;
+     --ac-bp-app: 900px;
+     --ac-bp-desktop: 1024px;
+     --ac-bp-wide: 1440px;
+  */
+
+  /* —— Public / tenant / portal teal system (Stitch public) —— */
+  --acp-primary: #006068;
+  --acp-primary-strong: #004f56;
+  --acp-primary-hover: #0f766e;
+  --acp-primary-soft: #d5faff;
+  --acp-navy: #213145;
+  --acp-ink: #181c1e;
+  --acp-muted: #6e797a;
+  --acp-surface: #ffffff;
+  --acp-surface-low: #f1f4f6;
+  --acp-bg: #eff4ff;
+  --acp-border: #c4c7c9;
+  --acp-outline: #bac6ec;
+  --acp-error: #ba1a1a;
+  --acp-error-bg: #ffdad6;
+  --acp-radius: var(--ac-radius-md);
+  --acp-radius-lg: var(--ac-radius-lg);
+  --acp-radius-xl: var(--ac-radius-xl);
+  --acp-shadow-sm: var(--ac-shadow-sm);
+  --acp-font: "Public Sans", Segoe UI, system-ui, sans-serif;
+  --acp-touch: var(--ac-touch);
+  --acp-max: 72rem;
+  --acp-space-1: var(--ac-space-1);
+  --acp-space-2: var(--ac-space-2);
+  --acp-space-3: var(--ac-space-3);
+  --acp-space-4: var(--ac-space-4);
+  --acp-space-5: var(--ac-space-5);
+  --acp-space-6: var(--ac-space-6);
+  --acp-space-7: var(--ac-space-7);
+  --acp-gutter: 1.25rem;
+  --acp-section-gap: 1.5rem;
+  --acp-card-gap: 1rem;
+  --acp-heading-mobile: clamp(1.65rem, 6vw, 2.1rem);
+  --acp-body-mobile: 1rem;
+  --acp-bottom-nav-h: 4.5rem;
+  --acp-safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* —— Public typography scale —— */
+  --acp-text-display: clamp(2.1rem, 5vw, 3.15rem);
+  --acp-text-h1: clamp(1.75rem, 4vw, 2.5rem);
+  --acp-text-h2: 1.35rem;
+  --acp-text-h3: 1.15rem;
+  --acp-text-body: 1rem;
+  --acp-text-body-lg: 1.1rem;
+  --acp-text-small: 0.92rem;
+  --acp-text-label: 0.875rem;
+  --acp-text-caption: 0.8rem;
+  --acp-text-badge: 0.75rem;
+  --acp-leading-tight: 1.18;
+  --acp-leading-body: 1.5;
+}
+
+/* Semantic status badge primitives (shared by public + portal) */
+.ac-status-badge,
+.acp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--ac-radius-pill);
+  font-size: var(--acp-text-badge);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--ac-status-neutral-bg);
+  color: var(--ac-status-neutral);
+}
+.ac-status-badge--success,
+.acp-status-badge--confirmed,
+.acp-status-badge--done {
+  background: var(--ac-status-info-bg);
+  color: var(--ac-status-info);
+}
+.acp-status-badge--done {
+  background: #e3f6ea;
+  color: #0f5132;
+}
+.ac-status-badge--pending,
+.acp-status-badge--pending {
+  background: var(--ac-status-pending-bg);
+  color: var(--ac-status-pending);
+}
+.ac-status-badge--warning {
+  background: var(--ac-status-warning-bg);
+  color: var(--ac-status-warning);
+}
+.ac-status-badge--danger {
+  background: var(--ac-status-danger-bg);
+  color: var(--ac-status-danger);
+}
+.ac-status-badge--neutral {
+  background: var(--ac-status-neutral-bg);
+  color: var(--ac-status-neutral);
+}
+
+/* Optional typography utilities (public/portal). Prefer these over ad-hoc sizes. */
+.ac-type-display,
+.acp-type-display {
+  font-size: var(--acp-text-display);
+  line-height: var(--acp-leading-tight);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--acp-navy);
+}
+.ac-type-h1,
+.acp-type-h1 {
+  font-size: var(--acp-text-h1);
+  line-height: var(--acp-leading-tight);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--acp-navy);
+}
+.ac-type-h2,
+.acp-type-h2 {
+  font-size: var(--acp-text-h2);
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--acp-navy);
+}
+.ac-type-h3,
+.acp-type-h3 {
+  font-size: var(--acp-text-h3);
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--acp-navy);
+}
+.ac-type-body,
+.acp-type-body {
+  font-size: var(--acp-text-body);
+  line-height: var(--acp-leading-body);
+  color: var(--acp-ink);
+}
+.ac-type-lede,
+.acp-type-lede {
+  font-size: var(--acp-text-body-lg);
+  line-height: var(--acp-leading-body);
+  color: var(--acp-muted);
+}
+.ac-type-label,
+.acp-type-label {
+  font-size: var(--acp-text-label);
+  font-weight: 600;
+  color: var(--acp-ink);
+}
+.ac-type-caption,
+.acp-type-caption {
+  font-size: var(--acp-text-caption);
+  color: var(--acp-muted);
+}
+
