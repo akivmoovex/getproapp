@@ -1,15 +1,27 @@
-<section class="ac-public-section" data-ac-page-section="tenant-doctors">
-  <h1>Doctors</h1>
+<section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-doctors">
+  <header class="ac-tenant-page-header">
+    <h1>Doctors</h1>
+    <p class="ac-public-lede">Clinicians with profiles published by <%= clinic.publicName %>.</p>
+  </header>
   <% const list = Array.isArray(profiles) ? profiles : []; %>
   <% if (!list.length) { %>
   <div class="ac-public-empty" data-ac-empty="doctors">
     <p>No public doctor profiles are published.</p>
-    <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
+    <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
   </div>
   <% } else { %>
   <ul class="ac-doctor-cards">
     <% list.forEach(function(d) { %>
-    <li><a href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>"><h2><%= d.displayName %></h2><% if (d.title) { %><p><%= d.title %></p><% } %></a></li>
+    <li class="ac-doctor-card">
+      <a class="ac-doctor-card__link" href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>">
+        <div class="ac-doctor-card__avatar" aria-hidden="true"><%= String(d.displayName || "?").charAt(0).toUpperCase() %></div>
+        <div class="ac-doctor-card__body">
+          <h2 class="ac-doctor-card__name"><%= d.displayName %></h2>
+          <% if (d.title) { %><p class="ac-doctor-card__title"><%= d.title %></p><% } %>
+          <span class="ac-doctor-card__cta">View profile</span>
+        </div>
+      </a>
+    </li>
     <% }) %>
   </ul>
   <% } %>

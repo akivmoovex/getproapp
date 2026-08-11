@@ -1,5 +1,11 @@
-<section class="ac-public-section" data-ac-page-section="tenant-contact-success">
-  <h1>Message received</h1>
-  <p>Your inquiry was recorded for <%= clinic.publicName %>. The clinic may contact you using the details you provided.</p>
-  <p><a href="/clinics/<%= clinic.clinicKey %>">Back to clinic</a></p>
+<section class="ac-public-section acp-confirmation-panel" data-ac-page-section="tenant-contact-success">
+  <div class="acp-confirmation-panel__card">
+    <p class="ac-public-eyebrow">Contact</p>
+    <h1>Message received</h1>
+    <p>Your inquiry was recorded for <%= clinic.publicName %>. The clinic may contact you using the details you provided.</p>
+    <p class="ac-public-actions">
+      <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>">Back to clinic</a>
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Send another message</a>
+    </p>
+  </div>
 </section>

@@ -1,24 +1,117 @@
-<section class="ac-public-hero" data-ac-page-section="tenant-home">
-  <h1><%= clinic.publicName %></h1>
-  <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
-  <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
-  <ul class="ac-public-list ac-public-list--inline">
-    <% if (clinic.publicPhoneDisplay) { %><li>Phone: <%= clinic.publicPhoneDisplay %></li><% } %>
-    <% if (clinic.publicEmailDisplay) { %><li>Email: <%= clinic.publicEmailDisplay %></li><% } %>
-  </ul>
-  <% } %>
-  <p class="ac-public-actions">
-    <% if (clinic.publicBookingEnabled) { %>
-    <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book">Request an appointment</a>
-    <% } %>
-    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
-    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
-    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/location">Location</a>
-  </p>
-  <% if (clinic.websiteAbout) { %>
-  <div class="ac-public-prose ac-public-prose--home">
-    <p><%= clinic.websiteAbout.length > 280 ? clinic.websiteAbout.slice(0, 280) + '…' : clinic.websiteAbout %></p>
-    <p><a href="/clinics/<%= clinic.clinicKey %>/about">Read more about us</a></p>
+<%
+  const primaryFacility = (Array.isArray(clinic.facilities) && clinic.facilities.length)
+    ? (clinic.facilities.find(function (f) { return f.isPrimary; }) || clinic.facilities[0])
+    : null;
+  const locationBits = [];
+  if (primaryFacility) {
+    if (primaryFacility.addressLine1) locationBits.push(primaryFacility.addressLine1);
+    if (primaryFacility.city) locationBits.push(primaryFacility.city);
+    if (primaryFacility.province) locationBits.push(primaryFacility.province);
+    if (primaryFacility.countryCode) locationBits.push(primaryFacility.countryCode);
+  }
+  const locationLine = locationBits.join(", ");
+  const heroSrc = clinic.websiteHeroUrl || "/activeclinic/assets/clinic-hero-default.jpg";
+  const heroAlt = "Exterior of " + clinic.publicName;
+%>
+<section class="ac-tenant-hero" data-ac-page-section="tenant-home" aria-labelledby="ac-tenant-hero-title">
+  <div class="ac-tenant-hero__grid">
+    <div class="ac-tenant-hero__copy">
+      <% if (clinic.websiteTagline) { %>
+      <p class="ac-tenant-eyebrow" data-ac-hero-eyebrow="1">
+        <span class="ac-tenant-eyebrow__icon" aria-hidden="true">◷</span>
+        <%= clinic.websiteTagline %>
+      </p>
+      <% } else { %>
+      <p class="ac-tenant-eyebrow" data-ac-hero-eyebrow="1">
+        <span class="ac-tenant-eyebrow__icon" aria-hidden="true">◷</span>
+        Caring for our community
+      </p>
+      <% } %>
+      <h1 id="ac-tenant-hero-title">Welcome to <%= clinic.publicName %></h1>
+      <p class="ac-tenant-hero__lede">
+        <% if (locationLine) { %><%= locationLine %>. <% } %>
+        <% if (clinic.websiteAbout) { %>
+          <%= clinic.websiteAbout.length > 160 ? clinic.websiteAbout.slice(0, 160) + "…" : clinic.websiteAbout %>
+        <% } else { %>
+          Providing compassionate, professional healthcare for our community.
+        <% } %>
+      </p>
+      <div class="ac-tenant-hero__actions">
+        <% if (clinic.publicBookingEnabled) { %>
+        <a class="ac-btn ac-btn--primary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/book">Book an appointment</a>
+        <% } %>
+        <% if (clinic.publicPhoneDisplay) { %>
+        <a class="ac-btn ac-btn--ghost ac-btn--pill ac-btn--phone" href="tel:<%= String(clinic.publicPhoneDisplay).replace(/[^\d+]/g, '') %>">
+          <span aria-hidden="true">☎</span>
+          <%= clinic.publicPhoneDisplay %>
+        </a>
+        <% } else { %>
+        <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/contact">Contact the clinic</a>
+        <% } %>
+      </div>
+    </div>
+    <div class="ac-tenant-hero__media">
+      <img
+        class="ac-tenant-hero__image"
+        src="<%= heroSrc %>"
+        alt="<%= heroAlt %>"
+        width="960"
+        height="600"
+        loading="eager"
+        decoding="async"
+      />
+      <aside class="ac-tenant-hero__badge" aria-label="Facility status">
+        <span class="ac-tenant-hero__badge-icon" aria-hidden="true">✓</span>
+        <span>
+          <strong>Published clinic</strong>
+          <span class="ac-tenant-hero__badge-sub">ActiveClinic directory</span>
+        </span>
+      </aside>
+    </div>
   </div>
+</section>
+
+<section class="ac-tenant-trust" data-ac-page-section="tenant-trust" aria-label="Clinic highlights">
+  <ul class="ac-tenant-trust__list">
+    <li>
+      <span class="ac-tenant-trust__icon" aria-hidden="true">✓</span>
+      Verified ActiveClinic listing
+    </li>
+    <% if (primaryFacility && (primaryFacility.city || primaryFacility.province)) { %>
+    <li>
+      <span class="ac-tenant-trust__icon" aria-hidden="true">⌖</span>
+      Located in <%= primaryFacility.city || primaryFacility.province %>
+    </li>
+    <% } %>
+    <% if (clinic.publicBookingEnabled) { %>
+    <li>
+      <span class="ac-tenant-trust__icon" aria-hidden="true">◷</span>
+      Online appointment requests
+    </li>
+    <% } %>
+    <li class="ac-tenant-trust__note">Clinic staff review booking requests before confirmation</li>
+  </ul>
+</section>
+
+<section class="ac-public-section ac-tenant-preview" data-ac-page-section="tenant-preview">
+  <div class="ac-tenant-preview__grid">
+    <article class="ac-tenant-preview__card">
+      <h2>Services</h2>
+      <p>Browse consultations, procedures, and care offerings published by this clinic.</p>
+      <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/services">View services</a>
+    </article>
+    <article class="ac-tenant-preview__card">
+      <h2>Doctors</h2>
+      <p>Meet clinicians with public profiles and specialties where the clinic has published them.</p>
+      <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/doctors">View doctors</a>
+    </article>
+    <article class="ac-tenant-preview__card">
+      <h2>Visit us</h2>
+      <p><% if (locationLine) { %><%= locationLine %><% } else { %>See location and opening hours.<% } %></p>
+      <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/location">Location &amp; hours</a>
+    </article>
+  </div>
+  <% if (clinic.websiteAbout && clinic.websiteAbout.length > 160) { %>
+  <p class="ac-tenant-preview__more"><a href="/clinics/<%= clinic.clinicKey %>/about">Read more about <%= clinic.publicName %></a></p>
   <% } %>
 </section>

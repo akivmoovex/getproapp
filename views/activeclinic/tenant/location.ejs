@@ -1,15 +1,19 @@
-<section class="ac-public-section" data-ac-page-section="tenant-location">
-  <h1>Location &amp; hours</h1>
+<section class="ac-public-section acp-page" data-ac-page-section="tenant-location">
+  <header class="acp-page-hero acp-page-hero--compact">
+    <p class="ac-public-eyebrow">Visit us</p>
+    <h1>Location &amp; hours</h1>
+    <p class="ac-public-lede">Published facility addresses and hours for <%= clinic.publicName %>.</p>
+  </header>
   <% const facilityList = Array.isArray(clinic.facilities) ? clinic.facilities : []; %>
   <% if (!facilityList.length) { %>
-  <div class="ac-public-empty" data-ac-location-state="empty">
+  <div class="ac-public-empty acp-empty-state" data-ac-location-state="empty">
     <p>Location details have not been published for this clinic yet.</p>
     <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a></p>
   </div>
   <% } else { %>
-  <ul class="ac-location-list">
+  <ul class="ac-location-list acp-location-grid">
     <% facilityList.forEach(function(f) { %>
-    <li class="ac-location-card" data-ac-facility="<%= f.facilityKey %>">
+    <li class="ac-location-card acp-location-card" data-ac-facility="<%= f.facilityKey %>">
       <h2><%= f.displayName %><% if (f.isPrimary) { %> <span class="ac-location-badge">Primary</span><% } %></h2>
       <% const addressParts = [f.addressLine1, f.addressLine2, f.city, f.district, f.province, f.postalCode].filter(Boolean); %>
       <% if (addressParts.length) { %>

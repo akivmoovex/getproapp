@@ -1,14 +1,24 @@
-<article class="ac-public-section" data-ac-page-section="tenant-about">
-  <h1>About <%= clinic.publicName %></h1>
-  <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
-  <% if (clinic.websiteAbout) { %><div class="ac-public-prose"><%= clinic.websiteAbout %></div>
-  <% } else { %><p>Public about content has not been configured for this clinic yet.</p><% } %>
+<article class="acp-page" data-ac-page-section="tenant-about">
+  <header class="acp-page-hero acp-page-hero--compact">
+    <p class="ac-public-eyebrow">About</p>
+    <h1>About <%= clinic.publicName %></h1>
+    <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
+  </header>
+  <% if (clinic.websiteAbout) { %>
+  <div class="ac-public-prose acp-prose-card"><%= clinic.websiteAbout %></div>
+  <% } else { %>
+  <div class="acp-empty-state ac-public-empty">
+    <p>Public about content has not been configured for this clinic yet.</p>
+  </div>
+  <% } %>
   <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
-  <h2>Contact details</h2>
-  <ul class="ac-public-list">
-    <% if (clinic.publicPhoneDisplay) { %><li>Phone: <%= clinic.publicPhoneDisplay %></li><% } %>
-    <% if (clinic.publicEmailDisplay) { %><li>Email: <%= clinic.publicEmailDisplay %></li><% } %>
-  </ul>
+  <section class="acp-section">
+    <h2>Contact details</h2>
+    <ul class="ac-public-list">
+      <% if (clinic.publicPhoneDisplay) { %><li>Phone: <%= clinic.publicPhoneDisplay %></li><% } %>
+      <% if (clinic.publicEmailDisplay) { %><li>Email: <%= clinic.publicEmailDisplay %></li><% } %>
+    </ul>
+  </section>
   <% } %>
   <p class="ac-public-actions">
     <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/location">Location &amp; hours</a>

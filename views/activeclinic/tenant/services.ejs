@@ -1,26 +1,45 @@
-<section class="ac-public-section" data-ac-page-section="tenant-services">
-  <h1>Services</h1>
+<section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-services">
+  <header class="ac-tenant-page-header">
+    <h1>Services</h1>
+    <p class="ac-public-lede">Care offerings published by <%= clinic.publicName %>.</p>
+  </header>
   <% const serviceList = Array.isArray(services) ? services : []; %>
   <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
   <% if (!serviceList.length && !procedureList.length) { %>
   <div class="ac-public-empty" data-ac-empty="services">
     <p>No public services are published yet.</p>
-    <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
+    <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
   </div>
   <% } %>
   <% if (serviceList.length) { %>
-  <h2>Consultations</h2>
+  <h2 class="acp-section-title">Consultations</h2>
   <ul class="ac-service-cards">
     <% serviceList.forEach(function(s) { %>
-    <li><a href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>"><h3><%= s.displayName %></h3><% if (s.summary) { %><p><%= s.summary %></p><% } %></a></li>
+    <li class="ac-service-card">
+      <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>">
+        <h3 class="ac-service-card__name"><%= s.displayName %></h3>
+        <% if (s.summary) { %>
+        <p class="ac-service-card__summary"><%= s.summary.length > 140 ? s.summary.slice(0, 140) + "…" : s.summary %></p>
+        <% } %>
+        <span class="ac-service-card__cta">View details</span>
+      </a>
+    </li>
     <% }) %>
   </ul>
   <% } %>
   <% if (procedureList.length) { %>
-  <h2>Procedures &amp; diagnostics</h2>
+  <h2 class="acp-section-title">Procedures &amp; diagnostics</h2>
   <ul class="ac-service-cards">
     <% procedureList.forEach(function(p) { %>
-    <li><a href="/clinics/<%= clinic.clinicKey %>/procedures/<%= p.procedureKey %>"><h3><%= p.displayName %></h3><% if (p.summary) { %><p><%= p.summary %></p><% } %></a></li>
+    <li class="ac-service-card">
+      <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/procedures/<%= p.procedureKey %>">
+        <h3 class="ac-service-card__name"><%= p.displayName %></h3>
+        <% if (p.summary) { %>
+        <p class="ac-service-card__summary"><%= p.summary.length > 140 ? p.summary.slice(0, 140) + "…" : p.summary %></p>
+        <% } %>
+        <span class="ac-service-card__cta">View details</span>
+      </a>
+    </li>
     <% }) %>
   </ul>
   <% } %>
