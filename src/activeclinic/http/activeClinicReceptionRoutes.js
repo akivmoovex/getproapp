@@ -16,6 +16,7 @@ const {
 } = require("./loadActiveClinicAuth");
 const {
   createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
@@ -100,6 +101,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     env,
     isProduction,
   });
+  const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
 
   function issuePageCsrf(res) {
     const token = issueCsrfToken(env);
@@ -135,6 +137,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception",
     requireAuth,
     requirePermission(PERM.VIEW),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicReceptionQueueScreen(getPool(), {
@@ -189,6 +192,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/call-board",
     requireAuth,
     requirePermission(PERM.VIEW),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicReceptionCallBoardScreen(getPool(), {
@@ -227,6 +231,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/check-in",
     requireAuth,
     requirePermission(PERM.CHECK_IN),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         const appointmentId = req.query.appointment_id || null;
@@ -267,6 +272,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/check-in",
     requireAuth,
     requirePermission(PERM.CHECK_IN),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -347,6 +353,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/walk-in",
     requireAuth,
     requirePermission(PERM.CHECK_IN),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicReceptionWalkInScreen(getPool(), {
@@ -385,6 +392,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/walk-in",
     requireAuth,
     requirePermission(PERM.CHECK_IN),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -485,6 +493,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/queue/:entryId",
     requireAuth,
     requirePermission(PERM.VIEW),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         const entryId = String(req.params.entryId || "");
@@ -603,6 +612,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/queue/:entryId/requeue",
     requireAuth,
     requirePermission(PERM.MANAGE_QUEUE),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -663,6 +673,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/queue/:entryId/assign",
     requireAuth,
     requirePermission(PERM.MANAGE_QUEUE),
+    requireDepartment("reception"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {

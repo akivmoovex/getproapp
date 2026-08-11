@@ -131,15 +131,22 @@ function itemIsVisible(item, permissionSet) {
 /**
  * @param {string[]} permissions
  * @param {string} [activeKey]
+ * @param {{ activeDepartmentTypes?: Set<string>|string[]|null }} [options]
  */
-function buildActiveClinicNavigation(permissions, activeKey) {
+function buildActiveClinicNavigation(permissions, activeKey, options) {
   const set = new Set(Array.isArray(permissions) ? permissions : []);
-  const items = NAV_ITEMS.filter((item) => itemIsVisible(item, set)).map((item) => ({
+  let items = NAV_ITEMS.filter((item) => itemIsVisible(item, set)).map((item) => ({
     ...item,
     // Expose a single representative permission for tests/markers.
     permission: item.permission || (item.anyOf && item.anyOf[0]) || null,
     current: activeKey != null && item.key === activeKey,
   }));
+  if (options && options.activeDepartmentTypes != null) {
+    const {
+      filterNavItemsByDepartments,
+    } = require("./activeClinicModuleAvailability");
+    items = filterNavItemsByDepartments(items, options.activeDepartmentTypes);
+  }
   return {
     items,
     desktop: items,

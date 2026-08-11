@@ -25,8 +25,11 @@ const {
 const {
   resolveEffectivePermissions,
 } = require("./activeClinicAuthorizationService");
+const {
+  loadActiveDepartmentTypeSet,
+} = require("./activeClinicModuleAvailability");
 
-const SHELL_ASSET_VERSION = "c07-1";
+const SHELL_ASSET_VERSION = "c07-2";
 
 /**
  * @param {{ query: Function }} db
@@ -84,7 +87,17 @@ async function buildActiveClinicShellViewModel(db, input) {
     });
     if (scoped.ok) permissions = scoped.permissions;
   }
-  const navigation = buildActiveClinicNavigation(permissions, activeNav);
+
+  let activeDepartmentTypes = null;
+  if (selectedFacility && auth.organization) {
+    activeDepartmentTypes = await loadActiveDepartmentTypeSet(db, {
+      facilityId: selectedFacility.id,
+      organizationId: auth.organization.id,
+    });
+  }
+  const navigation = buildActiveClinicNavigation(permissions, activeNav, {
+    activeDepartmentTypes,
+  });
 
   let eligibleOrganizations = [];
   if (auth.platformIdentity && auth.platformIdentity.id) {

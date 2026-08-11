@@ -32,9 +32,37 @@ const {
   updateHealthcareOrganizationSettings,
 } = require("../services/loadActiveClinicSettingsScreens");
 const {
+  loadDepartmentsSettingsScreen,
+  createDepartment,
+  updateDepartment,
+  RESULT: DEPT_RESULT,
+  PERM: DEPT_PERM,
+} = require("../services/loadActiveClinicDepartmentsSettingsScreen");
+const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+
+function departmentErrorMessage(code) {
+  switch (code) {
+    case DEPT_RESULT.ACCESS_DENIED:
+      return "You are not authorized to manage clinic departments.";
+    case DEPT_RESULT.FACILITY_NOT_FOUND:
+      return "Facility was not found in this organization.";
+    case DEPT_RESULT.DUPLICATE_KEY:
+      return "A department with that key already exists at this facility.";
+    case DEPT_RESULT.INVALID_TYPE:
+      return "Choose a supported department type.";
+    case DEPT_RESULT.INVALID_STATUS:
+      return "Choose active or inactive.";
+    case DEPT_RESULT.NOT_FOUND:
+      return "Department was not found.";
+    case DEPT_RESULT.INVALID_INPUT:
+      return "Check the department name, type, and facility.";
+    default:
+      return "Unable to update departments.";
+  }
+}
 
 function updateErrorMessage(code) {
   switch (code) {
@@ -389,6 +417,169 @@ function registerActiveClinicSettingsRoutes(app, deps) {
             },
           },
         });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/settings/clinic-setup/departments",
+    requireAuth,
+    requirePermission(DEPT_PERM.MANAGE),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadDepartmentsSettingsScreen(getPool(), {
+          auth: req.activeClinicAuth,
+        });
+        if (!loaded.ok) {
+          return denyPage(
+            res,
+            403,
+            "Access restricted",
+            departmentErrorMessage(loaded.code)
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "settings",
+          content: "app/settings-departments-content.ejs",
+          pageHeader: {
+            title: "Departments",
+            description: "Clinic Setup — configure operational departments per facility.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Settings", href: "/app/settings" },
+            { label: "Clinic Setup" },
+            { label: "Departments" },
+          ],
+          pageData: { departmentsPage: loaded.departmentsPage },
+          flash: req.query.ok
+            ? { type: "success", message: "Department configuration saved." }
+            : req.query.err
+              ? { type: "error", message: departmentErrorMessage(req.query.err) }
+              : null,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/clinic-setup/departments",
+    requireAuth,
+    requirePermission(DEPT_PERM.MANAGE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        const body = req.body || {};
+        const result = await createDepartment(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          facilityId: String(body.facility_id || "").trim(),
+          departmentType: String(body.department_type || "").trim(),
+          displayName: String(body.display_name || "").trim(),
+          departmentKey: String(body.department_key || "").trim() || null,
+        });
+        if (!result.ok) {
+          return res.redirect(
+            303,
+            `/app/settings/clinic-setup/departments?err=${encodeURIComponent(result.result)}`
+          );
+        }
+        return res.redirect(303, "/app/settings/clinic-setup/departments?ok=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/clinic-setup/departments/:id/edit",
+    requireAuth,
+    requirePermission(DEPT_PERM.MANAGE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        const result = await updateDepartment(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          departmentId: req.params.id,
+          displayName: String((req.body && req.body.display_name) || "").trim(),
+        });
+        if (!result.ok) {
+          return res.redirect(
+            303,
+            `/app/settings/clinic-setup/departments?err=${encodeURIComponent(result.result)}`
+          );
+        }
+        return res.redirect(303, "/app/settings/clinic-setup/departments?ok=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/clinic-setup/departments/:id/activate",
+    requireAuth,
+    requirePermission(DEPT_PERM.MANAGE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        const result = await updateDepartment(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          departmentId: req.params.id,
+          status: "active",
+        });
+        if (!result.ok) {
+          return res.redirect(
+            303,
+            `/app/settings/clinic-setup/departments?err=${encodeURIComponent(result.result)}`
+          );
+        }
+        return res.redirect(303, "/app/settings/clinic-setup/departments?ok=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/clinic-setup/departments/:id/deactivate",
+    requireAuth,
+    requirePermission(DEPT_PERM.MANAGE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        const result = await updateDepartment(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          departmentId: req.params.id,
+          status: "inactive",
+        });
+        if (!result.ok) {
+          return res.redirect(
+            303,
+            `/app/settings/clinic-setup/departments?err=${encodeURIComponent(result.result)}`
+          );
+        }
+        return res.redirect(303, "/app/settings/clinic-setup/departments?ok=1");
       } catch (err) {
         return next(err);
       }

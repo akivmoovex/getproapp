@@ -34,8 +34,11 @@ const {
 } = require("../src/activeclinic/services/activeClinicStaffFacilityService");
 const {
   assignStaffRole,
-  NETWORK_ADMIN,
+  PHARMACIST,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
+const {
+  ensureDefaultDepartments,
+} = require("../src/activeclinic/services/activeClinicDepartmentService");
 const {
   createActiveClinicFoundationApp,
 } = require("../src/activeclinic/http/activeClinicFoundationServer");
@@ -108,6 +111,11 @@ async function seedAcTenant(stamp, keyPrefix) {
     phone: nextPhone(),
   });
   assert.equal(facility.ok, true);
+  await ensureDefaultDepartments(pool, {
+    organizationId: org.records.organization.id,
+    healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facility.facility.id,
+  });
   return {
     orgId: org.records.organization.id,
     hcoId: hco.healthcareOrganization.id,
@@ -137,6 +145,7 @@ async function seedStaff(tenant) {
     phone,
     personalEmail: `pharmstaff_${Date.now()}@example.com`,
     staffRole: "pharmacist",
+    platformIdentityId: identity.identity.id,
   });
   assert.equal(staff.ok, true);
   await assignStaffToFacility(pool, {
@@ -147,7 +156,9 @@ async function seedStaff(tenant) {
   await assignStaffRole(pool, {
     organizationId: tenant.orgId,
     staffMemberId: staff.staffMember.id,
-    roleKey: NETWORK_ADMIN,
+    roleKey: PHARMACIST,
+    scopeType: "facility",
+    facilityId: tenant.facilityId,
   });
   return {
     identityId: identity.identity.id,
@@ -156,47 +167,41 @@ async function seedStaff(tenant) {
   };
 }
 
-async function authenticate(app, phone) {
-  const loginRes = await request(app)
-    .post("/login")
-    .type("form")
-    .send({
-      phone: phone,
-      password: PASSWORD,
-      step: "password",
-    })
-    .expect(303);
-  const cookies = loginRes.headers["set-cookie"] || [];
-  const sessionCookie = cookies.find((c) => c.startsWith(COOKIE_ACTIVECLINIC_ORG + "="));
-  assert.ok(sessionCookie, "Session cookie should be set");
-  return sessionCookie.split(";")[0];
+async function makeSessionCookie(identityId, orgId, facilityId) {
+  const session = await createPlatformIdentitySession(pool, {
+    deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    platformIdentityId: identityId,
+    organizationId: orgId,
+    contextJson: facilityId ? { selectedFacilityId: facilityId } : {},
+  });
+  assert.equal(session.ok, true, JSON.stringify(session));
+  return `${COOKIE_ACTIVECLINIC_ORG}=${session.rawToken}`;
 }
 
-before(async () => {
-  resetDeploymentProfileWarningsForTests();
-  const dbResult = await resetFoundationDatabase();
-  if (dbResult.skip) {
-    skipReason = dbResult.reason;
-    return;
-  }
-  databaseUrl = dbResult.databaseUrl;
-  pool = createFoundationPool(databaseUrl);
+describe("ActiveClinic P05 Pharmacy UI Parity", () => {
+  before(async () => {
+    resetDeploymentProfileWarningsForTests();
+    try {
+      databaseUrl = await resetFoundationDatabase();
+      pool = createFoundationPool(databaseUrl);
+      await migrate({ connectionString: databaseUrl });
+    } catch (err) {
+      skipReason = err && err.message ? String(err.message) : String(err);
+    }
+  });
 
-  const migrateResult = await migrate({ connectionString: databaseUrl });
-  if (!migrateResult.ok) {
-    skipReason = `Migration failed: ${migrateResult.error}`;
-    console.error(skipReason);
-  }
-});
+  after(async () => {
+    if (pool) {
+      await pool.end().catch(() => {});
+    }
+  });
 
-after(async () => {
-  if (pool) {
-    await pool.end();
+  function requireDb() {
+    if (skipReason) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
-});
 
-describe("ActiveClinic P05 Pharmacy UI Parity", { skip: () => skipReason }, () => {
   it("should require pharmacy.view permission to access pharmacy dashboard", async () => {
+    requireDb();
     const stamp = Date.now();
     const tenant = await seedAcTenant(stamp, "pharm_auth");
     
@@ -218,6 +223,7 @@ describe("ActiveClinic P05 Pharmacy UI Parity", { skip: () => skipReason }, () =
       phone,
       personalEmail: `noperm_${stamp}@example.com`,
       staffRole: "receptionist",
+      platformIdentityId: identity.identity.id,
     });
     await assignStaffToFacility(pool, {
       organizationId: tenant.orgId,
@@ -227,7 +233,7 @@ describe("ActiveClinic P05 Pharmacy UI Parity", { skip: () => skipReason }, () =
 
     const env = { ...MINIMAL_AC, DATABASE_URL: databaseUrl };
     const app = createActiveClinicFoundationApp({ getPool: () => pool, env });
-    const sessionCookie = await authenticate(app, phone);
+    const sessionCookie = await makeSessionCookie(identity.identity.id, tenant.orgId, tenant.facilityId);
 
     await request(app)
       .get("/app/pharmacy")
@@ -242,7 +248,7 @@ describe("ActiveClinic P05 Pharmacy UI Parity", { skip: () => skipReason }, () =
 
     const env = { ...MINIMAL_AC, DATABASE_URL: databaseUrl };
     const app = createActiveClinicFoundationApp({ getPool: () => pool, env });
-    const sessionCookie = await authenticate(app, staff.phone);
+    const sessionCookie = await makeSessionCookie(staff.identityId, tenant.orgId, tenant.facilityId);
 
     const res = await request(app)
       .get("/app/pharmacy")
@@ -260,7 +266,7 @@ describe("ActiveClinic P05 Pharmacy UI Parity", { skip: () => skipReason }, () =
 
     const env = { ...MINIMAL_AC, DATABASE_URL: databaseUrl };
     const app = createActiveClinicFoundationApp({ getPool: () => pool, env });
-    const sessionCookie = await authenticate(app, staff.phone);
+    const sessionCookie = await makeSessionCookie(staff.identityId, tenant.orgId, tenant.facilityId);
 
     await request(app)
       .post("/app/pharmacy/catalogue/new")
@@ -282,7 +288,7 @@ describe("ActiveClinic P05 Pharmacy UI Parity", { skip: () => skipReason }, () =
 
     const env = { ...MINIMAL_AC, DATABASE_URL: databaseUrl };
     const app = createActiveClinicFoundationApp({ getPool: () => pool, env });
-    const sessionCookie = await authenticate(app, staff.phone);
+    const sessionCookie = await makeSessionCookie(staff.identityId, tenant.orgId, tenant.facilityId);
 
     const csrfToken = issueCsrfToken(env);
     const csrfCookieValue = `${csrfToken}`;
@@ -311,7 +317,7 @@ describe("ActiveClinic P05 Pharmacy UI Parity", { skip: () => skipReason }, () =
 
     const env = { ...MINIMAL_AC, DATABASE_URL: databaseUrl };
     const app = createActiveClinicFoundationApp({ getPool: () => pool, env });
-    const sessionCookie = await authenticate(app, staff.phone);
+    const sessionCookie = await makeSessionCookie(staff.identityId, tenant.orgId, tenant.facilityId);
 
     const csrfToken = issueCsrfToken(env);
     const csrfCookieValue = `${csrfToken}`;
@@ -356,7 +362,7 @@ describe("ActiveClinic P05 Pharmacy UI Parity", { skip: () => skipReason }, () =
 
     const env = { ...MINIMAL_AC, DATABASE_URL: databaseUrl };
     const app = createActiveClinicFoundationApp({ getPool: () => pool, env });
-    const sessionCookie = await authenticate(app, staff.phone);
+    const sessionCookie = await makeSessionCookie(staff.identityId, tenant.orgId, tenant.facilityId);
 
     const res = await request(app)
       .get("/app/pharmacy/inventory")

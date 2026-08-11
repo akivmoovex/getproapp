@@ -19,6 +19,13 @@ const {
 const {
   STATE,
 } = require("../services/activeClinicStateTaxonomy");
+const {
+  assertModuleDepartmentAvailable,
+  RESULT: MODULE_RESULT,
+} = require("../services/activeClinicModuleAvailability");
+const {
+  PERM: DEPT_PERM,
+} = require("../services/activeClinicDepartmentService");
 
 function renderSimpleState(title, message, extras) {
   const pageId = (extras && extras.state) || "error";
@@ -181,8 +188,71 @@ function requireActiveClinicFacilityScope(options) {
   };
 }
 
+/**
+ * Server-side department availability gate (after permission checks).
+ * Does not convert authorization failures into department-unavailable.
+ * @param {{ getPool: Function, env?: NodeJS.ProcessEnv }} deps
+ */
+function createRequireActiveClinicDepartment(deps) {
+  const getPool = deps.getPool;
+  const env = deps.env || process.env;
+
+  return function requireActiveClinicDepartment(moduleKey) {
+    return async function departmentMiddleware(req, res, next) {
+      try {
+        const auth = req.activeClinicAuth;
+        if (!auth || !auth.authenticated) {
+          return res.redirect(303, "/login");
+        }
+        if (!auth.selectedFacility || !auth.selectedFacility.id) {
+          const returnTo = encodeURIComponent(req.originalUrl || req.url || "/app");
+          return res.redirect(303, `/app/select-facility?return=${returnTo}`);
+        }
+
+        const checked = await assertModuleDepartmentAvailable(getPool(), {
+          moduleKey,
+          auth,
+        });
+        if (checked.ok) return next();
+
+        if (checked.result === MODULE_RESULT.FACILITY_REQUIRED) {
+          const returnTo = encodeURIComponent(req.originalUrl || req.url || "/app");
+          return res.redirect(303, `/app/select-facility?return=${returnTo}`);
+        }
+
+        const canManage =
+          Array.isArray(auth.permissions) &&
+          auth.permissions.includes(DEPT_PERM.MANAGE);
+        const csrfToken = issueCsrfToken(env);
+        return res.status(403).type("html").send(
+          renderSimpleState(
+            "Department unavailable",
+            canManage
+              ? "This module needs an active department for the current facility. Configure departments in Clinic Setup."
+              : "This module is not available at the current facility.",
+            {
+              state: "department-unavailable",
+              stateKey: STATE.DEPARTMENT_NOT_CONFIGURED,
+              heading: "This department is not available",
+              linkHref: canManage
+                ? "/app/settings/clinic-setup/departments"
+                : "/app",
+              linkLabel: canManage ? "Clinic departments" : "Back to home",
+              showLogout: true,
+              csrfToken,
+            }
+          )
+        );
+      } catch (err) {
+        return next(err);
+      }
+    };
+  };
+}
+
 module.exports = {
   createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
   requireActiveClinicOrganizationScope,
   requireActiveClinicFacilityScope,
   renderSimpleState,

@@ -1,0 +1,126 @@
+<%
+  var departmentsPage = (pageData && pageData.departmentsPage) || {};
+  var departments = departmentsPage.departments || [];
+  var facilities = departmentsPage.facilities || [];
+  var types = departmentsPage.types || [];
+  var actions = departmentsPage.actions || {};
+  var flash = typeof flash !== 'undefined' ? flash : null;
+  var csrf = (typeof csrf !== 'undefined' && csrf) || {};
+%>
+<section class="ac-departments" data-ac-page-section="clinic-departments">
+  <% if (flash && flash.message) { %>
+  <div class="ac-panel" data-ac-flash="<%= flash.type || 'info' %>">
+    <p><%= flash.message %></p>
+  </div>
+  <% } %>
+
+  <div class="ac-panel">
+    <p class="ac-muted" style="margin-top:0">
+      Configure operational departments per facility. Deactivating a department hides its module and blocks new operational use — it does not delete prescriptions, inventory, or clinical history.
+    </p>
+  </div>
+
+  <% if (actions.canManage) { %>
+  <div class="ac-panel" data-ac-department-add="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Add department</h2>
+    <form method="post" action="/app/settings/clinic-setup/departments" class="ac-form">
+      <input type="hidden" name="<%= csrf.field || '_csrf' %>" value="<%= csrf.token || '' %>" />
+      <div class="ac-form-row">
+        <label for="facility_id">Facility</label>
+        <select id="facility_id" name="facility_id" required>
+          <% facilities.forEach(function (f) { %>
+          <option value="<%= f.id %>" <%= f.selected ? 'selected' : '' %>><%= f.displayName %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-form-row">
+        <label for="department_type">Type</label>
+        <select id="department_type" name="department_type" required>
+          <% types.forEach(function (t) { %>
+          <option value="<%= t.value %>"><%= t.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-form-row">
+        <label for="display_name">Display name</label>
+        <input id="display_name" name="display_name" type="text" maxlength="100" required placeholder="e.g. Main Pharmacy" />
+      </div>
+      <div class="ac-form-row">
+        <label for="department_key">Key (optional)</label>
+        <input id="department_key" name="department_key" type="text" maxlength="64" pattern="[a-z][a-z0-9_]{0,63}" placeholder="main_pharmacy" />
+      </div>
+      <button type="submit" class="ac-btn ac-btn--primary">Add department</button>
+    </form>
+  </div>
+  <% } %>
+
+  <% if (!departments.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'departments-empty',
+      title: 'No departments configured',
+      description: 'Add Reception, OPD, Pharmacy, and other departments for each facility.'
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table" data-ac-departments-table="1">
+      <caption class="ac-sr-only">Clinic departments</caption>
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Type</th>
+          <th scope="col">Facility</th>
+          <th scope="col">Status</th>
+          <th scope="col">Module</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% departments.forEach(function (d) { %>
+        <tr data-ac-department-id="<%= d.id %>" data-ac-department-status="<%= d.status %>">
+          <td><%= d.displayName %></td>
+          <td><%= d.typeLabel %></td>
+          <td><%= d.facilityDisplayName || '—' %></td>
+          <td>
+            <% if (d.status === 'active') { %>
+            <span class="ac-badge ac-badge--success">Active</span>
+            <% } else { %>
+            <span class="ac-badge">Inactive</span>
+            <% } %>
+          </td>
+          <td class="ac-muted"><%= d.moduleLabel || '—' %></td>
+          <td>
+            <% if (actions.canManage) { %>
+            <details class="ac-action-menu">
+              <summary>Actions</summary>
+              <form method="post" action="/app/settings/clinic-setup/departments/<%= d.id %>/edit" class="ac-form ac-form--compact">
+                <input type="hidden" name="<%= csrf.field || '_csrf' %>" value="<%= csrf.token || '' %>" />
+                <label class="ac-sr-only" for="name_<%= d.id %>">Display name</label>
+                <input id="name_<%= d.id %>" name="display_name" type="text" maxlength="100" value="<%= d.displayName %>" required />
+                <button type="submit" class="ac-btn ac-btn--secondary">Save name</button>
+              </form>
+              <% if (d.status === 'active') { %>
+              <form method="post" action="/app/settings/clinic-setup/departments/<%= d.id %>/deactivate" class="ac-form ac-form--compact" onsubmit="return confirm('Deactivate this department? Historical records are kept.');">
+                <input type="hidden" name="<%= csrf.field || '_csrf' %>" value="<%= csrf.token || '' %>" />
+                <button type="submit" class="ac-btn ac-btn--secondary">Deactivate</button>
+              </form>
+              <% } else { %>
+              <form method="post" action="/app/settings/clinic-setup/departments/<%= d.id %>/activate" class="ac-form ac-form--compact">
+                <input type="hidden" name="<%= csrf.field || '_csrf' %>" value="<%= csrf.token || '' %>" />
+                <button type="submit" class="ac-btn ac-btn--primary">Activate</button>
+              </form>
+              <% } %>
+            </details>
+            <% } else { %>
+            <span class="ac-muted">—</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>

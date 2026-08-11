@@ -16,6 +16,7 @@ const {
 } = require("./loadActiveClinicAuth");
 const {
   createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
@@ -101,6 +102,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     env,
     isProduction,
   });
+  const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
 
   function issuePageCsrf(res) {
     const token = issueCsrfToken(env);
@@ -137,30 +139,28 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy",
     requireAuth,
     requirePermission(PERM.PHARMACY_VIEW),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicPharmacyDashboardScreen(getPool(), {
           auth: req.activeClinicAuth,
         });
         if (!loaded.ok) {
+          if (loaded.code === "facility_required") {
+            return res.redirect(303, "/app/select-facility?return=/app/pharmacy");
+          }
           return res.status(403).type("html").send(
             renderSimpleState(
               "Pharmacy dashboard unavailable",
               mapPharmacyError(loaded.code),
-              { status: 403, linkHref: "/app", linkLabel: "Back to dashboard" }
+              { status: 403, linkHref: "/app", linkLabel: "Back to dashboard", state: "access-denied", stateKey: "access_restricted" }
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-dashboard-content",
-          { pageData: loaded.dashboard }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-dashboard-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: "Pharmacy",
+          pageHeader: { title: "Pharmacy", description: "Prescription queue, inventory, and dispensing.", actions: [] },
           breadcrumbs: [{ label: "Pharmacy", href: "/app/pharmacy" }],
           pageData: loaded.dashboard,
         });
@@ -175,6 +175,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/catalogue",
     requireAuth,
     requirePermission(PERM.INVENTORY_VIEW),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicPharmacyCatalogueScreen(getPool(), {
@@ -189,16 +190,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-catalogue-content",
-          { pageData: loaded.catalogue }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-catalogue-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: "Medicine Catalogue",
+          pageHeader: { title: "Medicine catalogue", description: "Organization medication catalogue.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Catalogue", href: "/app/pharmacy/catalogue" },
@@ -216,6 +211,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/catalogue/:id",
     requireAuth,
     requirePermission(PERM.INVENTORY_VIEW),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const medicationId = req.params.id;
@@ -243,16 +239,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-medicine-detail-content",
-          { pageData: loaded.medicineDetail }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-medicine-detail-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: loaded.medicineDetail.medication.genericName,
+          pageHeader: { title: loaded.medicineDetail.medication.genericName, description: "Medication detail.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Catalogue", href: "/app/pharmacy/catalogue" },
@@ -271,21 +261,16 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/catalogue/new",
     requireAuth,
     requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicPharmacyAddMedicineScreen(getPool(), {
           auth: req.activeClinicAuth,
         });
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-add-medicine-content",
-          { pageData: loaded.addMedicine }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-add-medicine-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: "Add Medicine",
+          pageHeader: { title: "Add medicine", description: "Add a medication to the catalogue.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Catalogue", href: "/app/pharmacy/catalogue" },
@@ -304,13 +289,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/catalogue/new",
     requireAuth,
     requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
-        const csrfValid = validateCsrf(
-          env,
-          req.body[CSRF_FIELD] || "",
-          req.cookies.csrf || ""
-        );
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
           return res.status(403).type("html").send(
             renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
@@ -343,16 +325,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             values: req.body,
             error: mapPharmacyError(result.result),
           });
-
-          const contentHtml = require("../../templateRenderers").renderTemplate(
-            "activeclinic/app/pharmacy-add-medicine-content",
-            { pageData: loaded.addMedicine }
-          );
-
-          return await renderShell(req, res, {
-            content: contentHtml,
+        return await renderShell(req, res, {
+          content: "app/pharmacy-add-medicine-content.ejs",
             activeNav: "pharmacy",
-            pageHeader: "Add Medicine",
+            pageHeader: { title: "Add medicine", description: "Add a medication to the catalogue.", actions: [] },
             breadcrumbs: [
               { label: "Pharmacy", href: "/app/pharmacy" },
               { label: "Catalogue", href: "/app/pharmacy/catalogue" },
@@ -375,6 +351,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/inventory",
     requireAuth,
     requirePermission(PERM.INVENTORY_VIEW),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicPharmacyInventoryScreen(getPool(), {
@@ -390,16 +367,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-inventory-content",
-          { pageData: loaded.inventory }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-inventory-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: "Medicine Inventory",
+          pageHeader: { title: "Medicine inventory", description: "Stock levels for this facility.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Inventory", href: "/app/pharmacy/inventory" },
@@ -417,6 +388,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/alerts/low-stock",
     requireAuth,
     requirePermission(PERM.INVENTORY_VIEW),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicPharmacyLowStockScreen(getPool(), {
@@ -432,16 +404,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-low-stock-content",
-          { pageData: loaded.lowStock }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-low-stock-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: "Low Stock Alerts",
+          pageHeader: { title: "Low stock alerts", description: "Items at or below reorder level.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Low Stock", href: "/app/pharmacy/alerts/low-stock" },
@@ -459,6 +425,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/alerts/expiry",
     requireAuth,
     requirePermission(PERM.INVENTORY_VIEW),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicPharmacyExpiryAlertsScreen(getPool(), {
@@ -474,16 +441,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-expiry-alerts-content",
-          { pageData: loaded.expiryAlerts }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-expiry-alerts-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: "Expiry Alerts",
+          pageHeader: { title: "Expiry alerts", description: "Batches expiring within 90 days.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Expiry Alerts", href: "/app/pharmacy/alerts/expiry" },
@@ -501,6 +462,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/queue",
     requireAuth,
     requirePermission(PERM.PHARMACY_VIEW),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicPharmacyPrescriptionQueueScreen(getPool(), {
@@ -517,16 +479,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-prescription-queue-content",
-          { pageData: loaded.prescriptionQueue }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-prescription-queue-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: "Prescription Queue",
+          pageHeader: { title: "Prescription queue", description: "Prescriptions awaiting pharmacy action.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Queue", href: "/app/pharmacy/queue" },
@@ -544,6 +500,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/prescriptions/:id",
     requireAuth,
     requirePermission(PERM.PHARMACY_VIEW),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const prescriptionId = req.params.id;
@@ -571,16 +528,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-prescription-detail-content",
-          { pageData: loaded.prescriptionDetail }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-prescription-detail-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: `Prescription ${loaded.prescriptionDetail.prescription.prescriptionNumber}`,
+          pageHeader: { title: `Prescription ${loaded.prescriptionDetail.prescription.prescriptionNumber}`, description: "Prescription detail.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Queue", href: "/app/pharmacy/queue" },
@@ -599,6 +550,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/prescriptions/:id/dispense",
     requireAuth,
     requirePermission(PERM.PHARMACY_DISPENSE),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const prescriptionId = req.params.id;
@@ -626,16 +578,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-dispense-content",
-          { pageData: loaded.dispense }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-dispense-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: `Dispense ${loaded.dispense.prescription.prescriptionNumber}`,
+          pageHeader: { title: `Dispense ${loaded.dispense.prescription.prescriptionNumber}`, description: "Dispense medications.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Queue", href: "/app/pharmacy/queue" },
@@ -655,13 +601,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/prescriptions/:id/dispense",
     requireAuth,
     requirePermission(PERM.PHARMACY_DISPENSE),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
-        const csrfValid = validateCsrf(
-          env,
-          req.body[CSRF_FIELD] || "",
-          req.cookies.csrf || ""
-        );
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
           return res.status(403).type("html").send(
             renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
@@ -707,16 +650,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             prescriptionId,
             error: mapPharmacyError(result.result),
           });
-
-          const contentHtml = require("../../templateRenderers").renderTemplate(
-            "activeclinic/app/pharmacy-dispense-content",
-            { pageData: loaded.dispense }
-          );
-
-          return await renderShell(req, res, {
-            content: contentHtml,
+        return await renderShell(req, res, {
+          content: "app/pharmacy-dispense-content.ejs",
             activeNav: "pharmacy",
-            pageHeader: `Dispense ${loaded.dispense.prescription.prescriptionNumber}`,
+            pageHeader: { title: `Dispense ${loaded.dispense.prescription.prescriptionNumber}`, description: "Dispense medications.", actions: [] },
             breadcrumbs: [
               { label: "Pharmacy", href: "/app/pharmacy" },
               { label: "Queue", href: "/app/pharmacy/queue" },
@@ -741,6 +678,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/inventory/receive",
     requireAuth,
     requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicPharmacyReceiveStockScreen(getPool(), {
@@ -756,16 +694,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
-
-        const contentHtml = require("../../templateRenderers").renderTemplate(
-          "activeclinic/app/pharmacy-receive-stock-content",
-          { pageData: loaded.receiveStock }
-        );
-
         return await renderShell(req, res, {
-          content: contentHtml,
+          content: "app/pharmacy-receive-stock-content.ejs",
           activeNav: "pharmacy",
-          pageHeader: "Receive Stock",
+          pageHeader: { title: "Receive stock", description: "Record incoming inventory batches.", actions: [] },
           breadcrumbs: [
             { label: "Pharmacy", href: "/app/pharmacy" },
             { label: "Inventory", href: "/app/pharmacy/inventory" },
@@ -784,13 +716,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     "/app/pharmacy/inventory/receive",
     requireAuth,
     requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
     async (req, res, next) => {
       try {
-        const csrfValid = validateCsrf(
-          env,
-          req.body[CSRF_FIELD] || "",
-          req.cookies.csrf || ""
-        );
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
           return res.status(403).type("html").send(
             renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
@@ -824,16 +753,10 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             values: req.body,
             error: mapPharmacyError(result.result),
           });
-
-          const contentHtml = require("../../templateRenderers").renderTemplate(
-            "activeclinic/app/pharmacy-receive-stock-content",
-            { pageData: loaded.receiveStock }
-          );
-
-          return await renderShell(req, res, {
-            content: contentHtml,
+        return await renderShell(req, res, {
+          content: "app/pharmacy-receive-stock-content.ejs",
             activeNav: "pharmacy",
-            pageHeader: "Receive Stock",
+            pageHeader: { title: "Receive stock", description: "Record incoming inventory batches.", actions: [] },
             breadcrumbs: [
               { label: "Pharmacy", href: "/app/pharmacy" },
               { label: "Inventory", href: "/app/pharmacy/inventory" },

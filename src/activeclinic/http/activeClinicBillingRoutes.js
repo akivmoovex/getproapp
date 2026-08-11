@@ -16,6 +16,7 @@ const {
 } = require("./loadActiveClinicAuth");
 const {
   createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
@@ -55,6 +56,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     env,
     isProduction,
   });
+  const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
 
   function issuePageCsrf(res) {
     const token = issueCsrfToken(env);
@@ -89,6 +91,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing",
     requireAuth,
     requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -168,6 +171,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/catalog",
     requireAuth,
     requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -236,6 +240,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/catalog/new",
     requireAuth,
     requirePermission("activeclinic.billing.catalog.manage"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         return await renderShell(req, res, {
@@ -267,6 +272,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/catalog",
     requireAuth,
     requirePermission("activeclinic.billing.catalog.manage"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -316,6 +322,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/patients/:patientNumber",
     requireAuth,
     requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -412,6 +419,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices/new",
     requireAuth,
     requirePermission("activeclinic.billing.invoice.create"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -490,6 +498,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices",
     requireAuth,
     requirePermission("activeclinic.billing.invoice.create"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -554,6 +563,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices/:invoiceId",
     requireAuth,
     requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -685,6 +695,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices/:invoiceId/post",
     requireAuth,
     requirePermission("activeclinic.billing.invoice.post"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -736,6 +747,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices/:invoiceId/post",
     requireAuth,
     requirePermission("activeclinic.billing.invoice.post"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -775,6 +787,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices",
     requireAuth,
     requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -846,6 +859,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices/:invoiceId/void",
     requireAuth,
     requirePermission("activeclinic.billing.invoice.void"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -881,6 +895,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices/:invoiceId/void",
     requireAuth,
     requirePermission("activeclinic.billing.invoice.void"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -915,6 +930,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices/:invoiceId/amend",
     requireAuth,
     requirePermission("activeclinic.billing.invoice.amend"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -951,6 +967,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     "/app/billing/invoices/:invoiceId/amend",
     requireAuth,
     requirePermission("activeclinic.billing.invoice.amend"),
+    requireDepartment("billing"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {

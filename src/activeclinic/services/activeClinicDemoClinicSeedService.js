@@ -45,6 +45,9 @@ const {
   DEMO_CLINIC_KEY,
   JULFLONA_CLINIC_KEY,
 } = require("./activeClinicDemoClinicSpec");
+const {
+  ensureDefaultDepartments,
+} = require("./activeClinicDepartmentService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -1242,6 +1245,18 @@ async function seedOneClinic(db, clinicKey, options = {}) {
     await ensureServices(db, spec, orgId, hcoId, { dryRun, counts });
     await ensureProcedures(db, spec, orgId, hcoId, facilityId, { dryRun, counts });
     await ensureClinicians(db, spec, orgId, hcoId, facilityId, { dryRun, counts });
+    if (!dryRun && facilityId) {
+      const deptSeed = await ensureDefaultDepartments(db, {
+        organizationId: orgId,
+        healthcareOrganizationId: hcoId,
+        facilityId,
+      });
+      if (deptSeed.ok) {
+        counts.created += deptSeed.created || 0;
+        counts.updated += deptSeed.updated || 0;
+        counts.unchanged += deptSeed.unchanged || 0;
+      }
+    }
   }
 
   let adminResult = { ok: true, skipped: !spec.admin };

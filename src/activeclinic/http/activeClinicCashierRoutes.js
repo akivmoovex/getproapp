@@ -16,6 +16,7 @@ const {
 } = require("./loadActiveClinicAuth");
 const {
   createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
@@ -57,6 +58,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     env,
     isProduction,
   });
+  const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
 
   function issuePageCsrf(res) {
     const token = issueCsrfToken(env);
@@ -91,6 +93,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier",
     requireAuth,
     requirePermission("activeclinic.cashier.open_session"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -172,6 +175,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/open",
     requireAuth,
     requirePermission("activeclinic.cashier.open_session"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         return await renderShell(req, res, {
@@ -200,6 +204,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/open",
     requireAuth,
     requirePermission("activeclinic.cashier.open_session"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -249,6 +254,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/session",
     requireAuth,
     requirePermission("activeclinic.cashier.open_session"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -313,6 +319,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/close",
     requireAuth,
     requirePermission("activeclinic.cashier.close_session"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -367,6 +374,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/close",
     requireAuth,
     requirePermission("activeclinic.cashier.close_session"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -431,6 +439,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/payment",
     requireAuth,
     requirePermission("activeclinic.payment.collect"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -512,6 +521,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/payment",
     requireAuth,
     requirePermission("activeclinic.payment.collect"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -602,6 +612,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/receipt/:receiptNumber",
     requireAuth,
     requirePermission("activeclinic.payment.view"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -671,6 +682,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/history",
     requireAuth,
     requirePermission("activeclinic.cashier.manage"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -730,6 +742,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/session/closed",
     requireAuth,
     requirePermission("activeclinic.cashier.close_session"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         const varianceMinor = parseInt(req.query.variance || "0", 10) || 0;
@@ -762,6 +775,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/payments/:paymentId/refund",
     requireAuth,
     requirePermission("activeclinic.payment.refund"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -801,6 +815,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/payments/:paymentId/reverse",
     requireAuth,
     requirePermission("activeclinic.payment.reverse"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -838,6 +853,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     "/app/cashier/sessions/:sessionId/reconcile",
     requireAuth,
     requirePermission("activeclinic.cashier.reconcile"),
+    requireDepartment("cashier"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {

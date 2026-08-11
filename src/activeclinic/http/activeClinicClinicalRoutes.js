@@ -15,6 +15,7 @@ const {
 } = require("./loadActiveClinicAuth");
 const {
   createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
@@ -91,6 +92,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     env,
     isProduction,
   });
+  const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
 
   function issuePageCsrf(res) {
     const token = issueCsrfToken(env);
@@ -127,6 +129,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical",
     requireAuth,
     requirePermission(PERM.VIEW),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicClinicalQueueScreen(getPool(), {
@@ -168,6 +171,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/start-encounter",
     requireAuth,
     requirePermission(PERM.MANAGE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         return renderShell(req, res, {
@@ -195,6 +199,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/start-encounter",
     requireAuth,
     requirePermission(PERM.MANAGE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -253,6 +258,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId",
     requireAuth,
     requirePermission(PERM.VIEW),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         const encounterId = String(req.params.encounterId || "");
@@ -320,6 +326,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/triage",
     requireAuth,
     requirePermission(PERM.TRIAGE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         const encounterId = String(req.params.encounterId || "");
@@ -360,6 +367,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/triage",
     requireAuth,
     requirePermission(PERM.TRIAGE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -413,6 +421,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/vitals",
     requireAuth,
     requirePermission(PERM.TRIAGE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         const encounterId = String(req.params.encounterId || "");
@@ -453,6 +462,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/vitals",
     requireAuth,
     requirePermission(PERM.TRIAGE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -505,6 +515,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/nursing-intake",
     requireAuth,
     requirePermission(PERM.NURSING_INTAKE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -541,6 +552,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/diagnosis",
     requireAuth,
     requirePermission(PERM.DIAGNOSIS_RECORD),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -581,6 +593,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/consultation",
     requireAuth,
     requirePermission(PERM.CONSULTATION_RECORD),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -622,6 +635,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/consultation/:consultationId/sign",
     requireAuth,
     requirePermission(PERM.CONSULTATION_SIGN),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -658,6 +672,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/order/:orderType",
     requireAuth,
     requirePermission(PERM.ORDER_CREATE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         const encounterId = String(req.params.encounterId || "");
@@ -708,6 +723,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/order/:orderType",
     requireAuth,
     requirePermission(PERM.ORDER_CREATE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -749,6 +765,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/alerts",
     requireAuth,
     requirePermission(PERM.ALERT_VIEW),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicClinicalAlertScreen(getPool(), {
@@ -788,6 +805,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/alerts/raise",
     requireAuth,
     requirePermission(PERM.ALERT_RAISE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -826,6 +844,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     "/app/clinical/encounter/:encounterId/close",
     requireAuth,
     requirePermission(PERM.MANAGE),
+    requireDepartment("clinical"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {

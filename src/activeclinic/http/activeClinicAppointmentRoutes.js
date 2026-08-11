@@ -15,6 +15,7 @@ const {
 } = require("./loadActiveClinicAuth");
 const {
   createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
@@ -89,6 +90,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     env,
     isProduction,
   });
+  const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
 
   function issuePageCsrf(res) {
     const token = issueCsrfToken(env);
@@ -144,6 +146,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     "/app/appointments",
     requireAuth,
     requirePermission(PERM.VIEW),
+    requireDepartment("appointments"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicAppointmentListScreen(getPool(), {
@@ -185,6 +188,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     "/app/appointments/calendar",
     requireAuth,
     requirePermission(PERM.VIEW),
+    requireDepartment("appointments"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicAppointmentCalendarScreen(getPool(), {
@@ -230,6 +234,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     "/app/appointments/new",
     requireAuth,
     requirePermission(PERM.CREATE),
+    requireDepartment("appointments"),
     async (req, res, next) => {
       try {
         const values = emptyFormValues(req.activeClinicAuth);
@@ -266,6 +271,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     "/app/appointments",
     requireAuth,
     requirePermission(PERM.CREATE),
+    requireDepartment("appointments"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -399,6 +405,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     "/app/appointments/:appointmentId",
     requireAuth,
     requirePermission(PERM.VIEW),
+    requireDepartment("appointments"),
     async (req, res, next) => {
       try {
         const appointmentId = String(req.params.appointmentId || "");
@@ -455,6 +462,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     "/app/appointments/:appointmentId/edit",
     requireAuth,
     requirePermission(PERM.UPDATE),
+    requireDepartment("appointments"),
     async (req, res, next) => {
       try {
         const appointmentId = String(req.params.appointmentId || "");
@@ -511,6 +519,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     "/app/appointments/:appointmentId",
     requireAuth,
     requirePermission(PERM.UPDATE),
+    requireDepartment("appointments"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -552,6 +561,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     "/app/appointments/:appointmentId/reschedule",
     requireAuth,
     requirePermission(PERM.UPDATE),
+    requireDepartment("appointments"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {

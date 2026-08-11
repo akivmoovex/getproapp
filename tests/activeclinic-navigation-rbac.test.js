@@ -64,6 +64,9 @@ const {
   createActiveClinicFoundationApp,
 } = require("../src/activeclinic/http/activeClinicFoundationServer");
 const {
+  ensureDefaultDepartments,
+} = require("../src/activeclinic/services/activeClinicDepartmentService");
+const {
   createPlatformIdentitySession,
 } = require("../src/platform/session/createDeploymentSession");
 const {
@@ -146,6 +149,16 @@ async function seedTenant(stamp, keyPrefix) {
     phone: nextPhone(),
   });
   assert.equal(facilityB.ok, true, JSON.stringify(facilityB));
+  await ensureDefaultDepartments(pool, {
+    organizationId: orgId,
+    healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facilityA.facility.id,
+  });
+  await ensureDefaultDepartments(pool, {
+    organizationId: orgId,
+    healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facilityB.facility.id,
+  });
   return {
     orgId,
     hcoId: hco.healthcareOrganization.id,

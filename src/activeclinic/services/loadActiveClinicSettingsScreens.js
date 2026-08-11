@@ -325,6 +325,16 @@ async function loadActiveClinicSettingsOverviewScreen(db, input) {
       summary: "Network, facility, and staff roles",
     });
   }
+  if (hasPerm(perms, "activeclinic.departments.manage")) {
+    categories.push({
+      key: "departments",
+      title: "Departments",
+      description: "Clinic Setup — enable operational departments per facility.",
+      href: "/app/settings/clinic-setup/departments",
+      statusLabel: "Clinic setup",
+      summary: "Reception, OPD, Pharmacy, Lab, and more",
+    });
+  }
   categories.push({
     key: "account",
     title: "Account security",

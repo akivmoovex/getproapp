@@ -13,6 +13,7 @@ const STATE = Object.freeze({
   REQUEST_ERROR: "request_error",
   ACCESS_RESTRICTED: "access_restricted",
   CONTEXT_UNAVAILABLE: "context_unavailable",
+  DEPARTMENT_NOT_CONFIGURED: "department_not_configured",
   SESSION_EXPIRED: "session_expired",
   NOT_FOUND: "not_found",
   SERVICE_UNAVAILABLE: "service_unavailable",
@@ -26,6 +27,7 @@ const PAGE_ID = Object.freeze({
   [STATE.SESSION_EXPIRED]: "session-expired",
   [STATE.NOT_FOUND]: "not-found",
   [STATE.CONTEXT_UNAVAILABLE]: "context-unavailable",
+  [STATE.DEPARTMENT_NOT_CONFIGURED]: "department-unavailable",
   [STATE.SERVICE_UNAVAILABLE]: "service-unavailable",
   [STATE.REQUEST_ERROR]: "error",
 });
@@ -61,6 +63,14 @@ const PRESETS = Object.freeze({
     message: "Sign out and try another organization, or contact your administrator.",
     primaryHref: "/login",
     primaryLabel: "Sign in",
+    httpStatus: 403,
+  },
+  [STATE.DEPARTMENT_NOT_CONFIGURED]: {
+    pageTitle: "Department unavailable",
+    heading: "This department is not available",
+    message: "This module is not configured for the current facility.",
+    primaryHref: "/app",
+    primaryLabel: "Back to home",
     httpStatus: 403,
   },
   [STATE.SERVICE_UNAVAILABLE]: {

@@ -15,6 +15,7 @@ const {
 } = require("./loadActiveClinicAuth");
 const {
   createRequireActiveClinicPermission,
+  createRequireActiveClinicDepartment,
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
@@ -103,6 +104,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     env,
     isProduction,
   });
+  const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
 
   function issuePageCsrf(res) {
     const token = issueCsrfToken(env);
@@ -139,6 +141,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics",
     requireAuth,
     requirePermission(DIAGNOSTICS_HUB_ANY),
+    requireDepartment("diagnostics"),
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
@@ -172,6 +175,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory",
     requireAuth,
     requirePermission(LAB_VIEW_ANY),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicLaboratoryDashboardScreen(getPool(), {
@@ -215,6 +219,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/queue",
     requireAuth,
     requirePermission(LAB_VIEW_ANY),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicLaboratoryQueueScreen(getPool(), {
@@ -255,6 +260,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/worklist",
     requireAuth,
     requirePermission(LAB_VIEW_ANY),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicLaboratoryWorklistScreen(getPool(), {
@@ -295,6 +301,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/request/:requestId",
     requireAuth,
     requirePermission(LAB_VIEW_ANY),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         const requestId = String(req.params.requestId || "");
@@ -362,6 +369,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/request/:requestId/collect",
     requireAuth,
     requirePermission(PERM.LAB_COLLECT),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         const requestId = String(req.params.requestId || "");
@@ -404,6 +412,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/request/:requestId/collect",
     requireAuth,
     requirePermission(PERM.LAB_COLLECT),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -452,6 +461,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/specimen/:specimenId/receive",
     requireAuth,
     requirePermission(PERM.LAB_COLLECT),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         const specimenId = String(req.params.specimenId || "");
@@ -493,6 +503,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/specimen/:specimenId/receive",
     requireAuth,
     requirePermission(PERM.LAB_COLLECT),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -528,6 +539,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/specimen/:specimenId/reject",
     requireAuth,
     requirePermission(PERM.LAB_COLLECT),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         const specimenId = String(req.params.specimenId || "");
@@ -569,6 +581,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/specimen/:specimenId/reject",
     requireAuth,
     requirePermission(PERM.LAB_COLLECT),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -614,6 +627,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/request/:requestId/result",
     requireAuth,
     requirePermission(PERM.LAB_RESULT),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         const requestId = String(req.params.requestId || "");
@@ -655,6 +669,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/laboratory/request/:requestId/result",
     requireAuth,
     requirePermission(PERM.LAB_RESULT),
+    requireDepartment("laboratory"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -709,6 +724,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/radiology",
     requireAuth,
     requirePermission(RADIOLOGY_VIEW_ANY),
+    requireDepartment("radiology"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicRadiologyDashboardScreen(getPool(), {
@@ -751,6 +767,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/radiology/queue",
     requireAuth,
     requirePermission(RADIOLOGY_VIEW_ANY),
+    requireDepartment("radiology"),
     async (req, res, next) => {
       try {
         const loaded = await loadActiveClinicRadiologyQueueScreen(getPool(), {
@@ -791,6 +808,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/radiology/request/:requestId/report",
     requireAuth,
     requirePermission(PERM.RADIOLOGY_RESULT),
+    requireDepartment("radiology"),
     async (req, res, next) => {
       try {
         const requestId = String(req.params.requestId || "");
@@ -832,6 +850,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/radiology/request/:requestId/report",
     requireAuth,
     requirePermission(PERM.RADIOLOGY_RESULT),
+    requireDepartment("radiology"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
@@ -885,6 +904,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/critical-alert/:resultId",
     requireAuth,
     requirePermission(DIAGNOSTICS_HUB_ANY),
+    requireDepartment("diagnostics"),
     async (req, res, next) => {
       try {
         const resultId = String(req.params.resultId || "");
@@ -925,6 +945,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     "/app/diagnostics/critical-alert/:resultId/acknowledge",
     requireAuth,
     requirePermission(DIAGNOSTICS_HUB_ANY),
+    requireDepartment("diagnostics"),
     async (req, res, next) => {
       try {
         if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
