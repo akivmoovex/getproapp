@@ -21,10 +21,10 @@ Canonical map: `docs/stitch-project-map.md`. Parity matrix: `docs/activeclinic/s
 
 Both are required design sources. **Neither is optional.**
 
-1. **Public / tenant / booking / portal** — `17813606734422395399`  
+1. **Public / tenant / booking / portal** — `17813606734422395399`
    Platform website, directory, onboarding, Juflona mini-website, doctors/services/pricing, consultation & procedure booking, My Booking, patient auth/portal, public mobile states.
 
-2. **Internal / authenticated operations** — `12272131183982732110`  
+2. **Internal / authenticated operations** — `12272131183982732110`
    Staff shell, dashboard, patients, appointments, reception, clinical/triage, pharmacy, lab/radiology, billing/cashier, internal mobile & operational states.
 
 ### Before any Stitch MCP retrieve / implement
