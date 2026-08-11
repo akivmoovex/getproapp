@@ -1,6 +1,6 @@
 # GetPro Stitch project map
 
-**Last updated:** 2026-08-03  
+**Last updated:** 2026-08-11  
 **Purpose:** Canonical registry of Stitch design projects per GetPro product. Treat each row as an isolated design source of truth.
 
 ## Isolation rules (mandatory)
@@ -8,10 +8,11 @@
 Before retrieving or implementing any Stitch screen via MCP:
 
 1. Confirm the **target product** (`blessboard` or `activeclinic`).
-2. Confirm the **Stitch project ID** for that product (table below).
+2. For ActiveClinic, confirm the **surface** (public/booking/portal vs internal operations) and its Stitch project ID.
 3. Call `list_screens` / `get_screen` / `download_assets` **only** against that project ID.
-4. Record the Stitch **screen name** and **screen ID** in this map (and the product screen map).
-5. Do **not** import BlessBoard navigation, terminology, layouts, or church-specific components into ActiveClinic (or the reverse).
+4. Record the Stitch **project ID**, **screen name**, and **screen ID** in the product map / visual-parity matrix.
+5. Do **not** claim “no Stitch reference” until **both** ActiveClinic Stitch projects have been checked.
+6. Do **not** import BlessBoard navigation, terminology, layouts, or church-specific components into ActiveClinic (or the reverse).
 
 **Never** modify, move, rename, regenerate, or delete screens in another product’s Stitch project.
 
@@ -21,19 +22,19 @@ Shared GetPro platform architecture (host routing, sessions, multi-tenant provis
 
 ## Product ↔ Stitch project registry
 
-| Product code | Product | Stitch project name | Stitch project ID | Domain | Pilot / notes | Screen map |
-|--------------|---------|---------------------|-------------------|--------|---------------|------------|
+| Product code | Product | Stitch project name | Stitch project ID | Domain / surface | Pilot / notes | Screen map |
+|--------------|---------|---------------------|-------------------|------------------|---------------|------------|
 | `blessboard` | BlessBoard | GetPro Church Platform | `projects/17124191473876947591` | Church management only | Existing church tenants | [`docs/gui/STITCH_SCREEN_MAP.md`](./gui/STITCH_SCREEN_MAP.md) |
-| `activeclinic` | ActiveClinic | ActiveClinic – Juflona Pilot | `projects/12272131183982732110` | Healthcare / clinical only | **Juflona Hospital & Medical Centre** | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
-| `activeclinic` (public/booking) | ActiveClinic | ActiveClinic Public Ecosystem & Booking Flow | `projects/17813606734422395399` | Public website + booking (P20–P26) | Same product; **not** clinical app screens | [`docs/activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_20.md`](./activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_20.md) |
+| `activeclinic` | ActiveClinic | ActiveClinic Public Ecosystem & Booking Flow | `projects/17813606734422395399` | Public platform, tenant sites, booking, My Booking, patient portal | **Authoritative** for P21–P27 | [`docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md`](./activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md) |
+| `activeclinic` | ActiveClinic | ActiveClinic – Juflona Pilot | `projects/12272131183982732110` | Authenticated clinic operations (shell + P01–P07) | **Authoritative** for internal ops; Juflona pilot | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
 
 ### MCP quick reference
 
-| Product code | `projectId` (no `projects/` prefix) |
-|--------------|-------------------------------------|
-| `blessboard` | `17124191473876947591` |
-| `activeclinic` | `12272131183982732110` |
-| `activeclinic` (public/booking) | ActiveClinic | ActiveClinic Public Ecosystem & Booking Flow | `projects/17813606734422395399` | Public website + booking (P20–P26) | Same product; **not** clinical app screens | [`docs/activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_20.md`](./activeclinic/stitch/ACTIVECLINIC_STITCH_PHASE_20.md) |
+| Product code | Surface | `projectId` (no `projects/` prefix) |
+|--------------|---------|-------------------------------------|
+| `blessboard` | Church | `17124191473876947591` |
+| `activeclinic` | Public / tenant / booking / portal | `17813606734422395399` |
+| `activeclinic` | Internal authenticated operations | `12272131183982732110` |
 
 ---
 
@@ -53,41 +54,78 @@ Application routes, screen names, screen IDs, and implementation status live in 
 
 ---
 
-## ActiveClinic (`activeclinic`)
+## ActiveClinic (`activeclinic`) — two authoritative Stitch projects
+
+ActiveClinic design authority is **split by surface**. Both projects are required; neither is optional. Never use BlessBoard Stitch for ActiveClinic.
+
+### Project 1 — Public / tenant / booking / portal
+
+| Field | Value |
+|-------|--------|
+| Stitch project name | ActiveClinic Public Ecosystem & Booking Flow |
+| Stitch project ID | `projects/17813606734422395399` |
+| URL | https://stitch.withgoogle.com/projects/17813606734422395399 |
+| Surfaces | Public platform website, clinic directory, clinic onboarding/registration, Juflona mini-website, doctors, services, pricing, consultation booking, procedure booking, My Booking, patient authentication, patient portal, public/mobile state variants |
+| Typical phases | P21–P27 |
+| Live screens (MCP 2026-08-11) | **189** |
+
+### Project 2 — Internal / authenticated clinic operations
+
+| Field | Value |
+|-------|--------|
+| Stitch project name | ActiveClinic – Juflona Pilot |
+| Stitch project ID | `projects/12272131183982732110` |
+| URL | https://stitch.withgoogle.com/projects/12272131183982732110 |
+| Surfaces | Authenticated shell, dashboard, patients, appointments, reception, clinical/triage/consultations, pharmacy, laboratory, radiology/diagnostics, billing, cashier, internal mobile variants, operational states |
+| Typical phases | P01–P07 (+ P13 staff activation patterns) |
+| Live screens (MCP 2026-08-11) | **199** |
+| Detail map | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
+| Inventory | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_INVENTORY.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_INVENTORY.md) |
+
+### Shared ActiveClinic fields
 
 | Field | Value |
 |-------|--------|
 | Product code | `activeclinic` |
-| Stitch project name | ActiveClinic – Juflona Pilot |
-| Stitch project ID | `projects/12272131183982732110` |
-| Scope | Healthcare screens only |
 | Pilot tenant | Juflona Hospital & Medical Centre |
-| Design system | ActiveClinic clinical design system (**separate** from BlessBoard; do not reuse Sacred Modernity / church chrome) |
-| Detail map | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
-| Authoritative inventory | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_INVENTORY.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_INVENTORY.md) (AC-V6-11) |
-| Stitch project created | 2026-08-03 via MCP `create_project` |
-| Screens in Stitch (AC-V6-11) | **114** (88 desktop · 26 mobile · packages P01–P07 + platform states) |
+| Design system | ActiveClinic clinical / public design system (**separate** from BlessBoard; do not reuse Sacred Modernity / church chrome) |
+| Visual parity matrix | [`docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md`](./activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md) |
+
+### Overlap selection rules
+
+If equivalent or overlapping screens exist in both ActiveClinic projects:
+
+1. Prefer the project whose screen clearly belongs to that product surface.
+2. Prefer the more recent/current approved design when repository evidence establishes recency.
+3. Preserve newer V7 functional requirements.
+4. Record genuine conflicts as `PRODUCT_DECISION_DIFFERENCE` (do not invent an unevidence hybrid).
+
+Examples of intentional surface separation (not hybrids):
+
+- P27 patient portal register/login/dashboard → **public** project `17813606734422395399`
+- P01 staff login/shell/dashboard and P02 staff patient registration/profile → **internal** project `12272131183982732110`
+- P24/P25 booking patient details → **public** project; P02 Edit Patient Details → **internal** project
 
 ### Screen / route implementation table
 
 Status legend: **PLANNED** · **STITCH_READY** · **PARTIAL** · **MATCHED** · **MISSING** · **DUPLICATE** · **STITCH_GAP**
 
-Full inventory lives in the ActiveClinic inventory doc. Tracker snapshot:
+Full inventory lives in the ActiveClinic inventory + V7 visual parity matrix. Tracker snapshot (internal):
 
 | Area | Screen name | Desktop Stitch ID | Mobile Stitch ID | Application route | Implementation status | Notes |
 |------|-------------|-------------------|------------------|-------------------|------------------------|-------|
-| Auth | P01 – Login | `ca8a34cf…` | `026f619c…` | `/login` | PARTIAL | Canonical; unprefixed Login = DUPLICATE |
-| Shell | P01 – Shared Application Shell | `01b91250…` | drawer `9f55cec7…` | `/app/*` | PARTIAL | AC-V6-10 shell exists |
-| Home | P01 – Dashboard | `390032bf…` | `8be466d4…` | `/app` | PARTIAL | |
-| Clinical | P02–P07 (97) | see inventory | see inventory | future | MISSING | No clinical backend |
-| Admin | Facilities / Staff / Access | — | — | `/app/facilities` etc. | STITCH_GAP | Backend read UI without Stitch |
+| Auth | P01 – Login | `ca8a34cf…` | `026f619c…` | `/login` | PARTIAL | Internal project |
+| Shell | P01 – Shared Application Shell | `01b91250…` | drawer `9f55cec7…` | `/app/*` | PARTIAL | Internal project |
+| Home | P01 – Dashboard | `390032bf…` | `8be466d4…` | `/app` | PARTIAL | Internal project |
+| Clinical | P02–P07 | see inventory | see inventory | `/app/*` | PARTIAL/MISSING | Internal project; Pass 3 focus |
+| Public/booking/portal | P21–P27 | see parity matrix | see parity matrix | `/`, `/clinics/*` | PARTIAL | Public project |
 
 When implementing a screen:
 
-1. Confirm product = `activeclinic` and project ID = `12272131183982732110`.
-2. `list_screens` / `get_screen` against **that** project only.
-3. Update inventory + screen map status (`STITCH_READY` → `PARTIAL` → `MATCHED`).
-4. Mirror the same row in [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md).
+1. Confirm product = `activeclinic` and select the **surface-correct** project ID.
+2. `list_screens` / `get_screen` against **that** project (check the other ActiveClinic project before claiming no reference).
+3. Update inventory / parity matrix with **Stitch project ID + screen ID**.
+4. Mirror status in the relevant ActiveClinic screen map.
 
 ---
 
@@ -95,8 +133,8 @@ When implementing a screen:
 
 | Check | BlessBoard | ActiveClinic |
 |-------|------------|--------------|
-| Stitch project isolated | Yes — `17124191473876947591` | Yes — `12272131183982732110` |
+| Stitch project isolated | Yes — `17124191473876947591` | Yes — **two** projects: `17813606734422395399` + `12272131183982732110` |
 | May reuse GetPro platform shells | Architecture only | Architecture only |
-| May reuse other product’s Stitch screens | **No** | **No** |
-| Own navigation / roles / workflows | Church | Clinical |
-| Own design tokens / CSS scope | `blessboard` / church selectors | `activeclinic` selectors (to be introduced) |
+| May reuse other product’s Stitch screens | **No** | **No** (and no BlessBoard→ActiveClinic) |
+| Own navigation / roles / workflows | Church | Clinical + public/booking/portal |
+| Own design tokens / CSS scope | `blessboard` / church selectors | `activeclinic` / `ac-public-*` / `acp-*` / app selectors |

@@ -5,28 +5,49 @@ alwaysApply: true
 
 # Stitch product isolation — ActiveClinic & BlessBoard
 
-Treat Stitch projects as **separate product design sources**. Never cross-import screens.
+Treat Stitch projects as **separate product design sources**. Never cross-import screens across products.
 
 ## Registry
 
-| Product code | Stitch project | Project ID |
-|--------------|----------------|------------|
-| `blessboard` | GetPro Church Platform | `projects/17124191473876947591` |
-| `activeclinic` | ActiveClinic – Juflona Pilot | `projects/12272131183982732110` |
+| Product code | Stitch project | Project ID | Surface |
+|--------------|----------------|------------|---------|
+| `blessboard` | GetPro Church Platform | `projects/17124191473876947591` | Church only |
+| `activeclinic` | ActiveClinic Public Ecosystem & Booking | `projects/17813606734422395399` | Public platform, tenant sites, booking, My Booking, patient portal |
+| `activeclinic` | ActiveClinic – Juflona Pilot (internal) | `projects/12272131183982732110` | Authenticated clinic operations (shell, patients, clinical, pharmacy, diagnostics, billing) |
 
-Canonical map: `docs/stitch-project-map.md`. ActiveClinic detail: `docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`.
+Canonical map: `docs/stitch-project-map.md`. Parity matrix: `docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.json`.
 
-## Before any Stitch MCP retrieve / implement
+## ActiveClinic has TWO authoritative Stitch projects
+
+Both are required design sources. **Neither is optional.**
+
+1. **Public / tenant / booking / portal** — `17813606734422395399`  
+   Platform website, directory, onboarding, Juflona mini-website, doctors/services/pricing, consultation & procedure booking, My Booking, patient auth/portal, public mobile states.
+
+2. **Internal / authenticated operations** — `12272131183982732110`  
+   Staff shell, dashboard, patients, appointments, reception, clinical/triage, pharmacy, lab/radiology, billing/cashier, internal mobile & operational states.
+
+### Before any Stitch MCP retrieve / implement
 
 1. Confirm target product (`blessboard` or `activeclinic`).
-2. Confirm that product’s Stitch project ID.
-3. Call MCP only against that project.
-4. Record screen name + screen ID in the product’s implementation map.
-5. Do not import the other product’s navigation, terminology, layouts, or inappropriate components.
+2. For ActiveClinic, confirm **which surface** (public/booking/portal vs internal ops).
+3. Call MCP only against the matching ActiveClinic project ID (never BlessBoard for ActiveClinic).
+4. Record **Stitch project ID + screen ID** in the product’s implementation / parity map.
+5. Do not claim “no Stitch reference” until **both** ActiveClinic projects have been checked.
+6. Do not import BlessBoard navigation, terminology, layouts, or church components into ActiveClinic (or the reverse).
+
+### Overlap / conflict rule
+
+If similar screens exist in both ActiveClinic projects:
+
+1. Prefer the project whose screen clearly belongs to that product surface.
+2. Prefer the more recent/current approved design when repository evidence establishes recency.
+3. Preserve newer V7 functional requirements.
+4. Record genuine conflicts as `PRODUCT_DECISION_DIFFERENCE` — do not invent an unevidence hybrid.
 
 ## Hard constraints
 
-- **Do not** modify, move, rename, regenerate, or delete screens in the other product’s Stitch project.
+- **Do not** modify, move, rename, regenerate, or delete screens in another product’s Stitch project.
 - BlessBoard = church-management screens only.
-- ActiveClinic = healthcare / clinical screens only (pilot: Juflona Hospital & Medical Centre).
+- ActiveClinic = healthcare only (pilot: Juflona Hospital & Medical Centre), using **both** ActiveClinic Stitch projects by surface.
 - Shared GetPro architecture may be reused; each product keeps its own design system, navigation, roles, and workflows.
