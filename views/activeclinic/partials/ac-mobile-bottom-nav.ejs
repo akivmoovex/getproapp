@@ -1,0 +1,41 @@
+<%#
+  Stitch-aligned mobile bottom navigation (tenant browsing).
+  Hidden on booking wizard / auth flows where Stitch uses a sticky CTA instead.
+%>
+<%
+  const key = clinic && clinic.clinicKey ? clinic.clinicKey : '';
+  const pid = typeof pageId === 'string' ? pageId : '';
+  const hide =
+    !key ||
+    /booking|book|patient|my-booking|register|login|verify|forgot|unavailable|not-found/i.test(pid);
+  function isActive(frag) {
+    return pid.indexOf(frag) !== -1;
+  }
+%>
+<% if (!hide) { %>
+<nav class="acp-mobile-bottom-nav" data-ac-mobile-bottom-nav="tenant" aria-label="Clinic shortcuts">
+  <a class="acp-mobile-bottom-nav__item<%= isActive('tenant-home') || pid === 'tenant-home' ? ' is-active' : '' %>" href="/clinics/<%= key %>">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌂</span>
+    <span class="acp-mobile-bottom-nav__label">Home</span>
+  </a>
+  <a class="acp-mobile-bottom-nav__item<%= isActive('doctor') || isActive('service') ? ' is-active' : '' %>" href="/clinics/<%= key %>/doctors">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌕</span>
+    <span class="acp-mobile-bottom-nav__label">Find</span>
+  </a>
+  <% if (clinic.publicBookingEnabled) { %>
+  <a class="acp-mobile-bottom-nav__item<%= isActive('book') ? ' is-active' : '' %>" href="/clinics/<%= key %>/book">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">◷</span>
+    <span class="acp-mobile-bottom-nav__label">Book</span>
+  </a>
+  <% } else { %>
+  <a class="acp-mobile-bottom-nav__item<%= isActive('contact') ? ' is-active' : '' %>" href="/clinics/<%= key %>/contact">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">☎</span>
+    <span class="acp-mobile-bottom-nav__label">Contact</span>
+  </a>
+  <% } %>
+  <a class="acp-mobile-bottom-nav__item<%= isActive('patient') ? ' is-active' : '' %>" href="/clinics/<%= key %>/patient/login">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">☺</span>
+    <span class="acp-mobile-bottom-nav__label">Account</span>
+  </a>
+</nav>
+<% } %>

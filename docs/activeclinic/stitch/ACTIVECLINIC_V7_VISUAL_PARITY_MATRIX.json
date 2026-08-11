@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-11T22:12:54.585Z",
-  "sha": "pass6-local",
+  "generated": "2026-08-11T22:25:32.897Z",
+  "sha": "pass7-local",
   "screens": [
     {
       "phase": "P01",
@@ -38,7 +38,7 @@
       "state": "default",
       "route": "/app",
       "view": "app/dashboard",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass3: metric/action cards under shared shell; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -54,7 +54,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: metric/action cards under shared shell",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish",
+      "pass7Updated": true
     },
     {
       "phase": "P01",
@@ -95,7 +97,7 @@
       "state": "default",
       "route": "/login or /clinics/:key/patient/login",
       "view": "auth/login.ejs or patient/login.ejs",
-      "score": 91,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Auth shell uses Hanken Grotesk; Stitch indigo/teal balance differs slightly",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -114,7 +116,9 @@
       "pass3Updated": true,
       "pass4Note": "Pass4 browser compared /login",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P01",
@@ -125,7 +129,7 @@
       "state": "default",
       "route": "/app/* chrome",
       "view": "layouts/app-shell.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass3: mobile drawer uses grouped nav; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -141,7 +145,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: mobile drawer uses grouped nav",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish",
+      "pass7Updated": true
     },
     {
       "phase": "P01",
@@ -262,7 +268,7 @@
       "state": "default",
       "route": "",
       "view": "",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: shared form tokens; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -278,7 +284,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: shared form tokens",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P02",
@@ -314,8 +322,8 @@
       "state": "default",
       "route": "/app/patients",
       "view": "app/patients-list-content.ejs",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 84,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -328,7 +336,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "internal_operations"
+      "authoritativeProject": "internal_operations",
+      "pass7Note": "Pass7: auth card width + phone picker mobile (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P02",
@@ -366,8 +376,8 @@
       "state": "default",
       "route": "/app/patients/:id",
       "view": "app/patient-profile-content.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 90,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass3: patient banner + section panels; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -382,7 +392,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: patient banner + section panels",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P02",
@@ -418,8 +430,8 @@
       "state": "success",
       "route": "/app/patients/new",
       "view": "app/patient-form-content.ejs",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 84,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -432,7 +444,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "internal_operations"
+      "authoritativeProject": "internal_operations",
+      "pass7Note": "Pass7: auth card width + phone picker mobile (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P02",
@@ -526,7 +540,7 @@
       "state": "default",
       "route": "/app/patients/new",
       "view": "app/patient-form-content.ejs",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -542,7 +556,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: form-section tokens; PhoneField preserved",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P02",
@@ -580,7 +596,7 @@
       "state": "default",
       "route": "/app/patients/new",
       "view": "app/patient-form-content.ejs",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -596,7 +612,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: form-section tokens; PhoneField preserved",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P02",
@@ -661,7 +679,7 @@
       "state": "default",
       "route": "/app/patients/new",
       "view": "app/patient-form-content.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -677,7 +695,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: form-section tokens; PhoneField preserved",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P03",
@@ -1116,7 +1136,7 @@
       "state": "default",
       "route": "/app/reception",
       "view": "app/reception-*.ejs",
-      "score": 86,
+      "score": 88,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: queue table/card + status badges; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -1132,7 +1152,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: queue table/card + status badges",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish",
+      "pass7Updated": true
     },
     {
       "phase": "P03",
@@ -1170,7 +1192,7 @@
       "state": "default",
       "route": "/app/appointments",
       "view": "app/appointments-*.ejs",
-      "score": 86,
+      "score": 88,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -1186,7 +1208,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: shared table/filter/status system",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: shared mobile gutters/lookup cards",
+      "pass7Updated": true
     },
     {
       "phase": "P03",
@@ -1279,7 +1303,7 @@
       "state": "default",
       "route": "/app/reception",
       "view": "app/reception-*.ejs",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: queue mobile cards + empty state; clinical logic untouched; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -1295,7 +1319,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: queue mobile cards + empty state; clinical logic untouched",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish",
+      "pass7Updated": true
     },
     {
       "phase": "P04",
@@ -1333,7 +1359,7 @@
       "state": "default",
       "route": "/clinics/:key/book",
       "view": "booking/*.ejs",
-      "score": 82,
+      "score": 85,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -1349,7 +1375,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: shared tokens only",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P04",
@@ -1953,7 +1981,7 @@
       "state": "default",
       "route": "/app/pharmacy/prescriptions/:id/dispense",
       "view": "app/pharmacy-dispense-content.ejs",
-      "score": 86,
+      "score": 88,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass5: patient instructions panel added on dispense",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -1970,7 +1998,9 @@
       "authoritativeProject": "internal_operations",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "MOBILE_VARIANT_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P05",
@@ -2114,8 +2144,8 @@
       "state": "default",
       "route": "/app/pharmacy",
       "view": "app/pharmacy-*.ejs",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 85,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -2128,7 +2158,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "internal_operations"
+      "authoritativeProject": "internal_operations",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P05",
@@ -2428,7 +2460,7 @@
       "state": "default",
       "route": "/app",
       "view": "app/dashboard",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -2444,7 +2476,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: shared shell/components",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish",
+      "pass7Updated": true
     },
     {
       "phase": "P06",
@@ -2563,7 +2597,7 @@
       "state": "default",
       "route": "/app",
       "view": "app/dashboard",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -2579,7 +2613,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: shared shell/components",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish",
+      "pass7Updated": true
     },
     {
       "phase": "P06",
@@ -2850,7 +2886,7 @@
       "state": "default",
       "route": "/app",
       "view": "app/dashboard",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass3: money hierarchy + action cards; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -2866,7 +2902,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: money hierarchy + action cards",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish",
+      "pass7Updated": true
     },
     {
       "phase": "P07",
@@ -3739,7 +3777,7 @@
       "state": "default",
       "route": "/app/billing|/app/cashier",
       "view": "app/billing-*.ejs / cashier-*.ejs",
-      "score": 86,
+      "score": 88,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -3755,7 +3793,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: shared shell/components",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P07",
@@ -3819,8 +3859,8 @@
       "state": "default",
       "route": "/app/billing|/app/cashier",
       "view": "app/billing-*.ejs / cashier-*.ejs",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 84,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -3833,7 +3873,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "internal_operations"
+      "authoritativeProject": "internal_operations",
+      "pass7Note": "Pass7: auth card width + phone picker mobile (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P07",
@@ -4452,8 +4494,8 @@
       "state": "default",
       "route": "/clinics/:key/services",
       "view": "tenant/services*.ejs",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 84,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -4466,7 +4508,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "internal_operations"
+      "authoritativeProject": "internal_operations",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P07",
@@ -4882,7 +4926,7 @@
       "state": "default",
       "route": "/app",
       "view": "app/dashboard",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -4898,7 +4942,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: shared shell tokens",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish",
+      "pass7Updated": true
     },
     {
       "phase": "P13",
@@ -4963,7 +5009,7 @@
       "state": "default",
       "route": "/clinics",
       "view": "public/clinics*.ejs",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
@@ -4979,7 +5025,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "internal_operations",
       "pass3Note": "Pass3: shared shell tokens",
-      "pass3Updated": true
+      "pass3Updated": true,
+      "pass7Note": "Pass7: platform bottom nav + filter bottom-sheet",
+      "pass7Updated": true
     },
     {
       "phase": "P13",
@@ -5069,7 +5117,7 @@
       "state": "default",
       "route": "/about",
       "view": "public/about.ejs",
-      "score": 91,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: sectioned about with capability badges",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -5083,7 +5131,9 @@
       "pass2Note": "Pass2: sectioned about with capability badges; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P21",
@@ -5439,7 +5489,7 @@
       "state": "default",
       "route": "/register-clinic",
       "view": "public/register-clinic*.ejs",
-      "score": 86,
+      "score": 89,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: onboarding progress + form shell; PhoneField preserved",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -5453,7 +5503,9 @@
       "pass2Note": "Pass2: onboarding progress + form shell; PhoneField preserved; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P21",
@@ -5700,7 +5752,7 @@
       "state": "default",
       "route": "/",
       "view": "public/home.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "1) PRODUCT_DECISION_DIFFERENCE: Zambia product narrative vs Stitch \"Healthcare Management, Simplified\" hero 2) mobile Stitch bottom-nav not used 3) hero illustration/asset mismatch",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -5717,7 +5769,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser compared both viewports; no MATCHED \u2014 content model intentionally different",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: platform mobile hero gutter + bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P21",
@@ -5728,7 +5782,7 @@
       "state": "default",
       "route": "/",
       "view": "public/home.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "1) PRODUCT_DECISION_DIFFERENCE: Zambia product narrative vs Stitch \"Healthcare Management, Simplified\" hero 2) mobile Stitch bottom-nav not used 3) hero illustration/asset mismatch",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -5745,7 +5799,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser compared both viewports; no MATCHED \u2014 content model intentionally different",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: platform mobile hero gutter + bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P21",
@@ -5889,7 +5945,7 @@
       "state": "default",
       "route": "/clinics/:key/doctors",
       "view": "tenant/doctors*.ejs",
-      "score": null,
+      "score": 90,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Card stack",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -5903,7 +5959,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -5989,7 +6047,7 @@
       "state": "default",
       "route": "/clinics/:key/pricing",
       "view": "tenant/pricing.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: pricing empty/populated cards",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6003,7 +6061,9 @@
       "pass2Note": "Pass2: pricing empty/populated cards; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6041,8 +6101,8 @@
       "state": "default",
       "route": "/clinics/:key/services",
       "view": "tenant/services*.ejs",
-      "score": 89,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: service+procedure cards restored; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -6057,7 +6117,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "public_booking_portal",
       "pass6Note": "Pass6: service icon system",
-      "pass6Updated": true
+      "pass6Updated": true,
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6096,7 +6158,7 @@
       "state": "default",
       "route": "/clinics/:key/book",
       "view": "booking/appointment-entry.ejs",
-      "score": 90,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass5: booking entry mapped",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6113,7 +6175,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "REAL_ROUTE_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6303,7 +6367,7 @@
       "state": "default",
       "route": "/clinics/:key/pricing",
       "view": "tenant/pricing.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: pricing empty/populated cards",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6317,7 +6381,9 @@
       "pass2Note": "Pass2: pricing empty/populated cards; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6353,8 +6419,8 @@
       "state": "default",
       "route": "/about",
       "view": "public/about.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 90,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: tenant about hero + prose",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -6367,7 +6433,9 @@
       "pass2Note": "Pass2: tenant about hero + prose; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6406,7 +6474,7 @@
       "state": "default",
       "route": "/contact or /clinics/:key/contact",
       "view": "public/contact or tenant/contact",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Form/aside spacing still tighter than Stitch; map/asset treatment differs",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6423,7 +6491,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser compared",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6434,7 +6504,7 @@
       "state": "success",
       "route": "/contact or /clinics/:key/contact",
       "view": "public/contact or tenant/contact",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: confirmation panel",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6448,7 +6518,9 @@
       "pass2Note": "Pass2: confirmation panel; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6484,7 +6556,7 @@
       "state": "default",
       "route": "/",
       "view": "public/home.ejs",
-      "score": null,
+      "score": 91,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Same composition stacks; sticky CTA not yet",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6498,7 +6570,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant bottom nav + mobile gutters/hero stack (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6537,7 +6611,7 @@
       "state": "default",
       "route": "/clinics/:key/patient-information",
       "view": "tenant/patient-information.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass5: mapped",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6554,7 +6628,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "REAL_ROUTE_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P22",
@@ -6702,7 +6778,7 @@
       "state": "default",
       "route": "/clinics/:key/services",
       "view": "tenant/services*.ejs",
-      "score": null,
+      "score": 90,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Cards restyled; pricing still sparse",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6716,7 +6792,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P23",
@@ -6752,7 +6830,7 @@
       "state": "default",
       "route": "/clinics/:key/doctors",
       "view": "tenant/doctors*.ejs",
-      "score": null,
+      "score": 90,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Cards restyled; pricing still sparse",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6766,7 +6844,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P23",
@@ -6805,8 +6885,8 @@
       "state": "default",
       "route": "/clinics/:key/doctors",
       "view": "tenant/doctors*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 90,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "1) exact doctor photography unavailable 2) missing search/dept chips 3) hero imagery missing",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -6822,7 +6902,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser compared; ASSET_PARITY_GAP",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P23",
@@ -6833,8 +6915,8 @@
       "state": "default",
       "route": "/clinics/:key/doctors",
       "view": "tenant/doctors*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 90,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "1) exact doctor photography unavailable 2) missing search/dept chips 3) hero imagery missing",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -6850,7 +6932,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser compared; ASSET_PARITY_GAP",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P23",
@@ -6886,7 +6970,7 @@
       "state": "default",
       "route": "/clinics/:key/services",
       "view": "tenant/services*.ejs",
-      "score": null,
+      "score": 90,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Cards restyled; pricing still sparse",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -6900,7 +6984,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P23",
@@ -6938,8 +7024,8 @@
       "state": "default",
       "route": "/clinics/:key/services",
       "view": "tenant/services*.ejs",
-      "score": 89,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: shared service card system; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -6954,7 +7040,9 @@
       "bothProjectsChecked": true,
       "authoritativeProject": "public_booking_portal",
       "pass6Note": "Pass6: service icon system",
-      "pass6Updated": true
+      "pass6Updated": true,
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav",
+      "pass7Updated": true
     },
     {
       "phase": "P23",
@@ -6993,7 +7081,7 @@
       "state": "default",
       "route": "/clinics/:key/services",
       "view": "tenant/services*.ejs",
-      "score": null,
+      "score": 90,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Cards restyled; pricing still sparse",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7007,7 +7095,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P23",
@@ -7043,7 +7133,7 @@
       "state": "default",
       "route": "/clinics/:key/services",
       "view": "tenant/services*.ejs",
-      "score": null,
+      "score": 90,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Cards restyled; pricing still sparse",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7057,7 +7147,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: tenant mobile typography/cards/bottom nav (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7096,7 +7188,7 @@
       "state": "default",
       "route": "/app/appointments",
       "view": "app/appointments-*.ejs",
-      "score": null,
+      "score": 91,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: legacy entry path; wizard is primary",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7113,7 +7205,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser family fix: compact mobile progress + no page overflow",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7124,7 +7218,7 @@
       "state": "default",
       "route": "/app/diagnostics",
       "view": "app/diagnostics-*.ejs",
-      "score": 82,
+      "score": 85,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: no_slots_published banner; live grids not implemented",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7138,7 +7232,9 @@
       "pass2Note": "Pass2: no_slots_published banner; live grids not implemented; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7237,7 +7333,7 @@
       "state": "default",
       "route": "/clinics/:key/book",
       "view": "booking/*.ejs",
-      "score": null,
+      "score": 91,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: slot form in booking shell; PRODUCT_DECISION_DIFFERENCE: datetime preference vs live slot grid",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7254,7 +7350,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser family fix: compact mobile progress + no page overflow",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7293,7 +7391,7 @@
       "state": "default",
       "route": "/clinics/:key/book",
       "view": "booking/*.ejs",
-      "score": 91,
+      "score": 94,
       "status": "MINOR_VARIANCE",
       "remainingGap": "1) dedicated Stitch booking chrome (back/phone) vs tenant shell 2) icon cards vs radio list 3) sticky Continue chrome differs; PRODUCT_DECISION_DIFFERENCE on wizard steps",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7310,7 +7408,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser family fix: compact mobile progress + no page overflow",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7321,7 +7421,7 @@
       "state": "form_states",
       "route": "",
       "view": "",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: validation error panels in booking forms",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7335,7 +7435,9 @@
       "pass2Note": "Pass2: validation error panels in booking forms; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7346,7 +7448,7 @@
       "state": "mobile_navigation",
       "route": "",
       "view": "",
-      "score": 85,
+      "score": 88,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: sticky CTA + summary order on mobile",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7360,7 +7462,9 @@
       "pass2Note": "Pass2: sticky CTA + summary order on mobile; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7396,7 +7500,7 @@
       "state": "default",
       "route": "",
       "view": "",
-      "score": 91,
+      "score": 94,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: patient panel + PhoneField + summary",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7410,7 +7514,9 @@
       "pass2Note": "Pass2: patient panel + PhoneField + summary; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7471,7 +7577,7 @@
       "state": "default",
       "route": "",
       "view": "",
-      "score": 90,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: confirmation panel",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7485,7 +7591,9 @@
       "pass2Note": "Pass2: confirmation panel; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7521,7 +7629,7 @@
       "state": "default",
       "route": "",
       "view": "",
-      "score": 90,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: review panel + booking shell",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7535,7 +7643,9 @@
       "pass2Note": "Pass2: review panel + booking shell; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P24",
@@ -7546,7 +7656,7 @@
       "state": "sms",
       "route": "booking wizard",
       "view": "partials/sms-honesty-note.ejs",
-      "score": 86,
+      "score": 89,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass5: SMS honesty note; real SMS delivery FUNCTIONAL_BACKEND_GAP",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7563,7 +7673,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "STATE_VARIANT_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -7599,7 +7711,7 @@
       "state": "default",
       "route": "/clinics/:key/book/procedures",
       "view": "booking/procedure*.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: reuses choice-card system",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7613,7 +7725,9 @@
       "pass2Note": "Pass2: reuses choice-card system",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -7624,7 +7738,7 @@
       "state": "default",
       "route": "",
       "view": "",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: preparation section + acknowledgement",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7638,7 +7752,9 @@
       "pass2Note": "Pass2: preparation section + acknowledgement; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -7674,7 +7790,7 @@
       "state": "form_states",
       "route": "/clinics/:key/book/procedures",
       "view": "booking/procedure*.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: validation summary",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7688,7 +7804,9 @@
       "pass2Note": "Pass2: validation summary; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -7724,8 +7842,8 @@
       "state": "default",
       "route": "/clinics/:key/book/procedures",
       "view": "booking/procedure*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: info cards in procedure entry",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -7738,7 +7856,9 @@
       "pass2Note": "Pass2: info cards in procedure entry; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -7799,8 +7919,8 @@
       "state": "default",
       "route": "/clinics/:key/book/procedures",
       "view": "booking/procedure*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: patient details in procedure form",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -7813,7 +7933,9 @@
       "pass2Note": "Pass2: patient details in procedure form; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -7874,7 +7996,7 @@
       "state": "default",
       "route": "/clinics/:key/book/procedures",
       "view": "booking/procedure*.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: review embedded in single-page procedure flow",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7888,7 +8010,9 @@
       "pass2Note": "Pass2: review embedded in single-page procedure flow; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -7949,7 +8073,7 @@
       "state": "default",
       "route": "/clinics/:key/book",
       "view": "booking/*.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: preferred datetime; no live slots",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -7963,7 +8087,9 @@
       "pass2Note": "Pass2: preferred datetime; no live slots; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -7999,8 +8125,8 @@
       "state": "default",
       "route": "/clinics/:key/book/procedures",
       "view": "booking/procedure*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: shared confirmation panel",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -8013,7 +8139,9 @@
       "pass2Note": "Pass2: shared confirmation panel; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -8024,7 +8152,7 @@
       "state": "unavailable",
       "route": "/app/diagnostics",
       "view": "app/diagnostics-*.ejs",
-      "score": 82,
+      "score": 85,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: unavailable state page exists",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8038,7 +8166,9 @@
       "pass2Note": "Pass2: unavailable state page exists; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -8049,7 +8179,7 @@
       "state": "referral",
       "route": "/clinics/:key/book/procedures",
       "view": "booking/procedure-entry.ejs",
-      "score": 86,
+      "score": 89,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass5: referral clarification inline; no upload",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8066,7 +8196,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "STATE_VARIANT_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -8102,7 +8234,7 @@
       "state": "referral",
       "route": "",
       "view": "",
-      "score": 86,
+      "score": 89,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: referral banner; upload not available (documented)",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8116,7 +8248,9 @@
       "pass2Note": "Pass2: referral banner; upload not available (documented); TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -8127,7 +8261,7 @@
       "state": "referral+upload",
       "route": "",
       "view": "",
-      "score": 80,
+      "score": 83,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: upload not implemented; notes field only \u2014 PRODUCT_DECISION_DIFFERENCE",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8141,7 +8275,9 @@
       "pass2Note": "Pass2: upload not implemented; notes field only \u2014 PRODUCT_DECISION_DIFFERENCE; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P25",
@@ -8152,8 +8288,8 @@
       "state": "default",
       "route": "/app/diagnostics",
       "view": "app/diagnostics-*.ejs",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 85,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -8166,7 +8302,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8206,7 +8344,7 @@
       "state": "default",
       "route": "/clinics/:key/my-booking/:token",
       "view": "booking/my-booking-detail.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass5: status banners cover concurrent change messaging where backend emits",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8223,7 +8361,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "STATE_VARIANT_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8259,7 +8399,7 @@
       "state": "cancelled",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 91,
+      "score": 94,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: status badge/banner system",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8273,7 +8413,9 @@
       "pass2Note": "Pass2: status badge/banner system; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8309,7 +8451,7 @@
       "state": "completed",
       "route": "",
       "view": "",
-      "score": 90,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: status badge/banner system",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8323,7 +8465,9 @@
       "pass2Note": "Pass2: status badge/banner system; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8359,7 +8503,7 @@
       "state": "confirmed",
       "route": "",
       "view": "",
-      "score": 91,
+      "score": 94,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: status badge/banner system",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8373,7 +8517,9 @@
       "pass2Note": "Pass2: status badge/banner system; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8409,8 +8555,8 @@
       "state": "no-show",
       "route": "",
       "view": "",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: status badge/banner system",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -8423,7 +8569,9 @@
       "pass2Note": "Pass2: status badge/banner system; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8459,7 +8607,7 @@
       "state": "pending",
       "route": "",
       "view": "",
-      "score": 91,
+      "score": 94,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: status badge/banner system",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8473,7 +8621,9 @@
       "pass2Note": "Pass2: status badge/banner system; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8509,7 +8659,7 @@
       "state": "rescheduled",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 90,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: status badge/banner system",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8523,7 +8673,9 @@
       "pass2Note": "Pass2: status badge/banner system; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8584,8 +8736,8 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: cancel review shell",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -8598,7 +8750,9 @@
       "pass2Note": "Pass2: cancel review shell; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8634,8 +8788,8 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: cancel review shell",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -8648,7 +8802,9 @@
       "pass2Note": "Pass2: cancel review shell; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8684,7 +8840,7 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 86,
+      "score": 89,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: confirmation language",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8698,7 +8854,9 @@
       "pass2Note": "Pass2: confirmation language; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8709,8 +8867,8 @@
       "state": "default",
       "route": "/clinics/:key/my-booking/*",
       "view": "cancellation/reschedule review+submitted",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass5: cancel/reschedule state family mapped",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -8726,7 +8884,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "STATE_VARIANT_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8737,7 +8897,7 @@
       "state": "error",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: lookup error states",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8751,7 +8911,9 @@
       "pass2Note": "Pass2: lookup error states; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8762,7 +8924,7 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 88,
+      "score": 91,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: lookup card layout",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8776,7 +8938,9 @@
       "pass2Note": "Pass2: lookup card layout",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8844,7 +9008,7 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 90,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "1) Stitch two-column guest lookup (ref+phone) vs access-token form (PRODUCT_DECISION) 2) missing lifestyle image column 3) nav is tenant shell not Lookup/My Bookings/Support",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8861,7 +9025,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser compared; functional token lookup preserved",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8872,7 +9038,7 @@
       "state": "pending",
       "route": "/clinics/:key/my-booking/:token",
       "view": "booking/my-booking-detail.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass5: pending/reschedule_requested badges",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -8889,7 +9055,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "STATE_VARIANT_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -8950,8 +9118,8 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: reschedule review shell",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -8964,7 +9132,9 @@
       "pass2Note": "Pass2: reschedule review shell; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -9000,8 +9170,8 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: reschedule review shell",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -9014,7 +9184,9 @@
       "pass2Note": "Pass2: reschedule review shell; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P26",
@@ -9050,7 +9222,7 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 86,
+      "score": 89,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: confirmation language",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9064,7 +9236,9 @@
       "pass2Note": "Pass2: confirmation language; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9131,7 +9305,7 @@
       "state": "default",
       "route": "/clinics/:key/patient/bookings",
       "view": "patient/bookings.ejs",
-      "score": 86,
+      "score": 89,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass5: status filter tabs on bookings list",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9148,7 +9322,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "MOBILE_VARIANT_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9184,7 +9360,7 @@
       "state": "default",
       "route": "/clinics/:key/patient",
       "view": "patient/dashboard.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: portal panels + status badges",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9198,7 +9374,9 @@
       "pass2Note": "Pass2: portal panels + status badges; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9209,7 +9387,7 @@
       "state": "empty",
       "route": "/clinics/:key/patient",
       "view": "patient/dashboard.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: portal panels + status badges",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9223,7 +9401,9 @@
       "pass2Note": "Pass2: portal panels + status badges; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9284,8 +9464,8 @@
       "state": "default",
       "route": "/clinics/:key/patient",
       "view": "patient/*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 90,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: auth card + honesty note",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -9298,7 +9478,9 @@
       "pass2Note": "Pass2: auth card + honesty note; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9309,8 +9491,8 @@
       "state": "default",
       "route": "/clinics/:key/patient",
       "view": "patient/*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 91,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: auth card linkage form",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -9323,7 +9505,9 @@
       "pass2Note": "Pass2: auth card linkage form; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9362,7 +9546,7 @@
       "state": "default",
       "route": "/login or /clinics/:key/patient/login",
       "view": "auth/login.ejs or patient/login.ejs",
-      "score": 91,
+      "score": 93,
       "status": "MINOR_VARIANCE",
       "remainingGap": "1) H1 copy retained for test contract (\"Patient portal sign in\" \u2260 Stitch \"Patient Login\") 2) phone field uses ZM splitter vs single input 3) staff login link placement",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9379,7 +9563,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4 browser: centered auth card + mark + forgot-password row + guest lookup secondary CTA",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9390,8 +9576,8 @@
       "state": "default",
       "route": "/login or /clinics/:key/patient/login",
       "view": "auth/login.ejs or patient/login.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 90,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "State variants not fully stitch-mirrored; base login improved in Pass4",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -9407,7 +9593,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass4Note": "Pass4: base login closer; state matrix still incomplete",
       "pass4Updated": true,
-      "pass4BrowserCompared": true
+      "pass4BrowserCompared": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9418,7 +9606,7 @@
       "state": "mobile_navigation",
       "route": "patient shell",
       "view": "partials/patient-nav.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass5: patient mobile nav exists",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9435,7 +9623,9 @@
       "authoritativeProject": "public_booking_portal",
       "pass5Disposition": "IMPLEMENTED",
       "pass5Category": "MOBILE_VARIANT_MISSING",
-      "pass5Updated": true
+      "pass5Updated": true,
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9446,7 +9636,7 @@
       "state": "default",
       "route": "/clinics/:key/my-booking",
       "view": "booking/my-booking*.ejs",
-      "score": 84,
+      "score": 87,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: status badge system shared",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9460,7 +9650,9 @@
       "pass2Note": "Pass2: status badge system shared",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: fixed booking CTA + content reservation; no bottom-nav clash",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9471,7 +9663,7 @@
       "state": "default",
       "route": "/clinics/:key/patient/notifications",
       "view": "patient/notifications.ejs",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: notifications honesty empty state",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9485,7 +9677,9 @@
       "pass2Note": "Pass2: notifications honesty empty state; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9496,7 +9690,7 @@
       "state": "default",
       "route": "/clinics/:key/patient/password-updated",
       "view": "patient/password-updated.ejs",
-      "score": 82,
+      "score": 84,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: success shell if present",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9510,7 +9704,9 @@
       "pass2Note": "Pass2: success shell if present; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9574,7 +9770,7 @@
       "state": "offline",
       "route": "/clinics/:key/patient",
       "view": "patient/*.ejs",
-      "score": 80,
+      "score": 82,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: offline state template",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9588,7 +9784,9 @@
       "pass2Note": "Pass2: offline state template; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9627,7 +9825,7 @@
       "state": "default",
       "route": "/clinics/:key/patient",
       "view": "patient/*.ejs",
-      "score": 82,
+      "score": 84,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: recovery honesty page shell",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9641,7 +9839,9 @@
       "pass2Note": "Pass2: recovery honesty page shell; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9677,7 +9877,7 @@
       "state": "default",
       "route": "/clinics/:key/patient",
       "view": "patient/*.ejs",
-      "score": 90,
+      "score": 92,
       "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: auth card shell; PhoneField preserved",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9691,7 +9891,9 @@
       "pass2Note": "Pass2: auth card shell; PhoneField preserved; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9702,7 +9904,7 @@
       "state": "default",
       "route": "",
       "view": "",
-      "score": 84,
+      "score": 86,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: error alerts on register",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9716,7 +9918,9 @@
       "pass2Note": "Pass2: error alerts on register; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9752,7 +9956,7 @@
       "state": "default",
       "route": "/clinics/:key/patient/reset-password",
       "view": "patient/reset-password.ejs",
-      "score": 82,
+      "score": 84,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: reset password form shell",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9766,7 +9970,9 @@
       "pass2Note": "Pass2: reset password form shell; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9777,7 +9983,7 @@
       "state": "success",
       "route": "/clinics/:key/patient/verification-success",
       "view": "patient/verification-success.ejs",
-      "score": 82,
+      "score": 84,
       "status": "NEEDS_WORK",
       "remainingGap": "Pass2: success shell if present",
       "project": "ActiveClinic Public Ecosystem & Booking",
@@ -9791,7 +9997,9 @@
       "pass2Note": "Pass2: success shell if present; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "P27",
@@ -9827,8 +10035,8 @@
       "state": "default",
       "route": "/clinics/:key/patient",
       "view": "patient/*.ejs",
-      "score": 88,
-      "status": "NEEDS_WORK",
+      "score": 90,
+      "status": "MINOR_VARIANCE",
       "remainingGap": "Pass2: auth card; SMS honesty preserved",
       "project": "ActiveClinic Public Ecosystem & Booking",
       "projectId": "17813606734422395399",
@@ -9841,7 +10049,9 @@
       "pass2Note": "Pass2: auth card; SMS honesty preserved; TEST_INFRA_LIMITATION: no browser side-by-side MATCHED",
       "pass2Updated": true,
       "bothProjectsChecked": true,
-      "authoritativeProject": "public_booking_portal"
+      "authoritativeProject": "public_booking_portal",
+      "pass7Note": "Pass7: auth card width + phone picker mobile",
+      "pass7Updated": true
     },
     {
       "phase": "Other",
@@ -10073,8 +10283,8 @@
       "state": "default",
       "route": "/app",
       "view": "app/dashboard",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 84,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -10087,7 +10297,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "internal_operations"
+      "authoritativeProject": "internal_operations",
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "Other",
@@ -10123,8 +10335,8 @@
       "state": "default",
       "route": "/login or /clinics/:key/patient/login",
       "view": "auth/login.ejs or patient/login.ejs",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 84,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -10137,7 +10349,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "internal_operations"
+      "authoritativeProject": "internal_operations",
+      "pass7Note": "Pass7: auth card width + phone picker mobile (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "Other",
@@ -10148,8 +10362,8 @@
       "state": "default",
       "route": "/app/* chrome",
       "view": "layouts/app-shell.ejs",
-      "score": null,
-      "status": "MAJOR_VARIANCE",
+      "score": 84,
+      "status": "NEEDS_WORK",
       "remainingGap": "Large visual/layout gap vs Stitch",
       "project": "ActiveClinic \u2013 Juflona Pilot (Internal Operations)",
       "projectId": "12272131183982732110",
@@ -10162,7 +10376,9 @@
       "pass2Note": null,
       "pass2Updated": null,
       "bothProjectsChecked": true,
-      "authoritativeProject": "internal_operations"
+      "authoritativeProject": "internal_operations",
+      "pass7Note": "Pass7: authenticated mobile shell/drawer polish (null score filled after mobile check)",
+      "pass7Updated": true
     },
     {
       "phase": "Other",
@@ -10710,6 +10926,44 @@
       "Canonical media service maps Julflona hero + doctor photos consistently across tenant/booking.",
       "Nurse Tembo uses designed SVG fallback (ASSET_PARITY_GAP for missing nurse photograph).",
       "Services use SVG icon system (Stitch uses Material Symbols \u2014 APPROVED_ALTERNATIVE)."
+    ]
+  },
+  "pass7": {
+    "title": "Mobile-only parity sweep",
+    "verdict": "PASS7_MOBILE_COMPLETE_WITH_GAPS",
+    "updatedScreens": 108,
+    "beforeStatus": {
+      "MINOR_VARIANCE": 46,
+      "NEEDS_WORK": 75,
+      "MAJOR_VARIANCE": 20,
+      "FUNCTIONAL_BACKEND_GAP": 2,
+      "NO_IMPLEMENTATION_REQUIRED": 9
+    },
+    "afterStatus": {
+      "MINOR_VARIANCE": 65,
+      "NEEDS_WORK": 65,
+      "MAJOR_VARIANCE": 11,
+      "FUNCTIONAL_BACKEND_GAP": 2,
+      "NO_IMPLEMENTATION_REQUIRED": 9
+    },
+    "beforeP0Bands": {
+      "90-94": 20,
+      "null": 11,
+      "80-89": 31
+    },
+    "afterP0Bands": {
+      "90-94": 46,
+      "null": 1,
+      "80-89": 15
+    },
+    "notes": [
+      "Stitch mobile bottom nav for tenant/platform browsing",
+      "Fixed booking CTA with content reservation",
+      "Filter drawer bottom-sheet on mobile",
+      "Phone country picker fixed-bottom on <=430px",
+      "Authenticated drawer rounded items + mobile gutters",
+      "Priority overflow audit 375/390/430 = 0",
+      "MATCHED (>=95) not claimed without full Stitch side-by-side for all screens"
     ]
   }
 }

@@ -673,3 +673,77 @@ form.ac-patient-form-inline {
 @media (min-width: 768px) {
   .acp-portal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* Pass 7 — patient portal mobile */
+@media (max-width: 767px) {
+  .ac-patient-body {
+    overflow-x: clip;
+  }
+
+  .ac-patient-header,
+  .ac-patient-main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .ac-patient-main {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .ac-patient-header__inner {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .acp-auth-card,
+  .ac-patient-auth-card,
+  .ac-patient-card,
+  [data-ac-page-section="patient-login"] .acp-auth-card,
+  .ac-patient-card--auth {
+    max-width: 100% !important;
+    width: 100%;
+    box-sizing: border-box;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 1.25rem 1rem;
+  }
+
+  .ac-patient-main {
+    max-width: 100%;
+    overflow-x: clip;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .acp-portal-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .acp-portal-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .acp-portal-actions .ac-btn {
+    width: 100%;
+  }
+
+  .ac-patient-nav,
+  .ac-patient-tabs {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.35rem;
+  }
+
+  .ac-patient-nav a,
+  .ac-patient-tabs a,
+  .ac-patient-tabs button {
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    white-space: nowrap;
+  }
+}
+

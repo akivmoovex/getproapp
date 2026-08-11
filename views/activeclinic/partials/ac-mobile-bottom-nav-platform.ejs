@@ -1,0 +1,27 @@
+<%#
+  Platform mobile bottom navigation (directory / marketing).
+%>
+<%
+  const pid = typeof pageId === "string" ? pageId : "";
+  const show = /public-home|clinics-directory|clinics-search|public-about|public-solutions|clinic-directory|clinic-search/.test(pid);
+%>
+<% if (show) { %>
+<nav class="acp-mobile-bottom-nav acp-mobile-bottom-nav--platform" data-ac-mobile-bottom-nav="platform" aria-label="ActiveClinic shortcuts">
+  <a class="acp-mobile-bottom-nav__item<%= pid === 'public-home' ? ' is-active' : '' %>" href="/">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌂</span>
+    <span class="acp-mobile-bottom-nav__label">Home</span>
+  </a>
+  <a class="acp-mobile-bottom-nav__item<%= /clinic/.test(pid) ? ' is-active' : '' %>" href="/clinics">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌕</span>
+    <span class="acp-mobile-bottom-nav__label">Clinics</span>
+  </a>
+  <a class="acp-mobile-bottom-nav__item<%= /solutions/.test(pid) ? ' is-active' : '' %>" href="/solutions">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">◎</span>
+    <span class="acp-mobile-bottom-nav__label">Solutions</span>
+  </a>
+  <a class="acp-mobile-bottom-nav__item<%= /register/.test(pid) ? ' is-active' : '' %>" href="/register-clinic">
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">＋</span>
+    <span class="acp-mobile-bottom-nav__label">Register</span>
+  </a>
+</nav>
+<% } %>

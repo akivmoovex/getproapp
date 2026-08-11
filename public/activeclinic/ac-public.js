@@ -15,6 +15,7 @@
     if (!drawer) return;
     lastFocus = document.activeElement;
     drawer.hidden = false;
+    document.body.classList.add("ac-public-nav-open");
     if (openBtn) openBtn.setAttribute("aria-expanded", "true");
     var panel = drawer.querySelector(".ac-public-drawer__panel");
     var focusable = panel && panel.querySelector("button, a[href], input");
@@ -25,6 +26,7 @@
   function closeDrawer() {
     if (!drawer) return;
     drawer.hidden = true;
+    document.body.classList.remove("ac-public-nav-open");
     if (openBtn) openBtn.setAttribute("aria-expanded", "false");
     if (lastFocus && lastFocus.focus) lastFocus.focus();
     announce("Menu closed");
@@ -47,6 +49,7 @@
     if (!filterDrawer) return;
     filterLastFocus = document.activeElement;
     filterDrawer.hidden = false;
+    document.body.classList.add("ac-public-nav-open");
     filterOpenBtns.forEach(function (btn) {
       btn.setAttribute("aria-expanded", "true");
     });
@@ -59,6 +62,9 @@
   function closeFilterDrawer() {
     if (!filterDrawer) return;
     filterDrawer.hidden = true;
+    if (!drawer || drawer.hidden) {
+      document.body.classList.remove("ac-public-nav-open");
+    }
     filterOpenBtns.forEach(function (btn) {
       btn.setAttribute("aria-expanded", "false");
     });

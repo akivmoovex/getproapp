@@ -180,3 +180,29 @@
     width: 100%;
   }
 }
+
+/* Pass 7 — narrow phone country picker */
+@media (max-width: 430px) {
+  .ac-phone-field__popover {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: auto;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-width: none;
+    max-height: min(55vh, 22rem);
+    z-index: 80;
+  }
+
+  .ac-phone-field__options {
+    max-height: min(40vh, 16rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ac-phone-field__option {
+    min-height: 2.75rem;
+  }
+}
+

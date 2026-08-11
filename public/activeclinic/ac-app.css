@@ -1552,3 +1552,91 @@ body.ac-app-body .ac-money--lg { font-size: 1.5rem; }
   body.ac-app-body .ac-clinical-mobile { display: none; }
   body.ac-app-body .ac-clinical-desktop { display: block; }
 }
+
+/* ===== Pass 7 — authenticated mobile shell ===== */
+@media (max-width: 899px) {
+  body.ac-app-body {
+    --ac-gutter: 1rem;
+    overflow-x: clip;
+  }
+
+  body.ac-app-body .ac-content {
+    padding: 1rem var(--ac-gutter) calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.ac-app-body .ac-topbar {
+    min-height: 3.5rem;
+    padding-inline: 0.65rem;
+    gap: 0.5rem;
+  }
+
+  body.ac-app-body .ac-topbar__sub {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 46vw;
+  }
+
+  body.ac-app-body .ac-icon-btn {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  body.ac-app-body .ac-drawer {
+    width: min(20rem, 86vw);
+    padding: 1rem 0.75rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.ac-app-body .ac-drawer .ac-nav-item,
+  body.ac-app-body .ac-drawer .ac-nav a {
+    border-radius: 999px;
+    margin-inline: 0.35rem;
+    padding-inline: 1rem;
+    min-height: 2.75rem;
+  }
+
+  body.ac-app-body .ac-drawer .ac-nav-item.is-active,
+  body.ac-app-body .ac-drawer .ac-nav-item[aria-current="page"],
+  body.ac-app-body .ac-drawer .ac-nav a.is-active,
+  body.ac-app-body .ac-drawer .ac-nav a[aria-current="page"] {
+    background: color-mix(in srgb, var(--ac-primary) 14%, #fff);
+  }
+
+  body.ac-app-body .ac-page-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  body.ac-app-body .ac-page-header h1 {
+    font-size: clamp(1.35rem, 5vw, 1.6rem);
+    line-height: 1.2;
+  }
+
+  body.ac-app-body .ac-page-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  body.ac-app-body .ac-page-header__actions .ac-btn {
+    flex: 1 1 auto;
+    min-height: 2.75rem;
+  }
+
+  body.ac-app-body .ac-table-wrap {
+    margin-inline: calc(-1 * var(--ac-gutter));
+    padding-inline: var(--ac-gutter);
+  }
+
+  body.ac-app-body .ac-mobile-record-card,
+  body.ac-app-body .ac-card {
+    min-height: 2.75rem;
+  }
+
+  body.ac-app-body .ac-btn {
+    min-height: 2.75rem;
+  }
+}
+

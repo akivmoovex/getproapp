@@ -162,3 +162,7 @@ No MATCHED claims. Backend gaps are listed under `pass5.functionalBackendGaps` i
 ## Pass 6 (assets)
 
 See `ACTIVECLINIC_PASS6_ASSET_REPORT.md`. Priority heroes/doctor photos wired from Stitch CDN (`=s2048`). Remaining: retina `LOW_RESOLUTION`, nurse photo `ASSET_PARITY_GAP`, Material Symbols vs SVG icons.
+
+## Pass 7 (mobile)
+
+Mobile-only sweep: bottom nav, booking fixed CTA, filter bottom-sheet, phone picker, app drawer polish. Priority overflow 375/390/430 = 0. See pass7 block in JSON matrix.
