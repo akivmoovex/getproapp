@@ -1,12 +1,15 @@
-<section class="ac-public-section" data-ac-page-section="register-clinic">
+<section class="ac-public-section acp-page acp-onboarding" data-ac-page-section="register-clinic">
   <ol class="ac-onboarding-steps" aria-label="Registration progress">
     <li class="ac-onboarding-steps__item ac-onboarding-steps__item--active" aria-current="step">Details</li>
     <li class="ac-onboarding-steps__item">Review</li>
     <li class="ac-onboarding-steps__item">Submitted</li>
   </ol>
 
-  <h1>Register your clinic</h1>
-  <p>Submit an application to join ActiveClinic. Applications are reviewed — submitting does not publish your clinic or create a live account automatically.</p>
+  <header class="acp-page-hero acp-page-hero--compact">
+    <p class="ac-public-eyebrow">Clinic onboarding</p>
+    <h1>Register your clinic</h1>
+    <p class="ac-public-lede">Submit an application to join ActiveClinic. Applications are reviewed — submitting does not publish your clinic or create a live account automatically.</p>
+  </header>
 
   <% if (typeof error === 'string' && error) { %>
   <div class="ac-public-error" role="alert"><%= error %></div>

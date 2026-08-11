@@ -5,9 +5,9 @@
   --ac-ink: #1a2b2f;
   --ac-muted: #5b6d72;
   --ac-border: #d5e0e3;
-  --ac-primary: #003c90;
+  --ac-primary: #006068;
   --ac-teal: #0f766e;
-  --ac-primary-2: #002f73;
+  --ac-primary-2: #004f56;
   --ac-focus: #1d59c1;
   --ac-success: #027a48;
   --ac-success-bg: #ecfdf3;
@@ -27,6 +27,13 @@
   --ac-sidebar-w: 17rem;
   --ac-font: "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
   --ac-touch: 2.75rem;
+  --ac-color-primary: var(--ac-primary);
+  --ac-bg-page: var(--ac-bg);
+  --ac-text-ink: var(--ac-ink);
+  --ac-text-muted: var(--ac-muted);
+  --ac-border-subtle: var(--ac-border);
+  --ac-radius-card: var(--ac-radius);
+  --ac-shadow-card: var(--ac-shadow);
 }
 
 *,

@@ -1,5 +1,6 @@
-<section class="ac-public-section" data-ac-page-section="clinic-search">
-  <header class="ac-directory-header">
+<section class="acp-page" data-ac-page-section="clinic-search">
+  <header class="acp-page-hero acp-page-hero--compact">
+    <p class="ac-public-eyebrow">Clinic search</p>
     <h1>Search clinics</h1>
     <p class="ac-public-lede">Filter published clinics by name, province, or city.</p>
   </header>
@@ -34,14 +35,16 @@
       }) %>
       <% } else { %>
       <p class="ac-directory-result-count" data-ac-result-count="<%= list.length %>"><%= list.length %> result<%= list.length === 1 ? '' : 's' %></p>
-      <ul class="ac-clinic-cards">
+      <ul class="ac-clinic-cards acp-clinic-grid">
         <% list.forEach(function(c) { %>
-        <li class="ac-clinic-card">
+        <li class="ac-clinic-card acp-clinic-card">
           <a href="/clinics/<%= c.clinicKey %>">
-            <h2><%= c.publicName %></h2>
-            <% if (c.city || c.province) { %>
-            <p class="ac-clinic-card__location"><%= [c.city, c.province].filter(Boolean).join(', ') %></p>
-            <% } %>
+            <div class="acp-clinic-card__body">
+              <h2><%= c.publicName %></h2>
+              <% if (c.city || c.province) { %>
+              <p class="ac-clinic-card__location"><%= [c.city, c.province].filter(Boolean).join(', ') %></p>
+              <% } %>
+            </div>
             <span class="ac-clinic-card__link">View clinic</span>
           </a>
         </li>

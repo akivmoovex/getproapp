@@ -1,12 +1,49 @@
+<%
+  const primaryFacility = (clinic && Array.isArray(clinic.facilities) && clinic.facilities.length)
+    ? (clinic.facilities.find(function (f) { return f.isPrimary; }) || clinic.facilities[0])
+    : null;
+  const footerLoc = [];
+  if (primaryFacility) {
+    if (primaryFacility.addressLine1) footerLoc.push(primaryFacility.addressLine1);
+    if (primaryFacility.city) footerLoc.push(primaryFacility.city);
+    if (primaryFacility.countryCode) footerLoc.push(primaryFacility.countryCode);
+  }
+%>
 <footer class="ac-public-footer ac-public-footer--tenant" data-ac-public-footer="tenant">
-  <div class="ac-public-footer__inner">
-    <p><strong><%= clinic.publicName %></strong></p>
-    <nav aria-label="Clinic footer">
-      <a href="/clinics/<%= clinic.clinicKey %>/privacy">Privacy</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/terms">Terms</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
-      <a href="/clinics">ActiveClinic directory</a>
-    </nav>
-    <p class="ac-public-footer__note">Website powered by ActiveClinic · GetPro</p>
+  <div class="ac-public-footer__inner ac-public-footer__inner--tenant">
+    <div class="ac-public-footer__col">
+      <p class="ac-public-footer__brand"><strong><%= clinic.publicName %></strong></p>
+      <% if (footerLoc.length) { %><p><%= footerLoc.join(", ") %></p><% } %>
+      <p class="ac-public-footer__note">Powered by ActiveClinic</p>
+    </div>
+    <div class="ac-public-footer__col">
+      <h2 class="ac-public-footer__heading">Quick links</h2>
+      <nav aria-label="Clinic footer links">
+        <a href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
+        <a href="/clinics/<%= clinic.clinicKey %>/doctors">Doctors</a>
+        <% if (clinic.publicBookingEnabled) { %>
+        <a href="/clinics/<%= clinic.clinicKey %>/book">Book appointment</a>
+        <% } %>
+      </nav>
+    </div>
+    <div class="ac-public-footer__col">
+      <h2 class="ac-public-footer__heading">Contact</h2>
+      <ul class="ac-public-footer__list">
+        <% if (clinic.publicPhoneDisplay) { %><li><%= clinic.publicPhoneDisplay %></li><% } %>
+        <% if (clinic.publicEmailDisplay) { %><li><%= clinic.publicEmailDisplay %></li><% } %>
+        <li><a href="/clinics/<%= clinic.clinicKey %>/contact">Contact form</a></li>
+      </ul>
+    </div>
+    <div class="ac-public-footer__col">
+      <h2 class="ac-public-footer__heading">Legal</h2>
+      <nav aria-label="Clinic legal">
+        <a href="/clinics/<%= clinic.clinicKey %>/privacy">Privacy policy</a>
+        <a href="/clinics/<%= clinic.clinicKey %>/terms">Terms of service</a>
+        <a href="/clinics">ActiveClinic directory</a>
+      </nav>
+    </div>
+  </div>
+  <div class="ac-public-footer__legal">
+    © <%= new Date().getFullYear() %> <%= clinic.publicName %>. All rights reserved.
   </div>
 </footer>
