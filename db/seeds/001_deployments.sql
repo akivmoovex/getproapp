@@ -1,43 +1,4 @@
--- Seed BlessBoard deployment catalogue rows (idempotent).
--- Official Hostinger codes: blessboard-com-production, blessboard-org-staging.
--- Legacy codes blessboard-com-v4 / blessboard-org-v5 are renamed when present
--- (canonical_domain is unique — one row per apex domain).
-
-UPDATE platform.deployments
-SET
-  deployment_code = 'blessboard-com-production',
-  application_code = 'blessboard',
-  release_version = 'v5',
-  canonical_domain = 'blessboard.com',
-  environment_code = 'production',
-  status = 'active',
-  jobs_enabled = true,
-  database_access_mode = 'read_write',
-  session_cookie_name = 'blessboard_com_sid',
-  updated_at = now()
-WHERE deployment_code = 'blessboard-com-v4'
-  AND NOT EXISTS (
-    SELECT 1 FROM platform.deployments d
-     WHERE d.deployment_code = 'blessboard-com-production'
-  );
-
-UPDATE platform.deployments
-SET
-  deployment_code = 'blessboard-org-staging',
-  application_code = 'blessboard',
-  release_version = 'v5',
-  canonical_domain = 'blessboard.org',
-  environment_code = 'testing',
-  status = 'active',
-  jobs_enabled = false,
-  database_access_mode = 'read_write',
-  session_cookie_name = 'blessboard_org_sid',
-  updated_at = now()
-WHERE deployment_code = 'blessboard-org-v5'
-  AND NOT EXISTS (
-    SELECT 1 FROM platform.deployments d
-     WHERE d.deployment_code = 'blessboard-org-staging'
-  );
+-- Seed BlessBoard V4 and V5 deployment rows (idempotent).
 
 INSERT INTO platform.deployments (
   deployment_code,
@@ -51,9 +12,9 @@ INSERT INTO platform.deployments (
   session_cookie_name
 ) VALUES
   (
-    'blessboard-com-production',
+    'blessboard-com-v4',
     'blessboard',
-    'v5',
+    'v4',
     'blessboard.com',
     'production',
     'active',
@@ -62,7 +23,7 @@ INSERT INTO platform.deployments (
     'blessboard_com_sid'
   ),
   (
-    'blessboard-org-staging',
+    'blessboard-org-v5',
     'blessboard',
     'v5',
     'blessboard.org',
