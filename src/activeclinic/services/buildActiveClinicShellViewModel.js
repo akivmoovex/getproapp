@@ -29,7 +29,7 @@ const {
   loadActiveDepartmentTypeSet,
 } = require("./activeClinicModuleAvailability");
 
-const SHELL_ASSET_VERSION = "phone-1";
+const SHELL_ASSET_VERSION = "v7-parity-3";
 
 /**
  * @param {{ query: Function }} db

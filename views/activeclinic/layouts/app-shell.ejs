@@ -62,11 +62,34 @@
 
       <header class="ac-desktop-header" data-ac-nav="desktop-header">
         <div class="ac-desktop-header__left">
+          <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %>
+          <nav class="ac-desktop-header__crumbs" aria-label="Breadcrumb">
+            <ol class="ac-breadcrumbs ac-breadcrumbs--header">
+              <% breadcrumbs.forEach(function (crumb) { %>
+              <li>
+                <% if (crumb.href) { %><a href="<%= crumb.href %>"><%= crumb.label %></a><% } else { %><%= crumb.label %><% } %>
+              </li>
+              <% }) %>
+            </ol>
+          </nav>
+          <% } else { %>
           <p class="ac-desktop-header__context ac-muted">
             <%= (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName) || '' %>
             <% if (shell && shell.selectedFacility) { %> · <%= shell.selectedFacility.displayName %><% } %>
           </p>
+          <% } %>
         </div>
+        <form class="ac-desktop-header__search" method="get" action="/app/patients" role="search" data-ac-shell-search="1">
+          <label class="ac-sr-only" for="ac-shell-patient-search">Search patients</label>
+          <input
+            id="ac-shell-patient-search"
+            class="ac-shell-search"
+            type="search"
+            name="q"
+            placeholder="Search patient name, ID, or phone…"
+            autocomplete="off"
+          />
+        </form>
         <div class="ac-desktop-header__right" data-ac-account-menu="desktop">
           <details class="ac-header-account">
             <summary>
@@ -95,7 +118,7 @@
 
       <main id="ac-main" class="ac-content" tabindex="-1">
         <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %>
-        <nav aria-label="Breadcrumb">
+        <nav class="ac-breadcrumbs-mobile" aria-label="Breadcrumb">
           <ol class="ac-breadcrumbs">
             <% breadcrumbs.forEach(function (crumb) { %>
             <li>

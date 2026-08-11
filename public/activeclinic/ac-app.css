@@ -1,39 +1,51 @@
-/* ActiveClinic authenticated application shell (AC-V6-10). Product-isolated. */
+/* ActiveClinic authenticated application shell (AC-V6-10 / V7 Pass 3). Product-isolated.
+   Tokens aligned to Stitch P01 Shared Application Shell (project 12272131183982732110). */
 :root {
-  --ac-bg: #eef5f6;
+  --ac-bg: #f8fafc;
+  --ac-bg-page: #f8fafc;
+  --ac-bg-subtle: #f1f5f9;
+  --ac-bg-muted: #eef2f7;
   --ac-surface: #ffffff;
-  --ac-ink: #1a2b2f;
-  --ac-muted: #5b6d72;
-  --ac-border: #d5e0e3;
-  --ac-primary: #006068;
+  --ac-ink: #0f172a;
+  --ac-text-ink: #0f172a;
+  --ac-muted: #64748b;
+  --ac-text-muted: #64748b;
+  --ac-text-subtle: #94a3b8;
+  --ac-border: #e2e8f0;
+  --ac-border-subtle: #e2e8f0;
+  --ac-border-strong: #cbd5e1;
+  --ac-primary: #1d4ed8;
+  --ac-primary-2: #1e40af;
+  --ac-primary-soft: #eef2ff;
+  --ac-primary-strong: #1e3a8a;
   --ac-teal: #0f766e;
-  --ac-primary-2: #004f56;
-  --ac-focus: #1d59c1;
+  --ac-focus: #2563eb;
   --ac-success: #027a48;
   --ac-success-bg: #ecfdf3;
   --ac-warning: #b54708;
   --ac-warning-bg: #fffaeb;
   --ac-danger: #b42318;
   --ac-danger-bg: #fef3f2;
-  --ac-radius: 14px;
+  --ac-radius: 12px;
+  --ac-radius-sm: 8px;
+  --ac-radius-lg: 16px;
   --ac-radius-pill: 999px;
-  --ac-shadow: 0 10px 30px rgba(15, 40, 45, 0.06);
+  --ac-radius-card: var(--ac-radius);
+  --ac-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
+  --ac-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --ac-shadow-card: var(--ac-shadow);
   --ac-space-1: 0.25rem;
   --ac-space-2: 0.5rem;
   --ac-space-3: 0.75rem;
   --ac-space-4: 1rem;
   --ac-space-5: 1.5rem;
   --ac-space-6: 2rem;
-  --ac-sidebar-w: 17rem;
+  --ac-space-7: 2.5rem;
+  --ac-sidebar-w: 16.5rem;
+  --ac-content-max: 72rem;
   --ac-font: "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
   --ac-touch: 2.75rem;
   --ac-color-primary: var(--ac-primary);
-  --ac-bg-page: var(--ac-bg);
-  --ac-text-ink: var(--ac-ink);
-  --ac-text-muted: var(--ac-muted);
-  --ac-border-subtle: var(--ac-border);
-  --ac-radius-card: var(--ac-radius);
-  --ac-shadow-card: var(--ac-shadow);
 }
 
 *,
@@ -54,9 +66,28 @@ body.ac-app-body {
   min-height: 100vh;
   font-family: var(--ac-font);
   color: var(--ac-ink);
-  background:
-    radial-gradient(1000px 500px at 0% -10%, #d9f3ef, transparent),
-    linear-gradient(180deg, #f4fafb, var(--ac-bg));
+  background: var(--ac-bg-page);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+body.ac-app-body h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--ac-ink);
+}
+body.ac-app-body h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ac-ink);
+}
+body.ac-app-body h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ac-ink);
 }
 
 .ac-sr-only {
@@ -132,13 +163,13 @@ body.ac-app-body {
   text-decoration: none;
   font-weight: 600;
 }
-.ac-nav a:hover { background: #eef2f8; color: var(--ac-ink); }
+.ac-nav a:hover { background: var(--ac-bg-subtle); color: var(--ac-ink); }
 .ac-nav a.is-active,
 .ac-nav a[aria-current="page"],
 .ac-nav-item.is-active,
 .ac-nav-item[aria-current="page"] {
-  background: #e8eefc;
-  color: var(--ac-primary);
+  background: var(--ac-primary-soft);
+  color: var(--ac-primary-strong);
 }
 .ac-nav a:focus-visible,
 .ac-btn:focus-visible,
@@ -449,9 +480,9 @@ body.ac-drawer-open .ac-drawer {
 .ac-brand-mark {
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: 0.45rem;
-  background: #0f52ba;
-  color: #bcceff;
+  border-radius: 0.55rem;
+  background: var(--ac-primary);
+  color: #dbeafe;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -510,7 +541,8 @@ body.ac-drawer-open .ac-drawer {
 .ac-nav-item[aria-current="page"]::before {
   content: "";
   position: absolute;
-  left: 0;
+  right: 0;
+  left: auto;
   top: 0.45rem;
   bottom: 0.45rem;
   width: 3px;
@@ -550,13 +582,40 @@ body.ac-drawer-open .ac-drawer {
   align-items: center;
   justify-content: space-between;
   gap: var(--ac-space-4);
-  padding: 0.85rem var(--ac-space-5);
-  background: rgba(255,255,255,0.92);
+  padding: 0.75rem var(--ac-space-5);
+  background: rgba(255,255,255,0.96);
   border-bottom: 1px solid var(--ac-border);
   position: sticky;
   top: 0;
   z-index: 15;
-  min-height: 3.75rem;
+  min-height: 4rem;
+}
+.ac-desktop-header__left { min-width: 0; flex: 0 1 16rem; }
+.ac-desktop-header__search {
+  flex: 1 1 18rem;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+.ac-shell-search {
+  width: 100%;
+  min-height: 2.5rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-pill);
+  padding: 0.55rem 1rem 0.55rem 1.1rem;
+  font: inherit;
+  background: var(--ac-bg-subtle);
+  color: var(--ac-ink);
+}
+.ac-shell-search:focus {
+  outline: 3px solid color-mix(in srgb, var(--ac-focus) 35%, transparent);
+  outline-offset: 1px;
+  background: #fff;
+  border-color: var(--ac-primary);
+}
+.ac-breadcrumbs--header { margin: 0; }
+.ac-breadcrumbs-mobile { display: block; }
+@media (min-width: 900px) {
+  .ac-breadcrumbs-mobile { display: none; }
 }
 .ac-desktop-header__context { margin: 0; font-size: 0.85rem; }
 .ac-header-account { position: relative; }
@@ -1141,3 +1200,303 @@ body.ac-drawer-open .ac-drawer {
   }
 }
 
+
+/* ===== V7 Pass 3 — shared internal components (scoped via ac-app classes) ===== */
+body.ac-app-body .ac-nav-group { margin: 0; }
+body.ac-app-body .ac-nav-group + .ac-nav-group { margin-top: 0.35rem; }
+body.ac-app-body .ac-nav-group-label {
+  margin: var(--ac-space-3) 0 var(--ac-space-2);
+  padding: 0 var(--ac-space-3);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ac-text-subtle);
+}
+body.ac-app-body .ac-nav-group:first-child .ac-nav-group-label { margin-top: 0.15rem; }
+
+body.ac-app-body .ac-content {
+  padding: var(--ac-space-5) var(--ac-space-5) var(--ac-space-7);
+  max-width: var(--ac-content-max);
+}
+body.ac-app-body .ac-page-header {
+  margin-bottom: var(--ac-space-5);
+  padding-bottom: var(--ac-space-3);
+  border-bottom: 1px solid transparent;
+}
+body.ac-app-body .ac-page-header h1 { margin: 0 0 var(--ac-space-2); font-size: 1.65rem; }
+body.ac-app-body .ac-page-header p { color: var(--ac-muted); max-width: 42rem; }
+
+body.ac-app-body .ac-panel {
+  border-radius: var(--ac-radius-lg);
+  border-color: var(--ac-border);
+  box-shadow: var(--ac-shadow-sm);
+}
+body.ac-app-body .ac-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  margin: 0 0 var(--ac-space-3);
+}
+body.ac-app-body .ac-section-header h2,
+body.ac-app-body .ac-section-header h3 { margin: 0; }
+
+body.ac-app-body .ac-metric-grid,
+body.ac-app-body .ac-stats-grid {
+  display: grid;
+  gap: var(--ac-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+}
+body.ac-app-body .ac-stat-card,
+body.ac-app-body .ac-metric-card {
+  background: var(--ac-surface);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  padding: 1.1rem 1.15rem;
+  box-shadow: var(--ac-shadow-sm);
+}
+body.ac-app-body .ac-stat-value,
+body.ac-app-body .ac-stat-card__value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ac-ink);
+}
+body.ac-app-body .ac-stat-label,
+body.ac-app-body .ac-stat-card__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ac-muted);
+}
+body.ac-app-body .ac-stat-link,
+body.ac-app-body .ac-stat-card__link {
+  display: inline-flex;
+  margin-top: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ac-primary);
+  text-decoration: none;
+}
+
+body.ac-app-body .ac-action-grid {
+  display: grid;
+  gap: var(--ac-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+body.ac-app-body .ac-action-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-surface);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--ac-shadow-sm);
+  min-height: 5.5rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+body.ac-app-body .ac-action-card:hover {
+  border-color: color-mix(in srgb, var(--ac-primary) 35%, var(--ac-border));
+  box-shadow: var(--ac-shadow);
+}
+body.ac-app-body .ac-action-title { font-weight: 700; color: var(--ac-ink); }
+body.ac-app-body .ac-action-description { font-size: 0.88rem; color: var(--ac-muted); }
+body.ac-app-body .ac-action-icon { font-size: 1.15rem; }
+
+body.ac-app-body .ac-status,
+body.ac-app-body .ac-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--ac-radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: var(--ac-bg-muted);
+  color: var(--ac-muted);
+}
+body.ac-app-body .ac-status[data-status="active"],
+body.ac-app-body .ac-status[data-ac-status="waiting"],
+body.ac-app-body .ac-status[data-ac-status="confirmed"] {
+  background: var(--ac-success-bg);
+  color: var(--ac-success);
+}
+body.ac-app-body .ac-status[data-ac-status="called"],
+body.ac-app-body .ac-status[data-ac-status="serving"],
+body.ac-app-body .ac-status[data-status="pending"] {
+  background: var(--ac-warning-bg);
+  color: var(--ac-warning);
+}
+body.ac-app-body .ac-status[data-status="archived"],
+body.ac-app-body .ac-status[data-ac-status="cancelled"] {
+  background: var(--ac-danger-bg);
+  color: var(--ac-danger);
+}
+
+body.ac-app-body .ac-patient-banner,
+body.ac-app-body .ac-clinical-banner {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--ac-radius-lg);
+  border: 1px solid var(--ac-border);
+  background: linear-gradient(180deg, #fff, var(--ac-primary-soft));
+  margin-bottom: var(--ac-space-4);
+}
+body.ac-app-body .ac-patient-banner__name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+body.ac-app-body .ac-queue-item {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius);
+  background: #fff;
+}
+
+body.ac-app-body .ac-table th {
+  background: var(--ac-bg-subtle);
+  border-bottom-color: var(--ac-border-strong);
+}
+body.ac-app-body .ac-table tbody tr:hover { background: #f8fafc; }
+
+body.ac-app-body .ac-filter-bar {
+  background: var(--ac-surface);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--ac-shadow-sm);
+}
+body.ac-app-body .ac-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ac-muted);
+}
+
+body.ac-app-body .ac-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 var(--ac-space-4);
+  border-bottom: 1px solid var(--ac-border);
+  padding-bottom: 0.35rem;
+}
+body.ac-app-body .ac-tabs a,
+body.ac-app-body .ac-tabs button {
+  min-height: 2.4rem;
+  padding: 0.45rem 0.85rem;
+  border: 0;
+  background: transparent;
+  border-radius: var(--ac-radius-sm) var(--ac-radius-sm) 0 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ac-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+body.ac-app-body .ac-tabs a.is-active,
+body.ac-app-body .ac-tabs button.is-active,
+body.ac-app-body .ac-tabs [aria-current="page"] {
+  color: var(--ac-primary-strong);
+  box-shadow: inset 0 -2px 0 var(--ac-primary);
+}
+
+body.ac-app-body .ac-form-section {
+  background: var(--ac-surface);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  padding: 1.15rem 1.2rem;
+  margin-bottom: var(--ac-space-4);
+  box-shadow: var(--ac-shadow-sm);
+}
+body.ac-app-body .ac-form-section > h2,
+body.ac-app-body .ac-form-section > h3 {
+  margin: 0 0 var(--ac-space-3);
+}
+
+body.ac-app-body .ac-alert {
+  border-radius: var(--ac-radius);
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ac-border);
+  margin-bottom: var(--ac-space-4);
+}
+body.ac-app-body .ac-alert--info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+body.ac-app-body .ac-alert--warning { background: var(--ac-warning-bg); border-color: #fedf89; color: var(--ac-warning); }
+body.ac-app-body .ac-alert--danger { background: var(--ac-danger-bg); border-color: #fecdca; color: var(--ac-danger); }
+body.ac-app-body .ac-alert--success { background: var(--ac-success-bg); border-color: #abefc6; color: var(--ac-success); }
+
+body.ac-app-body .ac-empty-state,
+body.ac-app-body .ac-loading-state,
+body.ac-app-body .ac-error-state {
+  text-align: center;
+  padding: var(--ac-space-6) var(--ac-space-4);
+  border: 1px dashed var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background: #fff;
+  color: var(--ac-muted);
+}
+
+body.ac-app-body .ac-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: var(--ac-space-4);
+}
+
+body.ac-app-body .ac-money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+body.ac-app-body .ac-money--lg { font-size: 1.5rem; }
+
+@media (max-width: 899px) {
+  body.ac-app-body .ac-desktop-header__search { display: none; }
+  body.ac-app-body .ac-patients-desktop,
+  body.ac-app-body .ac-reception-desktop,
+  body.ac-app-body [data-ac-table] .ac-table-wrap { /* keep */ }
+  body.ac-app-body .ac-patients-mobile,
+  body.ac-app-body .ac-reception-mobile,
+  body.ac-app-body .ac-card-list { display: grid; }
+  body.ac-app-body .ac-patients-desktop,
+  body.ac-app-body .ac-reception-desktop { display: none; }
+  body.ac-app-body .ac-card,
+  body.ac-app-body .ac-mobile-record-card {
+    background: #fff;
+    border: 1px solid var(--ac-border);
+    border-radius: var(--ac-radius-lg);
+    padding: 1rem;
+    box-shadow: var(--ac-shadow-sm);
+  }
+  body.ac-app-body .ac-card__link { text-decoration: none; color: inherit; display: grid; gap: 0.35rem; }
+  body.ac-app-body .ac-card__title { margin: 0; font-weight: 700; color: var(--ac-ink); }
+}
+
+@media (min-width: 900px) {
+  body.ac-app-body .ac-patients-mobile,
+  body.ac-app-body .ac-reception-mobile { display: none; }
+  body.ac-app-body .ac-patients-desktop,
+  body.ac-app-body .ac-reception-desktop { display: block; }
+}
+
+@media (min-width: 1440px) {
+  body.ac-app-body .ac-content { padding-left: var(--ac-space-6); padding-right: var(--ac-space-6); }
+}
+@media (max-width: 899px) {
+  body.ac-app-body .ac-clinical-desktop { display: none; }
+  body.ac-app-body .ac-clinical-mobile { display: grid; }
+}
+@media (min-width: 900px) {
+  body.ac-app-body .ac-clinical-mobile { display: none; }
+  body.ac-app-body .ac-clinical-desktop { display: block; }
+}

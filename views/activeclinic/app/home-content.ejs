@@ -115,14 +115,19 @@
 
   <% if (primarySections.length) { %>
   <article class="ac-panel" data-ac-dashboard-card="primary-work">
-    <h2 class="ac-dashboard__card-title">My work</h2>
+    <header class="ac-section-header">
+      <h2 class="ac-dashboard__card-title">My work</h2>
+    </header>
     <div class="ac-dashboard__sections">
       <% primarySections.forEach(function (section) { %>
       <div class="ac-dashboard__section" data-ac-dashboard-section="<%= section.key %>">
         <h3 class="ac-dashboard__section-title"><%= section.title %></h3>
-        <div class="ac-actions ac-actions--stack-mobile">
+        <div class="ac-action-grid">
           <% section.items.forEach(function (item) { %>
-            <a class="ac-btn ac-btn--ghost" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>"><%= item.label %></a>
+            <a class="ac-action-card" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>">
+              <span class="ac-action-title"><%= item.label %></span>
+              <span class="ac-action-description">Open module</span>
+            </a>
           <% }) %>
         </div>
       </div>
@@ -133,19 +138,29 @@
 
   <% if (adminSection && adminSection.items && adminSection.items.length) { %>
   <article class="ac-panel" data-ac-dashboard-card="administration">
-    <h2 class="ac-dashboard__card-title">Administration</h2>
-    <div class="ac-actions ac-actions--stack-mobile" data-ac-dashboard-section="administration">
+    <header class="ac-section-header">
+      <h2 class="ac-dashboard__card-title">Administration</h2>
+    </header>
+    <div class="ac-action-grid" data-ac-dashboard-section="administration">
       <% adminSection.items.forEach(function (item) { %>
-        <a class="ac-btn ac-btn--ghost" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>"><%= item.label %></a>
+        <a class="ac-action-card" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>">
+          <span class="ac-action-title"><%= item.label %></span>
+          <span class="ac-action-description">Open settings area</span>
+        </a>
       <% }) %>
     </div>
   </article>
   <% } else if (!primarySections.length && actions.length) { %>
   <article class="ac-panel" data-ac-dashboard-card="actions">
-    <h2 class="ac-dashboard__card-title">Quick actions</h2>
-    <div class="ac-actions ac-actions--stack-mobile">
+    <header class="ac-section-header">
+      <h2 class="ac-dashboard__card-title">Quick actions</h2>
+    </header>
+    <div class="ac-action-grid">
       <% actions.forEach(function (action) { %>
-        <a class="ac-btn<%= action.primary ? '' : ' ac-btn--ghost' %>" href="<%= action.href %>"<% if (action.key) { %> data-ac-dashboard-tile="<%= action.key %>"<% } %>><%= action.label %></a>
+        <a class="ac-action-card" href="<%= action.href %>"<% if (action.key) { %> data-ac-dashboard-tile="<%= action.key %>"<% } %>>
+          <span class="ac-action-title"><%= action.label %></span>
+          <span class="ac-action-description">Continue</span>
+        </a>
       <% }) %>
     </div>
   </article>

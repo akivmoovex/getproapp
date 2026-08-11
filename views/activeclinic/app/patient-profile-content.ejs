@@ -6,6 +6,15 @@
   var stitch = profile.stitch || {};
 %>
 <section class="ac-patient-profile" data-ac-page-section="patient-profile" data-ac-patient-status="<%= patient.status || '' %>" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <header class="ac-patient-banner" data-ac-patient-banner="1">
+    <h2 class="ac-patient-banner__name"><%= patient.displayName %></h2>
+    <p class="ac-muted">
+      <span><%= patient.patientNumber %></span>
+      · age <%= patient.approximateAge || '—' %>
+      · <span class="ac-status" data-status="<%= patient.status %>"><%= patient.statusLabel || patient.status %></span>
+    </p>
+  </header>
+
   <div class="ac-panel">
     <h2 class="ac-dashboard__card-title">Identity</h2>
     <dl class="ac-dl">

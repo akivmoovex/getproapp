@@ -1,9 +1,13 @@
 <%
   var s = typeof shell !== 'undefined' && shell ? shell : {};
   var nav = (s.navigation && s.navigation.items) || [];
+  var groups = (s.navigation && s.navigation.groups) || [];
   var csrf = s.csrf || { token: '', field: '_csrf' };
   var account = s.accountMenu || {};
   var isMobile = typeof mobile !== 'undefined' && mobile;
+  if (!groups.length && nav.length) {
+    groups = [{ key: 'all', label: 'Menu', items: nav }];
+  }
 %>
 <div class="ac-sidebar__brand" data-ac-shell-brand="1">
   <a class="ac-brand-lockup" href="/app">
@@ -39,17 +43,21 @@
   aria-label="<%= isMobile ? 'Mobile' : 'Desktop' %> primary"
   data-ac-nav-source="registry"
 >
-  <p class="ac-nav-group-label">Foundation</p>
-  <% nav.forEach(function (item) { %>
-  <a
-    href="<%= item.href %>"
-    class="ac-nav-item<%= item.current ? ' is-active' : '' %>"
-    <% if (item.current) { %>aria-current="page"<% } %>
-    data-ac-nav-key="<%= item.key %>"
-  >
-    <%- include('nav-icon', { name: item.icon }) %>
-    <span><%= item.label %></span>
-  </a>
+  <% groups.forEach(function (group) { %>
+  <div class="ac-nav-group" data-ac-nav-group="<%= group.key %>">
+    <p class="ac-nav-group-label"><%= group.label %></p>
+    <% (group.items || []).forEach(function (item) { %>
+    <a
+      href="<%= item.href %>"
+      class="ac-nav-item<%= item.current ? ' is-active' : '' %>"
+      <% if (item.current) { %>aria-current="page"<% } %>
+      data-ac-nav-key="<%= item.key %>"
+    >
+      <%- include('nav-icon', { name: item.icon }) %>
+      <span><%= item.label %></span>
+    </a>
+    <% }) %>
+  </div>
   <% }) %>
 </nav>
 
