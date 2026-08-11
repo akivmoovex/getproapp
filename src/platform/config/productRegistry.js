@@ -58,7 +58,7 @@ const PRODUCT_REGISTRY = Object.freeze({
     defaultSessionCookieName: "getproapp_org_sid",
     defaultCsrfCookieName: "getproapp_org_csrf",
     canonicalDomainHint: "getproapp.org",
-    testingDomainHint: "getpro.pronline.org",
+    testingDomainHint: "getproapp.pronline.org",
   }),
   ngo: Object.freeze({
     productCode: "ngo",

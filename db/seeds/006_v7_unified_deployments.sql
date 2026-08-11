@@ -59,7 +59,7 @@ INSERT INTO platform.deployments (
     'getpro-pronline-testing',
     'getpro',
     'v7',
-    'getpro.pronline.org',
+    'getproapp.pronline.org',
     'testing',
     'active',
     false,

@@ -18,7 +18,7 @@
 | `activeclinic-pronline-testing` | activeclinic | testing | activeclinic.pronline.org | transitional |
 | `activeclinic-org-v6` | activeclinic | testing | activeclinic.org | legacy |
 | `getproapp-org-production` | getpro | production | getproapp.org | transitional |
-| `getpro-pronline-testing` | getpro | testing | getpro.pronline.org | transitional |
+| `getpro-pronline-testing` | getpro | testing | getproapp.pronline.org (alias: getpro.pronline.org) | transitional |
 | `netraz-org-production` | ngo | production | netraz.org | transitional |
 | `netraz-pronline-testing` | ngo | testing | netraz.pronline.org | transitional |
 | `moovex-org-production` | corporate | production | moovex.org | transitional |

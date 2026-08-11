@@ -165,7 +165,7 @@ describe("V7 deployment resolution", () => {
       [CODE_GETPRO_PRONLINE_TESTING]: [
         "getpro",
         "testing",
-        "getpro.pronline.org",
+        "getproapp.pronline.org",
       ],
       [CODE_NETRAZ_ORG_PRODUCTION]: ["ngo", "production", "netraz.org"],
       [CODE_NETRAZ_PRONLINE_TESTING]: ["ngo", "testing", "netraz.pronline.org"],

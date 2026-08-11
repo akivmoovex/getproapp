@@ -126,7 +126,7 @@ describe("canonical host registry", () => {
     const cases = [
       ["blessboard.pronline.org", "testing", "blessboard", "BlessBoard"],
       ["activeclinic.pronline.org", "testing", "activeclinic", "ActiveClinic"],
-      ["getpro.pronline.org", "testing", "getpro", "GetPro"],
+      ["getproapp.pronline.org", "testing", "getpro", "GetPro"],
       ["netraz.pronline.org", "testing", "ngo", "Netraz"],
       ["blessboard.com", "production", "blessboard", "BlessBoard"],
       ["activeclinic.org", "production", "activeclinic", "ActiveClinic"],
@@ -140,6 +140,12 @@ describe("canonical host registry", () => {
       assert.equal(r.site.productKey, product, host);
       assert.equal(r.site.brand, brand, host);
     }
+    const alias = resolveCanonicalHost("getpro.pronline.org");
+    assert.equal(alias.ok, true);
+    assert.equal(alias.site.productKey, "getpro");
+    assert.equal(alias.site.status, "legacy");
+    assert.equal(alias.site.redirectTargetOrigin, "https://getproapp.pronline.org");
+    assert.equal(CANONICAL_HOST_REGISTRY["getproapp.pronline.org"].status, "canonical");
     assert.equal(CANONICAL_PLATFORM_IDENTITY_KEY, "moovex-platform-v7");
     assert.ok(CANONICAL_HOST_REGISTRY["moovex.org"].siteType === "corporate");
   });
@@ -300,7 +306,7 @@ describe("domain-resolved product isolation", () => {
 
         const gpPharmacy = await request(app)
           .get("/pharmacy")
-          .set("Host", "getpro.pronline.org");
+          .set("Host", "getproapp.pronline.org");
         assert.equal(gpPharmacy.status, 404);
 
         const ngoOk = await request(app)

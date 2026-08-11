@@ -195,7 +195,7 @@ describe("pronline.org QA launcher + product hosts", () => {
       assert.match(home.text, /Moovex Platform QA/);
       assert.match(home.text, /blessboard\.pronline\.org/);
       assert.match(home.text, /activeclinic\.pronline\.org/);
-      assert.match(home.text, /getpro\.pronline\.org/);
+      assert.match(home.text, /getproapp\.pronline\.org/);
       assert.match(home.text, /netraz\.pronline\.org/);
       assert.match(home.text, /data-site-type="platform"/);
 
@@ -224,7 +224,7 @@ describe("pronline.org QA launcher + product hosts", () => {
       const cases = [
         ["blessboard.pronline.org", "blessboard"],
         ["activeclinic.pronline.org", "activeclinic"],
-        ["getpro.pronline.org", "getpro"],
+        ["getproapp.pronline.org", "getpro"],
         ["netraz.pronline.org", "ngo"],
       ];
       for (const [host, product] of cases) {

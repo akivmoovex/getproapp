@@ -134,6 +134,22 @@ const CANONICAL_HOST_REGISTRY = Object.freeze({
     redirectTargetOrigin: null,
     status: "canonical",
   }),
+  /** Canonical GetPro testing hostname. */
+  "getproapp.pronline.org": Object.freeze({
+    hostname: "getproapp.pronline.org",
+    productKey: "getpro",
+    environment: "testing",
+    brand: "GetPro",
+    siteType: "product",
+    sessionCookieName: "getproapp_pronline_sid",
+    csrfCookieName: "getproapp_pronline_csrf",
+    redirectTargetOrigin: null,
+    status: "canonical",
+  }),
+  /**
+   * Compatibility alias → getproapp.pronline.org (temporary; not canonical).
+   * Runtime issues a 301 when redirectTargetOrigin is set on a product host.
+   */
   "getpro.pronline.org": Object.freeze({
     hostname: "getpro.pronline.org",
     productKey: "getpro",
@@ -142,8 +158,8 @@ const CANONICAL_HOST_REGISTRY = Object.freeze({
     siteType: "product",
     sessionCookieName: "getpro_pronline_sid",
     csrfCookieName: "getpro_pronline_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
+    redirectTargetOrigin: "https://getproapp.pronline.org",
+    status: "legacy",
   }),
   "netraz.org": Object.freeze({
     hostname: "netraz.org",

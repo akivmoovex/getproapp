@@ -47,7 +47,14 @@ const DOMAIN_MATRIX = Object.freeze([
     type: "testing",
     productOrSite: "GetPro",
     productKey: "getpro",
+    domain: "getproapp.pronline.org",
+  }),
+  Object.freeze({
+    type: "testing-alias",
+    productOrSite: "GetPro",
+    productKey: "getpro",
     domain: "getpro.pronline.org",
+    note: "Compatibility alias → getproapp.pronline.org",
   }),
   Object.freeze({
     type: "production",

@@ -58,7 +58,7 @@ Testing namespace: **`pronline.org`**
 | ------- | ------------ |
 | BlessBoard | `blessboard.pronline.org` |
 | ActiveClinic | `activeclinic.pronline.org` |
-| GetPro | `getpro.pronline.org` |
+| GetPro | `getproapp.pronline.org` (compat alias `getpro.pronline.org`) |
 | Netraz | `netraz.pronline.org` |
 
 ## 5. Deployment codes
@@ -212,7 +212,7 @@ Do not force-push `main`. Promote only after V7 verification.
 | Production | ActiveClinic | `activeclinic.org` |
 | Testing | ActiveClinic | `activeclinic.pronline.org` |
 | Production | GetPro | `getproapp.org` |
-| Testing | GetPro | `getpro.pronline.org` |
+| Testing | GetPro | `getproapp.pronline.org` (compat alias: `getpro.pronline.org`) |
 | Production | NGO / Netraz | `netraz.org` |
 | Testing | NGO / Netraz | `netraz.pronline.org` |
 | Corporate | Moovex | `moovex.org` |

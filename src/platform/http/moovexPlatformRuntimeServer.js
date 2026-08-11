@@ -24,7 +24,7 @@ const {
 const QA_PRODUCT_LINKS = Object.freeze([
   { label: "BlessBoard", href: "https://blessboard.pronline.org" },
   { label: "ActiveClinic", href: "https://activeclinic.pronline.org" },
-  { label: "GetPro", href: "https://getpro.pronline.org" },
+  { label: "GetPro", href: "https://getproapp.pronline.org" },
   { label: "Netraz", href: "https://netraz.pronline.org" },
 ]);
 
@@ -127,6 +127,11 @@ function createMoovexPlatformRuntimeApp(options) {
           message: "blessboard.org redirect is prepared but not activated.",
         });
       }
+      return res.redirect(301, buildRedirectLocation(platform.redirectTargetOrigin, req));
+    }
+
+    // Compatibility alias hosts (e.g. getpro.pronline.org → getproapp.pronline.org).
+    if (platform.siteType === "product" && platform.redirectTargetOrigin) {
       return res.redirect(301, buildRedirectLocation(platform.redirectTargetOrigin, req));
     }
 
