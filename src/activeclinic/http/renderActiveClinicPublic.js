@@ -11,9 +11,12 @@ const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
 const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
+const {
+  enrichPublicLocals,
+} = require("../services/activeClinicPublicMediaService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-parity-5";
+const ASSET_VERSION = "v7-parity-6";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -61,7 +64,7 @@ function renderPublicPage(input) {
         (input.locals.formData.phoneCountry || input.locals.formData.countryCode)) ||
       null,
   });
-  const locals = {
+  const locals = enrichPublicLocals({
     assetVersion: ASSET_VERSION,
     csrfField: CSRF_FIELD,
     csrfToken: (input.locals && input.locals.csrfToken) || "",
@@ -76,7 +79,7 @@ function renderPublicPage(input) {
     ...phoneLocals,
     ...(input.locals || {}),
     escapeHtml,
-  };
+  });
 
   const shellVariant = input.shellVariant || (locals.clinic ? "tenant" : "platform");
   const headerHtml = renderPartial(

@@ -17,6 +17,9 @@
     <% serviceList.forEach(function(s) { %>
     <li class="ac-service-card">
       <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>">
+        <span class="ac-service-card__icon" aria-hidden="true">
+          <img src="<%= s.iconUrl || '/activeclinic/assets/icons/general.svg' %>" alt="" width="28" height="28" loading="lazy"/>
+        </span>
         <h3 class="ac-service-card__name"><%= s.displayName %></h3>
         <% if (s.summary) { %>
         <p class="ac-service-card__summary"><%= s.summary.length > 140 ? s.summary.slice(0, 140) + "…" : s.summary %></p>
@@ -33,6 +36,9 @@
     <% procedureList.forEach(function(p) { %>
     <li class="ac-service-card">
       <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/procedures/<%= p.procedureKey %>">
+        <span class="ac-service-card__icon" aria-hidden="true">
+          <img src="<%= p.iconUrl || '/activeclinic/assets/icons/procedure.svg' %>" alt="" width="28" height="28" loading="lazy"/>
+        </span>
         <h3 class="ac-service-card__name"><%= p.displayName %></h3>
         <% if (p.summary) { %>
         <p class="ac-service-card__summary"><%= p.summary.length > 140 ? p.summary.slice(0, 140) + "…" : p.summary %></p>

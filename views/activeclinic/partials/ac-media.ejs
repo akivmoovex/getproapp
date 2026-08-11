@@ -1,0 +1,38 @@
+<%#
+  Reusable ActiveClinic media render.
+  Locals:
+    src (required), alt, className, aspect, objectFit, objectPosition,
+    width, height, loading, decoding, fallbackSrc, decorative
+%>
+<%
+  const mediaSrc = typeof src === "string" ? src : "";
+  const mediaAlt = typeof alt === "string" ? alt : "";
+  const mediaClass = typeof className === "string" ? className : "ac-media__img";
+  const mediaFit = typeof objectFit === "string" ? objectFit : "cover";
+  const mediaPos = typeof objectPosition === "string" ? objectPosition : "center center";
+  const mediaLoading = typeof loading === "string" ? loading : "lazy";
+  const mediaDecoding = typeof decoding === "string" ? decoding : "async";
+  const mediaFallback = typeof fallbackSrc === "string" ? fallbackSrc : "";
+  const isDecorative = typeof decorative !== "undefined" && Boolean(decorative);
+  const styleParts = [
+    "object-fit:" + mediaFit,
+    "object-position:" + mediaPos,
+  ];
+  if (typeof aspect === "string" && aspect) {
+    styleParts.push("aspect-ratio:" + aspect);
+  }
+  const styleAttr = styleParts.join(";");
+%>
+<img
+  class="<%= mediaClass %>"
+  src="<%= mediaSrc %>"
+  <% if (isDecorative) { %>alt="" role="presentation"<% } else { %>alt="<%= mediaAlt %>"<% } %>
+  <% if (typeof width !== "undefined" && width) { %>width="<%= width %>"<% } %>
+  <% if (typeof height !== "undefined" && height) { %>height="<%= height %>"<% } %>
+  loading="<%= mediaLoading %>"
+  decoding="<%= mediaDecoding %>"
+  style="<%= styleAttr %>"
+  <% if (mediaFallback) { %>
+  onerror="this.onerror=null;this.src='<%= mediaFallback %>';"
+  <% } %>
+/>

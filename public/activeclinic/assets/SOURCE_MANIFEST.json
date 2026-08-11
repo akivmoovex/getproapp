@@ -1,0 +1,62 @@
+{
+  "pass": 6,
+  "generated": "2026-08-11",
+  "note": "Local copies of Stitch aida-public assets at =s2048 (~1376×768). Exact retina sources unavailable from Stitch CDN/screenshot APIs.",
+  "assets": [
+    {
+      "file": "clinic/julflona-hero.jpg",
+      "type": "HERO",
+      "stitchScreen": "juflona-home",
+      "projectId": "17813606734422395399",
+      "quality": "APPROVED_STITCH_UPSCALED_CDN"
+    },
+    {
+      "file": "doctors/dr-julflona-banda.jpg",
+      "type": "DOCTOR_PHOTO",
+      "stitchScreen": "juflona-doctors",
+      "mappedTo": "dr-julflona-banda",
+      "quality": "APPROVED_STITCH_UPSCALED_CDN"
+    },
+    {
+      "file": "doctors/dr-julflona-mwansa.jpg",
+      "type": "DOCTOR_PHOTO",
+      "stitchScreen": "choose-doctor",
+      "mappedTo": "dr-julflona-mwansa",
+      "quality": "APPROVED_STITCH_UPSCALED_CDN"
+    },
+    {
+      "file": "doctors/doctor-fallback.svg",
+      "type": "AVATAR",
+      "quality": "FALLBACK"
+    },
+    {
+      "file": "clinic/directory-waiting.jpg",
+      "type": "CLINIC_PHOTO",
+      "stitchScreen": "directory",
+      "quality": "APPROVED_STITCH_UPSCALED_CDN"
+    },
+    {
+      "file": "clinic/directory-dental.jpg",
+      "type": "CLINIC_PHOTO",
+      "stitchScreen": "directory",
+      "quality": "APPROVED_STITCH_UPSCALED_CDN"
+    },
+    {
+      "file": "clinic/directory-lab.jpg",
+      "type": "CLINIC_PHOTO",
+      "stitchScreen": "directory",
+      "quality": "APPROVED_STITCH_UPSCALED_CDN"
+    },
+    {
+      "file": "platform/home-hero.jpg",
+      "type": "HERO",
+      "stitchScreen": "platform-home",
+      "quality": "APPROVED_STITCH_UPSCALED_CDN"
+    },
+    {
+      "file": "icons/*.svg",
+      "type": "ICON",
+      "quality": "CANONICAL_AC"
+    }
+  ]
+}

@@ -39,8 +39,19 @@
         <% list.forEach(function(c) { %>
         <li class="ac-clinic-card acp-clinic-card">
           <a href="/clinics/<%= c.clinicKey %>">
-            <div class="acp-clinic-card__media" aria-hidden="true">
-              <img src="/activeclinic/assets/clinic-hero-default.jpg" alt="" loading="lazy" width="640" height="360"/>
+            <div class="acp-clinic-card__media">
+              <%- include('../partials/ac-media', {
+                src: c.cardImageUrl || c.websiteHeroUrl || (typeof clinicHeroDefaultUrl === 'string' ? clinicHeroDefaultUrl : '/activeclinic/assets/clinic-hero-default.jpg'),
+                alt: '',
+                decorative: true,
+                className: 'acp-clinic-card__img',
+                objectFit: 'cover',
+                objectPosition: c.cardObjectPosition || 'center 40%',
+                width: 640,
+                height: 360,
+                loading: 'lazy',
+                fallbackSrc: typeof clinicHeroDefaultUrl === 'string' ? clinicHeroDefaultUrl : '/activeclinic/assets/clinic-hero-default.jpg',
+              }) %>
             </div>
             <div class="acp-clinic-card__body">
               <h2><%= c.publicName %></h2>

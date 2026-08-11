@@ -20,10 +20,23 @@
           </label>
           <% if (profiles && profiles.length) { %>
           <% profiles.forEach(function (doc) { %>
-          <label class="ac-booking-choice acp-choice-card acp-doctor-card<%= (draft && draft.staffKey === doc.staffKey) ? ' acp-choice-card--selected' : '' %>">
+          <label class="ac-booking-choice acp-choice-card acp-doctor-card<%= (draft && draft.staffKey === doc.staffKey) ? ' acp-choice-card--selected' : '' %>"<%= doc.photoIsFallback ? ' data-ac-asset-gap="doctor-photo"' : '' %>>
             <input type="radio" name="doctorChoice" value="<%= doc.staffKey %>"<%= (draft && draft.staffKey === doc.staffKey) ? ' checked' : '' %>/>
             <span class="ac-booking-choice__body">
-              <span class="acp-doctor-card__avatar" aria-hidden="true"><%= (doc.displayName || '?').charAt(0) %></span>
+              <span class="acp-doctor-card__avatar<%= doc.photoIsFallback ? '' : ' acp-doctor-card__avatar--photo' %>" aria-hidden="true">
+                <%- include('../partials/ac-media', {
+                  src: doc.photoUrl || (typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : '/activeclinic/assets/doctors/doctor-fallback.svg'),
+                  alt: '',
+                  decorative: true,
+                  className: 'acp-doctor-card__img',
+                  objectFit: 'cover',
+                  objectPosition: doc.photoObjectPosition || 'center 20%',
+                  width: 96,
+                  height: 96,
+                  loading: 'lazy',
+                  fallbackSrc: typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : '/activeclinic/assets/doctors/doctor-fallback.svg',
+                }) %>
+              </span>
               <strong><%= doc.displayName %></strong>
               <% if (doc.title) { %><span class="ac-booking-choice__meta"><%= doc.title %></span><% } %>
             </span>

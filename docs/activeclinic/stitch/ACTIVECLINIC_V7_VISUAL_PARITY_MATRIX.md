@@ -159,3 +159,6 @@ Shared additions: `ac-loading-state`, `ac-success-state`, `acp-shared-state`, `/
 
 No MATCHED claims. Backend gaps are listed under `pass5.functionalBackendGaps` in the JSON matrix.
 
+## Pass 6 (assets)
+
+See `ACTIVECLINIC_PASS6_ASSET_REPORT.md`. Priority heroes/doctor photos wired from Stitch CDN (`=s2048`). Remaining: retina `LOW_RESOLUTION`, nurse photo `ASSET_PARITY_GAP`, Material Symbols vs SVG icons.

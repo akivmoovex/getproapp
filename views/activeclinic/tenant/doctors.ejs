@@ -12,9 +12,20 @@
   <% } else { %>
   <ul class="ac-doctor-cards acp-doctor-grid">
     <% list.forEach(function(d) { %>
-    <li class="ac-doctor-card acp-doctor-card">
-      <div class="ac-doctor-card__media" aria-hidden="true">
-        <div class="ac-doctor-card__avatar ac-doctor-card__avatar--xl"><%= String(d.displayName || "?").charAt(0).toUpperCase() %></div>
+    <li class="ac-doctor-card acp-doctor-card<%= d.photoIsFallback ? ' ac-doctor-card--fallback' : '' %>"<%= d.photoIsFallback ? ' data-ac-asset-gap="doctor-photo"' : '' %>>
+      <div class="ac-doctor-card__media<%= d.photoIsFallback ? '' : ' ac-doctor-card__media--photo' %>">
+        <%- include('../partials/ac-media', {
+          src: d.photoUrl || (typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : '/activeclinic/assets/doctors/doctor-fallback.svg'),
+          alt: d.photoIsFallback ? '' : ('Portrait of ' + (d.displayName || 'clinician')),
+          decorative: Boolean(d.photoIsFallback),
+          className: d.photoIsFallback ? 'ac-doctor-card__photo ac-doctor-card__photo--fallback' : 'ac-doctor-card__photo',
+          objectFit: 'cover',
+          objectPosition: d.photoObjectPosition || 'center 20%',
+          width: 640,
+          height: 480,
+          loading: 'lazy',
+          fallbackSrc: typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : '/activeclinic/assets/doctors/doctor-fallback.svg',
+        }) %>
       </div>
       <div class="ac-doctor-card__body">
         <h2 class="ac-doctor-card__name"><%= d.displayName %></h2>

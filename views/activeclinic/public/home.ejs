@@ -9,11 +9,26 @@
         <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register your clinic</a>
       </p>
     </div>
-    <div class="acp-hero__visual" aria-hidden="true">
-      <div class="acp-hero__panel">
-        <span class="acp-hero__panel-label">Directory · Booking requests · Operations</span>
-        <strong>Built for Zambian clinics</strong>
-        <p>Phone formats, provinces, and secure staff workflows designed for local healthcare teams.</p>
+    <div class="acp-hero__visual">
+      <% const platformHeroMedia = (typeof platformHero === 'object' && platformHero) ? platformHero : { src: '/activeclinic/assets/platform/home-hero.jpg', objectPosition: 'center 35%' }; %>
+      <div class="acp-hero__media">
+        <%- include('../partials/ac-media', {
+          src: platformHeroMedia.src,
+          alt: '',
+          decorative: true,
+          className: 'acp-hero__image',
+          objectFit: 'cover',
+          objectPosition: platformHeroMedia.objectPosition || 'center 35%',
+          aspect: '16 / 10',
+          width: 960,
+          height: 600,
+          loading: 'eager',
+        }) %>
+        <div class="acp-hero__panel">
+          <span class="acp-hero__panel-label">Directory · Booking requests · Operations</span>
+          <strong>Built for Zambian clinics</strong>
+          <p>Phone formats, provinces, and secure staff workflows designed for local healthcare teams.</p>
+        </div>
       </div>
     </div>
   </div>
