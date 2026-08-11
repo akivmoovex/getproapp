@@ -4,6 +4,7 @@
 **Date:** 2026-08-11  
 **Branch:** `V7`  
 **SHA before:** `c049f759`  
+**SHA after:** `dca61f49`  
 **Environment:** `DEPLOYMENT_ENV=testing` · DB identity `moovex-platform-v7` · profile `moovex-platform-testing`
 
 ## Stage 0 — Safety
