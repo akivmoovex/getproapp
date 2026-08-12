@@ -1,0 +1,30 @@
+<%
+  var closed = (pageData && pageData.closed) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-cashier-variance" data-ac-page-section="cashier-variance" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <nav class="ac-stepper" aria-label="Close session steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item">Cash count</li>
+      <li class="ac-stepper__item">Closing review</li>
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Variance</li>
+    </ol>
+  </nav>
+
+  <div class="ac-panel ac-alert ac-alert--warning" role="alert">
+    <h2 class="ac-dashboard__card-title">Cash variance recorded</h2>
+    <p>The counted cash differs from the expected amount.</p>
+  </div>
+
+  <article class="ac-panel">
+    <dl class="ac-dl">
+      <div><dt>Variance</dt><dd class="ac-money"><strong><%= closed.varianceFormatted %></strong></dd></div>
+      <% if (closed.sessionNumber) { %>
+      <div><dt>Session</dt><dd><%= closed.sessionNumber %></dd></div>
+      <% } %>
+    </dl>
+    <div class="ac-form-actions">
+      <a href="/app/cashier" class="ac-btn">Cashier dashboard</a>
+    </div>
+  </article>
+</section>

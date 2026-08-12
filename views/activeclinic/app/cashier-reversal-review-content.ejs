@@ -1,0 +1,47 @@
+<%
+  var reversal = (pageData && pageData.reversal) || {};
+  var canApprove = (pageData && pageData.canApprove) === true;
+  var error = pageData && pageData.error;
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-reversal-review" data-ac-page-section="reversal-review" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <nav class="ac-stepper" aria-label="Reversal steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item">Request</li>
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Review</li>
+    </ol>
+  </nav>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Payment reversal review</h2>
+    <dl class="ac-dl">
+      <div><dt>Payment</dt><dd><%= reversal.paymentNumber %></dd></div>
+      <div><dt>Patient</dt><dd><%= reversal.patientName %> · <%= reversal.patientNumber %></dd></div>
+      <div><dt>Original amount</dt><dd class="ac-money"><%= reversal.originalAmountFormatted %></dd></div>
+      <div><dt>Reason</dt><dd><%= reversal.reason %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= reversal.status %>"><%= reversal.status %></span></dd></div>
+    </dl>
+  </article>
+
+  <% if (canApprove && reversal.status === 'pending') { %>
+  <div class="ac-panel ac-form-actions">
+    <form method="post" action="/app/cashier/reversals/<%= reversal.id %>/approve" style="display:inline">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <button type="submit" class="ac-btn">Approve reversal</button>
+    </form>
+    <form method="post" action="/app/cashier/reversals/<%= reversal.id %>/reject" class="ac-panel" style="margin-top:1rem">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <div class="ac-field">
+        <label class="ac-label" for="rejection_reason">Rejection reason *</label>
+        <textarea class="ac-textarea" id="rejection_reason" name="rejection_reason" rows="2" required maxlength="500"></textarea>
+      </div>
+      <button type="submit" class="ac-btn ac-btn--ghost">Reject reversal</button>
+    </form>
+  </div>
+  <% } %>
+</section>

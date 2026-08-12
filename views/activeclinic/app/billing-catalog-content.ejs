@@ -26,6 +26,7 @@
             <th>Category</th>
             <th>Amount</th>
             <th>Status</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -42,6 +43,7 @@
                 <span class="ac-status" data-status="inactive">Inactive</span>
               <% } %>
             </td>
+            <td><a href="/app/billing/catalog/<%= item.id %>" class="ac-btn ac-btn--ghost ac-btn--sm">View</a></td>
           </tr>
           <% }) %>
         </tbody>

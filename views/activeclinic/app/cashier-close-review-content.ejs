@@ -1,0 +1,38 @@
+<%
+  var session = (pageData && pageData.session) || {};
+  var review = (pageData && pageData.review) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-cashier-close-review" data-ac-page-section="cashier-close-review" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <nav class="ac-stepper" aria-label="Close session steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item">Cash count</li>
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Closing review</li>
+      <li class="ac-stepper__item">Complete</li>
+    </ol>
+  </nav>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Confirm session closing</h2>
+    <dl class="ac-dl">
+      <div><dt>Session</dt><dd><%= session.sessionNumber %></dd></div>
+      <div><dt>Opening cash</dt><dd><%= session.openingCashFormatted %></dd></div>
+      <div><dt>Payments collected</dt><dd><%= session.totalPaymentsFormatted %></dd></div>
+      <div><dt>Expected cash</dt><dd><%= session.expectedCashFormatted %></dd></div>
+      <div><dt>Actual cash count</dt><dd class="ac-money"><strong><%= review.actualCashFormatted %></strong></dd></div>
+      <div><dt>Variance</dt><dd class="ac-money" data-variance="<%= review.varianceMinor %>"><%= review.varianceFormatted %></dd></div>
+    </dl>
+    <% if (review.notes) { %>
+    <p class="ac-muted">Notes: <%= review.notes %></p>
+    <% } %>
+  </article>
+
+  <form method="post" action="/app/cashier/close/review" class="ac-panel ac-form-actions" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+    <input type="hidden" name="actual_cash" value="<%= review.actualCashRaw %>" />
+    <input type="hidden" name="notes" value="<%= review.notes || '' %>" />
+    <button type="submit" class="ac-btn">Close session</button>
+    <a href="/app/cashier/close/cash-count" class="ac-btn ac-btn--ghost">Back to cash count</a>
+  </form>
+</section>

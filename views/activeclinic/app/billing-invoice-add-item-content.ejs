@@ -1,0 +1,48 @@
+<%
+  var invoice = (pageData && pageData.invoice) || {};
+  var catalogItems = (pageData && pageData.catalogItems) || [];
+  var error = pageData && pageData.error;
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-invoice-add-item" data-ac-page-section="invoice-add-item" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert">Unable to add item (<%= error %>).</div>
+  <% } %>
+
+  <article class="ac-panel">
+    <p class="ac-muted">Invoice <strong><%= invoice.invoiceNumber %></strong> · <%= invoice.patientName %> · <%= invoice.patientNumber %></p>
+  </article>
+
+  <form method="post" action="/app/billing/invoices/<%= invoice.id %>/items/new" class="ac-panel" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+    <% if (catalogItems.length === 0) { %>
+      <p class="ac-muted">No active catalog items. Add charges to the catalog first.</p>
+      <div class="ac-form-actions">
+        <a href="/app/billing/catalog/new" class="ac-btn">Add catalog item</a>
+        <a href="/app/billing/invoices/<%= invoice.id %>" class="ac-btn ac-btn--ghost">Back to invoice</a>
+      </div>
+    <% } else { %>
+      <div class="ac-field">
+        <label class="ac-label" for="catalog_item_id">Catalog item *</label>
+        <select class="ac-input" id="catalog_item_id" name="catalog_item_id" required>
+          <option value="">Select a service or charge</option>
+          <% catalogItems.forEach(function (item) { %>
+          <option value="<%= item.id %>"><%= item.name %> — <%= item.amountFormatted %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-field">
+        <label class="ac-label" for="quantity">Quantity *</label>
+        <input class="ac-input" id="quantity" name="quantity" type="number" min="1" value="1" required />
+      </div>
+
+      <div class="ac-form-actions">
+        <button type="submit" class="ac-btn">Add to invoice</button>
+        <a href="/app/billing/invoices/<%= invoice.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+      </div>
+    <% } %>
+  </form>
+</section>

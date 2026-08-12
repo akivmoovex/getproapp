@@ -37,7 +37,15 @@ const {
 const {
   recordPayment,
   refundPayment,
+  requestRefund,
+  approveRefund,
+  rejectRefund,
+  getRefundById,
   reversePayment,
+  requestPaymentReversal,
+  approvePaymentReversal,
+  rejectPaymentReversal,
+  getPaymentReversalById,
   RESULT: BILLING_RESULT,
   PAYMENT_METHOD,
   PERM: BILLING_PERM,
@@ -291,7 +299,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
             description: `Session ${sess.sessionNumber}`,
             actions: [
               { label: "Record payment", href: "/app/cashier/payment" },
-              { label: "Close session", href: "/app/cashier/close" },
+              { label: "Close session", href: "/app/cashier/close/cash-count" },
             ],
           },
           breadcrumbs: [
@@ -313,11 +321,39 @@ function registerActiveClinicCashierRoutes(app, deps) {
   );
 
   // ========================================================================
-  // CLOSE SESSION
+  // CLOSE SESSION (multi-step: cash count → review → variance)
   // ========================================================================
+
+  async function loadOpenSession(auth, facility) {
+    return getCurrentCashierSession({
+      pool: getPool(),
+      tenantId: auth.tenantId,
+      facilityId: facility.id,
+      staffId: auth.staff.id,
+    });
+  }
+
+  function mapSessionForView(sess) {
+    return {
+      ...sess,
+      openingCashFormatted: formatMoney(sess.openingCashMinor),
+      expectedCashFormatted: formatMoney(sess.expectedCashMinor || 0),
+      totalPaymentsFormatted: formatMoney(sess.totalPaymentsMinor || 0),
+    };
+  }
 
   app.get(
     "/app/cashier/close",
+    requireAuth,
+    requirePermission("activeclinic.cashier.close_session"),
+    requireDepartment("cashier"),
+    async (req, res) => {
+      return res.redirect(303, "/app/cashier/close/cash-count");
+    }
+  );
+
+  app.get(
+    "/app/cashier/close/cash-count",
     requireAuth,
     requirePermission("activeclinic.cashier.close_session"),
     requireDepartment("cashier"),
@@ -325,43 +361,105 @@ function registerActiveClinicCashierRoutes(app, deps) {
       try {
         const auth = req.activeClinicAuth;
         const facility = auth.selectedFacility;
-        if (!facility) {
-          return res.redirect(303, "/app/select-facility");
-        }
+        if (!facility) return res.redirect(303, "/app/select-facility");
 
-        const sessionResult = await getCurrentCashierSession({
-          pool: getPool(),
-          tenantId: auth.tenantId,
-          facilityId: facility.id,
-          staffId: auth.staff.id,
-        });
-
+        const sessionResult = await loadOpenSession(auth, facility);
         if (sessionResult.result !== CASHIER_RESULT.OK) {
           return res.redirect(303, "/app/cashier");
         }
 
-        const sess = sessionResult.session;
-        const session = {
-          ...sess,
-          openingCashFormatted: formatMoney(sess.openingCashMinor),
-          expectedCashFormatted: formatMoney(sess.expectedCashMinor || 0),
-          totalPaymentsFormatted: formatMoney(sess.totalPaymentsMinor || 0),
-        };
-
         return await renderShell(req, res, {
           activeNav: "cashier",
-          content: "app/cashier-close-content.ejs",
+          content: "app/cashier-close-cash-count-content.ejs",
           pageHeader: {
-            title: "Close session",
-            description: "Perform cash count and close this cashier shift.",
-            actions: [],
+            title: "Cash count",
+            description: "Count drawer cash before closing.",
           },
           breadcrumbs: [
             { label: "Cashier", href: "/app/cashier" },
-            { label: "Close session" },
+            { label: "Close session", href: "/app/cashier/close/cash-count" },
+            { label: "Cash count" },
           ],
           pageData: {
-            session,
+            session: mapSessionForView(sessionResult.session),
+            stitch: { desktop: "02e8083e943d40deb9429b95a294ae30" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/close/cash-count",
+    requireAuth,
+    requirePermission("activeclinic.cashier.close_session"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const actualCashRaw = String(req.body.actual_cash || "").trim();
+        const notes = encodeURIComponent(String(req.body.notes || "").trim());
+        return res.redirect(
+          303,
+          `/app/cashier/close/review?actual_cash=${encodeURIComponent(actualCashRaw)}&notes=${notes}`
+        );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/cashier/close/review",
+    requireAuth,
+    requirePermission("activeclinic.cashier.close_session"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+
+        const sessionResult = await loadOpenSession(auth, facility);
+        if (sessionResult.result !== CASHIER_RESULT.OK) {
+          return res.redirect(303, "/app/cashier");
+        }
+
+        const actualCashMinor = parseMoneyInput(req.query.actual_cash || "0");
+        if (actualCashMinor === null || actualCashMinor < 0) {
+          return res.redirect(303, "/app/cashier/close/cash-count?error=invalid_amount");
+        }
+        const sess = sessionResult.session;
+        const expected = parseInt(sess.expectedCashMinor || 0, 10);
+        const varianceMinor = actualCashMinor - expected;
+        const notes = decodeURIComponent(String(req.query.notes || ""));
+
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-close-review-content.ejs",
+          pageHeader: {
+            title: "Closing review",
+            description: "Confirm session closing and variance.",
+          },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Close session", href: "/app/cashier/close/cash-count" },
+            { label: "Review" },
+          ],
+          pageData: {
+            session: mapSessionForView(sess),
+            review: {
+              actualCashMinor,
+              actualCashRaw: String(req.query.actual_cash || ""),
+              actualCashFormatted: formatMoney(actualCashMinor),
+              varianceMinor,
+              varianceFormatted: formatMoney(varianceMinor),
+              notes,
+            },
             stitch: { desktop: "d3e2ff001f694720b57371ef1a60d517" },
           },
         });
@@ -372,7 +470,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
   );
 
   app.post(
-    "/app/cashier/close",
+    "/app/cashier/close/review",
     requireAuth,
     requirePermission("activeclinic.cashier.close_session"),
     requireDepartment("cashier"),
@@ -384,24 +482,16 @@ function registerActiveClinicCashierRoutes(app, deps) {
 
         const auth = req.activeClinicAuth;
         const facility = auth.selectedFacility;
-        if (!facility) {
-          return res.redirect(303, "/app/select-facility");
-        }
+        if (!facility) return res.redirect(303, "/app/select-facility");
 
-        const sessionResult = await getCurrentCashierSession({
-          pool: getPool(),
-          tenantId: auth.tenantId,
-          facilityId: facility.id,
-          staffId: auth.staff.id,
-        });
-
+        const sessionResult = await loadOpenSession(auth, facility);
         if (sessionResult.result !== CASHIER_RESULT.OK) {
           return res.redirect(303, "/app/cashier");
         }
 
         const actualCashMinor = parseMoneyInput(req.body.actual_cash || "0");
         if (actualCashMinor === null || actualCashMinor < 0) {
-          return res.redirect(303, "/app/cashier/close?error=invalid_amount");
+          return res.redirect(303, "/app/cashier/close/cash-count?error=invalid_amount");
         }
 
         const result = await closeCashierSession({
@@ -415,17 +505,48 @@ function registerActiveClinicCashierRoutes(app, deps) {
         });
 
         if (result.result !== CASHIER_RESULT.OK) {
-          return res.redirect(303, `/app/cashier/close?error=${result.result}`);
+          return res.redirect(303, `/app/cashier/close/cash-count?error=${result.result}`);
         }
 
         if (result.hasVariance && result.varianceMinor !== 0) {
           return res.redirect(
             303,
-            `/app/cashier/session/closed?variance=${result.varianceMinor}`
+            `/app/cashier/close/variance?variance=${result.varianceMinor}&session=${encodeURIComponent(sessionResult.session.sessionNumber || "")}`
           );
         }
 
         return res.redirect(303, "/app/cashier");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/cashier/close/variance",
+    requireAuth,
+    requirePermission("activeclinic.cashier.close_session"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const varianceMinor = parseInt(req.query.variance || "0", 10) || 0;
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-close-variance-content.ejs",
+          pageHeader: { title: "Cash variance" },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Variance" },
+          ],
+          pageData: {
+            closed: {
+              varianceMinor,
+              varianceFormatted: formatMoney(varianceMinor),
+              sessionNumber: req.query.session || null,
+            },
+            stitch: { desktop: "7dd49983c4a840b9980fb4a92d486b3c" },
+          },
+        });
       } catch (err) {
         return next(err);
       }
@@ -597,7 +718,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
 
         return res.redirect(
           303,
-          `/app/cashier/receipt/${result.receiptNumber}?success=1`
+          `/app/cashier/payment/completed?receipt=${encodeURIComponent(result.receiptNumber)}&amount=${result.payment.amountMinor}`
         );
       } catch (err) {
         return next(err);
@@ -952,6 +1073,561 @@ function registerActiveClinicCashierRoutes(app, deps) {
             stitch: { desktop: "244dc0c45a23434bb2747468a699167b" },
           },
         });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // PAYMENT COMPLETED
+  // ========================================================================
+
+  app.get(
+    "/app/cashier/payment/completed",
+    requireAuth,
+    requirePermission("activeclinic.payment.collect"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const receiptNumber = String(req.query.receipt || "").trim();
+        const amountMinor = parseInt(req.query.amount || "0", 10) || 0;
+        let patientName = null;
+        if (receiptNumber) {
+          const auth = req.activeClinicAuth;
+          const rec = await getPool().query(
+            `SELECT r.issued_to_patient_name FROM activeclinic.receipts r
+              WHERE r.receipt_number = $1 AND r.tenant_id = $2 LIMIT 1`,
+            [receiptNumber, auth.tenantId]
+          );
+          if (rec.rows.length) patientName = rec.rows[0].issued_to_patient_name;
+        }
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-payment-completed-content.ejs",
+          pageHeader: { title: "Payment completed" },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Payment completed" },
+          ],
+          pageData: {
+            payment: {
+              receiptNumber,
+              amountFormatted: formatMoney(amountMinor),
+              patientName,
+            },
+            stitch: {
+              desktop: "bda1fbd1f6f441dba26719f451ee53de",
+              mobile: "bda1fbd1f6f441dba26719f451ee53de",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // PHASE 5D: REFUND / REVERSAL WORKFLOWS
+  // ========================================================================
+
+  async function loadPaymentContext(auth, facility, paymentId) {
+    const result = await getPool().query(
+      `SELECT py.*, p.patient_number, p.first_name, p.last_name
+         FROM activeclinic.payments py
+         JOIN activeclinic.patients p ON py.patient_id = p.id
+        WHERE py.id = $1 AND py.tenant_id = $2 AND py.facility_id = $3
+        LIMIT 1`,
+      [paymentId, auth.tenantId, facility.id]
+    );
+    if (!result.rows.length) return null;
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      paymentNumber: row.payment_number,
+      amountMinor: parseInt(row.amount_minor, 10),
+      amountFormatted: formatMoney(parseInt(row.amount_minor, 10), row.currency_code),
+      patientNumber: row.patient_number,
+      patientName: `${row.first_name} ${row.last_name}`.trim(),
+    };
+  }
+
+  app.get(
+    "/app/cashier/refunds/request",
+    requireAuth,
+    requirePermission("activeclinic.payment.collect"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const paymentId = String(req.query.paymentId || req.query.payment_id || "").trim();
+        if (!paymentId) {
+          return res.redirect(303, "/app/cashier/session?error=payment_required");
+        }
+        const payment = await loadPaymentContext(auth, facility, paymentId);
+        if (!payment) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Payment not found.", { status: 404 })
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-refund-request-content.ejs",
+          pageHeader: { title: "Refund request" },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Refund request" },
+          ],
+          pageData: {
+            payment,
+            error: req.query.error || null,
+            stitch: {
+              desktop: "685fb829c50a45af995772909fb49fb7",
+              mobile: "8461f1792a7a41209ae2abfe44db7b6a",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/refunds/request",
+    requireAuth,
+    requirePermission("activeclinic.payment.collect"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const paymentId = String(req.body.payment_id || "").trim();
+        const amountMinor = parseMoneyInput(String(req.body.amount || ""));
+        const result = await requestRefund({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          paymentId,
+          amountMinor,
+          reason: String(req.body.reason || "").trim(),
+        });
+        if (result.result !== BILLING_RESULT.CREATED) {
+          return res.redirect(
+            303,
+            `/app/cashier/refunds/request?paymentId=${paymentId}&error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/cashier/refunds/${result.refund.id}/review`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/cashier/refunds/:refundId/review",
+    requireAuth,
+    requirePermission("activeclinic.payment.view"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await getRefundById({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          refundId: req.params.refundId,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Refund request not found.", { status: 404 })
+          );
+        }
+        const refund = result.refund;
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-refund-review-content.ejs",
+          pageHeader: { title: "Refund review" },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Refund review" },
+          ],
+          pageData: {
+            refund: {
+              ...refund,
+              refundAmountFormatted: formatMoney(refund.refundAmountMinor, refund.currencyCode),
+            },
+            canApprove: hasFinancePermission(auth.permissions, BILLING_PERM.PAYMENT_REFUND),
+            error: req.query.error || null,
+            stitch: {
+              desktop: "438b1bb01f534492850ee8cb1253fcfe",
+              approval: "d8f3108dfcda4ab9bf58472786d0484c",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/refunds/:refundId/approve",
+    requireAuth,
+    requirePermission("activeclinic.payment.refund"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await approveRefund({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          refundId: req.params.refundId,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/cashier/refunds/${req.params.refundId}/review?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/cashier/refunds/${req.params.refundId}/completed`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/refunds/:refundId/reject",
+    requireAuth,
+    requirePermission("activeclinic.payment.refund"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await rejectRefund({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          refundId: req.params.refundId,
+          rejectionReason: String(req.body.rejection_reason || "").trim(),
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/cashier/refunds/${req.params.refundId}/review?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/cashier/refunds/${req.params.refundId}/rejected`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/cashier/refunds/:refundId/completed",
+    requireAuth,
+    requirePermission("activeclinic.payment.view"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await getRefundById({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          refundId: req.params.refundId,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Refund not found.", { status: 404 })
+          );
+        }
+        const refund = result.refund;
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-refund-completed-content.ejs",
+          pageHeader: { title: "Refund completed" },
+          breadcrumbs: [{ label: "Cashier", href: "/app/cashier" }, { label: "Completed" }],
+          pageData: {
+            refund: {
+              ...refund,
+              refundAmountFormatted: formatMoney(refund.refundAmountMinor, refund.currencyCode),
+            },
+            stitch: { desktop: "e52271b7be804e0ea95c825be9f977bd" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/cashier/refunds/:refundId/rejected",
+    requireAuth,
+    requirePermission("activeclinic.payment.view"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await getRefundById({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          refundId: req.params.refundId,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Refund not found.", { status: 404 })
+          );
+        }
+        const refund = result.refund;
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-refund-rejected-content.ejs",
+          pageHeader: { title: "Refund rejected" },
+          breadcrumbs: [{ label: "Cashier", href: "/app/cashier" }, { label: "Rejected" }],
+          pageData: {
+            refund: {
+              ...refund,
+              refundAmountFormatted: formatMoney(refund.refundAmountMinor, refund.currencyCode),
+            },
+            stitch: { desktop: "b76f80fb0d164501b8108bea91813385" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/cashier/reversals/request",
+    requireAuth,
+    requirePermission("activeclinic.payment.collect"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const paymentId = String(req.query.paymentId || "").trim();
+        if (!paymentId) return res.redirect(303, "/app/cashier/session?error=payment_required");
+        const payment = await loadPaymentContext(auth, facility, paymentId);
+        if (!payment) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Payment not found.", { status: 404 })
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-reversal-request-content.ejs",
+          pageHeader: { title: "Payment reversal request" },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Reversal request" },
+          ],
+          pageData: {
+            payment,
+            error: req.query.error || null,
+            stitch: { desktop: "2665942082b4428dbcabf3ff3a40ec60" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/reversals/request",
+    requireAuth,
+    requirePermission("activeclinic.payment.collect"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const paymentId = String(req.body.payment_id || "").trim();
+        const result = await requestPaymentReversal({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          paymentId,
+          reason: String(req.body.reason || "").trim(),
+        });
+        if (result.result !== BILLING_RESULT.CREATED) {
+          return res.redirect(
+            303,
+            `/app/cashier/reversals/request?paymentId=${paymentId}&error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/cashier/reversals/${result.reversal.id}/review`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/cashier/reversals/:reversalId/review",
+    requireAuth,
+    requirePermission("activeclinic.payment.view"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await getPaymentReversalById({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          reversalId: req.params.reversalId,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Reversal request not found.", { status: 404 })
+          );
+        }
+        const reversal = result.reversal;
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-reversal-review-content.ejs",
+          pageHeader: { title: "Reversal review" },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Reversal review" },
+          ],
+          pageData: {
+            reversal: {
+              ...reversal,
+              originalAmountFormatted: formatMoney(
+                reversal.originalAmountMinor,
+                reversal.currencyCode || "ZMW"
+              ),
+            },
+            canApprove: hasFinancePermission(auth.permissions, BILLING_PERM.PAYMENT_REVERSE),
+            error: req.query.error || null,
+            stitch: { desktop: "027b12b482934ef1a6f5dee02c888d26" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/reversals/:reversalId/approve",
+    requireAuth,
+    requirePermission("activeclinic.payment.reverse"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await approvePaymentReversal({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          reversalId: req.params.reversalId,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/cashier/reversals/${req.params.reversalId}/review?error=${result.result}`
+          );
+        }
+        return res.redirect(303, "/app/cashier?reversed=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/cashier/reversals/:reversalId/reject",
+    requireAuth,
+    requirePermission("activeclinic.payment.reverse"),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await rejectPaymentReversal({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          reversalId: req.params.reversalId,
+          rejectionReason: String(req.body.rejection_reason || "").trim(),
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/cashier/reversals/${req.params.reversalId}/review?error=${result.result}`
+          );
+        }
+        return res.redirect(303, "/app/cashier/session");
       } catch (err) {
         return next(err);
       }

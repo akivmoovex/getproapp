@@ -1,0 +1,48 @@
+<%
+  var refund = (pageData && pageData.refund) || {};
+  var canApprove = (pageData && pageData.canApprove) === true;
+  var error = pageData && pageData.error;
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-refund-review" data-ac-page-section="refund-review" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <nav class="ac-stepper" aria-label="Refund steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item">Request</li>
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Review</li>
+      <li class="ac-stepper__item">Outcome</li>
+    </ol>
+  </nav>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Refund request</h2>
+    <dl class="ac-dl">
+      <div><dt>Payment</dt><dd><%= refund.paymentNumber %></dd></div>
+      <div><dt>Patient</dt><dd><%= refund.patientName %> · <%= refund.patientNumber %></dd></div>
+      <div><dt>Refund amount</dt><dd class="ac-money"><strong><%= refund.refundAmountFormatted %></strong></dd></div>
+      <div><dt>Reason</dt><dd><%= refund.reason %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= refund.status %>"><%= refund.status %></span></dd></div>
+    </dl>
+  </article>
+
+  <% if (canApprove && refund.status === 'pending') { %>
+  <div class="ac-panel ac-form-actions">
+    <form method="post" action="/app/cashier/refunds/<%= refund.id %>/approve" style="display:inline">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <button type="submit" class="ac-btn">Approve refund</button>
+    </form>
+    <form method="post" action="/app/cashier/refunds/<%= refund.id %>/reject" class="ac-panel" style="margin-top:1rem">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <div class="ac-field">
+        <label class="ac-label" for="rejection_reason">Rejection reason *</label>
+        <textarea class="ac-textarea" id="rejection_reason" name="rejection_reason" rows="2" required maxlength="500"></textarea>
+      </div>
+      <button type="submit" class="ac-btn ac-btn--ghost">Reject refund</button>
+    </form>
+  </div>
+  <% } %>
+</section>

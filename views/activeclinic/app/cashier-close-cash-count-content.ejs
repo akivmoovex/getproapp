@@ -1,0 +1,45 @@
+<%
+  var session = (pageData && pageData.session) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-cashier-cash-count" data-ac-page-section="cashier-cash-count" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <nav class="ac-stepper" aria-label="Close session steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Cash count</li>
+      <li class="ac-stepper__item">Closing review</li>
+      <li class="ac-stepper__item">Complete</li>
+    </ol>
+  </nav>
+
+  <form method="post" action="/app/cashier/close/cash-count" class="ac-panel" data-ac-loading="1">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+    <p class="ac-flash ac-flash--warning" role="alert">
+      Count all cash in your drawer before continuing to closing review.
+    </p>
+
+    <article class="ac-field-group">
+      <h3 class="ac-label">Session summary</h3>
+      <dl class="ac-dl">
+        <div><dt>Session number</dt><dd><strong><%= session.sessionNumber %></strong></dd></div>
+        <div><dt>Expected cash</dt><dd><strong><%= session.expectedCashFormatted %></strong></dd></div>
+      </dl>
+    </article>
+
+    <div class="ac-field">
+      <label class="ac-label" for="actual_cash">Actual cash count (ZMW) *</label>
+      <input class="ac-input" id="actual_cash" name="actual_cash" required inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" autofocus />
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="notes">Notes (optional)</label>
+      <textarea class="ac-textarea" id="notes" name="notes" rows="2" maxlength="500"></textarea>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Continue to closing review</button>
+      <a href="/app/cashier/session" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
+  </form>
+</section>

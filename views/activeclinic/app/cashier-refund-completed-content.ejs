@@ -1,0 +1,21 @@
+<%
+  var refund = (pageData && pageData.refund) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-refund-completed" data-ac-page-section="refund-completed" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel ac-alert ac-alert--success" role="status">
+    <h2 class="ac-dashboard__card-title">Refund completed</h2>
+    <p>The refund has been approved and processed.</p>
+  </div>
+
+  <article class="ac-panel">
+    <dl class="ac-dl">
+      <div><dt>Payment</dt><dd><%= refund.paymentNumber %></dd></div>
+      <div><dt>Patient</dt><dd><%= refund.patientName %></dd></div>
+      <div><dt>Refund amount</dt><dd class="ac-money"><strong><%= refund.refundAmountFormatted %></strong></dd></div>
+    </dl>
+    <div class="ac-form-actions">
+      <a href="/app/cashier" class="ac-btn">Cashier dashboard</a>
+    </div>
+  </article>
+</section>

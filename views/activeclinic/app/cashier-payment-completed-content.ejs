@@ -1,0 +1,25 @@
+<%
+  var payment = (pageData && pageData.payment) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-payment-completed" data-ac-page-section="payment-completed" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <div class="ac-panel ac-alert ac-alert--success" role="status">
+    <h2 class="ac-dashboard__card-title">Payment completed</h2>
+    <p>Payment recorded successfully.</p>
+  </div>
+
+  <article class="ac-panel">
+    <dl class="ac-dl">
+      <div><dt>Receipt</dt><dd><strong><%= payment.receiptNumber %></strong></dd></div>
+      <div><dt>Amount</dt><dd class="ac-money"><%= payment.amountFormatted %></dd></div>
+      <% if (payment.patientName) { %>
+      <div><dt>Patient</dt><dd><%= payment.patientName %></dd></div>
+      <% } %>
+    </dl>
+    <div class="ac-form-actions">
+      <a href="/app/cashier/receipt/<%= payment.receiptNumber %>" class="ac-btn">View receipt</a>
+      <a href="/app/cashier/payment" class="ac-btn ac-btn--ghost">Record another payment</a>
+      <a href="/app/cashier" class="ac-btn ac-btn--ghost">Dashboard</a>
+    </div>
+  </article>
+</section>

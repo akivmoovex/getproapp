@@ -1,0 +1,24 @@
+<%
+  var invoice = (pageData && pageData.invoice) || {};
+  var error = (pageData && pageData.error) || 'An unexpected error occurred.';
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-invoice-error" data-ac-page-section="invoice-error" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel ac-alert ac-alert--error" role="alert">
+    <h2 class="ac-dashboard__card-title">Invoice error</h2>
+    <p><%= error %></p>
+  </div>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Invoice <%= invoice.invoice_number %></h2>
+    <dl class="ac-dl">
+      <div><dt>Patient</dt><dd><%= invoice.patientName %> · <%= invoice.patientNumber %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= invoice.status %>"><%= invoice.status %></span></dd></div>
+      <div><dt>Total</dt><dd><%= invoice.totalAmountFormatted %></dd></div>
+    </dl>
+    <div class="ac-form-actions">
+      <a href="/app/billing/invoices/<%= invoice.id %>" class="ac-btn">Return to invoice</a>
+      <a href="/app/billing/invoices" class="ac-btn ac-btn--ghost">All invoices</a>
+    </div>
+  </article>
+</section>

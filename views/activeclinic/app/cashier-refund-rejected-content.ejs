@@ -1,0 +1,24 @@
+<%
+  var refund = (pageData && pageData.refund) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-refund-rejected" data-ac-page-section="refund-rejected" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel ac-alert ac-alert--warning" role="status">
+    <h2 class="ac-dashboard__card-title">Refund rejected</h2>
+    <p>This refund request was not approved.</p>
+  </div>
+
+  <article class="ac-panel">
+    <dl class="ac-dl">
+      <div><dt>Payment</dt><dd><%= refund.paymentNumber %></dd></div>
+      <div><dt>Requested amount</dt><dd class="ac-money"><%= refund.refundAmountFormatted %></dd></div>
+      <% if (refund.rejectionReason) { %>
+      <div><dt>Reason</dt><dd><%= refund.rejectionReason %></dd></div>
+      <% } %>
+    </dl>
+    <div class="ac-form-actions">
+      <a href="/app/cashier/session" class="ac-btn ac-btn--ghost">Back to session</a>
+      <a href="/app/cashier" class="ac-btn">Dashboard</a>
+    </div>
+  </article>
+</section>

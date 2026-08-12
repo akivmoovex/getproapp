@@ -1,0 +1,36 @@
+<%
+  var payments = (pageData && pageData.payments) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-payment-history" data-ac-page-section="payment-history" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <% if (payments.length === 0) { %>
+      <p class="ac-muted">No payments recorded yet.</p>
+    <% } else { %>
+      <div class="ac-table-scroll">
+        <table class="ac-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Payment #</th>
+              <th>Patient</th>
+              <th>Method</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% payments.forEach(function (p) { %>
+            <tr>
+              <td><%= p.paymentDate %></td>
+              <td><%= p.paymentNumber %></td>
+              <td><%= p.patientName %> · <%= p.patientNumber %></td>
+              <td><%= p.paymentMethod %></td>
+              <td class="ac-money"><%= p.amountFormatted %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </article>
+</section>

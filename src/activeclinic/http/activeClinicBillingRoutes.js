@@ -28,17 +28,29 @@ const {
 const {
   listChargeCatalogItems,
   createChargeCatalogItem,
+  getChargeCatalogItemById,
   createPatientCharge,
   createInvoice,
+  addCatalogItemToDraftInvoice,
   postInvoice,
   recordPayment,
+  listPaymentHistory,
   refundPayment,
+  requestRefund,
+  approveRefund,
+  rejectRefund,
+  getRefundById,
   reversePayment,
+  requestPaymentReversal,
+  approvePaymentReversal,
+  rejectPaymentReversal,
+  getPaymentReversalById,
   voidInvoice,
   amendPostedInvoice,
   RESULT: BILLING_RESULT,
   PAYMENT_METHOD,
   PERM: BILLING_PERM,
+  INVOICE_STATUS,
 } = require("../services/activeClinicBillingService");
 const billingOps = require("../services/activeClinicBillingOpsService");
 const { formatMoney, parseMoneyInput } = require("../services/formatMoney");
@@ -644,12 +656,34 @@ function registerActiveClinicBillingRoutes(app, deps) {
           });
         }
 
+        if (
+          (invoice.status === "draft" || invoice.status === "pending") &&
+          hasFinancePermission(perms, BILLING_PERM.INVOICE_CREATE)
+        ) {
+          actions.push({
+            label: "Add item",
+            href: `/app/billing/invoices/${invoice.id}/items/new`,
+          });
+        }
+
+        const errorCode = String(req.query.error || "").trim() || null;
+        const errorMessages = {
+          invalid_input: "Invalid input. Check the form and try again.",
+          not_found: "The requested record was not found.",
+          immutable_record: "This invoice cannot be changed in its current state.",
+          access_denied: "You do not have permission for this action.",
+        };
+
         return await renderShell(req, res, {
           activeNav: "billing",
-          content: "app/billing-invoice-detail-content.ejs",
+          content: errorCode
+            ? "app/billing-invoice-error-content.ejs"
+            : "app/billing-invoice-detail-content.ejs",
           pageHeader: {
-            title: `Invoice ${invoice.invoice_number}`,
-            description: `Status: ${invoice.status}`,
+            title: errorCode ? "Invoice error" : `Invoice ${invoice.invoice_number}`,
+            description: errorCode
+              ? "An error occurred while processing this invoice."
+              : `Status: ${invoice.status}`,
             actions,
           },
           breadcrumbs: [
@@ -676,10 +710,15 @@ function registerActiveClinicBillingRoutes(app, deps) {
               patientNumber: invoice.patient_number,
             },
             lines,
-            stitch: {
-              desktop: "9f422c33e30c450e9502126ba4012585",
-              mobile: "3735516f4ecb4624ac715c6f77e7810b",
-            },
+            error: errorCode
+              ? errorMessages[errorCode] || `Error: ${errorCode}`
+              : null,
+            stitch: errorCode
+              ? { desktop: "b1a8b1855b9b4e268cd42359707d292e" }
+              : {
+                  desktop: "9f422c33e30c450e9502126ba4012585",
+                  mobile: "3735516f4ecb4624ac715c6f77e7810b",
+                },
           },
         });
       } catch (err) {
@@ -2073,6 +2112,285 @@ function registerActiveClinicBillingRoutes(app, deps) {
               amountFormatted: formatMoney(row.amountMinor, row.currencyCode),
             })),
             stitch: { desktop: "550a52476c254e258d58737fc1184bb6" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // PHASE 5D: BILLING PARTIAL CLOSURE
+  // ========================================================================
+
+  app.get(
+    "/app/billing/invoices/:invoiceId/error",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const pool = getPool();
+        const code = String(req.query.code || req.query.error || "unknown").trim();
+        const invoiceResult = await pool.query(
+          `SELECT i.*, p.first_name, p.last_name, pr.patient_number
+             FROM activeclinic.invoices i
+             JOIN activeclinic.patients p ON i.patient_id = p.id
+             JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
+            WHERE i.id = $1 AND i.tenant_id = $2
+            LIMIT 1`,
+          [req.params.invoiceId, auth.tenantId]
+        );
+        if (!invoiceResult.rows.length) {
+          return res.status(404).send("Invoice not found");
+        }
+        const invoice = invoiceResult.rows[0];
+        const errorMessages = {
+          invalid_input: "Invalid input. Check the form and try again.",
+          not_found: "The requested record was not found.",
+          immutable_record: "This invoice cannot be changed in its current state.",
+          access_denied: "You do not have permission for this action.",
+        };
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-error-content.ejs",
+          pageHeader: { title: "Invoice error" },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: invoice.invoice_number, href: `/app/billing/invoices/${invoice.id}` },
+            { label: "Error" },
+          ],
+          pageData: {
+            invoice: {
+              ...invoice,
+              totalAmountFormatted: formatMoney(
+                parseInt(invoice.total_amount_minor, 10),
+                invoice.currency_code
+              ),
+              patientName: `${invoice.first_name} ${invoice.last_name}`,
+              patientNumber: invoice.patient_number,
+            },
+            error: errorMessages[code] || `Error: ${code}`,
+            stitch: { desktop: "b1a8b1855b9b4e268cd42359707d292e" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/invoices/:invoiceId/items/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.create"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const pool = getPool();
+
+        const inv = await pool.query(
+          `SELECT i.id, i.invoice_number, i.status, i.patient_id,
+                  p.first_name, p.last_name, pr.patient_number
+             FROM activeclinic.invoices i
+             JOIN activeclinic.patients p ON i.patient_id = p.id
+             JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
+            WHERE i.id = $1 AND i.tenant_id = $2 AND i.facility_id = $3
+            LIMIT 1`,
+          [req.params.invoiceId, ids.tenantId, facility.id]
+        );
+        if (!inv.rows.length) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Invoice not found", { status: 404 })
+          );
+        }
+        const invoice = inv.rows[0];
+        if (invoice.status !== INVOICE_STATUS.DRAFT && invoice.status !== INVOICE_STATUS.PENDING) {
+          return res.redirect(
+            303,
+            `/app/billing/invoices/${invoice.id}?error=immutable_record`
+          );
+        }
+
+        const catalog = await listChargeCatalogItems({
+          pool,
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          activeOnly: true,
+        });
+
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-invoice-add-item-content.ejs",
+          pageHeader: {
+            title: "Add invoice item",
+            description: `Add a catalog charge to invoice ${invoice.invoice_number}.`,
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: invoice.invoice_number, href: `/app/billing/invoices/${invoice.id}` },
+            { label: "Add item" },
+          ],
+          pageData: {
+            invoice: {
+              id: invoice.id,
+              invoiceNumber: invoice.invoice_number,
+              patientName: `${invoice.first_name} ${invoice.last_name}`,
+              patientNumber: invoice.patient_number,
+            },
+            catalogItems: (catalog.items || []).map((item) => ({
+              ...item,
+              amountFormatted: formatMoney(item.amountMinor, item.currencyCode),
+            })),
+            error: req.query.error || null,
+            stitch: { desktop: "be4481e8f31b459facf2294f73311181" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/billing/invoices/:invoiceId/items/new",
+    requireAuth,
+    requirePermission("activeclinic.billing.invoice.create"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const catalogItemId = String(req.body.catalog_item_id || "").trim();
+        const quantity = parseInt(req.body.quantity || "1", 10);
+        const result = await addCatalogItemToDraftInvoice({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          invoiceId: req.params.invoiceId,
+          catalogItemId,
+          quantity,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.redirect(
+            303,
+            `/app/billing/invoices/${req.params.invoiceId}/items/new?error=${result.result}`
+          );
+        }
+        return res.redirect(303, `/app/billing/invoices/${req.params.invoiceId}`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/catalog/:catalogItemId",
+    requireAuth,
+    requirePermission("activeclinic.billing.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await getChargeCatalogItemById({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          catalogItemId: req.params.catalogItemId,
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Catalog item not found", { status: 404 })
+          );
+        }
+        const item = result.item;
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-catalog-detail-content.ejs",
+          pageHeader: {
+            title: item.name,
+            description: item.code,
+            actions: hasFinancePermission(auth.permissions, BILLING_PERM.CATALOG_MANAGE)
+              ? [{ label: "Catalog list", href: "/app/billing/catalog" }]
+              : [],
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Catalog", href: "/app/billing/catalog" },
+            { label: item.name },
+          ],
+          pageData: {
+            item: {
+              ...item,
+              amountFormatted: formatMoney(item.amountMinor, item.currencyCode),
+            },
+            stitch: { desktop: "d5eb57a8319c4130be473f8dd23851d6" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/billing/payments/history",
+    requireAuth,
+    requirePermission("activeclinic.payment.view"),
+    requireDepartment("billing"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) return res.redirect(303, "/app/select-facility");
+        const ids = financeIdsFromAuth(auth);
+        const result = await listPaymentHistory({
+          pool: getPool(),
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          limit: toIntQuery(req.query.limit, 50),
+          offset: toIntQuery(req.query.offset, 0),
+        });
+        if (result.result !== BILLING_RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Unable to load payment history.", { status: 403 })
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "billing",
+          content: "app/billing-payment-history-content.ejs",
+          pageHeader: {
+            title: "Payment history",
+            description: "Facility payment transactions.",
+          },
+          breadcrumbs: [
+            { label: "Billing", href: "/app/billing" },
+            { label: "Payment history" },
+          ],
+          pageData: {
+            payments: (result.payments || []).map((row) => ({
+              ...row,
+              amountFormatted: formatMoney(row.amountMinor, row.currencyCode),
+            })),
+            stitch: { desktop: "45929cd32480420aaa5788be86e183f9" },
           },
         });
       } catch (err) {

@@ -1164,6 +1164,882 @@ async function amendPostedInvoice({
 }
 
 // ============================================================================
+// CATALOG DETAIL / DRAFT INVOICE ITEMS / PAYMENT HISTORY
+// ============================================================================
+
+async function getChargeCatalogItemById({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  catalogItemId,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.BILLING_VIEW,
+  });
+  if (denied) return denied;
+
+  const result = await pool.query(
+    `SELECT * FROM activeclinic.charge_catalogue_items
+      WHERE id = $1 AND tenant_id = $2
+        AND (facility_id = $3 OR facility_id IS NULL)
+      LIMIT 1`,
+    [catalogItemId, tenantId, facilityId]
+  );
+  if (!result.rows.length) return { result: RESULT.NOT_FOUND };
+  return { result: RESULT.OK, item: mapCatalogItem(result.rows[0]) };
+}
+
+async function addCatalogItemToDraftInvoice({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  invoiceId,
+  catalogItemId,
+  quantity = 1,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.INVOICE_CREATE,
+  });
+  if (denied) return denied;
+
+  if (!invoiceId || !catalogItemId || quantity < 1) {
+    return { result: RESULT.INVALID_INPUT };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const invRes = await client.query(
+      `SELECT * FROM activeclinic.invoices
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
+        FOR UPDATE`,
+      [invoiceId, tenantId, facilityId]
+    );
+    if (!invRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND };
+    }
+    const invoice = invRes.rows[0];
+    if (invoice.status !== INVOICE_STATUS.DRAFT && invoice.status !== INVOICE_STATUS.PENDING) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.IMMUTABLE, reason: "invoice_not_draft" };
+    }
+
+    const catalogRes = await client.query(
+      `SELECT * FROM activeclinic.charge_catalogue_items
+        WHERE id = $1 AND tenant_id = $2
+          AND (facility_id = $3 OR facility_id IS NULL)
+          AND is_active = true
+        LIMIT 1`,
+      [catalogItemId, tenantId, facilityId]
+    );
+    if (!catalogRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND, reason: "catalogue_item" };
+    }
+    const catalog = catalogRes.rows[0];
+    const unitAmountMinor = parseInt(catalog.amount_minor, 10);
+    const qty = parseInt(quantity, 10);
+    const subtotalMinor = unitAmountMinor * qty;
+    const taxRate = parseFloat(catalog.tax_rate_percent || 0);
+    const taxAmountMinor = catalog.is_taxable
+      ? Math.round(subtotalMinor * (taxRate / 100))
+      : 0;
+    const totalMinor = subtotalMinor + taxAmountMinor;
+
+    const chargeRes = await client.query(
+      `INSERT INTO activeclinic.patient_charges (
+         tenant_id, facility_id, patient_id, catalogue_item_id,
+         charge_type, description, unit_amount_minor, quantity,
+         subtotal_minor, tax_amount_minor, total_amount_minor,
+         currency_code, status, charged_by_staff_id
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'invoiced', $13)
+       RETURNING *`,
+      [
+        tenantId,
+        facilityId,
+        invoice.patient_id,
+        catalogItemId,
+        catalog.category || "service",
+        catalog.name,
+        unitAmountMinor,
+        qty,
+        subtotalMinor,
+        taxAmountMinor,
+        totalMinor,
+        catalog.currency_code || "ZMW",
+        staffId,
+      ]
+    );
+    const charge = chargeRes.rows[0];
+
+    const lineCount = await client.query(
+      `SELECT COALESCE(MAX(line_number), 0) AS max_line
+         FROM activeclinic.invoice_lines WHERE invoice_id = $1`,
+      [invoiceId]
+    );
+    const lineNumber = parseInt(lineCount.rows[0].max_line, 10) + 1;
+
+    await client.query(
+      `INSERT INTO activeclinic.invoice_lines (
+         invoice_id, charge_id, line_number, description, quantity,
+         unit_amount_minor, subtotal_minor, tax_amount_minor, line_total_minor, currency_code
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        invoiceId,
+        charge.id,
+        lineNumber,
+        charge.description,
+        charge.quantity,
+        charge.unit_amount_minor,
+        charge.subtotal_minor,
+        charge.tax_amount_minor,
+        charge.total_amount_minor,
+        charge.currency_code,
+      ]
+    );
+
+    const nextSubtotal = parseInt(invoice.subtotal_minor, 10) + subtotalMinor;
+    const nextTax = parseInt(invoice.tax_amount_minor, 10) + taxAmountMinor;
+    const nextTotal = nextSubtotal + nextTax + parseInt(invoice.adjustment_minor, 10);
+
+    const updated = await client.query(
+      `UPDATE activeclinic.invoices
+          SET subtotal_minor = $1,
+              tax_amount_minor = $2,
+              total_amount_minor = $3,
+              updated_by_staff_id = $4,
+              updated_at = now()
+        WHERE id = $5
+        RETURNING *`,
+      [nextSubtotal, nextTax, nextTotal, staffId, invoiceId]
+    );
+
+    await client.query("COMMIT");
+
+    await writeFinanceAudit(pool, {
+      tenantId,
+      staffId,
+      eventType: "activeclinic.billing.invoice_item_added",
+      resourceType: "invoice",
+      resourceId: invoiceId,
+      metadata: { catalogItemId, quantity: qty, lineNumber },
+    });
+
+    return { result: RESULT.OK, invoice: mapInvoice(updated.rows[0]) };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function listPaymentHistory({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  limit = 50,
+  offset = 0,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_VIEW,
+  });
+  if (denied) return denied;
+
+  const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 200);
+  const safeOffset = Math.max(parseInt(offset, 10) || 0, 0);
+
+  const result = await pool.query(
+    `SELECT py.*, p.patient_number, p.first_name, p.last_name
+       FROM activeclinic.payments py
+       JOIN activeclinic.patients p ON py.patient_id = p.id
+      WHERE py.tenant_id = $1 AND py.facility_id = $2
+      ORDER BY py.payment_date DESC, py.created_at DESC
+      LIMIT $3 OFFSET $4`,
+    [tenantId, facilityId, safeLimit, safeOffset]
+  );
+
+  return {
+    result: RESULT.OK,
+    payments: result.rows.map((row) => ({
+      ...mapPayment(row),
+      patientNumber: row.patient_number,
+      patientName: `${row.first_name} ${row.last_name}`.trim(),
+    })),
+  };
+}
+
+function mapRefund(row) {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    facilityId: row.facility_id,
+    originalPaymentId: row.original_payment_id,
+    refundPaymentId: row.refund_payment_id,
+    refundDate: row.refund_date,
+    refundAmountMinor: parseInt(row.refund_amount_minor, 10),
+    currencyCode: row.currency_code,
+    reason: row.reason,
+    status: row.status,
+    requestedByStaffId: row.requested_by_staff_id,
+    approvedByStaffId: row.approved_by_staff_id,
+    approvedAt: row.approved_at,
+    rejectedByStaffId: row.rejected_by_staff_id,
+    rejectedAt: row.rejected_at,
+    rejectionReason: row.rejection_reason,
+    createdAt: row.created_at,
+  };
+}
+
+function mapFinancialReversal(row) {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    facilityId: row.facility_id,
+    reversalType: row.reversal_type,
+    originalRecordId: row.original_record_id,
+    originalRecordType: row.original_record_type,
+    reversalDate: row.reversal_date,
+    reason: row.reason,
+    status: row.status,
+    requestedByStaffId: row.requested_by_staff_id,
+    approvedByStaffId: row.approved_by_staff_id,
+    approvedAt: row.approved_at,
+    rejectedByStaffId: row.rejected_by_staff_id,
+    rejectedAt: row.rejected_at,
+    rejectionReason: row.rejection_reason,
+    reversalData: row.reversal_data,
+    createdAt: row.created_at,
+  };
+}
+
+async function sumActiveRefundMinor(client, paymentId, tenantId) {
+  const refundedRes = await client.query(
+    `SELECT COALESCE(SUM(refund_amount_minor), 0) AS refunded
+       FROM activeclinic.refunds
+      WHERE original_payment_id = $1
+        AND tenant_id = $2
+        AND status IN ('pending', 'completed')`,
+    [paymentId, tenantId]
+  );
+  return parseInt(refundedRes.rows[0].refunded, 10);
+}
+
+// ============================================================================
+// REFUND APPROVAL WORKFLOW
+// ============================================================================
+
+async function requestRefund({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  paymentId,
+  amountMinor,
+  reason,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_COLLECT,
+  });
+  if (denied) return denied;
+
+  if (!paymentId || !reason || !(amountMinor > 0)) {
+    return { result: RESULT.INVALID_INPUT };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const paymentRes = await client.query(
+      `SELECT * FROM activeclinic.payments
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
+        FOR UPDATE`,
+      [paymentId, tenantId, facilityId]
+    );
+    if (!paymentRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND };
+    }
+    const payment = paymentRes.rows[0];
+
+    const reversed = await client.query(
+      `SELECT 1 FROM activeclinic.financial_reversals
+        WHERE tenant_id = $1
+          AND original_record_id = $2
+          AND original_record_type = 'payment'
+          AND reversal_type = 'payment_reverse'
+          AND status IN ('pending', 'completed')
+        LIMIT 1`,
+      [tenantId, paymentId]
+    );
+    if (reversed.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.ALREADY_REVERSED };
+    }
+
+    const alreadyRefunded = await sumActiveRefundMinor(client, paymentId, tenantId);
+    const originalAmount = parseInt(payment.amount_minor, 10);
+    if (alreadyRefunded + amountMinor > originalAmount) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.REFUND_EXCEEDS_PAYMENT };
+    }
+
+    const refundRow = await client.query(
+      `INSERT INTO activeclinic.refunds (
+         tenant_id, facility_id, original_payment_id,
+         refund_amount_minor, currency_code, reason, status,
+         requested_by_staff_id
+       ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7)
+       RETURNING *`,
+      [
+        tenantId,
+        facilityId,
+        paymentId,
+        amountMinor,
+        payment.currency_code || "ZMW",
+        reason,
+        staffId,
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    await writeFinanceAudit(pool, {
+      tenantId,
+      staffId,
+      eventType: "activeclinic.billing.refund_requested",
+      resourceType: "refund",
+      resourceId: refundRow.rows[0].id,
+      metadata: { paymentId, amountMinor, reason },
+    });
+
+    return { result: RESULT.CREATED, refund: mapRefund(refundRow.rows[0]) };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function completePendingRefund(client, {
+  tenantId,
+  facilityId,
+  staffId,
+  refundRow,
+  payment,
+}) {
+  const refundPaymentNumber = await generatePaymentNumber(client, tenantId, facilityId);
+  const refundPay = await client.query(
+    `INSERT INTO activeclinic.payments (
+       tenant_id, facility_id, patient_id, payment_number, amount_minor,
+       currency_code, payment_method, reference_number, notes,
+       received_by_staff_id, cashier_session_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, 'other', $7, $8, $9, $10)
+     RETURNING id`,
+    [
+      tenantId,
+      facilityId,
+      payment.patient_id,
+      refundPaymentNumber,
+      refundRow.refund_amount_minor,
+      payment.currency_code || "ZMW",
+      `Refund for ${payment.payment_number}`,
+      refundRow.reason,
+      staffId,
+      null,
+    ]
+  );
+
+  const updated = await client.query(
+    `UPDATE activeclinic.refunds
+        SET status = 'completed',
+            refund_payment_id = $1,
+            approved_by_staff_id = $2,
+            updated_at = now()
+      WHERE id = $3
+      RETURNING *`,
+    [refundPay.rows[0].id, staffId, refundRow.id]
+  );
+
+  if (payment.cashier_session_id) {
+    await client.query(
+      `INSERT INTO activeclinic.cashier_session_events (
+         session_id, event_type, event_data, created_by_staff_id
+       ) VALUES ($1, 'refund_issued', $2, $3)`,
+      [
+        payment.cashier_session_id,
+        { paymentId: payment.id, amountMinor: refundRow.refund_amount_minor, reason: refundRow.reason },
+        staffId,
+      ]
+    );
+  }
+
+  return { refundPaymentId: refundPay.rows[0].id, refund: mapRefund(updated.rows[0]) };
+}
+
+async function approveRefund({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  refundId,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_REFUND,
+  });
+  if (denied) return denied;
+
+  if (!refundId) return { result: RESULT.INVALID_INPUT };
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const refundRes = await client.query(
+      `SELECT * FROM activeclinic.refunds
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
+        FOR UPDATE`,
+      [refundId, tenantId, facilityId]
+    );
+    if (!refundRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND };
+    }
+    const refundRow = refundRes.rows[0];
+    if (refundRow.status !== "pending") {
+      await client.query("ROLLBACK");
+      return { result: RESULT.INVALID_STATUS, reason: refundRow.status };
+    }
+    if (refundRow.requested_by_staff_id === staffId) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.APPROVAL_REQUIRED, reason: "self_approval_forbidden" };
+    }
+
+    const paymentRes = await client.query(
+      `SELECT * FROM activeclinic.payments
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
+        FOR UPDATE`,
+      [refundRow.original_payment_id, tenantId, facilityId]
+    );
+    if (!paymentRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND, reason: "payment" };
+    }
+    const payment = paymentRes.rows[0];
+
+    const completed = await completePendingRefund(client, {
+      tenantId,
+      facilityId,
+      staffId,
+      refundRow,
+      payment,
+    });
+
+    await client.query("COMMIT");
+
+    await writeFinanceAudit(pool, {
+      tenantId,
+      staffId,
+      eventType: "activeclinic.billing.refund_approved",
+      resourceType: "refund",
+      resourceId: refundId,
+      metadata: { refundPaymentId: completed.refundPaymentId },
+    });
+
+    return {
+      result: RESULT.OK,
+      refundId,
+      refundPaymentId: completed.refundPaymentId,
+      refund: completed.refund,
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function rejectRefund({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  refundId,
+  rejectionReason,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_REFUND,
+  });
+  if (denied) return denied;
+
+  if (!refundId || !rejectionReason) {
+    return { result: RESULT.INVALID_INPUT };
+  }
+
+  const updated = await pool.query(
+    `UPDATE activeclinic.refunds
+        SET status = 'rejected',
+            rejected_by_staff_id = $1,
+            rejected_at = now(),
+            rejection_reason = $2,
+            updated_at = now()
+      WHERE id = $3
+        AND tenant_id = $4
+        AND facility_id = $5
+        AND status = 'pending'
+      RETURNING *`,
+    [staffId, rejectionReason, refundId, tenantId, facilityId]
+  );
+  if (!updated.rows.length) {
+    const existing = await pool.query(
+      `SELECT id, status FROM activeclinic.refunds
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3`,
+      [refundId, tenantId, facilityId]
+    );
+    if (!existing.rows.length) return { result: RESULT.NOT_FOUND };
+    return { result: RESULT.INVALID_STATUS, reason: existing.rows[0].status };
+  }
+
+  await writeFinanceAudit(pool, {
+    tenantId,
+    staffId,
+    eventType: "activeclinic.billing.refund_rejected",
+    resourceType: "refund",
+    resourceId: refundId,
+    metadata: { rejectionReason },
+  });
+
+  return { result: RESULT.OK, refund: mapRefund(updated.rows[0]) };
+}
+
+async function getRefundById({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  refundId,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_VIEW,
+  });
+  if (denied) return denied;
+
+  const result = await pool.query(
+    `SELECT r.*, py.payment_number, py.amount_minor AS original_amount_minor,
+            p.patient_number, p.first_name, p.last_name
+       FROM activeclinic.refunds r
+       JOIN activeclinic.payments py ON r.original_payment_id = py.id
+       JOIN activeclinic.patients p ON py.patient_id = p.id
+      WHERE r.id = $1 AND r.tenant_id = $2 AND r.facility_id = $3
+      LIMIT 1`,
+    [refundId, tenantId, facilityId]
+  );
+  if (!result.rows.length) return { result: RESULT.NOT_FOUND };
+  const row = result.rows[0];
+  return {
+    result: RESULT.OK,
+    refund: {
+      ...mapRefund(row),
+      paymentNumber: row.payment_number,
+      originalAmountMinor: parseInt(row.original_amount_minor, 10),
+      patientNumber: row.patient_number,
+      patientName: `${row.first_name} ${row.last_name}`.trim(),
+    },
+  };
+}
+
+// ============================================================================
+// PAYMENT REVERSAL APPROVAL WORKFLOW
+// ============================================================================
+
+async function requestPaymentReversal({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  paymentId,
+  reason,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_COLLECT,
+  });
+  if (denied) return denied;
+
+  if (!paymentId || !reason) {
+    return { result: RESULT.INVALID_INPUT };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const paymentRes = await client.query(
+      `SELECT * FROM activeclinic.payments
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
+        FOR UPDATE`,
+      [paymentId, tenantId, facilityId]
+    );
+    if (!paymentRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND };
+    }
+    const payment = paymentRes.rows[0];
+
+    const existing = await client.query(
+      `SELECT id, status FROM activeclinic.financial_reversals
+        WHERE tenant_id = $1
+          AND original_record_id = $2
+          AND original_record_type = 'payment'
+          AND reversal_type = 'payment_reverse'
+          AND status IN ('pending', 'completed')
+        LIMIT 1`,
+      [tenantId, paymentId]
+    );
+    if (existing.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.ALREADY_REVERSED, reason: existing.rows[0].status };
+    }
+
+    const rev = await client.query(
+      `INSERT INTO activeclinic.financial_reversals (
+         tenant_id, facility_id, reversal_type, original_record_id,
+         original_record_type, reason, status, requested_by_staff_id,
+         reversal_data
+       ) VALUES ($1, $2, 'payment_reverse', $3, 'payment', $4, 'pending', $5, $6)
+       RETURNING *`,
+      [
+        tenantId,
+        facilityId,
+        paymentId,
+        reason,
+        staffId,
+        JSON.stringify({ paymentNumber: payment.payment_number }),
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    await writeFinanceAudit(pool, {
+      tenantId,
+      staffId,
+      eventType: "activeclinic.billing.payment_reversal_requested",
+      resourceType: "financial_reversal",
+      resourceId: rev.rows[0].id,
+      metadata: { paymentId, reason },
+    });
+
+    return { result: RESULT.CREATED, reversal: mapFinancialReversal(rev.rows[0]) };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function approvePaymentReversal({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  reversalId,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_REVERSE,
+  });
+  if (denied) return denied;
+
+  if (!reversalId) return { result: RESULT.INVALID_INPUT };
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const revRes = await client.query(
+      `SELECT * FROM activeclinic.financial_reversals
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
+        FOR UPDATE`,
+      [reversalId, tenantId, facilityId]
+    );
+    if (!revRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND };
+    }
+    const reversal = revRes.rows[0];
+    if (reversal.status !== "pending") {
+      await client.query("ROLLBACK");
+      return { result: RESULT.INVALID_STATUS, reason: reversal.status };
+    }
+    if (reversal.requested_by_staff_id === staffId) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.APPROVAL_REQUIRED, reason: "self_approval_forbidden" };
+    }
+
+    const updated = await client.query(
+      `UPDATE activeclinic.financial_reversals
+          SET status = 'completed',
+              approved_by_staff_id = $1,
+              updated_at = now()
+        WHERE id = $2
+        RETURNING *`,
+      [staffId, reversalId]
+    );
+
+    await client.query("COMMIT");
+
+    await writeFinanceAudit(pool, {
+      tenantId,
+      staffId,
+      eventType: "activeclinic.billing.payment_reversal_approved",
+      resourceType: "financial_reversal",
+      resourceId: reversalId,
+      metadata: { paymentId: reversal.original_record_id },
+    });
+
+    return {
+      result: RESULT.OK,
+      reversal: mapFinancialReversal(updated.rows[0]),
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function rejectPaymentReversal({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  reversalId,
+  rejectionReason,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_REVERSE,
+  });
+  if (denied) return denied;
+
+  if (!reversalId || !rejectionReason) {
+    return { result: RESULT.INVALID_INPUT };
+  }
+
+  const updated = await pool.query(
+    `UPDATE activeclinic.financial_reversals
+        SET status = 'rejected',
+            rejected_by_staff_id = $1,
+            rejected_at = now(),
+            rejection_reason = $2,
+            updated_at = now()
+      WHERE id = $3
+        AND tenant_id = $4
+        AND facility_id = $5
+        AND status = 'pending'
+      RETURNING *`,
+    [staffId, rejectionReason, reversalId, tenantId, facilityId]
+  );
+  if (!updated.rows.length) {
+    const existing = await pool.query(
+      `SELECT id, status FROM activeclinic.financial_reversals
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3`,
+      [reversalId, tenantId, facilityId]
+    );
+    if (!existing.rows.length) return { result: RESULT.NOT_FOUND };
+    return { result: RESULT.INVALID_STATUS, reason: existing.rows[0].status };
+  }
+
+  await writeFinanceAudit(pool, {
+    tenantId,
+    staffId,
+    eventType: "activeclinic.billing.payment_reversal_rejected",
+    resourceType: "financial_reversal",
+    resourceId: reversalId,
+    metadata: { rejectionReason },
+  });
+
+  return { result: RESULT.OK, reversal: mapFinancialReversal(updated.rows[0]) };
+}
+
+async function getPaymentReversalById({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  reversalId,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.PAYMENT_VIEW,
+  });
+  if (denied) return denied;
+
+  const result = await pool.query(
+    `SELECT fr.*, py.payment_number, py.amount_minor AS original_amount_minor,
+            p.patient_number, p.first_name, p.last_name
+       FROM activeclinic.financial_reversals fr
+       JOIN activeclinic.payments py ON fr.original_record_id = py.id
+       JOIN activeclinic.patients p ON py.patient_id = p.id
+      WHERE fr.id = $1 AND fr.tenant_id = $2 AND fr.facility_id = $3
+        AND fr.reversal_type = 'payment_reverse'
+      LIMIT 1`,
+    [reversalId, tenantId, facilityId]
+  );
+  if (!result.rows.length) return { result: RESULT.NOT_FOUND };
+  const row = result.rows[0];
+  return {
+    result: RESULT.OK,
+    reversal: {
+      ...mapFinancialReversal(row),
+      paymentNumber: row.payment_number,
+      originalAmountMinor: parseInt(row.original_amount_minor, 10),
+      patientNumber: row.patient_number,
+      patientName: `${row.first_name} ${row.last_name}`.trim(),
+    },
+  };
+}
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
@@ -1174,12 +2050,23 @@ module.exports = {
   PAYMENT_METHOD,
   listChargeCatalogItems,
   createChargeCatalogItem,
+  getChargeCatalogItemById,
   createPatientCharge,
   createInvoice,
+  addCatalogItemToDraftInvoice,
   postInvoice,
   recordPayment,
+  listPaymentHistory,
   refundPayment,
+  requestRefund,
+  approveRefund,
+  rejectRefund,
+  getRefundById,
   reversePayment,
+  requestPaymentReversal,
+  approvePaymentReversal,
+  rejectPaymentReversal,
+  getPaymentReversalById,
   voidInvoice,
   amendPostedInvoice,
 };
