@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T00:37:40.572Z",
+  "generated_at": "2026-08-12T01:26:46.889Z",
   "inventory_purpose": "RAW V7 ActiveClinic implementation inventory — no Stitch mapping",
   "safety": {
     "branch": "V7",
@@ -39,7 +39,7 @@
   "integrity": {
     "user_facing_routes_discovered": 175,
     "screen_rendering_views_discovered": 157,
-    "implementation_screen_state_records": 213,
+    "implementation_screen_state_records": 216,
     "orphan_views": 1,
     "api_only_routes_excluded": 22,
     "redirect_only_routes_excluded": 12,
@@ -1520,8 +1520,8 @@
       "route_method": "GET",
       "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey",
       "route_file": "src/activeclinic/http/activeClinicPublicBookingRoutes.js",
-      "handler": null,
-      "view_path": "views/activeclinic/booking/procedure-entry.ejs",
+      "handler": "procedureInfoStep",
+      "view_path": "views/activeclinic/booking/procedure-info.ejs",
       "layout": "layouts/public-shell.ejs",
       "device_support": [
         "DESKTOP",
@@ -1534,16 +1534,17 @@
       "facility_scope": false,
       "department_scope": null,
       "reachable": "CONDITIONALLY_REACHABLE",
-      "reachability_evidence": "GET procedure entry when available",
+      "reachability_evidence": "GET/POST info step; preparation ack; Phase 5A tests",
       "partials": [
-        "partials/phone-field.ejs",
+        "partials/booking-wizard-progress.ejs",
+        "partials/booking-summary.ejs",
         "partials/sms-honesty-note.ejs"
       ],
       "client_js": [
         "public/activeclinic/ac-phone-field.js"
       ],
       "implementation_substance": "FULLY_DATA_DRIVEN",
-      "notes": ""
+      "notes": "Phase 5A: procedure information wizard step (was combined entry)"
     },
     {
       "implementation_id": "ACV7-IMPL-0044",
@@ -1577,10 +1578,10 @@
       "surface": "BOOKING",
       "functional_area": "PROCEDURE_BOOKING",
       "route_method": "POST",
-      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/patient",
       "route_file": "src/activeclinic/http/activeClinicPublicBookingRoutes.js",
-      "handler": null,
-      "view_path": "views/activeclinic/booking/procedure-entry.ejs",
+      "handler": "procedurePatientStep",
+      "view_path": "views/activeclinic/booking/procedure-patient.ejs",
       "layout": "layouts/public-shell.ejs",
       "device_support": [
         "DESKTOP",
@@ -1593,22 +1594,22 @@
       "facility_scope": false,
       "department_scope": null,
       "reachable": "CONDITIONALLY_REACHABLE",
-      "reachability_evidence": "POST 400 re-render",
+      "reachability_evidence": "POST patient with errors; data-ac-form-state=validation_error",
       "partials": [
         "partials/phone-field.ejs"
       ],
       "client_js": [],
       "implementation_substance": "FUNCTIONAL",
-      "notes": ""
+      "notes": "Phase 5A: validation errors re-render step views (patient representative)"
     },
     {
       "implementation_id": "ACV7-IMPL-0046",
       "surface": "BOOKING",
       "functional_area": "PROCEDURE_BOOKING",
       "route_method": "POST",
-      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/submit",
       "route_file": "src/activeclinic/http/activeClinicPublicBookingRoutes.js",
-      "handler": null,
+      "handler": "procedureSubmit",
       "view_path": "views/activeclinic/booking/request-submitted.ejs",
       "layout": "layouts/public-shell.ejs",
       "device_support": [
@@ -1622,13 +1623,13 @@
       "facility_scope": false,
       "department_scope": null,
       "reachable": "CONDITIONALLY_REACHABLE",
-      "reachability_evidence": "Successful procedure submit",
+      "reachability_evidence": "POST submit clears draft; pending confirmation status",
       "partials": [
         "partials/sms-honesty-note.ejs"
       ],
       "client_js": [],
       "implementation_substance": "FULLY_DATA_DRIVEN",
-      "notes": ""
+      "notes": "Phase 5A: submit from review; request-submitted confirmation"
     },
     {
       "implementation_id": "ACV7-IMPL-0047",
@@ -7066,10 +7067,111 @@
       ],
       "department_scope": "billing",
       "reachability_evidence": "GET detailed revenue report"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0214",
+      "surface": "BOOKING",
+      "functional_area": "PROCEDURE_BOOKING",
+      "route_method": "GET",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/referral",
+      "route_file": "src/activeclinic/http/activeClinicPublicBookingRoutes.js",
+      "handler": "procedureReferralStep",
+      "view_path": "views/activeclinic/booking/procedure-referral.ejs",
+      "layout": "layouts/public-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": false,
+      "rbac_permissions": [],
+      "facility_scope": false,
+      "department_scope": null,
+      "reachable": "REACHABLE",
+      "reachability_evidence": "GET/POST referral step; honesty no-upload; Phase 5A tests",
+      "partials": [
+        "partials/booking-wizard-progress.ejs",
+        "partials/booking-summary.ejs",
+        "partials/sms-honesty-note.ejs"
+      ],
+      "client_js": [
+        "public/activeclinic/ac-public.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "Phase 5A referral step — upload not available"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0215",
+      "surface": "BOOKING",
+      "functional_area": "PROCEDURE_BOOKING",
+      "route_method": "GET",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/time",
+      "route_file": "src/activeclinic/http/activeClinicPublicBookingRoutes.js",
+      "handler": "procedureTimeStep",
+      "view_path": "views/activeclinic/booking/procedure-time.ejs",
+      "layout": "layouts/public-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": false,
+      "rbac_permissions": [],
+      "facility_scope": false,
+      "department_scope": null,
+      "reachable": "REACHABLE",
+      "reachability_evidence": "GET/POST preferred datetime; no_slots_published honesty",
+      "partials": [
+        "partials/booking-wizard-progress.ejs",
+        "partials/booking-summary.ejs"
+      ],
+      "client_js": [
+        "public/activeclinic/ac-public.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "Phase 5A preferred-time step (not live slots)"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0216",
+      "surface": "BOOKING",
+      "functional_area": "PROCEDURE_BOOKING",
+      "route_method": "GET",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/review",
+      "route_file": "src/activeclinic/http/activeClinicPublicBookingRoutes.js",
+      "handler": "procedureReviewStep",
+      "view_path": "views/activeclinic/booking/procedure-review.ejs",
+      "layout": "layouts/public-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": false,
+      "rbac_permissions": [],
+      "facility_scope": false,
+      "department_scope": null,
+      "reachable": "REACHABLE",
+      "reachability_evidence": "GET review + POST submit; pending confirmation wording",
+      "partials": [
+        "partials/booking-wizard-progress.ejs",
+        "partials/sms-honesty-note.ejs"
+      ],
+      "client_js": [
+        "public/activeclinic/ac-public.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "Phase 5A review before submit"
     }
   ],
   "phase4_update": {
     "added_count": 26,
     "note": "Phase 4 STITCH_NOT_IMPLEMENTED gap closure"
+  },
+  "phase5a_update": {
+    "added_count": 3,
+    "note": "P25 procedure booking multi-step wizard"
   }
 }

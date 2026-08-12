@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T00:37:40.572Z",
+  "generated_at": "2026-08-12T01:26:46.889Z",
   "purpose": "Phase 3 Stitch → V7 implementation mapping (independent of old parity matrix primary claims)",
   "safety": {
     "branch": "V7",
@@ -12,50 +12,50 @@
   },
   "inputs": {
     "stitch_screens": 388,
-    "implementation_records": 213,
+    "implementation_records": 216,
     "phase4_note": "Implementation inventory updated after Phase 4 code"
   },
   "counts": {
     "mapping_type": {
-      "EXACT_IMPLEMENTATION_MATCH": 66,
-      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 218,
+      "EXACT_IMPLEMENTATION_MATCH": 70,
+      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 228,
       "DUPLICATE_STITCH_VARIANT": 8,
-      "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 5,
-      "PARTIAL_IMPLEMENTATION": 77,
-      "PRODUCT_DECISION_DIFFERENCE": 6,
+      "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 6,
+      "PARTIAL_IMPLEMENTATION": 61,
+      "PRODUCT_DECISION_DIFFERENCE": 7,
       "NO_IMPLEMENTATION_REQUIRED": 8
     },
     "confidence": {
-      "HIGH": 329,
-      "MEDIUM": 59
+      "HIGH": 336,
+      "MEDIUM": 52
     },
     "stitch_screen_coverage": {
-      "full": 289,
-      "partial": 77,
+      "full": 304,
+      "partial": 61,
       "missing": 0,
-      "other": 22,
+      "other": 23,
       "total": 388
     },
     "unique_design_concept_coverage": {
-      "full": 289,
-      "partial": 77,
+      "full": 304,
+      "partial": 61,
       "missing": 0,
-      "other": 6,
+      "other": 7,
       "total": 372,
       "denominator_note": "Excludes DUPLICATE_STITCH_VARIANT and NO_IMPLEMENTATION_REQUIRED"
     },
     "desktop": {
-      "full": 176,
-      "partial": 51,
+      "full": 181,
+      "partial": 46,
       "missing": 0,
       "other": 10,
       "total": 237
     },
     "mobile": {
-      "full": 113,
-      "partial": 26,
+      "full": 123,
+      "partial": 15,
       "missing": 0,
-      "other": 12,
+      "other": 13,
       "total": 151
     }
   },
@@ -14064,21 +14064,19 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043",
-        "ACV7-IMPL-0045"
+        "ACV7-IMPL-0043"
       ],
       "route_paths": [
         "/clinics/:clinicKey/book/procedures/:procedureKey"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-info.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -14086,9 +14084,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "State/pattern boards not dedicated routes; validation + banners only",
-      "evidence": "Mapped to ACV7-IMPL-0043, ACV7-IMPL-0045 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-info.ejs",
+      "notes": "Phase 5A: preparation configured/empty states on info step"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14130,21 +14128,22 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043",
-        "ACV7-IMPL-0045"
+        "ACV7-IMPL-0045",
+        "ACV7-IMPL-0215"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/patient",
+        "/clinics/:clinicKey/book/procedures/:procedureKey/time"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-patient.ejs",
+        "views/activeclinic/booking/procedure-time.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -14152,9 +14151,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "State/pattern boards not dedicated routes; validation + banners only",
-      "evidence": "Mapped to ACV7-IMPL-0043, ACV7-IMPL-0045 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/patient | /clinics/:clinicKey/book/procedures/:procedureKey/time / views/activeclinic/booking/procedure-patient.ejs | views/activeclinic/booking/procedure-time.ejs",
+      "notes": "Phase 5A: form validation states on patient/time steps"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14164,7 +14163,7 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0043"
@@ -14173,7 +14172,7 @@
         "/clinics/:clinicKey/book/procedures/:procedureKey"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-info.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14184,9 +14183,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Information is a section inside single procedure-entry page, not a multi-step info screen",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-info.ejs",
+      "notes": "Phase 5A dedicated procedure information step"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14196,7 +14195,7 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0043"
@@ -14205,7 +14204,7 @@
         "/clinics/:clinicKey/book/procedures/:procedureKey"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-info.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14216,9 +14215,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Information is a section inside single procedure-entry page, not a multi-step info screen",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-info.ejs",
+      "notes": "Phase 5A mobile info shares procedure-info route"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14228,21 +14227,17 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
-      "implementation_ids": [
-        "ACV7-IMPL-0043",
-        "ACV7-IMPL-0045"
-      ],
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
+      "implementation_ids": [],
       "route_paths": [
         "/clinics/:clinicKey/book/procedures/:procedureKey"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/partials/booking-summary.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -14250,9 +14245,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "State/pattern boards not dedicated routes; validation + banners only",
-      "evidence": "Mapped to ACV7-IMPL-0043, ACV7-IMPL-0045 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/partials/booking-summary.ejs",
+      "notes": "Phase 5A shared booking-summary on procedure wizard steps"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14262,16 +14257,16 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043"
+        "ACV7-IMPL-0045"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/patient"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-patient.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14282,9 +14277,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Patient details embedded in procedure-entry; not a separate wizard step route",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/patient / views/activeclinic/booking/procedure-patient.ejs",
+      "notes": "Phase 5A dedicated patient step"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14294,16 +14289,16 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043"
+        "ACV7-IMPL-0045"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/patient"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-patient.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14314,9 +14309,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Patient details embedded in procedure-entry; not a separate wizard step route",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/patient / views/activeclinic/booking/procedure-patient.ejs",
+      "notes": "Phase 5A mobile patient shares procedure-patient"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14326,21 +14321,17 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
-      "implementation_ids": [
-        "ACV7-IMPL-0043",
-        "ACV7-IMPL-0045"
-      ],
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
+      "implementation_ids": [],
       "route_paths": [
         "/clinics/:clinicKey/book/procedures/:procedureKey"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/partials/booking-wizard-progress.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -14348,9 +14339,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "State/pattern boards not dedicated routes; validation + banners only",
-      "evidence": "Mapped to ACV7-IMPL-0043, ACV7-IMPL-0045 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/partials/booking-wizard-progress.ejs",
+      "notes": "Phase 5A PROCEDURE_WIZARD_STEPS progress partial"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14360,16 +14351,16 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043"
+        "ACV7-IMPL-0216"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/review"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-review.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14380,9 +14371,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "No separate procedure review step; submit from entry form",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/review / views/activeclinic/booking/procedure-review.ejs",
+      "notes": "Phase 5A dedicated review step"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14392,16 +14383,16 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043"
+        "ACV7-IMPL-0216"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/review"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-review.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14412,9 +14403,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "No separate procedure review step; submit from entry form",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/review / views/activeclinic/booking/procedure-review.ejs",
+      "notes": "Phase 5A mobile review shares procedure-review"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14488,21 +14479,17 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
-      "implementation_ids": [
-        "ACV7-IMPL-0043",
-        "ACV7-IMPL-0045"
-      ],
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
+      "implementation_ids": [],
       "route_paths": [
         "/clinics/:clinicKey/book/procedures/:procedureKey"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/partials/sms-honesty-note.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -14510,9 +14497,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "State/pattern boards not dedicated routes; validation + banners only",
-      "evidence": "Mapped to ACV7-IMPL-0043, ACV7-IMPL-0045 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/partials/sms-honesty-note.ejs",
+      "notes": "Phase 5A SMS honesty note on wizard steps"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14618,31 +14605,29 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "PRODUCT_DECISION_DIFFERENCE",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043",
-        "ACV7-IMPL-0045"
+        "ACV7-IMPL-0214"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/referral"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-referral.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
         "MOBILE"
       ],
       "canonical_stitch_screen_id": null,
-      "product_difference": null,
-      "missing_requirement": "State/pattern boards not dedicated routes; validation + banners only",
-      "evidence": "Mapped to ACV7-IMPL-0043, ACV7-IMPL-0045 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "product_difference": "Stitch shows referral upload UI states; V7 has no secure public upload storage — honesty banner only",
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/referral / views/activeclinic/booking/procedure-referral.ejs",
+      "notes": "Phase 5A: referral step exists; upload remains product/backend gap"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14652,16 +14637,16 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043"
+        "ACV7-IMPL-0214"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/referral"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-referral.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14672,9 +14657,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Referral messaging exists on entry; no upload/clarification wizard screens",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/referral / views/activeclinic/booking/procedure-referral.ejs",
+      "notes": "Phase 5A referral clarification/honesty messaging"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14684,16 +14669,16 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043"
+        "ACV7-IMPL-0214"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/referral"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-referral.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14704,9 +14689,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Referral messaging exists on entry; no upload/clarification wizard screens",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/referral / views/activeclinic/booking/procedure-referral.ejs",
+      "notes": "Phase 5A dedicated referral requirements step"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14716,16 +14701,16 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043"
+        "ACV7-IMPL-0214"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/referral"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-referral.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -14736,9 +14721,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Referral messaging exists on entry; no upload/clarification wizard screens",
-      "evidence": "Mapped to ACV7-IMPL-0043 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/referral / views/activeclinic/booking/procedure-referral.ejs",
+      "notes": "Phase 5A mobile referral shares procedure-referral"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14748,21 +14733,19 @@
       "stitch_functional_area": "PROCEDURE_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0043",
-        "ACV7-IMPL-0045"
+        "ACV7-IMPL-0215"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book/procedures/:procedureKey"
+        "/clinics/:clinicKey/book/procedures/:procedureKey/time"
       ],
       "view_paths": [
-        "views/activeclinic/booking/procedure-entry.ejs"
+        "views/activeclinic/booking/procedure-time.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -14770,9 +14753,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "State/pattern boards not dedicated routes; validation + banners only",
-      "evidence": "Mapped to ACV7-IMPL-0043, ACV7-IMPL-0045 via /clinics/:clinicKey/book/procedures/:procedureKey / views/activeclinic/booking/procedure-entry.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5A: /clinics/:clinicKey/book/procedures/:procedureKey/time / views/activeclinic/booking/procedure-time.ejs",
+      "notes": "Phase 5A: request-based availability banner on time step; live slot PRODUCT_DECISION remains separate"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -16963,5 +16946,39 @@
     "remapped_former_not_implemented": 21,
     "expected": 21,
     "missing_after": 0
+  },
+  "phase5a_remap": {
+    "remapped_former_p25_partials": 16,
+    "expected": 16,
+    "p25_before": {
+      "total": 24,
+      "full": 5,
+      "partial": 16,
+      "missing": 0,
+      "product": 2,
+      "other": 1
+    },
+    "p25_after": {
+      "total": 24,
+      "full": 20,
+      "partial": 0,
+      "missing": 0,
+      "product": 3,
+      "other": 1
+    },
+    "overall_before": {
+      "full": 289,
+      "partial": 77,
+      "missing": 0,
+      "other": 22,
+      "total": 388
+    },
+    "overall_after": {
+      "full": 304,
+      "partial": 61,
+      "missing": 0,
+      "other": 23,
+      "total": 388
+    }
   }
 }
