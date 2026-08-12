@@ -1,0 +1,31 @@
+<%
+  var schedule = (pageData && pageData.schedule) || {};
+  var groups = schedule.staffGroups || [];
+  var stitch = schedule.stitch || {};
+%>
+<section class="ac-appointments-schedule" data-ac-page-section="appointments-schedule" data-ac-stitch-schedule="<%= stitch.desktop || '' %>">
+  <% if (!groups.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'appointments-schedule-none',
+      title: 'No scheduled work in this range',
+      description: 'Adjust the appointment date range to view staff schedules.'
+    }
+  }) %>
+  <% } %>
+  <% groups.forEach(function (group) { %>
+  <section class="ac-panel" data-ac-staff-schedule="<%= group.staffId || 'unassigned' %>">
+    <h2 class="ac-panel__title"><%= group.staffName %></h2>
+    <ol class="ac-timeline">
+      <% group.appointments.forEach(function (a) { %>
+      <li>
+        <a href="/app/appointments/<%= a.id %>"><strong><%= a.when.dateLabel %> · <%= a.when.timeLabel %></strong></a>
+        <div><%= (a.patient && a.patient.displayName) || 'Patient' %> · <%= (a.service && a.service.displayName) || 'Service' %></div>
+        <span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel %></span>
+      </li>
+      <% }) %>
+    </ol>
+  </section>
+  <% }) %>
+</section>

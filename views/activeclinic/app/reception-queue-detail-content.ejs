@@ -5,8 +5,12 @@
   var events = detail.statusEvents || [];
   var stitch = detail.stitch || {};
   var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var stale = pageData && pageData.stale === true;
 %>
 <section class="ac-queue-detail" data-ac-page-section="queue-detail" data-ac-stitch-called="<%= stitch.called || '' %>" data-ac-stitch-did-not-respond="<%= stitch.didNotRespond || '' %>" data-ac-stitch-transfer="<%= stitch.transfer || '' %>" data-ac-stitch-assignment="<%= stitch.assignment || '' %>">
+  <% if (stale) { %>
+  <div class="ac-alert ac-alert--warning" role="alert" data-ac-stale-warning="bf9b846da6174bf995793b09e869cd30">This queue entry changed while you were working. Review the latest status before trying again.</div>
+  <% } %>
   <div class="ac-panel">
     <h2 class="ac-panel__title">Queue entry</h2>
     <dl class="ac-dl">
@@ -83,12 +87,7 @@
       </form>
       <% } %>
       <% if (actions.canRequeue) { %>
-      <form method="post" action="/app/reception/queue/<%= e.id %>/requeue" class="ac-inline-form">
-        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-        <label class="ac-label" for="requeue_reason">Reason</label>
-        <input class="ac-input" id="requeue_reason" name="reason" maxlength="200" placeholder="Patient not present"/>
-        <button type="submit" class="ac-btn ac-btn--ghost">Return to waiting</button>
-      </form>
+      <a class="ac-btn ac-btn--ghost" href="/app/reception/queue/<%= e.id %>/did-not-respond">Patient did not respond</a>
       <% } %>
       <% if (actions.canMarkLeft) { %>
       <form method="post" action="/app/reception/queue/<%= e.id %>/left" class="ac-inline-form">
@@ -105,20 +104,10 @@
       </form>
       <% } %>
       <% if (actions.canAssign) { %>
-      <form method="post" action="/app/reception/queue/<%= e.id %>/assign" class="ac-inline-form" data-ac-queue-assignment="1">
-        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-        <label class="ac-label" for="assigned_room">Assigned room / desk</label>
-        <input class="ac-input" id="assigned_room" name="assigned_room" maxlength="64" value="<%= e.assignedRoom || '' %>" placeholder="e.g. Room 3"/>
-        <button type="submit" class="ac-btn ac-btn--ghost">Save assignment</button>
-      </form>
+      <a class="ac-btn ac-btn--ghost" href="/app/reception/queue/<%= e.id %>/assign">Assign room / desk</a>
       <% } %>
       <% if (actions.canTransfer) { %>
-      <form method="post" action="/app/reception/queue/<%= e.id %>/transfer" class="ac-inline-form" data-ac-queue-transfer="1">
-        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-        <label class="ac-label" for="transfer_reason">Transfer destination / reason</label>
-        <input class="ac-input" id="transfer_reason" name="reason" required maxlength="80" placeholder="e.g. Triage desk"/>
-        <button type="submit" class="ac-btn ac-btn--ghost">Transfer patient</button>
-      </form>
+      <a class="ac-btn ac-btn--ghost" href="/app/reception/queue/<%= e.id %>/transfer">Transfer patient</a>
       <% } %>
     </div>
   </div>

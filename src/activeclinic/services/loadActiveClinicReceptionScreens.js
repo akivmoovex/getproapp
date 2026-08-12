@@ -373,6 +373,56 @@ async function loadActiveClinicReceptionQueueDetailScreen(db, input) {
   };
 }
 
+async function loadReceptionActionScreen(db, input, mode) {
+  const loaded = await loadActiveClinicReceptionQueueDetailScreen(db, input);
+  if (!loaded.ok) return loaded;
+  let servicePoints = [];
+  if (mode === "transfer") {
+    servicePoints = await listServicePointsForFacility(db, {
+      organizationId: input.auth.organization.id,
+      healthcareOrganizationId: input.auth.healthcareOrganization.id,
+      facilityId: loaded.detail.queueEntry.facilityId,
+    });
+    servicePoints = servicePoints.filter(
+      (point) => point.id !== loaded.detail.queueEntry.servicePointId
+    );
+  }
+  return {
+    ok: true,
+    action: {
+      mode,
+      detail: loaded.detail,
+      queueEntry: loaded.detail.queueEntry,
+      servicePoints,
+      error: input.error || null,
+      stitch:
+        mode === "called"
+          ? STITCH.calledDesktop
+          : mode === "did-not-respond"
+            ? STITCH.didNotRespondDesktop
+            : mode === "assign"
+              ? STITCH.assignmentDesktop
+              : STITCH.transferDesktop,
+    },
+  };
+}
+
+async function loadActiveClinicReceptionCalledScreen(db, input) {
+  return loadReceptionActionScreen(db, input, "called");
+}
+
+async function loadActiveClinicReceptionDidNotRespondScreen(db, input) {
+  return loadReceptionActionScreen(db, input, "did-not-respond");
+}
+
+async function loadActiveClinicReceptionAssignScreen(db, input) {
+  return loadReceptionActionScreen(db, input, "assign");
+}
+
+async function loadActiveClinicReceptionTransferScreen(db, input) {
+  return loadReceptionActionScreen(db, input, "transfer");
+}
+
 async function loadActiveClinicReceptionCallBoardScreen(db, input) {
   const { auth } = input;
   const selectedFacility = auth.selectedFacility;
@@ -436,5 +486,9 @@ module.exports = {
   loadActiveClinicReceptionWalkInScreen,
   loadActiveClinicReceptionQueueDetailScreen,
   loadActiveClinicReceptionCallBoardScreen,
+  loadActiveClinicReceptionCalledScreen,
+  loadActiveClinicReceptionDidNotRespondScreen,
+  loadActiveClinicReceptionAssignScreen,
+  loadActiveClinicReceptionTransferScreen,
   listServicePointsForFacility,
 };

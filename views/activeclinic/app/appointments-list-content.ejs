@@ -6,6 +6,7 @@
   var actions = list.actions || {};
   var emptyMode = list.emptyMode;
   var stitch = list.stitch || {};
+  var statusSummary = list.statusSummary || {};
 %>
 <section class="ac-appointments" data-ac-page-section="appointment-list" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>" data-ac-stitch-shared="<%= stitch.shared || '' %>">
   <form class="ac-panel ac-filter-bar" method="get" action="/app/appointments" data-ac-appointment-filters="1">
@@ -55,7 +56,20 @@
     </div>
   </form>
 
-  <p class="ac-muted" data-ac-unavailable="reception-queue">Reception queue, walk-in encounters, and call-board actions are not available yet (no queue schema).</p>
+  <div class="ac-panel" data-ac-status-summary="appointments">
+    <h2 class="ac-panel__title">Status summary</h2>
+    <dl class="ac-dl ac-dl--compact">
+      <div><dt>Scheduled</dt><dd><%= statusSummary.scheduled || 0 %></dd></div>
+      <div><dt>Confirmed</dt><dd><%= statusSummary.confirmed || 0 %></dd></div>
+      <div><dt>Checked in</dt><dd><%= statusSummary.checked_in || 0 %></dd></div>
+      <div><dt>No-show</dt><dd><%= statusSummary.no_show || 0 %></dd></div>
+      <div><dt>Cancelled</dt><dd><%= statusSummary.cancelled || 0 %></dd></div>
+    </dl>
+    <div class="ac-form-actions">
+      <a class="ac-btn ac-btn--ghost" href="<%= actions.missedHref || '/app/appointments/missed' %>">Missed appointments</a>
+      <a class="ac-btn ac-btn--ghost" href="<%= actions.scheduleHref || '/app/appointments/schedule' %>">Doctor schedule</a>
+    </div>
+  </div>
 
   <% if (list.resultCount != null && !emptyMode) { %>
   <p class="ac-muted" data-ac-result-count="<%= list.resultCount %>"><%= list.resultCount %> appointment<%= list.resultCount === 1 ? '' : 's' %></p>

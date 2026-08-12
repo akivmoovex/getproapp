@@ -67,7 +67,7 @@
     <h2 class="ac-panel__title">Actions</h2>
     <div class="ac-form-actions">
       <% if (actions.canEdit) { %>
-      <a class="ac-btn" href="<%= actions.editHref %>">Reschedule / edit</a>
+      <a class="ac-btn" href="<%= actions.editHref %>">Reschedule appointment</a>
       <% } %>
       <% if (actions.canCheckIn) { %>
       <form method="post" action="/app/appointments/<%= a.id %>/check-in" class="ac-inline-form">
@@ -82,12 +82,7 @@
       </form>
       <% } %>
       <% if (actions.canCancel) { %>
-      <form method="post" action="/app/appointments/<%= a.id %>/cancel" class="ac-inline-form" data-ac-cancel-confirm="1">
-        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-        <label class="ac-label" for="cancel_reason">Cancel reason</label>
-        <input class="ac-input" id="cancel_reason" name="reason" required maxlength="200" placeholder="Reason"/>
-        <button type="submit" class="ac-btn ac-btn--danger">Cancel appointment</button>
-      </form>
+      <a class="ac-btn ac-btn--danger" href="<%= actions.cancelHref %>">Cancel appointment</a>
       <% } %>
     </div>
   </div>

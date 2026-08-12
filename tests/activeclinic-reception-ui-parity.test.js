@@ -27,6 +27,9 @@ const {
   createFacility,
 } = require("../src/activeclinic/services/facilityService");
 const {
+  ensureDefaultDepartments,
+} = require("../src/activeclinic/services/activeClinicDepartmentService");
+const {
   createStaffMember,
 } = require("../src/activeclinic/services/activeClinicStaffService");
 const {
@@ -35,6 +38,9 @@ const {
 const {
   assignStaffRole,
   NETWORK_ADMIN,
+  ORGANIZATION_ADMIN,
+  FACILITY_ADMIN,
+  RECEPTIONIST,
   STAFF_ROLE,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 const {
@@ -121,6 +127,11 @@ async function seedAcTenant(stamp, keyPrefix) {
     phone: nextPhone(),
   });
   assert.equal(facility.ok, true);
+  await ensureDefaultDepartments(pool, {
+    organizationId: org.records.organization.id,
+    healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facility.facility.id,
+  });
   return {
     orgId: org.records.organization.id,
     hcoId: hco.healthcareOrganization.id,
@@ -161,8 +172,8 @@ async function seedStaff(tenant, opts) {
     organizationId: tenant.orgId,
     staffMemberId: staff.staffMember.id,
     roleKey: opts.roleKey,
-    scopeType: opts.roleKey === NETWORK_ADMIN ? "organisation" : "facility",
-    facilityId: opts.roleKey === NETWORK_ADMIN ? null : tenant.facilityId,
+    scopeType: [NETWORK_ADMIN, ORGANIZATION_ADMIN].includes(opts.roleKey) ? "organisation" : "facility",
+    facilityId: [NETWORK_ADMIN, ORGANIZATION_ADMIN].includes(opts.roleKey) ? null : tenant.facilityId,
   });
   return { identity: identity.identity, staff: staff.staffMember };
 }
@@ -214,7 +225,7 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
     const tenant = await seedAcTenant(stamp, "recui");
     const other = await seedAcTenant(`${stamp}x`, "recui2");
     const admin = await seedStaff(tenant, {
-      roleKey: NETWORK_ADMIN,
+      roleKey: RECEPTIONIST,
       firstName: "Rec",
       lastName: "Admin",
     });
@@ -224,13 +235,19 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
       lastName: "Staff",
     });
     const otherAdmin = await seedStaff(other, {
-      roleKey: NETWORK_ADMIN,
+      roleKey: FACILITY_ADMIN,
       firstName: "Other",
       lastName: "Admin",
+    });
+    const registrar = await seedStaff(tenant, {
+      roleKey: RECEPTIONIST,
+      firstName: "Patient",
+      lastName: "Registrar",
     });
 
     const actor = {
       staffMemberId: admin.staff.id,
+      platformIdentityId: admin.identity.id,
       organizationId: tenant.orgId,
     };
 
@@ -238,11 +255,15 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
       organizationId: tenant.orgId,
       healthcareOrganizationId: tenant.hcoId,
       facilityId: tenant.facilityId,
-      actor,
+      actor: {
+        staffMemberId: registrar.staff.id,
+        platformIdentityId: registrar.identity.id,
+        organizationId: tenant.orgId,
+      },
       demographics: { firstName: "Bob", lastName: "Queue" },
       registrationMethod: "walk_in",
     });
-    assert.equal(patient.ok, true);
+    assert.equal(patient.ok, true, JSON.stringify(patient));
 
     const servicePoint = await receptionRepo.insertServicePoint(pool, {
       organizationId: tenant.orgId,
@@ -319,6 +340,32 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
     assert.match(queueDetail.text, /waiting|Waiting/i);
     assert.match(queueDetail.text, /Call patient/);
 
+    const staleDetail = await request(app)
+      .get(`/app/reception/queue/${entryId}?stale=1`)
+      .set("Cookie", adminCookieWithFacility);
+    assert.equal(staleDetail.status, 200);
+    assert.match(staleDetail.text, /data-ac-stale-warning/);
+
+    const assignScreen = await request(app)
+      .get(`/app/reception/queue/${entryId}/assign`)
+      .set("Cookie", adminCookieWithFacility);
+    assert.equal(assignScreen.status, 200);
+    assert.match(assignScreen.text, /data-ac-page-section="reception-queue-assign"/);
+
+    const { cookie: assignCookie, csrf: assignCsrf } = withCsrf(adminCookieWithFacility);
+    const assigned = await request(app)
+      .post(`/app/reception/queue/${entryId}/assign`)
+      .set("Cookie", assignCookie)
+      .type("form")
+      .send({ [CSRF_FIELD]: assignCsrf, assigned_room: "Room 3" });
+    assert.equal(assigned.status, 303);
+
+    const transferScreen = await request(app)
+      .get(`/app/reception/queue/${entryId}/transfer`)
+      .set("Cookie", adminCookieWithFacility);
+    assert.equal(transferScreen.status, 200);
+    assert.match(transferScreen.text, /data-ac-page-section="reception-queue-transfer"/);
+
     const { cookie: callCookie, csrf: callCsrf } = withCsrf(adminCookieWithFacility);
     const called = await request(app)
       .post(`/app/reception/queue/${entryId}/call`)
@@ -326,6 +373,35 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
       .type("form")
       .send({ [CSRF_FIELD]: callCsrf });
     assert.equal(called.status, 303);
+    assert.match(called.headers.location, /\/called$/);
+
+    const calledScreen = await request(app)
+      .get(called.headers.location)
+      .set("Cookie", adminCookieWithFacility);
+    assert.equal(calledScreen.status, 200);
+    assert.match(calledScreen.text, /data-ac-page-section="reception-queue-called"/);
+
+    const didNotRespondScreen = await request(app)
+      .get(`/app/reception/queue/${entryId}/did-not-respond`)
+      .set("Cookie", adminCookieWithFacility);
+    assert.equal(didNotRespondScreen.status, 200);
+    assert.match(didNotRespondScreen.text, /data-ac-page-section="reception-queue-did-not-respond"/);
+
+    const { cookie: noResponseCookie, csrf: noResponseCsrf } = withCsrf(adminCookieWithFacility);
+    const requeued = await request(app)
+      .post(`/app/reception/queue/${entryId}/did-not-respond`)
+      .set("Cookie", noResponseCookie)
+      .type("form")
+      .send({ [CSRF_FIELD]: noResponseCsrf, reason: "did_not_respond" });
+    assert.equal(requeued.status, 303);
+
+    const { cookie: recallCookie, csrf: recallCsrf } = withCsrf(adminCookieWithFacility);
+    const recalled = await request(app)
+      .post(`/app/reception/queue/${entryId}/call`)
+      .set("Cookie", recallCookie)
+      .type("form")
+      .send({ [CSRF_FIELD]: recallCsrf });
+    assert.equal(recalled.status, 303);
 
     const afterCall = await request(app)
       .get(`/app/reception/queue/${entryId}`)
@@ -391,13 +467,24 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
     const stamp = Date.now().toString(36);
     const tenant = await seedAcTenant(stamp, "recsch");
     const admin = await seedStaff(tenant, {
-      roleKey: NETWORK_ADMIN,
+      roleKey: RECEPTIONIST,
       firstName: "Scheduled",
+      lastName: "Admin",
+    });
+    const registrar = await seedStaff(tenant, {
+      roleKey: RECEPTIONIST,
+      firstName: "Scheduled",
+      lastName: "Registrar",
+    });
+    const scheduler = await seedStaff(tenant, {
+      roleKey: FACILITY_ADMIN,
+      firstName: "Schedule",
       lastName: "Admin",
     });
 
     const actor = {
       staffMemberId: admin.staff.id,
+      platformIdentityId: admin.identity.id,
       organizationId: tenant.orgId,
     };
 
@@ -405,16 +492,24 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
       organizationId: tenant.orgId,
       healthcareOrganizationId: tenant.hcoId,
       facilityId: tenant.facilityId,
-      actor,
+      actor: {
+        staffMemberId: registrar.staff.id,
+        platformIdentityId: registrar.identity.id,
+        organizationId: tenant.orgId,
+      },
       demographics: { firstName: "Scheduled", lastName: "Patient" },
       registrationMethod: "walk_in",
     });
-    assert.equal(patient.ok, true);
+    assert.equal(patient.ok, true, JSON.stringify(patient));
 
     const service = await createAppointmentServiceType(pool, {
       organizationId: tenant.orgId,
       healthcareOrganizationId: tenant.hcoId,
-      actor,
+      actor: {
+        staffMemberId: scheduler.staff.id,
+        platformIdentityId: scheduler.identity.id,
+        organizationId: tenant.orgId,
+      },
       serviceKey: "consult",
       displayName: "Consultation",
       defaultDurationMinutes: 30,

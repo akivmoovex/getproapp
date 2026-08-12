@@ -33,6 +33,11 @@ const {
   loadActiveClinicAppointmentCalendarScreen,
   loadActiveClinicAppointmentFormScreen,
   loadActiveClinicAppointmentDetailScreen,
+  loadActiveClinicAppointmentSuccessScreen,
+  loadActiveClinicAppointmentCancelScreen,
+  loadActiveClinicAppointmentRescheduleScreen,
+  loadActiveClinicAppointmentMissedScreen,
+  loadActiveClinicAppointmentScheduleScreen,
   listAvailableAppointmentSlots,
 } = require("../services/loadActiveClinicAppointmentScreens");
 const {
@@ -230,6 +235,68 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     }
   );
 
+  async function renderAppointmentListMode(req, res, next, mode) {
+    try {
+      const loader =
+        mode === "missed"
+          ? loadActiveClinicAppointmentMissedScreen
+          : loadActiveClinicAppointmentScheduleScreen;
+      const loaded = await loader(getPool(), {
+        auth: req.activeClinicAuth,
+        query: req.query,
+      });
+      if (!loaded.ok) {
+        return res.status(403).type("html").send(
+          renderSimpleState("Appointments unavailable", mapApptError(loaded.code), {
+            status: 403,
+            linkHref: "/app/appointments",
+            linkLabel: "Back to appointments",
+          })
+        );
+      }
+      const model = mode === "missed" ? loaded.list : loaded.schedule;
+      return renderShell(req, res, {
+        activeNav: "appointments",
+        content:
+          mode === "missed"
+            ? "app/appointments-missed-content.ejs"
+            : "app/appointments-schedule-content.ejs",
+        pageHeader: {
+          title: mode === "missed" ? "Missed appointments" : "Doctor schedule",
+          description:
+            mode === "missed"
+              ? "Appointments marked as no-show."
+              : "Real appointments grouped by assigned staff.",
+          actions: [{ href: "/app/appointments", label: "Appointment list" }],
+        },
+        breadcrumbs: [
+          { label: "Home", href: "/app" },
+          { label: "Appointments", href: "/app/appointments" },
+          { label: mode === "missed" ? "Missed" : "Schedule" },
+        ],
+        pageData: mode === "missed" ? { list: model } : { schedule: model },
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  app.get(
+    "/app/appointments/missed",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    requireDepartment("appointments"),
+    (req, res, next) => renderAppointmentListMode(req, res, next, "missed")
+  );
+
+  app.get(
+    "/app/appointments/schedule",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    requireDepartment("appointments"),
+    (req, res, next) => renderAppointmentListMode(req, res, next, "schedule")
+  );
+
   app.get(
     "/app/appointments/new",
     requireAuth,
@@ -394,7 +461,117 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
             pageData: { form: loaded.form },
           });
         }
-        return res.redirect(303, `/app/appointments/${created.appointment.id}?booked=1`);
+        return res.redirect(303, `/app/appointments/${created.appointment.id}/confirmed`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/appointments/:appointmentId/confirmed",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    requireDepartment("appointments"),
+    async (req, res, next) => {
+      try {
+        const appointmentId = String(req.params.appointmentId || "");
+        const loaded = await loadActiveClinicAppointmentSuccessScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          appointmentId,
+        });
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Appointment unavailable", mapApptError(loaded.code), {
+              status: 404,
+              linkHref: "/app/appointments",
+              linkLabel: "Back to appointments",
+            })
+          );
+        }
+        return renderShell(req, res, {
+          activeNav: "appointments",
+          content: "app/appointment-success-content.ejs",
+          pageHeader: { title: "Appointment confirmed" },
+          breadcrumbs: [
+            { label: "Appointments", href: "/app/appointments" },
+            { label: "Confirmed" },
+          ],
+          pageData: { success: loaded.success },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/appointments/:appointmentId/cancel",
+    requireAuth,
+    requirePermission(PERM.CANCEL),
+    requireDepartment("appointments"),
+    async (req, res, next) => {
+      try {
+        const appointmentId = String(req.params.appointmentId || "");
+        const loaded = await loadActiveClinicAppointmentCancelScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          appointmentId,
+        });
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Appointment unavailable", mapApptError(loaded.code), {
+              status: 404,
+              linkHref: "/app/appointments",
+              linkLabel: "Back to appointments",
+            })
+          );
+        }
+        return renderShell(req, res, {
+          activeNav: "appointments",
+          content: "app/appointment-cancel-content.ejs",
+          pageHeader: { title: "Cancel appointment" },
+          breadcrumbs: [
+            { label: "Appointments", href: "/app/appointments" },
+            { label: "Cancel" },
+          ],
+          pageData: { cancel: loaded.cancel },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/appointments/:appointmentId/reschedule",
+    requireAuth,
+    requirePermission(PERM.UPDATE),
+    requireDepartment("appointments"),
+    async (req, res, next) => {
+      try {
+        const appointmentId = String(req.params.appointmentId || "");
+        const loaded = await loadActiveClinicAppointmentRescheduleScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          appointmentId,
+        });
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Appointment unavailable", mapApptError(loaded.code), {
+              status: 404,
+              linkHref: "/app/appointments",
+              linkLabel: "Back to appointments",
+            })
+          );
+        }
+        return renderShell(req, res, {
+          activeNav: "appointments",
+          content: "app/appointment-form-content.ejs",
+          pageHeader: {
+            title: "Reschedule appointment",
+            description: "Review the replacement booking before confirming.",
+          },
+          pageData: { form: loaded.form },
+        });
       } catch (err) {
         return next(err);
       }
@@ -571,6 +748,29 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
         const values = parseAppointmentFormBody(req.body);
         const { startsAt, endsAt } = buildStartsEnds(values);
         const auth = req.activeClinicAuth;
+        if (!values.confirm) {
+          const loaded = await loadActiveClinicAppointmentRescheduleScreen(getPool(), {
+            auth,
+            appointmentId,
+            values,
+            review: true,
+          });
+          if (!loaded.ok) {
+            return res.status(404).type("html").send(
+              renderSimpleState("Appointment unavailable", mapApptError(loaded.code), {
+                status: 404,
+                linkHref: "/app/appointments",
+                linkLabel: "Back to appointments",
+              })
+            );
+          }
+          return renderShell(req, res, {
+            activeNav: "appointments",
+            content: "app/appointment-form-content.ejs",
+            pageHeader: { title: "Review reschedule" },
+            pageData: { form: loaded.form },
+          });
+        }
         const result = await rescheduleAppointment(getPool(), {
           organizationId: auth.organization.id,
           healthcareOrganizationId: auth.healthcareOrganization.id,

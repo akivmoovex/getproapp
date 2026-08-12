@@ -31,6 +31,10 @@ const {
   loadActiveClinicReceptionWalkInScreen,
   loadActiveClinicReceptionQueueDetailScreen,
   loadActiveClinicReceptionCallBoardScreen,
+  loadActiveClinicReceptionCalledScreen,
+  loadActiveClinicReceptionDidNotRespondScreen,
+  loadActiveClinicReceptionAssignScreen,
+  loadActiveClinicReceptionTransferScreen,
   actorFromAuth,
 } = require("../services/loadActiveClinicReceptionScreens");
 const {
@@ -544,7 +548,10 @@ function registerActiveClinicReceptionRoutes(app, deps) {
             { label: "Queue entry" },
           ],
           flash,
-          pageData: { detail: loaded.detail },
+          pageData: {
+            detail: loaded.detail,
+            stale: req.query.stale === "1",
+          },
         });
       } catch (err) {
         return next(err);
@@ -568,6 +575,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
         assignedRoom: String(req.body.assigned_room || "").trim() || undefined,
         deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
       });
+      if (result && result.responseSent) return;
       if (!result.ok) {
         if (result.code === QUEUE_RESULT.STALE_VERSION) {
           return res.redirect(303, `/app/reception?stale=1`);
@@ -586,11 +594,106 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     }
   }
 
+  async function renderQueueAction(req, res, next, options) {
+    try {
+      const entryId = String(req.params.entryId || "");
+      const loaded = await options.loader(getPool(), {
+        auth: req.activeClinicAuth,
+        queueEntryId: entryId,
+      });
+      if (!loaded.ok) {
+        return res.status(loaded.code === QUEUE_RESULT.ACCESS_DENIED ? 403 : 404).type("html").send(
+          renderSimpleState("Queue entry unavailable", mapReceptionError(loaded.code), {
+            status: loaded.code === QUEUE_RESULT.ACCESS_DENIED ? 403 : 404,
+            linkHref: "/app/reception",
+            linkLabel: "Back to reception",
+          })
+        );
+      }
+      return renderShell(req, res, {
+        activeNav: "reception",
+        content: options.content,
+        pageHeader: { title: options.title, description: options.description },
+        breadcrumbs: [
+          { label: "Reception", href: "/app/reception" },
+          { label: options.title },
+        ],
+        pageData: { action: loaded.action },
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  app.get(
+    "/app/reception/queue/:entryId/called",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    requireDepartment("reception"),
+    (req, res, next) =>
+      renderQueueAction(req, res, next, {
+        loader: loadActiveClinicReceptionCalledScreen,
+        content: "app/reception-queue-called-content.ejs",
+        title: "Patient called",
+        description: "The patient has been called to the service point.",
+      })
+  );
+
+  app.get(
+    "/app/reception/queue/:entryId/did-not-respond",
+    requireAuth,
+    requirePermission(PERM.MANAGE_QUEUE),
+    requireDepartment("reception"),
+    (req, res, next) =>
+      renderQueueAction(req, res, next, {
+        loader: loadActiveClinicReceptionDidNotRespondScreen,
+        content: "app/reception-queue-did-not-respond-content.ejs",
+        title: "Patient did not respond",
+        description: "Record the attempt and return the patient to waiting.",
+      })
+  );
+
+  app.get(
+    "/app/reception/queue/:entryId/assign",
+    requireAuth,
+    requirePermission(PERM.MANAGE_QUEUE),
+    requireDepartment("reception"),
+    (req, res, next) =>
+      renderQueueAction(req, res, next, {
+        loader: loadActiveClinicReceptionAssignScreen,
+        content: "app/reception-queue-assign-content.ejs",
+        title: "Queue assignment",
+        description: "Assign a room or desk without changing queue status.",
+      })
+  );
+
+  app.get(
+    "/app/reception/queue/:entryId/transfer",
+    requireAuth,
+    requirePermission(PERM.TRANSFER),
+    requireDepartment("reception"),
+    (req, res, next) =>
+      renderQueueAction(req, res, next, {
+        loader: loadActiveClinicReceptionTransferScreen,
+        content: "app/reception-queue-transfer-content.ejs",
+        title: "Transfer patient",
+        description: "Record the destination service point for this transfer.",
+      })
+  );
+
   app.post(
     "/app/reception/queue/:entryId/call",
     requireAuth,
     requirePermission(PERM.CALL_NEXT),
-    (req, res, next) => postQueueAction(req, res, next, callNextQueueEntry)
+    (req, res, next) =>
+      postQueueAction(req, res, next, async (db, input) => {
+        const result = await callNextQueueEntry(db, input);
+        if (result.ok) {
+          res.redirect(303, `/app/reception/queue/${input.queueEntryId}/called`);
+          return { ok: false, responseSent: true };
+        }
+        return result;
+      })
   );
 
   app.post(
@@ -655,6 +758,21 @@ function registerActiveClinicReceptionRoutes(app, deps) {
   );
 
   app.post(
+    "/app/reception/queue/:entryId/did-not-respond",
+    requireAuth,
+    requirePermission(PERM.MANAGE_QUEUE),
+    requireDepartment("reception"),
+    (req, res, next) =>
+      postQueueAction(req, res, next, (db, input) =>
+        appendQueueStatusEvent(db, {
+          ...input,
+          toStatus: "waiting",
+          reason: input.reason || "did_not_respond",
+        })
+      )
+  );
+
+  app.post(
     "/app/reception/queue/:entryId/cancel",
     requireAuth,
     requirePermission(PERM.CANCEL),
@@ -672,7 +790,64 @@ function registerActiveClinicReceptionRoutes(app, deps) {
     "/app/reception/queue/:entryId/transfer",
     requireAuth,
     requirePermission(PERM.TRANSFER),
-    (req, res, next) => postQueueAction(req, res, next, transferQueueEntry)
+    requireDepartment("reception"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const entryId = String(req.params.entryId || "");
+        const destinationId = String(req.body.service_point_id || "").trim();
+        const auth = req.activeClinicAuth;
+        const loaded = await loadActiveClinicReceptionTransferScreen(getPool(), {
+          auth,
+          queueEntryId: entryId,
+        });
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Queue entry unavailable", mapReceptionError(loaded.code), {
+              status: 404,
+              linkHref: "/app/reception",
+              linkLabel: "Back to reception",
+            })
+          );
+        }
+        const destination = loaded.action.servicePoints.find(
+          (point) => point.id === destinationId
+        );
+        if (!destination) {
+          loaded.action.error = "Select a valid destination service point.";
+          return renderShell(req, res, {
+            activeNav: "reception",
+            content: "app/reception-queue-transfer-content.ejs",
+            status: 400,
+            pageHeader: { title: "Transfer patient" },
+            pageData: { action: loaded.action },
+          });
+        }
+        const note = String(req.body.reason || "").trim();
+        const result = await transferQueueEntry(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          queueEntryId: entryId,
+          actor: actor(auth),
+          reason: `Transfer to ${destination.displayName}${note ? `: ${note}` : ""}`.slice(0, 200),
+          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+        });
+        if (!result.ok) {
+          return res.status(400).type("html").send(
+            renderSimpleState("Transfer failed", mapReceptionError(result.code), {
+              status: 400,
+              linkHref: `/app/reception/queue/${entryId}/transfer`,
+              linkLabel: "Back to transfer",
+            })
+          );
+        }
+        return res.redirect(303, `/app/reception/queue/${entryId}?updated=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
   );
 
   app.post(

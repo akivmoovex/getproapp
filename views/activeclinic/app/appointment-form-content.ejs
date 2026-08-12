@@ -2,7 +2,8 @@
   var form = (pageData && pageData.form) || {};
   var values = form.values || {};
   var stitch = form.stitch || {};
-  var isEdit = form.mode === 'edit';
+  var isEdit = form.mode === 'edit' || form.mode === 'reschedule';
+  var isReschedule = form.mode === 'reschedule';
   var review = form.review === true;
   var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
@@ -14,7 +15,7 @@
   <div class="ac-alert ac-alert--error" role="alert">Selected time is not available for the assigned staff.</div>
   <% } %>
 
-  <form class="ac-panel" method="post" action="<%= isEdit ? (form.rescheduleAction || form.formAction) : form.formAction %>" novalidate>
+  <form class="ac-panel" method="post" action="<%= form.formAction %>" novalidate>
     <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
     <% if (review) { %>
     <input type="hidden" name="confirm" value="1"/>
@@ -29,7 +30,7 @@
     <input type="hidden" name="timezone" value="<%= values.timezone || '' %>"/>
     <input type="hidden" name="scheduling_note" value="<%= values.schedulingNote || '' %>"/>
     <input type="hidden" name="reminder_channel" value="<%= values.reminderChannel || 'none' %>"/>
-    <h2 class="ac-panel__title">Review booking</h2>
+    <h2 class="ac-panel__title"><%= isReschedule ? 'Review reschedule' : 'Review booking' %></h2>
     <dl class="ac-dl">
       <div><dt>Patient</dt><dd><%= values.patientNumber || values.patientId || '—' %></dd></div>
       <div><dt>When</dt><dd><%= values.startsDate %> <%= values.startsTime %>–<%= values.endsTime %> (<%= values.timezone %>)</dd></div>
@@ -41,7 +42,7 @@
     </dl>
     <div class="ac-form-actions">
       <button type="submit" class="ac-btn"><%= isEdit ? 'Confirm reschedule' : 'Confirm booking' %></button>
-      <a class="ac-btn ac-btn--ghost" href="/app/appointments/new">Back</a>
+      <a class="ac-btn ac-btn--ghost" href="<%= isReschedule && form.appointment ? '/app/appointments/' + form.appointment.id + '/reschedule' : '/app/appointments/new' %>">Back</a>
     </div>
     <% } else { %>
     <fieldset class="ac-fieldset">

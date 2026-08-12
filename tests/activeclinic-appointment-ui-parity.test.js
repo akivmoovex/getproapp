@@ -27,6 +27,9 @@ const {
   createFacility,
 } = require("../src/activeclinic/services/facilityService");
 const {
+  ensureDefaultDepartments,
+} = require("../src/activeclinic/services/activeClinicDepartmentService");
+const {
   createStaffMember,
 } = require("../src/activeclinic/services/activeClinicStaffService");
 const {
@@ -35,6 +38,9 @@ const {
 const {
   assignStaffRole,
   NETWORK_ADMIN,
+  ORGANIZATION_ADMIN,
+  FACILITY_ADMIN,
+  RECEPTIONIST,
   STAFF_ROLE,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 const {
@@ -116,6 +122,11 @@ async function seedAcTenant(stamp, keyPrefix) {
     phone: nextPhone(),
   });
   assert.equal(facility.ok, true);
+  await ensureDefaultDepartments(pool, {
+    organizationId: org.records.organization.id,
+    healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facility.facility.id,
+  });
   return {
     orgId: org.records.organization.id,
     hcoId: hco.healthcareOrganization.id,
@@ -156,8 +167,8 @@ async function seedStaff(tenant, opts) {
     organizationId: tenant.orgId,
     staffMemberId: staff.staffMember.id,
     roleKey: opts.roleKey,
-    scopeType: opts.roleKey === NETWORK_ADMIN ? "organisation" : "facility",
-    facilityId: opts.roleKey === NETWORK_ADMIN ? null : tenant.facilityId,
+    scopeType: [NETWORK_ADMIN, ORGANIZATION_ADMIN].includes(opts.roleKey) ? "organisation" : "facility",
+    facilityId: [NETWORK_ADMIN, ORGANIZATION_ADMIN].includes(opts.roleKey) ? null : tenant.facilityId,
   });
   return { identity: identity.identity, staff: staff.staffMember };
 }
@@ -209,8 +220,13 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
     const tenant = await seedAcTenant(stamp, "apptui");
     const other = await seedAcTenant(`${stamp}x`, "apptui2");
     const admin = await seedStaff(tenant, {
-      roleKey: NETWORK_ADMIN,
+      roleKey: RECEPTIONIST,
       firstName: "Net",
+      lastName: "Admin",
+    });
+    const scheduler = await seedStaff(tenant, {
+      roleKey: FACILITY_ADMIN,
+      firstName: "Schedule",
       lastName: "Admin",
     });
     const plain = await seedStaff(tenant, {
@@ -219,19 +235,29 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
       lastName: "Staff",
     });
     const otherAdmin = await seedStaff(other, {
-      roleKey: NETWORK_ADMIN,
+      roleKey: FACILITY_ADMIN,
       firstName: "Other",
       lastName: "Admin",
+    });
+    const registrar = await seedStaff(tenant, {
+      roleKey: RECEPTIONIST,
+      firstName: "Patient",
+      lastName: "Registrar",
     });
 
     const actor = {
       staffMemberId: admin.staff.id,
+      platformIdentityId: admin.identity.id,
       organizationId: tenant.orgId,
     };
     const service = await createAppointmentServiceType(pool, {
       organizationId: tenant.orgId,
       healthcareOrganizationId: tenant.hcoId,
-      actor,
+      actor: {
+        staffMemberId: scheduler.staff.id,
+        platformIdentityId: scheduler.identity.id,
+        organizationId: tenant.orgId,
+      },
       serviceKey: "consult",
       displayName: "Consultation",
       defaultDurationMinutes: 30,
@@ -242,11 +268,15 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
       organizationId: tenant.orgId,
       healthcareOrganizationId: tenant.hcoId,
       facilityId: tenant.facilityId,
-      actor,
+      actor: {
+        staffMemberId: registrar.staff.id,
+        platformIdentityId: registrar.identity.id,
+        organizationId: tenant.orgId,
+      },
       demographics: { firstName: "Ann", lastName: "Appt" },
       registrationMethod: "walk_in",
     });
-    assert.equal(patient.ok, true);
+    assert.equal(patient.ok, true, JSON.stringify(patient));
 
     const starts = new Date("2026-11-10T09:00:00+02:00");
     const ends = new Date("2026-11-10T09:30:00+02:00");
@@ -278,6 +308,7 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
     assert.match(list.text, /data-ac-stitch-desktop="284e9f8cd6804b0eb0f50574e2f571d6"/);
     assert.match(list.text, /data-ac-table="appointments"/);
     assert.match(list.text, /data-ac-card-list="appointments"/);
+    assert.match(list.text, /data-ac-status-summary="appointments"/);
     assert.match(list.text, /Ann Appt|Consultation|Africa\/Lusaka|Scheduled/);
     assert.doesNotMatch(list.text, /\b(prescription|pharmacy stock|lab result)\b/i);
 
@@ -349,12 +380,30 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
       timezone: "Africa/Lusaka",
       actor,
     });
+    const cancelScreen = await request(app)
+      .get(`/app/appointments/${booked3.appointment.id}/cancel`)
+      .set("Cookie", adminCookie);
+    assert.equal(cancelScreen.status, 200);
+    assert.match(cancelScreen.text, /data-ac-page-section="appointment-cancel"/);
+
     const cancelled = await request(app)
       .post(`/app/appointments/${booked3.appointment.id}/cancel`)
       .set("Cookie", cancelCookie)
       .type("form")
       .send({ [CSRF_FIELD]: cancelCsrf, reason: "patient_request" });
     assert.equal(cancelled.status, 303);
+
+    const missed = await request(app)
+      .get("/app/appointments/missed?date=2026-11-11&date_to=2026-11-11")
+      .set("Cookie", adminCookie);
+    assert.equal(missed.status, 200);
+    assert.match(missed.text, /data-ac-page-section="appointments-missed"/);
+
+    const schedule = await request(app)
+      .get("/app/appointments/schedule?date=2026-11-10&date_to=2026-11-16")
+      .set("Cookie", adminCookie);
+    assert.equal(schedule.status, 200);
+    assert.match(schedule.text, /data-ac-page-section="appointments-schedule"/);
 
     const newForm = await request(app)
       .get("/app/appointments/new")
@@ -400,7 +449,71 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
         reminder_channel: "sms",
       });
     assert.equal(created.status, 303);
-    assert.match(created.headers.location, /\/app\/appointments\/[0-9a-f-]+\?booked=1/);
+    assert.match(created.headers.location, /\/app\/appointments\/[0-9a-f-]+\/confirmed/);
+
+    const confirmed = await request(app)
+      .get(created.headers.location)
+      .set("Cookie", adminCookie);
+    assert.equal(confirmed.status, 200);
+    assert.match(confirmed.text, /data-ac-page-section="appointment-success"/);
+
+    const rescheduleScreen = await request(app)
+      .get(`/app/appointments/${booked.appointment.id}/reschedule`)
+      .set("Cookie", adminCookie);
+    assert.equal(rescheduleScreen.status, 404);
+
+    const rescheduleTarget = await createAppointment(pool, {
+      organizationId: tenant.orgId,
+      healthcareOrganizationId: tenant.hcoId,
+      facilityId: tenant.facilityId,
+      patientId: patient.patient.id,
+      serviceTypeId: service.serviceType.id,
+      startsAt: new Date("2026-11-18T09:00:00+02:00"),
+      endsAt: new Date("2026-11-18T09:30:00+02:00"),
+      timezone: "Africa/Lusaka",
+      actor,
+    });
+    assert.equal(rescheduleTarget.ok, true, JSON.stringify(rescheduleTarget));
+    const rescheduleGet = await request(app)
+      .get(`/app/appointments/${rescheduleTarget.appointment.id}/reschedule`)
+      .set("Cookie", adminCookie);
+    assert.equal(rescheduleGet.status, 200);
+    assert.match(rescheduleGet.text, /data-ac-page-section="appointment-reschedule"/);
+
+    const { cookie: reviewCookie, csrf: reviewCsrf } = withCsrf(adminCookie);
+    const rescheduleReview = await request(app)
+      .post(`/app/appointments/${rescheduleTarget.appointment.id}/reschedule`)
+      .set("Cookie", reviewCookie)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: reviewCsrf,
+        patient_number: patient.patient.patientNumber,
+        facility_id: tenant.facilityId,
+        service_type_id: service.serviceType.id,
+        starts_date: "2026-11-19",
+        starts_time: "09:00",
+        ends_time: "09:30",
+        timezone: "Africa/Lusaka",
+      });
+    assert.equal(rescheduleReview.status, 200);
+    assert.match(rescheduleReview.text, /Review reschedule/);
+
+    const { cookie: rescheduleCookie, csrf: rescheduleCsrf } = withCsrf(adminCookie);
+    const rescheduled = await request(app)
+      .post(`/app/appointments/${rescheduleTarget.appointment.id}/reschedule`)
+      .set("Cookie", rescheduleCookie)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: rescheduleCsrf,
+        confirm: "1",
+        facility_id: tenant.facilityId,
+        assigned_staff_id: "",
+        starts_date: "2026-11-19",
+        starts_time: "09:00",
+        ends_time: "09:30",
+        timezone: "Africa/Lusaka",
+      });
+    assert.equal(rescheduled.status, 303);
 
     const staffCookie = await sessionCookie(plain.identity.id, tenant.orgId);
     const denied = await request(app)
@@ -415,9 +528,10 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
     assert.ok(cross.status === 403 || cross.status === 404);
 
     const encounters = await pool.query(
-      `SELECT table_name FROM information_schema.tables
-        WHERE table_schema = 'activeclinic' AND table_name LIKE '%encounter%'`
+      `SELECT COUNT(*)::int AS c FROM activeclinic.encounters
+        WHERE organization_id = $1`,
+      [tenant.orgId]
     );
-    assert.equal(encounters.rows.length, 0);
+    assert.equal(encounters.rows[0].c, 0);
   });
 });

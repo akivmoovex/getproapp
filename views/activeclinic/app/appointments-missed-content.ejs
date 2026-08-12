@@ -1,0 +1,34 @@
+<%
+  var list = (pageData && pageData.list) || {};
+  var appointments = list.appointments || [];
+  var stitch = list.stitch || {};
+%>
+<section class="ac-appointments" data-ac-page-section="appointments-missed" data-ac-stitch-missed="<%= stitch.desktop || '' %>">
+  <% if (!appointments.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'appointments-missed-none',
+      title: 'No missed appointments',
+      description: 'No appointments in this range are marked no-show.'
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table" data-ac-table="missed-appointments">
+      <thead><tr><th>When</th><th>Patient</th><th>Service</th><th>Staff</th><th>Status</th></tr></thead>
+      <tbody>
+        <% appointments.forEach(function (a) { %>
+        <tr>
+          <td><a href="/app/appointments/<%= a.id %>"><%= a.when.dateLabel %></a><div class="ac-muted"><%= a.when.timeLabel %></div></td>
+          <td><%= (a.patient && a.patient.displayName) || '—' %></td>
+          <td><%= (a.service && a.service.displayName) || '—' %></td>
+          <td><%= (a.assignedStaff && a.assignedStaff.displayName) || 'Unassigned' %></td>
+          <td><span class="ac-status" data-ac-status="no_show">No-show</span></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>

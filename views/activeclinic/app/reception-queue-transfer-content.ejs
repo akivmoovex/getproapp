@@ -1,0 +1,28 @@
+<%
+  var action = (pageData && pageData.action) || {};
+  var e = action.queueEntry || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-queue-transfer" data-ac-page-section="reception-queue-transfer" data-ac-stitch-transfer="<%= action.stitch || '' %>">
+  <div class="ac-panel">
+    <h2 class="ac-panel__title">Transfer patient</h2>
+    <p class="ac-muted">This records the destination and closes this queue entry as transferred. It does not create a new destination queue entry.</p>
+    <% if (action.error) { %><div class="ac-alert ac-alert--error" role="alert"><%= action.error %></div><% } %>
+    <form method="post" action="/app/reception/queue/<%= e.id %>/transfer">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+      <label class="ac-label" for="service_point_id">Destination service point</label>
+      <select class="ac-select" id="service_point_id" name="service_point_id" required>
+        <option value="">Select destination</option>
+        <% (action.servicePoints || []).forEach(function (point) { %>
+        <option value="<%= point.id %>"><%= point.displayName %></option>
+        <% }) %>
+      </select>
+      <label class="ac-label" for="transfer_reason">Transfer note (optional)</label>
+      <textarea class="ac-input" id="transfer_reason" name="reason" maxlength="120" rows="3"></textarea>
+      <div class="ac-form-actions">
+        <button type="submit" class="ac-btn">Confirm transfer</button>
+        <a class="ac-btn ac-btn--ghost" href="/app/reception/queue/<%= e.id %>">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
