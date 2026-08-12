@@ -1,0 +1,49 @@
+<%
+  var selectBatch = (pageData && pageData) || {};
+  var prescription = selectBatch.prescription || {};
+  var item = selectBatch.item || {};
+  var batches = selectBatch.batches || [];
+  var returnHref = selectBatch.returnHref || '#';
+  var error = selectBatch.error;
+  var stitch = selectBatch.stitch || {};
+%>
+<section class="ac-pharmacy-select-batch" data-ac-page-section="pharmacy-select-batch" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <div class="ac-panel">
+    <h2>Select medicine batch</h2>
+    <p class="ac-muted">Prescription <%= prescription.prescriptionNumber %> · <strong><%= item.medicationGenericName %></strong></p>
+    <p>Remaining to dispense: <%= (item.quantityOrdered || 0) - (item.quantityDispensed || 0) %> <%= item.medicationUnit || '' %></p>
+  </div>
+
+  <% if (!batches.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'select-batch-empty',
+      title: 'No available batches',
+      description: 'Receive stock or choose another medication line.',
+      primaryAction: { href: '/app/pharmacy/inventory/receive', label: 'Receive stock' },
+      secondaryAction: { href: returnHref, label: 'Back to dispense' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-batch-cards">
+    <% batches.forEach(function (batch) { %>
+    <article class="ac-card ac-batch-card">
+      <h3><%= batch.batchNumber %></h3>
+      <p><%= batch.quantityInBatch %> <%= item.medicationUnit || '' %> available</p>
+      <p class="ac-muted">Expires <%= batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString() : '—' %></p>
+      <a class="ac-btn ac-btn--primary" href="<%= returnHref %>?batch_<%= item.id %>=<%= batch.id %>">Use this batch</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/pharmacy/inventory/batches/<%= batch.id %>">View batch detail</a>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <div class="ac-panel">
+    <a href="<%= returnHref %>" class="ac-btn ac-btn--secondary">Back to dispense review</a>
+  </div>
+</section>

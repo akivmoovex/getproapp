@@ -38,7 +38,7 @@
         <tr>
           <td><strong><%= batch.medicationGenericName || '—' %></strong></td>
           <td><%= batch.medicationStrength || '—' %></td>
-          <td><%= batch.batchNumber %></td>
+          <td><a href="/app/pharmacy/inventory/batches/<%= batch.id %>"><%= batch.batchNumber %></a></td>
           <td><%= batch.quantityInBatch %></td>
           <td class="ac-text-warning"><%= batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString() : '—' %></td>
         </tr>

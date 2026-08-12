@@ -1123,6 +1123,151 @@ async function createPharmacyPrescription(pool, input) {
   }
 }
 
+/**
+ * List available batches for a medication at a facility (FEFO order).
+ * Permission: activeclinic.inventory.view
+ */
+async function listAvailableBatchesForMedication(pool, input) {
+  const { staffId, organizationId, facilityId, medicationCatalogueItemId } = input;
+
+  if (!staffId || !organizationId || !facilityId || !medicationCatalogueItemId) {
+    return { ok: false, result: RESULT.INVALID_INPUT, batches: [] };
+  }
+
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_VIEW,
+    facilityId,
+  });
+  if (!authResult.ok) {
+    return { ok: false, result: RESULT.ACCESS_DENIED, batches: [] };
+  }
+
+  const result = await pool.query(
+    `SELECT ib.*,
+       mci.generic_name AS medication_generic_name,
+       mci.strength AS medication_strength,
+       mci.dosage_form AS medication_dosage_form,
+       mci.unit_of_measure AS medication_unit
+     FROM activeclinic.inventory_batches ib
+     JOIN activeclinic.inventory_items ii ON ib.inventory_item_id = ii.id
+     JOIN activeclinic.medication_catalogue_items mci ON ii.medication_catalogue_item_id = mci.id
+     WHERE ib.facility_id = $1
+       AND ii.medication_catalogue_item_id = $2
+       AND ib.status = 'available'
+       AND ib.quantity_in_batch > 0
+       AND ib.expiry_date >= CURRENT_DATE
+     ORDER BY ib.expiry_date ASC, ib.received_at ASC`,
+    [facilityId, medicationCatalogueItemId]
+  );
+
+  return { ok: true, result: RESULT.OK, batches: result.rows.map(mapInventoryBatch) };
+}
+
+/**
+ * Get inventory batch detail with medication context.
+ * Permission: activeclinic.inventory.view
+ */
+async function getInventoryBatchById(pool, input) {
+  const { staffId, organizationId, facilityId, batchId } = input;
+
+  if (!staffId || !organizationId || !facilityId || !batchId) {
+    return { ok: false, result: RESULT.INVALID_INPUT, batch: null, inventoryItem: null };
+  }
+
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_VIEW,
+    facilityId,
+  });
+  if (!authResult.ok) {
+    return { ok: false, result: RESULT.ACCESS_DENIED, batch: null, inventoryItem: null };
+  }
+
+  const result = await pool.query(
+    `SELECT ib.*,
+       mci.generic_name AS medication_generic_name,
+       mci.strength AS medication_strength,
+       mci.dosage_form AS medication_dosage_form,
+       mci.unit_of_measure AS medication_unit,
+       ii.current_quantity AS inventory_current_quantity,
+       ii.reorder_level AS inventory_reorder_level
+     FROM activeclinic.inventory_batches ib
+     JOIN activeclinic.inventory_items ii ON ib.inventory_item_id = ii.id
+     JOIN activeclinic.medication_catalogue_items mci ON ii.medication_catalogue_item_id = mci.id
+     WHERE ib.id = $1
+       AND ib.organization_id = $2
+       AND ib.facility_id = $3`,
+    [batchId, organizationId, facilityId]
+  );
+
+  if (result.rows.length === 0) {
+    return { ok: false, result: RESULT.BATCH_NOT_FOUND, batch: null, inventoryItem: null };
+  }
+
+  const row = result.rows[0];
+  const batch = mapInventoryBatch(row);
+  batch.medicationDosageForm = row.medication_dosage_form || null;
+  batch.medicationUnit = row.medication_unit || null;
+  batch.inventoryCurrentQuantity = row.inventory_current_quantity;
+  batch.inventoryReorderLevel = row.inventory_reorder_level;
+
+  return {
+    ok: true,
+    result: RESULT.OK,
+    batch,
+    inventoryItem: {
+      id: row.inventory_item_id,
+      currentQuantity: row.inventory_current_quantity,
+      reorderLevel: row.inventory_reorder_level,
+    },
+  };
+}
+
+/**
+ * List stock movements for a batch (append-only ledger).
+ * Permission: activeclinic.inventory.view
+ */
+async function listStockMovementsForBatch(pool, input) {
+  const { staffId, organizationId, facilityId, batchId, limit = 50 } = input;
+
+  if (!staffId || !organizationId || !facilityId || !batchId) {
+    return { ok: false, result: RESULT.INVALID_INPUT, movements: [] };
+  }
+
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_VIEW,
+    facilityId,
+  });
+  if (!authResult.ok) {
+    return { ok: false, result: RESULT.ACCESS_DENIED, movements: [] };
+  }
+
+  const result = await pool.query(
+    `SELECT sm.*,
+       sm2.display_name AS performed_by_staff_display_name,
+       mci.generic_name AS medication_generic_name,
+       ib.batch_number
+     FROM activeclinic.stock_movements sm
+     LEFT JOIN activeclinic.staff_members sm2 ON sm.performed_by_staff_id = sm2.id
+     LEFT JOIN activeclinic.inventory_items ii ON sm.inventory_item_id = ii.id
+     LEFT JOIN activeclinic.medication_catalogue_items mci ON ii.medication_catalogue_item_id = mci.id
+     LEFT JOIN activeclinic.inventory_batches ib ON sm.inventory_batch_id = ib.id
+     WHERE sm.inventory_batch_id = $1
+       AND sm.organization_id = $2
+       AND sm.facility_id = $3
+     ORDER BY sm.created_at DESC
+     LIMIT $4`,
+    [batchId, organizationId, facilityId, Math.min(Math.max(limit, 1), 100)]
+  );
+
+  return { ok: true, result: RESULT.OK, movements: result.rows.map(mapStockMovement) };
+}
+
 module.exports = {
   RESULT,
   PERM,
@@ -1133,6 +1278,9 @@ module.exports = {
   listInventoryItems,
   listLowStockItems,
   listExpiringBatches,
+  listAvailableBatchesForMedication,
+  getInventoryBatchById,
+  listStockMovementsForBatch,
   listPrescriptionQueue,
   getPrescriptionById,
   dispensePrescription,

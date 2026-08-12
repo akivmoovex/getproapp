@@ -2,98 +2,111 @@
   var dispense = (pageData && pageData) || {};
   var prescription = dispense.prescription || {};
   var items = dispense.items || [];
-  var availableInventory = dispense.availableInventory || [];
+  var batchesByMedication = dispense.batchesByMedication || {};
+  var selectedBatches = dispense.selectedBatches || {};
   var error = dispense.error;
-  var facility = dispense.facility || {};
-  var actions = dispense.actions || {};
   var stitch = dispense.stitch || {};
+  var step = dispense.step || 'review';
+  var isPartial = dispense.isPartial === true;
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
-<section class="ac-pharmacy-dispense" data-ac-page-section="pharmacy-dispense" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+<section class="ac-pharmacy-dispense" data-ac-page-section="pharmacy-dispense" data-ac-dispense-step="<%= step %>" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>" data-ac-stitch-review="<%= stitch.review || '' %>" data-ac-stitch-partial="<%= stitch.partial || '' %>">
   <% if (error) { %>
-  <div class="ac-panel ac-alert ac-alert--error">
-    <%= error %>
-  </div>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
   <% } %>
+
+  <nav class="ac-stepper ac-stepper--pharmacy" aria-label="Dispensing steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Review</li>
+      <li class="ac-stepper__item">Confirm</li>
+      <li class="ac-stepper__item">Completed</li>
+    </ol>
+  </nav>
 
   <div class="ac-panel">
     <dl class="ac-detail-list">
       <dt>Prescription</dt>
       <dd><strong><%= prescription.prescriptionNumber || '—' %></strong></dd>
-      
       <dt>Patient</dt>
       <dd><%= prescription.patientDisplayName || '—' %></dd>
     </dl>
   </div>
 
-  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-form">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+  <% if (isPartial) { %>
+  <div class="ac-alert ac-alert--warning" role="status">Partial dispensing — quantities below the remaining amount will leave items open.</div>
+  <% } %>
 
-    <div class="ac-panel">
-      <h3>Items to Dispense</h3>
+  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-form">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>">
+
+    <div class="ac-panel ac-dispense-items">
+      <h3>Review items</h3>
       <% if (!items.length) { %>
       <p class="ac-muted">No items to dispense.</p>
       <% } else { %>
-      <% items.forEach(function (item) { 
+      <% items.forEach(function (item) {
         var remainingQty = item.quantityOrdered - item.quantityDispensed;
+        var batches = batchesByMedication[item.medicationCatalogueItemId] || [];
+        var selectedBatchId = selectedBatches[item.id] || '';
       %>
-      <div class="ac-dispense-item">
+      <article class="ac-dispense-item ac-card">
         <input type="hidden" name="item_<%= item.id %>" value="<%= item.id %>">
-        <div class="ac-dispense-item-header">
-          <strong><%= item.medicationGenericName %></strong> - <%= item.medicationStrength %> (<%= item.medicationDosageForm %>)
-        </div>
-        <div class="ac-dispense-item-details">
-          <p><strong>Dosage:</strong> <%= item.dosageInstructions || '—' %></p>
-          <p><strong>Remaining to dispense:</strong> <%= remainingQty %> <%= item.medicationUnit %></p>
-        </div>
+        <header class="ac-dispense-item-header">
+          <strong><%= item.medicationGenericName %></strong>
+          <% if (item.medicationStrength) { %> — <%= item.medicationStrength %><% } %>
+          <% if (item.medicationDosageForm) { %> (<%= item.medicationDosageForm %>)<% } %>
+        </header>
+        <p class="ac-muted"><strong>Dosage:</strong> <%= item.dosageInstructions || '—' %></p>
+        <p><strong>Remaining:</strong> <%= remainingQty %> <%= item.medicationUnit || '' %></p>
         <div class="ac-form-field">
           <label for="quantity_<%= item.id %>" class="ac-form-label">Quantity to dispense</label>
-          <input type="number" id="quantity_<%= item.id %>" name="quantity_<%= item.id %>" min="0" max="<%= remainingQty %>" value="<%= remainingQty %>" class="ac-form-input">
+          <input type="number" id="quantity_<%= item.id %>" name="quantity_<%= item.id %>" min="0" max="<%= remainingQty %>" value="<%= remainingQty %>" class="ac-form-input" inputmode="numeric"/>
         </div>
         <div class="ac-form-field">
-          <label for="batch_<%= item.id %>" class="ac-form-label">Select batch</label>
-          <select id="batch_<%= item.id %>" name="batch_<%= item.id %>" class="ac-form-input">
+          <label for="batch_<%= item.id %>" class="ac-form-label">Batch</label>
+          <select id="batch_<%= item.id %>" name="batch_<%= item.id %>" class="ac-form-input" required>
             <option value="">Select batch</option>
-            <% availableInventory.filter(function(inv) { return inv.medicationCatalogueItemId === item.medicationCatalogueItemId }).forEach(function(inv) { %>
-            <option value="<%= inv.id %>">Available: <%= inv.currentQuantity %> <%= inv.medicationUnit %></option>
+            <% batches.forEach(function (batch) { %>
+            <option value="<%= batch.id %>" <%= selectedBatchId === batch.id ? 'selected' : '' %>>
+              <%= batch.batchNumber %> · <%= batch.quantityInBatch %> <%= item.medicationUnit || '' %> · exp <%= batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString() : '—' %>
+            </option>
             <% }) %>
           </select>
+          <p class="ac-muted"><a href="/app/pharmacy/prescriptions/<%= prescription.id %>/items/<%= item.id %>/select-batch">Select batch (dedicated screen)</a></p>
         </div>
-      </div>
+      </article>
       <% }) %>
       <% } %>
     </div>
 
     <div class="ac-panel">
       <div class="ac-form-field">
-        <label for="dispenseType" class="ac-form-label">Dispense Type</label>
+        <label for="dispenseType" class="ac-form-label">Dispense type</label>
         <select id="dispenseType" name="dispenseType" class="ac-form-input">
           <option value="full">Full dispense</option>
           <option value="partial">Partial dispense</option>
         </select>
       </div>
-
       <div class="ac-form-field">
         <label class="ac-form-label">
           <input type="checkbox" name="patientAcknowledged" value="true" class="ac-form-checkbox">
           Patient acknowledged receipt
         </label>
       </div>
-
       <div class="ac-form-field">
         <label class="ac-form-label">
           <input type="checkbox" name="counselingProvided" value="true" class="ac-form-checkbox">
           Counseling provided
         </label>
       </div>
-
       <div class="ac-form-field">
-        <label for="counselingNotes" class="ac-form-label">Counseling Notes</label>
+        <label for="counselingNotes" class="ac-form-label">Counseling notes</label>
         <textarea id="counselingNotes" name="counselingNotes" rows="3" class="ac-form-input"></textarea>
       </div>
     </div>
 
     <div class="ac-panel ac-form-actions">
-      <button type="submit" class="ac-btn ac-btn--primary">Confirm Dispense</button>
+      <button type="submit" class="ac-btn ac-btn--primary">Continue to confirmation</button>
       <a href="/app/pharmacy/prescriptions/<%= prescription.id %>" class="ac-btn ac-btn--secondary">Cancel</a>
     </div>
   </form>
@@ -106,10 +119,9 @@
       <% items.forEach(function (item) { %>
       <div class="ac-medicine-instructions__item">
         <strong><%= item.medicationGenericName %></strong>
-        <% if (item.medicationStrength) { %> — <%= item.medicationStrength %><% } %>
-        <p><%= item.dosageInstructions || 'Dosage instructions will appear here after the clinician records them.' %></p>
+        <p><%= item.dosageInstructions || 'Dosage instructions recorded by the prescriber.' %></p>
       </div>
-      <% }); %>
+      <% }) %>
     <% } %>
   </aside>
 </section>

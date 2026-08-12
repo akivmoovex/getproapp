@@ -1,0 +1,69 @@
+<%
+  var dispense = (pageData && pageData) || {};
+  var prescription = dispense.prescription || {};
+  var items = dispense.items || [];
+  var reviewValues = dispense.reviewValues || {};
+  var batchesByMedication = dispense.batchesByMedication || {};
+  var isPartial = dispense.isPartial === true;
+  var error = dispense.error;
+  var stitch = dispense.stitch || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-pharmacy-dispense-confirm" data-ac-page-section="pharmacy-dispense-confirm" data-ac-dispense-step="confirm" data-ac-stitch-desktop="<%= stitch.confirmation || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <nav class="ac-stepper ac-stepper--pharmacy" aria-label="Dispensing steps">
+    <ol class="ac-stepper__list">
+      <li class="ac-stepper__item">Review</li>
+      <li class="ac-stepper__item ac-stepper__item--active" aria-current="step">Confirm</li>
+      <li class="ac-stepper__item">Completed</li>
+    </ol>
+  </nav>
+
+  <div class="ac-panel">
+    <h2>Confirm dispensing</h2>
+    <p class="ac-muted">Prescription <strong><%= prescription.prescriptionNumber %></strong> · <%= prescription.patientDisplayName || '—' %></p>
+    <% if (isPartial || reviewValues.dispenseType === 'partial') { %>
+    <div class="ac-alert ac-alert--warning" role="status" data-ac-stitch-partial="<%= stitch.partial || '' %>">Partial dispensing selected.</div>
+    <% } %>
+  </div>
+
+  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-form">
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>">
+    <input type="hidden" name="confirm" value="1">
+    <input type="hidden" name="dispenseType" value="<%= reviewValues.dispenseType || 'full' %>">
+    <input type="hidden" name="patientAcknowledged" value="<%= reviewValues.patientAcknowledged || '' %>">
+    <input type="hidden" name="counselingProvided" value="<%= reviewValues.counselingProvided || '' %>">
+    <input type="hidden" name="counselingNotes" value="<%= reviewValues.counselingNotes || '' %>">
+
+    <div class="ac-panel">
+      <h3>Summary</h3>
+      <ul class="ac-summary-list">
+        <% items.forEach(function (item) {
+          var qty = reviewValues['quantity_' + item.id] || '0';
+          var batchId = reviewValues['batch_' + item.id] || '';
+          var batches = batchesByMedication[item.medicationCatalogueItemId] || [];
+          var batch = batches.find(function (b) { return b.id === batchId; }) || null;
+        %>
+        <li>
+          <input type="hidden" name="item_<%= item.id %>" value="<%= item.id %>">
+          <input type="hidden" name="quantity_<%= item.id %>" value="<%= qty %>">
+          <input type="hidden" name="batch_<%= item.id %>" value="<%= batchId %>">
+          <strong><%= item.medicationGenericName %></strong>
+          — <%= qty %> <%= item.medicationUnit || '' %>
+          <% if (batch) { %>
+          · Batch <%= batch.batchNumber %> (exp <%= batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString() : '—' %>)
+          <% } %>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+
+    <div class="ac-panel ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Confirm dispense</button>
+      <a href="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-btn ac-btn--secondary">Back to review</a>
+    </div>
+  </form>
+</section>

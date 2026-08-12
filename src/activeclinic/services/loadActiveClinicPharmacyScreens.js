@@ -11,6 +11,9 @@ const {
   listInventoryItems,
   listLowStockItems,
   listExpiringBatches,
+  listAvailableBatchesForMedication,
+  getInventoryBatchById,
+  listStockMovementsForBatch,
   listPrescriptionQueue,
   getPrescriptionById,
   RESULT: PHARM_RESULT,
@@ -43,6 +46,7 @@ const STITCH = Object.freeze({
   inventoryDesktop: "1f079e7d3f9c464c8754fa09a09f2626",
   inventoryMobile: "a0cb61de9f0f4eaa8d732d4cf143f090",
   batchDetailDesktop: "6c0795f36aef4fe3b634dc350d230672",
+  selectBatchDesktop: "a7649e64ba1e4eee8ca0bcb6a54594bd",
   lowStockDesktop: "553dd601642d41abb89cf4c7127c221a",
   expiryAlertsDesktop: "fcba0b2ed1334eacad9647e597f66959",
   prescriptionQueueDesktop: "5472760fda8148cf8611564236ae2247",
@@ -399,7 +403,7 @@ async function loadActiveClinicPharmacyPrescriptionDetailScreen(db, input) {
 }
 
 async function loadActiveClinicPharmacyDispenseScreen(db, input) {
-  const { auth, prescriptionId, error } = input;
+  const { auth, prescriptionId, error, step, reviewValues, selectedBatches } = input;
   const perms = auth.permissions || [];
   const selectedFacility = auth.selectedFacility;
   if (!selectedFacility || !selectedFacility.id) {
@@ -416,18 +420,37 @@ async function loadActiveClinicPharmacyDispenseScreen(db, input) {
     return { ok: false, code: detail.result, dispense: null };
   }
 
-  const inventory = await listInventoryItems(db, {
-    staffId: auth.staffMember.id,
-    organizationId: auth.organization.id,
-    facilityId: selectedFacility.id,
-  });
+  const batchesByMedication = {};
+  for (const item of detail.items) {
+    const listed = await listAvailableBatchesForMedication(db, {
+      staffId: auth.staffMember.id,
+      organizationId: auth.organization.id,
+      facilityId: selectedFacility.id,
+      medicationCatalogueItemId: item.medicationCatalogueItemId,
+    });
+    batchesByMedication[item.medicationCatalogueItemId] = listed.ok ? listed.batches : [];
+  }
+
+  const dispenseStep = step || "review";
+  const isPartial =
+    reviewValues &&
+    (reviewValues.dispenseType === "partial" ||
+      detail.items.some((item) => {
+        const qty = parseInt(reviewValues[`quantity_${item.id}`], 10);
+        const remaining = item.quantityOrdered - item.quantityDispensed;
+        return Number.isFinite(qty) && qty > 0 && qty < remaining;
+      }));
 
   return {
     ok: true,
     dispense: {
       prescription: detail.prescription,
       items: detail.items,
-      availableInventory: inventory.ok ? inventory.inventoryItems : [],
+      batchesByMedication,
+      selectedBatches: selectedBatches || {},
+      reviewValues: reviewValues || null,
+      step: dispenseStep,
+      isPartial,
       error: error || null,
       facility: selectedFacility,
       actions: {
@@ -436,6 +459,141 @@ async function loadActiveClinicPharmacyDispenseScreen(db, input) {
       stitch: {
         desktop: STITCH.dispenseDesktop,
         mobile: STITCH.dispenseMobile,
+        review: STITCH.dispenseReviewDesktop,
+        confirmation: STITCH.dispenseConfirmation,
+        completed: STITCH.dispenseCompletedDesktop,
+        partial: STITCH.partialDispensingDesktop,
+      },
+    },
+  };
+}
+
+async function loadActiveClinicPharmacyDispenseCompletedScreen(db, input) {
+  const { auth, prescriptionId } = input;
+  const selectedFacility = auth.selectedFacility;
+  if (!selectedFacility || !selectedFacility.id) {
+    return { ok: false, code: "facility_required", completed: null };
+  }
+
+  const detail = await getPrescriptionById(db, {
+    staffId: auth.staffMember.id,
+    organizationId: auth.organization.id,
+    prescriptionId,
+  });
+
+  if (!detail.ok) {
+    return { ok: false, code: detail.result, completed: null };
+  }
+
+  return {
+    ok: true,
+    completed: {
+      prescription: {
+        ...detail.prescription,
+        statusLabel: PRESCRIPTION_STATUS_LABELS[detail.prescription.status] || detail.prescription.status,
+      },
+      items: detail.items,
+      facility: selectedFacility,
+      stitch: {
+        desktop: STITCH.dispenseCompletedDesktop,
+        mobile: STITCH.dispenseMobile,
+      },
+    },
+  };
+}
+
+async function loadActiveClinicPharmacyBatchDetailScreen(db, input) {
+  const { auth, batchId } = input;
+  const perms = auth.permissions || [];
+  const selectedFacility = auth.selectedFacility;
+  if (!selectedFacility || !selectedFacility.id) {
+    return { ok: false, code: "facility_required", batchDetail: null };
+  }
+
+  const detail = await getInventoryBatchById(db, {
+    staffId: auth.staffMember.id,
+    organizationId: auth.organization.id,
+    facilityId: selectedFacility.id,
+    batchId,
+  });
+
+  if (!detail.ok) {
+    return { ok: false, code: detail.result, batchDetail: null };
+  }
+
+  const movements = await listStockMovementsForBatch(db, {
+    staffId: auth.staffMember.id,
+    organizationId: auth.organization.id,
+    facilityId: selectedFacility.id,
+    batchId,
+  });
+
+  const expiryDate = new Date(detail.batch.expiryDate);
+  const now = new Date();
+  const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+  let expiryStatus = "ok";
+  if (daysUntilExpiry < 0) expiryStatus = "expired";
+  else if (daysUntilExpiry <= 90) expiryStatus = "near_expiry";
+
+  return {
+    ok: true,
+    batchDetail: {
+      batch: detail.batch,
+      inventoryItem: detail.inventoryItem,
+      movements: movements.ok ? movements.movements : [],
+      expiryStatus,
+      daysUntilExpiry,
+      facility: selectedFacility,
+      actions: {
+        canManageInventory: hasPerm(perms, PERM.INVENTORY_MANAGE),
+      },
+      stitch: {
+        desktop: STITCH.batchDetailDesktop,
+      },
+    },
+  };
+}
+
+async function loadActiveClinicPharmacySelectBatchScreen(db, input) {
+  const { auth, prescriptionId, prescriptionItemId, error } = input;
+  const selectedFacility = auth.selectedFacility;
+  if (!selectedFacility || !selectedFacility.id) {
+    return { ok: false, code: "facility_required", selectBatch: null };
+  }
+
+  const detail = await getPrescriptionById(db, {
+    staffId: auth.staffMember.id,
+    organizationId: auth.organization.id,
+    prescriptionId,
+  });
+
+  if (!detail.ok) {
+    return { ok: false, code: detail.result, selectBatch: null };
+  }
+
+  const item = detail.items.find((row) => row.id === prescriptionItemId);
+  if (!item) {
+    return { ok: false, code: PHARM_RESULT.PRESCRIPTION_ITEM_NOT_FOUND, selectBatch: null };
+  }
+
+  const listed = await listAvailableBatchesForMedication(db, {
+    staffId: auth.staffMember.id,
+    organizationId: auth.organization.id,
+    facilityId: selectedFacility.id,
+    medicationCatalogueItemId: item.medicationCatalogueItemId,
+  });
+
+  return {
+    ok: true,
+    selectBatch: {
+      prescription: detail.prescription,
+      item,
+      batches: listed.ok ? listed.batches : [],
+      error: error || null,
+      facility: selectedFacility,
+      returnHref: `/app/pharmacy/prescriptions/${prescriptionId}/dispense`,
+      stitch: {
+        desktop: STITCH.selectBatchDesktop,
       },
     },
   };
@@ -495,5 +653,8 @@ module.exports = {
   loadActiveClinicPharmacyPrescriptionQueueScreen,
   loadActiveClinicPharmacyPrescriptionDetailScreen,
   loadActiveClinicPharmacyDispenseScreen,
+  loadActiveClinicPharmacyDispenseCompletedScreen,
+  loadActiveClinicPharmacyBatchDetailScreen,
+  loadActiveClinicPharmacySelectBatchScreen,
   loadActiveClinicPharmacyReceiveStockScreen,
 };

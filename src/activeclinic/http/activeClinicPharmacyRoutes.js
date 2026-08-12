@@ -36,6 +36,9 @@ const {
   loadActiveClinicPharmacyPrescriptionQueueScreen,
   loadActiveClinicPharmacyPrescriptionDetailScreen,
   loadActiveClinicPharmacyDispenseScreen,
+  loadActiveClinicPharmacyDispenseCompletedScreen,
+  loadActiveClinicPharmacyBatchDetailScreen,
+  loadActiveClinicPharmacySelectBatchScreen,
   loadActiveClinicPharmacyReceiveStockScreen,
   actorFromAuth,
 } = require("../services/loadActiveClinicPharmacyScreens");
@@ -80,6 +83,43 @@ const STITCH_OPS = Object.freeze({
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function parseDispenseFormBody(body) {
+  const reviewValues = {
+    dispenseType: body.dispenseType || "full",
+    patientAcknowledged: body.patientAcknowledged === "true" ? "true" : "",
+    counselingProvided: body.counselingProvided === "true" ? "true" : "",
+    counselingNotes: body.counselingNotes || "",
+  };
+  const itemDispenses = [];
+  const itemKeys = Object.keys(body || {}).filter((k) => k.startsWith("item_"));
+  for (const key of itemKeys) {
+    const itemId = key.replace("item_", "");
+    reviewValues[`quantity_${itemId}`] = body[`quantity_${itemId}`] || "";
+    reviewValues[`batch_${itemId}`] = body[`batch_${itemId}`] || "";
+    const quantity = parseInt(body[`quantity_${itemId}`], 10);
+    const batchId = body[`batch_${itemId}`];
+    if (quantity > 0 && batchId) {
+      itemDispenses.push({
+        prescriptionItemId: itemId,
+        quantityToDispense: quantity,
+        batchId,
+      });
+    }
+  }
+  return { reviewValues, itemDispenses };
+}
+
+function selectedBatchesFromQuery(query, itemIds) {
+  const selected = {};
+  for (const itemId of itemIds) {
+    const value = query[`batch_${itemId}`];
+    if (value && UUID_RE.test(String(value))) {
+      selected[itemId] = String(value);
+    }
+  }
+  return selected;
+}
 
 function mapPharmacyError(code) {
   switch (code) {
@@ -603,6 +643,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
         const loaded = await loadActiveClinicPharmacyDispenseScreen(getPool(), {
           auth: req.activeClinicAuth,
           prescriptionId,
+          selectedBatches: {},
         });
 
         if (!loaded.ok) {
@@ -614,6 +655,19 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             )
           );
         }
+
+        const itemIds = (loaded.dispense.items || []).map((item) => item.id);
+        const selectedBatches = selectedBatchesFromQuery(req.query, itemIds);
+        if (Object.keys(selectedBatches).length) {
+          const withSelection = await loadActiveClinicPharmacyDispenseScreen(getPool(), {
+            auth: req.activeClinicAuth,
+            prescriptionId,
+            selectedBatches,
+            step: "review",
+          });
+          if (withSelection.ok) loaded.dispense = withSelection.dispense;
+        }
+
         return await renderShell(req, res, {
           content: "app/pharmacy-dispense-content.ejs",
           activeNav: "pharmacy",
@@ -625,6 +679,237 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             { label: "Dispense" },
           ],
           pageData: loaded.dispense,
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Dispense confirmation (GET — review summary from query after review step)
+  app.get(
+    "/app/pharmacy/prescriptions/:id/dispense/confirm",
+    requireAuth,
+    requirePermission(PERM.PHARMACY_DISPENSE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const prescriptionId = req.params.id;
+        if (!UUID_RE.test(prescriptionId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not Found", "Invalid prescription ID.", {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        const { reviewValues, itemDispenses } = parseDispenseFormBody(req.query);
+        if (!itemDispenses.length) {
+          return res.redirect(303, `/app/pharmacy/prescriptions/${prescriptionId}/dispense`);
+        }
+
+        const loaded = await loadActiveClinicPharmacyDispenseScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          prescriptionId,
+          step: "confirm",
+          reviewValues,
+        });
+
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState(
+              "Cannot load confirmation",
+              mapPharmacyError(loaded.code),
+              { status: 404, linkHref: "/app/pharmacy/queue", linkLabel: "Back to queue" }
+            )
+          );
+        }
+
+        return await renderShell(req, res, {
+          content: "app/pharmacy-dispense-confirm-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: {
+            title: `Confirm dispense ${loaded.dispense.prescription.prescriptionNumber}`,
+            description: "Review before confirming.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Queue", href: "/app/pharmacy/queue" },
+            { label: loaded.dispense.prescription.prescriptionNumber, href: `/app/pharmacy/prescriptions/${prescriptionId}` },
+            { label: "Confirm" },
+          ],
+          pageData: loaded.dispense,
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Dispense completed (GET)
+  app.get(
+    "/app/pharmacy/prescriptions/:id/dispense/completed",
+    requireAuth,
+    requirePermission(PERM.PHARMACY_DISPENSE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const prescriptionId = req.params.id;
+        if (!UUID_RE.test(prescriptionId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not Found", "Invalid prescription ID.", {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        const loaded = await loadActiveClinicPharmacyDispenseCompletedScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          prescriptionId,
+        });
+
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState(
+              "Dispense summary unavailable",
+              mapPharmacyError(loaded.code),
+              { status: 404, linkHref: "/app/pharmacy/queue", linkLabel: "Back to queue" }
+            )
+          );
+        }
+
+        return await renderShell(req, res, {
+          content: "app/pharmacy-dispense-completed-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: {
+            title: "Dispensing completed",
+            description: loaded.completed.prescription.prescriptionNumber,
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Queue", href: "/app/pharmacy/queue" },
+            { label: loaded.completed.prescription.prescriptionNumber, href: `/app/pharmacy/prescriptions/${prescriptionId}` },
+            { label: "Completed" },
+          ],
+          pageData: loaded.completed,
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Select batch for dispense item (GET)
+  app.get(
+    "/app/pharmacy/prescriptions/:prescriptionId/items/:itemId/select-batch",
+    requireAuth,
+    requirePermission(PERM.PHARMACY_DISPENSE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const { prescriptionId, itemId } = req.params;
+        if (!UUID_RE.test(prescriptionId) || !UUID_RE.test(itemId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not Found", "Invalid prescription or item ID.", {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        const loaded = await loadActiveClinicPharmacySelectBatchScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          prescriptionId,
+          prescriptionItemId: itemId,
+        });
+
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState(
+              "Batch selection unavailable",
+              mapPharmacyError(loaded.code),
+              { status: 404, linkHref: "/app/pharmacy/queue", linkLabel: "Back to queue" }
+            )
+          );
+        }
+
+        return await renderShell(req, res, {
+          content: "app/pharmacy-select-batch-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: {
+            title: "Select medicine batch",
+            description: loaded.selectBatch.item.medicationGenericName,
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Queue", href: "/app/pharmacy/queue" },
+            { label: loaded.selectBatch.prescription.prescriptionNumber, href: `/app/pharmacy/prescriptions/${prescriptionId}` },
+            { label: "Select batch" },
+          ],
+          pageData: loaded.selectBatch,
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Medicine batch detail (GET)
+  app.get(
+    "/app/pharmacy/inventory/batches/:batchId",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_VIEW),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const batchId = req.params.batchId;
+        if (!UUID_RE.test(batchId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not Found", "Invalid batch ID.", {
+              status: 404,
+              linkHref: "/app/pharmacy/inventory",
+              linkLabel: "Back to inventory",
+            })
+          );
+        }
+
+        const loaded = await loadActiveClinicPharmacyBatchDetailScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          batchId,
+        });
+
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState(
+              "Batch not found",
+              mapPharmacyError(loaded.code),
+              { status: 404, linkHref: "/app/pharmacy/inventory", linkLabel: "Back to inventory" }
+            )
+          );
+        }
+
+        return await renderShell(req, res, {
+          content: "app/pharmacy-batch-detail-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: {
+            title: `Batch ${loaded.batchDetail.batch.batchNumber}`,
+            description: loaded.batchDetail.batch.medicationGenericName,
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Inventory", href: "/app/pharmacy/inventory" },
+            { label: loaded.batchDetail.batch.batchNumber },
+          ],
+          pageData: loaded.batchDetail,
         });
       } catch (err) {
         next(err);
@@ -653,20 +938,52 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
 
         const prescriptionId = req.params.id;
         const auth = req.activeClinicAuth;
+        const body = req.body || {};
+        const { reviewValues, itemDispenses } = parseDispenseFormBody(body);
 
-        const itemDispenses = [];
-        const itemKeys = Object.keys(req.body).filter((k) => k.startsWith("item_"));
-        for (const key of itemKeys) {
-          const itemId = key.replace("item_", "");
-          const quantity = parseInt(req.body[`quantity_${itemId}`], 10);
-          const batchId = req.body[`batch_${itemId}`];
-          if (quantity > 0 && batchId) {
-            itemDispenses.push({
-              prescriptionItemId: itemId,
-              quantityToDispense: quantity,
-              batchId,
+        if (!body.confirm) {
+          if (!itemDispenses.length) {
+            const review = await loadActiveClinicPharmacyDispenseScreen(getPool(), {
+              auth,
+              prescriptionId,
+              step: "review",
+              error: "Select at least one batch and quantity to dispense.",
+            });
+            return await renderShell(req, res, {
+              content: "app/pharmacy-dispense-content.ejs",
+              activeNav: "pharmacy",
+              pageHeader: {
+                title: `Dispense ${review.dispense.prescription.prescriptionNumber}`,
+                description: "Dispense medications.",
+                actions: [],
+              },
+              breadcrumbs: [
+                { label: "Pharmacy", href: "/app/pharmacy" },
+                { label: "Queue", href: "/app/pharmacy/queue" },
+                { label: review.dispense.prescription.prescriptionNumber, href: `/app/pharmacy/prescriptions/${prescriptionId}` },
+                { label: "Dispense" },
+              ],
+              pageData: review.dispense,
+              status: 400,
             });
           }
+
+          const confirmQuery = new URLSearchParams();
+          confirmQuery.set("dispenseType", reviewValues.dispenseType || "full");
+          if (reviewValues.patientAcknowledged) confirmQuery.set("patientAcknowledged", "true");
+          if (reviewValues.counselingProvided) confirmQuery.set("counselingProvided", "true");
+          if (reviewValues.counselingNotes) confirmQuery.set("counselingNotes", reviewValues.counselingNotes);
+          for (const key of Object.keys(reviewValues)) {
+            if (key.startsWith("quantity_") || key.startsWith("batch_")) {
+              confirmQuery.set(key, reviewValues[key]);
+            }
+          }
+          for (const key of Object.keys(body)) {
+            if (key.startsWith("item_")) {
+              confirmQuery.set(key, body[key]);
+            }
+          }
+          return res.redirect(303, `/app/pharmacy/prescriptions/${prescriptionId}/dispense/confirm?${confirmQuery.toString()}`);
         }
 
         const result = await dispensePrescription(getPool(), {
@@ -674,27 +991,33 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
           organizationId: auth.organization.id,
           prescriptionId,
           itemDispenses,
-          dispenseType: req.body.dispenseType || "full",
-          patientAcknowledged: req.body.patientAcknowledged === "true",
-          counselingProvided: req.body.counselingProvided === "true",
-          counselingNotes: req.body.counselingNotes || null,
+          dispenseType: reviewValues.dispenseType || "full",
+          patientAcknowledged: reviewValues.patientAcknowledged === "true",
+          counselingProvided: reviewValues.counselingProvided === "true",
+          counselingNotes: reviewValues.counselingNotes || null,
         });
 
         if (!result.ok) {
           const loaded = await loadActiveClinicPharmacyDispenseScreen(getPool(), {
             auth,
             prescriptionId,
+            step: "confirm",
+            reviewValues,
             error: mapPharmacyError(result.result),
           });
-        return await renderShell(req, res, {
-          content: "app/pharmacy-dispense-content.ejs",
+          return await renderShell(req, res, {
+            content: "app/pharmacy-dispense-confirm-content.ejs",
             activeNav: "pharmacy",
-            pageHeader: { title: `Dispense ${loaded.dispense.prescription.prescriptionNumber}`, description: "Dispense medications.", actions: [] },
+            pageHeader: {
+              title: `Confirm dispense ${loaded.dispense.prescription.prescriptionNumber}`,
+              description: "Review before confirming.",
+              actions: [],
+            },
             breadcrumbs: [
               { label: "Pharmacy", href: "/app/pharmacy" },
               { label: "Queue", href: "/app/pharmacy/queue" },
               { label: loaded.dispense.prescription.prescriptionNumber, href: `/app/pharmacy/prescriptions/${prescriptionId}` },
-              { label: "Dispense" },
+              { label: "Confirm" },
             ],
             pageData: loaded.dispense,
             flash: { error: mapPharmacyError(result.result) },
@@ -702,7 +1025,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
           });
         }
 
-        return res.redirect(303, `/app/pharmacy/prescriptions/${prescriptionId}`);
+        return res.redirect(303, `/app/pharmacy/prescriptions/${prescriptionId}/dispense/completed`);
       } catch (err) {
         next(err);
       }

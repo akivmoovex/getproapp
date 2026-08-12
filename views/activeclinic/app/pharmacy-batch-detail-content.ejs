@@ -1,0 +1,74 @@
+<%
+  var batchDetail = (pageData && pageData) || {};
+  var batch = batchDetail.batch || {};
+  var movements = batchDetail.movements || [];
+  var expiryStatus = batchDetail.expiryStatus || 'ok';
+  var daysUntilExpiry = batchDetail.daysUntilExpiry;
+  var stitch = batchDetail.stitch || {};
+%>
+<section class="ac-pharmacy-batch-detail" data-ac-page-section="pharmacy-batch-detail" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <h2>Batch <%= batch.batchNumber || '—' %></h2>
+    <p class="ac-muted"><%= batch.medicationGenericName || '—' %> <% if (batch.medicationStrength) { %>· <%= batch.medicationStrength %><% } %></p>
+    <% if (expiryStatus === 'expired') { %>
+    <div class="ac-alert ac-alert--error" role="alert">This batch is expired.</div>
+    <% } else if (expiryStatus === 'near_expiry') { %>
+    <div class="ac-alert ac-alert--warning" role="alert">Expires in <%= daysUntilExpiry %> days.</div>
+    <% } %>
+  </div>
+
+  <div class="ac-panel">
+    <dl class="ac-detail-list">
+      <dt>Quantity in batch</dt>
+      <dd><%= batch.quantityInBatch %> <%= batch.medicationUnit || '' %></dd>
+      <dt>Facility inventory total</dt>
+      <dd><%= batch.inventoryCurrentQuantity != null ? batch.inventoryCurrentQuantity : '—' %> <%= batch.medicationUnit || '' %></dd>
+      <dt>Expiry date</dt>
+      <dd><%= batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString() : '—' %></dd>
+      <dt>Manufacture date</dt>
+      <dd><%= batch.manufactureDate ? new Date(batch.manufactureDate).toLocaleDateString() : '—' %></dd>
+      <dt>Supplier</dt>
+      <dd><%= batch.supplierName || '—' %></dd>
+      <dt>Status</dt>
+      <dd><%= batch.status || '—' %></dd>
+      <dt>Received</dt>
+      <dd><%= batch.receivedAt ? new Date(batch.receivedAt).toLocaleString() : '—' %></dd>
+    </dl>
+  </div>
+
+  <div class="ac-panel">
+    <h3>Movement history</h3>
+    <% if (!movements.length) { %>
+    <p class="ac-muted">No movements recorded for this batch yet.</p>
+    <% } else { %>
+    <div class="ac-table-wrap ac-table-wrap--mobile-cards">
+      <table class="ac-table">
+        <caption class="ac-sr-only">Batch stock movements</caption>
+        <thead>
+          <tr>
+            <th scope="col">When</th>
+            <th scope="col">Type</th>
+            <th scope="col">Qty</th>
+            <th scope="col">By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% movements.forEach(function (m) { %>
+          <tr>
+            <td><%= m.createdAt ? new Date(m.createdAt).toLocaleString() : '—' %></td>
+            <td><%= m.movementType %></td>
+            <td><%= m.quantityDelta %></td>
+            <td><%= m.performedByStaffDisplayName || '—' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="ac-panel ac-form-actions">
+    <a href="/app/pharmacy/inventory" class="ac-btn ac-btn--secondary">Back to inventory</a>
+    <a href="/app/pharmacy/alerts/expiry" class="ac-btn ac-btn--ghost">Expiry alerts</a>
+  </div>
+</section>
