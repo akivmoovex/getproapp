@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T01:26:46.889Z",
+  "generated_at": "2026-08-12T09:44:16.963Z",
   "inventory_purpose": "RAW V7 ActiveClinic implementation inventory — no Stitch mapping",
   "safety": {
     "branch": "V7",
@@ -39,7 +39,7 @@
   "integrity": {
     "user_facing_routes_discovered": 175,
     "screen_rendering_views_discovered": 157,
-    "implementation_screen_state_records": 216,
+    "implementation_screen_state_records": 225,
     "orphan_views": 1,
     "api_only_routes_excluded": 22,
     "redirect_only_routes_excluded": 12,
@@ -7164,6 +7164,285 @@
       ],
       "implementation_substance": "FUNCTIONAL",
       "notes": "Phase 5A review before submit"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70217",
+      "surface": "INTERNAL",
+      "functional_area": "APPOINTMENTS",
+      "route_method": "GET",
+      "route_path": "/app/appointments/:appointmentId/confirmed",
+      "route_file": "src/activeclinic/http/activeClinicAppointmentRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/appointment-success-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.appointment.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "appointments",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70218",
+      "surface": "INTERNAL",
+      "functional_area": "APPOINTMENTS",
+      "route_method": "GET",
+      "route_path": "/app/appointments/:appointmentId/cancel",
+      "route_file": "src/activeclinic/http/activeClinicAppointmentRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/appointment-cancel-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.appointment.cancel"
+      ],
+      "facility_scope": true,
+      "department_scope": "appointments",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70219",
+      "surface": "INTERNAL",
+      "functional_area": "APPOINTMENTS",
+      "route_method": "GET",
+      "route_path": "/app/appointments/:appointmentId/reschedule",
+      "route_file": "src/activeclinic/http/activeClinicAppointmentRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/appointment-form-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.appointment.update"
+      ],
+      "facility_scope": true,
+      "department_scope": "appointments",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70220",
+      "surface": "INTERNAL",
+      "functional_area": "APPOINTMENTS",
+      "route_method": "GET",
+      "route_path": "/app/appointments/missed",
+      "route_file": "src/activeclinic/http/activeClinicAppointmentRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/appointments-missed-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.appointment.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "appointments",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70221",
+      "surface": "INTERNAL",
+      "functional_area": "APPOINTMENTS",
+      "route_method": "GET",
+      "route_path": "/app/appointments/schedule",
+      "route_file": "src/activeclinic/http/activeClinicAppointmentRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/appointments-schedule-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.appointment.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "appointments",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70222",
+      "surface": "INTERNAL",
+      "functional_area": "RECEPTION",
+      "route_method": "GET",
+      "route_path": "/app/reception/queue/:entryId/called",
+      "route_file": "src/activeclinic/http/activeClinicReceptionRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/reception-queue-called-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.reception.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "reception",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70223",
+      "surface": "INTERNAL",
+      "functional_area": "RECEPTION",
+      "route_method": "GET",
+      "route_path": "/app/reception/queue/:entryId/did-not-respond",
+      "route_file": "src/activeclinic/http/activeClinicReceptionRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/reception-queue-did-not-respond-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.reception.manage_queue"
+      ],
+      "facility_scope": true,
+      "department_scope": "reception",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70224",
+      "surface": "INTERNAL",
+      "functional_area": "RECEPTION",
+      "route_method": "GET",
+      "route_path": "/app/reception/queue/:entryId/assign",
+      "route_file": "src/activeclinic/http/activeClinicReceptionRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/reception-queue-assign-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.reception.manage_queue"
+      ],
+      "facility_scope": true,
+      "department_scope": "reception",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70225",
+      "surface": "INTERNAL",
+      "functional_area": "RECEPTION",
+      "route_method": "GET",
+      "route_path": "/app/reception/queue/:entryId/transfer",
+      "route_file": "src/activeclinic/http/activeClinicReceptionRoutes.js",
+      "handler": "Phase5B dedicated screen",
+      "view_path": "views/activeclinic/app/reception-queue-transfer-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.reception.transfer"
+      ],
+      "facility_scope": true,
+      "department_scope": "reception",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5B GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5B"
     }
   ],
   "phase4_update": {
@@ -7173,5 +7452,9 @@
   "phase5a_update": {
     "added_count": 3,
     "note": "P25 procedure booking multi-step wizard"
+  },
+  "phase5b_update": {
+    "added_count": 9,
+    "note": "Appointments + Reception partial closure"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T01:26:46.889Z",
+  "generated_at": "2026-08-12T09:44:16.963Z",
   "purpose": "Phase 3 Stitch → V7 implementation mapping (independent of old parity matrix primary claims)",
   "safety": {
     "branch": "V7",
@@ -12,26 +12,26 @@
   },
   "inputs": {
     "stitch_screens": 388,
-    "implementation_records": 216,
+    "implementation_records": 225,
     "phase4_note": "Implementation inventory updated after Phase 4 code"
   },
   "counts": {
     "mapping_type": {
-      "EXACT_IMPLEMENTATION_MATCH": 70,
-      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 228,
+      "EXACT_IMPLEMENTATION_MATCH": 81,
+      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 229,
       "DUPLICATE_STITCH_VARIANT": 8,
       "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 6,
-      "PARTIAL_IMPLEMENTATION": 61,
+      "PARTIAL_IMPLEMENTATION": 49,
       "PRODUCT_DECISION_DIFFERENCE": 7,
       "NO_IMPLEMENTATION_REQUIRED": 8
     },
     "confidence": {
-      "HIGH": 336,
-      "MEDIUM": 52
+      "HIGH": 340,
+      "MEDIUM": 48
     },
     "stitch_screen_coverage": {
-      "full": 304,
-      "partial": 61,
+      "full": 316,
+      "partial": 49,
       "missing": 0,
       "other": 23,
       "total": 388
@@ -235,8 +235,8 @@
     {
       "functional_area": "APPOINTMENTS",
       "total": 12,
-      "full": 5,
-      "partial": 7,
+      "full": 12,
+      "partial": 0,
       "not_implemented": 0,
       "product_difference": 0,
       "ambiguous": 0
@@ -442,8 +442,8 @@
     {
       "functional_area": "RECEPTION",
       "total": 8,
-      "full": 3,
-      "partial": 5,
+      "full": 8,
+      "partial": 0,
       "not_implemented": 0,
       "product_difference": 0,
       "ambiguous": 0
@@ -5576,16 +5576,16 @@
       "stitch_functional_area": "APPOINTMENTS",
       "stitch_device": "DESKTOP",
       "stitch_state": "CONFIRMED",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0102"
+        "ACV7-IMPL-70217"
       ],
       "route_paths": [
-        "/app/appointments/:appointmentId"
+        "/app/appointments/:appointmentId/confirmed"
       ],
       "view_paths": [
-        "views/activeclinic/app/appointment-detail-content.ejs"
+        "views/activeclinic/app/appointment-success-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -5596,9 +5596,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Confirmation via flash on detail; orphan appointment-success-content unused",
-      "evidence": "Mapped to ACV7-IMPL-0102 via /app/appointments/:appointmentId / views/activeclinic/app/appointment-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/appointments/:appointmentId/confirmed / views/activeclinic/app/appointment-success-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -5672,10 +5672,9 @@
       "stitch_functional_area": "APPOINTMENTS",
       "stitch_device": "DESKTOP",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0098",
         "ACV7-IMPL-0099"
       ],
       "route_paths": [
@@ -5685,8 +5684,7 @@
         "views/activeclinic/app/appointments-list-content.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "EMPTY"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -5694,9 +5692,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Composite appointment shared-states board",
-      "evidence": "Mapped to ACV7-IMPL-0098, ACV7-IMPL-0099 via /app/appointments / views/activeclinic/app/appointments-list-content.ejs",
-      "notes": "Composite appointment shared-states board; empty/list coverage only"
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/appointments / views/activeclinic/app/appointments-list-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -5738,16 +5736,16 @@
       "stitch_functional_area": "APPOINTMENTS",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0102"
+        "ACV7-IMPL-70218"
       ],
       "route_paths": [
-        "/app/appointments/:appointmentId"
+        "/app/appointments/:appointmentId/cancel"
       ],
       "view_paths": [
-        "views/activeclinic/app/appointment-detail-content.ejs"
+        "views/activeclinic/app/appointment-cancel-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -5758,9 +5756,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Cancel is action on detail, not dedicated cancel screen",
-      "evidence": "Mapped to ACV7-IMPL-0102 via /app/appointments/:appointmentId / views/activeclinic/app/appointment-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/appointments/:appointmentId/cancel / views/activeclinic/app/appointment-cancel-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -5802,16 +5800,16 @@
       "stitch_functional_area": "APPOINTMENTS",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0100"
+        "ACV7-IMPL-70221"
       ],
       "route_paths": [
-        "/app/appointments/calendar"
+        "/app/appointments/schedule"
       ],
       "view_paths": [
-        "views/activeclinic/app/appointments-calendar-content.ejs"
+        "views/activeclinic/app/appointments-schedule-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -5822,9 +5820,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "No dedicated doctor schedule screen; calendar approximates",
-      "evidence": "Mapped to ACV7-IMPL-0100 via /app/appointments/calendar / views/activeclinic/app/appointments-calendar-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/appointments/schedule / views/activeclinic/app/appointments-schedule-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -5834,16 +5832,16 @@
       "stitch_functional_area": "APPOINTMENTS",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0098"
+        "ACV7-IMPL-70220"
       ],
       "route_paths": [
-        "/app/appointments"
+        "/app/appointments/missed"
       ],
       "view_paths": [
-        "views/activeclinic/app/appointments-list-content.ejs"
+        "views/activeclinic/app/appointments-missed-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -5854,9 +5852,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "No dedicated missed-appointments route; filterable list only if supported",
-      "evidence": "Mapped to ACV7-IMPL-0098 via /app/appointments / views/activeclinic/app/appointments-list-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/appointments/missed / views/activeclinic/app/appointments-missed-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -5866,19 +5864,16 @@
       "stitch_functional_area": "RECEPTION",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0105",
-        "ACV7-IMPL-0108"
+        "ACV7-IMPL-70222"
       ],
       "route_paths": [
-        "/app/reception/call-board",
-        "/app/reception/queue/:entryId"
+        "/app/reception/queue/:entryId/called"
       ],
       "view_paths": [
-        "views/activeclinic/app/reception-call-board-content.ejs",
-        "views/activeclinic/app/reception-queue-detail-content.ejs"
+        "views/activeclinic/app/reception-queue-called-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -5889,9 +5884,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Call-board/queue-detail + POST actions cover flow; dedicated Stitch screens for each action state not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0105, ACV7-IMPL-0108 via /app/reception/call-board | /app/reception/queue/:entryId / views/activeclinic/app/reception-call-board-content.ejs | views/activeclinic/app/reception-queue-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/reception/queue/:entryId/called / views/activeclinic/app/reception-queue-called-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -5933,19 +5928,16 @@
       "stitch_functional_area": "RECEPTION",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0105",
-        "ACV7-IMPL-0108"
+        "ACV7-IMPL-70223"
       ],
       "route_paths": [
-        "/app/reception/call-board",
-        "/app/reception/queue/:entryId"
+        "/app/reception/queue/:entryId/did-not-respond"
       ],
       "view_paths": [
-        "views/activeclinic/app/reception-call-board-content.ejs",
-        "views/activeclinic/app/reception-queue-detail-content.ejs"
+        "views/activeclinic/app/reception-queue-did-not-respond-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -5956,9 +5948,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Call-board/queue-detail + POST actions cover flow; dedicated Stitch screens for each action state not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0105, ACV7-IMPL-0108 via /app/reception/call-board | /app/reception/queue/:entryId / views/activeclinic/app/reception-call-board-content.ejs | views/activeclinic/app/reception-queue-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/reception/queue/:entryId/did-not-respond / views/activeclinic/app/reception-queue-did-not-respond-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -5968,19 +5960,16 @@
       "stitch_functional_area": "RECEPTION",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0105",
-        "ACV7-IMPL-0108"
+        "ACV7-IMPL-70224"
       ],
       "route_paths": [
-        "/app/reception/call-board",
-        "/app/reception/queue/:entryId"
+        "/app/reception/queue/:entryId/assign"
       ],
       "view_paths": [
-        "views/activeclinic/app/reception-call-board-content.ejs",
-        "views/activeclinic/app/reception-queue-detail-content.ejs"
+        "views/activeclinic/app/reception-queue-assign-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -5991,9 +5980,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Call-board/queue-detail + POST actions cover flow; dedicated Stitch screens for each action state not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0105, ACV7-IMPL-0108 via /app/reception/call-board | /app/reception/queue/:entryId / views/activeclinic/app/reception-call-board-content.ejs | views/activeclinic/app/reception-queue-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/reception/queue/:entryId/assign / views/activeclinic/app/reception-queue-assign-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -6003,18 +5992,15 @@
       "stitch_functional_area": "RECEPTION",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0105",
         "ACV7-IMPL-0108"
       ],
       "route_paths": [
-        "/app/reception/call-board",
         "/app/reception/queue/:entryId"
       ],
       "view_paths": [
-        "views/activeclinic/app/reception-call-board-content.ejs",
         "views/activeclinic/app/reception-queue-detail-content.ejs"
       ],
       "implementation_states": [
@@ -6026,9 +6012,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Call-board/queue-detail + POST actions cover flow; dedicated Stitch screens for each action state not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0105, ACV7-IMPL-0108 via /app/reception/call-board | /app/reception/queue/:entryId / views/activeclinic/app/reception-call-board-content.ejs | views/activeclinic/app/reception-queue-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/reception/queue/:entryId / views/activeclinic/app/reception-queue-detail-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -6102,19 +6088,16 @@
       "stitch_functional_area": "APPOINTMENTS",
       "stitch_device": "DESKTOP",
       "stitch_state": "RESCHEDULED",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0103",
-        "ACV7-IMPL-0102"
+        "ACV7-IMPL-70219"
       ],
       "route_paths": [
-        "/app/appointments/:appointmentId/edit",
-        "/app/appointments/:appointmentId"
+        "/app/appointments/:appointmentId/reschedule"
       ],
       "view_paths": [
-        "views/activeclinic/app/appointment-form-content.ejs",
-        "views/activeclinic/app/appointment-detail-content.ejs"
+        "views/activeclinic/app/appointment-form-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -6125,9 +6108,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Reschedule is POST/edit on appointment detail — no dedicated reschedule screen matching Stitch",
-      "evidence": "Mapped to ACV7-IMPL-0103, ACV7-IMPL-0102 via /app/appointments/:appointmentId/edit | /app/appointments/:appointmentId / views/activeclinic/app/appointment-form-content.ejs | views/activeclinic/app/appointment-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/appointments/:appointmentId/reschedule / views/activeclinic/app/appointment-form-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -6137,19 +6120,16 @@
       "stitch_functional_area": "APPOINTMENTS",
       "stitch_device": "MOBILE",
       "stitch_state": "RESCHEDULED",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0103",
-        "ACV7-IMPL-0102"
+        "ACV7-IMPL-70219"
       ],
       "route_paths": [
-        "/app/appointments/:appointmentId/edit",
-        "/app/appointments/:appointmentId"
+        "/app/appointments/:appointmentId/reschedule"
       ],
       "view_paths": [
-        "views/activeclinic/app/appointment-form-content.ejs",
-        "views/activeclinic/app/appointment-detail-content.ejs"
+        "views/activeclinic/app/appointment-form-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -6160,9 +6140,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Reschedule is POST/edit on appointment detail — no dedicated reschedule screen matching Stitch",
-      "evidence": "Mapped to ACV7-IMPL-0103, ACV7-IMPL-0102 via /app/appointments/:appointmentId/edit | /app/appointments/:appointmentId / views/activeclinic/app/appointment-form-content.ejs | views/activeclinic/app/appointment-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/appointments/:appointmentId/reschedule / views/activeclinic/app/appointment-form-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -6172,19 +6152,16 @@
       "stitch_functional_area": "RECEPTION",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0105",
-        "ACV7-IMPL-0108"
+        "ACV7-IMPL-70225"
       ],
       "route_paths": [
-        "/app/reception/call-board",
-        "/app/reception/queue/:entryId"
+        "/app/reception/queue/:entryId/transfer"
       ],
       "view_paths": [
-        "views/activeclinic/app/reception-call-board-content.ejs",
-        "views/activeclinic/app/reception-queue-detail-content.ejs"
+        "views/activeclinic/app/reception-queue-transfer-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -6195,9 +6172,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Call-board/queue-detail + POST actions cover flow; dedicated Stitch screens for each action state not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0105, ACV7-IMPL-0108 via /app/reception/call-board | /app/reception/queue/:entryId / views/activeclinic/app/reception-call-board-content.ejs | views/activeclinic/app/reception-queue-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5B: /app/reception/queue/:entryId/transfer / views/activeclinic/app/reception-queue-transfer-content.ejs",
+      "notes": "Appointments + Reception partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -16979,6 +16956,41 @@
       "missing": 0,
       "other": 23,
       "total": 388
+    }
+  },
+  "phase5b_remap": {
+    "remapped_former_partials": 12,
+    "before": {
+      "APPOINTMENTS": {
+        "full": 5,
+        "partial": 7,
+        "missing": 0,
+        "other": 0,
+        "total": 12
+      },
+      "RECEPTION": {
+        "full": 3,
+        "partial": 5,
+        "missing": 0,
+        "other": 0,
+        "total": 8
+      }
+    },
+    "after": {
+      "APPOINTMENTS": {
+        "full": 12,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 12
+      },
+      "RECEPTION": {
+        "full": 8,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 8
+      }
     }
   }
 }

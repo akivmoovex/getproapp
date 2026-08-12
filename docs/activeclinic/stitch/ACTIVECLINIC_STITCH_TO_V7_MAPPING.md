@@ -1,35 +1,24 @@
 # ActiveClinic Stitch → V7 Implementation Mapping
 
-**Generated:** 2026-08-12T01:26:46.889Z  
-**Phase 5A:** remapped former P25 PARTIAL_IMPLEMENTATION rows
+**Generated:** 2026-08-12T09:44:16.963Z
+**Phase 5B:** 12 Appointments + Reception PARTIAL rows closed
 
-## Overall coverage
-
-| Bucket | Before | After |
-|--------|-------:|------:|
-| Full | 289 | 304 |
-| Partial | 77 | 61 |
-| Missing | 0 | 0 |
-
-## P25 coverage
+## APPOINTMENTS
 
 | Bucket | Before | After |
-|--------|-------:|------:|
-| Full | 5 | 20 |
-| Partial | 16 | 0 |
-| Product differences | 2 | 3 |
-| Missing | 0 | 0 |
+|---|---:|---:|
+| full | 5 | 12 |
+| partial | 7 | 0 |
+| missing | 0 | 0 |
+| other | 0 | 0 |
+| total | 12 | 12 |
 
-## mapping_type
+## RECEPTION
 
-| mapping_type | Count |
-|--------------|------:|
-| MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION | 228 |
-| EXACT_IMPLEMENTATION_MATCH | 70 |
-| PARTIAL_IMPLEMENTATION | 61 |
-| DUPLICATE_STITCH_VARIANT | 8 |
-| NO_IMPLEMENTATION_REQUIRED | 8 |
-| PRODUCT_DECISION_DIFFERENCE | 7 |
-| ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS | 6 |
-
-HEAD `7dccd9859235ec3feb3b9203816b040bac5c8b31`
+| Bucket | Before | After |
+|---|---:|---:|
+| full | 3 | 8 |
+| partial | 5 | 0 |
+| missing | 0 | 0 |
+| other | 0 | 0 |
+| total | 8 | 8 |
