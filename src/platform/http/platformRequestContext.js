@@ -196,14 +196,29 @@ function resolvePlatformRequestContext(input) {
     };
   }
 
+  // Unified hostname runtimes (moovex-platform-*) must use the deployment-profile
+  // cookie names for both Set-Cookie and session load. Host-registry names
+  // (e.g. blessboard_pronline_sid) are for product-specific deployments only.
+  // Live failure: login wrote moovex_platform_testing_sid (profile) while GET /admin
+  // looked for blessboard_pronline_sid (host registry) → no_session_cookie.
+  const useDeploymentCookies =
+    productSelection === "hostname" &&
+    profile &&
+    profile.sessionCookieName &&
+    profile.csrfCookieName;
+
   const platform = Object.freeze({
     environment: runtimeEnvironment,
     productKey,
     brand: brand || (product && product.brandName) || null,
     canonicalHost: site.hostname,
     siteType,
-    sessionCookieName: site.sessionCookieName,
-    csrfCookieName: site.csrfCookieName,
+    sessionCookieName: useDeploymentCookies
+      ? profile.sessionCookieName
+      : site.sessionCookieName,
+    csrfCookieName: useDeploymentCookies
+      ? profile.csrfCookieName
+      : site.csrfCookieName,
     redirectTargetOrigin: site.redirectTargetOrigin || null,
     productSelection,
     deploymentCode: deployment.code || null,

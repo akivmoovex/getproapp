@@ -212,7 +212,8 @@ describe("environment × hostname guard", () => {
       assert.equal(r.ok, true);
       assert.equal(r.platform.productKey, "activeclinic");
       assert.equal(r.platform.environment, "testing");
-      assert.equal(r.platform.sessionCookieName, "activeclinic_pronline_sid");
+      assert.equal(r.platform.sessionCookieName, "moovex_platform_testing_sid");
+      assert.equal(r.platform.csrfCookieName, "moovex_platform_testing_csrf");
     });
   });
 
@@ -323,19 +324,27 @@ describe("domain-resolved product isolation", () => {
     );
   });
 
-  it("uses host-scoped session cookie names", () => {
+  it("uses deployment-scoped session cookies under moovex hostname runtime", () => {
     withEnv({ PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING }, () => {
-      const fakeReq = {
-        platform: {
-          sessionCookieName: "activeclinic_pronline_sid",
-        },
-      };
-      assert.equal(getV5SessionCookieName(process.env, fakeReq), "activeclinic_pronline_sid");
-      assert.notEqual(
-        getV5SessionCookieName(process.env, fakeReq),
-        getV5SessionCookieName(process.env, {
-          platform: { sessionCookieName: "blessboard_pronline_sid" },
-        })
+      const bb = resolvePlatformRequestContext({
+        env: process.env,
+        hostname: "blessboard.pronline.org",
+      });
+      const ac = resolvePlatformRequestContext({
+        env: process.env,
+        hostname: "activeclinic.pronline.org",
+      });
+      assert.equal(bb.ok, true);
+      assert.equal(ac.ok, true);
+      assert.equal(bb.platform.sessionCookieName, "moovex_platform_testing_sid");
+      assert.equal(ac.platform.sessionCookieName, "moovex_platform_testing_sid");
+      assert.equal(
+        getV5SessionCookieName(process.env, { platform: bb.platform }),
+        "moovex_platform_testing_sid"
+      );
+      assert.equal(
+        getV5SessionCookieName(process.env, { platform: ac.platform }),
+        getV5SessionCookieName(process.env, { platform: bb.platform })
       );
     });
   });

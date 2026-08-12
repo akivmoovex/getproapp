@@ -1217,7 +1217,11 @@ function createV5FoundationApp(options) {
         outcome: "ok",
         roleKeys: result.roles,
       });
-      setV5SessionCookie(res, result.rawToken, { secure: isProduction, env });
+      setV5SessionCookie(res, result.rawToken, {
+        secure: isProduction,
+        env,
+        req,
+      });
       setCsrfCookie(res, csrfToken, { secure: isProduction });
       authLog.logAuthEvent(req, "apex_login_session_created", {
         outcome: "ok",
@@ -1329,7 +1333,11 @@ function createV5FoundationApp(options) {
         }
         return sendAuthError(req, res, status, message);
       }
-      setV5SessionCookie(res, redeemed.rawSessionToken, { secure: isProduction, env });
+      setV5SessionCookie(res, redeemed.rawSessionToken, {
+        secure: isProduction,
+        env,
+        req,
+      });
       const {
         resolveTenantPortalAccess,
       } = require("../../blessboard/services/resolveTenantPortalAccess");
@@ -1389,7 +1397,7 @@ function createV5FoundationApp(options) {
     } catch {
       /* fail-open clear cookie */
     }
-    clearV5SessionCookie(res, { secure: isProduction, env });
+    clearV5SessionCookie(res, { secure: isProduction, env, req });
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction });
     return res.redirect(303, "/login");

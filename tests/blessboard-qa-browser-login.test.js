@@ -193,12 +193,23 @@ describe("blessboard QA browser login (moovex-platform-testing)", () => {
     return res;
   }
 
-  it("email login creates session and redirects to HQ", async () => {
+  it("email login creates session cookie that authenticates the follow-up /hq request", async () => {
     requireDb();
     const res = await postLogin(BB_HOST, QA_EMAIL, PASSWORD);
     assert.equal(res.status, 303);
     assert.equal(res.headers.location, "/hq");
-    assert.ok(extractCookie(res, sessionCookieName), "session cookie issued");
+    const sid = extractCookie(res, sessionCookieName);
+    assert.ok(sid, `session cookie ${sessionCookieName} issued`);
+    assert.equal(sessionCookieName, "moovex_platform_testing_sid");
+
+    // Browser-equivalent: cookie name written must be the name read on the next request.
+    const follow = await request(app)
+      .get("/hq")
+      .set("Host", BB_HOST)
+      .set("Cookie", `${sessionCookieName}=${sid}`);
+    const loc = String(follow.headers.location || "");
+    assert.equal(loc.startsWith("/login"), false, `unexpected redirect ${loc}`);
+    assert.ok([200, 302, 303].includes(follow.status));
   });
 
   it("phone login creates session and redirects to HQ", async () => {
@@ -206,7 +217,13 @@ describe("blessboard QA browser login (moovex-platform-testing)", () => {
     const res = await postLogin(BB_HOST, QA_PHONE, PASSWORD);
     assert.equal(res.status, 303);
     assert.equal(res.headers.location, "/hq");
-    assert.ok(extractCookie(res, sessionCookieName), "session cookie issued");
+    const sid = extractCookie(res, sessionCookieName);
+    assert.ok(sid, "session cookie issued");
+    const follow = await request(app)
+      .get("/hq")
+      .set("Host", BB_HOST)
+      .set("Cookie", `${sessionCookieName}=${sid}`);
+    assert.equal(String(follow.headers.location || "").startsWith("/login"), false);
   });
 
   it("wrong password is rejected", async () => {
