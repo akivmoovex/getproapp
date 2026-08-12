@@ -1,0 +1,56 @@
+<%
+  var invoices = (pageData && pageData.invoices) || [];
+  var payments = (pageData && pageData.payments) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+  var dateFrom = (pageData && pageData.dateFrom) || '';
+  var dateTo = (pageData && pageData.dateTo) || '';
+%>
+<section class="ac-billing-revenue-report-detailed" data-ac-page-section="billing-revenue-report-detailed" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <p class="ac-muted">Range <%= dateFrom %> → <%= dateTo %></p>
+    <p><a href="/app/billing/reports/revenue?from=<%= dateFrom %>&amp;to=<%= dateTo %>">Back to summary</a></p>
+  </article>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Posted invoices</h2>
+    <% if (invoices.length === 0) { %>
+      <p class="ac-muted">No posted invoices in range.</p>
+    <% } else { %>
+      <table class="ac-table">
+        <thead><tr><th>Number</th><th>Date</th><th>Patient</th><th>Amount</th></tr></thead>
+        <tbody>
+          <% invoices.forEach(function (row) { %>
+          <tr>
+            <td><%= row.invoiceNumber %></td>
+            <td><%= row.invoiceDate %></td>
+            <td><%= row.patientName %> · <%= row.patientNumber %></td>
+            <td class="ac-money"><%= row.totalFormatted %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </article>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Payments</h2>
+    <% if (payments.length === 0) { %>
+      <p class="ac-muted">No payments in range.</p>
+    <% } else { %>
+      <table class="ac-table">
+        <thead><tr><th>Number</th><th>Date</th><th>Patient</th><th>Method</th><th>Amount</th></tr></thead>
+        <tbody>
+          <% payments.forEach(function (row) { %>
+          <tr>
+            <td><%= row.paymentNumber %></td>
+            <td><%= row.paymentDate %></td>
+            <td><%= row.patientName %> · <%= row.patientNumber %></td>
+            <td><%= row.paymentMethod %></td>
+            <td class="ac-money"><%= row.amountFormatted %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </article>
+</section>

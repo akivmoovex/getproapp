@@ -42,6 +42,7 @@ const {
   PAYMENT_METHOD,
   PERM: BILLING_PERM,
 } = require("../services/activeClinicBillingService");
+const billingOps = require("../services/activeClinicBillingOpsService");
 const { formatMoney, parseMoneyInput } = require("../services/formatMoney");
 const {
   financeIdsFromAuth,
@@ -881,6 +882,76 @@ function registerActiveClinicCashierRoutes(app, deps) {
           );
         }
         return res.redirect(303, "/app/cashier/history?reconciled=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ========================================================================
+  // PHASE 4: REFUND RECEIPT (PRINT)
+  // ========================================================================
+
+  app.get(
+    "/app/cashier/refunds/:refundId/receipt",
+    requireAuth,
+    requirePermission(["activeclinic.payment.refund", "activeclinic.payment.view"]),
+    requireDepartment("cashier"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+        const ids = financeIdsFromAuth(auth);
+        const result = await billingOps.getRefundReceipt(getPool(), {
+          tenantId: ids.tenantId,
+          facilityId: facility.id,
+          staffId: ids.staffId,
+          platformIdentityId: ids.platformIdentityId,
+          refundId: req.params.refundId,
+        });
+        if (result.result === billingOps.RESULT.NOT_FOUND) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "Refund receipt not found.", { status: 404 })
+          );
+        }
+        if (result.result !== billingOps.RESULT.OK) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Access denied", "Unable to load refund receipt.", {
+              status: 403,
+            })
+          );
+        }
+        const receipt = result.receipt;
+        return await renderShell(req, res, {
+          activeNav: "cashier",
+          content: "app/cashier-refund-receipt-content.ejs",
+          pageHeader: {
+            title: "Refund receipt",
+            description: "Printable refund record.",
+            actions: [{ label: "Print", href: "javascript:window.print()" }],
+          },
+          breadcrumbs: [
+            { label: "Cashier", href: "/app/cashier" },
+            { label: "Refund receipt" },
+          ],
+          pageData: {
+            receipt: {
+              ...receipt,
+              refundAmountFormatted: formatMoney(
+                receipt.refundAmountMinor,
+                receipt.currencyCode
+              ),
+              originalAmountFormatted: formatMoney(
+                receipt.originalPayment.amountMinor,
+                receipt.currencyCode
+              ),
+            },
+            stitch: { desktop: "244dc0c45a23434bb2747468a699167b" },
+          },
+        });
       } catch (err) {
         return next(err);
       }

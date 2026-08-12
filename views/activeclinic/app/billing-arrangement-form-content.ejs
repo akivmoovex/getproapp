@@ -1,0 +1,46 @@
+<%
+  var prefill = (pageData && pageData.prefill) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-billing-arrangement-form" data-ac-page-section="billing-arrangement-form" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <form method="POST" action="/app/billing/arrangements">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <div class="ac-form-group">
+        <label for="patientId">Patient ID *</label>
+        <input id="patientId" name="patientId" type="text" required value="<%= prefill.patientId || '' %>" />
+      </div>
+      <div class="ac-form-group">
+        <label for="totalAmount">Total amount *</label>
+        <input id="totalAmount" name="totalAmount" type="text" inputmode="decimal" required placeholder="0.00" />
+      </div>
+      <div class="ac-form-group">
+        <label for="numberOfInstallments">Number of installments *</label>
+        <input id="numberOfInstallments" name="numberOfInstallments" type="number" min="1" required value="3" />
+      </div>
+      <div class="ac-form-group">
+        <label for="installmentAmount">Installment amount *</label>
+        <input id="installmentAmount" name="installmentAmount" type="text" inputmode="decimal" required placeholder="0.00" />
+      </div>
+      <div class="ac-form-group">
+        <label for="installmentFrequency">Frequency *</label>
+        <select id="installmentFrequency" name="installmentFrequency" required>
+          <option value="weekly">Weekly</option>
+          <option value="biweekly">Biweekly</option>
+          <option value="monthly" selected>Monthly</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="ac-form-group">
+        <label for="startDate">Start date</label>
+        <input id="startDate" name="startDate" type="date" />
+      </div>
+      <div class="ac-form-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="3"></textarea>
+      </div>
+      <button type="submit" class="ac-btn">Submit arrangement</button>
+    </form>
+  </article>
+</section>

@@ -1,0 +1,45 @@
+<%
+  var items = (pageData && pageData.items) || [];
+  var caps = (pageData && pageData.capabilities) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-billing-arrangements" data-ac-page-section="billing-arrangements" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <% if (items.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'arrangements-empty',
+          title: 'No payment arrangements',
+          description: 'Requested payment plans will appear here.',
+          primaryAction: caps.canCreate
+            ? { href: '/app/billing/arrangements/new', label: 'New arrangement' }
+            : null
+        }
+      }) %>
+    <% } else { %>
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Number</th>
+            <th>Patient</th>
+            <th>Total</th>
+            <th>Installments</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (row) { %>
+          <tr>
+            <td><a href="/app/billing/arrangements/<%= row.id %>"><%= row.arrangementNumber %></a></td>
+            <td><%= row.patientName %> · <%= row.patientNumber %></td>
+            <td class="ac-money"><%= row.totalFormatted %></td>
+            <td><%= row.numberOfInstallments %> × <%= row.installmentFormatted %></td>
+            <td><span class="ac-status" data-status="<%= row.status %>"><%= row.status %></span></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </article>
+</section>

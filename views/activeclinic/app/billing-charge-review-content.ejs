@@ -1,0 +1,53 @@
+<%
+  var items = (pageData && pageData.items) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-billing-charge-review" data-ac-page-section="billing-charge-review" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <% if (items.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'charge-review-empty',
+          title: 'No charges pending review',
+          description: 'Automatically captured charges awaiting approval will appear here.'
+        }
+      }) %>
+    <% } else { %>
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Charged</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (row) { %>
+          <tr>
+            <td><%= row.patientName %> · <%= row.patientNumber %></td>
+            <td><%= row.description %></td>
+            <td class="ac-money"><%= row.totalFormatted %></td>
+            <td><%= row.chargedAt %></td>
+            <td class="ac-actions">
+              <form method="POST" action="/app/billing/charges/<%= row.id %>/review" style="display:inline">
+                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+                <input type="hidden" name="decision" value="approve" />
+                <button type="submit" class="ac-btn">Approve</button>
+              </form>
+              <form method="POST" action="/app/billing/charges/<%= row.id %>/review" style="display:inline">
+                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+                <input type="hidden" name="decision" value="reject" />
+                <button type="submit" class="ac-btn ac-btn--ghost">Reject</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </article>
+</section>

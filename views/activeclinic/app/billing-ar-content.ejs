@@ -1,0 +1,43 @@
+<%
+  var items = (pageData && pageData.items) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-billing-ar" data-ac-page-section="billing-ar" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <% if (items.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'ar-empty',
+          title: 'No outstanding balances',
+          description: 'Posted invoices with unpaid balances will appear here.'
+        }
+      }) %>
+    <% } else { %>
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Patient</th>
+            <th>Date</th>
+            <th>Days out</th>
+            <th>Total</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (row) { %>
+          <tr>
+            <td><a href="/app/billing/invoices/<%= row.id %>"><%= row.invoiceNumber %></a></td>
+            <td><%= row.patientName %> · <%= row.patientNumber %></td>
+            <td><%= row.invoiceDate %></td>
+            <td><%= row.daysOutstanding %></td>
+            <td class="ac-money"><%= row.totalFormatted %></td>
+            <td class="ac-money"><strong><%= row.balanceFormatted %></strong></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </article>
+</section>

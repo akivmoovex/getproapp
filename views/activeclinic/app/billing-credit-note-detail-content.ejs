@@ -1,0 +1,18 @@
+<%
+  var cn = (pageData && pageData.creditNote) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-billing-credit-note-detail" data-ac-page-section="billing-credit-note-detail" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title"><%= cn.creditNoteNumber %></h2>
+    <dl class="ac-dl">
+      <div><dt>Patient</dt><dd><%= cn.patientName %> · <%= cn.patientNumber %></dd></div>
+      <div><dt>Invoice</dt><dd><%= cn.invoiceNumber || '—' %></dd></div>
+      <div><dt>Amount</dt><dd class="ac-money"><strong><%= cn.amountFormatted %></strong></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= cn.status %>"><%= cn.status %></span></dd></div>
+      <div><dt>Reason</dt><dd><%= cn.reason %></dd></div>
+      <div><dt>Created</dt><dd><%= cn.createdAt %></dd></div>
+    </dl>
+    <p><a class="ac-btn ac-btn--ghost" href="/app/billing/credit-notes">Back to credit notes</a></p>
+  </article>
+</section>

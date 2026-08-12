@@ -1,0 +1,58 @@
+<%
+  var items = (pageData && pageData.items) || [];
+  var caps = (pageData && pageData.capabilities) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-billing-price-overrides" data-ac-page-section="billing-price-overrides" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <% if (items.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'price-overrides-empty',
+          title: 'No price override requests',
+          description: 'Pending and reviewed override requests will appear here.'
+        }
+      }) %>
+    <% } else { %>
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Original</th>
+            <th>Requested</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <% if (caps.canApprove) { %><th>Actions</th><% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (row) { %>
+          <tr>
+            <td><%= row.patientName || '—' %><% if (row.patientNumber) { %> · <%= row.patientNumber %><% } %></td>
+            <td class="ac-money"><%= row.originalFormatted %></td>
+            <td class="ac-money"><%= row.requestedFormatted %></td>
+            <td><%= row.reason %></td>
+            <td><span class="ac-status" data-status="<%= row.status %>"><%= row.status %></span></td>
+            <% if (caps.canApprove) { %>
+            <td class="ac-actions">
+              <% if (row.status === 'pending') { %>
+              <form method="POST" action="/app/billing/price-overrides/<%= row.id %>/approve" style="display:inline">
+                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+                <button type="submit" class="ac-btn">Approve</button>
+              </form>
+              <form method="POST" action="/app/billing/price-overrides/<%= row.id %>/reject" style="display:inline">
+                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+                <button type="submit" class="ac-btn ac-btn--ghost">Reject</button>
+              </form>
+              <% } else { %>—<% } %>
+            </td>
+            <% } %>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </article>
+</section>

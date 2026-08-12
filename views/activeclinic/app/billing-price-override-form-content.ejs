@@ -1,0 +1,38 @@
+<%
+  var prefill = (pageData && pageData.prefill) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-billing-price-override-form" data-ac-page-section="billing-price-override-form" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <form method="POST" action="/app/billing/price-overrides">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <div class="ac-form-group">
+        <label for="patientId">Patient ID</label>
+        <input id="patientId" name="patientId" type="text" value="<%= prefill.patientId || '' %>" />
+      </div>
+      <div class="ac-form-group">
+        <label for="patientChargeId">Patient charge ID</label>
+        <input id="patientChargeId" name="patientChargeId" type="text" value="<%= prefill.patientChargeId || '' %>" />
+      </div>
+      <div class="ac-form-group">
+        <label for="originalAmount">Original price *</label>
+        <input id="originalAmount" name="originalAmount" type="text" inputmode="decimal" required placeholder="0.00" />
+      </div>
+      <div class="ac-form-group">
+        <label for="requestedAmount">Requested price *</label>
+        <input id="requestedAmount" name="requestedAmount" type="text" inputmode="decimal" required placeholder="0.00" />
+      </div>
+      <div class="ac-form-group">
+        <label for="currencyCode">Currency</label>
+        <input id="currencyCode" name="currencyCode" type="text" maxlength="3" value="ZMW" />
+      </div>
+      <div class="ac-form-group">
+        <label for="reason">Reason *</label>
+        <textarea id="reason" name="reason" rows="3" required maxlength="2000"></textarea>
+      </div>
+      <button type="submit" class="ac-btn">Submit for approval</button>
+      <a class="ac-btn ac-btn--ghost" href="/app/billing/price-overrides">Cancel</a>
+    </form>
+  </article>
+</section>

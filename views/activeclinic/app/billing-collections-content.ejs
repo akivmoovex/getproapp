@@ -1,0 +1,43 @@
+<%
+  var items = (pageData && pageData.items) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-billing-collections" data-ac-page-section="billing-collections" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <% if (items.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'collections-empty',
+          title: 'Collections queue is clear',
+          description: 'No outstanding invoices need follow-up right now.'
+        }
+      }) %>
+    <% } else { %>
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Patient</th>
+            <th>Days out</th>
+            <th>Balance</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (row) { %>
+          <tr>
+            <td><%= row.invoiceNumber %></td>
+            <td><%= row.patientName %> · <%= row.patientNumber %></td>
+            <td><%= row.daysOutstanding %></td>
+            <td class="ac-money"><%= row.balanceFormatted %></td>
+            <td>
+              <a class="ac-btn ac-btn--ghost" href="/app/billing/collections/contact?patientId=<%= row.patientId %>&amp;invoiceId=<%= row.id %>">Log contact</a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </article>
+</section>

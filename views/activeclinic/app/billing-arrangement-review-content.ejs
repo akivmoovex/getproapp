@@ -1,0 +1,34 @@
+<%
+  var arr = (pageData && pageData.arrangement) || {};
+  var caps = (pageData && pageData.capabilities) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-billing-arrangement-review" data-ac-page-section="billing-arrangement-review" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title"><%= arr.arrangementNumber %></h2>
+    <dl class="ac-dl">
+      <div><dt>Patient</dt><dd><%= arr.patientName %> · <%= arr.patientNumber %></dd></div>
+      <div><dt>Total</dt><dd class="ac-money"><%= arr.totalFormatted %></dd></div>
+      <div><dt>Installments</dt><dd><%= arr.numberOfInstallments %> × <%= arr.installmentFormatted %> (<%= arr.installmentFrequency %>)</dd></div>
+      <div><dt>Start date</dt><dd><%= arr.startDate %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= arr.status %>"><%= arr.status %></span></dd></div>
+      <% if (arr.notes) { %><div><dt>Notes</dt><dd><%= arr.notes %></dd></div><% } %>
+    </dl>
+
+    <% if (caps.canReview) { %>
+    <form method="POST" action="/app/billing/arrangements/<%= arr.id %>/review" class="ac-form">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <div class="ac-form-group">
+        <label for="reviewNotes">Review notes</label>
+        <textarea id="reviewNotes" name="reviewNotes" rows="2"></textarea>
+      </div>
+      <div class="ac-actions">
+        <button type="submit" name="action" value="approve" class="ac-btn">Approve</button>
+        <button type="submit" name="action" value="reject" class="ac-btn ac-btn--ghost">Reject</button>
+      </div>
+    </form>
+    <% } %>
+    <p><a class="ac-btn ac-btn--ghost" href="/app/billing/arrangements">Back to arrangements</a></p>
+  </article>
+</section>

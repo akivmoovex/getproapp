@@ -1,0 +1,63 @@
+<%
+  var items = (pageData && pageData.items) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+%>
+<section class="ac-billing-corrections" data-ac-page-section="billing-corrections" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <article class="ac-panel">
+    <% if (items.length === 0) { %>
+      <%- include('../partials/ac-inline-state', {
+        inlineState: {
+          stateKey: 'empty',
+          marker: 'corrections-empty',
+          title: 'No corrections yet',
+          description: 'Refunds, reversals, and credit notes will appear here.'
+        }
+      }) %>
+    <% } else { %>
+      <div class="ac-table-wrap">
+        <table class="ac-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Subtype</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>When</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% items.forEach(function (row) { %>
+            <tr>
+              <td><%= row.correctionType %></td>
+              <td><%= row.subtype %></td>
+              <td class="ac-money"><%= row.amountFormatted %></td>
+              <td><span class="ac-status" data-status="<%= row.status %>"><%= row.status %></span></td>
+              <td><%= row.occurredAt %></td>
+              <td><%= row.reason %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <ul class="ac-list ac-list--mobile-only" aria-label="Corrections">
+        <% items.forEach(function (row) { %>
+        <li class="ac-list-card">
+          <p><strong><%= row.correctionType %></strong> · <%= row.subtype %></p>
+          <p class="ac-money"><%= row.amountFormatted %></p>
+          <p class="ac-muted"><%= row.occurredAt %></p>
+          <p><%= row.reason %></p>
+        </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+</section>
+<style>
+  .ac-list--mobile-only { display: none; list-style: none; padding: 0; margin: 0; }
+  .ac-list-card { border-top: 1px solid rgba(0,0,0,.08); padding: .75rem 0; }
+  @media (max-width: 720px) {
+    .ac-billing-corrections .ac-table-wrap { display: none; }
+    .ac-billing-corrections .ac-list--mobile-only { display: block; }
+  }
+</style>

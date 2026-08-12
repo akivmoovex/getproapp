@@ -1,0 +1,47 @@
+<%
+  var prefill = (pageData && pageData.prefill) || {};
+  var stitch = (pageData && pageData.stitch) || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+%>
+<section class="ac-billing-collections-contact" data-ac-page-section="billing-collections-contact" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <article class="ac-panel">
+    <form method="POST" action="/app/billing/collections/contact">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+      <div class="ac-form-group">
+        <label for="patientId">Patient ID *</label>
+        <input id="patientId" name="patientId" type="text" required value="<%= prefill.patientId || '' %>" />
+      </div>
+      <div class="ac-form-group">
+        <label for="invoiceId">Invoice ID</label>
+        <input id="invoiceId" name="invoiceId" type="text" value="<%= prefill.invoiceId || '' %>" />
+      </div>
+      <div class="ac-form-group">
+        <label for="contactMethod">Contact method *</label>
+        <select id="contactMethod" name="contactMethod" required>
+          <option value="phone">Phone</option>
+          <option value="sms">SMS</option>
+          <option value="email">Email</option>
+          <option value="in_person">In person</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="ac-form-group">
+        <label for="outcome">Outcome *</label>
+        <select id="outcome" name="outcome" required>
+          <option value="attempted">Attempted</option>
+          <option value="reached">Reached</option>
+          <option value="promised_payment">Promised payment</option>
+          <option value="disputed">Disputed</option>
+          <option value="no_answer">No answer</option>
+          <option value="wrong_contact">Wrong contact</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="ac-form-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="3"></textarea>
+      </div>
+      <button type="submit" class="ac-btn">Save contact</button>
+    </form>
+  </article>
+</section>
