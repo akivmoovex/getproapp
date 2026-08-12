@@ -1,0 +1,61 @@
+<section class="ac-public-section ac-booking-wizard ac-booking-procedure acp-booking-shell" data-ac-page-section="procedure-patient" data-ac-procedure-section="patient">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <div class="acp-booking-layout acp-booking-layout--procedure">
+    <div class="acp-booking-layout__main">
+      <header class="acp-booking-header">
+        <h1>Your details</h1>
+        <p>We need contact details so the clinic can review and confirm your procedure request.</p>
+      </header>
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <% if (validationErrors && Object.keys(validationErrors).length) { %>
+      <div class="ac-public-error" role="alert" data-ac-form-state="validation_error">
+        <p>Please fix the following:</p>
+        <ul><% Object.values(validationErrors).forEach(function (message) { %><li><%= message %></li><% }); %></ul>
+      </div>
+      <% } %>
+      <% const fd = (typeof formData !== 'undefined' && formData) || draft || {}; %>
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/patient" class="ac-public-form acp-patient-panel">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <div class="acp-field-grid">
+          <div class="acp-field">
+            <label for="patientFirstName">First name</label>
+            <input id="patientFirstName" name="patientFirstName" required maxlength="80" value="<%= fd.patientFirstName || '' %>"/>
+          </div>
+          <div class="acp-field">
+            <label for="patientLastName">Last name</label>
+            <input id="patientLastName" name="patientLastName" required maxlength="80" value="<%= fd.patientLastName || '' %>"/>
+          </div>
+        </div>
+        <%- include('../partials/phone-field', {
+          id: 'patientPhone',
+          label: 'Phone',
+          required: true,
+          defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          selectedCountry: fd.phoneCountry || fd.phone_country || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          nationalValue: fd.phoneNational || fd.phone_national || fd.patientPhoneNational || '',
+          e164Value: fd.patientPhone || '',
+          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+          phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+          countryFieldName: 'phone_country',
+          nationalFieldName: 'phone_national',
+          legacyFieldName: 'patientPhone',
+          showLegacyHidden: true
+        }) %>
+        <div class="acp-field">
+          <label for="patientEmail">Email (optional)</label>
+          <input id="patientEmail" name="patientEmail" type="email" value="<%= fd.patientEmail || '' %>"/>
+        </div>
+        <div class="acp-field">
+          <label for="visitReason">Notes for the clinic (optional)</label>
+          <textarea id="visitReason" name="visitReason" maxlength="500"><%= fd.visitReason || '' %></textarea>
+        </div>
+        <div class="ac-booking-wizard__actions acp-booking-actions">
+          <button type="submit" class="ac-btn ac-btn--primary">Continue to review</button>
+          <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/time">Back</a>
+        </div>
+      </form>
+      <%- include('../partials/sms-honesty-note') %>
+    </div>
+    <%- include('../partials/booking-summary', { draft: draft }) %>
+  </div>
+</section>

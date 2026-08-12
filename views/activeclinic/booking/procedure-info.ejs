@@ -1,0 +1,64 @@
+<section class="ac-public-section ac-booking-wizard ac-booking-procedure acp-booking-shell" data-ac-page-section="procedure-info" data-ac-procedure-section="information">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <div class="acp-booking-layout acp-booking-layout--procedure">
+    <div class="acp-booking-layout__main">
+      <header class="acp-booking-header">
+        <p class="ac-public-eyebrow">Procedure request</p>
+        <h1><%= procedure.displayName %></h1>
+        <p>Review procedure information before continuing. This creates a request for clinic confirmation — not an automatic booking.</p>
+      </header>
+
+      <section class="ac-booking-procedure__section acp-info-card" data-ac-procedure-section="information">
+        <h2>About this procedure</h2>
+        <% if (procedure.summary) { %><p><%= procedure.summary %></p><% } else { %>
+        <p class="ac-public-note">Detailed information is not published. Contact the clinic for questions.</p>
+        <% } %>
+        <% if (procedure.category) { %>
+        <p class="ac-booking-choice__meta">Category: <%= procedure.category %></p>
+        <% } %>
+        <% if (procedure.estimatedDurationMinutes) { %>
+        <p class="ac-booking-choice__meta">Estimated duration: <%= procedure.estimatedDurationMinutes %> minutes (clinic estimate only)</p>
+        <% } %>
+        <p class="ac-booking-choice__meta">Clinic: <%= clinic.publicName || clinic.displayName || clinic.clinicKey %></p>
+      </section>
+
+      <section class="ac-booking-procedure__section acp-info-card" data-ac-procedure-section="preparation" data-ac-prep-state="<%= procedure.preparationInstructions ? 'configured' : 'empty' %>">
+        <h2>Preparation</h2>
+        <% if (procedure.preparationInstructions) { %>
+        <div class="ac-public-prep"><p><%= procedure.preparationInstructions %></p></div>
+        <% } else { %>
+        <p class="ac-public-note">Preparation instructions are not configured. Contact the clinic for guidance. This site does not generate clinical advice.</p>
+        <% } %>
+      </section>
+
+      <section class="ac-booking-procedure__section acp-info-card" data-ac-procedure-section="referral-preview">
+        <h2>Referral</h2>
+        <% if (procedure.referralRequired) { %>
+        <p class="ac-public-banner" data-ac-referral="required">A referral is required. You will confirm referral details on the next step.</p>
+        <% } else { %>
+        <p class="ac-public-note" data-ac-referral="not_required">No referral is required for this procedure.</p>
+        <% } %>
+      </section>
+
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <% if (validationErrors && validationErrors.preparationAcknowledged) { %>
+      <div class="ac-public-error" role="alert" data-ac-form-state="validation_error"><%= validationErrors.preparationAcknowledged %></div>
+      <% } %>
+
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>" class="ac-public-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="wizardAction" value="continue"/>
+        <label class="ac-public-check">
+          <input type="checkbox" name="preparationAcknowledged" value="1" required<%= draft && draft.preparationAcknowledged ? ' checked' : '' %>/>
+          I have reviewed the preparation information above and understand the clinic will provide any guidance that is not published online.
+        </label>
+        <div class="ac-booking-wizard__actions acp-booking-actions">
+          <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+          <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/procedures">Back to procedures</a>
+        </div>
+      </form>
+      <%- include('../partials/sms-honesty-note') %>
+    </div>
+    <%- include('../partials/booking-summary', { draft: draft }) %>
+  </div>
+</section>

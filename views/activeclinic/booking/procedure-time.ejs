@@ -1,0 +1,36 @@
+<section class="ac-public-section ac-booking-wizard ac-booking-procedure acp-booking-shell" data-ac-page-section="procedure-time" data-ac-procedure-section="time">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <div class="acp-booking-layout acp-booking-layout--procedure">
+    <div class="acp-booking-layout__main">
+      <header class="acp-booking-header">
+        <h1>Preferred date and time</h1>
+        <p>Choose a preferred time for <strong><%= procedure.displayName %></strong>. The clinic reviews your request and confirms availability.</p>
+      </header>
+
+      <% if (slotAvailabilityState === 'no_slots_published') { %>
+      <p class="ac-public-banner acp-slot-banner" data-ac-slot-state="no_slots_published" data-ac-resource-availability="request_based">
+        Live procedure slots are not published online. Enter your preferred date and time — staff will confirm what is available.
+      </p>
+      <% } %>
+
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <% if (validationErrors && validationErrors.preferredStartsAt) { %>
+      <div class="ac-public-error" role="alert" data-ac-form-state="validation_error"><%= validationErrors.preferredStartsAt %></div>
+      <% } %>
+
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/time" class="ac-public-form acp-slot-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <div class="acp-field-panel">
+          <label for="preferredStartsAt">Preferred date and time</label>
+          <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" required value="<%= (draft && draft.preferredStartsAt) || '' %>"/>
+          <p class="ac-public-note">This is a request only. It is not confirmed until the clinic responds.</p>
+        </div>
+        <div class="ac-booking-wizard__actions acp-booking-actions">
+          <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+          <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %><%= procedure.referralRequired ? '/referral' : '' %>">Back</a>
+        </div>
+      </form>
+    </div>
+    <%- include('../partials/booking-summary', { draft: draft }) %>
+  </div>
+</section>

@@ -1,4 +1,5 @@
 <% const d = draft || {}; %>
+<% const isProcedure = d.bookingKind === 'procedure' || !!d.procedureDisplayName; %>
 <aside class="ac-booking-summary" data-ac-booking-summary>
   <h2 class="ac-booking-summary__title">Your request summary</h2>
   <dl class="ac-booking-summary__list">
@@ -8,7 +9,12 @@
     <% if (d.procedureDisplayName) { %>
     <div><dt>Procedure</dt><dd><%= d.procedureDisplayName %></dd></div>
     <% } %>
+    <% if (!isProcedure) { %>
     <div><dt>Doctor preference</dt><dd><%= d.anyDoctor ? 'Any available doctor' : (d.staffDisplayName || 'Not selected yet') %></dd></div>
+    <% } %>
+    <% if (isProcedure) { %>
+    <div><dt>Referral</dt><dd><%= d.referralRequired ? 'Required' : 'Not required' %></dd></div>
+    <% } %>
     <% if (d.preferredStartsAt) { %>
     <div><dt>Preferred time</dt><dd><%= d.preferredStartsAt %></dd></div>
     <% } %>

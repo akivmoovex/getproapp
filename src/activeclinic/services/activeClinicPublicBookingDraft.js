@@ -100,10 +100,52 @@ function emptyConsultationDraft(clinicKey) {
     patientFirstName: null,
     patientLastName: null,
     patientPhone: null,
+    phoneCountry: null,
+    phoneNational: null,
     patientEmail: null,
     visitReason: null,
     idempotencyKey: generateIdempotencyKey(),
   };
+}
+
+function emptyProcedureDraft(clinicKey, procedure) {
+  return {
+    clinicKey,
+    bookingKind: "procedure",
+    procedureKey: procedure && procedure.procedureKey ? procedure.procedureKey : null,
+    procedureId: procedure && procedure.id ? procedure.id : null,
+    procedureDisplayName: procedure && procedure.displayName ? procedure.displayName : null,
+    referralRequired: procedure ? procedure.referralRequired === true : false,
+    referralAcknowledged: false,
+    referralNotes: null,
+    preparationAcknowledged: false,
+    preferredStartsAt: null,
+    patientFirstName: null,
+    patientLastName: null,
+    patientPhone: null,
+    phoneCountry: null,
+    phoneNational: null,
+    patientEmail: null,
+    idempotencyKey: generateIdempotencyKey(),
+  };
+}
+
+function ensureProcedureDraft(req, env, clinicKey, procedure) {
+  const existing = readBookingDraft(req, env, clinicKey);
+  if (
+    existing
+    && existing.bookingKind === "procedure"
+    && existing.procedureKey === procedure.procedureKey
+    && existing.procedureId === procedure.id
+  ) {
+    return mergeDraft(existing, {
+      procedureKey: procedure.procedureKey,
+      procedureId: procedure.id,
+      procedureDisplayName: procedure.displayName,
+      referralRequired: procedure.referralRequired === true,
+    });
+  }
+  return emptyProcedureDraft(clinicKey, procedure);
 }
 
 function mergeDraft(existing, patch) {
@@ -123,6 +165,21 @@ const CONSULTATION_WIZARD_STEPS = Object.freeze([
   { key: "review", label: "Review", step: 5 },
 ]);
 
+const PROCEDURE_WIZARD_STEPS = Object.freeze([
+  { key: "info", label: "Procedure", step: 1 },
+  { key: "referral", label: "Referral", step: 2 },
+  { key: "time", label: "Preferred time", step: 3 },
+  { key: "patient", label: "Your details", step: 4 },
+  { key: "review", label: "Review", step: 5 },
+]);
+
+function procedureWizardStepsFor(draftOrProcedure) {
+  const referralRequired = !!(draftOrProcedure && draftOrProcedure.referralRequired === true);
+  return PROCEDURE_WIZARD_STEPS
+    .filter((item) => referralRequired || item.key !== "referral")
+    .map((item, index) => ({ ...item, step: index + 1 }));
+}
+
 function canModifyBookingStatus(status) {
   return status === "submitted_pending_confirmation" || status === "confirmed";
 }
@@ -130,11 +187,15 @@ function canModifyBookingStatus(status) {
 module.exports = {
   COOKIE_NAME,
   CONSULTATION_WIZARD_STEPS,
+  PROCEDURE_WIZARD_STEPS,
   readBookingDraft,
   writeBookingDraft,
   clearBookingDraft,
   emptyConsultationDraft,
+  emptyProcedureDraft,
+  ensureProcedureDraft,
   mergeDraft,
+  procedureWizardStepsFor,
   resolvePublicSlotAvailabilityState,
   canModifyBookingStatus,
 };

@@ -1,0 +1,46 @@
+<section class="ac-public-section ac-booking-wizard ac-booking-procedure acp-booking-shell" data-ac-page-section="procedure-referral" data-ac-procedure-section="referral">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <div class="acp-booking-layout acp-booking-layout--procedure">
+    <div class="acp-booking-layout__main">
+      <header class="acp-booking-header">
+        <h1>Referral requirements</h1>
+        <p>Tell the clinic how you will provide any required referral. Secure document upload is not available online yet.</p>
+      </header>
+
+      <% if (procedure.referralRequired) { %>
+      <div class="ac-public-banner" data-ac-referral="required" data-ac-referral-upload="unavailable">
+        A referral is required for <strong><%= procedure.displayName %></strong>.
+        You can add notes for the clinic; the clinic will follow up to collect the referral document.
+      </div>
+      <% } else { %>
+      <div class="ac-public-note" data-ac-referral="not_required">
+        No referral is required for this procedure. Continue to choose a preferred time.
+      </div>
+      <% } %>
+
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <% if (validationErrors && Object.keys(validationErrors).length) { %>
+      <div class="ac-public-error" role="alert" data-ac-form-state="validation_error">
+        <ul><% Object.values(validationErrors).forEach(function (msg) { %><li><%= msg %></li><% }); %></ul>
+      </div>
+      <% } %>
+
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/referral" class="ac-public-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <% if (procedure.referralRequired) { %>
+        <div class="acp-field">
+          <label for="referralNotes">Referral notes (optional)</label>
+          <textarea id="referralNotes" name="referralNotes" maxlength="2000" placeholder="Referring clinician, facility, or reference number"><%= (draft && draft.referralNotes) || '' %></textarea>
+          <p class="ac-public-note">Document upload is not available in this release. The clinic will contact you to complete referral verification.</p>
+        </div>
+        <% } %>
+        <div class="ac-booking-wizard__actions acp-booking-actions">
+          <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+          <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>">Back</a>
+        </div>
+      </form>
+      <%- include('../partials/sms-honesty-note') %>
+    </div>
+    <%- include('../partials/booking-summary', { draft: draft }) %>
+  </div>
+</section>

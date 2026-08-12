@@ -1,0 +1,41 @@
+<section class="ac-public-section ac-booking-wizard ac-booking-procedure acp-booking-shell" data-ac-page-section="procedure-review" data-ac-procedure-section="review">
+  <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <div class="acp-booking-layout acp-booking-layout--procedure">
+    <div class="acp-booking-layout__main">
+      <header class="acp-booking-header">
+        <h1>Review your procedure request</h1>
+        <p>Submitting creates a <strong>pending</strong> request. The clinic must confirm the procedure date and time.</p>
+      </header>
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <div class="ac-booking-review acp-review-panel">
+        <dl class="ac-booking-summary__list">
+          <div><dt>Procedure</dt><dd><%= draft.procedureDisplayName %> <a href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>">Edit</a></dd></div>
+          <div><dt>Preparation reviewed</dt><dd><%= draft.preparationAcknowledged ? 'Yes' : 'No' %></dd></div>
+          <div>
+            <dt>Referral</dt>
+            <dd>
+              <%= draft.referralRequired ? (draft.referralNotes ? 'Required — notes provided' : 'Required — clinic follow-up needed') : 'Not required' %>
+              <% if (draft.referralRequired) { %><a href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/referral">Edit</a><% } %>
+            </dd>
+          </div>
+          <% if (draft.referralNotes) { %><div><dt>Referral notes</dt><dd><%= draft.referralNotes %></dd></div><% } %>
+          <div><dt>Preferred time</dt><dd><%= draft.preferredStartsAt %> <a href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/time">Edit</a></dd></div>
+          <div><dt>Patient</dt><dd><%= draft.patientFirstName %> <%= draft.patientLastName %> <a href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/patient">Edit</a></dd></div>
+          <div><dt>Phone</dt><dd><%= draft.patientPhone %></dd></div>
+          <% if (draft.patientEmail) { %><div><dt>Email</dt><dd><%= draft.patientEmail %></dd></div><% } %>
+          <% if (draft.visitReason) { %><div><dt>Notes</dt><dd><%= draft.visitReason %></dd></div><% } %>
+        </dl>
+      </div>
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/submit" class="ac-public-form">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="idempotencyKey" value="<%= draft.idempotencyKey %>"/>
+        <div class="ac-booking-wizard__actions acp-booking-actions">
+          <button type="submit" class="ac-btn ac-btn--primary">Submit procedure request</button>
+          <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/patient">Back</a>
+        </div>
+      </form>
+      <%- include('../partials/sms-honesty-note') %>
+    </div>
+    <%- include('../partials/booking-summary', { draft: draft }) %>
+  </div>
+</section>

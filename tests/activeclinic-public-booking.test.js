@@ -311,12 +311,26 @@ describe("ActiveClinic public booking (P24–P26)", () => {
       [tenant.organizationId, tenant.healthcareOrganizationId]
     );
     const app = appWithEnv();
-    const page = await request(app).get(`/clinics/${tenant.orgKey}/book/procedures/mri`);
-    assert.equal(page.status, 200);
-    assert.match(page.text, /data-ac-referral="required"/);
-    assert.match(page.text, /upload is not available online/i);
-    assert.match(page.text, /clinic will follow up/i);
-    assert.match(page.text, /SMS reminders are not sent/i);
+    const base = `/clinics/${tenant.orgKey}/book/procedures/mri`;
+    let cookies = [];
+    const info = await request(app).get(base);
+    assert.equal(info.status, 200);
+    assert.match(info.text, /data-ac-page-section="procedure-info"/);
+    assert.match(info.text, /data-ac-referral="required"/);
+    cookies = mergeCookies(cookies, info);
+    const csrf = extractCsrf(info);
+    const continued = await request(app)
+      .post(base)
+      .set("Cookie", cookies)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, preparationAcknowledged: "1" });
+    assert.equal(continued.status, 303);
+    cookies = mergeCookies(cookies, continued);
+    const referral = await request(app).get(`${base}/referral`).set("Cookie", cookies);
+    assert.equal(referral.status, 200);
+    assert.match(referral.text, /upload is not available online/i);
+    assert.match(referral.text, /clinic will follow up/i);
+    assert.match(referral.text, /SMS reminders are not sent/i);
   });
 
   it("my-booking cancel gated by status and cancellation is request not completed", async () => {

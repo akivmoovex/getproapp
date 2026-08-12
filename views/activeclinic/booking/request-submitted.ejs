@@ -2,6 +2,7 @@
   <div class="acp-confirmation-panel__card">
     <p class="ac-public-eyebrow">Request received</p>
     <h1>Request submitted</h1>
+    <% if (booking.procedureDisplayName) { %><p>Procedure: <strong><%= booking.procedureDisplayName %></strong></p><% } %>
     <p>Your appointment request <strong><%= booking.requestNumber %></strong> is <strong>pending clinic confirmation</strong>.</p>
     <p class="acp-status-banner acp-status-banner--pending">This is not a confirmed appointment. Save your access link to check status.</p>
     <% if (accessToken) { %>

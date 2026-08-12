@@ -29,7 +29,9 @@ const {
   writeBookingDraft,
   clearBookingDraft,
   emptyConsultationDraft,
+  ensureProcedureDraft,
   mergeDraft,
+  procedureWizardStepsFor,
   resolvePublicSlotAvailabilityState,
   canModifyBookingStatus,
 } = require("../services/activeClinicPublicBookingDraft");
@@ -39,6 +41,18 @@ const { resolveClinicOrRespond, sendClinicResolveFailure } = require("./activeCl
 function wizardLocals(extra) {
   return {
     wizardSteps: CONSULTATION_WIZARD_STEPS,
+    slotAvailabilityState: resolvePublicSlotAvailabilityState(),
+    validationErrors: {},
+    ...extra,
+  };
+}
+
+function procedureWizardLocals(extra) {
+  const wizardSteps = procedureWizardStepsFor(extra.draft || extra.procedure);
+  const currentStep = wizardSteps.find((item) => item.key === extra.wizardStepKey);
+  return {
+    wizardSteps,
+    wizardStep: currentStep ? currentStep.step : 1,
     slotAvailabilityState: resolvePublicSlotAvailabilityState(),
     validationErrors: {},
     ...extra,
@@ -566,13 +580,17 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
           csrfToken, clinic: resolved.clinic,
         }));
       }
+      const procedure = procedureResult.procedure;
+      const draft = ensureProcedureDraft(req, env, clinicKey, procedure);
+      writeBookingDraft(res, env, draft, { isProduction });
       const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("booking/procedure-entry", {
+      return res.status(200).type("html").send(renderPublicView("booking/procedure-info", procedureWizardLocals({
         csrfToken,
         clinic: resolved.clinic,
-        procedure: procedureResult.procedure,
-        idempotencyKey: generateIdempotencyKey(),
-      }));
+        procedure,
+        draft,
+        wizardStepKey: "info",
+      })));
     } catch (err) {
       return next(err);
     }
@@ -596,54 +614,390 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         const csrfToken = issuePageCsrf(res, env, isProduction);
         return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
       }
+      const procedure = procedureResult.procedure;
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      let draft = ensureProcedureDraft(req, env, clinicKey, procedure);
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.status(403).type("html").send(renderPublicView("booking/procedure-info", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "info",
+          error: "Your session expired. Please try again.",
+        })));
+      }
+
+      if (req.body.preparationAcknowledged !== "1") {
+        return res.status(400).type("html").send(renderPublicView("booking/procedure-info", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "info",
+          validationErrors: { preparationAcknowledged: "Confirm that you have reviewed the preparation information." },
+        })));
+      }
+
+      draft = mergeDraft(draft, {
+        preparationAcknowledged: true,
+        referralAcknowledged: procedure.referralRequired !== true,
+      });
+      writeBookingDraft(res, env, draft, { isProduction });
+      const nextStep = procedure.referralRequired ? "referral" : "time";
+      return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/${nextStep}`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/book/procedures/:procedureKey/referral", async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
+      if (!resolved.ok) {
+        if (resolved.sent) return undefined;
+        return res.status(400).type("html").send("<h1>Booking Not Available</h1>");
+      }
+      const clinic = resolved.clinic;
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+      if (!procedureResult.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
+      }
+      const procedure = procedureResult.procedure;
+      const draft = readBookingDraft(req, env, clinicKey);
+      if (!draft || draft.bookingKind !== "procedure" || draft.procedureId !== procedure.id || !draft.preparationAcknowledged) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}`);
+      }
+      if (!procedure.referralRequired) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/time`);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(200).type("html").send(renderPublicView("booking/procedure-referral", procedureWizardLocals({
+        csrfToken, clinic, procedure, draft, wizardStepKey: "referral",
+      })));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/referral", bookingLimiter, async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
+      if (!resolved.ok) {
+        if (resolved.sent) return undefined;
+        return res.status(400).type("html").send("<h1>Booking Not Available</h1>");
+      }
+      const clinic = resolved.clinic;
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+      if (!procedureResult.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
+      }
+      const procedure = procedureResult.procedure;
+      let draft = readBookingDraft(req, env, clinicKey);
+      if (!draft || draft.bookingKind !== "procedure" || draft.procedureId !== procedure.id || !draft.preparationAcknowledged) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}`);
+      }
+      if (!procedure.referralRequired) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/time`);
+      }
       const csrfToken = issuePageCsrf(res, env, isProduction);
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        return res.status(403).type("html").send(renderPublicView("booking/procedure-entry", {
-          csrfToken, clinic, procedure: procedureResult.procedure,
-          idempotencyKey: req.body.idempotencyKey || generateIdempotencyKey(),
+        return res.status(403).type("html").send(renderPublicView("booking/procedure-referral", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "referral",
           error: "Your session expired. Please try again.",
-          formData: req.body || {},
-        }));
+        })));
       }
+      draft = mergeDraft(draft, {
+        referralAcknowledged: true,
+        referralNotes: String((req.body && req.body.referralNotes) || "").trim().slice(0, 2000) || null,
+      });
+      writeBookingDraft(res, env, draft, { isProduction });
+      return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/time`);
+    } catch (err) {
+      return next(err);
+    }
+  });
 
-      const { errors } = validatePatientFields(req.body);
+  app.get("/clinics/:clinicKey/book/procedures/:procedureKey/time", async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
+      if (!resolved.ok) {
+        if (resolved.sent) return undefined;
+        return res.status(400).type("html").send("<h1>Booking Not Available</h1>");
+      }
+      const clinic = resolved.clinic;
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+      if (!procedureResult.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
+      }
+      const procedure = procedureResult.procedure;
+      const draft = readBookingDraft(req, env, clinicKey);
+      if (!draft || draft.bookingKind !== "procedure" || draft.procedureId !== procedure.id || !draft.preparationAcknowledged) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}`);
+      }
+      if (procedure.referralRequired && !draft.referralAcknowledged) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/referral`);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(200).type("html").send(renderPublicView("booking/procedure-time", procedureWizardLocals({
+        csrfToken, clinic, procedure, draft, wizardStepKey: "time",
+      })));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/time", bookingLimiter, async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
+      if (!resolved.ok) {
+        if (resolved.sent) return undefined;
+        return res.status(400).type("html").send("<h1>Booking Not Available</h1>");
+      }
+      const clinic = resolved.clinic;
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+      if (!procedureResult.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
+      }
+      const procedure = procedureResult.procedure;
+      let draft = readBookingDraft(req, env, clinicKey);
+      if (!draft || draft.bookingKind !== "procedure" || draft.procedureId !== procedure.id || !draft.preparationAcknowledged) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}`);
+      }
+      if (procedure.referralRequired && !draft.referralAcknowledged) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/referral`);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.status(403).type("html").send(renderPublicView("booking/procedure-time", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "time",
+          error: "Your session expired. Please try again.",
+        })));
+      }
+      const preferredStartsAt = String((req.body && req.body.preferredStartsAt) || "").trim();
+      if (!preferredStartsAt || Number.isNaN(new Date(preferredStartsAt).getTime())) {
+        return res.status(400).type("html").send(renderPublicView("booking/procedure-time", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "time",
+          validationErrors: { preferredStartsAt: "Enter a valid preferred date and time." },
+        })));
+      }
+      draft = mergeDraft(draft, { preferredStartsAt });
+      writeBookingDraft(res, env, draft, { isProduction });
+      return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/patient`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/book/procedures/:procedureKey/patient", async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
+      if (!resolved.ok) {
+        if (resolved.sent) return undefined;
+        return res.status(400).type("html").send("<h1>Booking Not Available</h1>");
+      }
+      const clinic = resolved.clinic;
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+      if (!procedureResult.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
+      }
+      const procedure = procedureResult.procedure;
+      const draft = readBookingDraft(req, env, clinicKey);
+      if (!draft || draft.bookingKind !== "procedure" || draft.procedureId !== procedure.id || !draft.preferredStartsAt) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/time`);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(200).type("html").send(renderPublicView("booking/procedure-patient", procedureWizardLocals({
+        csrfToken, clinic, procedure, draft, wizardStepKey: "patient",
+      })));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/patient", bookingLimiter, async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
+      if (!resolved.ok) {
+        if (resolved.sent) return undefined;
+        return res.status(400).type("html").send("<h1>Booking Not Available</h1>");
+      }
+      const clinic = resolved.clinic;
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+      if (!procedureResult.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
+      }
+      const procedure = procedureResult.procedure;
+      let draft = readBookingDraft(req, env, clinicKey);
+      if (!draft || draft.bookingKind !== "procedure" || draft.procedureId !== procedure.id || !draft.preferredStartsAt) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/time`);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.status(403).type("html").send(renderPublicView("booking/procedure-patient", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "patient",
+          error: "Your session expired. Please try again.", formData: req.body || {},
+        })));
+      }
+      const { errors, firstName, lastName, phone, phoneCountry, phoneNational } = validatePatientFields(req.body);
       if (Object.keys(errors).length) {
-        return res.status(400).type("html").send(renderPublicView("booking/procedure-entry", {
-          csrfToken, clinic, procedure: procedureResult.procedure,
-          idempotencyKey: req.body.idempotencyKey || generateIdempotencyKey(),
+        return res.status(400).type("html").send(renderPublicView("booking/procedure-patient", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "patient",
           validationErrors: errors, formData: req.body || {},
-        }));
+        })));
       }
+      draft = mergeDraft(draft, {
+        patientFirstName: firstName,
+        patientLastName: lastName,
+        patientPhone: phone,
+        phoneCountry,
+        phoneNational,
+        patientEmail: String((req.body && req.body.patientEmail) || "").trim() || null,
+        visitReason: String((req.body && req.body.visitReason) || "").trim().slice(0, 500) || null,
+      });
+      writeBookingDraft(res, env, draft, { isProduction });
+      return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/review`);
+    } catch (err) {
+      return next(err);
+    }
+  });
 
+  app.get("/clinics/:clinicKey/book/procedures/:procedureKey/review", async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
+      if (!resolved.ok) {
+        if (resolved.sent) return undefined;
+        return res.status(400).type("html").send("<h1>Booking Not Available</h1>");
+      }
+      const clinic = resolved.clinic;
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+      if (!procedureResult.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
+      }
+      const procedure = procedureResult.procedure;
+      const draft = readBookingDraft(req, env, clinicKey);
+      if (!draft || draft.bookingKind !== "procedure" || draft.procedureId !== procedure.id || !draft.patientFirstName || !draft.patientLastName || !draft.patientPhone) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}/patient`);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      return res.status(200).type("html").send(renderPublicView("booking/procedure-review", procedureWizardLocals({
+        csrfToken, clinic, procedure, draft, wizardStepKey: "review",
+      })));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/submit", bookingLimiter, async (req, res, next) => {
+    try {
+      const clinicKey = req.params.clinicKey;
+      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
+      if (!resolved.ok) {
+        if (resolved.sent) return undefined;
+        return res.status(400).type("html").send("<h1>Booking Not Available</h1>");
+      }
+      const clinic = resolved.clinic;
+      const procedureResult = await getPublicProcedure(getPool(), {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: clinic.healthcareOrganizationId,
+        procedureKey: req.params.procedureKey,
+      });
+      if (!procedureResult.ok) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(404).type("html").send(renderPublicView("booking/procedure-unavailable", { csrfToken, clinic }));
+      }
+      const procedure = procedureResult.procedure;
+      const draft = readBookingDraft(req, env, clinicKey);
+      if (
+        !draft
+        || draft.bookingKind !== "procedure"
+        || draft.procedureId !== procedure.id
+        || !draft.preparationAcknowledged
+        || (procedure.referralRequired && !draft.referralAcknowledged)
+        || !draft.preferredStartsAt
+        || !draft.patientFirstName
+        || !draft.patientLastName
+        || !draft.patientPhone
+      ) {
+        return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}`);
+      }
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.status(403).type("html").send(renderPublicView("booking/procedure-review", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "review",
+          error: "Your session expired. Please try again.",
+        })));
+      }
+      const idempotencyKey = String((req.body && req.body.idempotencyKey) || draft.idempotencyKey || "").trim()
+        || generateIdempotencyKey();
       const result = await createProcedureBookingRequest(getPool(), {
         organizationId: clinic.organizationId,
         healthcareOrganizationId: clinic.healthcareOrganizationId,
         facilityId: clinic.primaryFacilityId,
-        procedureId: procedureResult.procedure.id,
-        patientFirstName: req.body.patientFirstName,
-        patientLastName: req.body.patientLastName,
-        patientPhone: req.body.patientPhone,
-        phoneCountry: req.body.phone_country || null,
-        phoneNational: req.body.phone_national || null,
-        patientEmail: req.body.patientEmail,
-        preferredStartsAt: req.body.preferredStartsAt || null,
-        preparationAcknowledged: req.body.preparationAcknowledged === "1",
-        referralRequired: procedureResult.procedure.referralRequired,
-        referralNotes: req.body.referralNotes || null,
+        procedureId: draft.procedureId,
+        patientFirstName: draft.patientFirstName,
+        patientLastName: draft.patientLastName,
+        patientPhone: draft.patientPhone,
+        phoneCountry: draft.phoneCountry || null,
+        phoneNational: draft.phoneNational || null,
+        patientEmail: draft.patientEmail,
+        visitReason: draft.visitReason,
+        preferredStartsAt: draft.preferredStartsAt,
+        preparationAcknowledged: draft.preparationAcknowledged === true,
+        referralRequired: procedure.referralRequired,
+        referralNotes: draft.referralNotes || null,
         timezone: clinic.timezone || "Africa/Lusaka",
-        idempotencyKey: req.body.idempotencyKey || undefined,
+        idempotencyKey,
       });
-
       if (!result.ok) {
-        return res.status(400).type("html").send(renderPublicView("booking/procedure-entry", {
-          csrfToken, clinic, procedure: procedureResult.procedure,
-          idempotencyKey: req.body.idempotencyKey || generateIdempotencyKey(),
-          error: "Unable to submit procedure request.", formData: req.body || {},
-        }));
+        return res.status(400).type("html").send(renderPublicView("booking/procedure-review", procedureWizardLocals({
+          csrfToken, clinic, procedure, draft, wizardStepKey: "review",
+          error: "Unable to submit procedure request. Check your details and try again.",
+        })));
       }
-
+      clearBookingDraft(res, { isProduction });
       return res.status(200).type("html").send(renderPublicView("booking/request-submitted", {
-        csrfToken, clinic, booking: result.booking, accessToken: result.booking.accessToken, robots: "noindex",
+        csrfToken,
+        clinic,
+        booking: { ...result.booking, procedureDisplayName: draft.procedureDisplayName },
+        accessToken: result.booking.accessToken,
+        pageTitle: "Request submitted",
+        robots: "noindex",
+        duplicateSubmit: result.duplicate === true,
       }));
     } catch (err) {
       return next(err);
